@@ -78,9 +78,9 @@ function MedsPage() {
       ) : meds.length === 0 ? (
         <div className="mt-10 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
           <Pill className="h-6 w-6 mx-auto text-muted-foreground" />
-          <p className="mt-3 font-serif text-lg text-foreground">No medications yet.</p>
+          <p className="mt-3 font-serif text-lg text-foreground">Add the medications you take.</p>
           <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
-            Add one to start tracking doses and getting gentle reminders at the right times.
+            I will remind you and watch for missed doses.
           </p>
           <Button className="mt-5 rounded-full" onClick={() => setOpen(true)}>
             <Plus className="h-4 w-4 mr-1" /> Add a medication
