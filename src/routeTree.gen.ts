@@ -13,6 +13,7 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
 import { Route as AppMedsRouteImport } from './routes/_app/meds'
 import { Route as AppJournalRouteImport } from './routes/_app/journal'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
@@ -39,6 +40,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrivacyRoute = AppPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMedsRoute = AppMedsRouteImport.update({
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/insights': typeof AppInsightsRoute
   '/journal': typeof AppJournalRoute
   '/meds': typeof AppMedsRouteWithChildren
+  '/privacy': typeof AppPrivacyRoute
   '/settings': typeof AppSettingsRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/insights': typeof AppInsightsRoute
   '/journal': typeof AppJournalRoute
   '/meds': typeof AppMedsRouteWithChildren
+  '/privacy': typeof AppPrivacyRoute
   '/settings': typeof AppSettingsRoute
   '/': typeof AppIndexRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/_app/insights': typeof AppInsightsRoute
   '/_app/journal': typeof AppJournalRoute
   '/_app/meds': typeof AppMedsRouteWithChildren
+  '/_app/privacy': typeof AppPrivacyRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/': typeof AppIndexRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/insights'
     | '/journal'
     | '/meds'
+    | '/privacy'
     | '/settings'
     | '/meds/$medId'
     | '/seizures/new'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
     | '/insights'
     | '/journal'
     | '/meds'
+    | '/privacy'
     | '/settings'
     | '/'
     | '/meds/$medId'
@@ -159,6 +170,7 @@ export interface FileRouteTypes {
     | '/_app/insights'
     | '/_app/journal'
     | '/_app/meds'
+    | '/_app/privacy'
     | '/_app/settings'
     | '/_app/'
     | '/_app/meds/$medId'
@@ -200,6 +212,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/privacy': {
+      id: '/_app/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof AppPrivacyRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/meds': {
@@ -278,6 +297,7 @@ interface AppRouteChildren {
   AppInsightsRoute: typeof AppInsightsRoute
   AppJournalRoute: typeof AppJournalRoute
   AppMedsRoute: typeof AppMedsRouteWithChildren
+  AppPrivacyRoute: typeof AppPrivacyRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppSeizuresNewRoute: typeof AppSeizuresNewRoute
@@ -289,6 +309,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppInsightsRoute: AppInsightsRoute,
   AppJournalRoute: AppJournalRoute,
   AppMedsRoute: AppMedsRouteWithChildren,
+  AppPrivacyRoute: AppPrivacyRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
   AppSeizuresNewRoute: AppSeizuresNewRoute,

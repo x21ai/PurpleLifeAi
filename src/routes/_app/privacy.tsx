@@ -1,0 +1,26 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
+
+export const Route = createFileRoute("/_app/privacy")({
+  head: () => ({ meta: [{ title: "Privacy & safety — Purple" }] }),
+  component: PrivacyPage,
+});
+
+function PrivacyPage() {
+  return (
+    <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-10 sm:pt-16 pb-12">
+      <Link to="/settings" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-4 w-4" /> Settings
+      </Link>
+      <h1 className="mt-6 font-serif text-4xl sm:text-5xl leading-tight text-foreground">
+        Privacy &amp; safety
+      </h1>
+      <p className="mt-6 text-base sm:text-lg text-muted-foreground">
+        Full policy coming soon. In short: your journal entries, biometrics, and seizure
+        logs belong to you. Purple stores them so you can search them — never to sell, never
+        to train models without your explicit consent. Export everything any time, delete
+        everything any time.
+      </p>
+    </div>
+  );
+}
