@@ -1,65 +1,88 @@
 
-# Purple — Foundation Setup
+# Purple — Backend, Schema, Auth
 
-This first pass establishes the visual system and app shell only. No features, no backend yet — those land in follow-up prompts.
+Enable Lovable Cloud, build the full schema with RLS, set up magic-link auth, and build the onboarding/sign-in screen.
 
-## Scope
+## 1. Enable Lovable Cloud
 
-1. Brand design tokens (light + dark) in `src/styles.css`
-2. Typography: Source Serif 4 (display) + Inter (UI) via Google Fonts
-3. Responsive app shell:
-   - Desktop (≥ md): left sidebar with Purple wordmark + nav
-   - Tablet: same sidebar, collapsible
-   - Mobile: bottom navigation bar, no sidebar
-4. Placeholder Today landing page with warm, calm copy
-5. Route scaffolding for future sections (placeholders only)
-6. Root `head()` metadata (title "Purple — a calm health journal", description, theme-color)
+Provisions Supabase, generates the three Supabase clients (`client.ts`, `client.server.ts`, `auth-middleware.ts`) plus env vars. No code changes needed before this — just enable.
 
-Not in scope this turn: Supabase, auth, AI, journal capture, meds, seizure log, wearables, forecast, insights. Stack libs (TanStack Query, date-fns, zustand) are already partly present or will be added as features arrive — not pre-installed speculatively.
+## 2. Database schema (one migration)
 
-## Design tokens
+All tables get `id uuid primary key default gen_random_uuid()` unless noted, `user_id uuid not null references auth.users(id) on delete cascade`, `created_at timestamptz default now()`, and `enable row level security`. Each gets a single permissive policy `auth.uid() = user_id` for ALL with check (profiles uses `auth.uid() = id`).
 
-Map the brand palette to oklch in `src/styles.css`:
+Tables created exactly per spec:
+- `profiles` (pk = `id` referencing `auth.users(id) on delete cascade`)
+- `journal_entries` — `linked_seizure_id`/`linked_medication_dose_id` are nullable uuids with FKs to the respective tables (`on delete set null`)
+- `seizure_events`
+- `medications`
+- `medication_doses` — FK to `medications(id) on delete cascade`
+- `biometrics` — every metric column nullable as listed
+- `oura_tokens` (`user_id` is PK)
+- `whoop_tokens` (`user_id` is PK)
+- `risk_forecasts` — unique `(user_id, for_date)`
+- `alerts`
 
-- `--primary` ← #5B2C82, `--primary-foreground` white
-- `--accent` ← #8B5FAB
-- `--secondary` / soft surface ← #EDE4F4
-- `--background` ← #FAF8FB, `--foreground` ← #1A1A1A
-- `--muted-foreground` ← #555555, `--border` ← #EAEAEA
-- Semantic: `--success`, `--warning`, `--danger`, `--info` registered in `@theme inline`
-- Dark mode: surface #0E0A12, alt #181321, ink #FAFAFA, muted #BABABA, divider #2A2330, primary lifted to accent purple for contrast
-- `--radius` set to a calm 0.75rem
-- Font tokens: `--font-serif` (Source Serif 4), `--font-sans` (Inter); register `font-serif` / `font-sans` Tailwind utilities via `@theme inline`
+Helpful indexes: `journal_entries(user_id, captured_at desc)`, `seizure_events(user_id, started_at desc)`, `medication_doses(user_id, scheduled_at)`, `biometrics(user_id, recorded_at desc)`, `risk_forecasts(user_id, for_date desc)`, `alerts(user_id, created_at desc) where acknowledged = false`.
 
-Body defaults to Inter; a `.font-display` / `font-serif` utility used for hero/headline text.
+Profile auto-create trigger:
+```sql
+create function public.handle_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profiles (id) values (new.id) on conflict do nothing;
+  return new;
+end $$;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+```
+
+## 3. Private storage bucket
+
+Create bucket `journal-media` (private). Four storage policies on `storage.objects` for that bucket, each requiring `(storage.foldername(name))[1] = auth.uid()::text`: SELECT, INSERT, UPDATE, DELETE. Convention: paths must start with `<user_id>/...`.
+
+## 4. Auth configuration
+
+Email magic link only. No password, no social. Site URL + redirect URL set to current origin (Cloud handles defaults). No `configure_social_auth` call.
+
+## 5. Onboarding / sign-in screen
+
+New public route `src/routes/sign-in.tsx`:
+- Centered, calm composition on `bg-background`
+- Large "PURPLE" wordmark in Inter SemiBold with wide letter-spacing (`tracking-[0.35em]`)
+- Tagline in Source Serif 4: "A quiet intelligence for your health."
+- Three short sentences (sans, muted) — paraphrased from the brand: write/speak/snap anything; Purple notices patterns over time; your data stays yours, always.
+- Email input + "Send me a sign-in link" button
+- On submit: `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + "/" } })`
+- Success state: "Check your inbox — the link will sign you in."
+- Footer microcopy: "Free forever. Open source. No ads."
+
+## 6. Auth state + route guard
+
+- `src/integrations/supabase/use-auth.ts` — small hook subscribing to `onAuthStateChange` (listener BEFORE `getSession()`), stores `{ session, loading }` in a React context provider mounted in `__root.tsx` `RootComponent`.
+- `src/routes/_app.tsx` — add `beforeLoad` that checks the session via the browser supabase client; redirect to `/sign-in` if unauthenticated. Keep the AppShell component as the route component.
+- Update `__root.tsx` to wrap children with the AuthProvider and invalidate the router on auth state change.
+- Sign-in route redirects to `/` if already authenticated.
+
+## 7. Settings page touch-up
+
+Add a "Sign out" button to `_app/settings.tsx` calling `supabase.auth.signOut()`. (Tiny addition — keeps the placeholder text but adds a real action.)
 
 ## Files
 
-- `src/styles.css` — replace token blocks, add Google Fonts `@import`, register semantic + font tokens in `@theme inline`
-- `src/routes/__root.tsx` — add Inter as default body class, keep existing shell, update meta (title, description, theme-color #5B2C82)
-- `src/components/layout/AppShell.tsx` — new; wraps `<Outlet />` with responsive sidebar + bottom nav, uses `useIsMobile`
-- `src/components/layout/SidebarNav.tsx` — new; desktop/tablet left sidebar (Purple wordmark in serif, nav items with lucide icons, active state via `useRouterState`)
-- `src/components/layout/BottomNav.tsx` — new; mobile bottom tab bar (fixed, safe-area aware)
-- `src/components/layout/NavItems.ts` — shared nav config: Today, Journal, Chat, Meds, Insights, Settings
-- `src/routes/_app.tsx` — pathless layout route rendering `<AppShell><Outlet /></AppShell>`
-- `src/routes/_app/index.tsx` — placeholder Today page (warm greeting, date, empty-state card "Nothing yet today. When you're ready, write, speak, or snap something.")
-- `src/routes/_app/journal.tsx`, `chat.tsx`, `meds.tsx`, `insights.tsx`, `settings.tsx` — minimal placeholder routes so nav links resolve at typecheck
+- New migration under `supabase/migrations/` (schema + RLS + trigger + storage bucket + storage policies)
+- `src/routes/sign-in.tsx` (public)
+- `src/integrations/supabase/auth-context.tsx`
+- `src/routes/__root.tsx` (wrap with AuthProvider, invalidate on auth change)
+- `src/routes/_app.tsx` (add `beforeLoad` redirect)
+- `src/routes/_app/settings.tsx` (add sign-out)
 
-Note: existing `src/routes/index.tsx` will be deleted in favor of `_app/index.tsx` so `/` renders inside the shell. (`_app` pathless layout is the TanStack pattern; not a Next.js convention.)
+## Out of scope this turn
 
-## Responsive behavior
-
-- `< 768px`: no sidebar, content full-width with `pb-20` to clear bottom nav; bottom nav fixed, 5 icons + labels
-- `768px – 1024px`: sidebar in icon-collapsed mode (64px), main content beside it
-- `≥ 1024px`: sidebar expanded (240px) with labels
-- All three breakpoints get the same nav items, same active states, same Today placeholder — verified per workspace rule.
-
-## Voice in placeholder copy
-
-Today page hero (serif): "Hi. How's today feeling?"
-Sub (sans, muted): "Write a line, hold to speak, or tap to add a photo. I'll remember the rest."
-No CTAs styled as marketing buttons; quiet, journal-like.
+Wearable OAuth flows, AI pipelines, journal capture UI, reminders, risk forecast computation. Tables and storage are ready for those to be wired up next.
 
 ## Verification
 
-After build: confirm `/` renders Today inside shell, sidebar appears at desktop width, bottom nav appears at mobile width, fonts load (Source Serif 4 + Inter), primary color matches #5B2C82, dark mode tokens applied when `.dark` is on the html.
+After build: visit `/` → redirects to `/sign-in`. Submit email → success message. Inspect Cloud → tables, policies, bucket, trigger all present. `auth.users` insert produces a `profiles` row.
