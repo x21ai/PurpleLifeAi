@@ -17,6 +17,7 @@ import { Route as AppMedsRouteImport } from './routes/_app/meds'
 import { Route as AppJournalRouteImport } from './routes/_app/journal'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
+import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
 import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
 
@@ -59,6 +60,11 @@ const AppChatRoute = AppChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AppRoute,
 } as any)
+const OauthOuraCallbackRoute = OauthOuraCallbackRouteImport.update({
+  id: '/oauth/oura/callback',
+  path: '/oauth/oura/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppSeizuresNewRoute = AppSeizuresNewRouteImport.update({
   id: '/seizures/new',
   path: '/seizures/new',
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
+  '/oauth/oura/callback': typeof OauthOuraCallbackRoute
 }
 export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
+  '/oauth/oura/callback': typeof OauthOuraCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
   '/_app/seizures/new': typeof AppSeizuresNewRoute
+  '/oauth/oura/callback': typeof OauthOuraCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/meds/$medId'
     | '/seizures/new'
+    | '/oauth/oura/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/sign-in'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/'
     | '/meds/$medId'
     | '/seizures/new'
+    | '/oauth/oura/callback'
   id:
     | '__root__'
     | '/_app'
@@ -140,11 +151,13 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/_app/meds/$medId'
     | '/_app/seizures/new'
+    | '/oauth/oura/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   SignInRoute: typeof SignInRoute
+  OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -205,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppChatRouteImport
       parentRoute: typeof AppRoute
     }
+    '/oauth/oura/callback': {
+      id: '/oauth/oura/callback'
+      path: '/oauth/oura/callback'
+      fullPath: '/oauth/oura/callback'
+      preLoaderRoute: typeof OauthOuraCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/seizures/new': {
       id: '/_app/seizures/new'
       path: '/seizures/new'
@@ -258,17 +278,8 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   SignInRoute: SignInRoute,
+  OauthOuraCallbackRoute: OauthOuraCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
