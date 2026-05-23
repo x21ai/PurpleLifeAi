@@ -316,6 +316,35 @@ Deno.serve(async (req) => {
       .eq("id", entry_id);
     if (updErr) throw new Error(updErr.message);
 
+    // Embed into ai_memory for semantic search
+    const memoryContent = [
+      entry.text || "",
+      transcript || "",
+      result.summary || "",
+      (result.tags || []).join(" "),
+    ]
+      .filter(Boolean)
+      .join("\n\n")
+      .trim();
+    if (memoryContent) {
+      const embedding = await embedText(memoryContent);
+      if (embedding) {
+        await admin
+          .from("ai_memory")
+          .upsert(
+            {
+              user_id: entry.user_id,
+              source_table: "journal_entries",
+              source_id: entry_id,
+              recorded_at: entry.captured_at || new Date().toISOString(),
+              content: memoryContent,
+              embedding: embedding as unknown as string,
+            },
+            { onConflict: "source_table,source_id" },
+          );
+      }
+    }
+
     // 8. Alert if needed
     if (needsFollowup) {
       await admin.from("alerts").insert({
