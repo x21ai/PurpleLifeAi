@@ -12,11 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
 import { Route as AppMedsRouteImport } from './routes/_app/meds'
 import { Route as AppJournalRouteImport } from './routes/_app/journal'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
+import { Route as AppCharterRouteImport } from './routes/_app/charter'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
 import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
@@ -35,9 +38,19 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWelcomeRoute = AppWelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrivacyRoute = AppPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMedsRoute = AppMedsRouteImport.update({
@@ -60,6 +73,11 @@ const AppChatRoute = AppChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCharterRoute = AppCharterRouteImport.update({
+  id: '/charter',
+  path: '/charter',
+  getParentRoute: () => AppRoute,
+} as any)
 const OauthOuraCallbackRoute = OauthOuraCallbackRouteImport.update({
   id: '/oauth/oura/callback',
   path: '/oauth/oura/callback',
@@ -79,22 +97,28 @@ const AppMedsMedIdRoute = AppMedsMedIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/sign-in': typeof SignInRoute
+  '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/insights': typeof AppInsightsRoute
   '/journal': typeof AppJournalRoute
   '/meds': typeof AppMedsRouteWithChildren
+  '/privacy': typeof AppPrivacyRoute
   '/settings': typeof AppSettingsRoute
+  '/welcome': typeof AppWelcomeRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
 }
 export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
+  '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/insights': typeof AppInsightsRoute
   '/journal': typeof AppJournalRoute
   '/meds': typeof AppMedsRouteWithChildren
+  '/privacy': typeof AppPrivacyRoute
   '/settings': typeof AppSettingsRoute
+  '/welcome': typeof AppWelcomeRoute
   '/': typeof AppIndexRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
@@ -104,11 +128,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/sign-in': typeof SignInRoute
+  '/_app/charter': typeof AppCharterRoute
   '/_app/chat': typeof AppChatRoute
   '/_app/insights': typeof AppInsightsRoute
   '/_app/journal': typeof AppJournalRoute
   '/_app/meds': typeof AppMedsRouteWithChildren
+  '/_app/privacy': typeof AppPrivacyRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/welcome': typeof AppWelcomeRoute
   '/_app/': typeof AppIndexRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
   '/_app/seizures/new': typeof AppSeizuresNewRoute
@@ -119,22 +146,28 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/sign-in'
+    | '/charter'
     | '/chat'
     | '/insights'
     | '/journal'
     | '/meds'
+    | '/privacy'
     | '/settings'
+    | '/welcome'
     | '/meds/$medId'
     | '/seizures/new'
     | '/oauth/oura/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/sign-in'
+    | '/charter'
     | '/chat'
     | '/insights'
     | '/journal'
     | '/meds'
+    | '/privacy'
     | '/settings'
+    | '/welcome'
     | '/'
     | '/meds/$medId'
     | '/seizures/new'
@@ -143,11 +176,14 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/sign-in'
+    | '/_app/charter'
     | '/_app/chat'
     | '/_app/insights'
     | '/_app/journal'
     | '/_app/meds'
+    | '/_app/privacy'
     | '/_app/settings'
+    | '/_app/welcome'
     | '/_app/'
     | '/_app/meds/$medId'
     | '/_app/seizures/new'
@@ -183,11 +219,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/welcome': {
+      id: '/_app/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof AppWelcomeRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/privacy': {
+      id: '/_app/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof AppPrivacyRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/meds': {
@@ -216,6 +266,13 @@ declare module '@tanstack/react-router' {
       path: '/chat'
       fullPath: '/chat'
       preLoaderRoute: typeof AppChatRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/charter': {
+      id: '/_app/charter'
+      path: '/charter'
+      fullPath: '/charter'
+      preLoaderRoute: typeof AppCharterRouteImport
       parentRoute: typeof AppRoute
     }
     '/oauth/oura/callback': {
@@ -254,21 +311,27 @@ const AppMedsRouteWithChildren =
   AppMedsRoute._addFileChildren(AppMedsRouteChildren)
 
 interface AppRouteChildren {
+  AppCharterRoute: typeof AppCharterRoute
   AppChatRoute: typeof AppChatRoute
   AppInsightsRoute: typeof AppInsightsRoute
   AppJournalRoute: typeof AppJournalRoute
   AppMedsRoute: typeof AppMedsRouteWithChildren
+  AppPrivacyRoute: typeof AppPrivacyRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppWelcomeRoute: typeof AppWelcomeRoute
   AppIndexRoute: typeof AppIndexRoute
   AppSeizuresNewRoute: typeof AppSeizuresNewRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppCharterRoute: AppCharterRoute,
   AppChatRoute: AppChatRoute,
   AppInsightsRoute: AppInsightsRoute,
   AppJournalRoute: AppJournalRoute,
   AppMedsRoute: AppMedsRouteWithChildren,
+  AppPrivacyRoute: AppPrivacyRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppWelcomeRoute: AppWelcomeRoute,
   AppIndexRoute: AppIndexRoute,
   AppSeizuresNewRoute: AppSeizuresNewRoute,
 }

@@ -1,0 +1,242 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { ArrowRight, Bell, Activity, Watch, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/integrations/supabase/auth-context";
+import { ensureServiceWorker, requestPermission } from "@/lib/med-notifications";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/_app/welcome")({
+  head: () => ({ meta: [{ title: "Welcome — Purple" }] }),
+  component: WelcomePage,
+});
+
+function WelcomePage() {
+  const navigate = useNavigate();
+  const { session } = useAuth();
+  const userId = session?.user.id;
+
+  const [step, setStep] = useState(0);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [emergencyName, setEmergencyName] = useState("");
+  const [emergencyPhone, setEmergencyPhone] = useState("");
+  const [notifGranted, setNotifGranted] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (typeof Notification !== "undefined") {
+      setNotifGranted(Notification.permission === "granted");
+    }
+  }, []);
+
+  const finish = async () => {
+    if (!userId) {
+      navigate({ to: "/" });
+      return;
+    }
+    setSaving(true);
+    try {
+      await supabase.from("profiles").upsert({
+        id: userId,
+        first_name: firstName || null,
+        last_name: lastName || null,
+        emergency_contact_name: emergencyName || null,
+        emergency_contact_phone: emergencyPhone || null,
+      });
+      localStorage.setItem("purple-onboarded", "1");
+      navigate({ to: "/" });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Could not save";
+      toast.error(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const skip = () => {
+    localStorage.setItem("purple-onboarded", "1");
+    navigate({ to: "/" });
+  };
+
+  const enableNotifs = async () => {
+    await ensureServiceWorker();
+    const perm = await requestPermission();
+    setNotifGranted(perm === "granted");
+    if (perm === "granted") toast.success("Notifications on");
+  };
+
+  const connectOura = async () => {
+    const { data: cfg } = await supabase.functions.invoke("oura-sync", { body: { action: "config" } });
+    if (!cfg?.client_id || !userId) {
+      toast.error("Oura is not configured");
+      return;
+    }
+    const redirect = window.location.origin + "/oauth/oura/callback";
+    const url = new URL("https://cloud.ouraring.com/oauth/authorize");
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("client_id", cfg.client_id);
+    url.searchParams.set("redirect_uri", redirect);
+    url.searchParams.set("scope", "personal daily heartrate workout tag session spo2 ring_configuration");
+    url.searchParams.set("state", userId);
+    window.open(url.toString(), "oura-oauth", "width=520,height=720");
+  };
+
+  return (
+    <div className="mx-auto max-w-xl px-5 sm:px-8 pt-12 sm:pt-20 pb-16">
+      <div className="flex items-center justify-between mb-10">
+        <div className="flex gap-1.5" aria-hidden="true">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className={`h-1.5 w-8 rounded-full transition-colors ${
+                i <= step ? "bg-primary" : "bg-secondary"
+              }`}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={skip}
+          className="text-sm text-muted-foreground hover:text-foreground"
+        >
+          Skip
+        </button>
+      </div>
+
+      {step === 0 && (
+        <div>
+          <h1 className="font-serif text-4xl sm:text-5xl leading-tight text-foreground">
+            Welcome to Purple. This is your space.
+          </h1>
+          <p className="mt-6 text-base sm:text-lg text-muted-foreground">
+            A calm place to keep track of your sleep, your symptoms, your medications, and
+            the patterns underneath them. Nothing here is sold, shared, or judged. I&rsquo;m
+            here when you need me, quiet when you don&rsquo;t.
+          </p>
+          <Button className="mt-10 rounded-full" size="lg" onClick={() => setStep(1)}>
+            Continue <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+        </div>
+      )}
+
+      {step === 1 && (
+        <div>
+          <h1 className="font-serif text-3xl sm:text-4xl leading-tight text-foreground">
+            Let me know who you are.
+          </h1>
+          <p className="mt-4 text-base text-muted-foreground">
+            Just enough so I can address you, and someone to reach if a seizure is ever logged.
+          </p>
+          <div className="mt-8 space-y-5">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="first">First name</Label>
+                <Input id="first" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" className="mt-1.5" />
+              </div>
+              <div>
+                <Label htmlFor="last">Last name</Label>
+                <Input id="last" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" className="mt-1.5" />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="ename">Emergency contact name</Label>
+              <Input id="ename" value={emergencyName} onChange={(e) => setEmergencyName(e.target.value)} className="mt-1.5" />
+            </div>
+            <div>
+              <Label htmlFor="ephone">Emergency contact phone</Label>
+              <Input id="ephone" type="tel" value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} autoComplete="tel" className="mt-1.5" />
+            </div>
+          </div>
+          <div className="mt-10 flex items-center justify-between gap-3">
+            <Button variant="ghost" onClick={() => setStep(0)}>Back</Button>
+            <Button className="rounded-full" onClick={() => setStep(2)}>
+              Continue <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div>
+          <h1 className="font-serif text-3xl sm:text-4xl leading-tight text-foreground">
+            Connect what helps.
+          </h1>
+          <p className="mt-4 text-base text-muted-foreground">
+            All optional. You can do this any time from Settings.
+          </p>
+          <div className="mt-8 space-y-3">
+            <ConnectCard
+              icon={Activity}
+              title="Oura Ring"
+              body="Sleep, readiness, HRV, body temperature."
+              actionLabel="Connect"
+              onAction={connectOura}
+            />
+            <ConnectCard
+              icon={Watch}
+              title="Whoop"
+              body="Recovery, strain, sleep performance."
+              actionLabel="Coming soon"
+              disabled
+            />
+            <ConnectCard
+              icon={Bell}
+              title="Browser notifications"
+              body="Quiet reminders when it's time for a dose."
+              actionLabel={notifGranted ? "Enabled" : "Enable"}
+              disabled={notifGranted}
+              onAction={enableNotifs}
+              done={notifGranted}
+            />
+          </div>
+          <div className="mt-10 flex items-center justify-between gap-3">
+            <Button variant="ghost" onClick={() => setStep(1)}>Back</Button>
+            <Button className="rounded-full" onClick={finish} disabled={saving}>
+              {saving ? "Saving…" : "Take me in"}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ConnectCard({
+  icon: Icon,
+  title,
+  body,
+  actionLabel,
+  onAction,
+  disabled,
+  done,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  body: string;
+  actionLabel: string;
+  onAction?: () => void;
+  disabled?: boolean;
+  done?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4">
+      <div className="flex items-center gap-3 min-w-0">
+        <span className="rounded-full bg-secondary p-2 text-secondary-foreground shrink-0">
+          <Icon className="h-4 w-4" />
+        </span>
+        <div className="min-w-0">
+          <p className="font-serif text-base text-foreground">{title}</p>
+          <p className="text-xs text-muted-foreground truncate">{body}</p>
+        </div>
+      </div>
+      <Button size="sm" variant={done ? "ghost" : "outline"} onClick={onAction} disabled={disabled}>
+        {done && <Check className="h-3.5 w-3.5 mr-1" />}
+        {actionLabel}
+      </Button>
+    </div>
+  );
+}
