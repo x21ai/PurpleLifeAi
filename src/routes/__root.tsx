@@ -146,9 +146,7 @@ function RootComponent() {
     try { inIframe = window.self !== window.top; } catch { inIframe = true; }
     const host = window.location.hostname;
     const isPreview =
-      host.includes("id-preview--") ||
-      host.includes("lovableproject.com") ||
-      host.endsWith(".lovable.app");
+      host.includes("id-preview--") || host.includes("lovableproject.com");
     if (inIframe || isPreview) {
       navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister()));
       return;
