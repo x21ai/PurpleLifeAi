@@ -68,84 +68,112 @@
   --font-serif: "Source Serif 4", ui-serif, Georgia, serif;
 }
 
+@theme inline {
+  --color-data-1: var(--data-1);
+  --color-data-2: var(--data-2);
+  --color-data-3: var(--data-3);
+  --color-data-4: var(--data-4);
+  --color-data-5: var(--data-5);
+  --color-data-alert: var(--data-alert);
+  --color-ring-track: var(--ring-track);
+  --color-ring-fill: var(--ring-fill);
+}
+
 :root {
-  --radius: 0.75rem;
-  /* Brand: Purple — epilepsy awareness */
-  --background: oklch(0.985 0.004 320);          /* #FAF8FB off-white */
-  --foreground: oklch(0.2 0.005 320);            /* #1A1A1A ink */
-  --card: oklch(1 0 0);                          /* white */
-  --card-foreground: oklch(0.2 0.005 320);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.005 320);
-  --primary: oklch(0.36 0.13 305);               /* #5B2C82 deep purple */
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.93 0.035 310);            /* #EDE4F4 soft purple */
-  --secondary-foreground: oklch(0.27 0.1 305);   /* #3A1A55 deep accent */
-  --muted: oklch(0.96 0.008 320);
-  --muted-foreground: oklch(0.46 0.005 320);     /* #555 muted ink */
-  --accent: oklch(0.55 0.11 305);                /* #8B5FAB light accent */
-  --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.55 0.16 25);            /* #B8453A danger */
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.92 0.003 320);               /* #EAEAEA divider */
-  --input: oklch(0.92 0.003 320);
-  --ring: oklch(0.55 0.11 305);
-  --success: oklch(0.6 0.08 160);                /* #4A8B6F */
-  --warning: oklch(0.68 0.12 70);                /* #C58A3F */
-  --danger: oklch(0.55 0.16 25);                 /* #B8453A */
-  --info: oklch(0.55 0.09 255);                  /* #4A6FA5 */
-  --chart-1: oklch(0.36 0.13 305);
-  --chart-2: oklch(0.55 0.11 305);
-  --chart-3: oklch(0.6 0.08 160);
-  --chart-4: oklch(0.68 0.12 70);
-  --chart-5: oklch(0.55 0.09 255);
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.2 0.005 320);
-  --sidebar-primary: oklch(0.36 0.13 305);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.93 0.035 310);
-  --sidebar-accent-foreground: oklch(0.27 0.1 305);
-  --sidebar-border: oklch(0.92 0.003 320);
-  --sidebar-ring: oklch(0.55 0.11 305);
+  --radius: 0.875rem;
+  /* Oura-inspired: warm cream surfaces, deep navy ink, reserved purple accent */
+  --background: oklch(0.985 0.005 85);           /* warm off-cream */
+  --foreground: oklch(0.24 0.04 250);            /* deep ink navy */
+  --card: oklch(0.995 0.003 85);                 /* cream, lifted */
+  --card-foreground: oklch(0.24 0.04 250);
+  --popover: oklch(0.995 0.003 85);
+  --popover-foreground: oklch(0.24 0.04 250);
+  --primary: oklch(0.32 0.07 250);               /* deep navy */
+  --primary-foreground: oklch(0.985 0.005 85);
+  --secondary: oklch(0.93 0.018 235);            /* pastel blue surface */
+  --secondary-foreground: oklch(0.28 0.06 250);
+  --muted: oklch(0.95 0.01 230);
+  --muted-foreground: oklch(0.5 0.02 250);       /* soft slate */
+  --accent: oklch(0.42 0.16 305);                /* reserved purple, used sparingly */
+  --accent-foreground: oklch(0.985 0.005 85);
+  --destructive: oklch(0.62 0.18 25);            /* warm coral */
+  --destructive-foreground: oklch(0.985 0.005 85);
+  --border: oklch(0.9 0.012 235);                /* hairline blue-grey */
+  --input: oklch(0.9 0.012 235);
+  --ring: oklch(0.32 0.07 250);
+  --success: oklch(0.6 0.08 180);
+  --warning: oklch(0.7 0.13 70);
+  --danger: oklch(0.62 0.18 25);
+  --info: oklch(0.55 0.09 230);
+  /* Data palette — Oura blue family + coral alert */
+  --data-1: oklch(0.28 0.07 250);                /* deep navy */
+  --data-2: oklch(0.48 0.1 240);                 /* mid blue */
+  --data-3: oklch(0.65 0.11 232);                /* sky */
+  --data-4: oklch(0.82 0.06 225);                /* ice */
+  --data-5: oklch(0.45 0.05 250);                /* slate */
+  --data-alert: oklch(0.68 0.17 30);             /* coral, "needs attention" */
+  --ring-track: oklch(0.92 0.015 230);           /* pastel blue track */
+  --ring-fill: oklch(0.32 0.07 250);
+  --chart-1: var(--data-1);
+  --chart-2: var(--data-2);
+  --chart-3: var(--data-3);
+  --chart-4: var(--data-4);
+  --chart-5: var(--data-alert);
+  --sidebar: oklch(0.995 0.003 85);
+  --sidebar-foreground: oklch(0.24 0.04 250);
+  --sidebar-primary: oklch(0.32 0.07 250);
+  --sidebar-primary-foreground: oklch(0.985 0.005 85);
+  --sidebar-accent: oklch(0.93 0.018 235);
+  --sidebar-accent-foreground: oklch(0.28 0.06 250);
+  --sidebar-border: oklch(0.9 0.012 235);
+  --sidebar-ring: oklch(0.32 0.07 250);
 }
 
 .dark {
-  --background: oklch(0.13 0.02 305);            /* #0E0A12 */
-  --foreground: oklch(0.98 0.002 320);           /* #FAFAFA */
-  --card: oklch(0.18 0.025 305);                 /* #181321 surface alt */
-  --card-foreground: oklch(0.98 0.002 320);
-  --popover: oklch(0.18 0.025 305);
-  --popover-foreground: oklch(0.98 0.002 320);
-  --primary: oklch(0.62 0.13 305);               /* lifted purple */
-  --primary-foreground: oklch(0.1 0.02 305);
-  --secondary: oklch(0.24 0.04 305);
-  --secondary-foreground: oklch(0.98 0.002 320);
-  --muted: oklch(0.22 0.03 305);
-  --muted-foreground: oklch(0.76 0.01 320);      /* #BABABA */
-  --accent: oklch(0.55 0.11 305);
-  --accent-foreground: oklch(0.98 0.002 320);
-  --destructive: oklch(0.6 0.18 25);
-  --destructive-foreground: oklch(0.98 0.002 320);
-  --border: oklch(0.27 0.03 305);                /* #2A2330 */
-  --input: oklch(0.27 0.03 305);
-  --ring: oklch(0.62 0.13 305);
-  --success: oklch(0.65 0.09 160);
-  --warning: oklch(0.72 0.13 70);
-  --danger: oklch(0.6 0.18 25);
-  --info: oklch(0.62 0.1 255);
-  --chart-1: oklch(0.62 0.13 305);
-  --chart-2: oklch(0.55 0.11 305);
-  --chart-3: oklch(0.65 0.09 160);
-  --chart-4: oklch(0.72 0.13 70);
-  --chart-5: oklch(0.62 0.1 255);
-  --sidebar: oklch(0.18 0.025 305);
-  --sidebar-foreground: oklch(0.98 0.002 320);
-  --sidebar-primary: oklch(0.62 0.13 305);
-  --sidebar-primary-foreground: oklch(0.1 0.02 305);
-  --sidebar-accent: oklch(0.24 0.04 305);
-  --sidebar-accent-foreground: oklch(0.98 0.002 320);
-  --sidebar-border: oklch(0.27 0.03 305);
-  --sidebar-ring: oklch(0.62 0.13 305);
+  --background: oklch(0.16 0.025 250);           /* deep ink navy bg */
+  --foreground: oklch(0.96 0.008 85);            /* warm cream type */
+  --card: oklch(0.2 0.03 250);
+  --card-foreground: oklch(0.96 0.008 85);
+  --popover: oklch(0.2 0.03 250);
+  --popover-foreground: oklch(0.96 0.008 85);
+  --primary: oklch(0.85 0.04 230);               /* cream-blue, lifted on dark */
+  --primary-foreground: oklch(0.18 0.03 250);
+  --secondary: oklch(0.26 0.04 250);
+  --secondary-foreground: oklch(0.96 0.008 85);
+  --muted: oklch(0.24 0.035 250);
+  --muted-foreground: oklch(0.74 0.015 230);
+  --accent: oklch(0.62 0.15 305);
+  --accent-foreground: oklch(0.16 0.025 250);
+  --destructive: oklch(0.66 0.18 25);
+  --destructive-foreground: oklch(0.96 0.008 85);
+  --border: oklch(0.3 0.04 250);
+  --input: oklch(0.3 0.04 250);
+  --ring: oklch(0.7 0.07 230);
+  --success: oklch(0.7 0.09 180);
+  --warning: oklch(0.76 0.13 70);
+  --danger: oklch(0.66 0.18 25);
+  --info: oklch(0.7 0.1 230);
+  --data-1: oklch(0.88 0.04 230);
+  --data-2: oklch(0.72 0.1 232);
+  --data-3: oklch(0.6 0.1 230);
+  --data-4: oklch(0.42 0.07 240);
+  --data-5: oklch(0.7 0.02 240);
+  --data-alert: oklch(0.72 0.17 30);
+  --ring-track: oklch(0.28 0.04 250);
+  --ring-fill: oklch(0.85 0.04 230);
+  --chart-1: var(--data-1);
+  --chart-2: var(--data-2);
+  --chart-3: var(--data-3);
+  --chart-4: var(--data-4);
+  --chart-5: var(--data-alert);
+  --sidebar: oklch(0.2 0.03 250);
+  --sidebar-foreground: oklch(0.96 0.008 85);
+  --sidebar-primary: oklch(0.85 0.04 230);
+  --sidebar-primary-foreground: oklch(0.18 0.03 250);
+  --sidebar-accent: oklch(0.26 0.04 250);
+  --sidebar-accent-foreground: oklch(0.96 0.008 85);
+  --sidebar-border: oklch(0.3 0.04 250);
+  --sidebar-ring: oklch(0.7 0.07 230);
 }
 
 @layer base {
@@ -166,4 +194,23 @@
     font-family: var(--font-serif);
     font-optical-sizing: auto;
   }
+
+  /* Tiny tracked-out uppercase label, used everywhere as a metric caption */
+  .label-eyebrow {
+    font-family: var(--font-sans);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  /* Big serif numeric used for headline metrics */
+  .numeric-display {
+    font-family: var(--font-serif);
+    font-feature-settings: "lnum", "tnum";
+    letter-spacing: -0.01em;
+    line-height: 0.95;
+  }
+}
 }

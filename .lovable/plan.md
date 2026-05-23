@@ -1,88 +1,126 @@
+# Oura-inspired redesign of Purple
 
-# Purple — Backend, Schema, Auth
+A platform-wide visual reset. Same features, same data, same routes — recalibrated to feel like Oura: calm, premium, oversized serif numerics, soft pastel progress bars, smooth wave trends, and a 3D landscape hero anchoring the headline score.
 
-Enable Lovable Cloud, build the full schema with RLS, set up magic-link auth, and build the onboarding/sign-in screen.
+## Design system reset
 
-## 1. Enable Lovable Cloud
+Rewrite `src/styles.css` tokens end to end. Old purple-primary palette retires; purple becomes a single reserved accent for "alive" moments (alerts, the Log Seizure button, brand mark).
 
-Provisions Supabase, generates the three Supabase clients (`client.ts`, `client.server.ts`, `auth-middleware.ts`) plus env vars. No code changes needed before this — just enable.
+New token direction (oklch values picked to match Oura's screenshots):
 
-## 2. Database schema (one migration)
+- `--background` — warm off-cream, `oklch(0.985 0.005 85)`
+- `--foreground` — deep ink navy, `oklch(0.22 0.04 250)`
+- `--card` — pure cream, slightly lighter than background
+- `--muted` / `--muted-foreground` — soft slate against navy
+- `--primary` — navy (`oklch(0.32 0.07 250)`), foreground cream
+- `--accent` — Purple (`#5B2C82`) preserved as reserved highlight
+- `--data-1` … `--data-5` — Oura blue family for charts (deep navy, mid blue, sky, ice, coral for "needs attention")
+- `--ring-track` / `--ring-fill` — pastel blue track + saturated navy fill for progress arcs and pills
+- Dark mode: deep navy surfaces, cream type — mirrors Oura's mobile dark mode
 
-All tables get `id uuid primary key default gen_random_uuid()` unless noted, `user_id uuid not null references auth.users(id) on delete cascade`, `created_at timestamptz default now()`, and `enable row level security`. Each gets a single permissive policy `auth.uid() = user_id` for ALL with check (profiles uses `auth.uid() = id`).
+Typography
+- Headline numerics: Source Serif 4 (already loaded), bumped up to display sizes
+- Tiny uppercase labels under each metric: tracked-out Inter at 10–11px
+- Body unchanged
 
-Tables created exactly per spec:
-- `profiles` (pk = `id` referencing `auth.users(id) on delete cascade`)
-- `journal_entries` — `linked_seizure_id`/`linked_medication_dose_id` are nullable uuids with FKs to the respective tables (`on delete set null`)
-- `seizure_events`
-- `medications`
-- `medication_doses` — FK to `medications(id) on delete cascade`
-- `biometrics` — every metric column nullable as listed
-- `oura_tokens` (`user_id` is PK)
-- `whoop_tokens` (`user_id` is PK)
-- `risk_forecasts` — unique `(user_id, for_date)`
-- `alerts`
+Shared primitives added under `src/components/ui-oura/`
+- `<MetricNumber>` — huge serif number + tiny uppercase label
+- `<ProgressPill>` — full-width pastel pill with value chip on the right
+- `<ScoreArc>` — SVG curved arc with score endpoint dot, used inside the hero
+- `<WaveTrend>` — overlapping smooth lines with endpoint dots and value labels, no axis chrome
+- `<StageBar>` — horizontal stacked bars for sleep stages (Awake/REM/Light/Deep)
+- `<SectionLabel>` — small navy heading like "Resting Heart Rate"
 
-Helpful indexes: `journal_entries(user_id, captured_at desc)`, `seizure_events(user_id, started_at desc)`, `medication_doses(user_id, scheduled_at)`, `biometrics(user_id, recorded_at desc)`, `risk_forecasts(user_id, for_date desc)`, `alerts(user_id, created_at desc) where acknowledged = false`.
+All hand-rolled SVG, no chart library. Animations: fade-in + path draw on mount, nothing busy.
 
-Profile auto-create trigger:
-```sql
-create function public.handle_new_user() returns trigger
-language plpgsql security definer set search_path = public as $$
-begin
-  insert into public.profiles (id) values (new.id) on conflict do nothing;
-  return new;
-end $$;
+## Hero artwork
 
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function public.handle_new_user();
-```
+Generate three calm, low-saturation landscape renders to back the headline score (Today screen + risk forecast):
 
-## 3. Private storage bucket
+- Dawn ridgeline (high readiness)
+- Misty valley (mid readiness)
+- Overcast coast (low readiness / needs attention)
 
-Create bucket `journal-media` (private). Four storage policies on `storage.objects` for that bucket, each requiring `(storage.foldername(name))[1] = auth.uid()::text`: SELECT, INSERT, UPDATE, DELETE. Convention: paths must start with `<user_id>/...`.
+Saved as `src/assets/hero-readiness-{dawn,mist,coast}.jpg`. The `<ScoreArc>` sits over the image with the curved track tracing the ridge line, big serif score number, and a one-line plain-English caption ("Doing alright", "Take it gentle today", etc.). Image is chosen by the score band.
 
-## 4. Auth configuration
+## Screen-by-screen pass
 
-Email magic link only. No password, no social. Site URL + redirect URL set to current origin (Cloud handles defaults). No `configure_social_auth` call.
+### Today (`/`)
+- Greeting block: smaller, more whitespace
+- New hero card: landscape image + score arc + big serif risk score + caption. Replaces the "Nothing yet today" placeholder as the top emotional anchor.
+- Capture row (Write / Speak / Photo / Log seizure) becomes a single quiet row of icon chips under the hero
+- Today's doses: each row gets the new `ProgressPill` treatment for time-of-day
+- Biometric snapshot: replaced with Oura-style stacked tiles — Sleep / Readiness / HRV / Steps — each a big serif number, tiny label, soft pill underneath showing where you sit in your personal range
+- Empty/connect-Oura state keeps copy from the previous polish pass
 
-## 5. Onboarding / sign-in screen
+### Sleep detail (new, `/_app/sleep`)
+- Hero: Total sleep big serif + bedtime → wake row
+- `StageBar` for Awake/REM/Light/Deep with minutes on the right
+- `ProgressPill` rows for Total, REM, Deep, Efficiency, Restfulness, Latency, Timing
+- `WaveTrend` of last 14 nights total sleep
+- Linked from the Today sleep tile
 
-New public route `src/routes/sign-in.tsx`:
-- Centered, calm composition on `bg-background`
-- Large "PURPLE" wordmark in Inter SemiBold with wide letter-spacing (`tracking-[0.35em]`)
-- Tagline in Source Serif 4: "A quiet intelligence for your health."
-- Three short sentences (sans, muted) — paraphrased from the brand: write/speak/snap anything; Purple notices patterns over time; your data stays yours, always.
-- Email input + "Send me a sign-in link" button
-- On submit: `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + "/" } })`
-- Success state: "Check your inbox — the link will sign you in."
-- Footer microcopy: "Free forever. Open source. No ads."
+### Insights / Patterns (`/insights`)
+- Top: three big metric numbers (Readiness / Sleep / Activity averages, 7-day) — direct echo of Oura's three-column header
+- "Resting Heart Rate" `WaveTrend` with min/avg endpoint labels
+- "Body measurements" row: Temperature deviation, Respiratory rate, SpO2 — each as a serif number with tiny label, no card chrome
+- Seizure tab keeps its calendar heatmap but recolored to the new palette (navy intensities, coral for high-frequency days)
 
-## 6. Auth state + route guard
+### Journal (`/journal`)
+- Entry cards lose the heavy borders; switch to cream surface, thin divider, serif date heading, body in sans
+- Tag chips become tiny uppercase pills in navy/cream
+- Empty state copy unchanged, new typography only
 
-- `src/integrations/supabase/use-auth.ts` — small hook subscribing to `onAuthStateChange` (listener BEFORE `getSession()`), stores `{ session, loading }` in a React context provider mounted in `__root.tsx` `RootComponent`.
-- `src/routes/_app.tsx` — add `beforeLoad` that checks the session via the browser supabase client; redirect to `/sign-in` if unauthenticated. Keep the AppShell component as the route component.
-- Update `__root.tsx` to wrap children with the AuthProvider and invalidate the router on auth state change.
-- Sign-in route redirects to `/` if already authenticated.
+### Meds (`/meds`, `/meds/$medId`)
+- List rows: cream cards, serif med name, dose as a quiet caption, time pills in pastel blue
+- Detail view: adherence percent becomes a big serif number with a `ProgressPill` underneath showing 14-day fill; weekly grid uses the new data palette
 
-## 7. Settings page touch-up
+### Ask / Chat (`/chat`)
+- Messages reflowed: AI bubbles on cream, user bubbles on a soft navy tint
+- Suggestion chips: cream with thin navy outline, serif first word
+- Input bar: bottom-anchored cream with navy focus ring
 
-Add a "Sign out" button to `_app/settings.tsx` calling `supabase.auth.signOut()`. (Tiny addition — keeps the placeholder text but adds a real action.)
+### Seizure log (`/seizures/new`)
+- The big "Log right now" CTA keeps Purple accent (the one place purple stays loud — intentional emotional anchor)
+- Form below reflowed in the new token system
 
-## Files
+### Welcome onboarding (`/welcome`)
+- Step indicator: navy pills instead of purple
+- Step 1: a small landscape thumbnail next to the headline
+- Connect cards reflowed to match the new card style
 
-- New migration under `supabase/migrations/` (schema + RLS + trigger + storage bucket + storage policies)
-- `src/routes/sign-in.tsx` (public)
-- `src/integrations/supabase/auth-context.tsx`
-- `src/routes/__root.tsx` (wrap with AuthProvider, invalidate on auth change)
-- `src/routes/_app.tsx` (add `beforeLoad` redirect)
-- `src/routes/_app/settings.tsx` (add sign-out)
+### Settings (`/settings`)
+- Section cards switch to cream surfaces with thin dividers
+- Connections row uses the new metric typography for "Connected · last sync 4m ago"
+- Data and About sections inherit automatically
 
-## Out of scope this turn
+### Auth (`/sign-in`)
+- Page rebalanced with a wide cream surface, serif headline, navy form
 
-Wearable OAuth flows, AI pipelines, journal capture UI, reminders, risk forecast computation. Tables and storage are ready for those to be wired up next.
+## Bottom nav + shell
+- Active tab indicator becomes a thin navy underline instead of a purple pill
+- Inactive icons: soft slate, active: deep navy + tiny serif label
+- Sidebar (desktop) gets the same cream-on-cream treatment
 
-## Verification
+## Accessibility
+- All new tokens verified for WCAG AA contrast in both modes
+- Score arc and wave trends include `aria-label` summaries (e.g. "Readiness 79, doing alright. Trend over 7 days: 74, 76, 80, 79, 81, 77, 79.")
+- The hero landscape gets `role="img"` with the caption as its label
+- Focus rings rebuilt around the navy ring token so keyboard nav stays visible against cream
 
-After build: visit `/` → redirects to `/sign-in`. Submit email → success message. Inspect Cloud → tables, policies, bucket, trigger all present. `auth.users` insert produces a `profiles` row.
+## Technical notes (for the engineer reading this)
+
+- All work stays in client/presentation code: token rewrite + new components + screen reflows. No schema, no server functions, no edge logic.
+- New folder: `src/components/ui-oura/` for the shared primitives. Existing `src/components/ui/` shadcn primitives stay; oura ones compose them.
+- New folder: `src/components/today/` for the hero score card so `index.tsx` stays short.
+- New route file: `src/routes/_app/sleep.tsx`.
+- Hero images via `imagegen` premium tier, transparent_background=false, jpg. Three renders, ~50KB each after compression.
+- No chart library added. `WaveTrend` and `StageBar` implemented as ~150 LOC SVG components with cubic-bezier smoothing and `prefers-reduced-motion` guards.
+- `tailwind` `@theme` block in `styles.css` extended with the data palette so chart components can use `text-data-1`, `bg-data-2`, etc.
+- Build expected to stay TS-clean; no new npm deps.
+
+## Out of scope (call out explicitly)
+
+- No feature changes, no copy changes beyond the design pass
+- No new data sources or AI behavior
+- No reskin of the legacy purple in marketing/published meta (theme-color stays purple in manifest so the home-screen splash matches the installed-app accent)
