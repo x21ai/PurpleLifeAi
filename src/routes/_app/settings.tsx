@@ -1,12 +1,44 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Placeholder } from "@/components/layout/placeholder-page";
+import { useNavigate } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/integrations/supabase/auth-context";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "Settings — Purple" }] }),
-  component: () => (
-    <Placeholder
-      title="Settings"
-      body="Account, privacy, integrations, and how Purple talks to you. All in your control."
-    />
-  ),
+  component: SettingsPage,
 });
+
+function SettingsPage() {
+  const { session, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate({ to: "/sign-in" });
+  };
+
+  return (
+    <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-10 sm:pt-16 pb-12">
+      <h1 className="font-serif text-4xl sm:text-5xl leading-tight text-foreground">
+        Settings
+      </h1>
+      <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-xl">
+        Account, privacy, integrations, and how Purple talks to you. All in your control.
+      </p>
+
+      <section className="mt-10 rounded-2xl border border-border bg-card p-5 sm:p-6">
+        <h2 className="font-serif text-xl text-foreground">Account</h2>
+        {session?.user?.email && (
+          <p className="mt-1 text-sm text-muted-foreground">
+            Signed in as <span className="text-foreground">{session.user.email}</span>
+          </p>
+        )}
+        <div className="mt-5">
+          <Button variant="outline" onClick={handleSignOut}>
+            Sign out
+          </Button>
+        </div>
+      </section>
+    </div>
+  );
+}
