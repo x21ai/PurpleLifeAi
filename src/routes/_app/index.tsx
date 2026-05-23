@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Mic, Camera, Pencil, Zap } from "lucide-react";
 import { TodayDoses } from "@/components/meds/today-doses";
+import { TodayBiometrics } from "@/components/biometrics/today-biometrics";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -75,6 +76,7 @@ function TodayPage() {
       </div>
 
       <TodayDoses />
+      <TodayBiometrics />
 
       <p className="mt-10 text-xs text-muted-foreground/80 font-serif italic text-center">
         Purple listens, never judges.
