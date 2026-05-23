@@ -21,16 +21,15 @@ function TodayPage() {
   }, []);
 
   const hour = now?.getHours() ?? -1;
-  const greeting =
-    !now
-      ? "Hi"
-      : hour < 5
-        ? "Still up"
-        : hour < 12
-          ? "Good morning"
-          : hour < 18
-            ? "Good afternoon"
-            : "Good evening";
+  const greeting = !now
+    ? "Hi"
+    : hour < 5
+      ? "Still up"
+      : hour < 12
+        ? "Good morning"
+        : hour < 18
+          ? "Good afternoon"
+          : "Good evening";
 
   return (
     <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-10 sm:pt-16 pb-12">
@@ -41,7 +40,7 @@ function TodayPage() {
         className="font-serif text-4xl sm:text-5xl leading-tight mt-2 text-foreground"
         suppressHydrationWarning
       >
-        {greeting}. How&rsquo;s today feeling?
+        <span suppressHydrationWarning>{greeting}</span>. How&rsquo;s today feeling?
       </h1>
       <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-xl">
         Write a line, hold to speak, or tap to add a photo. I&rsquo;ll remember the rest.
