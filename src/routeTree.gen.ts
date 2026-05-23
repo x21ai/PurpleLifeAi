@@ -17,6 +17,7 @@ import { Route as AppMedsRouteImport } from './routes/_app/meds'
 import { Route as AppJournalRouteImport } from './routes/_app/journal'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
+import { Route as AppCharterRouteImport } from './routes/_app/charter'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
 import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
@@ -60,6 +61,11 @@ const AppChatRoute = AppChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCharterRoute = AppCharterRouteImport.update({
+  id: '/charter',
+  path: '/charter',
+  getParentRoute: () => AppRoute,
+} as any)
 const OauthOuraCallbackRoute = OauthOuraCallbackRouteImport.update({
   id: '/oauth/oura/callback',
   path: '/oauth/oura/callback',
@@ -79,6 +85,7 @@ const AppMedsMedIdRoute = AppMedsMedIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/sign-in': typeof SignInRoute
+  '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/insights': typeof AppInsightsRoute
   '/journal': typeof AppJournalRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
+  '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/insights': typeof AppInsightsRoute
   '/journal': typeof AppJournalRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/sign-in': typeof SignInRoute
+  '/_app/charter': typeof AppCharterRoute
   '/_app/chat': typeof AppChatRoute
   '/_app/insights': typeof AppInsightsRoute
   '/_app/journal': typeof AppJournalRoute
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/sign-in'
+    | '/charter'
     | '/chat'
     | '/insights'
     | '/journal'
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/sign-in'
+    | '/charter'
     | '/chat'
     | '/insights'
     | '/journal'
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/sign-in'
+    | '/_app/charter'
     | '/_app/chat'
     | '/_app/insights'
     | '/_app/journal'
@@ -218,6 +230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppChatRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/charter': {
+      id: '/_app/charter'
+      path: '/charter'
+      fullPath: '/charter'
+      preLoaderRoute: typeof AppCharterRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/oauth/oura/callback': {
       id: '/oauth/oura/callback'
       path: '/oauth/oura/callback'
@@ -254,6 +273,7 @@ const AppMedsRouteWithChildren =
   AppMedsRoute._addFileChildren(AppMedsRouteChildren)
 
 interface AppRouteChildren {
+  AppCharterRoute: typeof AppCharterRoute
   AppChatRoute: typeof AppChatRoute
   AppInsightsRoute: typeof AppInsightsRoute
   AppJournalRoute: typeof AppJournalRoute
@@ -264,6 +284,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppCharterRoute: AppCharterRoute,
   AppChatRoute: AppChatRoute,
   AppInsightsRoute: AppInsightsRoute,
   AppJournalRoute: AppJournalRoute,
@@ -283,3 +304,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
