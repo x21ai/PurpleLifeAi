@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ChevronRight, Pill } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/integrations/supabase/auth-context";
+import { OuraConnection } from "@/components/connections/oura-connection";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "Settings — Purple" }] }),
@@ -56,6 +57,16 @@ function SettingsPage() {
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </Link>
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
+        <h2 className="font-serif text-xl text-foreground">Connections</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Bring your wearable data in so Purple can notice patterns across your body.
+        </p>
+        <div className="mt-4 divide-y divide-border">
+          <OuraConnection />
+        </div>
       </section>
     </div>
   );
