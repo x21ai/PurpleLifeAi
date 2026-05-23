@@ -1,5 +1,6 @@
 import * as React from "react";
-import { Camera, Image as ImageIcon, Video, Mic, X, Loader2 } from "lucide-react";
+import { Camera, Image as ImageIcon, Video, Mic, X, Loader2, Zap } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -272,6 +273,17 @@ export function CaptureSheet({
           >
             <Mic className={cn("h-5 w-5", voice.listening && "animate-pulse")} />
           </ToolbarButton>
+        </div>
+
+        <div className="border-t border-border px-5 py-2 bg-card/50">
+          <Link
+            to="/seizures/new"
+            onClick={() => onOpenChange(false)}
+            className="flex items-center justify-center gap-2 text-sm text-destructive font-medium py-1.5"
+          >
+            <Zap className="h-4 w-4" fill="currentColor" />
+            Log an event
+          </Link>
         </div>
 
         <input

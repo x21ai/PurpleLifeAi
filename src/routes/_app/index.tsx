@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Mic, Camera, Pencil } from "lucide-react";
+import { Mic, Camera, Pencil, Zap } from "lucide-react";
 import { TodayDoses } from "@/components/meds/today-doses";
 
 export const Route = createFileRoute("/_app/")({
@@ -61,6 +61,16 @@ function TodayPage() {
           <CaptureHint icon={Pencil} label="Write" />
           <CaptureHint icon={Mic} label="Speak" />
           <CaptureHint icon={Camera} label="Photo" />
+        </div>
+
+        <div className="mt-3">
+          <Link
+            to="/seizures/new"
+            className="flex items-center justify-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 text-destructive py-3 text-sm font-medium hover:bg-destructive/15 transition"
+          >
+            <Zap className="h-4 w-4" fill="currentColor" />
+            Log seizure
+          </Link>
         </div>
       </div>
 
