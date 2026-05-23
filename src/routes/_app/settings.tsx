@@ -3,6 +3,8 @@ import { ChevronRight, Pill } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { OuraConnection } from "@/components/connections/oura-connection";
+import { DataSection } from "@/components/settings/data-section";
+import { AboutSection } from "@/components/settings/about-section";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "Settings — Purple" }] }),
@@ -68,6 +70,9 @@ function SettingsPage() {
           <OuraConnection />
         </div>
       </section>
+
+      <DataSection />
+      <AboutSection />
     </div>
   );
 }
