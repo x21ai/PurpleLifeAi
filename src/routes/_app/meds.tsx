@@ -1,12 +1,164 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Placeholder } from "@/components/layout/placeholder-page";
+import * as React from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Plus, Pill, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/integrations/supabase/auth-context";
+import { MedicationFormSheet } from "@/components/meds/medication-form-sheet";
+import { scheduleMedications } from "@/lib/med-notifications";
+
+type Medication = {
+  id: string;
+  name: string;
+  dosage: string | null;
+  times_of_day: string[];
+  pills_remaining: number | null;
+  is_rescue: boolean;
+  active: boolean;
+};
 
 export const Route = createFileRoute("/_app/meds")({
   head: () => ({ meta: [{ title: "Meds — Purple" }] }),
-  component: () => (
-    <Placeholder
-      title="Medications"
-      body="Schedules, gentle reminders, and an honest record of what you actually took."
-    />
-  ),
+  component: MedsPage,
 });
+
+function formatTime(t: string): string {
+  const [hStr, mStr] = t.split(":");
+  const h = parseInt(hStr ?? "0", 10);
+  const m = parseInt(mStr ?? "0", 10);
+  const am = h < 12;
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12}:${String(m).padStart(2, "0")} ${am ? "AM" : "PM"}`;
+}
+
+function MedsPage() {
+  const { session } = useAuth();
+  const userId = session?.user.id;
+  const [meds, setMeds] = React.useState<Medication[] | null>(null);
+  const [open, setOpen] = React.useState(false);
+
+  const load = React.useCallback(async () => {
+    if (!userId) return;
+    const { data, error } = await supabase
+      .from("medications")
+      .select("id, name, dosage, times_of_day, pills_remaining, is_rescue, active")
+      .eq("active", true)
+      .order("is_rescue", { ascending: true })
+      .order("name", { ascending: true });
+    if (error) { console.error(error); return; }
+    setMeds((data as Medication[]) ?? []);
+  }, [userId]);
+
+  React.useEffect(() => { void load(); }, [load]);
+
+  // Re-arm reminders whenever the list changes.
+  React.useEffect(() => {
+    if (!meds) return;
+    if (typeof window === "undefined") return;
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    const scheduled = meds
+      .filter((m) => !m.is_rescue && (m.times_of_day?.length ?? 0) > 0)
+      .map((m) => ({ id: m.id, name: m.name, dosage: m.dosage, times_of_day: m.times_of_day }));
+    void scheduleMedications(scheduled);
+  }, [meds]);
+
+  const isFirst = (meds?.filter((m) => !m.is_rescue).length ?? 0) === 0;
+  const scheduled = meds?.filter((m) => !m.is_rescue) ?? [];
+  const rescue = meds?.filter((m) => m.is_rescue) ?? [];
+
+  return (
+    <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-10 sm:pt-16 pb-24 relative">
+      <h1 className="font-serif text-4xl sm:text-5xl leading-tight text-foreground">Medications</h1>
+      <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-xl">
+        Your schedule, your record. Tap a med to see how you've been doing.
+      </p>
+
+      {meds === null ? (
+        <p className="mt-10 text-sm text-muted-foreground">Loading…</p>
+      ) : meds.length === 0 ? (
+        <div className="mt-10 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+          <Pill className="h-6 w-6 mx-auto text-muted-foreground" />
+          <p className="mt-3 font-serif text-lg text-foreground">No medications yet.</p>
+          <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
+            Add one to start tracking doses and getting gentle reminders at the right times.
+          </p>
+          <Button className="mt-5 rounded-full" onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" /> Add a medication
+          </Button>
+        </div>
+      ) : (
+        <div className="mt-8 space-y-6">
+          {scheduled.length > 0 && (
+            <section>
+              <h2 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Scheduled</h2>
+              <ul className="space-y-2">
+                {scheduled.map((m) => <MedRow key={m.id} med={m} />)}
+              </ul>
+            </section>
+          )}
+          {rescue.length > 0 && (
+            <section>
+              <h2 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Rescue</h2>
+              <ul className="space-y-2">
+                {rescue.map((m) => <MedRow key={m.id} med={m} />)}
+              </ul>
+            </section>
+          )}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Add medication"
+        className="fixed bottom-24 sm:bottom-8 right-5 sm:right-8 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
+      >
+        <Plus className="h-6 w-6" />
+      </button>
+
+      <MedicationFormSheet
+        open={open}
+        onOpenChange={setOpen}
+        onSaved={load}
+        isFirstMedication={isFirst}
+      />
+    </div>
+  );
+}
+
+function MedRow({ med }: { med: Medication }) {
+  const lowStock = med.pills_remaining !== null && med.pills_remaining <= 7;
+  return (
+    <li>
+      <Link
+        to="/meds/$medId"
+        params={{ medId: med.id }}
+        className="block rounded-xl border border-border bg-card p-4 hover:border-primary/40 transition-colors"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-base font-medium text-foreground truncate">{med.name}</p>
+            {med.dosage && <p className="text-sm text-muted-foreground">{med.dosage}</p>}
+            {!med.is_rescue && med.times_of_day?.length > 0 && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {med.times_of_day.map(formatTime).join(" · ")}
+              </p>
+            )}
+            {med.is_rescue && (
+              <p className="mt-2 text-xs text-muted-foreground">As needed</p>
+            )}
+          </div>
+          {med.pills_remaining !== null && (
+            <div className={`text-right shrink-0 ${lowStock ? "text-destructive" : "text-muted-foreground"}`}>
+              <p className="text-xs">Pills</p>
+              <p className="text-lg font-medium tabular-nums flex items-center gap-1 justify-end">
+                {lowStock && <AlertCircle className="h-3.5 w-3.5" />}
+                {med.pills_remaining}
+              </p>
+            </div>
+          )}
+        </div>
+      </Link>
+    </li>
+  );
+}

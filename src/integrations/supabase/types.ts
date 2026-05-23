@@ -604,6 +604,15 @@ export type Database = {
           source_table: string
         }[]
       }
+      medication_adherence: {
+        Args: { days_back?: number; med_id: string }
+        Returns: {
+          adherence_pct: number
+          scheduled_count: number
+          taken_count: number
+        }[]
+      }
+      seed_daily_medication_doses: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

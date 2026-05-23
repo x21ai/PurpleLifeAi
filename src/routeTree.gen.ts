@@ -17,6 +17,7 @@ import { Route as AppMedsRouteImport } from './routes/_app/meds'
 import { Route as AppJournalRouteImport } from './routes/_app/journal'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
+import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
 
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
@@ -57,6 +58,11 @@ const AppChatRoute = AppChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMedsMedIdRoute = AppMedsMedIdRouteImport.update({
+  id: '/$medId',
+  path: '/$medId',
+  getParentRoute: () => AppMedsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -64,17 +70,19 @@ export interface FileRoutesByFullPath {
   '/chat': typeof AppChatRoute
   '/insights': typeof AppInsightsRoute
   '/journal': typeof AppJournalRoute
-  '/meds': typeof AppMedsRoute
+  '/meds': typeof AppMedsRouteWithChildren
   '/settings': typeof AppSettingsRoute
+  '/meds/$medId': typeof AppMedsMedIdRoute
 }
 export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/chat': typeof AppChatRoute
   '/insights': typeof AppInsightsRoute
   '/journal': typeof AppJournalRoute
-  '/meds': typeof AppMedsRoute
+  '/meds': typeof AppMedsRouteWithChildren
   '/settings': typeof AppSettingsRoute
   '/': typeof AppIndexRoute
+  '/meds/$medId': typeof AppMedsMedIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -83,9 +91,10 @@ export interface FileRoutesById {
   '/_app/chat': typeof AppChatRoute
   '/_app/insights': typeof AppInsightsRoute
   '/_app/journal': typeof AppJournalRoute
-  '/_app/meds': typeof AppMedsRoute
+  '/_app/meds': typeof AppMedsRouteWithChildren
   '/_app/settings': typeof AppSettingsRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/meds/$medId': typeof AppMedsMedIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/journal'
     | '/meds'
     | '/settings'
+    | '/meds/$medId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/sign-in'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/meds'
     | '/settings'
     | '/'
+    | '/meds/$medId'
   id:
     | '__root__'
     | '/_app'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/_app/meds'
     | '/_app/settings'
     | '/_app/'
+    | '/_app/meds/$medId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -181,14 +193,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppChatRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/meds/$medId': {
+      id: '/_app/meds/$medId'
+      path: '/$medId'
+      fullPath: '/meds/$medId'
+      preLoaderRoute: typeof AppMedsMedIdRouteImport
+      parentRoute: typeof AppMedsRoute
+    }
   }
 }
+
+interface AppMedsRouteChildren {
+  AppMedsMedIdRoute: typeof AppMedsMedIdRoute
+}
+
+const AppMedsRouteChildren: AppMedsRouteChildren = {
+  AppMedsMedIdRoute: AppMedsMedIdRoute,
+}
+
+const AppMedsRouteWithChildren =
+  AppMedsRoute._addFileChildren(AppMedsRouteChildren)
 
 interface AppRouteChildren {
   AppChatRoute: typeof AppChatRoute
   AppInsightsRoute: typeof AppInsightsRoute
   AppJournalRoute: typeof AppJournalRoute
-  AppMedsRoute: typeof AppMedsRoute
+  AppMedsRoute: typeof AppMedsRouteWithChildren
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
 }
@@ -197,7 +227,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppChatRoute: AppChatRoute,
   AppInsightsRoute: AppInsightsRoute,
   AppJournalRoute: AppJournalRoute,
-  AppMedsRoute: AppMedsRoute,
+  AppMedsRoute: AppMedsRouteWithChildren,
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
 }

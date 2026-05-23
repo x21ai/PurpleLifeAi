@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ChevronRight, Pill } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/integrations/supabase/auth-context";
 
@@ -38,6 +38,24 @@ function SettingsPage() {
             Sign out
           </Button>
         </div>
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-border bg-card overflow-hidden">
+        <Link
+          to="/meds"
+          className="flex items-center justify-between p-5 sm:p-6 hover:bg-secondary/40 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <span className="rounded-full bg-secondary p-2 text-secondary-foreground">
+              <Pill className="h-4 w-4" />
+            </span>
+            <div>
+              <p className="font-serif text-lg text-foreground">Medications</p>
+              <p className="text-xs text-muted-foreground">Schedules, reminders, and adherence</p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </Link>
       </section>
     </div>
   );

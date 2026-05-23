@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Mic, Camera, Pencil } from "lucide-react";
+import { TodayDoses } from "@/components/meds/today-doses";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -62,6 +63,8 @@ function TodayPage() {
           <CaptureHint icon={Camera} label="Photo" />
         </div>
       </div>
+
+      <TodayDoses />
 
       <p className="mt-10 text-xs text-muted-foreground/80 font-serif italic text-center">
         Purple listens, never judges.
