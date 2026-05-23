@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { Moon, HeartPulse, Activity, Footprints } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,12 +17,19 @@ type Row = {
 
 export function TodayBiometrics() {
   const [row, setRow] = useState<Row | null>(null);
+  const [connected, setConnected] = useState<boolean>(false);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     (async () => {
       const { data: sess } = await supabase.auth.getSession();
       if (!sess.session) { setLoaded(true); return; }
+      const { data: tok } = await supabase
+        .from("oura_tokens")
+        .select("user_id")
+        .eq("user_id", sess.session.user.id)
+        .maybeSingle();
+      setConnected(!!tok);
       const since = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
       const { data } = await supabase
         .from("biometrics")
@@ -36,7 +44,28 @@ export function TodayBiometrics() {
     })();
   }, []);
 
-  if (!loaded || !row) return null;
+  if (!loaded) return null;
+
+  if (!row) {
+    return (
+      <div className="mt-6 rounded-2xl border border-dashed border-border bg-card p-6 text-center">
+        <Activity className="h-6 w-6 mx-auto text-muted-foreground" aria-hidden="true" />
+        <p className="mt-3 font-serif text-base text-foreground">
+          {connected
+            ? "Today's read is still forming. Check back after your ring syncs."
+            : "Connect your Oura ring to start reading your patterns."}
+        </p>
+        {!connected && (
+          <Link
+            to="/settings"
+            className="mt-4 inline-block text-sm font-medium text-primary hover:underline"
+          >
+            Open Settings
+          </Link>
+        )}
+      </div>
+    );
+  }
 
   const fmtSleep = (m: number | null) =>
     m == null ? "—" : `${Math.floor(m / 60)}h ${m % 60}m`;
