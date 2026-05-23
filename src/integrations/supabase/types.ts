@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_memory: {
+        Row: {
+          content: string
+          created_at: string
+          embedding: string | null
+          id: string
+          recorded_at: string
+          source_id: string
+          source_table: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          recorded_at?: string
+          source_id: string
+          source_table: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          recorded_at?: string
+          source_id?: string
+          source_table?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       alerts: {
         Row: {
           acknowledged: boolean
@@ -555,7 +588,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_ai_memory: {
+        Args: {
+          days_back?: number
+          match_count?: number
+          match_user_id: string
+          query_embedding: string
+        }
+        Returns: {
+          content: string
+          id: string
+          recorded_at: string
+          similarity: number
+          source_id: string
+          source_table: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

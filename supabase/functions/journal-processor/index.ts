@@ -215,6 +215,32 @@ async function callClaude(opts: {
   };
 }
 
+async function embedText(text: string): Promise<number[] | null> {
+  if (!OPENAI_API_KEY || !text.trim()) return null;
+  try {
+    const r = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "text-embedding-3-small",
+        input: text.slice(0, 8000),
+      }),
+    });
+    if (!r.ok) {
+      console.error("embed error", r.status, await r.text());
+      return null;
+    }
+    const j = await r.json();
+    return j.data?.[0]?.embedding ?? null;
+  } catch (e) {
+    console.error("embed exception", e);
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -289,6 +315,35 @@ Deno.serve(async (req) => {
       })
       .eq("id", entry_id);
     if (updErr) throw new Error(updErr.message);
+
+    // Embed into ai_memory for semantic search
+    const memoryContent = [
+      entry.text || "",
+      transcript || "",
+      result.summary || "",
+      (result.tags || []).join(" "),
+    ]
+      .filter(Boolean)
+      .join("\n\n")
+      .trim();
+    if (memoryContent) {
+      const embedding = await embedText(memoryContent);
+      if (embedding) {
+        await admin
+          .from("ai_memory")
+          .upsert(
+            {
+              user_id: entry.user_id,
+              source_table: "journal_entries",
+              source_id: entry_id,
+              recorded_at: entry.captured_at || new Date().toISOString(),
+              content: memoryContent,
+              embedding: embedding as unknown as string,
+            },
+            { onConflict: "source_table,source_id" },
+          );
+      }
+    }
 
     // 8. Alert if needed
     if (needsFollowup) {
