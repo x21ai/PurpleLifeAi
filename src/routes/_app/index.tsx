@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Mic, Camera, Pencil } from "lucide-react";
 
@@ -13,17 +14,33 @@ export const Route = createFileRoute("/_app/")({
 });
 
 function TodayPage() {
-  const now = new Date();
-  const hour = now.getHours();
+  // Render-stable across SSR/client; fill in on mount to avoid hydration mismatch.
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+  }, []);
+
+  const hour = now?.getHours() ?? -1;
   const greeting =
-    hour < 5 ? "Still up" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    !now
+      ? "Hi"
+      : hour < 5
+        ? "Still up"
+        : hour < 12
+          ? "Good morning"
+          : hour < 18
+            ? "Good afternoon"
+            : "Good evening";
 
   return (
     <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-10 sm:pt-16 pb-12">
-      <p className="text-sm text-muted-foreground">
-        {format(now, "EEEE, MMMM d")}
+      <p className="text-sm text-muted-foreground" suppressHydrationWarning>
+        {now ? format(now, "EEEE, MMMM d") : "\u00a0"}
       </p>
-      <h1 className="font-serif text-4xl sm:text-5xl leading-tight mt-2 text-foreground">
+      <h1
+        className="font-serif text-4xl sm:text-5xl leading-tight mt-2 text-foreground"
+        suppressHydrationWarning
+      >
         {greeting}. How&rsquo;s today feeling?
       </h1>
       <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-xl">
