@@ -17,6 +17,7 @@ import { Route as AppMedsRouteImport } from './routes/_app/meds'
 import { Route as AppJournalRouteImport } from './routes/_app/journal'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
+import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
 
 const SignInRoute = SignInRouteImport.update({
@@ -58,6 +59,11 @@ const AppChatRoute = AppChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSeizuresNewRoute = AppSeizuresNewRouteImport.update({
+  id: '/seizures/new',
+  path: '/seizures/new',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMedsMedIdRoute = AppMedsMedIdRouteImport.update({
   id: '/$medId',
   path: '/$medId',
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/meds': typeof AppMedsRouteWithChildren
   '/settings': typeof AppSettingsRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
+  '/seizures/new': typeof AppSeizuresNewRoute
 }
 export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/': typeof AppIndexRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
+  '/seizures/new': typeof AppSeizuresNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/': typeof AppIndexRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
+  '/_app/seizures/new': typeof AppSeizuresNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/meds'
     | '/settings'
     | '/meds/$medId'
+    | '/seizures/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/sign-in'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/'
     | '/meds/$medId'
+    | '/seizures/new'
   id:
     | '__root__'
     | '/_app'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/'
     | '/_app/meds/$medId'
+    | '/_app/seizures/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -193,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppChatRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/seizures/new': {
+      id: '/_app/seizures/new'
+      path: '/seizures/new'
+      fullPath: '/seizures/new'
+      preLoaderRoute: typeof AppSeizuresNewRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/meds/$medId': {
       id: '/_app/meds/$medId'
       path: '/$medId'
@@ -221,6 +240,7 @@ interface AppRouteChildren {
   AppMedsRoute: typeof AppMedsRouteWithChildren
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppSeizuresNewRoute: typeof AppSeizuresNewRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -230,6 +250,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMedsRoute: AppMedsRouteWithChildren,
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
+  AppSeizuresNewRoute: AppSeizuresNewRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
