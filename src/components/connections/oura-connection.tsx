@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const OURA_CLIENT_ID = import.meta.env.VITE_OURA_CLIENT_ID as string | undefined;
 const OURA_SCOPE = "personal daily heartrate workout tag session spo2 ring_configuration";
 
 export function OuraConnection() {
@@ -40,14 +39,17 @@ export function OuraConnection() {
   const connect = async () => {
     const { data: sess } = await supabase.auth.getSession();
     if (!sess.session) { toast.error("Please sign in first"); return; }
-    if (!OURA_CLIENT_ID) {
-      toast.error("VITE_OURA_CLIENT_ID is not set");
+    const { data: cfg, error: cfgErr } = await supabase.functions.invoke("oura-sync", {
+      body: { action: "config" },
+    });
+    if (cfgErr || !cfg?.client_id) {
+      toast.error("Oura is not configured");
       return;
     }
     const redirect = window.location.origin + "/oauth/oura/callback";
     const url = new URL("https://cloud.ouraring.com/oauth/authorize");
     url.searchParams.set("response_type", "code");
-    url.searchParams.set("client_id", OURA_CLIENT_ID);
+    url.searchParams.set("client_id", cfg.client_id);
     url.searchParams.set("redirect_uri", redirect);
     url.searchParams.set("scope", OURA_SCOPE);
     url.searchParams.set("state", sess.session.user.id);
