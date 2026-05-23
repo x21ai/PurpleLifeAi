@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -25,14 +25,9 @@ export const Route = createFileRoute("/sign-in")({
 });
 
 function SignInPage() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // Already-signed-in users get bounced to Today (covers the edge where
-  // beforeLoad missed it on a stale hydration).
-  void navigate;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
