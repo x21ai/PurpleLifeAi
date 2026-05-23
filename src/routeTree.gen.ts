@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
 import { Route as AppMedsRouteImport } from './routes/_app/meds'
@@ -35,6 +36,11 @@ const AppRoute = AppRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWelcomeRoute = AppWelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/meds': typeof AppMedsRouteWithChildren
   '/privacy': typeof AppPrivacyRoute
   '/settings': typeof AppSettingsRoute
+  '/welcome': typeof AppWelcomeRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
@@ -111,6 +118,7 @@ export interface FileRoutesByTo {
   '/meds': typeof AppMedsRouteWithChildren
   '/privacy': typeof AppPrivacyRoute
   '/settings': typeof AppSettingsRoute
+  '/welcome': typeof AppWelcomeRoute
   '/': typeof AppIndexRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/_app/meds': typeof AppMedsRouteWithChildren
   '/_app/privacy': typeof AppPrivacyRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/welcome': typeof AppWelcomeRoute
   '/_app/': typeof AppIndexRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
   '/_app/seizures/new': typeof AppSeizuresNewRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/meds'
     | '/privacy'
     | '/settings'
+    | '/welcome'
     | '/meds/$medId'
     | '/seizures/new'
     | '/oauth/oura/callback'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/meds'
     | '/privacy'
     | '/settings'
+    | '/welcome'
     | '/'
     | '/meds/$medId'
     | '/seizures/new'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/_app/meds'
     | '/_app/privacy'
     | '/_app/settings'
+    | '/_app/welcome'
     | '/_app/'
     | '/_app/meds/$medId'
     | '/_app/seizures/new'
@@ -205,6 +217,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/welcome': {
+      id: '/_app/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof AppWelcomeRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings': {
@@ -299,6 +318,7 @@ interface AppRouteChildren {
   AppMedsRoute: typeof AppMedsRouteWithChildren
   AppPrivacyRoute: typeof AppPrivacyRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppWelcomeRoute: typeof AppWelcomeRoute
   AppIndexRoute: typeof AppIndexRoute
   AppSeizuresNewRoute: typeof AppSeizuresNewRoute
 }
@@ -311,6 +331,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMedsRoute: AppMedsRouteWithChildren,
   AppPrivacyRoute: AppPrivacyRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppWelcomeRoute: AppWelcomeRoute,
   AppIndexRoute: AppIndexRoute,
   AppSeizuresNewRoute: AppSeizuresNewRoute,
 }
@@ -325,3 +346,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
