@@ -72,11 +72,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Purple — a calm health journal" },
+      {
+        name: "description",
+        content:
+          "Purple is an open-source, AI-powered health journal for people managing epilepsy and other pattern-driven conditions. Write, speak, snap — Purple remembers.",
+      },
+      { name: "theme-color", content: "#5B2C82" },
+      { name: "author", content: "Devyn Walker" },
+      { property: "og:title", content: "Purple — a calm health journal" },
+      {
+        property: "og:description",
+        content:
+          "Open-source health intelligence for epilepsy and pattern-driven conditions. Free forever. No ads. Your data stays yours.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
