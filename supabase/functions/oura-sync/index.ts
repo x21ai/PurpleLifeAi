@@ -203,6 +203,12 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const action = body.action as "exchange" | "backfill" | "incremental";
 
+    if (action === "config" as any) {
+      return new Response(JSON.stringify({ client_id: OURA_CLIENT_ID }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Incremental cron: sync all connected users
     if (action === "incremental" && body.all === true) {
       const { data: tokens } = await admin.from("oura_tokens").select("user_id");
