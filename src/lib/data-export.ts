@@ -117,22 +117,21 @@ export async function deleteAllUserData(): Promise<void> {
   if (!user) throw new Error("Not signed in");
 
   // Best-effort: delete rows in all per-user tables. RLS scopes to this user.
-  const tables = [
-    "ai_memory",
-    "alerts",
-    "biometrics",
-    "journal_entries",
-    "medication_doses",
-    "medications",
-    "oura_tokens",
-    "whoop_tokens",
-    "risk_forecasts",
-    "seizure_events",
-    "profiles",
-  ] as const;
-  for (const t of tables) {
-    // profiles uses `id`, everything else uses `user_id`
-    const col = t === "profiles" ? "id" : "user_id";
-    await supabase.from(t).delete().eq(col, user.id);
+  const tables: Array<[string, string]> = [
+    ["ai_memory", "user_id"],
+    ["alerts", "user_id"],
+    ["biometrics", "user_id"],
+    ["journal_entries", "user_id"],
+    ["medication_doses", "user_id"],
+    ["medications", "user_id"],
+    ["oura_tokens", "user_id"],
+    ["whoop_tokens", "user_id"],
+    ["risk_forecasts", "user_id"],
+    ["seizure_events", "user_id"],
+    ["profiles", "id"],
+  ];
+  for (const [t, col] of tables) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from(t as any) as any).delete().eq(col, user.id);
   }
 }
