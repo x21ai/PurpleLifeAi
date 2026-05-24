@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Mic, Camera, Pencil, Zap } from "lucide-react";
 import { TodayDoses } from "@/components/meds/today-doses";
@@ -19,6 +19,8 @@ export const Route = createFileRoute("/_app/")({
 function TodayPage() {
   // Render-stable across SSR/client; fill in on mount to avoid hydration mismatch.
   const [now, setNow] = useState<Date | null>(null);
+  const [narrative, setNarrative] = useState<string | null>(null);
+  const onNarrative = useCallback((n: string | null) => setNarrative(n), []);
   useEffect(() => {
     setNow(new Date());
   }, []);
@@ -43,10 +45,15 @@ function TodayPage() {
         className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight mt-4 text-foreground"
         suppressHydrationWarning
       >
-        <span suppressHydrationWarning>{greeting}</span>. How&rsquo;s today feeling?
+        <span suppressHydrationWarning>{greeting}</span>.{" "}
+        {narrative ? (
+          <span className="text-foreground/85">{narrative}</span>
+        ) : (
+          <>How&rsquo;s today feeling?</>
+        )}
       </h1>
 
-      <HeroScoreCard />
+      <HeroScoreCard onNarrative={onNarrative} />
 
       <div className="mt-6 grid grid-cols-4 gap-2">
         <CaptureHint icon={Pencil} label="Write" to="/journal" />

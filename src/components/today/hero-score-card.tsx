@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { ScoreArc } from "@/components/ui-oura/score-arc";
@@ -20,7 +22,7 @@ function bandFor(score: number): { band: "calm" | "watchful" | "alert"; image: s
   return { band: "alert", image: coast, caption: "Be careful with yourself" };
 }
 
-export function HeroScoreCard() {
+export function HeroScoreCard({ onNarrative }: { onNarrative?: (n: string | null) => void } = {}) {
   const { session } = useAuth();
   const userId = session?.user.id;
   const [forecast, setForecast] = useState<Forecast | null>(null);
@@ -47,8 +49,9 @@ export function HeroScoreCard() {
       setForecast((f as Forecast | null) ?? null);
       setHasOura(!!tok);
       setLoaded(true);
+      if (onNarrative) onNarrative((f as Forecast | null)?.ai_narrative ?? null);
     })();
-  }, [userId]);
+  }, [userId, onNarrative]);
 
   if (!loaded) {
     return <div className="mt-8 h-64 rounded-3xl bg-card animate-pulse border border-border" />;
@@ -88,9 +91,10 @@ export function HeroScoreCard() {
   const tone = band === "alert" ? "alert" : "cream";
 
   return (
-    <section
-      className="mt-8 relative overflow-hidden rounded-3xl border border-border bg-card"
-      aria-label={`Today's read — ${caption}, ${readiness} out of 100`}
+    <Link
+      to="/today/risk"
+      className="mt-8 group relative block overflow-hidden rounded-3xl border border-border bg-card transition hover:border-foreground/30"
+      aria-label={`Today's read — ${caption}, ${readiness} out of 100. Open details.`}
     >
       <div className="relative h-80 sm:h-[420px]">
         <img
@@ -119,14 +123,13 @@ export function HeroScoreCard() {
           </div>
         </div>
       </div>
-      <div className="px-6 sm:px-8 py-5">
-        <p className="font-serif text-xl sm:text-2xl text-foreground">{caption}</p>
-        {forecast.ai_narrative && (
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground max-w-prose">
-            {forecast.ai_narrative}
-          </p>
-        )}
+      <div className="px-6 sm:px-8 py-5 flex items-center justify-between gap-4">
+        <div>
+          <p className="font-serif text-xl sm:text-2xl text-foreground">{caption}</p>
+          <p className="label-eyebrow mt-1">Tap to see why</p>
+        </div>
+        <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0 transition group-hover:translate-x-0.5 group-hover:text-foreground" />
       </div>
-    </section>
+    </Link>
   );
 }
