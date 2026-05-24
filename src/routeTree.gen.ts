@@ -21,8 +21,10 @@ import { Route as AppInsightsRouteImport } from './routes/_app/insights'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
 import { Route as AppCharterRouteImport } from './routes/_app/charter'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
+import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
 import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
+import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
 
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
@@ -83,6 +85,11 @@ const OauthOuraCallbackRoute = OauthOuraCallbackRouteImport.update({
   path: '/oauth/oura/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppTodayRiskRoute = AppTodayRiskRouteImport.update({
+  id: '/today/risk',
+  path: '/today/risk',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSeizuresNewRoute = AppSeizuresNewRouteImport.update({
   id: '/seizures/new',
   path: '/seizures/new',
@@ -93,6 +100,12 @@ const AppMedsMedIdRoute = AppMedsMedIdRouteImport.update({
   path: '/$medId',
   getParentRoute: () => AppMedsRoute,
 } as any)
+const ApiPublicHooksRiskForecasterRoute =
+  ApiPublicHooksRiskForecasterRouteImport.update({
+    id: '/api/public/hooks/risk-forecaster',
+    path: '/api/public/hooks/risk-forecaster',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -107,7 +120,9 @@ export interface FileRoutesByFullPath {
   '/welcome': typeof AppWelcomeRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
+  '/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
+  '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
 }
 export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
@@ -122,7 +137,9 @@ export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
+  '/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
+  '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -139,7 +156,9 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
   '/_app/seizures/new': typeof AppSeizuresNewRoute
+  '/_app/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
+  '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -156,7 +175,9 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/meds/$medId'
     | '/seizures/new'
+    | '/today/risk'
     | '/oauth/oura/callback'
+    | '/api/public/hooks/risk-forecaster'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/sign-in'
@@ -171,7 +192,9 @@ export interface FileRouteTypes {
     | '/'
     | '/meds/$medId'
     | '/seizures/new'
+    | '/today/risk'
     | '/oauth/oura/callback'
+    | '/api/public/hooks/risk-forecaster'
   id:
     | '__root__'
     | '/_app'
@@ -187,13 +210,16 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/_app/meds/$medId'
     | '/_app/seizures/new'
+    | '/_app/today/risk'
     | '/oauth/oura/callback'
+    | '/api/public/hooks/risk-forecaster'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   SignInRoute: typeof SignInRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
+  ApiPublicHooksRiskForecasterRoute: typeof ApiPublicHooksRiskForecasterRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -282,6 +308,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OauthOuraCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/today/risk': {
+      id: '/_app/today/risk'
+      path: '/today/risk'
+      fullPath: '/today/risk'
+      preLoaderRoute: typeof AppTodayRiskRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/seizures/new': {
       id: '/_app/seizures/new'
       path: '/seizures/new'
@@ -295,6 +328,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/meds/$medId'
       preLoaderRoute: typeof AppMedsMedIdRouteImport
       parentRoute: typeof AppMedsRoute
+    }
+    '/api/public/hooks/risk-forecaster': {
+      id: '/api/public/hooks/risk-forecaster'
+      path: '/api/public/hooks/risk-forecaster'
+      fullPath: '/api/public/hooks/risk-forecaster'
+      preLoaderRoute: typeof ApiPublicHooksRiskForecasterRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -321,6 +361,7 @@ interface AppRouteChildren {
   AppWelcomeRoute: typeof AppWelcomeRoute
   AppIndexRoute: typeof AppIndexRoute
   AppSeizuresNewRoute: typeof AppSeizuresNewRoute
+  AppTodayRiskRoute: typeof AppTodayRiskRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -334,6 +375,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppWelcomeRoute: AppWelcomeRoute,
   AppIndexRoute: AppIndexRoute,
   AppSeizuresNewRoute: AppSeizuresNewRoute,
+  AppTodayRiskRoute: AppTodayRiskRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -342,7 +384,18 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   SignInRoute: SignInRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
+  ApiPublicHooksRiskForecasterRoute: ApiPublicHooksRiskForecasterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
