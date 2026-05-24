@@ -1,22 +1,17 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap");
 
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * Purple Design System v2.
+ * Spec lives in chat; this file is the source of truth.
+ * Light mode (Journal, Patterns, Settings): cream/white surfaces, ink type.
+ * Dark mode (Today, Vitals, Ask): near-black w/ purple undertone #0A0710,
+ * lifted purple #B084D1, warm cream type #FAFAFC.
+ * Brand purple #5B2C82 is an accent, never a primary surface.
  */
 
 @theme inline {
@@ -80,100 +75,144 @@
 }
 
 :root {
-  --radius: 0.875rem;
-  /* Oura-inspired: warm cream surfaces, deep navy ink, reserved purple accent */
-  --background: oklch(0.985 0.005 85);           /* warm off-cream */
-  --foreground: oklch(0.24 0.04 250);            /* deep ink navy */
-  --card: oklch(0.995 0.003 85);                 /* cream, lifted */
-  --card-foreground: oklch(0.24 0.04 250);
-  --popover: oklch(0.995 0.003 85);
-  --popover-foreground: oklch(0.24 0.04 250);
-  --primary: oklch(0.32 0.07 250);               /* deep navy */
-  --primary-foreground: oklch(0.985 0.005 85);
-  --secondary: oklch(0.93 0.018 235);            /* pastel blue surface */
-  --secondary-foreground: oklch(0.28 0.06 250);
-  --muted: oklch(0.95 0.01 230);
-  --muted-foreground: oklch(0.5 0.02 250);       /* soft slate */
-  --accent: oklch(0.42 0.16 305);                /* reserved purple, used sparingly */
-  --accent-foreground: oklch(0.985 0.005 85);
-  --destructive: oklch(0.62 0.18 25);            /* warm coral */
-  --destructive-foreground: oklch(0.985 0.005 85);
-  --border: oklch(0.9 0.012 235);                /* hairline blue-grey */
-  --input: oklch(0.9 0.012 235);
-  --ring: oklch(0.32 0.07 250);
-  --success: oklch(0.6 0.08 180);
-  --warning: oklch(0.7 0.13 70);
-  --danger: oklch(0.62 0.18 25);
-  --info: oklch(0.55 0.09 230);
-  /* Data palette — Oura blue family + coral alert */
-  --data-1: oklch(0.28 0.07 250);                /* deep navy */
-  --data-2: oklch(0.48 0.1 240);                 /* mid blue */
-  --data-3: oklch(0.65 0.11 232);                /* sky */
-  --data-4: oklch(0.82 0.06 225);                /* ice */
-  --data-5: oklch(0.45 0.05 250);                /* slate */
-  --data-alert: oklch(0.68 0.17 30);             /* coral, "needs attention" */
-  --ring-track: oklch(0.92 0.015 230);           /* pastel blue track */
-  --ring-fill: oklch(0.32 0.07 250);
-  --chart-1: var(--data-1);
-  --chart-2: var(--data-2);
-  --chart-3: var(--data-3);
-  --chart-4: var(--data-4);
+  --radius: 1rem;
+
+  /* ===== Purple v2 raw tokens (light) ===== */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #FAF8FB;
+  --bg-tertiary: #F2EEF5;
+  --text-primary: #0A0A0F;
+  --text-secondary: #4A4A52;
+  --text-tertiary: #8B8B92;
+  --text-quaternary: #B8B8BD;
+  --divider: #ECECEF;
+  --purple-primary: #5B2C82;
+  --purple-soft: #EDE4F4;
+  --purple-deep: #3A1A55;
+  --accent-warm: #C58A3F;
+
+  /* Score band gradients (used edge-to-edge behind hero numbers) */
+  --grad-excellent: linear-gradient(135deg, #4A8B6F 0%, #2C6450 100%);
+  --grad-good:      linear-gradient(135deg, #4A6FA5 0%, #2C4E7A 100%);
+  --grad-fair:      linear-gradient(135deg, #C58A3F 0%, #8B5E26 100%);
+  --grad-attention: linear-gradient(135deg, #B8453A 0%, #7A2A22 100%);
+
+  /* Spacing scale (8px base) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-4xl: 96px;
+
+  /* ===== Tailwind/shadcn compatibility mapping ===== */
+  --background: var(--bg-primary);
+  --foreground: var(--text-primary);
+  --card: var(--bg-secondary);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-primary);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--text-primary);
+  --primary-foreground: var(--bg-primary);
+  --secondary: var(--bg-tertiary);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--bg-secondary);
+  --muted-foreground: var(--text-tertiary);
+  --accent: var(--purple-primary);
+  --accent-foreground: #FFFFFF;
+  --destructive: #B8453A;
+  --destructive-foreground: #FFFFFF;
+  --border: var(--divider);
+  --input: var(--divider);
+  --ring: var(--purple-primary);
+  --success: #4A8B6F;
+  --warning: #C58A3F;
+  --danger: #B8453A;
+  --info: #4A6FA5;
+  --data-1: var(--text-primary);
+  --data-2: #4A6FA5;
+  --data-3: #C58A3F;
+  --data-4: #8B8B92;
+  --data-5: #4A8B6F;
+  --data-alert: #B8453A;
+  --ring-track: var(--divider);
+  --ring-fill: var(--purple-primary);
+  --chart-1: var(--purple-primary);
+  --chart-2: #4A6FA5;
+  --chart-3: #C58A3F;
+  --chart-4: #4A8B6F;
   --chart-5: var(--data-alert);
-  --sidebar: oklch(0.995 0.003 85);
-  --sidebar-foreground: oklch(0.24 0.04 250);
-  --sidebar-primary: oklch(0.32 0.07 250);
-  --sidebar-primary-foreground: oklch(0.985 0.005 85);
-  --sidebar-accent: oklch(0.93 0.018 235);
-  --sidebar-accent-foreground: oklch(0.28 0.06 250);
-  --sidebar-border: oklch(0.9 0.012 235);
-  --sidebar-ring: oklch(0.32 0.07 250);
+  --sidebar: var(--bg-primary);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--purple-primary);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: var(--bg-tertiary);
+  --sidebar-accent-foreground: var(--text-primary);
+  --sidebar-border: var(--divider);
+  --sidebar-ring: var(--purple-primary);
 }
 
 .dark {
-  --background: oklch(0.16 0.025 250);           /* deep ink navy bg */
-  --foreground: oklch(0.96 0.008 85);            /* warm cream type */
-  --card: oklch(0.2 0.03 250);
-  --card-foreground: oklch(0.96 0.008 85);
-  --popover: oklch(0.2 0.03 250);
-  --popover-foreground: oklch(0.96 0.008 85);
-  --primary: oklch(0.85 0.04 230);               /* cream-blue, lifted on dark */
-  --primary-foreground: oklch(0.18 0.03 250);
-  --secondary: oklch(0.26 0.04 250);
-  --secondary-foreground: oklch(0.96 0.008 85);
-  --muted: oklch(0.24 0.035 250);
-  --muted-foreground: oklch(0.74 0.015 230);
-  --accent: oklch(0.62 0.15 305);
-  --accent-foreground: oklch(0.16 0.025 250);
-  --destructive: oklch(0.66 0.18 25);
-  --destructive-foreground: oklch(0.96 0.008 85);
-  --border: oklch(0.3 0.04 250);
-  --input: oklch(0.3 0.04 250);
-  --ring: oklch(0.7 0.07 230);
-  --success: oklch(0.7 0.09 180);
-  --warning: oklch(0.76 0.13 70);
-  --danger: oklch(0.66 0.18 25);
-  --info: oklch(0.7 0.1 230);
-  --data-1: oklch(0.88 0.04 230);
-  --data-2: oklch(0.72 0.1 232);
-  --data-3: oklch(0.6 0.1 230);
-  --data-4: oklch(0.42 0.07 240);
-  --data-5: oklch(0.7 0.02 240);
-  --data-alert: oklch(0.72 0.17 30);
-  --ring-track: oklch(0.28 0.04 250);
-  --ring-fill: oklch(0.85 0.04 230);
-  --chart-1: var(--data-1);
-  --chart-2: var(--data-2);
-  --chart-3: var(--data-3);
-  --chart-4: var(--data-4);
+  /* Dark is the hero mode. Near-black with a subtle purple undertone. */
+  --bg-primary: #0A0710;
+  --bg-secondary: #14101C;
+  --bg-tertiary: #1F1A2B;
+  --text-primary: #FAFAFC;
+  --text-secondary: #D8D8DD;
+  --text-tertiary: #8B8B92;
+  --text-quaternary: #5C5C64;
+  --divider: #25202F;
+  --purple-primary: #B084D1;        /* lifted for dark contrast */
+  --purple-soft: rgba(176, 132, 209, 0.12);
+  --purple-deep: #6E3FA0;
+  --accent-warm: #E8C39E;
+
+  --background: var(--bg-primary);
+  --foreground: var(--text-primary);
+  --card: var(--bg-secondary);
+  --card-foreground: var(--text-primary);
+  --popover: var(--bg-secondary);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--text-primary);
+  --primary-foreground: var(--bg-primary);
+  --secondary: var(--bg-tertiary);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--bg-tertiary);
+  --muted-foreground: var(--text-tertiary);
+  --accent: var(--purple-primary);
+  --accent-foreground: var(--bg-primary);
+  --destructive: #E8745C;
+  --destructive-foreground: #FFFFFF;
+  --border: var(--divider);
+  --input: var(--divider);
+  --ring: var(--purple-primary);
+  --success: #6FB394;
+  --warning: #E8C39E;
+  --danger: #E8745C;
+  --info: #82A4D4;
+  --data-1: var(--text-primary);
+  --data-2: #82A4D4;
+  --data-3: #E8C39E;
+  --data-4: #8B8B92;
+  --data-5: #6FB394;
+  --data-alert: #E8745C;
+  --ring-track: var(--divider);
+  --ring-fill: var(--purple-primary);
+  --chart-1: var(--purple-primary);
+  --chart-2: #82A4D4;
+  --chart-3: #E8C39E;
+  --chart-4: #6FB394;
   --chart-5: var(--data-alert);
-  --sidebar: oklch(0.2 0.03 250);
-  --sidebar-foreground: oklch(0.96 0.008 85);
-  --sidebar-primary: oklch(0.85 0.04 230);
-  --sidebar-primary-foreground: oklch(0.18 0.03 250);
-  --sidebar-accent: oklch(0.26 0.04 250);
-  --sidebar-accent-foreground: oklch(0.96 0.008 85);
-  --sidebar-border: oklch(0.3 0.04 250);
-  --sidebar-ring: oklch(0.7 0.07 230);
+  --sidebar: var(--bg-secondary);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--purple-primary);
+  --sidebar-primary-foreground: var(--bg-primary);
+  --sidebar-accent: var(--bg-tertiary);
+  --sidebar-accent-foreground: var(--text-primary);
+  --sidebar-border: var(--divider);
+  --sidebar-ring: var(--purple-primary);
 }
 
 @layer base {
@@ -195,21 +234,82 @@
     font-optical-sizing: auto;
   }
 
-  /* Tiny tracked-out uppercase label, used everywhere as a metric caption */
+  /* ===== Purple v2 utility classes ===== */
+
+  /* label.medium — uppercase tracked metric caption, used everywhere */
   .label-eyebrow {
     font-family: var(--font-sans);
-    font-size: 10.5px;
-    font-weight: 500;
-    letter-spacing: 0.18em;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--muted-foreground);
+    color: var(--text-tertiary);
+    line-height: 1;
   }
 
-  /* Big serif numeric used for headline metrics */
+  /* label.small — tag pills, footnotes */
+  .label-small {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+
+  /* Tabular, lined numeric — applied to ANY number on screen */
+  .numeric {
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum", "lnum";
+  }
+
+  /* Hero numeric display — Inter, ultra-light, tabular, tight */
   .numeric-display {
+    font-family: var(--font-sans);
+    font-weight: 300;
+    font-feature-settings: "tnum", "lnum";
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  /* The AI's voice — Source Serif 4 paragraphs */
+  .body-serif {
     font-family: var(--font-serif);
-    font-feature-settings: "lnum", "tnum";
-    letter-spacing: -0.01em;
-    line-height: 0.95;
+    font-size: 17px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+  }
+
+  /* Brand wordmark — tracked-out Inter */
+  .wordmark {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    letter-spacing: 0.45em;
+    text-transform: uppercase;
+  }
+
+  /* Score band utilities */
+  .grad-excellent { background-image: var(--grad-excellent); }
+  .grad-good      { background-image: var(--grad-good); }
+  .grad-fair      { background-image: var(--grad-fair); }
+  .grad-attention { background-image: var(--grad-attention); }
+
+  /* Soft AI-voice surface */
+  .surface-ai {
+    background-color: var(--purple-soft);
+  }
+
+  /* Keyboard focus ring per spec */
+  :focus-visible {
+    outline: 2px solid var(--purple-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
