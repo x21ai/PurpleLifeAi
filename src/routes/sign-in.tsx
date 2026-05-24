@@ -30,8 +30,29 @@ function SignInPage() {
   const [mode, setMode] = useState<"signin" | "register">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [status, setStatus] = useState<"idle" | "submitting" | "verify-sent" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "submitting" | "verify-sent" | "reset-sent" | "error"
+  >("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleForgotPassword = async () => {
+    setErrorMsg(null);
+    if (!email.trim()) {
+      setErrorMsg("Enter your email above, then tap Forgot password.");
+      setStatus("error");
+      return;
+    }
+    setStatus("submitting");
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: window.location.origin + "/reset-password",
+    });
+    if (error) {
+      setErrorMsg(error.message);
+      setStatus("error");
+      return;
+    }
+    setStatus("reset-sent");
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -116,6 +137,20 @@ function SignInPage() {
                   Confirm your email to finish creating your account.
                 </p>
               </div>
+            ) : status === "reset-sent" ? (
+              <div className="mt-10 rounded-2xl border border-border bg-secondary/60 p-6">
+                <p className="label-eyebrow">Check your inbox</p>
+                <p className="mt-3 font-serif text-2xl text-secondary-foreground leading-snug">
+                  We sent you a link to reset your password.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setStatus("idle")}
+                  className="mt-4 text-sm font-sans text-muted-foreground underline underline-offset-4"
+                >
+                  Back to sign in
+                </button>
+              </div>
             ) : (
               <div className="mt-10">
                 <Tabs value={mode} onValueChange={(v) => { setMode(v as "signin" | "register"); setErrorMsg(null); }}>
@@ -164,6 +199,18 @@ function SignInPage() {
                           ? mode === "signin" ? "Signing in\u2026" : "Creating account\u2026"
                           : mode === "signin" ? "Sign in" : "Create account"}
                       </Button>
+                      {mode === "signin" && (
+                        <div className="pt-1 text-right">
+                          <button
+                            type="button"
+                            onClick={handleForgotPassword}
+                            disabled={status === "submitting"}
+                            className="text-sm font-sans text-muted-foreground hover:text-foreground underline underline-offset-4 disabled:opacity-50"
+                          >
+                            Forgot password?
+                          </button>
+                        </div>
+                      )}
                       {errorMsg && (
                         <p className="text-sm text-destructive" role="alert">
                           {errorMsg}
