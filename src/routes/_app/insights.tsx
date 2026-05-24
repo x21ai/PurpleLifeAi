@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { cn } from "@/lib/utils";
+import { MetricNumber } from "@/components/ui-oura/metric-number";
+import { WaveTrend, type WaveSeries } from "@/components/ui-oura/wave-trend";
 
 type SeizureRow = {
   id: string;
@@ -32,7 +34,9 @@ function InsightsPage() {
         Purple quietly notices what changes around hard days.
       </p>
 
-      <Tabs defaultValue="seizures" className="mt-8">
+      <TrendsHeader />
+
+      <Tabs defaultValue="seizures" className="mt-10">
         <TabsList>
           <TabsTrigger value="seizures">Seizures</TabsTrigger>
           <TabsTrigger value="trends">Trends</TabsTrigger>
@@ -41,11 +45,109 @@ function InsightsPage() {
           <SeizuresTab />
         </TabsContent>
         <TabsContent value="trends" className="mt-6">
-          <div className="rounded-2xl border border-border p-8 text-center text-sm text-muted-foreground">
-            Trends across sleep, mood, and triggers are coming soon.
-          </div>
+          <TrendsTab />
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+type BioRow = {
+  recorded_at: string;
+  sleep_score: number | null;
+  sleep_total_min: number | null;
+  hrv_rmssd_ms: number | null;
+  resting_hr_bpm: number | null;
+};
+
+function useRecentBiometrics(days: number) {
+  const { session } = useAuth();
+  const userId = session?.user.id;
+  const [rows, setRows] = React.useState<BioRow[] | null>(null);
+  React.useEffect(() => {
+    if (!userId) return;
+    const since = new Date(Date.now() - days * 24 * 3600 * 1000).toISOString();
+    void (async () => {
+      const { data } = await supabase
+        .from("biometrics")
+        .select("recorded_at, sleep_score, sleep_total_min, hrv_rmssd_ms, resting_hr_bpm")
+        .gte("recorded_at", since)
+        .order("recorded_at", { ascending: true });
+      setRows((data as BioRow[]) ?? []);
+    })();
+  }, [userId, days]);
+  return rows;
+}
+
+function avg(nums: (number | null | undefined)[]): number | null {
+  const xs = nums.filter((n): n is number => typeof n === "number" && !Number.isNaN(n));
+  if (xs.length === 0) return null;
+  return xs.reduce((s, x) => s + x, 0) / xs.length;
+}
+
+function TrendsHeader() {
+  const rows = useRecentBiometrics(14);
+  const sleepMin = rows ? avg(rows.map((r) => r.sleep_total_min)) : null;
+  const hrv = rows ? avg(rows.map((r) => r.hrv_rmssd_ms)) : null;
+  const rhr = rows ? avg(rows.map((r) => r.resting_hr_bpm)) : null;
+
+  const fmtSleep = (m: number | null) => {
+    if (m == null) return "—";
+    const h = Math.floor(m / 60);
+    const mm = Math.round(m % 60);
+    return `${h}h ${mm}m`;
+  };
+
+  return (
+    <section className="mt-8 grid grid-cols-3 gap-x-6 gap-y-2 border-y border-border py-6">
+      <MetricNumber size="md" value={fmtSleep(sleepMin)} label="Avg sleep" />
+      <MetricNumber size="md" value={hrv ? Math.round(hrv) : "—"} label="HRV ms" />
+      <MetricNumber size="md" value={rhr ? Math.round(rhr) : "—"} label="Rest BPM" />
+      <p className="col-span-3 mt-2 text-[11px] text-muted-foreground">
+        Last 14 nights · from your connected ring
+      </p>
+    </section>
+  );
+}
+
+function TrendsTab() {
+  const rows = useRecentBiometrics(14);
+  if (rows === null) {
+    return <div className="h-48 rounded-2xl border border-border bg-card animate-pulse" />;
+  }
+  if (rows.length === 0) {
+    return (
+      <div className="rounded-2xl border border-border p-8 text-center text-sm text-muted-foreground">
+        Connect a wearable to start seeing your trends.
+      </div>
+    );
+  }
+  const series: WaveSeries[] = [
+    {
+      label: "Sleep Score",
+      values: rows.map((r) => r.sleep_score ?? 0),
+      color: "var(--data-1)",
+      format: (v) => `${Math.round(v)}`,
+    },
+    {
+      label: "HRV ms",
+      values: rows.map((r) => r.hrv_rmssd_ms ?? 0),
+      color: "var(--data-2)",
+      format: (v) => `${Math.round(v)}`,
+    },
+    {
+      label: "Resting HR",
+      values: rows.map((r) => r.resting_hr_bpm ?? 0),
+      color: "var(--data-3)",
+      format: (v) => `${Math.round(v)} bpm`,
+    },
+  ];
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <p className="label-eyebrow">Last 14 nights</p>
+      <div className="mt-4">
+        <WaveTrend series={series} height={200} />
+      </div>
     </div>
   );
 }

@@ -148,7 +148,7 @@ function Bubble({ msg }: { msg: Msg }) {
         className={
           isUser
             ? "max-w-[85%] rounded-2xl rounded-br-md bg-primary text-primary-foreground px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap"
-            : "max-w-[90%] rounded-2xl rounded-bl-md bg-secondary/60 text-foreground px-4 py-3 text-sm leading-relaxed prose prose-sm dark:prose-invert prose-p:my-2 prose-ul:my-2 max-w-none"
+            : "max-w-[90%] rounded-2xl rounded-bl-md bg-card border border-border text-foreground px-4 py-3 text-sm leading-relaxed prose prose-sm dark:prose-invert prose-p:my-2 prose-ul:my-2 max-w-none font-serif"
         }
       >
         {isUser ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
