@@ -45,9 +45,9 @@ function InsightsPage() {
       <TrendsHeader />
 
       <Tabs defaultValue="seizures" className="mt-14">
-        <TabsList className="h-11">
-          <TabsTrigger value="seizures">Seizures</TabsTrigger>
-          <TabsTrigger value="trends">Trends</TabsTrigger>
+        <TabsList className="h-11 rounded-full bg-secondary/60 p-1">
+          <TabsTrigger value="seizures" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Seizures</TabsTrigger>
+          <TabsTrigger value="trends" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Trends</TabsTrigger>
         </TabsList>
         <TabsContent value="seizures" className="mt-6">
           <SeizuresTab />
