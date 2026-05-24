@@ -211,13 +211,29 @@ Deno.serve(async (req) => {
 
     // Incremental cron: sync all connected users
     if (action === "incremental" && body.all === true) {
-      const { data: tokens } = await admin.from("oura_tokens").select("user_id");
+      const { data: tokens } = await admin
+        .from("oura_tokens")
+        .select("user_id, sync_interval_hours, updated_at");
       const end = fmt(new Date());
       const start = fmt(new Date(Date.now() - 3 * 24 * 3600 * 1000));
       const results: any[] = [];
       for (const t of tokens ?? []) {
+        const interval = (t as any).sync_interval_hours ?? 12;
+        if (interval === 0) {
+          results.push({ user_id: t.user_id, skipped: "manual" });
+          continue;
+        }
+        const last = (t as any).updated_at ? new Date((t as any).updated_at).getTime() : 0;
+        const dueAt = last + interval * 3600 * 1000;
+        if (Date.now() < dueAt) {
+          results.push({ user_id: t.user_id, skipped: "not_due" });
+          continue;
+        }
         try {
           const r = await syncRange(t.user_id, start, end);
+          await admin.from("oura_tokens")
+            .update({ updated_at: new Date().toISOString() })
+            .eq("user_id", t.user_id);
           results.push({ user_id: t.user_id, ...r });
         } catch (e) {
           results.push({ user_id: t.user_id, error: String(e) });
