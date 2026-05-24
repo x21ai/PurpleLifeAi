@@ -17,7 +17,8 @@ function OuraCallback() {
         const params = new URLSearchParams(window.location.search);
         const code = params.get("code");
         const err = params.get("error");
-        if (err) throw new Error(err);
+        const errDescription = params.get("error_description");
+        if (err) throw new Error(errDescription ? `${err}: ${errDescription}` : err);
         if (!code) throw new Error("Missing authorization code");
 
         const redirect_uri = window.location.origin + "/oauth/oura/callback";
