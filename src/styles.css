@@ -137,6 +137,9 @@
   --data-4: #8B8B92;
   --data-5: #4A8B6F;
   --data-alert: #B8453A;
+  --data-good: #4A8B6F;
+  --data-info: #4A6FA5;
+  --data-warn: #C58A3F;
   --ring-track: var(--divider);
   --ring-fill: var(--purple-primary);
   --chart-1: var(--purple-primary);
@@ -198,6 +201,9 @@
   --data-4: #8B8B92;
   --data-5: #6FB394;
   --data-alert: #E8745C;
+  --data-good: #6FB394;
+  --data-info: #82A4D4;
+  --data-warn: #E8C39E;
   --ring-track: var(--divider);
   --ring-fill: var(--purple-primary);
   --chart-1: var(--purple-primary);
