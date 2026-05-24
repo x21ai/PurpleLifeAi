@@ -1,61 +1,64 @@
-## Goal
+# Fix onboarding memory, layout chrome, sign-in, and Oura state
 
-Oura OAuth works. Now polish the connected state so it clearly shows what was imported, lets the user pick how often to sync, and runs that sync automatically server-side.
+Five fixes, mostly UI/shell. No new features.
 
-## Default sync frequency
+## 1. Stop re-asking for onboarding data
 
-**Every 12 hours** — confirmed. User can change to 1h / 6h / 12h / 24h / manual.
+**Problem:** `_app.tsx` checks `localStorage("purple-onboarded")` — wiped on every new browser/device/incognito, so Welcome reappears even after you filled it in.
 
-## Changes
+**Fix:**
+- In `_app.tsx` `beforeLoad`, read `profiles` for the signed-in user. Treat as onboarded if `first_name` is set OR `onboarded_at` is not null.
+- Add `onboarded_at timestamptz` to `profiles` (migration). Welcome's `finish()` and `skip()` set it.
+- Keep the localStorage flag as a fast hint to avoid a query on every nav, but DB is source of truth.
+- Welcome pre-fills `firstName/lastName/emergency*` from the existing `profiles` row so even if the user lands there, nothing is lost.
 
-### 1. Connected card (Settings + Welcome) — compact summary
+## 2. Sign-in page alignment
 
-Replace the current `Connected · last sync …` line with a small summary fetched from the DB:
+**Problem:** On desktop the right form column is taller than the left hero (which is `lg:h-screen` absolute-positioned), so the page scrolls and the hero ends mid-screen while the form continues — the "Free forever / PURPLE" text sits awkwardly.
 
-- **Status row**: "Connected" + last sync time (relative: "5 min ago", "2h ago")
-- **Imported counts** (last 90 days from `biometrics` where `source='oura'`):
-  - Sleep nights: N
-  - Readiness days: N
-  - Activity days: N
-- **Sync frequency dropdown**: Every hour · Every 6 hours · **Every 12 hours** (default) · Every 24 hours · Manual only
-- Buttons: `Sync now` · `Disconnect`
+**Fix:**
+- Make hero column `lg:sticky lg:top-0 lg:h-screen` so it stays pinned while the form scrolls, OR
+- Match heights: change grid to `lg:min-h-screen` with hero `lg:h-full` (not `h-screen`) and reduce form vertical padding on smaller laptops.
+- Going with the sticky approach — it's the same fix Linear/Stripe use and avoids re-flow.
 
-Reuse the same component on both Settings and Welcome onboarding.
+## 3. Site-wide footer + collapsible sidebar
 
-### 2. Persist user preference
+**Footer (new `src/components/layout/site-footer.tsx`):** rendered inside `AppShell` below `<Outlet />`. Contains:
+- Founding charter → `/charter`
+- Privacy & safety → `/privacy`
+- Terms → `/privacy#terms` (anchor — we can split later)
+- Contact → `mailto:` or `/privacy#contact`
+- Open source on GitHub → external link
+- Small "© Purple · Free forever" line
 
-New column `oura_tokens.sync_interval_hours` (smallint, default 12, allowed 0/1/6/12/24 where 0 = manual). Save via simple update from the dropdown.
+Same footer on `sign-in` (lighter variant, no Terms-from-app links needed but include legal).
 
-### 3. Automatic sync (server-side)
+**Collapsible sidebar on mobile:**
+- Today bottom-nav stays for primary nav on mobile.
+- Add a hamburger button in a slim top bar (mobile only) that opens a `Sheet` containing the full sidebar items + Settings + About links. Desktop sidebar unchanged but add a collapse toggle (icon-only ↔ full-width) persisted in localStorage.
 
-Use `pg_cron` + `pg_net` to call the existing `oura-sync` edge function with `{ action: "incremental", all: true }` **every hour**. Inside the function, filter users by:
+## 4. Welcome step 3 shows "Connect" even when Oura is connected
 
-```
-now() - last_sync >= sync_interval_hours
-```
+**Problem:** `WelcomePage.connectOura` doesn't check `oura_tokens`; it always shows the Connect button.
 
-So one hourly cron job services 1h / 6h / 12h / 24h preferences without multiple schedules. Manual (0) is skipped.
+**Fix:** On mount in step 3, query `oura_tokens` for the user; if a row exists, render "Connected · synced Xh ago" with a Disconnect/Continue affordance instead of Connect. Reuse the existing `OuraConnection` component (already shows correct state) instead of the custom inline button.
 
-### 4. Live progress after connect
+## 5. About/legal moves to footer
 
-Right now the popup says "Connected. Syncing your last 90 days…" then closes. The 90-day backfill happens inside `exchange` and can take ~15s. Change `oura-connection.tsx`:
-
-- After receiving `oura-connected` postMessage, set a `backfilling` state
-- Poll `biometrics` count every 2s for 30s, show "Imported N of ~90 days…"
-- When count stabilizes or 30s elapses, switch to the normal summary
+- Keep the About section in Settings (deep link target) but the same items also live in the global footer so they're reachable from every page on web and mobile.
+- Add a `/terms` route (simple page, can mirror privacy content for now) so the footer link resolves.
 
 ## Files
 
-- `src/components/connections/oura-connection.tsx` — summary UI, dropdown, polling
-- `src/routes/_app/welcome.tsx` — uses the same component (already does)
-- `supabase/functions/oura-sync/index.ts` — honor `sync_interval_hours` in the `all: true` branch
-- Migration: add `sync_interval_hours` column
-- Cron: schedule hourly `oura-sync` call
+- `supabase/migrations/<new>.sql` — `alter table profiles add column onboarded_at timestamptz`
+- `src/routes/_app.tsx` — DB-backed onboarded check
+- `src/routes/_app/welcome.tsx` — prefill from profile, set `onboarded_at`, swap inline Oura UI for `<OuraConnection />`
+- `src/routes/sign-in.tsx` — sticky hero column, add footer
+- `src/components/layout/site-footer.tsx` — new
+- `src/components/layout/app-shell.tsx` — render footer; mount mobile sheet
+- `src/components/layout/sidebar-nav.tsx` — collapse toggle + mobile sheet trigger
+- `src/routes/_app/terms.tsx` — new minimal page
 
 ## Out of scope
 
-- Whoop (still "Coming soon")
-- Per-metric sync toggles
-- Push notifications when sync completes
-
-Ready to implement on approval.
+- Cookie consent banner, real Terms of Service drafting (placeholder content), redesigning the bottom nav, dark mode for the footer beyond existing tokens.
