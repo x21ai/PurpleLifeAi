@@ -26,6 +26,7 @@ import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callb
 import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
 import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
+import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
 import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
 
 const SignInRoute = SignInRouteImport.update({
@@ -112,6 +113,11 @@ const AppMedsMedIdRoute = AppMedsMedIdRouteImport.update({
   path: '/$medId',
   getParentRoute: () => AppMedsRoute,
 } as any)
+const AppJournalNewRoute = AppJournalNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppJournalRoute,
+} as any)
 const ApiPublicHooksRiskForecasterRoute =
   ApiPublicHooksRiskForecasterRouteImport.update({
     id: '/api/public/hooks/risk-forecaster',
@@ -125,13 +131,14 @@ export interface FileRoutesByFullPath {
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/insights': typeof AppInsightsRoute
-  '/journal': typeof AppJournalRoute
+  '/journal': typeof AppJournalRouteWithChildren
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
   '/privacy': typeof AppPrivacyRoute
   '/settings': typeof AppSettingsRoute
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
+  '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/today/risk': typeof AppTodayRiskRoute
@@ -143,7 +150,7 @@ export interface FileRoutesByTo {
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/insights': typeof AppInsightsRoute
-  '/journal': typeof AppJournalRoute
+  '/journal': typeof AppJournalRouteWithChildren
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
   '/privacy': typeof AppPrivacyRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
   '/': typeof AppIndexRoute
+  '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/today/risk': typeof AppTodayRiskRoute
@@ -164,7 +172,7 @@ export interface FileRoutesById {
   '/_app/charter': typeof AppCharterRoute
   '/_app/chat': typeof AppChatRoute
   '/_app/insights': typeof AppInsightsRoute
-  '/_app/journal': typeof AppJournalRoute
+  '/_app/journal': typeof AppJournalRouteWithChildren
   '/_app/meds': typeof AppMedsRouteWithChildren
   '/_app/my-health': typeof AppMyHealthRoute
   '/_app/privacy': typeof AppPrivacyRoute
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/_app/vitals': typeof AppVitalsRoute
   '/_app/welcome': typeof AppWelcomeRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/journal/new': typeof AppJournalNewRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
   '/_app/seizures/new': typeof AppSeizuresNewRoute
   '/_app/today/risk': typeof AppTodayRiskRoute
@@ -193,6 +202,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/vitals'
     | '/welcome'
+    | '/journal/new'
     | '/meds/$medId'
     | '/seizures/new'
     | '/today/risk'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/vitals'
     | '/welcome'
     | '/'
+    | '/journal/new'
     | '/meds/$medId'
     | '/seizures/new'
     | '/today/risk'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/_app/vitals'
     | '/_app/welcome'
     | '/_app/'
+    | '/_app/journal/new'
     | '/_app/meds/$medId'
     | '/_app/seizures/new'
     | '/_app/today/risk'
@@ -367,6 +379,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMedsMedIdRouteImport
       parentRoute: typeof AppMedsRoute
     }
+    '/_app/journal/new': {
+      id: '/_app/journal/new'
+      path: '/new'
+      fullPath: '/journal/new'
+      preLoaderRoute: typeof AppJournalNewRouteImport
+      parentRoute: typeof AppJournalRoute
+    }
     '/api/public/hooks/risk-forecaster': {
       id: '/api/public/hooks/risk-forecaster'
       path: '/api/public/hooks/risk-forecaster'
@@ -376,6 +395,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AppJournalRouteChildren {
+  AppJournalNewRoute: typeof AppJournalNewRoute
+}
+
+const AppJournalRouteChildren: AppJournalRouteChildren = {
+  AppJournalNewRoute: AppJournalNewRoute,
+}
+
+const AppJournalRouteWithChildren = AppJournalRoute._addFileChildren(
+  AppJournalRouteChildren,
+)
 
 interface AppMedsRouteChildren {
   AppMedsMedIdRoute: typeof AppMedsMedIdRoute
@@ -392,7 +423,7 @@ interface AppRouteChildren {
   AppCharterRoute: typeof AppCharterRoute
   AppChatRoute: typeof AppChatRoute
   AppInsightsRoute: typeof AppInsightsRoute
-  AppJournalRoute: typeof AppJournalRoute
+  AppJournalRoute: typeof AppJournalRouteWithChildren
   AppMedsRoute: typeof AppMedsRouteWithChildren
   AppMyHealthRoute: typeof AppMyHealthRoute
   AppPrivacyRoute: typeof AppPrivacyRoute
@@ -408,7 +439,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCharterRoute: AppCharterRoute,
   AppChatRoute: AppChatRoute,
   AppInsightsRoute: AppInsightsRoute,
-  AppJournalRoute: AppJournalRoute,
+  AppJournalRoute: AppJournalRouteWithChildren,
   AppMedsRoute: AppMedsRouteWithChildren,
   AppMyHealthRoute: AppMyHealthRoute,
   AppPrivacyRoute: AppPrivacyRoute,
@@ -431,3 +462,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
