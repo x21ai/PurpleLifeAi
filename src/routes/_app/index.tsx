@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import { BookOpen, Pill, Zap, ChevronRight } from "lucide-react";
