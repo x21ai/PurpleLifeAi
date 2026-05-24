@@ -8,6 +8,8 @@ import { MedicationFormSheet } from "@/components/meds/medication-form-sheet";
 import { scheduleMedications } from "@/lib/med-notifications";
 import { MetricNumber } from "@/components/ui-oura/metric-number";
 import { ProgressPill } from "@/components/ui-oura/progress-pill";
+import { useRouteTheme } from "@/lib/use-route-theme";
+import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 
 type Medication = {
   id: string;
@@ -34,6 +36,7 @@ function formatTime(t: string): string {
 }
 
 function MedsPage() {
+  useRouteTheme("light");
   const { session } = useAuth();
   const userId = session?.user.id;
   const [meds, setMeds] = React.useState<Medication[] | null>(null);
@@ -69,11 +72,16 @@ function MedsPage() {
   const rescue = meds?.filter((m) => m.is_rescue) ?? [];
 
   return (
-    <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-10 sm:pt-16 pb-24 relative">
-      <h1 className="font-serif text-4xl sm:text-5xl leading-tight text-foreground">Medications</h1>
-      <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-xl">
-        Your schedule, your record. Tap a med to see how you've been doing.
-      </p>
+    <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-32 relative">
+      <p className="label-eyebrow text-muted-foreground">Medications</p>
+      <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
+        Your schedule,<br/>your record.
+      </h1>
+      <div className="mt-8">
+        <NarrativeBlock>
+          Tap a med to see how you've been doing. Purple keeps a quiet ledger and nudges only when it matters.
+        </NarrativeBlock>
+      </div>
 
       {meds && meds.length > 0 && <AdherenceCard />}
 
