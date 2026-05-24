@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_app/chat")({
 });
 
 function AskPage() {
-  useRouteTheme("light");
+  useRouteTheme("dark");
   const [messages, setMessages] = React.useState<Msg[]>([]);
   const [input, setInput] = React.useState("");
   const [thinking, setThinking] = React.useState(false);
@@ -85,12 +85,7 @@ function AskPage() {
               {messages.map((m, i) => (
                 <Bubble key={i} msg={m} />
               ))}
-              {thinking && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground px-1">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>thinking…</span>
-                </div>
-              )}
+              {thinking && <ThinkingDots />}
             </div>
           )}
         </div>
@@ -157,6 +152,16 @@ function Bubble({ msg }: { msg: Msg }) {
       >
         {isUser ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
       </div>
+    </div>
+  );
+}
+
+function ThinkingDots() {
+  return (
+    <div className="flex items-center gap-1.5 px-3 py-3 max-w-[60px] rounded-2xl rounded-bl-md bg-card border border-border">
+      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/70 animate-[pulse_1.2s_ease-in-out_infinite]" />
+      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/70 animate-[pulse_1.2s_ease-in-out_0.2s_infinite]" />
+      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/70 animate-[pulse_1.2s_ease-in-out_0.4s_infinite]" />
     </div>
   );
 }
