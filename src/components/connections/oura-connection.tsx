@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const OURA_SCOPE = "personal daily heartrate workout tag session spo2 ring_configuration";
+// Oura v2 documented scopes. "spo2Daily" (camelCase) is the correct name —
+// "spo2" silently 400s. "ring_configuration" requires app approval; omit by default.
+const OURA_SCOPE = "email personal daily heartrate workout tag session spo2Daily";
 
 export function OuraConnection() {
   const [connected, setConnected] = useState<boolean | null>(null);
@@ -53,6 +55,7 @@ export function OuraConnection() {
     url.searchParams.set("redirect_uri", redirect);
     url.searchParams.set("scope", OURA_SCOPE);
     url.searchParams.set("state", sess.session.user.id);
+    console.log("[oura] authorize URL", url.toString());
     const w = 520, h = 720;
     const left = window.screenX + (window.outerWidth - w) / 2;
     const top = window.screenY + (window.outerHeight - h) / 2;
