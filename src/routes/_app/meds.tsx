@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { MedicationFormSheet } from "@/components/meds/medication-form-sheet";
 import { scheduleMedications } from "@/lib/med-notifications";
+import { MetricNumber } from "@/components/ui-oura/metric-number";
+import { ProgressPill } from "@/components/ui-oura/progress-pill";
 
 type Medication = {
   id: string;
@@ -73,6 +75,8 @@ function MedsPage() {
         Your schedule, your record. Tap a med to see how you've been doing.
       </p>
 
+      {meds && meds.length > 0 && <AdherenceCard />}
+
       {meds === null ? (
         <p className="mt-10 text-sm text-muted-foreground">Loading…</p>
       ) : meds.length === 0 ? (
@@ -133,25 +137,32 @@ function MedRow({ med }: { med: Medication }) {
       <Link
         to="/meds/$medId"
         params={{ medId: med.id }}
-        className="block rounded-xl border border-border bg-card p-4 hover:border-primary/40 transition-colors"
+        className="block rounded-2xl border border-border bg-card p-5 hover:border-foreground/20 transition-colors"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-base font-medium text-foreground truncate">{med.name}</p>
+            <p className="font-serif text-lg text-foreground truncate">{med.name}</p>
             {med.dosage && <p className="text-sm text-muted-foreground">{med.dosage}</p>}
             {!med.is_rescue && med.times_of_day?.length > 0 && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                {med.times_of_day.map(formatTime).join(" · ")}
-              </p>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {med.times_of_day.map((t) => (
+                  <span
+                    key={t}
+                    className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium tabular-nums text-secondary-foreground"
+                  >
+                    {formatTime(t)}
+                  </span>
+                ))}
+              </div>
             )}
             {med.is_rescue && (
-              <p className="mt-2 text-xs text-muted-foreground">As needed</p>
+              <p className="mt-3 label-eyebrow">As needed</p>
             )}
           </div>
           {med.pills_remaining !== null && (
             <div className={`text-right shrink-0 ${lowStock ? "text-destructive" : "text-muted-foreground"}`}>
-              <p className="text-xs">Pills</p>
-              <p className="text-lg font-medium tabular-nums flex items-center gap-1 justify-end">
+              <p className="label-eyebrow">Pills</p>
+              <p className="font-serif text-2xl tabular-nums flex items-center gap-1 justify-end mt-1">
                 {lowStock && <AlertCircle className="h-3.5 w-3.5" />}
                 {med.pills_remaining}
               </p>
@@ -160,5 +171,55 @@ function MedRow({ med }: { med: Medication }) {
         </div>
       </Link>
     </li>
+  );
+}
+
+function AdherenceCard() {
+  const { session } = useAuth();
+  const userId = session?.user.id;
+  const [pct, setPct] = React.useState<number | null>(null);
+  const [counts, setCounts] = React.useState<{ taken: number; total: number } | null>(null);
+
+  React.useEffect(() => {
+    if (!userId) return;
+    const since = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString();
+    const now = new Date().toISOString();
+    void (async () => {
+      const { data } = await supabase
+        .from("medication_doses")
+        .select("status")
+        .gte("scheduled_at", since)
+        .lte("scheduled_at", now);
+      const rows = (data ?? []) as { status: string }[];
+      const total = rows.length;
+      const taken = rows.filter((r) => r.status === "taken").length;
+      setCounts({ taken, total });
+      setPct(total === 0 ? null : Math.round((taken / total) * 100));
+    })();
+  }, [userId]);
+
+  return (
+    <section className="mt-10 border-y border-border py-7">
+      <div className="flex items-end justify-between gap-6">
+        <MetricNumber
+          size="lg"
+          value={pct == null ? "—" : `${pct}%`}
+          label="Adherence · 14d"
+        />
+        {counts && counts.total > 0 && (
+          <p className="text-xs text-muted-foreground pb-2 tabular-nums">
+            {counts.taken} of {counts.total} doses
+          </p>
+        )}
+      </div>
+      <div className="mt-5">
+        <ProgressPill
+          label="On schedule"
+          value={pct == null ? "—" : `${pct}%`}
+          pct={pct ?? 0}
+          tone={pct != null && pct < 70 ? "alert" : "ink"}
+        />
+      </div>
+    </section>
   );
 }

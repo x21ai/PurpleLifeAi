@@ -84,7 +84,8 @@ export function EntryCard({ entry }: { entry: Entry }) {
           {entry.ai_tags.map((t) => (
             <span
               key={t}
-              className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs"
+              className="inline-flex items-center rounded-full border border-primary/30 bg-background text-primary px-2.5 py-0.5 text-[11px] tracking-wide"
+              aria-label={`Tag: ${t}`}
             >
               {t}
             </span>
