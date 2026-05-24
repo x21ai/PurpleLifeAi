@@ -92,7 +92,7 @@ export function HeroScoreCard() {
       className="mt-8 relative overflow-hidden rounded-3xl border border-border bg-card"
       aria-label={`Today's read — ${caption}, ${readiness} out of 100`}
     >
-      <div className="relative h-72 sm:h-80">
+      <div className="relative h-80 sm:h-[420px]">
         <img
           src={image}
           alt=""
@@ -104,9 +104,9 @@ export function HeroScoreCard() {
 
         <div className="relative h-full flex flex-col items-center justify-end pb-8 px-6">
           <div className="relative flex items-center justify-center">
-            <ScoreArc score={readiness} size={240} stroke={5} tone={tone} ariaLabel={`Readiness ${readiness}`} />
-            <div className="absolute inset-0 flex flex-col items-center justify-center pt-3">
-              <p className="numeric-display font-serif text-[64px] sm:text-[72px] text-[color:var(--background)] drop-shadow-sm">
+            <ScoreArc score={readiness} size={320} stroke={6} tone={tone} ariaLabel={`Readiness ${readiness}`} />
+            <div className="absolute inset-0 flex flex-col items-center justify-center pt-4">
+              <p className="numeric-display font-serif text-[96px] sm:text-[120px] text-[color:var(--background)] drop-shadow-sm">
                 {readiness}
               </p>
               <p

@@ -35,12 +35,12 @@ function TodayPage() {
           : "Good evening";
 
   return (
-    <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-10 sm:pt-16 pb-12">
+    <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-8 sm:pt-12 pb-12">
       <p className="label-eyebrow" suppressHydrationWarning>
         {now ? format(now, "EEEE, MMMM d") : "\u00a0"}
       </p>
       <h1
-        className="font-serif text-3xl sm:text-4xl leading-tight mt-3 text-foreground"
+        className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight mt-4 text-foreground"
         suppressHydrationWarning
       >
         <span suppressHydrationWarning>{greeting}</span>. How&rsquo;s today feeling?

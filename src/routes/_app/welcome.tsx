@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { ensureServiceWorker, requestPermission } from "@/lib/med-notifications";
 import { toast } from "sonner";
+import dawn from "@/assets/hero-readiness-dawn.jpg";
+import mist from "@/assets/hero-readiness-mist.jpg";
 
 export const Route = createFileRoute("/_app/welcome")({
   head: () => ({ meta: [{ title: "Welcome — Purple" }] }),
@@ -86,8 +88,8 @@ function WelcomePage() {
   };
 
   return (
-    <div className="mx-auto max-w-xl px-5 sm:px-8 pt-12 sm:pt-20 pb-16">
-      <div className="flex items-center justify-between mb-10">
+    <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-8 sm:pt-12 pb-16">
+      <div className="flex items-center justify-between mb-8">
         <div className="flex gap-1.5" aria-hidden="true">
           {[0, 1, 2].map((i) => (
             <span
@@ -109,15 +111,30 @@ function WelcomePage() {
 
       {step === 0 && (
         <div>
-          <h1 className="font-serif text-4xl sm:text-5xl leading-tight text-foreground">
-            Welcome to Purple. This is your space.
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-card aspect-[4/3] sm:aspect-[16/10]">
+            <img
+              src={dawn}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+              width={1536}
+              height={1024}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-foreground/55" />
+            <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+              <p className="label-eyebrow" style={{ color: "var(--background)", opacity: 0.85 }}>
+                Purple
+              </p>
+            </div>
+          </div>
+          <h1 className="font-serif text-5xl sm:text-7xl leading-[1.02] tracking-tight text-foreground mt-10">
+            Welcome.<br />This is your space.
           </h1>
-          <p className="mt-6 text-base sm:text-lg text-muted-foreground">
+          <p className="mt-6 text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-xl">
             A calm place to keep track of your sleep, your symptoms, your medications, and
             the patterns underneath them. Nothing here is sold, shared, or judged. I&rsquo;m
             here when you need me, quiet when you don&rsquo;t.
           </p>
-          <Button className="mt-10 rounded-full" size="lg" onClick={() => setStep(1)}>
+          <Button className="mt-10 rounded-full px-7 h-12 text-base" size="lg" onClick={() => setStep(1)}>
             Continue <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
@@ -125,10 +142,11 @@ function WelcomePage() {
 
       {step === 1 && (
         <div>
-          <h1 className="font-serif text-3xl sm:text-4xl leading-tight text-foreground">
+          <p className="label-eyebrow mb-4">Step 2 of 3</p>
+          <h1 className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight text-foreground">
             Let me know who you are.
           </h1>
-          <p className="mt-4 text-base text-muted-foreground">
+          <p className="mt-5 text-lg text-muted-foreground max-w-lg">
             Just enough so I can address you, and someone to reach if a seizure is ever logged.
           </p>
           <div className="mt-8 space-y-5">
@@ -162,10 +180,21 @@ function WelcomePage() {
 
       {step === 2 && (
         <div>
-          <h1 className="font-serif text-3xl sm:text-4xl leading-tight text-foreground">
+          <div className="relative overflow-hidden rounded-3xl border border-border mb-8 aspect-[16/9]">
+            <img
+              src={mist}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+              width={1536}
+              height={1024}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-foreground/40" />
+          </div>
+          <p className="label-eyebrow mb-4">Step 3 of 3</p>
+          <h1 className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight text-foreground">
             Connect what helps.
           </h1>
-          <p className="mt-4 text-base text-muted-foreground">
+          <p className="mt-5 text-lg text-muted-foreground">
             All optional. You can do this any time from Settings.
           </p>
           <div className="mt-8 space-y-3">
