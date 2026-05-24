@@ -201,6 +201,9 @@
   --data-4: #8B8B92;
   --data-5: #6FB394;
   --data-alert: #E8745C;
+  --data-good: #6FB394;
+  --data-info: #82A4D4;
+  --data-warn: #E8C39E;
   --ring-track: var(--divider);
   --ring-fill: var(--purple-primary);
   --chart-1: var(--purple-primary);
