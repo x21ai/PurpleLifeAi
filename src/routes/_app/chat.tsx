@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useRouteTheme } from "@/lib/use-route-theme";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/_app/chat")({
 });
 
 function AskPage() {
+  useRouteTheme("light");
   const [messages, setMessages] = React.useState<Msg[]>([]);
   const [input, setInput] = React.useState("");
   const [thinking, setThinking] = React.useState(false);
@@ -65,14 +67,17 @@ function AskPage() {
 
   return (
     <div className="flex flex-col h-[100dvh] md:h-screen">
-      <header className="px-4 sm:px-8 pt-8 pb-4 border-b border-border/40">
-        <div className="mx-auto max-w-2xl">
-          <h1 className="font-serif text-3xl sm:text-4xl text-foreground">Ask</h1>
+      <header className="px-4 sm:px-10 lg:px-16 pt-12 sm:pt-20 pb-6 border-b border-border/40">
+        <div className="mx-auto max-w-3xl">
+          <p className="label-eyebrow text-muted-foreground">Ask</p>
+          <h1 className="mt-2 font-serif text-[40px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
+            I know your<br/>patterns.
+          </h1>
         </div>
       </header>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-8 pb-24 md:pb-6">
-        <div className="mx-auto max-w-2xl py-6">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-10 lg:px-16 pb-28 md:pb-6">
+        <div className="mx-auto max-w-3xl py-8">
           {messages.length === 0 ? (
             <EmptyState onPick={(s) => void send(s)} />
           ) : (
@@ -91,8 +96,8 @@ function AskPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-16 md:static md:bottom-auto left-0 right-0 border-t border-border/40 bg-background/95 backdrop-blur px-4 sm:px-8 py-3">
-        <div className="mx-auto max-w-2xl flex items-end gap-2">
+      <div className="fixed bottom-16 md:static md:bottom-auto left-0 right-0 border-t border-border/40 bg-background/95 backdrop-blur px-4 sm:px-10 lg:px-16 py-4">
+        <div className="mx-auto max-w-3xl flex items-end gap-3">
           <textarea
             ref={inputRef}
             value={input}
@@ -119,18 +124,17 @@ function AskPage() {
 
 function EmptyState({ onPick }: { onPick: (s: string) => void }) {
   return (
-    <div className="py-10 sm:py-16">
-      <p className="font-serif text-2xl sm:text-3xl text-foreground">I know your patterns.</p>
-      <p className="text-muted-foreground mt-3 leading-relaxed max-w-lg">
+    <div className="py-6 sm:py-10">
+      <p className="body-serif text-foreground/85 max-w-lg leading-relaxed">
         Ask me anything about your sleep, your medication, your symptoms, your patterns, or your care.
       </p>
-      <div className="mt-6 flex flex-wrap gap-2">
+      <div className="mt-8 flex flex-wrap gap-2">
         {SUGGESTIONS.map((s) => (
           <button
             key={s}
             type="button"
             onClick={() => onPick(s)}
-            className="text-left text-sm rounded-full border border-border/60 bg-secondary/40 hover:bg-secondary px-4 py-2 transition"
+            className="text-left text-sm rounded-full border border-border/60 bg-secondary/40 hover:bg-secondary px-4 py-2.5 transition"
           >
             {s}
           </button>

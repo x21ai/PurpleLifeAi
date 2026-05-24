@@ -7,6 +7,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { CaptureSheet } from "@/components/journal/capture-sheet";
 import { EntryCard } from "@/components/journal/entry-card";
 import type { Database } from "@/integrations/supabase/types";
+import { useRouteTheme } from "@/lib/use-route-theme";
 
 type Entry = Database["public"]["Tables"]["journal_entries"]["Row"];
 
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/_app/journal")({
 });
 
 function JournalPage() {
+  useRouteTheme("light");
   const { session } = useAuth();
   const userId = session?.user.id;
   const [entries, setEntries] = React.useState<Entry[]>([]);
@@ -93,15 +95,17 @@ function JournalPage() {
 
   return (
     <div
-      className="mx-auto max-w-2xl px-4 sm:px-8 pt-8 sm:pt-12 pb-32"
+      className="mx-auto max-w-3xl px-4 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-32"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      <div className="flex items-baseline justify-between mb-6">
+      <div className="flex items-end justify-between mb-10 gap-4">
         <div>
-          <h1 className="font-serif text-3xl sm:text-4xl text-foreground">Journal</h1>
-          <p className="text-sm text-muted-foreground mt-1">Everything you've shared, in order.</p>
+          <p className="label-eyebrow text-muted-foreground">Journal</p>
+          <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
+            Everything you've<br/>shared, in order.
+          </h1>
         </div>
         <Button
           variant="ghost"
