@@ -1,26 +1,29 @@
-## Goal
-Get the Oura "Connect" flow working end-to-end and capture enough signal to diagnose the 400 if it fails again.
+## Plan to fix Oura OAuth
 
-## Pre-flight (you do this in the Oura developer portal)
-1. Open https://cloud.ouraring.com/oauth/applications → your app.
-2. Confirm the **Redirect URIs** list contains **exactly**:
+### What I found
+- The app is receiving Oura client ID `d0fdde6e-...` from the backend, but your Oura settings screenshot shows client ID `d0fdde6e-1fe2-43b7-868d-779dddb8091b`. The visible screenshot ID and the app-returned ID are close but not identical, so the configured backend secret may be wrong or stale.
+- Oura’s current authentication docs list `spo2` as the valid scope, not `spo2Daily`. The app currently sends `spo2Daily`, which can cause Oura’s authorization page to fail before redirecting back.
+- The redirect URI must match exactly. Your screenshot includes the published URL `https://purpledrw.lovable.app` but not the published callback `https://purpledrw.lovable.app/oauth/oura/callback`. It also includes the preview callback, which is correct for preview testing.
+
+### Implementation steps
+1. Update the frontend Oura scope string to match Oura’s current docs:
+   - `email personal daily heartrate workout tag session spo2`
+   - Keep `ring_configuration`, `stress`, `heart_health`, and other non-documented OAuth scopes out of the request for now.
+2. Improve the Oura authorize diagnostics temporarily so the console prints:
+   - client ID prefix/suffix
+   - exact redirect URI
+   - exact scope string
+   - full authorization URL
+3. Add safer callback error handling so if Oura redirects back with `error` / `error_description`, the app shows the detailed reason instead of a generic failure.
+4. Verify the deployed Oura backend config returns the exact client ID from your screenshot.
+   - If it still returns the wrong ID after code changes, the Oura client ID secret must be updated in Lovable Cloud to match the screenshot.
+5. Test the preview flow again using this exact redirect URI:
    - `https://id-preview--f43135c6-2e21-4f4c-9c81-6a19bf99587f.lovable.app/oauth/oura/callback`
-   - (and the published URL's callback once we publish)
-   No trailing slash, no typos, scheme must be `https`.
-3. Confirm the **Client ID** in the portal matches the value stored as `OURA_CLIENT_ID` secret.
+6. If preview still fails but the authorize URL is correct, publish and test on the published site after adding this exact Oura redirect URI:
+   - `https://purpledrw.lovable.app/oauth/oura/callback`
 
-## Plan
-1. **Add temporary diagnostics** to `supabase/functions/oura-sync/index.ts` so we log the exact authorize URL it builds (client_id prefix, redirect_uri, scope) before redirecting. This is the single most useful signal — Oura's 400 page does not tell us which parameter it rejected.
-2. **Trim the scope** to a known-safe set (`email personal daily heartrate workout tag session spo2Daily sleep`) and drop `ring_configuration`, which is the most common cause of a hard 400 on apps that weren't explicitly approved for it. If the connect succeeds, we'll add `ring_configuration` back behind a feature check.
-3. **Trigger the flow** in the preview: open Settings → Connect Oura. I'll watch:
-   - `supabase--edge_function_logs` for the built authorize URL.
-   - browser network for the redirect target Oura returns.
-4. **If still 400:** the logs will show whether it's `redirect_uri_mismatch`, `invalid_scope`, or `invalid_client`, and we fix that specific field. If everything looks right in the logs but Oura still 400s, the most likely remaining cause is the preview-environment limitation — we'd then publish the project and re-test on the published URL (per known platform behavior: preview and published can have different OAuth configs).
-5. **On success:** remove the diagnostic logging, confirm `oura_sync` row + token are stored, and you're done.
-
-## Technical notes
-- Only `supabase/functions/oura-sync/index.ts` changes; no schema, no client changes.
-- Diagnostic logs are stripped before we call it done.
-- No new secrets needed — `OURA_CLIENT_ID` and `OURA_CLIENT_SECRET` are already set.
-
-Approve and I'll switch to build mode and add the diagnostics + scope fix.
+### Technical notes
+- No database schema changes are needed.
+- I won’t change the OAuth callback path.
+- I won’t re-add broad Oura scopes until the base connection works.
+- If the backend secret is stale, I’ll ask you to update the Oura client ID/secret securely rather than hardcoding it.
