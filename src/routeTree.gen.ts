@@ -15,6 +15,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
 import { Route as AppVitalsRouteImport } from './routes/_app/vitals'
+import { Route as AppTermsRouteImport } from './routes/_app/terms'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
 import { Route as AppMyHealthRouteImport } from './routes/_app/my-health'
@@ -57,6 +58,11 @@ const AppWelcomeRoute = AppWelcomeRouteImport.update({
 const AppVitalsRoute = AppVitalsRouteImport.update({
   id: '/vitals',
   path: '/vitals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTermsRoute = AppTermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/my-health': typeof AppMyHealthRoute
   '/privacy': typeof AppPrivacyRoute
   '/settings': typeof AppSettingsRoute
+  '/terms': typeof AppTermsRoute
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
   '/journal/new': typeof AppJournalNewRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/my-health': typeof AppMyHealthRoute
   '/privacy': typeof AppPrivacyRoute
   '/settings': typeof AppSettingsRoute
+  '/terms': typeof AppTermsRoute
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
   '/': typeof AppIndexRoute
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   '/_app/my-health': typeof AppMyHealthRoute
   '/_app/privacy': typeof AppPrivacyRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/terms': typeof AppTermsRoute
   '/_app/vitals': typeof AppVitalsRoute
   '/_app/welcome': typeof AppWelcomeRoute
   '/_app/': typeof AppIndexRoute
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
     | '/my-health'
     | '/privacy'
     | '/settings'
+    | '/terms'
     | '/vitals'
     | '/welcome'
     | '/journal/new'
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/my-health'
     | '/privacy'
     | '/settings'
+    | '/terms'
     | '/vitals'
     | '/welcome'
     | '/'
@@ -252,6 +263,7 @@ export interface FileRouteTypes {
     | '/_app/my-health'
     | '/_app/privacy'
     | '/_app/settings'
+    | '/_app/terms'
     | '/_app/vitals'
     | '/_app/welcome'
     | '/_app/'
@@ -313,6 +325,13 @@ declare module '@tanstack/react-router' {
       path: '/vitals'
       fullPath: '/vitals'
       preLoaderRoute: typeof AppVitalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/terms': {
+      id: '/_app/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof AppTermsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings': {
@@ -448,6 +467,7 @@ interface AppRouteChildren {
   AppMyHealthRoute: typeof AppMyHealthRoute
   AppPrivacyRoute: typeof AppPrivacyRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppTermsRoute: typeof AppTermsRoute
   AppVitalsRoute: typeof AppVitalsRoute
   AppWelcomeRoute: typeof AppWelcomeRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -464,6 +484,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMyHealthRoute: AppMyHealthRoute,
   AppPrivacyRoute: AppPrivacyRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppTermsRoute: AppTermsRoute,
   AppVitalsRoute: AppVitalsRoute,
   AppWelcomeRoute: AppWelcomeRoute,
   AppIndexRoute: AppIndexRoute,
@@ -483,3 +504,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
