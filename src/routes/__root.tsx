@@ -77,7 +77,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Purple — a calm health journal" },
+      { title: "Purple - Lets be calm" },
       {
         name: "description",
         content:
@@ -85,7 +85,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { name: "theme-color", content: "#5B2C82" },
       { name: "author", content: "Devyn Walker" },
-      { property: "og:title", content: "Purple — a calm health journal" },
+      { property: "og:title", content: "Purple - Lets be calm" },
       {
         property: "og:description",
         content:
@@ -94,6 +94,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Purple - Lets be calm" },
+      { name: "description", content: "Purple Calm Journal is an AI-powered health journal for managing epilepsy and pattern-driven conditions." },
+      { property: "og:description", content: "Purple Calm Journal is an AI-powered health journal for managing epilepsy and pattern-driven conditions." },
+      { name: "twitter:description", content: "Purple Calm Journal is an AI-powered health journal for managing epilepsy and pattern-driven conditions." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/31c0effc-cee5-466e-980a-6e840d1e73d2/id-preview-e618ecd3--f43135c6-2e21-4f4c-9c81-6a19bf99587f.lovable.app-1779606381200.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/31c0effc-cee5-466e-980a-6e840d1e73d2/id-preview-e618ecd3--f43135c6-2e21-4f4c-9c81-6a19bf99587f.lovable.app-1779606381200.png" },
     ],
     links: [
       {
