@@ -4,9 +4,9 @@ import { BottomNav } from "./bottom-nav";
 
 export function AppShell() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-dvh bg-background text-foreground">
       <SidebarNav />
-      <main className="md:pl-16 lg:pl-60 pb-20 md:pb-0 min-h-screen">
+      <main className="md:pl-16 lg:pl-60 pb-24 md:pb-0 min-h-dvh">
         <Outlet />
       </main>
       <BottomNav />
