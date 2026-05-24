@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
@@ -32,6 +33,11 @@ import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/p
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -127,6 +133,7 @@ const ApiPublicHooksRiskForecasterRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
 }
 export interface FileRoutesByTo {
+  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
@@ -168,6 +176,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/_app/charter': typeof AppCharterRoute
   '/_app/chat': typeof AppChatRoute
@@ -191,6 +200,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/reset-password'
     | '/sign-in'
     | '/charter'
     | '/chat'
@@ -210,6 +220,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/risk-forecaster'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/reset-password'
     | '/sign-in'
     | '/charter'
     | '/chat'
@@ -231,6 +242,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_app'
+    | '/reset-password'
     | '/sign-in'
     | '/_app/charter'
     | '/_app/chat'
@@ -253,6 +265,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SignInRoute: typeof SignInRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   ApiPublicHooksRiskForecasterRoute: typeof ApiPublicHooksRiskForecasterRoute
@@ -265,6 +278,13 @@ declare module '@tanstack/react-router' {
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -455,6 +475,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  ResetPasswordRoute: ResetPasswordRoute,
   SignInRoute: SignInRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   ApiPublicHooksRiskForecasterRoute: ApiPublicHooksRiskForecasterRoute,
