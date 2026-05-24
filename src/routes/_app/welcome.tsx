@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, Bell, Activity, Watch, Check } from "lucide-react";
+import { ArrowRight, Bell, Watch, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { ensureServiceWorker, requestPermission } from "@/lib/med-notifications";
 import { toast } from "sonner";
+import { OuraConnection } from "@/components/connections/oura-connection";
 import dawn from "@/assets/hero-readiness-dawn.jpg";
 import mist from "@/assets/hero-readiness-mist.jpg";
 
@@ -35,6 +36,23 @@ function WelcomePage() {
     }
   }, []);
 
+  // Prefill from existing profile so the user never re-enters what's saved.
+  useEffect(() => {
+    if (!userId) return;
+    supabase
+      .from("profiles")
+      .select("first_name, last_name, emergency_contact_name, emergency_contact_phone")
+      .eq("id", userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) return;
+        if (data.first_name) setFirstName(data.first_name);
+        if (data.last_name) setLastName(data.last_name);
+        if (data.emergency_contact_name) setEmergencyName(data.emergency_contact_name);
+        if (data.emergency_contact_phone) setEmergencyPhone(data.emergency_contact_phone);
+      });
+  }, [userId]);
+
   const finish = async () => {
     if (!userId) {
       navigate({ to: "/" });
@@ -48,6 +66,7 @@ function WelcomePage() {
         last_name: lastName || null,
         emergency_contact_name: emergencyName || null,
         emergency_contact_phone: emergencyPhone || null,
+        onboarded_at: new Date().toISOString(),
       });
       localStorage.setItem("purple-onboarded", "1");
       navigate({ to: "/" });
@@ -59,7 +78,13 @@ function WelcomePage() {
     }
   };
 
-  const skip = () => {
+  const skip = async () => {
+    if (userId) {
+      await supabase.from("profiles").upsert({
+        id: userId,
+        onboarded_at: new Date().toISOString(),
+      });
+    }
     localStorage.setItem("purple-onboarded", "1");
     navigate({ to: "/" });
   };
@@ -69,22 +94,6 @@ function WelcomePage() {
     const perm = await requestPermission();
     setNotifGranted(perm === "granted");
     if (perm === "granted") toast.success("Notifications on");
-  };
-
-  const connectOura = async () => {
-    const { data: cfg } = await supabase.functions.invoke("oura-sync", { body: { action: "config" } });
-    if (!cfg?.client_id || !userId) {
-      toast.error("Oura is not configured");
-      return;
-    }
-    const redirect = window.location.origin + "/oauth/oura/callback";
-    const url = new URL("https://cloud.ouraring.com/oauth/authorize");
-    url.searchParams.set("response_type", "code");
-    url.searchParams.set("client_id", cfg.client_id);
-    url.searchParams.set("redirect_uri", redirect);
-    url.searchParams.set("scope", "personal daily heartrate workout tag session spo2 ring_configuration");
-    url.searchParams.set("state", userId);
-    window.open(url.toString(), "oura-oauth", "width=520,height=720");
   };
 
   return (
@@ -198,13 +207,9 @@ function WelcomePage() {
             All optional. You can do this any time from Settings.
           </p>
           <div className="mt-8 space-y-3">
-            <ConnectCard
-              icon={Activity}
-              title="Oura Ring"
-              body="Sleep, readiness, HRV, body temperature."
-              actionLabel="Connect"
-              onAction={connectOura}
-            />
+            <div className="rounded-xl border border-border bg-card px-4">
+              <OuraConnection />
+            </div>
             <ConnectCard
               icon={Watch}
               title="Whoop"
