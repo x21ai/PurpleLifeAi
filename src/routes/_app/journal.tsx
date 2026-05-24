@@ -1,10 +1,9 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus, RefreshCw, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
-import { CaptureSheet } from "@/components/journal/capture-sheet";
 import { EntryCard } from "@/components/journal/entry-card";
 import type { Database } from "@/integrations/supabase/types";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -18,12 +17,12 @@ export const Route = createFileRoute("/_app/journal")({
 
 function JournalPage() {
   useRouteTheme("light");
+  const navigate = useNavigate();
   const { session } = useAuth();
   const userId = session?.user.id;
   const [entries, setEntries] = React.useState<Entry[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
-  const [captureOpen, setCaptureOpen] = React.useState(false);
 
   const load = React.useCallback(async () => {
     if (!userId) return;
@@ -145,15 +144,13 @@ function JournalPage() {
 
       <button
         type="button"
-        onClick={() => setCaptureOpen(true)}
+        onClick={() => navigate({ to: "/journal/new" })}
         aria-label="New entry"
         className="fixed bottom-24 right-5 md:bottom-8 md:right-8 z-40 inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 py-3.5 shadow-lg shadow-primary/30 hover:bg-primary/90 active:scale-[0.98] transition"
       >
         <Plus className="h-5 w-5" />
         <span className="text-sm font-medium">New entry</span>
       </button>
-
-      <CaptureSheet open={captureOpen} onOpenChange={setCaptureOpen} />
     </div>
   );
 }
