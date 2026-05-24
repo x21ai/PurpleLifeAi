@@ -9,6 +9,8 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { cn } from "@/lib/utils";
 import { MetricNumber } from "@/components/ui-oura/metric-number";
 import { WaveTrend, type WaveSeries } from "@/components/ui-oura/wave-trend";
+import { useRouteTheme } from "@/lib/use-route-theme";
+import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 
 type SeizureRow = {
   id: string;
@@ -27,17 +29,23 @@ export const Route = createFileRoute("/_app/insights")({
 });
 
 function InsightsPage() {
+  useRouteTheme("light");
   return (
-    <div className="mx-auto max-w-3xl px-5 sm:px-8 pt-8 sm:pt-12 pb-24">
-      <h1 className="font-serif text-3xl sm:text-4xl text-foreground">Patterns</h1>
-      <p className="text-sm text-muted-foreground mt-1">
-        Purple quietly notices what changes around hard days.
-      </p>
+    <div className="mx-auto max-w-4xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-32">
+      <p className="label-eyebrow text-muted-foreground">Patterns</p>
+      <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
+        What your body<br/>has been saying.
+      </h1>
+      <div className="mt-8 max-w-[600px]">
+        <NarrativeBlock>
+          Purple watches quietly. When something shifts around a hard day, it remembers — so you don't have to.
+        </NarrativeBlock>
+      </div>
 
       <TrendsHeader />
 
-      <Tabs defaultValue="seizures" className="mt-10">
-        <TabsList>
+      <Tabs defaultValue="seizures" className="mt-14">
+        <TabsList className="h-11">
           <TabsTrigger value="seizures">Seizures</TabsTrigger>
           <TabsTrigger value="trends">Trends</TabsTrigger>
         </TabsList>
@@ -99,11 +107,11 @@ function TrendsHeader() {
   };
 
   return (
-    <section className="mt-8 grid grid-cols-3 gap-x-6 gap-y-2 border-y border-border py-6">
-      <MetricNumber size="md" value={fmtSleep(sleepMin)} label="Avg sleep" />
-      <MetricNumber size="md" value={hrv ? Math.round(hrv) : "—"} label="HRV ms" />
-      <MetricNumber size="md" value={rhr ? Math.round(rhr) : "—"} label="Rest BPM" />
-      <p className="col-span-3 mt-2 text-[11px] text-muted-foreground">
+    <section className="mt-14 grid grid-cols-3 gap-x-6 sm:gap-x-10 gap-y-2 border-y border-border py-8 sm:py-10">
+      <MetricNumber size="lg" value={fmtSleep(sleepMin)} label="Avg sleep" />
+      <MetricNumber size="lg" value={hrv ? Math.round(hrv) : "—"} label="HRV ms" />
+      <MetricNumber size="lg" value={rhr ? Math.round(rhr) : "—"} label="Rest BPM" />
+      <p className="col-span-3 mt-3 label-eyebrow text-muted-foreground">
         Last 14 nights · from your connected ring
       </p>
     </section>

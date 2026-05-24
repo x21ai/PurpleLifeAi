@@ -5,6 +5,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { OuraConnection } from "@/components/connections/oura-connection";
 import { DataSection } from "@/components/settings/data-section";
 import { AboutSection } from "@/components/settings/about-section";
+import { useRouteTheme } from "@/lib/use-route-theme";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "Settings — Purple" }] }),
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/_app/settings")({
 });
 
 function SettingsPage() {
+  useRouteTheme("light");
   const { session, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -21,12 +23,13 @@ function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-10 sm:pt-16 pb-12">
-      <h1 className="font-serif text-4xl sm:text-5xl leading-tight text-foreground">
-        Settings
+    <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
+      <p className="label-eyebrow text-muted-foreground">Settings</p>
+      <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
+        All in your<br/>control.
       </h1>
-      <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-xl">
-        Account, privacy, integrations, and how Purple talks to you. All in your control.
+      <p className="mt-6 body-serif text-foreground/75 max-w-[600px]">
+        Account, privacy, integrations, and how Purple talks to you.
       </p>
 
       <section className="mt-10 rounded-2xl border border-border bg-card p-5 sm:p-6">
