@@ -1,29 +1,61 @@
-## Plan to fix Oura OAuth
+## Goal
 
-### What I found
-- The app is receiving Oura client ID `d0fdde6e-...` from the backend, but your Oura settings screenshot shows client ID `d0fdde6e-1fe2-43b7-868d-779dddb8091b`. The visible screenshot ID and the app-returned ID are close but not identical, so the configured backend secret may be wrong or stale.
-- Oura’s current authentication docs list `spo2` as the valid scope, not `spo2Daily`. The app currently sends `spo2Daily`, which can cause Oura’s authorization page to fail before redirecting back.
-- The redirect URI must match exactly. Your screenshot includes the published URL `https://purpledrw.lovable.app` but not the published callback `https://purpledrw.lovable.app/oauth/oura/callback`. It also includes the preview callback, which is correct for preview testing.
+Oura OAuth works. Now polish the connected state so it clearly shows what was imported, lets the user pick how often to sync, and runs that sync automatically server-side.
 
-### Implementation steps
-1. Update the frontend Oura scope string to match Oura’s current docs:
-   - `email personal daily heartrate workout tag session spo2`
-   - Keep `ring_configuration`, `stress`, `heart_health`, and other non-documented OAuth scopes out of the request for now.
-2. Improve the Oura authorize diagnostics temporarily so the console prints:
-   - client ID prefix/suffix
-   - exact redirect URI
-   - exact scope string
-   - full authorization URL
-3. Add safer callback error handling so if Oura redirects back with `error` / `error_description`, the app shows the detailed reason instead of a generic failure.
-4. Verify the deployed Oura backend config returns the exact client ID from your screenshot.
-   - If it still returns the wrong ID after code changes, the Oura client ID secret must be updated in Lovable Cloud to match the screenshot.
-5. Test the preview flow again using this exact redirect URI:
-   - `https://id-preview--f43135c6-2e21-4f4c-9c81-6a19bf99587f.lovable.app/oauth/oura/callback`
-6. If preview still fails but the authorize URL is correct, publish and test on the published site after adding this exact Oura redirect URI:
-   - `https://purpledrw.lovable.app/oauth/oura/callback`
+## Default sync frequency
 
-### Technical notes
-- No database schema changes are needed.
-- I won’t change the OAuth callback path.
-- I won’t re-add broad Oura scopes until the base connection works.
-- If the backend secret is stale, I’ll ask you to update the Oura client ID/secret securely rather than hardcoding it.
+**Every 12 hours** — confirmed. User can change to 1h / 6h / 12h / 24h / manual.
+
+## Changes
+
+### 1. Connected card (Settings + Welcome) — compact summary
+
+Replace the current `Connected · last sync …` line with a small summary fetched from the DB:
+
+- **Status row**: "Connected" + last sync time (relative: "5 min ago", "2h ago")
+- **Imported counts** (last 90 days from `biometrics` where `source='oura'`):
+  - Sleep nights: N
+  - Readiness days: N
+  - Activity days: N
+- **Sync frequency dropdown**: Every hour · Every 6 hours · **Every 12 hours** (default) · Every 24 hours · Manual only
+- Buttons: `Sync now` · `Disconnect`
+
+Reuse the same component on both Settings and Welcome onboarding.
+
+### 2. Persist user preference
+
+New column `oura_tokens.sync_interval_hours` (smallint, default 12, allowed 0/1/6/12/24 where 0 = manual). Save via simple update from the dropdown.
+
+### 3. Automatic sync (server-side)
+
+Use `pg_cron` + `pg_net` to call the existing `oura-sync` edge function with `{ action: "incremental", all: true }` **every hour**. Inside the function, filter users by:
+
+```
+now() - last_sync >= sync_interval_hours
+```
+
+So one hourly cron job services 1h / 6h / 12h / 24h preferences without multiple schedules. Manual (0) is skipped.
+
+### 4. Live progress after connect
+
+Right now the popup says "Connected. Syncing your last 90 days…" then closes. The 90-day backfill happens inside `exchange` and can take ~15s. Change `oura-connection.tsx`:
+
+- After receiving `oura-connected` postMessage, set a `backfilling` state
+- Poll `biometrics` count every 2s for 30s, show "Imported N of ~90 days…"
+- When count stabilizes or 30s elapses, switch to the normal summary
+
+## Files
+
+- `src/components/connections/oura-connection.tsx` — summary UI, dropdown, polling
+- `src/routes/_app/welcome.tsx` — uses the same component (already does)
+- `supabase/functions/oura-sync/index.ts` — honor `sync_interval_hours` in the `all: true` branch
+- Migration: add `sync_interval_hours` column
+- Cron: schedule hourly `oura-sync` call
+
+## Out of scope
+
+- Whoop (still "Coming soon")
+- Per-metric sync toggles
+- Push notifications when sync completes
+
+Ready to implement on approval.
