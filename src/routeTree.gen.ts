@@ -13,8 +13,10 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
+import { Route as AppVitalsRouteImport } from './routes/_app/vitals'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
+import { Route as AppMyHealthRouteImport } from './routes/_app/my-health'
 import { Route as AppMedsRouteImport } from './routes/_app/meds'
 import { Route as AppJournalRouteImport } from './routes/_app/journal'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
@@ -45,6 +47,11 @@ const AppWelcomeRoute = AppWelcomeRouteImport.update({
   path: '/welcome',
   getParentRoute: () => AppRoute,
 } as any)
+const AppVitalsRoute = AppVitalsRouteImport.update({
+  id: '/vitals',
+  path: '/vitals',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -53,6 +60,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppPrivacyRoute = AppPrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyHealthRoute = AppMyHealthRouteImport.update({
+  id: '/my-health',
+  path: '/my-health',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMedsRoute = AppMedsRouteImport.update({
@@ -115,8 +127,10 @@ export interface FileRoutesByFullPath {
   '/insights': typeof AppInsightsRoute
   '/journal': typeof AppJournalRoute
   '/meds': typeof AppMedsRouteWithChildren
+  '/my-health': typeof AppMyHealthRoute
   '/privacy': typeof AppPrivacyRoute
   '/settings': typeof AppSettingsRoute
+  '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
@@ -131,8 +145,10 @@ export interface FileRoutesByTo {
   '/insights': typeof AppInsightsRoute
   '/journal': typeof AppJournalRoute
   '/meds': typeof AppMedsRouteWithChildren
+  '/my-health': typeof AppMyHealthRoute
   '/privacy': typeof AppPrivacyRoute
   '/settings': typeof AppSettingsRoute
+  '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
   '/': typeof AppIndexRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
@@ -150,8 +166,10 @@ export interface FileRoutesById {
   '/_app/insights': typeof AppInsightsRoute
   '/_app/journal': typeof AppJournalRoute
   '/_app/meds': typeof AppMedsRouteWithChildren
+  '/_app/my-health': typeof AppMyHealthRoute
   '/_app/privacy': typeof AppPrivacyRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/vitals': typeof AppVitalsRoute
   '/_app/welcome': typeof AppWelcomeRoute
   '/_app/': typeof AppIndexRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
@@ -170,8 +188,10 @@ export interface FileRouteTypes {
     | '/insights'
     | '/journal'
     | '/meds'
+    | '/my-health'
     | '/privacy'
     | '/settings'
+    | '/vitals'
     | '/welcome'
     | '/meds/$medId'
     | '/seizures/new'
@@ -186,8 +206,10 @@ export interface FileRouteTypes {
     | '/insights'
     | '/journal'
     | '/meds'
+    | '/my-health'
     | '/privacy'
     | '/settings'
+    | '/vitals'
     | '/welcome'
     | '/'
     | '/meds/$medId'
@@ -204,8 +226,10 @@ export interface FileRouteTypes {
     | '/_app/insights'
     | '/_app/journal'
     | '/_app/meds'
+    | '/_app/my-health'
     | '/_app/privacy'
     | '/_app/settings'
+    | '/_app/vitals'
     | '/_app/welcome'
     | '/_app/'
     | '/_app/meds/$medId'
@@ -252,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWelcomeRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/vitals': {
+      id: '/_app/vitals'
+      path: '/vitals'
+      fullPath: '/vitals'
+      preLoaderRoute: typeof AppVitalsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -264,6 +295,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof AppPrivacyRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-health': {
+      id: '/_app/my-health'
+      path: '/my-health'
+      fullPath: '/my-health'
+      preLoaderRoute: typeof AppMyHealthRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/meds': {
@@ -356,8 +394,10 @@ interface AppRouteChildren {
   AppInsightsRoute: typeof AppInsightsRoute
   AppJournalRoute: typeof AppJournalRoute
   AppMedsRoute: typeof AppMedsRouteWithChildren
+  AppMyHealthRoute: typeof AppMyHealthRoute
   AppPrivacyRoute: typeof AppPrivacyRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppVitalsRoute: typeof AppVitalsRoute
   AppWelcomeRoute: typeof AppWelcomeRoute
   AppIndexRoute: typeof AppIndexRoute
   AppSeizuresNewRoute: typeof AppSeizuresNewRoute
@@ -370,8 +410,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppInsightsRoute: AppInsightsRoute,
   AppJournalRoute: AppJournalRoute,
   AppMedsRoute: AppMedsRouteWithChildren,
+  AppMyHealthRoute: AppMyHealthRoute,
   AppPrivacyRoute: AppPrivacyRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppVitalsRoute: AppVitalsRoute,
   AppWelcomeRoute: AppWelcomeRoute,
   AppIndexRoute: AppIndexRoute,
   AppSeizuresNewRoute: AppSeizuresNewRoute,
