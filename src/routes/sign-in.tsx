@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import heroImage from "@/assets/sign-in-hero.jpg";
 
 export const Route = createFileRoute("/sign-in")({
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/sign-in")({
       { title: "Sign in — Purple" },
       {
         name: "description",
-        content: "Sign in to Purple with a magic link. A quiet intelligence for your health.",
+        content: "Sign in or create your Purple account. A quiet intelligence for your health.",
       },
     ],
   }),
@@ -26,27 +27,47 @@ export const Route = createFileRoute("/sign-in")({
 });
 
 function SignInPage() {
+  const [mode, setMode] = useState<"signin" | "register">("signin");
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [password, setPassword] = useState("");
+  const [status, setStatus] = useState<"idle" | "submitting" | "verify-sent" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
-    setStatus("sending");
+    if (!email.trim() || !password) return;
+    setStatus("submitting");
     setErrorMsg(null);
-    const { error } = await supabase.auth.signInWithOtp({
+    if (mode === "signin") {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (error) {
+        setErrorMsg(error.message);
+        setStatus("error");
+        return;
+      }
+      setStatus("idle");
+      // Auth listener will redirect via _app guard on next nav.
+      window.location.assign("/");
+      return;
+    }
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
-      options: {
-        emailRedirectTo: window.location.origin + "/",
-      },
+      password,
+      options: { emailRedirectTo: window.location.origin + "/" },
     });
     if (error) {
       setErrorMsg(error.message);
       setStatus("error");
       return;
     }
-    setStatus("sent");
+    if (data.session) {
+      window.location.assign("/");
+      return;
+    }
+    setStatus("verify-sent");
   };
 
   return (
@@ -88,43 +109,70 @@ function SignInPage() {
               <p>Purple listens, remembers, and quietly notices the patterns over time.</p>
             </div>
 
-            {status === "sent" ? (
+            {status === "verify-sent" ? (
               <div className="mt-10 rounded-2xl border border-border bg-secondary/60 p-6">
                 <p className="label-eyebrow">Check your inbox</p>
                 <p className="mt-3 font-serif text-2xl text-secondary-foreground leading-snug">
-                  The link in that email will sign you in.
+                  Confirm your email to finish creating your account.
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="mt-10 space-y-4">
-                <label htmlFor="email" className="label-eyebrow block">
-                  Email address
-                </label>
-                <Input
-                  id="email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  inputMode="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-14 text-lg font-serif rounded-xl"
-                  disabled={status === "sending"}
-                />
-                <Button
-                  type="submit"
-                  className="w-full h-14 text-base rounded-xl"
-                  disabled={status === "sending"}
-                >
-                  {status === "sending" ? "Sending\u2026" : "Send me a sign-in link"}
-                </Button>
-                {errorMsg && (
-                  <p className="text-sm text-destructive" role="alert">
-                    {errorMsg}
-                  </p>
-                )}
-              </form>
+              <div className="mt-10">
+                <Tabs value={mode} onValueChange={(v) => { setMode(v as "signin" | "register"); setErrorMsg(null); }}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="signin">Sign in</TabsTrigger>
+                    <TabsTrigger value="register">Create account</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value={mode} forceMount>
+                    <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                      <label htmlFor="email" className="label-eyebrow block">
+                        Email address
+                      </label>
+                      <Input
+                        id="email"
+                        type="email"
+                        required
+                        autoComplete="email"
+                        inputMode="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="h-14 text-lg font-serif rounded-xl"
+                        disabled={status === "submitting"}
+                      />
+                      <label htmlFor="password" className="label-eyebrow block pt-1">
+                        Password
+                      </label>
+                      <Input
+                        id="password"
+                        type="password"
+                        required
+                        minLength={8}
+                        autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                        placeholder={mode === "register" ? "At least 8 characters" : "Your password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="h-14 text-lg font-serif rounded-xl"
+                        disabled={status === "submitting"}
+                      />
+                      <Button
+                        type="submit"
+                        className="w-full h-14 text-base rounded-xl"
+                        disabled={status === "submitting"}
+                      >
+                        {status === "submitting"
+                          ? mode === "signin" ? "Signing in\u2026" : "Creating account\u2026"
+                          : mode === "signin" ? "Sign in" : "Create account"}
+                      </Button>
+                      {errorMsg && (
+                        <p className="text-sm text-destructive" role="alert">
+                          {errorMsg}
+                        </p>
+                      )}
+                    </form>
+                  </TabsContent>
+                </Tabs>
+              </div>
             )}
 
             <p className="mt-10 text-xs text-muted-foreground/80">
