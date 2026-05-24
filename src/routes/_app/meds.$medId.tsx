@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
+import { useRouteTheme } from "@/lib/use-route-theme";
 
 type Med = {
   id: string;
@@ -53,6 +54,7 @@ function formatTime(t: string): string {
 }
 
 function MedDetail() {
+  useRouteTheme("light");
   const { medId } = Route.useParams();
   const { session } = useAuth();
   const userId = session?.user.id;
@@ -95,13 +97,15 @@ function MedDetail() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-8 sm:pt-12 pb-12">
+    <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-10 sm:pt-16 lg:pt-20 pb-24">
       <Link to="/meds" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground gap-1">
         <ArrowLeft className="h-4 w-4" /> Medications
       </Link>
 
-      <h1 className="mt-4 font-serif text-3xl sm:text-4xl text-foreground">{med.name}</h1>
-      {med.dosage && <p className="mt-1 text-base text-muted-foreground">{med.dosage}</p>}
+      <h1 className="mt-6 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
+        {med.name}
+      </h1>
+      {med.dosage && <p className="mt-3 font-serif text-xl text-foreground/70">{med.dosage}</p>}
       {med.prescriber && <p className="mt-1 text-sm text-muted-foreground">Prescribed by {med.prescriber}</p>}
 
       {!med.is_rescue && (

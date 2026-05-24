@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useRouteTheme } from "@/lib/use-route-theme";
 
 export const Route = createFileRoute("/_app/seizures/new")({
   head: () => ({ meta: [{ title: "Log seizure — Purple" }] }),
@@ -50,6 +51,7 @@ function extOf(file: File): string {
 }
 
 function LogSeizurePage() {
+  useRouteTheme("dark");
   const navigate = useNavigate();
   const { session } = useAuth();
   const userId = session?.user.id;
@@ -236,10 +238,15 @@ function LogSeizurePage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-8 sm:pt-12 pb-32">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="font-serif text-3xl sm:text-4xl text-foreground">Log a seizure</h1>
-        <Button variant="ghost" size="icon" onClick={goBack} aria-label="Close">
+    <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-10 sm:pt-16 lg:pt-20 pb-32">
+      <div className="flex items-start justify-between mb-10 gap-4">
+        <div>
+          <p className="label-eyebrow text-muted-foreground">Capture</p>
+          <h1 className="mt-3 font-serif text-[40px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
+            Log a seizure.
+          </h1>
+        </div>
+        <Button variant="ghost" size="icon" onClick={goBack} aria-label="Close" className="mt-2 shrink-0">
           <X className="h-5 w-5" />
         </Button>
       </div>

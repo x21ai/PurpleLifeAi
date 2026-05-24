@@ -5,6 +5,7 @@ import { ChevronLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { ScoreArc } from "@/components/ui-oura/score-arc";
+import { useRouteTheme } from "@/lib/use-route-theme";
 
 type Factor = {
   key: string;
@@ -47,6 +48,7 @@ function bandTone(band: string): { ring: "cream" | "alert"; chip: string; label:
 }
 
 function RiskDetailPage() {
+  useRouteTheme("dark");
   const { session } = useAuth();
   const userId = session?.user.id;
   const [forecast, setForecast] = useState<Forecast | null>(null);
@@ -71,14 +73,14 @@ function RiskDetailPage() {
   }, [userId]);
 
   return (
-    <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-6 pb-16">
+    <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-8 sm:pt-12 pb-24">
       <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ChevronLeft className="h-4 w-4" />
         Back to today
       </Link>
 
-      <p className="label-eyebrow mt-8">Today&rsquo;s reading</p>
-      <h1 className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight mt-4 text-foreground">
+      <p className="label-eyebrow mt-10 text-muted-foreground">Today&rsquo;s reading</p>
+      <h1 className="font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] mt-3 text-foreground">
         Why today reads the way it does.
       </h1>
 
