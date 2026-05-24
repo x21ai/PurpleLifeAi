@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import heroImage from "@/assets/sign-in-hero.jpg";
+import { SiteFooter } from "@/components/layout/site-footer";
 
 export const Route = createFileRoute("/sign-in")({
   beforeLoad: async () => {
@@ -93,9 +94,9 @@ function SignInPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="lg:grid lg:grid-cols-[1.1fr_1fr] xl:grid-cols-[1.25fr_1fr] min-h-screen">
+      <div className="lg:grid lg:grid-cols-[1.1fr_1fr] xl:grid-cols-[1.25fr_1fr]">
         {/* Hero — full bleed image, top on mobile, left on desktop */}
-        <div className="relative h-[42vh] sm:h-[52vh] lg:h-screen overflow-hidden">
+        <div className="relative h-[42vh] sm:h-[52vh] lg:h-screen lg:sticky lg:top-0 overflow-hidden">
           <img
             src={heroImage}
             alt=""
@@ -118,7 +119,7 @@ function SignInPage() {
         </div>
 
         {/* Form panel */}
-        <main className="flex items-center justify-center px-6 sm:px-10 lg:px-14 py-12 lg:py-16">
+        <main className="flex items-center justify-center px-6 sm:px-10 lg:px-14 py-12 lg:py-16 min-h-screen">
           <div className="w-full max-w-md">
             <p className="label-eyebrow">Sign in</p>
             <h1 className="mt-5 font-serif text-5xl sm:text-6xl lg:text-7xl leading-[1.02] tracking-tight text-foreground">
@@ -228,6 +229,7 @@ function SignInPage() {
           </div>
         </main>
       </div>
+      <SiteFooter variant="marketing" />
     </div>
   );
 }
