@@ -22,13 +22,13 @@ export function ScoreTile({
       onClick={onClick}
       className={cn(
         "flex flex-col items-center justify-center text-center transition outline-none",
-        active ? "scale-[1.4] py-6" : "opacity-70 hover:opacity-100 py-3",
+        active ? "scale-[1.3] py-6" : "opacity-60 hover:opacity-100 py-3",
       )}
     >
       <span
         className={cn(
           "numeric-display text-foreground",
-          active ? "text-[80px] sm:text-[96px]" : "text-[40px] sm:text-[48px]",
+          active ? "text-[72px] sm:text-[88px]" : "text-[40px] sm:text-[48px]",
         )}
       >
         {typeof value === "number" ? <NumberCountUp value={value} /> : value}
