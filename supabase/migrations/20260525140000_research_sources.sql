@@ -15,8 +15,9 @@ create table if not exists public.research_sources (
 
 create unique index if not exists research_sources_url_idx on public.research_sources (url);
 
+-- HNSW works with small seed sizes; ivfflat needs substantially more rows than lists.
 create index if not exists research_sources_embedding_idx on public.research_sources
-  using ivfflat (embedding vector_cosine_ops) with (lists = 50);
+  using hnsw (embedding vector_cosine_ops);
 
 alter table public.research_sources enable row level security;
 
