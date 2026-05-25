@@ -12,7 +12,13 @@ type Dose = {
   id: string;
   scheduled_at: string;
   status: string;
-  medication: { id: string; name: string; dosage: string | null } | null;
+  medication: {
+    id: string;
+    name: string;
+    dosage: string | null;
+    kind: string;
+    is_rescue: boolean;
+  } | null;
 };
 
 function statusPillClass(status: string) {
@@ -28,6 +34,11 @@ function statusPillClass(status: string) {
   }
 }
 
+function isScheduledMed(d: Dose): boolean {
+  if (!d.medication) return false;
+  return d.medication.kind !== "rescue" && !d.medication.is_rescue;
+}
+
 export function TodayDoses() {
   const { session } = useAuth();
   const userId = session?.user.id;
@@ -39,7 +50,7 @@ export function TodayDoses() {
     const end = new Date(); end.setHours(23, 59, 59, 999);
     const { data, error } = await supabase
       .from("medication_doses")
-      .select("id, scheduled_at, status, medication:medications(id, name, dosage)")
+      .select("id, scheduled_at, status, medication:medications(id, name, dosage, kind, is_rescue)")
       .gte("scheduled_at", start.toISOString())
       .lte("scheduled_at", end.toISOString())
       .order("scheduled_at", { ascending: true });
@@ -47,7 +58,8 @@ export function TodayDoses() {
       console.error(error);
       return;
     }
-    setDoses((data as unknown as Dose[]) ?? []);
+    const rows = ((data as unknown as Dose[]) ?? []).filter(isScheduledMed);
+    setDoses(rows);
   }, [userId]);
 
   React.useEffect(() => { void load(); }, [load]);

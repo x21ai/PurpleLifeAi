@@ -301,57 +301,122 @@ export type Database = {
           },
         ]
       }
+      medication_side_effects: {
+        Row: {
+          id: string
+          medication_id: string
+          noted_at: string
+          severity: number | null
+          side_effect: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          medication_id: string
+          noted_at?: string
+          severity?: number | null
+          side_effect: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          medication_id?: string
+          noted_at?: string
+          severity?: number | null
+          side_effect?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_side_effects_medication_id_fkey"
+            columns: ["medication_id"]
+            isOneToOne: false
+            referencedRelation: "medications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medications: {
         Row: {
           active: boolean
           created_at: string
           dosage: string | null
+          dosage_amount: number | null
+          dosage_form: string | null
+          dosage_unit: string | null
           end_date: string | null
           id: string
           is_rescue: boolean
+          kind: string
           name: string
           notes: string | null
+          pharmacy_name: string | null
           pills_remaining: number | null
           prescriber: string | null
+          prescriber_name: string | null
+          prescription_number: string | null
           refill_date: string | null
+          refill_threshold: number | null
+          side_effects_tracked: string[] | null
           start_date: string | null
           times_of_day: string[]
           updated_at: string
           user_id: string
+          with_food: boolean | null
         }
         Insert: {
           active?: boolean
           created_at?: string
           dosage?: string | null
+          dosage_amount?: number | null
+          dosage_form?: string | null
+          dosage_unit?: string | null
           end_date?: string | null
           id?: string
           is_rescue?: boolean
+          kind?: string
           name: string
           notes?: string | null
+          pharmacy_name?: string | null
           pills_remaining?: number | null
           prescriber?: string | null
+          prescriber_name?: string | null
+          prescription_number?: string | null
           refill_date?: string | null
+          refill_threshold?: number | null
+          side_effects_tracked?: string[] | null
           start_date?: string | null
           times_of_day?: string[]
           updated_at?: string
           user_id: string
+          with_food?: boolean | null
         }
         Update: {
           active?: boolean
           created_at?: string
           dosage?: string | null
+          dosage_amount?: number | null
+          dosage_form?: string | null
+          dosage_unit?: string | null
           end_date?: string | null
           id?: string
           is_rescue?: boolean
+          kind?: string
           name?: string
           notes?: string | null
+          pharmacy_name?: string | null
           pills_remaining?: number | null
           prescriber?: string | null
+          prescriber_name?: string | null
+          prescription_number?: string | null
           refill_date?: string | null
+          refill_threshold?: number | null
+          side_effects_tracked?: string[] | null
           start_date?: string | null
           times_of_day?: string[]
           updated_at?: string
           user_id?: string
+          with_food?: boolean | null
         }
         Relationships: []
       }
