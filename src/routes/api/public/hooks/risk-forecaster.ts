@@ -4,9 +4,11 @@ import { createFileRoute } from "@tanstack/react-router";
 // risk-forecaster edge function with service-role context. No body params
 // are required, but if `user_id` is provided we run for just that user.
 export const Route = createFileRoute("/api/public/hooks/risk-forecaster")({
+  // @ts-expect-error -- `server` is supported at runtime by start-server-core
+  // but not yet in the @tanstack/react-router 1.168 route option types.
   server: {
     handlers: {
-      POST: async ({ request }) => {
+      POST: async ({ request }: { request: Request }) => {
         const apikey = request.headers.get("apikey");
         const expected =
           process.env.SUPABASE_PUBLISHABLE_KEY ||
