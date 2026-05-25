@@ -58,6 +58,7 @@ function SignInPage() {
     "idle" | "submitting" | "verify-sent" | "reset-sent" | "error"
   >("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const navigate = Route.useNavigate();
 
   useEffect(() => {
     const msg = oauthErrorMessage();
@@ -91,7 +92,7 @@ function SignInPage() {
     setStatus("submitting");
     setErrorMsg(null);
     if (mode === "signin") {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
@@ -100,9 +101,14 @@ function SignInPage() {
         setStatus("error");
         return;
       }
+      // Ensure the session is fully written to storage before we navigate,
+      // otherwise the _app guard can read a stale null session and bounce
+      // back to /sign-in, causing a perceived loop.
+      if (!signInData.session) {
+        await supabase.auth.getSession();
+      }
       setStatus("idle");
-      // Auth listener will redirect via _app guard on next nav.
-      window.location.assign("/");
+      await navigate({ to: "/" });
       return;
     }
     const { data, error } = await supabase.auth.signUp({
@@ -116,7 +122,7 @@ function SignInPage() {
       return;
     }
     if (data.session) {
-      window.location.assign("/");
+      await navigate({ to: "/" });
       return;
     }
     setStatus("verify-sent");
