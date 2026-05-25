@@ -70,6 +70,16 @@
     "vite-tsconfig-paths": "^6.0.2",
     "zod": "^3.24.2"
   },
+  "overrides": {
+    "@tanstack/router-core": "1.168.11",
+    "@tanstack/start-server-core": "1.168.11",
+    "@tanstack/history": "1.168.11"
+  },
+  "resolutions": {
+    "@tanstack/router-core": "1.168.11",
+    "@tanstack/start-server-core": "1.168.11",
+    "@tanstack/history": "1.168.11"
+  },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "^1.7.0",
