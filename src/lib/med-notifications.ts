@@ -1,15 +1,26 @@
-// Browser notification scheduler for medication reminders.
-// Daily times are stored as "HH:MM" strings; we schedule the next occurrence
-// for each time and re-schedule after each fires.
+// Service-worker-backed medication reminders.
+// The SW stores upcoming doses in IndexedDB and checks every 60s.
+
+import { supabase } from "@/integrations/supabase/client";
+
+export type ScheduledDose = {
+  doseId: string;
+  medicationId: string;
+  medName: string;
+  dosage: string | null;
+  scheduledAt: string;
+};
 
 type ScheduledMed = {
   id: string;
   name: string;
   dosage: string | null;
   times_of_day: string[];
+  kind?: string;
+  is_rescue?: boolean;
 };
 
-const timers = new Map<string, number>();
+const DISMISSED_REMINDER_BANNER_KEY = "purple-med-reminder-banner-dismissed";
 
 export function notificationsSupported(): boolean {
   return (
@@ -17,6 +28,24 @@ export function notificationsSupported(): boolean {
     "Notification" in window &&
     "serviceWorker" in navigator
   );
+}
+
+export function isStandalonePwa(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia?.("(display-mode: standalone)").matches ||
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
+
+export function shouldShowReminderBanner(): boolean {
+  if (typeof window === "undefined") return false;
+  if (isStandalonePwa()) return false;
+  return !localStorage.getItem(DISMISSED_REMINDER_BANNER_KEY);
+}
+
+export function dismissReminderBanner(): void {
+  localStorage.setItem(DISMISSED_REMINDER_BANNER_KEY, "1");
 }
 
 export async function ensureServiceWorker(): Promise<ServiceWorkerRegistration | null> {
@@ -39,57 +68,149 @@ export async function requestPermission(): Promise<NotificationPermission> {
   return await Notification.requestPermission();
 }
 
-function nextOccurrence(timeOfDay: string): Date {
+function isRescueMed(m: ScheduledMed): boolean {
+  return m.kind === "rescue" || m.is_rescue === true;
+}
+
+function formatDosageLabel(dosage: string | null): string | null {
+  if (!dosage?.trim()) return null;
+  return dosage.trim();
+}
+
+function nextOccurrences(timeOfDay: string, daysAhead = 3): Date[] {
   const [hStr, mStr] = timeOfDay.split(":");
   const h = parseInt(hStr ?? "0", 10);
   const m = parseInt(mStr ?? "0", 10);
   const now = new Date();
-  const target = new Date(now);
-  target.setHours(h, m, 0, 0);
-  if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
-  return target;
-}
+  const results: Date[] = [];
 
-function clearAll() {
-  for (const id of timers.values()) window.clearTimeout(id);
-  timers.clear();
-}
-
-async function fire(med: ScheduledMed, time: string) {
-  const reg = await ensureServiceWorker();
-  if (!reg) return;
-  const dosage = med.dosage ? `${med.dosage}. ` : "";
-  reg.active?.postMessage({
-    type: "show-med-notification",
-    title: `Time for ${med.name}`,
-    body: `${dosage}Tap when you have taken it.`,
-    tag: `med-${med.id}-${time}`,
-  });
-}
-
-function scheduleOne(med: ScheduledMed, time: string) {
-  const key = `${med.id}::${time}`;
-  const existing = timers.get(key);
-  if (existing) window.clearTimeout(existing);
-  const when = nextOccurrence(time);
-  const delay = Math.max(1000, when.getTime() - Date.now());
-  // setTimeout max ~24.8 days, our delays are <= 24h.
-  const handle = window.setTimeout(async () => {
-    await fire(med, time);
-    // Re-schedule for tomorrow.
-    scheduleOne(med, time);
-  }, delay);
-  timers.set(key, handle);
-}
-
-export async function scheduleMedications(meds: ScheduledMed[]) {
-  if (!notificationsSupported()) return;
-  if (Notification.permission !== "granted") return;
-  await ensureServiceWorker();
-  clearAll();
-  for (const m of meds) {
-    for (const t of m.times_of_day ?? []) {
-      if (/^\d{1,2}:\d{2}$/.test(t)) scheduleOne(m, t);
+  for (let day = 0; day <= daysAhead; day++) {
+    const target = new Date(now);
+    target.setDate(target.getDate() + day);
+    target.setHours(h, m, 0, 0);
+    if (target.getTime() > now.getTime()) {
+      results.push(target);
     }
   }
+  return results;
+}
+
+async function buildUpcomingDoses(meds: ScheduledMed[]): Promise<ScheduledDose[]> {
+  const scheduled = meds.filter((m) => !isRescueMed(m) && (m.times_of_day?.length ?? 0) > 0);
+  if (scheduled.length === 0) return [];
+
+  const now = new Date();
+  const horizon = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+  const { data: pendingDoses } = await supabase
+    .from("medication_doses")
+    .select("id, medication_id, scheduled_at, status")
+    .eq("status", "pending")
+    .gte("scheduled_at", now.toISOString())
+    .lte("scheduled_at", horizon.toISOString());
+
+  function sameMinute(iso: string, when: Date): boolean {
+    const d = new Date(iso);
+    return (
+      d.getFullYear() === when.getFullYear() &&
+      d.getMonth() === when.getMonth() &&
+      d.getDate() === when.getDate() &&
+      d.getHours() === when.getHours() &&
+      d.getMinutes() === when.getMinutes()
+    );
+  }
+
+  const upcoming: ScheduledDose[] = [];
+  const usedDoseIds = new Set<string>();
+
+  for (const med of scheduled) {
+    const dosage = formatDosageLabel(med.dosage);
+    for (const time of med.times_of_day ?? []) {
+      if (!/^\d{1,2}:\d{2}$/.test(time)) continue;
+      for (const when of nextOccurrences(time, 3)) {
+        const match = (pendingDoses ?? []).find(
+          (d) => d.medication_id === med.id && sameMinute(d.scheduled_at, when),
+        );
+        if (!match || usedDoseIds.has(match.id)) continue;
+        usedDoseIds.add(match.id);
+        upcoming.push({
+          doseId: match.id,
+          medicationId: med.id,
+          medName: med.name,
+          dosage,
+          scheduledAt: match.scheduled_at,
+        });
+      }
+    }
+  }
+
+  for (const d of pendingDoses ?? []) {
+    if (usedDoseIds.has(d.id)) continue;
+    const med = scheduled.find((m) => m.id === d.medication_id);
+    if (!med) continue;
+    upcoming.push({
+      doseId: d.id,
+      medicationId: med.id,
+      medName: med.name,
+      dosage: formatDosageLabel(med.dosage),
+      scheduledAt: d.scheduled_at,
+    });
+  }
+
+  return upcoming.sort(
+    (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+  );
+}
+
+async function postScheduleToSw(doses: ScheduledDose[], authToken: string | null): Promise<void> {
+  const reg = await ensureServiceWorker();
+  if (!reg) return;
+
+  const sw =
+    reg.active ?? reg.waiting ?? reg.installing;
+  if (!sw) return;
+
+  const payload = {
+    type: "SCHEDULE_DOSES",
+    doses: doses.map((d) => ({ ...d, authToken })),
+    supabaseUrl: import.meta.env.VITE_SUPABASE_URL ?? "",
+  };
+
+  if (reg.active) {
+    reg.active.postMessage(payload);
+  } else {
+    sw.addEventListener("statechange", () => {
+      if (sw.state === "activated") sw.postMessage(payload);
+    });
+  }
+}
+
+export async function scheduleMedications(meds: ScheduledMed[]): Promise<void> {
+  if (!notificationsSupported()) return;
+  if (Notification.permission !== "granted") return;
+
+  await ensureServiceWorker();
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const authToken = sessionData.session?.access_token ?? null;
+
+  const doses = await buildUpcomingDoses(meds);
+  await postScheduleToSw(doses, authToken);
+}
+
+export async function rearmMedicationNotifications(): Promise<void> {
+  if (!notificationsSupported()) return;
+  if (Notification.permission !== "granted") return;
+
+  const { data, error } = await supabase
+    .from("medications")
+    .select("id, name, dosage, times_of_day, kind, is_rescue")
+    .eq("active", true);
+
+  if (error) {
+    console.warn("[purple] could not load meds for reminders", error);
+    return;
+  }
+
+  await scheduleMedications((data ?? []) as ScheduledMed[]);
 }
