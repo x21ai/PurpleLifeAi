@@ -1,64 +1,62 @@
-# Fix onboarding memory, layout chrome, sign-in, and Oura state
 
-Five fixes, mostly UI/shell. No new features.
+## Step 1 — Connect this Lovable project to `AstroAii/purpledrw` (you do this, not me)
 
-## 1. Stop re-asking for onboarding data
+I can't perform the GitHub link from inside the agent — it's an OAuth flow that has to happen in your browser. Walk through:
 
-**Problem:** `_app.tsx` checks `localStorage("purple-onboarded")` — wiped on every new browser/device/incognito, so Welcome reappears even after you filled it in.
+**Desktop**
+1. In the Lovable editor, click the **Plus (+)** button at the bottom-left of the chat input.
+2. Choose **GitHub → Connect project**.
+3. Authorize the Lovable GitHub App if you haven't before. Pick the **AstroAii** account/org when prompted.
+4. Lovable will offer to **Create Repository**. Since `AstroAii/purpledrw` already exists, this is the awkward part:
+   - Lovable's GitHub integration **creates a new repo from the Lovable project**. It does **not** import an existing GitHub repo into Lovable.
+   - So you have three realistic options:
+     - **(a) Let Lovable create a new repo** (e.g. `purpledrw-lovable`) and treat *that* as the source of truth going forward. Archive the old `AstroAii/purpledrw` or merge its history manually.
+     - **(b) Keep `AstroAii/purpledrw` as source of truth**, do not connect Lovable to GitHub, and instead manually port the three PRs' changes into Lovable (I can do this — see "Alternative" below).
+     - **(c)** Connect, let Lovable make `AstroAii/purpledrw-lovable`, then push your old repo's history into it as a separate branch and cherry-pick. This is a manual git operation on your machine.
 
-**Fix:**
-- In `_app.tsx` `beforeLoad`, read `profiles` for the signed-in user. Treat as onboarded if `first_name` is set OR `onboarded_at` is not null.
-- Add `onboarded_at timestamptz` to `profiles` (migration). Welcome's `finish()` and `skip()` set it.
-- Keep the localStorage flag as a fast hint to avoid a query on every nav, but DB is source of truth.
-- Welcome pre-fills `firstName/lastName/emergency*` from the existing `profiles` row so even if the user lands there, nothing is lost.
+Once connected (option a or c), the sync is **bidirectional and automatic** — future merges to `main` on GitHub flow into Lovable in real time, and vice versa. No manual "pull" needed.
 
-## 2. Sign-in page alignment
+**Mobile:** Plus (+) → GitHub → same flow.
 
-**Problem:** On desktop the right form column is taller than the left hero (which is `lg:h-screen` absolute-positioned), so the page scrolls and the hero ends mid-screen while the form continues — the "Free forever / PURPLE" text sits awkwardly.
+→ **Tell me which option (a/b/c) you want, and confirm when the repo is linked.** I'll wait.
 
-**Fix:**
-- Make hero column `lg:sticky lg:top-0 lg:h-screen` so it stays pinned while the form scrolls, OR
-- Match heights: change grid to `lg:min-h-screen` with hero `lg:h-full` (not `h-screen`) and reduce form vertical padding on smaller laptops.
-- Going with the sticky approach — it's the same fix Linear/Stripe use and avoids re-flow.
+## Step 2 — Apply pending migrations
 
-## 3. Site-wide footer + collapsible sidebar
+Nothing for me to do manually. Any file under `supabase/migrations/` is applied to Lovable Cloud automatically on commit. After GitHub sync lands, I'll:
+- List `supabase/migrations/` and report what's present.
+- Run `supabase--linter` and a quick `read_query` against `information_schema.tables` to confirm new tables (e.g. `research_sources`) exist.
 
-**Footer (new `src/components/layout/site-footer.tsx`):** rendered inside `AppShell` below `<Outlet />`. Contains:
-- Founding charter → `/charter`
-- Privacy & safety → `/privacy`
-- Terms → `/privacy#terms` (anchor — we can split later)
-- Contact → `mailto:` or `/privacy#contact`
-- Open source on GitHub → external link
-- Small "© Purple · Free forever" line
+## Step 3 — Redeploy edge functions
 
-Same footer on `sign-in` (lighter variant, no Terms-from-app links needed but include legal).
+`ai-orchestrator` and `med-dose-action` redeploy automatically on file change, but I'll force a clean redeploy via `supabase--deploy_edge_functions` for both, then pull recent logs to confirm no boot errors.
 
-**Collapsible sidebar on mobile:**
-- Today bottom-nav stays for primary nav on mobile.
-- Add a hamburger button in a slim top bar (mobile only) that opens a `Sheet` containing the full sidebar items + Settings + About links. Desktop sidebar unchanged but add a collapse toggle (icon-only ↔ full-width) persisted in localStorage.
+## Step 4 — Verify `research_sources` row count
 
-## 4. Welcome step 3 shows "Connect" even when Oura is connected
+Run:
+```sql
+select count(*) from research_sources;
+```
+via `supabase--read_query` and report the number back. Expected ≈ 30.
 
-**Problem:** `WelcomePage.connectOura` doesn't check `oura_tokens`; it always shows the Connect button.
+> Note: per your instruction we're **skipping the seed run** (step 3 of your original list). If the table comes back with 0 rows after the GitHub sync, I'll flag it and ask whether to run `bun run seed:research` from the sandbox — that needs `OPENAI_API_KEY` (already a project secret) and the service role (also set).
 
-**Fix:** On mount in step 3, query `oura_tokens` for the user; if a row exists, render "Connected · synced Xh ago" with a Disconnect/Continue affordance instead of Connect. Reuse the existing `OuraConnection` component (already shows correct state) instead of the custom inline button.
+## Step 5 — Smoke test ai-orchestrator with curl
 
-## 5. About/legal moves to footer
+Call the deployed function with:
+```json
+{ "message": "what does the research say about levetiracetam" }
+```
+via `supabase--curl_edge_functions` (auth will use my preview session). Report:
+- HTTP status
+- The assistant text
+- Whether the response includes `citations` / `sources` / tool-call evidence of `search_research_library`
 
-- Keep the About section in Settings (deep link target) but the same items also live in the global footer so they're reachable from every page on web and mobile.
-- Add a `/terms` route (simple page, can mirror privacy content for now) so the footer link resolves.
+If citations are missing, pull `supabase--edge_function_logs` for `ai-orchestrator` filtered by `search_research_library` to diagnose whether the tool was registered, called, or returned empty.
 
-## Files
+## Alternative if you pick option (b) above
 
-- `supabase/migrations/<new>.sql` — `alter table profiles add column onboarded_at timestamptz`
-- `src/routes/_app.tsx` — DB-backed onboarded check
-- `src/routes/_app/welcome.tsx` — prefill from profile, set `onboarded_at`, swap inline Oura UI for `<OuraConnection />`
-- `src/routes/sign-in.tsx` — sticky hero column, add footer
-- `src/components/layout/site-footer.tsx` — new
-- `src/components/layout/app-shell.tsx` — render footer; mount mobile sheet
-- `src/components/layout/sidebar-nav.tsx` — collapse toggle + mobile sheet trigger
-- `src/routes/_app/terms.tsx` — new minimal page
+I port the three PRs' contents from `AstroAii/purpledrw` into Lovable by hand. You'd need to either (i) paste the diffs / file contents into chat, or (ii) push the repo to a public location so I can fetch raw files. Then I'd run the same verification (steps 4 & 5). Say the word and I'll switch to this plan.
 
-## Out of scope
+---
 
-- Cookie consent banner, real Terms of Service drafting (placeholder content), redesigning the bottom nav, dark mode for the footer beyond existing tokens.
+**Waiting on you:** pick option **a / b / c** for the GitHub linkage, then confirm when ready. Once you say go, I'll execute steps 2 → 5 in one pass.
