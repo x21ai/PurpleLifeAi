@@ -1,15 +1,22 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import heroImage from "@/assets/sign-in-hero.jpg";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { SocialSignInButtons } from "@/components/auth/social-sign-in-buttons";
+import { isOAuthCallbackUrl, waitForOAuthSession } from "@/lib/auth-oauth";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/sign-in")({
   beforeLoad: async () => {
     if (typeof window === "undefined") return;
+    if (isOAuthCallbackUrl()) {
+      const ok = await waitForOAuthSession();
+      if (ok) throw redirect({ to: "/" });
+    }
     const { data } = await supabase.auth.getSession();
     if (data.session) {
       throw redirect({ to: "/" });
@@ -27,6 +34,22 @@ export const Route = createFileRoute("/sign-in")({
   component: SignInPage,
 });
 
+function oauthErrorMessage(): string | null {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const hash = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : window.location.hash;
+  const hashParams = new URLSearchParams(hash);
+  const err =
+    params.get("error_description") ??
+    params.get("error") ??
+    hashParams.get("error_description") ??
+    hashParams.get("error");
+  if (!err) return null;
+  return err.replace(/\+/g, " ");
+}
+
 function SignInPage() {
   const [mode, setMode] = useState<"signin" | "register">("signin");
   const [email, setEmail] = useState("");
@@ -35,6 +58,13 @@ function SignInPage() {
     "idle" | "submitting" | "verify-sent" | "reset-sent" | "error"
   >("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    const msg = oauthErrorMessage();
+    if (!msg) return;
+    toast.error("Sign-in didn't finish. Try again, or use your email instead.");
+    window.history.replaceState({}, "", window.location.pathname);
+  }, []);
 
   const handleForgotPassword = async () => {
     setErrorMsg(null);
@@ -154,6 +184,17 @@ function SignInPage() {
               </div>
             ) : (
               <div className="mt-10">
+                <SocialSignInButtons />
+                <div className="relative my-8">
+                  <div className="absolute inset-0 flex items-center" aria-hidden>
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <p className="relative flex justify-center">
+                    <span className="bg-background px-3 text-xs font-sans uppercase tracking-widest text-muted-foreground">
+                      or continue with email
+                    </span>
+                  </p>
+                </div>
                 <Tabs value={mode} onValueChange={(v) => { setMode(v as "signin" | "register"); setErrorMsg(null); }}>
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="signin">Sign in</TabsTrigger>

@@ -136,7 +136,9 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      // Re-running route guards on TOKEN_REFRESHED caused brief null sessions and sign-in redirects.
+      if (event === "TOKEN_REFRESHED") return;
       router.invalidate();
       queryClient.invalidateQueries();
     });

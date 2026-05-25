@@ -13,24 +13,50 @@ const AuthContext = React.createContext<AuthState | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = React.useState<Session | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const initialSessionApplied = React.useRef(false);
 
   React.useEffect(() => {
-    // Listener FIRST, then fetch the existing session.
+    let mounted = true;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, next) => {
-      // eslint-disable-next-line no-console
-      console.log("[auth]", event, "hasSession=", !!next, "user=", next?.user?.id ?? null);
+      if (!mounted) return;
+
+      if (event === "SIGNED_OUT") {
+        // eslint-disable-next-line no-console
+        console.warn("[auth] SIGNED_OUT", "user=", next?.user?.id ?? null);
+        initialSessionApplied.current = true;
+        setSession(null);
+        setLoading(false);
+        return;
+      }
+
+      if (event === "TOKEN_REFRESHED") {
+        if (next) setSession(next);
+        return;
+      }
+
+      initialSessionApplied.current = true;
       setSession(next);
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data }) => {
-      // eslint-disable-next-line no-console
-      console.log("[auth] getSession on mount, hasSession=", !!data.session);
-      setSession(data.session);
-      setLoading(false);
+    supabase.auth.getSession().then(({ data: { session: stored } }) => {
+      if (!mounted) return;
+      setSession((prev) => {
+        // Avoid a stale null from getSession() wiping a session the listener already set.
+        if (stored) return stored;
+        return prev;
+      });
+      if (!initialSessionApplied.current) {
+        initialSessionApplied.current = true;
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const value = React.useMemo<AuthState>(
