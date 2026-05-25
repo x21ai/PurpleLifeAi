@@ -30,6 +30,8 @@ Grounding rules (these are absolute):
 - If the question needs data, CALL THE TOOLS FIRST. Don't answer from memory of the conversation alone.
 - Quote or paraphrase the person's own journal entries when relevant, and say roughly when ("last Tuesday", "three days ago") — not in raw timestamps.
 
+When the user asks a general question about epilepsy, medications, triggers, or treatments, you may call search_research_library to ground your reply. Always cite the source by title and year, and note the evidence grade (A, B, C, or expert). Use this exact citation format so the app can link it: [Source: Title (Year)](url) with the url from the tool result. Never present research as personalized medical advice — frame it as "here is what the research generally says" and recommend they discuss it with their care team. If the library returns no relevant entries, say you do not have curated research on that topic rather than inventing sources.
+
 In an emergency (someone describes an active seizure happening now, a serious injury, thoughts of self-harm), gently tell them to call their local emergency number or their emergency contact. Do not try to handle it alone.
 
 Keep replies focused. One question, one answer. End with a soft follow-up only if it genuinely helps.`;
@@ -85,6 +87,19 @@ const TOOLS = [
     description:
       "Today's risk forecast (score, band, top contributing factors, narrative) if one has been computed.",
     input_schema: { type: "object", properties: {} },
+  },
+  {
+    name: "search_research_library",
+    description:
+      "Search the curated epilepsy research library. Returns evidence-graded entries from the Epilepsy Foundation, ILAE, NICE, CDC, and peer-reviewed sources. Use whenever the user asks about a medication, a seizure type, a trigger, a lifestyle factor, or general epilepsy knowledge. Always cite the source and grade in your reply.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Plain-language search query." },
+        limit: { type: "integer", minimum: 1, maximum: 8, default: 5 },
+      },
+      required: ["query"],
+    },
   },
 ];
 
@@ -206,6 +221,33 @@ async function runTool(
         .maybeSingle();
       if (error) return { error: error.message };
       return data ? { forecast: data } : { forecast: null };
+    }
+    case "search_research_library": {
+      const query = String(input.query || "");
+      const limit = Math.min(8, Math.max(1, Number(input.limit ?? 5)));
+      const embedding = await embedQuery(query);
+      if (!embedding) return { error: "embedding unavailable", results: [] };
+      const { data, error } = await admin.rpc("match_research_library", {
+        query_embedding: embedding as unknown as string,
+        match_count: limit,
+      });
+      if (error) return { error: error.message, results: [] };
+      return {
+        results: (data || []).map((r: Record<string, unknown>) => ({
+          title: r.title,
+          authors: r.authors,
+          publication: r.publication,
+          year: r.year,
+          url: r.url,
+          source_type: r.source_type,
+          evidence_grade: r.evidence_grade,
+          abstract: r.abstract,
+          similarity: Number(
+            (r.similarity as number)?.toFixed?.(3) ?? r.similarity,
+          ),
+          excerpt: String(r.content || "").slice(0, 1200),
+        })),
+      };
     }
     default:
       return { error: `unknown tool ${name}` };

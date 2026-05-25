@@ -442,6 +442,51 @@ export type Database = {
         }
         Relationships: []
       }
+      research_sources: {
+        Row: {
+          abstract: string
+          authors: string | null
+          content: string
+          created_at: string
+          embedding: string | null
+          evidence_grade: string | null
+          id: string
+          publication: string | null
+          source_type: string | null
+          title: string
+          url: string
+          year: number | null
+        }
+        Insert: {
+          abstract: string
+          authors?: string | null
+          content: string
+          created_at?: string
+          embedding?: string | null
+          evidence_grade?: string | null
+          id?: string
+          publication?: string | null
+          source_type?: string | null
+          title: string
+          url: string
+          year?: number | null
+        }
+        Update: {
+          abstract?: string
+          authors?: string | null
+          content?: string
+          created_at?: string
+          embedding?: string | null
+          evidence_grade?: string | null
+          id?: string
+          publication?: string | null
+          source_type?: string | null
+          title?: string
+          url?: string
+          year?: number | null
+        }
+        Relationships: []
+      }
       risk_forecasts: {
         Row: {
           ai_narrative: string | null
@@ -608,6 +653,25 @@ export type Database = {
           similarity: number
           source_id: string
           source_table: string
+        }[]
+      }
+      match_research_library: {
+        Args: {
+          match_count?: number
+          query_embedding: string
+        }
+        Returns: {
+          abstract: string
+          authors: string | null
+          content: string
+          evidence_grade: string | null
+          id: string
+          publication: string | null
+          similarity: number
+          source_type: string | null
+          title: string
+          url: string
+          year: number | null
         }[]
       }
       medication_adherence: {

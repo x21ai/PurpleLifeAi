@@ -13,7 +13,7 @@ const SUGGESTIONS = [
   "How have I been sleeping this week?",
   "Did anything unusual happen yesterday?",
   "What patterns do you see before my events?",
-  "What did I say about my medications last month?",
+  "What does the research say about my main medication?",
 ];
 
 export const Route = createFileRoute("/_app/chat")({
@@ -46,7 +46,8 @@ function AskPage() {
         body: { action: "chat", message: trimmed, history },
       });
       if (error) throw error;
-      const reply = (data as { reply?: string })?.reply || "I couldn't put together an answer just now.";
+      const reply =
+        (data as { reply?: string })?.reply || "I couldn't put together an answer just now.";
       setMessages([...next, { role: "assistant", content: reply }]);
     } catch (e) {
       console.error(e);
@@ -71,7 +72,9 @@ function AskPage() {
         <div className="mx-auto max-w-3xl">
           <p className="label-eyebrow text-muted-foreground">Ask</p>
           <h1 className="mt-2 font-serif text-[40px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
-            I know your<br/>patterns.
+            I know your
+            <br />
+            patterns.
           </h1>
         </div>
       </header>
@@ -121,7 +124,8 @@ function EmptyState({ onPick }: { onPick: (s: string) => void }) {
   return (
     <div className="py-6 sm:py-10">
       <p className="body-serif text-foreground/85 max-w-lg leading-relaxed">
-        Ask me anything about your sleep, your medication, your symptoms, your patterns, or your care.
+        Ask me anything about your sleep, your medication, your symptoms, your patterns, or your
+        care.
       </p>
       <div className="mt-8 flex flex-wrap gap-2">
         {SUGGESTIONS.map((s) => (
@@ -139,6 +143,49 @@ function EmptyState({ onPick }: { onPick: (s: string) => void }) {
   );
 }
 
+const SOURCE_CITATION_RE = /\[Source:\s*([^\]]+)\]\((https?:\/\/[^)]+)\)|\[Source:\s*([^\]]+)\]/g;
+
+function renderWithSourceCitations(text: string) {
+  const parts: React.ReactNode[] = [];
+  let last = 0;
+  let key = 0;
+  for (const match of text.matchAll(SOURCE_CITATION_RE)) {
+    const idx = match.index ?? 0;
+    if (idx > last) {
+      parts.push(<ReactMarkdown key={`md-${key++}`}>{text.slice(last, idx)}</ReactMarkdown>);
+    }
+    const label = (match[1] ?? match[3] ?? "").trim();
+    const href = match[2];
+    if (href) {
+      parts.push(
+        <a
+          key={`src-${key++}`}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary hover:bg-primary/20 no-underline mx-0.5 align-middle"
+        >
+          {label}
+        </a>,
+      );
+    } else {
+      parts.push(
+        <span
+          key={`src-${key++}`}
+          className="inline-flex items-center rounded-full border border-border bg-secondary/60 px-2 py-0.5 text-xs text-muted-foreground mx-0.5 align-middle"
+        >
+          {label}
+        </span>,
+      );
+    }
+    last = idx + match[0].length;
+  }
+  if (last < text.length) {
+    parts.push(<ReactMarkdown key={`md-${key++}`}>{text.slice(last)}</ReactMarkdown>);
+  }
+  return parts.length > 0 ? parts : <ReactMarkdown>{text}</ReactMarkdown>;
+}
+
 function Bubble({ msg }: { msg: Msg }) {
   const isUser = msg.role === "user";
   return (
@@ -147,10 +194,10 @@ function Bubble({ msg }: { msg: Msg }) {
         className={
           isUser
             ? "max-w-[85%] rounded-2xl rounded-br-md bg-primary text-primary-foreground px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap"
-            : "max-w-[90%] rounded-2xl rounded-bl-md bg-card border border-border text-foreground px-4 py-3 text-sm leading-relaxed prose prose-sm dark:prose-invert prose-p:my-2 prose-ul:my-2 max-w-none font-serif"
+            : "max-w-[90%] rounded-2xl rounded-bl-md bg-card border border-border text-foreground px-4 py-3 text-sm leading-relaxed prose prose-sm dark:prose-invert prose-p:my-2 prose-ul:my-2 max-w-none font-serif [&_a.source-chip]:no-underline"
         }
       >
-        {isUser ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
+        {isUser ? msg.content : renderWithSourceCitations(msg.content)}
       </div>
     </div>
   );
