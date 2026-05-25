@@ -1,62 +1,27 @@
+## Problem
 
-## Step 1 — Connect this Lovable project to `AstroAii/purpledrw` (you do this, not me)
+Preview returns 500 on every request. Server logs show:
 
-I can't perform the GitHub link from inside the agent — it's an OAuth flow that has to happen in your browser. Walk through:
-
-**Desktop**
-1. In the Lovable editor, click the **Plus (+)** button at the bottom-left of the chat input.
-2. Choose **GitHub → Connect project**.
-3. Authorize the Lovable GitHub App if you haven't before. Pick the **AstroAii** account/org when prompted.
-4. Lovable will offer to **Create Repository**. Since `AstroAii/purpledrw` already exists, this is the awkward part:
-   - Lovable's GitHub integration **creates a new repo from the Lovable project**. It does **not** import an existing GitHub repo into Lovable.
-   - So you have three realistic options:
-     - **(a) Let Lovable create a new repo** (e.g. `purpledrw-lovable`) and treat *that* as the source of truth going forward. Archive the old `AstroAii/purpledrw` or merge its history manually.
-     - **(b) Keep `AstroAii/purpledrw` as source of truth**, do not connect Lovable to GitHub, and instead manually port the three PRs' changes into Lovable (I can do this — see "Alternative" below).
-     - **(c)** Connect, let Lovable make `AstroAii/purpledrw-lovable`, then push your old repo's history into it as a separate branch and cherry-pick. This is a manual git operation on your machine.
-
-Once connected (option a or c), the sync is **bidirectional and automatic** — future merges to `main` on GitHub flow into Lovable in real time, and vice versa. No manual "pull" needed.
-
-**Mobile:** Plus (+) → GitHub → same flow.
-
-→ **Tell me which option (a/b/c) you want, and confirm when the repo is linked.** I'll wait.
-
-## Step 2 — Apply pending migrations
-
-Nothing for me to do manually. Any file under `supabase/migrations/` is applied to Lovable Cloud automatically on commit. After GitHub sync lands, I'll:
-- List `supabase/migrations/` and report what's present.
-- Run `supabase--linter` and a quick `read_query` against `information_schema.tables` to confirm new tables (e.g. `research_sources`) exist.
-
-## Step 3 — Redeploy edge functions
-
-`ai-orchestrator` and `med-dose-action` redeploy automatically on file change, but I'll force a clean redeploy via `supabase--deploy_edge_functions` for both, then pull recent logs to confirm no boot errors.
-
-## Step 4 — Verify `research_sources` row count
-
-Run:
-```sql
-select count(*) from research_sources;
 ```
-via `supabase--read_query` and report the number back. Expected ≈ 30.
-
-> Note: per your instruction we're **skipping the seed run** (step 3 of your original list). If the table comes back with 0 rows after the GitHub sync, I'll flag it and ask whether to run `bun run seed:research` from the sandbox — that needs `OPENAI_API_KEY` (already a project secret) and the service role (also set).
-
-## Step 5 — Smoke test ai-orchestrator with curl
-
-Call the deployed function with:
-```json
-{ "message": "what does the research say about levetiracetam" }
+TypeError: Cannot read properties of undefined (reading 'get')
+  at Object.dehydrate (node_modules/@tanstack/start-server-core/node_modules/@tanstack/router-core/.../ssr-server.js:209)
 ```
-via `supabase--curl_edge_functions` (auth will use my preview session). Report:
-- HTTP status
-- The assistant text
-- Whether the response includes `citations` / `sources` / tool-call evidence of `search_research_library`
 
-If citations are missing, pull `supabase--edge_function_logs` for `ai-orchestrator` filtered by `search_research_library` to diagnose whether the tool was registered, called, or returned empty.
+The nested `node_modules/@tanstack/start-server-core/node_modules/@tanstack/router-core` path means `react-start` installed its own copy of `router-core` because the top-level `@tanstack/react-router` (pinned to `1.168.11` earlier) no longer matches the version `react-start` expects. The two copies disagree on internal shape and SSR `dehydrate()` blows up on every render.
 
-## Alternative if you pick option (b) above
+This is not a Cursor/Lovable conflict — it's a dependency-pin mismatch in `package.json`.
 
-I port the three PRs' contents from `AstroAii/purpledrw` into Lovable by hand. You'd need to either (i) paste the diffs / file contents into chat, or (ii) push the repo to a public location so I can fetch raw files. Then I'd run the same verification (steps 4 & 5). Say the word and I'll switch to this plan.
+## Fix
 
----
+1. In `package.json`, change `@tanstack/react-router` from the pinned `1.168.11` back to the same version range used by `@tanstack/react-start` (match whatever `react-start` resolves to — likely `^1.140.0` style, same as the original template). Remove the pin.
+2. Run `bun install` so only ONE copy of `@tanstack/router-core` exists under `node_modules/` (no nested copy under `start-server-core`).
+3. Re-address the original TS2353 `server` property error that motivated the pin. The correct fix in current TanStack is to use the supported route options shape, not to downgrade the router. Options:
+   - Keep the `@ts-expect-error` on the `server:` field in `src/routes/api/public/hooks/risk-forecaster.ts` (it works at runtime), OR
+   - Move the cron endpoint to the file-based server-route convention that the installed `react-start` version supports.
+4. Restart dev server, verify preview loads (no more 500 from `dehydrate`), then verify `/api/public/hooks/risk-forecaster` still responds.
 
-**Waiting on you:** pick option **a / b / c** for the GitHub linkage, then confirm when ready. Once you say go, I'll execute steps 2 → 5 in one pass.
+## Out of scope
+
+- No app/business-logic changes.
+- No auth, RLS, or Supabase changes.
+- No edits to other routes or components.
