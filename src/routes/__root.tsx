@@ -14,6 +14,7 @@ import { AuthProvider } from "@/integrations/supabase/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
+import { rearmMedicationNotifications } from "@/lib/med-notifications";
 
 function NotFoundComponent() {
   return (
@@ -160,6 +161,11 @@ function RootComponent() {
       return;
     }
     navigator.serviceWorker.register("/sw.js").catch(() => {});
+    // Repopulate the SW's IndexedDB schedule after every reload so dose
+    // reminders survive page refreshes / app restarts.
+    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+      void rearmMedicationNotifications();
+    }
   }, []);
 
   return (
