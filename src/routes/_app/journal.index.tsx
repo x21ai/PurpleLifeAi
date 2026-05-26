@@ -10,7 +10,7 @@ import { useRouteTheme } from "@/lib/use-route-theme";
 
 type Entry = Database["public"]["Tables"]["journal_entries"]["Row"];
 
-export const Route = createFileRoute("/_app/journal")({
+export const Route = createFileRoute("/_app/journal/")({
   head: () => ({ meta: [{ title: "Journal — Purple" }] }),
   component: JournalPage,
 });
