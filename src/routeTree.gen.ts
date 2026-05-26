@@ -20,10 +20,10 @@ import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
 import { Route as AppMyHealthRouteImport } from './routes/_app/my-health'
 import { Route as AppMedsRouteImport } from './routes/_app/meds'
-import { Route as AppJournalRouteImport } from './routes/_app/journal'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
 import { Route as AppCharterRouteImport } from './routes/_app/charter'
+import { Route as AppJournalIndexRouteImport } from './routes/_app/journal.index'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
 import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
 import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
@@ -85,11 +85,6 @@ const AppMedsRoute = AppMedsRouteImport.update({
   path: '/meds',
   getParentRoute: () => AppRoute,
 } as any)
-const AppJournalRoute = AppJournalRouteImport.update({
-  id: '/journal',
-  path: '/journal',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppInsightsRoute = AppInsightsRouteImport.update({
   id: '/insights',
   path: '/insights',
@@ -103,6 +98,11 @@ const AppChatRoute = AppChatRouteImport.update({
 const AppCharterRoute = AppCharterRouteImport.update({
   id: '/charter',
   path: '/charter',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppJournalIndexRoute = AppJournalIndexRouteImport.update({
+  id: '/journal/',
+  path: '/journal/',
   getParentRoute: () => AppRoute,
 } as any)
 const OauthOuraCallbackRoute = OauthOuraCallbackRouteImport.update({
@@ -126,9 +126,9 @@ const AppMedsMedIdRoute = AppMedsMedIdRouteImport.update({
   getParentRoute: () => AppMedsRoute,
 } as any)
 const AppJournalNewRoute = AppJournalNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => AppJournalRoute,
+  id: '/journal/new',
+  path: '/journal/new',
+  getParentRoute: () => AppRoute,
 } as any)
 const ApiPublicHooksRiskForecasterRoute =
   ApiPublicHooksRiskForecasterRouteImport.update({
@@ -144,7 +144,6 @@ export interface FileRoutesByFullPath {
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/insights': typeof AppInsightsRoute
-  '/journal': typeof AppJournalRouteWithChildren
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
   '/privacy': typeof AppPrivacyRoute
@@ -157,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/seizures/new': typeof AppSeizuresNewRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
+  '/journal/': typeof AppJournalIndexRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
 }
 export interface FileRoutesByTo {
@@ -165,7 +165,6 @@ export interface FileRoutesByTo {
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/insights': typeof AppInsightsRoute
-  '/journal': typeof AppJournalRouteWithChildren
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
   '/privacy': typeof AppPrivacyRoute
@@ -179,6 +178,7 @@ export interface FileRoutesByTo {
   '/seizures/new': typeof AppSeizuresNewRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
+  '/journal': typeof AppJournalIndexRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
 }
 export interface FileRoutesById {
@@ -189,7 +189,6 @@ export interface FileRoutesById {
   '/_app/charter': typeof AppCharterRoute
   '/_app/chat': typeof AppChatRoute
   '/_app/insights': typeof AppInsightsRoute
-  '/_app/journal': typeof AppJournalRouteWithChildren
   '/_app/meds': typeof AppMedsRouteWithChildren
   '/_app/my-health': typeof AppMyHealthRoute
   '/_app/privacy': typeof AppPrivacyRoute
@@ -203,6 +202,7 @@ export interface FileRoutesById {
   '/_app/seizures/new': typeof AppSeizuresNewRoute
   '/_app/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
+  '/_app/journal/': typeof AppJournalIndexRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
 }
 export interface FileRouteTypes {
@@ -214,7 +214,6 @@ export interface FileRouteTypes {
     | '/charter'
     | '/chat'
     | '/insights'
-    | '/journal'
     | '/meds'
     | '/my-health'
     | '/privacy'
@@ -227,6 +226,7 @@ export interface FileRouteTypes {
     | '/seizures/new'
     | '/today/risk'
     | '/oauth/oura/callback'
+    | '/journal/'
     | '/api/public/hooks/risk-forecaster'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -235,7 +235,6 @@ export interface FileRouteTypes {
     | '/charter'
     | '/chat'
     | '/insights'
-    | '/journal'
     | '/meds'
     | '/my-health'
     | '/privacy'
@@ -249,6 +248,7 @@ export interface FileRouteTypes {
     | '/seizures/new'
     | '/today/risk'
     | '/oauth/oura/callback'
+    | '/journal'
     | '/api/public/hooks/risk-forecaster'
   id:
     | '__root__'
@@ -258,7 +258,6 @@ export interface FileRouteTypes {
     | '/_app/charter'
     | '/_app/chat'
     | '/_app/insights'
-    | '/_app/journal'
     | '/_app/meds'
     | '/_app/my-health'
     | '/_app/privacy'
@@ -272,6 +271,7 @@ export interface FileRouteTypes {
     | '/_app/seizures/new'
     | '/_app/today/risk'
     | '/oauth/oura/callback'
+    | '/_app/journal/'
     | '/api/public/hooks/risk-forecaster'
   fileRoutesById: FileRoutesById
 }
@@ -362,13 +362,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMedsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/journal': {
-      id: '/_app/journal'
-      path: '/journal'
-      fullPath: '/journal'
-      preLoaderRoute: typeof AppJournalRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/insights': {
       id: '/_app/insights'
       path: '/insights'
@@ -388,6 +381,13 @@ declare module '@tanstack/react-router' {
       path: '/charter'
       fullPath: '/charter'
       preLoaderRoute: typeof AppCharterRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/journal/': {
+      id: '/_app/journal/'
+      path: '/journal'
+      fullPath: '/journal/'
+      preLoaderRoute: typeof AppJournalIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/oauth/oura/callback': {
@@ -420,10 +420,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/journal/new': {
       id: '/_app/journal/new'
-      path: '/new'
+      path: '/journal/new'
       fullPath: '/journal/new'
       preLoaderRoute: typeof AppJournalNewRouteImport
-      parentRoute: typeof AppJournalRoute
+      parentRoute: typeof AppRoute
     }
     '/api/public/hooks/risk-forecaster': {
       id: '/api/public/hooks/risk-forecaster'
@@ -434,18 +434,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface AppJournalRouteChildren {
-  AppJournalNewRoute: typeof AppJournalNewRoute
-}
-
-const AppJournalRouteChildren: AppJournalRouteChildren = {
-  AppJournalNewRoute: AppJournalNewRoute,
-}
-
-const AppJournalRouteWithChildren = AppJournalRoute._addFileChildren(
-  AppJournalRouteChildren,
-)
 
 interface AppMedsRouteChildren {
   AppMedsMedIdRoute: typeof AppMedsMedIdRoute
@@ -462,7 +450,6 @@ interface AppRouteChildren {
   AppCharterRoute: typeof AppCharterRoute
   AppChatRoute: typeof AppChatRoute
   AppInsightsRoute: typeof AppInsightsRoute
-  AppJournalRoute: typeof AppJournalRouteWithChildren
   AppMedsRoute: typeof AppMedsRouteWithChildren
   AppMyHealthRoute: typeof AppMyHealthRoute
   AppPrivacyRoute: typeof AppPrivacyRoute
@@ -471,15 +458,16 @@ interface AppRouteChildren {
   AppVitalsRoute: typeof AppVitalsRoute
   AppWelcomeRoute: typeof AppWelcomeRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppJournalNewRoute: typeof AppJournalNewRoute
   AppSeizuresNewRoute: typeof AppSeizuresNewRoute
   AppTodayRiskRoute: typeof AppTodayRiskRoute
+  AppJournalIndexRoute: typeof AppJournalIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppCharterRoute: AppCharterRoute,
   AppChatRoute: AppChatRoute,
   AppInsightsRoute: AppInsightsRoute,
-  AppJournalRoute: AppJournalRouteWithChildren,
   AppMedsRoute: AppMedsRouteWithChildren,
   AppMyHealthRoute: AppMyHealthRoute,
   AppPrivacyRoute: AppPrivacyRoute,
@@ -488,8 +476,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppVitalsRoute: AppVitalsRoute,
   AppWelcomeRoute: AppWelcomeRoute,
   AppIndexRoute: AppIndexRoute,
+  AppJournalNewRoute: AppJournalNewRoute,
   AppSeizuresNewRoute: AppSeizuresNewRoute,
   AppTodayRiskRoute: AppTodayRiskRoute,
+  AppJournalIndexRoute: AppJournalIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
