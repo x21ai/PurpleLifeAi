@@ -9,6 +9,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { ensureServiceWorker, requestPermission } from "@/lib/med-notifications";
 import { toast } from "sonner";
 import { OuraConnection } from "@/components/connections/oura-connection";
+import { PhoneInput, parsePhone, formatPhone } from "@/components/ui/phone-input";
 import dawn from "@/assets/hero-readiness-dawn.jpg";
 import mist from "@/assets/hero-readiness-mist.jpg";
 
@@ -26,7 +27,8 @@ function WelcomePage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [emergencyName, setEmergencyName] = useState("");
-  const [emergencyPhone, setEmergencyPhone] = useState("");
+  const [phoneCountry, setPhoneCountry] = useState("US");
+  const [phoneNational, setPhoneNational] = useState("");
   const [notifGranted, setNotifGranted] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -49,7 +51,11 @@ function WelcomePage() {
         if (data.first_name) setFirstName(data.first_name);
         if (data.last_name) setLastName(data.last_name);
         if (data.emergency_contact_name) setEmergencyName(data.emergency_contact_name);
-        if (data.emergency_contact_phone) setEmergencyPhone(data.emergency_contact_phone);
+        if (data.emergency_contact_phone) {
+          const parsed = parsePhone(data.emergency_contact_phone);
+          setPhoneCountry(parsed.code);
+          setPhoneNational(parsed.national);
+        }
       });
   }, [userId]);
 
@@ -60,12 +66,13 @@ function WelcomePage() {
     }
     setSaving(true);
     try {
+      const phone = formatPhone(phoneCountry, phoneNational);
       await supabase.from("profiles").upsert({
         id: userId,
         first_name: firstName || null,
         last_name: lastName || null,
         emergency_contact_name: emergencyName || null,
-        emergency_contact_phone: emergencyPhone || null,
+        emergency_contact_phone: phone || null,
         onboarded_at: new Date().toISOString(),
       });
       localStorage.setItem("purple-onboarded", "1");
@@ -175,7 +182,15 @@ function WelcomePage() {
             </div>
             <div>
               <Label htmlFor="ephone">Emergency contact phone</Label>
-              <Input id="ephone" type="tel" value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} autoComplete="tel" className="mt-1.5" />
+              <div className="mt-1.5">
+                <PhoneInput
+                  id="ephone"
+                  country={phoneCountry}
+                  onCountryChange={setPhoneCountry}
+                  national={phoneNational}
+                  onNationalChange={setPhoneNational}
+                />
+              </div>
             </div>
           </div>
           <div className="mt-10 flex items-center justify-between gap-3">
