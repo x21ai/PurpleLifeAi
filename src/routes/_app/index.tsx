@@ -10,6 +10,7 @@ import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 import { BodyMeasurementsRow } from "@/components/ui-oura/v2/body-measurements-row";
 import { ScoreHero, bandForReadiness } from "@/components/ui-oura/v2/score-hero";
 import { TodayDoses } from "@/components/meds/today-doses";
+import { TodayInstallBanner } from "@/components/pwa/today-install-banner";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -112,6 +113,9 @@ function TodayPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-10 sm:pt-16 pb-16">
+      <div className="mb-6">
+        <TodayInstallBanner />
+      </div>
       {/* Status bar */}
       <p className="label-eyebrow" suppressHydrationWarning>
         {now ? format(now, "EEEE, MMMM d") : "\u00a0"}
