@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { requestPermission, scheduleMedications } from "@/lib/med-notifications";
+import { searchMedDictionary, type MedDictEntry } from "@/lib/med-dictionary";
 
 export type MedKind = "medication" | "supplement" | "vitamin" | "herbal" | "rescue";
 
@@ -37,7 +38,9 @@ const DOSAGE_FORMS = [
   "pill", "capsule", "tablet", "liquid", "injection", "drops", "patch", "inhaler", "powder", "gummy", "other",
 ] as const;
 
-const DOSAGE_UNITS = ["mg", "mcg", "g", "ml", "IU", "drops", "sprays", "units"];
+const DOSAGE_UNITS = ["mg", "mcg", "mL", "g", "IU", "drops", "sprays", "units"];
+
+const REFILL_PRESETS = ["3", "7", "14", "30"] as const;
 
 function todayIso(time: string): string {
   const [h, m] = time.split(":");
@@ -72,15 +75,22 @@ export function MedicationFormSheet({
   const [dosageForm, setDosageForm] = React.useState<string>("");
   const [dosageAmount, setDosageAmount] = React.useState("");
   const [dosageUnit, setDosageUnit] = React.useState("mg");
+  const [unitMode, setUnitMode] = React.useState<"preset" | "custom">("preset");
   const [withFood, setWithFood] = React.useState(false);
   const [times, setTimes] = React.useState<string[]>(["08:00"]);
   const [pillsRemaining, setPillsRemaining] = React.useState("");
   const [refillThreshold, setRefillThreshold] = React.useState("7");
+  const [refillMode, setRefillMode] = React.useState<"preset" | "custom">("preset");
   const [prescriberName, setPrescriberName] = React.useState("");
   const [pharmacyName, setPharmacyName] = React.useState("");
   const [prescriptionNumber, setPrescriptionNumber] = React.useState("");
   const [prescriberOpen, setPrescriberOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [nameFocused, setNameFocused] = React.useState(false);
+  const nameSuggestions = React.useMemo<MedDictEntry[]>(
+    () => (nameFocused ? searchMedDictionary(name, 8) : []),
+    [name, nameFocused],
+  );
 
   const isRescue = kind === "rescue";
 
@@ -91,14 +101,17 @@ export function MedicationFormSheet({
       setDosageForm("");
       setDosageAmount("");
       setDosageUnit("mg");
+      setUnitMode("preset");
       setWithFood(false);
       setTimes(["08:00"]);
       setPillsRemaining("");
       setRefillThreshold("7");
+      setRefillMode("preset");
       setPrescriberName("");
       setPharmacyName("");
       setPrescriptionNumber("");
       setPrescriberOpen(false);
+      setNameFocused(false);
     }
   }, [open]);
 
@@ -225,7 +238,46 @@ export function MedicationFormSheet({
 
           <div className="space-y-2">
             <Label htmlFor="med-name">Name</Label>
-            <Input id="med-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Keppra" autoFocus />
+            <div className="relative">
+              <Input
+                id="med-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onFocus={() => setNameFocused(true)}
+                onBlur={() => {
+                  // Delay so click on suggestion registers.
+                  setTimeout(() => setNameFocused(false), 150);
+                }}
+                placeholder="e.g. Keppra"
+                autoComplete="off"
+              />
+              {nameSuggestions.length > 0 && (
+                <ul
+                  className="absolute z-50 mt-1 left-0 right-0 max-h-64 overflow-y-auto rounded-xl border border-border bg-popover shadow-lg"
+                  role="listbox"
+                >
+                  {nameSuggestions.map((entry) => (
+                    <li key={entry.label}>
+                      <button
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          setName(entry.label);
+                          setKind(entry.kind);
+                          setNameFocused(false);
+                        }}
+                      >
+                        <span className="text-foreground">{entry.label}</span>
+                        <span className="ml-2 text-xs text-muted-foreground capitalize">
+                          {entry.kind}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -258,16 +310,49 @@ export function MedicationFormSheet({
 
           <div className="space-y-2">
             <Label>Unit</Label>
-            <Select value={dosageUnit} onValueChange={setDosageUnit}>
-              <SelectTrigger className="max-w-[160px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {DOSAGE_UNITS.map((u) => (
-                  <SelectItem key={u} value={u}>{u}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {unitMode === "preset" ? (
+              <Select
+                value={DOSAGE_UNITS.includes(dosageUnit) ? dosageUnit : "mg"}
+                onValueChange={(v) => {
+                  if (v === "__custom__") {
+                    setUnitMode("custom");
+                    setDosageUnit("");
+                  } else {
+                    setDosageUnit(v);
+                  }
+                }}
+              >
+                <SelectTrigger className="max-w-[200px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DOSAGE_UNITS.map((u) => (
+                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                  ))}
+                  <SelectItem value="__custom__">Custom…</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="flex gap-2 items-center max-w-[260px]">
+                <Input
+                  autoFocus
+                  value={dosageUnit}
+                  onChange={(e) => setDosageUnit(e.target.value)}
+                  placeholder="Custom unit"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setUnitMode("preset");
+                    setDosageUnit("mg");
+                  }}
+                >
+                  Reset
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
@@ -325,15 +410,57 @@ export function MedicationFormSheet({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="med-threshold">Alert when ≤</Label>
-                <Input
-                  id="med-threshold"
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  value={refillThreshold}
-                  onChange={(e) => setRefillThreshold(e.target.value)}
-                  placeholder="7"
-                />
+                {refillMode === "preset" ? (
+                  <Select
+                    value={
+                      REFILL_PRESETS.includes(refillThreshold as typeof REFILL_PRESETS[number])
+                        ? refillThreshold
+                        : "7"
+                    }
+                    onValueChange={(v) => {
+                      if (v === "__custom__") {
+                        setRefillMode("custom");
+                      } else {
+                        setRefillThreshold(v);
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="med-threshold">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">3 days</SelectItem>
+                      <SelectItem value="7">7 days</SelectItem>
+                      <SelectItem value="14">14 days</SelectItem>
+                      <SelectItem value="30">30 days</SelectItem>
+                      <SelectItem value="__custom__">Custom…</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      id="med-threshold"
+                      autoFocus
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      value={refillThreshold}
+                      onChange={(e) => setRefillThreshold(e.target.value)}
+                      placeholder="days"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setRefillMode("preset");
+                        setRefillThreshold("7");
+                      }}
+                    >
+                      Reset
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
