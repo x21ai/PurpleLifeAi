@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
       journal_entry_id: journalEntryId,
       date: entryDate,
       behavior_key: e.behavior_key,
-      value: { v: e.value },
+      value: e.value,
       extraction_confidence: e.confidence,
       user_corrected: false,
     }));
