@@ -49,10 +49,29 @@ function JournalNewPage() {
   const { session } = useAuth();
   const userId = session?.user.id;
 
-  const [text, setText] = React.useState("");
+  const DRAFT_KEY = userId ? `purple-journal-draft-${userId}` : "purple-journal-draft";
+  const [text, setText] = React.useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      return localStorage.getItem(DRAFT_KEY) ?? "";
+    } catch {
+      return "";
+    }
+  });
   const [attachments, setAttachments] = React.useState<Attachment[]>([]);
   const [saving, setSaving] = React.useState(false);
   const voice = useVoiceCapture();
+
+  // Persist text draft across reloads / pull-to-refresh.
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (text) localStorage.setItem(DRAFT_KEY, text);
+      else localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      /* ignore quota errors */
+    }
+  }, [text, DRAFT_KEY]);
 
   const photoInput = React.useRef<HTMLInputElement | null>(null);
   const galleryInput = React.useRef<HTMLInputElement | null>(null);
@@ -176,6 +195,14 @@ function JournalNewPage() {
       console.error(err);
       toast.error(err?.message ?? "Could not save entry");
       setSaving(false);
+      return;
+    }
+
+    // Saved successfully — clear draft.
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      /* ignore */
     }
   };
 

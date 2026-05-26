@@ -212,7 +212,12 @@ export function MedicationFormSheet({
             is_rescue: med.is_rescue,
           }]);
         }
-      } else if (!isRescue && Notification?.permission === "granted") {
+      } else if (
+        !isRescue &&
+        typeof window !== "undefined" &&
+        "Notification" in window &&
+        window.Notification.permission === "granted"
+      ) {
         await scheduleMedications([{
           id: med.id,
           name: med.name,

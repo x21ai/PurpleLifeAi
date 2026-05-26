@@ -96,8 +96,16 @@ export function OuraConnection() {
     const { data: cfg, error: cfgErr } = await supabase.functions.invoke("oura-sync", {
       body: { action: "config" },
     });
-    if (cfgErr || !cfg?.client_id) {
-      toast.error("Oura is not configured");
+    if (cfgErr) {
+      console.error("[oura] config error", cfgErr);
+      toast.error("Couldn't reach Oura sync service. Please try again.");
+      return;
+    }
+    if (!cfg?.client_id) {
+      toast.error(
+        "Oura isn't configured yet. Add OURA_CLIENT_ID and OURA_CLIENT_SECRET in backend settings.",
+        { duration: 6000 },
+      );
       return;
     }
     const redirect = window.location.origin + "/oauth/oura/callback";
