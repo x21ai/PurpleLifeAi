@@ -78,6 +78,8 @@ export function MedicationFormSheet({
   const [unitMode, setUnitMode] = React.useState<"preset" | "custom">("preset");
   const [withFood, setWithFood] = React.useState(false);
   const [times, setTimes] = React.useState<string[]>(["08:00"]);
+  // Per-time amount overrides. Index-aligned with `times`. Empty string = use the base amount.
+  const [timeAmounts, setTimeAmounts] = React.useState<string[]>([""]);
   const [pillsRemaining, setPillsRemaining] = React.useState("");
   const [refillThreshold, setRefillThreshold] = React.useState("7");
   const [refillMode, setRefillMode] = React.useState<"preset" | "custom">("preset");
@@ -104,6 +106,7 @@ export function MedicationFormSheet({
       setUnitMode("preset");
       setWithFood(false);
       setTimes(["08:00"]);
+      setTimeAmounts([""]);
       setPillsRemaining("");
       setRefillThreshold("7");
       setRefillMode("preset");
@@ -119,7 +122,14 @@ export function MedicationFormSheet({
     setTimes((arr) => arr.map((t, i) => (i === idx ? v : t)));
   const removeTime = (idx: number) =>
     setTimes((arr) => (arr.length === 1 ? arr : arr.filter((_, i) => i !== idx)));
-  const addTime = () => setTimes((arr) => [...arr, "20:00"]);
+  const removeTimeAmount = (idx: number) =>
+    setTimeAmounts((arr) => (arr.length === 1 ? arr : arr.filter((_, i) => i !== idx)));
+  const addTime = () => {
+    setTimes((arr) => [...arr, "20:00"]);
+    setTimeAmounts((arr) => [...arr, ""]);
+  };
+  const updateTimeAmount = (idx: number, v: string) =>
+    setTimeAmounts((arr) => arr.map((a, i) => (i === idx ? v : a)));
 
   const canSave = !!userId && name.trim().length > 0 && (isRescue || times.length > 0);
 
@@ -127,12 +137,29 @@ export function MedicationFormSheet({
     if (!canSave || saving || !userId) return;
     setSaving(true);
     try {
-      const cleanTimes = isRescue
+      // Build [{time, amount, unit}] preserving per-time amounts, dedup'd by time.
+      const baseAmount = dosageAmount ? parseFloat(dosageAmount) : null;
+      const unit = (dosageUnit || "mg").trim() || "mg";
+      const seen = new Set<string>();
+      const scheduleSlots = isRescue
         ? []
-        : Array.from(new Set(times.filter((t) => /^\d{1,2}:\d{2}$/.test(t)))).sort();
+        : times
+            .map((t, i) => {
+              if (!/^\d{1,2}:\d{2}$/.test(t) || seen.has(t)) return null;
+              seen.add(t);
+              const per = timeAmounts[i]?.trim();
+              const amt = per ? parseFloat(per) : baseAmount;
+              return {
+                time: t,
+                amount: Number.isFinite(amt as number) ? amt : null,
+                unit,
+              };
+            })
+            .filter((s): s is { time: string; amount: number | null; unit: string } => !!s)
+            .sort((a, b) => a.time.localeCompare(b.time));
+      const cleanTimes = scheduleSlots.map((s) => s.time);
       const pills = pillsRemaining ? parseInt(pillsRemaining, 10) : null;
       const threshold = refillThreshold ? parseInt(refillThreshold, 10) : 7;
-      const amount = dosageAmount ? parseFloat(dosageAmount) : null;
       const dosageText = formatDosageText(dosageAmount, dosageUnit);
 
       const { data: med, error } = await supabase
@@ -143,8 +170,9 @@ export function MedicationFormSheet({
           kind,
           dosage: dosageText,
           dosage_form: dosageForm || null,
-          dosage_amount: Number.isFinite(amount as number) ? amount : null,
+          dosage_amount: Number.isFinite(baseAmount as number) ? baseAmount : null,
           dosage_unit: dosageUnit.trim() || null,
+          schedule: scheduleSlots,
           with_food: withFood,
           prescriber: prescriberName.trim() || null,
           prescriber_name: prescriberName.trim() || null,
@@ -161,11 +189,13 @@ export function MedicationFormSheet({
       if (error || !med) throw error ?? new Error("Failed to save");
 
       if (!isRescue && cleanTimes.length > 0) {
-        const rows = cleanTimes.map((t) => ({
+        const rows = scheduleSlots.map((s) => ({
           user_id: userId,
           medication_id: med.id,
-          scheduled_at: todayIso(t),
+          scheduled_at: todayIso(s.time),
           status: "pending" as const,
+          amount: s.amount,
+          unit: s.unit,
         }));
         await supabase.from("medication_doses").insert(rows);
       }
@@ -295,7 +325,7 @@ export function MedicationFormSheet({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="med-amount">Amount</Label>
+              <Label htmlFor="med-amount">Default amount</Label>
               <Input
                 id="med-amount"
                 type="number"
@@ -369,7 +399,10 @@ export function MedicationFormSheet({
             </p>
           ) : (
             <div className="space-y-2">
-              <Label>Times of day</Label>
+              <Label>Times and per-dose amount</Label>
+              <p className="text-xs text-muted-foreground -mt-1">
+                Leave amount blank to use the default. E.g. 500 at 10:00, 750 at 19:00.
+              </p>
               <div className="space-y-2">
                 {times.map((t, idx) => (
                   <div key={idx} className="flex items-center gap-2">
@@ -377,10 +410,30 @@ export function MedicationFormSheet({
                       type="time"
                       value={t}
                       onChange={(e) => updateTime(idx, e.target.value)}
-                      className="max-w-[160px]"
+                      className="max-w-[130px]"
                     />
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      value={timeAmounts[idx] ?? ""}
+                      onChange={(e) => updateTimeAmount(idx, e.target.value)}
+                      placeholder={dosageAmount || "amount"}
+                      className="max-w-[110px]"
+                    />
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {dosageUnit || "mg"}
+                    </span>
                     {times.length > 1 && (
-                      <Button type="button" variant="ghost" size="icon" onClick={() => removeTime(idx)}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          removeTime(idx);
+                          removeTimeAmount(idx);
+                        }}
+                      >
                         <X className="h-4 w-4" />
                       </Button>
                     )}
