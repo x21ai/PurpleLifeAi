@@ -282,7 +282,34 @@ Deno.serve(async (req) => {
   try {
     if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY missing");
 
-    // 1. Get authenticated user
+    const body = await req.json();
+    const action = body?.action ?? "chat";
+
+    // Internal action: extract behaviors from free text. Service role only.
+    if (action === "extract_behaviors_from_text") {
+      const authHeader = req.headers.get("Authorization") || "";
+      const token = authHeader.replace(/^Bearer\s+/i, "");
+      if (token !== SERVICE_ROLE) {
+        return new Response(JSON.stringify({ error: "forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const text = String(body?.text || "").trim();
+      const date = String(body?.date || new Date().toISOString().slice(0, 10));
+      if (!text) {
+        return new Response(JSON.stringify({ error: "text required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const result = await extractBehaviorsFromText(text, date);
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // 1. Get authenticated user (chat path)
     const authHeader = req.headers.get("Authorization") || "";
     const userClient = createClient(SUPABASE_URL, PUBLISHABLE, {
       global: { headers: { Authorization: authHeader } },
@@ -296,8 +323,6 @@ Deno.serve(async (req) => {
     }
     const userId = userData.user.id;
 
-    const body = await req.json();
-    const action = body?.action ?? "chat";
     if (action !== "chat") {
       return new Response(JSON.stringify({ error: "unknown action" }), {
         status: 400,
