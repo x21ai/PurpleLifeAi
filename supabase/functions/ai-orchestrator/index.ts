@@ -276,13 +276,176 @@ async function callClaudeOnce(messages: any[]) {
   return r.json();
 }
 
+export async function extractBehaviorsFromText(
+  text: string,
+  date: string,
+): Promise<{
+  extractions: Array<{
+    behavior_key: string;
+    value: unknown;
+    data_type: string;
+    confidence: number;
+  }>;
+  unmatched_phrases: string[];
+}> {
+  if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY missing");
+
+  const { data: taxonomy, error: taxErr } = await admin
+    .from("behavior_taxonomy")
+    .select("behavior_key, behavior_label, category, data_type, aliases, prompt_example")
+    .order("category")
+    .order("sort_order");
+  if (taxErr) throw new Error(`taxonomy load failed: ${taxErr.message}`);
+
+  const dict = (taxonomy || []).map((t: any) => ({
+    key: t.behavior_key,
+    label: t.behavior_label,
+    category: t.category,
+    data_type: t.data_type,
+    aliases: t.aliases || [],
+    example: t.prompt_example,
+  }));
+
+  const dataTypeByKey = new Map<string, string>(
+    dict.map((d) => [d.key, d.data_type]),
+  );
+
+  const system = `You extract structured behavior observations from a person's free-text health journal entry.
+
+You will receive:
+- The journal text (for date ${date}).
+- A DICTIONARY of behaviors with: key, label, category, data_type, aliases, example.
+
+STRICT RULES:
+- NEVER invent a behavior not explicitly stated or strongly implied in the text. If unsure, omit it.
+- Only use behavior_keys that exist in the dictionary.
+- Include a confidence (0..1) per extraction.
+- value MUST match data_type:
+  * boolean → true/false
+  * count → integer
+  * numeric → number
+  * scale_1_10 → integer 1..10
+  * time_of_day → "HH:MM" (24h)
+  * duration_minutes → integer
+  * text → short string
+- Use aliases to match brand names and colloquialisms (e.g. "Keppra" → keppra_dose; "coffee" → caffeine_intake).
+- Recognize NEGATIVES: "didn't take my evening dose" → missed_aed_dose=true (NOT keppra_dose=false).
+- Recognize COUNTS: "two coffees" → caffeine_intake value=2.
+- Phrases that do not map to any dictionary entry go in unmatched_phrases for later dictionary expansion.
+- Return ONLY JSON conforming to the tool schema. No prose.`;
+
+  const tools = [
+    {
+      name: "return_extractions",
+      description: "Return structured behavior extractions.",
+      input_schema: {
+        type: "object",
+        properties: {
+          extractions: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                behavior_key: { type: "string" },
+                value: {},
+                confidence: { type: "number", minimum: 0, maximum: 1 },
+              },
+              required: ["behavior_key", "value", "confidence"],
+            },
+          },
+          unmatched_phrases: {
+            type: "array",
+            items: { type: "string" },
+          },
+        },
+        required: ["extractions", "unmatched_phrases"],
+      },
+    },
+  ];
+
+  const userContent = `DICTIONARY (JSON):
+${JSON.stringify(dict)}
+
+JOURNAL TEXT:
+"""${text}"""
+
+Call return_extractions with your result.`;
+
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": ANTHROPIC_API_KEY!,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-5",
+      max_tokens: 2000,
+      system,
+      tools,
+      tool_choice: { type: "tool", name: "return_extractions" },
+      messages: [{ role: "user", content: userContent }],
+    }),
+  });
+  if (!r.ok) {
+    throw new Error(`anthropic ${r.status}: ${await r.text()}`);
+  }
+  const j = await r.json();
+  const toolUse = (j.content || []).find((b: any) => b.type === "tool_use");
+  const raw = toolUse?.input || { extractions: [], unmatched_phrases: [] };
+
+  // Normalize + enrich with data_type, drop unknown keys.
+  const extractions = (raw.extractions || [])
+    .filter((e: any) => e && typeof e.behavior_key === "string" && dataTypeByKey.has(e.behavior_key))
+    .map((e: any) => ({
+      behavior_key: e.behavior_key,
+      value: e.value,
+      data_type: dataTypeByKey.get(e.behavior_key)!,
+      confidence: typeof e.confidence === "number"
+        ? Math.max(0, Math.min(1, e.confidence))
+        : 0.5,
+    }));
+  const unmatched_phrases = Array.isArray(raw.unmatched_phrases)
+    ? raw.unmatched_phrases.filter((s: any) => typeof s === "string")
+    : [];
+
+  return { extractions, unmatched_phrases };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY missing");
 
-    // 1. Get authenticated user
+    const body = await req.json();
+    const action = body?.action ?? "chat";
+
+    // Internal action: extract behaviors from free text. Service role only.
+    if (action === "extract_behaviors_from_text") {
+      const authHeader = req.headers.get("Authorization") || "";
+      const token = authHeader.replace(/^Bearer\s+/i, "");
+      if (token !== SERVICE_ROLE) {
+        return new Response(JSON.stringify({ error: "forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const text = String(body?.text || "").trim();
+      const date = String(body?.date || new Date().toISOString().slice(0, 10));
+      if (!text) {
+        return new Response(JSON.stringify({ error: "text required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const result = await extractBehaviorsFromText(text, date);
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // 1. Get authenticated user (chat path)
     const authHeader = req.headers.get("Authorization") || "";
     const userClient = createClient(SUPABASE_URL, PUBLISHABLE, {
       global: { headers: { Authorization: authHeader } },
@@ -296,8 +459,6 @@ Deno.serve(async (req) => {
     }
     const userId = userData.user.id;
 
-    const body = await req.json();
-    const action = body?.action ?? "chat";
     if (action !== "chat") {
       return new Response(JSON.stringify({ error: "unknown action" }), {
         status: 400,
