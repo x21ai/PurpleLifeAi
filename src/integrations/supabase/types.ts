@@ -83,6 +83,45 @@ export type Database = {
         }
         Relationships: []
       }
+      behavior_taxonomy: {
+        Row: {
+          aliases: string[]
+          behavior_key: string
+          behavior_label: string
+          category: string
+          created_at: string
+          data_type: string
+          id: string
+          prompt_example: string
+          sort_order: number
+          unit: string | null
+        }
+        Insert: {
+          aliases?: string[]
+          behavior_key: string
+          behavior_label: string
+          category: string
+          created_at?: string
+          data_type: string
+          id?: string
+          prompt_example: string
+          sort_order?: number
+          unit?: string | null
+        }
+        Update: {
+          aliases?: string[]
+          behavior_key?: string
+          behavior_label?: string
+          category?: string
+          created_at?: string
+          data_type?: string
+          id?: string
+          prompt_example?: string
+          sort_order?: number
+          unit?: string | null
+        }
+        Relationships: []
+      }
       biometrics: {
         Row: {
           active_calories: number | null
@@ -193,6 +232,57 @@ export type Database = {
           workout_minutes?: number | null
         }
         Relationships: []
+      }
+      daily_behaviors: {
+        Row: {
+          behavior_key: string
+          created_at: string
+          date: string
+          extraction_confidence: number | null
+          id: string
+          journal_entry_id: string | null
+          user_corrected: boolean
+          user_id: string
+          value: Json
+        }
+        Insert: {
+          behavior_key: string
+          created_at?: string
+          date: string
+          extraction_confidence?: number | null
+          id?: string
+          journal_entry_id?: string | null
+          user_corrected?: boolean
+          user_id: string
+          value: Json
+        }
+        Update: {
+          behavior_key?: string
+          created_at?: string
+          date?: string
+          extraction_confidence?: number | null
+          id?: string
+          journal_entry_id?: string | null
+          user_corrected?: boolean
+          user_id?: string
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_behaviors_behavior_key_fkey"
+            columns: ["behavior_key"]
+            isOneToOne: false
+            referencedRelation: "behavior_taxonomy"
+            referencedColumns: ["behavior_key"]
+          },
+          {
+            foreignKeyName: "daily_behaviors_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       journal_entries: {
         Row: {
