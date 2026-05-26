@@ -352,6 +352,7 @@ export type Database = {
       }
       medication_doses: {
         Row: {
+          amount: number | null
           created_at: string
           id: string
           medication_id: string
@@ -359,9 +360,11 @@ export type Database = {
           scheduled_at: string
           status: string
           taken_at: string | null
+          unit: string | null
           user_id: string
         }
         Insert: {
+          amount?: number | null
           created_at?: string
           id?: string
           medication_id: string
@@ -369,9 +372,11 @@ export type Database = {
           scheduled_at: string
           status?: string
           taken_at?: string | null
+          unit?: string | null
           user_id: string
         }
         Update: {
+          amount?: number | null
           created_at?: string
           id?: string
           medication_id?: string
@@ -379,6 +384,7 @@ export type Database = {
           scheduled_at?: string
           status?: string
           taken_at?: string | null
+          unit?: string | null
           user_id?: string
         }
         Relationships: [
@@ -447,6 +453,7 @@ export type Database = {
           prescription_number: string | null
           refill_date: string | null
           refill_threshold: number | null
+          schedule: Json
           side_effects_tracked: string[] | null
           start_date: string | null
           times_of_day: string[]
@@ -474,6 +481,7 @@ export type Database = {
           prescription_number?: string | null
           refill_date?: string | null
           refill_threshold?: number | null
+          schedule?: Json
           side_effects_tracked?: string[] | null
           start_date?: string | null
           times_of_day?: string[]
@@ -501,6 +509,7 @@ export type Database = {
           prescription_number?: string | null
           refill_date?: string | null
           refill_threshold?: number | null
+          schedule?: Json
           side_effects_tracked?: string[] | null
           start_date?: string | null
           times_of_day?: string[]
