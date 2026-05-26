@@ -20,6 +20,8 @@ type Dose = {
   id: string;
   scheduled_at: string;
   status: string;
+  amount: number | null;
+  unit: string | null;
   medication: {
     id: string;
     name: string;
@@ -72,7 +74,7 @@ export function TodayDoses() {
     const end = new Date(); end.setHours(23, 59, 59, 999);
     const { data, error } = await supabase
       .from("medication_doses")
-      .select("id, scheduled_at, status, medication:medications(id, name, dosage, kind, is_rescue)")
+      .select("id, scheduled_at, status, amount, unit, medication:medications(id, name, dosage, kind, is_rescue)")
       .gte("scheduled_at", start.toISOString())
       .lte("scheduled_at", end.toISOString())
       .order("scheduled_at", { ascending: true });
@@ -216,9 +218,16 @@ export function TodayDoses() {
                 <p className="text-sm text-foreground truncate">
                   {d.medication?.name ?? "Medication"}
                 </p>
-                {d.medication?.dosage && (
-                  <p className="text-xs text-muted-foreground truncate">{d.medication.dosage}</p>
-                )}
+                {(() => {
+                  const perDose =
+                    d.amount != null
+                      ? `${d.amount}${d.unit ? ` ${d.unit}` : ""}`
+                      : null;
+                  const label = perDose ?? d.medication?.dosage ?? null;
+                  return label ? (
+                    <p className="text-xs text-muted-foreground truncate">{label}</p>
+                  ) : null;
+                })()}
               </div>
               {d.status === "pending" ? (
                 <div className="flex items-center gap-1.5">
