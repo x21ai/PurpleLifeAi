@@ -89,7 +89,7 @@ function CommunityFeed() {
             ))}
           </div>
           <Link
-            to={session ? "/community/new" : "/sign-in"}
+            to={session ? "/community-new" : "/sign-in"}
             className="inline-flex items-center gap-2 rounded-full bg-foreground text-background px-4 py-2 text-sm"
           >
             <PenSquare className="h-4 w-4" /> New post
