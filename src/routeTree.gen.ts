@@ -45,6 +45,7 @@ import { Route as AppAdminUsersRouteImport } from './routes/_app/admin.users'
 import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin.messages'
 import { Route as AppAdminFeedbackRouteImport } from './routes/_app/admin.feedback'
 import { Route as AppAdminContactRouteImport } from './routes/_app/admin.contact'
+import { Route as AppAdminCommunityRouteImport } from './routes/_app/admin.community'
 import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
 
 const SignUpRoute = SignUpRouteImport.update({
@@ -227,6 +228,11 @@ const AppAdminContactRoute = AppAdminContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminCommunityRoute = AppAdminCommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const ApiPublicHooksRiskForecasterRoute =
   ApiPublicHooksRiskForecasterRouteImport.update({
     id: '/api/public/hooks/risk-forecaster',
@@ -256,6 +262,7 @@ export interface FileRoutesByFullPath {
   '/today': typeof AppTodayRouteWithChildren
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
+  '/admin/community': typeof AppAdminCommunityRoute
   '/admin/contact': typeof AppAdminContactRoute
   '/admin/feedback': typeof AppAdminFeedbackRoute
   '/admin/messages': typeof AppAdminMessagesRoute
@@ -293,6 +300,7 @@ export interface FileRoutesByTo {
   '/today': typeof AppTodayRouteWithChildren
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
+  '/admin/community': typeof AppAdminCommunityRoute
   '/admin/contact': typeof AppAdminContactRoute
   '/admin/feedback': typeof AppAdminFeedbackRoute
   '/admin/messages': typeof AppAdminMessagesRoute
@@ -333,6 +341,7 @@ export interface FileRoutesById {
   '/_app/today': typeof AppTodayRouteWithChildren
   '/_app/vitals': typeof AppVitalsRoute
   '/_app/welcome': typeof AppWelcomeRoute
+  '/_app/admin/community': typeof AppAdminCommunityRoute
   '/_app/admin/contact': typeof AppAdminContactRoute
   '/_app/admin/feedback': typeof AppAdminFeedbackRoute
   '/_app/admin/messages': typeof AppAdminMessagesRoute
@@ -373,6 +382,7 @@ export interface FileRouteTypes {
     | '/today'
     | '/vitals'
     | '/welcome'
+    | '/admin/community'
     | '/admin/contact'
     | '/admin/feedback'
     | '/admin/messages'
@@ -410,6 +420,7 @@ export interface FileRouteTypes {
     | '/today'
     | '/vitals'
     | '/welcome'
+    | '/admin/community'
     | '/admin/contact'
     | '/admin/feedback'
     | '/admin/messages'
@@ -449,6 +460,7 @@ export interface FileRouteTypes {
     | '/_app/today'
     | '/_app/vitals'
     | '/_app/welcome'
+    | '/_app/admin/community'
     | '/_app/admin/contact'
     | '/_app/admin/feedback'
     | '/_app/admin/messages'
@@ -734,6 +746,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminContactRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/admin/community': {
+      id: '/_app/admin/community'
+      path: '/community'
+      fullPath: '/admin/community'
+      preLoaderRoute: typeof AppAdminCommunityRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/api/public/hooks/risk-forecaster': {
       id: '/api/public/hooks/risk-forecaster'
       path: '/api/public/hooks/risk-forecaster'
@@ -745,6 +764,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppAdminRouteChildren {
+  AppAdminCommunityRoute: typeof AppAdminCommunityRoute
   AppAdminContactRoute: typeof AppAdminContactRoute
   AppAdminFeedbackRoute: typeof AppAdminFeedbackRoute
   AppAdminMessagesRoute: typeof AppAdminMessagesRoute
@@ -753,6 +773,7 @@ interface AppAdminRouteChildren {
 }
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminCommunityRoute: AppAdminCommunityRoute,
   AppAdminContactRoute: AppAdminContactRoute,
   AppAdminFeedbackRoute: AppAdminFeedbackRoute,
   AppAdminMessagesRoute: AppAdminMessagesRoute,
