@@ -389,3 +389,180 @@ export const listAuditLog = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return { entries: data ?? [] };
   });
+
+/* ---------- Time-limited access ---------- */
+
+export const setExpiry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { relationship_id: string; expires_at: string | null }) =>
+    z
+      .object({
+        relationship_id: z.string().uuid(),
+        expires_at: z.string().datetime().nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: rel, error } = await supabaseAdmin
+      .from("care_relationships")
+      .select("id, owner_id")
+      .eq("id", data.relationship_id)
+      .single();
+    if (error || !rel) throw new Error("Relationship not found");
+    if (rel.owner_id !== userId) throw new Error("Forbidden");
+
+    const { error: uErr } = await supabaseAdmin
+      .from("care_relationships")
+      .update({ expires_at: data.expires_at })
+      .eq("id", data.relationship_id);
+    if (uErr) throw new Error(uErr.message);
+
+    await supabaseAdmin.from("care_audit_log").insert({
+      relationship_id: data.relationship_id,
+      owner_id: userId,
+      actor_id: userId,
+      action: "expiry_changed",
+      metadata: { expires_at: data.expires_at },
+    });
+    return { ok: true };
+  });
+
+/* ---------- Caregiver-side reads (scope-guarded) ---------- */
+
+async function assertScope(ownerId: string, caregiverId: string, scope: string) {
+  const { data, error } = await supabaseAdmin.rpc("has_care_scope", {
+    _owner_id: ownerId,
+    _caregiver_id: caregiverId,
+    _scope: scope,
+  });
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Missing scope: " + scope);
+}
+
+const ownerInput = (input: { owner_id: string }) =>
+  z.object({ owner_id: z.string().uuid() }).parse(input);
+
+export const caregiverReadOverview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(ownerInput)
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: rel, error } = await supabaseAdmin
+      .from("care_relationships")
+      .select("id, role, status, expires_at")
+      .eq("owner_id", data.owner_id)
+      .eq("caregiver_id", userId)
+      .eq("status", "active")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!rel) throw new Error("No active relationship");
+    if (rel.expires_at && new Date(rel.expires_at) < new Date())
+      throw new Error("Access expired");
+
+    const { data: scopes } = await supabaseAdmin
+      .from("care_scopes")
+      .select("scope, granted")
+      .eq("relationship_id", rel.id);
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("first_name, last_name, community_display_name, diagnosis, timezone")
+      .eq("id", data.owner_id)
+      .maybeSingle();
+
+    return {
+      relationship: rel,
+      scopes: (scopes ?? []).filter((s) => s.granted).map((s) => s.scope),
+      profile,
+    };
+  });
+
+export const caregiverReadMeds = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(ownerInput)
+  .handler(async ({ data, context }) => {
+    await assertScope(data.owner_id, context.userId, "meds:read");
+    const { data: meds } = await supabaseAdmin
+      .from("medications")
+      .select("id, name, dosage, times_of_day, schedule, is_rescue, active, notes, refill_date, pills_remaining")
+      .eq("user_id", data.owner_id)
+      .eq("active", true)
+      .order("name");
+    const since = new Date(Date.now() - 7 * 86400_000).toISOString();
+    const { data: doses } = await supabaseAdmin
+      .from("medication_doses")
+      .select("id, medication_id, scheduled_at, taken_at, status")
+      .eq("user_id", data.owner_id)
+      .gte("scheduled_at", since)
+      .order("scheduled_at", { ascending: false })
+      .limit(200);
+    return { meds: meds ?? [], doses: doses ?? [] };
+  });
+
+export const caregiverReadBiometrics = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(ownerInput)
+  .handler(async ({ data, context }) => {
+    await assertScope(data.owner_id, context.userId, "biometrics:read");
+    const since = new Date(Date.now() - 7 * 86400_000).toISOString();
+    const { data: rows } = await supabaseAdmin
+      .from("biometrics")
+      .select("recorded_at, source, hr_bpm, hrv_rmssd_ms, resting_hr_bpm, sleep_score, sleep_total_min, spo2_pct, steps")
+      .eq("user_id", data.owner_id)
+      .gte("recorded_at", since)
+      .order("recorded_at", { ascending: false })
+      .limit(100);
+    return { rows: rows ?? [] };
+  });
+
+export const caregiverReadJournal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(ownerInput)
+  .handler(async ({ data, context }) => {
+    await assertScope(data.owner_id, context.userId, "journal:read");
+    const { data: rows } = await supabaseAdmin
+      .from("journal_entries")
+      .select("id, captured_at, kind, text, ai_summary, ai_tags")
+      .eq("user_id", data.owner_id)
+      .is("archived_at", null)
+      .order("captured_at", { ascending: false })
+      .limit(30);
+    return { entries: rows ?? [] };
+  });
+
+export const caregiverReadSeizures = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(ownerInput)
+  .handler(async ({ data, context }) => {
+    await assertScope(data.owner_id, context.userId, "seizures:read");
+    const { data: rows } = await supabaseAdmin
+      .from("seizure_events")
+      .select("id, started_at, ended_at, duration_seconds, type, severity, injury, rescue_med_given, notes")
+      .eq("user_id", data.owner_id)
+      .order("started_at", { ascending: false })
+      .limit(30);
+    return { events: rows ?? [] };
+  });
+
+export const caregiverReadToday = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(ownerInput)
+  .handler(async ({ data, context }) => {
+    await assertScope(data.owner_id, context.userId, "today:read");
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: forecast } = await supabaseAdmin
+      .from("risk_forecasts")
+      .select("for_date, risk_score, band, ai_narrative, top_factors")
+      .eq("user_id", data.owner_id)
+      .eq("for_date", today)
+      .maybeSingle();
+    const { data: alerts } = await supabaseAdmin
+      .from("alerts")
+      .select("id, kind, title, body, severity, acknowledged, created_at")
+      .eq("user_id", data.owner_id)
+      .eq("acknowledged", false)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    return { forecast, alerts: alerts ?? [] };
+  });
