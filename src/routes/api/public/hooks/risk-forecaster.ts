@@ -8,9 +8,10 @@ export const Route = createFileRoute("/api/public/hooks/risk-forecaster")({
     handlers: {
       POST: async ({ request }: { request: Request }) => {
         const apikey = request.headers.get("apikey");
-        const expected =
-          process.env.SUPABASE_PUBLISHABLE_KEY ||
-          process.env.SUPABASE_ANON_KEY;
+        // Authenticate cron callers with a dedicated secret (CRON_SECRET).
+        // The Supabase publishable/anon key is embedded in the public JS bundle
+        // and must NEVER be used as an auth secret for server endpoints.
+        const expected = process.env.CRON_SECRET;
         if (!expected || apikey !== expected) {
           return new Response("Unauthorized", { status: 401 });
         }

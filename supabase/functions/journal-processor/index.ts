@@ -248,6 +248,30 @@ Deno.serve(async (req) => {
 
   let entry_id: string | undefined;
   try {
+    // AuthN: require either service-role token OR a valid user JWT whose
+    // user id matches the journal entry's user_id. Prevents unauthenticated
+    // callers from reading or re-processing arbitrary journal entries.
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    let callerUserId: string | null = null;
+    const isServiceRole = token === SERVICE_ROLE;
+    if (!isServiceRole) {
+      const { data: userData, error: userErr } = await admin.auth.getUser(token);
+      if (userErr || !userData.user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      callerUserId = userData.user.id;
+    }
+
     const body = await req.json().catch(() => ({}));
     entry_id = body?.entry_id;
     if (!entry_id) {
@@ -263,6 +287,13 @@ Deno.serve(async (req) => {
       .eq("id", entry_id)
       .single();
     if (fetchErr || !entry) throw new Error(fetchErr?.message || "entry not found");
+
+    if (!isServiceRole && entry.user_id !== callerUserId) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const media: string[] = Array.isArray(entry.media_urls) ? entry.media_urls : [];
     const audioUrls = media.filter((u) => isAudioExt(extOf(u)) && !isVideoExt(extOf(u)) && u.includes("voice-"));
