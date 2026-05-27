@@ -1,20 +1,29 @@
 import * as React from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { format, startOfDay, startOfWeek, startOfMonth, startOfYear } from "date-fns";
-import { Zap, BookOpen, Pill } from "lucide-react";
+import { Zap, BookOpen, Pill, Download, FileText, Copy, Share2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/timeline")({
   head: () => ({ meta: [{ title: "Timeline — Purple" }] }),
   component: TimelinePage,
 });
 
-type Range = "day" | "week" | "month" | "year";
+type Range = "day" | "week" | "month" | "year" | "custom";
 
 function rangeStart(r: Range): Date {
   const now = new Date();
@@ -23,6 +32,7 @@ function rangeStart(r: Range): Date {
     case "week": return startOfWeek(now, { weekStartsOn: 1 });
     case "month": return startOfMonth(now);
     case "year": return startOfYear(now);
+    case "custom": return startOfDay(now);
   }
 }
 
@@ -36,15 +46,27 @@ type Row = {
 
 function TimelinePage() {
   useRouteTheme("light");
+  const navigate = useNavigate();
   const { session } = useAuth();
   const userId = session?.user.id;
   const [range, setRange] = React.useState<Range>("week");
   const [search, setSearch] = React.useState("");
+  const [customFrom, setCustomFrom] = React.useState<Date>(() => {
+    const d = new Date(); d.setDate(d.getDate() - 30); return startOfDay(d);
+  });
+  const [customTo, setCustomTo] = React.useState<Date>(() => new Date());
 
-  const sinceISO = React.useMemo(() => rangeStart(range).toISOString(), [range]);
+  const sinceISO = React.useMemo(
+    () => (range === "custom" ? customFrom.toISOString() : rangeStart(range).toISOString()),
+    [range, customFrom],
+  );
+  const untilISO = React.useMemo(
+    () => (range === "custom" ? customTo.toISOString() : new Date().toISOString()),
+    [range, customTo],
+  );
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["timeline", userId, sinceISO],
+    queryKey: ["timeline", userId, sinceISO, untilISO],
     enabled: !!userId,
     queryFn: async (): Promise<Row[]> => {
       const [{ data: seizures }, { data: entries }, { data: doses }] = await Promise.all([
@@ -53,6 +75,7 @@ function TimelinePage() {
           .select("id, started_at, type, severity, notes")
           .eq("user_id", userId!)
           .gte("started_at", sinceISO)
+          .lte("started_at", untilISO)
           .order("started_at", { ascending: false }),
         supabase
           .from("journal_entries")
@@ -60,12 +83,14 @@ function TimelinePage() {
           .eq("user_id", userId!)
           .is("archived_at", null)
           .gte("captured_at", sinceISO)
+          .lte("captured_at", untilISO)
           .order("captured_at", { ascending: false }),
         supabase
           .from("medication_doses")
           .select("id, scheduled_at, taken_at, status, medication_id, medications(name)")
           .eq("user_id", userId!)
           .gte("scheduled_at", sinceISO)
+          .lte("scheduled_at", untilISO)
           .order("scheduled_at", { ascending: false })
           .limit(200),
       ]);
@@ -109,18 +134,152 @@ function TimelinePage() {
       )
     : rows;
 
+  // ---- Exports ----
+  const toCSV = (data: Row[]) => {
+    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const head = ["When", "Kind", "Title", "Notes"].join(",");
+    const lines = data.map((r) =>
+      [
+        esc(format(new Date(r.at), "yyyy-MM-dd HH:mm")),
+        esc(r.kind),
+        esc(r.title),
+        esc(r.body ?? ""),
+      ].join(","),
+    );
+    return head + "\n" + lines.join("\n");
+  };
+  const toText = (data: Row[]) =>
+    data
+      .map(
+        (r) =>
+          `${format(new Date(r.at), "EEE, MMM d, yyyy h:mm a")}  [${r.kind}]  ${r.title}${
+            r.body ? "\n    " + r.body.replace(/\n/g, "\n    ") : ""
+          }`,
+      )
+      .join("\n\n");
+
+  const download = (filename: string, content: string, mime: string) => {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const stamp = format(new Date(), "yyyy-MM-dd");
+  const onExportCSV = () => {
+    download(`purple-timeline-${stamp}.csv`, toCSV(filtered), "text/csv");
+    toast.success("Downloaded CSV");
+  };
+  const onExportTxt = () => {
+    download(`purple-timeline-${stamp}.txt`, toText(filtered), "text/plain");
+    toast.success("Downloaded text report");
+  };
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(toText(filtered));
+      toast.success("Copied to clipboard");
+    } catch {
+      toast.error("Couldn't copy");
+    }
+  };
+  const onShare = async () => {
+    const text = toText(filtered);
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Purple timeline", text });
+      } catch { /* user cancelled */ }
+    } else {
+      onCopy();
+    }
+  };
+  const onPrint = () => {
+    const w = window.open("", "_blank");
+    if (!w) return;
+    const rowsHtml = filtered
+      .map(
+        (r) => `
+          <li>
+            <small>${format(new Date(r.at), "EEE, MMM d, yyyy · h:mm a")}</small>
+            <strong style="text-transform:capitalize">${r.kind}</strong>
+            <div>${r.title.replace(/</g, "&lt;")}</div>
+            ${r.body ? `<p>${r.body.replace(/</g, "&lt;")}</p>` : ""}
+          </li>`,
+      )
+      .join("");
+    w.document.write(`<!doctype html><html><head><title>Purple timeline ${stamp}</title>
+      <style>
+        body{font-family:Georgia,serif;max-width:720px;margin:32px auto;padding:0 20px;color:#222}
+        h1{font-size:28px;margin-bottom:4px}
+        small{display:block;color:#777;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+        li{list-style:none;margin:0 0 18px;padding:14px 16px;border:1px solid #e5e5e5;border-radius:12px}
+        strong{display:inline-block;margin:4px 0;color:#6b3ec9}
+        p{margin:6px 0 0;color:#444;white-space:pre-wrap}
+        ul{padding:0}
+      </style></head><body>
+      <h1>Purple timeline</h1>
+      <p>Generated ${format(new Date(), "EEE, MMM d, yyyy h:mm a")}. ${filtered.length} entries.</p>
+      <ul>${rowsHtml}</ul>
+      <script>window.onload=()=>window.print()</script>
+      </body></html>`);
+    w.document.close();
+  };
+
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-10 sm:pt-16 pb-24">
-      <p className="label-eyebrow text-muted-foreground">Timeline</p>
-      <h1 className="mt-3 font-serif text-[40px] sm:text-6xl leading-[1.05] tracking-[-0.02em] text-foreground">
-        Everything,<br />in order.
-      </h1>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <p className="label-eyebrow text-muted-foreground">Timeline</p>
+          <h1 className="mt-3 font-serif text-[40px] sm:text-6xl leading-[1.05] tracking-[-0.02em] text-foreground">
+            Everything,<br />in order.
+          </h1>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="mt-2">
+              <Download className="h-4 w-4 mr-2" /> Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem onClick={onExportCSV}>
+              <FileText className="h-4 w-4 mr-2" /> Download CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onExportTxt}>
+              <FileText className="h-4 w-4 mr-2" /> Download text
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onPrint}>
+              <FileText className="h-4 w-4 mr-2" /> Print / Save as PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onCopy}>
+              <Copy className="h-4 w-4 mr-2" /> Copy to clipboard
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onShare}>
+              <Share2 className="h-4 w-4 mr-2" /> Share…
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       <p className="mt-5 body-serif text-foreground/75 max-w-[560px]">
-        Seizures, journal entries, and doses, side by side. Filter by range or search.
+        Seizures, journal entries, and doses, side by side. Filter by range, search, then export when you need to share with your care team.
       </p>
 
-      <div className="mt-8 flex flex-wrap items-center gap-2">
-        {(["day", "week", "month", "year"] as const).map((r) => (
+      {/* Quick add */}
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        <span className="text-xs text-muted-foreground mr-1">Add:</span>
+        <Button variant="outline" size="sm" onClick={() => navigate({ to: "/journal/new" })}>
+          <BookOpen className="h-3.5 w-3.5 mr-1.5" /> Journal entry
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => navigate({ to: "/seizures/new" })}>
+          <Zap className="h-3.5 w-3.5 mr-1.5" /> Seizure
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => navigate({ to: "/meds" })}>
+          <Pill className="h-3.5 w-3.5 mr-1.5" /> Dose
+        </Button>
+      </div>
+
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        {(["day", "week", "month", "year", "custom"] as const).map((r) => (
           <button
             key={r}
             onClick={() => setRange(r)}
@@ -141,6 +300,18 @@ function TimelinePage() {
           className="ml-auto h-9 max-w-[220px]"
         />
       </div>
+      {range === "custom" && (
+        <div className="mt-4 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-card/60 p-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">From</p>
+            <DateTimePicker value={customFrom} onChange={(d) => d && setCustomFrom(d)} disableFuture />
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">To</p>
+            <DateTimePicker value={customTo} onChange={(d) => d && setCustomTo(d)} disableFuture />
+          </div>
+        </div>
+      )}
 
       <div className="mt-8">
         {isLoading ? (
