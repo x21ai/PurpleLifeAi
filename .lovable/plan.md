@@ -1,97 +1,113 @@
-## What we're fixing
+# Purple — Wave 2 Plan: QA, Marketing, Admin, Community
 
-Your screenshots and message cover 7 distinct things. This plan groups them into shipping order so each piece is testable on its own.
-
----
-
-### 1. Photos + voice + video on every journal entry
-
-Today `journal_entries.media_urls` (text[]) exists and the `journal-media` storage bucket is already created — they're just not wired into the UI.
-
-- **Capture sheet** (`capture-sheet.tsx`) gets a single "+ Attach" tray with three sources:
-  - Photo (camera + library, `accept="image/*"`, capture on mobile)
-  - Video (`accept="video/*"`, capture on mobile, 60s soft cap, 50 MB hard cap)
-  - Voice clip (uses existing `use-voice-capture` but saves the recording instead of only transcribing — transcript still extracted for AI)
-- Uploads go to `journal-media/{user_id}/{entry_id}/{uuid}.{ext}` with signed-URL reads. Bucket stays private.
-- `entry-card.tsx` renders an inline media strip: square photo thumbs, video thumb with play overlay, audio waveform pill. Tap → lightbox / inline player.
-- Same media tray on the seizure log form (`seizure_events` already has `photo_urls`, `video_url`).
-
-### 2. Inline edit on the journal list (no more route jump)
-
-- Delete the full-screen `/journal/$entryId/edit` route from primary nav.
-- Tapping an entry expands it in place: text becomes editable, media tray appears, Save / Cancel pinned to the card. Optimistic update via TanStack Query.
-- The `…` menu keeps Archive / Delete.
-
-### 3. App-wide theme + chrome cleanup
-
-- **One theme, one mode.** Today is light, Patterns is light, Ask is dark, the edit sheet was dark — that's the inconsistency you saw. We standardize on the light Oura-style theme for the whole signed-in app. Ask gets a tinted lavender background instead of full dark so it still feels distinct.
-- **No site footer inside the app.** `site-footer.tsx` stays on marketing routes only. The `_app` shell already shouldn't render it; we audit and strip the stray Charter/Privacy/Terms/Contact/GitHub row visible at the bottom of Today/Journal/Patterns.
-- **Settings duplicates.** The About card on Settings repeats links that already live in the in-app footer. We remove the duplicate footer and keep About as the single source.
-
-### 4. Floating Ask Purple
-
-- Settings → Preferences gets a "Floating Ask button" toggle (default ON on desktop/tablet, OFF on mobile because the bottom nav already has Ask).
-- When ON, a small purple chat-bubble FAB appears bottom-right on every `_app` route, opens the Ask sheet without leaving the current page.
-
-### 5. Choose your AI model in Settings
-
-- Settings → AI gets a model picker with three options:
-  - Gemini 2.5 Flash (fast, default — via Lovable AI)
-  - Gemini 2.5 Pro (deeper reasoning — via Lovable AI)
-  - Claude (Sonnet 4.5 — via your existing `ANTHROPIC_API_KEY` secret, since Claude is not on the Lovable AI Gateway)
-- Stored on `profiles.ai_model_preference`. `ai-orchestrator` reads it per request and routes to the right provider.
-
-### 6. History import — both conversational AND form
-
-- **Conversational** (primary). You can say "I was on Keppra 500mg twice a day from Jan 2022 to March 2024, switched to Lamictal 100mg since then, and had 3 seizures last summer — June 12, July 3, August 20." Purple parses it, shows a stacked **Confirm card per item** (using the propose/execute pattern we already built), you tick which to save. Past meds get `end_date` filled, archived. Past seizures get `started_at` set to your stated date.
-- **Manual form** (backstop) under Settings → Medications → "Add past medication" and Seizures → "Log past event." Both accept arbitrary historical dates.
-
-### 7. Timeline — day / week / month / year + search
-
-New `/timeline` route (added to bottom nav, replacing Patterns? — see Decisions below) showing:
-
-- Date range tabs: Day · Week · Month · Year
-- Vertical timeline mixing seizures, journal entries, doses taken/missed, biometric anomalies, alerts
-- Search bar across journal text, AI tags, med names, seizure notes (Postgres `tsvector` on a generated `search_doc` column)
-- Date jumper (calendar picker → scroll to date)
-
-### 8. "How does the AI know to act?"
-
-This is a question, not a build item — but worth answering in the product. We add a short **"How Purple thinks" page** under Settings explaining:
-
-- Purple reads, never writes silently. Every action (add med, log seizure, archive) is a Confirm card you tap.
-- Pattern detection runs nightly: it compares the last 24h against your personal 30-day baseline across 8 signals (sleep, HRV, HR, temp, readiness, stress, cycle, dose adherence). 2+ stacked → gentle nudge. 4+ → "Tell me more" link.
-- The chat sees: last 7d biometrics, 14d journal, 90d seizures, current meds, latest risk forecast. Nothing else leaves your device unless you explicitly share.
-
-This page replaces hand-wavy "AI" copy with a concrete contract the user can trust.
+Four workstreams. Each is independent, so we can ship them in order without blocking.
 
 ---
 
-## Decisions I need from you
+## 1) End-to-end QA pass (mobile / tablet / desktop)
 
-1. **Bottom nav slot for /timeline** — do we (a) replace Patterns, (b) replace Ask (since Ask becomes a floating FAB), or (c) keep 5 items and add Timeline as the 6th?
-2. **Claude model exact name** — "Claude 4.7" doesn't exist yet; the current Anthropic flagship is **Claude Sonnet 4.5**. OK to use that and label it "Claude (most thoughtful)" in the picker?
-3. **Video storage cap** — 50 MB / 60s per clip OK? Higher = more Lovable Cloud storage cost.
+**Goal:** every existing route renders cleanly at 375px, 768px, and 1280px, with no console errors, no overflow, no theme mismatches.
+
+**Routes audited:** `/`, `/journal`, `/journal/new`, `/timeline`, `/insights`, `/meds`, `/meds/:id`, `/seizures/new`, `/chat`, `/settings`, `/settings/how-purple-thinks`, `/biometrics`, `/vitals`, `/my-health`, `/charter`, `/privacy`, `/terms`, `/welcome`, `/sign-in`, `/reset-password`.
+
+**Checks per route:**
+- Layout: no horizontal scroll, tap targets ≥ 44px, bottom-nav clearance (`pb-24` on mobile).
+- Theme: only semantic tokens (`bg-background`, `text-foreground`, …) — no stray `bg-white` / `text-black`.
+- Empty / loading / error states present.
+- Forms validate and submit; toasts fire.
+- Browser/console errors captured and fixed.
+
+**Functional flows tested end-to-end** (preview browser):
+1. Sign up → onboarding → first journal entry (text + photo + voice + video ≤50 MB/60 s).
+2. Log a seizure (with backdating) → see it on Timeline within filter.
+3. Add a medication → mark dose taken → adherence updates.
+4. Ask Purple a question via FAB → response renders → "How Purple thinks" link works.
+5. Settings: change AI model, toggle floating Ask, switch to "How Purple thinks".
+6. Timeline: Day/Week/Month/Year filter + search.
+
+Fixes done inline as found. Final deliverable: short report of what was checked + what was fixed.
 
 ---
 
-## Technical details
+## 2) Public marketing site + sign-up funnel
 
-- **DB migration**: add `profiles.ai_model_preference text default 'gemini-flash'`; add `profiles.floating_ask_enabled boolean default true`; add generated `search_doc tsvector` columns + GIN indexes on `journal_entries`, `seizure_events`, `medications`.
-- **Storage policies**: `journal-media` bucket gets per-user read/write policies scoped to `{user_id}/...` path prefix.
-- **Edge functions**:
-  - `ai-orchestrator`: branch on `profile.ai_model_preference` → Lovable AI Gateway (Gemini) or direct Anthropic call with `ANTHROPIC_API_KEY`. Same tool-calling schema for both.
-  - New `journal-media-sign` for short-lived signed URLs on read.
-- **New routes**: `/timeline`, `/settings/ai`, `/settings/how-purple-thinks`. Delete `/journal/$entryId/edit`.
-- **New components**: `media-tray.tsx`, `media-strip.tsx`, `media-lightbox.tsx`, `ask-fab.tsx`, `history-import-card.tsx`, `timeline-row.tsx`, `date-range-tabs.tsx`.
-- **Edits**: `capture-sheet.tsx`, `entry-card.tsx`, `journal.index.tsx` (inline edit), `app-shell.tsx` (footer audit + FAB mount), `chat.tsx` (model badge), `settings.tsx` (remove duplicate About footer, add AI + Floating Ask sections), `seizures.new.tsx` (media tray).
-- **Responsive**: every new component checked at 390 (mobile), 768 (tablet), 1280 (desktop) per the workspace rule.
+Currently the app is auth-gated end-to-end. We'll add a public surface.
+
+**New public routes** (outside `_authenticated`):
+- `/` becomes the marketing home (hero, problem, how Purple helps, screenshots, testimonials placeholder, CTA).
+- `/features` — media journal, AI patterns, timeline, meds, biometrics.
+- `/how-it-works` — 3-step explainer.
+- `/pricing` — single free tier for now (placeholder for future).
+- `/about` — mission, who it's for (people with epilepsy + caregivers).
+- `/contact` — simple form → stored in `contact_messages` table.
+
+Authenticated app moves under `/app` (Today/Journal/Timeline/etc. all reparent). Sign-in stays at `/sign-in`, sign-up gets a dedicated `/sign-up` page linked from every marketing CTA.
+
+Each route gets its own `head()` with title/description/og:title/og:description (per project SEO rules). Single H1, semantic HTML, alt text on all images. Sitemap + robots.txt updated.
+
+**Design direction:** matches existing in-app aesthetic (serif headings, warm palette, calm tone) so the transition into the app feels seamless.
 
 ---
 
-## Out of scope (call out, don't build)
+## 3) Super-admin console
 
-- Real-time multi-device sync of in-progress edits
-- AI-generated video summaries
-- Editing past biometric values
-- Push notifications for the gentle nudge (still in-app only)
+**Roles:** create `app_role` enum (`user`, `admin`, `super_admin`) and a `user_roles` table with the security-definer `has_role()` pattern (per project rules — never store roles on `profiles`).
+
+**New route group:** `/admin/*` gated by `has_role(auth.uid(), 'super_admin')` in `beforeLoad`.
+- `/admin` — dashboard (total users, active last 7d, seizures logged, journal entries, signups chart).
+- `/admin/users` — searchable table; view profile, recent activity, suspend, reset password.
+- `/admin/messages` — broadcast or 1:1 message to users (stored in new `admin_messages` table; user sees it as a banner on Today + in a new `/inbox` route).
+- `/admin/contact` — inbound `/contact` form submissions.
+- `/admin/feedback` — feedback inbox (new `feedback` table; "Send feedback" link in user Settings).
+
+**Migrations:** `user_roles`, `admin_messages`, `admin_message_recipients`, `contact_messages`, `feedback`. All with RLS + GRANTs.
+
+Server functions (`createServerFn` + `requireSupabaseAuth` + role check in handler) for every admin read/write. No client-side admin checks.
+
+---
+
+## 4) Community hub
+
+**Goal:** safe space for people with epilepsy + caregivers to talk, share, and find resources. Moderated, not anonymous-by-default, opt-in.
+
+**New routes** (in-app, behind auth, behind a "Join community" opt-in in Settings):
+- `/community` — feed of recent posts, filterable by topic (Seizures, Meds, Triggers, Caregiving, Wins, Questions).
+- `/community/new` — compose post (text + optional photo, no medical-advice disclaimer at top).
+- `/community/:postId` — post + threaded comments + reactions (❤️ 🤝 💡).
+- `/community/resources` — curated resource library (epilepsy foundations, hotlines, research summaries — seeded from existing `research_sources`).
+- `/community/profile/:userId` — public-facing display name + bio + post history (everything user opts to show).
+
+**Safety:**
+- Reports → `community_reports` table → surfaced in `/admin/community`.
+- Auto-flag for crisis keywords ("suicide", "overdose") with immediate resource banner.
+- "Not medical advice" disclaimer on every post.
+- Block / mute per user.
+
+**Migrations:** `community_posts`, `community_comments`, `community_reactions`, `community_reports`, `community_blocks`, plus `community_display_name` + `community_bio` + `community_opted_in` on `profiles`.
+
+---
+
+## Sequencing
+
+1. **QA pass** (fast, no schema) — fix what's broken before adding surface area.
+2. **Marketing site + `/app` reparent** — biggest structural change; do it before admin/community so new routes nest cleanly.
+3. **Super admin** — needed to moderate community, so ships before community goes live.
+4. **Community** — last, builds on roles + admin moderation.
+
+## Technical notes
+
+- All server-side reads/writes use `createServerFn` (not Edge Functions).
+- Roles via `has_role()` security-definer function — never queried from client without the function.
+- Every new public-schema table gets explicit GRANTs in the migration.
+- Marketing routes use relative canonicals (no project URL hardcoded).
+- Admin messages + community posts trigger realtime channels for live updates.
+- Custom instruction respected: every UI change verified at mobile / tablet / desktop.
+
+---
+
+## Open questions before I start
+
+1. **Scope for this round** — all four workstreams, or start with QA + marketing and queue admin + community for next wave? (Community especially is a big surface.)
+2. **Marketing home** — do you want me to ask the visual-design questions (palette / typography / layout) for the public site, or keep it visually identical to the in-app aesthetic?
+3. **Admin access** — who's the first super_admin? I can either (a) seed your user ID directly in the migration if you tell me the email, or (b) build a one-time "claim super admin" page that the very first signup can use.
+4. **Community** — public posts visible to logged-out visitors (better for SEO + growth), or members-only (safer, more intimate)?
