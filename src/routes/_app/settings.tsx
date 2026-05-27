@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ChevronRight, Pill } from "lucide-react";
+import { ChevronRight, Pill, History, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { OuraConnection } from "@/components/connections/oura-connection";
@@ -63,6 +63,44 @@ function SettingsPage() {
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </Link>
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
+        <div className="flex items-center gap-2">
+          <History className="h-4 w-4 text-primary" />
+          <h2 className="font-serif text-xl text-foreground">Add past history</h2>
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Backfill old medications and past episodes so Purple can see your full story. Each form lets you pick any date.
+        </p>
+        <div className="mt-4 grid sm:grid-cols-2 gap-3">
+          <Link
+            to="/meds"
+            className="flex items-center justify-between rounded-xl border border-border p-4 hover:bg-secondary/40 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Pill className="h-4 w-4 text-primary" />
+              <div>
+                <p className="font-serif text-base text-foreground">Old medications</p>
+                <p className="text-xs text-muted-foreground">Set start &amp; end dates in the past</p>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </Link>
+          <Link
+            to="/seizures/new"
+            className="flex items-center justify-between rounded-xl border border-border p-4 hover:bg-secondary/40 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Zap className="h-4 w-4 text-destructive" />
+              <div>
+                <p className="font-serif text-base text-foreground">Past episodes</p>
+                <p className="text-xs text-muted-foreground">Log seizures from any date or time</p>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </Link>
+        </div>
       </section>
 
       <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
