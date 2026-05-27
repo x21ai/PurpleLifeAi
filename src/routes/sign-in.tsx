@@ -15,11 +15,11 @@ export const Route = createFileRoute("/sign-in")({
     if (typeof window === "undefined") return;
     if (isOAuthCallbackUrl()) {
       const ok = await waitForOAuthSession();
-      if (ok) throw redirect({ to: "/" });
+      if (ok) throw redirect({ to: "/today" });
     }
     const { data } = await supabase.auth.getSession();
     if (data.session) {
-      throw redirect({ to: "/" });
+      throw redirect({ to: "/today" });
     }
   },
   head: () => ({
@@ -108,13 +108,13 @@ function SignInPage() {
         await supabase.auth.getSession();
       }
       setStatus("idle");
-      await navigate({ to: "/" });
+      await navigate({ to: "/today" });
       return;
     }
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { emailRedirectTo: window.location.origin + "/" },
+      options: { emailRedirectTo: window.location.origin + "/today" },
     });
     if (error) {
       setErrorMsg(error.message);
@@ -122,7 +122,7 @@ function SignInPage() {
       return;
     }
     if (data.session) {
-      await navigate({ to: "/" });
+      await navigate({ to: "/today" });
       return;
     }
     setStatus("verify-sent");

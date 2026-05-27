@@ -74,7 +74,7 @@ function RiskDetailPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-8 sm:pt-12 pb-24">
-      <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+      <Link to="/today" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ChevronLeft className="h-4 w-4" />
         Back to today
       </Link>

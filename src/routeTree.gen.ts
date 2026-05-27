@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as FeaturesRouteImport } from './routes/features'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as AppRouteImport } from './routes/_app'
-import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
 import { Route as AppVitalsRouteImport } from './routes/_app/vitals'
+import { Route as AppTodayRouteImport } from './routes/_app/today'
 import { Route as AppTimelineRouteImport } from './routes/_app/timeline'
 import { Route as AppTermsRouteImport } from './routes/_app/terms'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
@@ -35,6 +41,11 @@ import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
 import { Route as AppBiometricsMetricRouteImport } from './routes/_app/biometrics.$metric'
 import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
 
+const SignUpRoute = SignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
@@ -45,14 +56,34 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeaturesRoute = FeaturesRouteImport.update({
+  id: '/features',
+  path: '/features',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppIndexRoute = AppIndexRouteImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppWelcomeRoute = AppWelcomeRouteImport.update({
   id: '/welcome',
@@ -62,6 +93,11 @@ const AppWelcomeRoute = AppWelcomeRouteImport.update({
 const AppVitalsRoute = AppVitalsRouteImport.update({
   id: '/vitals',
   path: '/vitals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTodayRoute = AppTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTimelineRoute = AppTimelineRouteImport.update({
@@ -125,9 +161,9 @@ const OauthOuraCallbackRoute = OauthOuraCallbackRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppTodayRiskRoute = AppTodayRiskRouteImport.update({
-  id: '/today/risk',
-  path: '/today/risk',
-  getParentRoute: () => AppRoute,
+  id: '/risk',
+  path: '/risk',
+  getParentRoute: () => AppTodayRoute,
 } as any)
 const AppSettingsHowPurpleThinksRoute =
   AppSettingsHowPurpleThinksRouteImport.update({
@@ -163,9 +199,14 @@ const ApiPublicHooksRiskForecasterRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AppIndexRoute
+  '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/contact': typeof ContactRoute
+  '/features': typeof FeaturesRoute
+  '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/insights': typeof AppInsightsRoute
@@ -175,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRouteWithChildren
   '/terms': typeof AppTermsRoute
   '/timeline': typeof AppTimelineRoute
+  '/today': typeof AppTodayRouteWithChildren
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
@@ -189,8 +231,14 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/contact': typeof ContactRoute
+  '/features': typeof FeaturesRoute
+  '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/insights': typeof AppInsightsRoute
@@ -200,9 +248,9 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRouteWithChildren
   '/terms': typeof AppTermsRoute
   '/timeline': typeof AppTimelineRoute
+  '/today': typeof AppTodayRouteWithChildren
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
-  '/': typeof AppIndexRoute
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
@@ -216,9 +264,15 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
+  '/about': typeof AboutRoute
+  '/contact': typeof ContactRoute
+  '/features': typeof FeaturesRoute
+  '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
   '/_app/charter': typeof AppCharterRoute
   '/_app/chat': typeof AppChatRoute
   '/_app/insights': typeof AppInsightsRoute
@@ -228,9 +282,9 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/terms': typeof AppTermsRoute
   '/_app/timeline': typeof AppTimelineRoute
+  '/_app/today': typeof AppTodayRouteWithChildren
   '/_app/vitals': typeof AppVitalsRoute
   '/_app/welcome': typeof AppWelcomeRoute
-  '/_app/': typeof AppIndexRoute
   '/_app/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/_app/journal/new': typeof AppJournalNewRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
@@ -246,8 +300,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
+    | '/contact'
+    | '/features'
+    | '/pricing'
     | '/reset-password'
     | '/sign-in'
+    | '/sign-up'
     | '/charter'
     | '/chat'
     | '/insights'
@@ -257,6 +316,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/terms'
     | '/timeline'
+    | '/today'
     | '/vitals'
     | '/welcome'
     | '/biometrics/$metric'
@@ -271,8 +331,14 @@ export interface FileRouteTypes {
     | '/api/public/hooks/risk-forecaster'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
+    | '/about'
+    | '/contact'
+    | '/features'
+    | '/pricing'
     | '/reset-password'
     | '/sign-in'
+    | '/sign-up'
     | '/charter'
     | '/chat'
     | '/insights'
@@ -282,9 +348,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/terms'
     | '/timeline'
+    | '/today'
     | '/vitals'
     | '/welcome'
-    | '/'
     | '/biometrics/$metric'
     | '/journal/new'
     | '/meds/$medId'
@@ -297,9 +363,15 @@ export interface FileRouteTypes {
     | '/api/public/hooks/risk-forecaster'
   id:
     | '__root__'
+    | '/'
     | '/_app'
+    | '/about'
+    | '/contact'
+    | '/features'
+    | '/pricing'
     | '/reset-password'
     | '/sign-in'
+    | '/sign-up'
     | '/_app/charter'
     | '/_app/chat'
     | '/_app/insights'
@@ -309,9 +381,9 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/terms'
     | '/_app/timeline'
+    | '/_app/today'
     | '/_app/vitals'
     | '/_app/welcome'
-    | '/_app/'
     | '/_app/biometrics/$metric'
     | '/_app/journal/new'
     | '/_app/meds/$medId'
@@ -325,15 +397,28 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  AboutRoute: typeof AboutRoute
+  ContactRoute: typeof ContactRoute
+  FeaturesRoute: typeof FeaturesRoute
+  PricingRoute: typeof PricingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignInRoute: typeof SignInRoute
+  SignUpRoute: typeof SignUpRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   ApiPublicHooksRiskForecasterRoute: typeof ApiPublicHooksRiskForecasterRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sign-up': {
+      id: '/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sign-in': {
       id: '/sign-in'
       path: '/sign-in'
@@ -348,6 +433,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/features': {
+      id: '/features'
+      path: '/features'
+      fullPath: '/features'
+      preLoaderRoute: typeof FeaturesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app': {
       id: '/_app'
       path: ''
@@ -355,12 +468,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/': {
-      id: '/_app/'
+    '/': {
+      id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/welcome': {
       id: '/_app/welcome'
@@ -374,6 +487,13 @@ declare module '@tanstack/react-router' {
       path: '/vitals'
       fullPath: '/vitals'
       preLoaderRoute: typeof AppVitalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/today': {
+      id: '/_app/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof AppTodayRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/timeline': {
@@ -462,10 +582,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/today/risk': {
       id: '/_app/today/risk'
-      path: '/today/risk'
+      path: '/risk'
       fullPath: '/today/risk'
       preLoaderRoute: typeof AppTodayRiskRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppTodayRoute
     }
     '/_app/settings/how-purple-thinks': {
       id: '/_app/settings/how-purple-thinks'
@@ -535,6 +655,18 @@ const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
   AppSettingsRouteChildren,
 )
 
+interface AppTodayRouteChildren {
+  AppTodayRiskRoute: typeof AppTodayRiskRoute
+}
+
+const AppTodayRouteChildren: AppTodayRouteChildren = {
+  AppTodayRiskRoute: AppTodayRiskRoute,
+}
+
+const AppTodayRouteWithChildren = AppTodayRoute._addFileChildren(
+  AppTodayRouteChildren,
+)
+
 interface AppRouteChildren {
   AppCharterRoute: typeof AppCharterRoute
   AppChatRoute: typeof AppChatRoute
@@ -545,13 +677,12 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppTermsRoute: typeof AppTermsRoute
   AppTimelineRoute: typeof AppTimelineRoute
+  AppTodayRoute: typeof AppTodayRouteWithChildren
   AppVitalsRoute: typeof AppVitalsRoute
   AppWelcomeRoute: typeof AppWelcomeRoute
-  AppIndexRoute: typeof AppIndexRoute
   AppBiometricsMetricRoute: typeof AppBiometricsMetricRoute
   AppJournalNewRoute: typeof AppJournalNewRoute
   AppSeizuresNewRoute: typeof AppSeizuresNewRoute
-  AppTodayRiskRoute: typeof AppTodayRiskRoute
   AppBiometricsIndexRoute: typeof AppBiometricsIndexRoute
   AppJournalIndexRoute: typeof AppJournalIndexRoute
 }
@@ -566,13 +697,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppTermsRoute: AppTermsRoute,
   AppTimelineRoute: AppTimelineRoute,
+  AppTodayRoute: AppTodayRouteWithChildren,
   AppVitalsRoute: AppVitalsRoute,
   AppWelcomeRoute: AppWelcomeRoute,
-  AppIndexRoute: AppIndexRoute,
   AppBiometricsMetricRoute: AppBiometricsMetricRoute,
   AppJournalNewRoute: AppJournalNewRoute,
   AppSeizuresNewRoute: AppSeizuresNewRoute,
-  AppTodayRiskRoute: AppTodayRiskRoute,
   AppBiometricsIndexRoute: AppBiometricsIndexRoute,
   AppJournalIndexRoute: AppJournalIndexRoute,
 }
@@ -580,9 +710,15 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  AboutRoute: AboutRoute,
+  ContactRoute: ContactRoute,
+  FeaturesRoute: FeaturesRoute,
+  PricingRoute: PricingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignInRoute: SignInRoute,
+  SignUpRoute: SignUpRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   ApiPublicHooksRiskForecasterRoute: ApiPublicHooksRiskForecasterRoute,
 }
