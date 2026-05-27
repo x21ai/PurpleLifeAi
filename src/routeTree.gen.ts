@@ -60,6 +60,7 @@ import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin.messag
 import { Route as AppAdminFeedbackRouteImport } from './routes/_app/admin.feedback'
 import { Route as AppAdminContactRouteImport } from './routes/_app/admin.contact'
 import { Route as AppAdminCommunityRouteImport } from './routes/_app/admin.community'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
 
 const UsersRoute = UsersRouteImport.update({
@@ -317,6 +318,12 @@ const AppAdminCommunityRoute = AppAdminCommunityRouteImport.update({
   path: '/community',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksRiskForecasterRoute =
   ApiPublicHooksRiskForecasterRouteImport.update({
     id: '/api/public/hooks/risk-forecaster',
@@ -376,6 +383,7 @@ export interface FileRoutesByFullPath {
   '/biometrics/': typeof AppBiometricsIndexRoute
   '/journal/': typeof AppJournalIndexRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -428,6 +436,7 @@ export interface FileRoutesByTo {
   '/biometrics': typeof AppBiometricsIndexRoute
   '/journal': typeof AppJournalIndexRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -483,6 +492,7 @@ export interface FileRoutesById {
   '/_app/biometrics/': typeof AppBiometricsIndexRoute
   '/_app/journal/': typeof AppJournalIndexRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -538,6 +548,7 @@ export interface FileRouteTypes {
     | '/biometrics/'
     | '/journal/'
     | '/api/public/hooks/risk-forecaster'
+    | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -590,6 +601,7 @@ export interface FileRouteTypes {
     | '/biometrics'
     | '/journal'
     | '/api/public/hooks/risk-forecaster'
+    | '/lovable/email/queue/process'
   id:
     | '__root__'
     | '/'
@@ -644,6 +656,7 @@ export interface FileRouteTypes {
     | '/_app/biometrics/'
     | '/_app/journal/'
     | '/api/public/hooks/risk-forecaster'
+    | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -666,6 +679,7 @@ export interface RootRouteChildren {
   CareAcceptRoute: typeof CareAcceptRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   ApiPublicHooksRiskForecasterRoute: typeof ApiPublicHooksRiskForecasterRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1027,6 +1041,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminCommunityRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/risk-forecaster': {
       id: '/api/public/hooks/risk-forecaster'
       path: '/api/public/hooks/risk-forecaster'
@@ -1180,17 +1201,8 @@ const rootRouteChildren: RootRouteChildren = {
   CareAcceptRoute: CareAcceptRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   ApiPublicHooksRiskForecasterRoute: ApiPublicHooksRiskForecasterRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
