@@ -172,6 +172,7 @@ function JournalPage() {
         onClick={() => navigate({ to: "/journal/new" })}
         aria-label="New entry"
         className="fixed bottom-24 right-5 md:bottom-8 md:right-8 z-40 inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 py-3.5 shadow-lg shadow-primary/30 hover:bg-primary/90 active:scale-[0.98] transition"
+        style={{ marginBottom: "env(safe-area-inset-bottom)" }}
       >
         <Plus className="h-5 w-5" />
         <span className="text-sm font-medium">New entry</span>

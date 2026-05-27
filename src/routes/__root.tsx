@@ -17,6 +17,17 @@ import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { rearmMedicationNotifications } from "@/lib/med-notifications";
 
 function NotFoundComponent() {
+  // Compatibility: the internal `_app` segment is a TanStack route-group,
+  // not a public URL. Old links to `/_app/admin/...` 404 — strip the prefix
+  // and forward to the real route before showing the 404 screen.
+  if (typeof window !== "undefined") {
+    const { pathname, search, hash } = window.location;
+    if (pathname.startsWith("/_app/") || pathname === "/_app") {
+      const target = pathname.replace(/^\/_app/, "") || "/";
+      window.location.replace(target + search + hash);
+      return null;
+    }
+  }
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
