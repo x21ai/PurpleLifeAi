@@ -3,7 +3,7 @@ import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { Shield, Users, MessageSquare, Mail, MessageCircle, Flag, BookMarked } from "lucide-react";
 import { useIsAdmin } from "@/lib/use-is-admin";
 
-const navItems = [
+const navItems: Array<{ to: string; label: string; icon: typeof Shield; exact?: boolean }> = [
   { to: "/admin", label: "Dashboard", icon: Shield, exact: true },
   { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/messages", label: "Messages", icon: MessageSquare },
@@ -11,7 +11,7 @@ const navItems = [
   { to: "/admin/feedback", label: "Feedback", icon: MessageCircle },
   { to: "/admin/community", label: "Community", icon: Flag },
   { to: "/admin/resources", label: "Resources", icon: BookMarked },
-] as const;
+];
 
 export function AdminShell({ children }: { children?: React.ReactNode }) {
   const { loading, isAdmin } = useIsAdmin();
@@ -38,7 +38,7 @@ export function AdminShell({ children }: { children?: React.ReactNode }) {
           return (
             <Link
               key={item.to}
-              to={item.to}
+              to={item.to as "/admin"}
               className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm whitespace-nowrap transition ${
                 active
                   ? "bg-primary text-primary-foreground"
