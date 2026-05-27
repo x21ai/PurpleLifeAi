@@ -93,9 +93,19 @@ function MetricDrillPage() {
     if (!uid || !meta) return;
     const since = new Date(Date.now() - range * 24 * 3600 * 1000).toISOString();
     void (async () => {
-      const { data } = await supabase
+      const { data } = await (supabase
         .from("biometrics")
-        .select(`recorded_at, ${meta.column}`)
+        .select(`recorded_at, ${meta.column}`) as unknown as {
+          eq: (c: string, v: string) => {
+            eq: (c: string, v: string) => {
+              gte: (c: string, v: string) => {
+                order: (c: string, o: { ascending: boolean }) => Promise<{
+                  data: Array<Record<string, unknown>> | null;
+                }>;
+              };
+            };
+          };
+        })
         .eq("user_id", uid)
         .eq("source", "oura")
         .gte("recorded_at", since)
