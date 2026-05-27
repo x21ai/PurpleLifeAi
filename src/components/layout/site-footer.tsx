@@ -5,7 +5,7 @@ export function SiteFooter({ variant = "app" }: { variant?: "app" | "marketing" 
   return (
     <footer
       className={
-        "border-t border-border bg-background/60 " +
+        "hidden lg:block border-t border-border bg-background/60 " +
         (variant === "app" ? "mt-12" : "mt-0")
       }
     >
