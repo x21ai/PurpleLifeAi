@@ -15,9 +15,12 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CommunityRouteImport } from './routes/community'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CommunityResourcesRouteImport } from './routes/community.resources'
+import { Route as CommunityPostIdRouteImport } from './routes/community.$postId'
 import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
 import { Route as AppVitalsRouteImport } from './routes/_app/vitals'
 import { Route as AppTodayRouteImport } from './routes/_app/today'
@@ -28,10 +31,13 @@ import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
 import { Route as AppMyHealthRouteImport } from './routes/_app/my-health'
 import { Route as AppMedsRouteImport } from './routes/_app/meds'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
+import { Route as AppCommunityNewRouteImport } from './routes/_app/community-new'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
 import { Route as AppCharterRouteImport } from './routes/_app/charter'
+import { Route as AppAdminRouteImport } from './routes/_app/admin'
 import { Route as AppJournalIndexRouteImport } from './routes/_app/journal.index'
 import { Route as AppBiometricsIndexRouteImport } from './routes/_app/biometrics.index'
+import { Route as AppAdminIndexRouteImport } from './routes/_app/admin.index'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
 import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
 import { Route as AppSettingsHowPurpleThinksRouteImport } from './routes/_app/settings.how-purple-thinks'
@@ -39,6 +45,12 @@ import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
 import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
 import { Route as AppBiometricsMetricRouteImport } from './routes/_app/biometrics.$metric'
+import { Route as AppAdminUsersRouteImport } from './routes/_app/admin.users'
+import { Route as AppAdminResourcesRouteImport } from './routes/_app/admin.resources'
+import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin.messages'
+import { Route as AppAdminFeedbackRouteImport } from './routes/_app/admin.feedback'
+import { Route as AppAdminContactRouteImport } from './routes/_app/admin.contact'
+import { Route as AppAdminCommunityRouteImport } from './routes/_app/admin.community'
 import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
 
 const SignUpRoute = SignUpRouteImport.update({
@@ -71,6 +83,11 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CommunityRoute = CommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -84,6 +101,16 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const CommunityResourcesRoute = CommunityResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => CommunityRoute,
+} as any)
+const CommunityPostIdRoute = CommunityPostIdRouteImport.update({
+  id: '/$postId',
+  path: '/$postId',
+  getParentRoute: () => CommunityRoute,
 } as any)
 const AppWelcomeRoute = AppWelcomeRouteImport.update({
   id: '/welcome',
@@ -135,6 +162,11 @@ const AppInsightsRoute = AppInsightsRouteImport.update({
   path: '/insights',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCommunityNewRoute = AppCommunityNewRouteImport.update({
+  id: '/community-new',
+  path: '/community-new',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppChatRoute = AppChatRouteImport.update({
   id: '/chat',
   path: '/chat',
@@ -143,6 +175,11 @@ const AppChatRoute = AppChatRouteImport.update({
 const AppCharterRoute = AppCharterRouteImport.update({
   id: '/charter',
   path: '/charter',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
 const AppJournalIndexRoute = AppJournalIndexRouteImport.update({
@@ -154,6 +191,11 @@ const AppBiometricsIndexRoute = AppBiometricsIndexRouteImport.update({
   id: '/biometrics/',
   path: '/biometrics/',
   getParentRoute: () => AppRoute,
+} as any)
+const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppAdminRoute,
 } as any)
 const OauthOuraCallbackRoute = OauthOuraCallbackRouteImport.update({
   id: '/oauth/oura/callback',
@@ -191,6 +233,36 @@ const AppBiometricsMetricRoute = AppBiometricsMetricRouteImport.update({
   path: '/biometrics/$metric',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminUsersRoute = AppAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminResourcesRoute = AppAdminResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminMessagesRoute = AppAdminMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminFeedbackRoute = AppAdminFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminContactRoute = AppAdminContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminCommunityRoute = AppAdminCommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const ApiPublicHooksRiskForecasterRoute =
   ApiPublicHooksRiskForecasterRouteImport.update({
     id: '/api/public/hooks/risk-forecaster',
@@ -201,14 +273,17 @@ const ApiPublicHooksRiskForecasterRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/admin': typeof AppAdminRouteWithChildren
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
+  '/community-new': typeof AppCommunityNewRoute
   '/insights': typeof AppInsightsRoute
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
@@ -219,6 +294,14 @@ export interface FileRoutesByFullPath {
   '/today': typeof AppTodayRouteWithChildren
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
+  '/community/$postId': typeof CommunityPostIdRoute
+  '/community/resources': typeof CommunityResourcesRoute
+  '/admin/community': typeof AppAdminCommunityRoute
+  '/admin/contact': typeof AppAdminContactRoute
+  '/admin/feedback': typeof AppAdminFeedbackRoute
+  '/admin/messages': typeof AppAdminMessagesRoute
+  '/admin/resources': typeof AppAdminResourcesRoute
+  '/admin/users': typeof AppAdminUsersRoute
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
@@ -226,6 +309,7 @@ export interface FileRoutesByFullPath {
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
+  '/admin/': typeof AppAdminIndexRoute
   '/biometrics/': typeof AppBiometricsIndexRoute
   '/journal/': typeof AppJournalIndexRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
@@ -233,6 +317,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/pricing': typeof PricingRoute
@@ -241,6 +326,7 @@ export interface FileRoutesByTo {
   '/sign-up': typeof SignUpRoute
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
+  '/community-new': typeof AppCommunityNewRoute
   '/insights': typeof AppInsightsRoute
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
@@ -251,6 +337,14 @@ export interface FileRoutesByTo {
   '/today': typeof AppTodayRouteWithChildren
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
+  '/community/$postId': typeof CommunityPostIdRoute
+  '/community/resources': typeof CommunityResourcesRoute
+  '/admin/community': typeof AppAdminCommunityRoute
+  '/admin/contact': typeof AppAdminContactRoute
+  '/admin/feedback': typeof AppAdminFeedbackRoute
+  '/admin/messages': typeof AppAdminMessagesRoute
+  '/admin/resources': typeof AppAdminResourcesRoute
+  '/admin/users': typeof AppAdminUsersRoute
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
@@ -258,6 +352,7 @@ export interface FileRoutesByTo {
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
+  '/admin': typeof AppAdminIndexRoute
   '/biometrics': typeof AppBiometricsIndexRoute
   '/journal': typeof AppJournalIndexRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
@@ -267,14 +362,17 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/about': typeof AboutRoute
+  '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/charter': typeof AppCharterRoute
   '/_app/chat': typeof AppChatRoute
+  '/_app/community-new': typeof AppCommunityNewRoute
   '/_app/insights': typeof AppInsightsRoute
   '/_app/meds': typeof AppMedsRouteWithChildren
   '/_app/my-health': typeof AppMyHealthRoute
@@ -285,6 +383,14 @@ export interface FileRoutesById {
   '/_app/today': typeof AppTodayRouteWithChildren
   '/_app/vitals': typeof AppVitalsRoute
   '/_app/welcome': typeof AppWelcomeRoute
+  '/community/$postId': typeof CommunityPostIdRoute
+  '/community/resources': typeof CommunityResourcesRoute
+  '/_app/admin/community': typeof AppAdminCommunityRoute
+  '/_app/admin/contact': typeof AppAdminContactRoute
+  '/_app/admin/feedback': typeof AppAdminFeedbackRoute
+  '/_app/admin/messages': typeof AppAdminMessagesRoute
+  '/_app/admin/resources': typeof AppAdminResourcesRoute
+  '/_app/admin/users': typeof AppAdminUsersRoute
   '/_app/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/_app/journal/new': typeof AppJournalNewRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
@@ -292,6 +398,7 @@ export interface FileRoutesById {
   '/_app/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
   '/_app/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
+  '/_app/admin/': typeof AppAdminIndexRoute
   '/_app/biometrics/': typeof AppBiometricsIndexRoute
   '/_app/journal/': typeof AppJournalIndexRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
@@ -301,14 +408,17 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/community'
     | '/contact'
     | '/features'
     | '/pricing'
     | '/reset-password'
     | '/sign-in'
     | '/sign-up'
+    | '/admin'
     | '/charter'
     | '/chat'
+    | '/community-new'
     | '/insights'
     | '/meds'
     | '/my-health'
@@ -319,6 +429,14 @@ export interface FileRouteTypes {
     | '/today'
     | '/vitals'
     | '/welcome'
+    | '/community/$postId'
+    | '/community/resources'
+    | '/admin/community'
+    | '/admin/contact'
+    | '/admin/feedback'
+    | '/admin/messages'
+    | '/admin/resources'
+    | '/admin/users'
     | '/biometrics/$metric'
     | '/journal/new'
     | '/meds/$medId'
@@ -326,6 +444,7 @@ export interface FileRouteTypes {
     | '/settings/how-purple-thinks'
     | '/today/risk'
     | '/oauth/oura/callback'
+    | '/admin/'
     | '/biometrics/'
     | '/journal/'
     | '/api/public/hooks/risk-forecaster'
@@ -333,6 +452,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/community'
     | '/contact'
     | '/features'
     | '/pricing'
@@ -341,6 +461,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/charter'
     | '/chat'
+    | '/community-new'
     | '/insights'
     | '/meds'
     | '/my-health'
@@ -351,6 +472,14 @@ export interface FileRouteTypes {
     | '/today'
     | '/vitals'
     | '/welcome'
+    | '/community/$postId'
+    | '/community/resources'
+    | '/admin/community'
+    | '/admin/contact'
+    | '/admin/feedback'
+    | '/admin/messages'
+    | '/admin/resources'
+    | '/admin/users'
     | '/biometrics/$metric'
     | '/journal/new'
     | '/meds/$medId'
@@ -358,6 +487,7 @@ export interface FileRouteTypes {
     | '/settings/how-purple-thinks'
     | '/today/risk'
     | '/oauth/oura/callback'
+    | '/admin'
     | '/biometrics'
     | '/journal'
     | '/api/public/hooks/risk-forecaster'
@@ -366,14 +496,17 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/about'
+    | '/community'
     | '/contact'
     | '/features'
     | '/pricing'
     | '/reset-password'
     | '/sign-in'
     | '/sign-up'
+    | '/_app/admin'
     | '/_app/charter'
     | '/_app/chat'
+    | '/_app/community-new'
     | '/_app/insights'
     | '/_app/meds'
     | '/_app/my-health'
@@ -384,6 +517,14 @@ export interface FileRouteTypes {
     | '/_app/today'
     | '/_app/vitals'
     | '/_app/welcome'
+    | '/community/$postId'
+    | '/community/resources'
+    | '/_app/admin/community'
+    | '/_app/admin/contact'
+    | '/_app/admin/feedback'
+    | '/_app/admin/messages'
+    | '/_app/admin/resources'
+    | '/_app/admin/users'
     | '/_app/biometrics/$metric'
     | '/_app/journal/new'
     | '/_app/meds/$medId'
@@ -391,6 +532,7 @@ export interface FileRouteTypes {
     | '/_app/settings/how-purple-thinks'
     | '/_app/today/risk'
     | '/oauth/oura/callback'
+    | '/_app/admin/'
     | '/_app/biometrics/'
     | '/_app/journal/'
     | '/api/public/hooks/risk-forecaster'
@@ -400,6 +542,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AboutRoute: typeof AboutRoute
+  CommunityRoute: typeof CommunityRouteWithChildren
   ContactRoute: typeof ContactRoute
   FeaturesRoute: typeof FeaturesRoute
   PricingRoute: typeof PricingRoute
@@ -454,6 +597,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/community': {
+      id: '/community'
+      path: '/community'
+      fullPath: '/community'
+      preLoaderRoute: typeof CommunityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -474,6 +624,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/community/resources': {
+      id: '/community/resources'
+      path: '/resources'
+      fullPath: '/community/resources'
+      preLoaderRoute: typeof CommunityResourcesRouteImport
+      parentRoute: typeof CommunityRoute
+    }
+    '/community/$postId': {
+      id: '/community/$postId'
+      path: '/$postId'
+      fullPath: '/community/$postId'
+      preLoaderRoute: typeof CommunityPostIdRouteImport
+      parentRoute: typeof CommunityRoute
     }
     '/_app/welcome': {
       id: '/_app/welcome'
@@ -545,6 +709,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInsightsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/community-new': {
+      id: '/_app/community-new'
+      path: '/community-new'
+      fullPath: '/community-new'
+      preLoaderRoute: typeof AppCommunityNewRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/chat': {
       id: '/_app/chat'
       path: '/chat'
@@ -557,6 +728,13 @@ declare module '@tanstack/react-router' {
       path: '/charter'
       fullPath: '/charter'
       preLoaderRoute: typeof AppCharterRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin': {
+      id: '/_app/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/journal/': {
@@ -572,6 +750,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/biometrics/'
       preLoaderRoute: typeof AppBiometricsIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/admin/': {
+      id: '/_app/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppAdminRoute
     }
     '/oauth/oura/callback': {
       id: '/oauth/oura/callback'
@@ -622,6 +807,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBiometricsMetricRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/users': {
+      id: '/_app/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AppAdminUsersRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/resources': {
+      id: '/_app/admin/resources'
+      path: '/resources'
+      fullPath: '/admin/resources'
+      preLoaderRoute: typeof AppAdminResourcesRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/messages': {
+      id: '/_app/admin/messages'
+      path: '/messages'
+      fullPath: '/admin/messages'
+      preLoaderRoute: typeof AppAdminMessagesRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/feedback': {
+      id: '/_app/admin/feedback'
+      path: '/feedback'
+      fullPath: '/admin/feedback'
+      preLoaderRoute: typeof AppAdminFeedbackRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/contact': {
+      id: '/_app/admin/contact'
+      path: '/contact'
+      fullPath: '/admin/contact'
+      preLoaderRoute: typeof AppAdminContactRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/community': {
+      id: '/_app/admin/community'
+      path: '/community'
+      fullPath: '/admin/community'
+      preLoaderRoute: typeof AppAdminCommunityRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/api/public/hooks/risk-forecaster': {
       id: '/api/public/hooks/risk-forecaster'
       path: '/api/public/hooks/risk-forecaster'
@@ -631,6 +858,30 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AppAdminRouteChildren {
+  AppAdminCommunityRoute: typeof AppAdminCommunityRoute
+  AppAdminContactRoute: typeof AppAdminContactRoute
+  AppAdminFeedbackRoute: typeof AppAdminFeedbackRoute
+  AppAdminMessagesRoute: typeof AppAdminMessagesRoute
+  AppAdminResourcesRoute: typeof AppAdminResourcesRoute
+  AppAdminUsersRoute: typeof AppAdminUsersRoute
+  AppAdminIndexRoute: typeof AppAdminIndexRoute
+}
+
+const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminCommunityRoute: AppAdminCommunityRoute,
+  AppAdminContactRoute: AppAdminContactRoute,
+  AppAdminFeedbackRoute: AppAdminFeedbackRoute,
+  AppAdminMessagesRoute: AppAdminMessagesRoute,
+  AppAdminResourcesRoute: AppAdminResourcesRoute,
+  AppAdminUsersRoute: AppAdminUsersRoute,
+  AppAdminIndexRoute: AppAdminIndexRoute,
+}
+
+const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
+  AppAdminRouteChildren,
+)
 
 interface AppMedsRouteChildren {
   AppMedsMedIdRoute: typeof AppMedsMedIdRoute
@@ -668,8 +919,10 @@ const AppTodayRouteWithChildren = AppTodayRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRouteWithChildren
   AppCharterRoute: typeof AppCharterRoute
   AppChatRoute: typeof AppChatRoute
+  AppCommunityNewRoute: typeof AppCommunityNewRoute
   AppInsightsRoute: typeof AppInsightsRoute
   AppMedsRoute: typeof AppMedsRouteWithChildren
   AppMyHealthRoute: typeof AppMyHealthRoute
@@ -688,8 +941,10 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRouteWithChildren,
   AppCharterRoute: AppCharterRoute,
   AppChatRoute: AppChatRoute,
+  AppCommunityNewRoute: AppCommunityNewRoute,
   AppInsightsRoute: AppInsightsRoute,
   AppMedsRoute: AppMedsRouteWithChildren,
   AppMyHealthRoute: AppMyHealthRoute,
@@ -709,10 +964,25 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface CommunityRouteChildren {
+  CommunityPostIdRoute: typeof CommunityPostIdRoute
+  CommunityResourcesRoute: typeof CommunityResourcesRoute
+}
+
+const CommunityRouteChildren: CommunityRouteChildren = {
+  CommunityPostIdRoute: CommunityPostIdRoute,
+  CommunityResourcesRoute: CommunityResourcesRoute,
+}
+
+const CommunityRouteWithChildren = CommunityRoute._addFileChildren(
+  CommunityRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AboutRoute: AboutRoute,
+  CommunityRoute: CommunityRouteWithChildren,
   ContactRoute: ContactRoute,
   FeaturesRoute: FeaturesRoute,
   PricingRoute: PricingRoute,
