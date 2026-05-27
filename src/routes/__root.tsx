@@ -20,12 +20,25 @@ function NotFoundComponent() {
   // Compatibility: the internal `_app` segment is a TanStack route-group,
   // not a public URL. Old links to `/_app/admin/...` 404 — strip the prefix
   // and forward to the real route before showing the 404 screen.
+  const [redirecting, setRedirecting] = (
+    typeof React !== "undefined" ? React.useState(false) : [false, () => {}]
+  ) as ReturnType<typeof React.useState<boolean>>;
   if (typeof window !== "undefined") {
     const { pathname, search, hash } = window.location;
     if (pathname.startsWith("/_app/") || pathname === "/_app") {
       const target = pathname.replace(/^\/_app/, "") || "/";
-      window.location.replace(target + search + hash);
-      return null;
+      // Defer to avoid breaking hydration; return a tiny placeholder element
+      // so the hydrated tree matches the SSR-rendered NotFound shell shape.
+      if (typeof queueMicrotask !== "undefined") {
+        queueMicrotask(() => window.location.replace(target + search + hash));
+      } else {
+        setTimeout(() => window.location.replace(target + search + hash), 0);
+      }
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+          Redirecting…
+        </div>
+      );
     }
   }
   return (
