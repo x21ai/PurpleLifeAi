@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as RiskRouteImport } from './routes/risk'
@@ -70,6 +71,11 @@ import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/p
 const UsersRoute = UsersRouteImport.update({
   id: '/users',
   path: '/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignUpRoute = SignUpRouteImport.update({
@@ -372,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/risk': typeof RiskRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
   '/admin': typeof AppAdminRouteWithChildren
   '/charter': typeof AppCharterRoute
@@ -430,6 +437,7 @@ export interface FileRoutesByTo {
   '/risk': typeof RiskRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
@@ -489,6 +497,7 @@ export interface FileRoutesById {
   '/risk': typeof RiskRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
   '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/charter': typeof AppCharterRoute
@@ -549,6 +558,7 @@ export interface FileRouteTypes {
     | '/risk'
     | '/sign-in'
     | '/sign-up'
+    | '/unsubscribe'
     | '/users'
     | '/admin'
     | '/charter'
@@ -607,6 +617,7 @@ export interface FileRouteTypes {
     | '/risk'
     | '/sign-in'
     | '/sign-up'
+    | '/unsubscribe'
     | '/users'
     | '/charter'
     | '/chat'
@@ -665,6 +676,7 @@ export interface FileRouteTypes {
     | '/risk'
     | '/sign-in'
     | '/sign-up'
+    | '/unsubscribe'
     | '/users'
     | '/_app/admin'
     | '/_app/charter'
@@ -725,6 +737,7 @@ export interface RootRouteChildren {
   RiskRoute: typeof RiskRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   UsersRoute: typeof UsersRoute
   CareAcceptRoute: typeof CareAcceptRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
@@ -743,6 +756,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/users'
       preLoaderRoute: typeof UsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sign-up': {
@@ -1279,6 +1299,7 @@ const rootRouteChildren: RootRouteChildren = {
   RiskRoute: RiskRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   UsersRoute: UsersRoute,
   CareAcceptRoute: CareAcceptRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
