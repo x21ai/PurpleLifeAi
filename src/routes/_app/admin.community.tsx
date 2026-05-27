@@ -3,6 +3,7 @@ import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/admin/community")({
+  head: () => ({ meta: [{ title: "Community moderation — Purple" }] }),
   component: AdminCommunityMod,
 });
 
