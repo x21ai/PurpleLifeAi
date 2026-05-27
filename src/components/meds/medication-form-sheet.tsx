@@ -62,11 +62,13 @@ export function MedicationFormSheet({
   onOpenChange,
   onSaved,
   isFirstMedication,
+  editingMedId,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onSaved?: () => void;
   isFirstMedication: boolean;
+  editingMedId?: string | null;
 }) {
   const { session } = useAuth();
   const userId = session?.user.id;
@@ -95,6 +97,7 @@ export function MedicationFormSheet({
   );
 
   const isRescue = kind === "rescue";
+  const isEditing = !!editingMedId;
 
   React.useEffect(() => {
     if (!open) {
@@ -117,6 +120,71 @@ export function MedicationFormSheet({
       setNameFocused(false);
     }
   }, [open]);
+
+  // Load existing medication when opening in edit mode.
+  React.useEffect(() => {
+    if (!open || !editingMedId) return;
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("medications")
+        .select(
+          "name, kind, dosage_form, dosage_amount, dosage_unit, with_food, schedule, times_of_day, pills_remaining, refill_threshold, prescriber_name, pharmacy_name, prescription_number, is_rescue",
+        )
+        .eq("id", editingMedId)
+        .maybeSingle();
+      if (cancelled || error || !data) return;
+      const m = data as {
+        name: string;
+        kind: MedKind;
+        dosage_form: string | null;
+        dosage_amount: number | null;
+        dosage_unit: string | null;
+        with_food: boolean | null;
+        schedule: Array<{ time: string; amount: number | null; unit: string | null }> | null;
+        times_of_day: string[] | null;
+        pills_remaining: number | null;
+        refill_threshold: number | null;
+        prescriber_name: string | null;
+        pharmacy_name: string | null;
+        prescription_number: string | null;
+        is_rescue: boolean;
+      };
+      setName(m.name ?? "");
+      const resolvedKind: MedKind = m.is_rescue ? "rescue" : (m.kind as MedKind) ?? "medication";
+      setKind(resolvedKind);
+      setDosageForm(m.dosage_form ?? "");
+      setDosageAmount(m.dosage_amount != null ? String(m.dosage_amount) : "");
+      const unit = m.dosage_unit ?? "mg";
+      setDosageUnit(unit);
+      setUnitMode(DOSAGE_UNITS.includes(unit) ? "preset" : "custom");
+      setWithFood(!!m.with_food);
+      const schedule = Array.isArray(m.schedule) ? m.schedule : [];
+      if (schedule.length > 0) {
+        setTimes(schedule.map((s) => s.time));
+        setTimeAmounts(schedule.map((s) => (s.amount != null ? String(s.amount) : "")));
+      } else if (m.times_of_day && m.times_of_day.length > 0) {
+        setTimes(m.times_of_day);
+        setTimeAmounts(m.times_of_day.map(() => ""));
+      } else {
+        setTimes(["08:00"]);
+        setTimeAmounts([""]);
+      }
+      setPillsRemaining(m.pills_remaining != null ? String(m.pills_remaining) : "");
+      const thr = m.refill_threshold != null ? String(m.refill_threshold) : "7";
+      setRefillThreshold(thr);
+      setRefillMode(REFILL_PRESETS.includes(thr as typeof REFILL_PRESETS[number]) ? "preset" : "custom");
+      setPrescriberName(m.prescriber_name ?? "");
+      setPharmacyName(m.pharmacy_name ?? "");
+      setPrescriptionNumber(m.prescription_number ?? "");
+      setPrescriberOpen(
+        !!(m.prescriber_name || m.pharmacy_name || m.prescription_number),
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, editingMedId]);
 
   const updateTime = (idx: number, v: string) =>
     setTimes((arr) => arr.map((t, i) => (i === idx ? v : t)));
@@ -162,42 +230,82 @@ export function MedicationFormSheet({
       const threshold = refillThreshold ? parseInt(refillThreshold, 10) : 7;
       const dosageText = formatDosageText(dosageAmount, dosageUnit);
 
-      const { data: med, error } = await supabase
-        .from("medications")
-        .insert({
-          user_id: userId,
-          name: name.trim(),
-          kind,
-          dosage: dosageText,
-          dosage_form: dosageForm || null,
-          dosage_amount: Number.isFinite(baseAmount as number) ? baseAmount : null,
-          dosage_unit: dosageUnit.trim() || null,
-          schedule: scheduleSlots,
-          with_food: withFood,
-          prescriber: prescriberName.trim() || null,
-          prescriber_name: prescriberName.trim() || null,
-          pharmacy_name: pharmacyName.trim() || null,
-          prescription_number: prescriptionNumber.trim() || null,
-          times_of_day: cleanTimes,
-          is_rescue: isRescue,
-          pills_remaining: Number.isFinite(pills as number) ? pills : null,
-          refill_threshold: Number.isFinite(threshold) ? threshold : 7,
-          active: true,
-        })
-        .select("id, name, dosage, times_of_day, is_rescue, kind")
-        .single();
-      if (error || !med) throw error ?? new Error("Failed to save");
+      const payload = {
+        name: name.trim(),
+        kind,
+        dosage: dosageText,
+        dosage_form: dosageForm || null,
+        dosage_amount: Number.isFinite(baseAmount as number) ? baseAmount : null,
+        dosage_unit: dosageUnit.trim() || null,
+        schedule: scheduleSlots,
+        with_food: withFood,
+        prescriber: prescriberName.trim() || null,
+        prescriber_name: prescriberName.trim() || null,
+        pharmacy_name: pharmacyName.trim() || null,
+        prescription_number: prescriptionNumber.trim() || null,
+        times_of_day: cleanTimes,
+        is_rescue: isRescue,
+        pills_remaining: Number.isFinite(pills as number) ? pills : null,
+        refill_threshold: Number.isFinite(threshold) ? threshold : 7,
+      };
 
-      if (!isRescue && cleanTimes.length > 0) {
-        const rows = scheduleSlots.map((s) => ({
-          user_id: userId,
-          medication_id: med.id,
-          scheduled_at: todayIso(s.time),
-          status: "pending" as const,
-          amount: s.amount,
-          unit: s.unit,
-        }));
-        await supabase.from("medication_doses").insert(rows);
+      let med: { id: string; name: string; dosage: string | null; times_of_day: string[]; is_rescue: boolean; kind: string };
+
+      if (isEditing && editingMedId) {
+        const { data, error } = await supabase
+          .from("medications")
+          .update(payload)
+          .eq("id", editingMedId)
+          .select("id, name, dosage, times_of_day, is_rescue, kind")
+          .single();
+        if (error || !data) throw error ?? new Error("Failed to update");
+        med = data;
+
+        // Re-sync future pending doses for today to match the new schedule.
+        // Already-taken/missed doses are preserved.
+        const nowIso = new Date().toISOString();
+        await supabase
+          .from("medication_doses")
+          .delete()
+          .eq("medication_id", med.id)
+          .eq("status", "pending")
+          .gte("scheduled_at", nowIso);
+
+        if (!isRescue && cleanTimes.length > 0) {
+          const rows = scheduleSlots
+            .map((s) => ({
+              user_id: userId,
+              medication_id: med.id,
+              scheduled_at: todayIso(s.time),
+              status: "pending" as const,
+              amount: s.amount,
+              unit: s.unit,
+            }))
+            .filter((r) => r.scheduled_at >= nowIso);
+          if (rows.length > 0) {
+            await supabase.from("medication_doses").insert(rows);
+          }
+        }
+      } else {
+        const { data, error } = await supabase
+          .from("medications")
+          .insert({ ...payload, user_id: userId, active: true })
+          .select("id, name, dosage, times_of_day, is_rescue, kind")
+          .single();
+        if (error || !data) throw error ?? new Error("Failed to save");
+        med = data;
+
+        if (!isRescue && cleanTimes.length > 0) {
+          const rows = scheduleSlots.map((s) => ({
+            user_id: userId,
+            medication_id: med.id,
+            scheduled_at: todayIso(s.time),
+            status: "pending" as const,
+            amount: s.amount,
+            unit: s.unit,
+          }));
+          await supabase.from("medication_doses").insert(rows);
+        }
       }
 
       if (!isRescue && isFirstMedication) {
@@ -228,7 +336,7 @@ export function MedicationFormSheet({
         }]);
       }
 
-      toast.success(`${med.name} added`);
+      toast.success(isEditing ? `${med.name} updated` : `${med.name} added`);
       onSaved?.();
       onOpenChange(false);
     } catch (err: unknown) {
@@ -244,9 +352,9 @@ export function MedicationFormSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-2xl">
         <SheetHeader className="px-5 pt-5 pb-3 flex-row items-center justify-between space-y-0 border-b border-border">
-          <SheetTitle className="font-serif text-lg font-normal">Add medication</SheetTitle>
+          <SheetTitle className="font-serif text-lg font-normal">{isEditing ? "Edit medication" : "Add medication"}</SheetTitle>
           <Button onClick={handleSave} disabled={!canSave || saving} size="sm" className="rounded-full px-5">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : isEditing ? "Save changes" : "Save"}
           </Button>
         </SheetHeader>
 
