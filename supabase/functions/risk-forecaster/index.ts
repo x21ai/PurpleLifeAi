@@ -338,6 +338,18 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // AuthN: this function is internal-only — invoked by the cron hook with
+    // the service-role key. Reject any other caller to prevent unauthenticated
+    // reads of biometric data and injection of fake risk alerts.
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    if (!SERVICE_ROLE || token !== SERVICE_ROLE) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
     const action: string = body?.action ?? "run-all";
 

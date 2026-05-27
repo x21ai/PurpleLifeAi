@@ -211,6 +211,16 @@ Deno.serve(async (req) => {
 
     // Incremental cron: sync all connected users
     if (action === "incremental" && body.all === true) {
+      // Service-role only: prevents unauthenticated callers from triggering
+      // mass Oura API syncs and exhausting per-user rate limits.
+      const authHeader = req.headers.get("Authorization") ?? "";
+      const token = authHeader.replace(/^Bearer\s+/i, "");
+      if (!SERVICE_ROLE || token !== SERVICE_ROLE) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const { data: tokens } = await admin
         .from("oura_tokens")
         .select("user_id, sync_interval_hours, updated_at");
