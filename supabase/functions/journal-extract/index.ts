@@ -98,6 +98,16 @@ Deno.serve(async (req) => {
 
     let written = 0;
     if (rows.length > 0) {
+      // Sweep stale extractions for this entry that are no longer emitted
+      const keepKeys = rows.map((r: any) => r.behavior_key);
+      const { error: delErr } = await admin
+        .from("daily_behaviors")
+        .delete()
+        .eq("user_id", userId)
+        .eq("journal_entry_id", journalEntryId)
+        .not("behavior_key", "in", `(${keepKeys.map((k) => `"${k}"`).join(",")})`);
+      if (delErr) throw new Error(`sweep failed: ${delErr.message}`);
+
       const { error: insErr, count } = await admin
         .from("daily_behaviors")
         .upsert(rows, {
