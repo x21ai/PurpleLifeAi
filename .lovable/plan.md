@@ -1,112 +1,97 @@
+## What we're fixing
 
-# Smarter Oura + Conversational AI + Pre-seizure Signals
-
-Four threads, scoped to this round. All write actions are confirm-first. Tone stays warm and non-clinical — never "seizure imminent."
+Your screenshots and message cover 7 distinct things. This plan groups them into shipping order so each piece is testable on its own.
 
 ---
 
-## 1. Honest Oura sync timestamps + Sync now
+### 1. Photos + voice + video on every journal entry
 
-**Problem:** `recorded_at` is set to noon UTC of the Oura day, so "synced 5h ago" is a lie. The real last-pull time lives in `oura_tokens.updated_at`.
+Today `journal_entries.media_urls` (text[]) exists and the `journal-media` storage bucket is already created — they're just not wired into the UI.
 
-- Today tile shows two lines: **"Data through Tue 10:24am"** (from `recorded_at` / sleep end) and **"Last pulled 12m ago"** (from `oura_tokens.updated_at`).
-- Add a small **Sync now** icon-button next to it → invokes `oura-sync` for the current user, refreshes the tile, toasts errors.
-- Same dual-timestamp + Sync now button on Settings → Oura card and on the new `/biometrics` page.
-- Apply across mobile / tablet / desktop layouts.
+- **Capture sheet** (`capture-sheet.tsx`) gets a single "+ Attach" tray with three sources:
+  - Photo (camera + library, `accept="image/*"`, capture on mobile)
+  - Video (`accept="video/*"`, capture on mobile, 60s soft cap, 50 MB hard cap)
+  - Voice clip (uses existing `use-voice-capture` but saves the recording instead of only transcribing — transcript still extracted for AI)
+- Uploads go to `journal-media/{user_id}/{entry_id}/{uuid}.{ext}` with signed-URL reads. Bucket stays private.
+- `entry-card.tsx` renders an inline media strip: square photo thumbs, video thumb with play overlay, audio waveform pill. Tap → lightbox / inline player.
+- Same media tray on the seizure log form (`seizure_events` already has `photo_urls`, `video_url`).
 
-## 2. Deeper Oura — `/biometrics` index + per-metric drill-in
+### 2. Inline edit on the journal list (no more route jump)
 
-Expand Today tile and add a real biometrics surface.
+- Delete the full-screen `/journal/$entryId/edit` route from primary nav.
+- Tapping an entry expands it in place: text becomes editable, media tray appears, Save / Cancel pinned to the card. Optimistic update via TanStack Query.
+- The `…` menu keeps Archive / Delete.
 
-**Today tile (`today-biometrics.tsx`)** — add 4 more metrics with tiny 7-day sparklines: Sleep stages (REM/Deep), HRV, Resting HR, Temp deviation, SpO2, Stress, Resilience. Tap any metric → drill page.
+### 3. App-wide theme + chrome cleanup
 
-**`/biometrics` (new route)** — grid of all metrics, each card shows: current value, 14-day sparkline, baseline band (user's 30-day avg ± 1σ), delta vs baseline, status chip (in range / low / high).
+- **One theme, one mode.** Today is light, Patterns is light, Ask is dark, the edit sheet was dark — that's the inconsistency you saw. We standardize on the light Oura-style theme for the whole signed-in app. Ask gets a tinted lavender background instead of full dark so it still feels distinct.
+- **No site footer inside the app.** `site-footer.tsx` stays on marketing routes only. The `_app` shell already shouldn't render it; we audit and strip the stray Charter/Privacy/Terms/Contact/GitHub row visible at the bottom of Today/Journal/Patterns.
+- **Settings duplicates.** The About card on Settings repeats links that already live in the in-app footer. We remove the duplicate footer and keep About as the single source.
 
-**`/biometrics/$metric` (new dynamic route)** — full drill page:
-- Big chart with 7d / 30d / 90d toggle (recharts).
-- Baseline band overlay, anomaly dots highlighted in amber.
-- Plain-language "What this means for you" block (rendered from a small mapping table — not an AI call, deterministic copy per metric).
-- Linked context strip: any seizures, journal flags, or med changes in the same window.
+### 4. Floating Ask Purple
 
-Metrics covered: sleep total, sleep stages, sleep efficiency, sleep score, HRV (rmssd), resting HR, respiratory rate, SpO2, skin temp deviation, Oura readiness, Oura stress, Oura resilience, Oura activity, steps, active calories.
+- Settings → Preferences gets a "Floating Ask button" toggle (default ON on desktop/tablet, OFF on mobile because the bottom nav already has Ask).
+- When ON, a small purple chat-bubble FAB appears bottom-right on every `_app` route, opens the Ask sheet without leaving the current page.
 
-Responsive: 2-col grid mobile, 3-col tablet, 4-col desktop.
+### 5. Choose your AI model in Settings
 
-## 3. Conversational AI ("Ask Archie") with confirm-to-write actions
+- Settings → AI gets a model picker with three options:
+  - Gemini 2.5 Flash (fast, default — via Lovable AI)
+  - Gemini 2.5 Pro (deeper reasoning — via Lovable AI)
+  - Claude (Sonnet 4.5 — via your existing `ANTHROPIC_API_KEY` secret, since Claude is not on the Lovable AI Gateway)
+- Stored on `profiles.ai_model_preference`. `ai-orchestrator` reads it per request and routes to the right provider.
 
-Promote chat to a first-class surface so the user can ask questions and request actions without hunting menus.
+### 6. History import — both conversational AND form
 
-**Surface:** floating "Ask Archie" button on every authenticated route (bottom-right, above the bottom nav on mobile). Opens a side sheet on desktop/tablet, full-screen sheet on mobile. Chat history persists per-session.
+- **Conversational** (primary). You can say "I was on Keppra 500mg twice a day from Jan 2022 to March 2024, switched to Lamictal 100mg since then, and had 3 seizures last summer — June 12, July 3, August 20." Purple parses it, shows a stacked **Confirm card per item** (using the propose/execute pattern we already built), you tick which to save. Past meds get `end_date` filled, archived. Past seizures get `started_at` set to your stated date.
+- **Manual form** (backstop) under Settings → Medications → "Add past medication" and Seizures → "Log past event." Both accept arbitrary historical dates.
 
-**`ai-orchestrator` extension** — add new tools:
-- `get_biometric_trend(metric, days)` — read trends, not just last row.
-- `find_correlations(window_days)` — surface what shifted before recent seizures (sleep, HRV, temp, cycle phase, missed doses, journaled triggers).
-- `propose_action(kind, payload)` — write-intent tool. Kinds: `create_journal_entry`, `log_med_dose_taken`, `log_med_dose_skipped`, `add_medication`, `archive_medication`, `log_seizure`, `set_reminder`.
+### 7. Timeline — day / week / month / year + search
 
-**Confirm-to-write flow:** when the model calls `propose_action`, the orchestrator does NOT execute. It returns a structured proposal. The chat UI renders a confirm card ("Add Keppra 500mg, twice daily at 8am/8pm? [Confirm] [Edit] [Cancel]"). Confirm fires the matching server function. Edit opens the existing form sheet prefilled. Nothing writes without a tap.
+New `/timeline` route (added to bottom nav, replacing Patterns? — see Decisions below) showing:
 
-**Historical reach:** orchestrator system prompt + tools query up to 90 days back (already there for ai_memory; extend biometrics/journal/seizure tools the same way). Includes pattern summaries, not raw rows, when context gets big.
+- Date range tabs: Day · Week · Month · Year
+- Vertical timeline mixing seizures, journal entries, doses taken/missed, biometric anomalies, alerts
+- Search bar across journal text, AI tags, med names, seizure notes (Postgres `tsvector` on a generated `search_doc` column)
+- Date jumper (calendar picker → scroll to date)
 
-**Smarter context:** every Archie reply has access to:
-- Last 7d biometrics summary (already partial).
-- Last 14d journal flags + behaviors.
-- Last 90d seizure events.
-- Current med list + today's dose status.
-- Latest `risk_forecasts` row.
+### 8. "How does the AI know to act?"
 
-## 4. Pre-seizure signal detection — gentle stacked nudge
+This is a question, not a build item — but worth answering in the product. We add a short **"How Purple thinks" page** under Settings explaining:
 
-**Signals tracked** (per Oura research + epilepsy literature, all derived from existing biometric columns):
+- Purple reads, never writes silently. Every action (add med, log seizure, archive) is a Confirm card you tap.
+- Pattern detection runs nightly: it compares the last 24h against your personal 30-day baseline across 8 signals (sleep, HRV, HR, temp, readiness, stress, cycle, dose adherence). 2+ stacked → gentle nudge. 4+ → "Tell me more" link.
+- The chat sees: last 7d biometrics, 14d journal, 90d seizures, current meds, latest risk forecast. Nothing else leaves your device unless you explicitly share.
 
-| Signal | Threshold (vs personal 30-day baseline) |
-|---|---|
-| Sleep deficit | < baseline − 90 min OR efficiency < 80% |
-| HRV drop | rmssd < baseline − 15% over 2 nights |
-| Resting HR rise | > baseline + 7 bpm |
-| Temp deviation | abs(body_temp_deviation_c) > 0.4°C |
-| Low readiness | oura_readiness_score < 65 |
-| Stress spike | oura_stress_score > baseline + 25% |
-| Cycle phase risk | menstrual_phase in ('late_luteal','menstrual') if tracked |
-| Missed dose streak | ≥2 missed doses in last 24h on anticonvulsants |
+This page replaces hand-wavy "AI" copy with a concrete contract the user can trust.
 
-**Detection:** extend `risk-forecaster` to evaluate each signal and store them as `top_factors` (already a jsonb column). Runs on the existing schedule + after each oura-sync.
+---
 
-**Surfacing rule (no false-positive panic):**
-- 0–1 signals → silent, only feeds risk score.
-- ≥2 signals same day → create one **gentle alert** (kind `pre_seizure_stack`, severity `info`) and a soft banner on Today. Copy example: *"Three things have shifted today — sleep, HRV, and skin temp. Nothing to panic about. Worth taking it easy, hydrating, staying on top of meds."* Never uses the word "seizure" in the nudge.
-- ≥4 signals → severity `warn`, same warm tone, add a "Tell me more" link → `/today/risk` with the factor breakdown.
-- Hard rate limit: max 1 stacked-signal alert per 24h. Suppress if a seizure was logged in the last 12h.
+## Decisions I need from you
 
-**User control:** Settings → Notifications gets a toggle "Gentle daily nudges when signals stack" (default on) and a "What signals does Purple watch?" link → static info page.
+1. **Bottom nav slot for /timeline** — do we (a) replace Patterns, (b) replace Ask (since Ask becomes a floating FAB), or (c) keep 5 items and add Timeline as the 6th?
+2. **Claude model exact name** — "Claude 4.7" doesn't exist yet; the current Anthropic flagship is **Claude Sonnet 4.5**. OK to use that and label it "Claude (most thoughtful)" in the picker?
+3. **Video storage cap** — 50 MB / 60s per clip OK? Higher = more Lovable Cloud storage cost.
 
 ---
 
 ## Technical details
 
-**New routes**
-- `src/routes/_app/biometrics.index.tsx` — grid of metric cards.
-- `src/routes/_app/biometrics.$metric.tsx` — drill-in page.
-- Reuse `recharts` (already installed via shadcn/chart).
+- **DB migration**: add `profiles.ai_model_preference text default 'gemini-flash'`; add `profiles.floating_ask_enabled boolean default true`; add generated `search_doc tsvector` columns + GIN indexes on `journal_entries`, `seizure_events`, `medications`.
+- **Storage policies**: `journal-media` bucket gets per-user read/write policies scoped to `{user_id}/...` path prefix.
+- **Edge functions**:
+  - `ai-orchestrator`: branch on `profile.ai_model_preference` → Lovable AI Gateway (Gemini) or direct Anthropic call with `ANTHROPIC_API_KEY`. Same tool-calling schema for both.
+  - New `journal-media-sign` for short-lived signed URLs on read.
+- **New routes**: `/timeline`, `/settings/ai`, `/settings/how-purple-thinks`. Delete `/journal/$entryId/edit`.
+- **New components**: `media-tray.tsx`, `media-strip.tsx`, `media-lightbox.tsx`, `ask-fab.tsx`, `history-import-card.tsx`, `timeline-row.tsx`, `date-range-tabs.tsx`.
+- **Edits**: `capture-sheet.tsx`, `entry-card.tsx`, `journal.index.tsx` (inline edit), `app-shell.tsx` (footer audit + FAB mount), `chat.tsx` (model badge), `settings.tsx` (remove duplicate About footer, add AI + Floating Ask sections), `seizures.new.tsx` (media tray).
+- **Responsive**: every new component checked at 390 (mobile), 768 (tablet), 1280 (desktop) per the workspace rule.
 
-**New components**
-- `src/components/biometrics/metric-card.tsx` (sparkline + baseline chip).
-- `src/components/biometrics/metric-drill.tsx` (7/30/90 chart, anomaly dots).
-- `src/components/biometrics/sync-status.tsx` (dual timestamp + Sync now).
-- `src/components/archie/ask-archie-fab.tsx` (floating button).
-- `src/components/archie/ask-archie-sheet.tsx` (chat shell, reuses existing chat plumbing if any, otherwise new minimal one wired to `ai-orchestrator`).
-- `src/components/archie/action-confirm-card.tsx` (renders pending `propose_action` payloads).
+---
 
-**Edge function changes**
-- `oura-sync` — add a single-user manual mode (already supported via POST body `{ user_id, days }`). Surface invocation via a server fn or direct supabase.functions.invoke from the Sync now button.
-- `ai-orchestrator` — add the three new tools, add `propose_action` returning a structured proposal (do NOT execute). Add an `execute_action` endpoint that takes a signed proposal id + user confirmation and performs the write via service-role client with strict per-kind validation.
-- `risk-forecaster` — expand factor evaluation (8 signals above), keep narrative tone instruction. Insert an `alerts` row when ≥2 signals stack, honoring the 24h rate limit and 12h post-seizure suppression.
+## Out of scope (call out, don't build)
 
-**DB**
-- No schema changes required. `alerts.kind` is free-text. `risk_forecasts.top_factors` is jsonb. `biometrics` already carries every column we need.
-- Add a UNIQUE index suggestion only if we hit dedupe issues on `(user_id, source, recorded_at::date)` — out of scope this round unless asked.
-
-**Out of scope this round**
-- Push notifications (alerts surface in-app only; we can add web push next round).
-- Editing historical biometrics.
-- Native voice mode for Archie.
-- Cycle phase auto-detection if user hasn't connected a source that provides it.
+- Real-time multi-device sync of in-progress edits
+- AI-generated video summaries
+- Editing past biometric values
+- Push notifications for the gentle nudge (still in-app only)
