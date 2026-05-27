@@ -1,35 +1,79 @@
-I found two separate problems:
+# End-to-end QA + Journal/Timeline upgrade
 
-1. The admin pages are actually registered at `/admin`, `/admin/community`, etc. The internal `_app` segment is a TanStack route-group, not a public URL, so `/_app/admin` and `/_app/admin/community` currently hit 404. I will add safe redirects so those old/debug URLs still land on the working admin pages.
-2. On iPad/tablet widths, the medication add button and Ask Purple floating button both use the same bottom-right position. I will make floating action buttons route-aware/responsive so primary page actions stay usable and do not overlap.
+Two tracks in one pass: (1) sweep every route at three viewport sizes and fix what breaks, (2) deepen the Journal + Timeline experience around backdating, date/time display, and export.
 
-Plan:
+## 1. Journal & Timeline upgrades
 
-1. Fix route compatibility
-   - Add redirect route(s) for `/_app/admin` and `/_app/admin/community` to `/admin` and `/admin/community`.
-   - Add a catch-all compatibility redirect for other accidental `/_app/*` URLs when the matching public route exists, so users do not get stranded on the internal route-group path.
-   - Keep the real working URLs as `/admin`, `/admin/community`, `/journal`, etc.
+**Journal — show real date + time, not "ago"**
+- `src/components/journal/entry-card.tsx`: replace `formatDistanceToNow(...)` with `format(date, "EEE, MMM d, yyyy · h:mm a")`. Add a small relative line beneath for context (e.g. "2 days ago") so quick scanning still works.
+- Apply the same shift wherever entries are rendered (timeline cards, AI summaries, biometrics "synced …" stays relative since that's a sync indicator, not user data).
 
-2. Fix the page-load error handling visibility
-   - Improve the global error screen so it shows a clearer recovery path and does not look like cramped text/buttons on tablet/mobile.
-   - Keep the detailed error in console for debugging, but make the user-facing screen calmer and actionable.
+**Journal — backdate any entry (new + existing)**
+- `journal.new.tsx`: add a "When did this happen?" control above the composer — defaults to "Now", expands to a date + time picker (shadcn Calendar + native time input, with `pointer-events-auto`). Save into `captured_at` on insert.
+- `entry-card.tsx` (or detail sheet): allow editing `captured_at` after the fact via the same picker; update Supabase row.
+- Voice / photo / video flows: same picker is shared.
 
-3. Fix iPad/mobile/tablet floating action overlap
-   - Hide or offset Ask Purple on pages that already have a primary floating action (`/meds`, `/journal`, `/journal/new`, `/community-new`).
-   - Adjust the meds add button to respect tablet sidebars, bottom nav, and safe-area insets.
-   - Check journal new-entry FAB, medication add FAB, install prompt, and chat FAB together so they do not stack on the same spot.
+**Timeline — backdate + edit anything**
+- Seizures: `seizures.new.tsx` already accepts a date — verify and surface "Log past event" link prominently on Timeline.
+- Doses: add "Log a past dose" entry point on `meds.$medId` that writes a `medication_doses` row with `taken_at` in the past.
+- Inline edit: clicking any timeline row opens a sheet to adjust the date/time (and notes where applicable).
 
-4. Responsive admin polish
-   - Make admin tab navigation reliable on desktop, tablet, and mobile.
-   - Ensure admin tables/cards remain horizontally scrollable where needed and headings/buttons wrap cleanly.
-   - Avoid relying on `/_app` URLs in any visible links.
+**Timeline — easy export & capture**
+- Add an "Export" menu (top right of Timeline) with: **CSV**, **PDF report** (date range, grouped by day), **Copy to clipboard**, **Share** (Web Share API on mobile, fallback download).
+- Add an "Add to timeline" composer at the top of `/timeline` with a segmented control: **Type**, **Speak**, **Photo**, **Ask Purple** (free-text → AI extracts type/time/notes via existing AI gateway). Each routes into the right table (`journal_entries`, `seizure_events`, or `medication_doses` based on AI classification).
+- Show date range picker (custom range) alongside Day/Week/Month/Year.
 
-5. End-to-end QA pass
-   - Test core routes: `/`, `/features`, `/about`, `/pricing`, `/contact`, `/sign-in`, `/sign-up`, `/today`, `/journal`, `/journal/new`, `/meds`, `/timeline`, `/insights`, `/settings`, `/community`, `/community/resources`, `/admin`, `/admin/community`.
-   - Test at mobile, tablet/iPad, and desktop viewports.
-   - Verify no page shows “This page didn’t load,” no 404 for expected routes, and no overlapping floating controls.
+## 2. E2E QA sweep — every route at mobile (375), tablet (820), desktop (1366)
 
-Technical notes:
-- I will not edit generated backend/client files.
-- I will not edit `routeTree.gen.ts`; route registration will come from new/updated files under `src/routes`.
-- The working admin URLs are public-path protected by the authenticated `_app` layout, so `/admin` is correct even though the source files live under `_app`.
+Walk each route below in the browser at all three viewports, capture findings, fix per-route. No blank pages allowed — every route gets real content + working interactions.
+
+**Marketing & auth**
+- `/`, `/about`, `/features`, `/pricing`, `/contact`, `/sign-in`, `/sign-up`, `/reset-password`
+
+**App (authenticated)**
+- `/today`, `/today/risk`, `/my-health`, `/vitals`, `/biometrics`, `/biometrics/$metric`, `/insights`, `/chat`, `/journal`, `/journal/new`, `/timeline`, `/meds`, `/meds/$medId`, `/seizures/new`, `/charter`, `/welcome`, `/settings`, `/settings/how-purple-thinks`, `/community-new`, `/privacy`, `/terms`
+
+**Community (public)**
+- `/community`, `/community/$postId`, `/community/resources`
+
+**Admin (super admin only)**
+- `/admin`, `/admin/users`, `/admin/messages`, `/admin/contact`, `/admin/feedback`, `/admin/community`, `/admin/resources`
+
+**For every route, verify:**
+- Renders content (no empty/blank state without explanation)
+- Header, sidebar, bottom nav, FABs don't overlap at any viewport
+- Tap targets ≥ 44px on mobile; tables scroll horizontally on mobile
+- Forms submit, validation messages show
+- Loading + empty + error states present
+- SEO meta unique per route
+
+**Common fixes expected:**
+- Admin pages: convert tables to cards on mobile, add empty/loading/error states
+- Community pages: ensure post composer reachable on mobile, comment input doesn't get covered by bottom nav
+- Safe-area-inset padding on every fixed-position element
+- Sidebar collapse on tablet (820px) — currently likely shows desktop sidebar
+
+## 3. Approach
+
+Per-route loop:
+1. Browser navigate at 1366 → 820 → 375
+2. Screenshot + observe
+3. Patch the route file (and shared components if cross-cutting)
+4. Verify
+5. Move to next route
+
+Findings + fixes are committed as we go rather than batched. Cross-cutting fixes (sidebar breakpoints, FAB safe-area) land once and benefit everything.
+
+## Technical notes
+
+- Date/time picker: existing shadcn `Calendar` + native `<input type="time">`, packaged into `src/components/ui/date-time-picker.tsx` for reuse across journal, seizures, doses.
+- PDF export: `jspdf` (already lightweight, Worker-safe — runs client-side, no server function needed).
+- CSV export: build client-side via Blob + `URL.createObjectURL`.
+- AI classification for Timeline composer: reuse existing Lovable AI gateway (`google/gemini-2.5-flash`) with a small JSON-mode prompt.
+- Tablet sidebar: add `md:hidden` / `lg:flex` breakpoints to `sidebar-nav.tsx` so 820px shows the mobile bottom-bar instead of a cramped sidebar.
+
+## Out of scope
+
+- New backend tables (everything fits existing schema)
+- Pricing / plan logic
+- Email or push notifications

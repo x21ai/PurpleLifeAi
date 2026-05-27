@@ -1,6 +1,6 @@
 import * as React from "react";
-import { formatDistanceToNow } from "date-fns";
-import { Pencil, Mic, Camera, Video, Sparkles, Loader2, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2, X, Check } from "lucide-react";
+import { formatDistanceToNow, format } from "date-fns";
+import { Pencil, Mic, Camera, Video, Sparkles, Loader2, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2, X, Check, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 type Entry = Database["public"]["Tables"]["journal_entries"]["Row"];
 
@@ -49,12 +50,14 @@ export function EntryCard({ entry }: { entry: Entry }) {
   const [editing, setEditing] = React.useState(false);
   const [draftText, setDraftText] = React.useState(entry.text ?? "");
   const [draftVoice, setDraftVoice] = React.useState(entry.voice_transcript ?? "");
+  const [draftAt, setDraftAt] = React.useState<Date>(new Date(entry.captured_at));
   const [saving, setSaving] = React.useState(false);
   const archived = Boolean(entry.archived_at);
 
   const openEdit = () => {
     setDraftText(entry.text ?? "");
     setDraftVoice(entry.voice_transcript ?? "");
+    setDraftAt(new Date(entry.captured_at));
     setEditing(true);
   };
 
@@ -69,6 +72,7 @@ export function EntryCard({ entry }: { entry: Entry }) {
       .update({
         text: draftText.trim() ? draftText : null,
         voice_transcript: draftVoice.trim() ? draftVoice : null,
+        captured_at: draftAt.toISOString(),
         status: "processing",
       })
       .eq("id", entry.id);
@@ -129,10 +133,15 @@ export function EntryCard({ entry }: { entry: Entry }) {
           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-primary">
             <Icon className="h-3.5 w-3.5" />
           </span>
-          <span suppressHydrationWarning>
-            {mounted
-              ? formatDistanceToNow(new Date(entry.captured_at), { addSuffix: true })
-              : "\u00a0"}
+          <span suppressHydrationWarning className="flex flex-col leading-tight">
+            <span className="text-foreground/80">
+              {format(new Date(entry.captured_at), "EEE, MMM d, yyyy · h:mm a")}
+            </span>
+            <span className="text-[10px] text-muted-foreground/70">
+              {mounted
+                ? formatDistanceToNow(new Date(entry.captured_at), { addSuffix: true })
+                : "\u00a0"}
+            </span>
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -176,6 +185,12 @@ export function EntryCard({ entry }: { entry: Entry }) {
 
       {editing ? (
         <div className="mt-3 space-y-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1">
+              <CalendarIcon className="h-3 w-3" /> When did this happen?
+            </p>
+            <DateTimePicker value={draftAt} onChange={(d) => d && setDraftAt(d)} disableFuture />
+          </div>
           <Textarea
             autoFocus
             value={draftText}
