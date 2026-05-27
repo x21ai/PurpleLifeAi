@@ -24,11 +24,13 @@ import { Route as AppInsightsRouteImport } from './routes/_app/insights'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
 import { Route as AppCharterRouteImport } from './routes/_app/charter'
 import { Route as AppJournalIndexRouteImport } from './routes/_app/journal.index'
+import { Route as AppBiometricsIndexRouteImport } from './routes/_app/biometrics.index'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
 import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
 import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
 import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
+import { Route as AppBiometricsMetricRouteImport } from './routes/_app/biometrics.$metric'
 import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
 import { Route as AppJournalEntryIdEditRouteImport } from './routes/_app/journal.$entryId.edit'
 
@@ -106,6 +108,11 @@ const AppJournalIndexRoute = AppJournalIndexRouteImport.update({
   path: '/journal/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBiometricsIndexRoute = AppBiometricsIndexRouteImport.update({
+  id: '/biometrics/',
+  path: '/biometrics/',
+  getParentRoute: () => AppRoute,
+} as any)
 const OauthOuraCallbackRoute = OauthOuraCallbackRouteImport.update({
   id: '/oauth/oura/callback',
   path: '/oauth/oura/callback',
@@ -129,6 +136,11 @@ const AppMedsMedIdRoute = AppMedsMedIdRouteImport.update({
 const AppJournalNewRoute = AppJournalNewRouteImport.update({
   id: '/journal/new',
   path: '/journal/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBiometricsMetricRoute = AppBiometricsMetricRouteImport.update({
+  id: '/biometrics/$metric',
+  path: '/biometrics/$metric',
   getParentRoute: () => AppRoute,
 } as any)
 const ApiPublicHooksRiskForecasterRoute =
@@ -157,11 +169,13 @@ export interface FileRoutesByFullPath {
   '/terms': typeof AppTermsRoute
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
+  '/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
+  '/biometrics/': typeof AppBiometricsIndexRoute
   '/journal/': typeof AppJournalIndexRoute
   '/journal/$entryId/edit': typeof AppJournalEntryIdEditRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
@@ -180,11 +194,13 @@ export interface FileRoutesByTo {
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
   '/': typeof AppIndexRoute
+  '/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
+  '/biometrics': typeof AppBiometricsIndexRoute
   '/journal': typeof AppJournalIndexRoute
   '/journal/$entryId/edit': typeof AppJournalEntryIdEditRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
@@ -205,11 +221,13 @@ export interface FileRoutesById {
   '/_app/vitals': typeof AppVitalsRoute
   '/_app/welcome': typeof AppWelcomeRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/_app/journal/new': typeof AppJournalNewRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
   '/_app/seizures/new': typeof AppSeizuresNewRoute
   '/_app/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
+  '/_app/biometrics/': typeof AppBiometricsIndexRoute
   '/_app/journal/': typeof AppJournalIndexRoute
   '/_app/journal/$entryId/edit': typeof AppJournalEntryIdEditRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
@@ -230,11 +248,13 @@ export interface FileRouteTypes {
     | '/terms'
     | '/vitals'
     | '/welcome'
+    | '/biometrics/$metric'
     | '/journal/new'
     | '/meds/$medId'
     | '/seizures/new'
     | '/today/risk'
     | '/oauth/oura/callback'
+    | '/biometrics/'
     | '/journal/'
     | '/journal/$entryId/edit'
     | '/api/public/hooks/risk-forecaster'
@@ -253,11 +273,13 @@ export interface FileRouteTypes {
     | '/vitals'
     | '/welcome'
     | '/'
+    | '/biometrics/$metric'
     | '/journal/new'
     | '/meds/$medId'
     | '/seizures/new'
     | '/today/risk'
     | '/oauth/oura/callback'
+    | '/biometrics'
     | '/journal'
     | '/journal/$entryId/edit'
     | '/api/public/hooks/risk-forecaster'
@@ -277,11 +299,13 @@ export interface FileRouteTypes {
     | '/_app/vitals'
     | '/_app/welcome'
     | '/_app/'
+    | '/_app/biometrics/$metric'
     | '/_app/journal/new'
     | '/_app/meds/$medId'
     | '/_app/seizures/new'
     | '/_app/today/risk'
     | '/oauth/oura/callback'
+    | '/_app/biometrics/'
     | '/_app/journal/'
     | '/_app/journal/$entryId/edit'
     | '/api/public/hooks/risk-forecaster'
@@ -402,6 +426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppJournalIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/biometrics/': {
+      id: '/_app/biometrics/'
+      path: '/biometrics'
+      fullPath: '/biometrics/'
+      preLoaderRoute: typeof AppBiometricsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/oauth/oura/callback': {
       id: '/oauth/oura/callback'
       path: '/oauth/oura/callback'
@@ -435,6 +466,13 @@ declare module '@tanstack/react-router' {
       path: '/journal/new'
       fullPath: '/journal/new'
       preLoaderRoute: typeof AppJournalNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/biometrics/$metric': {
+      id: '/_app/biometrics/$metric'
+      path: '/biometrics/$metric'
+      fullPath: '/biometrics/$metric'
+      preLoaderRoute: typeof AppBiometricsMetricRouteImport
       parentRoute: typeof AppRoute
     }
     '/api/public/hooks/risk-forecaster': {
@@ -477,9 +515,11 @@ interface AppRouteChildren {
   AppVitalsRoute: typeof AppVitalsRoute
   AppWelcomeRoute: typeof AppWelcomeRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppBiometricsMetricRoute: typeof AppBiometricsMetricRoute
   AppJournalNewRoute: typeof AppJournalNewRoute
   AppSeizuresNewRoute: typeof AppSeizuresNewRoute
   AppTodayRiskRoute: typeof AppTodayRiskRoute
+  AppBiometricsIndexRoute: typeof AppBiometricsIndexRoute
   AppJournalIndexRoute: typeof AppJournalIndexRoute
   AppJournalEntryIdEditRoute: typeof AppJournalEntryIdEditRoute
 }
@@ -496,9 +536,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppVitalsRoute: AppVitalsRoute,
   AppWelcomeRoute: AppWelcomeRoute,
   AppIndexRoute: AppIndexRoute,
+  AppBiometricsMetricRoute: AppBiometricsMetricRoute,
   AppJournalNewRoute: AppJournalNewRoute,
   AppSeizuresNewRoute: AppSeizuresNewRoute,
   AppTodayRiskRoute: AppTodayRiskRoute,
+  AppBiometricsIndexRoute: AppBiometricsIndexRoute,
   AppJournalIndexRoute: AppJournalIndexRoute,
   AppJournalEntryIdEditRoute: AppJournalEntryIdEditRoute,
 }
