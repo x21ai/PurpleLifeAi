@@ -268,6 +268,10 @@ function JournalNewPage() {
 
       {/* Body */}
       <main className="flex-1 overflow-y-auto px-5 pt-2 pb-4">
+        <div className="mb-3 -mt-1">
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1.5">When did this happen?</p>
+          <DateTimePicker value={capturedAt} onChange={(d) => d && setCapturedAt(d)} disableFuture />
+        </div>
         <Textarea
           autoFocus
           value={text}
