@@ -1,52 +1,49 @@
 
 ## Goal
-Prevent duplicate `daily_behaviors` rows when journal-extract runs more than once on the same entry.
+On `/journal`, let users **edit**, **archive**, and (from Archive) **delete** any of their entries.
 
-## Changes
-
-### 1. DB migration
-Add a unique constraint to `daily_behaviors`:
+## DB migration
+Add an archive flag to `journal_entries`:
 
 ```sql
--- De-dupe any existing duplicates first (keep most recent per key)
-DELETE FROM public.daily_behaviors a
-USING public.daily_behaviors b
-WHERE a.ctid < b.ctid
-  AND a.user_id = b.user_id
-  AND a.journal_entry_id = b.journal_entry_id
-  AND a.behavior_key = b.behavior_key
-  AND a.journal_entry_id IS NOT NULL;
-
-ALTER TABLE public.daily_behaviors
-  ADD CONSTRAINT daily_behaviors_user_entry_key_uniq
-  UNIQUE (user_id, journal_entry_id, behavior_key);
+ALTER TABLE public.journal_entries
+  ADD COLUMN archived_at timestamptz;
+CREATE INDEX journal_entries_user_archived_idx
+  ON public.journal_entries (user_id, archived_at);
 ```
 
-Note: constraint only applies when `journal_entry_id` is non-null (rows without an entry id won't collide).
+No RLS changes needed — existing `journal_entries_all_own` policy already covers UPDATE/DELETE for the owner.
 
-### 2. `supabase/functions/journal-extract/index.ts`
-Replace the `.insert(rows)` call with:
+## UI changes — `src/routes/_app/journal.index.tsx`
+- Add a simple **Active / Archive** tab toggle under the heading. Default = Active.
+- Active view: `archived_at IS NULL` (filter client-side from the loaded list, or split queries — go with client filter since limit is 200).
+- Archive view: `archived_at IS NOT NULL`.
+- Realtime listener already handles UPDATE/DELETE — no change.
 
-```ts
-.upsert(rows, {
-  onConflict: 'user_id,journal_entry_id,behavior_key',
-  count: 'exact',
-})
-```
+## UI changes — `src/components/journal/entry-card.tsx`
+Add a kebab menu (top-right of the card) using existing `DropdownMenu`:
 
-And ensure each row sets `user_corrected: false` so a re-extraction resets it (existing code already does this; upsert will overwrite). Also overwrite `value` and `extraction_confidence` — handled automatically since upsert replaces the conflicting row's columns with the new payload.
+- **Active entry** menu items:
+  - **Edit** → navigate to `/journal/$id/edit`
+  - **Archive** → `update({ archived_at: new Date().toISOString() })`
+- **Archived entry** menu items:
+  - **Restore** → `update({ archived_at: null })`
+  - **Delete permanently** → confirm via `AlertDialog`, then `delete()`. Cascades nothing (no FK on `daily_behaviors.journal_entry_id`), so also clean up linked rows:
+    ```ts
+    await supabase.from("daily_behaviors").delete().eq("journal_entry_id", id);
+    await supabase.from("journal_entries").delete().eq("id", id);
+    ```
 
-Redeploy the function.
+Pass an `onMutate` callback prop or just call `supabase` directly inside the card (already imported pattern across the app). Toast on success/failure.
 
-### 3. Idempotency smoke test
-- Find (or create) a test `journal_entries` row with content: *"Slept poorly and woke up twice. Took my morning Keppra with breakfast. Had two coffees by 10am. Felt foggy until lunch."*
-- Call `journal-extract` with that entry id → expect 7 rows written.
-- Call `journal-extract` again with same entry id → expect 0 new rows, 7 updated.
-- Run:
-  ```sql
-  SELECT COUNT(*) FROM public.daily_behaviors WHERE journal_entry_id = '<id>';
-  ```
-  Confirm result = 7. Show response payloads from both calls and the count.
+## New route — `src/routes/_app/journal.$entryId.edit.tsx`
+A small edit page (mirrors `journal.new.tsx` but pared down):
+- Loads the entry by id (RLS-scoped).
+- Editable fields: `text`, `voice_transcript` (textarea). Leave media + kind alone for now (out of scope).
+- Save: `update({ text, voice_transcript, status: 'processing' })` then re-invoke `journal-extract` for that entry (idempotent upsert + stale sweep already in place, so re-running on edit is safe and keeps `daily_behaviors` in sync). Navigate back to `/journal`.
+- Cancel returns to `/journal`.
 
 ## Out of scope
-No UI changes, no Phase 2 work, no taxonomy changes.
+- Editing media attachments
+- Bulk archive/delete
+- Trash auto-purge schedule
