@@ -20,9 +20,6 @@ function NotFoundComponent() {
   // Compatibility: the internal `_app` segment is a TanStack route-group,
   // not a public URL. Old links to `/_app/admin/...` 404 — strip the prefix
   // and forward to the real route before showing the 404 screen.
-  const [redirecting, setRedirecting] = (
-    typeof React !== "undefined" ? React.useState(false) : [false, () => {}]
-  ) as ReturnType<typeof React.useState<boolean>>;
   if (typeof window !== "undefined") {
     const { pathname, search, hash } = window.location;
     if (pathname.startsWith("/_app/") || pathname === "/_app") {
