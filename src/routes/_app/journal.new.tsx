@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useVoiceCapture } from "@/components/journal/use-voice-capture";
 import { VoiceWave } from "@/components/journal/voice-wave";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 export const Route = createFileRoute("/_app/journal/new")({
   head: () => ({ meta: [{ title: "New entry — Purple" }] }),
@@ -80,6 +81,7 @@ function JournalNewPage() {
   });
   const [attachments, setAttachments] = React.useState<Attachment[]>([]);
   const [saving, setSaving] = React.useState(false);
+  const [capturedAt, setCapturedAt] = React.useState<Date>(new Date());
   const voice = useVoiceCapture();
 
   // Persist text draft across reloads / pull-to-refresh.
@@ -172,6 +174,7 @@ function JournalNewPage() {
           user_id: userId,
           kind,
           status: "processing",
+          captured_at: capturedAt.toISOString(),
           text: finalText || null,
           voice_transcript: liveTranscript || null,
         })
