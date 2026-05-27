@@ -13,6 +13,7 @@ const PUBLISHABLE = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ||
   Deno.env.get("SUPABASE_ANON_KEY")!;
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
@@ -316,6 +317,59 @@ async function callClaudeOnce(messages: any[]) {
   return r.json();
 }
 
+/**
+ * Lightweight chat through the Lovable AI Gateway. No tool use — text
+ * completion only, with the same Purple system prompt. Used when the user
+ * picks Gemini in Settings → Preferences.
+ */
+async function callGeminiViaLovableAI(
+  pref: "gemini-flash" | "gemini-pro",
+  message: string,
+  history: { role: "user" | "assistant"; content: string }[],
+): Promise<string> {
+  if (!LOVABLE_API_KEY) {
+    return "Gemini is not configured for this workspace yet. Switch to Claude in Settings → Preferences and ask me again.";
+  }
+  const model =
+    pref === "gemini-pro" ? "google/gemini-2.5-pro" : "google/gemini-3-flash-preview";
+  const trimmed = history
+    .slice(-12)
+    .filter((m) => typeof m?.content === "string")
+    .map((m) => ({ role: m.role, content: m.content }));
+  const body = {
+    model,
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...trimmed,
+      { role: "user", content: message },
+    ],
+  };
+  const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (r.status === 429) {
+    return "Purple is getting a lot of questions right now. Try again in a moment.";
+  }
+  if (r.status === 402) {
+    return "Your AI credits have run out for this workspace. Add credits in Settings → Workspace → Usage to keep using Gemini.";
+  }
+  if (!r.ok) {
+    const txt = await r.text();
+    console.error("lovable ai error", r.status, txt);
+    return "I couldn't reach Gemini just now. Try again in a moment, or switch to Claude in Settings.";
+  }
+  const j = await r.json();
+  const content = j?.choices?.[0]?.message?.content;
+  return typeof content === "string" && content.trim()
+    ? content.trim()
+    : "I couldn't put together an answer just now.";
+}
+
 export async function extractBehaviorsFromText(
   text: string,
   date: string,
@@ -519,6 +573,26 @@ Deno.serve(async (req) => {
     if (!message) {
       return new Response(JSON.stringify({ error: "message required" }), {
         status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Resolve the user's preferred AI engine. Claude keeps full tool-use
+    // (proposals, library search, etc.). Gemini variants use a lightweight
+    // text-only path via the Lovable AI Gateway — faster and cheaper but
+    // without action proposals.
+    const { data: profileRow } = await admin
+      .from("profiles")
+      .select("ai_model_preference")
+      .eq("id", userId)
+      .maybeSingle();
+    const modelPref = String(
+      (profileRow as any)?.ai_model_preference || "claude-sonnet",
+    );
+
+    if (modelPref === "gemini-flash" || modelPref === "gemini-pro") {
+      const reply = await callGeminiViaLovableAI(modelPref, message, history);
+      return new Response(JSON.stringify({ reply, proposals: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
