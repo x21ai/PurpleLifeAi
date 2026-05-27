@@ -289,6 +289,7 @@ export type Database = {
           ai_extracted: Json | null
           ai_summary: string | null
           ai_tags: string[]
+          archived_at: string | null
           captured_at: string
           created_at: string
           id: string
@@ -305,6 +306,7 @@ export type Database = {
           ai_extracted?: Json | null
           ai_summary?: string | null
           ai_tags?: string[]
+          archived_at?: string | null
           captured_at?: string
           created_at?: string
           id?: string
@@ -321,6 +323,7 @@ export type Database = {
           ai_extracted?: Json | null
           ai_summary?: string | null
           ai_tags?: string[]
+          archived_at?: string | null
           captured_at?: string
           created_at?: string
           id?: string

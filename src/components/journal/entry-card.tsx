@@ -1,6 +1,25 @@
 import * as React from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Pencil, Mic, Camera, Video, Sparkles, Loader2 } from "lucide-react";
+import { Pencil, Mic, Camera, Video, Sparkles, Loader2, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -24,6 +43,42 @@ function isVideo(url: string) {
 export function EntryCard({ entry }: { entry: Entry }) {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
+  const navigate = useNavigate();
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+  const archived = Boolean(entry.archived_at);
+
+  const archive = async () => {
+    setBusy(true);
+    const { error } = await supabase
+      .from("journal_entries")
+      .update({ archived_at: new Date().toISOString() })
+      .eq("id", entry.id);
+    setBusy(false);
+    if (error) toast.error("Couldn't archive entry");
+    else toast.success("Entry archived");
+  };
+
+  const restore = async () => {
+    setBusy(true);
+    const { error } = await supabase
+      .from("journal_entries")
+      .update({ archived_at: null })
+      .eq("id", entry.id);
+    setBusy(false);
+    if (error) toast.error("Couldn't restore entry");
+    else toast.success("Entry restored");
+  };
+
+  const destroy = async () => {
+    setBusy(true);
+    await supabase.from("daily_behaviors").delete().eq("journal_entry_id", entry.id);
+    const { error } = await supabase.from("journal_entries").delete().eq("id", entry.id);
+    setBusy(false);
+    setConfirmDelete(false);
+    if (error) toast.error("Couldn't delete entry");
+    else toast.success("Entry deleted");
+  };
 
   const Icon = KIND_ICON[entry.kind] ?? Pencil;
   const photos = entry.media_urls.filter(isImage);
@@ -43,11 +98,43 @@ export function EntryCard({ entry }: { entry: Entry }) {
               : "\u00a0"}
           </span>
         </div>
-        {processing && (
-          <span className="inline-flex items-center gap-1 text-primary/80">
-            <Loader2 className="h-3 w-3 animate-spin" /> reading…
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {processing && (
+            <span className="inline-flex items-center gap-1 text-primary/80">
+              <Loader2 className="h-3 w-3 animate-spin" /> reading…
+            </span>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full hover:bg-secondary/70 text-muted-foreground disabled:opacity-50"
+              aria-label="Entry actions"
+              disabled={busy}
+            >
+              <MoreVertical className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              {!archived ? (
+                <>
+                  <DropdownMenuItem onClick={() => navigate({ to: "/journal/$entryId/edit", params: { entryId: entry.id } })}>
+                    <Edit3 className="h-4 w-4 mr-2" /> Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={archive}>
+                    <Archive className="h-4 w-4 mr-2" /> Archive
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuItem onClick={restore}>
+                    <ArchiveRestore className="h-4 w-4 mr-2" /> Restore
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setConfirmDelete(true)} className="text-destructive focus:text-destructive">
+                    <Trash2 className="h-4 w-4 mr-2" /> Delete permanently
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
 
       {entry.text && (
@@ -92,6 +179,23 @@ export function EntryCard({ entry }: { entry: Entry }) {
           ))}
         </div>
       )}
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the journal entry and any behaviors extracted from it. This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={destroy} disabled={busy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </article>
   );
 }

@@ -23,6 +23,7 @@ function JournalPage() {
   const [entries, setEntries] = React.useState<Entry[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [tab, setTab] = React.useState<"active" | "archive">("active");
 
   const load = React.useCallback(async () => {
     if (!userId) return;
@@ -132,14 +133,38 @@ function JournalPage() {
             <div key={i} className="h-28 rounded-2xl bg-secondary/40 animate-pulse" />
           ))}
         </div>
-      ) : entries.length === 0 ? (
-        <EmptyState />
       ) : (
-        <div className="space-y-3">
-          {entries.map((e) => (
-            <EntryCard key={e.id} entry={e} />
-          ))}
-        </div>
+        <>
+          <div className="mb-6 inline-flex rounded-full border border-border bg-secondary/40 p-1 text-sm">
+            <button
+              type="button"
+              onClick={() => setTab("active")}
+              className={`px-4 py-1.5 rounded-full transition ${tab === "active" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
+            >
+              Active
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("archive")}
+              className={`px-4 py-1.5 rounded-full transition ${tab === "archive" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
+            >
+              Archive
+            </button>
+          </div>
+          {(() => {
+            const visible = entries.filter((e) =>
+              tab === "active" ? !e.archived_at : !!e.archived_at,
+            );
+            if (visible.length === 0) return <EmptyState archive={tab === "archive"} />;
+            return (
+              <div className="space-y-3">
+                {visible.map((e) => (
+                  <EntryCard key={e.id} entry={e} />
+                ))}
+              </div>
+            );
+          })()}
+        </>
       )}
 
       <button
@@ -155,7 +180,16 @@ function JournalPage() {
   );
 }
 
-function EmptyState() {
+function EmptyState({ archive = false }: { archive?: boolean }) {
+  if (archive) {
+    return (
+      <div className="text-center py-16 px-6">
+        <p className="font-serif text-lg leading-relaxed text-muted-foreground max-w-md mx-auto">
+          Nothing archived yet. Archived entries land here so you can restore or delete them.
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="text-center py-16 px-6">
       <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-secondary">
