@@ -118,7 +118,7 @@ function MyHealthPage() {
       </section>
 
       <p className="mt-12 text-[11px] text-muted-foreground/60 text-center">
-        <Link to="/" className="hover:text-foreground">Back to today</Link>
+        <Link to="/today" className="hover:text-foreground">Back to today</Link>
       </p>
     </div>
   );
