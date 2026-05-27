@@ -15,6 +15,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
 import { Route as AppVitalsRouteImport } from './routes/_app/vitals'
+import { Route as AppTimelineRouteImport } from './routes/_app/timeline'
 import { Route as AppTermsRouteImport } from './routes/_app/terms'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
@@ -60,6 +61,11 @@ const AppWelcomeRoute = AppWelcomeRouteImport.update({
 const AppVitalsRoute = AppVitalsRouteImport.update({
   id: '/vitals',
   path: '/vitals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTimelineRoute = AppTimelineRouteImport.update({
+  id: '/timeline',
+  path: '/timeline',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTermsRoute = AppTermsRouteImport.update({
@@ -161,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof AppPrivacyRoute
   '/settings': typeof AppSettingsRoute
   '/terms': typeof AppTermsRoute
+  '/timeline': typeof AppTimelineRoute
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof AppPrivacyRoute
   '/settings': typeof AppSettingsRoute
   '/terms': typeof AppTermsRoute
+  '/timeline': typeof AppTimelineRoute
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
   '/': typeof AppIndexRoute
@@ -210,6 +218,7 @@ export interface FileRoutesById {
   '/_app/privacy': typeof AppPrivacyRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/terms': typeof AppTermsRoute
+  '/_app/timeline': typeof AppTimelineRoute
   '/_app/vitals': typeof AppVitalsRoute
   '/_app/welcome': typeof AppWelcomeRoute
   '/_app/': typeof AppIndexRoute
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/settings'
     | '/terms'
+    | '/timeline'
     | '/vitals'
     | '/welcome'
     | '/biometrics/$metric'
@@ -260,6 +270,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/settings'
     | '/terms'
+    | '/timeline'
     | '/vitals'
     | '/welcome'
     | '/'
@@ -285,6 +296,7 @@ export interface FileRouteTypes {
     | '/_app/privacy'
     | '/_app/settings'
     | '/_app/terms'
+    | '/_app/timeline'
     | '/_app/vitals'
     | '/_app/welcome'
     | '/_app/'
@@ -349,6 +361,13 @@ declare module '@tanstack/react-router' {
       path: '/vitals'
       fullPath: '/vitals'
       preLoaderRoute: typeof AppVitalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/timeline': {
+      id: '/_app/timeline'
+      path: '/timeline'
+      fullPath: '/timeline'
+      preLoaderRoute: typeof AppTimelineRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/terms': {
@@ -493,6 +512,7 @@ interface AppRouteChildren {
   AppPrivacyRoute: typeof AppPrivacyRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTermsRoute: typeof AppTermsRoute
+  AppTimelineRoute: typeof AppTimelineRoute
   AppVitalsRoute: typeof AppVitalsRoute
   AppWelcomeRoute: typeof AppWelcomeRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -513,6 +533,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPrivacyRoute: AppPrivacyRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTermsRoute: AppTermsRoute,
+  AppTimelineRoute: AppTimelineRoute,
   AppVitalsRoute: AppVitalsRoute,
   AppWelcomeRoute: AppWelcomeRoute,
   AppIndexRoute: AppIndexRoute,
