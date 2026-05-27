@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Check, Loader2, Mail, Trash2, X } from "lucide-react";
+import { ArrowLeft, Check, Copy, Loader2, Mail, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { ExpiryControl } from "@/components/care/expiry-control";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import {
   inviteCaregiver,
@@ -144,6 +145,11 @@ function SharingPage() {
                         <StatusPill status={r.status} />
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">{myScopes.length} scope{myScopes.length === 1 ? "" : "s"} granted</p>
+                      {r.status === "active" && (
+                        <div className="mt-2">
+                          <ExpiryControl relationshipId={r.id} expiresAt={r.expires_at} />
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <ManageRelationshipSheet
@@ -167,9 +173,27 @@ function SharingPage() {
                     </div>
                   </div>
                   {r.status === "pending" && (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Invite link: <code className="text-foreground">/care/accept?token={r.invite_token.slice(0, 12)}…</code>
-                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <code className="flex-1 truncate rounded-md bg-muted px-2 py-1 text-[11px] text-foreground">
+                        {typeof window !== "undefined" ? window.location.origin : ""}/care/accept?token={r.invite_token}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const url =
+                            (typeof window !== "undefined" ? window.location.origin : "") +
+                            "/care/accept?token=" +
+                            r.invite_token;
+                          navigator.clipboard?.writeText(url).then(
+                            () => toast.success("Invite link copied"),
+                            () => toast.error("Couldn't copy"),
+                          );
+                        }}
+                      >
+                        <Copy className="h-3 w-3 mr-1" /> Copy link
+                      </Button>
+                    </div>
                   )}
                 </li>
               );
