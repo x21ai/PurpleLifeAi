@@ -15,6 +15,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
 import { Route as AppVitalsRouteImport } from './routes/_app/vitals'
+import { Route as AppTimelineRouteImport } from './routes/_app/timeline'
 import { Route as AppTermsRouteImport } from './routes/_app/terms'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
@@ -27,6 +28,7 @@ import { Route as AppJournalIndexRouteImport } from './routes/_app/journal.index
 import { Route as AppBiometricsIndexRouteImport } from './routes/_app/biometrics.index'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
 import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
+import { Route as AppSettingsHowPurpleThinksRouteImport } from './routes/_app/settings.how-purple-thinks'
 import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
 import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
@@ -60,6 +62,11 @@ const AppWelcomeRoute = AppWelcomeRouteImport.update({
 const AppVitalsRoute = AppVitalsRouteImport.update({
   id: '/vitals',
   path: '/vitals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTimelineRoute = AppTimelineRouteImport.update({
+  id: '/timeline',
+  path: '/timeline',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTermsRoute = AppTermsRouteImport.update({
@@ -122,6 +129,12 @@ const AppTodayRiskRoute = AppTodayRiskRouteImport.update({
   path: '/today/risk',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsHowPurpleThinksRoute =
+  AppSettingsHowPurpleThinksRouteImport.update({
+    id: '/how-purple-thinks',
+    path: '/how-purple-thinks',
+    getParentRoute: () => AppSettingsRoute,
+  } as any)
 const AppSeizuresNewRoute = AppSeizuresNewRouteImport.update({
   id: '/seizures/new',
   path: '/seizures/new',
@@ -159,14 +172,16 @@ export interface FileRoutesByFullPath {
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
   '/privacy': typeof AppPrivacyRoute
-  '/settings': typeof AppSettingsRoute
+  '/settings': typeof AppSettingsRouteWithChildren
   '/terms': typeof AppTermsRoute
+  '/timeline': typeof AppTimelineRoute
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
+  '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/biometrics/': typeof AppBiometricsIndexRoute
@@ -182,8 +197,9 @@ export interface FileRoutesByTo {
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
   '/privacy': typeof AppPrivacyRoute
-  '/settings': typeof AppSettingsRoute
+  '/settings': typeof AppSettingsRouteWithChildren
   '/terms': typeof AppTermsRoute
+  '/timeline': typeof AppTimelineRoute
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
   '/': typeof AppIndexRoute
@@ -191,6 +207,7 @@ export interface FileRoutesByTo {
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
+  '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/biometrics': typeof AppBiometricsIndexRoute
@@ -208,8 +225,9 @@ export interface FileRoutesById {
   '/_app/meds': typeof AppMedsRouteWithChildren
   '/_app/my-health': typeof AppMyHealthRoute
   '/_app/privacy': typeof AppPrivacyRoute
-  '/_app/settings': typeof AppSettingsRoute
+  '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/terms': typeof AppTermsRoute
+  '/_app/timeline': typeof AppTimelineRoute
   '/_app/vitals': typeof AppVitalsRoute
   '/_app/welcome': typeof AppWelcomeRoute
   '/_app/': typeof AppIndexRoute
@@ -217,6 +235,7 @@ export interface FileRoutesById {
   '/_app/journal/new': typeof AppJournalNewRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
   '/_app/seizures/new': typeof AppSeizuresNewRoute
+  '/_app/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
   '/_app/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/_app/biometrics/': typeof AppBiometricsIndexRoute
@@ -237,12 +256,14 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/settings'
     | '/terms'
+    | '/timeline'
     | '/vitals'
     | '/welcome'
     | '/biometrics/$metric'
     | '/journal/new'
     | '/meds/$medId'
     | '/seizures/new'
+    | '/settings/how-purple-thinks'
     | '/today/risk'
     | '/oauth/oura/callback'
     | '/biometrics/'
@@ -260,6 +281,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/settings'
     | '/terms'
+    | '/timeline'
     | '/vitals'
     | '/welcome'
     | '/'
@@ -267,6 +289,7 @@ export interface FileRouteTypes {
     | '/journal/new'
     | '/meds/$medId'
     | '/seizures/new'
+    | '/settings/how-purple-thinks'
     | '/today/risk'
     | '/oauth/oura/callback'
     | '/biometrics'
@@ -285,6 +308,7 @@ export interface FileRouteTypes {
     | '/_app/privacy'
     | '/_app/settings'
     | '/_app/terms'
+    | '/_app/timeline'
     | '/_app/vitals'
     | '/_app/welcome'
     | '/_app/'
@@ -292,6 +316,7 @@ export interface FileRouteTypes {
     | '/_app/journal/new'
     | '/_app/meds/$medId'
     | '/_app/seizures/new'
+    | '/_app/settings/how-purple-thinks'
     | '/_app/today/risk'
     | '/oauth/oura/callback'
     | '/_app/biometrics/'
@@ -349,6 +374,13 @@ declare module '@tanstack/react-router' {
       path: '/vitals'
       fullPath: '/vitals'
       preLoaderRoute: typeof AppVitalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/timeline': {
+      id: '/_app/timeline'
+      path: '/timeline'
+      fullPath: '/timeline'
+      preLoaderRoute: typeof AppTimelineRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/terms': {
@@ -435,6 +467,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTodayRiskRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings/how-purple-thinks': {
+      id: '/_app/settings/how-purple-thinks'
+      path: '/how-purple-thinks'
+      fullPath: '/settings/how-purple-thinks'
+      preLoaderRoute: typeof AppSettingsHowPurpleThinksRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
     '/_app/seizures/new': {
       id: '/_app/seizures/new'
       path: '/seizures/new'
@@ -484,6 +523,18 @@ const AppMedsRouteChildren: AppMedsRouteChildren = {
 const AppMedsRouteWithChildren =
   AppMedsRoute._addFileChildren(AppMedsRouteChildren)
 
+interface AppSettingsRouteChildren {
+  AppSettingsHowPurpleThinksRoute: typeof AppSettingsHowPurpleThinksRoute
+}
+
+const AppSettingsRouteChildren: AppSettingsRouteChildren = {
+  AppSettingsHowPurpleThinksRoute: AppSettingsHowPurpleThinksRoute,
+}
+
+const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
+  AppSettingsRouteChildren,
+)
+
 interface AppRouteChildren {
   AppCharterRoute: typeof AppCharterRoute
   AppChatRoute: typeof AppChatRoute
@@ -491,8 +542,9 @@ interface AppRouteChildren {
   AppMedsRoute: typeof AppMedsRouteWithChildren
   AppMyHealthRoute: typeof AppMyHealthRoute
   AppPrivacyRoute: typeof AppPrivacyRoute
-  AppSettingsRoute: typeof AppSettingsRoute
+  AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppTermsRoute: typeof AppTermsRoute
+  AppTimelineRoute: typeof AppTimelineRoute
   AppVitalsRoute: typeof AppVitalsRoute
   AppWelcomeRoute: typeof AppWelcomeRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -511,8 +563,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppMedsRoute: AppMedsRouteWithChildren,
   AppMyHealthRoute: AppMyHealthRoute,
   AppPrivacyRoute: AppPrivacyRoute,
-  AppSettingsRoute: AppSettingsRoute,
+  AppSettingsRoute: AppSettingsRouteWithChildren,
   AppTermsRoute: AppTermsRoute,
+  AppTimelineRoute: AppTimelineRoute,
   AppVitalsRoute: AppVitalsRoute,
   AppWelcomeRoute: AppWelcomeRoute,
   AppIndexRoute: AppIndexRoute,

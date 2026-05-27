@@ -1,8 +1,8 @@
-import { Sun, BookOpen, MessageCircle, TrendingUp, Settings2 } from "lucide-react";
+import { Sun, BookOpen, Clock, TrendingUp, Settings2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export type NavItem = {
-  to: "/" | "/journal" | "/chat" | "/insights" | "/settings";
+  to: "/" | "/journal" | "/timeline" | "/insights" | "/settings";
   label: string;
   icon: LucideIcon;
 };
@@ -10,7 +10,7 @@ export type NavItem = {
 export const navItems: NavItem[] = [
   { to: "/", label: "Today", icon: Sun },
   { to: "/journal", label: "Journal", icon: BookOpen },
-  { to: "/chat", label: "Ask", icon: MessageCircle },
+  { to: "/timeline", label: "Timeline", icon: Clock },
   { to: "/insights", label: "Patterns", icon: TrendingUp },
   { to: "/settings", label: "Settings", icon: Settings2 },
 ];

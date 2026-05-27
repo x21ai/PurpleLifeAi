@@ -1,5 +1,6 @@
 import * as React from "react";
-import { Sparkles, MessageCircle, Loader2 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Sparkles, MessageCircle, Loader2, BookOpen, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -139,8 +140,7 @@ export function PreferencesSection() {
               {savingFab && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
             </Label>
             <p className="mt-1 text-xs text-muted-foreground">
-              Show a small Ask Purple button on every screen on desktop and tablet.
-              Mobile already has Ask in the bottom nav.
+              Show a small Ask Purple bubble on every screen so you can chat without leaving what you're doing.
             </p>
           </div>
           <Switch
@@ -150,6 +150,20 @@ export function PreferencesSection() {
             disabled={loading}
           />
         </div>
+
+        <Link
+          to="/settings/how-purple-thinks"
+          className="flex items-center justify-between border-t border-border pt-5 -mx-1 px-1 rounded-lg hover:bg-secondary/40 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-primary" />
+            <div>
+              <p className="font-serif text-base text-foreground">How Purple thinks</p>
+              <p className="text-xs text-muted-foreground">What it reads, when it acts, what stays private.</p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </Link>
       </div>
     </section>
   );
