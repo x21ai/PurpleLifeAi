@@ -27,6 +27,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CommunityResourcesRouteImport } from './routes/community.resources'
 import { Route as CommunityPostIdRouteImport } from './routes/community.$postId'
+import { Route as CareAcceptRouteImport } from './routes/care.accept'
 import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
 import { Route as AppVitalsRouteImport } from './routes/_app/vitals'
 import { Route as AppTodayRouteImport } from './routes/_app/today'
@@ -46,10 +47,12 @@ import { Route as AppBiometricsIndexRouteImport } from './routes/_app/biometrics
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin.index'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
 import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
+import { Route as AppSettingsSharingRouteImport } from './routes/_app/settings.sharing'
 import { Route as AppSettingsHowPurpleThinksRouteImport } from './routes/_app/settings.how-purple-thinks'
 import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
 import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
+import { Route as AppCareOwnerIdRouteImport } from './routes/_app/care.$ownerId'
 import { Route as AppBiometricsMetricRouteImport } from './routes/_app/biometrics.$metric'
 import { Route as AppAdminUsersRouteImport } from './routes/_app/admin.users'
 import { Route as AppAdminResourcesRouteImport } from './routes/_app/admin.resources'
@@ -148,6 +151,11 @@ const CommunityPostIdRoute = CommunityPostIdRouteImport.update({
   path: '/$postId',
   getParentRoute: () => CommunityRoute,
 } as any)
+const CareAcceptRoute = CareAcceptRouteImport.update({
+  id: '/care/accept',
+  path: '/care/accept',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppWelcomeRoute = AppWelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
@@ -243,6 +251,11 @@ const AppTodayRiskRoute = AppTodayRiskRouteImport.update({
   path: '/risk',
   getParentRoute: () => AppTodayRoute,
 } as any)
+const AppSettingsSharingRoute = AppSettingsSharingRouteImport.update({
+  id: '/sharing',
+  path: '/sharing',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
 const AppSettingsHowPurpleThinksRoute =
   AppSettingsHowPurpleThinksRouteImport.update({
     id: '/how-purple-thinks',
@@ -262,6 +275,11 @@ const AppMedsMedIdRoute = AppMedsMedIdRouteImport.update({
 const AppJournalNewRoute = AppJournalNewRouteImport.update({
   id: '/journal/new',
   path: '/journal/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCareOwnerIdRoute = AppCareOwnerIdRouteImport.update({
+  id: '/care/$ownerId',
+  path: '/care/$ownerId',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBiometricsMetricRoute = AppBiometricsMetricRouteImport.update({
@@ -336,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/today': typeof AppTodayRouteWithChildren
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
+  '/care/accept': typeof CareAcceptRoute
   '/community/$postId': typeof CommunityPostIdRoute
   '/community/resources': typeof CommunityResourcesRoute
   '/admin/community': typeof AppAdminCommunityRoute
@@ -345,10 +364,12 @@ export interface FileRoutesByFullPath {
   '/admin/resources': typeof AppAdminResourcesRoute
   '/admin/users': typeof AppAdminUsersRoute
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
+  '/care/$ownerId': typeof AppCareOwnerIdRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
+  '/settings/sharing': typeof AppSettingsSharingRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/admin/': typeof AppAdminIndexRoute
@@ -385,6 +406,7 @@ export interface FileRoutesByTo {
   '/today': typeof AppTodayRouteWithChildren
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
+  '/care/accept': typeof CareAcceptRoute
   '/community/$postId': typeof CommunityPostIdRoute
   '/community/resources': typeof CommunityResourcesRoute
   '/admin/community': typeof AppAdminCommunityRoute
@@ -394,10 +416,12 @@ export interface FileRoutesByTo {
   '/admin/resources': typeof AppAdminResourcesRoute
   '/admin/users': typeof AppAdminUsersRoute
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
+  '/care/$ownerId': typeof AppCareOwnerIdRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
+  '/settings/sharing': typeof AppSettingsSharingRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/admin': typeof AppAdminIndexRoute
@@ -437,6 +461,7 @@ export interface FileRoutesById {
   '/_app/today': typeof AppTodayRouteWithChildren
   '/_app/vitals': typeof AppVitalsRoute
   '/_app/welcome': typeof AppWelcomeRoute
+  '/care/accept': typeof CareAcceptRoute
   '/community/$postId': typeof CommunityPostIdRoute
   '/community/resources': typeof CommunityResourcesRoute
   '/_app/admin/community': typeof AppAdminCommunityRoute
@@ -446,10 +471,12 @@ export interface FileRoutesById {
   '/_app/admin/resources': typeof AppAdminResourcesRoute
   '/_app/admin/users': typeof AppAdminUsersRoute
   '/_app/biometrics/$metric': typeof AppBiometricsMetricRoute
+  '/_app/care/$ownerId': typeof AppCareOwnerIdRoute
   '/_app/journal/new': typeof AppJournalNewRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
   '/_app/seizures/new': typeof AppSeizuresNewRoute
   '/_app/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
+  '/_app/settings/sharing': typeof AppSettingsSharingRoute
   '/_app/today/risk': typeof AppTodayRiskRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/_app/admin/': typeof AppAdminIndexRoute
@@ -489,6 +516,7 @@ export interface FileRouteTypes {
     | '/today'
     | '/vitals'
     | '/welcome'
+    | '/care/accept'
     | '/community/$postId'
     | '/community/resources'
     | '/admin/community'
@@ -498,10 +526,12 @@ export interface FileRouteTypes {
     | '/admin/resources'
     | '/admin/users'
     | '/biometrics/$metric'
+    | '/care/$ownerId'
     | '/journal/new'
     | '/meds/$medId'
     | '/seizures/new'
     | '/settings/how-purple-thinks'
+    | '/settings/sharing'
     | '/today/risk'
     | '/oauth/oura/callback'
     | '/admin/'
@@ -538,6 +568,7 @@ export interface FileRouteTypes {
     | '/today'
     | '/vitals'
     | '/welcome'
+    | '/care/accept'
     | '/community/$postId'
     | '/community/resources'
     | '/admin/community'
@@ -547,10 +578,12 @@ export interface FileRouteTypes {
     | '/admin/resources'
     | '/admin/users'
     | '/biometrics/$metric'
+    | '/care/$ownerId'
     | '/journal/new'
     | '/meds/$medId'
     | '/seizures/new'
     | '/settings/how-purple-thinks'
+    | '/settings/sharing'
     | '/today/risk'
     | '/oauth/oura/callback'
     | '/admin'
@@ -589,6 +622,7 @@ export interface FileRouteTypes {
     | '/_app/today'
     | '/_app/vitals'
     | '/_app/welcome'
+    | '/care/accept'
     | '/community/$postId'
     | '/community/resources'
     | '/_app/admin/community'
@@ -598,10 +632,12 @@ export interface FileRouteTypes {
     | '/_app/admin/resources'
     | '/_app/admin/users'
     | '/_app/biometrics/$metric'
+    | '/_app/care/$ownerId'
     | '/_app/journal/new'
     | '/_app/meds/$medId'
     | '/_app/seizures/new'
     | '/_app/settings/how-purple-thinks'
+    | '/_app/settings/sharing'
     | '/_app/today/risk'
     | '/oauth/oura/callback'
     | '/_app/admin/'
@@ -627,6 +663,7 @@ export interface RootRouteChildren {
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
   UsersRoute: typeof UsersRoute
+  CareAcceptRoute: typeof CareAcceptRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   ApiPublicHooksRiskForecasterRoute: typeof ApiPublicHooksRiskForecasterRoute
 }
@@ -758,6 +795,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/community/$postId'
       preLoaderRoute: typeof CommunityPostIdRouteImport
       parentRoute: typeof CommunityRoute
+    }
+    '/care/accept': {
+      id: '/care/accept'
+      path: '/care/accept'
+      fullPath: '/care/accept'
+      preLoaderRoute: typeof CareAcceptRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/welcome': {
       id: '/_app/welcome'
@@ -892,6 +936,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTodayRiskRouteImport
       parentRoute: typeof AppTodayRoute
     }
+    '/_app/settings/sharing': {
+      id: '/_app/settings/sharing'
+      path: '/sharing'
+      fullPath: '/settings/sharing'
+      preLoaderRoute: typeof AppSettingsSharingRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
     '/_app/settings/how-purple-thinks': {
       id: '/_app/settings/how-purple-thinks'
       path: '/how-purple-thinks'
@@ -918,6 +969,13 @@ declare module '@tanstack/react-router' {
       path: '/journal/new'
       fullPath: '/journal/new'
       preLoaderRoute: typeof AppJournalNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/care/$ownerId': {
+      id: '/_app/care/$ownerId'
+      path: '/care/$ownerId'
+      fullPath: '/care/$ownerId'
+      preLoaderRoute: typeof AppCareOwnerIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/biometrics/$metric': {
@@ -1016,10 +1074,12 @@ const AppMedsRouteWithChildren =
 
 interface AppSettingsRouteChildren {
   AppSettingsHowPurpleThinksRoute: typeof AppSettingsHowPurpleThinksRoute
+  AppSettingsSharingRoute: typeof AppSettingsSharingRoute
 }
 
 const AppSettingsRouteChildren: AppSettingsRouteChildren = {
   AppSettingsHowPurpleThinksRoute: AppSettingsHowPurpleThinksRoute,
+  AppSettingsSharingRoute: AppSettingsSharingRoute,
 }
 
 const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
@@ -1054,6 +1114,7 @@ interface AppRouteChildren {
   AppVitalsRoute: typeof AppVitalsRoute
   AppWelcomeRoute: typeof AppWelcomeRoute
   AppBiometricsMetricRoute: typeof AppBiometricsMetricRoute
+  AppCareOwnerIdRoute: typeof AppCareOwnerIdRoute
   AppJournalNewRoute: typeof AppJournalNewRoute
   AppSeizuresNewRoute: typeof AppSeizuresNewRoute
   AppBiometricsIndexRoute: typeof AppBiometricsIndexRoute
@@ -1076,6 +1137,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppVitalsRoute: AppVitalsRoute,
   AppWelcomeRoute: AppWelcomeRoute,
   AppBiometricsMetricRoute: AppBiometricsMetricRoute,
+  AppCareOwnerIdRoute: AppCareOwnerIdRoute,
   AppJournalNewRoute: AppJournalNewRoute,
   AppSeizuresNewRoute: AppSeizuresNewRoute,
   AppBiometricsIndexRoute: AppBiometricsIndexRoute,
@@ -1115,6 +1177,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
   UsersRoute: UsersRoute,
+  CareAcceptRoute: CareAcceptRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   ApiPublicHooksRiskForecasterRoute: ApiPublicHooksRiskForecasterRoute,
 }
