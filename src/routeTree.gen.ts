@@ -32,7 +32,6 @@ import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
 import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
 import { Route as AppBiometricsMetricRouteImport } from './routes/_app/biometrics.$metric'
 import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
-import { Route as AppJournalEntryIdEditRouteImport } from './routes/_app/journal.$entryId.edit'
 
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
@@ -149,11 +148,6 @@ const ApiPublicHooksRiskForecasterRoute =
     path: '/api/public/hooks/risk-forecaster',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AppJournalEntryIdEditRoute = AppJournalEntryIdEditRouteImport.update({
-  id: '/journal/$entryId/edit',
-  path: '/journal/$entryId/edit',
-  getParentRoute: () => AppRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -177,7 +171,6 @@ export interface FileRoutesByFullPath {
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/biometrics/': typeof AppBiometricsIndexRoute
   '/journal/': typeof AppJournalIndexRoute
-  '/journal/$entryId/edit': typeof AppJournalEntryIdEditRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
 }
 export interface FileRoutesByTo {
@@ -202,7 +195,6 @@ export interface FileRoutesByTo {
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/biometrics': typeof AppBiometricsIndexRoute
   '/journal': typeof AppJournalIndexRoute
-  '/journal/$entryId/edit': typeof AppJournalEntryIdEditRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
 }
 export interface FileRoutesById {
@@ -229,7 +221,6 @@ export interface FileRoutesById {
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/_app/biometrics/': typeof AppBiometricsIndexRoute
   '/_app/journal/': typeof AppJournalIndexRoute
-  '/_app/journal/$entryId/edit': typeof AppJournalEntryIdEditRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
 }
 export interface FileRouteTypes {
@@ -256,7 +247,6 @@ export interface FileRouteTypes {
     | '/oauth/oura/callback'
     | '/biometrics/'
     | '/journal/'
-    | '/journal/$entryId/edit'
     | '/api/public/hooks/risk-forecaster'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -281,7 +271,6 @@ export interface FileRouteTypes {
     | '/oauth/oura/callback'
     | '/biometrics'
     | '/journal'
-    | '/journal/$entryId/edit'
     | '/api/public/hooks/risk-forecaster'
   id:
     | '__root__'
@@ -307,7 +296,6 @@ export interface FileRouteTypes {
     | '/oauth/oura/callback'
     | '/_app/biometrics/'
     | '/_app/journal/'
-    | '/_app/journal/$entryId/edit'
     | '/api/public/hooks/risk-forecaster'
   fileRoutesById: FileRoutesById
 }
@@ -482,13 +470,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRiskForecasterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/journal/$entryId/edit': {
-      id: '/_app/journal/$entryId/edit'
-      path: '/journal/$entryId/edit'
-      fullPath: '/journal/$entryId/edit'
-      preLoaderRoute: typeof AppJournalEntryIdEditRouteImport
-      parentRoute: typeof AppRoute
-    }
   }
 }
 
@@ -521,7 +502,6 @@ interface AppRouteChildren {
   AppTodayRiskRoute: typeof AppTodayRiskRoute
   AppBiometricsIndexRoute: typeof AppBiometricsIndexRoute
   AppJournalIndexRoute: typeof AppJournalIndexRoute
-  AppJournalEntryIdEditRoute: typeof AppJournalEntryIdEditRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -542,7 +522,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppTodayRiskRoute: AppTodayRiskRoute,
   AppBiometricsIndexRoute: AppBiometricsIndexRoute,
   AppJournalIndexRoute: AppJournalIndexRoute,
-  AppJournalEntryIdEditRoute: AppJournalEntryIdEditRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
