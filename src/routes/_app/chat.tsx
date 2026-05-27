@@ -7,7 +7,23 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouteTheme } from "@/lib/use-route-theme";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type Proposal = {
+  kind:
+    | "add_medication"
+    | "log_seizure"
+    | "create_journal_entry"
+    | "mark_dose_taken"
+    | "archive_medication";
+  summary: string;
+  params: Record<string, unknown>;
+};
+
+type Msg = {
+  role: "user" | "assistant";
+  content: string;
+  proposals?: Proposal[];
+  proposalStatus?: Array<"pending" | "confirmed" | "cancelled" | "failed">;
+};
 
 const SUGGESTIONS = [
   "How have I been sleeping this week?",
@@ -36,7 +52,7 @@ function AskPage() {
   const send = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || thinking) return;
-    const history = messages;
+    const history = messages.map(({ role, content }) => ({ role, content }));
     const next: Msg[] = [...messages, { role: "user", content: trimmed }];
     setMessages(next);
     setInput("");
@@ -46,9 +62,18 @@ function AskPage() {
         body: { action: "chat", message: trimmed, history },
       });
       if (error) throw error;
-      const reply =
-        (data as { reply?: string })?.reply || "I couldn't put together an answer just now.";
-      setMessages([...next, { role: "assistant", content: reply }]);
+      const d = data as { reply?: string; proposals?: Proposal[] };
+      const reply = d?.reply || "I couldn't put together an answer just now.";
+      const proposals = Array.isArray(d?.proposals) ? d.proposals : [];
+      setMessages([
+        ...next,
+        {
+          role: "assistant",
+          content: reply,
+          proposals: proposals.length ? proposals : undefined,
+          proposalStatus: proposals.length ? proposals.map(() => "pending") : undefined,
+        },
+      ]);
     } catch (e) {
       console.error(e);
       toast.error("Couldn't reach Purple just now. Try again in a moment.");
@@ -56,6 +81,38 @@ function AskPage() {
     } finally {
       setThinking(false);
       inputRef.current?.focus();
+    }
+  };
+
+  const updateProposalStatus = (
+    msgIdx: number,
+    propIdx: number,
+    status: "confirmed" | "cancelled" | "failed",
+  ) => {
+    setMessages((prev) =>
+      prev.map((m, i) => {
+        if (i !== msgIdx || !m.proposalStatus) return m;
+        const next = m.proposalStatus.slice();
+        next[propIdx] = status;
+        return { ...m, proposalStatus: next };
+      }),
+    );
+  };
+
+  const onConfirm = async (msgIdx: number, propIdx: number, proposal: Proposal) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-orchestrator", {
+        body: { action: "execute_action", proposal },
+      });
+      if (error) throw error;
+      const ok = (data as { ok?: boolean })?.ok;
+      if (!ok) throw new Error((data as { error?: string })?.error || "Action failed");
+      updateProposalStatus(msgIdx, propIdx, "confirmed");
+      toast.success("Done.");
+    } catch (e) {
+      console.error(e);
+      updateProposalStatus(msgIdx, propIdx, "failed");
+      toast.error(e instanceof Error ? e.message : "Couldn't complete that action.");
     }
   };
 
@@ -86,7 +143,18 @@ function AskPage() {
           ) : (
             <div className="space-y-4">
               {messages.map((m, i) => (
-                <Bubble key={i} msg={m} />
+                <React.Fragment key={i}>
+                  <Bubble msg={m} />
+                  {m.proposals?.map((p, pi) => (
+                    <ActionConfirmCard
+                      key={pi}
+                      proposal={p}
+                      status={m.proposalStatus?.[pi] ?? "pending"}
+                      onConfirm={() => void onConfirm(i, pi, p)}
+                      onCancel={() => updateProposalStatus(i, pi, "cancelled")}
+                    />
+                  ))}
+                </React.Fragment>
               ))}
               {thinking && <ThinkingDots />}
             </div>
