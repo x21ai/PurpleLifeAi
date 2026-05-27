@@ -13,7 +13,7 @@ import { TodayDoses } from "@/components/meds/today-doses";
 import { TodayInstallBanner } from "@/components/pwa/today-install-banner";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
 
-export const Route = createFileRoute("/_app/")({
+export const Route = createFileRoute("/_app/today")({
   head: () => ({
     meta: [
       { title: "Today — Purple" },
@@ -41,8 +41,9 @@ type Forecast = {
 
 type Profile = { first_name: string | null };
 
+type AdminMessage = { id: string; subject: string; body: string; created_at: string };
+
 function TodayPage() {
-  // Today is the hero mode — always dark.
   useRouteTheme("dark");
 
   const { session } = useAuth();
@@ -54,6 +55,7 @@ function TodayPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [focus, setFocus] = useState<"readiness" | "sleep" | "activity">("sleep");
   const [expanded, setExpanded] = useState(false);
+  const [announcement, setAnnouncement] = useState<AdminMessage | null>(null);
 
   useEffect(() => setNow(new Date()), []);
 
@@ -61,7 +63,7 @@ function TodayPage() {
     if (!userId) return;
     void (async () => {
       const since = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
-      const [b, f, p] = await Promise.all([
+      const [b, f, p, msg] = await Promise.all([
         supabase
           .from("biometrics")
           .select(
@@ -84,10 +86,18 @@ function TodayPage() {
           .select("first_name")
           .eq("id", userId)
           .maybeSingle(),
+        supabase
+          .from("admin_messages")
+          .select("id, subject, body, created_at")
+          .or(`is_broadcast.eq.true,recipient_id.eq.${userId}`)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
       setBio((b.data as Bio | null) ?? null);
       setForecast((f.data as Forecast | null) ?? null);
       setProfile((p.data as Profile | null) ?? null);
+      setAnnouncement((msg.data as AdminMessage | null) ?? null);
     })();
   }, [userId]);
 
@@ -117,12 +127,19 @@ function TodayPage() {
       <div className="mb-6">
         <TodayInstallBanner />
       </div>
-      {/* Status bar */}
+
+      {announcement && (
+        <div className="mb-6 rounded-2xl border border-border bg-card p-4">
+          <p className="label-eyebrow">From the Purple team</p>
+          <p className="mt-2 font-serif text-lg text-foreground">{announcement.subject}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{announcement.body}</p>
+        </div>
+      )}
+
       <p className="label-eyebrow" suppressHydrationWarning>
         {now ? format(now, "EEEE, MMMM d") : "\u00a0"}
       </p>
 
-      {/* Greeting — Source Serif 4, 32px */}
       <h1
         className="font-serif text-[32px] sm:text-[40px] leading-[1.15] tracking-tight mt-6 text-foreground"
         suppressHydrationWarning
@@ -131,7 +148,6 @@ function TodayPage() {
         {firstName ? `, ${firstName}` : ""}.
       </h1>
 
-      {/* AI narrative paragraph (max 3 lines feel) */}
       {forecast?.ai_narrative ? (
         <p className="body-serif mt-4 max-w-[600px] text-foreground/75">
           {forecast.ai_narrative}
@@ -142,7 +158,6 @@ function TodayPage() {
         </p>
       )}
 
-      {/* Hero score row — three numbers, center focused */}
       <section className="mt-12 sm:mt-16 grid grid-cols-3 items-center gap-2">
         <ScoreTile
           value={readiness ?? "—"}
@@ -173,7 +188,6 @@ function TodayPage() {
         />
       </section>
 
-      {/* Expanded hero modal — opens when active tile is tapped again */}
       {expanded && typeof focusScore === "number" && (
         <div
           className="fixed inset-0 z-50 bg-background/95 backdrop-blur overflow-y-auto"
@@ -219,21 +233,18 @@ function TodayPage() {
         </div>
       )}
 
-      {/* AI narrative block */}
       {forecast?.ai_narrative && (
         <div className="mt-12">
           <NarrativeBlock>{forecast.ai_narrative}</NarrativeBlock>
         </div>
       )}
 
-      {/* Quick actions — 3 equal-width tiles, 80px tall */}
       <section className="mt-10 grid grid-cols-3 gap-3">
         <QuickAction icon={BookOpen} label="Journal" to="/journal" />
         <QuickAction icon={Pill} label="Meds" to="/meds" />
         <QuickAction icon={Zap} label="Seizure" to="/seizures/new" tone="accent" />
       </section>
 
-      {/* Body measurements row — Temp / Resp / SpO2 */}
       {bio && (
         <div className="mt-12">
           <BodyMeasurementsRow
