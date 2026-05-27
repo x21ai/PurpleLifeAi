@@ -310,7 +310,8 @@ function MedsPage() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Add medication"
-        className="fixed bottom-24 sm:bottom-8 right-5 sm:right-8 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
+        className="fixed bottom-24 md:bottom-8 right-5 md:right-8 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
+        style={{ marginBottom: "env(safe-area-inset-bottom)" }}
       >
         <Plus className="h-6 w-6" />
       </button>
