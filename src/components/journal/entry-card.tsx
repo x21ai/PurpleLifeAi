@@ -1,9 +1,10 @@
 import * as React from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Pencil, Mic, Camera, Video, Sparkles, Loader2, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2 } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
+import { Pencil, Mic, Camera, Video, Sparkles, Loader2, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2, X, Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,10 +44,46 @@ function isVideo(url: string) {
 export function EntryCard({ entry }: { entry: Entry }) {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
-  const navigate = useNavigate();
   const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
+  const [editing, setEditing] = React.useState(false);
+  const [draftText, setDraftText] = React.useState(entry.text ?? "");
+  const [draftVoice, setDraftVoice] = React.useState(entry.voice_transcript ?? "");
+  const [saving, setSaving] = React.useState(false);
   const archived = Boolean(entry.archived_at);
+
+  const openEdit = () => {
+    setDraftText(entry.text ?? "");
+    setDraftVoice(entry.voice_transcript ?? "");
+    setEditing(true);
+  };
+
+  const cancelEdit = () => {
+    setEditing(false);
+  };
+
+  const saveEdit = async () => {
+    setSaving(true);
+    const { error } = await supabase
+      .from("journal_entries")
+      .update({
+        text: draftText.trim() ? draftText : null,
+        voice_transcript: draftVoice.trim() ? draftVoice : null,
+        status: "processing",
+      })
+      .eq("id", entry.id);
+    if (error) {
+      setSaving(false);
+      toast.error("Couldn't save changes");
+      return;
+    }
+    void supabase.functions
+      .invoke("journal-extract", { body: { journal_entry_id: entry.id } })
+      .catch(() => { /* extraction errors don't block save */ });
+    setSaving(false);
+    setEditing(false);
+    toast.success("Entry updated");
+  };
 
   const archive = async () => {
     setBusy(true);
@@ -115,7 +152,7 @@ export function EntryCard({ entry }: { entry: Entry }) {
             <DropdownMenuContent align="end" className="w-44">
               {!archived ? (
                 <>
-                  <DropdownMenuItem onClick={() => navigate({ to: "/journal/$entryId/edit", params: { entryId: entry.id } })}>
+                  <DropdownMenuItem onClick={openEdit}>
                     <Edit3 className="h-4 w-4 mr-2" /> Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={archive}>
@@ -137,7 +174,58 @@ export function EntryCard({ entry }: { entry: Entry }) {
         </div>
       </header>
 
-      {entry.text && (
+      {editing ? (
+        <div className="mt-3 space-y-3">
+          <Textarea
+            autoFocus
+            value={draftText}
+            onChange={(e) => setDraftText(e.target.value)}
+            placeholder="What is happening, or what just happened?"
+            className="min-h-[120px] font-serif text-[15px] leading-relaxed bg-background"
+          />
+          {(entry.voice_transcript || draftVoice) && (
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                Voice transcript
+              </p>
+              <Textarea
+                value={draftVoice}
+                onChange={(e) => setDraftVoice(e.target.value)}
+                className="min-h-[80px] font-serif text-sm italic bg-secondary/40"
+              />
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={cancelEdit}
+              disabled={saving}
+              className="h-8"
+            >
+              <X className="h-3.5 w-3.5 mr-1" /> Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={saveEdit}
+              disabled={saving || (!draftText.trim() && !draftVoice.trim())}
+              className="h-8"
+            >
+              {saving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <>
+                  <Check className="h-3.5 w-3.5 mr-1" /> Save
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {entry.text && (
         <p className="mt-3 font-serif text-[15px] leading-relaxed whitespace-pre-wrap text-foreground">
           {entry.text}
         </p>
@@ -178,6 +266,8 @@ export function EntryCard({ entry }: { entry: Entry }) {
             </span>
           ))}
         </div>
+      )}
+        </>
       )}
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>

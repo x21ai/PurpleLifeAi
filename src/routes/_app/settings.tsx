@@ -5,6 +5,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { OuraConnection } from "@/components/connections/oura-connection";
 import { DataSection } from "@/components/settings/data-section";
 import { AboutSection } from "@/components/settings/about-section";
+import { PreferencesSection } from "@/components/settings/preferences-section";
 import { useRouteTheme } from "@/lib/use-route-theme";
 
 export const Route = createFileRoute("/_app/settings")({
@@ -74,6 +75,7 @@ function SettingsPage() {
         </div>
       </section>
 
+      <PreferencesSection />
       <DataSection />
       <AboutSection />
     </div>

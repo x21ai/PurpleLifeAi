@@ -560,6 +560,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_model_preference: string
           caregiver_emails: string[]
           consent_research: boolean
           consent_share_with_caregivers: boolean
@@ -569,6 +570,7 @@ export type Database = {
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
           first_name: string | null
+          floating_ask_enabled: boolean
           id: string
           last_name: string | null
           onboarded_at: string | null
@@ -576,6 +578,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_model_preference?: string
           caregiver_emails?: string[]
           consent_research?: boolean
           consent_share_with_caregivers?: boolean
@@ -585,6 +588,7 @@ export type Database = {
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           first_name?: string | null
+          floating_ask_enabled?: boolean
           id: string
           last_name?: string | null
           onboarded_at?: string | null
@@ -592,6 +596,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_model_preference?: string
           caregiver_emails?: string[]
           consent_research?: boolean
           consent_share_with_caregivers?: boolean
@@ -601,6 +606,7 @@ export type Database = {
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           first_name?: string | null
+          floating_ask_enabled?: boolean
           id?: string
           last_name?: string | null
           onboarded_at?: string | null
