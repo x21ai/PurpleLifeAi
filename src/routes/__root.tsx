@@ -24,8 +24,18 @@ function NotFoundComponent() {
     const { pathname, search, hash } = window.location;
     if (pathname.startsWith("/_app/") || pathname === "/_app") {
       const target = pathname.replace(/^\/_app/, "") || "/";
-      window.location.replace(target + search + hash);
-      return null;
+      // Defer to avoid breaking hydration; return a tiny placeholder element
+      // so the hydrated tree matches the SSR-rendered NotFound shell shape.
+      if (typeof queueMicrotask !== "undefined") {
+        queueMicrotask(() => window.location.replace(target + search + hash));
+      } else {
+        setTimeout(() => window.location.replace(target + search + hash), 0);
+      }
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+          Redirecting…
+        </div>
+      );
     }
   }
   return (

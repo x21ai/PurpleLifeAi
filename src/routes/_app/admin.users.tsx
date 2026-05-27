@@ -3,6 +3,7 @@ import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/admin/users")({
+  head: () => ({ meta: [{ title: "Admin users — Purple" }] }),
   component: AdminUsers,
 });
 
@@ -57,7 +58,36 @@ function AdminUsers() {
           className="rounded-full border border-border bg-card px-4 py-2 text-sm min-w-[240px]"
         />
       </div>
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-border bg-card">
+      {/* Mobile: card list. md+: table. */}
+      <ul className="mt-6 space-y-3 md:hidden">
+        {filtered.map((r) => (
+          <li key={r.id} className="rounded-2xl border border-border bg-card p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-serif text-lg truncate">
+                  {(r.first_name || r.last_name) ? `${r.first_name ?? ""} ${r.last_name ?? ""}` : "—"}
+                </p>
+                <p className="font-mono text-[11px] text-muted-foreground mt-0.5">{r.id.slice(0, 8)}…</p>
+              </div>
+              <span className={r.suspended_at ? "text-destructive text-xs" : "text-foreground/70 text-xs"}>
+                {r.suspended_at ? "Suspended" : "Active"}
+              </span>
+            </div>
+            <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+              <span>Joined {new Date(r.created_at).toLocaleDateString()}</span>
+              <span>Community: {r.community_opted_in ? "Yes" : "—"}</span>
+            </div>
+            <button
+              onClick={() => toggleSuspend(r)}
+              className="mt-3 w-full rounded-full border border-border px-3 py-2 text-xs hover:bg-secondary"
+            >
+              {r.suspended_at ? "Unsuspend" : "Suspend"}
+            </button>
+          </li>
+        ))}
+        {filtered.length === 0 && <p className="text-muted-foreground">No users.</p>}
+      </ul>
+      <div className="mt-6 hidden md:block overflow-x-auto rounded-2xl border border-border bg-card">
         <table className="w-full text-sm">
           <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
