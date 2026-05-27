@@ -1,127 +1,94 @@
+# Status of Slice 1
 
-# Plan: Footer tests, full E2E suite, and Caregiver Sharing
+Yes — Playwright scaffold + footer spec shipped last turn:
+- `@playwright/test` installed
+- `playwright.config.ts` with viewports 375 / 768 / 1023 / 1024 / 1440
+- `tests/e2e/footer.spec.ts` asserting hidden < 1024px, visible ≥ 1024px on `/`, `/welcome`, `/today`, `/biometrics`, `/community`, `/settings`
+- `test:e2e` / `test:e2e:install` scripts in `package.json`
+- `data-testid="site-footer"` on `<SiteFooter>`
 
-Three things, in this order. The sharing feature is the biggest piece and ships in its own slice so we don't block the tests.
+Sandbox can't run browsers, so tests run in your CI (or locally via `bun run test:e2e:install && bun run test:e2e`).
 
----
+# Plan for the rest
 
-## Slice 1 — Footer responsive tests (small)
-
-Add Playwright. New spec asserts footer behavior across breakpoints.
-
-- Install `@playwright/test`, add `playwright.config.ts` (baseURL = preview URL, retries 1, projects: chromium-mobile-375, chromium-tablet-768, chromium-tablet-1024, chromium-desktop-1440).
-- `tests/e2e/footer.spec.ts`: for each route in `['/', '/welcome', '/today', '/biometrics', '/community', '/settings']`, at viewports **375, 768, 1023** → footer (`[data-testid="site-footer"]`) **not visible**; at **1024, 1440** → footer **visible**.
-- Add `data-testid="site-footer"` to `src/components/layout/site-footer.tsx` (the only code change in this slice).
-- `bun run test:e2e` script.
-
----
-
-## Slice 2 — Full E2E suite (smoke + core flows + sharing)
-
-One Playwright test user seeded per run. Specs:
-
-1. `auth.spec` — sign-up email/password, sign-in, sign-out, password reset request.
-2. `onboarding.spec` — `/welcome` → profile → consents → lands on `/today`.
-3. `today.spec` — hero risk card renders, ask-FAB opens chat.
-4. `journal.spec` — new text entry, new voice entry (mocked mic), entry appears in timeline.
-5. `meds.spec` — add med, schedule slot, log dose as taken, adherence updates.
-6. `biometrics.spec` — page loads, "no data" state OK, metric drill-down route loads.
-7. `community.spec` — opt in, create post, comment, react, report (admin sees report).
-8. `settings.spec` — theme switch (light/dark/system) persists, data export downloads.
-9. `admin.spec` — super-admin (seeded `pmt@eigital.com`) sees all admin routes.
-10. `sharing.spec` — full caregiver flow (see Slice 3 below).
-11. `routes-smoke.spec` — every route in the route tree returns 200 and renders without console error, at desktop + mobile viewports.
-12. `theme-footer.spec` — footer breakpoint spec from Slice 1, expanded to all routes.
-
-Test user is created via a TanStack server fn `seedTestUser` gated by a `TEST_SEED_TOKEN` env var (only available in test env). Teardown deletes the user.
-
----
-
-## Slice 3 — Caregiver Sharing ("Circle of Trust")
-
-Your answers locked in: **Roles + per-scope toggles · Always needs your approval · Until I revoke** (we'll add expiry later as a follow-up; data model supports it from day one).
-
-### Concept
-
-You invite someone by email → they sign in or sign up → they appear in your **pending invitations** → you assign a role and toggle exact scopes → they get access. Anything they write (edits, comments) lands in your **approval queue** until you tap ✓. You can revoke instantly. Every view and change is logged.
-
-### Roles (presets that pre-fill scope toggles, all editable per person)
-
-| Role | Default scopes (you can flip any off) |
-|---|---|
-| **Emergency contact** | seizure_events:read, profile:read, location:read |
-| **Caregiver / Co-pilot** (e.g. partner, parent) | all reads + meds:propose + journal:comment + alerts:receive |
-| **Care provider** (clinician) | biometrics:read, meds:read, seizures:read, journal:read |
-| **Viewer** | today:read only |
-
-Scopes are atomic and composable: `today`, `journal`, `meds`, `biometrics`, `seizures`, `risk`, `community`, `profile`, `location`, `chat`, `alerts` × `read | comment | propose | receive`.
-
-### Approval queue
-
-Caregivers never write directly to your tables. Their actions become **pending_changes** rows with a typed payload (`type: 'edit_med' | 'add_journal_comment' | 'edit_profile' | ...`). Your inbox shows diff + caregiver + timestamp. Tap ✓ → server fn applies the change as you; tap ✗ → marked rejected with optional note.
-
-### Data model (one migration)
+## 1. Full E2E suite (Slice 2) — 12 specs under `tests/e2e/`
 
 ```text
-care_relationships
-  id, owner_id (you), caregiver_id (nullable until accepted),
-  invite_email, invite_token, role,
-  status (pending|active|revoked),
-  created_at, accepted_at, revoked_at,
-  expires_at (nullable, reserved for future)
-
-care_scopes
-  relationship_id, scope (text), granted (bool)
-  -- e.g. (rel_42, 'meds:propose', true)
-
-pending_changes
-  id, relationship_id, owner_id, caregiver_id,
-  type, target_table, target_id, payload (jsonb),
-  status (pending|approved|rejected), decided_at, decision_note
-
-care_audit_log
-  id, relationship_id, actor_id, action (viewed|proposed|approved|rejected|revoked),
-  resource_type, resource_id, at, ip, user_agent
+auth.spec.ts              sign up, log in, log out, password reset link visible
+onboarding.spec.ts        first-run /welcome → /today redirect
+today.spec.ts             dashboard renders, key cards present
+journal.spec.ts           create text entry, appears in list, archive
+meds.spec.ts              add med, mark dose taken, adherence updates
+biometrics.spec.ts        manual entry, chart renders
+community.spec.ts         post + comment + reaction (gated by opt-in)
+settings.spec.ts          profile update, theme toggle, sharing tab loads
+admin.spec.ts             non-admin denied, super-admin sees dashboard
+sharing.spec.ts           invite → accept → scope toggle → propose → approve → revoke
+routes-smoke.spec.ts      every route returns < 500
+theme-footer.spec.ts      dark/light + footer breakpoint matrix (replaces standalone footer.spec)
 ```
 
-RLS: owner can CRUD their relationships, scopes, pending_changes, audit_log. Caregiver can SELECT their own active relationships, INSERT pending_changes for relationships they're active on, SELECT data only via dedicated `caregiver_read_*` security-definer functions that internally check `has_scope(relationship_id, scope)`.
+Test user seeding via new `src/lib/test-seed.functions.ts` server fn gated by `TEST_SEED_TOKEN` env var. Playwright `globalSetup` calls it once to create `e2e+seed@purple.test` with deterministic password and clean data.
 
-### Server functions (`src/lib/care.functions.ts`)
+## 2. Transactional invite email
 
-`inviteCaregiver`, `acceptInvite`, `setScopes`, `revokeRelationship`,
-`listMyCaregivers`, `listPeopleSharingWithMe`,
-`proposeChange`, `approveChange`, `rejectChange`,
-`caregiverReadToday`, `caregiverReadMeds`, `caregiverReadBiometrics`, …
+- Verify email infra (`setup_email_infra`) is in place; if not, run it.
+- Scaffold transactional emails (`scaffold_transactional_email`).
+- Create template `src/lib/email-templates/care-invite.tsx` — branded, white body, button → `https://<app>/care/accept?token=…`, fallback link, sender name, role, scopes summary.
+- Register in `registry.ts`.
+- Update `inviteCaregiver` server fn (`src/lib/care.functions.ts`) to call `sendTransactionalEmail({ templateName: 'care-invite', recipientEmail, idempotencyKey: 'care-invite-'+relId, templateData: { ownerName, role, acceptUrl } })`. Inline link stays as a fallback "Copy link" button in the UI.
 
-All `requireSupabaseAuth`. Reads go through the security-definer functions so RLS stays simple.
+If no email domain is configured yet, surface the email setup dialog first, then continue.
 
-### UI
+## 3. Caregiver-side read dashboards
 
-- **Settings → Sharing** (new tab)
-  - "People I share with" — list, role chip, scope summary, manage / revoke buttons
-  - "People sharing with me" — list of owners who've invited you, click → care dashboard for that person
-  - "Pending approvals" — count badge, queue with diff + ✓ / ✗
-  - "Invite someone" — email + role picker + scope toggles + "Send invite"
-  - Audit log link → full-page table, filterable by person/action/date
-- **Top-bar badge** when pending approvals > 0 (link to queue)
-- **Caregiver-side dashboard** (`/care/$ownerId`) — read-only views of granted scopes, "propose edit" buttons that open a sheet, comment thread on each section
-- Invite email template (transactional, via existing email infra) with one-tap accept link
+Replace stub `src/routes/_app/care.$ownerId.tsx` with a real layout:
 
-### What's deferred (call out, don't build yet)
+- **Header** — owner display name, role badge, scopes granted, "Propose change" / "Add comment" buttons.
+- **Tabs** (only those whose scope is granted):
+  - `today` — risk band, alerts, next med (read-only).
+  - `meds` — schedule + recent doses, "propose edit" → enqueues `pending_changes`.
+  - `biometrics` — last 7 days HR/HRV/sleep summary.
+  - `journal` — recent entries (text only, no media unless `journal:media` scope).
+  - `seizures` — log + counts.
+- Data via new server fns `caregiverReadToday / Meds / Biometrics / Journal / Seizures` in `care.functions.ts`, each guarded by `has_care_scope(owner, auth.uid(), 'meds:read'…)`. All return owner data with the admin client only after the scope check passes.
+- Pending-change submission: shared `<ProposeChangeDialog>` component writes to `pending_changes` (RLS already permits caregiver insert).
 
-- Time-limited access (`expires_at` already in schema, no UI this pass)
-- Break-glass auto-unlock on seizure
-- SMS invites (email only for v1)
-- Caregiver mobile push notifications (in-app alerts only)
+## 4. Time-limited access UI
 
----
+Settings → Sharing tab:
+- Per-relationship row: "Access expires" with options:
+  - **Never** (clears `expires_at`)
+  - **In 24h / 7 days / 30 days** (quick picks)
+  - **Custom date** (`<Calendar>` popover)
+- New server fn `setExpiry(relationshipId, expiresAt | null)` updating `care_relationships.expires_at`.
+- Display countdown chip ("expires in 3 days") on each caregiver card.
+- `has_care_scope` already enforces `expires_at > now()`, so backend enforcement is free.
+- Add audit log entry `expiry_changed`.
 
-## Technical notes
+## 5. Responsive coverage
 
-- **Routes added**: `src/routes/_app/settings.sharing.tsx`, `src/routes/_app/care.$ownerId.tsx`, `src/routes/care.accept.tsx` (public, token-gated)
-- **Components**: `CaregiverList`, `InviteCaregiverSheet`, `ScopeToggleMatrix`, `PendingApprovalsList`, `ChangeDiff`, `AuditLogTable`
-- **No breaking changes** to existing tables — sharing layers on top
-- **Tests**: `sharing.spec` covers invite → accept → scope toggle → caregiver propose → owner approve → caregiver sees change → owner revoke → caregiver access blocked + audit log entries
-- **Order I'll ship**: Slice 1 (footer tests) → Slice 3 schema + server fns → Slice 3 UI → Slice 2 E2E suite (sharing.spec written alongside the UI)
+All new UI (caregiver dashboard tabs, expiry controls, pending-change dialog) styled for mobile (390px), tablet (768px), and desktop (≥1024px) per workspace rule. Tabs collapse to a `<Select>` on mobile; expiry quick picks become a vertical stack.
 
-Ready to implement on approval.
+## Order of execution
+
+1. Email infra check → scaffold transactional → invite template → wire `inviteCaregiver` → smoke-test invite flow.
+2. Caregiver server fns + dashboard tabs.
+3. Time-limited access UI + `setExpiry` fn.
+4. Playwright globalSetup + seed fn, then 12 specs.
+5. Run `bun run test:e2e` locally (or hand off to CI) and triage failures.
+
+## Files touched / created
+
+- `src/lib/email-templates/care-invite.tsx` (new)
+- `src/lib/email-templates/registry.ts` (edit)
+- `src/lib/email/send.ts` (new helper if not present)
+- `src/lib/care.functions.ts` (extend: caregiver reads, setExpiry, invite email send)
+- `src/routes/_app/care.$ownerId.tsx` (rewrite)
+- `src/components/care/propose-change-dialog.tsx` (new)
+- `src/components/care/expiry-control.tsx` (new)
+- `src/routes/_app/settings.sharing.tsx` (add expiry UI)
+- `src/lib/test-seed.functions.ts` (new, token-gated)
+- `tests/e2e/*.spec.ts` (12 files) + `tests/e2e/global-setup.ts`
+- `playwright.config.ts` (add globalSetup + theme-footer project)
+- Migration: none required (schema already supports everything).
