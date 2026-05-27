@@ -1,20 +1,8 @@
-import { useEffect } from "react";
-
 /**
- * Force a theme (dark|light) on the <html> element while a component is
- * mounted. Reverts to the previous value on unmount so routes don't
- * leak their theme into one another.
+ * Deprecated: theme is now controlled globally by ThemeProvider
+ * (src/lib/theme-provider.tsx) based on the user's preference in Settings.
+ * Kept as a no-op so existing call sites don't break.
  */
-export function useRouteTheme(theme: "dark" | "light") {
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    const root = document.documentElement;
-    const had = root.classList.contains("dark");
-    if (theme === "dark") root.classList.add("dark");
-    else root.classList.remove("dark");
-    return () => {
-      if (had) root.classList.add("dark");
-      else root.classList.remove("dark");
-    };
-  }, [theme]);
+export function useRouteTheme(_theme: "dark" | "light") {
+  // intentionally empty
 }

@@ -5,11 +5,8 @@ import { BottomNav } from "./bottom-nav";
 import { MobileTopBar } from "./mobile-top-bar";
 import { AskFab } from "@/components/chat/ask-fab";
 import { ensureServiceWorker, rearmMedicationNotifications } from "@/lib/med-notifications";
-import { useAuth } from "@/integrations/supabase/auth-context";
 
 export function AppShell() {
-  const { session, loading } = useAuth();
-
   useEffect(() => {
     void (async () => {
       await ensureServiceWorker();
@@ -17,14 +14,10 @@ export function AppShell() {
     })();
   }, []);
 
-  // Avoid the dashboard flashing before the client-side redirect to /sign-in.
-  // SSR renders this shell without auth context; on the client we wait until
-  // the session has been resolved. If there's no session, render a blank
-  // surface — the route's beforeLoad will throw a redirect.
-  if (loading || !session) {
-    return <div className="min-h-dvh bg-background" aria-hidden="true" />;
-  }
-
+  // Render an identical tree on SSR and the first client render.
+  // The `/_app` route's `beforeLoad` handles redirects to /sign-in when
+  // there's no session, so we never gate the shell on auth state here
+  // (that branch was the source of hydration mismatches).
   return (
     <div className="min-h-dvh bg-background text-foreground">
       <SidebarNav />
