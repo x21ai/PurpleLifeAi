@@ -9,10 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UsersRouteImport } from './routes/users'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as RiskRouteImport } from './routes/risk'
+import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as HowPurpleThinksRouteImport } from './routes/how-purple-thinks'
+import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CommunityRouteImport } from './routes/community'
@@ -53,6 +59,11 @@ import { Route as AppAdminContactRouteImport } from './routes/_app/admin.contact
 import { Route as AppAdminCommunityRouteImport } from './routes/_app/admin.community'
 import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
 
+const UsersRoute = UsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignUpRoute = SignUpRouteImport.update({
   id: '/sign-up',
   path: '/sign-up',
@@ -63,6 +74,16 @@ const SignInRoute = SignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RiskRoute = RiskRouteImport.update({
+  id: '/risk',
+  path: '/risk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResourcesRoute = ResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -71,6 +92,21 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowPurpleThinksRoute = HowPurpleThinksRouteImport.update({
+  id: '/how-purple-thinks',
+  path: '/how-purple-thinks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedbackRoute = FeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeaturesRoute = FeaturesRouteImport.update({
@@ -276,10 +312,16 @@ export interface FileRoutesByFullPath {
   '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
+  '/feedback': typeof FeedbackRoute
+  '/how-purple-thinks': typeof HowPurpleThinksRoute
+  '/messages': typeof MessagesRoute
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/resources': typeof ResourcesRoute
+  '/risk': typeof RiskRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/users': typeof UsersRoute
   '/admin': typeof AppAdminRouteWithChildren
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
@@ -320,10 +362,16 @@ export interface FileRoutesByTo {
   '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
+  '/feedback': typeof FeedbackRoute
+  '/how-purple-thinks': typeof HowPurpleThinksRoute
+  '/messages': typeof MessagesRoute
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/resources': typeof ResourcesRoute
+  '/risk': typeof RiskRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/users': typeof UsersRoute
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/community-new': typeof AppCommunityNewRoute
@@ -365,10 +413,16 @@ export interface FileRoutesById {
   '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
+  '/feedback': typeof FeedbackRoute
+  '/how-purple-thinks': typeof HowPurpleThinksRoute
+  '/messages': typeof MessagesRoute
   '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/resources': typeof ResourcesRoute
+  '/risk': typeof RiskRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/users': typeof UsersRoute
   '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/charter': typeof AppCharterRoute
   '/_app/chat': typeof AppChatRoute
@@ -411,10 +465,16 @@ export interface FileRouteTypes {
     | '/community'
     | '/contact'
     | '/features'
+    | '/feedback'
+    | '/how-purple-thinks'
+    | '/messages'
     | '/pricing'
     | '/reset-password'
+    | '/resources'
+    | '/risk'
     | '/sign-in'
     | '/sign-up'
+    | '/users'
     | '/admin'
     | '/charter'
     | '/chat'
@@ -455,10 +515,16 @@ export interface FileRouteTypes {
     | '/community'
     | '/contact'
     | '/features'
+    | '/feedback'
+    | '/how-purple-thinks'
+    | '/messages'
     | '/pricing'
     | '/reset-password'
+    | '/resources'
+    | '/risk'
     | '/sign-in'
     | '/sign-up'
+    | '/users'
     | '/charter'
     | '/chat'
     | '/community-new'
@@ -499,10 +565,16 @@ export interface FileRouteTypes {
     | '/community'
     | '/contact'
     | '/features'
+    | '/feedback'
+    | '/how-purple-thinks'
+    | '/messages'
     | '/pricing'
     | '/reset-password'
+    | '/resources'
+    | '/risk'
     | '/sign-in'
     | '/sign-up'
+    | '/users'
     | '/_app/admin'
     | '/_app/charter'
     | '/_app/chat'
@@ -545,16 +617,29 @@ export interface RootRouteChildren {
   CommunityRoute: typeof CommunityRouteWithChildren
   ContactRoute: typeof ContactRoute
   FeaturesRoute: typeof FeaturesRoute
+  FeedbackRoute: typeof FeedbackRoute
+  HowPurpleThinksRoute: typeof HowPurpleThinksRoute
+  MessagesRoute: typeof MessagesRoute
   PricingRoute: typeof PricingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ResourcesRoute: typeof ResourcesRoute
+  RiskRoute: typeof RiskRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
+  UsersRoute: typeof UsersRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   ApiPublicHooksRiskForecasterRoute: typeof ApiPublicHooksRiskForecasterRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/users': {
+      id: '/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof UsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sign-up': {
       id: '/sign-up'
       path: '/sign-up'
@@ -569,6 +654,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/risk': {
+      id: '/risk'
+      path: '/risk'
+      fullPath: '/risk'
+      preLoaderRoute: typeof RiskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resources': {
+      id: '/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -581,6 +680,27 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-purple-thinks': {
+      id: '/how-purple-thinks'
+      path: '/how-purple-thinks'
+      fullPath: '/how-purple-thinks'
+      preLoaderRoute: typeof HowPurpleThinksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feedback': {
+      id: '/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof FeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/features': {
@@ -985,23 +1105,19 @@ const rootRouteChildren: RootRouteChildren = {
   CommunityRoute: CommunityRouteWithChildren,
   ContactRoute: ContactRoute,
   FeaturesRoute: FeaturesRoute,
+  FeedbackRoute: FeedbackRoute,
+  HowPurpleThinksRoute: HowPurpleThinksRoute,
+  MessagesRoute: MessagesRoute,
   PricingRoute: PricingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ResourcesRoute: ResourcesRoute,
+  RiskRoute: RiskRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
+  UsersRoute: UsersRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   ApiPublicHooksRiskForecasterRoute: ApiPublicHooksRiskForecasterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

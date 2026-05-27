@@ -8,6 +8,7 @@ import { AboutSection } from "@/components/settings/about-section";
 import { PreferencesSection } from "@/components/settings/preferences-section";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useIsAdmin } from "@/lib/use-is-admin";
+import { useTheme, type ThemeMode } from "@/lib/theme-provider";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "Settings — Purple" }] }),
@@ -156,9 +157,48 @@ function SettingsPage() {
         </div>
       </section>
 
+      <AppearanceSection />
       <PreferencesSection />
       <DataSection />
       <AboutSection />
     </div>
+  );
+}
+
+function AppearanceSection() {
+  const { mode, setMode } = useTheme();
+  const opts: { v: ThemeMode; label: string; desc: string }[] = [
+    { v: "system", label: "System", desc: "Match device" },
+    { v: "light", label: "Light", desc: "Always light" },
+    { v: "dark", label: "Dark", desc: "Always dark" },
+  ];
+  return (
+    <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <h2 className="font-serif text-xl text-foreground">Appearance</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Choose how Purple looks. Applies across every page.
+      </p>
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {opts.map((o) => {
+          const active = mode === o.v;
+          return (
+            <button
+              key={o.v}
+              type="button"
+              onClick={() => setMode(o.v)}
+              className={`rounded-xl border p-3 text-left transition-colors ${
+                active
+                  ? "border-primary bg-primary/10 text-foreground"
+                  : "border-border bg-background hover:bg-secondary/40 text-foreground"
+              }`}
+              aria-pressed={active}
+            >
+              <p className="font-serif text-base">{o.label}</p>
+              <p className="text-xs text-muted-foreground">{o.desc}</p>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
