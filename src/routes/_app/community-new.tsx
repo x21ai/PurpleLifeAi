@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
@@ -32,8 +32,12 @@ function NewPost() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-12 pb-24">
-      <h1 className="font-serif text-4xl">New post</h1>
+    <div
+      className="mx-auto max-w-2xl px-5 sm:px-8 pt-8 sm:pt-12 pb-32"
+      style={{ paddingBottom: "calc(8rem + env(safe-area-inset-bottom))" }}
+    >
+      <Link to="/community" className="text-sm text-foreground/70 hover:text-foreground">← Community</Link>
+      <h1 className="mt-3 font-serif text-4xl">New post</h1>
       <p className="mt-2 text-muted-foreground">Be kind. No medical advice. Don't share other people's info.</p>
       <div className="mt-8 space-y-3">
         <select value={topic} onChange={(e) => setTopic(e.target.value)} className="rounded-xl border border-border bg-card px-3 py-2 text-sm">
@@ -52,7 +56,11 @@ function NewPost() {
           placeholder="Share what's on your mind…"
           className="w-full rounded-xl border border-border bg-card px-4 py-3"
         />
-        <button onClick={submit} disabled={posting} className="rounded-full bg-primary text-primary-foreground px-5 py-2 disabled:opacity-60">
+        <button
+          onClick={submit}
+          disabled={posting}
+          className="w-full sm:w-auto rounded-full bg-primary text-primary-foreground px-5 py-3 disabled:opacity-60"
+        >
           {posting ? "Posting…" : "Post"}
         </button>
       </div>
