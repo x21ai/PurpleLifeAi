@@ -289,6 +289,124 @@ export type Database = {
         }
         Relationships: []
       }
+      care_audit_log: {
+        Row: {
+          action: string
+          actor_id: string
+          at: string
+          id: string
+          metadata: Json
+          owner_id: string
+          relationship_id: string | null
+          resource_id: string | null
+          resource_type: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          at?: string
+          id?: string
+          metadata?: Json
+          owner_id: string
+          relationship_id?: string | null
+          resource_id?: string | null
+          resource_type?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          at?: string
+          id?: string
+          metadata?: Json
+          owner_id?: string
+          relationship_id?: string | null
+          resource_id?: string | null
+          resource_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_audit_log_relationship_id_fkey"
+            columns: ["relationship_id"]
+            isOneToOne: false
+            referencedRelation: "care_relationships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_relationships: {
+        Row: {
+          accepted_at: string | null
+          caregiver_id: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          invite_email: string
+          invite_token: string
+          owner_id: string
+          revoked_at: string | null
+          role: Database["public"]["Enums"]["care_role"]
+          status: Database["public"]["Enums"]["care_relationship_status"]
+        }
+        Insert: {
+          accepted_at?: string | null
+          caregiver_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          invite_email: string
+          invite_token: string
+          owner_id: string
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["care_role"]
+          status?: Database["public"]["Enums"]["care_relationship_status"]
+        }
+        Update: {
+          accepted_at?: string | null
+          caregiver_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          invite_email?: string
+          invite_token?: string
+          owner_id?: string
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["care_role"]
+          status?: Database["public"]["Enums"]["care_relationship_status"]
+        }
+        Relationships: []
+      }
+      care_scopes: {
+        Row: {
+          created_at: string
+          granted: boolean
+          id: string
+          relationship_id: string
+          scope: string
+        }
+        Insert: {
+          created_at?: string
+          granted?: boolean
+          id?: string
+          relationship_id: string
+          scope: string
+        }
+        Update: {
+          created_at?: string
+          granted?: boolean
+          id?: string
+          relationship_id?: string
+          scope?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_scopes_relationship_id_fkey"
+            columns: ["relationship_id"]
+            isOneToOne: false
+            referencedRelation: "care_relationships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_comments: {
         Row: {
           body: string
@@ -855,6 +973,59 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_changes: {
+        Row: {
+          caregiver_id: string
+          created_at: string
+          decided_at: string | null
+          decision_note: string | null
+          id: string
+          owner_id: string
+          payload: Json
+          relationship_id: string
+          status: Database["public"]["Enums"]["pending_change_status"]
+          target_id: string | null
+          target_table: string | null
+          type: string
+        }
+        Insert: {
+          caregiver_id: string
+          created_at?: string
+          decided_at?: string | null
+          decision_note?: string | null
+          id?: string
+          owner_id: string
+          payload?: Json
+          relationship_id: string
+          status?: Database["public"]["Enums"]["pending_change_status"]
+          target_id?: string | null
+          target_table?: string | null
+          type: string
+        }
+        Update: {
+          caregiver_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decision_note?: string | null
+          id?: string
+          owner_id?: string
+          payload?: Json
+          relationship_id?: string
+          status?: Database["public"]["Enums"]["pending_change_status"]
+          target_id?: string | null
+          target_table?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_changes_relationship_id_fkey"
+            columns: ["relationship_id"]
+            isOneToOne: false
+            referencedRelation: "care_relationships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ai_model_preference: string
@@ -1162,6 +1333,10 @@ export type Database = {
       }
     }
     Functions: {
+      has_care_scope: {
+        Args: { _caregiver_id: string; _owner_id: string; _scope: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1214,6 +1389,9 @@ export type Database = {
     }
     Enums: {
       app_role: "user" | "admin" | "super_admin"
+      care_relationship_status: "pending" | "active" | "revoked"
+      care_role: "emergency" | "caregiver" | "provider" | "viewer"
+      pending_change_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1342,6 +1520,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["user", "admin", "super_admin"],
+      care_relationship_status: ["pending", "active", "revoked"],
+      care_role: ["emergency", "caregiver", "provider", "viewer"],
+      pending_change_status: ["pending", "approved", "rejected"],
     },
   },
 } as const
