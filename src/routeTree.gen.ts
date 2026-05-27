@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as RiskRouteImport } from './routes/risk'
@@ -25,6 +26,7 @@ import { Route as CommunityRouteImport } from './routes/community'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as CommunityResourcesRouteImport } from './routes/community.resources'
 import { Route as CommunityPostIdRouteImport } from './routes/community.$postId'
 import { Route as CareAcceptRouteImport } from './routes/care.accept'
@@ -46,6 +48,7 @@ import { Route as AppJournalIndexRouteImport } from './routes/_app/journal.index
 import { Route as AppBiometricsIndexRouteImport } from './routes/_app/biometrics.index'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin.index'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
+import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
 import { Route as AppSettingsSharingRouteImport } from './routes/_app/settings.sharing'
 import { Route as AppSettingsHowPurpleThinksRouteImport } from './routes/_app/settings.how-purple-thinks'
@@ -60,12 +63,19 @@ import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin.messag
 import { Route as AppAdminFeedbackRouteImport } from './routes/_app/admin.feedback'
 import { Route as AppAdminContactRouteImport } from './routes/_app/admin.contact'
 import { Route as AppAdminCommunityRouteImport } from './routes/_app/admin.community'
+import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
 
 const UsersRoute = UsersRouteImport.update({
   id: '/users',
   path: '/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignUpRoute = SignUpRouteImport.update({
@@ -140,6 +150,11 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email/unsubscribe',
+  path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CommunityResourcesRoute = CommunityResourcesRouteImport.update({
@@ -247,6 +262,11 @@ const OauthOuraCallbackRoute = OauthOuraCallbackRouteImport.update({
   path: '/oauth/oura/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
+  id: '/lovable/email/suppression',
+  path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppTodayRiskRoute = AppTodayRiskRouteImport.update({
   id: '/risk',
   path: '/risk',
@@ -318,6 +338,18 @@ const AppAdminCommunityRoute = AppAdminCommunityRouteImport.update({
   path: '/community',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const LovableEmailTransactionalSendRoute =
+  LovableEmailTransactionalSendRouteImport.update({
+    id: '/lovable/email/transactional/send',
+    path: '/lovable/email/transactional/send',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -346,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/risk': typeof RiskRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
   '/admin': typeof AppAdminRouteWithChildren
   '/charter': typeof AppCharterRoute
@@ -364,6 +397,7 @@ export interface FileRoutesByFullPath {
   '/care/accept': typeof CareAcceptRoute
   '/community/$postId': typeof CommunityPostIdRoute
   '/community/resources': typeof CommunityResourcesRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/community': typeof AppAdminCommunityRoute
   '/admin/contact': typeof AppAdminContactRoute
   '/admin/feedback': typeof AppAdminFeedbackRoute
@@ -378,12 +412,15 @@ export interface FileRoutesByFullPath {
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
   '/settings/sharing': typeof AppSettingsSharingRoute
   '/today/risk': typeof AppTodayRiskRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/admin/': typeof AppAdminIndexRoute
   '/biometrics/': typeof AppBiometricsIndexRoute
   '/journal/': typeof AppJournalIndexRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -400,6 +437,7 @@ export interface FileRoutesByTo {
   '/risk': typeof RiskRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
@@ -417,6 +455,7 @@ export interface FileRoutesByTo {
   '/care/accept': typeof CareAcceptRoute
   '/community/$postId': typeof CommunityPostIdRoute
   '/community/resources': typeof CommunityResourcesRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/community': typeof AppAdminCommunityRoute
   '/admin/contact': typeof AppAdminContactRoute
   '/admin/feedback': typeof AppAdminFeedbackRoute
@@ -431,12 +470,15 @@ export interface FileRoutesByTo {
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
   '/settings/sharing': typeof AppSettingsSharingRoute
   '/today/risk': typeof AppTodayRiskRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/admin': typeof AppAdminIndexRoute
   '/biometrics': typeof AppBiometricsIndexRoute
   '/journal': typeof AppJournalIndexRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -455,6 +497,7 @@ export interface FileRoutesById {
   '/risk': typeof RiskRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
   '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/charter': typeof AppCharterRoute
@@ -473,6 +516,7 @@ export interface FileRoutesById {
   '/care/accept': typeof CareAcceptRoute
   '/community/$postId': typeof CommunityPostIdRoute
   '/community/resources': typeof CommunityResourcesRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/_app/admin/community': typeof AppAdminCommunityRoute
   '/_app/admin/contact': typeof AppAdminContactRoute
   '/_app/admin/feedback': typeof AppAdminFeedbackRoute
@@ -487,12 +531,15 @@ export interface FileRoutesById {
   '/_app/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
   '/_app/settings/sharing': typeof AppSettingsSharingRoute
   '/_app/today/risk': typeof AppTodayRiskRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/_app/admin/': typeof AppAdminIndexRoute
   '/_app/biometrics/': typeof AppBiometricsIndexRoute
   '/_app/journal/': typeof AppJournalIndexRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -511,6 +558,7 @@ export interface FileRouteTypes {
     | '/risk'
     | '/sign-in'
     | '/sign-up'
+    | '/unsubscribe'
     | '/users'
     | '/admin'
     | '/charter'
@@ -529,6 +577,7 @@ export interface FileRouteTypes {
     | '/care/accept'
     | '/community/$postId'
     | '/community/resources'
+    | '/email/unsubscribe'
     | '/admin/community'
     | '/admin/contact'
     | '/admin/feedback'
@@ -543,12 +592,15 @@ export interface FileRouteTypes {
     | '/settings/how-purple-thinks'
     | '/settings/sharing'
     | '/today/risk'
+    | '/lovable/email/suppression'
     | '/oauth/oura/callback'
     | '/admin/'
     | '/biometrics/'
     | '/journal/'
     | '/api/public/hooks/risk-forecaster'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -565,6 +617,7 @@ export interface FileRouteTypes {
     | '/risk'
     | '/sign-in'
     | '/sign-up'
+    | '/unsubscribe'
     | '/users'
     | '/charter'
     | '/chat'
@@ -582,6 +635,7 @@ export interface FileRouteTypes {
     | '/care/accept'
     | '/community/$postId'
     | '/community/resources'
+    | '/email/unsubscribe'
     | '/admin/community'
     | '/admin/contact'
     | '/admin/feedback'
@@ -596,12 +650,15 @@ export interface FileRouteTypes {
     | '/settings/how-purple-thinks'
     | '/settings/sharing'
     | '/today/risk'
+    | '/lovable/email/suppression'
     | '/oauth/oura/callback'
     | '/admin'
     | '/biometrics'
     | '/journal'
     | '/api/public/hooks/risk-forecaster'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
   id:
     | '__root__'
     | '/'
@@ -619,6 +676,7 @@ export interface FileRouteTypes {
     | '/risk'
     | '/sign-in'
     | '/sign-up'
+    | '/unsubscribe'
     | '/users'
     | '/_app/admin'
     | '/_app/charter'
@@ -637,6 +695,7 @@ export interface FileRouteTypes {
     | '/care/accept'
     | '/community/$postId'
     | '/community/resources'
+    | '/email/unsubscribe'
     | '/_app/admin/community'
     | '/_app/admin/contact'
     | '/_app/admin/feedback'
@@ -651,12 +710,15 @@ export interface FileRouteTypes {
     | '/_app/settings/how-purple-thinks'
     | '/_app/settings/sharing'
     | '/_app/today/risk'
+    | '/lovable/email/suppression'
     | '/oauth/oura/callback'
     | '/_app/admin/'
     | '/_app/biometrics/'
     | '/_app/journal/'
     | '/api/public/hooks/risk-forecaster'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -675,11 +737,16 @@ export interface RootRouteChildren {
   RiskRoute: typeof RiskRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   UsersRoute: typeof UsersRoute
   CareAcceptRoute: typeof CareAcceptRoute
+  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   ApiPublicHooksRiskForecasterRoute: typeof ApiPublicHooksRiskForecasterRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -689,6 +756,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/users'
       preLoaderRoute: typeof UsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sign-up': {
@@ -794,6 +868,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/email/unsubscribe': {
+      id: '/email/unsubscribe'
+      path: '/email/unsubscribe'
+      fullPath: '/email/unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/community/resources': {
@@ -943,6 +1024,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OauthOuraCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/suppression': {
+      id: '/lovable/email/suppression'
+      path: '/lovable/email/suppression'
+      fullPath: '/lovable/email/suppression'
+      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/today/risk': {
       id: '/_app/today/risk'
       path: '/risk'
@@ -1040,6 +1128,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/community'
       preLoaderRoute: typeof AppAdminCommunityRouteImport
       parentRoute: typeof AppAdminRoute
+    }
+    '/lovable/email/transactional/send': {
+      id: '/lovable/email/transactional/send'
+      path: '/lovable/email/transactional/send'
+      fullPath: '/lovable/email/transactional/send'
+      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
@@ -1197,11 +1299,16 @@ const rootRouteChildren: RootRouteChildren = {
   RiskRoute: RiskRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   UsersRoute: UsersRoute,
   CareAcceptRoute: CareAcceptRoute,
+  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   ApiPublicHooksRiskForecasterRoute: ApiPublicHooksRiskForecasterRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

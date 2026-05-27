@@ -3,7 +3,9 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { CareRole, CareScope } from "./care.scopes";
-import { ROLE_DEFAULT_SCOPES } from "./care.scopes";
+import { ROLE_DEFAULT_SCOPES, ROLE_LABELS } from "./care.scopes";
+import { sendTransactionalEmail } from "./email/send";
+import { getRequest } from "@tanstack/react-start/server";
 
 function newInviteToken(): string {
   return (
@@ -65,6 +67,38 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
       resource_id: rel.id,
       metadata: { email: data.email, role: data.role },
     });
+
+    // Best-effort transactional email. The invite link is also surfaced in
+    // Settings → Sharing so a failure here is non-fatal.
+    try {
+      const req = getRequest();
+      const origin =
+        process.env.PUBLIC_SITE_URL ||
+        (req ? new URL(req.url).origin : "https://purplelife.org");
+      const acceptUrl = `${origin}/care/accept?token=${invite_token}`;
+      const { data: inviter } = await supabaseAdmin
+        .from("profiles")
+        .select("first_name, last_name")
+        .eq("id", userId)
+        .maybeSingle();
+      const inviterName = [inviter?.first_name, inviter?.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      await sendTransactionalEmail({
+        templateName: "care-invite",
+        recipientEmail: data.email,
+        idempotencyKey: `care-invite-${rel.id}`,
+        templateData: {
+          inviterName: inviterName || undefined,
+          roleLabel: ROLE_LABELS[data.role as CareRole],
+          acceptUrl,
+          expiresAt: (rel as { expires_at?: string | null }).expires_at ?? null,
+        },
+      });
+    } catch (err) {
+      console.warn("care-invite email failed (link still available in UI)", err);
+    }
 
     return { relationship: rel, invite_token };
   });
