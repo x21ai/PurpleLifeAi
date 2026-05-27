@@ -1,49 +1,37 @@
 
 ## Goal
-On `/journal`, let users **edit**, **archive**, and (from Archive) **delete** any of their entries.
+On `/meds` (and `/meds/$medId`), let users **edit** any med (name, type, dosage form/amount/unit, per-time amounts, schedule times, refill threshold, prescriber, pharmacy, etc.), **archive** it, and from the Archive view **restore** or **delete permanently**.
 
-## DB migration
-Add an archive flag to `journal_entries`:
+## No DB migration
+`medications.active` already serves as the archive flag (`true` = active, `false` = archived). Reuse it. Cascade deletes are done manually since there are no FKs.
 
-```sql
-ALTER TABLE public.journal_entries
-  ADD COLUMN archived_at timestamptz;
-CREATE INDEX journal_entries_user_archived_idx
-  ON public.journal_entries (user_id, archived_at);
-```
+## `src/components/meds/medication-form-sheet.tsx` — add edit mode
+- New optional prop `editingMedId?: string | null`.
+- When `open && editingMedId`, fetch the medication row and prefill all state (name, kind, dosage form/amount/unit, with_food, times + per-time amounts derived from `schedule` jsonb or `times_of_day`, pills_remaining, refill_threshold, prescriber_name, pharmacy_name, prescription_number).
+- Sheet title becomes "Edit medication"; Save button label "Save changes".
+- `handleSave` branches:
+  - **Insert path** (current behavior) when no `editingMedId`.
+  - **Update path** when editing: `UPDATE medications SET …` for the same fields. Then re-sync today's pending doses: `DELETE FROM medication_doses WHERE medication_id = ? AND status = 'pending' AND scheduled_at >= now()` and re-insert from the new `scheduleSlots` (mirrors the insert seeding logic). This keeps already-taken doses intact while reflecting the new schedule going forward.
+- Reset effect: when the sheet closes OR `editingMedId` changes, reset/reload state accordingly.
 
-No RLS changes needed — existing `journal_entries_all_own` policy already covers UPDATE/DELETE for the owner.
+## `src/routes/_app/meds.tsx` — list page
+- Drop the `.eq("active", true)` filter; load both active and archived.
+- Add an **Active / Archive** tab toggle (matching the journal styling), default Active.
+  - Filter chips (`medication / supplement / vitamin / rescue`) remain but only apply within the Active tab. Hide them in Archive view (replaced by a simple list).
+- In `MedRow`: add a kebab menu (DropdownMenu) in the top-right corner of the card. Stop click propagation so the row Link still works for the rest of the card.
+  - **Active**: Edit (opens form sheet in edit mode) · Archive (sets `active: false`).
+  - **Archived**: Restore (sets `active: true`) · Delete permanently (AlertDialog confirm → cascade delete `medication_doses`, `medication_side_effects`, then the `medications` row).
+- Today's doses section + adherence card stay scoped to active meds only.
+- Lift `editingMedId` state to `MedsPage` so the form sheet can be opened in edit mode from any row.
 
-## UI changes — `src/routes/_app/journal.index.tsx`
-- Add a simple **Active / Archive** tab toggle under the heading. Default = Active.
-- Active view: `archived_at IS NULL` (filter client-side from the loaded list, or split queries — go with client filter since limit is 200).
-- Archive view: `archived_at IS NOT NULL`.
-- Realtime listener already handles UPDATE/DELETE — no change.
-
-## UI changes — `src/components/journal/entry-card.tsx`
-Add a kebab menu (top-right of the card) using existing `DropdownMenu`:
-
-- **Active entry** menu items:
-  - **Edit** → navigate to `/journal/$id/edit`
-  - **Archive** → `update({ archived_at: new Date().toISOString() })`
-- **Archived entry** menu items:
-  - **Restore** → `update({ archived_at: null })`
-  - **Delete permanently** → confirm via `AlertDialog`, then `delete()`. Cascades nothing (no FK on `daily_behaviors.journal_entry_id`), so also clean up linked rows:
-    ```ts
-    await supabase.from("daily_behaviors").delete().eq("journal_entry_id", id);
-    await supabase.from("journal_entries").delete().eq("id", id);
-    ```
-
-Pass an `onMutate` callback prop or just call `supabase` directly inside the card (already imported pattern across the app). Toast on success/failure.
-
-## New route — `src/routes/_app/journal.$entryId.edit.tsx`
-A small edit page (mirrors `journal.new.tsx` but pared down):
-- Loads the entry by id (RLS-scoped).
-- Editable fields: `text`, `voice_transcript` (textarea). Leave media + kind alone for now (out of scope).
-- Save: `update({ text, voice_transcript, status: 'processing' })` then re-invoke `journal-extract` for that entry (idempotent upsert + stale sweep already in place, so re-running on edit is safe and keeps `daily_behaviors` in sync). Navigate back to `/journal`.
-- Cancel returns to `/journal`.
+## `src/routes/_app/meds.$medId.tsx` — detail page
+- Replace the bare "Archive medication" button with a small action bar:
+  - **Edit** — opens `MedicationFormSheet` in edit mode (state local to this page; on save → reload).
+  - **Archive** — current behavior (and label flips to **Restore** when `med.active === false`).
+  - **Delete permanently** — only shown when `med.active === false`. AlertDialog confirm → cascade delete doses + side effects + the med row, then `navigate({ to: "/meds" })`.
+- If a user lands on an archived med, show a small "Archived" pill near the title.
 
 ## Out of scope
-- Editing media attachments
+- Editing historical taken/missed doses
 - Bulk archive/delete
-- Trash auto-purge schedule
+- Reassigning notifications for past schedules (we only re-seed future pending doses)
