@@ -14,9 +14,7 @@ for (const route of ROUTES) {
     if (width >= 1024) {
       await expect(footer).toBeVisible();
     } else {
-      await expect(footer).toHaveCount(0).catch(async () => {
-        await expect(footer).toBeHidden();
-      });
+      await expect(footer).toBeHidden();
     }
   });
 }
