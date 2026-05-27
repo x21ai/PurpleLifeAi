@@ -1,79 +1,56 @@
-# End-to-end QA + Journal/Timeline upgrade
+# Fix site-wide crash, theme system, and missing routes
 
-Two tracks in one pass: (1) sweep every route at three viewport sizes and fix what breaks, (2) deepen the Journal + Timeline experience around backdating, date/time display, and export.
+The "site not loading" is one root cause, not many: a hydration mismatch in `AppShell` is crashing the React tree, which makes every `/_app/*` page render the "This page didn't load" error boundary. On top of that, several URLs you listed don't exist as top-level routes (they live under `/admin/*` or `/today/*`), and the theme is being toggled per-route instead of from a single user preference.
 
-## 1. Journal & Timeline upgrades
+## 1. Fix the hydration crash (root cause of "nothing loads")
 
-**Journal — show real date + time, not "ago"**
-- `src/components/journal/entry-card.tsx`: replace `formatDistanceToNow(...)` with `format(date, "EEE, MMM d, yyyy · h:mm a")`. Add a small relative line beneath for context (e.g. "2 days ago") so quick scanning still works.
-- Apply the same shift wherever entries are rendered (timeline cards, AI summaries, biometrics "synced …" stays relative since that's a sync indicator, not user data).
+**Problem**: `src/components/layout/app-shell.tsx` returns two different trees depending on `session`:
+- SSR: no session → renders `<div class="min-h-dvh bg-background" aria-hidden />`
+- Client (post-hydration): has session → renders full shell with sidebar/nav/main
 
-**Journal — backdate any entry (new + existing)**
-- `journal.new.tsx`: add a "When did this happen?" control above the composer — defaults to "Now", expands to a date + time picker (shadcn Calendar + native time input, with `pointer-events-auto`). Save into `captured_at` on insert.
-- `entry-card.tsx` (or detail sheet): allow editing `captured_at` after the fact via the same picker; update Supabase row.
-- Voice / photo / video flows: same picker is shared.
+React detects the mismatch, throws, and the route's error boundary shows "This page didn't load" on every protected page. This is exactly what the runtime errors log shows.
 
-**Timeline — backdate + edit anything**
-- Seizures: `seizures.new.tsx` already accepts a date — verify and surface "Log past event" link prominently on Timeline.
-- Doses: add "Log a past dose" entry point on `meds.$medId` that writes a `medication_doses` row with `taken_at` in the past.
-- Inline edit: clicking any timeline row opens a sheet to adjust the date/time (and notes where applicable).
+**Fix**: Make SSR and the first client render produce the **same** markup. Render the full shell unconditionally; gate only the *interior content* on a `mounted` flag so the auth-dependent decision happens after hydration. Replace the early-return blank div with a `Suspense`-friendly placeholder inside the same shell layout.
 
-**Timeline — easy export & capture**
-- Add an "Export" menu (top right of Timeline) with: **CSV**, **PDF report** (date range, grouped by day), **Copy to clipboard**, **Share** (Web Share API on mobile, fallback download).
-- Add an "Add to timeline" composer at the top of `/timeline` with a segmented control: **Type**, **Speak**, **Photo**, **Ask Purple** (free-text → AI extracts type/time/notes via existing AI gateway). Each routes into the right table (`journal_entries`, `seizure_events`, or `medication_doses` based on AI classification).
-- Show date range picker (custom range) alongside Day/Week/Month/Year.
+Also: in `_app.tsx` `beforeLoad`, the `if (typeof window === "undefined") return;` is correct — keep it. The bug is purely in `AppShell`'s render branching.
 
-## 2. E2E QA sweep — every route at mobile (375), tablet (820), desktop (1366)
+## 2. Replace per-route theme hacks with a real theme system
 
-Walk each route below in the browser at all three viewports, capture findings, fix per-route. No blank pages allowed — every route gets real content + working interactions.
+**Problem**: `src/lib/use-route-theme.ts` mutates `document.documentElement.classList` from `useEffect` on individual pages. That's why "some pages still have dark theme and light" — each route is forcing its own. There is no user preference, no persistence, no system option.
 
-**Marketing & auth**
-- `/`, `/about`, `/features`, `/pricing`, `/contact`, `/sign-in`, `/sign-up`, `/reset-password`
+**Fix**:
+- Create `src/lib/theme-provider.tsx` with a `ThemeProvider` (modes: `light` | `dark` | `system`), persisted in `localStorage` under `purple-theme`, listens to `prefers-color-scheme` when `system`.
+- Add an inline `<script>` in `__root.tsx`'s `RootShell` that runs **before** React hydrates and sets/removes `.dark` on `<html>` from `localStorage` — this prevents both a flash and a hydration mismatch.
+- Wrap the app in `ThemeProvider` inside `RootComponent`.
+- Delete `useRouteTheme` usages across all pages (settings, journal, timeline, etc.). The whole app respects the global preference.
+- Add a "Appearance" card to `src/routes/_app/settings.tsx` with a segmented control: System / Light / Dark.
 
-**App (authenticated)**
-- `/today`, `/today/risk`, `/my-health`, `/vitals`, `/biometrics`, `/biometrics/$metric`, `/insights`, `/chat`, `/journal`, `/journal/new`, `/timeline`, `/meds`, `/meds/$medId`, `/seizures/new`, `/charter`, `/welcome`, `/settings`, `/settings/how-purple-thinks`, `/community-new`, `/privacy`, `/terms`
+## 3. Add the missing top-level URL redirects
 
-**Community (public)**
-- `/community`, `/community/$postId`, `/community/resources`
+Most URLs you listed exist but at different paths. Add tiny redirect route files so the bare URLs work too:
 
-**Admin (super admin only)**
-- `/admin`, `/admin/users`, `/admin/messages`, `/admin/contact`, `/admin/feedback`, `/admin/community`, `/admin/resources`
+| URL you tried | Real route | Action |
+|---|---|---|
+| `/biometrics` | `/_app/biometrics` | Already exists — will work once §1 fixes hydration |
+| `/charter`, `/community-new`, `/journal`, `/meds`, `/settings`, `/privacy`, `/terms` | `/_app/*` | Same — fixed by §1 |
+| `/community`, `/contact`, `/features`, `/pricing`, `/reset-password` | top-level | Already exist — fixed by §1 |
+| `/users` | `/admin/users` | Add `src/routes/users.tsx` → redirect |
+| `/messages` | `/admin/messages` | Add `src/routes/messages.tsx` → redirect |
+| `/feedback` | `/admin/feedback` | Add `src/routes/feedback.tsx` → redirect |
+| `/resources` | `/community/resources` | Add `src/routes/resources.tsx` → redirect |
+| `/risk` | `/today/risk` | Add `src/routes/risk.tsx` → redirect |
+| `/how-purple-thinks` | `/settings/how-purple-thinks` | Add `src/routes/how-purple-thinks.tsx` → redirect |
+| `/oauth/oura/callback` | `/oauth.oura.callback` | Already exists — fixed by §1 |
+| `/api/public/hooks/risk-forecaster` | server route | Not a page — it's a `POST` webhook, returns 401 to browser GETs. Working as intended; no fix needed. |
 
-**For every route, verify:**
-- Renders content (no empty/blank state without explanation)
-- Header, sidebar, bottom nav, FABs don't overlap at any viewport
-- Tap targets ≥ 44px on mobile; tables scroll horizontally on mobile
-- Forms submit, validation messages show
-- Loading + empty + error states present
-- SEO meta unique per route
+## 4. Verification pass (after build)
 
-**Common fixes expected:**
-- Admin pages: convert tables to cards on mobile, add empty/loading/error states
-- Community pages: ensure post composer reachable on mobile, comment input doesn't get covered by bottom nav
-- Safe-area-inset padding on every fixed-position element
-- Sidebar collapse on tablet (820px) — currently likely shows desktop sidebar
-
-## 3. Approach
-
-Per-route loop:
-1. Browser navigate at 1366 → 820 → 375
-2. Screenshot + observe
-3. Patch the route file (and shared components if cross-cutting)
-4. Verify
-5. Move to next route
-
-Findings + fixes are committed as we go rather than batched. Cross-cutting fixes (sidebar breakpoints, FAB safe-area) land once and benefit everything.
-
-## Technical notes
-
-- Date/time picker: existing shadcn `Calendar` + native `<input type="time">`, packaged into `src/components/ui/date-time-picker.tsx` for reuse across journal, seizures, doses.
-- PDF export: `jspdf` (already lightweight, Worker-safe — runs client-side, no server function needed).
-- CSV export: build client-side via Blob + `URL.createObjectURL`.
-- AI classification for Timeline composer: reuse existing Lovable AI gateway (`google/gemini-2.5-flash`) with a small JSON-mode prompt.
-- Tablet sidebar: add `md:hidden` / `lg:flex` breakpoints to `sidebar-nav.tsx` so 820px shows the mobile bottom-bar instead of a cramped sidebar.
+Open preview at desktop / tablet / mobile and confirm:
+- `/today`, `/journal`, `/timeline`, `/meds`, `/settings`, `/biometrics`, `/charter`, `/community`, `/admin` all render without the "didn't load" screen.
+- Theme toggle in Settings switches the whole app and persists across reloads.
+- Bare URLs (`/users`, `/risk`, `/resources`, …) redirect to their canonical paths.
 
 ## Out of scope
 
-- New backend tables (everything fits existing schema)
-- Pricing / plan logic
-- Email or push notifications
+- The big per-route visual QA pass (the one you queued earlier) is **not** included here — that's a separate follow-up once the app stops crashing.
+- No backend / schema changes.
