@@ -11,6 +11,9 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "seed:research": "bun run supabase/seeds/research_sources.ts"
+    ,
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install --with-deps chromium"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
