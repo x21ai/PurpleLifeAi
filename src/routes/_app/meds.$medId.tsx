@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Edit3, Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,17 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { MedicationFormSheet } from "@/components/meds/medication-form-sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
@@ -92,6 +103,8 @@ function MedDetail() {
   const [sideEffectText, setSideEffectText] = React.useState("");
   const [sideEffectSeverity, setSideEffectSeverity] = React.useState(5);
   const [savingSideEffect, setSavingSideEffect] = React.useState(false);
+  const [editOpen, setEditOpen] = React.useState(false);
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
 
   const load = React.useCallback(async () => {
     if (!userId) return;
@@ -125,6 +138,24 @@ function MedDetail() {
     const { error } = await supabase.from("medications").update({ active: false }).eq("id", med.id);
     if (error) { toast.error(error.message); return; }
     toast.success("Medication archived");
+    navigate({ to: "/meds" });
+  };
+
+  const restore = async () => {
+    if (!med) return;
+    const { error } = await supabase.from("medications").update({ active: true }).eq("id", med.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Medication restored");
+    void load();
+  };
+
+  const destroy = async () => {
+    if (!med) return;
+    await supabase.from("medication_doses").delete().eq("medication_id", med.id);
+    await supabase.from("medication_side_effects").delete().eq("medication_id", med.id);
+    const { error } = await supabase.from("medications").delete().eq("id", med.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${med.name} deleted`);
     navigate({ to: "/meds" });
   };
 
@@ -166,6 +197,11 @@ function MedDetail() {
       <h1 className="mt-6 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
         {med.name}
       </h1>
+      {!med.active && (
+        <span className="mt-3 inline-block rounded-full bg-muted text-muted-foreground px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+          Archived
+        </span>
+      )}
       {med.dosage && <p className="mt-3 font-serif text-xl text-foreground/70">{med.dosage}</p>}
       {prescriber && <p className="mt-1 text-sm text-muted-foreground">Prescribed by {prescriber}</p>}
       {med.pharmacy_name && <p className="mt-1 text-sm text-muted-foreground">Pharmacy: {med.pharmacy_name}</p>}
@@ -254,9 +290,54 @@ function MedDetail() {
         </section>
       )}
 
-      <div className="mt-8">
-        <Button variant="outline" onClick={archive}>Archive medication</Button>
+      <div className="mt-8 flex flex-wrap gap-2">
+        <Button variant="outline" onClick={() => setEditOpen(true)}>
+          <Edit3 className="h-4 w-4 mr-1.5" /> Edit
+        </Button>
+        {med.active ? (
+          <Button variant="outline" onClick={archive}>
+            <Archive className="h-4 w-4 mr-1.5" /> Archive
+          </Button>
+        ) : (
+          <>
+            <Button variant="outline" onClick={restore}>
+              <ArchiveRestore className="h-4 w-4 mr-1.5" /> Restore
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDelete(true)}
+              className="text-destructive hover:text-destructive border-destructive/30 hover:border-destructive/60"
+            >
+              <Trash2 className="h-4 w-4 mr-1.5" /> Delete permanently
+            </Button>
+          </>
+        )}
       </div>
+
+      <MedicationFormSheet
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSaved={load}
+        isFirstMedication={false}
+        editingMedId={editOpen ? med.id : null}
+      />
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {med.name} permanently?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the medication along with its dose history and logged side effects. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={destroy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Sheet open={sideEffectOpen} onOpenChange={setSideEffectOpen}>
         <SheetContent side="bottom" className="rounded-t-2xl">
