@@ -19,6 +19,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 export const Route = createFileRoute("/_app/seizures/new")({
   head: () => ({ meta: [{ title: "Log seizure — Purple" }] }),
@@ -60,6 +61,7 @@ function LogSeizurePage() {
   const [saving, setSaving] = React.useState(false);
 
   const [type, setType] = React.useState<string>("");
+  const [startedAtDate, setStartedAtDate] = React.useState<Date>(new Date());
   const [witnessed, setWitnessed] = React.useState(false);
   const [witnessName, setWitnessName] = React.useState("");
   const [duration, setDuration] = React.useState(0);
@@ -165,7 +167,7 @@ function LogSeizurePage() {
     if (!userId || saving) return;
     setSaving(true);
     try {
-      const startedAt = new Date().toISOString();
+      const startedAt = startedAtDate.toISOString();
       // 1. Insert seizure
       const { data: seizure, error: sErr } = await supabase
         .from("seizure_events")
@@ -274,6 +276,13 @@ function LogSeizurePage() {
       <h2 className="font-serif text-xl mt-10 mb-4 text-foreground">Or add details</h2>
 
       <div className="space-y-6">
+        {/* When did it happen */}
+        <div className="space-y-2">
+          <Label>When did it happen?</Label>
+          <DateTimePicker value={startedAtDate} onChange={(d) => d && setStartedAtDate(d)} disableFuture />
+          <p className="text-xs text-muted-foreground">Defaults to now. Change it to log a past seizure.</p>
+        </div>
+
         {/* Type */}
         <div className="space-y-2">
           <Label>Type</Label>
