@@ -93,24 +93,17 @@ function MetricDrillPage() {
     if (!uid || !meta) return;
     const since = new Date(Date.now() - range * 24 * 3600 * 1000).toISOString();
     void (async () => {
-      const { data } = await (supabase
+      const query = supabase
         .from("biometrics")
-        .select(`recorded_at, ${meta.column}`) as unknown as {
-          eq: (c: string, v: string) => {
-            eq: (c: string, v: string) => {
-              gte: (c: string, v: string) => {
-                order: (c: string, o: { ascending: boolean }) => Promise<{
-                  data: Array<Record<string, unknown>> | null;
-                }>;
-              };
-            };
-          };
-        })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .select(`recorded_at, ${meta.column}` as any)
         .eq("user_id", uid)
         .eq("source", "oura")
         .gte("recorded_at", since)
         .order("recorded_at", { ascending: true });
-      const mapped: Row[] = (data ?? []).map((r: Record<string, unknown>) => {
+      const { data } = await query;
+      const rowsRaw = (data ?? []) as unknown as Array<Record<string, unknown>>;
+      const mapped: Row[] = rowsRaw.map((r) => {
         const raw = r[meta.column];
         const n = typeof raw === "number" ? raw : raw == null ? null : Number(raw);
         return {
