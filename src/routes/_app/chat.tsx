@@ -280,3 +280,86 @@ function ThinkingDots() {
     </div>
   );
 }
+
+const KIND_LABEL: Record<Proposal["kind"], string> = {
+  add_medication: "Add medication",
+  log_seizure: "Log seizure event",
+  create_journal_entry: "Create journal entry",
+  mark_dose_taken: "Mark dose as taken",
+  archive_medication: "Archive medication",
+};
+
+function ActionConfirmCard({
+  proposal,
+  status,
+  onConfirm,
+  onCancel,
+}: {
+  proposal: Proposal;
+  status: "pending" | "confirmed" | "cancelled" | "failed";
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const [busy, setBusy] = React.useState(false);
+  const handleConfirm = async () => {
+    setBusy(true);
+    try {
+      await onConfirm();
+    } finally {
+      setBusy(false);
+    }
+  };
+  const paramEntries = Object.entries(proposal.params ?? {}).filter(
+    ([, v]) => v !== null && v !== undefined && !(Array.isArray(v) && v.length === 0) && v !== "",
+  );
+  return (
+    <div className="flex justify-start">
+      <div className="max-w-[90%] rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+        <div className="flex items-center justify-between gap-3">
+          <p className="label-eyebrow text-primary">{KIND_LABEL[proposal.kind]}</p>
+          {status === "confirmed" && (
+            <span className="text-xs text-primary/80">Done</span>
+          )}
+          {status === "cancelled" && (
+            <span className="text-xs text-muted-foreground">Cancelled</span>
+          )}
+          {status === "failed" && (
+            <span className="text-xs text-destructive">Failed</span>
+          )}
+        </div>
+        <p className="mt-1 text-foreground/90">{proposal.summary}</p>
+        {paramEntries.length > 0 && (
+          <ul className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+            {paramEntries.map(([k, v]) => (
+              <li key={k}>
+                <span className="font-medium text-foreground/70">{k}:</span>{" "}
+                {Array.isArray(v) ? v.join(", ") : String(v)}
+              </li>
+            ))}
+          </ul>
+        )}
+        {status === "pending" && (
+          <div className="mt-3 flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => void handleConfirm()}
+              disabled={busy}
+              className="h-8"
+            >
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Confirm"}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onCancel}
+              disabled={busy}
+              className="h-8"
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
