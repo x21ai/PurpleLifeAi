@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { format, formatDistanceToNow } from "date-fns";
-import { BookOpen, Pill, Zap, ChevronRight } from "lucide-react";
+import { format } from "date-fns";
+import { BookOpen, Pill, Zap, ChevronRight, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -11,6 +11,7 @@ import { BodyMeasurementsRow } from "@/components/ui-oura/v2/body-measurements-r
 import { ScoreHero, bandForReadiness } from "@/components/ui-oura/v2/score-hero";
 import { TodayDoses } from "@/components/meds/today-doses";
 import { TodayInstallBanner } from "@/components/pwa/today-install-banner";
+import { OuraSyncStatus } from "@/components/biometrics/sync-status";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -260,9 +261,17 @@ function TodayPage() {
       <TodayDoses />
 
       {bio && (
-        <p className="mt-10 text-[11px] text-muted-foreground/70 text-center">
-          Last sync {formatDistanceToNow(new Date(bio.recorded_at), { addSuffix: true })} · Oura
-        </p>
+        <div className="mt-10 flex flex-col items-center gap-3">
+          <OuraSyncStatus variant="compact" />
+          <Link
+            to="/biometrics"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <Activity className="h-3 w-3" />
+            Dig deeper into your signals
+            <ChevronRight className="h-3 w-3" />
+          </Link>
+        </div>
       )}
     </div>
   );
