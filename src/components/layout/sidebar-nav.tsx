@@ -53,7 +53,7 @@ function SideLink({
   Icon,
   active,
 }: {
-  to: "/" | "/journal" | "/chat" | "/insights" | "/settings";
+  to: "/" | "/journal" | "/timeline" | "/insights" | "/settings";
   label: string;
   Icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   active: boolean;
