@@ -1,8 +1,8 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { format, startOfDay, startOfWeek, startOfMonth, startOfYear, subDays } from "date-fns";
-import { Zap, BookOpen, Pill, Activity } from "lucide-react";
+import { format, startOfDay, startOfWeek, startOfMonth, startOfYear } from "date-fns";
+import { Zap, BookOpen, Pill } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -63,10 +63,10 @@ function TimelinePage() {
           .order("captured_at", { ascending: false }),
         supabase
           .from("medication_doses")
-          .select("id, taken_at, status, medication_id, medications(name)")
+          .select("id, scheduled_at, taken_at, status, medication_id, medications(name)")
           .eq("user_id", userId!)
-          .gte("taken_at", subDays(rangeStart(range), 0).toISOString())
-          .order("taken_at", { ascending: false })
+          .gte("scheduled_at", sinceISO)
+          .order("scheduled_at", { ascending: false })
           .limit(200),
       ]);
       const out: Row[] = [];
@@ -92,7 +92,7 @@ function TimelinePage() {
         const name = (d as any).medications?.name ?? "Medication";
         out.push({
           id: `d-${d.id}`,
-          at: d.taken_at ?? new Date().toISOString(),
+          at: d.taken_at ?? d.scheduled_at,
           kind: "dose",
           title: `${name} · ${d.status}`,
         });
@@ -182,6 +182,3 @@ function TimelinePage() {
     </div>
   );
 }
-
-// Avoid unused import warning when Activity icon isn't referenced.
-void Activity;
