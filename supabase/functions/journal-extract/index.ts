@@ -100,8 +100,11 @@ Deno.serve(async (req) => {
     if (rows.length > 0) {
       const { error: insErr, count } = await admin
         .from("daily_behaviors")
-        .insert(rows, { count: "exact" });
-      if (insErr) throw new Error(`insert failed: ${insErr.message}`);
+        .upsert(rows, {
+          onConflict: "user_id,journal_entry_id,behavior_key",
+          count: "exact",
+        });
+      if (insErr) throw new Error(`upsert failed: ${insErr.message}`);
       written = count ?? rows.length;
     }
 
