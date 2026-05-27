@@ -94,7 +94,7 @@ async function runForUser(userId: string): Promise<{ ok: boolean; reason?: strin
 
   const { data: bios, error: biosErr } = await admin
     .from("biometrics")
-    .select("recorded_at, sleep_total_min, hrv_rmssd_ms, oura_readiness_score, body_temp_deviation_c")
+    .select("recorded_at, sleep_total_min, sleep_score, sleep_efficiency_pct, hrv_rmssd_ms, hr_bpm, resting_hr_bpm, oura_readiness_score, oura_stress_score, body_temp_deviation_c, menstrual_phase")
     .eq("user_id", userId)
     .gte("recorded_at", since14)
     .order("recorded_at", { ascending: true });
@@ -116,6 +116,16 @@ async function runForUser(userId: string): Promise<{ ok: boolean; reason?: strin
   const baselineSleep = avg(baseline.map((r) => r.sleep_total_min as number | null));
   const recentHrv = avg(recent.map((r) => r.hrv_rmssd_ms as number | null));
   const baselineHrv = avg(baseline.map((r) => r.hrv_rmssd_ms as number | null));
+  const recentRestHr = avg(recent.map((r) => r.resting_hr_bpm as number | null));
+  const baselineRestHr = avg(baseline.map((r) => r.resting_hr_bpm as number | null));
+  const recentStress = avg(recent.map((r) => r.oura_stress_score as number | null));
+  const baselineStress = avg(baseline.map((r) => r.oura_stress_score as number | null));
+  const recentSleepScore = avg(recent.map((r) => r.sleep_score as number | null));
+  const baselineSleepScore = avg(baseline.map((r) => r.sleep_score as number | null));
+  const inLutealOrMenstrual = recent.some((r) => {
+    const p = String(r.menstrual_phase ?? "").toLowerCase();
+    return p === "luteal" || p === "menstrual";
+  });
   const recentTempDevMax = Math.max(
     0,
     ...recent.map((r) => Math.abs(Number(r.body_temp_deviation_c ?? 0))),
@@ -190,6 +200,50 @@ async function runForUser(userId: string): Promise<{ ok: boolean; reason?: strin
     });
   }
 
+  if (recentRestHr !== null && baselineRestHr !== null && recentRestHr > baselineRestHr + 5) {
+    score += 8;
+    factors.push({
+      key: "resting_hr_up",
+      label: "Resting heart rate is up",
+      detail: `Averaging ${Math.round(recentRestHr)} bpm vs. your usual ${Math.round(baselineRestHr)}.`,
+      weight: 8,
+    });
+  }
+
+  if (recentStress !== null && baselineStress !== null && recentStress > baselineStress + 15) {
+    score += 8;
+    factors.push({
+      key: "stress_spike",
+      label: "Stress is running higher",
+      detail: `Stress score around ${Math.round(recentStress)} vs. baseline ${Math.round(baselineStress)}.`,
+      weight: 8,
+    });
+  }
+
+  if (
+    recentSleepScore !== null &&
+    baselineSleepScore !== null &&
+    recentSleepScore < baselineSleepScore - 10
+  ) {
+    score += 6;
+    factors.push({
+      key: "sleep_quality_drop",
+      label: "Sleep quality is down",
+      detail: `Sleep score around ${Math.round(recentSleepScore)} vs. ${Math.round(baselineSleepScore)}.`,
+      weight: 6,
+    });
+  }
+
+  if (inLutealOrMenstrual) {
+    score += 4;
+    factors.push({
+      key: "cycle_phase",
+      label: "Cycle phase to watch",
+      detail: "You're in a phase some people report as more sensitive.",
+      weight: 4,
+    });
+  }
+
   score = Math.max(0, Math.min(100, score));
   const band = bandFor(score);
 
@@ -226,6 +280,53 @@ async function runForUser(userId: string): Promise<{ ok: boolean; reason?: strin
       title: band === "high" ? "Today reads high" : "Today reads elevated",
       body: narrative,
     });
+  }
+
+  // Gentle stacked pre-seizure nudge: fires when >=2 signals stack the same day.
+  // Hard rate limits: max 1 per 24h, suppressed if a seizure was logged in last 12h.
+  if (factors.length >= 2) {
+    const since24h = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    const since12h = new Date(Date.now() - 12 * 3600 * 1000).toISOString();
+
+    const [{ data: recentAlerts }, { data: recentSeizures }] = await Promise.all([
+      admin
+        .from("alerts")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("kind", "pre_seizure_stack")
+        .gte("created_at", since24h)
+        .limit(1),
+      admin
+        .from("seizure_events")
+        .select("id")
+        .eq("user_id", userId)
+        .gte("started_at", since12h)
+        .limit(1),
+    ]);
+
+    if ((recentAlerts?.length ?? 0) === 0 && (recentSeizures?.length ?? 0) === 0) {
+      const stackCount = factors.length;
+      const stackSeverity = stackCount >= 4 ? "warning" : "info";
+      const headline =
+        stackCount >= 4
+          ? "A few signals are stacking today"
+          : "A couple of signals are nudging today";
+      const top = factors
+        .slice()
+        .sort((a, b) => b.weight - a.weight)
+        .slice(0, 3)
+        .map((f) => `• ${f.label} — ${f.detail}`)
+        .join("\n");
+      const body =
+        `${top}\n\nNothing to be alarmed about — just worth slowing down, hydrating, and being gentle with yourself today.`;
+      await admin.from("alerts").insert({
+        user_id: userId,
+        kind: "pre_seizure_stack",
+        severity: stackSeverity,
+        title: headline,
+        body,
+      });
+    }
   }
 
   return { ok: true, score, band };

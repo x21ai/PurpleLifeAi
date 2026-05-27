@@ -101,6 +101,36 @@ const TOOLS = [
       required: ["query"],
     },
   },
+  {
+    name: "propose_action",
+    description:
+      "Propose a write action for the user to confirm BEFORE it is executed. NEVER perform writes silently — always propose first. Use when the user asks you to: add a medication, log a seizure, create a journal entry, mark a dose as taken, or archive a medication. After calling this tool, finish your turn with one short sentence asking the user to confirm in the card.",
+    input_schema: {
+      type: "object",
+      properties: {
+        kind: {
+          type: "string",
+          enum: [
+            "add_medication",
+            "log_seizure",
+            "create_journal_entry",
+            "mark_dose_taken",
+            "archive_medication",
+          ],
+        },
+        summary: {
+          type: "string",
+          description: "One short human sentence describing what will happen if confirmed.",
+        },
+        params: {
+          type: "object",
+          description:
+            "Action-specific fields. add_medication: { name, dosage?, times_of_day?:[\"HH:MM\"], notes?, is_rescue? }. log_seizure: { started_at?(ISO, default now), type?, duration_seconds?, severity?, notes? }. create_journal_entry: { text, captured_at?(ISO) }. mark_dose_taken: { medication_id, scheduled_at?(ISO) }. archive_medication: { medication_id }.",
+        },
+      },
+      required: ["kind", "summary", "params"],
+    },
+  },
 ];
 
 function fmtDate(iso?: string | null) {
@@ -247,6 +277,16 @@ async function runTool(
           ),
           excerpt: String(r.content || "").slice(0, 1200),
         })),
+      };
+    }
+    case "propose_action": {
+      // No DB effect — the proposal is captured by the chat handler
+      // and rendered as a confirm card on the client.
+      return {
+        proposed: true,
+        kind: input.kind,
+        summary: input.summary,
+        params: input.params ?? {},
       };
     }
     default:
@@ -459,6 +499,14 @@ Deno.serve(async (req) => {
     }
     const userId = userData.user.id;
 
+    if (action === "execute_action") {
+      const result = await executeAction(userClient, userId, body?.proposal);
+      return new Response(JSON.stringify(result), {
+        status: result.ok ? 200 : 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action !== "chat") {
       return new Response(JSON.stringify({ error: "unknown action" }), {
         status: 400,
@@ -485,6 +533,7 @@ Deno.serve(async (req) => {
 
     // Tool-use loop
     let reply = "";
+    const proposals: Array<{ kind: string; summary: string; params: Record<string, unknown> }> = [];
     for (let step = 0; step < 8; step++) {
       const resp = await callClaudeOnce(messages);
       const contentBlocks: any[] = resp.content || [];
@@ -496,6 +545,13 @@ Deno.serve(async (req) => {
         for (const tu of toolUses) {
           try {
             const out = await runTool(userId, tu.name, tu.input || {});
+            if (tu.name === "propose_action" && (out as any)?.proposed) {
+              proposals.push({
+                kind: String((out as any).kind),
+                summary: String((out as any).summary),
+                params: ((out as any).params ?? {}) as Record<string, unknown>,
+              });
+            }
             toolResults.push({
               type: "tool_result",
               tool_use_id: tu.id,
@@ -527,7 +583,7 @@ Deno.serve(async (req) => {
       reply = "I'm sorry — I couldn't put together an answer just now. Try asking again in a moment.";
     }
 
-    return new Response(JSON.stringify({ reply }), {
+    return new Response(JSON.stringify({ reply, proposals }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
@@ -538,3 +594,136 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+type ProposalKind =
+  | "add_medication"
+  | "log_seizure"
+  | "create_journal_entry"
+  | "mark_dose_taken"
+  | "archive_medication";
+
+type Proposal = {
+  kind: ProposalKind;
+  summary?: string;
+  params?: Record<string, unknown>;
+};
+
+async function executeAction(
+  userClient: ReturnType<typeof createClient>,
+  userId: string,
+  proposal: Proposal | undefined,
+): Promise<{ ok: boolean; kind?: string; id?: string; error?: string }> {
+  if (!proposal || typeof proposal !== "object") {
+    return { ok: false, error: "proposal required" };
+  }
+  const params = (proposal.params ?? {}) as Record<string, any>;
+  try {
+    switch (proposal.kind) {
+      case "add_medication": {
+        const name = String(params.name ?? "").trim();
+        if (!name) return { ok: false, error: "name required" };
+        const times = Array.isArray(params.times_of_day)
+          ? params.times_of_day.filter((t: unknown) => typeof t === "string")
+          : [];
+        const { data, error } = await userClient
+          .from("medications")
+          .insert({
+            user_id: userId,
+            name,
+            dosage: params.dosage ?? null,
+            times_of_day: times,
+            notes: params.notes ?? null,
+            is_rescue: !!params.is_rescue,
+            active: true,
+          })
+          .select("id")
+          .single();
+        if (error) return { ok: false, error: error.message };
+        return { ok: true, kind: proposal.kind, id: (data as any).id };
+      }
+      case "log_seizure": {
+        const started_at = params.started_at
+          ? new Date(String(params.started_at)).toISOString()
+          : new Date().toISOString();
+        const { data, error } = await userClient
+          .from("seizure_events")
+          .insert({
+            user_id: userId,
+            started_at,
+            type: params.type ?? null,
+            duration_seconds: params.duration_seconds ?? null,
+            severity: params.severity ?? null,
+            notes: params.notes ?? null,
+            detection_source: "ai_chat",
+          })
+          .select("id")
+          .single();
+        if (error) return { ok: false, error: error.message };
+        return { ok: true, kind: proposal.kind, id: (data as any).id };
+      }
+      case "create_journal_entry": {
+        const text = String(params.text ?? "").trim();
+        if (!text) return { ok: false, error: "text required" };
+        const captured_at = params.captured_at
+          ? new Date(String(params.captured_at)).toISOString()
+          : new Date().toISOString();
+        const { data, error } = await userClient
+          .from("journal_entries")
+          .insert({
+            user_id: userId,
+            kind: "text",
+            status: "processing",
+            text,
+            captured_at,
+          })
+          .select("id")
+          .single();
+        if (error) return { ok: false, error: error.message };
+        return { ok: true, kind: proposal.kind, id: (data as any).id };
+      }
+      case "mark_dose_taken": {
+        const medication_id = String(params.medication_id ?? "");
+        if (!medication_id) return { ok: false, error: "medication_id required" };
+        const taken_at = new Date().toISOString();
+        if (params.scheduled_at) {
+          const { error } = await userClient
+            .from("medication_doses")
+            .update({ status: "taken", taken_at })
+            .eq("user_id", userId)
+            .eq("medication_id", medication_id)
+            .eq("scheduled_at", new Date(String(params.scheduled_at)).toISOString());
+          if (error) return { ok: false, error: error.message };
+          return { ok: true, kind: proposal.kind };
+        }
+        const { data, error } = await userClient
+          .from("medication_doses")
+          .insert({
+            user_id: userId,
+            medication_id,
+            scheduled_at: taken_at,
+            status: "taken",
+            taken_at,
+          })
+          .select("id")
+          .single();
+        if (error) return { ok: false, error: error.message };
+        return { ok: true, kind: proposal.kind, id: (data as any).id };
+      }
+      case "archive_medication": {
+        const medication_id = String(params.medication_id ?? "");
+        if (!medication_id) return { ok: false, error: "medication_id required" };
+        const { error } = await userClient
+          .from("medications")
+          .update({ active: false, end_date: new Date().toISOString().slice(0, 10) })
+          .eq("id", medication_id)
+          .eq("user_id", userId);
+        if (error) return { ok: false, error: error.message };
+        return { ok: true, kind: proposal.kind };
+      }
+      default:
+        return { ok: false, error: `unknown kind ${proposal.kind}` };
+    }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "execute error" };
+  }
+}
