@@ -37,7 +37,8 @@ function BiometricsIndex() {
     void (async () => {
       const { data } = await supabase
         .from("biometrics")
-        .select(cols)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .select(cols as any)
         .eq("user_id", uid)
         .eq("source", "oura")
         .gte("recorded_at", since)
