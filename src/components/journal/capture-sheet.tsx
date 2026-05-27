@@ -17,6 +17,26 @@ type Attachment = {
   kind: "photo" | "video";
 };
 
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024; // 50 MB
+const MAX_VIDEO_SECONDS = 60;
+
+async function checkVideoDuration(file: File): Promise<number> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.onloadedmetadata = () => {
+      URL.revokeObjectURL(url);
+      resolve(v.duration || 0);
+    };
+    v.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(0);
+    };
+    v.src = url;
+  });
+}
+
 function extOf(file: File): string {
   const fromName = file.name.split(".").pop();
   if (fromName && fromName.length <= 5) return fromName.toLowerCase();
@@ -72,10 +92,21 @@ export function CaptureSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const addFiles = (files: FileList | null, kind: "photo" | "video") => {
+  const addFiles = async (files: FileList | null, kind: "photo" | "video") => {
     if (!files || files.length === 0) return;
     const next: Attachment[] = [];
     for (const f of Array.from(files)) {
+      if (kind === "video") {
+        if (f.size > MAX_VIDEO_BYTES) {
+          toast.error(`Video too large — keep under 50 MB (${f.name})`);
+          continue;
+        }
+        const dur = await checkVideoDuration(f);
+        if (dur > MAX_VIDEO_SECONDS + 0.5) {
+          toast.error(`Video too long — keep under 60s (${Math.round(dur)}s)`);
+          continue;
+        }
+      }
       next.push({
         id: crypto.randomUUID(),
         file: f,
@@ -83,6 +114,7 @@ export function CaptureSheet({
         kind,
       });
     }
+    if (next.length === 0) return;
     setAttachments((prev) => [...prev, ...next]);
   };
 
