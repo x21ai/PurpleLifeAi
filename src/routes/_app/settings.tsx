@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ChevronRight, Pill, History, Zap } from "lucide-react";
+import { ChevronRight, Pill, History, Zap, Users, Shield, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { OuraConnection } from "@/components/connections/oura-connection";
@@ -7,6 +7,7 @@ import { DataSection } from "@/components/settings/data-section";
 import { AboutSection } from "@/components/settings/about-section";
 import { PreferencesSection } from "@/components/settings/preferences-section";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { useIsAdmin } from "@/lib/use-is-admin";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "Settings — Purple" }] }),
@@ -17,6 +18,7 @@ function SettingsPage() {
   useRouteTheme("light");
   const { session, signOut } = useAuth();
   const navigate = useNavigate();
+  const { isAdmin } = useIsAdmin();
 
   const handleSignOut = async () => {
     await signOut();
@@ -63,6 +65,47 @@ function SettingsPage() {
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </Link>
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
+        <Link to="/community" className="flex items-center justify-between p-5 sm:p-6 hover:bg-secondary/40 transition-colors">
+          <div className="flex items-center gap-3">
+            <span className="rounded-full bg-secondary p-2 text-secondary-foreground">
+              <Users className="h-4 w-4" />
+            </span>
+            <div>
+              <p className="font-serif text-lg text-foreground">Community</p>
+              <p className="text-xs text-muted-foreground">Share experiences and find resources</p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </Link>
+        <Link to="/contact" className="flex items-center justify-between p-5 sm:p-6 hover:bg-secondary/40 transition-colors">
+          <div className="flex items-center gap-3">
+            <span className="rounded-full bg-secondary p-2 text-secondary-foreground">
+              <MessageCircle className="h-4 w-4" />
+            </span>
+            <div>
+              <p className="font-serif text-lg text-foreground">Contact the team</p>
+              <p className="text-xs text-muted-foreground">Questions, feedback, anything</p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </Link>
+        {isAdmin && (
+          <Link to="/admin" className="flex items-center justify-between p-5 sm:p-6 hover:bg-secondary/40 transition-colors">
+            <div className="flex items-center gap-3">
+              <span className="rounded-full bg-primary/10 p-2 text-primary">
+                <Shield className="h-4 w-4" />
+              </span>
+              <div>
+                <p className="font-serif text-lg text-foreground">Admin console</p>
+                <p className="text-xs text-muted-foreground">Manage users, messages, and community</p>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </Link>
+        )}
       </section>
 
       <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
