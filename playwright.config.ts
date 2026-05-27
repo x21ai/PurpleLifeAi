@@ -13,7 +13,7 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
-    { name: "mobile-375", use: { viewport: { width: 375, height: 812 }, userAgent: devices["iPhone 13"].userAgent } },
+    { name: "mobile-375", use: { ...devices["iPhone 13"] } },
     { name: "tablet-768", use: { viewport: { width: 768, height: 1024 } } },
     { name: "tablet-1023", use: { viewport: { width: 1023, height: 768 } } },
     { name: "desktop-1024", use: { viewport: { width: 1024, height: 768 } } },
