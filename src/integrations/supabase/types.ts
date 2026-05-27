@@ -1139,7 +1139,27 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      community_profiles: {
+        Row: {
+          community_bio: string | null
+          community_display_name: string | null
+          community_opted_in: boolean | null
+          id: string | null
+        }
+        Insert: {
+          community_bio?: string | null
+          community_display_name?: string | null
+          community_opted_in?: boolean | null
+          id?: string | null
+        }
+        Update: {
+          community_bio?: string | null
+          community_display_name?: string | null
+          community_opted_in?: boolean | null
+          id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
