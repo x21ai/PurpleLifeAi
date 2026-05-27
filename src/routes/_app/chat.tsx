@@ -38,7 +38,7 @@ export const Route = createFileRoute("/_app/chat")({
 });
 
 function AskPage() {
-  useRouteTheme("dark");
+  useRouteTheme("light");
   const [messages, setMessages] = React.useState<Msg[]>([]);
   const [input, setInput] = React.useState("");
   const [thinking, setThinking] = React.useState(false);

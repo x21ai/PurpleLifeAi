@@ -2,8 +2,8 @@ import { Outlet } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { SidebarNav } from "./sidebar-nav";
 import { BottomNav } from "./bottom-nav";
-import { SiteFooter } from "./site-footer";
 import { MobileTopBar } from "./mobile-top-bar";
+import { AskFab } from "@/components/chat/ask-fab";
 import { ensureServiceWorker, rearmMedicationNotifications } from "@/lib/med-notifications";
 import { useAuth } from "@/integrations/supabase/auth-context";
 
@@ -33,9 +33,9 @@ export function AppShell() {
         <div className="flex-1">
           <Outlet />
         </div>
-        <SiteFooter />
       </main>
       <BottomNav />
+      <AskFab />
     </div>
   );
 }
