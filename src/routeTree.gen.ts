@@ -19,6 +19,8 @@ import { Route as CommunityRouteImport } from './routes/community'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CommunityResourcesRouteImport } from './routes/community.resources'
+import { Route as CommunityPostIdRouteImport } from './routes/community.$postId'
 import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
 import { Route as AppVitalsRouteImport } from './routes/_app/vitals'
 import { Route as AppTodayRouteImport } from './routes/_app/today'
@@ -98,6 +100,16 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const CommunityResourcesRoute = CommunityResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => CommunityRoute,
+} as any)
+const CommunityPostIdRoute = CommunityPostIdRouteImport.update({
+  id: '/$postId',
+  path: '/$postId',
+  getParentRoute: () => CommunityRoute,
 } as any)
 const AppWelcomeRoute = AppWelcomeRouteImport.update({
   id: '/welcome',
@@ -255,7 +267,7 @@ const ApiPublicHooksRiskForecasterRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/community': typeof CommunityRoute
+  '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/pricing': typeof PricingRoute
@@ -275,6 +287,8 @@ export interface FileRoutesByFullPath {
   '/today': typeof AppTodayRouteWithChildren
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
+  '/community/$postId': typeof CommunityPostIdRoute
+  '/community/resources': typeof CommunityResourcesRoute
   '/admin/community': typeof AppAdminCommunityRoute
   '/admin/contact': typeof AppAdminContactRoute
   '/admin/feedback': typeof AppAdminFeedbackRoute
@@ -296,7 +310,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/community': typeof CommunityRoute
+  '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/pricing': typeof PricingRoute
@@ -315,6 +329,8 @@ export interface FileRoutesByTo {
   '/today': typeof AppTodayRouteWithChildren
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
+  '/community/$postId': typeof CommunityPostIdRoute
+  '/community/resources': typeof CommunityResourcesRoute
   '/admin/community': typeof AppAdminCommunityRoute
   '/admin/contact': typeof AppAdminContactRoute
   '/admin/feedback': typeof AppAdminFeedbackRoute
@@ -338,7 +354,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/about': typeof AboutRoute
-  '/community': typeof CommunityRoute
+  '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/pricing': typeof PricingRoute
@@ -358,6 +374,8 @@ export interface FileRoutesById {
   '/_app/today': typeof AppTodayRouteWithChildren
   '/_app/vitals': typeof AppVitalsRoute
   '/_app/welcome': typeof AppWelcomeRoute
+  '/community/$postId': typeof CommunityPostIdRoute
+  '/community/resources': typeof CommunityResourcesRoute
   '/_app/admin/community': typeof AppAdminCommunityRoute
   '/_app/admin/contact': typeof AppAdminContactRoute
   '/_app/admin/feedback': typeof AppAdminFeedbackRoute
@@ -401,6 +419,8 @@ export interface FileRouteTypes {
     | '/today'
     | '/vitals'
     | '/welcome'
+    | '/community/$postId'
+    | '/community/resources'
     | '/admin/community'
     | '/admin/contact'
     | '/admin/feedback'
@@ -441,6 +461,8 @@ export interface FileRouteTypes {
     | '/today'
     | '/vitals'
     | '/welcome'
+    | '/community/$postId'
+    | '/community/resources'
     | '/admin/community'
     | '/admin/contact'
     | '/admin/feedback'
@@ -483,6 +505,8 @@ export interface FileRouteTypes {
     | '/_app/today'
     | '/_app/vitals'
     | '/_app/welcome'
+    | '/community/$postId'
+    | '/community/resources'
     | '/_app/admin/community'
     | '/_app/admin/contact'
     | '/_app/admin/feedback'
@@ -506,7 +530,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AboutRoute: typeof AboutRoute
-  CommunityRoute: typeof CommunityRoute
+  CommunityRoute: typeof CommunityRouteWithChildren
   ContactRoute: typeof ContactRoute
   FeaturesRoute: typeof FeaturesRoute
   PricingRoute: typeof PricingRoute
@@ -588,6 +612,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/community/resources': {
+      id: '/community/resources'
+      path: '/resources'
+      fullPath: '/community/resources'
+      preLoaderRoute: typeof CommunityResourcesRouteImport
+      parentRoute: typeof CommunityRoute
+    }
+    '/community/$postId': {
+      id: '/community/$postId'
+      path: '/$postId'
+      fullPath: '/community/$postId'
+      preLoaderRoute: typeof CommunityPostIdRouteImport
+      parentRoute: typeof CommunityRoute
     }
     '/_app/welcome': {
       id: '/_app/welcome'
@@ -905,11 +943,25 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface CommunityRouteChildren {
+  CommunityPostIdRoute: typeof CommunityPostIdRoute
+  CommunityResourcesRoute: typeof CommunityResourcesRoute
+}
+
+const CommunityRouteChildren: CommunityRouteChildren = {
+  CommunityPostIdRoute: CommunityPostIdRoute,
+  CommunityResourcesRoute: CommunityResourcesRoute,
+}
+
+const CommunityRouteWithChildren = CommunityRoute._addFileChildren(
+  CommunityRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AboutRoute: AboutRoute,
-  CommunityRoute: CommunityRoute,
+  CommunityRoute: CommunityRouteWithChildren,
   ContactRoute: ContactRoute,
   FeaturesRoute: FeaturesRoute,
   PricingRoute: PricingRoute,
@@ -922,3 +974,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
