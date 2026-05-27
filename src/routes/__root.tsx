@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { rearmMedicationNotifications } from "@/lib/med-notifications";
+import { ThemeProvider, themeBootstrapScript } from "@/lib/theme-provider";
 
 function NotFoundComponent() {
   // Compatibility: the internal `_app` segment is a TanStack route-group,
@@ -144,6 +145,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
       <body>
         {children}
@@ -191,11 +193,13 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Outlet />
-        <Toaster />
-        <InstallPrompt />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Outlet />
+          <Toaster />
+          <InstallPrompt />
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
