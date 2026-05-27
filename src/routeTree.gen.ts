@@ -30,6 +30,7 @@ import { Route as AppMedsRouteImport } from './routes/_app/meds'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
 import { Route as AppCharterRouteImport } from './routes/_app/charter'
+import { Route as AppAdminRouteImport } from './routes/_app/admin'
 import { Route as AppJournalIndexRouteImport } from './routes/_app/journal.index'
 import { Route as AppBiometricsIndexRouteImport } from './routes/_app/biometrics.index'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
@@ -145,6 +146,11 @@ const AppCharterRoute = AppCharterRouteImport.update({
   path: '/charter',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppJournalIndexRoute = AppJournalIndexRouteImport.update({
   id: '/journal/',
   path: '/journal/',
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/admin': typeof AppAdminRoute
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/insights': typeof AppInsightsRoute
@@ -239,6 +246,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/admin': typeof AppAdminRoute
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/insights': typeof AppInsightsRoute
@@ -273,6 +281,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/_app/admin': typeof AppAdminRoute
   '/_app/charter': typeof AppCharterRoute
   '/_app/chat': typeof AppChatRoute
   '/_app/insights': typeof AppInsightsRoute
@@ -307,6 +316,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sign-in'
     | '/sign-up'
+    | '/admin'
     | '/charter'
     | '/chat'
     | '/insights'
@@ -339,6 +349,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sign-in'
     | '/sign-up'
+    | '/admin'
     | '/charter'
     | '/chat'
     | '/insights'
@@ -372,6 +383,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sign-in'
     | '/sign-up'
+    | '/_app/admin'
     | '/_app/charter'
     | '/_app/chat'
     | '/_app/insights'
@@ -559,6 +571,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCharterRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin': {
+      id: '/_app/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/journal/': {
       id: '/_app/journal/'
       path: '/journal'
@@ -668,6 +687,7 @@ const AppTodayRouteWithChildren = AppTodayRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
   AppCharterRoute: typeof AppCharterRoute
   AppChatRoute: typeof AppChatRoute
   AppInsightsRoute: typeof AppInsightsRoute
@@ -688,6 +708,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
   AppCharterRoute: AppCharterRoute,
   AppChatRoute: AppChatRoute,
   AppInsightsRoute: AppInsightsRoute,
