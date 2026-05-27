@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Pill, AlertCircle, CheckCheck } from "lucide-react";
+import { Plus, Pill, AlertCircle, CheckCheck, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,22 @@ import { useRouteTheme } from "@/lib/use-route-theme";
 import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { MedKind } from "@/components/meds/medication-form-sheet";
 
 type Medication = {
@@ -78,7 +94,9 @@ function MedsPage() {
   const [meds, setMeds] = React.useState<Medication[] | null>(null);
   const [todayDoses, setTodayDoses] = React.useState<TodayDose[] | null>(null);
   const [filter, setFilter] = React.useState<FilterKind>("all");
+  const [tab, setTab] = React.useState<"active" | "archive">("active");
   const [open, setOpen] = React.useState(false);
+  const [editingMedId, setEditingMedId] = React.useState<string | null>(null);
   const [markingAll, setMarkingAll] = React.useState(false);
 
   const load = React.useCallback(async () => {
@@ -90,7 +108,6 @@ function MedsPage() {
       supabase
         .from("medications")
         .select("id, name, dosage, times_of_day, pills_remaining, refill_threshold, is_rescue, kind, active")
-        .eq("active", true)
         .order("kind", { ascending: true })
         .order("name", { ascending: true }),
       supabase
@@ -116,7 +133,7 @@ function MedsPage() {
     if (typeof window === "undefined") return;
     if (!("Notification" in window) || Notification.permission !== "granted") return;
     const scheduled = meds
-      .filter((m) => !isRescueMed(m) && (m.times_of_day?.length ?? 0) > 0)
+      .filter((m) => m.active && !isRescueMed(m) && (m.times_of_day?.length ?? 0) > 0)
       .map((m) => ({
         id: m.id,
         name: m.name,
@@ -128,17 +145,21 @@ function MedsPage() {
     void scheduleMedications(scheduled);
   }, [meds]);
 
-  const isFirst = (meds?.filter((m) => !isRescueMed(m)).length ?? 0) === 0;
+  const activeMeds = React.useMemo(() => meds?.filter((m) => m.active) ?? [], [meds]);
+  const archivedMeds = React.useMemo(() => meds?.filter((m) => !m.active) ?? [], [meds]);
+  const isFirst = activeMeds.filter((m) => !isRescueMed(m)).length === 0;
 
   const filteredMeds = React.useMemo(() => {
     if (!meds) return null;
-    if (filter === "all") return meds;
-    if (filter === "rescue") return meds.filter((m) => isRescueMed(m));
-    return meds.filter((m) => m.kind === filter);
-  }, [meds, filter]);
+    const base = tab === "active" ? activeMeds : archivedMeds;
+    if (tab === "archive") return base;
+    if (filter === "all") return base;
+    if (filter === "rescue") return base.filter((m) => isRescueMed(m));
+    return base.filter((m) => m.kind === filter);
+  }, [meds, activeMeds, archivedMeds, tab, filter]);
 
   const groupedMeds = React.useMemo(() => {
-    if (!filteredMeds || filter !== "all") return null;
+    if (!filteredMeds || tab !== "active" || filter !== "all") return null;
     const groups = new Map<MedKind, Medication[]>();
     for (const m of filteredMeds) {
       const key = isRescueMed(m) ? "rescue" : m.kind;
@@ -147,7 +168,7 @@ function MedsPage() {
       groups.set(key, list);
     }
     return groups;
-  }, [filteredMeds, filter]);
+  }, [filteredMeds, tab, filter]);
 
   const pendingToday = todayDoses?.filter((d) => d.status === "pending") ?? [];
 
@@ -169,6 +190,11 @@ function MedsPage() {
     void load();
   };
 
+  const handleEdit = (id: string) => {
+    setEditingMedId(id);
+    setOpen(true);
+  };
+
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-32 relative">
       <p className="label-eyebrow text-muted-foreground">Medications</p>
@@ -185,7 +211,7 @@ function MedsPage() {
         <MedRemindersBanner />
       </div>
 
-      {meds && meds.length > 0 && (
+      {activeMeds.length > 0 && (
         <>
           <TodayDosesSection
             doses={todayDoses}
@@ -198,7 +224,29 @@ function MedsPage() {
       )}
 
       {meds && meds.length > 0 && (
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div className="mt-8 flex items-center gap-2 border-b border-border">
+          {(["active", "archive"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={cn(
+                "px-3 py-2 text-sm capitalize -mb-px border-b-2 transition-colors",
+                tab === t
+                  ? "border-foreground text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t} {t === "archive" && archivedMeds.length > 0 && (
+                <span className="ml-1 text-xs text-muted-foreground">({archivedMeds.length})</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {tab === "active" && activeMeds.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
           {FILTER_CHIPS.map((chip) => (
             <button
               key={chip.value}
@@ -230,7 +278,12 @@ function MedsPage() {
             <Plus className="h-4 w-4 mr-1" /> Add a medication
           </Button>
         </div>
-      ) : filter === "all" && groupedMeds ? (
+      ) : tab === "archive" && archivedMeds.length === 0 ? (
+        <div className="mt-10 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+          <Archive className="h-6 w-6 mx-auto text-muted-foreground" />
+          <p className="mt-3 text-sm text-muted-foreground">No archived medications.</p>
+        </div>
+      ) : tab === "active" && filter === "all" && groupedMeds ? (
         <div className="mt-8 space-y-6">
           {(["medication", "supplement", "vitamin", "herbal", "rescue"] as MedKind[]).map((kind) => {
             const list = groupedMeds.get(kind);
@@ -241,7 +294,7 @@ function MedsPage() {
                   {KIND_LABELS[kind]}
                 </h2>
                 <ul className="space-y-2">
-                  {list.map((m) => <MedRow key={m.id} med={m} />)}
+                  {list.map((m) => <MedRow key={m.id} med={m} onEdit={handleEdit} onChanged={load} />)}
                 </ul>
               </section>
             );
@@ -249,7 +302,7 @@ function MedsPage() {
         </div>
       ) : (
         <ul className="mt-8 space-y-2">
-          {(filteredMeds ?? []).map((m) => <MedRow key={m.id} med={m} />)}
+          {(filteredMeds ?? []).map((m) => <MedRow key={m.id} med={m} onEdit={handleEdit} onChanged={load} />)}
         </ul>
       )}
 
@@ -264,9 +317,13 @@ function MedsPage() {
 
       <MedicationFormSheet
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={(v) => {
+          setOpen(v);
+          if (!v) setEditingMedId(null);
+        }}
         onSaved={load}
         isFirstMedication={isFirst}
+        editingMedId={editingMedId}
       />
     </div>
   );
@@ -323,23 +380,54 @@ function TodayDosesSection({
   );
 }
 
-function MedRow({ med }: { med: Medication }) {
+function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: string) => void; onChanged: () => void | Promise<void> }) {
   const threshold = med.refill_threshold ?? 7;
   const lowStock = med.pills_remaining !== null && med.pills_remaining <= threshold;
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
+
+  const archive = async () => {
+    const { error } = await supabase.from("medications").update({ active: false }).eq("id", med.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${med.name} archived`);
+    void onChanged();
+  };
+  const restore = async () => {
+    const { error } = await supabase.from("medications").update({ active: true }).eq("id", med.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${med.name} restored`);
+    void onChanged();
+  };
+  const destroy = async () => {
+    await supabase.from("medication_doses").delete().eq("medication_id", med.id);
+    await supabase.from("medication_side_effects").delete().eq("medication_id", med.id);
+    const { error } = await supabase.from("medications").delete().eq("id", med.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${med.name} deleted`);
+    void onChanged();
+  };
+
   return (
-    <li>
+    <li className="relative">
       <Link
         to="/meds/$medId"
         params={{ medId: med.id }}
-        className="block rounded-2xl border border-border bg-card p-5 hover:border-foreground/20 transition-colors"
+        className={cn(
+          "block rounded-2xl border border-border bg-card p-5 hover:border-foreground/20 transition-colors",
+          !med.active && "opacity-70",
+        )}
       >
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-3 pr-8">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <p className="font-serif text-lg text-foreground truncate">{med.name}</p>
               {lowStock && (
                 <span className="rounded-full bg-destructive/15 text-destructive px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
                   Refill soon
+                </span>
+              )}
+              {!med.active && (
+                <span className="rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                  Archived
                 </span>
               )}
             </div>
@@ -371,6 +459,59 @@ function MedRow({ med }: { med: Medication }) {
           )}
         </div>
       </Link>
+
+      <div className="absolute top-3 right-3">
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            className="h-8 w-8 inline-flex items-center justify-center rounded-full hover:bg-secondary text-muted-foreground"
+            aria-label="Medication actions"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            {med.active ? (
+              <>
+                <DropdownMenuItem onClick={() => onEdit(med.id)}>
+                  <Edit3 className="h-4 w-4 mr-2" /> Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={archive}>
+                  <Archive className="h-4 w-4 mr-2" /> Archive
+                </DropdownMenuItem>
+              </>
+            ) : (
+              <>
+                <DropdownMenuItem onClick={restore}>
+                  <ArchiveRestore className="h-4 w-4 mr-2" /> Restore
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setConfirmDelete(true)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" /> Delete
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {med.name} permanently?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the medication along with its dose history and logged side effects. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={destroy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </li>
   );
 }
