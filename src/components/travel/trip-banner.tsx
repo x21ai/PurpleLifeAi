@@ -138,6 +138,14 @@ export function TripBanner() {
                 No upcoming doses in this trip window.
               </p>
             )}
+            {legs.length <= 1 && (
+              <Link
+                to="/settings/travel"
+                className="mt-2 inline-flex items-center text-xs text-primary underline-offset-2 hover:underline"
+              >
+                + Add itinerary
+              </Link>
+            )}
           </div>
           <Link
             to="/settings/travel"
