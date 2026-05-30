@@ -206,7 +206,7 @@ function SignInPage() {
                         required
                         autoComplete="email"
                         inputMode="email"
-                        placeholder="you@example.com"
+                        placeholder="you@example.com" // live-data-guard:allow (input placeholder, not stored data)
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="h-14 text-lg font-serif rounded-xl"
