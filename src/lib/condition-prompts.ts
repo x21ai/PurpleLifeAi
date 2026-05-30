@@ -106,3 +106,17 @@ export function promptsForConditions(conditions: string[] | null | undefined): s
 export function labelForCondition(id: string): string {
   return CONDITION_OPTIONS.find((c) => c.id === id)?.label ?? id;
 }
+
+/**
+ * Conditions for which seizure tracking surfaces should appear.
+ * Today only `epilepsy`; expand if we add seizure-prone conditions
+ * (e.g. certain neurological diagnoses) later.
+ */
+const SEIZURE_PRONE: ReadonlySet<ConditionTag> = new Set(["epilepsy"]);
+
+export function showsSeizureFeatures(
+  conditions: string[] | null | undefined,
+): boolean {
+  if (!conditions || conditions.length === 0) return false;
+  return conditions.some((c): c is ConditionTag => SEIZURE_PRONE.has(c as ConditionTag));
+}

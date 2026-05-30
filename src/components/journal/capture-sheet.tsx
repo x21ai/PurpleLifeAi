@@ -248,7 +248,7 @@ export function CaptureSheet({
         side="bottom"
         className="h-[92vh] sm:h-[88vh] flex flex-col p-0 rounded-t-2xl"
       >
-        <SheetHeader className="px-5 pt-5 pb-3 flex-row items-center justify-between space-y-0 border-b border-border">
+        <SheetHeader className="px-5 pt-5 pb-3 pr-14 flex-row items-center justify-between space-y-0 border-b border-border">
           <SheetTitle className="font-serif text-lg font-normal">New entry</SheetTitle>
           <Button
             onClick={handleSave}

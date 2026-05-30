@@ -13,7 +13,7 @@ import { TodayDoses } from "@/components/meds/today-doses";
 import { TripBanner } from "@/components/travel/trip-banner";
 import { TodayInstallBanner } from "@/components/pwa/today-install-banner";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
-import { promptsForConditions } from "@/lib/condition-prompts";
+import { promptsForConditions, showsSeizureFeatures } from "@/lib/condition-prompts";
 
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
@@ -248,10 +248,16 @@ function TodayPage() {
         </div>
       )}
 
-      <section className="mt-10 grid grid-cols-3 gap-3">
+      <section
+        className={`mt-10 grid gap-3 ${
+          showsSeizureFeatures(profile?.conditions) ? "grid-cols-3" : "grid-cols-2"
+        }`}
+      >
         <QuickAction icon={BookOpen} label="Journal" to="/journal" />
         <QuickAction icon={Pill} label="Meds" to="/meds" />
-        <QuickAction icon={Zap} label="Seizure" to="/seizures/new" tone="accent" />
+        {showsSeizureFeatures(profile?.conditions) && (
+          <QuickAction icon={Zap} label="Seizure" to="/seizures/new" tone="accent" />
+        )}
       </section>
 
       {bio && (

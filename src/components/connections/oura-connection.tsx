@@ -176,10 +176,17 @@ export function OuraConnection() {
             </span>
             <div className="min-w-0">
               <p className="font-serif text-base text-foreground">Oura Ring</p>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-xs text-muted-foreground">
                 {backfilling
                   ? `Importing… ${counts.sleep} sleep · ${counts.readiness} readiness · ${counts.activity} activity`
-                  : `Connected · synced ${relativeTime(lastSync)}`}
+                  : (
+                    <>
+                      Connected
+                      <span className="block sm:inline sm:before:content-['_·_']">
+                        Last synced {relativeTime(lastSync)}
+                      </span>
+                    </>
+                  )}
               </p>
             </div>
           </div>

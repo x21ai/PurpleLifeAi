@@ -1220,6 +1220,7 @@ export type Database = {
           created_at: string
           date_of_birth: string | null
           default_alarm_sound: string
+          deleted_at: string | null
           diagnosis: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
@@ -1229,6 +1230,7 @@ export type Database = {
           idle_timeout_minutes: number
           last_name: string | null
           onboarded_at: string | null
+          purge_after: string | null
           sleep_time: string
           snooze_minutes: number
           suspended_at: string | null
@@ -1249,6 +1251,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           default_alarm_sound?: string
+          deleted_at?: string | null
           diagnosis?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
@@ -1258,6 +1261,7 @@ export type Database = {
           idle_timeout_minutes?: number
           last_name?: string | null
           onboarded_at?: string | null
+          purge_after?: string | null
           sleep_time?: string
           snooze_minutes?: number
           suspended_at?: string | null
@@ -1278,6 +1282,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           default_alarm_sound?: string
+          deleted_at?: string | null
           diagnosis?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
@@ -1287,6 +1292,7 @@ export type Database = {
           idle_timeout_minutes?: number
           last_name?: string | null
           onboarded_at?: string | null
+          purge_after?: string | null
           sleep_time?: string
           snooze_minutes?: number
           suspended_at?: string | null
