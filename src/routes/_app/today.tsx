@@ -12,6 +12,7 @@ import { ScoreHero, bandForReadiness } from "@/components/ui-oura/v2/score-hero"
 import { TodayDoses } from "@/components/meds/today-doses";
 import { TripBanner } from "@/components/travel/trip-banner";
 import { TodayInstallBanner } from "@/components/pwa/today-install-banner";
+import { RestoreBanner } from "@/components/settings/restore-banner";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
 import { promptsForConditions, showsSeizureFeatures } from "@/lib/condition-prompts";
 
@@ -133,6 +134,7 @@ function TodayPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-10 sm:pt-16 pb-16">
+      <RestoreBanner />
       <div className="mb-6">
         <TodayInstallBanner />
       </div>
