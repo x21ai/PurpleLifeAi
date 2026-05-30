@@ -1,75 +1,115 @@
-# Phased Completion Plan
 
-We'll do this in 3 phases. After each phase I'll stop, we verify, then move to the next.
+# Plan — Reposition, condition-aware onboarding, real travel scheduler
 
----
-
-## Phase 1 — True phone alarms (push notifications)
-
-**Goal:** Medication reminders fire even when the app is closed or the screen is off.
-
-**Approach:** Web Push (works on installed PWA across iOS 16.4+, Android, desktop). No app-store submission needed. If you later want native iOS/Android, we wrap with Capacitor — but Web Push covers 95% of the need now.
-
-**What I'll build:**
-1. PWA manifest + service worker (`/sw.js`) registered on app load
-2. "Enable notifications" prompt in Settings → Reminders
-3. Server function `subscribe_push` storing VAPID subscription per user/device in a new `push_subscriptions` table
-4. Server function `schedule_dose_reminder` + a cron-triggered route `/api/public/cron/dose-reminders` that runs every minute, finds doses due in the next 1 min, and sends a push via Web Push API
-5. Service worker handles the push → shows native OS notification with "Taken / Snooze 10m" actions
-6. Add `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` secrets (I'll request them via add_secret)
-7. Install-to-home-screen banner so users get the PWA experience
-
-**Stop & verify:** Install PWA on your phone, set a reminder 2 min out, lock phone, confirm notification fires.
+Three independent slices. We'll ship them in order.
 
 ---
 
-## Phase 2 — Full QA pass
+## 1. Reposition the homepage (and other public copy)
 
-I'll execute the test plan via the browser tool + targeted code reads, on mobile (473px), tablet (768px), and desktop (1280px) viewports:
+**Why:** Current hero pigeonholes Purple as "epilepsy journal" and uses em dashes that read like default AI output.
 
-1. **Auth** — signup, email confirm, login, Google OAuth, logout
-2. **Meds** — create / edit / delete med, schedule, mark dose taken/missed, adherence %
-3. **Reports** — upload PDF + JPG, parse, view single report, upload 2nd same-type → verify trend graph, supplement suggestions, medical disclaimer visible
-4. **Care sharing** — invite, accept, scope enforcement, invite_token cleared post-accept
-5. **Travel/timezone** — change tz, verify dose times shift
-6. **Journal + AI memory** — write entry, verify processing, semantic recall
-7. **Phone alarms (Phase 1)** — end-to-end push fires
-8. **Security** — re-run security scan, confirm 0 findings, run DB linter
-9. **Responsive** — every screen at 3 viewports
-10. **Console/network** — zero errors on each route
+**New positioning:** Purple is a health companion for people managing complex or chronic conditions — and for the people who care for them. Epilepsy is the depth we're known for; migraine, diabetes, mental health, autoimmune, long COVID, dysautonomia, and caregiving are all welcome.
 
-Output: a checklist with pass/fail and any bugs I fix inline.
+**Tone (Apple-style):**
+- Short, declarative sentences. No em dashes. No "quietly notices." No "whatever's happening."
+- Lead with what it does for *you*, not what it is.
+- One idea per line.
 
----
+**Draft hero (for approval during build):**
+> Your health, remembered.
+> Purple is a private journal for people living with conditions that need attention every day — from epilepsy and migraine to diabetes and mental health. Write it, say it, or snap it. Purple keeps it, and helps you see what matters.
 
-## Phase 3 — HIPAA hardening (production posture)
+(I'll finalize wording in build; the constraint is: no em dashes anywhere in marketing copy, no "—" used as a stylistic pause. Use periods or line breaks instead.)
 
-**What's already in place:** PHI access logging, owner checks, RLS on all PHI tables, invite-token clearing, realtime scoping, email rate limits, medical disclaimers, encrypted-at-rest storage.
-
-**What's missing for true HIPAA compliance:**
-1. **Audit log UI** — user-facing page at `/settings/audit` showing who accessed their PHI, when, from where
-2. **Data export** — "Download all my data" (JSON + files zip) — required under HIPAA right of access
-3. **Account deletion with PHI purge** — hard delete + cascade, with 30-day grace
-4. **Session timeout** — auto-logout after 15 min idle (configurable)
-5. **Failed-login lockout** — 5 attempts → 15 min lock (HIPAA technical safeguard)
-6. **Encryption-at-rest disclosure** + privacy policy + Terms of Service pages
-7. **Breach notification email infrastructure** — admin tool to notify affected users
-8. **BAA reminder** — banner in admin settings: "Signed BAA required with Lovable Cloud/Supabase before going live with real PHI" + link to request one
-
-**Out of scope** (requires your action, not code):
-- Signing BAA with Supabase (paid plan required)
-- HIPAA risk assessment documentation
-- Staff training records
-- Physical safeguards (your laptop, etc.)
+**Files touched:**
+- `src/routes/index.tsx` (hero, sub-hero, feature blurbs)
+- `src/routes/features.tsx`, `src/routes/about.tsx`, `src/routes/pricing.tsx` — sweep em dashes, broaden language away from epilepsy-only
+- `src/routes/_app/welcome.tsx` — same sweep
+- Page `<title>` and meta descriptions updated to reflect broader positioning
 
 ---
 
-## Order of operations
+## 2. Condition-aware onboarding (light tailoring)
 
-```
-Phase 1 (push alarms)  →  you test on phone  →  approve
-Phase 2 (QA pass)      →  I report findings  →  fix bugs  →  approve
-Phase 3 (HIPAA)        →  you review legal items  →  publish
-```
+**Why:** Today everyone gets the same epilepsy-shaped Today dashboard. We want signup to ask what each person is managing and lightly adapt.
 
-Reply "approve" and I'll start Phase 1.
+**UX flow (added to signup → welcome):**
+1. New "What brings you to Purple?" step after account creation.
+2. Multi-select chips of common conditions + a free-text "Add your own" field.
+   - Suggested chips: Epilepsy, Migraine, Diabetes, Mental health, Autoimmune, POTS / dysautonomia, Long COVID / ME-CFS, Chronic pain, Caregiver for someone else, General wellness.
+3. Optional follow-up: "Anything else we should know?" (free text, stored as a note).
+4. "You can change this anytime in Settings."
+
+**What "Light tailoring" means (per your choice):**
+- Stored on profile, no new trackers/tables built per condition.
+- Affects:
+  - Journal prompt suggestions ("How did your head feel today?" for migraine, "Any aura?" for epilepsy, "Glucose check?" for diabetes, etc.)
+  - Today page greeting & empty-state copy
+  - Which example tiles get highlighted first (e.g. seizure logger stays prominent only if Epilepsy is selected)
+  - Ask-AI default system prompt gets the user's conditions as context so answers are relevant
+
+**Data:**
+- New columns on `profiles`: `conditions text[]` (the picked tags), `conditions_note text` (free text)
+- Settings page gets a small "Your focus" card to edit later
+- No new tables, no destructive migration
+
+**Files touched:**
+- Migration: add 2 columns to `profiles`
+- `src/routes/sign-up.tsx` or `src/routes/_app/welcome.tsx` — new step
+- `src/components/settings/preferences-section.tsx` — edit-later UI
+- `src/routes/_app/today.tsx`, `src/components/journal/capture-sheet.tsx` — read `conditions` to pick prompts
+- A small `src/lib/condition-prompts.ts` mapping condition → prompt suggestions
+
+---
+
+## 3. Itinerary-driven travel medication scheduler
+
+**Why:** The current Travel tab just stores a destination timezone. You want a real "I'm Traveling" mode where Purple plans every dose across the trip.
+
+**UX flow (in Settings → Travel, renamed "I'm Traveling"):**
+1. **Plan a trip** button opens a wizard:
+   - Trip name (e.g. "Tokyo for work")
+   - Add flights one by one: departure city + airport (or just city), departure date/time (local), arrival city, arrival date/time (local). Add as many legs as you want — layovers are just flights with short gaps.
+   - Optional: lodging timezone if different from final arrival city.
+2. Purple computes a per-medication, per-dose schedule across the trip:
+   - Before departure: home schedule.
+   - In-flight & layovers: doses shifted by small increments (configurable: gradual shift over N days, vs. snap-to-destination on arrival).
+   - At destination: destination-local times.
+   - Return leg: shifts back to home time.
+3. Preview screen shows a timeline of every dose with its new local time (and what it would have been at home), grouped by day.
+4. "Activate trip" turns it on; medication reminders + push notifications fire on the new schedule. An "I'm Traveling" banner shows on Today with current trip + next dose.
+5. Edit or cancel anytime; ending the trip restores home schedule.
+
+**Defaults:** gradual shift = 1 hour per day until aligned with destination (well-supported for circadian meds). User can override per trip.
+
+**Data:**
+- Extend `trips` table: add `legs jsonb` (array of `{from_city, from_tz, depart_local, to_city, to_tz, arrive_local}`), `shift_strategy text` ('gradual' | 'snap'), `shift_hours_per_day int`.
+- New table `trip_dose_overrides` — per-dose scheduled time during an active trip, so the existing reminders/cron just reads from here when a trip is active.
+- Existing `medication_doses` and the `dose-reminders` cron keep working as-is; the trip layer just supplies different `scheduled_at` values for the trip window.
+
+**Files touched:**
+- Migration: extend `trips`, add `trip_dose_overrides` with RLS + GRANTs
+- `src/lib/travel.functions.ts` — `createTripWithItinerary`, `previewTripSchedule`, `activateTrip`, `endTrip`
+- `src/lib/travel-scheduler.ts` (pure function): inputs = home schedule + legs + strategy; output = list of `{dose_time, tz}` per med
+- `src/routes/_app/settings.travel.tsx` — full rebuild as "I'm Traveling" with wizard + timeline preview
+- `src/components/travel/trip-banner.tsx` — show active trip on Today
+- `src/routes/api/public/cron/dose-reminders.ts` — read trip overrides when present
+
+---
+
+## Out of scope (for now)
+
+- Heavy condition-specific trackers (glucose meter integration, migraine attack form, etc.) — your call was "Light." We can revisit later condition by condition.
+- Pulling real flight data from an airline API — you type the flight times manually. (Can add a flight-lookup API later behind a feature flag.)
+- Multi-trip overlap handling — we'll enforce one active trip at a time in v1.
+
+---
+
+## Suggested build order
+
+**Phase A (small, fast win):** Section 1 — copy rewrite & em-dash sweep across public pages.
+**Phase B:** Section 2 — conditions onboarding + light tailoring.
+**Phase C (biggest):** Section 3 — travel scheduler, ending with the cron integration.
+
+Reply "go" to start with Phase A, or tell me which phase to prioritize.
