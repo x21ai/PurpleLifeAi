@@ -255,8 +255,39 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
   const invite = useServerFn(inviteCaregiver);
   const m = useMutation({
     mutationFn: () => invite({ data: { email, role } }),
-    onSuccess: () => {
-      toast.success(`Invite sent to ${email}`);
+    onSuccess: (res: { acceptUrl?: string; emailSent?: boolean }) => {
+      const url = res?.acceptUrl;
+      if (res?.emailSent) {
+        toast.success(`Invite sent to ${email}`, {
+          description: url
+            ? "You can also copy the link below to share manually."
+            : undefined,
+          action: url
+            ? {
+                label: "Copy link",
+                onClick: () => {
+                  navigator.clipboard?.writeText(url);
+                  toast.success("Invite link copied");
+                },
+              }
+            : undefined,
+        });
+      } else {
+        toast.message("Invite created — share the link", {
+          description:
+            "Email couldn't be delivered automatically. Copy the link and send it yourself.",
+          duration: 10000,
+          action: url
+            ? {
+                label: "Copy link",
+                onClick: () => {
+                  navigator.clipboard?.writeText(url);
+                  toast.success("Invite link copied");
+                },
+              }
+            : undefined,
+        });
+      }
       setEmail("");
       setOpen(false);
       onInvited();
