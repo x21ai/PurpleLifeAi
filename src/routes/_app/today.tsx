@@ -15,6 +15,7 @@ import { TodayInstallBanner } from "@/components/pwa/today-install-banner";
 import { RestoreBanner } from "@/components/settings/restore-banner";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
 import { promptsForConditions, showsSeizureFeatures } from "@/lib/condition-prompts";
+import { TodayEmptyState } from "@/components/today/empty-state";
 
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
@@ -59,6 +60,11 @@ function TodayPage() {
   const [focus, setFocus] = useState<"readiness" | "sleep" | "activity">("sleep");
   const [expanded, setExpanded] = useState(false);
   const [announcement, setAnnouncement] = useState<AdminMessage | null>(null);
+  const [journalCount, setJournalCount] = useState<number | null>(null);
+  const [emptyDismissed, setEmptyDismissed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem("purple-today-empty-dismissed") === "1";
+  });
 
   useEffect(() => setNow(new Date()), []);
 
@@ -66,7 +72,7 @@ function TodayPage() {
     if (!userId) return;
     void (async () => {
       const since = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
-      const [b, f, p, msg] = await Promise.all([
+      const [b, f, p, msg, jc] = await Promise.all([
         supabase
           .from("biometrics")
           .select(
@@ -96,11 +102,16 @@ function TodayPage() {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from("journal_entries")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", userId),
       ]);
       setBio((b.data as Bio | null) ?? null);
       setForecast((f.data as Forecast | null) ?? null);
       setProfile((p.data as Profile | null) ?? null);
       setAnnouncement((msg.data as AdminMessage | null) ?? null);
+      setJournalCount(jc.count ?? 0);
     })();
   }, [userId]);
 
@@ -138,6 +149,15 @@ function TodayPage() {
       <div className="mb-6">
         <TodayInstallBanner />
       </div>
+
+      {journalCount === 0 && !emptyDismissed && (
+        <TodayEmptyState
+          onDismiss={() => {
+            sessionStorage.setItem("purple-today-empty-dismissed", "1");
+            setEmptyDismissed(true);
+          }}
+        />
+      )}
 
       {announcement && (
         <div className="mb-6 rounded-2xl border border-border bg-card p-4">
