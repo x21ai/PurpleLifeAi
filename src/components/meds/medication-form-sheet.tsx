@@ -342,6 +342,21 @@ export function MedicationFormSheet({
       }
 
       toast.success(isEditing ? `${med.name} updated` : `${med.name} added`);
+      // Capture the user's local timezone (one-time) and sync today's pending
+      // doses on the server so they show at the times the user actually set.
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (tz) {
+          await supabase
+            .from("profiles")
+            .update({ timezone: tz })
+            .eq("id", userId)
+            .is("timezone", null);
+        }
+        await supabase.rpc("regenerate_today_pending_doses", { _user_id: userId });
+      } catch {
+        /* non-fatal */
+      }
       onSaved?.();
       onOpenChange(false);
     } catch (err: unknown) {
