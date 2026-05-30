@@ -252,6 +252,14 @@ function WelcomePage() {
                 />
               </div>
             </div>
+            <div className="pt-2 border-t border-border">
+              <p className="label-eyebrow mt-4 mb-3">Region &amp; language</p>
+              <LocaleFields
+                values={localeValues}
+                onChange={setLocaleValues}
+                compact
+              />
+            </div>
           </div>
           <div className="mt-10 flex items-center justify-between gap-3">
             <Button variant="ghost" onClick={() => setStep(0)}>Back</Button>
