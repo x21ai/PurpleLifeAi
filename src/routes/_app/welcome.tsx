@@ -75,14 +75,27 @@ function WelcomePage() {
     setSaving(true);
     try {
       const phone = formatPhone(phoneCountry, phoneNational);
+      // Merge any free-text note into the chip array so Settings can edit it.
+      const extraChips = (conditionsNote ?? "")
+        .split(/[,;\n]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const seen = new Set(conditions.map((c) => c.toLowerCase()));
+      const mergedConditions = [...conditions];
+      for (const item of extraChips) {
+        if (!seen.has(item.toLowerCase())) {
+          mergedConditions.push(item);
+          seen.add(item.toLowerCase());
+        }
+      }
       await supabase.from("profiles").upsert({
         id: userId,
         first_name: firstName || null,
         last_name: lastName || null,
         emergency_contact_name: emergencyName || null,
         emergency_contact_phone: phone || null,
-        conditions,
-        conditions_note: conditionsNote.trim() || null,
+        conditions: mergedConditions,
+        conditions_note: null,
         onboarded_at: new Date().toISOString(),
       });
       localStorage.setItem("purple-onboarded", "1");
