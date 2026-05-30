@@ -36,6 +36,7 @@ import { Route as AppTodayRouteImport } from './routes/_app/today'
 import { Route as AppTimelineRouteImport } from './routes/_app/timeline'
 import { Route as AppTermsRouteImport } from './routes/_app/terms'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppReportsRouteImport } from './routes/_app/reports'
 import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
 import { Route as AppMyHealthRouteImport } from './routes/_app/my-health'
 import { Route as AppMedsRouteImport } from './routes/_app/meds'
@@ -203,6 +204,11 @@ const AppTermsRoute = AppTermsRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsRoute = AppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPrivacyRoute = AppPrivacyRouteImport.update({
@@ -406,6 +412,7 @@ export interface FileRoutesByFullPath {
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
   '/privacy': typeof AppPrivacyRoute
+  '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/terms': typeof AppTermsRoute
   '/timeline': typeof AppTimelineRoute
@@ -467,6 +474,7 @@ export interface FileRoutesByTo {
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
   '/privacy': typeof AppPrivacyRoute
+  '/reports': typeof AppReportsRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/terms': typeof AppTermsRoute
   '/timeline': typeof AppTimelineRoute
@@ -531,6 +539,7 @@ export interface FileRoutesById {
   '/_app/meds': typeof AppMedsRouteWithChildren
   '/_app/my-health': typeof AppMyHealthRoute
   '/_app/privacy': typeof AppPrivacyRoute
+  '/_app/reports': typeof AppReportsRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/terms': typeof AppTermsRoute
   '/_app/timeline': typeof AppTimelineRoute
@@ -595,6 +604,7 @@ export interface FileRouteTypes {
     | '/meds'
     | '/my-health'
     | '/privacy'
+    | '/reports'
     | '/settings'
     | '/terms'
     | '/timeline'
@@ -656,6 +666,7 @@ export interface FileRouteTypes {
     | '/meds'
     | '/my-health'
     | '/privacy'
+    | '/reports'
     | '/settings'
     | '/terms'
     | '/timeline'
@@ -719,6 +730,7 @@ export interface FileRouteTypes {
     | '/_app/meds'
     | '/_app/my-health'
     | '/_app/privacy'
+    | '/_app/reports'
     | '/_app/settings'
     | '/_app/terms'
     | '/_app/timeline'
@@ -976,6 +988,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reports': {
+      id: '/_app/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AppReportsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/privacy': {
@@ -1291,6 +1310,7 @@ interface AppRouteChildren {
   AppMedsRoute: typeof AppMedsRouteWithChildren
   AppMyHealthRoute: typeof AppMyHealthRoute
   AppPrivacyRoute: typeof AppPrivacyRoute
+  AppReportsRoute: typeof AppReportsRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppTermsRoute: typeof AppTermsRoute
   AppTimelineRoute: typeof AppTimelineRoute
@@ -1314,6 +1334,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMedsRoute: AppMedsRouteWithChildren,
   AppMyHealthRoute: AppMyHealthRoute,
   AppPrivacyRoute: AppPrivacyRoute,
+  AppReportsRoute: AppReportsRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppTermsRoute: AppTermsRoute,
   AppTimelineRoute: AppTimelineRoute,
