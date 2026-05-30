@@ -334,11 +334,25 @@ Deno.serve(async (req) => {
       (result.extracted as any)?.needs_followup,
     );
 
+    // Guard: if the entry had no actual content (no text, no transcript, no photos)
+    // the model often replies with a meta "I don't see a journal entry…" message.
+    // That isn't a summary — drop it so the journal list doesn't show AI scaffolding.
+    const hadContent = Boolean((entry.text ?? "").trim() || transcript.trim() || photos.length > 0);
+    const summaryLower = (result.summary ?? "").toLowerCase();
+    const looksLikeMetaReply =
+      summaryLower.includes("i don't see a journal") ||
+      summaryLower.includes("i do not see a journal") ||
+      summaryLower.includes("no journal entry") ||
+      summaryLower.startsWith("please provide") ||
+      summaryLower.startsWith("i'm ready to help") ||
+      summaryLower.startsWith("i am ready to help");
+    const cleanSummary = hadContent && !looksLikeMetaReply ? result.summary : null;
+
     // 7. Update entry
     const { error: updErr } = await admin
       .from("journal_entries")
       .update({
-        ai_summary: result.summary,
+        ai_summary: cleanSummary,
         ai_tags: result.tags ?? [],
         ai_extracted: result.extracted ?? {},
         voice_transcript: transcript || null,

@@ -10,6 +10,8 @@ import { CONDITION_OPTIONS } from "@/lib/condition-prompts";
 import {
   Select,
   SelectContent,
+  SelectGroup,
+  SelectLabel,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -49,7 +51,7 @@ export function PreferencesSection() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("ai_model_preference, floating_ask_enabled, wake_time, sleep_time, snooze_minutes, conditions")
+        .select("ai_model_preference, floating_ask_enabled, wake_time, sleep_time, snooze_minutes, conditions, conditions_note")
         .eq("id", userId)
         .maybeSingle();
       if (cancelled) return;
@@ -59,7 +61,28 @@ export function PreferencesSection() {
         if (data.wake_time) setWakeTime(String(data.wake_time).slice(0, 5));
         if (data.sleep_time) setSleepTime(String(data.sleep_time).slice(0, 5));
         if (data.snooze_minutes != null) setSnoozeMinutes(String(data.snooze_minutes));
-        if (Array.isArray(data.conditions)) setConditions(data.conditions);
+        // Merge legacy free-text conditions_note into chips, then drain the column.
+        const existing: string[] = Array.isArray(data.conditions) ? data.conditions : [];
+        const legacy: string[] = (data.conditions_note ?? "")
+          .split(/[,;\n]/)
+          .map((s: string) => s.trim())
+          .filter(Boolean);
+        const seen = new Set(existing.map((c) => c.toLowerCase()));
+        const merged = [...existing];
+        for (const item of legacy) {
+          if (!seen.has(item.toLowerCase())) {
+            merged.push(item);
+            seen.add(item.toLowerCase());
+          }
+        }
+        setConditions(merged);
+        if (legacy.length > 0) {
+          // Persist the merge so the legacy column stops shadowing chip edits.
+          void supabase
+            .from("profiles")
+            .update({ conditions: merged, conditions_note: null })
+            .eq("id", userId);
+        }
       }
       setLoading(false);
     })();
@@ -254,8 +277,8 @@ export function PreferencesSection() {
               </SelectTrigger>
               <SelectContent>
                 {(["Fast", "Balanced", "Deepest"] as const).map((g) => (
-                  <div key={g}>
-                    <div className="px-2 pt-2 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">{g}</div>
+                  <SelectGroup key={g}>
+                    <SelectLabel className="px-2 pt-2 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">{g}</SelectLabel>
                     {MODEL_OPTIONS.filter((o) => o.group === g).map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         <div className="flex flex-col items-start">
@@ -264,7 +287,7 @@ export function PreferencesSection() {
                         </div>
                       </SelectItem>
                     ))}
-                  </div>
+                  </SelectGroup>
                 ))}
               </SelectContent>
             </Select>

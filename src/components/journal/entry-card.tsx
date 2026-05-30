@@ -124,6 +124,23 @@ export function EntryCard({ entry }: { entry: Entry }) {
   const Icon = KIND_ICON[entry.kind] ?? Pencil;
   const photos = entry.media_urls.filter(isImage);
   const videos = entry.media_urls.filter(isVideo);
+  // Filter out the model's "no entry provided" meta replies if any landed in the DB.
+  const cleanSummary = React.useMemo(() => {
+    const s = (entry.ai_summary ?? "").trim();
+    if (!s) return "";
+    const lower = s.toLowerCase();
+    if (
+      lower.includes("i don't see a journal") ||
+      lower.includes("i do not see a journal") ||
+      lower.includes("no journal entry") ||
+      lower.startsWith("please provide") ||
+      lower.startsWith("i'm ready to help") ||
+      lower.startsWith("i am ready to help")
+    ) {
+      return "";
+    }
+    return s;
+  }, [entry.ai_summary]);
   const processing = entry.status === "processing";
   const failed = entry.status === "failed";
   // After 5 minutes, a "processing" entry has almost certainly stalled — offer a retry.
@@ -300,9 +317,9 @@ export function EntryCard({ entry }: { entry: Entry }) {
         </div>
       )}
 
-      {entry.ai_summary && (
+      {cleanSummary && (
         <div className="mt-4 rounded-xl bg-secondary/70 px-3 py-2 text-sm text-secondary-foreground">
-          <span className="font-serif">{entry.ai_summary}</span>
+          <span className="font-serif">{cleanSummary}</span>
         </div>
       )}
 
