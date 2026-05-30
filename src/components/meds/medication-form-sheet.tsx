@@ -531,6 +531,16 @@ export function MedicationFormSheet({
             <Switch checked={withFood} onCheckedChange={setWithFood} />
           </div>
 
+          <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
+            <div className="pr-3">
+              <p className="text-sm font-medium text-foreground">Critical alarm</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Sound an alarm and keep prompting until you confirm. Use for must-take doses.
+              </p>
+            </div>
+            <Switch checked={criticalAlarm} onCheckedChange={setCriticalAlarm} />
+          </div>
+
           {isRescue ? (
             <p className="text-sm text-muted-foreground rounded-xl bg-secondary/60 p-4">
               Rescue meds are logged when taken, not on a schedule.
