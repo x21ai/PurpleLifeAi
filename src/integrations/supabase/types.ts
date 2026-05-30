@@ -1217,6 +1217,7 @@ export type Database = {
           conditions_note: string | null
           consent_research: boolean
           consent_share_with_caregivers: boolean
+          country: string | null
           created_at: string
           date_of_birth: string | null
           default_alarm_sound: string
@@ -1229,6 +1230,7 @@ export type Database = {
           id: string
           idle_timeout_minutes: number
           last_name: string | null
+          locale: string
           onboarded_at: string | null
           purge_after: string | null
           sleep_time: string
@@ -1248,6 +1250,7 @@ export type Database = {
           conditions_note?: string | null
           consent_research?: boolean
           consent_share_with_caregivers?: boolean
+          country?: string | null
           created_at?: string
           date_of_birth?: string | null
           default_alarm_sound?: string
@@ -1260,6 +1263,7 @@ export type Database = {
           id: string
           idle_timeout_minutes?: number
           last_name?: string | null
+          locale?: string
           onboarded_at?: string | null
           purge_after?: string | null
           sleep_time?: string
@@ -1279,6 +1283,7 @@ export type Database = {
           conditions_note?: string | null
           consent_research?: boolean
           consent_share_with_caregivers?: boolean
+          country?: string | null
           created_at?: string
           date_of_birth?: string | null
           default_alarm_sound?: string
@@ -1291,6 +1296,7 @@ export type Database = {
           id?: string
           idle_timeout_minutes?: number
           last_name?: string | null
+          locale?: string
           onboarded_at?: string | null
           purge_after?: string | null
           sleep_time?: string
