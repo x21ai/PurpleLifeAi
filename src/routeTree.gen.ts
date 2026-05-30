@@ -55,6 +55,7 @@ import { Route as AppSettingsTravelRouteImport } from './routes/_app/settings.tr
 import { Route as AppSettingsSharingRouteImport } from './routes/_app/settings.sharing'
 import { Route as AppSettingsHowPurpleThinksRouteImport } from './routes/_app/settings.how-purple-thinks'
 import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
+import { Route as AppReportsNewRouteImport } from './routes/_app/reports.new'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
 import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
 import { Route as AppCareOwnerIdRouteImport } from './routes/_app/care.$ownerId'
@@ -302,6 +303,11 @@ const AppSeizuresNewRoute = AppSeizuresNewRouteImport.update({
   path: '/seizures/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportsNewRoute = AppReportsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppReportsRoute,
+} as any)
 const AppMedsMedIdRoute = AppMedsMedIdRouteImport.update({
   id: '/$medId',
   path: '/$medId',
@@ -412,7 +418,7 @@ export interface FileRoutesByFullPath {
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
   '/privacy': typeof AppPrivacyRoute
-  '/reports': typeof AppReportsRoute
+  '/reports': typeof AppReportsRouteWithChildren
   '/settings': typeof AppSettingsRouteWithChildren
   '/terms': typeof AppTermsRoute
   '/timeline': typeof AppTimelineRoute
@@ -433,6 +439,7 @@ export interface FileRoutesByFullPath {
   '/care/$ownerId': typeof AppCareOwnerIdRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
+  '/reports/new': typeof AppReportsNewRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
   '/settings/sharing': typeof AppSettingsSharingRoute
@@ -474,7 +481,7 @@ export interface FileRoutesByTo {
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
   '/privacy': typeof AppPrivacyRoute
-  '/reports': typeof AppReportsRoute
+  '/reports': typeof AppReportsRouteWithChildren
   '/settings': typeof AppSettingsRouteWithChildren
   '/terms': typeof AppTermsRoute
   '/timeline': typeof AppTimelineRoute
@@ -495,6 +502,7 @@ export interface FileRoutesByTo {
   '/care/$ownerId': typeof AppCareOwnerIdRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
+  '/reports/new': typeof AppReportsNewRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
   '/settings/sharing': typeof AppSettingsSharingRoute
@@ -539,7 +547,7 @@ export interface FileRoutesById {
   '/_app/meds': typeof AppMedsRouteWithChildren
   '/_app/my-health': typeof AppMyHealthRoute
   '/_app/privacy': typeof AppPrivacyRoute
-  '/_app/reports': typeof AppReportsRoute
+  '/_app/reports': typeof AppReportsRouteWithChildren
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/terms': typeof AppTermsRoute
   '/_app/timeline': typeof AppTimelineRoute
@@ -560,6 +568,7 @@ export interface FileRoutesById {
   '/_app/care/$ownerId': typeof AppCareOwnerIdRoute
   '/_app/journal/new': typeof AppJournalNewRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
+  '/_app/reports/new': typeof AppReportsNewRoute
   '/_app/seizures/new': typeof AppSeizuresNewRoute
   '/_app/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
   '/_app/settings/sharing': typeof AppSettingsSharingRoute
@@ -625,6 +634,7 @@ export interface FileRouteTypes {
     | '/care/$ownerId'
     | '/journal/new'
     | '/meds/$medId'
+    | '/reports/new'
     | '/seizures/new'
     | '/settings/how-purple-thinks'
     | '/settings/sharing'
@@ -687,6 +697,7 @@ export interface FileRouteTypes {
     | '/care/$ownerId'
     | '/journal/new'
     | '/meds/$medId'
+    | '/reports/new'
     | '/seizures/new'
     | '/settings/how-purple-thinks'
     | '/settings/sharing'
@@ -751,6 +762,7 @@ export interface FileRouteTypes {
     | '/_app/care/$ownerId'
     | '/_app/journal/new'
     | '/_app/meds/$medId'
+    | '/_app/reports/new'
     | '/_app/seizures/new'
     | '/_app/settings/how-purple-thinks'
     | '/_app/settings/sharing'
@@ -1123,6 +1135,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSeizuresNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/reports/new': {
+      id: '/_app/reports/new'
+      path: '/new'
+      fullPath: '/reports/new'
+      preLoaderRoute: typeof AppReportsNewRouteImport
+      parentRoute: typeof AppReportsRoute
+    }
     '/_app/meds/$medId': {
       id: '/_app/meds/$medId'
       path: '/$medId'
@@ -1273,6 +1292,18 @@ const AppMedsRouteChildren: AppMedsRouteChildren = {
 const AppMedsRouteWithChildren =
   AppMedsRoute._addFileChildren(AppMedsRouteChildren)
 
+interface AppReportsRouteChildren {
+  AppReportsNewRoute: typeof AppReportsNewRoute
+}
+
+const AppReportsRouteChildren: AppReportsRouteChildren = {
+  AppReportsNewRoute: AppReportsNewRoute,
+}
+
+const AppReportsRouteWithChildren = AppReportsRoute._addFileChildren(
+  AppReportsRouteChildren,
+)
+
 interface AppSettingsRouteChildren {
   AppSettingsHowPurpleThinksRoute: typeof AppSettingsHowPurpleThinksRoute
   AppSettingsSharingRoute: typeof AppSettingsSharingRoute
@@ -1310,7 +1341,7 @@ interface AppRouteChildren {
   AppMedsRoute: typeof AppMedsRouteWithChildren
   AppMyHealthRoute: typeof AppMyHealthRoute
   AppPrivacyRoute: typeof AppPrivacyRoute
-  AppReportsRoute: typeof AppReportsRoute
+  AppReportsRoute: typeof AppReportsRouteWithChildren
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppTermsRoute: typeof AppTermsRoute
   AppTimelineRoute: typeof AppTimelineRoute
@@ -1334,7 +1365,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMedsRoute: AppMedsRouteWithChildren,
   AppMyHealthRoute: AppMyHealthRoute,
   AppPrivacyRoute: AppPrivacyRoute,
-  AppReportsRoute: AppReportsRoute,
+  AppReportsRoute: AppReportsRouteWithChildren,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppTermsRoute: AppTermsRoute,
   AppTimelineRoute: AppTimelineRoute,
