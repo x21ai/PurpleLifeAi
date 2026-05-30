@@ -869,6 +869,7 @@ export type Database = {
           scheduled_at: string
           status: string
           taken_at: string | null
+          trip_id: string | null
           unit: string | null
           user_id: string
         }
@@ -882,6 +883,7 @@ export type Database = {
           scheduled_at: string
           status?: string
           taken_at?: string | null
+          trip_id?: string | null
           unit?: string | null
           user_id: string
         }
@@ -895,6 +897,7 @@ export type Database = {
           scheduled_at?: string
           status?: string
           taken_at?: string | null
+          trip_id?: string | null
           unit?: string | null
           user_id?: string
         }
@@ -1615,9 +1618,14 @@ export type Database = {
           created_at: string
           depart_at: string
           destination_tz: string
+          home_tz_snapshot: string | null
           id: string
           label: string | null
+          legs: Json
           return_at: string
+          schedule_generated_at: string | null
+          shift_hours_per_day: number
+          shift_strategy: string
           status: string
           user_id: string
         }
@@ -1625,9 +1633,14 @@ export type Database = {
           created_at?: string
           depart_at: string
           destination_tz: string
+          home_tz_snapshot?: string | null
           id?: string
           label?: string | null
+          legs?: Json
           return_at: string
+          schedule_generated_at?: string | null
+          shift_hours_per_day?: number
+          shift_strategy?: string
           status?: string
           user_id: string
         }
@@ -1635,9 +1648,14 @@ export type Database = {
           created_at?: string
           depart_at?: string
           destination_tz?: string
+          home_tz_snapshot?: string | null
           id?: string
           label?: string | null
+          legs?: Json
           return_at?: string
+          schedule_generated_at?: string | null
+          shift_hours_per_day?: number
+          shift_strategy?: string
           status?: string
           user_id?: string
         }
