@@ -131,7 +131,7 @@ export function MedicationFormSheet({
       const { data, error } = await supabase
         .from("medications")
         .select(
-          "name, kind, dosage_form, dosage_amount, dosage_unit, with_food, schedule, times_of_day, pills_remaining, refill_threshold, prescriber_name, pharmacy_name, prescription_number, is_rescue",
+          "name, kind, dosage_form, dosage_amount, dosage_unit, with_food, schedule, times_of_day, pills_remaining, refill_threshold, prescriber_name, pharmacy_name, prescription_number, is_rescue, reminder_style",
         )
         .eq("id", editingMedId)
         .maybeSingle();
@@ -151,6 +151,7 @@ export function MedicationFormSheet({
         pharmacy_name: string | null;
         prescription_number: string | null;
         is_rescue: boolean;
+        reminder_style: string | null;
       };
       setName(m.name ?? "");
       const resolvedKind: MedKind = m.is_rescue ? "rescue" : (m.kind as MedKind) ?? "medication";
@@ -161,6 +162,7 @@ export function MedicationFormSheet({
       setDosageUnit(unit);
       setUnitMode(DOSAGE_UNITS.includes(unit) ? "preset" : "custom");
       setWithFood(!!m.with_food);
+      setCriticalAlarm(m.reminder_style === "critical");
       const schedule = Array.isArray(m.schedule) ? m.schedule : [];
       if (schedule.length > 0) {
         setTimes(schedule.map((s) => s.time));
