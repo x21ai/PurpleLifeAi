@@ -73,6 +73,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
+import { Route as ApiPublicCronPurgeDeletedAccountsRouteImport } from './routes/api/public/cron/purge-deleted-accounts'
 import { Route as ApiPublicCronDoseRemindersRouteImport } from './routes/api/public/cron/dose-reminders'
 
 const UsersRoute = UsersRouteImport.update({
@@ -399,6 +400,12 @@ const ApiPublicHooksRiskForecasterRoute =
     path: '/api/public/hooks/risk-forecaster',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronPurgeDeletedAccountsRoute =
+  ApiPublicCronPurgeDeletedAccountsRouteImport.update({
+    id: '/api/public/cron/purge-deleted-accounts',
+    path: '/api/public/cron/purge-deleted-accounts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronDoseRemindersRoute =
   ApiPublicCronDoseRemindersRouteImport.update({
     id: '/api/public/cron/dose-reminders',
@@ -465,6 +472,7 @@ export interface FileRoutesByFullPath {
   '/biometrics/': typeof AppBiometricsIndexRoute
   '/journal/': typeof AppJournalIndexRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
+  '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -530,6 +538,7 @@ export interface FileRoutesByTo {
   '/biometrics': typeof AppBiometricsIndexRoute
   '/journal': typeof AppJournalIndexRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
+  '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -598,6 +607,7 @@ export interface FileRoutesById {
   '/_app/biometrics/': typeof AppBiometricsIndexRoute
   '/_app/journal/': typeof AppJournalIndexRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
+  '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -666,6 +676,7 @@ export interface FileRouteTypes {
     | '/biometrics/'
     | '/journal/'
     | '/api/public/cron/dose-reminders'
+    | '/api/public/cron/purge-deleted-accounts'
     | '/api/public/hooks/risk-forecaster'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -731,6 +742,7 @@ export interface FileRouteTypes {
     | '/biometrics'
     | '/journal'
     | '/api/public/cron/dose-reminders'
+    | '/api/public/cron/purge-deleted-accounts'
     | '/api/public/hooks/risk-forecaster'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -798,6 +810,7 @@ export interface FileRouteTypes {
     | '/_app/biometrics/'
     | '/_app/journal/'
     | '/api/public/cron/dose-reminders'
+    | '/api/public/cron/purge-deleted-accounts'
     | '/api/public/hooks/risk-forecaster'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -829,6 +842,7 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   ApiPublicCronDoseRemindersRoute: typeof ApiPublicCronDoseRemindersRoute
+  ApiPublicCronPurgeDeletedAccountsRoute: typeof ApiPublicCronPurgeDeletedAccountsRoute
   ApiPublicHooksRiskForecasterRoute: typeof ApiPublicHooksRiskForecasterRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1287,6 +1301,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRiskForecasterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/purge-deleted-accounts': {
+      id: '/api/public/cron/purge-deleted-accounts'
+      path: '/api/public/cron/purge-deleted-accounts'
+      fullPath: '/api/public/cron/purge-deleted-accounts'
+      preLoaderRoute: typeof ApiPublicCronPurgeDeletedAccountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/dose-reminders': {
       id: '/api/public/cron/dose-reminders'
       path: '/api/public/cron/dose-reminders'
@@ -1461,6 +1482,8 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   ApiPublicCronDoseRemindersRoute: ApiPublicCronDoseRemindersRoute,
+  ApiPublicCronPurgeDeletedAccountsRoute:
+    ApiPublicCronPurgeDeletedAccountsRoute,
   ApiPublicHooksRiskForecasterRoute: ApiPublicHooksRiskForecasterRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
