@@ -14,7 +14,7 @@ import dawn from "@/assets/hero-readiness-dawn.jpg";
 import mist from "@/assets/hero-readiness-mist.jpg";
 
 export const Route = createFileRoute("/_app/welcome")({
-  head: () => ({ meta: [{ title: "Welcome — Purple" }] }),
+  head: () => ({ meta: [{ title: "Welcome to Purple" }] }),
   component: WelcomePage,
 });
 
