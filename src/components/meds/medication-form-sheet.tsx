@@ -548,6 +548,41 @@ export function MedicationFormSheet({
             <Switch checked={criticalAlarm} onCheckedChange={setCriticalAlarm} />
           </div>
 
+          <div className="space-y-2 rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-foreground">Reminder sound</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {criticalAlarm
+                    ? "Plays on a loop until you confirm the dose."
+                    : "Plays once when the reminder fires."}
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                onClick={() => playAlarmOnce(alarmSound)}
+                aria-label="Preview sound"
+              >
+                <Volume2 className="h-4 w-4" />
+              </Button>
+            </div>
+            <Select value={alarmSound} onValueChange={(v) => setAlarmSound(v as AlarmSoundId)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ALARM_SOUNDS.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    <span className="font-medium">{s.label}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">{s.description}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {isRescue ? (
             <p className="text-sm text-muted-foreground rounded-xl bg-secondary/60 p-4">
               Rescue meds are logged when taken, not on a schedule.
