@@ -5,9 +5,9 @@ import { SiteFooter } from "@/components/layout/site-footer";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About — Purple" },
-      { name: "description", content: "Purple is a calm, open-source AI companion for people living with epilepsy, built by people who get it." },
-      { property: "og:title", content: "About — Purple" },
+      { title: "About Purple" },
+      { name: "description", content: "Purple is a calm, open-source companion for people living with chronic conditions, built by people who get it." },
+      { property: "og:title", content: "About Purple" },
       { property: "og:description", content: "Why we built Purple." },
     ],
     links: [{ rel: "canonical", href: "/about" }],
@@ -30,8 +30,8 @@ function AboutPage() {
           Calm, quiet, on your side.
         </h1>
         <div className="mt-10 space-y-6 text-lg text-muted-foreground leading-relaxed">
-          <p>Living with epilepsy means watching your body, your meds, your sleep, your moods — every day. Most apps that try to help feel like spreadsheets. Cold, demanding, full of charts that don&rsquo;t answer the question you actually have.</p>
-          <p>Purple is different. It listens before it speaks. It captures whatever you can give it — a sentence, a voice memo, a photo — and quietly builds a picture of you over time. When you have a question, Purple has read the chapters that matter.</p>
+          <p>Living with a chronic condition means watching your body, your meds, your sleep, your moods. Every day. Most apps that try to help feel like spreadsheets. Cold, demanding, full of charts that don&rsquo;t answer the question you actually have.</p>
+          <p>Purple is different. It listens before it speaks. It takes whatever you can give it. A sentence. A voice memo. A photo. And it quietly builds a picture of you over time. When you have a question, Purple has read the chapters that matter.</p>
           <p>We&rsquo;re free, open source, and ad-free forever. Your data is yours. Always.</p>
         </div>
         <div className="mt-12">

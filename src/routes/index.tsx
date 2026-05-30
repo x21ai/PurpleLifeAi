@@ -6,13 +6,13 @@ import { SiteFooter } from "@/components/layout/site-footer";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Purple — A calm AI companion for epilepsy" },
+      { title: "Purple. A quiet companion for your health." },
       {
         name: "description",
         content:
-          "Purple is a private, AI-powered health journal for people managing epilepsy. Write, speak, snap — Purple remembers, notices patterns, and helps you stay one step ahead.",
+          "A private health journal for people living with conditions that need daily attention. Epilepsy. Migraine. Diabetes. Mental health. And more. Write it, say it, snap it. Purple remembers.",
       },
-      { property: "og:title", content: "Purple — A calm AI companion for epilepsy" },
+      { property: "og:title", content: "Purple. A quiet companion for your health." },
       {
         property: "og:description",
         content: "Free forever. Open source. Your data stays yours.",
@@ -34,19 +34,19 @@ function MarketingHome() {
         <section className="mx-auto max-w-5xl px-6 sm:px-10 pt-16 sm:pt-24 lg:pt-32 pb-16 sm:pb-24 text-center">
           <p className="label-eyebrow">Free forever · Open source</p>
           <h1 className="mt-6 font-serif text-4xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight">
-            A quiet intelligence
+            Your health,
             <br />
-            for your health.
+            remembered.
           </h1>
           <p className="mt-8 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Purple is an AI journal made for people with epilepsy and the people who care for them.
-            Write, speak, or snap whatever&rsquo;s happening with your body — Purple listens,
-            remembers, and quietly notices the patterns over time.
+            A private journal for people living with conditions that take daily attention.
+            Epilepsy. Migraine. Diabetes. Mental health. And more.
+            Write it. Say it. Snap it. Purple keeps it, and helps you see what matters.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button asChild className="h-12 px-7 text-base rounded-xl">
               <Link to="/sign-up">
-                Get started — free <ArrowRight className="ml-1.5 h-4 w-4" />
+                Get started. Free. <ArrowRight className="ml-1.5 h-4 w-4" />
               </Link>
             </Button>
             <Button asChild variant="outline" className="h-12 px-7 text-base rounded-xl">
@@ -65,22 +65,22 @@ function MarketingHome() {
             <FeatureCard
               icon={BookOpen}
               title="Capture everything"
-              body="Text, voice, photos, video — log a moment in seconds. AI tags and summarizes so nothing gets lost."
+              body="Text, voice, photos, video. Log a moment in seconds. Purple tags and summarizes so nothing gets lost."
             />
             <FeatureCard
               icon={Sparkles}
               title="Ask Purple anything"
-              body="A floating bubble on every screen. Ask about your sleep, your meds, your patterns — Purple knows your history."
+              body="A floating bubble on every screen. Ask about your sleep, your meds, your patterns. Purple knows your history."
             />
             <FeatureCard
               icon={Clock}
               title="See the full picture"
-              body="One timeline of seizures, meds, journal moments, and biometrics. Filter by day, week, month, or year."
+              body="One timeline of symptoms, meds, journal moments, and biometrics. Filter by day, week, month, or year."
             />
             <FeatureCard
               icon={TrendingUp}
               title="Notice patterns early"
-              body="Daily risk forecast based on sleep, HRV, missed doses, and triggers from your own history."
+              body="Daily insights based on sleep, HRV, missed doses, and triggers from your own history."
             />
             <FeatureCard
               icon={Shield}
@@ -99,9 +99,9 @@ function MarketingHome() {
         <section className="mx-auto max-w-4xl px-6 sm:px-10 py-16 sm:py-24 border-t border-border text-center">
           <h2 className="font-serif text-3xl sm:text-4xl">Built for you, with you</h2>
           <p className="mt-6 text-base sm:text-lg text-muted-foreground leading-relaxed">
-            If you live with epilepsy, care for someone who does, or just want a calm place to track
-            how your body feels day to day — Purple is for you. We built it because the alternatives
-            felt cold, clinical, and overwhelming. Purple is warm, quiet, and patient.
+            If you live with a chronic condition, care for someone who does, or simply want a calm
+            place to track how your body feels day to day, Purple is for you. We built it because
+            the alternatives felt cold, clinical, and overwhelming. Purple is warm, quiet, and patient.
           </p>
           <div className="mt-10">
             <Button asChild className="h-12 px-7 text-base rounded-xl">
@@ -122,7 +122,7 @@ function MarketingHeader() {
   return (
     <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border">
       <div className="mx-auto max-w-6xl px-6 sm:px-10 h-16 flex items-center justify-between">
-        <Link to="/" className="wordmark text-[14px] text-foreground" aria-label="Purple — home">
+        <Link to="/" className="wordmark text-[14px] text-foreground" aria-label="Purple home">
           Purple
         </Link>
         <nav className="hidden sm:flex items-center gap-6 text-sm text-muted-foreground">
