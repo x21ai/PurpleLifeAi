@@ -17,6 +17,7 @@ import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { rearmMedicationNotifications } from "@/lib/med-notifications";
 import { ThemeProvider, themeBootstrapScript } from "@/lib/theme-provider";
 import "@/i18n";
+import { hydrateLocale } from "@/i18n";
 
 function NotFoundComponent() {
   // Compatibility: the internal `_app` segment is a TanStack route-group,
@@ -159,6 +160,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
+  // Resolve navigator → saved → default *after* hydration so the SSR markup
+  // (always rendered in the default locale) matches the first client render.
+  useEffect(() => {
+    hydrateLocale();
+  }, []);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
