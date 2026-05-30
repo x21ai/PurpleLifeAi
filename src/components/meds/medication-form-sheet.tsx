@@ -383,7 +383,7 @@ export function MedicationFormSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-2xl">
-        <SheetHeader className="px-5 pt-5 pb-3 flex-row items-center justify-between space-y-0 border-b border-border">
+        <SheetHeader className="px-5 pt-5 pb-3 pr-14 flex-row items-center justify-between space-y-0 border-b border-border">
           <SheetTitle className="font-serif text-lg font-normal">{isEditing ? "Edit medication" : "Add medication"}</SheetTitle>
           <Button onClick={handleSave} disabled={!canSave || saving} size="sm" className="rounded-full px-5">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : isEditing ? "Save changes" : "Save"}
