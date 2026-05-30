@@ -3,9 +3,6 @@ import { initReactI18next } from "react-i18next";
 import en from "./locales/en.json";
 import es from "./locales/es.json";
 
-// Single source of truth for supported UI languages.
-// Profile.locale persists the user's choice; on first load we fall back
-// to browser detection so signed-out marketing pages still match.
 export const SUPPORTED_LOCALES = [
   { value: "en", label: "English" },
   { value: "es", label: "Español" },
@@ -13,18 +10,51 @@ export const SUPPORTED_LOCALES = [
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]["value"];
 
-const isBrowser = typeof window !== "undefined";
+export const DEFAULT_LOCALE: SupportedLocale = "en";
+const STORAGE_KEY = "purple-locale";
+const SUPPORTED_VALUES = SUPPORTED_LOCALES.map((l) => l.value) as readonly SupportedLocale[];
 
-function initialLanguage(): SupportedLocale {
-  if (!isBrowser) return "en";
+function isSupported(value: unknown): value is SupportedLocale {
+  return typeof value === "string" && (SUPPORTED_VALUES as readonly string[]).includes(value);
+}
+
+function normalize(raw: string | null | undefined): SupportedLocale | null {
+  if (!raw) return null;
+  const base = raw.toLowerCase().split(/[-_]/)[0];
+  return isSupported(base) ? base : null;
+}
+
+function readStoredLocale(): SupportedLocale | null {
+  if (typeof window === "undefined") return null;
   try {
-    const stored = localStorage.getItem("purple-locale");
-    if (stored === "en" || stored === "es") return stored;
+    return normalize(window.localStorage.getItem(STORAGE_KEY));
   } catch {
-    // ignore
+    return null;
   }
-  const nav = (navigator.language || "en").toLowerCase();
-  return nav.startsWith("es") ? "es" : "en";
+}
+
+function readNavigatorLocale(): SupportedLocale | null {
+  if (typeof navigator === "undefined") return null;
+  const langs: string[] = Array.isArray(navigator.languages) && navigator.languages.length
+    ? [...navigator.languages]
+    : navigator.language
+      ? [navigator.language]
+      : [];
+  for (const lang of langs) {
+    const match = normalize(lang);
+    if (match) return match;
+  }
+  return null;
+}
+
+/**
+ * Fallback chain: navigator → saved profile (localStorage cache) → default.
+ * Returns DEFAULT_LOCALE on the server so SSR is deterministic and identical
+ * across requests; the browser re-resolves after hydration via `hydrateLocale`.
+ */
+export function resolveClientLocale(): SupportedLocale {
+  if (typeof window === "undefined") return DEFAULT_LOCALE;
+  return readNavigatorLocale() ?? readStoredLocale() ?? DEFAULT_LOCALE;
 }
 
 if (!i18n.isInitialized) {
@@ -35,9 +65,11 @@ if (!i18n.isInitialized) {
         en: { translation: en },
         es: { translation: es },
       },
-      lng: initialLanguage(),
-      fallbackLng: "en",
-      supportedLngs: SUPPORTED_LOCALES.map((l) => l.value),
+      // Always start with the default so server and first client render
+      // produce identical markup. `hydrateLocale()` switches post-hydration.
+      lng: DEFAULT_LOCALE,
+      fallbackLng: DEFAULT_LOCALE,
+      supportedLngs: SUPPORTED_VALUES as unknown as string[],
       interpolation: { escapeValue: false },
       react: { useSuspense: false },
     });
@@ -46,17 +78,26 @@ if (!i18n.isInitialized) {
 export default i18n;
 
 export function setLocale(locale: SupportedLocale) {
+  if (!isSupported(locale)) return;
   void i18n.changeLanguage(locale);
+  if (typeof window === "undefined") return;
   try {
-    localStorage.setItem("purple-locale", locale);
+    window.localStorage.setItem(STORAGE_KEY, locale);
   } catch {
     // ignore — private mode
   }
 }
 
 export function detectBrowserLocale(): SupportedLocale {
-  if (typeof navigator === "undefined") return "en";
-  const raw = (navigator.language || "en").toLowerCase();
-  if (raw.startsWith("es")) return "es";
-  return "en";
+  return readNavigatorLocale() ?? DEFAULT_LOCALE;
+}
+
+/**
+ * Browser-only. Call inside `useEffect` after hydration to switch i18next
+ * to the resolved locale without causing an SSR/CSR markup mismatch.
+ */
+export function hydrateLocale(): SupportedLocale {
+  const next = resolveClientLocale();
+  if (i18n.language !== next) void i18n.changeLanguage(next);
+  return next;
 }
