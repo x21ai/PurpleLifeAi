@@ -51,6 +51,7 @@ import { Route as AppAdminIndexRouteImport } from './routes/_app/admin.index'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
+import { Route as AppSettingsTravelRouteImport } from './routes/_app/settings.travel'
 import { Route as AppSettingsSharingRouteImport } from './routes/_app/settings.sharing'
 import { Route as AppSettingsHowPurpleThinksRouteImport } from './routes/_app/settings.how-purple-thinks'
 import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
@@ -283,6 +284,11 @@ const AppTodayRiskRoute = AppTodayRiskRouteImport.update({
   path: '/risk',
   getParentRoute: () => AppTodayRoute,
 } as any)
+const AppSettingsTravelRoute = AppSettingsTravelRouteImport.update({
+  id: '/travel',
+  path: '/travel',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
 const AppSettingsSharingRoute = AppSettingsSharingRouteImport.update({
   id: '/sharing',
   path: '/sharing',
@@ -451,6 +457,7 @@ export interface FileRoutesByFullPath {
   '/seizures/new': typeof AppSeizuresNewRoute
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
   '/settings/sharing': typeof AppSettingsSharingRoute
+  '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
@@ -515,6 +522,7 @@ export interface FileRoutesByTo {
   '/seizures/new': typeof AppSeizuresNewRoute
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
   '/settings/sharing': typeof AppSettingsSharingRoute
+  '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
@@ -582,6 +590,7 @@ export interface FileRoutesById {
   '/_app/seizures/new': typeof AppSeizuresNewRoute
   '/_app/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
   '/_app/settings/sharing': typeof AppSettingsSharingRoute
+  '/_app/settings/travel': typeof AppSettingsTravelRoute
   '/_app/today/risk': typeof AppTodayRiskRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
@@ -649,6 +658,7 @@ export interface FileRouteTypes {
     | '/seizures/new'
     | '/settings/how-purple-thinks'
     | '/settings/sharing'
+    | '/settings/travel'
     | '/today/risk'
     | '/lovable/email/suppression'
     | '/oauth/oura/callback'
@@ -713,6 +723,7 @@ export interface FileRouteTypes {
     | '/seizures/new'
     | '/settings/how-purple-thinks'
     | '/settings/sharing'
+    | '/settings/travel'
     | '/today/risk'
     | '/lovable/email/suppression'
     | '/oauth/oura/callback'
@@ -779,6 +790,7 @@ export interface FileRouteTypes {
     | '/_app/seizures/new'
     | '/_app/settings/how-purple-thinks'
     | '/_app/settings/sharing'
+    | '/_app/settings/travel'
     | '/_app/today/risk'
     | '/lovable/email/suppression'
     | '/oauth/oura/callback'
@@ -1121,6 +1133,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTodayRiskRouteImport
       parentRoute: typeof AppTodayRoute
     }
+    '/_app/settings/travel': {
+      id: '/_app/settings/travel'
+      path: '/travel'
+      fullPath: '/settings/travel'
+      preLoaderRoute: typeof AppSettingsTravelRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
     '/_app/settings/sharing': {
       id: '/_app/settings/sharing'
       path: '/sharing'
@@ -1330,11 +1349,13 @@ const AppReportsRouteWithChildren = AppReportsRoute._addFileChildren(
 interface AppSettingsRouteChildren {
   AppSettingsHowPurpleThinksRoute: typeof AppSettingsHowPurpleThinksRoute
   AppSettingsSharingRoute: typeof AppSettingsSharingRoute
+  AppSettingsTravelRoute: typeof AppSettingsTravelRoute
 }
 
 const AppSettingsRouteChildren: AppSettingsRouteChildren = {
   AppSettingsHowPurpleThinksRoute: AppSettingsHowPurpleThinksRoute,
   AppSettingsSharingRoute: AppSettingsSharingRoute,
+  AppSettingsTravelRoute: AppSettingsTravelRoute,
 }
 
 const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
