@@ -1,70 +1,61 @@
-## Phase D — Surface what Phase B & C already built
+## What's actually wrong
 
-Five small slices that make the existing plumbing visible. Caregiver audit (item 5) is already done — the proposeChange → pending_changes flow is the only write path from caregiver UI; no fixes needed.
+**1. Google button text is invisible** — `social-sign-in-buttons.tsx:84` uses `text-foreground` on a `bg-white` button. On the dark sign-in page, `--foreground` is near-white, so white-on-white. Apple button is fine because it correctly uses `text-black`.
 
----
+**2. Sign-in order is backwards** — `sign-in.tsx:192-203` renders `<SocialSignInButtons />` first, then an "or continue with email" divider, then the email form. Apple's pattern (Health, iCloud, App Store sign-in sheets) is the opposite: the primary credential form is up top, alternate identity providers sit beneath a divider as "Other ways to sign in."
 
-### 1. Trip banner shows active leg city + next dose
+**3. Settings links** — every route the page links to exists in `src/routes/` (`/meds`, `/settings/sharing`, `/settings/travel`, `/reports`, `/community`, `/contact`, `/admin`, `/seizures/new`). The earlier "nothing happens on Travel mode" was a stale SSR/HMR error in `push.functions.ts` that crashed the whole `_app/settings` route — that one was cleared by restarting the dev server in the previous turn. I have not, however, hand-clicked every link in the current build. The user is right that I should — that's part of this plan.
 
-**File:** `src/components/travel/trip-banner.tsx`
+**4. Slow loading** — `_app/settings.tsx` eagerly imports `OuraConnection`, `DataSection`, `AboutSection`, `PreferencesSection`, `PhoneAlarmsSection`, plus the auth context fetch + a `profiles.conditions` read, all on first paint. Every section ships its own data hooks. Settings is below-the-fold for most of these, so they should code-split.
 
-Today the banner only shows a generic "Travel mode" pill when a trip is active. Upgrade it to:
+## What I'll change
 
-- Fetch `trips.legs`, `home_tz_snapshot`, plus the next pending `medication_doses` row inside the trip window.
-- Compute the **active leg** = the leg with the latest `from_at <= now`.
-- Render: `You're in {leg.label or short-tz}. Next dose 9:00 PM JST · 6:00 AM EST home`, using the existing `DualTime` component.
-- Keep the "Manage" link to `/settings/travel`.
-- Fall back to today's current behaviour when there are no legs or no upcoming dose.
+### A. Sign-in screen — Apple-style order + fix Google
+- Move `<SocialSignInButtons />` **below** the email/password form.
+- The first thing under the headline becomes: tabs (Sign in / Create account) → email → password → Sign in button → "Forgot password?"
+- Below that: a thin divider with the label **"Or use another account"** (not "or continue with email" — that label only makes sense when social is on top).
+- The social block keeps Apple + Google but with the helper line **"Quick sign-in with"** instead of "Sign in with the account you already have."
+- Force both social buttons to `text-black` (and remove the misleading `text-foreground` on Google). Match Apple's exact treatment so they read identically on dark and light themes.
 
-Responsive: stack the dose line under the city line on narrow widths, inline on `sm+`.
+### B. Settings link audit — click every row end-to-end
+On mobile viewport (390×715), with the dev sandbox open, walk each row in `/settings`, click it, confirm the destination renders, then come back. Specifically:
 
----
+```
+/settings → /meds                 (Medications card + Old medications card)
+/settings → /settings/sharing     (Sharing & access)
+/settings → /settings/travel      (Travel mode)
+/settings → /reports              (Lab reports)
+/settings → /community            (Community)
+/settings → /contact              (Contact the team)
+/settings → /admin                (only if admin)
+/settings → /seizures/new         (Past episodes, only if seizure user)
+/settings → /settings/how-purple-thinks (How Purple thinks row in Preferences)
+About section → /charter, /privacy, GitHub external link
+Data section → Export everything (downloads zip), Delete everything (opens type-to-confirm)
+Phone alarms → Enable phone alarms
+Connections → Oura Sync / Disconnect / Auto-sync select
+```
 
-### 2. Wire condition prompts into Today + Journal
+For any link that fails to navigate, I'll trace whether it's:
+- a wrong `to=` path (fix the prop),
+- a missing route file (create it or remove the link),
+- a click intercept from the bottom dock / overlay sheet (fix z-index or pointer-events),
+- a runtime error that swallows the click (fix the underlying error).
 
-**Files:** `src/routes/_app/today.tsx`, `src/components/journal/capture-sheet.tsx`
+I'll report each row's status in the closing summary, not just say "audited."
 
-- Today already loads `profiles.first_name` — extend the same query to fetch `conditions`. When `forecast.ai_narrative` is empty, pick the first item from `promptsForConditions(conditions)` instead of the static "How's today feeling?".
-- Capture sheet: load `profiles.conditions` once on open and rotate the `Textarea` placeholder through `promptsForConditions(...)` (deterministic by day-of-year so the same prompt sticks for the whole day, no jarring change between opens).
+### C. Settings page perf — lazy-load heavy sections
+The first paint only needs the heading, Account card, and the main link list. Everything from Appearance downward (Phone alarms, Preferences, Data, About) loads via `React.lazy` + `<Suspense>` with a small skeleton. This:
+- gets the link cards on screen and tappable in one render,
+- removes the OneSignal / push subscription probe from blocking initial paint,
+- removes the Lovable AI model fetch and Oura status fetch from the critical path.
 
-No new dependencies, no schema change.
+The `profiles.conditions` fetch in `SettingsPage` stays (it gates the "Past episodes" link visibility) but moves into a `useQuery` so it's not blocking and gets cached for the rest of the session.
 
----
+### D. Done across mobile + tablet + desktop
+Per workspace rules, the sign-in reorder and Settings audit are verified at 390px, 768px, and 1280px viewports before I close out.
 
-### 3. Ask-Purple system prompt gets conditions context
-
-**File:** `supabase/functions/ai-orchestrator/index.ts` (pre-existing edge function — keeps the chat layer where it already lives)
-
-- Extend the `profiles` select in the chat handler to also pull `conditions, conditions_note`.
-- Build `userSystem = SYSTEM_PROMPT + "\n\nThis person is managing: …. They also noted: …."` when present.
-- Make `callClaudeOnce` and `callGeminiViaLovableAI` accept the system string as an argument (default to `SYSTEM_PROMPT` for the extractor path that already passes its own).
-
-No tool changes, no behaviour change for users without conditions set.
-
----
-
-### 4. Travel schedule preview before "Generate"
-
-**Files:** `src/lib/travel.functions.ts`, `src/routes/_app/settings.travel.tsx`
-
-- Add `previewTripSchedule` server fn — same body as `generateTripSchedule` but no DB writes; returns `{ homeTz, doses: [{ medication_id, medication_name, scheduled_at, leg_tz, amount, unit }], slotCount }`.
-- In Settings → Travel, add a "Preview schedule" button next to each trip's "Generate" button. Opens a `Dialog` with doses grouped by local date (in the active leg's tz), each row showing medication name + DualTime (leg tz vs home tz).
-- "Generate" button stays as-is; users can preview, tweak strategy, then generate.
-
-Responsive: dialog uses `max-w-2xl`, body scrolls; on mobile the dialog goes full-height.
-
----
-
-### 5. Caregiver "confirm to write" audit — DONE
-
-Verified during exploration: the only caregiver write path is `ProposeChangeDialog` → `proposeChange` server fn → `pending_changes`. Owner approval applies via `decidePendingChange`. No direct DB writes from caregiver UI code. No fix required.
-
----
-
-## Out of scope (intentional)
-
-- No new tables, no migrations. Everything reuses existing columns.
-- No model/provider changes — Ask-Purple stays on Claude/Gemini per user preference.
-- Preview doesn't write `schedule_generated_at` — only "Generate" does.
-
-Approve to switch to build mode and ship this.
+## Out of scope
+- I'm not redesigning the sign-in hero, copy, or branding — only the form/social order and the Google text color.
+- I'm not changing what each Settings row links to or how each destination page works (Sharing, Travel, Reports, etc. — those landed in previous turns). Only making sure the links actually work and the page feels fast.
+- Soft-delete, restore banner, condition gating, and Trip Banner CTAs from the previous turns stay as they are.
