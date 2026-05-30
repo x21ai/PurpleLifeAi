@@ -1,61 +1,100 @@
-## What's actually wrong
+## What's wrong today
 
-**1. Google button text is invisible** — `social-sign-in-buttons.tsx:84` uses `text-foreground` on a `bg-white` button. On the dark sign-in page, `--foreground` is near-white, so white-on-white. Apple button is fine because it correctly uses `text-black`.
+Going through each complaint after reading the code and the screenshots:
 
-**2. Sign-in order is backwards** — `sign-in.tsx:192-203` renders `<SocialSignInButtons />` first, then an "or continue with email" divider, then the email form. Apple's pattern (Health, iCloud, App Store sign-in sheets) is the opposite: the primary credential form is up top, alternate identity providers sit beneath a divider as "Other ways to sign in."
+### 1. Sharing & Travel mode crash to "This page didn't load" / "Not Found"
+- Both routes call `createServerFn` functions wrapped with `requireSupabaseAuth` (`care.functions.ts`, `travel.functions.ts`).
+- If `attachSupabaseAuth` isn't firing globally in `src/start.ts`, or any of those server fns throw during render, the route's `errorComponent` renders the "This page didn't load" fallback (screenshot 1) and a stale link in the menu / footer renders "Not Found" (screenshot 2).
+- Need to: (a) confirm `attachSupabaseAuth` is registered, (b) wrap each `useQuery` call in defensive error handling so a single failing server fn doesn't blow up the whole page, (c) add proper empty/error states.
 
-**3. Settings links** — every route the page links to exists in `src/routes/` (`/meds`, `/settings/sharing`, `/settings/travel`, `/reports`, `/community`, `/contact`, `/admin`, `/seizures/new`). The earlier "nothing happens on Travel mode" was a stale SSR/HMR error in `push.functions.ts` that crashed the whole `_app/settings` route — that one was cleared by restarting the dev server in the previous turn. I have not, however, hand-clicked every link in the current build. The user is right that I should — that's part of this plan.
+### 2. "Heart Health" typed into the textbox doesn't save anywhere meaningful
+- That field is `profiles.conditions_note` — a free-text note, NOT a condition tag. The user (correctly) expects typing "Heart Health" to add it as a chip and tailor prompts.
+- Fix: turn the textbox into a real "Add custom condition" input that pushes the value into the `conditions` array as a chip (with an X to remove). Keep the note field separate, lower, labeled "Anything else?" — or drop it entirely. Custom conditions get passed into Ask Purple's system prompt just like the built-ins.
 
-**4. Slow loading** — `_app/settings.tsx` eagerly imports `OuraConnection`, `DataSection`, `AboutSection`, `PreferencesSection`, `PhoneAlarmsSection`, plus the auth context fetch + a `profiles.conditions` read, all on first paint. Every section ships its own data hooks. Settings is below-the-fold for most of these, so they should code-split.
+### 3. AI model list is too short
+- Today: only Gemini Flash, Gemini Pro, Claude Sonnet.
+- Add (all already supported by Lovable AI Gateway):
+  - **GPT-5** (OpenAI) — flagship reasoning
+  - **GPT-5 mini** — fast OpenAI
+  - **Gemini 2.5 Pro** — Google's deepest
+- Group them under labels: *Fast*, *Balanced*, *Deepest*. Add a one-line "Why pick this" hint.
+- Grok and a "Maya" persona aren't on the Lovable AI Gateway model list, so they can't be added without a separate API key. I'll call this out and ask before wiring anything custom.
 
-## What I'll change
+### 4. Settings IA is messy — not Apple-grade
+Restructure the Settings hub the way iOS Settings does — grouped, scannable, no orphan rows:
 
-### A. Sign-in screen — Apple-style order + fix Google
-- Move `<SocialSignInButtons />` **below** the email/password form.
-- The first thing under the headline becomes: tabs (Sign in / Create account) → email → password → Sign in button → "Forgot password?"
-- Below that: a thin divider with the label **"Or use another account"** (not "or continue with email" — that label only makes sense when social is on top).
-- The social block keeps Apple + Google but with the helper line **"Quick sign-in with"** instead of "Sign in with the account you already have."
-- Force both social buttons to `text-black` (and remove the misleading `text-foreground` on Google). Match Apple's exact treatment so they read identically on dark and light themes.
+```text
+ACCOUNT
+  pmt@eigital.com  ›  (tap → account detail)
+  Sign out
 
-### B. Settings link audit — click every row end-to-end
-On mobile viewport (390×715), with the dev sandbox open, walk each row in `/settings`, click it, confirm the destination renders, then come back. Specifically:
+YOUR HEALTH
+  Focus & conditions  ›
+  Medications  ›
+  Past episodes  ›   (only if seizure-relevant)
+  Lab reports  ›
 
+PEOPLE
+  Sharing & access  ›
+  Community  ›
+
+APP
+  Travel mode  ›
+  Connections (Oura, …)  ›
+  Notifications & alarms  ›
+  Appearance  ›
+  How Purple thinks  ›
+  AI model  ›
+
+DATA
+  Export        (icon + label, small)
+  Delete        (destructive icon, no long paragraph)
+
+HELP
+  Contact  ›
+  Charter  ›  Privacy  ›  Terms  ›
+
+(Admin console — only visible to admins, lives at the very bottom under its own ADMIN group)
 ```
-/settings → /meds                 (Medications card + Old medications card)
-/settings → /settings/sharing     (Sharing & access)
-/settings → /settings/travel      (Travel mode)
-/settings → /reports              (Lab reports)
-/settings → /community            (Community)
-/settings → /contact              (Contact the team)
-/settings → /admin                (only if admin)
-/settings → /seizures/new         (Past episodes, only if seizure user)
-/settings → /settings/how-purple-thinks (How Purple thinks row in Preferences)
-About section → /charter, /privacy, GitHub external link
-Data section → Export everything (downloads zip), Delete everything (opens type-to-confirm)
-Phone alarms → Enable phone alarms
-Connections → Oura Sync / Disconnect / Auto-sync select
-```
 
-For any link that fails to navigate, I'll trace whether it's:
-- a wrong `to=` path (fix the prop),
-- a missing route file (create it or remove the link),
-- a click intercept from the bottom dock / overlay sheet (fix z-index or pointer-events),
-- a runtime error that swallows the click (fix the underlying error).
+- "Contact the team" and "Admin console" stop sitting in the main list as if they're equal to Travel; Contact moves to Help, Admin gets its own admin-only group at the bottom.
+- "Delete everything" becomes a small destructive icon-button with a tooltip ("Delete account") and an `aria-label`. All the warning text moves into the confirmation dialog where it belongs — that already has DELETE + password gating + 60-day restore window.
+- "Export everything" becomes a small icon-button next to it, matching the Apple "quiet utility" pattern.
 
-I'll report each row's status in the closing summary, not just say "audited."
+### 5. "Not Found" on certain pages (screenshot 2)
+- Likely a stale link in the footer/menu (e.g. `/lovable/...` or an old route id). I'll audit `nav-items.ts`, the site footer, and the mobile menu and remove or fix every dead link.
 
-### C. Settings page perf — lazy-load heavy sections
-The first paint only needs the heading, Account card, and the main link list. Everything from Appearance downward (Phone alarms, Preferences, Data, About) loads via `React.lazy` + `<Suspense>` with a small skeleton. This:
-- gets the link cards on screen and tappable in one render,
-- removes the OneSignal / push subscription probe from blocking initial paint,
-- removes the Lovable AI model fetch and Oura status fetch from the critical path.
+## Technical work
 
-The `profiles.conditions` fetch in `SettingsPage` stays (it gates the "Past episodes" link visibility) but moves into a `useQuery` so it's not blocking and gets cached for the rest of the session.
+Files I'll touch:
 
-### D. Done across mobile + tablet + desktop
-Per workspace rules, the sign-in reorder and Settings audit are verified at 390px, 768px, and 1280px viewports before I close out.
+- `src/components/settings/preferences-section.tsx`
+  - Replace the freeform "Anything else" textarea with a custom-condition chip input ("+ Add your own"). Save to `profiles.conditions` array. Keep a small optional note below.
+  - Expand `MODEL_OPTIONS` to include GPT-5, GPT-5 mini, Gemini 2.5 Pro, grouped by speed/depth.
 
-## Out of scope
-- I'm not redesigning the sign-in hero, copy, or branding — only the form/social order and the Google text color.
-- I'm not changing what each Settings row links to or how each destination page works (Sharing, Travel, Reports, etc. — those landed in previous turns). Only making sure the links actually work and the page feels fast.
-- Soft-delete, restore banner, condition gating, and Trip Banner CTAs from the previous turns stay as they are.
+- `src/components/settings/data-section.tsx`
+  - Collapse the two big buttons into two small icon buttons (`Download`, `Trash2`) with `aria-label` + tooltip. Keep the dialog flow as-is (it already has DELETE + password + 60-day restore).
+
+- `src/routes/_app/settings.tsx`
+  - Re-group sections into ACCOUNT / YOUR HEALTH / PEOPLE / APP / DATA / HELP / ADMIN as above.
+  - Move Contact under HELP, Admin into its own gated group.
+  - Lazy-load order kept; just regrouped.
+
+- `src/routes/_app/settings.sharing.tsx` & `src/routes/_app/settings.travel.tsx`
+  - Wrap each `useQuery` so a server-fn failure renders a friendly inline empty state, not the full-page error boundary.
+  - Verify `attachSupabaseAuth` is wired in `src/start.ts`; if not, add it.
+
+- `src/lib/condition-prompts.ts`
+  - Helper already exists; just make sure custom-added conditions are merged into the Ask Purple system prompt.
+
+- `src/components/layout/nav-items.ts`, `src/components/layout/site-footer.tsx`, `src/components/layout/sidebar-nav.tsx`
+  - Audit every link; remove or fix anything that 404s.
+
+- Mobile, tablet, and desktop layouts all updated (workspace rule).
+
+## Out of scope (will ask first)
+
+- Adding **Grok** or **Maya** — these need an external API key / custom integration, not just a model-name change. Want me to wire that up after we ship the rest, or skip it for now?
+- Renaming "Seizure" globally — already gated on the epilepsy condition in earlier rounds; leaving as-is unless you want a different label everywhere.
+
+If you approve, I'll implement in that order: (1) fix the broken Sharing/Travel pages and dead links, (2) custom condition chips + expanded AI models, (3) Settings re-grouping + Apple-style icon buttons for Export/Delete.
