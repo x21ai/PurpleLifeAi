@@ -10,6 +10,7 @@ import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 import { BodyMeasurementsRow } from "@/components/ui-oura/v2/body-measurements-row";
 import { ScoreHero, bandForReadiness } from "@/components/ui-oura/v2/score-hero";
 import { TodayDoses } from "@/components/meds/today-doses";
+import { TripBanner } from "@/components/travel/trip-banner";
 import { TodayInstallBanner } from "@/components/pwa/today-install-banner";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
 
@@ -269,6 +270,7 @@ function TodayPage() {
         </div>
       )}
 
+      <TripBanner />
       <TodayDoses />
 
       {bio && (

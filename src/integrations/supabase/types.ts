@@ -958,6 +958,7 @@ export type Database = {
           prescription_number: string | null
           refill_date: string | null
           refill_threshold: number | null
+          reminder_style: string
           schedule: Json
           side_effects_tracked: string[] | null
           start_date: string | null
@@ -986,6 +987,7 @@ export type Database = {
           prescription_number?: string | null
           refill_date?: string | null
           refill_threshold?: number | null
+          reminder_style?: string
           schedule?: Json
           side_effects_tracked?: string[] | null
           start_date?: string | null
@@ -1014,6 +1016,7 @@ export type Database = {
           prescription_number?: string | null
           refill_date?: string | null
           refill_threshold?: number | null
+          reminder_style?: string
           schedule?: Json
           side_effects_tracked?: string[] | null
           start_date?: string | null
@@ -1132,9 +1135,12 @@ export type Database = {
           id: string
           last_name: string | null
           onboarded_at: string | null
+          sleep_time: string
+          snooze_minutes: number
           suspended_at: string | null
           timezone: string | null
           updated_at: string
+          wake_time: string
         }
         Insert: {
           ai_model_preference?: string
@@ -1154,9 +1160,12 @@ export type Database = {
           id: string
           last_name?: string | null
           onboarded_at?: string | null
+          sleep_time?: string
+          snooze_minutes?: number
           suspended_at?: string | null
           timezone?: string | null
           updated_at?: string
+          wake_time?: string
         }
         Update: {
           ai_model_preference?: string
@@ -1176,9 +1185,12 @@ export type Database = {
           id?: string
           last_name?: string | null
           onboarded_at?: string | null
+          sleep_time?: string
+          snooze_minutes?: number
           suspended_at?: string | null
           timezone?: string | null
           updated_at?: string
+          wake_time?: string
         }
         Relationships: []
       }
@@ -1362,6 +1374,39 @@ export type Database = {
           id?: string
           metadata?: Json | null
           reason?: string
+        }
+        Relationships: []
+      }
+      trips: {
+        Row: {
+          created_at: string
+          depart_at: string
+          destination_tz: string
+          id: string
+          label: string | null
+          return_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          depart_at: string
+          destination_tz: string
+          id?: string
+          label?: string | null
+          return_at: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          depart_at?: string
+          destination_tz?: string
+          id?: string
+          label?: string | null
+          return_at?: string
+          status?: string
+          user_id?: string
         }
         Relationships: []
       }

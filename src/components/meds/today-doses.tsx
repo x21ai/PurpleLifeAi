@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
-import { Bell, ChevronRight, MoreVertical, Pill } from "lucide-react";
+import { Bell, ChevronRight, Moon, MoreVertical, Pill } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +19,7 @@ import {
   rearmMedicationNotifications,
   requestPermission,
 } from "@/lib/med-notifications";
+import { DualTime } from "@/components/travel/dual-time";
 
 const PERM_DISMISSED_KEY = "purple-perm-nudge-dismissed";
 
@@ -59,6 +60,10 @@ export function TodayDoses() {
   const { session } = useAuth();
   const userId = session?.user.id;
   const [doses, setDoses] = React.useState<Dose[] | null>(null);
+  const [homeTz, setHomeTz] = React.useState<string | null>(null);
+  const [wakeTime, setWakeTime] = React.useState<string>("07:00");
+  const [sleepTime, setSleepTime] = React.useState<string>("23:00");
+  const [traveling, setTraveling] = React.useState(false);
   const [permState, setPermState] = React.useState<NotificationPermission | "unsupported">(
     "default",
   );
@@ -93,6 +98,58 @@ export function TodayDoses() {
   }, [userId]);
 
   React.useEffect(() => { void load(); }, [load]);
+
+  // Load profile (home tz + wake/sleep) and active trip flag.
+  React.useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    void (async () => {
+      const [{ data: p }, { data: trips }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("timezone, wake_time, sleep_time")
+          .eq("id", userId)
+          .maybeSingle(),
+        supabase
+          .from("trips")
+          .select("id")
+          .lte("depart_at", new Date().toISOString())
+          .gte("return_at", new Date().toISOString())
+          .neq("status", "cancelled")
+          .limit(1),
+      ]);
+      if (cancelled) return;
+      const prof = p as { timezone: string | null; wake_time: string | null; sleep_time: string | null } | null;
+      setHomeTz(prof?.timezone ?? null);
+      if (prof?.wake_time) setWakeTime(prof.wake_time.slice(0, 5));
+      if (prof?.sleep_time) setSleepTime(prof.sleep_time.slice(0, 5));
+      let deviceTz: string | null = null;
+      try { deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { /* noop */ }
+      setTraveling(((trips ?? []).length > 0) || (!!prof?.timezone && !!deviceTz && prof.timezone !== deviceTz));
+    })();
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  // Does this scheduled instant fall inside the user's local sleep window?
+  const isAsleep = (iso: string): boolean => {
+    try {
+      const parts = new Intl.DateTimeFormat([], {
+        hour: "2-digit", minute: "2-digit", hour12: false,
+      }).formatToParts(new Date(iso));
+      const hh = parts.find((p) => p.type === "hour")?.value ?? "00";
+      const mm = parts.find((p) => p.type === "minute")?.value ?? "00";
+      const cur = `${hh}:${mm}`;
+      // sleep window crosses midnight if sleepTime > wakeTime numerically
+      if (sleepTime > wakeTime) {
+        // awake from wake..sleep, asleep otherwise
+        return cur >= sleepTime || cur < wakeTime;
+      }
+      // window crosses midnight (e.g. sleep 02:00, wake 09:00 → unusual)
+      return cur >= sleepTime && cur < wakeTime;
+    } catch {
+      return false;
+    }
+  };
 
   const runAction = async (id: string, action: "taken" | "skip" | "snooze") => {
     const prev = doses;
@@ -239,11 +296,18 @@ export function TodayDoses() {
             <li key={d.id} className="flex flex-wrap items-center gap-2 py-3 first:pt-0 last:pb-0">
               <span
                 className={cn(
-                  "inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-medium tabular-nums",
+                  "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium tabular-nums",
                   statusPillClass(d.status),
                 )}
               >
-                {format(new Date(d.scheduled_at), "h:mm a")}
+                {isAsleep(d.scheduled_at) && (
+                  <Moon className="h-3 w-3" aria-label="During your sleep window" />
+                )}
+                {traveling && homeTz ? (
+                  <DualTime iso={d.scheduled_at} homeTz={homeTz} />
+                ) : (
+                  <span>{format(new Date(d.scheduled_at), "h:mm a")}</span>
+                )}
               </span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-foreground truncate">
