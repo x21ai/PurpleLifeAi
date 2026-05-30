@@ -1,34 +1,69 @@
-## Changes
+# Plan
 
-### 1. Footer visible on all viewports for marketing pages
-- `src/components/layout/site-footer.tsx` — remove `hidden lg:block` so the footer renders on mobile, tablet, and desktop.
-- The signed-in `AppShell` does not render `SiteFooter`, so it stays hidden after sign-in automatically. No app-shell changes needed.
-- `tests/e2e/theme-footer.spec.ts` — update assertion to expect the footer visible at every viewport.
+## 1. Today — calm empty-state for brand-new users
 
-### 2. Charter page — real content, no founder name
-Replace the "Coming soon" placeholder in `src/routes/_app/charter.tsx` with the founding charter, styled to match the existing layout (eyebrow → serif headline → body-serif sections):
+The existing `/today` dashboard stays exactly as it is for returning users. For users with **zero journal entries**, render a calm full-bleed welcome card above the dashboard.
 
-- **Why Purple exists** — for people managing epilepsy and other pattern-driven conditions; named after the global epilepsy awareness color.
-- **The promises we won't break**
-  1. Free forever for individuals
-  2. Open source (Apache 2.0)
-  3. No ads. Ever.
-  4. We never sell your data
-  5. Your data is yours — full export, full delete, anytime
-  6. Conversation-first, not form-first
-  7. Condition-aware, not condition-locked
-  8. Not a medical device — supports you, doesn't replace your clinician
-- **What we will never do** — dark patterns, lock-in, behavioral ads, data brokers, paywalled core journaling.
+- In `src/routes/_app/today.tsx`, add a `journal_entries` count query alongside the existing fetches.
+- When count === 0, render a new `TodayEmptyState` component at the top of the page:
+  - Eyebrow: "Welcome to Purple"
+  - Serif headline: "Start where you are."
+  - One short body line: "Write a sentence, speak a thought, or snap a photo. Purple does the rest."
+  - Primary CTA "Start journaling" → routes to `/journal/new` (existing capture route)
+  - Secondary quiet link "Skip for now" that dismisses the card for the session (localStorage flag)
+- Component lives at `src/components/today/empty-state.tsx`, dark-theme aware, matches the ScoreHero spacing rhythm.
 
-No author/signature line.
+## 2. `/charter` — warmer tone + tighter mobile/desktop rhythm
 
-### 3. Save the rule as memory
-- `mem://design/footer-visibility` — "SiteFooter renders on all viewports for marketing/auth routes only; the signed-in AppShell never renders it."
-- Update `mem://index.md` to reference it.
+Refine copy and layout in `src/routes/_app/charter.tsx`:
+- Soften the headline split ("Why Purple exists." as the H1, drop the abstract "Founding charter.").
+- Reorder sections: **Why Purple exists → Our standard → Promises we keep → Things we won't do**. Ends on warmth, not prohibition.
+- Rewrite each section with the Purple voice (calm, human, never clinical — e.g. "We will never sell your data" → "Your story is yours. We won't sell it, rent it, or hand it to brokers.").
+- Layout: wider serif headline on desktop, narrower measure on mobile, more breathing room between sections (`space-y-14 sm:space-y-16`), larger top padding on mobile so the back-link doesn't crowd the eyebrow.
+- Same content visible on every viewport — no responsive hiding.
 
-### Files touched
-- `src/components/layout/site-footer.tsx`
-- `tests/e2e/theme-footer.spec.ts`
-- `src/routes/_app/charter.tsx`
-- `mem://index.md`
-- `mem://design/footer-visibility`
+## 3. Country, time zone, and language — sign-up + welcome + settings
+
+### Schema (one migration)
+Add to `profiles`:
+- `country` text (ISO 3166-1 alpha-2, nullable)
+- `locale` text (`'en'` | `'es'`, default `'en'`)
+- `timezone` already exists — no change
+
+### Shared picker components (`src/components/locale/`)
+- `country-select.tsx` — searchable combobox, ~50 common countries (full list kept in `src/lib/countries.ts`).
+- `timezone-select.tsx` — uses `Intl.supportedValuesOf('timeZone')` grouped by region, with a "Detect from browser" button (`Intl.DateTimeFormat().resolvedOptions().timeZone`).
+- `language-select.tsx` — English / Español.
+
+All three auto-detect sensible defaults from the browser on first render when the field is empty.
+
+### Where they appear
+- **Sign-up** (`src/routes/sign-up.tsx`): add a compact "Where are you?" block (country + time zone + language) below the password field. Values are written to the profile on first successful sign-in via the existing profile-bootstrap path.
+- **Welcome** (`src/routes/_app/welcome.tsx`): add a "Locale" step / section so users who signed up via Google can set them. Pre-fills from browser detection.
+- **Settings** (`src/components/settings/preferences-section.tsx`): new "Region & language" subsection with the same three pickers, save-on-change with toast confirmation.
+
+### i18n (English + Spanish)
+- Install `i18next` + `react-i18next` + `i18next-browser-languagedetector`.
+- `src/i18n/index.ts` initializes i18next with `en` and `es` resource bundles.
+- `src/i18n/locales/en.json` and `es.json` — start with the visible strings on: nav, sign-in, sign-up, welcome, today empty-state, settings preferences, charter. Other routes keep raw English strings for now and get translated incrementally; the contract is "no schema or component churn needed to add a language later."
+- Provider wired in `src/routes/__root.tsx`.
+- Language source of truth: `profile.locale` once signed in, browser detection before. Updating the setting calls `i18n.changeLanguage()` immediately.
+
+## Files touched
+
+- `supabase/migrations/<new>.sql` — add `country`, `locale` to `profiles`
+- `src/routes/_app/today.tsx` — empty-state branch
+- `src/components/today/empty-state.tsx` *(new)*
+- `src/routes/_app/charter.tsx` — copy + layout
+- `src/lib/countries.ts` *(new)*
+- `src/components/locale/{country,timezone,language}-select.tsx` *(new)*
+- `src/routes/sign-up.tsx` — locale block
+- `src/routes/_app/welcome.tsx` — locale step
+- `src/components/settings/preferences-section.tsx` — Region & language subsection
+- `src/i18n/index.ts` + `src/i18n/locales/{en,es}.json` *(new)*
+- `src/routes/__root.tsx` — i18n provider
+- `package.json` — add `i18next`, `react-i18next`, `i18next-browser-languagedetector`
+
+## Out of scope
+- Translating every route into Spanish in this pass — only the routes listed above. The infra makes incremental translation a copy-paste job.
+- No new edge functions; everything reads/writes through existing profile updates.

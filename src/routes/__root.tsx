@@ -16,6 +16,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { rearmMedicationNotifications } from "@/lib/med-notifications";
 import { ThemeProvider, themeBootstrapScript } from "@/lib/theme-provider";
+import "@/i18n";
 
 function NotFoundComponent() {
   // Compatibility: the internal `_app` segment is a TanStack route-group,
