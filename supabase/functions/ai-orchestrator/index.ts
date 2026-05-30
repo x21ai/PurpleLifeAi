@@ -323,16 +323,22 @@ async function callClaudeOnce(messages: any[], system: string = SYSTEM_PROMPT) {
  * picks Gemini in Settings → Preferences.
  */
 async function callGeminiViaLovableAI(
-  pref: "gemini-flash" | "gemini-pro",
+  pref: string,
   message: string,
   history: { role: "user" | "assistant"; content: string }[],
   system: string = SYSTEM_PROMPT,
 ): Promise<string> {
   if (!LOVABLE_API_KEY) {
-    return "Gemini is not configured for this workspace yet. Switch to Claude in Settings → Preferences and ask me again.";
+    return "This AI model isn't configured for this workspace yet. Switch to Claude in Settings → Preferences and ask me again.";
   }
-  const model =
-    pref === "gemini-pro" ? "google/gemini-2.5-pro" : "google/gemini-3-flash-preview";
+  const MODEL_MAP: Record<string, string> = {
+    "gemini-flash": "google/gemini-3-flash-preview",
+    "gemini-pro": "google/gemini-2.5-pro",
+    "gemini-2.5-pro": "google/gemini-2.5-pro",
+    "gpt-5": "openai/gpt-5",
+    "gpt-5-mini": "openai/gpt-5-mini",
+  };
+  const model = MODEL_MAP[pref] ?? "google/gemini-3-flash-preview";
   const trimmed = history
     .slice(-12)
     .filter((m) => typeof m?.content === "string")
@@ -620,7 +626,7 @@ Deno.serve(async (req) => {
         " Let this quietly shape what you ask about and what you suggest. Don't lecture or list facts about the condition unless asked.";
     }
 
-    if (modelPref === "gemini-flash" || modelPref === "gemini-pro") {
+    if (modelPref !== "claude-sonnet") {
       const reply = await callGeminiViaLovableAI(modelPref, message, history, userSystem);
       return new Response(JSON.stringify({ reply, proposals: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
