@@ -72,7 +72,8 @@ function SettingsPage() {
         Account, privacy, integrations, and how Purple talks to you.
       </p>
 
-      <section className="mt-10 rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <GroupLabel>Account</GroupLabel>
+      <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
         <h2 className="font-serif text-xl text-foreground">Account</h2>
         {session?.user?.email && (
           <p className="mt-1 text-sm text-muted-foreground">
@@ -86,102 +87,27 @@ function SettingsPage() {
         </div>
       </section>
 
-      <section className="mt-6 rounded-2xl border border-border bg-card overflow-hidden">
-        <Link
-          to="/meds"
-          className="flex items-center justify-between p-5 sm:p-6 hover:bg-secondary/40 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <span className="rounded-full bg-secondary p-2 text-secondary-foreground">
-              <Pill className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="font-serif text-lg text-foreground">Medications</p>
-              <p className="text-xs text-muted-foreground">Schedules, reminders, and adherence</p>
-            </div>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </Link>
-      </section>
-
-      <section className="mt-6 rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
-        <Link to="/settings/sharing" className="flex items-center justify-between p-5 sm:p-6 hover:bg-secondary/40 transition-colors">
-          <div className="flex items-center gap-3">
-            <span className="rounded-full bg-secondary p-2 text-secondary-foreground">
-              <HeartHandshake className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="font-serif text-lg text-foreground">Sharing &amp; access</p>
-              <p className="text-xs text-muted-foreground">Invite caregivers, set what they can see, approve any edits</p>
-            </div>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </Link>
-        <Link to="/settings/travel" className="flex items-center justify-between p-5 sm:p-6 hover:bg-secondary/40 transition-colors">
-          <div className="flex items-center gap-3">
-            <span className="rounded-full bg-secondary p-2 text-secondary-foreground">
-              <Plane className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="font-serif text-lg text-foreground">Travel mode</p>
-              <p className="text-xs text-muted-foreground">Plan trips, anchor doses to home time, set home timezone</p>
-            </div>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </Link>
-        <Link to="/reports" className="flex items-center justify-between p-5 sm:p-6 hover:bg-secondary/40 transition-colors">
-          <div className="flex items-center gap-3">
-            <span className="rounded-full bg-secondary p-2 text-secondary-foreground">
-              <FileText className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="font-serif text-lg text-foreground">Lab reports</p>
-              <p className="text-xs text-muted-foreground">Upload labs as PDF or photo. See trends over time. Educational only.</p>
-            </div>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </Link>
-        <Link to="/community" className="flex items-center justify-between p-5 sm:p-6 hover:bg-secondary/40 transition-colors">
-          <div className="flex items-center gap-3">
-            <span className="rounded-full bg-secondary p-2 text-secondary-foreground">
-              <Users className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="font-serif text-lg text-foreground">Community</p>
-              <p className="text-xs text-muted-foreground">Share experiences and find resources</p>
-            </div>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </Link>
-        <Link to="/contact" className="flex items-center justify-between p-5 sm:p-6 hover:bg-secondary/40 transition-colors">
-          <div className="flex items-center gap-3">
-            <span className="rounded-full bg-secondary p-2 text-secondary-foreground">
-              <MessageCircle className="h-4 w-4" />
-            </span>
-            <div>
-              <p className="font-serif text-lg text-foreground">Contact the team</p>
-              <p className="text-xs text-muted-foreground">Questions, feedback, anything</p>
-            </div>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </Link>
-        {isAdmin && (
-          <Link to="/admin" className="flex items-center justify-between p-5 sm:p-6 hover:bg-secondary/40 transition-colors">
-            <div className="flex items-center gap-3">
-              <span className="rounded-full bg-primary/10 p-2 text-primary">
-                <Shield className="h-4 w-4" />
-              </span>
-              <div>
-                <p className="font-serif text-lg text-foreground">Admin console</p>
-                <p className="text-xs text-muted-foreground">Manage users, messages, and community</p>
-              </div>
-            </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </Link>
+      <GroupLabel>Your health</GroupLabel>
+      <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
+        <Row to="/meds" icon={Pill} title="Medications" subtitle="Schedules, reminders, and adherence" />
+        <Row to="/reports" icon={FileText} title="Lab reports" subtitle="Upload labs as PDF or photo. See trends. Educational only." />
+        {showSeizure && (
+          <Row to="/seizures/new" icon={Zap} title="Past episodes" subtitle="Log seizures from any date or time" iconTone="destructive" />
         )}
       </section>
 
-      <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <GroupLabel>People</GroupLabel>
+      <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
+        <Row to="/settings/sharing" icon={HeartHandshake} title="Sharing &amp; access" subtitle="Invite caregivers, set what they see, approve edits" />
+        <Row to="/community" icon={Users} title="Community" subtitle="Share experiences and find resources" />
+      </section>
+
+      <GroupLabel>App</GroupLabel>
+      <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
+        <Row to="/settings/travel" icon={Plane} title="Travel mode" subtitle="Plan trips, anchor doses to home time" />
+      </section>
+
+      <section className="mt-3 rounded-2xl border border-border bg-card p-5 sm:p-6">
         <div className="flex items-center gap-2">
           <History className="h-4 w-4 text-primary" />
           <h2 className="font-serif text-xl text-foreground">Add past history</h2>
@@ -240,13 +166,73 @@ function SettingsPage() {
       <Suspense fallback={<SectionSkeleton />}>
         <PreferencesSection />
       </Suspense>
+
+      <GroupLabel>Data</GroupLabel>
       <Suspense fallback={<SectionSkeleton />}>
         <DataSection />
       </Suspense>
+
+      <GroupLabel>Help</GroupLabel>
+      <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
+        <Row to="/contact" icon={MessageCircle} title="Contact the team" subtitle="Questions, feedback, anything" />
+      </section>
       <Suspense fallback={<SectionSkeleton />}>
         <AboutSection />
       </Suspense>
+
+      {isAdmin && (
+        <>
+          <GroupLabel>Admin</GroupLabel>
+          <section className="rounded-2xl border border-border bg-card overflow-hidden">
+            <Row to="/admin" icon={Shield} title="Admin console" subtitle="Manage users, messages, and community" iconTone="primary" />
+          </section>
+        </>
+      )}
     </div>
+  );
+}
+
+function GroupLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mt-8 mb-2 px-1 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+      {children}
+    </p>
+  );
+}
+
+function Row({
+  to,
+  icon: Icon,
+  title,
+  subtitle,
+  iconTone = "default",
+}: {
+  to: string;
+  icon: typeof Pill;
+  title: string;
+  subtitle: string;
+  iconTone?: "default" | "primary" | "destructive";
+}) {
+  const toneClass =
+    iconTone === "primary"
+      ? "bg-primary/10 text-primary"
+      : iconTone === "destructive"
+        ? "bg-destructive/10 text-destructive"
+        : "bg-secondary text-secondary-foreground";
+  return (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    <Link to={to as any} className="flex items-center justify-between p-5 sm:p-6 hover:bg-secondary/40 transition-colors">
+      <div className="flex items-center gap-3">
+        <span className={`rounded-full p-2 ${toneClass}`}>
+          <Icon className="h-4 w-4" />
+        </span>
+        <div>
+          <p className="font-serif text-lg text-foreground" dangerouslySetInnerHTML={{ __html: title }} />
+          <p className="text-xs text-muted-foreground">{subtitle}</p>
+        </div>
+      </div>
+      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+    </Link>
   );
 }
 
