@@ -6,7 +6,13 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
-import { Bell, ChevronRight, Pill } from "lucide-react";
+import { Bell, ChevronRight, MoreVertical, Pill } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   ensureServiceWorker,
   notificationsSupported,
@@ -133,6 +139,31 @@ export function TodayDoses() {
     }
   };
 
+  // Retroactive edit: change a non-pending dose back to taken / skipped / pending.
+  const reclassify = async (
+    id: string,
+    next: "taken" | "skipped" | "pending",
+  ) => {
+    const prev = doses;
+    setDoses((d) => d?.map((x) => (x.id === id ? { ...x, status: next } : x)) ?? null);
+    const update: { status: string; taken_at: string | null } = {
+      status: next,
+      taken_at: next === "taken" ? new Date().toISOString() : null,
+    };
+    const { error } = await supabase
+      .from("medication_doses")
+      .update(update)
+      .eq("id", id);
+    if (error) {
+      setDoses(prev);
+      toast.error("Could not update dose");
+      return;
+    }
+    toast.success(
+      next === "taken" ? "Marked as taken" : next === "skipped" ? "Marked as skipped" : "Reset to pending",
+    );
+  };
+
   const enableReminders = async () => {
     // Must run synchronously inside the click handler — no awaits before the
     // permission request, otherwise Safari/iOS drops the user gesture.
@@ -224,9 +255,21 @@ export function TodayDoses() {
                       ? `${d.amount}${d.unit ? ` ${d.unit}` : ""}`
                       : null;
                   const label = perDose ?? d.medication?.dosage ?? null;
-                  return label ? (
-                    <p className="text-xs text-muted-foreground truncate">{label}</p>
-                  ) : null;
+                  if (label) {
+                    return <p className="text-xs text-muted-foreground truncate">{label}</p>;
+                  }
+                  if (d.medication?.id) {
+                    return (
+                      <Link
+                        to="/meds/$medId"
+                        params={{ medId: d.medication.id }}
+                        className="text-xs text-primary/80 underline-offset-2 hover:underline"
+                      >
+                        Set dose
+                      </Link>
+                    );
+                  }
+                  return null;
                 })()}
               </div>
               {d.status === "pending" ? (
@@ -256,7 +299,34 @@ export function TodayDoses() {
                   </Button>
                 </div>
               ) : (
-                <span className="text-xs text-muted-foreground capitalize">{d.status}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground capitalize">{d.status}</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      aria-label="Edit dose status"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full hover:bg-secondary/70 text-muted-foreground"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44">
+                      {d.status !== "taken" && (
+                        <DropdownMenuItem onClick={() => reclassify(d.id, "taken")}>
+                          Mark as taken
+                        </DropdownMenuItem>
+                      )}
+                      {d.status !== "skipped" && (
+                        <DropdownMenuItem onClick={() => reclassify(d.id, "skipped")}>
+                          Mark as skipped
+                        </DropdownMenuItem>
+                      )}
+                      {d.status !== "pending" && (
+                        <DropdownMenuItem onClick={() => reclassify(d.id, "pending")}>
+                          Reset to pending
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               )}
             </li>
           ))}
