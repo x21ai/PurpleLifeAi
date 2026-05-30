@@ -41,7 +41,7 @@ const providerLabels: Record<Provider, string> = {
   google: "Continue with Google",
 };
 
-export function SocialSignInButtons() {
+export function SocialSignInButtons({ helper }: { helper?: string } = {}) {
   const [busy, setBusy] = useState<Provider | null>(null);
 
   const handleOAuth = async (provider: Provider) => {
@@ -65,9 +65,11 @@ export function SocialSignInButtons() {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">
-        Sign in with the account you already have.
-      </p>
+      {helper !== "" && (
+        <p className="text-sm text-muted-foreground">
+          {helper ?? "Sign in with the account you already have."}
+        </p>
+      )}
       <button
         type="button"
         disabled={busy !== null}
@@ -81,7 +83,7 @@ export function SocialSignInButtons() {
         type="button"
         disabled={busy !== null}
         onClick={() => handleOAuth("google")}
-        className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-border bg-white px-4 text-[15px] font-sans font-medium text-foreground transition-colors duration-300 ease-out hover:bg-white/95 disabled:opacity-50"
+        className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-border bg-white px-4 text-[15px] font-sans font-medium text-black transition-colors duration-300 ease-out hover:bg-white/95 disabled:opacity-50"
       >
         <GoogleLogo />
         {busy === "google" ? "Opening Google\u2026" : providerLabels.google}
