@@ -1,0 +1,29 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "saving": "Guardando…",
+    "saved": "Guardado"
+  },
+  "today": {
+    "emptyEyebrow": "Te damos la bienvenida a Purple",
+    "emptyHeading": "Empieza donde estés.",
+    "emptyBody": "Escribe una frase, dicta un pensamiento o haz una foto. Purple hace el resto.",
+    "emptyCta": "Empezar a escribir",
+    "emptySkip": "Por ahora no"
+  },
+  "locale": {
+    "title": "Región e idioma",
+    "subtitle": "Cómo Purple muestra las horas y el idioma en el que te habla.",
+    "country": "País",
+    "countryPlaceholder": "Elige tu país",
+    "timezone": "Zona horaria",
+    "timezoneDetect": "Usar la de mi dispositivo",
+    "language": "Idioma",
+    "saved": "Guardado"
+  },
+  "charter": {
+    "back": "Ajustes",
+    "eyebrow": "Sobre Purple"
+  }
+}
