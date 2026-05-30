@@ -256,6 +256,7 @@ export function MedicationFormSheet({
         is_rescue: isRescue,
         pills_remaining: Number.isFinite(pills as number) ? pills : null,
         refill_threshold: Number.isFinite(threshold) ? threshold : 7,
+        reminder_style: criticalAlarm ? "critical" : "standard",
       };
 
       let med: { id: string; name: string; dosage: string | null; times_of_day: string[]; is_rescue: boolean; kind: string };
