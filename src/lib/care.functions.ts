@@ -70,12 +70,13 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
 
     // Best-effort transactional email. The invite link is also surfaced in
     // Settings → Sharing so a failure here is non-fatal.
+    const req = getRequest();
+    const origin =
+      process.env.PUBLIC_SITE_URL ||
+      (req ? new URL(req.url).origin : "https://purplelife.org");
+    const acceptUrl = `${origin}/care/accept?token=${invite_token}`;
+    let emailSent = false;
     try {
-      const req = getRequest();
-      const origin =
-        process.env.PUBLIC_SITE_URL ||
-        (req ? new URL(req.url).origin : "https://purplelife.org");
-      const acceptUrl = `${origin}/care/accept?token=${invite_token}`;
       const { data: inviter } = await supabaseAdmin
         .from("profiles")
         .select("first_name, last_name")
@@ -85,7 +86,7 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
         .filter(Boolean)
         .join(" ")
         .trim();
-      await sendTransactionalEmail({
+      const result = await sendTransactionalEmail({
         templateName: "care-invite",
         recipientEmail: data.email,
         idempotencyKey: `care-invite-${rel.id}`,
@@ -96,11 +97,12 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
           expiresAt: (rel as { expires_at?: string | null }).expires_at ?? null,
         },
       });
+      emailSent = !!result?.ok;
     } catch (err) {
       console.warn("care-invite email failed (link still available in UI)", err);
     }
 
-    return { relationship: rel, invite_token };
+    return { relationship: rel, invite_token, acceptUrl, emailSent };
   });
 
 export const listMyCaregivers = createServerFn({ method: "GET" })
