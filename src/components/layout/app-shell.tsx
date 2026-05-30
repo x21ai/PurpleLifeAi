@@ -5,6 +5,7 @@ import { BottomNav } from "./bottom-nav";
 import { MobileTopBar } from "./mobile-top-bar";
 import { AskFab } from "@/components/chat/ask-fab";
 import { ensureServiceWorker, rearmMedicationNotifications } from "@/lib/med-notifications";
+import { ReminderAlarmSheet } from "@/components/meds/reminder-alarm-sheet";
 
 export function AppShell() {
   useEffect(() => {
@@ -29,6 +30,7 @@ export function AppShell() {
       </main>
       <BottomNav />
       <AskFab />
+      <ReminderAlarmSheet />
     </div>
   );
 }
