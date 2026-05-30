@@ -115,6 +115,55 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           )
         }
 
+        // Authorization: prevent abuse of the app's email domain as an open relay.
+        // Allowed recipients:
+        //   1. Templates with a fixed `to` (configured server-side).
+        //   2. The authenticated user's own email (self-notifications).
+        //   3. care-invite template: recipient must match a pending care
+        //      relationship invite_email owned by the caller.
+        if (!template.to) {
+          const normalizedTarget = effectiveRecipient.toLowerCase()
+          const callerEmail = (user.email || '').toLowerCase()
+          let allowed = callerEmail && normalizedTarget === callerEmail
+
+          if (!allowed && templateName === 'care-invite') {
+            const { data: invite } = await supabase
+              .from('care_relationships')
+              .select('id')
+              .eq('owner_id', user.id)
+              .eq('status', 'pending')
+              .ilike('invite_email', normalizedTarget)
+              .maybeSingle()
+            allowed = !!invite
+          }
+
+          if (!allowed) {
+            console.warn('Email send rejected: recipient not permitted', {
+              templateName,
+              user_id: user.id,
+              recipient_redacted: redactEmail(effectiveRecipient),
+            })
+            return Response.json(
+              { error: 'Recipient not permitted for this template' },
+              { status: 403 }
+            )
+          }
+        }
+
+        // Per-user rate limit: max 20 sends per hour to mitigate abuse.
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+        const { count: recentCount } = await supabase
+          .from('email_send_log')
+          .select('id', { count: 'exact', head: true })
+          .eq('sent_by', user.id)
+          .gte('created_at', oneHourAgo)
+        if ((recentCount ?? 0) >= 20) {
+          return Response.json(
+            { error: 'Email rate limit exceeded. Try again later.' },
+            { status: 429 }
+          )
+        }
+
         // 2. Check suppression list (fail-closed: if we can't verify, don't send)
         const { data: suppressed, error: suppressionError } = await supabase
           .from('suppressed_emails')
