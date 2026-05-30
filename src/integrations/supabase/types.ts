@@ -680,6 +680,7 @@ export type Database = {
           message_id: string | null
           metadata: Json | null
           recipient_email: string
+          sent_by: string | null
           status: string
           template_name: string
         }
@@ -690,6 +691,7 @@ export type Database = {
           message_id?: string | null
           metadata?: Json | null
           recipient_email: string
+          sent_by?: string | null
           status: string
           template_name: string
         }
@@ -700,6 +702,7 @@ export type Database = {
           message_id?: string | null
           metadata?: Json | null
           recipient_email?: string
+          sent_by?: string | null
           status?: string
           template_name?: string
         }
