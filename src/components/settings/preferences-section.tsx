@@ -4,6 +4,9 @@ import { Sparkles, MessageCircle, Loader2, BookOpen, ChevronRight, Moon, Bell } 
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Heart } from "lucide-react";
+import { CONDITION_OPTIONS, type ConditionTag } from "@/lib/condition-prompts";
 import {
   Select,
   SelectContent,
@@ -40,6 +43,9 @@ export function PreferencesSection() {
   const [wakeTime, setWakeTime] = React.useState<string>("07:00");
   const [sleepTime, setSleepTime] = React.useState<string>("23:00");
   const [snoozeMinutes, setSnoozeMinutes] = React.useState<string>("10");
+  const [conditions, setConditions] = React.useState<string[]>([]);
+  const [conditionsNote, setConditionsNote] = React.useState<string>("");
+  const [savingConditions, setSavingConditions] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [savingModel, setSavingModel] = React.useState(false);
   const [savingFab, setSavingFab] = React.useState(false);
@@ -50,7 +56,7 @@ export function PreferencesSection() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("ai_model_preference, floating_ask_enabled, wake_time, sleep_time, snooze_minutes")
+        .select("ai_model_preference, floating_ask_enabled, wake_time, sleep_time, snooze_minutes, conditions, conditions_note")
         .eq("id", userId)
         .maybeSingle();
       if (cancelled) return;
@@ -60,6 +66,8 @@ export function PreferencesSection() {
         if (data.wake_time) setWakeTime(String(data.wake_time).slice(0, 5));
         if (data.sleep_time) setSleepTime(String(data.sleep_time).slice(0, 5));
         if (data.snooze_minutes != null) setSnoozeMinutes(String(data.snooze_minutes));
+        if (Array.isArray(data.conditions)) setConditions(data.conditions);
+        if (data.conditions_note) setConditionsNote(data.conditions_note);
       }
       setLoading(false);
     })();
@@ -121,6 +129,30 @@ export function PreferencesSection() {
     }
   };
 
+  const toggleCondition = async (id: ConditionTag) => {
+    if (!userId) return;
+    const next = conditions.includes(id)
+      ? conditions.filter((c) => c !== id)
+      : [...conditions, id];
+    setConditions(next);
+    setSavingConditions(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ conditions: next })
+      .eq("id", userId);
+    setSavingConditions(false);
+    if (error) toast.error("Couldn't save");
+  };
+
+  const saveConditionsNote = async () => {
+    if (!userId) return;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ conditions_note: conditionsNote.trim() || null })
+      .eq("id", userId);
+    if (error) toast.error("Couldn't save note");
+  };
+
   return (
     <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
       <h2 className="font-serif text-xl text-foreground">Preferences</h2>
@@ -129,6 +161,48 @@ export function PreferencesSection() {
       </p>
 
       <div className="mt-6 space-y-6">
+        <div>
+          <Label className="flex items-center gap-2 font-serif text-base text-foreground">
+            <Heart className="h-4 w-4 text-primary" />
+            Your focus
+            {savingConditions && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+          </Label>
+          <p className="mt-1 text-xs text-muted-foreground">
+            What you're managing. Shapes prompts and how Purple talks with you.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {CONDITION_OPTIONS.map((opt) => {
+              const active = conditions.includes(opt.id);
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => toggleCondition(opt.id)}
+                  disabled={loading}
+                  className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                    active
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-card text-foreground hover:bg-secondary"
+                  }`}
+                  aria-pressed={active}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-3">
+            <Textarea
+              value={conditionsNote}
+              onChange={(e) => setConditionsNote(e.target.value.slice(0, 500))}
+              onBlur={saveConditionsNote}
+              placeholder="Anything else we should know? (optional)"
+              className="min-h-[72px]"
+              disabled={loading}
+            />
+          </div>
+        </div>
+
         <div>
           <Label
             htmlFor="ai-model"
