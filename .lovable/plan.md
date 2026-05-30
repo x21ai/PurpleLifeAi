@@ -1,101 +1,139 @@
-## Travel mode & smart dose reminders
 
-Two connected features: (1) a Travel Mode that keeps your dose schedule medically correct as you cross timezones, and (2) a real reminder system that alarms your phone until you confirm.
+## Part 1 — Why we can't hook into the phone's native Alarm/Clock app
 
----
+Short answer: web apps (even installed PWAs) are sandboxed by iOS and Android. Neither Safari, Chrome, nor any browser exposes an API to create entries in the system **Clock / Alarm** app. That app is a privileged native app — only a native iOS (Swift) or Android (Kotlin) app, signed and installed via the App Store / Play Store, can schedule entries that ring with the phone on silent, override Do-Not-Disturb (with the user's permission), or wake the device from a cold state.
 
-### 1. Travel Mode — "Anchor to home time"
+What a web app *can* do is the closest legal substitute on each OS:
 
-**Principle:** A dose set for 10:00 AM in your home tz (EST) is *always* taken at 10:00 AM EST, no matter where you are. We just show it in your current local time so you know when on your watch to take it.
+| Capability | iOS Safari / PWA | Android Chrome / PWA |
+|---|---|---|
+| In-app alarm while tab open | ✅ (today) | ✅ (today) |
+| Push notification when closed | ✅ iOS 16.4+, installed to home screen only | ✅ reliable |
+| Notification with custom sound | ⚠️ short default tone only | ✅ custom short sound |
+| Override silent / DND | ❌ | ❌ |
+| Schedule months ahead offline | ❌ | ⚠️ limited |
+| Native Clock app entry | ❌ | ❌ |
 
-**Trip setup (two entry points):**
-- **Manual planner** — Settings → Travel → "Plan a trip": pick destination, depart date/time, return date. App shows a preview of every dose for the trip in both home time and local time, flags any that land during your sleep window, and lets you confirm.
-- **Auto-detect** — When the browser tz differs from your home tz for >2 hours and no active trip exists, a banner appears on Today: *"Looks like you're in Hong Kong (HKT). Start travel mode? [Yes, anchor to home time] [I moved — update home tz]"*.
+The only way to *truly* land in the system alarm is `.ics` calendar export — the user imports it once, and iOS/Android Calendar fires native alerts (and those *can* override DND if the user allows). That's why option (c) matters: it's the only path to OS-level reliability without shipping a native app.
 
-**What you see while traveling:**
-- Today screen shows each dose with **two times**: large local time ("3:00 AM HKT") + small home-time chip ("10:00 PM EST · home"). No ambiguity about whether a dose is "the 10 PM one".
-- Sleep-window warning: doses falling inside your wake/sleep window get a moon icon and tooltip *"This lands at 3 AM local. OK to take if you wake; otherwise log when you do."*
-- A trip badge in the header for the duration.
-
-**What stays the same:**
-- `scheduled_at` is still stored in UTC, derived from `times_of_day` interpreted in your **home** tz (never the device tz during a trip).
-- Drug intervals are preserved exactly — that's the whole point of anchoring.
-
-**Editing while away:**
-- Manually logging a dose ("I took it now") uses real `now()` as today — already works.
-- If you genuinely move (not travel), tap "Update home timezone" in the banner; we stop anchoring and the next nightly regen uses the new home tz.
+If full native alarms are non-negotiable later, the path is a thin React Native / Capacitor wrapper around this same web app — out of scope for now but worth flagging.
 
 ---
 
-### 2. Sleep window
+## Part 2 — Build "All of the above" (a + b + c)
 
-- New profile field: `wake_time` / `sleep_time` (defaults 7:00 AM / 11:00 PM home tz).
-- Editable in Settings → Preferences.
-- Doses landing inside this window get a visual warning ("During sleep — take when you wake"), but are **not** auto-moved. You can long-press → "Move to wake time" if you want.
+### (a) Custom beep picker
+- New `src/lib/alarm-sounds.ts` — Web Audio presets: `gentle-chime`, `classic-beep`, `urgent-pulse`, `rooster`, `vibrate-only` (uses `navigator.vibrate`), `silent`.
+- Per-medication: add `alarm_sound` column to `medications`. Default falls back to a global preference.
+- Global default: add `default_alarm_sound` to `profiles`, edited in **Settings → Reminders**.
+- Med form: dropdown with **Preview** button next to the existing critical-alarm toggle.
+- Update `reminder-alarm-sheet.tsx` `useBeeper` to read the chosen preset.
 
----
+### (b) PWA push notifications
+- `public/sw.js` already exists — extend with `push` + `notificationclick` handlers.
+- New `push_subscriptions` table (user_id, endpoint, p256dh, auth, user_agent).
+- Server fn `subscribePush` / `unsubscribePush` + `sendDueReminders` (Web Push via VAPID).
+- Add `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` secrets.
+- pg_cron (every minute) → `/api/public/hooks/dispatch-reminders` → sends push for any `pending` dose within the next minute that the in-app modal hasn't already fired.
+- Settings toggle: **Enable phone notifications** (prompts "Add to Home Screen" on iOS first).
 
-### 3. Dose reminders with alarm
-
-**Per-med setting** on each medication: *Reminder style*
-- **Standard** (default) — single push notification at scheduled time. Tap to confirm Taken/Skip/Snooze.
-- **Critical / persistent alarm** — repeating alarm sound + push every N minutes (you pick 5/10/15) until you confirm Taken or Skip. Intended for seizure meds.
-
-**How it works:**
-- PWA push notifications via the existing service worker (`public/sw.js`) — requires "Add to Home Screen" + notification permission, which we'll prompt for on the meds page when reminders are first enabled.
-- In-app: when the app is open at dose time, an alarm sheet pops up with a sound loop (Web Audio) and Taken/Snooze/Skip buttons.
-- Snooze interval is per-user in Settings (5/10/15 min, default 10).
-- Confirming "Taken" writes to `medication_doses` exactly like the existing Today actions.
-
-**Reliability honest note:** browser push is best-effort; if the OS kills the PWA, alarms may not fire. We'll show a one-time setup checklist (install PWA, allow notifications, disable battery optimization) and a banner if permissions are missing.
-
----
-
-### Technical details
-
-**Schema (one migration):**
-- `profiles`: add `home_timezone` (rename usage of existing `timezone` → home), `wake_time time`, `sleep_time time`, `snooze_minutes int default 10`.
-- `medications`: add `reminder_style text default 'standard'` (`'standard' | 'critical'`).
-- New table `trips`: `id, user_id, destination_tz, depart_at, return_at, status, created_at` + RLS owner-only + GRANTs.
-- Update `seed_daily_medication_doses()` and `regenerate_today_pending_doses()` to always use `home_timezone` (ignore active trip's destination tz — that's the anchor behavior).
-
-**Code:**
-- `src/routes/_app/settings.travel.tsx` — trip planner UI + list of past/upcoming trips.
-- `src/components/travel/trip-banner.tsx` — auto-detect banner on Today.
-- `src/components/travel/dual-time.tsx` — render "3:00 AM HKT · 10:00 PM EST home" on dose rows when a trip is active.
-- `src/lib/travel.functions.ts` — `createTrip`, `endTrip`, `previewTripSchedule` server fns.
-- `src/lib/reminders.ts` — service worker registration, notification scheduler, alarm sheet.
-- `src/components/meds/reminder-alarm-sheet.tsx` — fullscreen alarm UI with audio loop.
-- `src/components/meds/medication-form-sheet.tsx` — add "Reminder style" select.
-- `src/components/meds/today-doses.tsx` — show dual-time chip when trip active; show sleep-window moon icon.
-- `public/sw.js` — handle `showNotification` + click actions (taken/snooze/skip routing back to app).
-- New server route `src/routes/api/public/hooks/dose-reminders.ts` + pg_cron every minute to fan out push notifications for due doses (only for users with critical-style reminders or push subscriptions).
-
-**Out of scope (call out if you want them):**
-- Gradual-shift / jet-lag taper transitions (you chose anchor-only — can add later).
-- SMS or email fallback alarms.
-- Apple/Google Calendar export of trip schedule.
+### (c) .ics calendar export
+- New `src/lib/ics.ts` builder (RFC 5545, with `VALARM` triggers).
+- Per-trip and per-medication "Export to Calendar" button → downloads `.ics`.
+- Anchors to the user's **home timezone** so doses stay aligned during travel (matches the existing travel-mode logic).
+- Settings → Travel → "Export trip schedule (.ics)" — generates the full trip's dose schedule in one file.
 
 ---
 
-### Files touched
+## Part 3 — Reports hub
 
-```text
-supabase/migrations/<new>.sql                          (schema + RLS + GRANTs)
-src/integrations/supabase/types.ts                     (auto)
-src/routes/_app/settings.tsx                           (link to travel)
-src/routes/_app/settings.travel.tsx                    (NEW)
-src/routes/_app/settings.preferences.tsx               (wake/sleep, snooze)
-src/routes/_app/today.tsx                              (trip banner)
-src/components/travel/trip-banner.tsx                  (NEW)
-src/components/travel/dual-time.tsx                    (NEW)
-src/components/meds/today-doses.tsx                    (dual-time, sleep icon)
-src/components/meds/medication-form-sheet.tsx          (reminder style)
-src/components/meds/reminder-alarm-sheet.tsx           (NEW)
-src/lib/travel.functions.ts                            (NEW)
-src/lib/reminders.ts                                   (NEW)
-src/routes/api/public/hooks/dose-reminders.ts          (NEW, cron target)
-public/sw.js                                           (push handlers)
-```
+New section accessible from bottom nav / sidebar: **Reports**.
 
-All viewports (mobile/tablet/desktop) covered per workspace rule.
+### Data model
+- `report_documents` — id, user_id, title, report_type, report_date, file_path (Supabase Storage), file_mime, ocr_text, status (`processing` / `ready` / `failed`).
+- `report_metrics` — id, report_id, user_id, metric_key (e.g. `vitamin_d`, `ldl`, `hba1c`, `tsh`), value numeric, unit, reference_low, reference_high, flag (`low` / `normal` / `high`).
+- `metric_dictionary` (seeded) — canonical metric keys, display names, typical units, default reference ranges, category (lipids / thyroid / vitamins / CBC / liver / kidney / hormones / glucose / inflammation / EEG-relevant…), and supplement/lifestyle hints.
+- New private Storage bucket `reports` with strict per-user folder RLS (`{auth.uid()}/...`).
+
+### Upload + parse flow
+1. User uploads PDF or JPG via `reports.new` route.
+2. Server fn `processReport`:
+   - PDF → text via `pdfjs-dist` (already Worker-safe).
+   - JPG/scanned PDF → Lovable AI Gateway (`google/gemini-2.5-pro` vision) for OCR + structured extraction.
+   - Extraction prompt returns `{ report_type, report_date, metrics: [{key, value, unit, ref_low, ref_high}] }` matched against `metric_dictionary`.
+3. Rows written to `report_metrics`; status flipped to `ready`.
+4. User can review/correct extracted values (audit trail kept).
+
+### Comparative trends UI
+- **Reports list** — grouped by `report_type` (e.g. "Blood Panel · 4 reports").
+- **Report detail** — extracted values + raw file preview.
+- **Trend view** — when ≥2 reports of the same type exist:
+  - Line chart per metric over time (Recharts).
+  - Reference-range band shaded.
+  - Delta vs previous + delta vs first.
+  - Plain-language summary (Lovable AI): "Your Vitamin D rose from 18 → 32 ng/mL over 6 months — moving from deficient toward sufficient."
+  - Supplement / lifestyle suggestions pulled from `metric_dictionary.hints` (e.g. "Low ferritin often improves with iron + vitamin C; ask your doctor before supplementing").
+
+### Medical safety wrapper (non-negotiable, on every AI-generated panel)
+- Persistent banner: **"Educational only — not medical advice. Always consult your medical practitioner before changing treatment or adding supplements."**
+- Every supplement suggestion card has a **"Discuss with my doctor"** button that drops the metric + value into a shareable note (PDF export reusing existing share infra).
+- AI prompt enforces: no diagnoses, no dosages, always recommend clinician follow-up for any flagged metric.
+
+---
+
+## Part 4 — HIPAA compliance
+
+**Important context** — true HIPAA compliance is *operational*, not just technical. We can make the app **HIPAA-ready** in code, but you (the covered entity / business associate) also need:
+
+1. **BAA (Business Associate Agreement)** with every vendor touching PHI:
+   - Supabase (Lovable Cloud) → BAA available on Team/Enterprise plan. **You will need to upgrade and sign one.**
+   - Lovable AI Gateway → confirm BAA coverage; if not available, route PHI-touching AI calls to a BAA-covered provider (OpenAI / Anthropic / Google all offer BAAs on paid tiers — we'd swap the gateway for direct calls with the secret keys you already have).
+   - Any push / email vendor → BAA required if PHI in payloads (we'll keep notifications PHI-free: "Time for your dose" — never the med name in push body).
+2. **Breach notification process** — documented runbook (we'll add a `docs/hipaa-breach-response.md`).
+3. **Workforce training & access policies** — your responsibility.
+
+### What we'll build in code (technical safeguards)
+- **Encryption at rest** — already on (Supabase default AES-256). Storage bucket `reports` will be private with signed-URL access only (60s TTL).
+- **Encryption in transit** — already HTTPS-only.
+- **Audit log** — new `phi_access_log` table writing on every read/write of `report_documents`, `report_metrics`, `medications`, `seizure_events`, `journal_entries`, `biometrics`. Captures user_id, actor_id, action, resource, ip, user_agent, at. Append-only RLS.
+- **Access controls** — already RLS-per-user; add explicit deny for `anon` on all PHI tables (audit + tighten existing grants).
+- **Minimum necessary** — caregiver sharing already scope-gated; we'll audit `care_scopes` to confirm Reports is opt-in per scope, not bundled.
+- **Session safeguards** — auto-logout after configurable idle (default 15 min) for PHI routes; require re-auth for export/share actions.
+- **Data export & deletion** — extend existing data-export to include reports; add a "Delete all my data" button (right-to-erasure flow, soft-delete + 30-day purge job).
+- **Notification privacy** — push payloads strip PHI ("Time for your medication" — full details only inside the app).
+- **No PHI in logs / Sentry** — add PHI scrubber to `src/lib/error-capture.ts`.
+- **No PHI in URLs** — audit existing routes; any `?token=` style sharing uses opaque one-time tokens (already pattern in `care.accept`).
+- **MFA available** — enable in Supabase Auth settings (toggle via Settings → Security).
+- **HIPAA settings page** — `settings.privacy-security.tsx` showing: BAA status, idle-timeout slider, MFA toggle, export, delete, audit-log download.
+
+### Disclaimers wired everywhere PHI is shown
+- Reports section banner.
+- AI summaries everywhere (Today insights, chat, risk forecast, supplements).
+- Onboarding consent checkbox: "I understand this app is educational and not a substitute for medical care."
+
+---
+
+## Phased delivery
+
+**Phase 1 (this build)** — reminders complete (a+b+c) and Reports MVP (upload, OCR, list, single-metric trend chart) + HIPAA banners + audit log + private storage.
+
+**Phase 2 (next)** — multi-metric dashboards, AI narrative summaries, supplement suggestion engine, .ics for full trips, push notifications, idle-timeout, MFA UI, data deletion flow.
+
+**Phase 3** — BAA paperwork checklist UI, PHI scrubbing in logs, full breach runbook doc.
+
+Splitting like this keeps each turn shippable and reviewable.
+
+---
+
+## Technical details (for the engineer view)
+
+- **Tables** (new): `push_subscriptions`, `report_documents`, `report_metrics`, `metric_dictionary`, `phi_access_log`. All with RLS scoped to `auth.uid()`, explicit `GRANT` to `authenticated` only, `service_role` for server fns. No `anon` grants.
+- **Columns added**: `medications.alarm_sound text`, `profiles.default_alarm_sound text`, `profiles.idle_timeout_minutes int default 15`.
+- **Storage**: bucket `reports` (private), policy `{auth.uid()}/*`, signed URLs only.
+- **Server fns** (new in `src/lib/`): `reports.functions.ts` (upload, process, list, trends), `push.functions.ts` (subscribe, unsubscribe, dispatch), `phi-audit.functions.ts` (log write helper used by all PHI fns).
+- **Server routes**: `/api/public/hooks/dispatch-reminders` (cron, CRON_SECRET-guarded).
+- **AI**: OCR + extraction via `google/gemini-2.5-pro`; narrative summaries via `google/gemini-2.5-flash` (cheaper); all PHI-bearing calls gated behind BAA-confirmed provider once confirmed.
+- **Libraries to add**: `pdfjs-dist`, `web-push`, `ics` (or hand-rolled — small).
+- **Secrets to add (Phase 2)**: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`.
+
+Approve and I'll start with Phase 1.
