@@ -12,6 +12,8 @@ import { OuraConnection } from "@/components/connections/oura-connection";
 import { PhoneInput, parsePhone, formatPhone } from "@/components/ui/phone-input";
 import dawn from "@/assets/hero-readiness-dawn.jpg";
 import mist from "@/assets/hero-readiness-mist.jpg";
+import { CONDITION_OPTIONS, type ConditionTag } from "@/lib/condition-prompts";
+import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_app/welcome")({
   head: () => ({ meta: [{ title: "Welcome to Purple" }] }),
@@ -31,6 +33,8 @@ function WelcomePage() {
   const [phoneNational, setPhoneNational] = useState("");
   const [notifGranted, setNotifGranted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [conditions, setConditions] = useState<string[]>([]);
+  const [conditionsNote, setConditionsNote] = useState("");
 
   useEffect(() => {
     if (typeof Notification !== "undefined") {
@@ -43,7 +47,7 @@ function WelcomePage() {
     if (!userId) return;
     supabase
       .from("profiles")
-      .select("first_name, last_name, emergency_contact_name, emergency_contact_phone")
+      .select("first_name, last_name, emergency_contact_name, emergency_contact_phone, conditions, conditions_note")
       .eq("id", userId)
       .maybeSingle()
       .then(({ data }) => {
@@ -56,6 +60,10 @@ function WelcomePage() {
           setPhoneCountry(parsed.code);
           setPhoneNational(parsed.national);
         }
+        if (Array.isArray(data.conditions) && data.conditions.length > 0) {
+          setConditions(data.conditions);
+        }
+        if (data.conditions_note) setConditionsNote(data.conditions_note);
       });
   }, [userId]);
 
@@ -73,6 +81,8 @@ function WelcomePage() {
         last_name: lastName || null,
         emergency_contact_name: emergencyName || null,
         emergency_contact_phone: phone || null,
+        conditions,
+        conditions_note: conditionsNote.trim() || null,
         onboarded_at: new Date().toISOString(),
       });
       localStorage.setItem("purple-onboarded", "1");
@@ -107,7 +117,7 @@ function WelcomePage() {
     <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-8 sm:pt-12 pb-16">
       <div className="flex items-center justify-between mb-8">
         <div className="flex gap-1.5" aria-hidden="true">
-          {[0, 1, 2].map((i) => (
+          {[0, 1, 2, 3].map((i) => (
             <span
               key={i}
               className={`h-1.5 w-8 rounded-full transition-colors ${
@@ -158,7 +168,7 @@ function WelcomePage() {
 
       {step === 1 && (
         <div>
-          <p className="label-eyebrow mb-4">Step 2 of 3</p>
+          <p className="label-eyebrow mb-4">Step 2 of 4</p>
           <h1 className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight text-foreground">
             Let me know who you are.
           </h1>
@@ -204,6 +214,60 @@ function WelcomePage() {
 
       {step === 2 && (
         <div>
+          <p className="label-eyebrow mb-4">Step 3 of 4</p>
+          <h1 className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight text-foreground">
+            What brings you to Purple?
+          </h1>
+          <p className="mt-5 text-lg text-muted-foreground max-w-lg">
+            Pick anything that fits. This shapes the prompts and the way I talk with you. You can change it anytime in Settings.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-2">
+            {CONDITION_OPTIONS.map((opt) => {
+              const active = conditions.includes(opt.id);
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() =>
+                    setConditions((prev) =>
+                      prev.includes(opt.id)
+                        ? prev.filter((c) => c !== opt.id)
+                        : [...prev, opt.id as ConditionTag],
+                    )
+                  }
+                  className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+                    active
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-card text-foreground hover:bg-secondary"
+                  }`}
+                  aria-pressed={active}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-6">
+            <Label htmlFor="conditions-note">Anything else we should know?</Label>
+            <Textarea
+              id="conditions-note"
+              value={conditionsNote}
+              onChange={(e) => setConditionsNote(e.target.value.slice(0, 500))}
+              placeholder="Optional. A few words about what you're managing."
+              className="mt-1.5 min-h-[88px]"
+            />
+          </div>
+          <div className="mt-10 flex items-center justify-between gap-3">
+            <Button variant="ghost" onClick={() => setStep(1)}>Back</Button>
+            <Button className="rounded-full" onClick={() => setStep(3)}>
+              Continue <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div>
           <div className="relative overflow-hidden rounded-3xl border border-border mb-8 aspect-[16/9]">
             <img
               src={mist}
@@ -214,7 +278,7 @@ function WelcomePage() {
             />
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-foreground/40" />
           </div>
-          <p className="label-eyebrow mb-4">Step 3 of 3</p>
+          <p className="label-eyebrow mb-4">Step 4 of 4</p>
           <h1 className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight text-foreground">
             Connect what helps.
           </h1>
@@ -243,7 +307,7 @@ function WelcomePage() {
             />
           </div>
           <div className="mt-10 flex items-center justify-between gap-3">
-            <Button variant="ghost" onClick={() => setStep(1)}>Back</Button>
+            <Button variant="ghost" onClick={() => setStep(2)}>Back</Button>
             <Button className="rounded-full" onClick={finish} disabled={saving}>
               {saving ? "Saving…" : "Take me in"}
             </Button>
