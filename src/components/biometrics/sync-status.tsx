@@ -86,8 +86,15 @@ export function OuraSyncStatus({ variant = "detailed", onSynced, className }: Pr
   if (variant === "compact") {
     return (
       <div className={"flex items-center gap-2 text-[11px] text-muted-foreground " + (className ?? "")}>
-        <span>
-          {pulledDate ? `Synced ${formatDistanceToNow(pulledDate, { addSuffix: true })}` : "Never synced"}
+        <span className="flex flex-col leading-tight">
+          <span>
+            {pulledDate ? `Last sync ${formatDistanceToNow(pulledDate, { addSuffix: true })}` : "Never synced"}
+          </span>
+          {dataDate && (
+            <span className="text-muted-foreground/70">
+              Latest data {formatDistanceToNow(dataDate, { addSuffix: true })}
+            </span>
+          )}
         </span>
         <button
           type="button"
