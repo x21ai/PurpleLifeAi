@@ -203,7 +203,7 @@ export function PreferencesSection() {
           </div>
         </div>
 
-        <div>
+        <div className="border-t border-border pt-5">
           <Label
             htmlFor="ai-model"
             className="flex items-center gap-2 font-serif text-base text-foreground"
