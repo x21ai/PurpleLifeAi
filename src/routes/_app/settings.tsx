@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ChevronRight, Pill, History, Zap, Users, Shield, MessageCircle, HeartHandshake, Plane } from "lucide-react";
+import { ChevronRight, Pill, History, Zap, Users, Shield, MessageCircle, HeartHandshake, Plane, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { OuraConnection } from "@/components/connections/oura-connection";
@@ -89,6 +89,18 @@ function SettingsPage() {
             <div>
               <p className="font-serif text-lg text-foreground">Travel mode</p>
               <p className="text-xs text-muted-foreground">Plan trips, anchor doses to home time, set home timezone</p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </Link>
+        <Link to="/reports" className="flex items-center justify-between p-5 sm:p-6 hover:bg-secondary/40 transition-colors">
+          <div className="flex items-center gap-3">
+            <span className="rounded-full bg-secondary p-2 text-secondary-foreground">
+              <FileText className="h-4 w-4" />
+            </span>
+            <div>
+              <p className="font-serif text-lg text-foreground">Lab reports</p>
+              <p className="text-xs text-muted-foreground">Upload labs as PDF or photo. See trends over time. Educational only.</p>
             </div>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
