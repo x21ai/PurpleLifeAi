@@ -12,7 +12,9 @@
     "format": "prettier --write .",
     "seed:research": "bun run supabase/seeds/research_sources.ts",
     "test:e2e": "playwright test",
-    "test:e2e:install": "playwright install --with-deps chromium"
+    "test:e2e:install": "playwright install --with-deps chromium",
+    "check:live-data": "node scripts/check-no-test-data.mjs",
+    "check:live-data:db": "node scripts/check-no-test-data.mjs --db"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

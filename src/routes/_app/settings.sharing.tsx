@@ -338,7 +338,7 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="partner@example.com"
+              placeholder="partner@example.com" // live-data-guard:allow (input placeholder, not stored data)
               className="mt-1"
             />
           </div>
