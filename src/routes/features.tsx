@@ -6,9 +6,9 @@ import { SiteFooter } from "@/components/layout/site-footer";
 export const Route = createFileRoute("/features")({
   head: () => ({
     meta: [
-      { title: "Features — Purple" },
+      { title: "Features. Purple." },
       { name: "description", content: "Everything Purple can do: media journal, AI patterns, timeline, meds, biometrics, and community." },
-      { property: "og:title", content: "Features — Purple" },
+      { property: "og:title", content: "Features. Purple." },
       { property: "og:description", content: "Everything Purple can do." },
     ],
     links: [{ rel: "canonical", href: "/features" }],
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/features")({
 
 const features = [
   { icon: BookOpen, title: "Multi-modal journal", body: "Write, dictate, snap a photo, or record a 60s video. Purple transcribes voice, tags photos, and summarises everything into a clean entry." },
-  { icon: Sparkles, title: "Ask Purple", body: "A floating bubble on every screen. Choose Gemini Flash, Gemini Pro, or Claude Sonnet from settings. Purple reads your history before answering — always with a 'confirm to write' step before changing anything." },
+  { icon: Sparkles, title: "Ask Purple", body: "A floating bubble on every screen. Choose Gemini Flash, Gemini Pro, or Claude Sonnet from settings. Purple reads your history before answering. Always with a 'confirm to write' step before changing anything." },
   { icon: Clock, title: "Unified timeline", body: "All seizures, meds, journal entries, and biometrics in one feed. Filter by day, week, month, year, or search free text." },
   { icon: TrendingUp, title: "Pattern detection", body: "Daily risk forecast that considers sleep, HRV, missed doses, menstrual phase, and your own trigger history." },
   { icon: Pill, title: "Smart meds", body: "Schedule reminders, track adherence, log side effects, set refill thresholds. Backdate old prescriptions to build full history." },
@@ -42,7 +42,7 @@ function FeaturesPage() {
           Everything Purple does.
         </h1>
         <p className="mt-6 text-lg text-muted-foreground max-w-2xl">
-          A complete, calm health companion for epilepsy and pattern-driven conditions.
+          A complete, calm health companion for chronic and pattern-driven conditions.
         </p>
         <div className="mt-16 grid gap-6 sm:grid-cols-2">
           {features.map((f) => (
