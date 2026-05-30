@@ -135,3 +135,68 @@ export async function deleteAllUserData(): Promise<void> {
     await (supabase.from(t as any) as any).delete().eq(col, user.id);
   }
 }
+
+/** How many days users have to undo a "delete everything" before purge. */
+export const RESTORE_WINDOW_DAYS = 60;
+
+/**
+ * Soft-delete: marks the profile with a deletion request and a purge date
+ * 60 days in the future. The user is then signed out by the caller. They
+ * can sign back in within the window to restore. Requires the user's
+ * password to be re-entered (verified by re-authenticating).
+ */
+export async function softDeleteUserData(password: string): Promise<void> {
+  const { data: sess } = await supabase.auth.getSession();
+  const user = sess.session?.user;
+  if (!user?.email) throw new Error("Not signed in");
+
+  // Re-validate password by re-signing in. This does not invalidate the
+  // existing session, but throws if the password is wrong.
+  const { error: pwErr } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password,
+  });
+  if (pwErr) throw new Error("Password is incorrect");
+
+  const now = new Date();
+  const purgeAfter = new Date(
+    now.getTime() + RESTORE_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+  );
+  const { error } = await supabase
+    .from("profiles")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update({ deleted_at: now.toISOString(), purge_after: purgeAfter.toISOString() } as any)
+    .eq("id", user.id);
+  if (error) throw new Error(error.message);
+}
+
+/** Clear the deletion request — restores full access. */
+export async function restoreUserData(): Promise<void> {
+  const { data: sess } = await supabase.auth.getSession();
+  const user = sess.session?.user;
+  if (!user) throw new Error("Not signed in");
+  const { error } = await supabase
+    .from("profiles")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update({ deleted_at: null, purge_after: null } as any)
+    .eq("id", user.id);
+  if (error) throw new Error(error.message);
+}
+
+export type DeletionStatus = { deletedAt: string; purgeAfter: string | null };
+
+/** Returns deletion status if the user has a pending soft-delete, else null. */
+export async function checkDeletionStatus(
+  userId: string,
+): Promise<DeletionStatus | null> {
+  const { data } = await supabase
+    .from("profiles")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .select("deleted_at, purge_after" as any)
+    .eq("id", userId)
+    .maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const row = data as any;
+  if (!row?.deleted_at) return null;
+  return { deletedAt: row.deleted_at, purgeAfter: row.purge_after ?? null };
+}
