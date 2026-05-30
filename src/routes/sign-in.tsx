@@ -268,6 +268,16 @@ function SignInPage() {
                           ? mode === "signin" ? "Signing in\u2026" : "Creating account\u2026"
                           : mode === "signin" ? "Sign in" : "Create account"}
                       </Button>
+                      {mode === "register" && (
+                        <div className="pt-4 border-t border-border mt-2">
+                          <p className="label-eyebrow mb-3">Region &amp; language</p>
+                          <LocaleFields
+                            values={localeValues}
+                            onChange={setLocaleValues}
+                            compact
+                          />
+                        </div>
+                      )}
                       {mode === "signin" && (
                         <div className="pt-1 text-right">
                           <button
