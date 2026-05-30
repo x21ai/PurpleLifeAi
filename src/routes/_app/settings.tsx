@@ -5,7 +5,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useIsAdmin } from "@/lib/use-is-admin";
 import { useTheme, type ThemeMode } from "@/lib/theme-provider";
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, useState, lazy, Suspense, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { showsSeizureFeatures } from "@/lib/condition-prompts";
 
@@ -192,7 +192,7 @@ function SettingsPage() {
   );
 }
 
-function GroupLabel({ children }: { children: React.ReactNode }) {
+function GroupLabel({ children }: { children: ReactNode }) {
   return (
     <p className="mt-8 mb-2 px-1 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
       {children}
