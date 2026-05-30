@@ -186,6 +186,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           // Log the suppressed attempt
           await supabase.from('email_send_log').insert({
             message_id: messageId,
+            sent_by: user.id,
             template_name: templateName,
             recipient_email: effectiveRecipient,
             status: 'suppressed',
@@ -216,6 +217,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           })
           await supabase.from('email_send_log').insert({
             message_id: messageId,
+            sent_by: user.id,
             template_name: templateName,
             recipient_email: effectiveRecipient,
             status: 'failed',
@@ -246,6 +248,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
             })
             await supabase.from('email_send_log').insert({
               message_id: messageId,
+            sent_by: user.id,
               template_name: templateName,
               recipient_email: effectiveRecipient,
               status: 'failed',
@@ -272,6 +275,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
             })
             await supabase.from('email_send_log').insert({
               message_id: messageId,
+            sent_by: user.id,
               template_name: templateName,
               recipient_email: effectiveRecipient,
               status: 'failed',
@@ -291,6 +295,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           })
           await supabase.from('email_send_log').insert({
             message_id: messageId,
+            sent_by: user.id,
             template_name: templateName,
             recipient_email: effectiveRecipient,
             status: 'suppressed',
@@ -317,6 +322,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
         // Log pending BEFORE enqueue so we have a record even if enqueue crashes
         await supabase.from('email_send_log').insert({
           message_id: messageId,
+            sent_by: user.id,
           template_name: templateName,
           recipient_email: effectiveRecipient,
           status: 'pending',
@@ -349,6 +355,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
 
           await supabase.from('email_send_log').insert({
             message_id: messageId,
+            sent_by: user.id,
             template_name: templateName,
             recipient_email: effectiveRecipient,
             status: 'failed',
