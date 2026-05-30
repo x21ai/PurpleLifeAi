@@ -190,17 +190,6 @@ function SignInPage() {
               </div>
             ) : (
               <div className="mt-10">
-                <SocialSignInButtons />
-                <div className="relative my-8">
-                  <div className="absolute inset-0 flex items-center" aria-hidden>
-                    <span className="w-full border-t border-border" />
-                  </div>
-                  <p className="relative flex justify-center">
-                    <span className="bg-background px-3 text-xs font-sans uppercase tracking-widest text-muted-foreground">
-                      or continue with email
-                    </span>
-                  </p>
-                </div>
                 <Tabs value={mode} onValueChange={(v) => { setMode(v as "signin" | "register"); setErrorMsg(null); }}>
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="signin">Sign in</TabsTrigger>
@@ -267,6 +256,17 @@ function SignInPage() {
                     </form>
                   </TabsContent>
                 </Tabs>
+                <div className="relative my-8">
+                  <div className="absolute inset-0 flex items-center" aria-hidden>
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <p className="relative flex justify-center">
+                    <span className="bg-background px-3 text-xs font-sans uppercase tracking-widest text-muted-foreground">
+                      or use another account
+                    </span>
+                  </p>
+                </div>
+                <SocialSignInButtons helper="" />
               </div>
             )}
 
