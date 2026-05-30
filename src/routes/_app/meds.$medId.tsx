@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Plus, Edit3, Archive, ArchiveRestore, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Edit3, Archive, ArchiveRestore, Trash2, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { buildIcs, downloadIcs, medicationToIcsEvents } from "@/lib/ics";
 
 type Med = {
   id: string;
@@ -105,10 +106,11 @@ function MedDetail() {
   const [savingSideEffect, setSavingSideEffect] = React.useState(false);
   const [editOpen, setEditOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const [homeTz, setHomeTz] = React.useState<string>("UTC");
 
   const load = React.useCallback(async () => {
     if (!userId) return;
-    const [{ data: m }, { data: adh }, { data: doses }, { data: effects }] = await Promise.all([
+    const [{ data: m }, { data: adh }, { data: doses }, { data: effects }, { data: prof }] = await Promise.all([
       supabase.from("medications").select("*").eq("id", medId).maybeSingle(),
       supabase.rpc("medication_adherence", { med_id: medId, days_back: 14 }),
       supabase
@@ -122,12 +124,14 @@ function MedDetail() {
         .select("id, side_effect, severity, noted_at")
         .eq("medication_id", medId)
         .order("noted_at", { ascending: false }),
+      supabase.from("profiles").select("timezone").eq("id", userId).maybeSingle(),
     ]);
     setMed((m as Med) ?? null);
     const row = (adh as Array<{ scheduled_count: number; taken_count: number; adherence_pct: number }>)?.[0];
     if (row) setAdherence({ scheduled: Number(row.scheduled_count), taken: Number(row.taken_count), pct: Number(row.adherence_pct) });
     setRecent((doses as Dose[]) ?? []);
     setSideEffects((effects as SideEffect[]) ?? []);
+    setHomeTz((prof as { timezone: string | null } | null)?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC");
   }, [medId, userId]);
 
   React.useEffect(() => { void load(); }, [load]);
@@ -178,6 +182,29 @@ function MedDetail() {
     setSideEffectSeverity(5);
     setSideEffectOpen(false);
     void load();
+  };
+
+  const exportToCalendar = () => {
+    if (!med) return;
+    if (isRescueMed(med) || med.times_of_day.length === 0) {
+      toast.error("No schedule to export for this medication.");
+      return;
+    }
+    const events = medicationToIcsEvents({
+      medId: med.id,
+      medName: med.name,
+      dosage: med.dosage,
+      timesOfDay: med.times_of_day,
+      days: 30,
+      homeTz,
+    });
+    if (events.length === 0) {
+      toast.error("Could not build calendar events.");
+      return;
+    }
+    const ics = buildIcs(`${med.name} — Purple`, events);
+    downloadIcs(`${med.name.replace(/\s+/g, "-").toLowerCase()}-30d`, ics);
+    toast.success("Calendar file downloaded. Open it to add to Apple or Google Calendar.");
   };
 
   if (!med) {
@@ -294,6 +321,11 @@ function MedDetail() {
         <Button variant="outline" onClick={() => setEditOpen(true)}>
           <Edit3 className="h-4 w-4 mr-1.5" /> Edit
         </Button>
+        {!isRescueMed(med) && med.times_of_day.length > 0 && (
+          <Button variant="outline" onClick={exportToCalendar}>
+            <CalendarDays className="h-4 w-4 mr-1.5" /> Export to calendar
+          </Button>
+        )}
         {med.active ? (
           <Button variant="outline" onClick={archive}>
             <Archive className="h-4 w-4 mr-1.5" /> Archive
