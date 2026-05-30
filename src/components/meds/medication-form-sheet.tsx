@@ -23,6 +23,8 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { requestPermission, scheduleMedications } from "@/lib/med-notifications";
 import { searchMedDictionary, type MedDictEntry } from "@/lib/med-dictionary";
+import { ALARM_SOUNDS, DEFAULT_ALARM_SOUND, playAlarmOnce, type AlarmSoundId } from "@/lib/alarm-sounds";
+import { Volume2 } from "lucide-react";
 
 export type MedKind = "medication" | "supplement" | "vitamin" | "herbal" | "rescue";
 
@@ -80,6 +82,7 @@ export function MedicationFormSheet({
   const [unitMode, setUnitMode] = React.useState<"preset" | "custom">("preset");
   const [withFood, setWithFood] = React.useState(false);
   const [criticalAlarm, setCriticalAlarm] = React.useState(false);
+  const [alarmSound, setAlarmSound] = React.useState<AlarmSoundId>(DEFAULT_ALARM_SOUND);
   const [times, setTimes] = React.useState<string[]>(["08:00"]);
   // Per-time amount overrides. Index-aligned with `times`. Empty string = use the base amount.
   const [timeAmounts, setTimeAmounts] = React.useState<string[]>([""]);
@@ -110,6 +113,7 @@ export function MedicationFormSheet({
       setUnitMode("preset");
       setWithFood(false);
       setCriticalAlarm(false);
+      setAlarmSound(DEFAULT_ALARM_SOUND);
       setTimes(["08:00"]);
       setTimeAmounts([""]);
       setPillsRemaining("");
@@ -131,7 +135,7 @@ export function MedicationFormSheet({
       const { data, error } = await supabase
         .from("medications")
         .select(
-          "name, kind, dosage_form, dosage_amount, dosage_unit, with_food, schedule, times_of_day, pills_remaining, refill_threshold, prescriber_name, pharmacy_name, prescription_number, is_rescue, reminder_style",
+          "name, kind, dosage_form, dosage_amount, dosage_unit, with_food, schedule, times_of_day, pills_remaining, refill_threshold, prescriber_name, pharmacy_name, prescription_number, is_rescue, reminder_style, alarm_sound",
         )
         .eq("id", editingMedId)
         .maybeSingle();
@@ -152,6 +156,7 @@ export function MedicationFormSheet({
         prescription_number: string | null;
         is_rescue: boolean;
         reminder_style: string | null;
+        alarm_sound: string | null;
       };
       setName(m.name ?? "");
       const resolvedKind: MedKind = m.is_rescue ? "rescue" : (m.kind as MedKind) ?? "medication";
@@ -163,6 +168,7 @@ export function MedicationFormSheet({
       setUnitMode(DOSAGE_UNITS.includes(unit) ? "preset" : "custom");
       setWithFood(!!m.with_food);
       setCriticalAlarm(m.reminder_style === "critical");
+      setAlarmSound(((m.alarm_sound as AlarmSoundId) ?? DEFAULT_ALARM_SOUND));
       const schedule = Array.isArray(m.schedule) ? m.schedule : [];
       if (schedule.length > 0) {
         setTimes(schedule.map((s) => s.time));
@@ -257,6 +263,7 @@ export function MedicationFormSheet({
         pills_remaining: Number.isFinite(pills as number) ? pills : null,
         refill_threshold: Number.isFinite(threshold) ? threshold : 7,
         reminder_style: criticalAlarm ? "critical" : "standard",
+        alarm_sound: alarmSound,
       };
 
       let med: { id: string; name: string; dosage: string | null; times_of_day: string[]; is_rescue: boolean; kind: string };
