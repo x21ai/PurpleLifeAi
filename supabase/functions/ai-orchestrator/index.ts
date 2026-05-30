@@ -584,15 +584,44 @@ Deno.serve(async (req) => {
     // without action proposals.
     const { data: profileRow } = await admin
       .from("profiles")
-      .select("ai_model_preference")
+      .select("ai_model_preference, conditions, conditions_note")
       .eq("id", userId)
       .maybeSingle();
     const modelPref = String(
       (profileRow as any)?.ai_model_preference || "claude-sonnet",
     );
 
+    // Build per-user system prompt with light condition context so replies feel
+    // condition-aware without changing the underlying tone.
+    const CONDITION_LABELS: Record<string, string> = {
+      epilepsy: "epilepsy / seizures",
+      migraine: "migraine",
+      diabetes: "diabetes",
+      mental_health: "mental health (mood, anxiety, sleep)",
+      autoimmune: "an autoimmune condition",
+      pots: "POTS / dysautonomia",
+      long_covid: "long COVID / ME-CFS",
+      chronic_pain: "chronic pain",
+      caregiver: "caregiving for someone else",
+      general: "general wellness",
+    };
+    const conds = Array.isArray((profileRow as any)?.conditions)
+      ? ((profileRow as any).conditions as string[])
+      : [];
+    const condNote = String((profileRow as any)?.conditions_note ?? "").trim();
+    const labels = conds.map((c) => CONDITION_LABELS[c] ?? c).filter(Boolean);
+    let userSystem = SYSTEM_PROMPT;
+    if (labels.length > 0 || condNote) {
+      userSystem +=
+        "\n\nAbout this person: they are managing " +
+        (labels.length > 0 ? labels.join(", ") : "their health") +
+        "." +
+        (condNote ? ` They also noted: "${condNote.slice(0, 400)}".` : "") +
+        " Let this quietly shape what you ask about and what you suggest. Don't lecture or list facts about the condition unless asked.";
+    }
+
     if (modelPref === "gemini-flash" || modelPref === "gemini-pro") {
-      const reply = await callGeminiViaLovableAI(modelPref, message, history);
+      const reply = await callGeminiViaLovableAI(modelPref, message, history, userSystem);
       return new Response(JSON.stringify({ reply, proposals: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -610,7 +639,7 @@ Deno.serve(async (req) => {
     let reply = "";
     const proposals: Array<{ kind: string; summary: string; params: Record<string, unknown> }> = [];
     for (let step = 0; step < 8; step++) {
-      const resp = await callClaudeOnce(messages);
+      const resp = await callClaudeOnce(messages, userSystem);
       const contentBlocks: any[] = resp.content || [];
       messages.push({ role: "assistant", content: contentBlocks });
 

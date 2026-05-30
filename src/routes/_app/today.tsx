@@ -13,6 +13,7 @@ import { TodayDoses } from "@/components/meds/today-doses";
 import { TripBanner } from "@/components/travel/trip-banner";
 import { TodayInstallBanner } from "@/components/pwa/today-install-banner";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
+import { promptsForConditions } from "@/lib/condition-prompts";
 
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
@@ -40,7 +41,7 @@ type Forecast = {
   band: string;
 };
 
-type Profile = { first_name: string | null };
+type Profile = { first_name: string | null; conditions: string[] | null };
 
 type AdminMessage = { id: string; subject: string; body: string; created_at: string };
 
@@ -84,7 +85,7 @@ function TodayPage() {
           .maybeSingle(),
         supabase
           .from("profiles")
-          .select("first_name")
+          .select("first_name, conditions")
           .eq("id", userId)
           .maybeSingle(),
         supabase
@@ -113,6 +114,13 @@ function TodayPage() {
           ? "Good afternoon"
           : "Good evening";
   const firstName = profile?.first_name?.trim();
+  const conditionPrompt = React.useMemo(() => {
+    const list = promptsForConditions(profile?.conditions ?? []);
+    if (list.length === 0) return "How's today feeling?";
+    // Deterministic per-day so the prompt doesn't flicker on re-render.
+    const day = now ? Math.floor(now.getTime() / 86_400_000) : 0;
+    return list[day % list.length];
+  }, [profile?.conditions, now]);
 
   const readiness = bio?.oura_readiness_score ?? null;
   const sleep = bio?.sleep_score ?? null;
@@ -155,7 +163,7 @@ function TodayPage() {
         </p>
       ) : (
         <p className="body-serif mt-4 max-w-[600px] text-foreground/60">
-          How&rsquo;s today feeling?
+          {conditionPrompt}
         </p>
       )}
 
