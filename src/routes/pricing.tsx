@@ -6,9 +6,9 @@ import { SiteFooter } from "@/components/layout/site-footer";
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "Pricing — Purple" },
+      { title: "Pricing. Purple." },
       { name: "description", content: "Purple is free forever. No ads. No selling your data." },
-      { property: "og:title", content: "Pricing — Purple" },
+      { property: "og:title", content: "Pricing. Purple." },
       { property: "og:description", content: "Free forever." },
     ],
     links: [{ rel: "canonical", href: "/pricing" }],
@@ -23,7 +23,7 @@ const included = [
   "Medication tracking, reminders, adherence",
   "Seizure log with backdating",
   "Oura biometrics integration",
-  "Ask Purple — choose your AI model",
+  "Ask Purple. Choose your AI model.",
   "Community access",
   "Export everything, delete anytime",
 ];
