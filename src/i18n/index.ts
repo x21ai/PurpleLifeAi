@@ -1,6 +1,5 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
 import en from "./locales/en.json";
 import es from "./locales/es.json";
 
@@ -14,23 +13,32 @@ export const SUPPORTED_LOCALES = [
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]["value"];
 
+const isBrowser = typeof window !== "undefined";
+
+function initialLanguage(): SupportedLocale {
+  if (!isBrowser) return "en";
+  try {
+    const stored = localStorage.getItem("purple-locale");
+    if (stored === "en" || stored === "es") return stored;
+  } catch {
+    // ignore
+  }
+  const nav = (navigator.language || "en").toLowerCase();
+  return nav.startsWith("es") ? "es" : "en";
+}
+
 if (!i18n.isInitialized) {
   void i18n
-    .use(LanguageDetector)
     .use(initReactI18next)
     .init({
       resources: {
         en: { translation: en },
         es: { translation: es },
       },
+      lng: initialLanguage(),
       fallbackLng: "en",
       supportedLngs: SUPPORTED_LOCALES.map((l) => l.value),
       interpolation: { escapeValue: false },
-      detection: {
-        order: ["localStorage", "navigator", "htmlTag"],
-        caches: ["localStorage"],
-        lookupLocalStorage: "purple-locale",
-      },
       react: { useSuspense: false },
     });
 }
