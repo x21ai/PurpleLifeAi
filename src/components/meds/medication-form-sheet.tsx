@@ -79,6 +79,7 @@ export function MedicationFormSheet({
   const [dosageUnit, setDosageUnit] = React.useState("mg");
   const [unitMode, setUnitMode] = React.useState<"preset" | "custom">("preset");
   const [withFood, setWithFood] = React.useState(false);
+  const [criticalAlarm, setCriticalAlarm] = React.useState(false);
   const [times, setTimes] = React.useState<string[]>(["08:00"]);
   // Per-time amount overrides. Index-aligned with `times`. Empty string = use the base amount.
   const [timeAmounts, setTimeAmounts] = React.useState<string[]>([""]);
@@ -108,6 +109,7 @@ export function MedicationFormSheet({
       setDosageUnit("mg");
       setUnitMode("preset");
       setWithFood(false);
+      setCriticalAlarm(false);
       setTimes(["08:00"]);
       setTimeAmounts([""]);
       setPillsRemaining("");
@@ -129,7 +131,7 @@ export function MedicationFormSheet({
       const { data, error } = await supabase
         .from("medications")
         .select(
-          "name, kind, dosage_form, dosage_amount, dosage_unit, with_food, schedule, times_of_day, pills_remaining, refill_threshold, prescriber_name, pharmacy_name, prescription_number, is_rescue",
+          "name, kind, dosage_form, dosage_amount, dosage_unit, with_food, schedule, times_of_day, pills_remaining, refill_threshold, prescriber_name, pharmacy_name, prescription_number, is_rescue, reminder_style",
         )
         .eq("id", editingMedId)
         .maybeSingle();
@@ -149,6 +151,7 @@ export function MedicationFormSheet({
         pharmacy_name: string | null;
         prescription_number: string | null;
         is_rescue: boolean;
+        reminder_style: string | null;
       };
       setName(m.name ?? "");
       const resolvedKind: MedKind = m.is_rescue ? "rescue" : (m.kind as MedKind) ?? "medication";
@@ -159,6 +162,7 @@ export function MedicationFormSheet({
       setDosageUnit(unit);
       setUnitMode(DOSAGE_UNITS.includes(unit) ? "preset" : "custom");
       setWithFood(!!m.with_food);
+      setCriticalAlarm(m.reminder_style === "critical");
       const schedule = Array.isArray(m.schedule) ? m.schedule : [];
       if (schedule.length > 0) {
         setTimes(schedule.map((s) => s.time));
@@ -252,6 +256,7 @@ export function MedicationFormSheet({
         is_rescue: isRescue,
         pills_remaining: Number.isFinite(pills as number) ? pills : null,
         refill_threshold: Number.isFinite(threshold) ? threshold : 7,
+        reminder_style: criticalAlarm ? "critical" : "standard",
       };
 
       let med: { id: string; name: string; dosage: string | null; times_of_day: string[]; is_rescue: boolean; kind: string };
@@ -524,6 +529,16 @@ export function MedicationFormSheet({
               <p className="text-xs text-muted-foreground mt-0.5">Reminders will mention this.</p>
             </div>
             <Switch checked={withFood} onCheckedChange={setWithFood} />
+          </div>
+
+          <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
+            <div className="pr-3">
+              <p className="text-sm font-medium text-foreground">Critical alarm</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Sound an alarm and keep prompting until you confirm. Use for must-take doses.
+              </p>
+            </div>
+            <Switch checked={criticalAlarm} onCheckedChange={setCriticalAlarm} />
           </div>
 
           {isRescue ? (
