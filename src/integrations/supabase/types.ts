@@ -1444,6 +1444,7 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_stuck_journal_entries: { Args: never; Returns: number }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -1520,6 +1521,10 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      regenerate_today_pending_doses: {
+        Args: { _user_id: string }
+        Returns: undefined
       }
       seed_daily_medication_doses: { Args: never; Returns: undefined }
     }

@@ -80,7 +80,7 @@ export function TodayBiometrics() {
       <div className="flex items-baseline justify-between">
         <h2 className="label-eyebrow">Your body today</h2>
         <p className="text-[11px] text-muted-foreground">
-          Oura · synced {formatDistanceToNow(new Date(row.recorded_at), { addSuffix: true })}
+          Oura · latest data {formatDistanceToNow(new Date(row.recorded_at), { addSuffix: true })}
         </p>
       </div>
       <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-7">

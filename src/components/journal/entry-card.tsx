@@ -125,6 +125,32 @@ export function EntryCard({ entry }: { entry: Entry }) {
   const photos = entry.media_urls.filter(isImage);
   const videos = entry.media_urls.filter(isVideo);
   const processing = entry.status === "processing";
+  const failed = entry.status === "failed";
+  // After 5 minutes, a "processing" entry has almost certainly stalled — offer a retry.
+  const stale =
+    processing &&
+    Date.now() - new Date(entry.created_at).getTime() > 5 * 60 * 1000;
+
+  const retryExtract = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      // Re-trigger the extractor by re-saving the row's text/captured_at;
+      // the realtime listener on the journal page will pick up the update.
+      await supabase
+        .from("journal_entries")
+        .update({ status: "processing" })
+        .eq("id", entry.id);
+      await supabase.functions.invoke("journal-processor", {
+        body: { entryId: entry.id },
+      });
+      toast.success("Re-reading entry…");
+    } catch (e) {
+      toast.error("Couldn't restart. Try again later.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <article className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-sm">
@@ -145,10 +171,21 @@ export function EntryCard({ entry }: { entry: Entry }) {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {processing && (
+          {processing && !stale && (
             <span className="inline-flex items-center gap-1 text-primary/80">
               <Loader2 className="h-3 w-3 animate-spin" /> reading…
             </span>
+          )}
+          {(stale || failed) && (
+            <button
+              type="button"
+              onClick={retryExtract}
+              disabled={busy}
+              className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-50"
+            >
+              {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+              {failed ? "Retry reading" : "Stuck — retry"}
+            </button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger
