@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronLeft, Plane, Trash2, Loader2 } from "lucide-react";
+import { ChevronLeft, Plane, Trash2, Loader2, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { buildIcs, downloadIcs, medicationToIcsEvents } from "@/lib/ics";
 
 export const Route = createFileRoute("/_app/settings/travel")({
   head: () => ({ meta: [{ title: "Travel mode — Purple" }] }),
@@ -137,6 +138,45 @@ function TravelPage() {
     void load();
   };
 
+  const exportTripToCalendar = async (trip: Trip) => {
+    if (!userId) return;
+    const { data: meds, error } = await supabase
+      .from("medications")
+      .select("id, name, dosage, times_of_day, is_rescue")
+      .eq("user_id", userId)
+      .eq("active", true);
+    if (error) {
+      toast.error("Could not load medications");
+      return;
+    }
+    const list = (meds ?? []) as Array<{ id: string; name: string; dosage: string | null; times_of_day: string[] | null; is_rescue: boolean }>;
+    const depart = new Date(trip.depart_at);
+    const ret = new Date(trip.return_at);
+    const days = Math.max(1, Math.ceil((ret.getTime() - depart.getTime()) / (1000 * 60 * 60 * 24)));
+    const startDate = depart.toISOString().slice(0, 10);
+    const events = list
+      .filter((m) => !m.is_rescue && (m.times_of_day?.length ?? 0) > 0)
+      .flatMap((m) =>
+        medicationToIcsEvents({
+          medId: m.id,
+          medName: m.name,
+          dosage: m.dosage,
+          timesOfDay: m.times_of_day ?? [],
+          days,
+          startDate,
+          homeTz,
+        }),
+      );
+    if (events.length === 0) {
+      toast.error("No scheduled medications to export for this trip.");
+      return;
+    }
+    const label = trip.label ?? `Trip to ${trip.destination_tz}`;
+    const ics = buildIcs(`${label} — Purple`, events);
+    downloadIcs(`${label.replace(/\s+/g, "-").toLowerCase()}-meds`, ics);
+    toast.success("Calendar file downloaded. Open it to add to Apple or Google Calendar.");
+  };
+
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-10 sm:pt-16 pb-24">
       <Link
@@ -249,6 +289,17 @@ function TravelPage() {
                     {" · "}
                     <span className="capitalize">{t.status}</span>
                   </p>
+                  <div className="mt-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full h-7 px-3 text-xs"
+                      onClick={() => void exportTripToCalendar(t)}
+                    >
+                      <CalendarDays className="h-3 w-3 mr-1" /> Export to calendar
+                    </Button>
+                  </div>
                 </div>
                 <button
                   type="button"
