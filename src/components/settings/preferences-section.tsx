@@ -277,8 +277,8 @@ export function PreferencesSection() {
               </SelectTrigger>
               <SelectContent>
                 {(["Fast", "Balanced", "Deepest"] as const).map((g) => (
-                  <div key={g}>
-                    <div className="px-2 pt-2 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">{g}</div>
+                  <SelectGroup key={g}>
+                    <SelectLabel className="px-2 pt-2 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">{g}</SelectLabel>
                     {MODEL_OPTIONS.filter((o) => o.group === g).map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         <div className="flex flex-col items-start">
@@ -287,7 +287,7 @@ export function PreferencesSection() {
                         </div>
                       </SelectItem>
                     ))}
-                  </div>
+                  </SelectGroup>
                 ))}
               </SelectContent>
             </Select>
