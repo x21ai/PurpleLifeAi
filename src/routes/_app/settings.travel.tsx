@@ -283,6 +283,15 @@ function TravelPage() {
         you're actually in.
       </p>
 
+      <div className="mt-6">
+        <a
+          href="#plan-a-trip"
+          className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+        >
+          <Plus className="h-4 w-4 mr-1.5" /> New trip
+        </a>
+      </div>
+
       <section className="mt-8 rounded-2xl border border-border bg-card p-5 sm:p-6">
         <h2 className="font-serif text-xl text-foreground">Home timezone</h2>
         <p className="mt-1 text-sm text-muted-foreground">
