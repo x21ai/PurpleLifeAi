@@ -1,16 +1,24 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronLeft, Plane, Trash2, Loader2, CalendarDays, Plus, Wand2 } from "lucide-react";
+import { ChevronLeft, Plane, Trash2, Loader2, CalendarDays, Plus, Wand2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { buildIcs, downloadIcs, medicationToIcsEvents } from "@/lib/ics";
 import { useServerFn } from "@tanstack/react-start";
-import { generateTripSchedule } from "@/lib/travel.functions";
+import { generateTripSchedule, previewTripSchedule } from "@/lib/travel.functions";
+import { DualTime } from "@/components/travel/dual-time";
 
 export const Route = createFileRoute("/_app/settings/travel")({
   head: () => ({ meta: [{ title: "Travel mode — Purple" }] }),
@@ -56,6 +64,7 @@ function TravelPage() {
   const { session } = useAuth();
   const userId = session?.user.id;
   const generateFn = useServerFn(generateTripSchedule);
+  const previewFn = useServerFn(previewTripSchedule);
   const [homeTz, setHomeTz] = React.useState<string>("UTC");
   const [trips, setTrips] = React.useState<Trip[] | null>(null);
   const [savingHome, setSavingHome] = React.useState(false);
@@ -68,6 +77,22 @@ function TravelPage() {
   const [legs, setLegs] = React.useState<LegDraft[]>([]);
   const [creating, setCreating] = React.useState(false);
   const [generatingId, setGeneratingId] = React.useState<string | null>(null);
+  const [previewState, setPreviewState] = React.useState<
+    | {
+        trip: Trip;
+        homeTz: string;
+        doses: Array<{
+          medication_id: string;
+          medication_name: string;
+          scheduled_at: string;
+          leg_tz: string;
+          amount: number | null;
+          unit: string | null;
+        }>;
+      }
+    | null
+  >(null);
+  const [previewingId, setPreviewingId] = React.useState<string | null>(null);
 
   const load = React.useCallback(async () => {
     if (!userId) return;
@@ -175,6 +200,26 @@ function TravelPage() {
       toast.error(e instanceof Error ? e.message : "Could not generate schedule");
     } finally {
       setGeneratingId(null);
+    }
+  };
+
+  const previewSchedule = async (trip: Trip) => {
+    setPreviewingId(trip.id);
+    try {
+      const res = await previewFn({ data: { trip_id: trip.id } });
+      if (res.doses.length === 0) {
+        toast.info(
+          res.slotCount === 0
+            ? "No scheduled medications to preview."
+            : "No doses fall inside this trip window.",
+        );
+        return;
+      }
+      setPreviewState({ trip, homeTz: res.homeTz, doses: res.doses });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not build preview");
+    } finally {
+      setPreviewingId(null);
     }
   };
 
@@ -475,6 +520,21 @@ function TravelPage() {
                       size="sm"
                       variant="outline"
                       className="rounded-full h-7 px-3 text-xs"
+                      onClick={() => void previewSchedule(t)}
+                      disabled={previewingId === t.id}
+                    >
+                      {previewingId === t.id ? (
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      ) : (
+                        <Eye className="h-3 w-3 mr-1" />
+                      )}
+                      Preview
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full h-7 px-3 text-xs"
                       onClick={() => void exportTripToCalendar(t)}
                     >
                       <CalendarDays className="h-3 w-3 mr-1" /> Export to calendar
@@ -494,6 +554,132 @@ function TravelPage() {
           </ul>
         )}
       </section>
+
+      <Dialog
+        open={!!previewState}
+        onOpenChange={(o) => {
+          if (!o) setPreviewState(null);
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl">
+              Schedule preview
+            </DialogTitle>
+            <DialogDescription>
+              {previewState
+                ? `${previewState.doses.length} doses, ${previewState.trip.shift_strategy ?? "snap"} strategy. Nothing has been saved yet.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto -mx-6 px-6 pb-2">
+            {previewState && (
+              <PreviewBody
+                homeTz={previewState.homeTz}
+                doses={previewState.doses}
+              />
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+            <Button
+              variant="ghost"
+              onClick={() => setPreviewState(null)}
+              className="rounded-full"
+            >
+              Close
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!previewState) return;
+                const trip = previewState.trip;
+                setPreviewState(null);
+                await generateSchedule(trip);
+              }}
+              className="rounded-full"
+            >
+              <Wand2 className="h-3.5 w-3.5 mr-1.5" />
+              Generate now
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function PreviewBody({
+  homeTz,
+  doses,
+}: {
+  homeTz: string;
+  doses: Array<{
+    medication_id: string;
+    medication_name: string;
+    scheduled_at: string;
+    leg_tz: string;
+    amount: number | null;
+    unit: string | null;
+  }>;
+}) {
+  // Group by local date in each dose's leg_tz.
+  const groups = React.useMemo(() => {
+    const m = new Map<string, typeof doses>();
+    for (const d of doses) {
+      const key = new Intl.DateTimeFormat("en-CA", {
+        timeZone: d.leg_tz,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date(d.scheduled_at));
+      const arr = m.get(key) ?? [];
+      arr.push(d);
+      m.set(key, arr);
+    }
+    return Array.from(m.entries()).sort(([a], [b]) => (a < b ? -1 : 1));
+  }, [doses]);
+
+  return (
+    <div className="space-y-5 py-3">
+      {groups.map(([day, list]) => (
+        <div key={day}>
+          <p className="label-eyebrow text-muted-foreground">
+            {new Date(`${day}T12:00:00Z`).toLocaleDateString(undefined, {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            })}
+          </p>
+          <ul className="mt-2 divide-y divide-border rounded-xl border border-border">
+            {list
+              .slice()
+              .sort(
+                (a, b) =>
+                  new Date(a.scheduled_at).getTime() -
+                  new Date(b.scheduled_at).getTime(),
+              )
+              .map((d, i) => (
+                <li
+                  key={`${d.medication_id}-${d.scheduled_at}-${i}`}
+                  className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="text-foreground truncate">{d.medication_name}</p>
+                    {d.amount != null && (
+                      <p className="text-xs text-muted-foreground">
+                        {d.amount} {d.unit ?? ""}
+                      </p>
+                    )}
+                  </div>
+                  <DualTime
+                    iso={d.scheduled_at}
+                    homeTz={homeTz}
+                    className="text-foreground/90 text-right shrink-0"
+                  />
+                </li>
+              ))}
+          </ul>
+        </div>
+      ))}
     </div>
   );
 }

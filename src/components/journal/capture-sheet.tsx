@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { useVoiceCapture } from "./use-voice-capture";
+import { promptsForConditions } from "@/lib/condition-prompts";
 
 type Attachment = {
   id: string;
@@ -77,6 +78,26 @@ export function CaptureSheet({
   const galleryInput = React.useRef<HTMLInputElement | null>(null);
   const videoInput = React.useRef<HTMLInputElement | null>(null);
   const voice = useVoiceCapture();
+  const [conditions, setConditions] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    if (!userId) return;
+    void supabase
+      .from("profiles")
+      .select("conditions")
+      .eq("id", userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        setConditions(((data?.conditions as string[] | null) ?? []));
+      });
+  }, [userId]);
+
+  const placeholder = React.useMemo(() => {
+    const list = promptsForConditions(conditions);
+    if (list.length === 0) return "What is happening, or what just happened?";
+    const day = Math.floor(Date.now() / 86_400_000);
+    return list[day % list.length];
+  }, [conditions]);
 
   React.useEffect(() => {
     if (open) {
@@ -244,7 +265,7 @@ export function CaptureSheet({
             ref={textareaRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="What is happening, or what just happened?"
+            placeholder={placeholder}
             className="min-h-[180px] border-0 shadow-none focus-visible:ring-0 px-0 text-base resize-none font-serif placeholder:text-muted-foreground/60 placeholder:font-sans"
           />
 

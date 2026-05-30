@@ -4,11 +4,20 @@ import { Plane, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
+import { DualTime } from "./dual-time";
 
 const DISMISS_KEY = "purple-trip-banner-dismissed-tz";
 
 type Profile = { timezone: string | null };
-type ActiveTrip = { id: string; destination_tz: string } | null;
+type Leg = { tz: string; from_at: string; label?: string };
+type ActiveTrip = {
+  id: string;
+  destination_tz: string;
+  legs: Leg[] | null;
+  home_tz_snapshot: string | null;
+  return_at: string;
+} | null;
+type NextDose = { scheduled_at: string; medication_name: string } | null;
 
 /**
  * Shown on Today when the device timezone differs from the user's stored home
@@ -21,6 +30,7 @@ export function TripBanner() {
   const userId = session?.user.id;
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [activeTrip, setActiveTrip] = React.useState<ActiveTrip>(null);
+  const [nextDose, setNextDose] = React.useState<NextDose>(null);
   const [deviceTz, setDeviceTz] = React.useState<string | null>(null);
   const [dismissedFor, setDismissedFor] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
@@ -41,7 +51,7 @@ export function TripBanner() {
       supabase.from("profiles").select("timezone").eq("id", userId).maybeSingle(),
       supabase
         .from("trips")
-        .select("id, destination_tz, depart_at, return_at, status")
+        .select("id, destination_tz, depart_at, return_at, status, legs, home_tz_snapshot")
         .lte("depart_at", new Date().toISOString())
         .gte("return_at", new Date().toISOString())
         .neq("status", "cancelled")
@@ -49,7 +59,40 @@ export function TripBanner() {
     ]);
     setProfile((p as Profile) ?? { timezone: null });
     const t = (trips ?? [])[0];
-    setActiveTrip(t ? { id: t.id, destination_tz: t.destination_tz } : null);
+    setActiveTrip(
+      t
+        ? {
+            id: t.id,
+            destination_tz: t.destination_tz,
+            legs: (t.legs as Leg[] | null) ?? null,
+            home_tz_snapshot: t.home_tz_snapshot ?? null,
+            return_at: t.return_at,
+          }
+        : null,
+    );
+    if (t) {
+      const { data: dose } = await supabase
+        .from("medication_doses")
+        .select("scheduled_at, medications(name)")
+        .eq("user_id", userId)
+        .eq("status", "pending")
+        .gte("scheduled_at", new Date().toISOString())
+        .lte("scheduled_at", t.return_at)
+        .order("scheduled_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      setNextDose(
+        dose
+          ? {
+              scheduled_at: dose.scheduled_at,
+              medication_name:
+                (dose as { medications?: { name?: string } }).medications?.name ?? "Next dose",
+            }
+          : null,
+      );
+    } else {
+      setNextDose(null);
+    }
   }, [userId]);
 
   React.useEffect(() => {
@@ -59,19 +102,51 @@ export function TripBanner() {
   if (!userId || !deviceTz) return null;
   const homeTz = profile?.timezone ?? null;
 
-  // Active trip → show a slim travel pill instead of the prompt.
+  // Active trip → show a richer card with active leg + next dose dual time.
   if (activeTrip) {
+    const homeTz = activeTrip.home_tz_snapshot ?? profile?.timezone ?? null;
+    const legs = (activeTrip.legs ?? []).slice().sort(
+      (a, b) => new Date(a.from_at).getTime() - new Date(b.from_at).getTime(),
+    );
+    const nowMs = Date.now();
+    const active = legs.filter((l) => new Date(l.from_at).getTime() <= nowMs).pop();
+    const currentTz = active?.tz ?? activeTrip.destination_tz;
+    const currentLabel = active?.label?.trim() || shortCity(currentTz);
     return (
-      <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs text-foreground">
-        <Plane className="h-3.5 w-3.5 text-primary" />
-        <span>Travel mode · doses anchored to home time</span>
-        <Link
-          to="/settings/travel"
-          className="text-primary underline-offset-2 hover:underline"
-        >
-          Manage
-        </Link>
-      </div>
+      <aside
+        aria-label="Travel mode active"
+        className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 sm:p-5"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 text-primary">
+              <Plane className="h-3.5 w-3.5" />
+              <p className="label-eyebrow text-primary">Travel mode</p>
+            </div>
+            <p className="mt-2 text-sm text-foreground">
+              You're in <span className="font-medium">{currentLabel}</span>
+              <span className="text-muted-foreground"> · {currentTz}</span>
+            </p>
+            {nextDose ? (
+              <p className="mt-1.5 text-sm text-foreground/80 flex flex-wrap items-baseline gap-x-2">
+                <span className="text-muted-foreground">Next dose</span>
+                <span className="font-medium">{nextDose.medication_name}</span>
+                <DualTime iso={nextDose.scheduled_at} homeTz={homeTz} />
+              </p>
+            ) : (
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                No upcoming doses in this trip window.
+              </p>
+            )}
+          </div>
+          <Link
+            to="/settings/travel"
+            className="text-xs text-primary underline-offset-2 hover:underline shrink-0"
+          >
+            Manage
+          </Link>
+        </div>
+      </aside>
     );
   }
 
@@ -170,4 +245,10 @@ export function TripBanner() {
       </button>
     </aside>
   );
+}
+
+/** "America/New_York" → "New York"; falls back to last segment of the tz id. */
+function shortCity(tz: string): string {
+  const last = tz.split("/").pop() ?? tz;
+  return last.replace(/_/g, " ");
 }

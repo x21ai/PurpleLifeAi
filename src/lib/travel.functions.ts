@@ -199,3 +199,86 @@ export const generateTripSchedule = createServerFn({ method: "POST" })
 
     return { generated: doses.length, slots: slots.length };
   });
+
+/**
+ * Dry-run of `generateTripSchedule`: computes what would be written without
+ * touching the database. Powers the "Preview schedule" UI.
+ */
+export const previewTripSchedule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ trip_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: trip, error: tripErr } = await supabase
+      .from("trips")
+      .select(
+        "id, depart_at, return_at, legs, shift_strategy, shift_hours_per_day, home_tz_snapshot, destination_tz",
+      )
+      .eq("id", data.trip_id)
+      .maybeSingle();
+    if (tripErr || !trip) throw new Error(tripErr?.message ?? "Trip not found");
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("timezone")
+      .eq("id", userId)
+      .maybeSingle();
+    const homeTz = trip.home_tz_snapshot ?? profile?.timezone ?? "UTC";
+
+    const { data: meds, error: medsErr } = await supabase
+      .from("medications")
+      .select("id, name, schedule, times_of_day, dosage_amount, dosage_unit, is_rescue, active")
+      .eq("user_id", userId)
+      .eq("active", true)
+      .eq("is_rescue", false);
+    if (medsErr) throw new Error(medsErr.message);
+
+    type ScheduleSlot = { time?: string; amount?: string | number; unit?: string };
+    const slots: MedSlot[] = [];
+    const medName = new Map<string, string>();
+    for (const m of meds ?? []) {
+      medName.set(m.id, m.name);
+      const sched = (m.schedule as ScheduleSlot[] | null) ?? [];
+      if (sched.length > 0) {
+        for (const s of sched) {
+          if (!s.time || !/^\d{1,2}:\d{2}$/.test(s.time)) continue;
+          slots.push({
+            medication_id: m.id,
+            time: s.time,
+            amount: s.amount != null && s.amount !== "" ? Number(s.amount) : m.dosage_amount,
+            unit: s.unit || m.dosage_unit,
+          });
+        }
+      } else if (m.times_of_day) {
+        for (const t of m.times_of_day as string[]) {
+          if (!/^\d{1,2}:\d{2}$/.test(t)) continue;
+          slots.push({
+            medication_id: m.id,
+            time: t,
+            amount: m.dosage_amount,
+            unit: m.dosage_unit,
+          });
+        }
+      }
+    }
+
+    const doses = generateTripDoses({
+      homeTz,
+      departAt: trip.depart_at,
+      returnAt: trip.return_at,
+      legs: (trip.legs as TripLeg[]) ?? [],
+      slots,
+      strategy: (trip.shift_strategy as "home" | "snap" | "gradual") ?? "snap",
+      shiftHoursPerDay: Number(trip.shift_hours_per_day ?? 2),
+    });
+
+    return {
+      homeTz,
+      doses: doses.map((d) => ({
+        ...d,
+        medication_name: medName.get(d.medication_id) ?? "Medication",
+      })),
+      slotCount: slots.length,
+    };
+  });
