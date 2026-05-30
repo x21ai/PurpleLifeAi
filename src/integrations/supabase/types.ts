@@ -1210,6 +1210,8 @@ export type Database = {
           community_bio: string | null
           community_display_name: string | null
           community_opted_in: boolean
+          conditions: string[]
+          conditions_note: string | null
           consent_research: boolean
           consent_share_with_caregivers: boolean
           created_at: string
@@ -1237,6 +1239,8 @@ export type Database = {
           community_bio?: string | null
           community_display_name?: string | null
           community_opted_in?: boolean
+          conditions?: string[]
+          conditions_note?: string | null
           consent_research?: boolean
           consent_share_with_caregivers?: boolean
           created_at?: string
@@ -1264,6 +1268,8 @@ export type Database = {
           community_bio?: string | null
           community_display_name?: string | null
           community_opted_in?: boolean
+          conditions?: string[]
+          conditions_note?: string | null
           consent_research?: boolean
           consent_share_with_caregivers?: boolean
           created_at?: string
