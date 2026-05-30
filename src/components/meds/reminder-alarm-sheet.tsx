@@ -12,54 +12,21 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
+import { startAlarmLoop, type AlarmSoundId, DEFAULT_ALARM_SOUND } from "@/lib/alarm-sounds";
 
 type CriticalDose = {
   id: string;
   scheduled_at: string;
-  medication: { id: string; name: string; dosage: string | null } | null;
+  medication: { id: string; name: string; dosage: string | null; alarm_sound?: string | null } | null;
 };
 
-// Lightweight web-audio beep loop — no asset needed.
-function useBeeper(active: boolean) {
-  const ctxRef = React.useRef<AudioContext | null>(null);
-  const timerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
-
+// Uses startAlarmLoop from @/lib/alarm-sounds to play the user's chosen preset.
+function useAlarmLoop(active: boolean, sound: AlarmSoundId) {
   React.useEffect(() => {
-    if (!active) {
-      if (timerRef.current) clearInterval(timerRef.current);
-      timerRef.current = null;
-      try { ctxRef.current?.close(); } catch { /* noop */ }
-      ctxRef.current = null;
-      return;
-    }
-    try {
-      const AC = (window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
-      if (!AC) return;
-      const ctx = new AC();
-      ctxRef.current = ctx;
-      const beep = () => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.value = 880;
-        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
-        osc.connect(gain).connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.55);
-      };
-      beep();
-      timerRef.current = setInterval(beep, 1500);
-    } catch { /* noop */ }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      timerRef.current = null;
-      try { ctxRef.current?.close(); } catch { /* noop */ }
-      ctxRef.current = null;
-    };
-  }, [active]);
+    if (!active) return;
+    const stop = startAlarmLoop(sound);
+    return () => stop();
+  }, [active, sound]);
 }
 
 export function ReminderAlarmSheet() {
@@ -67,6 +34,7 @@ export function ReminderAlarmSheet() {
   const userId = session?.user.id;
   const [dose, setDose] = React.useState<CriticalDose | null>(null);
   const [snoozeMinutes, setSnoozeMinutes] = React.useState(10);
+  const [defaultSound, setDefaultSound] = React.useState<AlarmSoundId>(DEFAULT_ALARM_SOUND);
   const [busy, setBusy] = React.useState(false);
   const dismissedRef = React.useRef<Set<string>>(new Set());
 
@@ -76,11 +44,12 @@ export function ReminderAlarmSheet() {
     void (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("snooze_minutes")
+        .select("snooze_minutes, default_alarm_sound")
         .eq("id", userId)
         .maybeSingle();
-      const m = (data as { snooze_minutes: number | null } | null)?.snooze_minutes;
-      if (m && m > 0) setSnoozeMinutes(m);
+      const row = data as { snooze_minutes: number | null; default_alarm_sound: string | null } | null;
+      if (row?.snooze_minutes && row.snooze_minutes > 0) setSnoozeMinutes(row.snooze_minutes);
+      if (row?.default_alarm_sound) setDefaultSound(row.default_alarm_sound as AlarmSoundId);
     })();
   }, [userId]);
 
@@ -90,7 +59,7 @@ export function ReminderAlarmSheet() {
     const { data } = await supabase
       .from("medication_doses")
       .select(
-        "id, scheduled_at, medication:medications!inner(id, name, dosage, reminder_style)",
+        "id, scheduled_at, medication:medications!inner(id, name, dosage, reminder_style, alarm_sound)",
       )
       .eq("user_id", userId)
       .eq("status", "pending")
@@ -98,7 +67,7 @@ export function ReminderAlarmSheet() {
       .order("scheduled_at", { ascending: true })
       .limit(5);
     const rows = (data as unknown as Array<
-      CriticalDose & { medication: { reminder_style: string } | null }
+      CriticalDose & { medication: { reminder_style: string; alarm_sound: string | null } | null }
     > | null) ?? [];
     const critical = rows.find(
       (r) => r.medication?.reminder_style === "critical" && !dismissedRef.current.has(r.id),
@@ -113,7 +82,8 @@ export function ReminderAlarmSheet() {
     return () => clearInterval(t);
   }, [userId, poll]);
 
-  useBeeper(!!dose);
+  const activeSound = (dose?.medication?.alarm_sound as AlarmSoundId | undefined) ?? defaultSound;
+  useAlarmLoop(!!dose, activeSound);
 
   if (!dose) return null;
 

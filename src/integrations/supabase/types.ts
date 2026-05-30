@@ -940,6 +940,7 @@ export type Database = {
       medications: {
         Row: {
           active: boolean
+          alarm_sound: string | null
           created_at: string
           dosage: string | null
           dosage_amount: number | null
@@ -969,6 +970,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          alarm_sound?: string | null
           created_at?: string
           dosage?: string | null
           dosage_amount?: number | null
@@ -998,6 +1000,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          alarm_sound?: string | null
           created_at?: string
           dosage?: string | null
           dosage_amount?: number | null
@@ -1024,6 +1027,45 @@ export type Database = {
           updated_at?: string
           user_id?: string
           with_food?: boolean | null
+        }
+        Relationships: []
+      }
+      metric_dictionary: {
+        Row: {
+          aliases: string[]
+          category: string
+          created_at: string
+          default_ref_high: number | null
+          default_ref_low: number | null
+          default_unit: string | null
+          display_name: string
+          hints: string | null
+          id: string
+          metric_key: string
+        }
+        Insert: {
+          aliases?: string[]
+          category: string
+          created_at?: string
+          default_ref_high?: number | null
+          default_ref_low?: number | null
+          default_unit?: string | null
+          display_name: string
+          hints?: string | null
+          id?: string
+          metric_key: string
+        }
+        Update: {
+          aliases?: string[]
+          category?: string
+          created_at?: string
+          default_ref_high?: number | null
+          default_ref_low?: number | null
+          default_unit?: string | null
+          display_name?: string
+          hints?: string | null
+          id?: string
+          metric_key?: string
         }
         Relationships: []
       }
@@ -1116,6 +1158,45 @@ export type Database = {
           },
         ]
       }
+      phi_access_log: {
+        Row: {
+          action: string
+          actor_id: string
+          at: string
+          id: string
+          ip_address: string | null
+          metadata: Json
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          at?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          at?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ai_model_preference: string
@@ -1127,12 +1208,14 @@ export type Database = {
           consent_share_with_caregivers: boolean
           created_at: string
           date_of_birth: string | null
+          default_alarm_sound: string
           diagnosis: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
           first_name: string | null
           floating_ask_enabled: boolean
           id: string
+          idle_timeout_minutes: number
           last_name: string | null
           onboarded_at: string | null
           sleep_time: string
@@ -1152,12 +1235,14 @@ export type Database = {
           consent_share_with_caregivers?: boolean
           created_at?: string
           date_of_birth?: string | null
+          default_alarm_sound?: string
           diagnosis?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           first_name?: string | null
           floating_ask_enabled?: boolean
           id: string
+          idle_timeout_minutes?: number
           last_name?: string | null
           onboarded_at?: string | null
           sleep_time?: string
@@ -1177,12 +1262,14 @@ export type Database = {
           consent_share_with_caregivers?: boolean
           created_at?: string
           date_of_birth?: string | null
+          default_alarm_sound?: string
           diagnosis?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           first_name?: string | null
           floating_ask_enabled?: boolean
           id?: string
+          idle_timeout_minutes?: number
           last_name?: string | null
           onboarded_at?: string | null
           sleep_time?: string
@@ -1193,6 +1280,140 @@ export type Database = {
           wake_time?: string
         }
         Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      report_documents: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          file_mime: string
+          file_path: string
+          id: string
+          ocr_text: string | null
+          report_date: string | null
+          report_type: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          file_mime: string
+          file_path: string
+          id?: string
+          ocr_text?: string | null
+          report_date?: string | null
+          report_type?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          file_mime?: string
+          file_path?: string
+          id?: string
+          ocr_text?: string | null
+          report_date?: string | null
+          report_type?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      report_metrics: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          flag: string | null
+          id: string
+          measured_at: string | null
+          metric_key: string
+          reference_high: number | null
+          reference_low: number | null
+          report_id: string
+          unit: string | null
+          user_corrected: boolean
+          user_id: string
+          value: number | null
+          value_text: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          flag?: string | null
+          id?: string
+          measured_at?: string | null
+          metric_key: string
+          reference_high?: number | null
+          reference_low?: number | null
+          report_id: string
+          unit?: string | null
+          user_corrected?: boolean
+          user_id: string
+          value?: number | null
+          value_text?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          flag?: string | null
+          id?: string
+          measured_at?: string | null
+          metric_key?: string
+          reference_high?: number | null
+          reference_low?: number | null
+          report_id?: string
+          unit?: string | null
+          user_corrected?: boolean
+          user_id?: string
+          value?: number | null
+          value_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_metrics_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "report_documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       research_sources: {
         Row: {
