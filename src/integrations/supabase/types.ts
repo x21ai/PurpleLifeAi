@@ -865,6 +865,7 @@ export type Database = {
           id: string
           medication_id: string
           notes: string | null
+          notified_at: string | null
           scheduled_at: string
           status: string
           taken_at: string | null
@@ -877,6 +878,7 @@ export type Database = {
           id?: string
           medication_id: string
           notes?: string | null
+          notified_at?: string | null
           scheduled_at: string
           status?: string
           taken_at?: string | null
@@ -889,6 +891,7 @@ export type Database = {
           id?: string
           medication_id?: string
           notes?: string | null
+          notified_at?: string | null
           scheduled_at?: string
           status?: string
           taken_at?: string | null

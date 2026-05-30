@@ -6,6 +6,7 @@ import { OuraConnection } from "@/components/connections/oura-connection";
 import { DataSection } from "@/components/settings/data-section";
 import { AboutSection } from "@/components/settings/about-section";
 import { PreferencesSection } from "@/components/settings/preferences-section";
+import { PhoneAlarmsSection } from "@/components/settings/phone-alarms-section";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useIsAdmin } from "@/lib/use-is-admin";
 import { useTheme, type ThemeMode } from "@/lib/theme-provider";
@@ -194,6 +195,7 @@ function SettingsPage() {
       </section>
 
       <AppearanceSection />
+      <PhoneAlarmsSection />
       <PreferencesSection />
       <DataSection />
       <AboutSection />
