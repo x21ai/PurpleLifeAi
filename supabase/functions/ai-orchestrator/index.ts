@@ -295,7 +295,7 @@ async function runTool(
   }
 }
 
-async function callClaudeOnce(messages: any[]) {
+async function callClaudeOnce(messages: any[], system: string = SYSTEM_PROMPT) {
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -306,7 +306,7 @@ async function callClaudeOnce(messages: any[]) {
     body: JSON.stringify({
       model: "claude-sonnet-4-5",
       max_tokens: 1500,
-      system: SYSTEM_PROMPT,
+      system,
       tools: TOOLS,
       messages,
     }),
@@ -326,6 +326,7 @@ async function callGeminiViaLovableAI(
   pref: "gemini-flash" | "gemini-pro",
   message: string,
   history: { role: "user" | "assistant"; content: string }[],
+  system: string = SYSTEM_PROMPT,
 ): Promise<string> {
   if (!LOVABLE_API_KEY) {
     return "Gemini is not configured for this workspace yet. Switch to Claude in Settings → Preferences and ask me again.";
@@ -339,7 +340,7 @@ async function callGeminiViaLovableAI(
   const body = {
     model,
     messages: [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: system },
       ...trimmed,
       { role: "user", content: message },
     ],
