@@ -10,6 +10,9 @@ import { PhoneAlarmsSection } from "@/components/settings/phone-alarms-section";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useIsAdmin } from "@/lib/use-is-admin";
 import { useTheme, type ThemeMode } from "@/lib/theme-provider";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { showsSeizureFeatures } from "@/lib/condition-prompts";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "Settings — Purple" }] }),
@@ -21,6 +24,17 @@ function SettingsPage() {
   const { session, signOut } = useAuth();
   const navigate = useNavigate();
   const { isAdmin } = useIsAdmin();
+  const [conditions, setConditions] = useState<string[] | null>(null);
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    void supabase
+      .from("profiles")
+      .select("conditions")
+      .eq("id", session.user.id)
+      .maybeSingle()
+      .then(({ data }) => setConditions((data?.conditions as string[] | null) ?? []));
+  }, [session?.user?.id]);
+  const showSeizure = showsSeizureFeatures(conditions);
 
   const handleSignOut = async () => {
     await signOut();
@@ -168,19 +182,21 @@ function SettingsPage() {
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </Link>
-          <Link
-            to="/seizures/new"
-            className="flex items-center justify-between rounded-xl border border-border p-4 hover:bg-secondary/40 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <Zap className="h-4 w-4 text-destructive" />
-              <div>
-                <p className="font-serif text-base text-foreground">Past episodes</p>
-                <p className="text-xs text-muted-foreground">Log seizures from any date or time</p>
+          {showSeizure && (
+            <Link
+              to="/seizures/new"
+              className="flex items-center justify-between rounded-xl border border-border p-4 hover:bg-secondary/40 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <Zap className="h-4 w-4 text-destructive" />
+                <div>
+                  <p className="font-serif text-base text-foreground">Past episodes</p>
+                  <p className="text-xs text-muted-foreground">Log seizures from any date or time</p>
+                </div>
               </div>
-            </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </Link>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </Link>
+          )}
         </div>
       </section>
 
