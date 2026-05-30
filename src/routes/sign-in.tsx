@@ -9,6 +9,23 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SocialSignInButtons } from "@/components/auth/social-sign-in-buttons";
 import { isOAuthCallbackUrl, waitForOAuthSession } from "@/lib/auth-oauth";
 import { toast } from "sonner";
+import { LocaleFields, type LocaleValues } from "@/components/locale/locale-fields";
+import { setLocale, detectBrowserLocale, type SupportedLocale } from "@/i18n";
+
+const LOCALE_PREFILL_KEY = "purple-locale-prefill";
+
+function readPrefill(): LocaleValues {
+  if (typeof window === "undefined") {
+    return { country: null, timezone: null, locale: "en" };
+  }
+  try {
+    const raw = localStorage.getItem(LOCALE_PREFILL_KEY);
+    if (raw) return JSON.parse(raw) as LocaleValues;
+  } catch {
+    // ignore
+  }
+  return { country: null, timezone: null, locale: detectBrowserLocale() };
+}
 
 export const Route = createFileRoute("/sign-in")({
   beforeLoad: async () => {
@@ -58,6 +75,7 @@ function SignInPage() {
     "idle" | "submitting" | "verify-sent" | "reset-sent" | "error"
   >("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [localeValues, setLocaleValues] = useState<LocaleValues>(() => readPrefill());
   const navigate = Route.useNavigate();
 
   useEffect(() => {
@@ -121,7 +139,21 @@ function SignInPage() {
       setStatus("error");
       return;
     }
+    // Persist locale prefill so /welcome (post-verification) can apply it.
+    try {
+      localStorage.setItem(LOCALE_PREFILL_KEY, JSON.stringify(localeValues));
+    } catch {
+      // ignore
+    }
+    setLocale(localeValues.locale as SupportedLocale);
     if (data.session) {
+      // Save immediately so a fresh profile starts with the right locale.
+      void supabase.from("profiles").upsert({
+        id: data.session.user.id,
+        country: localeValues.country,
+        timezone: localeValues.timezone,
+        locale: localeValues.locale,
+      });
       await navigate({ to: "/today" });
       return;
     }
