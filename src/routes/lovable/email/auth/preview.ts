@@ -26,8 +26,8 @@ const ROOT_DOMAIN = "purplelife.org"
 // The sample email uses a fixed placeholder (RFC 6761 .test TLD) so the Go backend
 // can always find-and-replace it with the actual recipient when sending test emails,
 // even if the project's domain has changed since the template was scaffolded.
-const SAMPLE_PROJECT_URL = "https://purplelife.lovable.app"
-const SAMPLE_EMAIL = "user@example.test"
+const SAMPLE_PROJECT_URL = "https://purplelife.lovable.app" // live-data-guard:allow (email template preview only)
+const SAMPLE_EMAIL = "user@example.test" // live-data-guard:allow (email template preview only)
 const SAMPLE_DATA: Record<string, object> = {
   signup: {
     siteName: SITE_NAME,
@@ -99,7 +99,7 @@ export const Route = createFileRoute("/lovable/email/auth/preview")({
           )
         }
 
-        const sampleData = SAMPLE_DATA[type] || {}
+        const sampleData = SAMPLE_DATA[type] || {} // live-data-guard:allow (email template preview only)
         const html = await render(React.createElement(EmailTemplate, sampleData))
 
         return new Response(html, {
