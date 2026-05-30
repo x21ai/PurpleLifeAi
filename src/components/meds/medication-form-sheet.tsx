@@ -203,6 +203,11 @@ export function MedicationFormSheet({
 
   const handleSave = async () => {
     if (!canSave || saving || !userId) return;
+    // Require dosage amount for non-rescue meds so today's list never shows a blank row.
+    if (!isRescue && !dosageAmount.trim()) {
+      toast.error("Please enter a dose amount (e.g. 750 mg).");
+      return;
+    }
     setSaving(true);
     try {
       // Build [{time, amount, unit}] preserving per-time amounts, dedup'd by time.
