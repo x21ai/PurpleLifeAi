@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { ChevronRight, Pill, History, Zap, Users, Shield, MessageCircle, HeartHandshake, Plane, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/integrations/supabase/auth-context";
@@ -37,8 +37,18 @@ function SectionSkeleton() {
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "Settings — Purple" }] }),
-  component: SettingsPage,
+  component: SettingsLayout,
 });
+
+function SettingsLayout() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+  if (pathname !== "/settings") {
+    return <Outlet />;
+  }
+
+  return <SettingsPage />;
+}
 
 function SettingsPage() {
   useRouteTheme("light");
