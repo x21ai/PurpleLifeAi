@@ -23,6 +23,29 @@ import { DualTime } from "@/components/travel/dual-time";
 export const Route = createFileRoute("/_app/settings/travel")({
   head: () => ({ meta: [{ title: "Travel mode — Purple" }] }),
   component: TravelPage,
+  errorComponent: ({ error, reset }) => (
+    <div className="mx-auto max-w-3xl px-5 sm:px-10 pt-16 pb-24">
+      <h1 className="font-serif text-3xl text-foreground">Travel mode</h1>
+      <p className="mt-3 text-sm text-muted-foreground">
+        We hit a snag loading your trips. {error?.message ? `(${error.message})` : ""}
+      </p>
+      <div className="mt-5 flex gap-2">
+        <button
+          type="button"
+          onClick={reset}
+          className="rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground hover:bg-secondary"
+        >
+          Try again
+        </button>
+        <Link
+          to="/settings"
+          className="rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground hover:bg-secondary"
+        >
+          Back to settings
+        </Link>
+      </div>
+    </div>
+  ),
 });
 
 type Leg = { tz: string; from_at: string; label?: string };

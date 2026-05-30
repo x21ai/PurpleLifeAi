@@ -1,12 +1,12 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { Sparkles, MessageCircle, Loader2, BookOpen, ChevronRight, Moon, Bell } from "lucide-react";
+import { Sparkles, MessageCircle, Loader2, BookOpen, ChevronRight, Moon, Bell, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Heart } from "lucide-react";
-import { CONDITION_OPTIONS, type ConditionTag } from "@/lib/condition-prompts";
+import { CONDITION_OPTIONS } from "@/lib/condition-prompts";
 import {
   Select,
   SelectContent,
@@ -17,23 +17,16 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 
-const MODEL_OPTIONS = [
-  {
-    value: "gemini-flash",
-    label: "Gemini Flash · fast",
-    hint: "Quickest replies. Good default for day-to-day questions.",
-  },
-  {
-    value: "gemini-pro",
-    label: "Gemini Pro · deeper",
-    hint: "Slower, more thorough — best for pattern questions.",
-  },
-  {
-    value: "claude-sonnet",
-    label: "Claude Sonnet · most thoughtful",
-    hint: "Anthropic's flagship. Warmest tone, careful reasoning.",
-  },
+type ModelGroup = "Fast" | "Balanced" | "Deepest";
+const MODEL_OPTIONS: { value: string; label: string; hint: string; group: ModelGroup }[] = [
+  { value: "gemini-flash", label: "Gemini Flash", hint: "Quickest replies. Best default.", group: "Fast" },
+  { value: "gpt-5-mini", label: "GPT-5 mini", hint: "OpenAI, fast and balanced.", group: "Fast" },
+  { value: "claude-sonnet", label: "Claude Sonnet", hint: "Warm tone, careful reasoning. Used for actions.", group: "Balanced" },
+  { value: "gemini-pro", label: "Gemini Pro", hint: "Slower, more thorough.", group: "Balanced" },
+  { value: "gpt-5", label: "GPT-5", hint: "OpenAI flagship. Deep reasoning, slower.", group: "Deepest" },
+  { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro", hint: "Google's deepest. Long context.", group: "Deepest" },
 ];
+const KNOWN_CONDITION_IDS = new Set(CONDITION_OPTIONS.map((o) => o.id as string));
 
 export function PreferencesSection() {
   const { session } = useAuth();
@@ -44,7 +37,7 @@ export function PreferencesSection() {
   const [sleepTime, setSleepTime] = React.useState<string>("23:00");
   const [snoozeMinutes, setSnoozeMinutes] = React.useState<string>("10");
   const [conditions, setConditions] = React.useState<string[]>([]);
-  const [conditionsNote, setConditionsNote] = React.useState<string>("");
+  const [customDraft, setCustomDraft] = React.useState<string>("");
   const [savingConditions, setSavingConditions] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [savingModel, setSavingModel] = React.useState(false);
@@ -56,7 +49,7 @@ export function PreferencesSection() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("ai_model_preference, floating_ask_enabled, wake_time, sleep_time, snooze_minutes, conditions, conditions_note")
+        .select("ai_model_preference, floating_ask_enabled, wake_time, sleep_time, snooze_minutes, conditions")
         .eq("id", userId)
         .maybeSingle();
       if (cancelled) return;
@@ -67,7 +60,6 @@ export function PreferencesSection() {
         if (data.sleep_time) setSleepTime(String(data.sleep_time).slice(0, 5));
         if (data.snooze_minutes != null) setSnoozeMinutes(String(data.snooze_minutes));
         if (Array.isArray(data.conditions)) setConditions(data.conditions);
-        if (data.conditions_note) setConditionsNote(data.conditions_note);
       }
       setLoading(false);
     })();
@@ -129,11 +121,8 @@ export function PreferencesSection() {
     }
   };
 
-  const toggleCondition = async (id: ConditionTag) => {
+  const persistConditions = async (next: string[]) => {
     if (!userId) return;
-    const next = conditions.includes(id)
-      ? conditions.filter((c) => c !== id)
-      : [...conditions, id];
     setConditions(next);
     setSavingConditions(true);
     const { error } = await supabase
@@ -144,13 +133,24 @@ export function PreferencesSection() {
     if (error) toast.error("Couldn't save");
   };
 
-  const saveConditionsNote = async () => {
+  const toggleCondition = async (id: string) => {
     if (!userId) return;
-    const { error } = await supabase
-      .from("profiles")
-      .update({ conditions_note: conditionsNote.trim() || null })
-      .eq("id", userId);
-    if (error) toast.error("Couldn't save note");
+    const next = conditions.includes(id)
+      ? conditions.filter((c) => c !== id)
+      : [...conditions, id];
+    await persistConditions(next);
+  };
+
+  const addCustomCondition = async () => {
+    const v = customDraft.trim().slice(0, 60);
+    if (!v) return;
+    if (conditions.some((c) => c.toLowerCase() === v.toLowerCase())) {
+      setCustomDraft("");
+      return;
+    }
+    await persistConditions([...conditions, v]);
+    setCustomDraft("");
+    toast.success(`Added "${v}"`);
   };
 
   return (
@@ -190,16 +190,48 @@ export function PreferencesSection() {
                 </button>
               );
             })}
+            {conditions
+              .filter((c) => !KNOWN_CONDITION_IDS.has(c))
+              .map((c) => (
+                <span
+                  key={c}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-primary bg-primary text-primary-foreground px-3 py-1.5 text-xs"
+                >
+                  {c}
+                  <button
+                    type="button"
+                    onClick={() => toggleCondition(c)}
+                    aria-label={`Remove ${c}`}
+                    className="rounded-full hover:bg-primary-foreground/20"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
           </div>
-          <div className="mt-3">
-            <Textarea
-              value={conditionsNote}
-              onChange={(e) => setConditionsNote(e.target.value.slice(0, 500))}
-              onBlur={saveConditionsNote}
-              placeholder="Anything else we should know? (optional)"
-              className="min-h-[72px]"
+          <div className="mt-3 flex gap-2">
+            <Input
+              value={customDraft}
+              onChange={(e) => setCustomDraft(e.target.value.slice(0, 60))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void addCustomCondition();
+                }
+              }}
+              placeholder="Add your own (e.g. Heart health)"
               disabled={loading}
+              className="flex-1"
             />
+            <button
+              type="button"
+              onClick={() => void addCustomCondition()}
+              disabled={loading || !customDraft.trim()}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-foreground hover:bg-secondary disabled:opacity-50"
+            >
+              <Plus className="h-3 w-3" />
+              Add
+            </button>
           </div>
         </div>
 
@@ -221,13 +253,18 @@ export function PreferencesSection() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {MODEL_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    <div className="flex flex-col items-start">
-                      <span>{opt.label}</span>
-                      <span className="text-xs text-muted-foreground">{opt.hint}</span>
-                    </div>
-                  </SelectItem>
+                {(["Fast", "Balanced", "Deepest"] as const).map((g) => (
+                  <div key={g}>
+                    <div className="px-2 pt-2 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">{g}</div>
+                    {MODEL_OPTIONS.filter((o) => o.group === g).map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div className="flex flex-col items-start">
+                          <span>{opt.label}</span>
+                          <span className="text-xs text-muted-foreground">{opt.hint}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </div>
                 ))}
               </SelectContent>
             </Select>

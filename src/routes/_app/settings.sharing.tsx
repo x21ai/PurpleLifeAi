@@ -36,6 +36,29 @@ import {
 export const Route = createFileRoute("/_app/settings/sharing")({
   head: () => ({ meta: [{ title: "Sharing & access — Purple" }] }),
   component: SharingPage,
+  errorComponent: ({ error, reset }) => (
+    <div className="mx-auto max-w-3xl px-5 sm:px-10 pt-16 pb-24">
+      <h1 className="font-serif text-3xl text-foreground">Sharing & access</h1>
+      <p className="mt-3 text-sm text-muted-foreground">
+        We couldn't load your sharing settings. {error?.message ? `(${error.message})` : ""}
+      </p>
+      <div className="mt-5 flex gap-2">
+        <button
+          type="button"
+          onClick={reset}
+          className="rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground hover:bg-secondary"
+        >
+          Try again
+        </button>
+        <Link
+          to="/settings"
+          className="rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground hover:bg-secondary"
+        >
+          Back to settings
+        </Link>
+      </div>
+    </div>
+  ),
 });
 
 function SharingPage() {
