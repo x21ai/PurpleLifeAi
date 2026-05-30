@@ -49,7 +49,7 @@ export function PreferencesSection() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("ai_model_preference, floating_ask_enabled, wake_time, sleep_time, snooze_minutes, conditions, conditions_note")
+        .select("ai_model_preference, floating_ask_enabled, wake_time, sleep_time, snooze_minutes, conditions")
         .eq("id", userId)
         .maybeSingle();
       if (cancelled) return;
