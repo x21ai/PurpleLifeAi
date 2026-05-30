@@ -79,6 +79,7 @@ export function MedicationFormSheet({
   const [dosageUnit, setDosageUnit] = React.useState("mg");
   const [unitMode, setUnitMode] = React.useState<"preset" | "custom">("preset");
   const [withFood, setWithFood] = React.useState(false);
+  const [criticalAlarm, setCriticalAlarm] = React.useState(false);
   const [times, setTimes] = React.useState<string[]>(["08:00"]);
   // Per-time amount overrides. Index-aligned with `times`. Empty string = use the base amount.
   const [timeAmounts, setTimeAmounts] = React.useState<string[]>([""]);
@@ -108,6 +109,7 @@ export function MedicationFormSheet({
       setDosageUnit("mg");
       setUnitMode("preset");
       setWithFood(false);
+      setCriticalAlarm(false);
       setTimes(["08:00"]);
       setTimeAmounts([""]);
       setPillsRemaining("");
