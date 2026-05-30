@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Download, Loader2, Trash2, ShieldAlert, Undo2 } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -136,22 +137,41 @@ export function DataSection() {
         </div>
       )}
 
-      <div className="mt-5 flex flex-wrap gap-3">
-        <Button variant="outline" onClick={onExport} disabled={exporting}>
-          {exporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-          Export everything
-        </Button>
-        {!pendingDeletion && (
-          <Button
-            variant="ghost"
-            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={() => setConfirmOpen(true)}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete everything
-          </Button>
-        )}
-      </div>
+      <TooltipProvider delayDuration={200}>
+        <div className="mt-5 flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onExport}
+                disabled={exporting}
+                aria-label="Export all your data"
+                className="rounded-full"
+              >
+                {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Export your data</TooltipContent>
+          </Tooltip>
+          {!pendingDeletion && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setConfirmOpen(true)}
+                  aria-label="Delete account"
+                  className="rounded-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Delete account</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      </TooltipProvider>
 
       <Dialog open={confirmOpen} onOpenChange={(o) => (o ? setConfirmOpen(true) : closeConfirm())}>
         <DialogContent className="max-w-md">
