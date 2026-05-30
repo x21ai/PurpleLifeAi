@@ -98,7 +98,7 @@ function SettingsPage() {
 
       <GroupLabel>People</GroupLabel>
       <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
-        <Row to="/settings/sharing" icon={HeartHandshake} title="Sharing &amp; access" subtitle="Invite caregivers, set what they see, approve edits" />
+        <Row to="/settings/sharing" icon={HeartHandshake} title="Sharing & access" subtitle="Invite caregivers, set what they see, approve edits" />
         <Row to="/community" icon={Users} title="Community" subtitle="Share experiences and find resources" />
       </section>
 
@@ -220,14 +220,16 @@ function Row({
         ? "bg-destructive/10 text-destructive"
         : "bg-secondary text-secondary-foreground";
   return (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    <Link to={to as any} className="flex items-center justify-between p-5 sm:p-6 hover:bg-secondary/40 transition-colors">
+    <Link
+      to={to as never}
+      className="flex items-center justify-between p-5 sm:p-6 hover:bg-secondary/40 transition-colors"
+    >
       <div className="flex items-center gap-3">
         <span className={`rounded-full p-2 ${toneClass}`}>
           <Icon className="h-4 w-4" />
         </span>
         <div>
-          <p className="font-serif text-lg text-foreground" dangerouslySetInnerHTML={{ __html: title }} />
+          <p className="font-serif text-lg text-foreground">{title}</p>
           <p className="text-xs text-muted-foreground">{subtitle}</p>
         </div>
       </div>
