@@ -315,7 +315,7 @@ function TravelPage() {
         </div>
       </section>
 
-      <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <section id="plan-a-trip" className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6 scroll-mt-20">
         <h2 className="font-serif text-xl text-foreground">Plan a trip</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Add each flight or layover. Local times are interpreted in that
