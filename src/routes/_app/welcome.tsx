@@ -14,6 +14,10 @@ import dawn from "@/assets/hero-readiness-dawn.jpg";
 import mist from "@/assets/hero-readiness-mist.jpg";
 import { CONDITION_OPTIONS, type ConditionTag } from "@/lib/condition-prompts";
 import { Textarea } from "@/components/ui/textarea";
+import { LocaleFields, type LocaleValues } from "@/components/locale/locale-fields";
+import { setLocale, detectBrowserLocale, type SupportedLocale } from "@/i18n";
+
+const LOCALE_PREFILL_KEY = "purple-locale-prefill";
 
 export const Route = createFileRoute("/_app/welcome")({
   head: () => ({ meta: [{ title: "Welcome to Purple" }] }),
@@ -35,6 +39,18 @@ function WelcomePage() {
   const [saving, setSaving] = useState(false);
   const [conditions, setConditions] = useState<string[]>([]);
   const [conditionsNote, setConditionsNote] = useState("");
+  const [localeValues, setLocaleValues] = useState<LocaleValues>(() => {
+    if (typeof window === "undefined") {
+      return { country: null, timezone: null, locale: "en" };
+    }
+    try {
+      const raw = localStorage.getItem(LOCALE_PREFILL_KEY);
+      if (raw) return JSON.parse(raw) as LocaleValues;
+    } catch {
+      // ignore
+    }
+    return { country: null, timezone: null, locale: detectBrowserLocale() };
+  });
 
   useEffect(() => {
     if (typeof Notification !== "undefined") {
@@ -47,7 +63,7 @@ function WelcomePage() {
     if (!userId) return;
     supabase
       .from("profiles")
-      .select("first_name, last_name, emergency_contact_name, emergency_contact_phone, conditions, conditions_note")
+      .select("first_name, last_name, emergency_contact_name, emergency_contact_phone, conditions, conditions_note, country, timezone, locale")
       .eq("id", userId)
       .maybeSingle()
       .then(({ data }) => {
@@ -64,6 +80,18 @@ function WelcomePage() {
           setConditions(data.conditions);
         }
         if (data.conditions_note) setConditionsNote(data.conditions_note);
+        const row = data as {
+          country?: string | null;
+          timezone?: string | null;
+          locale?: string | null;
+        };
+        if (row.country || row.timezone || row.locale) {
+          setLocaleValues((prev) => ({
+            country: row.country ?? prev.country,
+            timezone: row.timezone ?? prev.timezone,
+            locale: (row.locale as SupportedLocale) ?? prev.locale,
+          }));
+        }
       });
   }, [userId]);
 
@@ -96,8 +124,17 @@ function WelcomePage() {
         emergency_contact_phone: phone || null,
         conditions: mergedConditions,
         conditions_note: null,
+        country: localeValues.country,
+        timezone: localeValues.timezone,
+        locale: localeValues.locale,
         onboarded_at: new Date().toISOString(),
       });
+      setLocale(localeValues.locale);
+      try {
+        localStorage.removeItem(LOCALE_PREFILL_KEY);
+      } catch {
+        // ignore
+      }
       localStorage.setItem("purple-onboarded", "1");
       navigate({ to: "/" });
     } catch (e) {
