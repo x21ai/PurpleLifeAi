@@ -2,17 +2,38 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ChevronRight, Pill, History, Zap, Users, Shield, MessageCircle, HeartHandshake, Plane, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/integrations/supabase/auth-context";
-import { OuraConnection } from "@/components/connections/oura-connection";
-import { DataSection } from "@/components/settings/data-section";
-import { AboutSection } from "@/components/settings/about-section";
-import { PreferencesSection } from "@/components/settings/preferences-section";
-import { PhoneAlarmsSection } from "@/components/settings/phone-alarms-section";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useIsAdmin } from "@/lib/use-is-admin";
 import { useTheme, type ThemeMode } from "@/lib/theme-provider";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { showsSeizureFeatures } from "@/lib/condition-prompts";
+
+// Code-split heavy below-the-fold sections so the link list renders fast.
+const OuraConnection = lazy(() =>
+  import("@/components/connections/oura-connection").then((m) => ({ default: m.OuraConnection })),
+);
+const PhoneAlarmsSection = lazy(() =>
+  import("@/components/settings/phone-alarms-section").then((m) => ({ default: m.PhoneAlarmsSection })),
+);
+const PreferencesSection = lazy(() =>
+  import("@/components/settings/preferences-section").then((m) => ({ default: m.PreferencesSection })),
+);
+const DataSection = lazy(() =>
+  import("@/components/settings/data-section").then((m) => ({ default: m.DataSection })),
+);
+const AboutSection = lazy(() =>
+  import("@/components/settings/about-section").then((m) => ({ default: m.AboutSection })),
+);
+
+function SectionSkeleton() {
+  return (
+    <div
+      className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6 h-32 animate-pulse"
+      aria-hidden
+    />
+  );
+}
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "Settings — Purple" }] }),
@@ -206,15 +227,25 @@ function SettingsPage() {
           Bring your wearable data in so Purple can notice patterns across your body.
         </p>
         <div className="mt-4 divide-y divide-border">
-          <OuraConnection />
+          <Suspense fallback={<div className="h-20 animate-pulse" aria-hidden />}>
+            <OuraConnection />
+          </Suspense>
         </div>
       </section>
 
       <AppearanceSection />
-      <PhoneAlarmsSection />
-      <PreferencesSection />
-      <DataSection />
-      <AboutSection />
+      <Suspense fallback={<SectionSkeleton />}>
+        <PhoneAlarmsSection />
+      </Suspense>
+      <Suspense fallback={<SectionSkeleton />}>
+        <PreferencesSection />
+      </Suspense>
+      <Suspense fallback={<SectionSkeleton />}>
+        <DataSection />
+      </Suspense>
+      <Suspense fallback={<SectionSkeleton />}>
+        <AboutSection />
+      </Suspense>
     </div>
   );
 }
