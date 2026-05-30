@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { BookOpen, Pill, Zap, ChevronRight, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -114,7 +114,7 @@ function TodayPage() {
           ? "Good afternoon"
           : "Good evening";
   const firstName = profile?.first_name?.trim();
-  const conditionPrompt = React.useMemo(() => {
+  const conditionPrompt = useMemo(() => {
     const list = promptsForConditions(profile?.conditions ?? []);
     if (list.length === 0) return "How's today feeling?";
     // Deterministic per-day so the prompt doesn't flicker on re-render.
