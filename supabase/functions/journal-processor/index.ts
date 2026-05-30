@@ -34,7 +34,7 @@ const TOOL_SCHEMA = {
         type: "array",
         items: { type: "string" },
         description:
-          "Snake_case tags prefixed with symptom:, mood:, trigger:, med:, or event: (e.g. symptom:headache, mood:tired, trigger:poor_sleep, med:keppra_taken, event:aura).",
+          "Snake_case tags. Use ONE of these prefixes: symptom: (headache, nausea), mood: (tired, anxious), trigger: (alcohol, poor_sleep), med: (keppra_taken), event: (seizure, aura, fall — DISCRETE events only), or context: (sleep, work, exercise — ongoing states or settings). NEVER tag 'sleep', 'awake', 'bedtime', or 'morning' as event:. Those are context:.",
       },
       extracted: {
         type: "object",
