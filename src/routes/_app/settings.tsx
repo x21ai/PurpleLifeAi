@@ -7,6 +7,7 @@ import { useIsAdmin } from "@/lib/use-is-admin";
 import { useEffect, useState, lazy, Suspense, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { showsSeizureFeatures } from "@/lib/condition-prompts";
+import { useTranslation } from "react-i18next";
 
 // Code-split heavy below-the-fold sections so the link list renders fast.
 const PreferencesSection = lazy(() =>
@@ -45,6 +46,7 @@ function SettingsLayout() {
 
 function SettingsPage() {
   useRouteTheme("light");
+  const { t } = useTranslation();
   const { session, signOut } = useAuth();
   const navigate = useNavigate();
   const { isAdmin } = useIsAdmin();
@@ -67,39 +69,39 @@ function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
-      <p className="label-eyebrow text-muted-foreground">Settings</p>
+      <p className="label-eyebrow text-muted-foreground">{t("settings.eyebrow")}</p>
       <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
-        All in your<br/>control.
+        {t("settings.title1")}<br/>{t("settings.title2")}
       </h1>
       <p className="mt-6 body-serif text-foreground/75 max-w-[600px]">
-        Account, privacy, integrations, and how Purple talks to you.
+        {t("settings.intro")}
       </p>
 
       {/* Hub: Account / Settings / Tools, like Oura's three top-level sheets. */}
       <div className="mt-8 grid gap-3 sm:grid-cols-3">
-        <HubCard to="/account" icon={UserCircle2} title="Account" subtitle="Profile, security, language, appearance" />
-        <HubCard to="/settings" icon={Settings2} title="Settings" subtitle="Preferences, sharing, data" active />
-        <HubCard to="/tools" icon={Wrench} title="Tools" subtitle="Devices, alarms, integrations" />
+        <HubCard to="/account" icon={UserCircle2} title={t("settings.hub.accountTitle")} subtitle={t("settings.hub.accountSubtitle")} />
+        <HubCard to="/settings" icon={Settings2} title={t("settings.hub.settingsTitle")} subtitle={t("settings.hub.settingsSubtitle")} active />
+        <HubCard to="/tools" icon={Wrench} title={t("settings.hub.toolsTitle")} subtitle={t("settings.hub.toolsSubtitle")} />
       </div>
 
-      <GroupLabel>Your health</GroupLabel>
+      <GroupLabel>{t("settings.groups.yourHealth")}</GroupLabel>
       <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
-        <Row to="/meds" icon={Pill} title="Medications" subtitle="Schedules, reminders, and adherence" />
-        <Row to="/reports" icon={FileText} title="Lab reports" subtitle="Upload labs as PDF or photo. See trends. Educational only." />
+        <Row to="/meds" icon={Pill} title={t("settings.rows.meds")} subtitle={t("settings.rows.medsSub")} />
+        <Row to="/reports" icon={FileText} title={t("settings.rows.labs")} subtitle={t("settings.rows.labsSub")} />
         {showSeizure && (
-          <Row to="/seizures/new" icon={Zap} title="Past episodes" subtitle="Log seizures from any date or time" iconTone="destructive" />
+          <Row to="/seizures/new" icon={Zap} title={t("settings.rows.pastEpisodes")} subtitle={t("settings.rows.pastEpisodesSub")} iconTone="destructive" />
         )}
       </section>
 
-      <GroupLabel>People</GroupLabel>
+      <GroupLabel>{t("settings.groups.people")}</GroupLabel>
       <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
-        <Row to="/settings/sharing" icon={HeartHandshake} title="Sharing & access" subtitle="Invite caregivers, set what they see, approve edits" />
-        <Row to="/community" icon={Users} title="Community" subtitle="Share experiences and find resources" />
+        <Row to="/settings/sharing" icon={HeartHandshake} title={t("settings.rows.sharing")} subtitle={t("settings.rows.sharingSub")} />
+        <Row to="/community" icon={Users} title={t("settings.rows.community")} subtitle={t("settings.rows.communitySub")} />
       </section>
 
-      <GroupLabel>App</GroupLabel>
+      <GroupLabel>{t("settings.groups.app")}</GroupLabel>
       <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
-        <Row to="/settings/travel" icon={Plane} title="Travel mode" subtitle="Plan trips, anchor doses to home time" />
+        <Row to="/settings/travel" icon={Plane} title={t("settings.rows.travel")} subtitle={t("settings.rows.travelSub")} />
       </section>
 
       <section className="mt-3 rounded-2xl border border-border bg-card p-5 sm:p-6">
@@ -146,31 +148,26 @@ function SettingsPage() {
         <PreferencesSection />
       </Suspense>
 
-      <GroupLabel>Data</GroupLabel>
+      <GroupLabel>{t("settings.groups.data")}</GroupLabel>
       <Suspense fallback={<SectionSkeleton />}>
         <DataSection />
       </Suspense>
 
-      <GroupLabel>Help</GroupLabel>
+      <GroupLabel>{t("settings.groups.help")}</GroupLabel>
       <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
-        <Row to="/contact" icon={MessageCircle} title="Contact the team" subtitle="Questions, feedback, anything" />
+        <Row to="/contact" icon={MessageCircle} title={t("settings.rows.contact")} subtitle={t("settings.rows.contactSub")} />
       </section>
       <Suspense fallback={<SectionSkeleton />}>
         <AboutSection />
       </Suspense>
 
-      <p className="mt-8 text-xs text-muted-foreground">
-        Looking for connections, alarms, or your device? They moved to{" "}
-        <Link to="/tools" className="underline">Tools</Link>. Name, password,
-        2FA, region, language, and appearance live in{" "}
-        <Link to="/account" className="underline">Account</Link>.
-      </p>
+      <p className="mt-8 text-xs text-muted-foreground">{t("settings.moved")}</p>
 
       {isAdmin && (
         <>
-          <GroupLabel>Admin</GroupLabel>
+          <GroupLabel>{t("settings.groups.admin")}</GroupLabel>
           <section className="rounded-2xl border border-border bg-card overflow-hidden">
-            <Row to="/admin" icon={Shield} title="Admin console" subtitle="Manage users, messages, and community" iconTone="primary" />
+            <Row to="/admin" icon={Shield} title={t("settings.rows.admin")} subtitle={t("settings.rows.adminSub")} iconTone="primary" />
           </section>
         </>
       )}
