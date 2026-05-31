@@ -32,6 +32,7 @@ import { Route as CommunityPostIdRouteImport } from './routes/community.$postId'
 import { Route as CareAcceptRouteImport } from './routes/care.accept'
 import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
 import { Route as AppVitalsRouteImport } from './routes/_app/vitals'
+import { Route as AppToolsRouteImport } from './routes/_app/tools'
 import { Route as AppTodayRouteImport } from './routes/_app/today'
 import { Route as AppTimelineRouteImport } from './routes/_app/timeline'
 import { Route as AppTermsRouteImport } from './routes/_app/terms'
@@ -189,6 +190,11 @@ const AppWelcomeRoute = AppWelcomeRouteImport.update({
 const AppVitalsRoute = AppVitalsRouteImport.update({
   id: '/vitals',
   path: '/vitals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppToolsRoute = AppToolsRouteImport.update({
+  id: '/tools',
+  path: '/tools',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTodayRoute = AppTodayRouteImport.update({
@@ -450,6 +456,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof AppTermsRoute
   '/timeline': typeof AppTimelineRoute
   '/today': typeof AppTodayRouteWithChildren
+  '/tools': typeof AppToolsRoute
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
   '/care/accept': typeof CareAcceptRoute
@@ -517,6 +524,7 @@ export interface FileRoutesByTo {
   '/terms': typeof AppTermsRoute
   '/timeline': typeof AppTimelineRoute
   '/today': typeof AppTodayRouteWithChildren
+  '/tools': typeof AppToolsRoute
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
   '/care/accept': typeof CareAcceptRoute
@@ -587,6 +595,7 @@ export interface FileRoutesById {
   '/_app/terms': typeof AppTermsRoute
   '/_app/timeline': typeof AppTimelineRoute
   '/_app/today': typeof AppTodayRouteWithChildren
+  '/_app/tools': typeof AppToolsRoute
   '/_app/vitals': typeof AppVitalsRoute
   '/_app/welcome': typeof AppWelcomeRoute
   '/care/accept': typeof CareAcceptRoute
@@ -657,6 +666,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/timeline'
     | '/today'
+    | '/tools'
     | '/vitals'
     | '/welcome'
     | '/care/accept'
@@ -724,6 +734,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/timeline'
     | '/today'
+    | '/tools'
     | '/vitals'
     | '/welcome'
     | '/care/accept'
@@ -793,6 +804,7 @@ export interface FileRouteTypes {
     | '/_app/terms'
     | '/_app/timeline'
     | '/_app/today'
+    | '/_app/tools'
     | '/_app/vitals'
     | '/_app/welcome'
     | '/care/accept'
@@ -1024,6 +1036,13 @@ declare module '@tanstack/react-router' {
       path: '/vitals'
       fullPath: '/vitals'
       preLoaderRoute: typeof AppVitalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tools': {
+      id: '/_app/tools'
+      path: '/tools'
+      fullPath: '/tools'
+      preLoaderRoute: typeof AppToolsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/today': {
@@ -1429,6 +1448,7 @@ interface AppRouteChildren {
   AppTermsRoute: typeof AppTermsRoute
   AppTimelineRoute: typeof AppTimelineRoute
   AppTodayRoute: typeof AppTodayRouteWithChildren
+  AppToolsRoute: typeof AppToolsRoute
   AppVitalsRoute: typeof AppVitalsRoute
   AppWelcomeRoute: typeof AppWelcomeRoute
   AppBiometricsMetricRoute: typeof AppBiometricsMetricRoute
@@ -1454,6 +1474,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTermsRoute: AppTermsRoute,
   AppTimelineRoute: AppTimelineRoute,
   AppTodayRoute: AppTodayRouteWithChildren,
+  AppToolsRoute: AppToolsRoute,
   AppVitalsRoute: AppVitalsRoute,
   AppWelcomeRoute: AppWelcomeRoute,
   AppBiometricsMetricRoute: AppBiometricsMetricRoute,
