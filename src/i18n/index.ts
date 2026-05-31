@@ -48,13 +48,19 @@ function readNavigatorLocale(): SupportedLocale | null {
 }
 
 /**
- * Fallback chain: navigator → saved profile (localStorage cache) → default.
+ * Fallback chain: saved (localStorage / profile-seeded) → navigator → default.
+ *
+ * Saved choice ALWAYS wins. Once the user picks a language in Account, that
+ * value lands in localStorage via `setLocale` (and is also seeded from the
+ * Supabase profile on sign-in via `seedLocaleFromProfile`), so navigating
+ * across pages can never demote it back to the navigator language.
+ *
  * Returns DEFAULT_LOCALE on the server so SSR is deterministic and identical
  * across requests; the browser re-resolves after hydration via `hydrateLocale`.
  */
 export function resolveClientLocale(): SupportedLocale {
   if (typeof window === "undefined") return DEFAULT_LOCALE;
-  return readNavigatorLocale() ?? readStoredLocale() ?? DEFAULT_LOCALE;
+  return readStoredLocale() ?? readNavigatorLocale() ?? DEFAULT_LOCALE;
 }
 
 if (!i18n.isInitialized) {
@@ -100,4 +106,21 @@ export function hydrateLocale(): SupportedLocale {
   const next = resolveClientLocale();
   if (i18n.language !== next) void i18n.changeLanguage(next);
   return next;
+}
+
+/**
+ * Seed the locale cache from the signed-in user's `profiles.locale`.
+ * This guarantees the saved choice survives a fresh browser / cleared
+ * localStorage / new device. Browser-only; no-op on the server.
+ */
+export function seedLocaleFromProfile(raw: string | null | undefined) {
+  if (typeof window === "undefined") return;
+  const next = normalize(raw);
+  if (!next) return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, next);
+  } catch {
+    // ignore — private mode
+  }
+  if (i18n.language !== next) void i18n.changeLanguage(next);
 }
