@@ -8,6 +8,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import {
@@ -46,6 +47,7 @@ type Row = {
 
 function TimelinePage() {
   useRouteTheme("light");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { session } = useAuth();
   const userId = session?.user.id;
@@ -230,9 +232,9 @@ function TimelinePage() {
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-10 sm:pt-16 pb-24">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <p className="label-eyebrow text-muted-foreground">Timeline</p>
+          <p className="label-eyebrow text-muted-foreground">{t("timeline.eyebrow")}</p>
           <h1 className="mt-3 font-serif text-[40px] sm:text-6xl leading-[1.05] tracking-[-0.02em] text-foreground">
-            Everything,<br />in order.
+            {t("timeline.title1")}<br />{t("timeline.title2")}
           </h1>
         </div>
         <DropdownMenu>
