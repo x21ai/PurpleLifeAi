@@ -16,6 +16,7 @@ import { RestoreBanner } from "@/components/settings/restore-banner";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
 import { promptsForConditions, showsSeizureFeatures } from "@/lib/condition-prompts";
 import { TodayEmptyState } from "@/components/today/empty-state";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
@@ -49,6 +50,7 @@ type AdminMessage = { id: string; subject: string; body: string; created_at: str
 
 function TodayPage() {
   useRouteTheme("dark");
+  const { t } = useTranslation();
 
   const { session } = useAuth();
   const userId = session?.user.id;
@@ -121,10 +123,10 @@ function TodayPage() {
     : hour < 5
       ? "Still up"
       : hour < 12
-        ? "Good morning"
+        ? t("todayPage.morning")
         : hour < 18
-          ? "Good afternoon"
-          : "Good evening";
+          ? t("todayPage.afternoon")
+          : t("todayPage.evening");
   const firstName = profile?.first_name?.trim();
   const conditionPrompt = useMemo(() => {
     const list = promptsForConditions(profile?.conditions ?? []);
@@ -161,7 +163,7 @@ function TodayPage() {
 
       {announcement && (
         <div className="mb-6 rounded-2xl border border-border bg-card p-4">
-          <p className="label-eyebrow">From the Purple team</p>
+          <p className="label-eyebrow">{t("todayPage.fromTeam")}</p>
           <p className="mt-2 font-serif text-lg text-foreground">{announcement.subject}</p>
           <p className="mt-1 text-sm text-muted-foreground">{announcement.body}</p>
         </div>

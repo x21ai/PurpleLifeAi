@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { processReport } from "@/lib/reports.functions";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/reports/new")({
   head: () => ({ meta: [{ title: "Upload report — Purple" }] }),
@@ -22,6 +23,7 @@ const ACCEPT = "application/pdf,image/jpeg,image/png,image/heic,image/webp";
 
 function UploadReportPage() {
   useRouteTheme("light");
+  const { t } = useTranslation();
   const { session } = useAuth();
   const userId = session?.user.id;
   const navigate = useNavigate();
@@ -93,12 +95,11 @@ function UploadReportPage() {
         to="/reports"
         className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground gap-1"
       >
-        <ChevronLeft className="h-3.5 w-3.5" /> Reports
+        <ChevronLeft className="h-3.5 w-3.5" /> {t("reportsNew.back")}
       </Link>
-      <h1 className="mt-4 font-serif text-4xl sm:text-5xl text-foreground">Upload report</h1>
+      <h1 className="mt-4 font-serif text-4xl sm:text-5xl text-foreground">{t("reportsNew.title")}</h1>
       <p className="mt-3 text-foreground/75">
-        PDF, JPG, or PNG up to 15 MB. Purple uses AI to read the values and
-        match them to standard metrics.
+        {t("reportsNew.intro")}
       </p>
 
       <MedicalDisclaimer className="mt-6" />

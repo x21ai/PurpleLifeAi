@@ -25,6 +25,7 @@ import {
 } from "@/lib/care.functions";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { ROLE_LABELS, type CareRole } from "@/lib/care.scopes";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/care/$ownerId")({
   head: () => ({ meta: [{ title: "Caregiver dashboard — Purple" }] }),
@@ -35,6 +36,7 @@ type TabKey = "today" | "meds" | "biometrics" | "journal" | "seizures";
 
 function CareDashboardPage() {
   useRouteTheme("light");
+  const { t } = useTranslation();
   const { ownerId } = useParams({ from: "/_app/care/$ownerId" });
 
   const fetchOverview = useServerFn(caregiverReadOverview);
@@ -76,11 +78,11 @@ function CareDashboardPage() {
     return (
       <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
         <Link to="/settings/sharing" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Sharing
+          <ArrowLeft className="h-4 w-4" /> {t("care.back")}
         </Link>
-        <h1 className="mt-6 font-serif text-3xl text-foreground">No access</h1>
+        <h1 className="mt-6 font-serif text-3xl text-foreground">{t("care.noAccessTitle")}</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          {(overview.error as any)?.message ?? "You don't have an active share with this person."}
+          {(overview.error as any)?.message ?? t("care.noAccessBody")}
         </p>
       </div>
     );
@@ -95,10 +97,10 @@ function CareDashboardPage() {
   return (
     <div className="mx-auto max-w-4xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
       <Link to="/settings/sharing" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" /> Sharing
+        <ArrowLeft className="h-4 w-4" /> {t("care.back")}
       </Link>
 
-      <p className="label-eyebrow text-muted-foreground mt-6">Caregiver view</p>
+      <p className="label-eyebrow text-muted-foreground mt-6">{t("care.eyebrow")}</p>
       <h1 className="mt-3 font-serif text-4xl sm:text-5xl leading-[1.04] tracking-[-0.02em] text-foreground">
         {displayName}
       </h1>

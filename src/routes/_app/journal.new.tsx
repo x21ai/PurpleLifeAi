@@ -11,6 +11,7 @@ import { useVoiceCapture } from "@/components/journal/use-voice-capture";
 import { VoiceWave } from "@/components/journal/voice-wave";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/journal/new")({
   head: () => ({ meta: [{ title: "New entry — Purple" }] }),
@@ -66,6 +67,7 @@ function inferKind(text: string, voice: string, atts: Attachment[]): string {
 
 function JournalNewPage() {
   useRouteTheme("dark");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { session } = useAuth();
   const userId = session?.user.id;
@@ -250,19 +252,19 @@ function JournalNewPage() {
         <button
           type="button"
           onClick={close}
-          aria-label="Close"
+          aria-label={t("common.close")}
           className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground/80 hover:bg-secondary/60"
         >
           <X className="h-5 w-5" />
         </button>
-        <h1 className="font-serif text-base font-normal text-foreground/80">New entry</h1>
+        <h1 className="font-serif text-base font-normal text-foreground/80">{t("journalNew.title")}</h1>
         <Button
           onClick={handleSave}
           disabled={!hasContent || saving}
           size="sm"
           className="rounded-full px-5"
         >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.save")}
         </Button>
       </header>
 
