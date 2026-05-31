@@ -18,6 +18,7 @@ export const Route = createFileRoute("/_app/journal/")({
 
 function JournalPage() {
   useRouteTheme("light");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { session } = useAuth();
   const userId = session?.user.id;
