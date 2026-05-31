@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/my-health")({
   head: () => ({
@@ -38,6 +39,7 @@ const STATUS_GRAD: Record<Status, string> = {
 
 function MyHealthPage() {
   useRouteTheme("dark");
+  const { t } = useTranslation();
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-6 sm:pt-10 pb-32">
       {/* Header */}
@@ -45,7 +47,7 @@ function MyHealthPage() {
         <button type="button" aria-label="Info" className="h-9 w-9 grid place-items-center rounded-full hover:bg-secondary">
           <Info className="h-4 w-4 text-muted-foreground" />
         </button>
-        <h1 className="text-[18px] font-semibold text-foreground">My Health</h1>
+        <h1 className="text-[18px] font-semibold text-foreground">{t("myHealth.title")}</h1>
         <button type="button" aria-label="Profile" className="h-9 w-9 grid place-items-center rounded-full hover:bg-secondary">
           <UserCircle className="h-5 w-5 text-muted-foreground" />
         </button>
