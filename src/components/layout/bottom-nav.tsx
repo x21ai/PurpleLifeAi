@@ -4,8 +4,9 @@ import { cn } from "@/lib/utils";
 
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  // Exactly 5 tabs per spec: Today, Journal, Ask, Patterns, Settings.
-  const items = navItems;
+  // Mobile keeps 5 tabs. Account & Tools live one tap inside the Settings hub.
+  const MOBILE_TABS = new Set(["/today", "/journal", "/timeline", "/insights", "/settings"]);
+  const items = navItems.filter((i) => MOBILE_TABS.has(i.to));
 
   return (
     <nav
