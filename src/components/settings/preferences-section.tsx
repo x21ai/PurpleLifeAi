@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
-import { LocaleFields, type LocaleValues } from "@/components/locale/locale-fields";
-import { setLocale, type SupportedLocale } from "@/i18n";
+
+// Region & Language now live in /account. Removed from Preferences to avoid duplication.
 
 type ModelGroup = "Fast" | "Balanced" | "Deepest";
 const MODEL_OPTIONS: { value: string; label: string; hint: string; group: ModelGroup }[] = [
@@ -46,12 +46,6 @@ export function PreferencesSection() {
   const [loading, setLoading] = React.useState(true);
   const [savingModel, setSavingModel] = React.useState(false);
   const [savingFab, setSavingFab] = React.useState(false);
-  const [locale, setLocaleState] = React.useState<LocaleValues>({
-    country: null,
-    timezone: null,
-    locale: "en",
-  });
-  const [savingLocale, setSavingLocale] = React.useState(false);
 
   React.useEffect(() => {
     if (!userId) return;
@@ -59,7 +53,7 @@ export function PreferencesSection() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("ai_model_preference, floating_ask_enabled, wake_time, sleep_time, snooze_minutes, conditions, conditions_note, country, timezone, locale")
+        .select("ai_model_preference, floating_ask_enabled, wake_time, sleep_time, snooze_minutes, conditions, conditions_note")
         .eq("id", userId)
         .maybeSingle();
       if (cancelled) return;
@@ -69,11 +63,6 @@ export function PreferencesSection() {
         if (data.wake_time) setWakeTime(String(data.wake_time).slice(0, 5));
         if (data.sleep_time) setSleepTime(String(data.sleep_time).slice(0, 5));
         if (data.snooze_minutes != null) setSnoozeMinutes(String(data.snooze_minutes));
-        setLocaleState({
-          country: (data as { country?: string | null }).country ?? null,
-          timezone: (data as { timezone?: string | null }).timezone ?? null,
-          locale: ((data as { locale?: string }).locale as SupportedLocale) ?? "en",
-        });
         // Merge legacy free-text conditions_note into chips, then drain the column.
         const existing: string[] = Array.isArray(data.conditions) ? data.conditions : [];
         const legacy: string[] = (data.conditions_note ?? "")
@@ -115,27 +104,6 @@ export function PreferencesSection() {
     setSavingModel(false);
     if (error) toast.error("Couldn't save model preference");
     else toast.success("AI model updated");
-  };
-
-  const onLocaleChange = async (next: LocaleValues) => {
-    setLocaleState(next);
-    if (!userId) return;
-    setSavingLocale(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        country: next.country,
-        timezone: next.timezone,
-        locale: next.locale,
-      })
-      .eq("id", userId);
-    setSavingLocale(false);
-    if (error) {
-      toast.error("Couldn't save region & language");
-      return;
-    }
-    setLocale(next.locale);
-    toast.success("Saved");
   };
 
   const saveSleep = async (next: { wake?: string; sleep?: string }) => {
@@ -419,17 +387,6 @@ export function PreferencesSection() {
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </Link>
-
-        <div className="border-t border-border pt-5">
-          <div className="flex items-center gap-2 mb-1">
-            <Label className="font-serif text-base text-foreground">Region &amp; language</Label>
-            {savingLocale && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-          </div>
-          <p className="text-xs text-muted-foreground mb-4">
-            How Purple shows times and which language it speaks.
-          </p>
-          <LocaleFields values={locale} onChange={onLocaleChange} disabled={loading} />
-        </div>
       </div>
     </section>
   );
