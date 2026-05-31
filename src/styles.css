@@ -305,6 +305,43 @@
     background-color: var(--purple-soft);
   }
 
+  /* ===== Sheet surfaces (Oura-like dark device/account/tools pages) =====
+   * Deep near-black canvas with lifted card "sheets" — used by Account,
+   * Tools, and the slim Settings hub regardless of theme. Tokens force a
+   * dark treatment locally so the surface looks identical in light + dark.
+   */
+  .sheet-canvas {
+    background-color: #0A0710;
+    color: #FAFAFC;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  .sheet-card {
+    background-color: #1A1521;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1.75rem;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  }
+  .sheet-card-inset {
+    background-color: #221C2C;
+    border-radius: 1.25rem;
+  }
+  .sheet-divider {
+    border-color: rgba(255, 255, 255, 0.06);
+  }
+  .sheet-muted {
+    color: #9A9AA3;
+  }
+  .sheet-accent {
+    color: #82B4FF;
+  }
+  .sheet-link {
+    color: #FAFAFC;
+  }
+  .sheet-link:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+  }
+
   /* Keyboard focus ring per spec */
   :focus-visible {
     outline: 2px solid var(--purple-primary);
