@@ -25,6 +25,7 @@ import {
   stats,
 } from "@/lib/biometric-metrics";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
+import { useTranslation } from "react-i18next";
 
 const VALID = new Set<MetricKey>(METRIC_ORDER);
 
@@ -79,6 +80,7 @@ type Row = { recorded_at: string; value: number | null };
 type Range = 7 | 30 | 90;
 
 function MetricDrillPage() {
+  const { t } = useTranslation();
   useRouteTheme("dark");
   const { metric } = useParams({ from: "/_app/biometrics/$metric" });
   const meta = METRICS[metric as MetricKey];
