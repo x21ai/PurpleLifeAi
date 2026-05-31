@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { listReports } from "@/lib/reports.functions";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/reports")({
   head: () => ({
@@ -36,6 +37,7 @@ type ReportRow = {
 
 function ReportsPage() {
   useRouteTheme("light");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const fetchList = useServerFn(listReports);
   const { data, isLoading, refetch } = useQuery({
@@ -61,17 +63,16 @@ function ReportsPage() {
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-10 sm:pt-16 pb-24">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="font-serif text-4xl sm:text-5xl text-foreground">Reports</h1>
+          <h1 className="font-serif text-4xl sm:text-5xl text-foreground">{t("reports.title")}</h1>
           <p className="mt-2 text-foreground/75 max-w-[560px]">
-            Upload lab work, blood panels, and medical reports. Purple extracts
-            the values and shows how they change over time.
+            {t("reports.intro")}
           </p>
         </div>
         <Button
           onClick={() => navigate({ to: "/reports/new" })}
           className="rounded-full"
         >
-          <Upload className="h-4 w-4 mr-2" /> Upload report
+          <Upload className="h-4 w-4 mr-2" /> {t("reports.upload")}
         </Button>
       </div>
 
@@ -80,13 +81,13 @@ function ReportsPage() {
       <section className="mt-8">
         {isLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+            <Loader2 className="h-4 w-4 animate-spin" /> {t("reports.loading")}
           </div>
         ) : reports.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card/40 p-10 text-center">
             <FileText className="h-10 w-10 mx-auto text-muted-foreground" />
             <p className="mt-3 text-sm text-muted-foreground">
-              No reports yet. Upload your first PDF or photo to get started.
+              {t("reports.emptyBody")}
             </p>
             <Button
               onClick={() => navigate({ to: "/reports/new" })}
