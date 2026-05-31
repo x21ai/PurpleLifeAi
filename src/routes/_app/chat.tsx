@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { useTranslation } from "react-i18next";
 
 type Proposal = {
   kind:
