@@ -54,6 +54,7 @@ function extOf(file: File): string {
 
 function LogSeizurePage() {
   useRouteTheme("dark");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { session } = useAuth();
   const userId = session?.user.id;
@@ -244,12 +245,12 @@ function LogSeizurePage() {
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-10 sm:pt-16 lg:pt-20 pb-32">
       <div className="flex items-start justify-between mb-10 gap-4">
         <div>
-          <p className="label-eyebrow text-muted-foreground">Capture</p>
+          <p className="label-eyebrow text-muted-foreground">{t("seizuresNew.eyebrow")}</p>
           <h1 className="mt-3 font-serif text-[40px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
-            Log a seizure.
+            {t("seizuresNew.title")}
           </h1>
         </div>
-        <Button variant="ghost" size="icon" onClick={goBack} aria-label="Close" className="mt-2 shrink-0">
+        <Button variant="ghost" size="icon" onClick={goBack} aria-label={t("seizuresNew.close")} className="mt-2 shrink-0">
           <X className="h-5 w-5" />
         </Button>
       </div>
