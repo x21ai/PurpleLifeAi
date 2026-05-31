@@ -240,43 +240,43 @@ function TimelinePage() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="mt-2">
-              <Download className="h-4 w-4 mr-2" /> Export
+              <Download className="h-4 w-4 mr-2" /> {t("timeline.export")}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuItem onClick={onExportCSV}>
-              <FileText className="h-4 w-4 mr-2" /> Download CSV
+              <FileText className="h-4 w-4 mr-2" /> {t("timeline.downloadCsv")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onExportTxt}>
-              <FileText className="h-4 w-4 mr-2" /> Download text
+              <FileText className="h-4 w-4 mr-2" /> {t("timeline.downloadText")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onPrint}>
-              <FileText className="h-4 w-4 mr-2" /> Print / Save as PDF
+              <FileText className="h-4 w-4 mr-2" /> {t("timeline.print")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onCopy}>
-              <Copy className="h-4 w-4 mr-2" /> Copy to clipboard
+              <Copy className="h-4 w-4 mr-2" /> {t("timeline.copy")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onShare}>
-              <Share2 className="h-4 w-4 mr-2" /> Share…
+              <Share2 className="h-4 w-4 mr-2" /> {t("timeline.share")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
       <p className="mt-5 body-serif text-foreground/75 max-w-[560px]">
-        Seizures, journal entries, and doses, side by side. Filter by range, search, then export when you need to share with your care team.
+        {t("timeline.intro")}
       </p>
 
       {/* Quick add */}
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <span className="text-xs text-muted-foreground mr-1">Add:</span>
+        <span className="text-xs text-muted-foreground mr-1">{t("timeline.add")}</span>
         <Button variant="outline" size="sm" onClick={() => navigate({ to: "/journal/new" })}>
-          <BookOpen className="h-3.5 w-3.5 mr-1.5" /> Journal entry
+          <BookOpen className="h-3.5 w-3.5 mr-1.5" /> {t("timeline.journalEntry")}
         </Button>
         <Button variant="outline" size="sm" onClick={() => navigate({ to: "/seizures/new" })}>
-          <Zap className="h-3.5 w-3.5 mr-1.5" /> Seizure
+          <Zap className="h-3.5 w-3.5 mr-1.5" /> {t("timeline.seizure")}
         </Button>
         <Button variant="outline" size="sm" onClick={() => navigate({ to: "/meds" })}>
-          <Pill className="h-3.5 w-3.5 mr-1.5" /> Dose
+          <Pill className="h-3.5 w-3.5 mr-1.5" /> {t("timeline.dose")}
         </Button>
       </div>
 
@@ -292,24 +292,24 @@ function TimelinePage() {
                 : "bg-card text-foreground border-border hover:bg-secondary/60",
             )}
           >
-            {r}
+            {t(`timeline.${r}`)}
           </button>
         ))}
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search…"
+          placeholder={t("timeline.search")}
           className="ml-auto h-9 max-w-[220px]"
         />
       </div>
       {range === "custom" && (
         <div className="mt-4 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-card/60 p-3">
           <div>
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">From</p>
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">{t("timeline.from")}</p>
             <DateTimePicker value={customFrom} onChange={(d) => d && setCustomFrom(d)} disableFuture />
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">To</p>
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">{t("timeline.to")}</p>
             <DateTimePicker value={customTo} onChange={(d) => d && setCustomTo(d)} disableFuture />
           </div>
         </div>
@@ -317,9 +317,9 @@ function TimelinePage() {
 
       <div className="mt-8">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
         ) : filtered.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing in this range yet.</p>
+          <p className="text-sm text-muted-foreground">{t("timeline.emptyRange")}</p>
         ) : (
           <ol className="relative border-l border-border pl-6 space-y-5">
             {filtered.map((r) => (
