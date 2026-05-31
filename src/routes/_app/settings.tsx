@@ -224,40 +224,31 @@ function Row({
   );
 }
 
-function AppearanceSection() {
-  const { mode, setMode } = useTheme();
-  const opts: { v: ThemeMode; label: string; desc: string }[] = [
-    { v: "system", label: "System", desc: "Match device" },
-    { v: "light", label: "Light", desc: "Always light" },
-    { v: "dark", label: "Dark", desc: "Always dark" },
-  ];
+function HubCard({
+  to,
+  icon: Icon,
+  title,
+  subtitle,
+  active,
+}: {
+  to: string;
+  icon: typeof Pill;
+  title: string;
+  subtitle: string;
+  active?: boolean;
+}) {
   return (
-    <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
-      <h2 className="font-serif text-xl text-foreground">Appearance</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Choose how Purple looks. Applies across every page.
-      </p>
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        {opts.map((o) => {
-          const active = mode === o.v;
-          return (
-            <button
-              key={o.v}
-              type="button"
-              onClick={() => setMode(o.v)}
-              className={`rounded-xl border p-3 text-left transition-colors ${
-                active
-                  ? "border-primary bg-primary/10 text-foreground"
-                  : "border-border bg-background hover:bg-secondary/40 text-foreground"
-              }`}
-              aria-pressed={active}
-            >
-              <p className="font-serif text-base">{o.label}</p>
-              <p className="text-xs text-muted-foreground">{o.desc}</p>
-            </button>
-          );
-        })}
-      </div>
-    </section>
+    <Link
+      to={to as never}
+      className={`flex flex-col gap-2 rounded-2xl border p-5 transition-colors ${
+        active
+          ? "border-primary bg-primary/5"
+          : "border-border bg-card hover:bg-secondary/40"
+      }`}
+    >
+      <Icon className="h-5 w-5 text-primary" />
+      <p className="font-serif text-lg text-foreground">{title}</p>
+      <p className="text-xs text-muted-foreground">{subtitle}</p>
+    </Link>
   );
 }
