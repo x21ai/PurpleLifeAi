@@ -48,8 +48,8 @@ function InsightsPage() {
 
       <Tabs defaultValue="seizures" className="mt-14">
         <TabsList className="h-11 rounded-full bg-secondary/60 p-1">
-          <TabsTrigger value="seizures" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Seizures</TabsTrigger>
-          <TabsTrigger value="trends" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Trends</TabsTrigger>
+          <TabsTrigger value="seizures" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">{t("insights.tabSeizures")}</TabsTrigger>
+          <TabsTrigger value="trends" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">{t("insights.tabTrends")}</TabsTrigger>
         </TabsList>
         <TabsContent value="seizures" className="mt-6">
           <SeizuresTab />
@@ -96,6 +96,7 @@ function avg(nums: (number | null | undefined)[]): number | null {
 }
 
 function TrendsHeader() {
+  const { t } = useTranslation();
   const rows = useRecentBiometrics(14);
   const sleepMin = rows ? avg(rows.map((r) => r.sleep_total_min)) : null;
   const hrv = rows ? avg(rows.map((r) => r.hrv_rmssd_ms)) : null;
@@ -110,17 +111,18 @@ function TrendsHeader() {
 
   return (
     <section className="mt-14 grid grid-cols-3 gap-x-6 sm:gap-x-10 gap-y-2 border-y border-border py-8 sm:py-10">
-      <MetricNumber size="lg" value={fmtSleep(sleepMin)} label="Avg sleep" />
-      <MetricNumber size="lg" value={hrv ? Math.round(hrv) : "—"} label="HRV ms" />
-      <MetricNumber size="lg" value={rhr ? Math.round(rhr) : "—"} label="Rest BPM" />
+      <MetricNumber size="lg" value={fmtSleep(sleepMin)} label={t("insights.avgSleep")} />
+      <MetricNumber size="lg" value={hrv ? Math.round(hrv) : "—"} label={t("insights.hrvMs")} />
+      <MetricNumber size="lg" value={rhr ? Math.round(rhr) : "—"} label={t("insights.restBpm")} />
       <p className="col-span-3 mt-3 label-eyebrow text-muted-foreground">
-        Last 14 nights · from your connected ring
+        {t("insights.last14")}
       </p>
     </section>
   );
 }
 
 function TrendsTab() {
+  const { t } = useTranslation();
   const rows = useRecentBiometrics(14);
   if (rows === null) {
     return <div className="h-48 rounded-2xl border border-border bg-card animate-pulse" />;
@@ -128,7 +130,7 @@ function TrendsTab() {
   if (rows.length === 0) {
     return (
       <div className="rounded-2xl border border-border p-8 text-center text-sm text-muted-foreground">
-        Connect a wearable to start seeing your trends.
+        {t("insights.connectWearable")}
       </div>
     );
   }
@@ -154,7 +156,7 @@ function TrendsTab() {
   ];
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
-      <p className="label-eyebrow">Last 14 nights</p>
+      <p className="label-eyebrow">{t("insights.last14Short")}</p>
       <div className="mt-4">
         <WaveTrend series={series} height={200} />
       </div>
@@ -163,6 +165,7 @@ function TrendsTab() {
 }
 
 function SeizuresTab() {
+  const { t } = useTranslation();
   const { session } = useAuth();
   const userId = session?.user.id;
   const [events, setEvents] = React.useState<SeizureRow[]>([]);
@@ -189,17 +192,17 @@ function SeizuresTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-serif text-lg text-foreground">Last 90 days</h2>
+        <h2 className="font-serif text-lg text-foreground">{t("insights.last90")}</h2>
         <Button asChild size="sm" variant="outline">
           <Link to="/seizures/new">
-            <Plus className="h-4 w-4 mr-1" /> Log
+            <Plus className="h-4 w-4 mr-1" /> {t("insights.logShort")}
           </Link>
         </Button>
       </div>
 
       <Heatmap events={events} days={90} />
 
-      <h2 className="font-serif text-lg text-foreground mt-10 mb-3">All events</h2>
+      <h2 className="font-serif text-lg text-foreground mt-10 mb-3">{t("insights.allEvents")}</h2>
       {loading ? (
         <div className="space-y-2">
           {[0, 1, 2].map((i) => (
@@ -209,9 +212,9 @@ function SeizuresTab() {
       ) : events.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-8 text-center">
           <Zap className="h-7 w-7 mx-auto text-muted-foreground mb-2" />
-          <p className="font-serif text-foreground">No events logged.</p>
+          <p className="font-serif text-foreground">{t("insights.noEvents")}</p>
           <p className="text-sm text-muted-foreground mt-1">
-            When something happens, log it — it only takes a tap.
+            {t("insights.noEventsBody")}
           </p>
         </div>
       ) : (

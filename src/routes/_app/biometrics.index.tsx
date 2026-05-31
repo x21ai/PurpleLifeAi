@@ -74,7 +74,7 @@ function BiometricsIndex() {
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ChevronLeft className="h-4 w-4" />
-        Back to today
+        {t("biometrics.backToToday")}
       </Link>
 
       <p className="label-eyebrow mt-10 text-muted-foreground">{t("biometrics.eyebrow")}</p>
@@ -96,9 +96,9 @@ function BiometricsIndex() {
         </div>
       ) : empty ? (
         <div className="mt-10 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
-          <p className="font-serif text-xl">No Oura data yet.</p>
+          <p className="font-serif text-xl">{t("biometrics.noDataTitle")}</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Connect your ring in settings or pull data with Sync now once it&rsquo;s connected.
+            {t("biometrics.noDataBody")}
           </p>
         </div>
       ) : (
