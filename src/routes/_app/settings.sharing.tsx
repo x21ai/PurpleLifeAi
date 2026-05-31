@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Badge } from "@/components/ui/badge";
 import { ExpiryControl } from "@/components/care/expiry-control";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { useTranslation } from "react-i18next";
 import {
   inviteCaregiver,
   listMyCaregivers,
