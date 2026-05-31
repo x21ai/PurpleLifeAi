@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTheme, type ThemeMode } from "@/lib/theme-provider";
 import { setLocale, type SupportedLocale } from "@/i18n";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/account")({
   head: () => ({ meta: [{ title: "Account — Purple" }] }),
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/_app/account")({
 });
 
 function AccountPage() {
+  const { t } = useTranslation();
   // Force dark chrome so the sheet treatment looks identical in either theme.
   useRouteTheme("dark");
   const { session, signOut } = useAuth();
@@ -75,13 +77,13 @@ function AccountPage() {
   };
 
   return (
-    <SheetPage title="Account">
-      <SheetSectionLabel>Profile</SheetSectionLabel>
+    <SheetPage title={t("account.title")}>
+      <SheetSectionLabel>{t("account.profile")}</SheetSectionLabel>
       <SheetCard>
         <ProfileFields />
       </SheetCard>
 
-      <SheetSectionLabel>Security</SheetSectionLabel>
+      <SheetSectionLabel>{t("account.security")}</SheetSectionLabel>
       <SheetCard>
         <PasswordSection />
       </SheetCard>
@@ -89,22 +91,19 @@ function AccountPage() {
         <TwoFactorSection />
       </SheetCard>
 
-      <SheetSectionLabel>Region &amp; language</SheetSectionLabel>
+      <SheetSectionLabel>{t("account.language")}</SheetSectionLabel>
       <SheetCard>
         <div className="flex items-center gap-2">
-          <p className="text-[15px] text-[#FAFAFC]">Region &amp; language</p>
+          <p className="text-[15px] text-[#FAFAFC]">{t("locale.title")}</p>
           {savingLocale && <Loader2 className="h-3 w-3 animate-spin text-white/40" />}
         </div>
-        <p className="mt-1 text-[13px] sheet-muted">
-          How Purple shows times and which language it speaks. Your saved language
-          always wins.
-        </p>
+        <p className="mt-1 text-[13px] sheet-muted">{t("locale.subtitle")}</p>
         <div className="mt-5 [&_label]:text-white/80 [&_input]:bg-white/[0.04] [&_input]:border-white/10 [&_input]:text-[#FAFAFC] [&_button[role=combobox]]:bg-white/[0.04] [&_button[role=combobox]]:border-white/10 [&_button[role=combobox]]:text-[#FAFAFC]">
           <LocaleFields values={locale} onChange={onLocaleChange} disabled={loading} />
         </div>
       </SheetCard>
 
-      <SheetSectionLabel>Appearance</SheetSectionLabel>
+      <SheetSectionLabel>{t("account.appearance")}</SheetSectionLabel>
       <SheetCard>
         <AppearancePicker />
       </SheetCard>
@@ -115,7 +114,7 @@ function AccountPage() {
         <p className="mt-1 text-[13px] sheet-muted">{session?.user?.email ?? "—"}</p>
         <div className="mt-5">
           <Button onClick={handleSignOut} variant="outline" className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10">
-            Sign out
+            {t("account.signOut")}
           </Button>
         </div>
       </SheetCard>
