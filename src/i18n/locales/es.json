@@ -215,5 +215,68 @@
     "intro": "Cuéntale a Purple tu itinerario. Reconstruimos tu horario de medicación a través de vuelos y escalas, eligiendo cada hora según la zona horaria en la que realmente estás.",
     "newTrip": "Nuevo viaje",
     "homeTz": "Zona horaria de casa"
+  },
+  "todayPage": {
+    "fromTeam": "Del equipo de Purple",
+    "morning": "Buenos días",
+    "afternoon": "Buenas tardes",
+    "evening": "Buenas noches"
+  },
+  "riskDetail": {
+    "eyebrow": "Lectura de hoy",
+    "title": "Por qué hoy se lee así.",
+    "backToToday": "Volver a hoy",
+    "noReadingTitle": "Aún no hay lectura para hoy.",
+    "noReadingBody": "Purple calcula una lectura nueva una vez al día, al amanecer.",
+    "readiness": "Preparación",
+    "whatsShifting": "Qué está cambiando"
+  },
+  "reports": {
+    "title": "Informes",
+    "intro": "Sube analíticas, paneles de sangre e informes médicos. Purple extrae los valores y muestra cómo cambian con el tiempo.",
+    "upload": "Subir informe",
+    "loading": "Cargando…",
+    "emptyBody": "Aún no hay informes. Sube tu primer PDF o foto para empezar.",
+    "couldNotLoad": "No se pudieron cargar los informes"
+  },
+  "reportsNew": {
+    "back": "Informes",
+    "title": "Subir informe",
+    "intro": "PDF, JPG o PNG hasta 15 MB. Purple usa IA para leer los valores y emparejarlos con métricas estándar.",
+    "fileTitle": "Título",
+    "filePlaceholder": "p. ej. Analítica Quest",
+    "reportDate": "Fecha del informe (opcional)"
+  },
+  "vitals": {
+    "back": "Hoy",
+    "eyebrow": "Constantes",
+    "title1": "Cómo se lee tu",
+    "title2": "cuerpo hoy."
+  },
+  "myHealth": {
+    "title": "Mi salud",
+    "thriving": "Floreciendo",
+    "good": "Bien",
+    "attention": "Atención",
+    "care": "Necesita cuidado"
+  },
+  "chatPage": {
+    "eyebrow": "Pregunta",
+    "title1": "Conozco tus",
+    "title2": "patrones."
+  },
+  "seizuresNew": {
+    "eyebrow": "Registrar",
+    "title": "Registra una crisis.",
+    "close": "Cerrar"
+  },
+  "care": {
+    "back": "Compartir",
+    "eyebrow": "Vista de cuidador",
+    "noAccessTitle": "Sin acceso",
+    "noAccessBody": "No tienes un acceso activo con esta persona."
+  },
+  "journalNew": {
+    "title": "Nueva entrada"
   }
 }
