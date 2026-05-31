@@ -215,5 +215,68 @@
     "intro": "Tell Purple your itinerary. We rebuild your medication schedule across flights and layovers, choosing each dose time based on the timezone you're actually in.",
     "newTrip": "New trip",
     "homeTz": "Home timezone"
+  },
+  "todayPage": {
+    "fromTeam": "From the Purple team",
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
+  },
+  "riskDetail": {
+    "eyebrow": "Today's reading",
+    "title": "Why today reads the way it does.",
+    "backToToday": "Back to today",
+    "noReadingTitle": "No reading yet for today.",
+    "noReadingBody": "Purple computes a fresh reading once a day at dawn.",
+    "readiness": "Readiness",
+    "whatsShifting": "What's shifting"
+  },
+  "reports": {
+    "title": "Reports",
+    "intro": "Upload lab work, blood panels, and medical reports. Purple extracts the values and shows how they change over time.",
+    "upload": "Upload report",
+    "loading": "Loading…",
+    "emptyBody": "No reports yet. Upload your first PDF or photo to get started.",
+    "couldNotLoad": "Couldn't load reports"
+  },
+  "reportsNew": {
+    "back": "Reports",
+    "title": "Upload report",
+    "intro": "PDF, JPG, or PNG up to 15 MB. Purple uses AI to read the values and match them to standard metrics.",
+    "fileTitle": "Title",
+    "filePlaceholder": "e.g. Quest blood panel",
+    "reportDate": "Report date (optional)"
+  },
+  "vitals": {
+    "back": "Today",
+    "eyebrow": "Vitals",
+    "title1": "How your body is",
+    "title2": "reading today."
+  },
+  "myHealth": {
+    "title": "My Health",
+    "thriving": "Thriving",
+    "good": "Looking good",
+    "attention": "Pay attention",
+    "care": "Needs care"
+  },
+  "chatPage": {
+    "eyebrow": "Ask",
+    "title1": "I know your",
+    "title2": "patterns."
+  },
+  "seizuresNew": {
+    "eyebrow": "Capture",
+    "title": "Log a seizure.",
+    "close": "Close"
+  },
+  "care": {
+    "back": "Sharing",
+    "eyebrow": "Caregiver view",
+    "noAccessTitle": "No access",
+    "noAccessBody": "You don't have an active share with this person."
+  },
+  "journalNew": {
+    "title": "New entry"
   }
 }
