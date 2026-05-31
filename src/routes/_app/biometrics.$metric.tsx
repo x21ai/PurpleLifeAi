@@ -145,7 +145,7 @@ function MetricDrillPage() {
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ChevronLeft className="h-4 w-4" />
-        All signals
+        {t("nav.allSignals")}
       </Link>
 
       <div className="mt-8 flex items-start justify-between gap-4 flex-wrap">

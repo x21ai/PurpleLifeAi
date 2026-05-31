@@ -28,6 +28,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { buildIcs, downloadIcs, medicationToIcsEvents } from "@/lib/ics";
+import { useTranslation } from "react-i18next";
 
 type Med = {
   id: string;
