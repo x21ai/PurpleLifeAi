@@ -3,7 +3,76 @@
     "save": "Guardar",
     "cancel": "Cancelar",
     "saving": "Guardando…",
-    "saved": "Guardado"
+    "saved": "Guardado",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "loading": "Cargando…"
+  },
+  "nav": {
+    "today": "Hoy",
+    "journal": "Diario",
+    "timeline": "Cronología",
+    "patterns": "Patrones",
+    "tools": "Herramientas",
+    "account": "Cuenta",
+    "settings": "Ajustes"
+  },
+  "settings": {
+    "eyebrow": "Ajustes",
+    "title1": "Todo bajo tu",
+    "title2": "control.",
+    "intro": "Cuenta, privacidad, integraciones y cómo te habla Purple.",
+    "hub": {
+      "accountTitle": "Cuenta",
+      "accountSubtitle": "Perfil, seguridad, idioma, apariencia",
+      "settingsTitle": "Ajustes",
+      "settingsSubtitle": "Preferencias, compartir, datos",
+      "toolsTitle": "Herramientas",
+      "toolsSubtitle": "Dispositivos, alarmas, integraciones"
+    },
+    "groups": {
+      "yourHealth": "Tu salud",
+      "people": "Personas",
+      "app": "Aplicación",
+      "data": "Datos",
+      "help": "Ayuda",
+      "admin": "Administración"
+    },
+    "rows": {
+      "meds": "Medicamentos",
+      "medsSub": "Horarios, recordatorios y adherencia",
+      "labs": "Resultados de laboratorio",
+      "labsSub": "Sube análisis en PDF o foto. Mira tendencias. Solo informativo.",
+      "pastEpisodes": "Episodios pasados",
+      "pastEpisodesSub": "Registra convulsiones de cualquier fecha u hora",
+      "sharing": "Compartir y acceso",
+      "sharingSub": "Invita a cuidadores, decide qué ven, aprueba cambios",
+      "community": "Comunidad",
+      "communitySub": "Comparte experiencias y encuentra recursos",
+      "travel": "Modo viaje",
+      "travelSub": "Planifica viajes, ancla las dosis a la hora de casa",
+      "contact": "Contactar al equipo",
+      "contactSub": "Preguntas, comentarios, lo que sea",
+      "admin": "Panel de administración",
+      "adminSub": "Gestiona usuarios, mensajes y comunidad"
+    },
+    "moved": "¿Buscas conexiones, alarmas o tu dispositivo? Se movieron a Herramientas. Nombre, contraseña, 2FA, región, idioma y apariencia viven en Cuenta."
+  },
+  "account": {
+    "title": "Cuenta",
+    "profile": "Perfil",
+    "security": "Seguridad",
+    "language": "Región e idioma",
+    "appearance": "Apariencia",
+    "signOut": "Cerrar sesión"
+  },
+  "tools": {
+    "title": "Herramientas",
+    "subtitle": "Dispositivos, alarmas e integraciones.",
+    "devices": "Dispositivos",
+    "utilities": "Utilidades"
   },
   "today": {
     "emptyEyebrow": "Te damos la bienvenida a Purple",
