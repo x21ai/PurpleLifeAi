@@ -45,6 +45,7 @@ import { Route as AppCommunityNewRouteImport } from './routes/_app/community-new
 import { Route as AppChatRouteImport } from './routes/_app/chat'
 import { Route as AppCharterRouteImport } from './routes/_app/charter'
 import { Route as AppAdminRouteImport } from './routes/_app/admin'
+import { Route as AppAccountRouteImport } from './routes/_app/account'
 import { Route as AppJournalIndexRouteImport } from './routes/_app/journal.index'
 import { Route as AppBiometricsIndexRouteImport } from './routes/_app/biometrics.index'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin.index'
@@ -255,6 +256,11 @@ const AppAdminRoute = AppAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAccountRoute = AppAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppJournalIndexRoute = AppJournalIndexRouteImport.update({
   id: '/journal/',
   path: '/journal/',
@@ -430,6 +436,7 @@ export interface FileRoutesByFullPath {
   '/sign-up': typeof SignUpRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
+  '/account': typeof AppAccountRoute
   '/admin': typeof AppAdminRouteWithChildren
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
@@ -497,6 +504,7 @@ export interface FileRoutesByTo {
   '/sign-up': typeof SignUpRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
+  '/account': typeof AppAccountRoute
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/community-new': typeof AppCommunityNewRoute
@@ -565,6 +573,7 @@ export interface FileRoutesById {
   '/sign-up': typeof SignUpRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
+  '/_app/account': typeof AppAccountRoute
   '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/charter': typeof AppCharterRoute
   '/_app/chat': typeof AppChatRoute
@@ -634,6 +643,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/unsubscribe'
     | '/users'
+    | '/account'
     | '/admin'
     | '/charter'
     | '/chat'
@@ -701,6 +711,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/unsubscribe'
     | '/users'
+    | '/account'
     | '/charter'
     | '/chat'
     | '/community-new'
@@ -768,6 +779,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/unsubscribe'
     | '/users'
+    | '/_app/account'
     | '/_app/admin'
     | '/_app/charter'
     | '/_app/chat'
@@ -1105,6 +1117,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/account': {
+      id: '/_app/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AppAccountRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/journal/': {
       id: '/_app/journal/'
       path: '/journal'
@@ -1396,6 +1415,7 @@ const AppTodayRouteWithChildren = AppTodayRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppAccountRoute: typeof AppAccountRoute
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppCharterRoute: typeof AppCharterRoute
   AppChatRoute: typeof AppChatRoute
@@ -1420,6 +1440,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAccountRoute: AppAccountRoute,
   AppAdminRoute: AppAdminRouteWithChildren,
   AppCharterRoute: AppCharterRoute,
   AppChatRoute: AppChatRoute,
