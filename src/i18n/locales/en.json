@@ -3,7 +3,76 @@
     "save": "Save",
     "cancel": "Cancel",
     "saving": "Saving…",
-    "saved": "Saved"
+    "saved": "Saved",
+    "close": "Close",
+    "back": "Back",
+    "edit": "Edit",
+    "delete": "Delete",
+    "loading": "Loading…"
+  },
+  "nav": {
+    "today": "Today",
+    "journal": "Journal",
+    "timeline": "Timeline",
+    "patterns": "Patterns",
+    "tools": "Tools",
+    "account": "Account",
+    "settings": "Settings"
+  },
+  "settings": {
+    "eyebrow": "Settings",
+    "title1": "All in your",
+    "title2": "control.",
+    "intro": "Account, privacy, integrations, and how Purple talks to you.",
+    "hub": {
+      "accountTitle": "Account",
+      "accountSubtitle": "Profile, security, language, appearance",
+      "settingsTitle": "Settings",
+      "settingsSubtitle": "Preferences, sharing, data",
+      "toolsTitle": "Tools",
+      "toolsSubtitle": "Devices, alarms, integrations"
+    },
+    "groups": {
+      "yourHealth": "Your health",
+      "people": "People",
+      "app": "App",
+      "data": "Data",
+      "help": "Help",
+      "admin": "Admin"
+    },
+    "rows": {
+      "meds": "Medications",
+      "medsSub": "Schedules, reminders, and adherence",
+      "labs": "Lab reports",
+      "labsSub": "Upload labs as PDF or photo. See trends. Educational only.",
+      "pastEpisodes": "Past episodes",
+      "pastEpisodesSub": "Log seizures from any date or time",
+      "sharing": "Sharing & access",
+      "sharingSub": "Invite caregivers, set what they see, approve edits",
+      "community": "Community",
+      "communitySub": "Share experiences and find resources",
+      "travel": "Travel mode",
+      "travelSub": "Plan trips, anchor doses to home time",
+      "contact": "Contact the team",
+      "contactSub": "Questions, feedback, anything",
+      "admin": "Admin console",
+      "adminSub": "Manage users, messages, and community"
+    },
+    "moved": "Looking for connections, alarms, or your device? They moved to Tools. Name, password, 2FA, region, language, and appearance live in Account."
+  },
+  "account": {
+    "title": "Account",
+    "profile": "Profile",
+    "security": "Security",
+    "language": "Region & language",
+    "appearance": "Appearance",
+    "signOut": "Sign out"
+  },
+  "tools": {
+    "title": "Tools",
+    "subtitle": "Devices, alarms, and integrations.",
+    "devices": "Devices",
+    "utilities": "Utilities"
   },
   "today": {
     "emptyEyebrow": "Welcome to Purple",
