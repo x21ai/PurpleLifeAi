@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { navItems } from "./nav-items";
+import { navItems, type NavItem } from "./nav-items";
 import { cn } from "@/lib/utils";
 
 export function SidebarNav() {
@@ -53,7 +53,7 @@ function SideLink({
   Icon,
   active,
 }: {
-  to: "/today" | "/journal" | "/timeline" | "/insights" | "/settings";
+  to: NavItem["to"];
   label: string;
   Icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   active: boolean;
