@@ -143,21 +143,21 @@ function JournalPage() {
               onClick={() => setTab("active")}
               className={`px-4 py-1.5 rounded-full transition ${tab === "active" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
             >
-              Active
+              {t("journal.tabActive")}
             </button>
             <button
               type="button"
               onClick={() => setTab("archive")}
               className={`px-4 py-1.5 rounded-full transition ${tab === "archive" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
             >
-              Archive
+              {t("journal.tabArchive")}
             </button>
           </div>
           {(() => {
             const visible = entries.filter((e) =>
               tab === "active" ? !e.archived_at : !!e.archived_at,
             );
-            if (visible.length === 0) return <EmptyState archive={tab === "archive"} />;
+            if (visible.length === 0) return <EmptyState archive={tab === "archive"} t={t} />;
             return (
               <div className="space-y-3">
                 {visible.map((e) => (
@@ -172,23 +172,23 @@ function JournalPage() {
       <button
         type="button"
         onClick={() => navigate({ to: "/journal/new" })}
-        aria-label="New entry"
+        aria-label={t("journal.newEntry")}
         className="fixed bottom-24 right-5 md:bottom-8 md:right-8 z-40 inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 py-3.5 shadow-lg shadow-primary/30 hover:bg-primary/90 active:scale-[0.98] transition"
         style={{ marginBottom: "env(safe-area-inset-bottom)" }}
       >
         <Plus className="h-5 w-5" />
-        <span className="text-sm font-medium">New entry</span>
+        <span className="text-sm font-medium">{t("journal.newEntry")}</span>
       </button>
     </div>
   );
 }
 
-function EmptyState({ archive = false }: { archive?: boolean }) {
+function EmptyState({ archive = false, t }: { archive?: boolean; t: (k: string) => string }) {
   if (archive) {
     return (
       <div className="text-center py-16 px-6">
         <p className="font-serif text-lg leading-relaxed text-muted-foreground max-w-md mx-auto">
-          Nothing archived yet. Archived entries land here so you can restore or delete them.
+          {t("journal.emptyArchive")}
         </p>
       </div>
     );
@@ -199,7 +199,7 @@ function EmptyState({ archive = false }: { archive?: boolean }) {
         <BookOpen className="h-9 w-9 text-primary/70" />
       </div>
       <p className="font-serif text-lg leading-relaxed text-foreground max-w-md mx-auto">
-        Your journal is yours. Write, speak, photograph, or record anything. I will read it carefully and remember it for you.
+        {t("journal.emptyTitle")}
       </p>
     </div>
   );

@@ -87,7 +87,10 @@
     "title2": "compartido, en orden.",
     "newEntry": "Nueva entrada",
     "emptyTitle": "Tu diario es tuyo. Escribe, habla, fotografía o graba lo que quieras. Lo leeré con atención y lo recordaré por ti.",
-    "emptyArchive": "Nada archivado todavía. Las entradas archivadas aparecen aquí para que puedas restaurarlas o eliminarlas."
+    "emptyArchive": "Nada archivado todavía. Las entradas archivadas aparecen aquí para que puedas restaurarlas o eliminarlas.",
+    "tabActive": "Activas",
+    "tabArchive": "Archivadas",
+    "refresh": "Actualizar"
   },
   "meds": {
     "eyebrow": "Medicamentos",
