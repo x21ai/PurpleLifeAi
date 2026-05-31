@@ -87,7 +87,10 @@
     "title2": "shared, in order.",
     "newEntry": "New entry",
     "emptyTitle": "Your journal is yours. Write, speak, photograph, or record anything. I will read it carefully and remember it for you.",
-    "emptyArchive": "Nothing archived yet. Archived entries land here so you can restore or delete them."
+    "emptyArchive": "Nothing archived yet. Archived entries land here so you can restore or delete them.",
+    "tabActive": "Active",
+    "tabArchive": "Archive",
+    "refresh": "Refresh"
   },
   "meds": {
     "eyebrow": "Medications",
