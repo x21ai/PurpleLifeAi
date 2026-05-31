@@ -1,69 +1,80 @@
-# Plan
+## Scope
 
-## 1. Today — calm empty-state for brand-new users
+Four threads, sequenced so visual work lands on a stable IA and a working locale.
 
-The existing `/today` dashboard stays exactly as it is for returning users. For users with **zero journal entries**, render a calm full-bleed welcome card above the dashboard.
+The two HEICs decode to Oura "My Devices" screens (dark sheet: device card with ring + circular battery arc, secondary card for the charging case, "+ Set up a new device" row, and a "Wear and care" link list with external-link chevrons). They're the visual reference for the new `/tools` surface.
 
-- In `src/routes/_app/today.tsx`, add a `journal_entries` count query alongside the existing fetches.
-- When count === 0, render a new `TodayEmptyState` component at the top of the page:
-  - Eyebrow: "Welcome to Purple"
-  - Serif headline: "Start where you are."
-  - One short body line: "Write a sentence, speak a thought, or snap a photo. Purple does the rest."
-  - Primary CTA "Start journaling" → routes to `/journal/new` (existing capture route)
-  - Secondary quiet link "Skip for now" that dismisses the card for the session (localStorage flag)
-- Component lives at `src/components/today/empty-state.tsx`, dark-theme aware, matches the ScoreHero spacing rhythm.
+## 1. Locale: saved choice always wins
 
-## 2. `/charter` — warmer tone + tighter mobile/desktop rhythm
+Problem today: `resolveClientLocale()` returns `navigator → stored → default`, so even after saving "Español" to Supabase + localStorage, the next navigation re-reads navigator (English) and reverts. Saved profile locale is never seeded into the i18n cache either.
 
-Refine copy and layout in `src/routes/_app/charter.tsx`:
-- Soften the headline split ("Why Purple exists." as the H1, drop the abstract "Founding charter.").
-- Reorder sections: **Why Purple exists → Our standard → Promises we keep → Things we won't do**. Ends on warmth, not prohibition.
-- Rewrite each section with the Purple voice (calm, human, never clinical — e.g. "We will never sell your data" → "Your story is yours. We won't sell it, rent it, or hand it to brokers.").
-- Layout: wider serif headline on desktop, narrower measure on mobile, more breathing room between sections (`space-y-14 sm:space-y-16`), larger top padding on mobile so the back-link doesn't crowd the eyebrow.
-- Same content visible on every viewport — no responsive hiding.
+Changes (all in `src/i18n/index.ts` + one hook):
+- Flip the chain to `stored → profile (seeded) → navigator → default`.
+- Add `seedLocaleFromProfile(locale)` — called once when `AuthContext` loads `profiles.locale` — that writes localStorage and calls `i18n.changeLanguage` if different. This makes "saved wins" survive a cleared localStorage on a new device too.
+- `setLocale()` already writes localStorage; keep it, and have `PreferencesSection.onLocaleChange` call it on save (already does) — confirmed still correct after chain flip.
+- `hydrateLocale()` runs in `__root.tsx`; after change it will pick stored first, so navigation can never demote Spanish back to English.
+- Verify by toggling to Español, navigating across `/today → /settings → /tools → /account`, and reloading — UI stays Spanish.
 
-## 3. Country, time zone, and language — sign-up + welcome + settings
+## 2. IA split: Account vs Settings vs Tools
 
-### Schema (one migration)
-Add to `profiles`:
-- `country` text (ISO 3166-1 alpha-2, nullable)
-- `locale` text (`'en'` | `'es'`, default `'en'`)
-- `timezone` already exists — no change
+Today everything lives under `/settings`. Mirror Oura's three-surface model.
 
-### Shared picker components (`src/components/locale/`)
-- `country-select.tsx` — searchable combobox, ~50 common countries (full list kept in `src/lib/countries.ts`).
-- `timezone-select.tsx` — uses `Intl.supportedValuesOf('timeZone')` grouped by region, with a "Detect from browser" button (`Intl.DateTimeFormat().resolvedOptions().timeZone`).
-- `language-select.tsx` — English / Español.
+New routes (file-based, all under `_app`):
+- `src/routes/_app/account.tsx` — identity & security
+- `src/routes/_app/settings.tsx` — preferences (keep route, slim down)
+- `src/routes/_app/tools.tsx` — devices, integrations, utilities
 
-All three auto-detect sensible defaults from the browser on first render when the field is empty.
+Move map:
 
-### Where they appear
-- **Sign-up** (`src/routes/sign-up.tsx`): add a compact "Where are you?" block (country + time zone + language) below the password field. Values are written to the profile on first successful sign-in via the existing profile-bootstrap path.
-- **Welcome** (`src/routes/_app/welcome.tsx`): add a "Locale" step / section so users who signed up via Google can set them. Pre-fills from browser detection.
-- **Settings** (`src/components/settings/preferences-section.tsx`): new "Region & language" subsection with the same three pickers, save-on-change with toast confirmation.
+| New home | Items moved from current settings |
+|---|---|
+| **Account** | Full name, email (read-only), phone number, change password, enable 2FA, region (country + timezone), language, appearance (theme), sign out |
+| **Settings** | Your focus (conditions), AI model, Floating Ask, sleep window, reminder snooze, How Purple thinks, sharing & access, travel mode, data export/delete, about |
+| **Tools** | Oura connection, phone alarms, medications, lab reports, past episodes (when applicable), community |
 
-### i18n (English + Spanish)
-- Install `i18next` + `react-i18next` + `i18next-browser-languagedetector`.
-- `src/i18n/index.ts` initializes i18next with `en` and `es` resource bundles.
-- `src/i18n/locales/en.json` and `es.json` — start with the visible strings on: nav, sign-in, sign-up, welcome, today empty-state, settings preferences, charter. Other routes keep raw English strings for now and get translated incrementally; the contract is "no schema or component churn needed to add a language later."
-- Provider wired in `src/routes/__root.tsx`.
-- Language source of truth: `profile.locale` once signed in, browser detection before. Updating the setting calls `i18n.changeLanguage()` immediately.
+Bottom-nav / drawer: replace the single "Settings" entry with three (Account, Settings, Tools). Keep `/settings` redirecting deep-links by rendering the slim Settings page; no breaking links because all moved items get redirect stubs (`/settings/appearance → /account#appearance` etc.) only where one already exists.
 
-## Files touched
+New supporting pieces:
+- `src/components/account/profile-fields.tsx` — full name, phone (E.164 input).
+- `src/components/account/password-section.tsx` — change password via `supabase.auth.updateUser({ password })`.
+- `src/components/account/two-factor-section.tsx` — TOTP enrol/verify using `supabase.auth.mfa.*` (enroll → QR → verify code → list factors → unenroll). Backend already supports this; no migration needed.
+- Move `AppearanceSection` and `LocaleFields` (region + language) out of `preferences-section.tsx` into Account.
 
-- `supabase/migrations/<new>.sql` — add `country`, `locale` to `profiles`
-- `src/routes/_app/today.tsx` — empty-state branch
-- `src/components/today/empty-state.tsx` *(new)*
-- `src/routes/_app/charter.tsx` — copy + layout
-- `src/lib/countries.ts` *(new)*
-- `src/components/locale/{country,timezone,language}-select.tsx` *(new)*
-- `src/routes/sign-up.tsx` — locale block
-- `src/routes/_app/welcome.tsx` — locale step
-- `src/components/settings/preferences-section.tsx` — Region & language subsection
-- `src/i18n/index.ts` + `src/i18n/locales/{en,es}.json` *(new)*
-- `src/routes/__root.tsx` — i18n provider
-- `package.json` — add `i18next`, `react-i18next`, `i18next-browser-languagedetector`
+## 3. Oura-like redesign (mobile, tablet, desktop)
 
-## Out of scope
-- Translating every route into Spanish in this pass — only the routes listed above. The infra makes incremental translation a copy-paste job.
-- No new edge functions; everything reads/writes through existing profile updates.
+Visual direction matches the attached screenshots: deep near-black background, large rounded "card-sheet" containers (`rounded-3xl`, subtle inner highlight), generous padding, light sans-serif type at large sizes with thin weight for numbers, soft secondary text, and a top "X close" affordance on full-screen surfaces.
+
+Tokens & shell:
+- Add `--surface-sheet` (oklch deep neutral) and `--surface-card` (one step lighter) in `src/styles.css`, plus `--sheet-radius: 1.75rem`.
+- New `SheetPage` layout primitive: full-bleed dark bg on mobile, max-w-3xl centered on tablet, max-w-5xl two-column grid on desktop (left: sectioned cards, right: sticky summary like Oura's web dashboards).
+- Title pattern: tiny "X" top-left, centered page title in light sans, then stacked cards.
+
+Card patterns to mirror:
+- **Device card** (Tools → Connections): device name + subtitle, hero illustration (ring/phone), circular battery arc (SVG), "Active | Sensing" status row.
+- **List card** (Wear and care): label + right-aligned external-link icon, divided rows.
+- **Action row** ("+ Set up a new device"): primary-accent text with leading "+".
+
+Breakpoint behavior:
+- Mobile (≤640): single column, sheet-style cards span the viewport with 20px gutter.
+- Tablet (641–1024): centered single column, max-w-2xl, larger type scale.
+- Desktop (≥1025): two-column on Account/Tools (cards + sticky meta), single wide column on Settings.
+
+Apply the same treatment to: Account, Settings, Tools, plus `/today`, `/journal`, `/meds`, `/biometrics`, `/insights` headers so the whole app feels consistent — header eyebrow + huge serif title stays as Purple's signature, but card chrome adopts the Oura sheet treatment.
+
+## 4. Deliverable: HEIC conversion
+
+The two uploaded HEICs are now decoded to JPG previews and used as the visual reference above. Nothing to ship for the user here — done as part of the planning step.
+
+## Technical notes
+
+- No DB migration needed for Account fields: `profiles` already has `country`, `timezone`, `locale`, `full_name`. Phone goes on `profiles.phone` if it exists; otherwise add a single column in one migration.
+- 2FA uses Supabase Auth's built-in MFA API — no edge function, no extra table.
+- Route moves keep loaders/serverFns where they are; only the UI mount-point changes.
+- Bottom nav updated in `src/components/app/bottom-nav.tsx` (or equivalent) to three entries.
+- All new card chrome uses semantic tokens; no raw colors in components.
+
+## Out of scope (ask before adding)
+
+- Reorganizing `/today` or biometric detail pages beyond chrome polish.
+- Wiring real device data (we have Oura already; the device card is the only "device" until more integrations land).
+- Localizing every string into Spanish — fix the persistence bug now; full string coverage is a separate pass.
