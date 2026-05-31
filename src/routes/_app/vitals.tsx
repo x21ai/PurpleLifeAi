@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import type { LucideIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/vitals")({
   head: () => ({ meta: [{ title: "Vitals — Purple" }] }),
@@ -22,20 +23,21 @@ const BAND_COLOR: Record<Band, string> = {
 
 function VitalsPage() {
   useRouteTheme("dark");
+  const { t } = useTranslation();
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-8 sm:pt-12 pb-32">
       <Link to="/today" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" /> Today
+        <ArrowLeft className="h-4 w-4" /> {t("vitals.back")}
       </Link>
 
       <div className="mt-8 flex items-center justify-between">
-        <p className="label-eyebrow text-muted-foreground">Vitals</p>
+        <p className="label-eyebrow text-muted-foreground">{t("vitals.eyebrow")}</p>
         <button type="button" aria-label="Edit" className="h-9 w-9 grid place-items-center rounded-full hover:bg-secondary">
           <Pencil className="h-4 w-4 text-muted-foreground" />
         </button>
       </div>
       <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
-        How your body is<br/>reading today.
+        {t("vitals.title1")}<br/>{t("vitals.title2")}
       </h1>
 
       {/* Date tabs */}
