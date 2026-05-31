@@ -182,5 +182,21 @@
   "charter": {
     "back": "Ajustes",
     "eyebrow": "Sobre Purple"
+  },
+  "howPurple": {
+    "back": "Ajustes",
+    "eyebrow": "Cómo piensa Purple",
+    "title1": "Lee con suavidad.",
+    "title2": "Solo actúa cuando tú lo dices.",
+    "seesTitle": "Qué ve Purple",
+    "seesBody": "Cuando haces una pregunta, Purple lee los últimos 7 días de biometría, 14 días de entradas del diario, 90 días de crisis, tus medicamentos actuales y el último pronóstico de riesgo. Nada más.",
+    "patternsTitle": "Cómo encuentra patrones",
+    "patternsBody": "Cada noche, un pequeño trabajo revisa 8 señales — sueño, VFC, temperatura, actividad, dosis omitidas, ánimo, ubicación e historial de crisis — buscando combinaciones repetidas. Los nuevos patrones aparecen en",
+    "patternsLink": "Patrones",
+    "actionTitle": "Cuando Purple propone una acción",
+    "actionBody": "Si Purple quiere añadir un medicamento, registrar una crisis o cambiar un ajuste por ti, primero muestra una tarjeta de confirmación. No se escribe nada hasta que toques Confirmar.",
+    "privateTitle": "Lo que se mantiene privado",
+    "privateBody": "Tus datos viven en tu cuenta. Purple nunca entrena modelos con ellos, nunca los comparte y puedes exportar o borrarlo todo desde",
+    "privateLink": "Ajustes → Datos"
   }
 }

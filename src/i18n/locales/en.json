@@ -182,5 +182,21 @@
   "charter": {
     "back": "Settings",
     "eyebrow": "About Purple"
+  },
+  "howPurple": {
+    "back": "Settings",
+    "eyebrow": "How Purple thinks",
+    "title1": "Reads gently.",
+    "title2": "Acts only when you say.",
+    "seesTitle": "What Purple sees",
+    "seesBody": "When you ask a question, Purple reads the last 7 days of biometrics, 14 days of journal entries, 90 days of seizure events, your current medications, and the latest risk forecast. Nothing else.",
+    "patternsTitle": "How patterns are found",
+    "patternsBody": "Every night, a small job looks across 8 signals — sleep, HRV, temperature, activity, missed doses, mood, location, and seizure history — for repeating combinations. New patterns surface in",
+    "patternsLink": "Patterns",
+    "actionTitle": "When Purple proposes an action",
+    "actionBody": "If Purple wants to add a medication, log a seizure, or change a setting on your behalf, it shows a Confirm card first. Nothing is written until you tap Confirm.",
+    "privateTitle": "What stays private",
+    "privateBody": "Your data lives in your account. Purple never trains models on it, never shares it with anyone, and you can export or delete everything from",
+    "privateLink": "Settings → Data"
   }
 }
