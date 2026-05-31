@@ -16,6 +16,7 @@ import { CONDITION_OPTIONS, type ConditionTag } from "@/lib/condition-prompts";
 import { Textarea } from "@/components/ui/textarea";
 import { LocaleFields, type LocaleValues } from "@/components/locale/locale-fields";
 import { setLocale, detectBrowserLocale, type SupportedLocale } from "@/i18n";
+import { useTranslation } from "react-i18next";
 
 const LOCALE_PREFILL_KEY = "purple-locale-prefill";
 
@@ -28,6 +29,7 @@ function WelcomePage() {
   const navigate = useNavigate();
   const { session } = useAuth();
   const userId = session?.user.id;
+  const { t } = useTranslation();
 
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState("");
@@ -138,7 +140,7 @@ function WelcomePage() {
       localStorage.setItem("purple-onboarded", "1");
       navigate({ to: "/" });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Could not save";
+      const msg = e instanceof Error ? e.message : t("welcome.couldNotSave");
       toast.error(msg);
     } finally {
       setSaving(false);
@@ -160,7 +162,7 @@ function WelcomePage() {
     await ensureServiceWorker();
     const perm = await requestPermission();
     setNotifGranted(perm === "granted");
-    if (perm === "granted") toast.success("Notifications on");
+    if (perm === "granted") toast.success(t("welcome.notifsOn"));
   };
 
   return (
@@ -181,7 +183,7 @@ function WelcomePage() {
           onClick={skip}
           className="text-sm text-muted-foreground hover:text-foreground"
         >
-          Skip
+          {t("welcome.skip")}
         </button>
       </div>
 
@@ -203,45 +205,43 @@ function WelcomePage() {
             </div>
           </div>
           <h1 className="font-serif text-5xl sm:text-7xl leading-[1.02] tracking-tight text-foreground mt-10">
-            Welcome.<br />This is your space.
+            {t("welcome.heroTitle1")}<br />{t("welcome.heroTitle2")}
           </h1>
           <p className="mt-6 text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-xl">
-            A calm place to keep track of your sleep, your symptoms, your medications, and
-            the patterns underneath them. Nothing here is sold, shared, or judged. I&rsquo;m
-            here when you need me, quiet when you don&rsquo;t.
+            {t("welcome.heroBody")}
           </p>
           <Button className="mt-10 rounded-full px-7 h-12 text-base" size="lg" onClick={() => setStep(1)}>
-            Continue <ArrowRight className="h-4 w-4 ml-2" />
+            {t("welcome.continue")} <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
       )}
 
       {step === 1 && (
         <div>
-          <p className="label-eyebrow mb-4">Step 2 of 4</p>
+          <p className="label-eyebrow mb-4">{t("welcome.step2")}</p>
           <h1 className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight text-foreground">
-            Let me know who you are.
+            {t("welcome.whoTitle")}
           </h1>
           <p className="mt-5 text-lg text-muted-foreground max-w-lg">
-            Just enough so I can address you, and someone to reach if a seizure is ever logged.
+            {t("welcome.whoBody")}
           </p>
           <div className="mt-8 space-y-5">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="first">First name</Label>
+                <Label htmlFor="first">{t("welcome.firstName")}</Label>
                 <Input id="first" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" className="mt-1.5" />
               </div>
               <div>
-                <Label htmlFor="last">Last name</Label>
+                <Label htmlFor="last">{t("welcome.lastName")}</Label>
                 <Input id="last" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" className="mt-1.5" />
               </div>
             </div>
             <div>
-              <Label htmlFor="ename">Emergency contact name</Label>
+              <Label htmlFor="ename">{t("welcome.emergencyName")}</Label>
               <Input id="ename" value={emergencyName} onChange={(e) => setEmergencyName(e.target.value)} className="mt-1.5" />
             </div>
             <div>
-              <Label htmlFor="ephone">Emergency contact phone</Label>
+              <Label htmlFor="ephone">{t("welcome.emergencyPhone")}</Label>
               <div className="mt-1.5">
                 <PhoneInput
                   id="ephone"
@@ -253,7 +253,7 @@ function WelcomePage() {
               </div>
             </div>
             <div className="pt-2 border-t border-border">
-              <p className="label-eyebrow mt-4 mb-3">Region &amp; language</p>
+              <p className="label-eyebrow mt-4 mb-3">{t("welcome.regionLanguage")}</p>
               <LocaleFields
                 values={localeValues}
                 onChange={setLocaleValues}
@@ -262,9 +262,9 @@ function WelcomePage() {
             </div>
           </div>
           <div className="mt-10 flex items-center justify-between gap-3">
-            <Button variant="ghost" onClick={() => setStep(0)}>Back</Button>
+            <Button variant="ghost" onClick={() => setStep(0)}>{t("welcome.back")}</Button>
             <Button className="rounded-full" onClick={() => setStep(2)}>
-              Continue <ArrowRight className="h-4 w-4 ml-2" />
+              {t("welcome.continue")} <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </div>
         </div>
@@ -272,12 +272,12 @@ function WelcomePage() {
 
       {step === 2 && (
         <div>
-          <p className="label-eyebrow mb-4">Step 3 of 4</p>
+          <p className="label-eyebrow mb-4">{t("welcome.step3")}</p>
           <h1 className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight text-foreground">
-            What brings you to Purple?
+            {t("welcome.bringsTitle")}
           </h1>
           <p className="mt-5 text-lg text-muted-foreground max-w-lg">
-            Pick anything that fits. This shapes the prompts and the way I talk with you. You can change it anytime in Settings.
+            {t("welcome.bringsBody")}
           </p>
           <div className="mt-8 flex flex-wrap gap-2">
             {CONDITION_OPTIONS.map((opt) => {
@@ -306,19 +306,19 @@ function WelcomePage() {
             })}
           </div>
           <div className="mt-6">
-            <Label htmlFor="conditions-note">Anything else we should know?</Label>
+            <Label htmlFor="conditions-note">{t("welcome.anythingElse")}</Label>
             <Textarea
               id="conditions-note"
               value={conditionsNote}
               onChange={(e) => setConditionsNote(e.target.value.slice(0, 500))}
-              placeholder="Optional. A few words about what you're managing."
+              placeholder={t("welcome.anythingElsePlaceholder")}
               className="mt-1.5 min-h-[88px]"
             />
           </div>
           <div className="mt-10 flex items-center justify-between gap-3">
-            <Button variant="ghost" onClick={() => setStep(1)}>Back</Button>
+            <Button variant="ghost" onClick={() => setStep(1)}>{t("welcome.back")}</Button>
             <Button className="rounded-full" onClick={() => setStep(3)}>
-              Continue <ArrowRight className="h-4 w-4 ml-2" />
+              {t("welcome.continue")} <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </div>
         </div>
@@ -336,12 +336,12 @@ function WelcomePage() {
             />
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-foreground/40" />
           </div>
-          <p className="label-eyebrow mb-4">Step 4 of 4</p>
+          <p className="label-eyebrow mb-4">{t("welcome.step4")}</p>
           <h1 className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight text-foreground">
-            Connect what helps.
+            {t("welcome.connectTitle")}
           </h1>
           <p className="mt-5 text-lg text-muted-foreground">
-            All optional. You can do this any time from Settings.
+            {t("welcome.connectBody")}
           </p>
           <div className="mt-8 space-y-3">
             <div className="rounded-xl border border-border bg-card px-4">
@@ -349,25 +349,25 @@ function WelcomePage() {
             </div>
             <ConnectCard
               icon={Watch}
-              title="Whoop"
-              body="Recovery, strain, sleep performance."
-              actionLabel="Coming soon"
+              title={t("welcome.whoopTitle")}
+              body={t("welcome.whoopBody")}
+              actionLabel={t("welcome.comingSoon")}
               disabled
             />
             <ConnectCard
               icon={Bell}
-              title="Browser notifications"
-              body="Quiet reminders when it's time for a dose."
-              actionLabel={notifGranted ? "Enabled" : "Enable"}
+              title={t("welcome.notifTitle")}
+              body={t("welcome.notifBody")}
+              actionLabel={notifGranted ? t("welcome.enabled") : t("welcome.enable")}
               disabled={notifGranted}
               onAction={enableNotifs}
               done={notifGranted}
             />
           </div>
           <div className="mt-10 flex items-center justify-between gap-3">
-            <Button variant="ghost" onClick={() => setStep(2)}>Back</Button>
+            <Button variant="ghost" onClick={() => setStep(2)}>{t("welcome.back")}</Button>
             <Button className="rounded-full" onClick={finish} disabled={saving}>
-              {saving ? "Saving…" : "Take me in"}
+              {saving ? t("welcome.saving") : t("welcome.takeMeIn")}
             </Button>
           </div>
         </div>

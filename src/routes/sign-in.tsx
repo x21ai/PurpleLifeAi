@@ -11,6 +11,7 @@ import { isOAuthCallbackUrl, waitForOAuthSession } from "@/lib/auth-oauth";
 import { toast } from "sonner";
 import { LocaleFields, type LocaleValues } from "@/components/locale/locale-fields";
 import { setLocale, detectBrowserLocale, type SupportedLocale } from "@/i18n";
+import { useTranslation } from "react-i18next";
 
 const LOCALE_PREFILL_KEY = "purple-locale-prefill";
 
@@ -68,6 +69,7 @@ function oauthErrorMessage(): string | null {
 }
 
 function SignInPage() {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<"signin" | "register">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -81,14 +83,14 @@ function SignInPage() {
   useEffect(() => {
     const msg = oauthErrorMessage();
     if (!msg) return;
-    toast.error("Sign-in didn't finish. Try again, or use your email instead.");
+    toast.error(t("signIn.oauthError"));
     window.history.replaceState({}, "", window.location.pathname);
-  }, []);
+  }, [t]);
 
   const handleForgotPassword = async () => {
     setErrorMsg(null);
     if (!email.trim()) {
-      setErrorMsg("Enter your email above, then tap Forgot password.");
+      setErrorMsg(t("signIn.enterEmailFirst"));
       setStatus("error");
       return;
     }
@@ -181,7 +183,7 @@ function SignInPage() {
               PURPLE
             </p>
             <p className="mt-3 font-serif italic text-base sm:text-lg text-foreground/75 max-w-md">
-              Free forever. Open source. No ads.
+              {t("signIn.freeForever")}
             </p>
           </div>
         </div>
@@ -189,48 +191,48 @@ function SignInPage() {
         {/* Form panel */}
         <main className="flex items-center justify-center px-6 sm:px-10 lg:px-14 py-12 lg:py-16 min-h-screen">
           <div className="w-full max-w-md">
-            <p className="label-eyebrow">Sign in</p>
+            <p className="label-eyebrow">{t("signIn.eyebrow")}</p>
             <h1 className="mt-5 font-serif text-5xl sm:text-6xl lg:text-7xl leading-[1.02] tracking-tight text-foreground">
-              A quiet intelligence for your health.
+              {t("signIn.title")}
             </h1>
 
             <div className="mt-8 space-y-3 text-base sm:text-[17px] leading-relaxed text-muted-foreground max-w-prose">
-              <p>Write, speak, or snap whatever&rsquo;s happening with your body or your day.</p>
-              <p>Purple listens, remembers, and quietly notices the patterns over time.</p>
+              <p>{t("signIn.tag1")}</p>
+              <p>{t("signIn.tag2")}</p>
             </div>
 
             {status === "verify-sent" ? (
               <div className="mt-10 rounded-2xl border border-border bg-secondary/60 p-6">
-                <p className="label-eyebrow">Check your inbox</p>
+                <p className="label-eyebrow">{t("signIn.checkInbox")}</p>
                 <p className="mt-3 font-serif text-2xl text-secondary-foreground leading-snug">
-                  Confirm your email to finish creating your account.
+                  {t("signIn.confirmEmail")}
                 </p>
               </div>
             ) : status === "reset-sent" ? (
               <div className="mt-10 rounded-2xl border border-border bg-secondary/60 p-6">
-                <p className="label-eyebrow">Check your inbox</p>
+                <p className="label-eyebrow">{t("signIn.checkInbox")}</p>
                 <p className="mt-3 font-serif text-2xl text-secondary-foreground leading-snug">
-                  We sent you a link to reset your password.
+                  {t("signIn.resetSent")}
                 </p>
                 <button
                   type="button"
                   onClick={() => setStatus("idle")}
                   className="mt-4 text-sm font-sans text-muted-foreground underline underline-offset-4"
                 >
-                  Back to sign in
+                  {t("signIn.backToSignIn")}
                 </button>
               </div>
             ) : (
               <div className="mt-10">
                 <Tabs value={mode} onValueChange={(v) => { setMode(v as "signin" | "register"); setErrorMsg(null); }}>
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="signin">Sign in</TabsTrigger>
-                    <TabsTrigger value="register">Create account</TabsTrigger>
+                    <TabsTrigger value="signin">{t("signIn.tabSignIn")}</TabsTrigger>
+                    <TabsTrigger value="register">{t("signIn.tabRegister")}</TabsTrigger>
                   </TabsList>
                   <TabsContent value={mode} forceMount>
                     <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                       <label htmlFor="email" className="label-eyebrow block">
-                        Email address
+                        {t("signIn.email")}
                       </label>
                       <Input
                         id="email"
@@ -245,7 +247,7 @@ function SignInPage() {
                         disabled={status === "submitting"}
                       />
                       <label htmlFor="password" className="label-eyebrow block pt-1">
-                        Password
+                        {t("signIn.password")}
                       </label>
                       <Input
                         id="password"
@@ -253,7 +255,7 @@ function SignInPage() {
                         required
                         minLength={8}
                         autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                        placeholder={mode === "register" ? "At least 8 characters" : "Your password"}
+                        placeholder={mode === "register" ? t("signIn.passwordPlaceholderNew") : t("signIn.passwordPlaceholderSignIn")}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="h-14 text-lg font-serif rounded-xl"
@@ -265,12 +267,12 @@ function SignInPage() {
                         disabled={status === "submitting"}
                       >
                         {status === "submitting"
-                          ? mode === "signin" ? "Signing in\u2026" : "Creating account\u2026"
-                          : mode === "signin" ? "Sign in" : "Create account"}
+                          ? mode === "signin" ? t("signIn.signingIn") : t("signIn.creating")
+                          : mode === "signin" ? t("signIn.signIn") : t("signIn.createAccount")}
                       </Button>
                       {mode === "register" && (
                         <div className="pt-4 border-t border-border mt-2">
-                          <p className="label-eyebrow mb-3">Region &amp; language</p>
+                          <p className="label-eyebrow mb-3">{t("welcome.regionLanguage")}</p>
                           <LocaleFields
                             values={localeValues}
                             onChange={setLocaleValues}
@@ -286,7 +288,7 @@ function SignInPage() {
                             disabled={status === "submitting"}
                             className="text-sm font-sans text-muted-foreground hover:text-foreground underline underline-offset-4 disabled:opacity-50"
                           >
-                            Forgot password?
+                            {t("signIn.forgot")}
                           </button>
                         </div>
                       )}
@@ -304,7 +306,7 @@ function SignInPage() {
                   </div>
                   <p className="relative flex justify-center">
                     <span className="bg-background px-3 text-xs font-sans uppercase tracking-widest text-muted-foreground">
-                      or use another account
+                      {t("signIn.orUseAnother")}
                     </span>
                   </p>
                 </div>
@@ -313,7 +315,7 @@ function SignInPage() {
             )}
 
             <p className="mt-10 text-xs text-muted-foreground/80">
-              Your data stays yours. Always.
+              {t("signIn.dataStaysYours")}
             </p>
           </div>
         </main>

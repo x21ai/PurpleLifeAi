@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/reset-password")({
 });
 
 function ResetPasswordPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
   const [password, setPassword] = useState("");
@@ -37,12 +39,12 @@ function ResetPasswordPage() {
     e.preventDefault();
     setErrorMsg(null);
     if (password.length < 8) {
-      setErrorMsg("Password must be at least 8 characters.");
+      setErrorMsg(t("resetPassword.tooShort"));
       setStatus("error");
       return;
     }
     if (password !== confirm) {
-      setErrorMsg("Passwords don't match.");
+      setErrorMsg(t("resetPassword.mismatch"));
       setStatus("error");
       return;
     }
@@ -60,49 +62,49 @@ function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
-        <p className="label-eyebrow">Reset password</p>
+        <p className="label-eyebrow">{t("resetPassword.eyebrow")}</p>
         <h1 className="mt-5 font-serif text-4xl sm:text-5xl leading-[1.05] tracking-tight">
-          Choose a new password.
+          {t("resetPassword.title")}
         </h1>
 
         {status === "done" ? (
           <p className="mt-10 font-serif text-xl text-muted-foreground">
-            Password updated. Taking you to Purple&hellip;
+            {t("resetPassword.done")}
           </p>
         ) : (
           <form onSubmit={handleSubmit} className="mt-10 space-y-4">
-            <label htmlFor="new-password" className="label-eyebrow block">New password</label>
+            <label htmlFor="new-password" className="label-eyebrow block">{t("resetPassword.newPassword")}</label>
             <Input
               id="new-password"
               type="password"
               required
               minLength={8}
               autoComplete="new-password"
-              placeholder="At least 8 characters"
+              placeholder={t("resetPassword.newPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="h-14 text-lg font-serif rounded-xl"
               disabled={!ready || status === "submitting"}
             />
-            <label htmlFor="confirm-password" className="label-eyebrow block pt-1">Confirm password</label>
+            <label htmlFor="confirm-password" className="label-eyebrow block pt-1">{t("resetPassword.confirmPassword")}</label>
             <Input
               id="confirm-password"
               type="password"
               required
               minLength={8}
               autoComplete="new-password"
-              placeholder="Re-enter password"
+              placeholder={t("resetPassword.confirmPlaceholder")}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               className="h-14 text-lg font-serif rounded-xl"
               disabled={!ready || status === "submitting"}
             />
             <Button type="submit" className="w-full h-14 text-base rounded-xl" disabled={!ready || status === "submitting"}>
-              {status === "submitting" ? "Updating\u2026" : "Update password"}
+              {status === "submitting" ? t("resetPassword.updating") : t("resetPassword.updateBtn")}
             </Button>
             {!ready && (
               <p className="text-sm text-muted-foreground">
-                Open this page from the link in your reset email.
+                {t("resetPassword.openFromEmail")}
               </p>
             )}
             {errorMsg && (
