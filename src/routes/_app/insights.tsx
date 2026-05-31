@@ -11,6 +11,7 @@ import { MetricNumber } from "@/components/ui-oura/metric-number";
 import { WaveTrend, type WaveSeries } from "@/components/ui-oura/wave-trend";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
+import { useTranslation } from "react-i18next";
 
 type SeizureRow = {
   id: string;
@@ -30,15 +31,16 @@ export const Route = createFileRoute("/_app/insights")({
 
 function InsightsPage() {
   useRouteTheme("light");
+  const { t } = useTranslation();
   return (
     <div className="mx-auto max-w-4xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-32">
-      <p className="label-eyebrow text-muted-foreground">Patterns</p>
+      <p className="label-eyebrow text-muted-foreground">{t("insights.eyebrow")}</p>
       <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
-        What your body<br/>has been saying.
+        {t("insights.title1")}<br/>{t("insights.title2")}
       </h1>
       <div className="mt-8 max-w-[600px]">
         <NarrativeBlock>
-          Purple watches quietly. When something shifts around a hard day, it remembers — so you don't have to.
+          {t("insights.intro")}
         </NarrativeBlock>
       </div>
 
