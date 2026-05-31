@@ -17,7 +17,10 @@
     "patterns": "Patrones",
     "tools": "Herramientas",
     "account": "Cuenta",
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "medications": "Medicamentos",
+    "biometrics": "Tu cuerpo",
+    "allSignals": "Todas las señales"
   },
   "settings": {
     "eyebrow": "Ajustes",
