@@ -93,6 +93,7 @@ function formatTime(t: string): string {
 
 function MedDetail() {
   useRouteTheme("light");
+  const { t } = useTranslation();
   const { medId } = Route.useParams();
   const { session } = useAuth();
   const userId = session?.user.id;
@@ -219,7 +220,7 @@ function MedDetail() {
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-10 sm:pt-16 lg:pt-20 pb-24">
       <Link to="/meds" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground gap-1">
-        <ArrowLeft className="h-4 w-4" /> Medications
+        <ArrowLeft className="h-4 w-4" /> {t("nav.medications")}
       </Link>
 
       <h1 className="mt-6 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
@@ -227,7 +228,7 @@ function MedDetail() {
       </h1>
       {!med.active && (
         <span className="mt-3 inline-block rounded-full bg-muted text-muted-foreground px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
-          Archived
+          {t("meds.archived")}
         </span>
       )}
       {med.dosage && <p className="mt-3 font-serif text-xl text-foreground/70">{med.dosage}</p>}
