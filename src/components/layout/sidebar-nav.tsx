@@ -1,9 +1,21 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { navItems, type NavItem } from "./nav-items";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
+
+const NAV_I18N: Record<string, string> = {
+  "/today": "nav.today",
+  "/journal": "nav.journal",
+  "/timeline": "nav.timeline",
+  "/insights": "nav.patterns",
+  "/tools": "nav.tools",
+  "/account": "nav.account",
+  "/settings": "nav.settings",
+};
 
 export function SidebarNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { t } = useTranslation();
   // Top items (everything except Settings — which sticks to the bottom).
   const top = navItems.filter((i) => i.to !== "/settings");
   const settings = navItems.find((i) => i.to === "/settings");
@@ -29,7 +41,13 @@ export function SidebarNav() {
           const active = pathname === item.to;
           const Icon = item.icon;
           return (
-            <SideLink key={item.to} to={item.to} label={item.label} Icon={Icon} active={active} />
+            <SideLink
+              key={item.to}
+              to={item.to}
+              label={t(NAV_I18N[item.to] ?? "", { defaultValue: item.label })}
+              Icon={Icon}
+              active={active}
+            />
           );
         })}
       </nav>
@@ -37,7 +55,7 @@ export function SidebarNav() {
         <div className="border-t border-border p-2 lg:p-3">
           <SideLink
             to={settings.to}
-            label={settings.label}
+            label={t(NAV_I18N[settings.to] ?? "", { defaultValue: settings.label })}
             Icon={settings.icon}
             active={pathname === settings.to}
           />
