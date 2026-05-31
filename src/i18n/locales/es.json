@@ -120,19 +120,54 @@
   "biometrics": {
     "eyebrow": "Tu cuerpo",
     "title1": "Cada señal que Purple",
-    "title2": "está leyendo."
+    "title2": "está leyendo.",
+    "backToToday": "Volver a hoy",
+    "noDataTitle": "Aún no hay datos de Oura.",
+    "noDataBody": "Conecta tu anillo en ajustes o usa Sincronizar ahora cuando esté conectado."
   },
   "insights": {
     "eyebrow": "Patrones",
     "title1": "Lo que tu cuerpo",
     "title2": "ha estado diciendo.",
-    "intro": "Purple observa en silencio. Cuando algo cambia cerca de un día difícil, lo recuerda — para que tú no tengas que hacerlo."
+    "intro": "Purple observa en silencio. Cuando algo cambia cerca de un día difícil, lo recuerda — para que tú no tengas que hacerlo.",
+    "tabSeizures": "Crisis",
+    "tabTrends": "Tendencias",
+    "avgSleep": "Sueño medio",
+    "hrvMs": "VFC ms",
+    "restBpm": "FC reposo",
+    "last14": "Últimas 14 noches · desde tu anillo conectado",
+    "last14Short": "Últimas 14 noches",
+    "last90": "Últimos 90 días",
+    "allEvents": "Todos los eventos",
+    "noEvents": "Sin eventos registrados.",
+    "noEventsBody": "Cuando suceda algo, regístralo — solo un toque.",
+    "logShort": "Registrar",
+    "connectWearable": "Conecta un dispositivo para empezar a ver tus tendencias."
   },
   "timeline": {
     "eyebrow": "Cronología",
     "title1": "Todo,",
     "title2": "en orden.",
-    "export": "Exportar"
+    "export": "Exportar",
+    "intro": "Crisis, entradas del diario y dosis, lado a lado. Filtra por rango, busca y exporta cuando necesites compartir con tu equipo médico.",
+    "add": "Añadir:",
+    "journalEntry": "Entrada de diario",
+    "seizure": "Crisis",
+    "dose": "Dosis",
+    "day": "Día",
+    "week": "Semana",
+    "month": "Mes",
+    "year": "Año",
+    "custom": "Personalizado",
+    "search": "Buscar…",
+    "from": "Desde",
+    "to": "Hasta",
+    "emptyRange": "Nada en este rango todavía.",
+    "downloadCsv": "Descargar CSV",
+    "downloadText": "Descargar texto",
+    "print": "Imprimir / Guardar como PDF",
+    "copy": "Copiar al portapapeles",
+    "share": "Compartir…"
   },
   "locale": {
     "title": "Región e idioma",
