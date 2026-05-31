@@ -1,6 +1,7 @@
 import * as React from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./client";
+import { seedLocaleFromProfile } from "@/i18n";
 
 type AuthState = {
   session: Session | null;
@@ -69,6 +70,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }),
     [session, loading],
   );
+
+  // Seed the saved language from the user's profile so it wins over
+  // navigator on a fresh device / cleared localStorage.
+  const seededFor = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    const uid = session?.user?.id;
+    if (!uid || seededFor.current === uid) return;
+    seededFor.current = uid;
+    void supabase
+      .from("profiles")
+      .select("locale")
+      .eq("id", uid)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.locale) seedLocaleFromProfile(data.locale);
+      });
+  }, [session?.user?.id]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
