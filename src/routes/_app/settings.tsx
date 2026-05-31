@@ -1,21 +1,14 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { ChevronRight, Pill, History, Zap, Users, Shield, MessageCircle, HeartHandshake, Plane, FileText } from "lucide-react";
+import { ChevronRight, Pill, History, Zap, Users, Shield, MessageCircle, HeartHandshake, Plane, FileText, UserCircle2, Wrench, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useIsAdmin } from "@/lib/use-is-admin";
-import { useTheme, type ThemeMode } from "@/lib/theme-provider";
 import { useEffect, useState, lazy, Suspense, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { showsSeizureFeatures } from "@/lib/condition-prompts";
 
 // Code-split heavy below-the-fold sections so the link list renders fast.
-const OuraConnection = lazy(() =>
-  import("@/components/connections/oura-connection").then((m) => ({ default: m.OuraConnection })),
-);
-const PhoneAlarmsSection = lazy(() =>
-  import("@/components/settings/phone-alarms-section").then((m) => ({ default: m.PhoneAlarmsSection })),
-);
 const PreferencesSection = lazy(() =>
   import("@/components/settings/preferences-section").then((m) => ({ default: m.PreferencesSection })),
 );
@@ -82,20 +75,12 @@ function SettingsPage() {
         Account, privacy, integrations, and how Purple talks to you.
       </p>
 
-      <GroupLabel>Account</GroupLabel>
-      <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
-        <h2 className="font-serif text-xl text-foreground">Account</h2>
-        {session?.user?.email && (
-          <p className="mt-1 text-sm text-muted-foreground">
-            Signed in as <span className="text-foreground">{session.user.email}</span>
-          </p>
-        )}
-        <div className="mt-5">
-          <Button variant="outline" onClick={handleSignOut}>
-            Sign out
-          </Button>
-        </div>
-      </section>
+      {/* Hub: Account / Settings / Tools, like Oura's three top-level sheets. */}
+      <div className="mt-8 grid gap-3 sm:grid-cols-3">
+        <HubCard to="/account" icon={UserCircle2} title="Account" subtitle="Profile, security, language, appearance" />
+        <HubCard to="/settings" icon={Settings2} title="Settings" subtitle="Preferences, sharing, data" active />
+        <HubCard to="/tools" icon={Wrench} title="Tools" subtitle="Devices, alarms, integrations" />
+      </div>
 
       <GroupLabel>Your health</GroupLabel>
       <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
@@ -157,22 +142,6 @@ function SettingsPage() {
         </div>
       </section>
 
-      <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
-        <h2 className="font-serif text-xl text-foreground">Connections</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Bring your wearable data in so Purple can notice patterns across your body.
-        </p>
-        <div className="mt-4 divide-y divide-border">
-          <Suspense fallback={<div className="h-20 animate-pulse" aria-hidden />}>
-            <OuraConnection />
-          </Suspense>
-        </div>
-      </section>
-
-      <AppearanceSection />
-      <Suspense fallback={<SectionSkeleton />}>
-        <PhoneAlarmsSection />
-      </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
         <PreferencesSection />
       </Suspense>
@@ -189,6 +158,13 @@ function SettingsPage() {
       <Suspense fallback={<SectionSkeleton />}>
         <AboutSection />
       </Suspense>
+
+      <p className="mt-8 text-xs text-muted-foreground">
+        Looking for connections, alarms, or your device? They moved to{" "}
+        <Link to="/tools" className="underline">Tools</Link>. Name, password,
+        2FA, region, language, and appearance live in{" "}
+        <Link to="/account" className="underline">Account</Link>.
+      </p>
 
       {isAdmin && (
         <>
@@ -248,40 +224,31 @@ function Row({
   );
 }
 
-function AppearanceSection() {
-  const { mode, setMode } = useTheme();
-  const opts: { v: ThemeMode; label: string; desc: string }[] = [
-    { v: "system", label: "System", desc: "Match device" },
-    { v: "light", label: "Light", desc: "Always light" },
-    { v: "dark", label: "Dark", desc: "Always dark" },
-  ];
+function HubCard({
+  to,
+  icon: Icon,
+  title,
+  subtitle,
+  active,
+}: {
+  to: string;
+  icon: typeof Pill;
+  title: string;
+  subtitle: string;
+  active?: boolean;
+}) {
   return (
-    <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
-      <h2 className="font-serif text-xl text-foreground">Appearance</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Choose how Purple looks. Applies across every page.
-      </p>
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        {opts.map((o) => {
-          const active = mode === o.v;
-          return (
-            <button
-              key={o.v}
-              type="button"
-              onClick={() => setMode(o.v)}
-              className={`rounded-xl border p-3 text-left transition-colors ${
-                active
-                  ? "border-primary bg-primary/10 text-foreground"
-                  : "border-border bg-background hover:bg-secondary/40 text-foreground"
-              }`}
-              aria-pressed={active}
-            >
-              <p className="font-serif text-base">{o.label}</p>
-              <p className="text-xs text-muted-foreground">{o.desc}</p>
-            </button>
-          );
-        })}
-      </div>
-    </section>
+    <Link
+      to={to as never}
+      className={`flex flex-col gap-2 rounded-2xl border p-5 transition-colors ${
+        active
+          ? "border-primary bg-primary/5"
+          : "border-border bg-card hover:bg-secondary/40"
+      }`}
+    >
+      <Icon className="h-5 w-5 text-primary" />
+      <p className="font-serif text-lg text-foreground">{title}</p>
+      <p className="text-xs text-muted-foreground">{subtitle}</p>
+    </Link>
   );
 }

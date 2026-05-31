@@ -32,6 +32,7 @@ import { Route as CommunityPostIdRouteImport } from './routes/community.$postId'
 import { Route as CareAcceptRouteImport } from './routes/care.accept'
 import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
 import { Route as AppVitalsRouteImport } from './routes/_app/vitals'
+import { Route as AppToolsRouteImport } from './routes/_app/tools'
 import { Route as AppTodayRouteImport } from './routes/_app/today'
 import { Route as AppTimelineRouteImport } from './routes/_app/timeline'
 import { Route as AppTermsRouteImport } from './routes/_app/terms'
@@ -45,6 +46,7 @@ import { Route as AppCommunityNewRouteImport } from './routes/_app/community-new
 import { Route as AppChatRouteImport } from './routes/_app/chat'
 import { Route as AppCharterRouteImport } from './routes/_app/charter'
 import { Route as AppAdminRouteImport } from './routes/_app/admin'
+import { Route as AppAccountRouteImport } from './routes/_app/account'
 import { Route as AppJournalIndexRouteImport } from './routes/_app/journal.index'
 import { Route as AppBiometricsIndexRouteImport } from './routes/_app/biometrics.index'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin.index'
@@ -190,6 +192,11 @@ const AppVitalsRoute = AppVitalsRouteImport.update({
   path: '/vitals',
   getParentRoute: () => AppRoute,
 } as any)
+const AppToolsRoute = AppToolsRouteImport.update({
+  id: '/tools',
+  path: '/tools',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTodayRoute = AppTodayRouteImport.update({
   id: '/today',
   path: '/today',
@@ -253,6 +260,11 @@ const AppCharterRoute = AppCharterRouteImport.update({
 const AppAdminRoute = AppAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAccountRoute = AppAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => AppRoute,
 } as any)
 const AppJournalIndexRoute = AppJournalIndexRouteImport.update({
@@ -430,6 +442,7 @@ export interface FileRoutesByFullPath {
   '/sign-up': typeof SignUpRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
+  '/account': typeof AppAccountRoute
   '/admin': typeof AppAdminRouteWithChildren
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
@@ -443,6 +456,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof AppTermsRoute
   '/timeline': typeof AppTimelineRoute
   '/today': typeof AppTodayRouteWithChildren
+  '/tools': typeof AppToolsRoute
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
   '/care/accept': typeof CareAcceptRoute
@@ -497,6 +511,7 @@ export interface FileRoutesByTo {
   '/sign-up': typeof SignUpRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
+  '/account': typeof AppAccountRoute
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/community-new': typeof AppCommunityNewRoute
@@ -509,6 +524,7 @@ export interface FileRoutesByTo {
   '/terms': typeof AppTermsRoute
   '/timeline': typeof AppTimelineRoute
   '/today': typeof AppTodayRouteWithChildren
+  '/tools': typeof AppToolsRoute
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
   '/care/accept': typeof CareAcceptRoute
@@ -565,6 +581,7 @@ export interface FileRoutesById {
   '/sign-up': typeof SignUpRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
+  '/_app/account': typeof AppAccountRoute
   '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/charter': typeof AppCharterRoute
   '/_app/chat': typeof AppChatRoute
@@ -578,6 +595,7 @@ export interface FileRoutesById {
   '/_app/terms': typeof AppTermsRoute
   '/_app/timeline': typeof AppTimelineRoute
   '/_app/today': typeof AppTodayRouteWithChildren
+  '/_app/tools': typeof AppToolsRoute
   '/_app/vitals': typeof AppVitalsRoute
   '/_app/welcome': typeof AppWelcomeRoute
   '/care/accept': typeof CareAcceptRoute
@@ -634,6 +652,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/unsubscribe'
     | '/users'
+    | '/account'
     | '/admin'
     | '/charter'
     | '/chat'
@@ -647,6 +666,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/timeline'
     | '/today'
+    | '/tools'
     | '/vitals'
     | '/welcome'
     | '/care/accept'
@@ -701,6 +721,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/unsubscribe'
     | '/users'
+    | '/account'
     | '/charter'
     | '/chat'
     | '/community-new'
@@ -713,6 +734,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/timeline'
     | '/today'
+    | '/tools'
     | '/vitals'
     | '/welcome'
     | '/care/accept'
@@ -768,6 +790,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/unsubscribe'
     | '/users'
+    | '/_app/account'
     | '/_app/admin'
     | '/_app/charter'
     | '/_app/chat'
@@ -781,6 +804,7 @@ export interface FileRouteTypes {
     | '/_app/terms'
     | '/_app/timeline'
     | '/_app/today'
+    | '/_app/tools'
     | '/_app/vitals'
     | '/_app/welcome'
     | '/care/accept'
@@ -1014,6 +1038,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVitalsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/tools': {
+      id: '/_app/tools'
+      path: '/tools'
+      fullPath: '/tools'
+      preLoaderRoute: typeof AppToolsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/today': {
       id: '/_app/today'
       path: '/today'
@@ -1103,6 +1134,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/account': {
+      id: '/_app/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AppAccountRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/journal/': {
@@ -1396,6 +1434,7 @@ const AppTodayRouteWithChildren = AppTodayRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppAccountRoute: typeof AppAccountRoute
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppCharterRoute: typeof AppCharterRoute
   AppChatRoute: typeof AppChatRoute
@@ -1409,6 +1448,7 @@ interface AppRouteChildren {
   AppTermsRoute: typeof AppTermsRoute
   AppTimelineRoute: typeof AppTimelineRoute
   AppTodayRoute: typeof AppTodayRouteWithChildren
+  AppToolsRoute: typeof AppToolsRoute
   AppVitalsRoute: typeof AppVitalsRoute
   AppWelcomeRoute: typeof AppWelcomeRoute
   AppBiometricsMetricRoute: typeof AppBiometricsMetricRoute
@@ -1420,6 +1460,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAccountRoute: AppAccountRoute,
   AppAdminRoute: AppAdminRouteWithChildren,
   AppCharterRoute: AppCharterRoute,
   AppChatRoute: AppChatRoute,
@@ -1433,6 +1474,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTermsRoute: AppTermsRoute,
   AppTimelineRoute: AppTimelineRoute,
   AppTodayRoute: AppTodayRouteWithChildren,
+  AppToolsRoute: AppToolsRoute,
   AppVitalsRoute: AppVitalsRoute,
   AppWelcomeRoute: AppWelcomeRoute,
   AppBiometricsMetricRoute: AppBiometricsMetricRoute,
@@ -1494,13 +1536,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
