@@ -40,6 +40,7 @@ export const Route = createFileRoute("/_app/chat")({
 
 function AskPage() {
   useRouteTheme("light");
+  const { t } = useTranslation();
   const [messages, setMessages] = React.useState<Msg[]>([]);
   const [input, setInput] = React.useState("");
   const [thinking, setThinking] = React.useState(false);
@@ -128,11 +129,11 @@ function AskPage() {
     <div className="flex flex-col h-[100dvh] md:h-screen">
       <header className="px-4 sm:px-10 lg:px-16 pt-12 sm:pt-20 pb-6 border-b border-border/40">
         <div className="mx-auto max-w-3xl">
-          <p className="label-eyebrow text-muted-foreground">Ask</p>
+          <p className="label-eyebrow text-muted-foreground">{t("chatPage.eyebrow")}</p>
           <h1 className="mt-2 font-serif text-[40px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
-            I know your
+            {t("chatPage.title1")}
             <br />
-            patterns.
+            {t("chatPage.title2")}
           </h1>
         </div>
       </header>
