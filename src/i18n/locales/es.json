@@ -201,5 +201,19 @@
     "privateTitle": "Lo que se mantiene privado",
     "privateBody": "Tus datos viven en tu cuenta. Purple nunca entrena modelos con ellos, nunca los comparte y puedes exportar o borrarlo todo desde",
     "privateLink": "Ajustes → Datos"
+  },
+  "sharing": {
+    "eyebrow": "Compartir y acceso",
+    "title1": "Tu círculo",
+    "title2": "de confianza.",
+    "intro": "Elige quién puede ver tu historia de salud y qué puede hacer. Sus ediciones no se aplican hasta que tú las apruebas. Puedes revocar a cualquiera, en cualquier momento.",
+    "pending": "Aprobaciones pendientes",
+    "pendingEmpty": "Nada esperando. Cuando alguien sugiera un cambio aparecerá aquí."
+  },
+  "travel": {
+    "title": "Estoy viajando",
+    "intro": "Cuéntale a Purple tu itinerario. Reconstruimos tu horario de medicación a través de vuelos y escalas, eligiendo cada hora según la zona horaria en la que realmente estás.",
+    "newTrip": "Nuevo viaje",
+    "homeTz": "Zona horaria de casa"
   }
 }

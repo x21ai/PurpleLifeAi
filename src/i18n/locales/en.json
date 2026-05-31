@@ -201,5 +201,19 @@
     "privateTitle": "What stays private",
     "privateBody": "Your data lives in your account. Purple never trains models on it, never shares it with anyone, and you can export or delete everything from",
     "privateLink": "Settings → Data"
+  },
+  "sharing": {
+    "eyebrow": "Sharing & access",
+    "title1": "Your circle",
+    "title2": "of trust.",
+    "intro": "Choose who can see your health story and what they can do. Their edits never go live until you approve them. You can revoke anyone, anytime.",
+    "pending": "Pending approvals",
+    "pendingEmpty": "Nothing waiting. When someone suggests an edit it'll show here."
+  },
+  "travel": {
+    "title": "I'm Traveling",
+    "intro": "Tell Purple your itinerary. We rebuild your medication schedule across flights and layovers, choosing each dose time based on the timezone you're actually in.",
+    "newTrip": "New trip",
+    "homeTz": "Home timezone"
   }
 }

@@ -64,6 +64,7 @@ export const Route = createFileRoute("/_app/settings/sharing")({
 
 function SharingPage() {
   useRouteTheme("light");
+  const { t } = useTranslation();
   const qc = useQueryClient();
 
   const fetchMyCaregivers = useServerFn(listMyCaregivers);
@@ -100,27 +101,26 @@ function SharingPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
       <Link to="/settings" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" /> Settings
+        <ArrowLeft className="h-4 w-4" /> {t("nav.settings")}
       </Link>
-      <p className="label-eyebrow text-muted-foreground mt-6">Sharing &amp; access</p>
+      <p className="label-eyebrow text-muted-foreground mt-6">{t("sharing.eyebrow")}</p>
       <h1 className="mt-3 font-serif text-[40px] sm:text-6xl leading-[1.02] tracking-[-0.02em] text-foreground">
-        Your circle<br />of trust.
+        {t("sharing.title1")}<br />{t("sharing.title2")}
       </h1>
       <p className="mt-6 body-serif text-foreground/75 max-w-[600px]">
-        Choose who can see your health story and what they can do.
-        Their edits never go live until you approve them. You can revoke anyone, anytime.
+        {t("sharing.intro")}
       </p>
 
       {/* Pending approvals */}
       <section className="mt-10 rounded-2xl border border-border bg-card p-5 sm:p-6">
         <div className="flex items-center justify-between">
-          <h2 className="font-serif text-xl text-foreground">Pending approvals</h2>
+          <h2 className="font-serif text-xl text-foreground">{t("sharing.pending")}</h2>
           {pendingCount > 0 && <Badge variant="default">{pendingCount}</Badge>}
         </div>
         {pending.isLoading ? (
-          <p className="mt-3 text-sm text-muted-foreground"><Loader2 className="inline h-3 w-3 animate-spin" /> Loading…</p>
+          <p className="mt-3 text-sm text-muted-foreground"><Loader2 className="inline h-3 w-3 animate-spin" /> {t("common.loading")}</p>
         ) : pendingCount === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">Nothing waiting. When someone suggests an edit it'll show here.</p>
+          <p className="mt-3 text-sm text-muted-foreground">{t("sharing.pendingEmpty")}</p>
         ) : (
           <ul className="mt-4 space-y-3">
             {pending.data!.changes.map((c) => (

@@ -18,6 +18,7 @@ import { useRouteTheme } from "@/lib/use-route-theme";
 import { buildIcs, downloadIcs, medicationToIcsEvents } from "@/lib/ics";
 import { useServerFn } from "@tanstack/react-start";
 import { generateTripSchedule, previewTripSchedule } from "@/lib/travel.functions";
+import { useTranslation } from "react-i18next";
 import { DualTime } from "@/components/travel/dual-time";
 
 export const Route = createFileRoute("/_app/settings/travel")({
