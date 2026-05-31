@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/seizures/new")({
   head: () => ({ meta: [{ title: "Log seizure — Purple" }] }),
