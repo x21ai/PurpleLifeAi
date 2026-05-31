@@ -54,20 +54,20 @@ type TodayDose = {
 
 type FilterKind = "all" | "medication" | "supplement" | "vitamin" | "rescue";
 
-const FILTER_CHIPS: { value: FilterKind; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "medication", label: "Medications" },
-  { value: "supplement", label: "Supplements" },
-  { value: "vitamin", label: "Vitamins" },
-  { value: "rescue", label: "Rescue" },
+const FILTER_CHIPS: { value: FilterKind; labelKey: string }[] = [
+  { value: "all", labelKey: "meds.filterAll" },
+  { value: "medication", labelKey: "meds.filterMedications" },
+  { value: "supplement", labelKey: "meds.filterSupplements" },
+  { value: "vitamin", labelKey: "meds.filterVitamins" },
+  { value: "rescue", labelKey: "meds.filterRescue" },
 ];
 
-const KIND_LABELS: Record<MedKind, string> = {
-  medication: "Medications",
-  supplement: "Supplements",
-  vitamin: "Vitamins",
-  herbal: "Herbal",
-  rescue: "Rescue",
+const KIND_LABEL_KEYS: Record<MedKind, string> = {
+  medication: "meds.filterMedications",
+  supplement: "meds.filterSupplements",
+  vitamin: "meds.filterVitamins",
+  herbal: "meds.filterHerbal",
+  rescue: "meds.filterRescue",
 };
 
 export const Route = createFileRoute("/_app/meds")({
@@ -227,19 +227,19 @@ function MedsPage() {
 
       {meds && meds.length > 0 && (
         <div className="mt-8 flex items-center gap-2 border-b border-border">
-          {(["active", "archive"] as const).map((t) => (
+          {(["active", "archive"] as const).map((tabKey) => (
             <button
-              key={t}
+              key={tabKey}
               type="button"
-              onClick={() => setTab(t)}
+              onClick={() => setTab(tabKey)}
               className={cn(
                 "px-3 py-2 text-sm capitalize -mb-px border-b-2 transition-colors",
-                tab === t
+                tab === tabKey
                   ? "border-foreground text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground",
               )}
             >
-              {t} {t === "archive" && archivedMeds.length > 0 && (
+              {tabKey === "active" ? t("meds.tabActive") : t("meds.tabArchive")} {tabKey === "archive" && archivedMeds.length > 0 && (
                 <span className="ml-1 text-xs text-muted-foreground">({archivedMeds.length})</span>
               )}
             </button>
@@ -261,29 +261,29 @@ function MedsPage() {
                   : "bg-secondary text-secondary-foreground hover:bg-secondary/80",
               )}
             >
-              {chip.label}
+              {t(chip.labelKey)}
             </button>
           ))}
         </div>
       )}
 
       {meds === null ? (
-        <p className="mt-10 text-sm text-muted-foreground">Loading…</p>
+        <p className="mt-10 text-sm text-muted-foreground">{t("common.loading")}</p>
       ) : meds.length === 0 ? (
         <div className="mt-10 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
           <Pill className="h-6 w-6 mx-auto text-muted-foreground" />
-          <p className="mt-3 font-serif text-lg text-foreground">Add the medications you take.</p>
+          <p className="mt-3 font-serif text-lg text-foreground">{t("meds.emptyTitle")}</p>
           <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
-            I will remind you and watch for missed doses.
+            {t("meds.emptyBody")}
           </p>
           <Button className="mt-5 rounded-full" onClick={() => setOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Add a medication
+            <Plus className="h-4 w-4 mr-1" /> {t("meds.addMedication")}
           </Button>
         </div>
       ) : tab === "archive" && archivedMeds.length === 0 ? (
         <div className="mt-10 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
           <Archive className="h-6 w-6 mx-auto text-muted-foreground" />
-          <p className="mt-3 text-sm text-muted-foreground">No archived medications.</p>
+          <p className="mt-3 text-sm text-muted-foreground">{t("meds.noArchived")}</p>
         </div>
       ) : tab === "active" && filter === "all" && groupedMeds ? (
         <div className="mt-8 space-y-6">
@@ -293,7 +293,7 @@ function MedsPage() {
             return (
               <section key={kind}>
                 <h2 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">
-                  {KIND_LABELS[kind]}
+                  {t(KIND_LABEL_KEYS[kind])}
                 </h2>
                 <ul className="space-y-2">
                   {list.map((m) => <MedRow key={m.id} med={m} onEdit={handleEdit} onChanged={load} />)}
@@ -311,7 +311,7 @@ function MedsPage() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Add medication"
+        aria-label={t("meds.addMedication")}
         className="fixed bottom-24 md:bottom-8 right-5 md:right-8 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
         style={{ marginBottom: "env(safe-area-inset-bottom)" }}
       >
@@ -343,10 +343,11 @@ function TodayDosesSection({
   onMarkAll: () => void;
   markingAll: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <section className="mt-8 rounded-2xl border border-border bg-card p-5 sm:p-6">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-serif text-xl text-foreground">Today&apos;s doses</h2>
+        <h2 className="font-serif text-xl text-foreground">{t("meds.todayDoses")}</h2>
         {pendingCount > 0 && (
           <Button
             size="sm"
@@ -356,14 +357,14 @@ function TodayDosesSection({
             disabled={markingAll}
           >
             <CheckCheck className="h-3.5 w-3.5 mr-1" />
-            Mark all taken
+            {t("meds.markAllTaken")}
           </Button>
         )}
       </div>
       {doses === null ? (
-        <p className="mt-4 text-sm text-muted-foreground">Loading…</p>
+        <p className="mt-4 text-sm text-muted-foreground">{t("common.loading")}</p>
       ) : doses.length === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">No scheduled doses today.</p>
+        <p className="mt-4 text-sm text-muted-foreground">{t("meds.noDosesToday")}</p>
       ) : (
         <ul className="mt-4 divide-y divide-border">
           {doses.map((d) => (
