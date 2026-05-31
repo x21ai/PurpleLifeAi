@@ -7,6 +7,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { EntryCard } from "@/components/journal/entry-card";
 import type { Database } from "@/integrations/supabase/types";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { useTranslation } from "react-i18next";
 
 type Entry = Database["public"]["Tables"]["journal_entries"]["Row"];
 
