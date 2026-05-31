@@ -17,7 +17,10 @@
     "patterns": "Patrones",
     "tools": "Herramientas",
     "account": "Cuenta",
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "medications": "Medicamentos",
+    "biometrics": "Tu cuerpo",
+    "allSignals": "Todas las señales"
   },
   "settings": {
     "eyebrow": "Ajustes",
@@ -182,5 +185,35 @@
   "charter": {
     "back": "Ajustes",
     "eyebrow": "Sobre Purple"
+  },
+  "howPurple": {
+    "back": "Ajustes",
+    "eyebrow": "Cómo piensa Purple",
+    "title1": "Lee con suavidad.",
+    "title2": "Solo actúa cuando tú lo dices.",
+    "seesTitle": "Qué ve Purple",
+    "seesBody": "Cuando haces una pregunta, Purple lee los últimos 7 días de biometría, 14 días de entradas del diario, 90 días de crisis, tus medicamentos actuales y el último pronóstico de riesgo. Nada más.",
+    "patternsTitle": "Cómo encuentra patrones",
+    "patternsBody": "Cada noche, un pequeño trabajo revisa 8 señales — sueño, VFC, temperatura, actividad, dosis omitidas, ánimo, ubicación e historial de crisis — buscando combinaciones repetidas. Los nuevos patrones aparecen en",
+    "patternsLink": "Patrones",
+    "actionTitle": "Cuando Purple propone una acción",
+    "actionBody": "Si Purple quiere añadir un medicamento, registrar una crisis o cambiar un ajuste por ti, primero muestra una tarjeta de confirmación. No se escribe nada hasta que toques Confirmar.",
+    "privateTitle": "Lo que se mantiene privado",
+    "privateBody": "Tus datos viven en tu cuenta. Purple nunca entrena modelos con ellos, nunca los comparte y puedes exportar o borrarlo todo desde",
+    "privateLink": "Ajustes → Datos"
+  },
+  "sharing": {
+    "eyebrow": "Compartir y acceso",
+    "title1": "Tu círculo",
+    "title2": "de confianza.",
+    "intro": "Elige quién puede ver tu historia de salud y qué puede hacer. Sus ediciones no se aplican hasta que tú las apruebas. Puedes revocar a cualquiera, en cualquier momento.",
+    "pending": "Aprobaciones pendientes",
+    "pendingEmpty": "Nada esperando. Cuando alguien sugiera un cambio aparecerá aquí."
+  },
+  "travel": {
+    "title": "Estoy viajando",
+    "intro": "Cuéntale a Purple tu itinerario. Reconstruimos tu horario de medicación a través de vuelos y escalas, eligiendo cada hora según la zona horaria en la que realmente estás.",
+    "newTrip": "Nuevo viaje",
+    "homeTz": "Zona horaria de casa"
   }
 }

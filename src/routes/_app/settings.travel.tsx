@@ -18,6 +18,7 @@ import { useRouteTheme } from "@/lib/use-route-theme";
 import { buildIcs, downloadIcs, medicationToIcsEvents } from "@/lib/ics";
 import { useServerFn } from "@tanstack/react-start";
 import { generateTripSchedule, previewTripSchedule } from "@/lib/travel.functions";
+import { useTranslation } from "react-i18next";
 import { DualTime } from "@/components/travel/dual-time";
 
 export const Route = createFileRoute("/_app/settings/travel")({
@@ -84,6 +85,7 @@ const COMMON_TZS = [
 
 function TravelPage() {
   useRouteTheme("light");
+  const { t } = useTranslation();
   const { session } = useAuth();
   const userId = session?.user.id;
   const generateFn = useServerFn(generateTripSchedule);
@@ -297,13 +299,11 @@ function TravelPage() {
         to="/settings"
         className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground gap-1"
       >
-        <ChevronLeft className="h-3.5 w-3.5" /> Settings
+        <ChevronLeft className="h-3.5 w-3.5" /> {t("nav.settings")}
       </Link>
-      <h1 className="mt-4 font-serif text-4xl sm:text-5xl text-foreground">I'm Traveling</h1>
+      <h1 className="mt-4 font-serif text-4xl sm:text-5xl text-foreground">{t("travel.title")}</h1>
       <p className="mt-3 text-foreground/75 max-w-[600px]">
-        Tell Purple your itinerary. We rebuild your medication schedule across
-        flights and layovers, choosing each dose time based on the timezone
-        you're actually in.
+        {t("travel.intro")}
       </p>
 
       <div className="mt-6">
@@ -311,12 +311,12 @@ function TravelPage() {
           href="#plan-a-trip"
           className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
         >
-          <Plus className="h-4 w-4 mr-1.5" /> New trip
+          <Plus className="h-4 w-4 mr-1.5" /> {t("travel.newTrip")}
         </a>
       </div>
 
       <section className="mt-8 rounded-2xl border border-border bg-card p-5 sm:p-6">
-        <h2 className="font-serif text-xl text-foreground">Home timezone</h2>
+        <h2 className="font-serif text-xl text-foreground">{t("travel.homeTz")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           The anchor when you're not on a trip. Change this only if you've
           actually moved.
