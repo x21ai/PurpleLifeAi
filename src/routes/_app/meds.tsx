@@ -14,6 +14,7 @@ import { useRouteTheme } from "@/lib/use-route-theme";
 import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -89,6 +90,7 @@ function formatTime(t: string): string {
 
 function MedsPage() {
   useRouteTheme("light");
+  const { t } = useTranslation();
   const { session } = useAuth();
   const userId = session?.user.id;
   const [meds, setMeds] = React.useState<Medication[] | null>(null);
@@ -197,13 +199,13 @@ function MedsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-32 relative">
-      <p className="label-eyebrow text-muted-foreground">Medications</p>
+      <p className="label-eyebrow text-muted-foreground">{t("meds.eyebrow")}</p>
       <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
-        Your schedule,<br/>your record.
+        {t("meds.title1")}<br/>{t("meds.title2")}
       </h1>
       <div className="mt-8">
         <NarrativeBlock>
-          Tap a med to see how you've been doing. Purple keeps a quiet ledger and nudges only when it matters.
+          {t("meds.intro")}
         </NarrativeBlock>
       </div>
 
