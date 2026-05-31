@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { ScoreArc } from "@/components/ui-oura/score-arc";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { useTranslation } from "react-i18next";
 
 type Factor = {
   key: string;
@@ -49,6 +50,7 @@ function bandTone(band: string): { ring: "cream" | "alert"; chip: string; label:
 
 function RiskDetailPage() {
   useRouteTheme("dark");
+  const { t } = useTranslation();
   const { session } = useAuth();
   const userId = session?.user.id;
   const [forecast, setForecast] = useState<Forecast | null>(null);
@@ -76,21 +78,21 @@ function RiskDetailPage() {
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-8 sm:pt-12 pb-24">
       <Link to="/today" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ChevronLeft className="h-4 w-4" />
-        Back to today
+        {t("riskDetail.backToToday")}
       </Link>
 
-      <p className="label-eyebrow mt-10 text-muted-foreground">Today&rsquo;s reading</p>
+      <p className="label-eyebrow mt-10 text-muted-foreground">{t("riskDetail.eyebrow")}</p>
       <h1 className="font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] mt-3 text-foreground">
-        Why today reads the way it does.
+        {t("riskDetail.title")}
       </h1>
 
       {!loaded ? (
         <div className="mt-10 h-64 rounded-3xl bg-card animate-pulse border border-border" />
       ) : !forecast ? (
         <div className="mt-10 rounded-3xl border border-border bg-card p-8 text-center">
-          <p className="font-serif text-xl">No reading yet for today.</p>
+          <p className="font-serif text-xl">{t("riskDetail.noReadingTitle")}</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Purple computes a fresh reading once a day at dawn.
+            {t("riskDetail.noReadingBody")}
           </p>
         </div>
       ) : (
