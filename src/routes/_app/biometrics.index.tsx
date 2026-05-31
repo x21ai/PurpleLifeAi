@@ -7,6 +7,7 @@ import { useRouteTheme } from "@/lib/use-route-theme";
 import { METRIC_ORDER, METRICS, type MetricKey } from "@/lib/biometric-metrics";
 import { MetricCard } from "@/components/biometrics/metric-card";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/biometrics/")({
   head: () => ({
@@ -22,6 +23,7 @@ type BioRow = Record<string, number | string | null>;
 
 function BiometricsIndex() {
   useRouteTheme("dark");
+  const { t } = useTranslation();
   const { session } = useAuth();
   const uid = session?.user.id;
   const [rows, setRows] = useState<BioRow[] | null>(null);
@@ -75,11 +77,11 @@ function BiometricsIndex() {
         Back to today
       </Link>
 
-      <p className="label-eyebrow mt-10 text-muted-foreground">Your body</p>
+      <p className="label-eyebrow mt-10 text-muted-foreground">{t("biometrics.eyebrow")}</p>
       <h1 className="font-serif text-[40px] sm:text-6xl leading-[1.04] tracking-[-0.02em] mt-3 text-foreground">
-        Every signal Purple
+        {t("biometrics.title1")}
         <br />
-        is reading.
+        {t("biometrics.title2")}
       </h1>
 
       <div className="mt-8 rounded-2xl border border-border bg-card px-5 py-4">
