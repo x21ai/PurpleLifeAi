@@ -7,6 +7,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { EntryCard } from "@/components/journal/entry-card";
 import type { Database } from "@/integrations/supabase/types";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { useTranslation } from "react-i18next";
 
 type Entry = Database["public"]["Tables"]["journal_entries"]["Row"];
 
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/_app/journal/")({
 
 function JournalPage() {
   useRouteTheme("light");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { session } = useAuth();
   const userId = session?.user.id;
@@ -102,9 +104,9 @@ function JournalPage() {
     >
       <div className="flex items-end justify-between mb-10 gap-4">
         <div>
-          <p className="label-eyebrow text-muted-foreground">Journal</p>
+          <p className="label-eyebrow text-muted-foreground">{t("journal.eyebrow")}</p>
           <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
-            Everything you've<br/>shared, in order.
+            {t("journal.title1")}<br/>{t("journal.title2")}
           </h1>
         </div>
         <Button

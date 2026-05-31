@@ -81,6 +81,38 @@
     "emptyCta": "Empezar a escribir",
     "emptySkip": "Por ahora no"
   },
+  "journal": {
+    "eyebrow": "Diario",
+    "title1": "Todo lo que has",
+    "title2": "compartido, en orden.",
+    "newEntry": "Nueva entrada",
+    "emptyTitle": "Tu diario es tuyo. Escribe, habla, fotografía o graba lo que quieras. Lo leeré con atención y lo recordaré por ti.",
+    "emptyArchive": "Nada archivado todavía. Las entradas archivadas aparecen aquí para que puedas restaurarlas o eliminarlas."
+  },
+  "meds": {
+    "eyebrow": "Medicamentos",
+    "title1": "Tu horario,",
+    "title2": "tu registro.",
+    "intro": "Toca un medicamento para ver cómo te ha ido. Purple lleva un registro tranquilo y solo te avisa cuando importa.",
+    "todayDoses": "Dosis de hoy"
+  },
+  "biometrics": {
+    "eyebrow": "Tu cuerpo",
+    "title1": "Cada señal que Purple",
+    "title2": "está leyendo."
+  },
+  "insights": {
+    "eyebrow": "Patrones",
+    "title1": "Lo que tu cuerpo",
+    "title2": "ha estado diciendo.",
+    "intro": "Purple observa en silencio. Cuando algo cambia cerca de un día difícil, lo recuerda — para que tú no tengas que hacerlo."
+  },
+  "timeline": {
+    "eyebrow": "Cronología",
+    "title1": "Todo,",
+    "title2": "en orden.",
+    "export": "Exportar"
+  },
   "locale": {
     "title": "Región e idioma",
     "subtitle": "Cómo Purple muestra las horas y el idioma en el que te habla.",

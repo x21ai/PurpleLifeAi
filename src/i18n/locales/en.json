@@ -81,6 +81,38 @@
     "emptyCta": "Start journaling",
     "emptySkip": "Skip for now"
   },
+  "journal": {
+    "eyebrow": "Journal",
+    "title1": "Everything you've",
+    "title2": "shared, in order.",
+    "newEntry": "New entry",
+    "emptyTitle": "Your journal is yours. Write, speak, photograph, or record anything. I will read it carefully and remember it for you.",
+    "emptyArchive": "Nothing archived yet. Archived entries land here so you can restore or delete them."
+  },
+  "meds": {
+    "eyebrow": "Medications",
+    "title1": "Your schedule,",
+    "title2": "your record.",
+    "intro": "Tap a med to see how you've been doing. Purple keeps a quiet ledger and nudges only when it matters.",
+    "todayDoses": "Today's doses"
+  },
+  "biometrics": {
+    "eyebrow": "Your body",
+    "title1": "Every signal Purple",
+    "title2": "is reading."
+  },
+  "insights": {
+    "eyebrow": "Patterns",
+    "title1": "What your body",
+    "title2": "has been saying.",
+    "intro": "Purple watches quietly. When something shifts around a hard day, it remembers — so you don't have to."
+  },
+  "timeline": {
+    "eyebrow": "Timeline",
+    "title1": "Everything,",
+    "title2": "in order.",
+    "export": "Export"
+  },
   "locale": {
     "title": "Region & language",
     "subtitle": "How Purple shows times and which language it speaks.",
