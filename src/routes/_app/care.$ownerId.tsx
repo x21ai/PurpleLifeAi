@@ -15,6 +15,19 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import { ProposeChangeDialog } from "@/components/care/propose-change-dialog";
+import { JournalEntryReadOnly } from "@/components/care/journal-entry-readonly";
+import { DoseRowsReadOnly } from "@/components/care/dose-rows-readonly";
+import { MedsListReadOnly } from "@/components/care/meds-list-readonly";
+import { SeizureListReadOnly } from "@/components/care/seizure-list-readonly";
+import { ReportsListReadOnly } from "@/components/care/reports-list-readonly";
+import { MetricCard } from "@/components/biometrics/metric-card";
+import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
+import { ScoreTile } from "@/components/ui-oura/v2/score-tile";
+import {
+  METRIC_ORDER,
+  METRICS,
+  type MetricKey,
+} from "@/lib/biometric-metrics";
 import {
   caregiverReadBiometrics,
   caregiverReadJournal,
