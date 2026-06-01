@@ -20,6 +20,7 @@ import {
   caregiverReadJournal,
   caregiverReadMeds,
   caregiverReadOverview,
+  caregiverReadReports,
   caregiverReadSeizures,
   caregiverReadToday,
 } from "@/lib/care.functions";
@@ -32,7 +33,7 @@ export const Route = createFileRoute("/_app/care/$ownerId")({
   component: CareDashboardPage,
 });
 
-type TabKey = "today" | "meds" | "biometrics" | "journal" | "seizures";
+type TabKey = "today" | "meds" | "biometrics" | "journal" | "seizures" | "reports";
 
 function CareDashboardPage() {
   useRouteTheme("light");
@@ -57,6 +58,7 @@ function CareDashboardPage() {
         { key: "biometrics" as TabKey, label: "Biometrics", scope: "biometrics:read" },
         { key: "journal" as TabKey, label: "Journal", scope: "journal:read" },
         { key: "seizures" as TabKey, label: "Seizures", scope: "seizures:read" },
+        { key: "reports" as TabKey, label: "Reports", scope: "reports:read" },
       ].filter((t) => has(t.scope)),
     [scopes.join(",")],
   );
@@ -178,6 +180,11 @@ function CareDashboardPage() {
                 <SeizuresPanel ownerId={ownerId} />
               </TabsContent>
             )}
+            {tabs.find((t) => t.key === "reports") && (
+              <TabsContent value="reports" className="mt-4">
+                <ReportsPanel ownerId={ownerId} />
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       )}
@@ -269,7 +276,9 @@ function MedsPanel({
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground">{m.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {m.dosage ?? "—"} · {(m.times_of_day ?? []).join(", ") || "no schedule"}
+                      {[m.dosage, (m.times_of_day ?? []).join(", ")]
+                        .filter((s: string | null) => s && String(s).trim())
+                        .join(" · ") || "no schedule"}
                     </p>
                     {m.notes && <p className="mt-1 text-xs text-foreground/70 whitespace-pre-wrap">{m.notes}</p>}
                   </div>
@@ -297,7 +306,13 @@ function MedsPanel({
                         }
                         title={new Date(d.scheduled_at).toLocaleString()}
                       >
-                        {d.status}
+                        {d.status} ·{" "}
+                        {new Date(d.scheduled_at).toLocaleString(undefined, {
+                          month: "numeric",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
                       </span>
                     ))}
                   </div>
@@ -384,7 +399,8 @@ function JournalPanel({
           {entries.map((e: any) => (
             <li key={e.id} className="rounded-xl border border-border p-3">
               <p className="text-xs text-muted-foreground">
-                {new Date(e.captured_at).toLocaleString()} · {e.kind}
+                {new Date(e.captured_at).toLocaleString()}
+                {e.kind && e.kind !== "text" ? ` · ${e.kind}` : ""}
               </p>
               {e.ai_summary && <p className="mt-1 text-sm font-medium text-foreground">{e.ai_summary}</p>}
               {e.text && (
@@ -438,6 +454,40 @@ function SeizuresPanel({ ownerId }: { ownerId: string }) {
                 {e.injury ? " · injury" : ""}
               </p>
               {e.notes && <p className="mt-1 text-sm text-foreground/80 whitespace-pre-wrap">{e.notes}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
+/* ----- Reports ----- */
+function ReportsPanel({ ownerId }: { ownerId: string }) {
+  const fn = useServerFn(caregiverReadReports);
+  const q = useQuery({
+    queryKey: ["care", "reports", ownerId],
+    queryFn: () => fn({ data: { owner_id: ownerId } }),
+  });
+  if (q.isLoading) return <Empty>Loading…</Empty>;
+  if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
+  const reports = q.data!.reports;
+  return (
+    <Section>
+      <h2 className="font-serif text-xl text-foreground">Reports</h2>
+      {reports.length === 0 ? (
+        <Empty>No reports uploaded yet.</Empty>
+      ) : (
+        <ul className="mt-3 divide-y divide-border">
+          {reports.map((r: any) => (
+            <li key={r.id} className="py-3 first:pt-0 last:pb-0">
+              <p className="text-sm font-medium text-foreground">{r.title}</p>
+              <p className="text-xs text-muted-foreground">
+                {r.report_type ?? "Uncategorized"}
+                {r.report_date ? ` · ${new Date(r.report_date).toLocaleDateString()}` : ""}
+                {" · "}
+                {r.status}
+              </p>
             </li>
           ))}
         </ul>
