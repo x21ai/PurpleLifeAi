@@ -399,7 +399,8 @@ function JournalPanel({
           {entries.map((e: any) => (
             <li key={e.id} className="rounded-xl border border-border p-3">
               <p className="text-xs text-muted-foreground">
-                {new Date(e.captured_at).toLocaleString()} · {e.kind}
+                {new Date(e.captured_at).toLocaleString()}
+                {e.kind && e.kind !== "text" ? ` · ${e.kind}` : ""}
               </p>
               {e.ai_summary && <p className="mt-1 text-sm font-medium text-foreground">{e.ai_summary}</p>}
               {e.text && (
