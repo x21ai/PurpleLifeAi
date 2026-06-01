@@ -308,6 +308,15 @@ export const decidePendingChange = createServerFn({ method: "POST" })
       resource_id: change.id,
       metadata: { type: change.type },
     });
+    if (change.caregiver_id) {
+      void notifyCaregiverOfDecision({
+        caregiverId: change.caregiver_id,
+        ownerId: userId,
+        changeType: String(change.type),
+        decision: data.decision,
+        decisionNote: data.note ?? null,
+      });
+    }
     return { ok: true };
   });
 
