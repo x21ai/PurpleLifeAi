@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import {
   inviteCaregiver,
   listMyCaregivers,
+  listCareAuditLog,
   listPendingChanges,
   listPeopleSharingWithMe,
   decidePendingChange,
