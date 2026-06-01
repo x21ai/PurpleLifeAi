@@ -99,3 +99,11 @@ CREATE POLICY "caregiver writes own visits" ON public.care_caregiver_visits
 ## Gate
 
 Sign in as `pmt@eigital.com` → land on `/care` → see Devyn's card with an unread badge → tap → Today tab shows alerts (recent missed dose / seizure if any) → switch tabs and watch badges clear → from `/care/$ownerId` header dropdown, jump back to the switcher without losing state.
+
+## Phase 3 — done
+
+- New `/care` index (owners switcher) at `src/routes/_app/care.index.tsx` with `OwnerCard` and pending-invite list.
+- New serverFns in `src/lib/care.functions.ts`: `listCaregiverOwners`, `markOwnerSeen`, `getOwnerActivityCounts`, `caregiverReadAlerts`, `dismissCaregiverAlert`.
+- New table `care_caregiver_visits` (RLS caregiver-only) tracks `last_seen_at`, per-tab `last_seen_by_tab`, and `dismissed_alert_ids`.
+- `/care/$ownerId` mounts `OwnerSwitcher` in the header, renders `CaregiverAlertsCard` on the Today tab, shows unread badges on each tab, and calls `markOwnerSeen` on tab change.
+- `care.accept.tsx` redirects to `/care` after accepting so multi-owner caregivers see the switcher.
