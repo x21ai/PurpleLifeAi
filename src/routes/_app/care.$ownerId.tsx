@@ -270,7 +270,13 @@ function Empty({ children }: { children: React.ReactNode }) {
 }
 
 /* ----- Today ----- */
-function TodayPanel({ ownerId }: { ownerId: string }) {
+function TodayPanel({
+  ownerId,
+  onJump,
+}: {
+  ownerId: string;
+  onJump?: (tab: TabKey) => void;
+}) {
   const fn = useServerFn(caregiverReadToday);
   const q = useQuery({
     queryKey: ["care", "today", ownerId],
@@ -281,6 +287,7 @@ function TodayPanel({ ownerId }: { ownerId: string }) {
   const { forecast, alerts } = q.data!;
   return (
     <div className="space-y-6">
+      <CaregiverAlertsCard ownerId={ownerId} onJump={onJump as (t: string) => void} />
       <Section>
         <p className="label-eyebrow text-muted-foreground">Today's read</p>
         {forecast ? (
