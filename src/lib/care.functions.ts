@@ -942,3 +942,398 @@ export const caregiverAddBiometric = createServerFn({ method: "POST" })
     });
     return { id: row.id };
   });
+
+/* ---------- Caregiver dashboard: owners switcher, visits, alerts ---------- */
+
+const TAB_KEYS = ["today", "meds", "biometrics", "journal", "seizures", "reports"] as const;
+type TabKey = (typeof TAB_KEYS)[number];
+
+async function getActiveRelationshipForCaregiver(ownerId: string, caregiverId: string) {
+  const { data: rel, error } = await supabaseAdmin
+    .from("care_relationships")
+    .select("id, status, expires_at")
+    .eq("owner_id", ownerId)
+    .eq("caregiver_id", caregiverId)
+    .eq("status", "active")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!rel) throw new Error("No active relationship");
+  if (rel.expires_at && new Date(rel.expires_at) < new Date())
+    throw new Error("Access expired");
+  return rel;
+}
+
+export const listCaregiverOwners = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const { data: rels, error } = await supabaseAdmin
+      .from("care_relationships")
+      .select("id, owner_id, role, status, expires_at, invite_email, invite_token, created_at, accepted_at")
+      .eq("caregiver_id", userId)
+      .in("status", ["active", "pending"])
+      .order("accepted_at", { ascending: false, nullsFirst: false });
+    if (error) throw new Error(error.message);
+    const relationships = rels ?? [];
+    const ownerIds = Array.from(
+      new Set(relationships.filter((r) => r.status === "active").map((r) => r.owner_id)),
+    );
+
+    let profilesById: Record<string, { id: string; first_name: string | null; last_name: string | null; community_display_name: string | null; conditions: string[] | null; timezone: string | null }> = {};
+    if (ownerIds.length > 0) {
+      const { data: profiles } = await supabaseAdmin
+        .from("profiles")
+        .select("id, first_name, last_name, community_display_name, conditions, timezone")
+        .in("id", ownerIds);
+      profilesById = Object.fromEntries((profiles ?? []).map((p) => [p.id, p as never]));
+    }
+
+    // Per-relationship last_seen + activity counts
+    const relIds = relationships.filter((r) => r.status === "active").map((r) => r.id);
+    let visitsByRel: Record<string, { last_seen_at: string; last_seen_by_tab: Record<string, string> }> = {};
+    if (relIds.length > 0) {
+      const { data: visits } = await supabaseAdmin
+        .from("care_caregiver_visits")
+        .select("relationship_id, last_seen_at, last_seen_by_tab")
+        .in("relationship_id", relIds);
+      visitsByRel = Object.fromEntries(
+        (visits ?? []).map((v) => [
+          v.relationship_id,
+          {
+            last_seen_at: v.last_seen_at,
+            last_seen_by_tab: (v.last_seen_by_tab as Record<string, string>) ?? {},
+          },
+        ]),
+      );
+    }
+
+    // Cheap activity totals per owner since last_seen_at (or 30 days back as floor)
+    const owners = await Promise.all(
+      relationships
+        .filter((r) => r.status === "active")
+        .map(async (r) => {
+          const visit = visitsByRel[r.id];
+          const fallback = new Date(Date.now() - 30 * 86400_000).toISOString();
+          const since = visit?.last_seen_at ?? fallback;
+          const [meds, journal, seizures, biometrics] = await Promise.all([
+            supabaseAdmin
+              .from("medication_doses")
+              .select("id", { count: "exact", head: true })
+              .eq("user_id", r.owner_id)
+              .gt("created_at", since),
+            supabaseAdmin
+              .from("journal_entries")
+              .select("id", { count: "exact", head: true })
+              .eq("user_id", r.owner_id)
+              .gt("created_at", since),
+            supabaseAdmin
+              .from("seizure_events")
+              .select("id", { count: "exact", head: true })
+              .eq("user_id", r.owner_id)
+              .gt("created_at", since),
+            supabaseAdmin
+              .from("biometrics")
+              .select("id", { count: "exact", head: true })
+              .eq("user_id", r.owner_id)
+              .gt("created_at", since),
+          ]);
+          const counts = {
+            meds: meds.count ?? 0,
+            journal: journal.count ?? 0,
+            seizures: seizures.count ?? 0,
+            biometrics: biometrics.count ?? 0,
+          };
+          const total = counts.meds + counts.journal + counts.seizures + counts.biometrics;
+          return {
+            relationship_id: r.id,
+            owner_id: r.owner_id,
+            role: r.role,
+            expires_at: r.expires_at,
+            accepted_at: r.accepted_at,
+            profile: profilesById[r.owner_id] ?? null,
+            last_seen_at: visit?.last_seen_at ?? null,
+            unread_total: total,
+            unread_by_tab: counts,
+          };
+        }),
+    );
+
+    const pending = relationships
+      .filter((r) => r.status === "pending")
+      .map((r) => ({
+        relationship_id: r.id,
+        owner_id: r.owner_id,
+        invite_email: r.invite_email,
+        invite_token: r.invite_token,
+        role: r.role,
+        created_at: r.created_at,
+      }));
+
+    return { owners, pending };
+  });
+
+export const markOwnerSeen = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { owner_id: string; tab?: string }) =>
+    z
+      .object({
+        owner_id: z.string().uuid(),
+        tab: z.enum(TAB_KEYS).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const caregiverId = context.userId;
+    const rel = await getActiveRelationshipForCaregiver(data.owner_id, caregiverId);
+    const now = new Date().toISOString();
+
+    // Fetch existing for last_seen_by_tab merge
+    const { data: existing } = await supabaseAdmin
+      .from("care_caregiver_visits")
+      .select("last_seen_by_tab")
+      .eq("relationship_id", rel.id)
+      .maybeSingle();
+    const prevTabs =
+      ((existing?.last_seen_by_tab as Record<string, string>) ?? {});
+    const tabs = data.tab ? { ...prevTabs, [data.tab]: now } : prevTabs;
+
+    const { error } = await supabaseAdmin
+      .from("care_caregiver_visits")
+      .upsert(
+        {
+          relationship_id: rel.id,
+          caregiver_id: caregiverId,
+          last_seen_at: now,
+          last_seen_by_tab: tabs,
+          updated_at: now,
+        },
+        { onConflict: "relationship_id" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const getOwnerActivityCounts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(ownerInput)
+  .handler(async ({ data, context }) => {
+    const caregiverId = context.userId;
+    const rel = await getActiveRelationshipForCaregiver(data.owner_id, caregiverId);
+    const { data: visit } = await supabaseAdmin
+      .from("care_caregiver_visits")
+      .select("last_seen_at, last_seen_by_tab")
+      .eq("relationship_id", rel.id)
+      .maybeSingle();
+    const fallback = new Date(Date.now() - 30 * 86400_000).toISOString();
+    const baseSince = visit?.last_seen_at ?? fallback;
+    const tabSeen = (visit?.last_seen_by_tab as Record<string, string>) ?? {};
+    const sinceFor = (tab: TabKey) => tabSeen[tab] ?? baseSince;
+
+    const [meds, journal, seizures, biometrics, reports, today] = await Promise.all([
+      supabaseAdmin
+        .from("medication_doses")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", data.owner_id)
+        .gt("created_at", sinceFor("meds")),
+      supabaseAdmin
+        .from("journal_entries")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", data.owner_id)
+        .gt("created_at", sinceFor("journal")),
+      supabaseAdmin
+        .from("seizure_events")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", data.owner_id)
+        .gt("created_at", sinceFor("seizures")),
+      supabaseAdmin
+        .from("biometrics")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", data.owner_id)
+        .gt("created_at", sinceFor("biometrics")),
+      supabaseAdmin
+        .from("report_documents")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", data.owner_id)
+        .gt("created_at", sinceFor("reports")),
+      supabaseAdmin
+        .from("alerts")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", data.owner_id)
+        .eq("acknowledged", false)
+        .gt("created_at", sinceFor("today")),
+    ]);
+
+    return {
+      counts: {
+        today: today.count ?? 0,
+        meds: meds.count ?? 0,
+        journal: journal.count ?? 0,
+        seizures: seizures.count ?? 0,
+        biometrics: biometrics.count ?? 0,
+        reports: reports.count ?? 0,
+      },
+    };
+  });
+
+export const caregiverReadAlerts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(ownerInput)
+  .handler(async ({ data, context }) => {
+    const caregiverId = context.userId;
+    const rel = await getActiveRelationshipForCaregiver(data.owner_id, caregiverId);
+
+    // Get caregiver scopes — drive each section by what they can see
+    const { data: scopeRows } = await supabaseAdmin
+      .from("care_scopes")
+      .select("scope, granted")
+      .eq("relationship_id", rel.id);
+    const scopes = new Set((scopeRows ?? []).filter((s) => s.granted).map((s) => s.scope));
+
+    const since24h = new Date(Date.now() - 24 * 3600_000).toISOString();
+
+    const { data: visit } = await supabaseAdmin
+      .from("care_caregiver_visits")
+      .select("last_seen_at, dismissed_alert_ids")
+      .eq("relationship_id", rel.id)
+      .maybeSingle();
+    const dismissed = new Set(((visit?.dismissed_alert_ids as string[]) ?? []));
+    const sinceVisit = visit?.last_seen_at ?? since24h;
+
+    type AlertItem = {
+      id: string;
+      kind: "missed_dose" | "seizure" | "biometric" | "journal";
+      title: string;
+      body?: string;
+      at: string;
+      tab: TabKey;
+    };
+    const items: AlertItem[] = [];
+
+    if (scopes.has("meds:read")) {
+      const { data: missed } = await supabaseAdmin
+        .from("medication_doses")
+        .select("id, scheduled_at, medication_id")
+        .eq("user_id", data.owner_id)
+        .eq("status", "missed")
+        .gte("scheduled_at", since24h)
+        .order("scheduled_at", { ascending: false })
+        .limit(8);
+      for (const m of missed ?? []) {
+        items.push({
+          id: `missed:${m.id}`,
+          kind: "missed_dose",
+          title: "Missed dose",
+          body: new Date(m.scheduled_at).toLocaleString(),
+          at: m.scheduled_at,
+          tab: "meds",
+        });
+      }
+    }
+
+    if (scopes.has("seizures:read")) {
+      const { data: seizures } = await supabaseAdmin
+        .from("seizure_events")
+        .select("id, started_at, type, severity")
+        .eq("user_id", data.owner_id)
+        .gte("started_at", since24h)
+        .order("started_at", { ascending: false })
+        .limit(8);
+      for (const s of seizures ?? []) {
+        items.push({
+          id: `seizure:${s.id}`,
+          kind: "seizure",
+          title: s.type ? `Seizure: ${s.type}` : "Seizure logged",
+          body: new Date(s.started_at).toLocaleString(),
+          at: s.started_at,
+          tab: "seizures",
+        });
+      }
+    }
+
+    if (scopes.has("biometrics:read")) {
+      const { data: bio } = await supabaseAdmin
+        .from("biometrics")
+        .select("id, recorded_at, spo2_pct, resting_hr_bpm, skin_temp_c")
+        .eq("user_id", data.owner_id)
+        .gte("recorded_at", since24h)
+        .order("recorded_at", { ascending: false })
+        .limit(50);
+      for (const b of bio ?? []) {
+        const flags: string[] = [];
+        if (typeof b.spo2_pct === "number" && b.spo2_pct < 92) flags.push(`SpO₂ ${b.spo2_pct}%`);
+        if (typeof b.resting_hr_bpm === "number" && (b.resting_hr_bpm > 100 || b.resting_hr_bpm < 40))
+          flags.push(`Resting HR ${b.resting_hr_bpm} bpm`);
+        if (typeof b.skin_temp_c === "number" && (b.skin_temp_c > 38 || b.skin_temp_c < 35))
+          flags.push(`Temp ${b.skin_temp_c}°C`);
+        if (flags.length > 0) {
+          items.push({
+            id: `bio:${b.id}`,
+            kind: "biometric",
+            title: "Biometric out of range",
+            body: flags.join(" · "),
+            at: b.recorded_at,
+            tab: "biometrics",
+          });
+        }
+      }
+    }
+
+    if (scopes.has("journal:read")) {
+      const { count } = await supabaseAdmin
+        .from("journal_entries")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", data.owner_id)
+        .gt("created_at", sinceVisit);
+      if ((count ?? 0) > 0) {
+        items.push({
+          id: `journal:since-${sinceVisit}`,
+          kind: "journal",
+          title: `${count} new journal ${count === 1 ? "entry" : "entries"}`,
+          body: "Since your last visit",
+          at: sinceVisit,
+          tab: "journal",
+        });
+      }
+    }
+
+    const filtered = items.filter((i) => !dismissed.has(i.id));
+    filtered.sort((a, b) => +new Date(b.at) - +new Date(a.at));
+    return { alerts: filtered };
+  });
+
+export const dismissCaregiverAlert = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { owner_id: string; alert_id: string }) =>
+    z
+      .object({
+        owner_id: z.string().uuid(),
+        alert_id: z.string().min(1).max(200),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const caregiverId = context.userId;
+    const rel = await getActiveRelationshipForCaregiver(data.owner_id, caregiverId);
+    const { data: existing } = await supabaseAdmin
+      .from("care_caregiver_visits")
+      .select("dismissed_alert_ids")
+      .eq("relationship_id", rel.id)
+      .maybeSingle();
+    const prev = ((existing?.dismissed_alert_ids as string[]) ?? []);
+    if (prev.includes(data.alert_id)) return { ok: true };
+    const next = [...prev, data.alert_id].slice(-200);
+    const now = new Date().toISOString();
+    const { error } = await supabaseAdmin
+      .from("care_caregiver_visits")
+      .upsert(
+        {
+          relationship_id: rel.id,
+          caregiver_id: caregiverId,
+          dismissed_alert_ids: next,
+          updated_at: now,
+        },
+        { onConflict: "relationship_id" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
