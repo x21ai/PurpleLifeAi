@@ -1,85 +1,109 @@
-# Phase 1.5 · Step 3 — Caregiver writes (foundations + Meds tab)
+# Phase 3 — Caregiver dashboard polish
 
-Step 2 shipped read-only caregiver views with patient-grade components. Step 3 adds the write story: provenance columns on every patient-data table, a new `write` verb in the scope catalog, four scope-guarded caregiver-write serverFns, and end-to-end wiring on the **Meds** tab so pmt can mark Devyn's doses taken/skipped today.
+Today, a caregiver lands on `/care/$ownerId` only via the invite-accept redirect or a bookmarked URL. There's no home, no way to switch between people they care for, no signal of what's new since they last checked, and the per-owner view assumes they already know which tab matters. Phase 3 fixes those gaps.
 
-## What shipped
+## Scope
 
-1. **Migration** — `created_by_id uuid` + `created_by_kind text default 'self'` (validated by trigger to `self|caregiver|system`) on: `journal_entries`, `medication_doses`, `seizure_events`, `medications`, `biometrics`, `report_documents`. Existing rows backfilled to `self`.
-2. **Scope catalog** — added `write` verb + per-resource labels in `src/lib/care.scopes.ts`. Added `meds:write`, `journal:write`, `seizures:write`, `biometrics:write` to the caregiver role defaults. Existing pmt→Devyn relationship was upgraded with the four write scopes.
-3. **serverFns** in `src/lib/care.functions.ts`, all guarded by `requireSupabaseAuth` + `assertScope(<resource>:write)` + active-relationship check, all writing to `care_audit_log`:
-   - `caregiverMarkDose({ owner_id, dose_id, action: 'taken'|'skip'|'reset_pending' })`
-   - `caregiverLogSeizure({ owner_id, started_at, ... })`
-   - `caregiverAddJournalEntry({ owner_id, text, captured_at? })`
-   - `caregiverAddBiometric({ owner_id, recorded_at, ... })`
-4. **Meds tab wiring** — `DoseRowsReadOnly` accepts an optional `onAction` handler and `pendingId`; `MedsPanel` passes a `markDose` mutation when the caregiver has `meds:write`. Toasts on success/error; cache invalidates on success. Other tabs unchanged.
+1. **`/care` index — owners switcher**
+2. **Per-owner unread / activity counts** surfaced on the switcher and tab nav
+3. **Caregiver alerts digest** on each owner's Today tab (what changed since last visit)
+4. **Responsive nav refinements** across mobile / tablet / desktop
 
-## Gate
+Step 5 / Phase 2 work (audit log, pending-changes loop, sticky tabs) is already shipped — Phase 3 does not redo any of it.
 
-Sign in as `pmt@eigital.com` → `/care/d7d17e54-b6e5-4775-877b-e77ce661fc54` → **Meds** tab → "Taken" / "Skip" buttons appear next to pending doses → tapping one updates the dose and shows a toast. Devyn's own `/meds` view is unchanged.
+## 1. `/care` index — owners switcher
 
-## Step 4 — done
+New route `src/routes/_app/care.index.tsx` (path `/care`).
 
-- Write UI wired: `LogSeizureSheet`, `AddJournalSheet`, `AddBiometricSheet` mount on `/care/$ownerId` (Seizures, Journal, Biometrics tabs), gated by `*:write` scopes.
-- `CaregiverBadge` rendered on `JournalEntryReadOnly`, `SeizureListReadOnly`, and `DoseRowsReadOnly` rows where `created_by_kind === 'caregiver'`.
-- Owner notifications wired via `notifyOwnerOfCaregiverWrite` (throttled push + email) inside every `caregiverWrite*` serverFn.
+- Server fn `listCaregiverOwners` in `src/lib/care.functions.ts`:
+  - Auth-gated. For the current user as caregiver, returns active `care_relationships` joined with the owner's `profiles` (display_name, avatar_url, conditions[]) plus per-owner activity counters since `last_seen_at` (see step 2).
+- UI: list of owner cards (avatar, name, condition chips, "new since last visit" badge, last-activity timestamp). Tapping a card → `/care/$ownerId`.
+- Empty state: "No one is sharing with you yet" + link to docs.
+- Pending invites surfaced inline ("Devyn invited you — Accept").
 
-## Step 5 + Phase 2 — done
+After accepting an invite, redirect goes to `/care` (not directly to `/care/$ownerId`) when the caregiver has 2+ relationships; single-owner caregivers keep current direct redirect.
 
-- Caregiver notified on owner decision: new `caregiver-proposal-decision` email template + `notifyCaregiverOfDecision` helper, called from `decidePendingChange`.
-- Per-caregiver audit log: `listCareAuditLog({ relationship_id })` serverFn + "Recent activity (last 30 days)" section inside `ManageRelationshipSheet`.
-- Caregiver mobile polish: sticky tab nav on `/care/$ownerId` (desktop tabs row pins to top of scroll).
+## 2. Per-owner unread / activity counts
 
-### Gate
-Sign in as `pmt@eigital.com` → `/care/d7d17e54-...` → confirm "Log seizure", "Add note", and "Add biometric" buttons appear on the matching tabs and that submissions land on Devyn's account with a caregiver badge + owner notification.
+New tiny table `care_caregiver_visits` (`relationship_id` PK, `caregiver_id`, `last_seen_at timestamptz`, `last_seen_by_tab jsonb`). RLS: caregiver can read/write only their own row.
 
-## Approach
+Server fns:
+- `markOwnerSeen({ owner_id, tab? })` — upserts `last_seen_at` (and per-tab timestamp if `tab` passed). Called from `/care/$ownerId` on mount and on tab change.
+- `getOwnerActivityCounts({ owner_id })` — returns `{ today, meds, biometrics, journal, seizures, reports }` counts of rows created/updated since the caregiver's last visit (or last per-tab visit for the matching tab).
 
-Add an optional `targetUserId?: string` prop to the patient components below. When set, they query that user's data via the matching `caregiverRead*` server function instead of the self-scoped one. Default behavior (no prop) is unchanged for Devyn's own pages.
+Wire counts:
+- `/care` switcher: single "12 new" badge per owner card.
+- `/care/$ownerId` tab nav: small numeric badge on each tab with unread > 0; cleared on tab visit.
 
-## Components to extend
+## 3. Caregiver alerts digest
 
-| Component | File | Caregiver fn |
-|---|---|---|
-| HeroScoreCard | `src/components/today/hero-score-card.tsx` | `caregiverReadToday` |
-| TodayBiometrics | `src/components/biometrics/today-biometrics.tsx` | `caregiverReadBiometrics` |
-| TodayDoses | `src/components/meds/today-doses.tsx` | `caregiverReadMeds` |
-| MetricCard grid | extract from `routes/_app/biometrics.index.tsx` into `components/biometrics/metric-grid.tsx` | `caregiverReadBiometrics` |
-| EntryCard list | `src/components/journal/entry-card.tsx` + new `components/journal/entry-list.tsx` | `caregiverReadJournal` |
-| Seizure list | extract from `routes/_app/today.tsx` into `components/seizures/seizure-list.tsx` | `caregiverReadSeizures` |
-| Report list | extract from `routes/_app/reports.tsx` into `components/reports/report-list.tsx` | `caregiverReadReports` |
+New `CaregiverAlertsCard` on the Today tab of `/care/$ownerId`.
 
-For each: keep all existing call sites working with no prop; when `targetUserId` is set, route through the caregiver fn and hide any self-only affordances (edit, delete, FAB).
+Content (computed in a new `caregiverReadAlerts` serverFn, owner-scoped, scope-guarded):
+- **Missed doses** in the last 24h (`status='missed'`).
+- **Seizures** in the last 24h.
+- **Biometrics out of range** (reuse existing alert detection from `src/lib/...` if available; otherwise simple threshold check on HR / SpO2 / temp).
+- **New journal entries** since last visit (count + link).
 
-## care.$ownerId.tsx rewrite
+Each row links to the relevant tab and is dismissible (writes a row to `care_caregiver_visits.dismissed_alert_ids jsonb`).
 
-Replace each panel's body:
+## 4. Responsive nav refinements
 
-- **Today** → `<HeroScoreCard targetUserId={ownerId} />` + `<TodayBiometrics targetUserId={ownerId} />` + alerts list (already caregiver-scoped).
-- **Meds** → `<TodayDoses targetUserId={ownerId} />` + medications list card (extract into `components/meds/medications-list.tsx`).
-- **Biometrics** → `<MetricGrid targetUserId={ownerId} />`.
-- **Journal** → `<EntryList targetUserId={ownerId} />` (drops the raw `· text` suffix; voice/photo get a small icon).
-- **Seizures** → `<SeizureList targetUserId={ownerId} />`.
-- **Reports** → `<ReportList targetUserId={ownerId} />`.
+Verified on 390 (mobile), 820 (tablet), 1280+ (desktop):
 
-Tab nav, scope gating, and the Propose-change action stay where they are.
+- **Mobile**: `/care/$ownerId` tab nav becomes a horizontally-scrollable pill row pinned under the header; current sticky behavior preserved. Owner switcher is a top-of-screen dropdown ("Devyn ▾") that opens a sheet with the full owners list — saves a round-trip to `/care` for multi-owner caregivers.
+- **Tablet**: switcher dropdown collapses to icon+name; tab nav fits without scroll.
+- **Desktop**: 2-column layout on `/care` (owner cards as grid). `/care/$ownerId` keeps current single-column shell; switcher dropdown sits next to the back button in the header.
 
-## Server-function checks
+## Files
 
-Each `caregiverRead*` fn already validates the relationship + scope via `requireSupabaseAuth` + `assertScope`. No new migrations. Confirm each fn returns the same shape its patient counterpart expects (e.g. biometrics: array sorted by `recorded_at desc`, meds: `{ medications, doses }`). Where shapes differ, add a thin adapter inside the component (not the server fn).
+- New
+  - `src/routes/_app/care.index.tsx`
+  - `src/components/care/owner-switcher.tsx` (dropdown used in header)
+  - `src/components/care/owner-card.tsx`
+  - `src/components/care/caregiver-alerts-card.tsx`
+  - `supabase/migrations/<ts>_care_caregiver_visits.sql`
+- Edited
+  - `src/lib/care.functions.ts` — add `listCaregiverOwners`, `markOwnerSeen`, `getOwnerActivityCounts`, `caregiverReadAlerts`
+  - `src/routes/_app/care.$ownerId.tsx` — mount switcher in header, alerts card on Today, unread badges on tab triggers, call `markOwnerSeen` on mount + tab change
+  - `src/routes/care.accept.tsx` — redirect target logic (single-owner → ownerId, multi-owner → `/care`)
+  - `.lovable/plan.md` — append Phase 3 record
 
-## Cosmetic carry-overs (verify Step 1 didn't miss any)
+## Migration (single block)
 
-- Journal kind suffix: only render when `kind !== 'text'`, as an icon, not the word.
-- Dose chip: show `HH:mm` next to status.
-- Meds row: drop orphan "mg ·" when `dosage_amount` is null.
+```sql
+CREATE TABLE public.care_caregiver_visits (
+  relationship_id uuid PRIMARY KEY REFERENCES public.care_relationships(id) ON DELETE CASCADE,
+  caregiver_id uuid NOT NULL,
+  last_seen_at timestamptz NOT NULL DEFAULT now(),
+  last_seen_by_tab jsonb NOT NULL DEFAULT '{}'::jsonb,
+  dismissed_alert_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.care_caregiver_visits TO authenticated;
+GRANT ALL ON public.care_caregiver_visits TO service_role;
+ALTER TABLE public.care_caregiver_visits ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "caregiver reads own visits" ON public.care_caregiver_visits
+  FOR SELECT TO authenticated USING (caregiver_id = auth.uid());
+CREATE POLICY "caregiver writes own visits" ON public.care_caregiver_visits
+  FOR ALL TO authenticated USING (caregiver_id = auth.uid()) WITH CHECK (caregiver_id = auth.uid());
+```
 
 ## Non-negotiables
 
-- No schema changes this step.
 - No new Edge Functions.
-- Existing self-view (Devyn's own routes) must render identically — verified by visiting `/today`, `/meds`, `/biometrics`, `/journal`, `/reports` before claiming done.
-- Mobile (390px) + tablet + desktop checked on caregiver view.
+- Devyn's own routes (`/today`, `/meds`, etc.) untouched.
+- All counter / alert work happens server-side; client only renders.
+- Mobile (390), tablet (820), desktop (1280) all verified before claiming done.
 
 ## Gate
 
-Sign in as `pmt@eigital.com` → `/care/{devyn-id}` → every tab visually matches what Devyn sees on her own pages, with the data pulled correctly. Then Step 3 (caregiver-write columns + `targetUserId` on write serverFns).
+Sign in as `pmt@eigital.com` → land on `/care` → see Devyn's card with an unread badge → tap → Today tab shows alerts (recent missed dose / seizure if any) → switch tabs and watch badges clear → from `/care/$ownerId` header dropdown, jump back to the switcher without losing state.
+
+## Phase 3 — done
+
+- New `/care` index (owners switcher) at `src/routes/_app/care.index.tsx` with `OwnerCard` and pending-invite list.
+- New serverFns in `src/lib/care.functions.ts`: `listCaregiverOwners`, `markOwnerSeen`, `getOwnerActivityCounts`, `caregiverReadAlerts`, `dismissCaregiverAlert`.
+- New table `care_caregiver_visits` (RLS caregiver-only) tracks `last_seen_at`, per-tab `last_seen_by_tab`, and `dismissed_alert_ids`.
+- `/care/$ownerId` mounts `OwnerSwitcher` in the header, renders `CaregiverAlertsCard` on the Today tab, shows unread badges on each tab, and calls `markOwnerSeen` on tab change.
+- `care.accept.tsx` redirects to `/care` after accepting so multi-owner caregivers see the switcher.
