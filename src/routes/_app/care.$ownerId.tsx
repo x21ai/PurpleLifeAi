@@ -157,7 +157,7 @@ function CareDashboardPage() {
             </Select>
           </div>
           <Tabs value={current} onValueChange={(v) => setActive(v as TabKey)} className="mt-4">
-            <TabsList className="hidden sm:flex">
+            <TabsList className="hidden sm:flex sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
               {tabs.map((t) => (
                 <TabsTrigger key={t.key} value={t.key}>
                   {t.label}
