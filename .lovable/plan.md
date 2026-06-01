@@ -17,11 +17,14 @@ Step 2 shipped read-only caregiver views with patient-grade components. Step 3 a
 
 Sign in as `pmt@eigital.com` → `/care/d7d17e54-b6e5-4775-877b-e77ce661fc54` → **Meds** tab → "Taken" / "Skip" buttons appear next to pending doses → tapping one updates the dose and shows a toast. Devyn's own `/meds` view is unchanged.
 
-## Next (Step 4 candidates)
+## Step 4 — done
 
-- UI for `caregiverLogSeizure`, `caregiverAddJournalEntry`, `caregiverAddBiometric` (sheet pickers in Seizures / Journal / Biometrics tabs).
-- Show a "Logged by caregiver" badge wherever `created_by_kind = 'caregiver'` (journal entry card, seizure list row, biometrics history).
-- Notify the owner when a caregiver writes (push + email, throttled).
+- Write UI wired: `LogSeizureSheet`, `AddJournalSheet`, `AddBiometricSheet` mount on `/care/$ownerId` (Seizures, Journal, Biometrics tabs), gated by `*:write` scopes.
+- `CaregiverBadge` rendered on `JournalEntryReadOnly`, `SeizureListReadOnly`, and `DoseRowsReadOnly` rows where `created_by_kind === 'caregiver'`.
+- Owner notifications wired via `notifyOwnerOfCaregiverWrite` (throttled push + email) inside every `caregiverWrite*` serverFn.
+
+### Gate
+Sign in as `pmt@eigital.com` → `/care/d7d17e54-...` → confirm "Log seizure", "Add note", and "Add biometric" buttons appear on the matching tabs and that submissions land on Devyn's account with a caregiver badge + owner notification.
 
 ## Approach
 
