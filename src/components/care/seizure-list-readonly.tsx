@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { Zap } from "lucide-react";
+import { CaregiverBadge } from "@/components/care/caregiver-badge";
 
 type Event = {
   id: string;
@@ -11,6 +12,7 @@ type Event = {
   injury: boolean;
   rescue_med_given: boolean;
   notes: string | null;
+  created_by_kind?: string | null;
 };
 
 export function SeizureListReadOnly({ events }: { events: Event[] }) {
@@ -45,6 +47,7 @@ export function SeizureListReadOnly({ events }: { events: Event[] }) {
               </p>
             </div>
             <div className="flex flex-wrap gap-1.5">
+              <CaregiverBadge createdByKind={e.created_by_kind} />
               {e.rescue_med_given && (
                 <span className="rounded-full bg-primary/15 text-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
                   Rescue med
