@@ -643,7 +643,7 @@ async function logCaregiverWrite(
   caregiverId: string,
   resourceType: string,
   resourceId: string,
-  metadata: Record<string, unknown> = {},
+  metadata: Record<string, string | number | boolean | null> = {},
 ) {
   await supabaseAdmin.from("care_audit_log").insert({
     relationship_id: relationshipId,
