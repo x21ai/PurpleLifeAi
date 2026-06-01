@@ -1,0 +1,1 @@
+ALTER TABLE public.care_relationships ALTER COLUMN invite_token DROP NOT NULL;
