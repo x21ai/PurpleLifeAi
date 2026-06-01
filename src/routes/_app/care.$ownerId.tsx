@@ -461,3 +461,37 @@ function SeizuresPanel({ ownerId }: { ownerId: string }) {
     </Section>
   );
 }
+
+/* ----- Reports ----- */
+function ReportsPanel({ ownerId }: { ownerId: string }) {
+  const fn = useServerFn(caregiverReadReports);
+  const q = useQuery({
+    queryKey: ["care", "reports", ownerId],
+    queryFn: () => fn({ data: { owner_id: ownerId } }),
+  });
+  if (q.isLoading) return <Empty>Loading…</Empty>;
+  if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
+  const reports = q.data!.reports;
+  return (
+    <Section>
+      <h2 className="font-serif text-xl text-foreground">Reports</h2>
+      {reports.length === 0 ? (
+        <Empty>No reports uploaded yet.</Empty>
+      ) : (
+        <ul className="mt-3 divide-y divide-border">
+          {reports.map((r: any) => (
+            <li key={r.id} className="py-3 first:pt-0 last:pb-0">
+              <p className="text-sm font-medium text-foreground">{r.title}</p>
+              <p className="text-xs text-muted-foreground">
+                {r.report_type ?? "Uncategorized"}
+                {r.report_date ? ` · ${new Date(r.report_date).toLocaleDateString()}` : ""}
+                {" · "}
+                {r.status}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  );
+}
