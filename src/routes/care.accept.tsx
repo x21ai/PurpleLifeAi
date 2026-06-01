@@ -45,9 +45,10 @@ function AcceptInvitePage() {
     if (!token) return;
     setState("running");
     try {
-      const res = await accept({ data: { invite_token: token } });
+      await accept({ data: { invite_token: token } });
       setState("done");
-      setTimeout(() => navigate({ to: "/care/$ownerId", params: { ownerId: res.owner_id } }), 800);
+      // Phase 3: land on /care so caregivers see all owners they care for.
+      setTimeout(() => navigate({ to: "/care" }), 800);
     } catch (e: any) {
       setState("error");
       setMessage(e?.message ?? "Couldn't accept this invite.");
