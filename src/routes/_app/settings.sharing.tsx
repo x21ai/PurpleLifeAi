@@ -423,6 +423,13 @@ function ManageRelationshipSheet({
     });
   }
 
+  const fetchAudit = useServerFn(listCareAuditLog);
+  const audit = useQuery({
+    queryKey: ["care", "audit", relationshipId],
+    queryFn: () => fetchAudit({ data: { relationship_id: relationshipId, limit: 50 } }),
+    enabled: open,
+  });
+
   return (
     <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (o) setGranted(new Set(currentScopes)); }}>
       <SheetTrigger asChild>
@@ -453,6 +460,34 @@ function ManageRelationshipSheet({
               <p className="mt-1 text-[10px] text-muted-foreground">{SCOPE_LABELS[`${res}:read` as CareScope]}</p>
             </div>
           ))}
+        </div>
+        <div className="mt-6 rounded-xl border border-border p-4">
+          <p className="font-serif text-sm text-foreground">Recent activity (last 30 days)</p>
+          {audit.isLoading ? (
+            <p className="mt-2 text-xs text-muted-foreground inline-flex items-center gap-2">
+              <Loader2 className="h-3 w-3 animate-spin" /> Loading…
+            </p>
+          ) : (audit.data?.entries ?? []).length === 0 ? (
+            <p className="mt-2 text-xs text-muted-foreground">No activity yet.</p>
+          ) : (
+            <ul className="mt-3 max-h-48 overflow-y-auto divide-y divide-border text-xs">
+              {audit.data!.entries.map((e: any) => (
+                <li key={e.id} className="py-2 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-foreground capitalize">
+                      {String(e.action).replace(/_/g, " ")}
+                      {e.resource_type ? (
+                        <span className="text-muted-foreground"> · {String(e.resource_type).replace(/_/g, " ")}</span>
+                      ) : null}
+                    </p>
+                  </div>
+                  <span className="text-muted-foreground tabular-nums whitespace-nowrap">
+                    {new Date(e.at).toLocaleString()}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <div className="mt-5 flex gap-2">
           <Button className="flex-1" onClick={() => m.mutate()} disabled={m.isPending}>
