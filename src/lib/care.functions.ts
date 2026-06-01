@@ -541,14 +541,17 @@ export const caregiverReadBiometrics = createServerFn({ method: "POST" })
   .inputValidator(ownerInput)
   .handler(async ({ data, context }) => {
     await assertScope(data.owner_id, context.userId, "biometrics:read");
-    const since = new Date(Date.now() - 7 * 86400_000).toISOString();
+    // 30 days so the MetricCard grid can compute baselines + sparklines, the
+    // same window the patient sees on /biometrics.
+    const since = new Date(Date.now() - 30 * 86400_000).toISOString();
     const { data: rows } = await supabaseAdmin
       .from("biometrics")
-      .select("recorded_at, source, hr_bpm, hrv_rmssd_ms, resting_hr_bpm, sleep_score, sleep_total_min, spo2_pct, steps")
+      .select("*")
       .eq("user_id", data.owner_id)
+      .eq("source", "oura")
       .gte("recorded_at", since)
-      .order("recorded_at", { ascending: false })
-      .limit(100);
+      .order("recorded_at", { ascending: true })
+      .limit(500);
     return { rows: rows ?? [] };
   });
 
