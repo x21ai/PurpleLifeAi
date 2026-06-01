@@ -339,6 +339,41 @@ export type Database = {
           },
         ]
       }
+      care_caregiver_visits: {
+        Row: {
+          caregiver_id: string
+          dismissed_alert_ids: Json
+          last_seen_at: string
+          last_seen_by_tab: Json
+          relationship_id: string
+          updated_at: string
+        }
+        Insert: {
+          caregiver_id: string
+          dismissed_alert_ids?: Json
+          last_seen_at?: string
+          last_seen_by_tab?: Json
+          relationship_id: string
+          updated_at?: string
+        }
+        Update: {
+          caregiver_id?: string
+          dismissed_alert_ids?: Json
+          last_seen_at?: string
+          last_seen_by_tab?: Json
+          relationship_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_caregiver_visits_relationship_id_fkey"
+            columns: ["relationship_id"]
+            isOneToOne: true
+            referencedRelation: "care_relationships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       care_relationships: {
         Row: {
           accepted_at: string | null
