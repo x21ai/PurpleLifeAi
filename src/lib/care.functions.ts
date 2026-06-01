@@ -685,16 +685,15 @@ export const caregiverMarkDose = createServerFn({ method: "POST" })
     if (!dose || dose.user_id !== data.owner_id) throw new Error("Dose not found");
 
     const now = new Date().toISOString();
-    const update: Record<string, unknown> =
-      data.action === "taken"
-        ? { status: "taken", taken_at: now }
-        : data.action === "skip"
-          ? { status: "skipped", taken_at: null }
-          : { status: "pending", taken_at: null };
-
     const { error: uErr } = await supabaseAdmin
       .from("medication_doses")
-      .update(update)
+      .update(
+        data.action === "taken"
+          ? { status: "taken", taken_at: now }
+          : data.action === "skip"
+            ? { status: "skipped", taken_at: null }
+            : { status: "pending", taken_at: null },
+      )
       .eq("id", data.dose_id);
     if (uErr) throw new Error(uErr.message);
 
@@ -842,24 +841,22 @@ export const caregiverAddBiometric = createServerFn({ method: "POST" })
     await assertScope(data.owner_id, caregiverId, "biometrics:write");
     const rel = await getActiveRelationship(data.owner_id, caregiverId);
 
-    const payload: Record<string, unknown> = {
-      user_id: data.owner_id,
-      source: "caregiver",
-      recorded_at: data.recorded_at,
-      hr_bpm: data.hr_bpm ?? null,
-      resting_hr_bpm: data.resting_hr_bpm ?? null,
-      spo2_pct: data.spo2_pct ?? null,
-      skin_temp_c: data.skin_temp_c ?? null,
-      steps: data.steps ?? null,
-      sleep_total_min: data.sleep_total_min ?? null,
-      raw_payload: data.notes ? { notes: data.notes } : null,
-      created_by_id: caregiverId,
-      created_by_kind: "caregiver",
-    };
-
     const { data: row, error } = await supabaseAdmin
       .from("biometrics")
-      .insert(payload)
+      .insert({
+        user_id: data.owner_id,
+        source: "caregiver",
+        recorded_at: data.recorded_at,
+        hr_bpm: data.hr_bpm ?? null,
+        resting_hr_bpm: data.resting_hr_bpm ?? null,
+        spo2_pct: data.spo2_pct ?? null,
+        skin_temp_c: data.skin_temp_c ?? null,
+        steps: data.steps ?? null,
+        sleep_total_min: data.sleep_total_min ?? null,
+        raw_payload: data.notes ? { notes: data.notes } : null,
+        created_by_id: caregiverId,
+        created_by_kind: "caregiver",
+      })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
