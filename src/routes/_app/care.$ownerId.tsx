@@ -224,35 +224,50 @@ function TodayPanel({ ownerId }: { ownerId: string }) {
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const { forecast, alerts } = q.data!;
   return (
-    <Section>
-      <h2 className="font-serif text-xl text-foreground">Today</h2>
-      {forecast ? (
-        <div className="mt-3">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">Risk band</p>
-          <p className="mt-1 font-serif text-3xl text-foreground capitalize">{forecast.band}</p>
-          {forecast.ai_narrative && (
-            <p className="mt-2 text-sm text-foreground/80 whitespace-pre-wrap">{forecast.ai_narrative}</p>
-          )}
-        </div>
-      ) : (
-        <p className="mt-3 text-sm text-muted-foreground">No forecast for today.</p>
-      )}
-      <div className="mt-5">
-        <p className="text-xs text-muted-foreground uppercase tracking-wide">Active alerts</p>
-        {alerts.length === 0 ? (
-          <p className="mt-1 text-sm text-muted-foreground">None.</p>
+    <div className="space-y-6">
+      <Section>
+        <p className="label-eyebrow text-muted-foreground">Today's read</p>
+        {forecast ? (
+          <>
+            <p className="mt-2 font-serif text-3xl text-foreground capitalize">
+              {forecast.band} risk
+              {typeof forecast.risk_score === "number" && (
+                <span className="ml-2 text-base text-muted-foreground tabular-nums">
+                  {forecast.risk_score}/100
+                </span>
+              )}
+            </p>
+            {forecast.ai_narrative && (
+              <div className="mt-4">
+                <NarrativeBlock>{forecast.ai_narrative}</NarrativeBlock>
+              </div>
+            )}
+          </>
         ) : (
-          <ul className="mt-2 space-y-2">
+          <p className="mt-2 text-sm text-muted-foreground">
+            No risk forecast for today.
+          </p>
+        )}
+      </Section>
+
+      <Section>
+        <h2 className="font-serif text-xl text-foreground">Active alerts</h2>
+        {alerts.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">None.</p>
+        ) : (
+          <ul className="mt-3 space-y-2">
             {alerts.map((a: any) => (
               <li key={a.id} className="rounded-xl border border-border p-3">
                 <p className="text-sm font-medium text-foreground">{a.title}</p>
-                {a.body && <p className="mt-0.5 text-xs text-muted-foreground">{a.body}</p>}
+                {a.body && (
+                  <p className="mt-0.5 text-xs text-muted-foreground">{a.body}</p>
+                )}
               </li>
             ))}
           </ul>
         )}
-      </div>
-    </Section>
+      </Section>
+    </div>
   );
 }
 
