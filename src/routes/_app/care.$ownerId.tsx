@@ -379,7 +379,15 @@ function MedsPanel({
 }
 
 /* ----- Biometrics ----- */
-function BiometricsPanel({ ownerId }: { ownerId: string }) {
+function BiometricsPanel({
+  ownerId,
+  ownerName,
+  canWrite,
+}: {
+  ownerId: string;
+  ownerName: string;
+  canWrite: boolean;
+}) {
   const fn = useServerFn(caregiverReadBiometrics);
   const q = useQuery({
     queryKey: ["care", "biometrics", ownerId],
@@ -391,11 +399,18 @@ function BiometricsPanel({ ownerId }: { ownerId: string }) {
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
-        <p className="font-serif text-lg text-foreground">No biometrics yet</p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Once a wearable is connected, the last 30 days appear here.
-        </p>
+      <div className="space-y-4">
+        {canWrite && (
+          <div className="flex justify-end">
+            <AddBiometricSheet ownerId={ownerId} ownerName={ownerName} />
+          </div>
+        )}
+        <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+          <p className="font-serif text-lg text-foreground">No biometrics yet</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Once a wearable is connected, the last 30 days appear here.
+          </p>
+        </div>
       </div>
     );
   }
@@ -416,10 +431,17 @@ function BiometricsPanel({ ownerId }: { ownerId: string }) {
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-      {METRIC_ORDER.map((m) => (
-        <MetricCard key={m} metric={m} series={seriesByMetric[m]} disableLink />
-      ))}
+    <div className="space-y-4">
+      {canWrite && (
+        <div className="flex justify-end">
+          <AddBiometricSheet ownerId={ownerId} ownerName={ownerName} />
+        </div>
+      )}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+        {METRIC_ORDER.map((m) => (
+          <MetricCard key={m} metric={m} series={seriesByMetric[m]} disableLink />
+        ))}
+      </div>
     </div>
   );
 }
@@ -429,10 +451,14 @@ function JournalPanel({
   ownerId,
   relationshipId,
   canComment,
+  canWrite,
+  ownerName,
 }: {
   ownerId: string;
   relationshipId: string;
   canComment: boolean;
+  canWrite: boolean;
+  ownerName: string;
 }) {
   const fn = useServerFn(caregiverReadJournal);
   const q = useQuery({
@@ -442,15 +468,18 @@ function JournalPanel({
   if (q.isLoading) return <Empty>Loading…</Empty>;
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const entries = q.data!.entries;
-  if (entries.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
-        <p className="text-sm text-muted-foreground">No recent journal entries.</p>
-      </div>
-    );
-  }
   return (
     <div className="space-y-3">
+      {canWrite && (
+        <div className="flex justify-end">
+          <AddJournalSheet ownerId={ownerId} ownerName={ownerName} />
+        </div>
+      )}
+      {entries.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+          <p className="text-sm text-muted-foreground">No recent journal entries.</p>
+        </div>
+      )}
       {entries.map((e: any) => (
         <div key={e.id}>
           <JournalEntryReadOnly entry={e} />
@@ -471,7 +500,15 @@ function JournalPanel({
 }
 
 /* ----- Seizures ----- */
-function SeizuresPanel({ ownerId }: { ownerId: string }) {
+function SeizuresPanel({
+  ownerId,
+  ownerName,
+  canWrite,
+}: {
+  ownerId: string;
+  ownerName: string;
+  canWrite: boolean;
+}) {
   const fn = useServerFn(caregiverReadSeizures);
   const q = useQuery({
     queryKey: ["care", "seizures", ownerId],
@@ -480,7 +517,16 @@ function SeizuresPanel({ ownerId }: { ownerId: string }) {
   if (q.isLoading) return <Empty>Loading…</Empty>;
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const events = q.data!.events;
-  return <SeizureListReadOnly events={events} />;
+  return (
+    <div className="space-y-4">
+      {canWrite && (
+        <div className="flex justify-end">
+          <LogSeizureSheet ownerId={ownerId} ownerName={ownerName} />
+        </div>
+      )}
+      <SeizureListReadOnly events={events} />
+    </div>
+  );
 }
 
 /* ----- Reports ----- */
