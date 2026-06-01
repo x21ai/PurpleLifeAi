@@ -276,7 +276,9 @@ function MedsPanel({
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground">{m.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {m.dosage ?? "—"} · {(m.times_of_day ?? []).join(", ") || "no schedule"}
+                      {[m.dosage, (m.times_of_day ?? []).join(", ")]
+                        .filter((s: string | null) => s && String(s).trim())
+                        .join(" · ") || "no schedule"}
                     </p>
                     {m.notes && <p className="mt-1 text-xs text-foreground/70 whitespace-pre-wrap">{m.notes}</p>}
                   </div>
