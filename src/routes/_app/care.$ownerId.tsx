@@ -21,6 +21,9 @@ import { DoseRowsReadOnly } from "@/components/care/dose-rows-readonly";
 import { MedsListReadOnly } from "@/components/care/meds-list-readonly";
 import { SeizureListReadOnly } from "@/components/care/seizure-list-readonly";
 import { ReportsListReadOnly } from "@/components/care/reports-list-readonly";
+import { LogSeizureSheet } from "@/components/care/log-seizure-sheet";
+import { AddJournalSheet } from "@/components/care/add-journal-sheet";
+import { AddBiometricSheet } from "@/components/care/add-biometric-sheet";
 import { MetricCard } from "@/components/biometrics/metric-card";
 import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 import {
@@ -178,7 +181,11 @@ function CareDashboardPage() {
             )}
             {tabs.find((t) => t.key === "biometrics") && (
               <TabsContent value="biometrics" className="mt-4">
-                <BiometricsPanel ownerId={ownerId} />
+                <BiometricsPanel
+                  ownerId={ownerId}
+                  ownerName={displayName}
+                  canWrite={has("biometrics:write")}
+                />
               </TabsContent>
             )}
             {tabs.find((t) => t.key === "journal") && (
@@ -187,12 +194,18 @@ function CareDashboardPage() {
                   ownerId={ownerId}
                   relationshipId={relationship.id}
                   canComment={has("journal:comment")}
+                  canWrite={has("journal:write")}
+                  ownerName={displayName}
                 />
               </TabsContent>
             )}
             {tabs.find((t) => t.key === "seizures") && (
               <TabsContent value="seizures" className="mt-4">
-                <SeizuresPanel ownerId={ownerId} />
+                <SeizuresPanel
+                  ownerId={ownerId}
+                  ownerName={displayName}
+                  canWrite={has("seizures:write")}
+                />
               </TabsContent>
             )}
             {tabs.find((t) => t.key === "reports") && (
