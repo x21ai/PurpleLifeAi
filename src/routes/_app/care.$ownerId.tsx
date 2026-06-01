@@ -289,68 +289,40 @@ function MedsPanel({
   if (q.isLoading) return <Empty>Loading…</Empty>;
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const { meds, doses } = q.data!;
+  // Today's doses only (matches the patient's "Today" doses card on /meds).
+  const start = new Date(); start.setHours(0, 0, 0, 0);
+  const end = new Date(); end.setHours(23, 59, 59, 999);
+  const todayDoses = (doses ?? []).filter((d: any) => {
+    const t = new Date(d.scheduled_at).getTime();
+    return t >= start.getTime() && t <= end.getTime();
+  }).sort((a: any, b: any) => +new Date(a.scheduled_at) - +new Date(b.scheduled_at));
+
   return (
-    <Section>
-      <h2 className="font-serif text-xl text-foreground">Medications</h2>
-      {meds.length === 0 ? (
-        <Empty>No active medications.</Empty>
-      ) : (
-        <ul className="mt-3 divide-y divide-border">
-          {meds.map((m: any) => {
-            const recent = doses.filter((d: any) => d.medication_id === m.id).slice(0, 6);
-            return (
-              <li key={m.id} className="py-3 first:pt-0 last:pb-0">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground">{m.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {[m.dosage, (m.times_of_day ?? []).join(", ")]
-                        .filter((s: string | null) => s && String(s).trim())
-                        .join(" · ") || "no schedule"}
-                    </p>
-                    {m.notes && <p className="mt-1 text-xs text-foreground/70 whitespace-pre-wrap">{m.notes}</p>}
-                  </div>
-                  {canPropose && (
-                    <ProposeChangeDialog
-                      relationshipId={relationshipId}
-                      type="add_meds_note"
-                      targetId={m.id}
-                      targetLabel={m.name}
-                    />
-                  )}
-                </div>
-                {recent.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {recent.map((d: any) => (
-                      <span
-                        key={d.id}
-                        className={
-                          "inline-block rounded-full px-2 py-0.5 text-[10px] " +
-                          (d.status === "taken"
-                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                            : d.status === "missed"
-                              ? "bg-destructive/10 text-destructive"
-                              : "bg-muted text-muted-foreground")
-                        }
-                        title={new Date(d.scheduled_at).toLocaleString()}
-                      >
-                        {d.status} ·{" "}
-                        {new Date(d.scheduled_at).toLocaleString(undefined, {
-                          month: "numeric",
-                          day: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </Section>
+    <div className="space-y-6">
+      <Section>
+        <h2 className="font-serif text-xl text-foreground">Today's doses</h2>
+        <div className="mt-4">
+          <DoseRowsReadOnly doses={todayDoses} meds={meds} />
+        </div>
+      </Section>
+
+      <div>
+        <h2 className="font-serif text-xl text-foreground mb-3">Medications</h2>
+        <MedsListReadOnly
+          meds={meds}
+          trailing={(m) =>
+            canPropose ? (
+              <ProposeChangeDialog
+                relationshipId={relationshipId}
+                type="add_meds_note"
+                targetId={m.id}
+                targetLabel={m.name}
+              />
+            ) : null
+          }
+        />
+      </div>
+    </div>
   );
 }
 
