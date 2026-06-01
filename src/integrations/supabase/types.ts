@@ -183,6 +183,8 @@ export type Database = {
           active_calories: number | null
           body_temp_deviation_c: number | null
           created_at: string
+          created_by_id: string | null
+          created_by_kind: string
           cycle_day: number | null
           hr_bpm: number | null
           hrv_rmssd_ms: number | null
@@ -219,6 +221,8 @@ export type Database = {
           active_calories?: number | null
           body_temp_deviation_c?: number | null
           created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
           cycle_day?: number | null
           hr_bpm?: number | null
           hrv_rmssd_ms?: number | null
@@ -255,6 +259,8 @@ export type Database = {
           active_calories?: number | null
           body_temp_deviation_c?: number | null
           created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
           cycle_day?: number | null
           hr_bpm?: number | null
           hrv_rmssd_ms?: number | null
@@ -797,6 +803,8 @@ export type Database = {
           archived_at: string | null
           captured_at: string
           created_at: string
+          created_by_id: string | null
+          created_by_kind: string
           id: string
           kind: string
           linked_medication_dose_id: string | null
@@ -814,6 +822,8 @@ export type Database = {
           archived_at?: string | null
           captured_at?: string
           created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
           id?: string
           kind?: string
           linked_medication_dose_id?: string | null
@@ -831,6 +841,8 @@ export type Database = {
           archived_at?: string | null
           captured_at?: string
           created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
           id?: string
           kind?: string
           linked_medication_dose_id?: string | null
@@ -862,6 +874,8 @@ export type Database = {
         Row: {
           amount: number | null
           created_at: string
+          created_by_id: string | null
+          created_by_kind: string
           id: string
           medication_id: string
           notes: string | null
@@ -876,6 +890,8 @@ export type Database = {
         Insert: {
           amount?: number | null
           created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
           id?: string
           medication_id: string
           notes?: string | null
@@ -890,6 +906,8 @@ export type Database = {
         Update: {
           amount?: number | null
           created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
           id?: string
           medication_id?: string
           notes?: string | null
@@ -951,6 +969,8 @@ export type Database = {
           active: boolean
           alarm_sound: string | null
           created_at: string
+          created_by_id: string | null
+          created_by_kind: string
           dosage: string | null
           dosage_amount: number | null
           dosage_form: string | null
@@ -981,6 +1001,8 @@ export type Database = {
           active?: boolean
           alarm_sound?: string | null
           created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
           dosage?: string | null
           dosage_amount?: number | null
           dosage_form?: string | null
@@ -1011,6 +1033,8 @@ export type Database = {
           active?: boolean
           alarm_sound?: string | null
           created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
           dosage?: string | null
           dosage_amount?: number | null
           dosage_form?: string | null
@@ -1341,6 +1365,8 @@ export type Database = {
       report_documents: {
         Row: {
           created_at: string
+          created_by_id: string | null
+          created_by_kind: string
           error_message: string | null
           file_mime: string
           file_path: string
@@ -1355,6 +1381,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
           error_message?: string | null
           file_mime: string
           file_path: string
@@ -1369,6 +1397,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
           error_message?: string | null
           file_mime?: string
           file_path?: string
@@ -1527,6 +1557,8 @@ export type Database = {
         Row: {
           auto_detected: boolean
           created_at: string
+          created_by_id: string | null
+          created_by_kind: string
           detection_source: string | null
           duration_seconds: number | null
           ended_at: string | null
@@ -1552,6 +1584,8 @@ export type Database = {
         Insert: {
           auto_detected?: boolean
           created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
           detection_source?: string | null
           duration_seconds?: number | null
           ended_at?: string | null
@@ -1577,6 +1611,8 @@ export type Database = {
         Update: {
           auto_detected?: boolean
           created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
           detection_source?: string | null
           duration_seconds?: number | null
           ended_at?: string | null
