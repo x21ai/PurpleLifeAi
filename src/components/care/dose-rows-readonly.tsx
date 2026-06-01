@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { CaregiverBadge } from "@/components/care/caregiver-badge";
 
 type Dose = {
   id: string;
@@ -8,6 +9,7 @@ type Dose = {
   taken_at?: string | null;
   status: string;
   medication_id: string;
+  created_by_kind?: string | null;
 };
 
 type Med = {
@@ -75,6 +77,7 @@ export function DoseRowsReadOnly({
               {med?.dosage && (
                 <p className="text-xs text-muted-foreground truncate">{med.dosage}</p>
               )}
+              <CaregiverBadge createdByKind={d.created_by_kind} className="mt-1" />
             </div>
             {onAction && d.status === "pending" ? (
               <div className="flex items-center gap-1.5">
