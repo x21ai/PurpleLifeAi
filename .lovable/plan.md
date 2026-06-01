@@ -23,6 +23,12 @@ Sign in as `pmt@eigital.com` → `/care/d7d17e54-b6e5-4775-877b-e77ce661fc54` �
 - `CaregiverBadge` rendered on `JournalEntryReadOnly`, `SeizureListReadOnly`, and `DoseRowsReadOnly` rows where `created_by_kind === 'caregiver'`.
 - Owner notifications wired via `notifyOwnerOfCaregiverWrite` (throttled push + email) inside every `caregiverWrite*` serverFn.
 
+## Step 5 + Phase 2 — done
+
+- Caregiver notified on owner decision: new `caregiver-proposal-decision` email template + `notifyCaregiverOfDecision` helper, called from `decidePendingChange`.
+- Per-caregiver audit log: `listCareAuditLog({ relationship_id })` serverFn + "Recent activity (last 30 days)" section inside `ManageRelationshipSheet`.
+- Caregiver mobile polish: sticky tab nav on `/care/$ownerId` (desktop tabs row pins to top of scroll).
+
 ### Gate
 Sign in as `pmt@eigital.com` → `/care/d7d17e54-...` → confirm "Log seizure", "Add note", and "Add biometric" buttons appear on the matching tabs and that submissions land on Devyn's account with a caregiver badge + owner notification.
 
