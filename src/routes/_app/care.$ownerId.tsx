@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,6 +24,8 @@ import { ReportsListReadOnly } from "@/components/care/reports-list-readonly";
 import { LogSeizureSheet } from "@/components/care/log-seizure-sheet";
 import { AddJournalSheet } from "@/components/care/add-journal-sheet";
 import { AddBiometricSheet } from "@/components/care/add-biometric-sheet";
+import { OwnerSwitcher } from "@/components/care/owner-switcher";
+import { CaregiverAlertsCard } from "@/components/care/caregiver-alerts-card";
 import { MetricCard } from "@/components/biometrics/metric-card";
 import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 import {
@@ -40,6 +42,8 @@ import {
   caregiverReadSeizures,
   caregiverReadToday,
   caregiverMarkDose,
+  getOwnerActivityCounts,
+  markOwnerSeen,
 } from "@/lib/care.functions";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { ROLE_LABELS, type CareRole } from "@/lib/care.scopes";
@@ -83,6 +87,31 @@ function CareDashboardPage() {
   const [active, setActive] = useState<TabKey>("today");
   const current: TabKey = tabs.some((t) => t.key === active) ? active : (tabs[0]?.key ?? "today");
 
+  // Activity counts (unread badges)
+  const countsFn = useServerFn(getOwnerActivityCounts);
+  const queryClient = useQueryClient();
+  const counts = useQuery({
+    queryKey: ["care", "counts", ownerId],
+    queryFn: () => countsFn({ data: { owner_id: ownerId } }),
+    enabled: !overview.isLoading && !overview.isError,
+    staleTime: 15_000,
+  });
+
+  // Mark current tab seen
+  const markSeenFn = useServerFn(markOwnerSeen);
+  const markSeen = useMutation({
+    mutationFn: (tab: TabKey) =>
+      markSeenFn({ data: { owner_id: ownerId, tab } }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["care", "counts", ownerId] });
+      void queryClient.invalidateQueries({ queryKey: ["care", "owners-switcher"] });
+    },
+  });
+  useEffect(() => {
+    if (overview.data) markSeen.mutate(current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ownerId, current, overview.data?.relationship?.id]);
+
   if (overview.isLoading) {
     return (
       <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
@@ -115,9 +144,12 @@ function CareDashboardPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
-      <Link to="/settings/sharing" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" /> {t("care.back")}
-      </Link>
+      <div className="flex items-center justify-between gap-3">
+        <Link to="/care" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> All people
+        </Link>
+        <OwnerSwitcher currentOwnerId={ownerId} currentLabel={displayName} />
+      </div>
 
       <p className="label-eyebrow text-muted-foreground mt-6">{t("care.eyebrow")}</p>
       <h1 className="mt-3 font-serif text-4xl sm:text-5xl leading-[1.04] tracking-[-0.02em] text-foreground">
@@ -157,16 +189,25 @@ function CareDashboardPage() {
             </Select>
           </div>
           <Tabs value={current} onValueChange={(v) => setActive(v as TabKey)} className="mt-4">
-            <TabsList className="hidden sm:flex sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+            <TabsList className="hidden sm:flex sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 overflow-x-auto">
               {tabs.map((t) => (
-                <TabsTrigger key={t.key} value={t.key}>
-                  {t.label}
+                <TabsTrigger key={t.key} value={t.key} className="relative">
+                  <span>{t.label}</span>
+                  {(() => {
+                    const n = counts.data?.counts?.[t.key as keyof typeof counts.data.counts] ?? 0;
+                    if (n <= 0 || t.key === current) return null;
+                    return (
+                      <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-medium text-primary-foreground tabular-nums">
+                        {n > 99 ? "99+" : n}
+                      </span>
+                    );
+                  })()}
                 </TabsTrigger>
               ))}
             </TabsList>
             {tabs.find((t) => t.key === "today") && (
               <TabsContent value="today" className="mt-4">
-                <TodayPanel ownerId={ownerId} />
+                <TodayPanel ownerId={ownerId} onJump={(tab) => setActive(tab)} />
               </TabsContent>
             )}
             {tabs.find((t) => t.key === "meds") && (

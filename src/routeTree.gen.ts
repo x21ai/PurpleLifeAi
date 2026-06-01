@@ -48,6 +48,7 @@ import { Route as AppCharterRouteImport } from './routes/_app/charter'
 import { Route as AppAdminRouteImport } from './routes/_app/admin'
 import { Route as AppAccountRouteImport } from './routes/_app/account'
 import { Route as AppJournalIndexRouteImport } from './routes/_app/journal.index'
+import { Route as AppCareIndexRouteImport } from './routes/_app/care.index'
 import { Route as AppBiometricsIndexRouteImport } from './routes/_app/biometrics.index'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin.index'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
@@ -272,6 +273,11 @@ const AppJournalIndexRoute = AppJournalIndexRouteImport.update({
   path: '/journal/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCareIndexRoute = AppCareIndexRouteImport.update({
+  id: '/care/',
+  path: '/care/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBiometricsIndexRoute = AppBiometricsIndexRouteImport.update({
   id: '/biometrics/',
   path: '/biometrics/',
@@ -484,6 +490,7 @@ export interface FileRoutesByFullPath {
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/admin/': typeof AppAdminIndexRoute
   '/biometrics/': typeof AppBiometricsIndexRoute
+  '/care/': typeof AppCareIndexRoute
   '/journal/': typeof AppJournalIndexRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
@@ -552,6 +559,7 @@ export interface FileRoutesByTo {
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/admin': typeof AppAdminIndexRoute
   '/biometrics': typeof AppBiometricsIndexRoute
+  '/care': typeof AppCareIndexRoute
   '/journal': typeof AppJournalIndexRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
@@ -623,6 +631,7 @@ export interface FileRoutesById {
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/_app/admin/': typeof AppAdminIndexRoute
   '/_app/biometrics/': typeof AppBiometricsIndexRoute
+  '/_app/care/': typeof AppCareIndexRoute
   '/_app/journal/': typeof AppJournalIndexRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
@@ -694,6 +703,7 @@ export interface FileRouteTypes {
     | '/oauth/oura/callback'
     | '/admin/'
     | '/biometrics/'
+    | '/care/'
     | '/journal/'
     | '/api/public/cron/dose-reminders'
     | '/api/public/cron/purge-deleted-accounts'
@@ -762,6 +772,7 @@ export interface FileRouteTypes {
     | '/oauth/oura/callback'
     | '/admin'
     | '/biometrics'
+    | '/care'
     | '/journal'
     | '/api/public/cron/dose-reminders'
     | '/api/public/cron/purge-deleted-accounts'
@@ -832,6 +843,7 @@ export interface FileRouteTypes {
     | '/oauth/oura/callback'
     | '/_app/admin/'
     | '/_app/biometrics/'
+    | '/_app/care/'
     | '/_app/journal/'
     | '/api/public/cron/dose-reminders'
     | '/api/public/cron/purge-deleted-accounts'
@@ -1150,6 +1162,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppJournalIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/care/': {
+      id: '/_app/care/'
+      path: '/care'
+      fullPath: '/care/'
+      preLoaderRoute: typeof AppCareIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/biometrics/': {
       id: '/_app/biometrics/'
       path: '/biometrics'
@@ -1456,6 +1475,7 @@ interface AppRouteChildren {
   AppJournalNewRoute: typeof AppJournalNewRoute
   AppSeizuresNewRoute: typeof AppSeizuresNewRoute
   AppBiometricsIndexRoute: typeof AppBiometricsIndexRoute
+  AppCareIndexRoute: typeof AppCareIndexRoute
   AppJournalIndexRoute: typeof AppJournalIndexRoute
 }
 
@@ -1482,6 +1502,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppJournalNewRoute: AppJournalNewRoute,
   AppSeizuresNewRoute: AppSeizuresNewRoute,
   AppBiometricsIndexRoute: AppBiometricsIndexRoute,
+  AppCareIndexRoute: AppCareIndexRoute,
   AppJournalIndexRoute: AppJournalIndexRoute,
 }
 
