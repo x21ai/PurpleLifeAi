@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 type Dose = {
   id: string;
@@ -30,14 +31,18 @@ function statusPillClass(status: string) {
 
 /**
  * Read-only "today's doses" list mirroring <TodayDoses>. No taken/skip/snooze
- * buttons — caregiver writes come in Step 3.
+ * buttons unless `onAction` is provided (caregiver with meds:write scope).
  */
 export function DoseRowsReadOnly({
   doses,
   meds,
+  onAction,
+  pendingId,
 }: {
   doses: Dose[];
   meds: Med[];
+  onAction?: (doseId: string, action: "taken" | "skip") => void;
+  pendingId?: string | null;
 }) {
   if (doses.length === 0) {
     return (
@@ -49,6 +54,7 @@ export function DoseRowsReadOnly({
     <ul className="divide-y divide-border">
       {doses.map((d) => {
         const med = medById.get(d.medication_id);
+        const busy = pendingId === d.id;
         return (
           <li
             key={d.id}
@@ -70,12 +76,34 @@ export function DoseRowsReadOnly({
                 <p className="text-xs text-muted-foreground truncate">{med.dosage}</p>
               )}
             </div>
-            <span className="text-xs text-muted-foreground capitalize">
-              {d.status}
-              {d.taken_at && d.status === "taken"
-                ? ` · ${format(new Date(d.taken_at), "h:mm a")}`
-                : ""}
-            </span>
+            {onAction && d.status === "pending" ? (
+              <div className="flex items-center gap-1.5">
+                <Button
+                  size="sm"
+                  className="rounded-full"
+                  disabled={busy}
+                  onClick={() => onAction(d.id, "taken")}
+                >
+                  Taken
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-full text-muted-foreground"
+                  disabled={busy}
+                  onClick={() => onAction(d.id, "skip")}
+                >
+                  Skip
+                </Button>
+              </div>
+            ) : (
+              <span className="text-xs text-muted-foreground capitalize">
+                {d.status}
+                {d.taken_at && d.status === "taken"
+                  ? ` · ${format(new Date(d.taken_at), "h:mm a")}`
+                  : ""}
+              </span>
+            )}
           </li>
         );
       })}
