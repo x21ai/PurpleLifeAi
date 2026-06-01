@@ -6,7 +6,10 @@ import type { CareRole, CareScope } from "./care.scopes";
 import { ROLE_DEFAULT_SCOPES, ROLE_LABELS } from "./care.scopes";
 import { sendTransactionalEmail } from "./email/send";
 import { getRequest } from "@tanstack/react-start/server";
-import { notifyOwnerOfCaregiverWrite } from "./care-notify.server";
+import {
+  notifyOwnerOfCaregiverWrite,
+  notifyCaregiverOfDecision,
+} from "./care-notify.server";
 
 function newInviteToken(): string {
   return (
