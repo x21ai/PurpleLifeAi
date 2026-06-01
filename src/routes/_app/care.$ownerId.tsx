@@ -22,7 +22,6 @@ import { SeizureListReadOnly } from "@/components/care/seizure-list-readonly";
 import { ReportsListReadOnly } from "@/components/care/reports-list-readonly";
 import { MetricCard } from "@/components/biometrics/metric-card";
 import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
-import { ScoreTile } from "@/components/ui-oura/v2/score-tile";
 import {
   METRIC_ORDER,
   METRICS,
