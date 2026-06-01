@@ -581,6 +581,20 @@ export const caregiverReadSeizures = createServerFn({ method: "POST" })
     return { events: rows ?? [] };
   });
 
+export const caregiverReadReports = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(ownerInput)
+  .handler(async ({ data, context }) => {
+    await assertScope(data.owner_id, context.userId, "reports:read");
+    const { data: rows } = await supabaseAdmin
+      .from("report_documents")
+      .select("id, title, report_type, report_date, file_mime, status, created_at")
+      .eq("user_id", data.owner_id)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    return { reports: rows ?? [] };
+  });
+
 export const caregiverReadToday = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(ownerInput)
