@@ -341,7 +341,7 @@ export type Database = {
           expires_at: string | null
           id: string
           invite_email: string
-          invite_token: string
+          invite_token: string | null
           owner_id: string
           revoked_at: string | null
           role: Database["public"]["Enums"]["care_role"]
@@ -354,7 +354,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           invite_email: string
-          invite_token: string
+          invite_token?: string | null
           owner_id: string
           revoked_at?: string | null
           role?: Database["public"]["Enums"]["care_role"]
@@ -367,7 +367,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           invite_email?: string
-          invite_token?: string
+          invite_token?: string | null
           owner_id?: string
           revoked_at?: string | null
           role?: Database["public"]["Enums"]["care_role"]
