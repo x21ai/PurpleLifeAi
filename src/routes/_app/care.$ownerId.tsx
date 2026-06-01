@@ -304,7 +304,13 @@ function MedsPanel({
                         }
                         title={new Date(d.scheduled_at).toLocaleString()}
                       >
-                        {d.status}
+                        {d.status} ·{" "}
+                        {new Date(d.scheduled_at).toLocaleString(undefined, {
+                          month: "numeric",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
                       </span>
                     ))}
                   </div>
