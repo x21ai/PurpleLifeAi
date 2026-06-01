@@ -15,6 +15,18 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import { ProposeChangeDialog } from "@/components/care/propose-change-dialog";
+import { JournalEntryReadOnly } from "@/components/care/journal-entry-readonly";
+import { DoseRowsReadOnly } from "@/components/care/dose-rows-readonly";
+import { MedsListReadOnly } from "@/components/care/meds-list-readonly";
+import { SeizureListReadOnly } from "@/components/care/seizure-list-readonly";
+import { ReportsListReadOnly } from "@/components/care/reports-list-readonly";
+import { MetricCard } from "@/components/biometrics/metric-card";
+import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
+import {
+  METRIC_ORDER,
+  METRICS,
+  type MetricKey,
+} from "@/lib/biometric-metrics";
 import {
   caregiverReadBiometrics,
   caregiverReadJournal,
@@ -211,35 +223,50 @@ function TodayPanel({ ownerId }: { ownerId: string }) {
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const { forecast, alerts } = q.data!;
   return (
-    <Section>
-      <h2 className="font-serif text-xl text-foreground">Today</h2>
-      {forecast ? (
-        <div className="mt-3">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">Risk band</p>
-          <p className="mt-1 font-serif text-3xl text-foreground capitalize">{forecast.band}</p>
-          {forecast.ai_narrative && (
-            <p className="mt-2 text-sm text-foreground/80 whitespace-pre-wrap">{forecast.ai_narrative}</p>
-          )}
-        </div>
-      ) : (
-        <p className="mt-3 text-sm text-muted-foreground">No forecast for today.</p>
-      )}
-      <div className="mt-5">
-        <p className="text-xs text-muted-foreground uppercase tracking-wide">Active alerts</p>
-        {alerts.length === 0 ? (
-          <p className="mt-1 text-sm text-muted-foreground">None.</p>
+    <div className="space-y-6">
+      <Section>
+        <p className="label-eyebrow text-muted-foreground">Today's read</p>
+        {forecast ? (
+          <>
+            <p className="mt-2 font-serif text-3xl text-foreground capitalize">
+              {forecast.band} risk
+              {typeof forecast.risk_score === "number" && (
+                <span className="ml-2 text-base text-muted-foreground tabular-nums">
+                  {forecast.risk_score}/100
+                </span>
+              )}
+            </p>
+            {forecast.ai_narrative && (
+              <div className="mt-4">
+                <NarrativeBlock>{forecast.ai_narrative}</NarrativeBlock>
+              </div>
+            )}
+          </>
         ) : (
-          <ul className="mt-2 space-y-2">
+          <p className="mt-2 text-sm text-muted-foreground">
+            No risk forecast for today.
+          </p>
+        )}
+      </Section>
+
+      <Section>
+        <h2 className="font-serif text-xl text-foreground">Active alerts</h2>
+        {alerts.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">None.</p>
+        ) : (
+          <ul className="mt-3 space-y-2">
             {alerts.map((a: any) => (
               <li key={a.id} className="rounded-xl border border-border p-3">
                 <p className="text-sm font-medium text-foreground">{a.title}</p>
-                {a.body && <p className="mt-0.5 text-xs text-muted-foreground">{a.body}</p>}
+                {a.body && (
+                  <p className="mt-0.5 text-xs text-muted-foreground">{a.body}</p>
+                )}
               </li>
             ))}
           </ul>
         )}
-      </div>
-    </Section>
+      </Section>
+    </div>
   );
 }
 
@@ -261,68 +288,40 @@ function MedsPanel({
   if (q.isLoading) return <Empty>Loading…</Empty>;
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const { meds, doses } = q.data!;
+  // Today's doses only (matches the patient's "Today" doses card on /meds).
+  const start = new Date(); start.setHours(0, 0, 0, 0);
+  const end = new Date(); end.setHours(23, 59, 59, 999);
+  const todayDoses = (doses ?? []).filter((d: any) => {
+    const t = new Date(d.scheduled_at).getTime();
+    return t >= start.getTime() && t <= end.getTime();
+  }).sort((a: any, b: any) => +new Date(a.scheduled_at) - +new Date(b.scheduled_at));
+
   return (
-    <Section>
-      <h2 className="font-serif text-xl text-foreground">Medications</h2>
-      {meds.length === 0 ? (
-        <Empty>No active medications.</Empty>
-      ) : (
-        <ul className="mt-3 divide-y divide-border">
-          {meds.map((m: any) => {
-            const recent = doses.filter((d: any) => d.medication_id === m.id).slice(0, 6);
-            return (
-              <li key={m.id} className="py-3 first:pt-0 last:pb-0">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground">{m.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {[m.dosage, (m.times_of_day ?? []).join(", ")]
-                        .filter((s: string | null) => s && String(s).trim())
-                        .join(" · ") || "no schedule"}
-                    </p>
-                    {m.notes && <p className="mt-1 text-xs text-foreground/70 whitespace-pre-wrap">{m.notes}</p>}
-                  </div>
-                  {canPropose && (
-                    <ProposeChangeDialog
-                      relationshipId={relationshipId}
-                      type="add_meds_note"
-                      targetId={m.id}
-                      targetLabel={m.name}
-                    />
-                  )}
-                </div>
-                {recent.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {recent.map((d: any) => (
-                      <span
-                        key={d.id}
-                        className={
-                          "inline-block rounded-full px-2 py-0.5 text-[10px] " +
-                          (d.status === "taken"
-                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                            : d.status === "missed"
-                              ? "bg-destructive/10 text-destructive"
-                              : "bg-muted text-muted-foreground")
-                        }
-                        title={new Date(d.scheduled_at).toLocaleString()}
-                      >
-                        {d.status} ·{" "}
-                        {new Date(d.scheduled_at).toLocaleString(undefined, {
-                          month: "numeric",
-                          day: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </Section>
+    <div className="space-y-6">
+      <Section>
+        <h2 className="font-serif text-xl text-foreground">Today's doses</h2>
+        <div className="mt-4">
+          <DoseRowsReadOnly doses={todayDoses} meds={meds} />
+        </div>
+      </Section>
+
+      <div>
+        <h2 className="font-serif text-xl text-foreground mb-3">Medications</h2>
+        <MedsListReadOnly
+          meds={meds}
+          trailing={(m) =>
+            canPropose ? (
+              <ProposeChangeDialog
+                relationshipId={relationshipId}
+                type="add_meds_note"
+                targetId={m.id}
+                targetLabel={m.name}
+              />
+            ) : null
+          }
+        />
+      </div>
+    </div>
   );
 }
 
@@ -336,38 +335,39 @@ function BiometricsPanel({ ownerId }: { ownerId: string }) {
   if (q.isLoading) return <Empty>Loading…</Empty>;
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const rows = q.data!.rows;
+
+  if (rows.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+        <p className="font-serif text-lg text-foreground">No biometrics yet</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Once a wearable is connected, the last 30 days appear here.
+        </p>
+      </div>
+    );
+  }
+
+  // Build per-metric series matching the patient /biometrics page.
+  const seriesByMetric: Record<MetricKey, Array<{ date: string; value: number | null }>> =
+    {} as never;
+  for (const key of METRIC_ORDER) {
+    const meta = METRICS[key];
+    seriesByMetric[key] = rows.map((r: any) => {
+      const raw = r[meta.column];
+      const num = typeof raw === "number" ? raw : raw == null ? null : Number(raw);
+      return {
+        date: String(r.recorded_at ?? ""),
+        value: Number.isFinite(num as number) ? (num as number) : null,
+      };
+    });
+  }
+
   return (
-    <Section>
-      <h2 className="font-serif text-xl text-foreground">Biometrics (last 7 days)</h2>
-      {rows.length === 0 ? (
-        <Empty>No biometrics yet.</Empty>
-      ) : (
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-muted-foreground uppercase tracking-wide">
-                <th className="py-2 pr-3">When</th>
-                <th className="py-2 pr-3">HR</th>
-                <th className="py-2 pr-3">HRV</th>
-                <th className="py-2 pr-3">Sleep</th>
-                <th className="py-2 pr-3">SpO₂</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {rows.map((r: any, i: number) => (
-                <tr key={i} className="text-foreground/80">
-                  <td className="py-2 pr-3 whitespace-nowrap">{new Date(r.recorded_at).toLocaleString()}</td>
-                  <td className="py-2 pr-3">{r.hr_bpm ?? "—"}</td>
-                  <td className="py-2 pr-3">{r.hrv_rmssd_ms ?? "—"}</td>
-                  <td className="py-2 pr-3">{r.sleep_score ?? "—"}</td>
-                  <td className="py-2 pr-3">{r.spo2_pct ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </Section>
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+      {METRIC_ORDER.map((m) => (
+        <MetricCard key={m} metric={m} series={seriesByMetric[m]} disableLink />
+      ))}
+    </div>
   );
 }
 
@@ -389,38 +389,31 @@ function JournalPanel({
   if (q.isLoading) return <Empty>Loading…</Empty>;
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const entries = q.data!.entries;
+  if (entries.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+        <p className="text-sm text-muted-foreground">No recent journal entries.</p>
+      </div>
+    );
+  }
   return (
-    <Section>
-      <h2 className="font-serif text-xl text-foreground">Journal</h2>
-      {entries.length === 0 ? (
-        <Empty>No recent entries.</Empty>
-      ) : (
-        <ul className="mt-3 space-y-3">
-          {entries.map((e: any) => (
-            <li key={e.id} className="rounded-xl border border-border p-3">
-              <p className="text-xs text-muted-foreground">
-                {new Date(e.captured_at).toLocaleString()}
-                {e.kind && e.kind !== "text" ? ` · ${e.kind}` : ""}
-              </p>
-              {e.ai_summary && <p className="mt-1 text-sm font-medium text-foreground">{e.ai_summary}</p>}
-              {e.text && (
-                <p className="mt-1 text-sm text-foreground/80 whitespace-pre-wrap line-clamp-6">{e.text}</p>
-              )}
-              {canComment && (
-                <div className="mt-2">
-                  <ProposeChangeDialog
-                    relationshipId={relationshipId}
-                    type="add_journal_comment"
-                    targetId={e.id}
-                    targetLabel={e.ai_summary ?? new Date(e.captured_at).toLocaleDateString()}
-                  />
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </Section>
+    <div className="space-y-3">
+      {entries.map((e: any) => (
+        <div key={e.id}>
+          <JournalEntryReadOnly entry={e} />
+          {canComment && (
+            <div className="mt-2 flex justify-end">
+              <ProposeChangeDialog
+                relationshipId={relationshipId}
+                type="add_journal_comment"
+                targetId={e.id}
+                targetLabel={e.ai_summary ?? new Date(e.captured_at).toLocaleDateString()}
+              />
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -434,32 +427,7 @@ function SeizuresPanel({ ownerId }: { ownerId: string }) {
   if (q.isLoading) return <Empty>Loading…</Empty>;
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const events = q.data!.events;
-  return (
-    <Section>
-      <h2 className="font-serif text-xl text-foreground">Seizure events</h2>
-      {events.length === 0 ? (
-        <Empty>None logged.</Empty>
-      ) : (
-        <ul className="mt-3 divide-y divide-border">
-          {events.map((e: any) => (
-            <li key={e.id} className="py-3 first:pt-0 last:pb-0">
-              <p className="text-sm font-medium text-foreground">
-                {new Date(e.started_at).toLocaleString()}
-                {e.duration_seconds ? ` · ${Math.round(e.duration_seconds / 60) || 1} min` : ""}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {e.type ?? "Unspecified"}
-                {typeof e.severity === "number" ? ` · severity ${e.severity}` : ""}
-                {e.rescue_med_given ? " · rescue med" : ""}
-                {e.injury ? " · injury" : ""}
-              </p>
-              {e.notes && <p className="mt-1 text-sm text-foreground/80 whitespace-pre-wrap">{e.notes}</p>}
-            </li>
-          ))}
-        </ul>
-      )}
-    </Section>
-  );
+  return <SeizureListReadOnly events={events} />;
 }
 
 /* ----- Reports ----- */
@@ -472,26 +440,5 @@ function ReportsPanel({ ownerId }: { ownerId: string }) {
   if (q.isLoading) return <Empty>Loading…</Empty>;
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const reports = q.data!.reports;
-  return (
-    <Section>
-      <h2 className="font-serif text-xl text-foreground">Reports</h2>
-      {reports.length === 0 ? (
-        <Empty>No reports uploaded yet.</Empty>
-      ) : (
-        <ul className="mt-3 divide-y divide-border">
-          {reports.map((r: any) => (
-            <li key={r.id} className="py-3 first:pt-0 last:pb-0">
-              <p className="text-sm font-medium text-foreground">{r.title}</p>
-              <p className="text-xs text-muted-foreground">
-                {r.report_type ?? "Uncategorized"}
-                {r.report_date ? ` · ${new Date(r.report_date).toLocaleDateString()}` : ""}
-                {" · "}
-                {r.status}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Section>
-  );
+  return <ReportsListReadOnly reports={reports} />;
 }

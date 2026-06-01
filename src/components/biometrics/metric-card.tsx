@@ -10,7 +10,17 @@ import {
 
 type Series = Array<{ date: string; value: number | null }>;
 
-export function MetricCard({ metric, series }: { metric: MetricKey; series: Series }) {
+export function MetricCard({
+  metric,
+  series,
+  disableLink = false,
+}: {
+  metric: MetricKey;
+  series: Series;
+  /** When true, render as a plain card instead of a Link to /biometrics/$metric.
+   *  Used by the caregiver view, where the link would point to the wrong user. */
+  disableLink?: boolean;
+}) {
   const meta = METRICS[metric];
   const recent = series.slice(-14);
   const baselineWindow = series.slice(-30, -3);
@@ -24,12 +34,8 @@ export function MetricCard({ metric, series }: { metric: MetricKey; series: Seri
   const delta =
     current != null && baseline.mean != null ? current - baseline.mean : null;
 
-  return (
-    <Link
-      to="/biometrics/$metric"
-      params={{ metric }}
-      className="group block rounded-2xl border border-border bg-card p-4 sm:p-5 transition hover:border-foreground/30 hover:shadow-sm"
-    >
+  const inner = (
+    <>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="label-eyebrow text-muted-foreground">{meta.label}</p>
@@ -82,6 +88,23 @@ export function MetricCard({ metric, series }: { metric: MetricKey; series: Seri
           </span>
         )}
       </div>
+    </>
+  );
+
+  if (disableLink) {
+    return (
+      <div className="block rounded-2xl border border-border bg-card p-4 sm:p-5">
+        {inner}
+      </div>
+    );
+  }
+  return (
+    <Link
+      to="/biometrics/$metric"
+      params={{ metric }}
+      className="group block rounded-2xl border border-border bg-card p-4 sm:p-5 transition hover:border-foreground/30 hover:shadow-sm"
+    >
+      {inner}
     </Link>
   );
 }

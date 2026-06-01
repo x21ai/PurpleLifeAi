@@ -1,0 +1,84 @@
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+
+type Dose = {
+  id: string;
+  scheduled_at: string;
+  taken_at?: string | null;
+  status: string;
+  medication_id: string;
+};
+
+type Med = {
+  id: string;
+  name: string;
+  dosage: string | null;
+};
+
+function statusPillClass(status: string) {
+  switch (status) {
+    case "taken":
+      return "bg-[color:var(--success)]/15 text-[color:var(--success)] ring-1 ring-[color:var(--success)]/30";
+    case "missed":
+      return "bg-destructive/15 text-destructive ring-1 ring-destructive/30";
+    case "skipped":
+      return "bg-muted text-muted-foreground ring-1 ring-border";
+    default:
+      return "bg-primary/15 text-primary ring-1 ring-primary/30";
+  }
+}
+
+/**
+ * Read-only "today's doses" list mirroring <TodayDoses>. No taken/skip/snooze
+ * buttons — caregiver writes come in Step 3.
+ */
+export function DoseRowsReadOnly({
+  doses,
+  meds,
+}: {
+  doses: Dose[];
+  meds: Med[];
+}) {
+  if (doses.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">No doses logged today.</p>
+    );
+  }
+  const medById = new Map(meds.map((m) => [m.id, m]));
+  return (
+    <ul className="divide-y divide-border">
+      {doses.map((d) => {
+        const med = medById.get(d.medication_id);
+        return (
+          <li
+            key={d.id}
+            className="flex flex-wrap items-center gap-2 py-3 first:pt-0 last:pb-0"
+          >
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium tabular-nums",
+                statusPillClass(d.status),
+              )}
+            >
+              {format(new Date(d.scheduled_at), "h:mm a")}
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-foreground truncate">
+                {med?.name ?? "Medication"}
+              </p>
+              {med?.dosage && (
+                <p className="text-xs text-muted-foreground truncate">{med.dosage}</p>
+              )}
+            </div>
+            <span className="text-xs text-muted-foreground capitalize">
+              {d.status}
+              {d.taken_at && d.status === "taken"
+                ? ` · ${format(new Date(d.taken_at), "h:mm a")}`
+                : ""}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
