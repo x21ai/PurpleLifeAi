@@ -128,3 +128,69 @@ export async function notifyOwnerOfCaregiverWrite(params: {
     console.warn("[care-notify] failed", err);
   }
 }
+
+const CHANGE_TYPE_LABEL: Record<string, string> = {
+  add_journal_comment: "your note on a journal entry",
+  add_meds_note: "your note on a medication",
+};
+
+/**
+ * Best-effort: email the caregiver after the data owner approves or rejects
+ * one of their proposed changes. Never throws.
+ */
+export async function notifyCaregiverOfDecision(params: {
+  caregiverId: string;
+  ownerId: string;
+  changeType: string;
+  decision: "approved" | "rejected";
+  decisionNote?: string | null;
+}): Promise<void> {
+  const { caregiverId, ownerId, changeType, decision, decisionNote } = params;
+  try {
+    const [{ data: ownerProfile }, { data: caregiverProfile }, { data: caregiverAuth }] =
+      await Promise.all([
+        supabaseAdmin
+          .from("profiles")
+          .select("first_name, last_name, community_display_name")
+          .eq("id", ownerId)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("profiles")
+          .select("first_name, community_display_name")
+          .eq("id", caregiverId)
+          .maybeSingle(),
+        supabaseAdmin.auth.admin.getUserById(caregiverId),
+      ]);
+
+    const caregiverEmail = caregiverAuth?.user?.email ?? null;
+    if (!caregiverEmail) return;
+
+    const ownerName =
+      ownerProfile?.community_display_name?.trim() ||
+      [ownerProfile?.first_name, ownerProfile?.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim() ||
+      "The account owner";
+    const caregiverFirstName =
+      caregiverProfile?.first_name?.trim() ||
+      caregiverProfile?.community_display_name?.trim() ||
+      "";
+    const changeLabel = CHANGE_TYPE_LABEL[changeType] ?? "your proposed change";
+
+    await sendTransactionalEmail({
+      templateName: "caregiver-proposal-decision",
+      recipientEmail: caregiverEmail,
+      idempotencyKey: `care-decision-${decision}-${ownerId}-${caregiverId}-${Date.now()}`,
+      templateData: {
+        caregiverFirstName,
+        ownerName,
+        decision,
+        changeLabel,
+        decisionNote: decisionNote ?? null,
+      },
+    });
+  } catch (err) {
+    console.warn("[care-notify] decision email failed", err);
+  }
+}

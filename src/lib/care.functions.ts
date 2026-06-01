@@ -6,7 +6,10 @@ import type { CareRole, CareScope } from "./care.scopes";
 import { ROLE_DEFAULT_SCOPES, ROLE_LABELS } from "./care.scopes";
 import { sendTransactionalEmail } from "./email/send";
 import { getRequest } from "@tanstack/react-start/server";
-import { notifyOwnerOfCaregiverWrite } from "./care-notify.server";
+import {
+  notifyOwnerOfCaregiverWrite,
+  notifyCaregiverOfDecision,
+} from "./care-notify.server";
 
 function newInviteToken(): string {
   return (
@@ -189,6 +192,40 @@ export const setScopes = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/* ---------- Audit log ---------- */
+
+export const listCareAuditLog = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { relationship_id: string; limit?: number }) =>
+    z
+      .object({
+        relationship_id: z.string().uuid(),
+        limit: z.number().int().min(1).max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: rel, error: rErr } = await supabaseAdmin
+      .from("care_relationships")
+      .select("id, owner_id")
+      .eq("id", data.relationship_id)
+      .single();
+    if (rErr || !rel) throw new Error("Relationship not found");
+    if (rel.owner_id !== userId) throw new Error("Forbidden");
+
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: rows, error } = await supabaseAdmin
+      .from("care_audit_log")
+      .select("id, action, at, resource_type, resource_id, metadata")
+      .eq("relationship_id", data.relationship_id)
+      .gte("at", since)
+      .order("at", { ascending: false })
+      .limit(data.limit ?? 50);
+    if (error) throw new Error(error.message);
+    return { entries: rows ?? [] };
+  });
+
 export const revokeRelationship = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { relationship_id: string }) =>
@@ -305,6 +342,15 @@ export const decidePendingChange = createServerFn({ method: "POST" })
       resource_id: change.id,
       metadata: { type: change.type },
     });
+    if (change.caregiver_id) {
+      void notifyCaregiverOfDecision({
+        caregiverId: change.caregiver_id,
+        ownerId: userId,
+        changeType: String(change.type),
+        decision: data.decision,
+        decisionNote: data.note ?? null,
+      });
+    }
     return { ok: true };
   });
 
