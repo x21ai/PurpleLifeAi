@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useMemo } from "react";
 
@@ -35,6 +36,7 @@ import {
   caregiverReadReports,
   caregiverReadSeizures,
   caregiverReadToday,
+  caregiverMarkDose,
 } from "@/lib/care.functions";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { ROLE_LABELS, type CareRole } from "@/lib/care.scopes";
@@ -170,6 +172,7 @@ function CareDashboardPage() {
                   ownerId={ownerId}
                   relationshipId={relationship.id}
                   canPropose={has("meds:propose")}
+                  canWrite={has("meds:write")}
                 />
               </TabsContent>
             )}
@@ -275,16 +278,39 @@ function MedsPanel({
   ownerId,
   relationshipId,
   canPropose,
+  canWrite,
 }: {
   ownerId: string;
   relationshipId: string;
   canPropose: boolean;
+  canWrite: boolean;
 }) {
   const fn = useServerFn(caregiverReadMeds);
+  const markDoseFn = useServerFn(caregiverMarkDose);
+  const queryClient = useQueryClient();
   const q = useQuery({
     queryKey: ["care", "meds", ownerId],
     queryFn: () => fn({ data: { owner_id: ownerId } }),
   });
+
+  const markDose = useMutation({
+    mutationFn: ({
+      doseId,
+      action,
+    }: {
+      doseId: string;
+      action: "taken" | "skip";
+    }) =>
+      markDoseFn({ data: { owner_id: ownerId, dose_id: doseId, action } }),
+    onSuccess: (_res, vars) => {
+      toast.success(vars.action === "taken" ? "Marked as taken" : "Marked as skipped");
+      void queryClient.invalidateQueries({ queryKey: ["care", "meds", ownerId] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message ?? "Couldn't update dose");
+    },
+  });
+
   if (q.isLoading) return <Empty>Loading…</Empty>;
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const { meds, doses } = q.data!;
@@ -300,8 +326,22 @@ function MedsPanel({
     <div className="space-y-6">
       <Section>
         <h2 className="font-serif text-xl text-foreground">Today's doses</h2>
+        {canWrite && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Actions you take here are logged on their account as caregiver writes.
+          </p>
+        )}
         <div className="mt-4">
-          <DoseRowsReadOnly doses={todayDoses} meds={meds} />
+          <DoseRowsReadOnly
+            doses={todayDoses}
+            meds={meds}
+            onAction={
+              canWrite
+                ? (doseId, action) => markDose.mutate({ doseId, action })
+                : undefined
+            }
+            pendingId={markDose.isPending ? (markDose.variables?.doseId ?? null) : null}
+          />
         </div>
       </Section>
 

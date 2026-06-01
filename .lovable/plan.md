@@ -1,6 +1,27 @@
-# Phase 1.5 · Step 2 — Make pmt's view look exactly like Devyn's
+# Phase 1.5 · Step 3 — Caregiver writes (foundations + Meds tab)
 
-Step 1 shipped the Reports tab + cosmetic fixes. Step 2 swaps the bespoke caregiver tables for the same components Devyn sees, scoped by `ownerId`. Read-only this step; caregiver writes are Step 3.
+Step 2 shipped read-only caregiver views with patient-grade components. Step 3 adds the write story: provenance columns on every patient-data table, a new `write` verb in the scope catalog, four scope-guarded caregiver-write serverFns, and end-to-end wiring on the **Meds** tab so pmt can mark Devyn's doses taken/skipped today.
+
+## What shipped
+
+1. **Migration** — `created_by_id uuid` + `created_by_kind text default 'self'` (validated by trigger to `self|caregiver|system`) on: `journal_entries`, `medication_doses`, `seizure_events`, `medications`, `biometrics`, `report_documents`. Existing rows backfilled to `self`.
+2. **Scope catalog** — added `write` verb + per-resource labels in `src/lib/care.scopes.ts`. Added `meds:write`, `journal:write`, `seizures:write`, `biometrics:write` to the caregiver role defaults. Existing pmt→Devyn relationship was upgraded with the four write scopes.
+3. **serverFns** in `src/lib/care.functions.ts`, all guarded by `requireSupabaseAuth` + `assertScope(<resource>:write)` + active-relationship check, all writing to `care_audit_log`:
+   - `caregiverMarkDose({ owner_id, dose_id, action: 'taken'|'skip'|'reset_pending' })`
+   - `caregiverLogSeizure({ owner_id, started_at, ... })`
+   - `caregiverAddJournalEntry({ owner_id, text, captured_at? })`
+   - `caregiverAddBiometric({ owner_id, recorded_at, ... })`
+4. **Meds tab wiring** — `DoseRowsReadOnly` accepts an optional `onAction` handler and `pendingId`; `MedsPanel` passes a `markDose` mutation when the caregiver has `meds:write`. Toasts on success/error; cache invalidates on success. Other tabs unchanged.
+
+## Gate
+
+Sign in as `pmt@eigital.com` → `/care/d7d17e54-b6e5-4775-877b-e77ce661fc54` → **Meds** tab → "Taken" / "Skip" buttons appear next to pending doses → tapping one updates the dose and shows a toast. Devyn's own `/meds` view is unchanged.
+
+## Next (Step 4 candidates)
+
+- UI for `caregiverLogSeizure`, `caregiverAddJournalEntry`, `caregiverAddBiometric` (sheet pickers in Seizures / Journal / Biometrics tabs).
+- Show a "Logged by caregiver" badge wherever `created_by_kind = 'caregiver'` (journal entry card, seizure list row, biometrics history).
+- Notify the owner when a caregiver writes (push + email, throttled).
 
 ## Approach
 

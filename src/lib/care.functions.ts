@@ -619,3 +619,248 @@ export const caregiverReadToday = createServerFn({ method: "POST" })
       .limit(10);
     return { forecast, alerts: alerts ?? [] };
   });
+
+/* ---------- Caregiver-side writes (scope-guarded) ---------- */
+
+async function getActiveRelationship(ownerId: string, caregiverId: string) {
+  const { data: rel, error } = await supabaseAdmin
+    .from("care_relationships")
+    .select("id, status, expires_at")
+    .eq("owner_id", ownerId)
+    .eq("caregiver_id", caregiverId)
+    .eq("status", "active")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!rel) throw new Error("No active relationship");
+  if (rel.expires_at && new Date(rel.expires_at) < new Date())
+    throw new Error("Access expired");
+  return rel;
+}
+
+async function logCaregiverWrite(
+  relationshipId: string,
+  ownerId: string,
+  caregiverId: string,
+  resourceType: string,
+  resourceId: string,
+  metadata: Record<string, string | number | boolean | null> = {},
+) {
+  await supabaseAdmin.from("care_audit_log").insert({
+    relationship_id: relationshipId,
+    owner_id: ownerId,
+    actor_id: caregiverId,
+    action: "wrote",
+    resource_type: resourceType,
+    resource_id: resourceId,
+    metadata,
+  });
+}
+
+export const caregiverMarkDose = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: {
+    owner_id: string;
+    dose_id: string;
+    action: "taken" | "skip" | "reset_pending";
+  }) =>
+    z
+      .object({
+        owner_id: z.string().uuid(),
+        dose_id: z.string().uuid(),
+        action: z.enum(["taken", "skip", "reset_pending"]),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const caregiverId = context.userId;
+    await assertScope(data.owner_id, caregiverId, "meds:write");
+    const rel = await getActiveRelationship(data.owner_id, caregiverId);
+
+    const { data: dose, error: dErr } = await supabaseAdmin
+      .from("medication_doses")
+      .select("id, user_id")
+      .eq("id", data.dose_id)
+      .maybeSingle();
+    if (dErr) throw new Error(dErr.message);
+    if (!dose || dose.user_id !== data.owner_id) throw new Error("Dose not found");
+
+    const now = new Date().toISOString();
+    const { error: uErr } = await supabaseAdmin
+      .from("medication_doses")
+      .update(
+        data.action === "taken"
+          ? { status: "taken", taken_at: now }
+          : data.action === "skip"
+            ? { status: "skipped", taken_at: null }
+            : { status: "pending", taken_at: null },
+      )
+      .eq("id", data.dose_id);
+    if (uErr) throw new Error(uErr.message);
+
+    await logCaregiverWrite(rel.id, data.owner_id, caregiverId, "medication_doses", data.dose_id, {
+      action: data.action,
+    });
+    return { ok: true };
+  });
+
+export const caregiverLogSeizure = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: {
+    owner_id: string;
+    started_at: string;
+    ended_at?: string | null;
+    type?: string | null;
+    severity?: number | null;
+    notes?: string | null;
+    rescue_med_given?: boolean;
+    injury?: boolean;
+  }) =>
+    z
+      .object({
+        owner_id: z.string().uuid(),
+        started_at: z.string().datetime(),
+        ended_at: z.string().datetime().nullable().optional(),
+        type: z.string().max(64).nullable().optional(),
+        severity: z.number().int().min(0).max(10).nullable().optional(),
+        notes: z.string().max(2000).nullable().optional(),
+        rescue_med_given: z.boolean().optional(),
+        injury: z.boolean().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const caregiverId = context.userId;
+    await assertScope(data.owner_id, caregiverId, "seizures:write");
+    const rel = await getActiveRelationship(data.owner_id, caregiverId);
+
+    const duration =
+      data.ended_at
+        ? Math.max(
+            0,
+            Math.round(
+              (new Date(data.ended_at).getTime() -
+                new Date(data.started_at).getTime()) /
+                1000,
+            ),
+          )
+        : null;
+
+    const { data: row, error } = await supabaseAdmin
+      .from("seizure_events")
+      .insert({
+        user_id: data.owner_id,
+        started_at: data.started_at,
+        ended_at: data.ended_at ?? null,
+        duration_seconds: duration,
+        type: data.type ?? null,
+        severity: data.severity ?? null,
+        notes: data.notes ?? null,
+        rescue_med_given: data.rescue_med_given ?? false,
+        injury: data.injury ?? false,
+        witnessed: true,
+        witness_name: null,
+        created_by_id: caregiverId,
+        created_by_kind: "caregiver",
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+
+    await logCaregiverWrite(rel.id, data.owner_id, caregiverId, "seizure_events", row.id);
+    return { id: row.id };
+  });
+
+export const caregiverAddJournalEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: {
+    owner_id: string;
+    text: string;
+    captured_at?: string;
+  }) =>
+    z
+      .object({
+        owner_id: z.string().uuid(),
+        text: z.string().trim().min(1).max(8000),
+        captured_at: z.string().datetime().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const caregiverId = context.userId;
+    await assertScope(data.owner_id, caregiverId, "journal:write");
+    const rel = await getActiveRelationship(data.owner_id, caregiverId);
+
+    const { data: row, error } = await supabaseAdmin
+      .from("journal_entries")
+      .insert({
+        user_id: data.owner_id,
+        text: data.text,
+        kind: "text",
+        captured_at: data.captured_at ?? new Date().toISOString(),
+        status: "processing",
+        created_by_id: caregiverId,
+        created_by_kind: "caregiver",
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+
+    await logCaregiverWrite(rel.id, data.owner_id, caregiverId, "journal_entries", row.id);
+    return { id: row.id };
+  });
+
+export const caregiverAddBiometric = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: {
+    owner_id: string;
+    recorded_at: string;
+    hr_bpm?: number | null;
+    resting_hr_bpm?: number | null;
+    spo2_pct?: number | null;
+    skin_temp_c?: number | null;
+    steps?: number | null;
+    sleep_total_min?: number | null;
+    notes?: string | null;
+  }) =>
+    z
+      .object({
+        owner_id: z.string().uuid(),
+        recorded_at: z.string().datetime(),
+        hr_bpm: z.number().min(0).max(400).nullable().optional(),
+        resting_hr_bpm: z.number().min(0).max(400).nullable().optional(),
+        spo2_pct: z.number().min(0).max(100).nullable().optional(),
+        skin_temp_c: z.number().min(20).max(45).nullable().optional(),
+        steps: z.number().int().min(0).max(200000).nullable().optional(),
+        sleep_total_min: z.number().min(0).max(1440).nullable().optional(),
+        notes: z.string().max(500).nullable().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const caregiverId = context.userId;
+    await assertScope(data.owner_id, caregiverId, "biometrics:write");
+    const rel = await getActiveRelationship(data.owner_id, caregiverId);
+
+    const { data: row, error } = await supabaseAdmin
+      .from("biometrics")
+      .insert({
+        user_id: data.owner_id,
+        source: "caregiver",
+        recorded_at: data.recorded_at,
+        hr_bpm: data.hr_bpm ?? null,
+        resting_hr_bpm: data.resting_hr_bpm ?? null,
+        spo2_pct: data.spo2_pct ?? null,
+        skin_temp_c: data.skin_temp_c ?? null,
+        steps: data.steps ?? null,
+        sleep_total_min: data.sleep_total_min ?? null,
+        raw_payload: data.notes ? { notes: data.notes } : null,
+        created_by_id: caregiverId,
+        created_by_kind: "caregiver",
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+
+    await logCaregiverWrite(rel.id, data.owner_id, caregiverId, "biometrics", row.id);
+    return { id: row.id };
+  });
