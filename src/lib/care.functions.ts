@@ -6,6 +6,7 @@ import type { CareRole, CareScope } from "./care.scopes";
 import { ROLE_DEFAULT_SCOPES, ROLE_LABELS } from "./care.scopes";
 import { sendTransactionalEmail } from "./email/send";
 import { getRequest } from "@tanstack/react-start/server";
+import { notifyOwnerOfCaregiverWrite } from "./care-notify.server";
 
 function newInviteToken(): string {
   return (
@@ -521,14 +522,14 @@ export const caregiverReadMeds = createServerFn({ method: "POST" })
     await assertScope(data.owner_id, context.userId, "meds:read");
     const { data: meds } = await supabaseAdmin
       .from("medications")
-      .select("id, name, dosage, times_of_day, schedule, is_rescue, active, notes, refill_date, pills_remaining")
+      .select("id, name, dosage, times_of_day, schedule, is_rescue, active, notes, refill_date, pills_remaining, created_by_kind")
       .eq("user_id", data.owner_id)
       .eq("active", true)
       .order("name");
     const since = new Date(Date.now() - 7 * 86400_000).toISOString();
     const { data: doses } = await supabaseAdmin
       .from("medication_doses")
-      .select("id, medication_id, scheduled_at, taken_at, status")
+      .select("id, medication_id, scheduled_at, taken_at, status, created_by_kind")
       .eq("user_id", data.owner_id)
       .gte("scheduled_at", since)
       .order("scheduled_at", { ascending: false })
@@ -562,7 +563,7 @@ export const caregiverReadJournal = createServerFn({ method: "POST" })
     await assertScope(data.owner_id, context.userId, "journal:read");
     const { data: rows } = await supabaseAdmin
       .from("journal_entries")
-      .select("id, captured_at, kind, text, ai_summary, ai_tags")
+      .select("id, captured_at, kind, text, ai_summary, ai_tags, created_by_kind")
       .eq("user_id", data.owner_id)
       .is("archived_at", null)
       .order("captured_at", { ascending: false })
@@ -577,7 +578,7 @@ export const caregiverReadSeizures = createServerFn({ method: "POST" })
     await assertScope(data.owner_id, context.userId, "seizures:read");
     const { data: rows } = await supabaseAdmin
       .from("seizure_events")
-      .select("id, started_at, ended_at, duration_seconds, type, severity, injury, rescue_med_given, notes")
+      .select("id, started_at, ended_at, duration_seconds, type, severity, injury, rescue_med_given, notes, created_by_kind")
       .eq("user_id", data.owner_id)
       .order("started_at", { ascending: false })
       .limit(30);
@@ -700,6 +701,14 @@ export const caregiverMarkDose = createServerFn({ method: "POST" })
     await logCaregiverWrite(rel.id, data.owner_id, caregiverId, "medication_doses", data.dose_id, {
       action: data.action,
     });
+    void notifyOwnerOfCaregiverWrite({
+      ownerId: data.owner_id,
+      caregiverId,
+      relationshipId: rel.id,
+      kind: "dose",
+      resourceId: data.dose_id,
+      summary: `Dose marked ${data.action}`,
+    });
     return { ok: true };
   });
 
@@ -767,6 +776,14 @@ export const caregiverLogSeizure = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     await logCaregiverWrite(rel.id, data.owner_id, caregiverId, "seizure_events", row.id);
+    void notifyOwnerOfCaregiverWrite({
+      ownerId: data.owner_id,
+      caregiverId,
+      relationshipId: rel.id,
+      kind: "seizure",
+      resourceId: row.id,
+      summary: data.notes?.slice(0, 200) ?? undefined,
+    });
     return { id: row.id };
   });
 
@@ -806,6 +823,14 @@ export const caregiverAddJournalEntry = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     await logCaregiverWrite(rel.id, data.owner_id, caregiverId, "journal_entries", row.id);
+    void notifyOwnerOfCaregiverWrite({
+      ownerId: data.owner_id,
+      caregiverId,
+      relationshipId: rel.id,
+      kind: "journal",
+      resourceId: row.id,
+      summary: data.text.slice(0, 200),
+    });
     return { id: row.id };
   });
 
@@ -862,5 +887,12 @@ export const caregiverAddBiometric = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     await logCaregiverWrite(rel.id, data.owner_id, caregiverId, "biometrics", row.id);
+    void notifyOwnerOfCaregiverWrite({
+      ownerId: data.owner_id,
+      caregiverId,
+      relationshipId: rel.id,
+      kind: "biometric",
+      resourceId: row.id,
+    });
     return { id: row.id };
   });
