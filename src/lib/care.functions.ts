@@ -192,8 +192,6 @@ export const setScopes = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const revokeRelationship = createServerFn({ method: "POST" })
-
 /* ---------- Audit log ---------- */
 
 export const listCareAuditLog = createServerFn({ method: "POST" })
@@ -227,6 +225,8 @@ export const listCareAuditLog = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { entries: rows ?? [] };
   });
+
+export const revokeRelationship = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { relationship_id: string }) =>
     z.object({ relationship_id: z.string().uuid() }).parse(input),
