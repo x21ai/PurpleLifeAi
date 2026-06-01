@@ -20,6 +20,7 @@ import {
   caregiverReadJournal,
   caregiverReadMeds,
   caregiverReadOverview,
+  caregiverReadReports,
   caregiverReadSeizures,
   caregiverReadToday,
 } from "@/lib/care.functions";
@@ -32,7 +33,7 @@ export const Route = createFileRoute("/_app/care/$ownerId")({
   component: CareDashboardPage,
 });
 
-type TabKey = "today" | "meds" | "biometrics" | "journal" | "seizures";
+type TabKey = "today" | "meds" | "biometrics" | "journal" | "seizures" | "reports";
 
 function CareDashboardPage() {
   useRouteTheme("light");
@@ -57,6 +58,7 @@ function CareDashboardPage() {
         { key: "biometrics" as TabKey, label: "Biometrics", scope: "biometrics:read" },
         { key: "journal" as TabKey, label: "Journal", scope: "journal:read" },
         { key: "seizures" as TabKey, label: "Seizures", scope: "seizures:read" },
+        { key: "reports" as TabKey, label: "Reports", scope: "reports:read" },
       ].filter((t) => has(t.scope)),
     [scopes.join(",")],
   );
@@ -176,6 +178,11 @@ function CareDashboardPage() {
             {tabs.find((t) => t.key === "seizures") && (
               <TabsContent value="seizures" className="mt-4">
                 <SeizuresPanel ownerId={ownerId} />
+              </TabsContent>
+            )}
+            {tabs.find((t) => t.key === "reports") && (
+              <TabsContent value="reports" className="mt-4">
+                <ReportsPanel ownerId={ownerId} />
               </TabsContent>
             )}
           </Tabs>
