@@ -2,6 +2,7 @@ import * as React from "react";
 import { formatDistanceToNow, format } from "date-fns";
 import { Pencil, Mic, Camera, Video, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CaregiverBadge } from "@/components/care/caregiver-badge";
 
 type Entry = {
   id: string;
@@ -10,6 +11,7 @@ type Entry = {
   text: string | null;
   ai_summary: string | null;
   ai_tags: string[] | null;
+  created_by_kind?: string | null;
 };
 
 const KIND_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -66,6 +68,7 @@ export function JournalEntryReadOnly({ entry }: { entry: Entry }) {
             </span>
           </span>
         </div>
+        <CaregiverBadge createdByKind={entry.created_by_kind} />
       </header>
 
       {entry.text && (
