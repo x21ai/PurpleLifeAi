@@ -701,6 +701,14 @@ export const caregiverMarkDose = createServerFn({ method: "POST" })
     await logCaregiverWrite(rel.id, data.owner_id, caregiverId, "medication_doses", data.dose_id, {
       action: data.action,
     });
+    void notifyOwnerOfCaregiverWrite({
+      ownerId: data.owner_id,
+      caregiverId,
+      relationshipId: rel.id,
+      kind: "dose",
+      resourceId: data.dose_id,
+      summary: `Dose marked ${data.action}`,
+    });
     return { ok: true };
   });
 
@@ -768,6 +776,14 @@ export const caregiverLogSeizure = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     await logCaregiverWrite(rel.id, data.owner_id, caregiverId, "seizure_events", row.id);
+    void notifyOwnerOfCaregiverWrite({
+      ownerId: data.owner_id,
+      caregiverId,
+      relationshipId: rel.id,
+      kind: "seizure",
+      resourceId: row.id,
+      summary: data.notes?.slice(0, 200) ?? undefined,
+    });
     return { id: row.id };
   });
 
@@ -807,6 +823,14 @@ export const caregiverAddJournalEntry = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     await logCaregiverWrite(rel.id, data.owner_id, caregiverId, "journal_entries", row.id);
+    void notifyOwnerOfCaregiverWrite({
+      ownerId: data.owner_id,
+      caregiverId,
+      relationshipId: rel.id,
+      kind: "journal",
+      resourceId: row.id,
+      summary: data.text.slice(0, 200),
+    });
     return { id: row.id };
   });
 
@@ -863,5 +887,12 @@ export const caregiverAddBiometric = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     await logCaregiverWrite(rel.id, data.owner_id, caregiverId, "biometrics", row.id);
+    void notifyOwnerOfCaregiverWrite({
+      ownerId: data.owner_id,
+      caregiverId,
+      relationshipId: rel.id,
+      kind: "biometric",
+      resourceId: row.id,
+    });
     return { id: row.id };
   });
