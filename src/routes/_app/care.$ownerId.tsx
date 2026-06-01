@@ -336,38 +336,39 @@ function BiometricsPanel({ ownerId }: { ownerId: string }) {
   if (q.isLoading) return <Empty>Loading…</Empty>;
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const rows = q.data!.rows;
+
+  if (rows.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+        <p className="font-serif text-lg text-foreground">No biometrics yet</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Once a wearable is connected, the last 30 days appear here.
+        </p>
+      </div>
+    );
+  }
+
+  // Build per-metric series matching the patient /biometrics page.
+  const seriesByMetric: Record<MetricKey, Array<{ date: string; value: number | null }>> =
+    {} as never;
+  for (const key of METRIC_ORDER) {
+    const meta = METRICS[key];
+    seriesByMetric[key] = rows.map((r: any) => {
+      const raw = r[meta.column];
+      const num = typeof raw === "number" ? raw : raw == null ? null : Number(raw);
+      return {
+        date: String(r.recorded_at ?? ""),
+        value: Number.isFinite(num as number) ? (num as number) : null,
+      };
+    });
+  }
+
   return (
-    <Section>
-      <h2 className="font-serif text-xl text-foreground">Biometrics (last 7 days)</h2>
-      {rows.length === 0 ? (
-        <Empty>No biometrics yet.</Empty>
-      ) : (
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-muted-foreground uppercase tracking-wide">
-                <th className="py-2 pr-3">When</th>
-                <th className="py-2 pr-3">HR</th>
-                <th className="py-2 pr-3">HRV</th>
-                <th className="py-2 pr-3">Sleep</th>
-                <th className="py-2 pr-3">SpO₂</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {rows.map((r: any, i: number) => (
-                <tr key={i} className="text-foreground/80">
-                  <td className="py-2 pr-3 whitespace-nowrap">{new Date(r.recorded_at).toLocaleString()}</td>
-                  <td className="py-2 pr-3">{r.hr_bpm ?? "—"}</td>
-                  <td className="py-2 pr-3">{r.hrv_rmssd_ms ?? "—"}</td>
-                  <td className="py-2 pr-3">{r.sleep_score ?? "—"}</td>
-                  <td className="py-2 pr-3">{r.spo2_pct ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </Section>
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+      {METRIC_ORDER.map((m) => (
+        <MetricCard key={m} metric={m} series={seriesByMetric[m]} disableLink />
+      ))}
+    </div>
   );
 }
 
