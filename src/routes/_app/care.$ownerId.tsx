@@ -390,38 +390,31 @@ function JournalPanel({
   if (q.isLoading) return <Empty>Loading…</Empty>;
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const entries = q.data!.entries;
+  if (entries.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+        <p className="text-sm text-muted-foreground">No recent journal entries.</p>
+      </div>
+    );
+  }
   return (
-    <Section>
-      <h2 className="font-serif text-xl text-foreground">Journal</h2>
-      {entries.length === 0 ? (
-        <Empty>No recent entries.</Empty>
-      ) : (
-        <ul className="mt-3 space-y-3">
-          {entries.map((e: any) => (
-            <li key={e.id} className="rounded-xl border border-border p-3">
-              <p className="text-xs text-muted-foreground">
-                {new Date(e.captured_at).toLocaleString()}
-                {e.kind && e.kind !== "text" ? ` · ${e.kind}` : ""}
-              </p>
-              {e.ai_summary && <p className="mt-1 text-sm font-medium text-foreground">{e.ai_summary}</p>}
-              {e.text && (
-                <p className="mt-1 text-sm text-foreground/80 whitespace-pre-wrap line-clamp-6">{e.text}</p>
-              )}
-              {canComment && (
-                <div className="mt-2">
-                  <ProposeChangeDialog
-                    relationshipId={relationshipId}
-                    type="add_journal_comment"
-                    targetId={e.id}
-                    targetLabel={e.ai_summary ?? new Date(e.captured_at).toLocaleDateString()}
-                  />
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </Section>
+    <div className="space-y-3">
+      {entries.map((e: any) => (
+        <div key={e.id}>
+          <JournalEntryReadOnly entry={e} />
+          {canComment && (
+            <div className="mt-2 flex justify-end">
+              <ProposeChangeDialog
+                relationshipId={relationshipId}
+                type="add_journal_comment"
+                targetId={e.id}
+                targetLabel={e.ai_summary ?? new Date(e.captured_at).toLocaleDateString()}
+              />
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -435,32 +428,7 @@ function SeizuresPanel({ ownerId }: { ownerId: string }) {
   if (q.isLoading) return <Empty>Loading…</Empty>;
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const events = q.data!.events;
-  return (
-    <Section>
-      <h2 className="font-serif text-xl text-foreground">Seizure events</h2>
-      {events.length === 0 ? (
-        <Empty>None logged.</Empty>
-      ) : (
-        <ul className="mt-3 divide-y divide-border">
-          {events.map((e: any) => (
-            <li key={e.id} className="py-3 first:pt-0 last:pb-0">
-              <p className="text-sm font-medium text-foreground">
-                {new Date(e.started_at).toLocaleString()}
-                {e.duration_seconds ? ` · ${Math.round(e.duration_seconds / 60) || 1} min` : ""}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {e.type ?? "Unspecified"}
-                {typeof e.severity === "number" ? ` · severity ${e.severity}` : ""}
-                {e.rescue_med_given ? " · rescue med" : ""}
-                {e.injury ? " · injury" : ""}
-              </p>
-              {e.notes && <p className="mt-1 text-sm text-foreground/80 whitespace-pre-wrap">{e.notes}</p>}
-            </li>
-          ))}
-        </ul>
-      )}
-    </Section>
-  );
+  return <SeizureListReadOnly events={events} />;
 }
 
 /* ----- Reports ----- */
@@ -473,26 +441,5 @@ function ReportsPanel({ ownerId }: { ownerId: string }) {
   if (q.isLoading) return <Empty>Loading…</Empty>;
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const reports = q.data!.reports;
-  return (
-    <Section>
-      <h2 className="font-serif text-xl text-foreground">Reports</h2>
-      {reports.length === 0 ? (
-        <Empty>No reports uploaded yet.</Empty>
-      ) : (
-        <ul className="mt-3 divide-y divide-border">
-          {reports.map((r: any) => (
-            <li key={r.id} className="py-3 first:pt-0 last:pb-0">
-              <p className="text-sm font-medium text-foreground">{r.title}</p>
-              <p className="text-xs text-muted-foreground">
-                {r.report_type ?? "Uncategorized"}
-                {r.report_date ? ` · ${new Date(r.report_date).toLocaleDateString()}` : ""}
-                {" · "}
-                {r.status}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Section>
-  );
+  return <ReportsListReadOnly reports={reports} />;
 }
