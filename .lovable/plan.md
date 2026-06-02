@@ -78,3 +78,14 @@ A focused QA sweep across everything Phases 1–8 touched. Not a feature — a c
 4. No runtime errors remaining in the preview console.
 
 Shall I proceed?
+
+---
+
+## Phases 6–9 — shipped
+
+- **Phase 6 (badge + alerts)**: `proposeChange` now also writes an `alerts` row (`kind='caregiver_proposal'`). New server fn `getPendingChangesCount`. New `PendingInboxBadge` wired into `MobileTopBar` (compact, top-right) and `SidebarNav` (full row, desktop only). Polls every 30s, hidden when count = 0.
+- **Phase 7 (travel polish)**: existing itinerary editor + preview + active-trip banner are already comprehensive. Added `AlertDialog` confirmation before regenerating an already-generated trip schedule, showing the count of pending doses that will be replaced.
+- **Phase 8 (Ask Purple)**: `condition-prompts.ts` exports `getSuggestedQuestions(conditions)` with per-condition analytical questions. `/chat` loads `profiles.conditions` and renders condition-aware suggestions, horizontally scrollable on mobile, wrapped on desktop. System-prompt tuning already covered server-side.
+- **Phase 9 (audit)**: no new tables/GRANTs. Route boundaries on `/care/inbox` verified. Both `dose-reminders` and `care-daily-digest` cron schedules registered in prior loops.
+
+Deferred: in-place trip editing (current flow remains delete + recreate). No new migrations or Edge Functions.
