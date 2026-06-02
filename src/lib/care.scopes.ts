@@ -41,6 +41,23 @@ export const ROLE_DESCRIPTIONS: Record<CareRole, string> = {
   viewer: "Only sees your Today screen. Nothing else.",
 };
 
+// Purely a human label for how the caregiver relates to the owner.
+// Does NOT affect permissions — those still come from CareRole + CareScope.
+export const RELATIONSHIP_LABELS = [
+  "Parent",
+  "Child",
+  "Sibling",
+  "Spouse",
+  "Partner",
+  "Friend",
+  "Doctor",
+  "Nurse",
+  "Therapist",
+  "Caregiver",
+  "Other",
+] as const;
+export type RelationshipLabel = (typeof RELATIONSHIP_LABELS)[number];
+
 // Sensible default scope sets per role. The owner can still toggle anything off.
 export const ROLE_DEFAULT_SCOPES: Record<CareRole, CareScope[]> = {
   emergency: ["seizures:read", "profile:read", "location:read", "alerts:receive"],
