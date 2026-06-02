@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, Copy, Download, Loader2, Mail, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Copy, Download, Loader2, Mail, MessageCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,7 @@ import {
   setCareDigestPreference,
   getCareDigestPreference,
 } from "@/lib/care.functions";
+import { getOrCreateDirectThread } from "@/lib/care-chat.functions";
 import {
   CARE_RESOURCES,
   CARE_VERBS,
