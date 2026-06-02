@@ -43,6 +43,7 @@ import { Route as AppMyHealthRouteImport } from './routes/_app/my-health'
 import { Route as AppMedsRouteImport } from './routes/_app/meds'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
 import { Route as AppCommunityNewRouteImport } from './routes/_app/community-new'
+import { Route as AppChatCareRouteImport } from './routes/_app/chat-care'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
 import { Route as AppCharterRouteImport } from './routes/_app/charter'
 import { Route as AppAdminRouteImport } from './routes/_app/admin'
@@ -248,6 +249,11 @@ const AppInsightsRoute = AppInsightsRouteImport.update({
 const AppCommunityNewRoute = AppCommunityNewRouteImport.update({
   id: '/community-new',
   path: '/community-new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppChatCareRoute = AppChatCareRouteImport.update({
+  id: '/chat-care',
+  path: '/chat-care',
   getParentRoute: () => AppRoute,
 } as any)
 const AppChatRoute = AppChatRouteImport.update({
@@ -465,6 +471,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AppAdminRouteWithChildren
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
+  '/chat-care': typeof AppChatCareRoute
   '/community-new': typeof AppCommunityNewRoute
   '/insights': typeof AppInsightsRoute
   '/meds': typeof AppMedsRouteWithChildren
@@ -536,6 +543,7 @@ export interface FileRoutesByTo {
   '/account': typeof AppAccountRoute
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
+  '/chat-care': typeof AppChatCareRoute
   '/community-new': typeof AppCommunityNewRoute
   '/insights': typeof AppInsightsRoute
   '/meds': typeof AppMedsRouteWithChildren
@@ -610,6 +618,7 @@ export interface FileRoutesById {
   '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/charter': typeof AppCharterRoute
   '/_app/chat': typeof AppChatRoute
+  '/_app/chat-care': typeof AppChatCareRoute
   '/_app/community-new': typeof AppCommunityNewRoute
   '/_app/insights': typeof AppInsightsRoute
   '/_app/meds': typeof AppMedsRouteWithChildren
@@ -684,6 +693,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/charter'
     | '/chat'
+    | '/chat-care'
     | '/community-new'
     | '/insights'
     | '/meds'
@@ -755,6 +765,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/charter'
     | '/chat'
+    | '/chat-care'
     | '/community-new'
     | '/insights'
     | '/meds'
@@ -828,6 +839,7 @@ export interface FileRouteTypes {
     | '/_app/admin'
     | '/_app/charter'
     | '/_app/chat'
+    | '/_app/chat-care'
     | '/_app/community-new'
     | '/_app/insights'
     | '/_app/meds'
@@ -1151,6 +1163,13 @@ declare module '@tanstack/react-router' {
       path: '/community-new'
       fullPath: '/community-new'
       preLoaderRoute: typeof AppCommunityNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/chat-care': {
+      id: '/_app/chat-care'
+      path: '/chat-care'
+      fullPath: '/chat-care'
+      preLoaderRoute: typeof AppChatCareRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/chat': {
@@ -1497,6 +1516,7 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppCharterRoute: typeof AppCharterRoute
   AppChatRoute: typeof AppChatRoute
+  AppChatCareRoute: typeof AppChatCareRoute
   AppCommunityNewRoute: typeof AppCommunityNewRoute
   AppInsightsRoute: typeof AppInsightsRoute
   AppMedsRoute: typeof AppMedsRouteWithChildren
@@ -1525,6 +1545,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRouteWithChildren,
   AppCharterRoute: AppCharterRoute,
   AppChatRoute: AppChatRoute,
+  AppChatCareRoute: AppChatCareRoute,
   AppCommunityNewRoute: AppCommunityNewRoute,
   AppInsightsRoute: AppInsightsRoute,
   AppMedsRoute: AppMedsRouteWithChildren,
