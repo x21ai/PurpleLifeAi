@@ -303,7 +303,6 @@ function TodayPanel({
   const { forecast, alerts } = q.data!;
   return (
     <div className="space-y-6">
-      <CaregiverAlertsCard ownerId={ownerId} onJump={onJump as (t: string) => void} />
       <Section>
         <p className="label-eyebrow text-muted-foreground">Today's read</p>
         {forecast ? (
