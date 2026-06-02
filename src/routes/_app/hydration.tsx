@@ -6,7 +6,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { listHydrationForDay } from "@/lib/hydration.functions";
 import { listAurasForDay } from "@/lib/auras.functions";
-import { HydrationTimeline } from "@/components/hydration/hydration-timeline";
+import { HydrationTimeline, type HydrationRow } from "@/components/hydration/hydration-timeline";
 import { QuickAddWater } from "@/components/hydration/quick-add-water";
 import { LogAuraSheet } from "@/components/hydration/log-aura-sheet";
 import { Button } from "@/components/ui/button";
@@ -104,7 +104,7 @@ function HydrationPage() {
       <div className="mt-6">
         <HydrationTimeline
           day={day}
-          hydration={hydration.data ?? []}
+          hydration={(hydration.data ?? []) as HydrationRow[]}
           auras={auras.data ?? []}
         />
       </div>
