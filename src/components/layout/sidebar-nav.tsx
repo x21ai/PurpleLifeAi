@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { navItems, type NavItem } from "./nav-items";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+import { PendingInboxBadge } from "@/components/care/pending-inbox-badge";
 
 const NAV_I18N: Record<string, string> = {
   "/today": "nav.today",
@@ -50,6 +51,9 @@ export function SidebarNav() {
             />
           );
         })}
+        <div className="hidden lg:block">
+          <PendingInboxBadge variant="full" />
+        </div>
       </nav>
       {settings && (
         <div className="border-t border-border p-2 lg:p-3">
