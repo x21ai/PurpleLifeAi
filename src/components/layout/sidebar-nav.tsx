@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { PendingInboxBadge } from "@/components/care/pending-inbox-badge";
 import { CaregiverNavLink } from "./caregiver-nav-link";
+import { RoleSwitcher } from "./role-switcher";
 
 const NAV_I18N: Record<string, string> = {
   "/today": "nav.today",
@@ -25,7 +26,7 @@ export function SidebarNav() {
   return (
     <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-16 lg:w-60 border-r border-border bg-sidebar text-sidebar-foreground">
       <div className="flex items-center h-20 px-4 lg:px-6 border-b border-border">
-        <Link to="/today" className="flex items-center" aria-label="Purple — home">
+        <Link to="/today" className="flex items-center flex-1" aria-label="Purple — home">
           <span
             className="hidden lg:inline wordmark text-[14px] text-foreground"
           >
@@ -37,6 +38,9 @@ export function SidebarNav() {
             aria-hidden
           />
         </Link>
+        <div className="hidden lg:block">
+          <RoleSwitcher />
+        </div>
       </div>
       <nav className="flex-1 py-6 px-2 lg:px-3 space-y-1" aria-label="Primary">
         {top.map((item) => {
