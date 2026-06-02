@@ -589,6 +589,23 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
             />
           </div>
           <div>
+            <Label htmlFor="invite-relationship">How are they related to you?</Label>
+            <select
+              id="invite-relationship"
+              value={relationshipLabel}
+              onChange={(e) => setRelationshipLabelValue(e.target.value as RelationshipLabel | "")}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+            >
+              <option value="">Not specified</option>
+              {RELATIONSHIP_LABELS.map((l) => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Just a label so you remember who's who. Doesn't change what they can see.
+            </p>
+          </div>
+          <div>
             <Label>What kind of access?</Label>
             <div className="mt-2 grid gap-2">
               {(["emergency", "caregiver", "provider", "viewer"] as CareRole[]).map((r) => (
