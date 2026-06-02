@@ -517,6 +517,26 @@ function TravelPage() {
                     >
                       <CalendarDays className="h-3 w-3 mr-1" /> Export to calendar
                     </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full h-7 px-3 text-xs"
+                      onClick={() =>
+                        setEditingTrip({
+                          id: t.id,
+                          label: t.label,
+                          destination_tz: t.destination_tz,
+                          depart_at: t.depart_at,
+                          return_at: t.return_at,
+                          legs: t.legs,
+                          shift_strategy: t.shift_strategy,
+                          schedule_generated_at: t.schedule_generated_at,
+                        })
+                      }
+                    >
+                      <Pencil className="h-3 w-3 mr-1" /> Edit
+                    </Button>
                   </div>
                 </div>
                 <button
