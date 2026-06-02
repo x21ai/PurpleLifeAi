@@ -290,6 +290,11 @@ function CareDashboardPage() {
                 <ReportsPanel ownerId={ownerId} />
               </TabsContent>
             )}
+            {tabs.find((t) => t.key === "chat") && (
+              <TabsContent value="chat" className="mt-4">
+                <ChatPanel relationshipId={relationship.id} ownerName={displayName} />
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       )}
