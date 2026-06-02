@@ -591,7 +591,7 @@ export const caregiverReadOverview = createServerFn({ method: "POST" })
 
     const { data: profile } = await supabaseAdmin
       .from("profiles")
-      .select("first_name, last_name, community_display_name, diagnosis, timezone")
+      .select("first_name, last_name, community_display_name, diagnosis, timezone, phone, pronouns")
       .eq("id", data.owner_id)
       .maybeSingle();
 
