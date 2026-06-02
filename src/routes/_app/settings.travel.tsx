@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronLeft, Plane, Trash2, Loader2, CalendarDays, Plus, Wand2, Eye } from "lucide-react";
+import { ChevronLeft, Plane, Trash2, Loader2, CalendarDays, Plus, Wand2, Eye, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { generateTripSchedule, previewTripSchedule } from "@/lib/travel.functions";
 import { useTranslation } from "react-i18next";
 import { DualTime } from "@/components/travel/dual-time";
+import { ItineraryEditor, legsAreChronological, type LegDraft } from "@/components/travel/itinerary-editor";
+import { TripEditDialog, type EditableTrip } from "@/components/travel/trip-edit-dialog";
 
 export const Route = createFileRoute("/_app/settings/travel")({
   head: () => ({ meta: [{ title: "Travel mode — Purple" }] }),
@@ -72,8 +74,6 @@ type Trip = {
   shift_strategy: string | null;
   schedule_generated_at: string | null;
 };
-
-type LegDraft = { tz: string; localAt: string; label: string };
 
 const COMMON_TZS = [
   "America/New_York",
