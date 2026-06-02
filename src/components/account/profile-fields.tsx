@@ -13,9 +13,11 @@ export function ProfileFields() {
   const [first, setFirst] = React.useState("");
   const [last, setLast] = React.useState("");
   const [phone, setPhone] = React.useState(session?.user?.phone ?? "");
+  const [pronouns, setPronouns] = React.useState("");
   const [loading, setLoading] = React.useState(true);
   const [savingName, setSavingName] = React.useState(false);
   const [savingPhone, setSavingPhone] = React.useState(false);
+  const [savingPronouns, setSavingPronouns] = React.useState(false);
 
   React.useEffect(() => {
     if (!userId) return;
@@ -23,12 +25,14 @@ export function ProfileFields() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("first_name, last_name")
+        .select("first_name, last_name, phone, pronouns")
         .eq("id", userId)
         .maybeSingle();
       if (cancelled) return;
       setFirst(data?.first_name ?? "");
       setLast(data?.last_name ?? "");
+      if ((data as any)?.phone) setPhone((data as any).phone);
+      setPronouns((data as any)?.pronouns ?? "");
       setLoading(false);
     })();
     return () => {
@@ -50,10 +54,31 @@ export function ProfileFields() {
 
   const savePhone = async () => {
     setSavingPhone(true);
-    const { error } = await supabase.auth.updateUser({ phone: phone.trim() || undefined });
+    const trimmed = phone.trim();
+    // Save to profiles.phone so the people you care for (and the people who
+    // care for you) can see/contact it. Best-effort sync to auth too.
+    const { error } = await supabase
+      .from("profiles")
+      .update({ phone: trimmed || null })
+      .eq("id", userId!);
+    if (!error && trimmed) {
+      void supabase.auth.updateUser({ phone: trimmed }).catch(() => {});
+    }
     setSavingPhone(false);
     if (error) toast.error(error.message);
-    else toast.success("Phone updated. Check for a verification code if requested.");
+    else toast.success("Phone updated");
+  };
+
+  const savePronouns = async () => {
+    if (!userId) return;
+    setSavingPronouns(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ pronouns: pronouns.trim() || null })
+      .eq("id", userId);
+    setSavingPronouns(false);
+    if (error) toast.error("Couldn't save pronouns");
+    else toast.success("Pronouns updated");
   };
 
   return (
