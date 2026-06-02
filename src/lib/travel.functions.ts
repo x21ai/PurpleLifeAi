@@ -137,10 +137,23 @@ export const updateTrip = createServerFn({ method: "POST" })
       }
     }
 
-    const update: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(patch)) {
-      if (v !== undefined) update[k] = v;
-    }
+    const update: {
+      label?: string | null;
+      destination_tz?: string;
+      depart_at?: string;
+      return_at?: string;
+      legs?: typeof patch.legs;
+      shift_strategy?: "home" | "snap" | "gradual";
+      shift_hours_per_day?: number;
+    } = {};
+    if (patch.label !== undefined) update.label = patch.label;
+    if (patch.destination_tz !== undefined) update.destination_tz = patch.destination_tz;
+    if (patch.depart_at !== undefined) update.depart_at = patch.depart_at;
+    if (patch.return_at !== undefined) update.return_at = patch.return_at;
+    if (patch.legs !== undefined) update.legs = patch.legs;
+    if (patch.shift_strategy !== undefined) update.shift_strategy = patch.shift_strategy;
+    if (patch.shift_hours_per_day !== undefined)
+      update.shift_hours_per_day = patch.shift_hours_per_day;
     if (Object.keys(update).length === 0) {
       return { ok: true, doseAffectingChanged: false, hasSchedule: !!prev.schedule_generated_at };
     }
