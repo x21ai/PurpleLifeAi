@@ -513,9 +513,17 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<CareRole>("caregiver");
+  const [relationshipLabel, setRelationshipLabelValue] = useState<RelationshipLabel | "">("");
   const invite = useServerFn(inviteCaregiver);
   const m = useMutation({
-    mutationFn: () => invite({ data: { email, role } }),
+    mutationFn: () =>
+      invite({
+        data: {
+          email,
+          role,
+          relationship_label: relationshipLabel || null,
+        },
+      }),
     onSuccess: (res: { acceptUrl?: string; emailSent?: boolean }) => {
       const url = res?.acceptUrl;
       if (res?.emailSent) {
