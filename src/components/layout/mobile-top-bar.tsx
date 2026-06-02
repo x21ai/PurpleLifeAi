@@ -4,6 +4,7 @@ import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
 import { navItems } from "./nav-items";
 import { cn } from "@/lib/utils";
+import { PendingInboxBadge } from "@/components/care/pending-inbox-badge";
 
 export function MobileTopBar() {
   const [open, setOpen] = useState(false);
@@ -17,7 +18,9 @@ export function MobileTopBar() {
       <Link to="/today" className="wordmark text-[12px] text-foreground" aria-label="Purple — home">
         Purple
       </Link>
-      <Sheet open={open} onOpenChange={setOpen}>
+      <div className="flex items-center gap-1">
+        <PendingInboxBadge />
+        <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger
           aria-label="Open menu"
           className="rounded-md p-2 -mr-2 text-muted-foreground hover:text-foreground"
@@ -65,7 +68,8 @@ export function MobileTopBar() {
             </a>
           </div>
         </SheetContent>
-      </Sheet>
+        </Sheet>
+      </div>
     </header>
   );
 }
