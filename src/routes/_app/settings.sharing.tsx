@@ -32,6 +32,7 @@ import {
   listPeopleSharingWithMe,
   revokeRelationship,
   setScopes,
+  setRelationshipLabel,
   exportCareAuditCsv,
   listOwnerAuditFeed,
   pauseAllWrites,
@@ -46,6 +47,8 @@ import {
   ROLE_DESCRIPTIONS,
   ROLE_LABELS,
   SCOPE_LABELS,
+  RELATIONSHIP_LABELS,
+  type RelationshipLabel,
   type CareRole,
   type CareScope,
 } from "@/lib/care.scopes";
