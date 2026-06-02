@@ -54,7 +54,7 @@ export const Route = createFileRoute("/_app/care/$ownerId")({
   component: CareDashboardPage,
 });
 
-type TabKey = "today" | "meds" | "biometrics" | "journal" | "seizures" | "reports";
+type TabKey = "today" | "meds" | "biometrics" | "journal" | "seizures" | "reports" | "chat";
 
 function CareDashboardPage() {
   useRouteTheme("light");
@@ -80,6 +80,7 @@ function CareDashboardPage() {
         { key: "journal" as TabKey, label: "Journal", scope: "journal:read" },
         { key: "seizures" as TabKey, label: "Seizures", scope: "seizures:read" },
         { key: "reports" as TabKey, label: "Reports", scope: "reports:read" },
+        { key: "chat" as TabKey, label: "Chat", scope: "today:read" },
       ].filter((t) => has(t.scope)),
     [scopes.join(",")],
   );
