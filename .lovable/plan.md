@@ -1,109 +1,103 @@
-# Phase 3 — Caregiver dashboard polish
+# Phase 4 — Owner controls & audit, then Phase 5 — Pending-changes inbox
 
-Today, a caregiver lands on `/care/$ownerId` only via the invite-accept redirect or a bookmarked URL. There's no home, no way to switch between people they care for, no signal of what's new since they last checked, and the per-owner view assumes they already know which tab matters. Phase 3 fixes those gaps.
+Settings → Sharing already ships scope toggles, revoke, audit log (in the scope sheet), and a pending approvals strip. Phase 4 fills the gaps the owner actually needs day-to-day; Phase 5 elevates pending approvals into a first-class inbox.
 
-## Scope
+---
 
-1. **`/care` index — owners switcher**
-2. **Per-owner unread / activity counts** surfaced on the switcher and tab nav
-3. **Caregiver alerts digest** on each owner's Today tab (what changed since last visit)
-4. **Responsive nav refinements** across mobile / tablet / desktop
+## Phase 4 — Owner controls & audit
 
-Step 5 / Phase 2 work (audit log, pending-changes loop, sticky tabs) is already shipped — Phase 3 does not redo any of it.
+### 4.1 Sharing page polish (`/settings/sharing`)
+- Replace `confirm(...)` revoke with a real `AlertDialog` showing caregiver email, role, count of writes to-date, and a hard "Revoke access" red button.
+- Move the audit log out of the per-relationship sheet into a top-level **"Activity"** section on the page so the owner can see *all* caregiver activity in one place, filterable by caregiver and by resource (journal/meds/biometrics/seizures).
+- Add **"Export CSV"** button on the Activity section → calls new server fn `exportCareAuditCsv` which returns a CSV string of `{ at, caregiver_email, action, resource_type, resource_id, metadata }` rows for the owner. Browser triggers download.
+- Add a per-scope **"Pause all writes"** master switch on each relationship row — flips every `*:write` and `*:propose` scope off in one call (uses existing `setScopes`); shows current state ("Read-only" / "Can write").
 
-## 1. `/care` index — owners switcher
+### 4.2 Daily caregiver-activity digest email
+- New server-only helper `src/lib/care-digest.server.ts` builds a per-owner summary of the previous 24h from `care_audit_log` joined with caregiver profiles: who did what, on which resource, with counts and one-line previews (journal text truncated to 120 chars).
+- New email template `src/lib/email-templates/care-daily-digest.tsx` registered in `registry.ts`.
+- New public cron route `src/routes/api/public/cron/care-daily-digest.ts` — runs once/day; queries owners with active relationships and at least one audit row in the last 24h, sends digest via the existing queue. Skip owners with `consent_share_with_caregivers = false` or who have opted out (new column, see migration).
+- New owner preference toggle on `/settings/sharing` ("Email me a daily summary of caregiver activity"). Default **on** for owners with ≥1 active caregiver.
 
-New route `src/routes/_app/care.index.tsx` (path `/care`).
-
-- Server fn `listCaregiverOwners` in `src/lib/care.functions.ts`:
-  - Auth-gated. For the current user as caregiver, returns active `care_relationships` joined with the owner's `profiles` (display_name, avatar_url, conditions[]) plus per-owner activity counters since `last_seen_at` (see step 2).
-- UI: list of owner cards (avatar, name, condition chips, "new since last visit" badge, last-activity timestamp). Tapping a card → `/care/$ownerId`.
-- Empty state: "No one is sharing with you yet" + link to docs.
-- Pending invites surfaced inline ("Devyn invited you — Accept").
-
-After accepting an invite, redirect goes to `/care` (not directly to `/care/$ownerId`) when the caregiver has 2+ relationships; single-owner caregivers keep current direct redirect.
-
-## 2. Per-owner unread / activity counts
-
-New tiny table `care_caregiver_visits` (`relationship_id` PK, `caregiver_id`, `last_seen_at timestamptz`, `last_seen_by_tab jsonb`). RLS: caregiver can read/write only their own row.
-
-Server fns:
-- `markOwnerSeen({ owner_id, tab? })` — upserts `last_seen_at` (and per-tab timestamp if `tab` passed). Called from `/care/$ownerId` on mount and on tab change.
-- `getOwnerActivityCounts({ owner_id })` — returns `{ today, meds, biometrics, journal, seizures, reports }` counts of rows created/updated since the caregiver's last visit (or last per-tab visit for the matching tab).
-
-Wire counts:
-- `/care` switcher: single "12 new" badge per owner card.
-- `/care/$ownerId` tab nav: small numeric badge on each tab with unread > 0; cleared on tab visit.
-
-## 3. Caregiver alerts digest
-
-New `CaregiverAlertsCard` on the Today tab of `/care/$ownerId`.
-
-Content (computed in a new `caregiverReadAlerts` serverFn, owner-scoped, scope-guarded):
-- **Missed doses** in the last 24h (`status='missed'`).
-- **Seizures** in the last 24h.
-- **Biometrics out of range** (reuse existing alert detection from `src/lib/...` if available; otherwise simple threshold check on HR / SpO2 / temp).
-- **New journal entries** since last visit (count + link).
-
-Each row links to the relevant tab and is dismissible (writes a row to `care_caregiver_visits.dismissed_alert_ids jsonb`).
-
-## 4. Responsive nav refinements
-
-Verified on 390 (mobile), 820 (tablet), 1280+ (desktop):
-
-- **Mobile**: `/care/$ownerId` tab nav becomes a horizontally-scrollable pill row pinned under the header; current sticky behavior preserved. Owner switcher is a top-of-screen dropdown ("Devyn ▾") that opens a sheet with the full owners list — saves a round-trip to `/care` for multi-owner caregivers.
-- **Tablet**: switcher dropdown collapses to icon+name; tab nav fits without scroll.
-- **Desktop**: 2-column layout on `/care` (owner cards as grid). `/care/$ownerId` keeps current single-column shell; switcher dropdown sits next to the back button in the header.
-
-## Files
-
-- New
-  - `src/routes/_app/care.index.tsx`
-  - `src/components/care/owner-switcher.tsx` (dropdown used in header)
-  - `src/components/care/owner-card.tsx`
-  - `src/components/care/caregiver-alerts-card.tsx`
-  - `supabase/migrations/<ts>_care_caregiver_visits.sql`
-- Edited
-  - `src/lib/care.functions.ts` — add `listCaregiverOwners`, `markOwnerSeen`, `getOwnerActivityCounts`, `caregiverReadAlerts`
-  - `src/routes/_app/care.$ownerId.tsx` — mount switcher in header, alerts card on Today, unread badges on tab triggers, call `markOwnerSeen` on mount + tab change
-  - `src/routes/care.accept.tsx` — redirect target logic (single-owner → ownerId, multi-owner → `/care`)
-  - `.lovable/plan.md` — append Phase 3 record
-
-## Migration (single block)
-
+### 4.3 Migration
 ```sql
-CREATE TABLE public.care_caregiver_visits (
-  relationship_id uuid PRIMARY KEY REFERENCES public.care_relationships(id) ON DELETE CASCADE,
-  caregiver_id uuid NOT NULL,
-  last_seen_at timestamptz NOT NULL DEFAULT now(),
-  last_seen_by_tab jsonb NOT NULL DEFAULT '{}'::jsonb,
-  dismissed_alert_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.care_caregiver_visits TO authenticated;
-GRANT ALL ON public.care_caregiver_visits TO service_role;
-ALTER TABLE public.care_caregiver_visits ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "caregiver reads own visits" ON public.care_caregiver_visits
-  FOR SELECT TO authenticated USING (caregiver_id = auth.uid());
-CREATE POLICY "caregiver writes own visits" ON public.care_caregiver_visits
-  FOR ALL TO authenticated USING (caregiver_id = auth.uid()) WITH CHECK (caregiver_id = auth.uid());
+ALTER TABLE public.profiles
+  ADD COLUMN care_daily_digest_enabled boolean NOT NULL DEFAULT true;
 ```
 
-## Non-negotiables
+### 4.4 pg_cron schedule
+Add a daily job (08:00 UTC) hitting `/api/public/cron/care-daily-digest` with the shared cron secret (same pattern as `dose-reminders`).
 
-- No new Edge Functions.
-- Devyn's own routes (`/today`, `/meds`, etc.) untouched.
-- All counter / alert work happens server-side; client only renders.
-- Mobile (390), tablet (820), desktop (1280) all verified before claiming done.
+---
+
+## Phase 5 — Pending-changes inbox UI
+
+Today, pending caregiver proposals appear as a small strip at the top of `/settings/sharing` with text-only approve/reject. Phase 5 turns that into a real review experience.
+
+### 5.1 New route `/care/inbox` (owner-facing)
+- File `src/routes/_app/care.inbox.tsx`, linked from Settings → Sharing and from a new badge on the top bar when `pending.count > 0`.
+- Server fn `listPendingChangesDetailed` (extends existing `listPendingChanges`) returns each pending change with: caregiver profile, target row snapshot (current value from the live table), proposed payload, and a computed **diff** (server-side, field-by-field) for known `type` values (`add_journal_comment`, `add_meds_note`, `propose_med_change`, `propose_journal_edit`, etc.).
+- UI per row: caregiver avatar + name, change type, side-by-side **Current → Proposed** diff with added/removed fields highlighted (semantic tokens `--success` / `--destructive`), free-form decision note input, **Approve** / **Reject** buttons. Approve writes through to the target table inside `decidePendingChange` (extends existing fn to actually apply known change types, not just mark approved).
+- Empty state: "All caught up — no pending changes from caregivers."
+
+### 5.2 Notifications
+- When a caregiver creates a `pending_change`, fire an in-app alert via existing `alerts` table (`kind='caregiver_proposal'`) and an email using the existing `caregiver-write-notice` template (already wired) — link points to `/care/inbox`.
+- After owner decides, the existing `caregiver-proposal-decision` email already notifies the caregiver — keep as-is.
+
+### 5.3 Strip on `/settings/sharing`
+Collapses to a single line: **"3 changes waiting for you → Open inbox"** linking to `/care/inbox`. Removes the inline approve/reject buttons (kept in the inbox).
+
+### 5.4 Files
+
+**New**
+- `src/routes/_app/care.inbox.tsx`
+- `src/components/care/pending-change-row.tsx`
+- `src/components/care/pending-change-diff.tsx`
+- `src/components/care/revoke-relationship-dialog.tsx`
+- `src/components/care/audit-activity-section.tsx`
+- `src/lib/care-digest.server.ts`
+- `src/lib/email-templates/care-daily-digest.tsx`
+- `src/routes/api/public/cron/care-daily-digest.ts`
+- One migration: `care_daily_digest_enabled` column + pg_cron job
+
+**Edited**
+- `src/lib/care.functions.ts` — `exportCareAuditCsv`, `listPendingChangesDetailed`, extend `decidePendingChange` to apply approved writes, extend `setScopes` use via new `pauseAllWrites` helper (or just call setScopes from the UI), preference update for digest
+- `src/lib/email-templates/registry.ts` — register digest template
+- `src/routes/_app/settings.sharing.tsx` — alert-dialog revoke, top-level Activity section, digest toggle, collapsed pending strip
+- `src/components/layout/mobile-top-bar.tsx` + sidebar nav — pending-inbox badge when `pending.count > 0`
+- `.lovable/plan.md` — append Phase 4 + 5 records
+
+---
+
+## Non-negotiables
+- No new Edge Functions (cron uses TanStack server route at `/api/public/cron/*`, same pattern as `dose-reminders`).
+- Caregiver UX (`/care/*`) unaffected aside from the proposal-creation success toast updating to mention "the inbox".
+- All three viewports verified: mobile (390), tablet (820), desktop (1280+).
+- All writes inside `decidePendingChange` for approved changes go through `supabaseAdmin` server-side and log to `care_audit_log` (caregiver as actor, owner as patient).
 
 ## Gate
+1. Sign in as Devyn (owner), `/settings/sharing` → see Activity section listing recent caregiver writes, click **Export CSV**, file downloads with correct rows.
+2. Toggle "Pause all writes" on `pmt@eigital.com` row → caregiver dashboard immediately drops to read-only.
+3. Switch to `pmt@eigital.com`, propose a journal edit from `/care/$ownerId`.
+4. Back as Devyn: top-bar badge shows "1", `/care/inbox` shows the diff, approve → change applied + caregiver gets decision email.
+5. Trigger cron locally (curl `/api/public/cron/care-daily-digest` with secret) → digest email lands in Devyn's inbox with yesterday's activity.
 
-Sign in as `pmt@eigital.com` → land on `/care` → see Devyn's card with an unread badge → tap → Today tab shows alerts (recent missed dose / seizure if any) → switch tabs and watch badges clear → from `/care/$ownerId` header dropdown, jump back to the switcher without losing state.
+Both phases ship in the same loop, Phase 4 first then Phase 5.
 
-## Phase 3 — done
+---
 
-- New `/care` index (owners switcher) at `src/routes/_app/care.index.tsx` with `OwnerCard` and pending-invite list.
-- New serverFns in `src/lib/care.functions.ts`: `listCaregiverOwners`, `markOwnerSeen`, `getOwnerActivityCounts`, `caregiverReadAlerts`, `dismissCaregiverAlert`.
-- New table `care_caregiver_visits` (RLS caregiver-only) tracks `last_seen_at`, per-tab `last_seen_by_tab`, and `dismissed_alert_ids`.
-- `/care/$ownerId` mounts `OwnerSwitcher` in the header, renders `CaregiverAlertsCard` on the Today tab, shows unread badges on each tab, and calls `markOwnerSeen` on tab change.
-- `care.accept.tsx` redirects to `/care` after accepting so multi-owner caregivers see the switcher.
+## Phase 4 — partial (backend complete, UI still TODO)
+
+Shipped this loop:
+- Migration: `profiles.care_daily_digest_enabled boolean default true`.
+- New server fns in `src/lib/care.functions.ts`: `exportCareAuditCsv`, `listOwnerAuditFeed`, `pauseAllWrites`, `getRelationshipWriteState`, `setCareDigestPreference`, `getCareDigestPreference`, `sendCareDigestNow`, `listPendingChangesDetailed`.
+- New `src/lib/email/render-and-enqueue.server.ts` — renders templates and enqueues via the `enqueue_email` RPC directly, so server-only contexts (cron) can send mail without a Bearer token.
+- New email template `care-daily-digest` + registered in `email-templates/registry.ts`.
+- New digest builder `src/lib/care-digest.server.ts` (`sendCareDailyDigest`, `runDailyDigest`).
+- New cron route `src/routes/api/public/cron/care-daily-digest.ts` (POST + GET for manual test).
+
+Still TODO next loop:
+- `/settings/sharing` UI wiring: AlertDialog revoke, top-level Activity section + Export CSV button, per-relationship "Pause all writes" switch, daily-digest toggle + "Send test digest" button, collapsed pending strip linking to `/care/inbox`.
+- `pg_cron` schedule (08:00 UTC daily) calling `/api/public/cron/care-daily-digest` — via `supabase--insert`.
+- Phase 5 UI: `/care/inbox` route, `PendingChangeRow` / `PendingChangeDiff` components, top-bar pending badge, in-app `alerts` row inserted in `proposeChange`.
+
+All Phase 4 server endpoints are callable end-to-end; the remaining work is UI plumbing plus one `cron.schedule` call.
