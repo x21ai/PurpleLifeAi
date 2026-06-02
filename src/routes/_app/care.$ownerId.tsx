@@ -1,8 +1,8 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, MessageCircle } from "lucide-react";
 import { useEffect, useMemo } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import { SeizureListReadOnly } from "@/components/care/seizure-list-readonly";
 import { ReportsListReadOnly } from "@/components/care/reports-list-readonly";
 import { LogSeizureSheet } from "@/components/care/log-seizure-sheet";
 import { AddJournalSheet } from "@/components/care/add-journal-sheet";
+import { getOrCreateDirectThread } from "@/lib/care-chat.functions";
 import { AddBiometricSheet } from "@/components/care/add-biometric-sheet";
 import { OwnerSwitcher } from "@/components/care/owner-switcher";
 import { CaregiverAlertsCard } from "@/components/care/caregiver-alerts-card";
