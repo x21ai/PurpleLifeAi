@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { BookOpen, Pill, Zap, ChevronRight, Activity } from "lucide-react";
+import { BookOpen, Pill, Zap, ChevronRight, Activity, Droplets } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -17,6 +17,8 @@ import { OuraSyncStatus } from "@/components/biometrics/sync-status";
 import { promptsForConditions, showsSeizureFeatures, getTodayGreeting } from "@/lib/condition-prompts";
 import { TodayEmptyState } from "@/components/today/empty-state";
 import { useTranslation } from "react-i18next";
+import { QuickAddWater } from "@/components/hydration/quick-add-water";
+import { LogAuraSheet } from "@/components/hydration/log-aura-sheet";
 
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
@@ -320,6 +322,28 @@ function TodayPage() {
 
       <TripBanner />
       <TodayDoses />
+
+      {/* Hydration & auras quick-capture */}
+      <section className="mt-10 rounded-2xl ring-1 ring-border bg-card p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="label-eyebrow text-muted-foreground">Hydration & auras</p>
+            <p className="mt-1 text-sm text-foreground">Log every drink. Capture déjà vu the moment it lands.</p>
+          </div>
+          <Link
+            to="/hydration"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <Droplets className="h-3.5 w-3.5" /> Day view <ChevronRight className="h-3 w-3" />
+          </Link>
+        </div>
+        <div className="mt-4">
+          <QuickAddWater />
+        </div>
+        <div className="mt-3">
+          <LogAuraSheet />
+        </div>
+      </section>
 
       {bio && (
         <div className="mt-10 flex flex-col items-center gap-3">
