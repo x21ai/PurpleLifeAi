@@ -14,7 +14,7 @@ import { TripBanner } from "@/components/travel/trip-banner";
 import { TodayInstallBanner } from "@/components/pwa/today-install-banner";
 import { RestoreBanner } from "@/components/settings/restore-banner";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
-import { promptsForConditions, showsSeizureFeatures } from "@/lib/condition-prompts";
+import { promptsForConditions, showsSeizureFeatures, getTodayGreeting } from "@/lib/condition-prompts";
 import { TodayEmptyState } from "@/components/today/empty-state";
 import { useTranslation } from "react-i18next";
 
@@ -129,11 +129,17 @@ function TodayPage() {
           : t("todayPage.evening");
   const firstName = profile?.first_name?.trim();
   const conditionPrompt = useMemo(() => {
+    if (!now) return "How's today feeling?";
+    const { journalPrompt } = getTodayGreeting(profile?.conditions ?? [], now.getHours());
     const list = promptsForConditions(profile?.conditions ?? []);
-    if (list.length === 0) return "How's today feeling?";
+    if (list.length === 0) return journalPrompt;
     // Deterministic per-day so the prompt doesn't flicker on re-render.
-    const day = now ? Math.floor(now.getTime() / 86_400_000) : 0;
+    const day = Math.floor(now.getTime() / 86_400_000);
     return list[day % list.length];
+  }, [profile?.conditions, now]);
+  const greetingSuffix = useMemo(() => {
+    if (!now) return "";
+    return getTodayGreeting(profile?.conditions ?? [], now.getHours()).greetingSuffix;
   }, [profile?.conditions, now]);
 
   const readiness = bio?.oura_readiness_score ?? null;
@@ -180,6 +186,10 @@ function TodayPage() {
         <span suppressHydrationWarning>{greeting}</span>
         {firstName ? `, ${firstName}` : ""}.
       </h1>
+
+      {greetingSuffix && !forecast?.ai_narrative && (
+        <p className="mt-2 text-sm text-muted-foreground">{greetingSuffix}</p>
+      )}
 
       {forecast?.ai_narrative ? (
         <p className="body-serif mt-4 max-w-[600px] text-foreground/75">
