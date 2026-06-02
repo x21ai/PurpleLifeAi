@@ -125,7 +125,9 @@ export function ProfileFields() {
 
       <div className="border-t sheet-divider pt-6">
         <p className="text-[15px] text-[#FAFAFC]">Phone number</p>
-        <p className="mt-1 text-[13px] sheet-muted">Used for security and account recovery. Include country code.</p>
+        <p className="mt-1 text-[13px] sheet-muted">
+          Visible to people you share your account with so they can reach you. Include country code.
+        </p>
         <div className="mt-3 flex gap-2">
           <Input
             value={phone}
@@ -136,6 +138,24 @@ export function ProfileFields() {
           />
           <Button onClick={savePhone} disabled={savingPhone} variant="outline" className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10">
             {savingPhone && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+            Save
+          </Button>
+        </div>
+      </div>
+
+      <div className="border-t sheet-divider pt-6">
+        <p className="text-[15px] text-[#FAFAFC]">Pronouns</p>
+        <p className="mt-1 text-[13px] sheet-muted">Optional. Shown to people you share with.</p>
+        <div className="mt-3 flex gap-2">
+          <Input
+            value={pronouns}
+            onChange={(e) => setPronouns(e.target.value)}
+            placeholder="she/her, he/him, they/them…"
+            disabled={loading}
+            className="bg-white/[0.04] border-white/10 text-[#FAFAFC] placeholder:text-white/30 flex-1"
+          />
+          <Button onClick={savePronouns} disabled={savingPronouns || loading} variant="outline" className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10">
+            {savingPronouns && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
             Save
           </Button>
         </div>
