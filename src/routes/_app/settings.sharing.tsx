@@ -640,6 +640,46 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
 
 /* ----------------- Manage scopes sheet ----------------- */
 
+function RelationshipLabelEditor({
+  relationshipId,
+  value,
+  onSaved,
+}: {
+  relationshipId: string;
+  value: string | null;
+  onSaved: () => void;
+}) {
+  const save = useServerFn(setRelationshipLabel);
+  const m = useMutation({
+    mutationFn: (next: string | null) =>
+      save({ data: { relationship_id: relationshipId, relationship_label: next } }),
+    onSuccess: () => {
+      toast.success("Relationship updated");
+      onSaved();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't save"),
+  });
+  return (
+    <div className="mt-2 inline-flex items-center gap-2">
+      <Label htmlFor={`rel-${relationshipId}`} className="text-[11px] text-muted-foreground">
+        Relationship
+      </Label>
+      <select
+        id={`rel-${relationshipId}`}
+        value={value ?? ""}
+        disabled={m.isPending}
+        onChange={(e) => m.mutate(e.target.value ? e.target.value : null)}
+        className="rounded-md border border-border bg-background px-2 py-1 text-[11px] text-foreground"
+      >
+        <option value="">Not specified</option>
+        {RELATIONSHIP_LABELS.map((l) => (
+          <option key={l} value={l}>{l}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function ManageRelationshipSheet({
   relationshipId,
   role,
