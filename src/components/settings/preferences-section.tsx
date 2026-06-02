@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { Sparkles, MessageCircle, Loader2, BookOpen, ChevronRight, Moon, Bell, Plus, X } from "lucide-react";
+import { Sparkles, MessageCircle, Loader2, BookOpen, ChevronRight, Moon, Bell, Plus, X, Droplets } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -40,6 +40,8 @@ export function PreferencesSection() {
   const [wakeTime, setWakeTime] = React.useState<string>("07:00");
   const [sleepTime, setSleepTime] = React.useState<string>("23:00");
   const [snoozeMinutes, setSnoozeMinutes] = React.useState<string>("10");
+  const [waterGoalMl, setWaterGoalMl] = React.useState<string>("2000");
+  const [savingGoal, setSavingGoal] = React.useState(false);
   const [conditions, setConditions] = React.useState<string[]>([]);
   const [customDraft, setCustomDraft] = React.useState<string>("");
   const [savingConditions, setSavingConditions] = React.useState(false);
@@ -53,7 +55,7 @@ export function PreferencesSection() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("ai_model_preference, floating_ask_enabled, wake_time, sleep_time, snooze_minutes, conditions, conditions_note")
+        .select("ai_model_preference, floating_ask_enabled, wake_time, sleep_time, snooze_minutes, conditions, conditions_note, daily_water_goal_ml")
         .eq("id", userId)
         .maybeSingle();
       if (cancelled) return;
@@ -63,6 +65,8 @@ export function PreferencesSection() {
         if (data.wake_time) setWakeTime(String(data.wake_time).slice(0, 5));
         if (data.sleep_time) setSleepTime(String(data.sleep_time).slice(0, 5));
         if (data.snooze_minutes != null) setSnoozeMinutes(String(data.snooze_minutes));
+        if ((data as any).daily_water_goal_ml != null)
+          setWaterGoalMl(String((data as any).daily_water_goal_ml));
         // Merge legacy free-text conditions_note into chips, then drain the column.
         const existing: string[] = Array.isArray(data.conditions) ? data.conditions : [];
         const legacy: string[] = (data.conditions_note ?? "")
@@ -129,6 +133,20 @@ export function PreferencesSection() {
       .update({ snooze_minutes: n })
       .eq("id", userId);
     if (error) toast.error("Couldn't save snooze setting");
+  };
+
+  const saveWaterGoal = async (raw: string) => {
+    if (!userId) return;
+    setWaterGoalMl(raw);
+    const n = parseInt(raw, 10);
+    if (!Number.isFinite(n) || n < 250 || n > 10000) return;
+    setSavingGoal(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ daily_water_goal_ml: n } as any)
+      .eq("id", userId);
+    setSavingGoal(false);
+    if (error) toast.error("Couldn't save water goal");
   };
 
   const onFabChange = async (next: boolean) => {
@@ -371,6 +389,34 @@ export function PreferencesSection() {
                 <SelectItem value="15">15 minutes</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </div>
+
+        <div className="border-t border-border pt-5">
+          <Label htmlFor="water-goal" className="flex items-center gap-2 font-serif text-base text-foreground">
+            <Droplets className="h-4 w-4 text-primary" />
+            Daily water goal
+            {savingGoal && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+          </Label>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Target volume used on the Hydration timeline. Between 250 and 10,000 ml.
+          </p>
+          <div className="mt-3 flex items-center gap-2">
+            <Input
+              id="water-goal"
+              type="number"
+              min={250}
+              max={10000}
+              step={50}
+              value={waterGoalMl}
+              onChange={(e) => void saveWaterGoal(e.target.value)}
+              disabled={loading}
+              className="w-32"
+            />
+            <span className="text-sm text-muted-foreground">ml</span>
+            <span className="text-xs text-muted-foreground">
+              ≈ {(parseInt(waterGoalMl, 10) / 1000).toFixed(1)} L
+            </span>
           </div>
         </div>
 

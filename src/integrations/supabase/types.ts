@@ -1474,6 +1474,7 @@ export type Database = {
           consent_share_with_caregivers: boolean
           country: string | null
           created_at: string
+          daily_water_goal_ml: number
           date_of_birth: string | null
           default_alarm_sound: string
           deleted_at: string | null
@@ -1510,6 +1511,7 @@ export type Database = {
           consent_share_with_caregivers?: boolean
           country?: string | null
           created_at?: string
+          daily_water_goal_ml?: number
           date_of_birth?: string | null
           default_alarm_sound?: string
           deleted_at?: string | null
@@ -1546,6 +1548,7 @@ export type Database = {
           consent_share_with_caregivers?: boolean
           country?: string | null
           created_at?: string
+          daily_water_goal_ml?: number
           date_of_birth?: string | null
           default_alarm_sound?: string
           deleted_at?: string | null
