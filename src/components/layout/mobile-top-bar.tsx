@@ -6,6 +6,7 @@ import { navItems } from "./nav-items";
 import { cn } from "@/lib/utils";
 import { PendingInboxBadge } from "@/components/care/pending-inbox-badge";
 import { CaregiverNavLink } from "./caregiver-nav-link";
+import { RoleSwitcher } from "./role-switcher";
 
 export function MobileTopBar() {
   const [open, setOpen] = useState(false);
@@ -20,6 +21,7 @@ export function MobileTopBar() {
         Purple
       </Link>
       <div className="flex items-center gap-1">
+        <RoleSwitcher compact />
         <PendingInboxBadge />
         <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger
