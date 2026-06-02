@@ -82,3 +82,22 @@ Collapses to a single line: **"3 changes waiting for you → Open inbox"** linki
 5. Trigger cron locally (curl `/api/public/cron/care-daily-digest` with secret) → digest email lands in Devyn's inbox with yesterday's activity.
 
 Both phases ship in the same loop, Phase 4 first then Phase 5.
+
+---
+
+## Phase 4 — partial (backend complete, UI still TODO)
+
+Shipped this loop:
+- Migration: `profiles.care_daily_digest_enabled boolean default true`.
+- New server fns in `src/lib/care.functions.ts`: `exportCareAuditCsv`, `listOwnerAuditFeed`, `pauseAllWrites`, `getRelationshipWriteState`, `setCareDigestPreference`, `getCareDigestPreference`, `sendCareDigestNow`, `listPendingChangesDetailed`.
+- New `src/lib/email/render-and-enqueue.server.ts` — renders templates and enqueues via the `enqueue_email` RPC directly, so server-only contexts (cron) can send mail without a Bearer token.
+- New email template `care-daily-digest` + registered in `email-templates/registry.ts`.
+- New digest builder `src/lib/care-digest.server.ts` (`sendCareDailyDigest`, `runDailyDigest`).
+- New cron route `src/routes/api/public/cron/care-daily-digest.ts` (POST + GET for manual test).
+
+Still TODO next loop:
+- `/settings/sharing` UI wiring: AlertDialog revoke, top-level Activity section + Export CSV button, per-relationship "Pause all writes" switch, daily-digest toggle + "Send test digest" button, collapsed pending strip linking to `/care/inbox`.
+- `pg_cron` schedule (08:00 UTC daily) calling `/api/public/cron/care-daily-digest` — via `supabase--insert`.
+- Phase 5 UI: `/care/inbox` route, `PendingChangeRow` / `PendingChangeDiff` components, top-bar pending badge, in-app `alerts` row inserted in `proposeChange`.
+
+All Phase 4 server endpoints are callable end-to-end; the remaining work is UI plumbing plus one `cron.schedule` call.
