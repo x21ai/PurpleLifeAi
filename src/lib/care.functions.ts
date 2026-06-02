@@ -26,12 +26,13 @@ const roleSchema = z.enum(["emergency", "caregiver", "provider", "viewer"]);
 
 export const inviteCaregiver = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { email: string; role: CareRole; scopes?: CareScope[] }) =>
+  .inputValidator((input: { email: string; role: CareRole; scopes?: CareScope[]; relationship_label?: string | null }) =>
     z
       .object({
         email: emailSchema,
         role: roleSchema,
         scopes: z.array(z.string().max(64)).max(60).optional(),
+        relationship_label: z.string().trim().min(1).max(40).optional().nullable(),
       })
       .parse(input),
   )
@@ -48,6 +49,7 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
         invite_token,
         role: data.role,
         status: "pending",
+        relationship_label: data.relationship_label ?? null,
       })
       .select()
       .single();
