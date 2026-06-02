@@ -29,6 +29,11 @@ import { OwnerSwitcher } from "@/components/care/owner-switcher";
 import { CaregiverAlertsCard } from "@/components/care/caregiver-alerts-card";
 import { MetricCard } from "@/components/biometrics/metric-card";
 import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
+import { HydrationTimeline, type HydrationRow } from "@/components/hydration/hydration-timeline";
+import { QuickAddWater } from "@/components/hydration/quick-add-water";
+import { LogAuraSheet } from "@/components/hydration/log-aura-sheet";
+import { listHydrationForDay } from "@/lib/hydration.functions";
+import { listAurasForDay } from "@/lib/auras.functions";
 import {
   METRIC_ORDER,
   METRICS,
@@ -55,7 +60,7 @@ export const Route = createFileRoute("/_app/care/$ownerId")({
   component: CareDashboardPage,
 });
 
-type TabKey = "today" | "meds" | "biometrics" | "journal" | "seizures" | "reports" | "chat";
+type TabKey = "today" | "meds" | "biometrics" | "hydration" | "journal" | "seizures" | "reports" | "chat";
 
 function CareDashboardPage() {
   useRouteTheme("light");
@@ -78,6 +83,7 @@ function CareDashboardPage() {
         { key: "biometrics" as TabKey, label: "Biometrics", scope: "biometrics:read" },
         { key: "today" as TabKey, label: "Today", scope: "today:read" },
         { key: "meds" as TabKey, label: "Meds", scope: "meds:read" },
+        { key: "hydration" as TabKey, label: "Hydration", scope: "biometrics:read" },
         { key: "journal" as TabKey, label: "Journal", scope: "journal:read" },
         { key: "seizures" as TabKey, label: "Seizures", scope: "seizures:read" },
         { key: "reports" as TabKey, label: "Reports", scope: "reports:read" },
@@ -262,6 +268,14 @@ function CareDashboardPage() {
                 <BiometricsPanel
                   ownerId={ownerId}
                   ownerName={displayName}
+                  canWrite={has("biometrics:write")}
+                />
+              </TabsContent>
+            )}
+            {tabs.find((t) => t.key === "hydration") && (
+              <TabsContent value="hydration" className="mt-4">
+                <HydrationPanel
+                  ownerId={ownerId}
                   canWrite={has("biometrics:write")}
                 />
               </TabsContent>
@@ -670,4 +684,55 @@ function ReportsPanel({ ownerId }: { ownerId: string }) {
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const reports = q.data!.reports;
   return <ReportsListReadOnly reports={reports} />;
+}
+
+/* ----- Hydration ----- */
+function HydrationPanel({ ownerId, canWrite }: { ownerId: string; canWrite: boolean }) {
+  const day = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+  const from = day.toISOString();
+  const to = new Date(day.getTime() + 86400000).toISOString();
+
+  const listH = useServerFn(listHydrationForDay);
+  const listA = useServerFn(listAurasForDay);
+
+  const hydration = useQuery({
+    queryKey: ["hydration", ownerId, day.toISOString()],
+    queryFn: () => listH({ data: { user_id: ownerId, from, to } }),
+  });
+  const auras = useQuery({
+    queryKey: ["auras", ownerId, day.toISOString()],
+    queryFn: () => listA({ data: { user_id: ownerId, from, to } }),
+  });
+
+  return (
+    <div className="space-y-4">
+      {canWrite && (
+        <Section>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Log on their behalf
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Anything you add will be tagged as logged by a caregiver.
+          </p>
+          <div className="mt-3 space-y-3">
+            <QuickAddWater ownerId={ownerId} />
+            <div><LogAuraSheet ownerId={ownerId} /></div>
+          </div>
+        </Section>
+      )}
+      {hydration.isLoading || auras.isLoading ? (
+        <Empty>Loading…</Empty>
+      ) : (
+        <HydrationTimeline
+          day={day}
+          hydration={(hydration.data ?? []) as HydrationRow[]}
+          auras={auras.data ?? []}
+        />
+      )}
+    </div>
+  );
 }
