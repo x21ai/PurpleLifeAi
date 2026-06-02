@@ -10,6 +10,7 @@ import {
   notifyOwnerOfCaregiverWrite,
   notifyCaregiverOfDecision,
 } from "./care-notify.server";
+import { sendCareDailyDigest } from "./care-digest.server";
 
 function newInviteToken(): string {
   return (

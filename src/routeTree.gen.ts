@@ -78,6 +78,7 @@ import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/em
 import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
 import { Route as ApiPublicCronPurgeDeletedAccountsRouteImport } from './routes/api/public/cron/purge-deleted-accounts'
 import { Route as ApiPublicCronDoseRemindersRouteImport } from './routes/api/public/cron/dose-reminders'
+import { Route as ApiPublicCronCareDailyDigestRouteImport } from './routes/api/public/cron/care-daily-digest'
 
 const UsersRoute = UsersRouteImport.update({
   id: '/users',
@@ -430,6 +431,12 @@ const ApiPublicCronDoseRemindersRoute =
     path: '/api/public/cron/dose-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronCareDailyDigestRoute =
+  ApiPublicCronCareDailyDigestRouteImport.update({
+    id: '/api/public/cron/care-daily-digest',
+    path: '/api/public/cron/care-daily-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -492,6 +499,7 @@ export interface FileRoutesByFullPath {
   '/biometrics/': typeof AppBiometricsIndexRoute
   '/care/': typeof AppCareIndexRoute
   '/journal/': typeof AppJournalIndexRoute
+  '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
@@ -561,6 +569,7 @@ export interface FileRoutesByTo {
   '/biometrics': typeof AppBiometricsIndexRoute
   '/care': typeof AppCareIndexRoute
   '/journal': typeof AppJournalIndexRoute
+  '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
@@ -633,6 +642,7 @@ export interface FileRoutesById {
   '/_app/biometrics/': typeof AppBiometricsIndexRoute
   '/_app/care/': typeof AppCareIndexRoute
   '/_app/journal/': typeof AppJournalIndexRoute
+  '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
@@ -705,6 +715,7 @@ export interface FileRouteTypes {
     | '/biometrics/'
     | '/care/'
     | '/journal/'
+    | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
     | '/api/public/cron/purge-deleted-accounts'
     | '/api/public/hooks/risk-forecaster'
@@ -774,6 +785,7 @@ export interface FileRouteTypes {
     | '/biometrics'
     | '/care'
     | '/journal'
+    | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
     | '/api/public/cron/purge-deleted-accounts'
     | '/api/public/hooks/risk-forecaster'
@@ -845,6 +857,7 @@ export interface FileRouteTypes {
     | '/_app/biometrics/'
     | '/_app/care/'
     | '/_app/journal/'
+    | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
     | '/api/public/cron/purge-deleted-accounts'
     | '/api/public/hooks/risk-forecaster'
@@ -877,6 +890,7 @@ export interface RootRouteChildren {
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
+  ApiPublicCronCareDailyDigestRoute: typeof ApiPublicCronCareDailyDigestRoute
   ApiPublicCronDoseRemindersRoute: typeof ApiPublicCronDoseRemindersRoute
   ApiPublicCronPurgeDeletedAccountsRoute: typeof ApiPublicCronPurgeDeletedAccountsRoute
   ApiPublicHooksRiskForecasterRoute: typeof ApiPublicHooksRiskForecasterRoute
@@ -1372,6 +1386,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronDoseRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/care-daily-digest': {
+      id: '/api/public/cron/care-daily-digest'
+      path: '/api/public/cron/care-daily-digest'
+      fullPath: '/api/public/cron/care-daily-digest'
+      preLoaderRoute: typeof ApiPublicCronCareDailyDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1544,6 +1565,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
+  ApiPublicCronCareDailyDigestRoute: ApiPublicCronCareDailyDigestRoute,
   ApiPublicCronDoseRemindersRoute: ApiPublicCronDoseRemindersRoute,
   ApiPublicCronPurgeDeletedAccountsRoute:
     ApiPublicCronPurgeDeletedAccountsRoute,
