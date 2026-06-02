@@ -19,6 +19,7 @@ import { TodayEmptyState } from "@/components/today/empty-state";
 import { useTranslation } from "react-i18next";
 import { QuickAddWater } from "@/components/hydration/quick-add-water";
 import { LogAuraSheet } from "@/components/hydration/log-aura-sheet";
+import { PatternHintCard } from "@/components/hydration/pattern-hint-card";
 
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
@@ -343,6 +344,7 @@ function TodayPage() {
         <div className="mt-3">
           <LogAuraSheet />
         </div>
+        <PatternHintCard />
       </section>
 
       {bio && (
