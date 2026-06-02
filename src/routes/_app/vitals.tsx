@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Sparkles, Moon, Activity, Waves, Utensils, Heart, BarChart3,
-  ChevronRight, ArrowLeft, Pencil,
+  ChevronRight, ArrowLeft, Pencil, Droplets,
 } from "lucide-react";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import type { LucideIcon } from "lucide-react";
@@ -82,6 +82,30 @@ function VitalsPage() {
         <MetricCard title="Glucose" status="No data" band="fair" value="—" />
         <MetricCard title="Meals" status="Log a meal" band="fair" value="—" />
       </Section>
+
+      <section className="mt-12">
+        <div className="flex items-center gap-3">
+          <Droplets className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-[18px] font-semibold text-foreground">Hydration & auras</h2>
+        </div>
+        <Link
+          to="/hydration"
+          className="mt-4 block rounded-[24px] bg-card p-5 sm:p-6 hover:bg-secondary/60 transition"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[13px] text-muted-foreground">Open hydration day view</p>
+              <p className={`mt-2 text-[12px] uppercase tracking-[0.12em] font-medium ${BAND_COLOR.good}`}>
+                Track water, electrolytes, déjà vu
+              </p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground/60" />
+          </div>
+          <p className="mt-5 font-serif text-[28px] sm:text-[36px] text-foreground leading-tight">
+            Hourly + minute-precision timeline
+          </p>
+        </Link>
+      </section>
 
       <Section icon={Heart} name="Heart Health">
         <MetricCard title="Cardiovascular Age" status="2.5 yrs older" band="good" value="Aligned" />
