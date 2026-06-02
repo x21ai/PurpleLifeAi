@@ -19,6 +19,17 @@ const TripInput = z.object({
   shift_hours_per_day: z.number().min(0).max(12).optional(),
 });
 
+const TripUpdateInput = z.object({
+  id: z.string().uuid(),
+  label: z.string().max(120).optional().nullable(),
+  destination_tz: z.string().min(1).max(80).optional(),
+  depart_at: z.string().min(1).optional(),
+  return_at: z.string().min(1).optional(),
+  legs: z.array(LegSchema).max(20).optional(),
+  shift_strategy: z.enum(["home", "snap", "gradual"]).optional(),
+  shift_hours_per_day: z.number().min(0).max(12).optional(),
+});
+
 export const listTrips = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -95,6 +106,78 @@ export const deleteTrip = createServerFn({ method: "POST" })
     const { error } = await supabase.from("trips").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+/**
+ * Patch an existing trip. Owner-only via RLS. Returns the fields that
+ * affect dose scheduling so the caller can decide whether to regenerate.
+ */
+export const updateTrip = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => TripUpdateInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { id, ...patch } = data;
+
+    // Load current row to detect dose-affecting changes.
+    const { data: prev, error: loadErr } = await supabase
+      .from("trips")
+      .select(
+        "id, destination_tz, depart_at, return_at, legs, shift_strategy, shift_hours_per_day, schedule_generated_at",
+      )
+      .eq("id", id)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (loadErr) throw new Error(loadErr.message);
+    if (!prev) throw new Error("Trip not found");
+
+    if (patch.depart_at && patch.return_at) {
+      if (new Date(patch.depart_at).getTime() >= new Date(patch.return_at).getTime()) {
+        throw new Error("Return must be after departure");
+      }
+    }
+
+    const update: {
+      label?: string | null;
+      destination_tz?: string;
+      depart_at?: string;
+      return_at?: string;
+      legs?: typeof patch.legs;
+      shift_strategy?: "home" | "snap" | "gradual";
+      shift_hours_per_day?: number;
+    } = {};
+    if (patch.label !== undefined) update.label = patch.label;
+    if (patch.destination_tz !== undefined) update.destination_tz = patch.destination_tz;
+    if (patch.depart_at !== undefined) update.depart_at = patch.depart_at;
+    if (patch.return_at !== undefined) update.return_at = patch.return_at;
+    if (patch.legs !== undefined) update.legs = patch.legs;
+    if (patch.shift_strategy !== undefined) update.shift_strategy = patch.shift_strategy;
+    if (patch.shift_hours_per_day !== undefined)
+      update.shift_hours_per_day = patch.shift_hours_per_day;
+    if (Object.keys(update).length === 0) {
+      return { ok: true, doseAffectingChanged: false, hasSchedule: !!prev.schedule_generated_at };
+    }
+    const { error: updErr } = await supabase
+      .from("trips")
+      .update(update)
+      .eq("id", id)
+      .eq("user_id", userId);
+    if (updErr) throw new Error(updErr.message);
+
+    const doseAffectingChanged =
+      (patch.legs !== undefined && JSON.stringify(patch.legs) !== JSON.stringify(prev.legs)) ||
+      (patch.shift_strategy !== undefined && patch.shift_strategy !== prev.shift_strategy) ||
+      (patch.shift_hours_per_day !== undefined &&
+        Number(patch.shift_hours_per_day) !== Number(prev.shift_hours_per_day)) ||
+      (patch.depart_at !== undefined && patch.depart_at !== prev.depart_at) ||
+      (patch.return_at !== undefined && patch.return_at !== prev.return_at) ||
+      (patch.destination_tz !== undefined && patch.destination_tz !== prev.destination_tz);
+
+    return {
+      ok: true,
+      doseAffectingChanged,
+      hasSchedule: !!prev.schedule_generated_at,
+    };
   });
 
 /**

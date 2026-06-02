@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronLeft, Plane, Trash2, Loader2, CalendarDays, Plus, Wand2, Eye } from "lucide-react";
+import { ChevronLeft, Plane, Trash2, Loader2, CalendarDays, Plus, Wand2, Eye, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { generateTripSchedule, previewTripSchedule } from "@/lib/travel.functions";
 import { useTranslation } from "react-i18next";
 import { DualTime } from "@/components/travel/dual-time";
+import { ItineraryEditor, legsAreChronological, type LegDraft } from "@/components/travel/itinerary-editor";
+import { TripEditDialog, type EditableTrip } from "@/components/travel/trip-edit-dialog";
 
 export const Route = createFileRoute("/_app/settings/travel")({
   head: () => ({ meta: [{ title: "Travel mode — Purple" }] }),
@@ -72,8 +74,6 @@ type Trip = {
   shift_strategy: string | null;
   schedule_generated_at: string | null;
 };
-
-type LegDraft = { tz: string; localAt: string; label: string };
 
 const COMMON_TZS = [
   "America/New_York",
@@ -131,6 +131,7 @@ function TravelPage() {
   const [regenConfirm, setRegenConfirm] = React.useState<
     { trip: Trip; pendingCount: number } | null
   >(null);
+  const [editingTrip, setEditingTrip] = React.useState<EditableTrip | null>(null);
 
   const load = React.useCallback(async () => {
     if (!userId) return;
@@ -171,6 +172,10 @@ function TravelPage() {
     if (!userId) return;
     if (!destinationTz || !departAt || !returnAt) {
       toast.error("Pick a destination and dates");
+      return;
+    }
+    if (!legsAreChronological(legs)) {
+      toast.error("Legs are out of order. Reorder before saving.");
       return;
     }
     const depart = new Date(departAt);
@@ -430,93 +435,7 @@ function TravelPage() {
         </div>
 
         <div className="mt-5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-foreground">Legs</h3>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="rounded-full h-7 px-3 text-xs"
-              onClick={() =>
-                setLegs((prev) => [...prev, { tz: destinationTz, localAt: "", label: "" }])
-              }
-            >
-              <Plus className="h-3 w-3 mr-1" /> Add leg
-            </Button>
-          </div>
-          {legs.length === 0 ? (
-            <p className="mt-2 text-xs text-muted-foreground">
-              Optional. Add a leg for each flight or layover — e.g. arrival in
-              Dubai at 22:10 local, then Hong Kong at 14:25 local. Without
-              legs, Purple uses your final destination from departure.
-            </p>
-          ) : (
-            <ul className="mt-3 space-y-3">
-              {legs.map((leg, i) => (
-                <li
-                  key={i}
-                  className="rounded-xl border border-border p-3 grid gap-2 sm:grid-cols-3"
-                >
-                  <div className="space-y-1">
-                    <Label className="text-xs">Timezone</Label>
-                    <select
-                      value={leg.tz}
-                      onChange={(e) =>
-                        setLegs((prev) =>
-                          prev.map((l, j) => (j === i ? { ...l, tz: e.target.value } : l)),
-                        )
-                      }
-                      className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
-                    >
-                      {COMMON_TZS.map((tz) => (
-                        <option key={tz} value={tz}>
-                          {tz}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Arrives (local)</Label>
-                    <Input
-                      type="datetime-local"
-                      value={leg.localAt}
-                      onChange={(e) =>
-                        setLegs((prev) =>
-                          prev.map((l, j) =>
-                            j === i ? { ...l, localAt: e.target.value } : l,
-                          ),
-                        )
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Note</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={leg.label}
-                        placeholder="JFK to HKG"
-                        onChange={(e) =>
-                          setLegs((prev) =>
-                            prev.map((l, j) =>
-                              j === i ? { ...l, label: e.target.value } : l,
-                            ),
-                          )
-                        }
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setLegs((prev) => prev.filter((_, j) => j !== i))}
-                        aria-label="Remove leg"
-                        className="text-muted-foreground hover:text-destructive p-1.5"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+          <ItineraryEditor value={legs} onChange={setLegs} defaultTz={destinationTz} />
         </div>
 
         <div className="mt-4">
@@ -597,6 +516,26 @@ function TravelPage() {
                       onClick={() => void exportTripToCalendar(t)}
                     >
                       <CalendarDays className="h-3 w-3 mr-1" /> Export to calendar
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full h-7 px-3 text-xs"
+                      onClick={() =>
+                        setEditingTrip({
+                          id: t.id,
+                          label: t.label,
+                          destination_tz: t.destination_tz,
+                          depart_at: t.depart_at,
+                          return_at: t.return_at,
+                          legs: t.legs,
+                          shift_strategy: t.shift_strategy,
+                          schedule_generated_at: t.schedule_generated_at,
+                        })
+                      }
+                    >
+                      <Pencil className="h-3 w-3 mr-1" /> Edit
                     </Button>
                   </div>
                 </div>
@@ -694,6 +633,28 @@ function TravelPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <TripEditDialog
+        trip={editingTrip}
+        homeTz={homeTz}
+        onOpenChange={(o) => {
+          if (!o) setEditingTrip(null);
+        }}
+        onSaved={async (tripId, regenerateRecommended) => {
+          await load();
+          if (regenerateRecommended) {
+            const fresh = (trips ?? []).find((x) => x.id === tripId);
+            if (fresh) {
+              const { count } = await supabase
+                .from("medication_doses")
+                .select("id", { count: "exact", head: true })
+                .eq("trip_id", tripId)
+                .eq("status", "pending");
+              setRegenConfirm({ trip: fresh, pendingCount: count ?? 0 });
+            }
+          }
+        }}
+      />
     </div>
   );
 }
