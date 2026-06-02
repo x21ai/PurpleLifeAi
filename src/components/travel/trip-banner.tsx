@@ -275,3 +275,18 @@ function shortCity(tz: string): string {
   const last = tz.split("/").pop() ?? tz;
   return last.replace(/_/g, " ");
 }
+
+/** Plain-language nudge derived from the trip's shift strategy. */
+function strategyText(
+  strategy: "home" | "snap" | "gradual" | null,
+  hoursPerDay: number | null,
+): string | null {
+  if (!strategy) return null;
+  if (strategy === "snap") return "On destination time now.";
+  if (strategy === "home") return "Staying on home time.";
+  if (strategy === "gradual") {
+    const h = hoursPerDay && hoursPerDay > 0 ? hoursPerDay : 2;
+    return `Shifting ${h}h/day toward destination time.`;
+  }
+  return null;
+}
