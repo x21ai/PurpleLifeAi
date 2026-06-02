@@ -16,6 +16,8 @@ type ActiveTrip = {
   legs: Leg[] | null;
   home_tz_snapshot: string | null;
   return_at: string;
+  shift_strategy: "home" | "snap" | "gradual" | null;
+  shift_hours_per_day: number | null;
 } | null;
 type NextDose = { scheduled_at: string; medication_name: string } | null;
 
@@ -51,7 +53,9 @@ export function TripBanner() {
       supabase.from("profiles").select("timezone").eq("id", userId).maybeSingle(),
       supabase
         .from("trips")
-        .select("id, destination_tz, depart_at, return_at, status, legs, home_tz_snapshot")
+        .select(
+          "id, destination_tz, depart_at, return_at, status, legs, home_tz_snapshot, shift_strategy, shift_hours_per_day",
+        )
         .lte("depart_at", new Date().toISOString())
         .gte("return_at", new Date().toISOString())
         .neq("status", "cancelled")
@@ -67,6 +71,10 @@ export function TripBanner() {
             legs: (t.legs as Leg[] | null) ?? null,
             home_tz_snapshot: t.home_tz_snapshot ?? null,
             return_at: t.return_at,
+            shift_strategy:
+              (t.shift_strategy as "home" | "snap" | "gradual" | null) ?? null,
+            shift_hours_per_day:
+              typeof t.shift_hours_per_day === "number" ? t.shift_hours_per_day : null,
           }
         : null,
     );
@@ -112,6 +120,10 @@ export function TripBanner() {
     const active = legs.filter((l) => new Date(l.from_at).getTime() <= nowMs).pop();
     const currentTz = active?.tz ?? activeTrip.destination_tz;
     const currentLabel = active?.label?.trim() || shortCity(currentTz);
+    const strategyNudge = strategyText(
+      activeTrip.shift_strategy,
+      activeTrip.shift_hours_per_day,
+    );
     return (
       <aside
         aria-label="Travel mode active"
@@ -127,6 +139,9 @@ export function TripBanner() {
               You're in <span className="font-medium">{currentLabel}</span>
               <span className="text-muted-foreground"> · {currentTz}</span>
             </p>
+            {strategyNudge && (
+              <p className="mt-1 text-xs text-muted-foreground">{strategyNudge}</p>
+            )}
             {nextDose ? (
               <p className="mt-1.5 text-sm text-foreground/80 flex flex-wrap items-baseline gap-x-2">
                 <span className="text-muted-foreground">Next dose</span>
@@ -259,4 +274,19 @@ export function TripBanner() {
 function shortCity(tz: string): string {
   const last = tz.split("/").pop() ?? tz;
   return last.replace(/_/g, " ");
+}
+
+/** Plain-language nudge derived from the trip's shift strategy. */
+function strategyText(
+  strategy: "home" | "snap" | "gradual" | null,
+  hoursPerDay: number | null,
+): string | null {
+  if (!strategy) return null;
+  if (strategy === "snap") return "On destination time now.";
+  if (strategy === "home") return "Staying on home time.";
+  if (strategy === "gradual") {
+    const h = hoursPerDay && hoursPerDay > 0 ? hoursPerDay : 2;
+    return `Shifting ${h}h/day toward destination time.`;
+  }
+  return null;
 }

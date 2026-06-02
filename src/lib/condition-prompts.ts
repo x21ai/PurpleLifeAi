@@ -203,3 +203,100 @@ export function showsSeizureFeatures(
   if (!conditions || conditions.length === 0) return false;
   return conditions.some((c): c is ConditionTag => SEIZURE_PRONE.has(c as ConditionTag));
 }
+
+/**
+ * Condition-aware greeting + first journal prompt for the Today empty state.
+ * Greeting is short and warm; prompt is a single open question.
+ */
+export function getTodayGreeting(
+  conditions: string[] | null | undefined,
+  hour: number,
+): { greetingSuffix: string; journalPrompt: string } {
+  const tags = (conditions ?? []).filter((c): c is ConditionTag => c in PROMPTS);
+  const tag: ConditionTag = tags[0] ?? "general";
+  const tod: "morning" | "afternoon" | "evening" =
+    hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
+
+  const suffix: Partial<Record<ConditionTag, Record<typeof tod, string>>> = {
+    epilepsy: {
+      morning: "How did you sleep, and any aura?",
+      afternoon: "How's the day feeling so far?",
+      evening: "Any warning signs today?",
+    },
+    migraine: {
+      morning: "How's your head this morning?",
+      afternoon: "Any triggers showing up today?",
+      evening: "How's your head tonight?",
+    },
+    diabetes: {
+      morning: "How are your numbers this morning?",
+      afternoon: "Any highs or lows so far?",
+      evening: "How did the day go, numbers-wise?",
+    },
+    mental_health: {
+      morning: "How are you waking up today?",
+      afternoon: "How's your headspace right now?",
+      evening: "How are you, honestly, tonight?",
+    },
+    pots: {
+      morning: "How was standing up this morning?",
+      afternoon: "How's your energy holding up?",
+      evening: "How did your body do today?",
+    },
+    long_covid: {
+      morning: "How's your battery starting today?",
+      afternoon: "How's the energy envelope so far?",
+      evening: "Any PEM signs from today?",
+    },
+    chronic_pain: {
+      morning: "How's the pain this morning?",
+      afternoon: "Where's pain sitting right now?",
+      evening: "How did your body hold up today?",
+    },
+    autoimmune: {
+      morning: "Any flare signs this morning?",
+      afternoon: "How's fatigue treating you?",
+      evening: "How did your body do today?",
+    },
+    caregiver: {
+      morning: "How are they starting the day?",
+      afternoon: "How are they, and how are you?",
+      evening: "How was their day, in your words?",
+    },
+  };
+  const greetingSuffix =
+    suffix[tag]?.[tod] ?? "How's today feeling?";
+
+  const prompts = promptsForConditions(conditions);
+  const journalPrompt = prompts[0] ?? "How are you, honestly?";
+  return { greetingSuffix, journalPrompt };
+}
+
+/**
+ * Follow-up chip suggestions to render under an assistant reply.
+ * Lightweight: combines condition-flavored questions with topic hints
+ * pulled from the user's last message.
+ */
+export function getFollowUps(
+  conditions: string[] | null | undefined,
+  lastUserMessage: string,
+): string[] {
+  const base = getSuggestedQuestions(conditions);
+  const msg = lastUserMessage.toLowerCase();
+  const topical: string[] = [];
+  if (/sleep|slept|rest/.test(msg)) topical.push("How is sleep trending this month?");
+  if (/pain|ache|hurt/.test(msg)) topical.push("What helped most on flare days?");
+  if (/mood|anxious|down|sad/.test(msg)) topical.push("What seems to help on harder days?");
+  if (/med|dose|pill/.test(msg)) topical.push("Have I been taking every dose on time?");
+  if (/trigger|caused|why/.test(msg)) topical.push("What patterns do you see in my journal?");
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const s of [...topical, ...base]) {
+    if (!seen.has(s)) {
+      seen.add(s);
+      out.push(s);
+    }
+    if (out.length >= 3) break;
+  }
+  return out;
+}

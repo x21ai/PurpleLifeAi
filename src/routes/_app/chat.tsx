@@ -8,7 +8,9 @@ import { toast } from "sonner";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/integrations/supabase/auth-context";
-import { getSuggestedQuestions } from "@/lib/condition-prompts";
+import { getSuggestedQuestions, getFollowUps } from "@/lib/condition-prompts";
+import { DisclaimerFooter } from "@/components/chat/disclaimer-footer";
+import { FollowUpChips } from "@/components/chat/follow-up-chips";
 
 type Proposal = {
   kind:
@@ -167,6 +169,18 @@ function AskPage() {
                       onCancel={() => updateProposalStatus(i, pi, "cancelled")}
                     />
                   ))}
+                  {m.role === "assistant" &&
+                    !m.proposals?.length &&
+                    i === messages.length - 1 &&
+                    !thinking && (
+                      <FollowUpChips
+                        suggestions={getFollowUps(
+                          conditions,
+                          [...messages].reverse().find((x) => x.role === "user")?.content ?? "",
+                        )}
+                        onPick={(s) => void send(s)}
+                      />
+                    )}
                 </React.Fragment>
               ))}
               {thinking && <ThinkingDots />}
@@ -176,6 +190,7 @@ function AskPage() {
       </div>
 
       <div className="fixed bottom-16 md:static md:bottom-auto left-0 right-0 border-t border-border/40 bg-background/95 backdrop-blur px-4 sm:px-10 lg:px-16 py-4">
+        <DisclaimerFooter />
         <div className="mx-auto max-w-3xl flex items-end gap-3">
           <textarea
             ref={inputRef}
