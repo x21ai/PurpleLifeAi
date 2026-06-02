@@ -152,7 +152,7 @@ function AskPage() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-10 lg:px-16 pb-28 md:pb-6">
         <div className="mx-auto max-w-3xl py-8">
           {messages.length === 0 ? (
-            <EmptyState onPick={(s) => void send(s)} />
+            <EmptyState onPick={(s) => void send(s)} suggestions={suggestions} />
           ) : (
             <div className="space-y-4">
               {messages.map((m, i) => (
