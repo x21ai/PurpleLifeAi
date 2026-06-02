@@ -457,7 +457,45 @@ export const proposeChange = createServerFn({ method: "POST" })
       metadata: { type: data.type },
     });
 
+    // Fire an in-app alert for the owner so the pending-inbox badge updates.
+    try {
+      const { data: caregiverProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("first_name, last_name")
+        .eq("id", userId)
+        .maybeSingle();
+      const caregiverName =
+        [caregiverProfile?.first_name, caregiverProfile?.last_name]
+          .filter(Boolean)
+          .join(" ")
+          .trim() || "A caregiver";
+      const summary = String((data.payload as { text?: string })?.text ?? "")
+        .slice(0, 140);
+      await supabaseAdmin.from("alerts").insert({
+        user_id: rel.owner_id,
+        kind: "caregiver_proposal",
+        severity: "info",
+        title: `${caregiverName} proposed a change`,
+        body: summary || "Open the inbox to review.",
+      });
+    } catch {
+      // Non-fatal: alert is a UX nicety, the pending_change is what matters.
+    }
+
     return { change };
+  });
+
+export const getPendingChangesCount = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const { count, error } = await supabaseAdmin
+      .from("pending_changes")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", userId)
+      .eq("status", "pending");
+    if (error) throw new Error(error.message);
+    return { count: count ?? 0 };
   });
 
 export const listAuditLog = createServerFn({ method: "GET" })

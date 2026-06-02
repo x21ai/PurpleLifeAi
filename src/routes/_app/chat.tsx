@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/integrations/supabase/auth-context";
+import { getSuggestedQuestions } from "@/lib/condition-prompts";
 
 type Proposal = {
   kind:
@@ -26,13 +28,6 @@ type Msg = {
   proposalStatus?: Array<"pending" | "confirmed" | "cancelled" | "failed">;
 };
 
-const SUGGESTIONS = [
-  "How have I been sleeping this week?",
-  "Did anything unusual happen yesterday?",
-  "What patterns do you see before my events?",
-  "What does the research say about my main medication?",
-];
-
 export const Route = createFileRoute("/_app/chat")({
   head: () => ({ meta: [{ title: "Ask — Purple" }] }),
   component: AskPage,
@@ -41,6 +36,22 @@ export const Route = createFileRoute("/_app/chat")({
 function AskPage() {
   useRouteTheme("light");
   const { t } = useTranslation();
+  const { session } = useAuth();
+  const userId = session?.user.id;
+  const [conditions, setConditions] = React.useState<string[] | null>(null);
+  React.useEffect(() => {
+    if (!userId) return;
+    void supabase
+      .from("profiles")
+      .select("conditions")
+      .eq("id", userId)
+      .maybeSingle()
+      .then(({ data }) => setConditions(data?.conditions ?? []));
+  }, [userId]);
+  const suggestions = React.useMemo(
+    () => getSuggestedQuestions(conditions),
+    [conditions],
+  );
   const [messages, setMessages] = React.useState<Msg[]>([]);
   const [input, setInput] = React.useState("");
   const [thinking, setThinking] = React.useState(false);
@@ -141,7 +152,7 @@ function AskPage() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-10 lg:px-16 pb-28 md:pb-6">
         <div className="mx-auto max-w-3xl py-8">
           {messages.length === 0 ? (
-            <EmptyState onPick={(s) => void send(s)} />
+            <EmptyState onPick={(s) => void send(s)} suggestions={suggestions} />
           ) : (
             <div className="space-y-4">
               {messages.map((m, i) => (
@@ -190,20 +201,26 @@ function AskPage() {
   );
 }
 
-function EmptyState({ onPick }: { onPick: (s: string) => void }) {
+function EmptyState({
+  onPick,
+  suggestions,
+}: {
+  onPick: (s: string) => void;
+  suggestions: string[];
+}) {
   return (
     <div className="py-6 sm:py-10">
       <p className="body-serif text-foreground/85 max-w-lg leading-relaxed">
         Ask me anything about your sleep, your medication, your symptoms, your patterns, or your
         care.
       </p>
-      <div className="mt-8 flex flex-wrap gap-2">
-        {SUGGESTIONS.map((s) => (
+      <div className="mt-8 -mx-1 flex gap-2 overflow-x-auto sm:flex-wrap sm:overflow-visible scrollbar-none">
+        {suggestions.map((s) => (
           <button
             key={s}
             type="button"
             onClick={() => onPick(s)}
-            className="text-left text-sm rounded-full border border-border/60 bg-secondary/40 hover:bg-secondary px-4 py-2.5 transition"
+            className="shrink-0 sm:shrink text-left text-sm rounded-full border border-border/60 bg-secondary/40 hover:bg-secondary px-4 py-2.5 transition"
           >
             {s}
           </button>

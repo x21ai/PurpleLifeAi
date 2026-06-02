@@ -108,6 +108,89 @@ export function labelForCondition(id: string): string {
 }
 
 /**
+ * Suggested questions for Ask Purple, by condition. These are questions
+ * the *user asks Purple* (analytical), not journal prompts.
+ */
+const QUESTIONS: Record<ConditionTag, string[]> = {
+  epilepsy: [
+    "Show my seizures from the last 30 days",
+    "Any patterns before my recent episodes?",
+    "Have I been taking every dose on time?",
+  ],
+  migraine: [
+    "When did my last migraine hit and what helped?",
+    "Which triggers show up most often in my journal?",
+    "How often am I using abortive meds this month?",
+  ],
+  diabetes: [
+    "Show my recent highs and lows",
+    "Which meals seemed to push my glucose up?",
+    "How is my time-in-range trending?",
+  ],
+  mental_health: [
+    "How has my mood been this week?",
+    "What seems to help on the harder days?",
+    "Am I sleeping enough?",
+  ],
+  autoimmune: [
+    "When did my last flare start and how long did it last?",
+    "What patterns show up before a flare?",
+    "How is fatigue trending this month?",
+  ],
+  pots: [
+    "How is my heart rate on standing this week?",
+    "Which days were hardest for orthostatic symptoms?",
+    "Am I getting enough fluids and salt?",
+  ],
+  long_covid: [
+    "Show signs of PEM after activity",
+    "How is my energy envelope this week?",
+    "Which activities seem to cost me the most?",
+  ],
+  chronic_pain: [
+    "How has my pain trended this week?",
+    "What helped most on flare days?",
+    "Any triggers worth noting recently?",
+  ],
+  caregiver: [
+    "Summarize this week for me",
+    "Any episodes or missed doses this week?",
+    "What changed compared to last week?",
+  ],
+  general: [
+    "How am I sleeping?",
+    "Anything unusual this week?",
+    "What patterns do you see in my journal?",
+  ],
+};
+
+const GENERAL_FALLBACK = [
+  "How am I sleeping?",
+  "Show last week's events",
+  "What patterns do you see in my journal?",
+];
+
+export function getSuggestedQuestions(
+  conditions: string[] | null | undefined,
+): string[] {
+  const tags = (conditions ?? []).filter(
+    (c): c is ConditionTag => c in QUESTIONS,
+  );
+  if (tags.length === 0) return GENERAL_FALLBACK;
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const tag of tags) {
+    for (const q of QUESTIONS[tag]) {
+      if (!seen.has(q)) {
+        seen.add(q);
+        out.push(q);
+      }
+    }
+  }
+  return out.slice(0, 5);
+}
+
+/**
  * Conditions for which seizure tracking surfaces should appear.
  * Today only `epilepsy`; expand if we add seizure-prone conditions
  * (e.g. certain neurological diagnoses) later.

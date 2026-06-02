@@ -11,6 +11,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
@@ -118,6 +128,9 @@ function TravelPage() {
     | null
   >(null);
   const [previewingId, setPreviewingId] = React.useState<string | null>(null);
+  const [regenConfirm, setRegenConfirm] = React.useState<
+    { trip: Trip; pendingCount: number } | null
+  >(null);
 
   const load = React.useCallback(async () => {
     if (!userId) return;
@@ -226,6 +239,20 @@ function TravelPage() {
     } finally {
       setGeneratingId(null);
     }
+  };
+
+  const requestGenerate = async (trip: Trip) => {
+    // First time: just generate. Re-generation: confirm with count.
+    if (!trip.schedule_generated_at) {
+      await generateSchedule(trip);
+      return;
+    }
+    const { count } = await supabase
+      .from("medication_doses")
+      .select("id", { count: "exact", head: true })
+      .eq("trip_id", trip.id)
+      .eq("status", "pending");
+    setRegenConfirm({ trip, pendingCount: count ?? 0 });
   };
 
   const previewSchedule = async (trip: Trip) => {
@@ -537,7 +564,7 @@ function TravelPage() {
                       type="button"
                       size="sm"
                       className="rounded-full h-7 px-3 text-xs"
-                      onClick={() => void generateSchedule(t)}
+                      onClick={() => void requestGenerate(t)}
                       disabled={generatingId === t.id}
                     >
                       {generatingId === t.id ? (
@@ -635,6 +662,38 @@ function TravelPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={!!regenConfirm}
+        onOpenChange={(o) => {
+          if (!o) setRegenConfirm(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Regenerate trip schedule?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {regenConfirm
+                ? `This will replace ${regenConfirm.pendingCount} pending dose${
+                    regenConfirm.pendingCount === 1 ? "" : "s"
+                  } for this trip with a fresh schedule. Already-taken doses are kept.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                const trip = regenConfirm?.trip;
+                setRegenConfirm(null);
+                if (trip) await generateSchedule(trip);
+              }}
+            >
+              Regenerate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
