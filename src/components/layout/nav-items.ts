@@ -1,8 +1,8 @@
-import { Sun, BookOpen, Clock, TrendingUp, Settings2, User, Wrench } from "lucide-react";
+import { Sun, BookOpen, Clock, TrendingUp, Settings2, User, Wrench, Droplets } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export type NavItem = {
-  to: "/today" | "/journal" | "/timeline" | "/insights" | "/account" | "/tools" | "/settings";
+  to: "/today" | "/journal" | "/timeline" | "/insights" | "/account" | "/tools" | "/settings" | "/hydration";
   label: string;
   icon: LucideIcon;
 };
@@ -10,6 +10,7 @@ export type NavItem = {
 export const navItems: NavItem[] = [
   { to: "/today", label: "Today", icon: Sun },
   { to: "/journal", label: "Journal", icon: BookOpen },
+  { to: "/hydration", label: "Hydration", icon: Droplets },
   { to: "/timeline", label: "Timeline", icon: Clock },
   { to: "/insights", label: "Patterns", icon: TrendingUp },
   { to: "/tools", label: "Tools", icon: Wrench },
