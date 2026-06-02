@@ -633,6 +633,28 @@ function TravelPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <TripEditDialog
+        trip={editingTrip}
+        homeTz={homeTz}
+        onOpenChange={(o) => {
+          if (!o) setEditingTrip(null);
+        }}
+        onSaved={async (tripId, regenerateRecommended) => {
+          await load();
+          if (regenerateRecommended) {
+            const fresh = (trips ?? []).find((x) => x.id === tripId);
+            if (fresh) {
+              const { count } = await supabase
+                .from("medication_doses")
+                .select("id", { count: "exact", head: true })
+                .eq("trip_id", tripId)
+                .eq("status", "pending");
+              setRegenConfirm({ trip: fresh, pendingCount: count ?? 0 });
+            }
+          }
+        }}
+      />
     </div>
   );
 }
