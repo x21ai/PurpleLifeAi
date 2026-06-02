@@ -3,6 +3,7 @@ import { navItems, type NavItem } from "./nav-items";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { PendingInboxBadge } from "@/components/care/pending-inbox-badge";
+import { CaregiverNavLink } from "./caregiver-nav-link";
 
 const NAV_I18N: Record<string, string> = {
   "/today": "nav.today",
@@ -51,6 +52,7 @@ export function SidebarNav() {
             />
           );
         })}
+        <CaregiverNavLink />
         <div className="hidden lg:block">
           <PendingInboxBadge variant="full" />
         </div>

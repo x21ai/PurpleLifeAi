@@ -16,6 +16,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { rearmMedicationNotifications } from "@/lib/med-notifications";
 import { ThemeProvider, themeBootstrapScript } from "@/lib/theme-provider";
+import { useOuraDailyAutoSync } from "@/hooks/use-oura-daily-autosync";
 import "@/i18n";
 import { hydrateLocale } from "@/i18n";
 
@@ -160,6 +161,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
+  // Fire a background Oura sync once per session if the data is > 20h old.
+  useOuraDailyAutoSync();
 
   // Resolve navigator → saved → default *after* hydration so the SSR markup
   // (always rendered in the default locale) matches the first client render.

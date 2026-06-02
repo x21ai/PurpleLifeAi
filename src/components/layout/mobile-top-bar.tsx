@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/co
 import { navItems } from "./nav-items";
 import { cn } from "@/lib/utils";
 import { PendingInboxBadge } from "@/components/care/pending-inbox-badge";
+import { CaregiverNavLink } from "./caregiver-nav-link";
 
 export function MobileTopBar() {
   const [open, setOpen] = useState(false);
@@ -53,6 +54,7 @@ export function MobileTopBar() {
                 </Link>
               );
             })}
+            <CaregiverNavLink variant="sheet" onClick={() => setOpen(false)} />
           </nav>
           <div className="mt-2 mx-3 pt-4 border-t border-border space-y-1 text-[14px]">
             <Link to="/charter" onClick={() => setOpen(false)} className="block px-3 py-2 text-muted-foreground hover:text-foreground">Charter</Link>

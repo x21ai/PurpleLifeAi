@@ -74,9 +74,9 @@ function CareDashboardPage() {
   const tabs: { key: TabKey; label: string; scope: string }[] = useMemo(
     () =>
       [
+        { key: "biometrics" as TabKey, label: "Biometrics", scope: "biometrics:read" },
         { key: "today" as TabKey, label: "Today", scope: "today:read" },
         { key: "meds" as TabKey, label: "Meds", scope: "meds:read" },
-        { key: "biometrics" as TabKey, label: "Biometrics", scope: "biometrics:read" },
         { key: "journal" as TabKey, label: "Journal", scope: "journal:read" },
         { key: "seizures" as TabKey, label: "Seizures", scope: "seizures:read" },
         { key: "reports" as TabKey, label: "Reports", scope: "reports:read" },
@@ -84,7 +84,7 @@ function CareDashboardPage() {
     [scopes.join(",")],
   );
 
-  const [active, setActive] = useState<TabKey>("today");
+  const [active, setActive] = useState<TabKey>("biometrics");
   const current: TabKey = tabs.some((t) => t.key === active) ? active : (tabs[0]?.key ?? "today");
 
   // Activity counts (unread badges)
@@ -141,6 +141,12 @@ function CareDashboardPage() {
     profile?.community_display_name?.trim() ||
     [profile?.first_name, profile?.last_name].filter(Boolean).join(" ").trim() ||
     "Their account";
+  // "Devyn's Dashboard" — use first name when we have it, fall back to the
+  // full display name otherwise. Possessive suffix follows simple English rule.
+  const firstName = profile?.first_name?.trim();
+  const dashboardTitle = firstName
+    ? `${firstName}${firstName.endsWith("s") ? "'" : "'s"} Dashboard`
+    : `${displayName}${displayName.endsWith("s") ? "'" : "'s"} Dashboard`;
 
   return (
     <div className="mx-auto max-w-4xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
@@ -153,7 +159,7 @@ function CareDashboardPage() {
 
       <p className="label-eyebrow text-muted-foreground mt-6">{t("care.eyebrow")}</p>
       <h1 className="mt-3 font-serif text-4xl sm:text-5xl leading-[1.04] tracking-[-0.02em] text-foreground">
-        {displayName}
+        {dashboardTitle}
       </h1>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Badge variant="secondary">{ROLE_LABELS[relationship.role as CareRole]}</Badge>
@@ -173,6 +179,16 @@ function CareDashboardPage() {
         </p>
       ) : (
         <div className="mt-8">
+          {/*
+            Patient-related alerts surface above tabs on every tab, not only on
+            Today. Tapping an alert still jumps to the relevant tab.
+          */}
+          <div className="mb-6">
+            <CaregiverAlertsCard
+              ownerId={ownerId}
+              onJump={(tab) => setActive(tab as TabKey)}
+            />
+          </div>
           {/* Mobile: <Select>. Desktop: tabs. */}
           <div className="sm:hidden">
             <Select value={current} onValueChange={(v) => setActive(v as TabKey)}>
@@ -287,7 +303,6 @@ function TodayPanel({
   const { forecast, alerts } = q.data!;
   return (
     <div className="space-y-6">
-      <CaregiverAlertsCard ownerId={ownerId} onJump={onJump as (t: string) => void} />
       <Section>
         <p className="label-eyebrow text-muted-foreground">Today's read</p>
         {forecast ? (
