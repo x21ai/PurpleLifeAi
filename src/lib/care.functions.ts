@@ -26,12 +26,13 @@ const roleSchema = z.enum(["emergency", "caregiver", "provider", "viewer"]);
 
 export const inviteCaregiver = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { email: string; role: CareRole; scopes?: CareScope[] }) =>
+  .inputValidator((input: { email: string; role: CareRole; scopes?: CareScope[]; relationship_label?: string | null }) =>
     z
       .object({
         email: emailSchema,
         role: roleSchema,
         scopes: z.array(z.string().max(64)).max(60).optional(),
+        relationship_label: z.string().trim().min(1).max(40).optional().nullable(),
       })
       .parse(input),
   )
@@ -48,6 +49,7 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
         invite_token,
         role: data.role,
         status: "pending",
+        relationship_label: data.relationship_label ?? null,
       })
       .select()
       .single();
@@ -194,6 +196,27 @@ export const setScopes = createServerFn({ method: "POST" })
   });
 
 /* ---------- Audit log ---------- */
+
+export const setRelationshipLabel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { relationship_id: string; relationship_label: string | null }) =>
+    z
+      .object({
+        relationship_id: z.string().uuid(),
+        relationship_label: z.string().trim().min(1).max(40).nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { error } = await supabaseAdmin
+      .from("care_relationships")
+      .update({ relationship_label: data.relationship_label })
+      .eq("id", data.relationship_id)
+      .eq("owner_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
 
 export const listCareAuditLog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -589,7 +612,7 @@ export const caregiverReadOverview = createServerFn({ method: "POST" })
 
     const { data: profile } = await supabaseAdmin
       .from("profiles")
-      .select("first_name, last_name, community_display_name, diagnosis, timezone")
+      .select("first_name, last_name, community_display_name, diagnosis, timezone, phone, pronouns")
       .eq("id", data.owner_id)
       .maybeSingle();
 

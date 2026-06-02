@@ -32,6 +32,7 @@ import {
   listPeopleSharingWithMe,
   revokeRelationship,
   setScopes,
+  setRelationshipLabel,
   exportCareAuditCsv,
   listOwnerAuditFeed,
   pauseAllWrites,
@@ -46,6 +47,8 @@ import {
   ROLE_DESCRIPTIONS,
   ROLE_LABELS,
   SCOPE_LABELS,
+  RELATIONSHIP_LABELS,
+  type RelationshipLabel,
   type CareRole,
   type CareScope,
 } from "@/lib/care.scopes";
@@ -160,10 +163,23 @@ function SharingPage() {
                     <div className="min-w-0">
                       <p className="text-sm text-foreground truncate">{r.invite_email}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
+                        {(r as any).relationship_label ? (
+                          <>
+                            <span className="text-foreground">{(r as any).relationship_label}</span>
+                            <span> · </span>
+                          </>
+                        ) : null}
                         {ROLE_LABELS[r.role as CareRole]} ·{" "}
                         <StatusPill status={r.status} />
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">{myScopes.length} scope{myScopes.length === 1 ? "" : "s"} granted</p>
+                      {r.status !== "revoked" && (
+                        <RelationshipLabelEditor
+                          relationshipId={r.id}
+                          value={(r as any).relationship_label ?? null}
+                          onSaved={() => qc.invalidateQueries({ queryKey: ["care", "mine"] })}
+                        />
+                      )}
                       {r.status === "active" && (
                         <div className="mt-2">
                           <ExpiryControl relationshipId={r.id} expiresAt={r.expires_at} />
@@ -497,9 +513,17 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<CareRole>("caregiver");
+  const [relationshipLabel, setRelationshipLabelValue] = useState<RelationshipLabel | "">("");
   const invite = useServerFn(inviteCaregiver);
   const m = useMutation({
-    mutationFn: () => invite({ data: { email, role } }),
+    mutationFn: () =>
+      invite({
+        data: {
+          email,
+          role,
+          relationship_label: relationshipLabel || null,
+        },
+      }),
     onSuccess: (res: { acceptUrl?: string; emailSent?: boolean }) => {
       const url = res?.acceptUrl;
       if (res?.emailSent) {
@@ -565,6 +589,23 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
             />
           </div>
           <div>
+            <Label htmlFor="invite-relationship">How are they related to you?</Label>
+            <select
+              id="invite-relationship"
+              value={relationshipLabel}
+              onChange={(e) => setRelationshipLabelValue(e.target.value as RelationshipLabel | "")}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+            >
+              <option value="">Not specified</option>
+              {RELATIONSHIP_LABELS.map((l) => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Just a label so you remember who's who. Doesn't change what they can see.
+            </p>
+          </div>
+          <div>
             <Label>What kind of access?</Label>
             <div className="mt-2 grid gap-2">
               {(["emergency", "caregiver", "provider", "viewer"] as CareRole[]).map((r) => (
@@ -598,6 +639,46 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
 }
 
 /* ----------------- Manage scopes sheet ----------------- */
+
+function RelationshipLabelEditor({
+  relationshipId,
+  value,
+  onSaved,
+}: {
+  relationshipId: string;
+  value: string | null;
+  onSaved: () => void;
+}) {
+  const save = useServerFn(setRelationshipLabel);
+  const m = useMutation({
+    mutationFn: (next: string | null) =>
+      save({ data: { relationship_id: relationshipId, relationship_label: next } }),
+    onSuccess: () => {
+      toast.success("Relationship updated");
+      onSaved();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't save"),
+  });
+  return (
+    <div className="mt-2 inline-flex items-center gap-2">
+      <Label htmlFor={`rel-${relationshipId}`} className="text-[11px] text-muted-foreground">
+        Relationship
+      </Label>
+      <select
+        id={`rel-${relationshipId}`}
+        value={value ?? ""}
+        disabled={m.isPending}
+        onChange={(e) => m.mutate(e.target.value ? e.target.value : null)}
+        className="rounded-md border border-border bg-background px-2 py-1 text-[11px] text-foreground"
+      >
+        <option value="">Not specified</option>
+        {RELATIONSHIP_LABELS.map((l) => (
+          <option key={l} value={l}>{l}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
 
 function ManageRelationshipSheet({
   relationshipId,

@@ -13,9 +13,11 @@ export function ProfileFields() {
   const [first, setFirst] = React.useState("");
   const [last, setLast] = React.useState("");
   const [phone, setPhone] = React.useState(session?.user?.phone ?? "");
+  const [pronouns, setPronouns] = React.useState("");
   const [loading, setLoading] = React.useState(true);
   const [savingName, setSavingName] = React.useState(false);
   const [savingPhone, setSavingPhone] = React.useState(false);
+  const [savingPronouns, setSavingPronouns] = React.useState(false);
 
   React.useEffect(() => {
     if (!userId) return;
@@ -23,12 +25,14 @@ export function ProfileFields() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("first_name, last_name")
+        .select("first_name, last_name, phone, pronouns")
         .eq("id", userId)
         .maybeSingle();
       if (cancelled) return;
       setFirst(data?.first_name ?? "");
       setLast(data?.last_name ?? "");
+      if ((data as any)?.phone) setPhone((data as any).phone);
+      setPronouns((data as any)?.pronouns ?? "");
       setLoading(false);
     })();
     return () => {
@@ -50,10 +54,31 @@ export function ProfileFields() {
 
   const savePhone = async () => {
     setSavingPhone(true);
-    const { error } = await supabase.auth.updateUser({ phone: phone.trim() || undefined });
+    const trimmed = phone.trim();
+    // Save to profiles.phone so the people you care for (and the people who
+    // care for you) can see/contact it. Best-effort sync to auth too.
+    const { error } = await supabase
+      .from("profiles")
+      .update({ phone: trimmed || null })
+      .eq("id", userId!);
+    if (!error && trimmed) {
+      void supabase.auth.updateUser({ phone: trimmed }).catch(() => {});
+    }
     setSavingPhone(false);
     if (error) toast.error(error.message);
-    else toast.success("Phone updated. Check for a verification code if requested.");
+    else toast.success("Phone updated");
+  };
+
+  const savePronouns = async () => {
+    if (!userId) return;
+    setSavingPronouns(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ pronouns: pronouns.trim() || null })
+      .eq("id", userId);
+    setSavingPronouns(false);
+    if (error) toast.error("Couldn't save pronouns");
+    else toast.success("Pronouns updated");
   };
 
   return (
@@ -100,7 +125,9 @@ export function ProfileFields() {
 
       <div className="border-t sheet-divider pt-6">
         <p className="text-[15px] text-[#FAFAFC]">Phone number</p>
-        <p className="mt-1 text-[13px] sheet-muted">Used for security and account recovery. Include country code.</p>
+        <p className="mt-1 text-[13px] sheet-muted">
+          Visible to people you share your account with so they can reach you. Include country code.
+        </p>
         <div className="mt-3 flex gap-2">
           <Input
             value={phone}
@@ -111,6 +138,24 @@ export function ProfileFields() {
           />
           <Button onClick={savePhone} disabled={savingPhone} variant="outline" className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10">
             {savingPhone && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+            Save
+          </Button>
+        </div>
+      </div>
+
+      <div className="border-t sheet-divider pt-6">
+        <p className="text-[15px] text-[#FAFAFC]">Pronouns</p>
+        <p className="mt-1 text-[13px] sheet-muted">Optional. Shown to people you share with.</p>
+        <div className="mt-3 flex gap-2">
+          <Input
+            value={pronouns}
+            onChange={(e) => setPronouns(e.target.value)}
+            placeholder="she/her, he/him, they/them…"
+            disabled={loading}
+            className="bg-white/[0.04] border-white/10 text-[#FAFAFC] placeholder:text-white/30 flex-1"
+          />
+          <Button onClick={savePronouns} disabled={savingPronouns || loading} variant="outline" className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10">
+            {savingPronouns && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
             Save
           </Button>
         </div>

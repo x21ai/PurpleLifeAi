@@ -384,6 +384,7 @@ export type Database = {
           invite_email: string
           invite_token: string | null
           owner_id: string
+          relationship_label: string | null
           revoked_at: string | null
           role: Database["public"]["Enums"]["care_role"]
           status: Database["public"]["Enums"]["care_relationship_status"]
@@ -397,6 +398,7 @@ export type Database = {
           invite_email: string
           invite_token?: string | null
           owner_id: string
+          relationship_label?: string | null
           revoked_at?: string | null
           role?: Database["public"]["Enums"]["care_role"]
           status?: Database["public"]["Enums"]["care_relationship_status"]
@@ -410,6 +412,7 @@ export type Database = {
           invite_email?: string
           invite_token?: string | null
           owner_id?: string
+          relationship_label?: string | null
           revoked_at?: string | null
           role?: Database["public"]["Enums"]["care_role"]
           status?: Database["public"]["Enums"]["care_relationship_status"]
@@ -1292,6 +1295,8 @@ export type Database = {
           last_name: string | null
           locale: string
           onboarded_at: string | null
+          phone: string | null
+          pronouns: string | null
           purge_after: string | null
           sleep_time: string
           snooze_minutes: number
@@ -1326,6 +1331,8 @@ export type Database = {
           last_name?: string | null
           locale?: string
           onboarded_at?: string | null
+          phone?: string | null
+          pronouns?: string | null
           purge_after?: string | null
           sleep_time?: string
           snooze_minutes?: number
@@ -1360,6 +1367,8 @@ export type Database = {
           last_name?: string | null
           locale?: string
           onboarded_at?: string | null
+          phone?: string | null
+          pronouns?: string | null
           purge_after?: string | null
           sleep_time?: string
           snooze_minutes?: number
