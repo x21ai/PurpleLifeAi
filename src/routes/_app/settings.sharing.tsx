@@ -163,10 +163,23 @@ function SharingPage() {
                     <div className="min-w-0">
                       <p className="text-sm text-foreground truncate">{r.invite_email}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
+                        {(r as any).relationship_label ? (
+                          <>
+                            <span className="text-foreground">{(r as any).relationship_label}</span>
+                            <span> · </span>
+                          </>
+                        ) : null}
                         {ROLE_LABELS[r.role as CareRole]} ·{" "}
                         <StatusPill status={r.status} />
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">{myScopes.length} scope{myScopes.length === 1 ? "" : "s"} granted</p>
+                      {r.status !== "revoked" && (
+                        <RelationshipLabelEditor
+                          relationshipId={r.id}
+                          value={(r as any).relationship_label ?? null}
+                          onSaved={() => qc.invalidateQueries({ queryKey: ["care", "mine"] })}
+                        />
+                      )}
                       {r.status === "active" && (
                         <div className="mt-2">
                           <ExpiryControl relationshipId={r.id} expiresAt={r.expires_at} />
