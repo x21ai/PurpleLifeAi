@@ -163,6 +163,9 @@ function CareDashboardPage() {
       </h1>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Badge variant="secondary">{ROLE_LABELS[relationship.role as CareRole]}</Badge>
+        {(relationship as any).relationship_label ? (
+          <Badge variant="outline">{(relationship as any).relationship_label}</Badge>
+        ) : null}
         <span className="text-xs text-muted-foreground">
           {scopes.length} scope{scopes.length === 1 ? "" : "s"} granted
         </span>
@@ -172,6 +175,22 @@ function CareDashboardPage() {
           </span>
         )}
       </div>
+
+      {(profile as any)?.phone || (profile as any)?.pronouns ? (
+        <div className="mt-4 rounded-xl border border-border bg-card p-4 text-sm">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">Contact</p>
+          <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-foreground">
+            {(profile as any)?.phone && (
+              <a href={`tel:${(profile as any).phone}`} className="hover:underline">
+                📞 {(profile as any).phone}
+              </a>
+            )}
+            {(profile as any)?.pronouns && (
+              <span className="text-muted-foreground">{(profile as any).pronouns}</span>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {tabs.length === 0 ? (
         <p className="mt-10 text-sm text-muted-foreground">
