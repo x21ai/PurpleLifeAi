@@ -197,6 +197,27 @@ export const setScopes = createServerFn({ method: "POST" })
 
 /* ---------- Audit log ---------- */
 
+export const setRelationshipLabel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { relationship_id: string; relationship_label: string | null }) =>
+    z
+      .object({
+        relationship_id: z.string().uuid(),
+        relationship_label: z.string().trim().min(1).max(40).nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { error } = await supabaseAdmin
+      .from("care_relationships")
+      .update({ relationship_label: data.relationship_label })
+      .eq("id", data.relationship_id)
+      .eq("owner_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const listCareAuditLog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { relationship_id: string; limit?: number }) =>
