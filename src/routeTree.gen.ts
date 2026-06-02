@@ -42,6 +42,7 @@ import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
 import { Route as AppMyHealthRouteImport } from './routes/_app/my-health'
 import { Route as AppMedsRouteImport } from './routes/_app/meds'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
+import { Route as AppHydrationRouteImport } from './routes/_app/hydration'
 import { Route as AppCommunityNewRouteImport } from './routes/_app/community-new'
 import { Route as AppChatCareRouteImport } from './routes/_app/chat-care'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
@@ -245,6 +246,11 @@ const AppMedsRoute = AppMedsRouteImport.update({
 const AppInsightsRoute = AppInsightsRouteImport.update({
   id: '/insights',
   path: '/insights',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHydrationRoute = AppHydrationRouteImport.update({
+  id: '/hydration',
+  path: '/hydration',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCommunityNewRoute = AppCommunityNewRouteImport.update({
@@ -480,6 +486,7 @@ export interface FileRoutesByFullPath {
   '/chat': typeof AppChatRoute
   '/chat-care': typeof AppChatCareRoute
   '/community-new': typeof AppCommunityNewRoute
+  '/hydration': typeof AppHydrationRoute
   '/insights': typeof AppInsightsRoute
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
@@ -553,6 +560,7 @@ export interface FileRoutesByTo {
   '/chat': typeof AppChatRoute
   '/chat-care': typeof AppChatCareRoute
   '/community-new': typeof AppCommunityNewRoute
+  '/hydration': typeof AppHydrationRoute
   '/insights': typeof AppInsightsRoute
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
@@ -629,6 +637,7 @@ export interface FileRoutesById {
   '/_app/chat': typeof AppChatRoute
   '/_app/chat-care': typeof AppChatCareRoute
   '/_app/community-new': typeof AppCommunityNewRoute
+  '/_app/hydration': typeof AppHydrationRoute
   '/_app/insights': typeof AppInsightsRoute
   '/_app/meds': typeof AppMedsRouteWithChildren
   '/_app/my-health': typeof AppMyHealthRoute
@@ -705,6 +714,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/chat-care'
     | '/community-new'
+    | '/hydration'
     | '/insights'
     | '/meds'
     | '/my-health'
@@ -778,6 +788,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/chat-care'
     | '/community-new'
+    | '/hydration'
     | '/insights'
     | '/meds'
     | '/my-health'
@@ -853,6 +864,7 @@ export interface FileRouteTypes {
     | '/_app/chat'
     | '/_app/chat-care'
     | '/_app/community-new'
+    | '/_app/hydration'
     | '/_app/insights'
     | '/_app/meds'
     | '/_app/my-health'
@@ -1170,6 +1182,13 @@ declare module '@tanstack/react-router' {
       path: '/insights'
       fullPath: '/insights'
       preLoaderRoute: typeof AppInsightsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/hydration': {
+      id: '/_app/hydration'
+      path: '/hydration'
+      fullPath: '/hydration'
+      preLoaderRoute: typeof AppHydrationRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/community-new': {
@@ -1539,6 +1558,7 @@ interface AppRouteChildren {
   AppChatRoute: typeof AppChatRoute
   AppChatCareRoute: typeof AppChatCareRoute
   AppCommunityNewRoute: typeof AppCommunityNewRoute
+  AppHydrationRoute: typeof AppHydrationRoute
   AppInsightsRoute: typeof AppInsightsRoute
   AppMedsRoute: typeof AppMedsRouteWithChildren
   AppMyHealthRoute: typeof AppMyHealthRoute
@@ -1568,6 +1588,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppChatRoute: AppChatRoute,
   AppChatCareRoute: AppChatCareRoute,
   AppCommunityNewRoute: AppCommunityNewRoute,
+  AppHydrationRoute: AppHydrationRoute,
   AppInsightsRoute: AppInsightsRoute,
   AppMedsRoute: AppMedsRouteWithChildren,
   AppMyHealthRoute: AppMyHealthRoute,
@@ -1643,13 +1664,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

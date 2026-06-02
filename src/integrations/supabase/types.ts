@@ -139,6 +139,48 @@ export type Database = {
         }
         Relationships: []
       }
+      aura_events: {
+        Row: {
+          created_at: string
+          created_by_id: string | null
+          created_by_kind: string
+          duration_seconds: number | null
+          id: string
+          kind: string
+          led_to_seizure: boolean
+          linked_seizure_id: string | null
+          notes: string | null
+          occurred_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
+          duration_seconds?: number | null
+          id?: string
+          kind?: string
+          led_to_seizure?: boolean
+          linked_seizure_id?: string | null
+          notes?: string | null
+          occurred_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
+          duration_seconds?: number | null
+          id?: string
+          kind?: string
+          led_to_seizure?: boolean
+          linked_seizure_id?: string | null
+          notes?: string | null
+          occurred_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       behavior_taxonomy: {
         Row: {
           aliases: string[]
@@ -938,6 +980,48 @@ export type Database = {
           message?: string
           resolved?: boolean
           user_id?: string
+        }
+        Relationships: []
+      }
+      hydration_intake: {
+        Row: {
+          consumed_at: string
+          created_at: string
+          created_by_id: string | null
+          created_by_kind: string
+          electrolyte_brand: string | null
+          id: string
+          kind: string
+          notes: string | null
+          sodium_mg: number | null
+          user_id: string
+          volume_ml: number
+        }
+        Insert: {
+          consumed_at?: string
+          created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
+          electrolyte_brand?: string | null
+          id?: string
+          kind?: string
+          notes?: string | null
+          sodium_mg?: number | null
+          user_id: string
+          volume_ml: number
+        }
+        Update: {
+          consumed_at?: string
+          created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
+          electrolyte_brand?: string | null
+          id?: string
+          kind?: string
+          notes?: string | null
+          sodium_mg?: number | null
+          user_id?: string
+          volume_ml?: number
         }
         Relationships: []
       }
