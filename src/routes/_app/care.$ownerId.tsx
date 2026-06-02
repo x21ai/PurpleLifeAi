@@ -1,8 +1,8 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, MessageCircle } from "lucide-react";
 import { useEffect, useMemo } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import { SeizureListReadOnly } from "@/components/care/seizure-list-readonly";
 import { ReportsListReadOnly } from "@/components/care/reports-list-readonly";
 import { LogSeizureSheet } from "@/components/care/log-seizure-sheet";
 import { AddJournalSheet } from "@/components/care/add-journal-sheet";
+import { getOrCreateDirectThread } from "@/lib/care-chat.functions";
 import { AddBiometricSheet } from "@/components/care/add-biometric-sheet";
 import { OwnerSwitcher } from "@/components/care/owner-switcher";
 import { CaregiverAlertsCard } from "@/components/care/caregiver-alerts-card";
@@ -54,7 +55,7 @@ export const Route = createFileRoute("/_app/care/$ownerId")({
   component: CareDashboardPage,
 });
 
-type TabKey = "today" | "meds" | "biometrics" | "journal" | "seizures" | "reports";
+type TabKey = "today" | "meds" | "biometrics" | "journal" | "seizures" | "reports" | "chat";
 
 function CareDashboardPage() {
   useRouteTheme("light");
@@ -80,6 +81,7 @@ function CareDashboardPage() {
         { key: "journal" as TabKey, label: "Journal", scope: "journal:read" },
         { key: "seizures" as TabKey, label: "Seizures", scope: "seizures:read" },
         { key: "reports" as TabKey, label: "Reports", scope: "reports:read" },
+        { key: "chat" as TabKey, label: "Chat", scope: "today:read" },
       ].filter((t) => has(t.scope)),
     [scopes.join(",")],
   );
@@ -289,6 +291,11 @@ function CareDashboardPage() {
                 <ReportsPanel ownerId={ownerId} />
               </TabsContent>
             )}
+            {tabs.find((t) => t.key === "chat") && (
+              <TabsContent value="chat" className="mt-4">
+                <ChatPanel relationshipId={relationship.id} ownerName={displayName} />
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       )}
@@ -298,6 +305,47 @@ function CareDashboardPage() {
 
 function Section({ children }: { children: React.ReactNode }) {
   return <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">{children}</div>;
+}
+
+function ChatPanel({
+  relationshipId,
+  ownerName,
+}: {
+  relationshipId: string;
+  ownerName: string;
+}) {
+  const openFn = useServerFn(getOrCreateDirectThread);
+  const navigate = useNavigate();
+  const q = useQuery({
+    queryKey: ["care-chat", "direct-thread", relationshipId],
+    queryFn: () => openFn({ data: { relationshipId } }),
+    staleTime: 60_000,
+  });
+  return (
+    <Section>
+      <div className="flex flex-col items-start gap-3">
+        <p className="label-eyebrow text-muted-foreground">Direct chat</p>
+        <p className="text-sm text-muted-foreground">
+          Send a private message to {ownerName}. Saved like WhatsApp — full history is kept.
+        </p>
+        <button
+          type="button"
+          disabled={q.isLoading || !q.data}
+          onClick={() => {
+            if (q.data) navigate({ to: "/chat-care", search: { thread: q.data.threadId } });
+          }}
+          className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+        >
+          {q.isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <MessageCircle className="h-4 w-4" />
+          )}
+          Open chat with {ownerName}
+        </button>
+      </div>
+    </Section>
+  );
 }
 
 function Empty({ children }: { children: React.ReactNode }) {

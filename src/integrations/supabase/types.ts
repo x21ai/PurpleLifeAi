@@ -374,6 +374,44 @@ export type Database = {
           },
         ]
       }
+      care_messages: {
+        Row: {
+          attachments: Json
+          body: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          sender_id: string
+          thread_id: string
+        }
+        Insert: {
+          attachments?: Json
+          body: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          sender_id: string
+          thread_id: string
+        }
+        Update: {
+          attachments?: Json
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          sender_id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "care_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       care_relationships: {
         Row: {
           accepted_at: string | null
@@ -444,6 +482,76 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "care_scopes_relationship_id_fkey"
+            columns: ["relationship_id"]
+            isOneToOne: false
+            referencedRelation: "care_relationships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_thread_participants: {
+        Row: {
+          joined_at: string
+          last_read_at: string | null
+          role: string
+          thread_id: string
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string
+          last_read_at?: string | null
+          role: string
+          thread_id: string
+          user_id: string
+        }
+        Update: {
+          joined_at?: string
+          last_read_at?: string | null
+          role?: string
+          thread_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_thread_participants_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "care_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_threads: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          last_message_at: string
+          owner_id: string
+          relationship_id: string | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          last_message_at?: string
+          owner_id: string
+          relationship_id?: string | null
+          title?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          last_message_at?: string
+          owner_id?: string
+          relationship_id?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_threads_relationship_id_fkey"
             columns: ["relationship_id"]
             isOneToOne: false
             referencedRelation: "care_relationships"
@@ -1853,6 +1961,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_care_thread_participant: {
+        Args: { _thread_id: string; _user_id: string }
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }

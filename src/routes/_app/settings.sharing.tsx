@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, Copy, Download, Loader2, Mail, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Copy, Download, Loader2, Mail, MessageCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,7 @@ import {
   setCareDigestPreference,
   getCareDigestPreference,
 } from "@/lib/care.functions";
+import { getOrCreateDirectThread } from "@/lib/care-chat.functions";
 import {
   CARE_RESOURCES,
   CARE_VERBS,
@@ -187,6 +188,9 @@ function SharingPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                      {r.status === "active" && r.caregiver_id && (
+                        <MessageCaregiverButton relationshipId={r.id} />
+                      )}
                       <ManageRelationshipSheet
                         relationshipId={r.id}
                         role={r.role as CareRole}
@@ -279,6 +283,37 @@ function StatusPill({ status }: { status: string }) {
 }
 
 /* ----------------- Revoke confirmation ----------------- */
+
+function MessageCaregiverButton({ relationshipId }: { relationshipId: string }) {
+  const openFn = useServerFn(getOrCreateDirectThread);
+  const [busy, setBusy] = useState(false);
+  const handleOpen = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const r = await openFn({ data: { relationshipId } });
+      window.location.assign(`/chat-care?thread=${r.threadId}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't open chat");
+      setBusy(false);
+    }
+  };
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      aria-label="Message"
+      onClick={handleOpen}
+      disabled={busy}
+    >
+      {busy ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <MessageCircle className="h-4 w-4" />
+      )}
+    </Button>
+  );
+}
 
 function RevokeRelationshipButton({
   email,

@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { HeartHandshake } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { listCaregiverOwners } from "@/lib/care.functions";
+import { getCareChatUnreadTotal } from "@/lib/care-chat.functions";
 
 /**
  * Sidebar/menu entry that only appears when the current user has at least one
@@ -25,9 +26,17 @@ export function CaregiverNavLink({
     staleTime: 60_000,
     retry: false,
   });
+  const unreadFn = useServerFn(getCareChatUnreadTotal);
+  const chatQ = useQuery({
+    queryKey: ["care-chat", "unread-total"],
+    queryFn: () => unreadFn(),
+    refetchInterval: 30_000,
+    retry: false,
+  });
 
   const ownersCount = q.data?.owners.length ?? 0;
-  if (ownersCount === 0) return null;
+  const chatUnread = chatQ.data?.total ?? 0;
+  if (ownersCount === 0 && chatUnread === 0) return null;
 
   const active = pathname === "/care" || pathname.startsWith("/care/");
   const unread =
@@ -35,6 +44,7 @@ export function CaregiverNavLink({
       (acc, o) => acc + (typeof o.unread_total === "number" ? o.unread_total : 0),
       0,
     ) ?? 0;
+  const totalUnread = unread + chatUnread;
 
   if (variant === "sheet") {
     return (
@@ -51,9 +61,9 @@ export function CaregiverNavLink({
       >
         <HeartHandshake className="h-5 w-5" strokeWidth={active ? 2 : 1.6} />
         <span className="flex-1">Caregiver</span>
-        {unread > 0 && (
+        {totalUnread > 0 && (
           <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-medium text-primary-foreground tabular-nums">
-            {unread > 99 ? "99+" : unread}
+            {totalUnread > 99 ? "99+" : totalUnread}
           </span>
         )}
       </Link>
@@ -80,9 +90,9 @@ export function CaregiverNavLink({
         strokeWidth={active ? 2 : 1.6}
       />
       <span className="hidden lg:inline flex-1">Caregiver</span>
-      {unread > 0 && (
+      {totalUnread > 0 && (
         <span className="hidden lg:inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-medium text-primary-foreground tabular-nums">
-          {unread > 99 ? "99+" : unread}
+          {totalUnread > 99 ? "99+" : totalUnread}
         </span>
       )}
     </Link>

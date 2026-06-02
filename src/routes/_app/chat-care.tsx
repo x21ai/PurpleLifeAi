@@ -1,0 +1,414 @@
+import * as React from "react";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { Send, ChevronLeft, Users, MessageCircle, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/integrations/supabase/auth-context";
+import { useRouteTheme } from "@/lib/use-route-theme";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import {
+  listCareThreads,
+  getCareMessages,
+  sendCareMessage,
+  markCareThreadRead,
+  getOrCreateGroupThread,
+} from "@/lib/care-chat.functions";
+
+const searchSchema = z.object({ thread: z.string().uuid().optional() });
+
+export const Route = createFileRoute("/_app/chat-care")({
+  head: () => ({ meta: [{ title: "Care chat — Purple" }] }),
+  validateSearch: searchSchema,
+  component: CareChatPage,
+});
+
+type ThreadSummary = {
+  id: string;
+  owner_id: string;
+  kind: "direct" | "group";
+  relationship_id: string | null;
+  title: string | null;
+  last_message_at: string;
+  others: Array<{ user_id: string; name: string; role: string }>;
+  last_message: { body: string; sender_id: string; created_at: string } | null;
+  unread: number;
+};
+
+type Message = {
+  id: string;
+  thread_id: string;
+  sender_id: string;
+  body: string;
+  attachments: unknown;
+  created_at: string;
+  deleted_at: string | null;
+};
+
+function threadDisplayName(t: ThreadSummary, meId: string | undefined): string {
+  if (t.kind === "group") return t.title ?? "Care team";
+  const other = t.others.find((o) => o.user_id !== meId) ?? t.others[0];
+  return other?.name ?? "Conversation";
+}
+
+function formatTime(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  if (d.toDateString() === today.toDateString()) {
+    return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+  return d.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+function CareChatPage() {
+  useRouteTheme("light");
+  const { session } = useAuth();
+  const meId = session?.user.id;
+  const navigate = useNavigate({ from: "/chat-care" });
+  const search = useSearch({ from: "/_app/chat-care" });
+  const qc = useQueryClient();
+
+  const listFn = useServerFn(listCareThreads);
+  const threadsQ = useQuery({
+    queryKey: ["care-chat", "threads"],
+    queryFn: () => listFn(),
+    refetchInterval: 15_000,
+  });
+
+  const threads = (threadsQ.data?.threads ?? []) as ThreadSummary[];
+  const activeId = search.thread ?? threads[0]?.id;
+  const activeThread = threads.find((t) => t.id === activeId);
+
+  const setActive = (id: string) => {
+    void navigate({ search: { thread: id } });
+  };
+
+  const createGroupFn = useServerFn(getOrCreateGroupThread);
+  const handleNewGroup = async () => {
+    try {
+      const r = await createGroupFn();
+      await qc.invalidateQueries({ queryKey: ["care-chat", "threads"] });
+      setActive(r.threadId);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't open group chat");
+    }
+  };
+
+  const showList = !activeId; // mobile: list-only when no thread selected
+
+  return (
+    <div className="mx-auto flex h-[calc(100dvh-4rem)] max-w-6xl flex-col px-0 md:px-4 md:py-4">
+      <div className="flex flex-1 overflow-hidden md:rounded-2xl md:border md:border-border md:bg-card md:shadow-sm">
+        {/* Sidebar / list */}
+        <aside
+          className={cn(
+            "w-full md:w-80 md:shrink-0 md:border-r md:border-border flex flex-col",
+            !showList && "hidden md:flex",
+          )}
+        >
+          <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border">
+            <h1 className="text-base font-semibold">Care chat</h1>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 gap-1.5 text-xs"
+              onClick={handleNewGroup}
+              title="Open or create group chat with all your caregivers"
+            >
+              <Users className="h-3.5 w-3.5" />
+              Group
+            </Button>
+          </header>
+          <div className="flex-1 overflow-y-auto">
+            {threadsQ.isLoading && (
+              <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+            )}
+            {!threadsQ.isLoading && threads.length === 0 && (
+              <div className="px-4 py-10 text-center text-sm text-muted-foreground">
+                <MessageCircle className="mx-auto mb-3 h-8 w-8 opacity-40" />
+                No conversations yet.
+                <p className="mt-2 text-xs">
+                  Open a chat from a caregiver card in Settings → Sharing, or
+                  from a person on the Caregiver page.
+                </p>
+              </div>
+            )}
+            <ul>
+              {threads.map((t) => {
+                const isActive = t.id === activeId;
+                const name = threadDisplayName(t, meId);
+                return (
+                  <li key={t.id}>
+                    <button
+                      type="button"
+                      onClick={() => setActive(t.id)}
+                      className={cn(
+                        "w-full px-4 py-3 text-left transition-colors border-l-2",
+                        isActive
+                          ? "bg-secondary/60 border-l-primary"
+                          : "border-l-transparent hover:bg-secondary/40",
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            {t.kind === "group" && (
+                              <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                            )}
+                            <span className="truncate text-sm font-medium">
+                              {name}
+                            </span>
+                          </div>
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            {t.last_message
+                              ? (t.last_message.sender_id === meId ? "You: " : "") +
+                                t.last_message.body
+                              : "No messages yet"}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-[10px] text-muted-foreground">
+                            {formatTime(t.last_message_at)}
+                          </span>
+                          {t.unread > 0 && (
+                            <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground tabular-nums">
+                              {t.unread > 99 ? "99+" : t.unread}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </aside>
+
+        {/* Conversation panel */}
+        <section
+          className={cn(
+            "flex flex-1 flex-col bg-background",
+            showList && "hidden md:flex",
+          )}
+        >
+          {activeThread ? (
+            <ConversationPanel
+              thread={activeThread}
+              meId={meId}
+              onBack={() => navigate({ search: {} })}
+            />
+          ) : (
+            <div className="hidden md:flex flex-1 items-center justify-center text-sm text-muted-foreground">
+              Select a conversation
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function ConversationPanel({
+  thread,
+  meId,
+  onBack,
+}: {
+  thread: ThreadSummary;
+  meId: string | undefined;
+  onBack: () => void;
+}) {
+  const qc = useQueryClient();
+  const messagesFn = useServerFn(getCareMessages);
+  const sendFn = useServerFn(sendCareMessage);
+  const markReadFn = useServerFn(markCareThreadRead);
+
+  const msgsQ = useQuery({
+    queryKey: ["care-chat", "messages", thread.id],
+    queryFn: () => messagesFn({ data: { threadId: thread.id } }),
+    refetchOnWindowFocus: false,
+  });
+
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  React.useEffect(() => {
+    if (msgsQ.data?.messages) setMessages(msgsQ.data.messages as Message[]);
+  }, [msgsQ.data]);
+
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+  }, [messages.length]);
+
+  // Mark read on open + when new messages arrive
+  React.useEffect(() => {
+    void markReadFn({ data: { threadId: thread.id } }).then(() => {
+      void qc.invalidateQueries({ queryKey: ["care-chat", "threads"] });
+      void qc.invalidateQueries({ queryKey: ["care", "owners-switcher"] });
+    });
+  }, [thread.id, messages.length, markReadFn, qc]);
+
+  // Realtime subscription
+  React.useEffect(() => {
+    const channel = supabase
+      .channel(`care-thread-${thread.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "care_messages",
+          filter: `thread_id=eq.${thread.id}`,
+        },
+        (payload) => {
+          const m = payload.new as Message;
+          setMessages((prev) =>
+            prev.some((x) => x.id === m.id) ? prev : [...prev, m],
+          );
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [thread.id]);
+
+  const [input, setInput] = React.useState("");
+  const [sending, setSending] = React.useState(false);
+
+  const handleSend = async () => {
+    const body = input.trim();
+    if (!body || sending) return;
+    setSending(true);
+    setInput("");
+    try {
+      const r = await sendFn({ data: { threadId: thread.id, body } });
+      setMessages((prev) =>
+        prev.some((x) => x.id === r.message.id)
+          ? prev
+          : [...prev, r.message as Message],
+      );
+      void qc.invalidateQueries({ queryKey: ["care-chat", "threads"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't send");
+      setInput(body);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const displayName = threadDisplayName(thread, meId);
+
+  return (
+    <>
+      <header className="flex items-center gap-2 border-b border-border px-3 py-3 md:px-4">
+        <Button
+          size="icon"
+          variant="ghost"
+          className="md:hidden h-8 w-8"
+          onClick={onBack}
+          aria-label="Back"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-sm font-semibold">{displayName}</h2>
+          {thread.kind === "group" && (
+            <p className="truncate text-xs text-muted-foreground">
+              {thread.others.length + 1} people
+            </p>
+          )}
+        </div>
+      </header>
+
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 md:px-6">
+        {msgsQ.isLoading && (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        )}
+        <ul className="space-y-2">
+          {messages.map((m) => {
+            const mine = m.sender_id === meId;
+            const senderName = thread.others.find((o) => o.user_id === m.sender_id)?.name;
+            return (
+              <li
+                key={m.id}
+                className={cn("flex", mine ? "justify-end" : "justify-start")}
+              >
+                <div
+                  className={cn(
+                    "max-w-[75%] rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap break-words",
+                    mine
+                      ? "bg-primary text-primary-foreground rounded-br-md"
+                      : "bg-secondary text-foreground rounded-bl-md",
+                  )}
+                >
+                  {!mine && thread.kind === "group" && senderName && (
+                    <div className="mb-0.5 text-[11px] font-medium opacity-70">
+                      {senderName}
+                    </div>
+                  )}
+                  {m.deleted_at ? (
+                    <em className="opacity-60">Message deleted</em>
+                  ) : (
+                    m.body
+                  )}
+                  <div
+                    className={cn(
+                      "mt-1 text-[10px] tabular-nums",
+                      mine ? "text-primary-foreground/70" : "text-muted-foreground",
+                    )}
+                  >
+                    {formatTime(m.created_at)}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      <footer className="border-t border-border bg-card/40 p-3 md:p-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handleSend();
+          }}
+          className="flex items-end gap-2"
+        >
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void handleSend();
+              }
+            }}
+            rows={1}
+            placeholder="Message"
+            className="flex-1 resize-none rounded-2xl border border-border bg-background px-4 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 max-h-32"
+          />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={!input.trim() || sending}
+            className="h-10 w-10 rounded-full shrink-0"
+            aria-label="Send"
+          >
+            {sending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </Button>
+        </form>
+      </footer>
+    </>
+  );
+}
