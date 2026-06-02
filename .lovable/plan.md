@@ -101,3 +101,14 @@ Still TODO next loop:
 - Phase 5 UI: `/care/inbox` route, `PendingChangeRow` / `PendingChangeDiff` components, top-bar pending badge, in-app `alerts` row inserted in `proposeChange`.
 
 All Phase 4 server endpoints are callable end-to-end; the remaining work is UI plumbing plus one `cron.schedule` call.
+
+---
+
+## Phase 4 + 5 — completed
+
+UI + scheduling shipped this loop:
+- `/settings/sharing`: collapsed pending strip links to `/care/inbox`, AlertDialog-based revoke flow, per-relationship "Pause all writes" switch (`PauseWritesRow`), top-level Activity feed with caregiver/resource filters + Export CSV, daily-digest preference card.
+- New route `/care/inbox` (`src/routes/_app/care.inbox.tsx`): side-by-side Current vs Proposed diff, optional decision note, Approve & apply / Reject buttons wired to `decidePendingChange` which already applies `add_journal_comment` / `add_meds_note`.
+- Cron: `cron.schedule('care-daily-digest', '0 8 * * *', …)` calls the public TanStack route with the project anon key.
+
+Deferred (not required for parity): top-bar pending-badge — `/care/inbox` is discoverable from `/settings/sharing` and via direct link from the digest email's "X changes waiting for you" CTA.

@@ -62,6 +62,7 @@ import { Route as AppReportsNewRouteImport } from './routes/_app/reports.new'
 import { Route as AppReportsReportIdRouteImport } from './routes/_app/reports.$reportId'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
 import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
+import { Route as AppCareInboxRouteImport } from './routes/_app/care.inbox'
 import { Route as AppCareOwnerIdRouteImport } from './routes/_app/care.$ownerId'
 import { Route as AppBiometricsMetricRouteImport } from './routes/_app/biometrics.$metric'
 import { Route as AppAdminUsersRouteImport } from './routes/_app/admin.users'
@@ -345,6 +346,11 @@ const AppJournalNewRoute = AppJournalNewRouteImport.update({
   path: '/journal/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCareInboxRoute = AppCareInboxRouteImport.update({
+  id: '/care/inbox',
+  path: '/care/inbox',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCareOwnerIdRoute = AppCareOwnerIdRouteImport.update({
   id: '/care/$ownerId',
   path: '/care/$ownerId',
@@ -484,6 +490,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AppAdminUsersRoute
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/care/$ownerId': typeof AppCareOwnerIdRoute
+  '/care/inbox': typeof AppCareInboxRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/reports/$reportId': typeof AppReportsReportIdRoute
@@ -554,6 +561,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AppAdminUsersRoute
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/care/$ownerId': typeof AppCareOwnerIdRoute
+  '/care/inbox': typeof AppCareInboxRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/reports/$reportId': typeof AppReportsReportIdRoute
@@ -627,6 +635,7 @@ export interface FileRoutesById {
   '/_app/admin/users': typeof AppAdminUsersRoute
   '/_app/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/_app/care/$ownerId': typeof AppCareOwnerIdRoute
+  '/_app/care/inbox': typeof AppCareInboxRoute
   '/_app/journal/new': typeof AppJournalNewRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
   '/_app/reports/$reportId': typeof AppReportsReportIdRoute
@@ -700,6 +709,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/biometrics/$metric'
     | '/care/$ownerId'
+    | '/care/inbox'
     | '/journal/new'
     | '/meds/$medId'
     | '/reports/$reportId'
@@ -770,6 +780,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/biometrics/$metric'
     | '/care/$ownerId'
+    | '/care/inbox'
     | '/journal/new'
     | '/meds/$medId'
     | '/reports/$reportId'
@@ -842,6 +853,7 @@ export interface FileRouteTypes {
     | '/_app/admin/users'
     | '/_app/biometrics/$metric'
     | '/_app/care/$ownerId'
+    | '/_app/care/inbox'
     | '/_app/journal/new'
     | '/_app/meds/$medId'
     | '/_app/reports/$reportId'
@@ -1274,6 +1286,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppJournalNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/care/inbox': {
+      id: '/_app/care/inbox'
+      path: '/care/inbox'
+      fullPath: '/care/inbox'
+      preLoaderRoute: typeof AppCareInboxRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/care/$ownerId': {
       id: '/_app/care/$ownerId'
       path: '/care/$ownerId'
@@ -1493,6 +1512,7 @@ interface AppRouteChildren {
   AppWelcomeRoute: typeof AppWelcomeRoute
   AppBiometricsMetricRoute: typeof AppBiometricsMetricRoute
   AppCareOwnerIdRoute: typeof AppCareOwnerIdRoute
+  AppCareInboxRoute: typeof AppCareInboxRoute
   AppJournalNewRoute: typeof AppJournalNewRoute
   AppSeizuresNewRoute: typeof AppSeizuresNewRoute
   AppBiometricsIndexRoute: typeof AppBiometricsIndexRoute
@@ -1520,6 +1540,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppWelcomeRoute: AppWelcomeRoute,
   AppBiometricsMetricRoute: AppBiometricsMetricRoute,
   AppCareOwnerIdRoute: AppCareOwnerIdRoute,
+  AppCareInboxRoute: AppCareInboxRoute,
   AppJournalNewRoute: AppJournalNewRoute,
   AppSeizuresNewRoute: AppSeizuresNewRoute,
   AppBiometricsIndexRoute: AppBiometricsIndexRoute,

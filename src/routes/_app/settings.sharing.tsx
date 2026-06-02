@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Check, Copy, Loader2, Mail, Trash2, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Copy, Download, Loader2, Mail, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,16 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ExpiryControl } from "@/components/care/expiry-control";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useTranslation } from "react-i18next";
@@ -20,9 +30,14 @@ import {
   listCareAuditLog,
   listPendingChanges,
   listPeopleSharingWithMe,
-  decidePendingChange,
   revokeRelationship,
   setScopes,
+  exportCareAuditCsv,
+  listOwnerAuditFeed,
+  pauseAllWrites,
+  getRelationshipWriteState,
+  setCareDigestPreference,
+  getCareDigestPreference,
 } from "@/lib/care.functions";
 import {
   CARE_RESOURCES,
@@ -76,17 +91,6 @@ function SharingPage() {
   const sharedWithMe = useQuery({ queryKey: ["care", "shared-with-me"], queryFn: () => fetchSharingWithMe() });
   const pending = useQuery({ queryKey: ["care", "pending"], queryFn: () => fetchPending() });
 
-  const decide = useServerFn(decidePendingChange);
-  const decideMut = useMutation({
-    mutationFn: (vars: { id: string; decision: "approved" | "rejected" }) =>
-      decide({ data: vars }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["care", "pending"] });
-      toast.success("Decision recorded");
-    },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't save decision"),
-  });
-
   const revoke = useServerFn(revokeRelationship);
   const revokeMut = useMutation({
     mutationFn: (relationship_id: string) => revoke({ data: { relationship_id } }),
@@ -112,39 +116,29 @@ function SharingPage() {
         {t("sharing.intro")}
       </p>
 
-      {/* Pending approvals */}
-      <section className="mt-10 rounded-2xl border border-border bg-card p-5 sm:p-6">
-        <div className="flex items-center justify-between">
-          <h2 className="font-serif text-xl text-foreground">{t("sharing.pending")}</h2>
-          {pendingCount > 0 && <Badge variant="default">{pendingCount}</Badge>}
+      {/* Pending approvals strip → inbox */}
+      <Link
+        to="/care/inbox"
+        className="mt-10 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 sm:p-6 transition-colors hover:bg-secondary/40"
+      >
+        <div className="flex items-center gap-3">
+          {pendingCount > 0 ? <Badge variant="default">{pendingCount}</Badge> : null}
+          <div>
+            <p className="font-serif text-base text-foreground">
+              {pending.isLoading
+                ? t("common.loading")
+                : pendingCount === 0
+                ? "Nothing waiting for your review"
+                : `${pendingCount} ${pendingCount === 1 ? "change is" : "changes are"} waiting for you`}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">Open the caregiver inbox to review</p>
+          </div>
         </div>
-        {pending.isLoading ? (
-          <p className="mt-3 text-sm text-muted-foreground"><Loader2 className="inline h-3 w-3 animate-spin" /> {t("common.loading")}</p>
-        ) : pendingCount === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">{t("sharing.pendingEmpty")}</p>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {pending.data!.changes.map((c) => (
-              <li key={c.id} className="rounded-xl border border-border p-4">
-                <p className="text-sm text-foreground">
-                  <span className="font-medium">{prettifyChangeType(c.type)}</span>
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
-                  {(c.payload as any)?.text ?? ""}
-                </p>
-                <div className="mt-3 flex gap-2">
-                  <Button size="sm" onClick={() => decideMut.mutate({ id: c.id, decision: "approved" })} disabled={decideMut.isPending}>
-                    <Check className="h-3 w-3 mr-1" /> Approve
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => decideMut.mutate({ id: c.id, decision: "rejected" })} disabled={decideMut.isPending}>
-                    <X className="h-3 w-3 mr-1" /> Reject
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+      </Link>
+
+      {/* Daily digest preference */}
+      <DigestPreferenceCard />
 
       {/* People I share with */}
       <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
@@ -184,19 +178,17 @@ function SharingPage() {
                         onSaved={() => qc.invalidateQueries({ queryKey: ["care", "mine"] })}
                       />
                       {r.status !== "revoked" && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            if (confirm(`Revoke access for ${r.invite_email}?`)) revokeMut.mutate(r.id);
-                          }}
-                          aria-label="Revoke"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <RevokeRelationshipButton
+                          email={r.invite_email ?? ""}
+                          onConfirm={() => revokeMut.mutate(r.id)}
+                          disabled={revokeMut.isPending}
+                        />
                       )}
                     </div>
                   </div>
+                  {r.status === "active" && (
+                    <PauseWritesRow relationshipId={r.id} />
+                  )}
                   {r.status === "pending" && (
                     <div className="mt-2 flex items-center gap-2">
                       <code className="flex-1 truncate rounded-md bg-muted px-2 py-1 text-[11px] text-foreground">
@@ -226,6 +218,11 @@ function SharingPage() {
           </ul>
         )}
       </section>
+
+      {/* Activity feed */}
+      <ActivitySection
+        relationships={(caregivers.data?.relationships ?? []).filter((r) => r.status === "active")}
+      />
 
       {/* People sharing with me */}
       <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
@@ -265,10 +262,233 @@ function StatusPill({ status }: { status: string }) {
   return <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide ${map[status] ?? ""}`}>{status}</span>;
 }
 
-function prettifyChangeType(t: string) {
-  if (t === "add_journal_comment") return "Caregiver note on a journal entry";
-  if (t === "add_meds_note") return "Caregiver note on a medication";
-  return t;
+/* ----------------- Revoke confirmation ----------------- */
+
+function RevokeRelationshipButton({
+  email,
+  onConfirm,
+  disabled,
+}: {
+  email: string;
+  onConfirm: () => void;
+  disabled: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <Button variant="ghost" size="icon" aria-label="Revoke" onClick={() => setOpen(true)}>
+        <Trash2 className="h-4 w-4 text-destructive" />
+      </Button>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Revoke access for {email || "this person"}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            They'll lose access immediately. Past activity stays in your audit log.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={disabled}
+            onClick={() => {
+              onConfirm();
+              setOpen(false);
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Revoke access
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+/* ----------------- Pause writes switch ----------------- */
+
+function PauseWritesRow({ relationshipId }: { relationshipId: string }) {
+  const qc = useQueryClient();
+  const fetchState = useServerFn(getRelationshipWriteState);
+  const state = useQuery({
+    queryKey: ["care", "write-state", relationshipId],
+    queryFn: () => fetchState({ data: { relationship_id: relationshipId } }),
+  });
+  const pause = useServerFn(pauseAllWrites);
+  const m = useMutation({
+    mutationFn: (paused: boolean) => pause({ data: { relationship_id: relationshipId, paused } }),
+    onSuccess: (_, paused) => {
+      qc.invalidateQueries({ queryKey: ["care", "write-state", relationshipId] });
+      qc.invalidateQueries({ queryKey: ["care", "mine"] });
+      toast.success(paused ? "Writes paused — read-only access" : "Writes resumed");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't update"),
+  });
+
+  if (!state.data || state.data.total === 0) return null;
+  const paused = state.data.paused;
+  return (
+    <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2">
+      <div>
+        <p className="text-xs font-medium text-foreground">Pause all writes</p>
+        <p className="text-[11px] text-muted-foreground">
+          {paused ? "Read-only — they can view but not change anything." : "They can write within their scopes."}
+        </p>
+      </div>
+      <Switch checked={paused} disabled={m.isPending} onCheckedChange={(v) => m.mutate(v)} />
+    </div>
+  );
+}
+
+/* ----------------- Daily digest preference ----------------- */
+
+function DigestPreferenceCard() {
+  const qc = useQueryClient();
+  const fetchPref = useServerFn(getCareDigestPreference);
+  const setPref = useServerFn(setCareDigestPreference);
+  const pref = useQuery({ queryKey: ["care", "digest-pref"], queryFn: () => fetchPref() });
+  const m = useMutation({
+    mutationFn: (enabled: boolean) => setPref({ data: { enabled } }),
+    onSuccess: (_, enabled) => {
+      qc.invalidateQueries({ queryKey: ["care", "digest-pref"] });
+      toast.success(enabled ? "Daily digest on" : "Daily digest off");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't update"),
+  });
+  return (
+    <section className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <div>
+        <h2 className="font-serif text-base text-foreground">Daily caregiver digest</h2>
+        <p className="text-xs text-muted-foreground mt-1 max-w-md">
+          A once-a-day email summarising what your caregivers did in the last 24 hours.
+        </p>
+      </div>
+      <Switch
+        checked={pref.data?.enabled ?? true}
+        disabled={pref.isLoading || m.isPending}
+        onCheckedChange={(v) => m.mutate(v)}
+      />
+    </section>
+  );
+}
+
+/* ----------------- Activity feed ----------------- */
+
+function ActivitySection({
+  relationships,
+}: {
+  relationships: Array<{ id: string; invite_email: string | null }>;
+}) {
+  const [caregiverFilter, setCaregiverFilter] = useState<string | "all">("all");
+  const [resourceFilter, setResourceFilter] = useState<string>("all");
+  const fetchFeed = useServerFn(listOwnerAuditFeed);
+  const feed = useQuery({
+    queryKey: ["care", "audit-feed", caregiverFilter, resourceFilter],
+    queryFn: () =>
+      fetchFeed({
+        data: {
+          limit: 100,
+          caregiverRelId: caregiverFilter === "all" ? null : caregiverFilter,
+          resourceType: resourceFilter === "all" ? null : resourceFilter,
+        },
+      }),
+  });
+
+  const exportCsv = useServerFn(exportCareAuditCsv);
+  const [exporting, setExporting] = useState(false);
+  async function onExport() {
+    setExporting(true);
+    try {
+      const res = await exportCsv({ data: { days: 90 } });
+      const blob = new Blob([res.csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `purple-care-activity-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${res.rowCount} rows`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const entries = feed.data?.entries ?? [];
+  const resourceTypes = Array.from(new Set(entries.map((e) => e.resource_type).filter(Boolean) as string[]));
+
+  return (
+    <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="font-serif text-xl text-foreground">Activity</h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            What your caregivers have done. Last 100 actions.
+          </p>
+        </div>
+        <Button size="sm" variant="outline" onClick={onExport} disabled={exporting}>
+          {exporting ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
+          Export CSV
+        </Button>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <select
+          value={caregiverFilter}
+          onChange={(e) => setCaregiverFilter(e.target.value as any)}
+          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+        >
+          <option value="all">All caregivers</option>
+          {relationships.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.invite_email}
+            </option>
+          ))}
+        </select>
+        <select
+          value={resourceFilter}
+          onChange={(e) => setResourceFilter(e.target.value)}
+          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+        >
+          <option value="all">All resources</option>
+          {resourceTypes.map((rt) => (
+            <option key={rt} value={rt}>
+              {rt.replace(/_/g, " ")}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {feed.isLoading ? (
+        <p className="mt-4 text-sm text-muted-foreground">
+          <Loader2 className="inline h-3 w-3 animate-spin" /> Loading…
+        </p>
+      ) : entries.length === 0 ? (
+        <p className="mt-4 text-sm text-muted-foreground">No activity yet.</p>
+      ) : (
+        <ul className="mt-4 max-h-96 overflow-y-auto divide-y divide-border text-xs">
+          {entries.map((e: any) => (
+            <li key={e.id} className="py-2 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-foreground capitalize">
+                  <span className="font-medium">{e.caregiver_email ?? "Someone"}</span>{" "}
+                  {String(e.action).replace(/_/g, " ")}
+                  {e.resource_type ? (
+                    <span className="text-muted-foreground"> · {String(e.resource_type).replace(/_/g, " ")}</span>
+                  ) : null}
+                </p>
+              </div>
+              <span className="text-muted-foreground tabular-nums whitespace-nowrap">
+                {new Date(e.at).toLocaleString()}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
 }
 
 /* ----------------- Invite sheet ----------------- */
