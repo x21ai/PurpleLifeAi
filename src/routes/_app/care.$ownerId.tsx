@@ -685,3 +685,54 @@ function ReportsPanel({ ownerId }: { ownerId: string }) {
   const reports = q.data!.reports;
   return <ReportsListReadOnly reports={reports} />;
 }
+
+/* ----- Hydration ----- */
+function HydrationPanel({ ownerId, canWrite }: { ownerId: string; canWrite: boolean }) {
+  const day = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+  const from = day.toISOString();
+  const to = new Date(day.getTime() + 86400000).toISOString();
+
+  const listH = useServerFn(listHydrationForDay);
+  const listA = useServerFn(listAurasForDay);
+
+  const hydration = useQuery({
+    queryKey: ["hydration", ownerId, day.toISOString()],
+    queryFn: () => listH({ data: { user_id: ownerId, from, to } }),
+  });
+  const auras = useQuery({
+    queryKey: ["auras", ownerId, day.toISOString()],
+    queryFn: () => listA({ data: { user_id: ownerId, from, to } }),
+  });
+
+  return (
+    <div className="space-y-4">
+      {canWrite && (
+        <Section>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Log on their behalf
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Anything you add will be tagged as logged by a caregiver.
+          </p>
+          <div className="mt-3 space-y-3">
+            <QuickAddWater ownerId={ownerId} />
+            <div><LogAuraSheet ownerId={ownerId} /></div>
+          </div>
+        </Section>
+      )}
+      {hydration.isLoading || auras.isLoading ? (
+        <Empty>Loading…</Empty>
+      ) : (
+        <HydrationTimeline
+          day={day}
+          hydration={(hydration.data ?? []) as HydrationRow[]}
+          auras={auras.data ?? []}
+        />
+      )}
+    </div>
+  );
+}
