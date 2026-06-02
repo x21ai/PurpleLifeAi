@@ -1338,3 +1338,298 @@ export const dismissCaregiverAlert = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/* ---------- Phase 4: owner controls & audit ---------- */
+
+function csvEscape(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  const s = typeof value === "string" ? value : JSON.stringify(value);
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+export const exportCareAuditCsv = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { days?: number }) =>
+    z.object({ days: z.number().int().min(1).max(365).optional() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const days = data.days ?? 90;
+    const since = new Date(Date.now() - days * 86400_000).toISOString();
+
+    const { data: rows, error } = await supabaseAdmin
+      .from("care_audit_log")
+      .select("id, at, relationship_id, actor_id, action, resource_type, resource_id, metadata")
+      .eq("owner_id", userId)
+      .gte("at", since)
+      .order("at", { ascending: false })
+      .limit(5000);
+    if (error) throw new Error(error.message);
+
+    // Resolve caregiver emails via relationships → invite_email + auth lookup as fallback
+    const relIds = Array.from(new Set((rows ?? []).map((r) => r.relationship_id).filter(Boolean) as string[]));
+    const relByActor: Record<string, string> = {};
+    if (relIds.length > 0) {
+      const { data: rels } = await supabaseAdmin
+        .from("care_relationships")
+        .select("id, invite_email")
+        .in("id", relIds);
+      for (const r of rels ?? []) {
+        relByActor[r.id] = r.invite_email ?? "";
+      }
+    }
+
+    const header = ["at", "action", "resource_type", "resource_id", "caregiver_email", "metadata"];
+    const lines = [header.join(",")];
+    for (const r of rows ?? []) {
+      const caregiverEmail = r.relationship_id ? relByActor[r.relationship_id] ?? "" : "";
+      lines.push(
+        [
+          csvEscape(r.at),
+          csvEscape(r.action),
+          csvEscape(r.resource_type),
+          csvEscape(r.resource_id),
+          csvEscape(caregiverEmail),
+          csvEscape(r.metadata),
+        ].join(","),
+      );
+    }
+    return { csv: lines.join("\n"), rowCount: rows?.length ?? 0 };
+  });
+
+export const listOwnerAuditFeed = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { limit?: number; caregiverRelId?: string | null; resourceType?: string | null }) =>
+    z
+      .object({
+        limit: z.number().int().min(1).max(500).optional(),
+        caregiverRelId: z.string().uuid().nullable().optional(),
+        resourceType: z.string().max(64).nullable().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    let q = supabaseAdmin
+      .from("care_audit_log")
+      .select("id, at, relationship_id, actor_id, action, resource_type, resource_id, metadata")
+      .eq("owner_id", userId)
+      .in("action", ["wrote", "proposed", "approved", "rejected", "scopes_updated", "revoked"])
+      .order("at", { ascending: false })
+      .limit(data.limit ?? 100);
+    if (data.caregiverRelId) q = q.eq("relationship_id", data.caregiverRelId);
+    if (data.resourceType) q = q.eq("resource_type", data.resourceType);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+
+    const relIds = Array.from(new Set((rows ?? []).map((r) => r.relationship_id).filter(Boolean) as string[]));
+    const relByActor: Record<string, { email: string; role: string }> = {};
+    if (relIds.length > 0) {
+      const { data: rels } = await supabaseAdmin
+        .from("care_relationships")
+        .select("id, invite_email, role")
+        .in("id", relIds);
+      for (const r of rels ?? []) {
+        relByActor[r.id] = { email: r.invite_email ?? "", role: r.role };
+      }
+    }
+    return {
+      entries: (rows ?? []).map((r) => ({
+        ...r,
+        caregiver_email: r.relationship_id ? relByActor[r.relationship_id]?.email ?? null : null,
+        caregiver_role: r.relationship_id ? relByActor[r.relationship_id]?.role ?? null : null,
+      })),
+    };
+  });
+
+export const pauseAllWrites = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { relationship_id: string; paused: boolean }) =>
+    z
+      .object({
+        relationship_id: z.string().uuid(),
+        paused: z.boolean(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: rel } = await supabaseAdmin
+      .from("care_relationships")
+      .select("id, owner_id, role")
+      .eq("id", data.relationship_id)
+      .single();
+    if (!rel || rel.owner_id !== userId) throw new Error("Forbidden");
+
+    const { data: scopeRows } = await supabaseAdmin
+      .from("care_scopes")
+      .select("scope, granted")
+      .eq("relationship_id", data.relationship_id);
+
+    const writeLike = (s: string) => s.endsWith(":write") || s.endsWith(":propose");
+    const toFlip = (scopeRows ?? []).filter((s) => writeLike(s.scope));
+
+    const rows = toFlip.map((s) => ({
+      relationship_id: data.relationship_id,
+      scope: s.scope,
+      granted: data.paused ? false : true,
+    }));
+    if (rows.length > 0) {
+      const { error } = await supabaseAdmin
+        .from("care_scopes")
+        .upsert(rows, { onConflict: "relationship_id,scope" });
+      if (error) throw new Error(error.message);
+    }
+
+    // If un-pausing and no scopes exist yet, seed from role defaults
+    if (!data.paused && rows.length === 0) {
+      const defaults = ROLE_DEFAULT_SCOPES[rel.role as CareRole] ?? [];
+      const seed = defaults
+        .filter(writeLike)
+        .map((scope) => ({ relationship_id: data.relationship_id, scope, granted: true }));
+      if (seed.length > 0) {
+        const { error } = await supabaseAdmin
+          .from("care_scopes")
+          .upsert(seed, { onConflict: "relationship_id,scope" });
+        if (error) throw new Error(error.message);
+      }
+    }
+
+    await supabaseAdmin.from("care_audit_log").insert({
+      relationship_id: data.relationship_id,
+      owner_id: userId,
+      actor_id: userId,
+      action: data.paused ? "writes_paused" : "writes_resumed",
+    });
+    return { ok: true, flipped: rows.length };
+  });
+
+export const getRelationshipWriteState = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { relationship_id: string }) =>
+    z.object({ relationship_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: rel } = await supabaseAdmin
+      .from("care_relationships")
+      .select("id, owner_id")
+      .eq("id", data.relationship_id)
+      .single();
+    if (!rel || rel.owner_id !== userId) throw new Error("Forbidden");
+    const { data: scopeRows } = await supabaseAdmin
+      .from("care_scopes")
+      .select("scope, granted")
+      .eq("relationship_id", data.relationship_id);
+    const writeLike = (s: string) => s.endsWith(":write") || s.endsWith(":propose");
+    const writes = (scopeRows ?? []).filter((s) => writeLike(s.scope));
+    const hasAnyEnabled = writes.some((s) => s.granted);
+    return { paused: writes.length > 0 && !hasAnyEnabled, total: writes.length };
+  });
+
+export const setCareDigestPreference = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { enabled: boolean }) =>
+    z.object({ enabled: z.boolean() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({ care_daily_digest_enabled: data.enabled })
+      .eq("id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const getCareDigestPreference = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const { data } = await supabaseAdmin
+      .from("profiles")
+      .select("care_daily_digest_enabled")
+      .eq("id", userId)
+      .maybeSingle();
+    return { enabled: data?.care_daily_digest_enabled ?? true };
+  });
+
+export const sendCareDigestNow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const req = getRequest();
+    const origin =
+      process.env.PUBLIC_SITE_URL ||
+      (req ? new URL(req.url).origin : "https://purplelife.org");
+    return await sendCareDailyDigest({ ownerId: userId, origin, windowHours: 24 });
+  });
+
+/* ---------- Phase 5: pending-changes inbox ---------- */
+
+const PENDING_TYPE_LABEL: Record<string, string> = {
+  add_journal_comment: "Note appended to a journal entry",
+  add_meds_note: "Note appended to a medication",
+};
+
+export const listPendingChangesDetailed = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const { data: changes, error } = await supabaseAdmin
+      .from("pending_changes")
+      .select("*")
+      .eq("owner_id", userId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+
+    const caregiverIds = Array.from(
+      new Set((changes ?? []).map((c) => c.caregiver_id).filter(Boolean) as string[]),
+    );
+    const profilesById: Record<string, { first_name: string | null; last_name: string | null; community_display_name: string | null }> = {};
+    if (caregiverIds.length > 0) {
+      const { data: profs } = await supabaseAdmin
+        .from("profiles")
+        .select("id, first_name, last_name, community_display_name")
+        .in("id", caregiverIds);
+      for (const p of profs ?? []) profilesById[p.id] = p;
+    }
+
+    const detailed = await Promise.all(
+      (changes ?? []).map(async (c) => {
+        let currentValue: string | null = null;
+        if (c.type === "add_journal_comment" && c.target_id) {
+          const { data } = await supabaseAdmin
+            .from("journal_entries")
+            .select("text, captured_at")
+            .eq("id", c.target_id)
+            .maybeSingle();
+          currentValue = data?.text ?? null;
+        } else if (c.type === "add_meds_note" && c.target_id) {
+          const { data } = await supabaseAdmin
+            .from("medications")
+            .select("name, notes")
+            .eq("id", c.target_id)
+            .maybeSingle();
+          currentValue = data ? `${data.name}\n${data.notes ?? ""}` : null;
+        }
+        const proposedText = String((c.payload as { text?: string } | null)?.text ?? "");
+        return {
+          id: c.id,
+          type: c.type,
+          type_label: PENDING_TYPE_LABEL[c.type] ?? c.type,
+          created_at: c.created_at,
+          target_table: c.target_table,
+          target_id: c.target_id,
+          caregiver_id: c.caregiver_id,
+          caregiver_profile: c.caregiver_id ? profilesById[c.caregiver_id] ?? null : null,
+          current_value: currentValue,
+          proposed_text: proposedText,
+        };
+      }),
+    );
+    return { changes: detailed };
+  });
