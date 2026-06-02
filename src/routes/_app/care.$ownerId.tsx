@@ -307,6 +307,47 @@ function Section({ children }: { children: React.ReactNode }) {
   return <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">{children}</div>;
 }
 
+function ChatPanel({
+  relationshipId,
+  ownerName,
+}: {
+  relationshipId: string;
+  ownerName: string;
+}) {
+  const openFn = useServerFn(getOrCreateDirectThread);
+  const navigate = useNavigate();
+  const q = useQuery({
+    queryKey: ["care-chat", "direct-thread", relationshipId],
+    queryFn: () => openFn({ data: { relationshipId } }),
+    staleTime: 60_000,
+  });
+  return (
+    <Section>
+      <div className="flex flex-col items-start gap-3">
+        <p className="label-eyebrow text-muted-foreground">Direct chat</p>
+        <p className="text-sm text-muted-foreground">
+          Send a private message to {ownerName}. Saved like WhatsApp — full history is kept.
+        </p>
+        <button
+          type="button"
+          disabled={q.isLoading || !q.data}
+          onClick={() => {
+            if (q.data) navigate({ to: "/chat-care", search: { thread: q.data.threadId } });
+          }}
+          className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+        >
+          {q.isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <MessageCircle className="h-4 w-4" />
+          )}
+          Open chat with {ownerName}
+        </button>
+      </div>
+    </Section>
+  );
+}
+
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-sm text-muted-foreground">{children}</p>;
 }
