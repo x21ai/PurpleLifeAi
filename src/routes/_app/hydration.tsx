@@ -11,6 +11,8 @@ import { QuickAddWater } from "@/components/hydration/quick-add-water";
 import { LogAuraSheet } from "@/components/hydration/log-aura-sheet";
 import { Button } from "@/components/ui/button";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/integrations/supabase/auth-context";
 
 export const Route = createFileRoute("/_app/hydration")({
   head: () => ({
@@ -40,6 +42,8 @@ function fmtDay(d: Date) {
 function HydrationPage() {
   useRouteTheme("dark");
   const [day, setDay] = useState<Date>(() => startOfDay(new Date()));
+  const { session } = useAuth();
+  const userId = session?.user.id;
 
   const from = day.toISOString();
   const to = new Date(day.getTime() + 86400000).toISOString();
@@ -54,6 +58,19 @@ function HydrationPage() {
   const auras = useQuery({
     queryKey: ["auras", day.toISOString()],
     queryFn: () => listA({ data: { from, to } }),
+  });
+
+  const goal = useQuery({
+    queryKey: ["profile", "water-goal", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("daily_water_goal_ml")
+        .eq("id", userId!)
+        .maybeSingle();
+      return (data as any)?.daily_water_goal_ml ?? 2000;
+    },
   });
 
   const isToday = day.toDateString() === new Date().toDateString();
@@ -106,6 +123,7 @@ function HydrationPage() {
           day={day}
           hydration={(hydration.data ?? []) as HydrationRow[]}
           auras={auras.data ?? []}
+          goalMl={goal.data ?? 2000}
         />
       </div>
 
