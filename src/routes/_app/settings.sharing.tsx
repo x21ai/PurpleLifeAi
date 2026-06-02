@@ -188,6 +188,9 @@ function SharingPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                      {r.status === "active" && r.caregiver_id && (
+                        <MessageCaregiverButton relationshipId={r.id} />
+                      )}
                       <ManageRelationshipSheet
                         relationshipId={r.id}
                         role={r.role as CareRole}
