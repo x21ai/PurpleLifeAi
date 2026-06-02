@@ -131,6 +131,7 @@ function TravelPage() {
   const [regenConfirm, setRegenConfirm] = React.useState<
     { trip: Trip; pendingCount: number } | null
   >(null);
+  const [editingTrip, setEditingTrip] = React.useState<EditableTrip | null>(null);
 
   const load = React.useCallback(async () => {
     if (!userId) return;
@@ -171,6 +172,10 @@ function TravelPage() {
     if (!userId) return;
     if (!destinationTz || !departAt || !returnAt) {
       toast.error("Pick a destination and dates");
+      return;
+    }
+    if (!legsAreChronological(legs)) {
+      toast.error("Legs are out of order. Reorder before saving.");
       return;
     }
     const depart = new Date(departAt);
