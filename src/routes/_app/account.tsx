@@ -14,6 +14,9 @@ import { useTheme, type ThemeMode } from "@/lib/theme-provider";
 import { setLocale, type SupportedLocale } from "@/i18n";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useTranslation } from "react-i18next";
+import { useServerFn } from "@tanstack/react-start";
+import { getOrCreatePersonalShareCode } from "@/lib/share-codes.functions";
+import { Check, Copy, Share2 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/account")({
   head: () => ({ meta: [{ title: "Account — Purple" }] }),
@@ -106,6 +109,11 @@ function AccountPage() {
       <SheetSectionLabel>{t("account.appearance")}</SheetSectionLabel>
       <SheetCard>
         <AppearancePicker />
+      </SheetCard>
+
+      <SheetSectionLabel>Invite</SheetSectionLabel>
+      <SheetCard>
+        <InviteCodeCard />
       </SheetCard>
 
       <SheetSectionLabel>Session</SheetSectionLabel>
