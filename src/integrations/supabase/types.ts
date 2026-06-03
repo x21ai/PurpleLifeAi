@@ -1469,6 +1469,7 @@ export type Database = {
       profiles: {
         Row: {
           ai_model_preference: string
+          avatar_path: string | null
           care_daily_digest_enabled: boolean
           caregiver_emails: string[]
           community_bio: string | null
@@ -1510,6 +1511,7 @@ export type Database = {
         }
         Insert: {
           ai_model_preference?: string
+          avatar_path?: string | null
           care_daily_digest_enabled?: boolean
           caregiver_emails?: string[]
           community_bio?: string | null
@@ -1551,6 +1553,7 @@ export type Database = {
         }
         Update: {
           ai_model_preference?: string
+          avatar_path?: string | null
           care_daily_digest_enabled?: boolean
           caregiver_emails?: string[]
           community_bio?: string | null

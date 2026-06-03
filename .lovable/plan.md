@@ -1,98 +1,89 @@
-# Plan
+## 1. Move the role/account menu to the top-right (Apple-style)
 
-Two phases. Phase A is cleanup + verification of what already exists. Phase B is four targeted fixes the screenshots and notes flag.
+The current `RoleSwitcher` pill sits **inside the sidebar header next to the PURPLE wordmark**. The rule going forward: nothing touches the wordmark — branding stays clean. The account menu lives on the right edge of every page, mobile and desktop.
 
-## Phase A — Cleanup and QA (no new features)
+Changes:
 
-### A1. Delete synthetic seed data
-- Drop the 2 seeded `report_documents` ("Lipid + HbA1c panel Mar/May 2026") and their cascaded `report_metrics`. Confirmed via DB: only those 2 rows exist; user has no other reports.
-- Verify `/reports` returns to empty-state, suggestions card disappears (no metrics → no rules fire), and dismissed-suggestion entries in `profiles.suggestions_dismissed` are left in place (harmless; user added "diabetes" to conditions during QA — leave that decision alone unless you want it reverted).
+- New `src/components/layout/top-bar.tsx` — a sticky desktop top bar (`md:flex hidden`, `h-14`, transparent/blurred, right-aligned). It renders:
+  - `<PendingInboxBadge />` (if any pending caregiver work)
+  - `<ProfileMenu />` (new — see below)
+- New `src/components/layout/profile-menu.tsx` — circular avatar button + dropdown. Behavior:
+  - Trigger: 32px circle showing the user's **avatar image** if `profiles.avatar_url` is set, otherwise the user's **initials** on a `var(--purple-primary)` background.
+  - Menu contents (in this order, separators between groups):
+    1. Header row: avatar (larger) + display name + email
+    2. Role switcher items — `My account`, then `Caring for {name}` per active caregiver relationship (only shown if `listCaregiverOwners` returns rows). Replaces what `RoleSwitcher` does today.
+    3. `Account` → `/account`
+    4. `Settings` → `/settings`
+    5. `Sign out`
+- `SidebarNav`: remove the `RoleSwitcher` render from the header. Keep the wordmark as the sole element.
+- `MobileTopBar`: remove the `RoleSwitcher` from the right cluster. Replace with the same `<ProfileMenu />` (the avatar circle works in mobile too — same component).
+- `AppShell`: render `<TopBar />` above `<Outlet />` on desktop, inside the main column so it doesn't overlap the sidebar.
 
-### A2. Medication reminders + adherence — E2E in the live browser
-1. Create a test med with a near-future dose time on `/meds`.
-2. Confirm row appears in `medication_doses` with `scheduled_for` in the next few minutes.
-3. Trigger `/api/public/cron/dose-reminders` manually and confirm: notification queued, reminder banner renders on `/today`.
-4. Mark dose taken → confirm `adherence` updates and the Today doses card reflects it.
-5. Skip a dose → confirm "missed" status flows into caregiver alerts.
+The standalone `RoleSwitcher` component stays in place but becomes unused; we'll delete it once the new menu ships and nothing imports it.
 
-### A3. One-tap seizure log
-1. `/today` → tap the seizure FAB / `/seizures/new` quick-log button.
-2. Confirm a row is written to `seizure_events` with `started_at = now()` and minimal payload.
-3. Re-open the event, fill in duration / type / notes / triggers, save, confirm the same row is updated (not duplicated).
-4. Confirm it appears in `/timeline` immediately.
+## 2. Avatar upload + storage
 
-### A4. Wearable sample data → risk forecast
-- Seed ~14 days of synthetic `biometrics` rows for the test user (sleep_total_min, hrv, oura_readiness_score, oura_activity_score) with `source='oura'`.
-- Trigger `/api/public/hooks/risk-forecaster` (or the in-app refresh on `/today/risk`).
-- Confirm `today.risk` summary renders with a non-empty score, top contributing factors, and the medical disclaimer.
-- Clean up the synthetic biometrics after verification.
+Profile picture is part of the new menu, so we need a place to store it.
 
-## Phase B — Four follow-up fixes
+Database (migration):
+- Add `profiles.avatar_path text` (nullable). Storing the storage object path, not a URL — we'll resolve to a signed URL on read so private RLS still applies.
 
-### B1. Oura "Last synced Nd ago" never refreshes (screenshot 1)
-**Root cause:** `OuraConnection` derives "last synced" from `oura_tokens.updated_at`. The cron and the `Sync` button only call `.update({ updated_at })` when the **token** actually gets refreshed (new access_token). On a normal incremental sync that reuses a valid token, `updated_at` is never bumped, so the UI shows the install date forever even though sleep/readiness/activity counts grow.
+Storage:
+- Reuse the existing private `journal-media` bucket under a `avatars/{userId}/...` prefix. RLS already restricts that bucket to the owner's folder, so no new bucket or new policies are needed.
 
-**Fix:**
-- Add `last_sync_at timestamptz` to `oura_tokens` (migration).
-- In `supabase/functions/oura-sync/index.ts`, set `last_sync_at = now()` at the end of every successful `incremental` / `backfill` run for that user (both the per-user "Sync" path and the cron-all path).
-- In `oura-connection.tsx`, read and display `last_sync_at` (fall back to `updated_at` if null).
-- Verify in the browser after a manual Sync that the label flips to "just now".
+Server fn (new — `src/lib/avatar.functions.ts`):
+- `setAvatarPath({ path })` — writes `profiles.avatar_path` for the current user (via `requireSupabaseAuth`).
+- `getAvatarSignedUrl()` — resolves the current user's `avatar_path` to a signed URL (24h) and returns it. Used by `ProfileMenu` and `/account`.
 
-### B2. Super-admin console expansion (screenshot 2)
-The current `/admin/users` table only shows name / id / joined / community / suspend. Build out the missing super-admin actions in a single panel per user (drawer or expanded row), all gated by `has_role(auth.uid(), 'super_admin')` via existing `user_roles` table:
+UI:
+- In `/account`, add an "Avatar" card under the existing Profile section: shows current avatar (or initials), `Upload photo` (file input, image-only, <2MB), `Remove`. On upload: client uploads to `journal-media` at `avatars/{userId}/{ts}.{ext}`, then calls `setAvatarPath`. Autosaves (no Save button — per the autosave rule).
+- `ProfileMenu` resolves the signed URL via a TanStack Query (5-min `staleTime`) and falls back to initials while loading or if no avatar is set.
 
-Per-user actions (server fns with `requireSupabaseAuth` + super-admin check):
-- Pause / resume (already wired via `suspended_at`)
-- Archive / restore (existing soft-delete flow on `profiles`)
-- Schedule delete / cancel delete (existing purge cron path)
-- Reset password (send Supabase reset email via `supabaseAdmin.auth.admin.generateLink`)
-- Reset 2FA (delete the user's MFA factors via `auth.admin.mfa`)
-- View caregivers (read `care_relationships` where `owner_id = user.id`) and pending invites (`care_invites`) — readonly list
-- Categorize: tabs for "Active", "Paused", "Archived", "Scheduled for deletion"
+## 3. End-to-end verification (manual + scripted)
 
-Promo codes (new):
-- New table `promo_codes` (code, label, kind enum 'invite'|'discount'|'share', max_uses, used_count, created_by, expires_at, active) + `promo_code_redemptions`.
-- Admin UI tab "Promo codes": create / disable / view redemptions.
-- Surface a "Get an invite code" button on `/account` for end users to share — generates a personal share code.
+These are the verifications the user explicitly asked for. Each ends with a clear pass/fail check.
 
-Scope it as one migration + one admin tab + one users-detail drawer; ship promo codes as a follow-up sub-task in the same plan so it doesn't bloat the first PR.
+### 3a. Dose reminder scheduling + adherence
+- Inspect `seed_daily_medication_doses()` and the `/api/public/cron/dose-reminders` route (already exist).
+- Simulate by: (a) creating a med with a time slot 2 minutes in the future for the logged-in test user, (b) calling `seed_daily_medication_doses()` via `supabase--insert` to materialize today's doses, (c) hitting the dose-reminders endpoint with `stack_modern--invoke-server-function` (apikey header), (d) confirming a row in `medication_doses` flipped `notified_at`, (e) opening `/meds` in the browser and confirming the dose row + "Mark all taken" button updates `status` to `taken` and the 14-day adherence % bumps.
+- Pass criteria: notified_at set after cron call; status flips to `taken` after UI click; `medication_adherence(med_id, 14)` returns updated `taken_count` and `adherence_pct`.
 
-### B3. Autosave everywhere unless the change is destructive/expensive
-Audit and convert these to debounced autosave (300-500ms after last edit), drop the Save button, replace with a discreet "Saved · just now" indicator:
-- `src/components/account/profile-fields.tsx` — name, phone, pronouns
-- `src/components/settings/preferences-section.tsx` — toggles & selects (most already autosave; verify)
-- `src/components/settings/what-i-track-section.tsx` — feature toggles
-- `src/components/locale/locale-fields.tsx` — language/timezone/units
-- `src/components/account/two-factor-section.tsx` — leave Save (security-sensitive)
-- `src/components/account/password-section.tsx` — leave Save (security-sensitive)
-- Medication form sheet — leave Save (multi-field commit)
-- Trip itinerary editor — leave Save (recomputes dose schedule)
+### 3b. Oura/Whoop OAuth and Risk/Today rings
+- Whoop is **not in the codebase today** (only `oura_tokens` + `oura-sync` edge function exist). Two options:
+  - (i) Verify Oura only — confirm OAuth round-trip, the periodic sync function writes to `biometrics`, and `/today` + `/risk` rings + summary reflect the latest `biometrics` row.
+  - (ii) Add Whoop OAuth + sync as a new feature (much bigger — new connector page, OAuth flow, `whoop_tokens` table, sync server fn, mappings). I'd recommend deferring this and shipping (i) now.
+- Plan to do (i): open `/account` → reconnect Oura with the logged-in user; trigger `oura-sync`; confirm a new `biometrics` row; navigate to `/today` and `/risk` and screenshot the rings + summary copy to confirm they're driven by the new readings (not cached/empty).
 
-Pattern: shared `useAutosave(value, saver, { delay: 400 })` hook so the indicator state is consistent.
+### 3c. Onboarding invite-code hint
+- **Already implemented** in `src/routes/_app/welcome.tsx` (step 1 has an "Invite code" field prefilled from `localStorage`, and a `useEffect` auto-redeems any stored code as soon as the session exists).
+- Verification only: load `/?invite=TESTCODE` in the browser (creates an active test promo code first via `supabase--insert`), sign up a fresh user, confirm `promo_code_redemptions` gets a row and the welcome screen shows the prefilled code. If the prefill or auto-redeem is silently failing, fix in place — no schema or UX changes planned.
 
-### B4. Seizures from journal aren't surfacing in Timeline
-**Root cause to verify in build:**
-- `journal-processor` already extracts `event:seizure` tags. But Timeline only reads from `seizure_events`, not from `journal_entries.tags`.
-- Either (a) when the extractor sees `event:seizure`, insert a stub row into `seizure_events` linked back to the journal entry (`source_journal_id`), or (b) extend Timeline's loader to merge journal entries tagged `event:seizure` as virtual seizure rows.
+### 3d. Privacy guarantees
+- Grep the codebase + `index.html` for analytics/trackers (gtag, posthog, plausible, mixpanel, amplitude, fathom, sentry). Current grep returns **zero hits** — confirming clean. Codify this as a CI-friendly check by adding a short note to `mem://index.md` under Core: "No third-party analytics or trackers. Ever."
+- Verify uploaded media access:
+  - Confirm `journal-media` bucket is `public: false` (already is, per `supabase/migrations/.../20260523031938_*.sql`).
+  - Confirm storage.objects RLS policies scope reads to `auth.uid()::text = (storage.foldername(name))[1]` (the owner-folder pattern). Spot-check with `supabase--read_query`.
+  - Confirm every read path in the app uses `createSignedUrl` / `createSignedUrls` (already does — `reports.functions.ts`, `seizures.new.tsx`, `journal.new.tsx`, `capture-sheet.tsx`).
+  - Smoke test: as user A, upload to journal-media; as user B (different session via `Authorization` override), attempt `from('journal-media').download(path)` → expect 403. Document the result.
 
-Recommended: option (a). It keeps a single source of truth, makes Patterns / Care alerts / Caregiver mirror "just work", and gives the user a single tap to add duration/severity later.
+### 3e. Existing security warnings (surface, don't silently fix)
+Two warnings are currently open and worth addressing in the same pass since they touch privacy:
+- `community_reactions_public_user_linkage` — `community_reactions_read` policy is `USING (true)` and exposes `user_id`. Recommendation: restrict `SELECT` to `authenticated` and drop `user_id` from the publicly-readable column set (create a `community_reactions_public` view that exposes only `post_id, kind, count` aggregates if anon UX needs counts).
+- `user_roles_privilege_escalation` — replace the RESTRICTIVE deny-INSERT policy with an explicit permissive allowlist scoped to `is_super_admin(auth.uid())` only.
 
-Implementation:
-- Add `source = 'journal' | 'manual' | 'caregiver'` and `source_journal_id uuid` to `seizure_events` (migration).
-- In `journal-processor`, when an `event:seizure` tag is produced, upsert a minimal `seizure_events` row with `started_at = entry timestamp`, `source = 'journal'`, `source_journal_id = entry.id`.
-- Skip insert if a manual seizure_event already exists within ±10 min for the same user (dedupe).
-- Add a small "From journal" badge on the seizure card in `/timeline` and `/seizures/$id` so the user knows where it came from and can enrich it.
+If you want these fixed in this pass, I'll include the migration; otherwise I'll just record them in the security memory and tackle separately.
 
-## Order of work
+## 4. Order of work
 
-1. A1 (1 SQL delete) → A2/A3/A4 QA in one browser session.
-2. B1 (smallest, highest user-visible value).
-3. B4 (data plumbing, no UI redesign).
-4. B3 (autosave sweep — touches several files, no schema).
-5. B2 (largest; split into "users console" → "promo codes" if it gets long).
+1. Migration: add `profiles.avatar_path`.
+2. New `avatar.functions.ts` + `ProfileMenu` + `TopBar`.
+3. Wire `AppShell` + `MobileTopBar` to use `ProfileMenu`; remove `RoleSwitcher` from sidebar/mobile bar.
+4. Add Avatar card to `/account`.
+5. Run verifications 3a → 3d, screenshot results, report pass/fail inline.
+6. (Optional) Apply the two security-warning migrations from 3e.
 
-Each step ends with: targeted browser QA + a one-line summary of what was verified.
+## Open questions
 
-## Open question
-
-For B3, do you want the security-sensitive sections (password, 2FA, payment) to keep their explicit Save button? Default: **yes, keep them.** Reply "autosave everything" if you want them converted too.
+1. **Whoop**: verify Oura-only now (Q3b option i), or add Whoop as a new connector this pass (option ii)?
+2. **Security warnings 3e**: fix in this pass, or leave for a dedicated security cleanup?
+3. **Avatar storage location**: reuse `journal-media/avatars/{userId}/...` (no new bucket needed), or create a separate `avatars` public bucket so the menu can show photos without a signed-URL round-trip? Private reuse is safer; public is slightly faster to render.
