@@ -25,6 +25,9 @@ import { Switch } from "@/components/ui/switch";
 import { LocaleFields, type LocaleValues } from "@/components/locale/locale-fields";
 import { setLocale, detectBrowserLocale, type SupportedLocale } from "@/i18n";
 import { useTranslation } from "react-i18next";
+import { useServerFn } from "@tanstack/react-start";
+import { redeemInviteCode } from "@/lib/invite-codes.functions";
+import { getStoredInvite, clearStoredInvite, setStoredInvite } from "@/lib/invite-storage";
 
 const LOCALE_PREFILL_KEY = "purple-locale-prefill";
 
@@ -66,6 +69,29 @@ function WelcomePage() {
     }
     return { country: null, timezone: null, locale: detectBrowserLocale() };
   });
+  const [inviteCode, setInviteCode] = useState<string>(() => getStoredInvite() ?? "");
+  const redeem = useServerFn(redeemInviteCode);
+
+  // Auto-redeem any stored invite as soon as we have a session.
+  useEffect(() => {
+    if (!userId) return;
+    const stored = getStoredInvite();
+    if (!stored) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await redeem({ data: { code: stored } });
+        if (cancelled) return;
+        if (res.ok) {
+          clearStoredInvite();
+          toast.success("Invite code applied");
+        }
+      } catch {
+        /* non-fatal */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [userId, redeem]);
 
   useEffect(() => {
     if (typeof Notification !== "undefined") {
