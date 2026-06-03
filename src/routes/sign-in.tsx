@@ -12,6 +12,9 @@ import { toast } from "sonner";
 import { LocaleFields, type LocaleValues } from "@/components/locale/locale-fields";
 import { setLocale, detectBrowserLocale, type SupportedLocale } from "@/i18n";
 import { useTranslation } from "react-i18next";
+import { useServerFn } from "@tanstack/react-start";
+import { redeemInviteCode } from "@/lib/invite-codes.functions";
+import { captureInviteFromUrl, getStoredInvite, setStoredInvite, clearStoredInvite } from "@/lib/invite-storage";
 
 const LOCALE_PREFILL_KEY = "purple-locale-prefill";
 
@@ -73,12 +76,20 @@ function SignInPage() {
   const [mode, setMode] = useState<"signin" | "register">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [status, setStatus] = useState<
     "idle" | "submitting" | "verify-sent" | "reset-sent" | "error"
   >("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [localeValues, setLocaleValues] = useState<LocaleValues>(() => readPrefill());
   const navigate = Route.useNavigate();
+  const redeem = useServerFn(redeemInviteCode);
+
+  useEffect(() => {
+    captureInviteFromUrl();
+    const stored = getStoredInvite();
+    if (stored) setInviteCode(stored);
+  }, []);
 
   useEffect(() => {
     const msg = oauthErrorMessage();
@@ -148,7 +159,24 @@ function SignInPage() {
       // ignore
     }
     setLocale(localeValues.locale as SupportedLocale);
+    // Persist invite for later redemption (after email verification, etc.)
+    if (inviteCode.trim()) setStoredInvite(inviteCode.trim().toUpperCase());
     if (data.session) {
+      // Try to redeem immediately when we already have a session.
+      const code = inviteCode.trim().toUpperCase();
+      if (code) {
+        try {
+          const res = await redeem({ data: { code } });
+          if (res.ok) {
+            clearStoredInvite();
+            toast.success("Invite code applied");
+          } else {
+            toast.error(`Invite code ${res.reason}`);
+          }
+        } catch {
+          /* non-fatal */
+        }
+      }
       // Save immediately so a fresh profile starts with the right locale.
       void supabase.from("profiles").upsert({
         id: data.session.user.id,
