@@ -303,6 +303,22 @@ function WelcomePage() {
                 compact
               />
             </div>
+            <div className="pt-2 border-t border-border">
+              <Label htmlFor="invite-code" className="label-eyebrow mt-4 mb-2 block">
+                Invite code (optional)
+              </Label>
+              <Input
+                id="invite-code"
+                value={inviteCode}
+                onChange={(e) => {
+                  const v = e.target.value.toUpperCase();
+                  setInviteCode(v);
+                  setStoredInvite(v || null);
+                }}
+                placeholder="If a friend shared one"
+                className="mt-1.5 font-mono tracking-widest"
+              />
+            </div>
           </div>
           <div className="mt-10 flex items-center justify-between gap-3">
             <Button variant="ghost" onClick={() => setStep(0)}>{t("welcome.back")}</Button>
