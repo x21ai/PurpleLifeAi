@@ -74,7 +74,7 @@ function TimelinePage() {
       const [{ data: seizures }, { data: entries }, { data: doses }] = await Promise.all([
         supabase
           .from("seizure_events")
-          .select("id, started_at, type, severity, notes")
+          .select("id, started_at, type, severity, notes, detection_source")
           .eq("user_id", userId!)
           .gte("started_at", sinceISO)
           .lte("started_at", untilISO)
@@ -102,7 +102,7 @@ function TimelinePage() {
           id: `s-${s.id}`,
           at: s.started_at,
           kind: "seizure",
-          title: `Seizure${s.type ? ` · ${s.type}` : ""}${s.severity ? ` · sev ${s.severity}` : ""}`,
+          title: `Seizure${s.type ? ` · ${s.type}` : ""}${s.severity ? ` · sev ${s.severity}` : ""}${(s as any).detection_source === "journal" ? " · from journal" : ""}`,
           body: s.notes,
         });
       }
