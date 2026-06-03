@@ -1592,6 +1592,77 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_code_redemptions: {
+        Row: {
+          id: string
+          promo_code_id: string
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          promo_code_id: string
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          promo_code_id?: string
+          redeemed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_code_redemptions_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promo_codes: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          kind: Database["public"]["Enums"]["promo_code_kind"]
+          label: string | null
+          max_uses: number | null
+          updated_at: string
+          used_count: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["promo_code_kind"]
+          label?: string | null
+          max_uses?: number | null
+          updated_at?: string
+          used_count?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["promo_code_kind"]
+          label?: string | null
+          max_uses?: number | null
+          updated_at?: string
+          used_count?: number
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -2174,6 +2245,7 @@ export type Database = {
       care_relationship_status: "pending" | "active" | "revoked"
       care_role: "emergency" | "caregiver" | "provider" | "viewer"
       pending_change_status: "pending" | "approved" | "rejected"
+      promo_code_kind: "invite" | "discount" | "share"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2305,6 +2377,7 @@ export const Constants = {
       care_relationship_status: ["pending", "active", "revoked"],
       care_role: ["emergency", "caregiver", "provider", "viewer"],
       pending_change_status: ["pending", "approved", "rejected"],
+      promo_code_kind: ["invite", "discount", "share"],
     },
   },
 } as const
