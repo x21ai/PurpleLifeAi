@@ -223,7 +223,7 @@ Deno.serve(async (req) => {
       }
       const { data: tokens } = await admin
         .from("oura_tokens")
-        .select("user_id, sync_interval_hours, updated_at");
+        .select("user_id, sync_interval_hours, updated_at, last_sync_at");
       const end = fmt(new Date());
       const start = fmt(new Date(Date.now() - 3 * 24 * 3600 * 1000));
       const results: any[] = [];
@@ -233,7 +233,8 @@ Deno.serve(async (req) => {
           results.push({ user_id: t.user_id, skipped: "manual" });
           continue;
         }
-        const last = (t as any).updated_at ? new Date((t as any).updated_at).getTime() : 0;
+        const lastIso = (t as any).last_sync_at ?? (t as any).updated_at;
+        const last = lastIso ? new Date(lastIso).getTime() : 0;
         const dueAt = last + interval * 3600 * 1000;
         if (Date.now() < dueAt) {
           results.push({ user_id: t.user_id, skipped: "not_due" });
@@ -242,7 +243,7 @@ Deno.serve(async (req) => {
         try {
           const r = await syncRange(t.user_id, start, end);
           await admin.from("oura_tokens")
-            .update({ updated_at: new Date().toISOString() })
+            .update({ last_sync_at: new Date().toISOString() })
             .eq("user_id", t.user_id);
           results.push({ user_id: t.user_id, ...r });
         } catch (e) {
@@ -288,6 +289,9 @@ Deno.serve(async (req) => {
       const end = fmt(new Date());
       const start = fmt(new Date(Date.now() - days * 24 * 3600 * 1000));
       const result = await syncRange(user_id, start, end);
+      await admin.from("oura_tokens")
+        .update({ last_sync_at: new Date().toISOString() })
+        .eq("user_id", user_id);
       return new Response(JSON.stringify({ ok: true, ...result }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -297,6 +301,9 @@ Deno.serve(async (req) => {
       const end = fmt(new Date());
       const start = fmt(new Date(Date.now() - 3 * 24 * 3600 * 1000));
       const result = await syncRange(user_id, start, end);
+      await admin.from("oura_tokens")
+        .update({ last_sync_at: new Date().toISOString() })
+        .eq("user_id", user_id);
       return new Response(JSON.stringify({ ok: true, ...result }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
