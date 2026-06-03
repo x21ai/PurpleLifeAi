@@ -16,6 +16,9 @@ const PreferencesSection = lazy(() =>
 const WhatITrackSection = lazy(() =>
   import("@/components/settings/what-i-track-section").then((m) => ({ default: m.WhatITrackSection })),
 );
+const ConditionHistorySection = lazy(() =>
+  import("@/components/settings/condition-history-section").then((m) => ({ default: m.ConditionHistorySection })),
+);
 const DataSection = lazy(() =>
   import("@/components/settings/data-section").then((m) => ({ default: m.DataSection })),
 );
@@ -153,6 +156,10 @@ function SettingsPage() {
 
       <Suspense fallback={<SectionSkeleton />}>
         <WhatITrackSection />
+      </Suspense>
+
+      <Suspense fallback={<SectionSkeleton />}>
+        <ConditionHistorySection />
       </Suspense>
 
       <GroupLabel>{t("settings.groups.data")}</GroupLabel>
