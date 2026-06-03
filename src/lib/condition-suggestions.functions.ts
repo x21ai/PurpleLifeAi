@@ -3,16 +3,6 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { computeSuggestions, type Suggestion } from "./condition-suggestions";
 
-export const suggestConditionsFromReports = createServerFn({ method: "GET" }).handler(
-  async () => {
-    // Auth middleware is enforced via attachSupabaseAuth + requireSupabaseAuth
-    return suggestConditionsImpl();
-  },
-);
-
-// keep impl separate so it can be middleware-wrapped
-const _ = requireSupabaseAuth; // keep import used; actual wiring below
-
 export const suggestConditions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
