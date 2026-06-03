@@ -1,9 +1,8 @@
 import * as React from "react";
-import { Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 
@@ -15,9 +14,9 @@ export function ProfileFields() {
   const [phone, setPhone] = React.useState(session?.user?.phone ?? "");
   const [pronouns, setPronouns] = React.useState("");
   const [loading, setLoading] = React.useState(true);
-  const [savingName, setSavingName] = React.useState(false);
-  const [savingPhone, setSavingPhone] = React.useState(false);
-  const [savingPronouns, setSavingPronouns] = React.useState(false);
+  const [nameState, setNameState] = React.useState<SaveState>("idle");
+  const [phoneState, setPhoneState] = React.useState<SaveState>("idle");
+  const [pronounsState, setPronounsState] = React.useState<SaveState>("idle");
 
   React.useEffect(() => {
     if (!userId) return;
@@ -40,46 +39,34 @@ export function ProfileFields() {
     };
   }, [userId]);
 
-  const saveName = async () => {
-    if (!userId) return;
-    setSavingName(true);
+  // Autosave: debounce every field 600ms after the last edit. No buttons.
+  useAutosave(loading || !userId ? null : { first, last }, async (v) => {
+    setNameState("saving");
     const { error } = await supabase
       .from("profiles")
-      .update({ first_name: first.trim() || null, last_name: last.trim() || null })
-      .eq("id", userId);
-    setSavingName(false);
-    if (error) toast.error("Couldn't save name");
-    else toast.success("Name updated");
-  };
-
-  const savePhone = async () => {
-    setSavingPhone(true);
-    const trimmed = phone.trim();
-    // Save to profiles.phone so the people you care for (and the people who
-    // care for you) can see/contact it. Best-effort sync to auth too.
-    const { error } = await supabase
-      .from("profiles")
-      .update({ phone: trimmed || null })
+      .update({ first_name: v.first.trim() || null, last_name: v.last.trim() || null })
       .eq("id", userId!);
-    if (!error && trimmed) {
-      void supabase.auth.updateUser({ phone: trimmed }).catch(() => {});
-    }
-    setSavingPhone(false);
-    if (error) toast.error(error.message);
-    else toast.success("Phone updated");
-  };
+    if (error) { setNameState("error"); toast.error("Couldn't save name"); }
+    else setNameState("saved");
+  });
 
-  const savePronouns = async () => {
-    if (!userId) return;
-    setSavingPronouns(true);
+  useAutosave(loading || !userId ? null : phone, async (v) => {
+    setPhoneState("saving");
+    const trimmed = v.trim();
     const { error } = await supabase
-      .from("profiles")
-      .update({ pronouns: pronouns.trim() || null })
-      .eq("id", userId);
-    setSavingPronouns(false);
-    if (error) toast.error("Couldn't save pronouns");
-    else toast.success("Pronouns updated");
-  };
+      .from("profiles").update({ phone: trimmed || null }).eq("id", userId!);
+    if (!error && trimmed) void supabase.auth.updateUser({ phone: trimmed }).catch(() => {});
+    if (error) { setPhoneState("error"); toast.error(error.message); }
+    else setPhoneState("saved");
+  });
+
+  useAutosave(loading || !userId ? null : pronouns, async (v) => {
+    setPronounsState("saving");
+    const { error } = await supabase
+      .from("profiles").update({ pronouns: v.trim() || null }).eq("id", userId!);
+    if (error) { setPronounsState("error"); toast.error("Couldn't save pronouns"); }
+    else setPronounsState("saved");
+  });
 
   return (
     <div className="space-y-6">
@@ -110,12 +97,7 @@ export function ProfileFields() {
             />
           </div>
         </div>
-        <div className="mt-3">
-          <Button onClick={saveName} disabled={savingName || loading} variant="outline" className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10">
-            {savingName && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-            Save name
-          </Button>
-        </div>
+        <SavedIndicator state={nameState} className="mt-2" />
       </div>
 
       <div className="border-t sheet-divider pt-6">
@@ -128,38 +110,60 @@ export function ProfileFields() {
         <p className="mt-1 text-[13px] sheet-muted">
           Visible to people you share your account with so they can reach you. Include country code.
         </p>
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3">
           <Input
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="+1 555 555 5555"
             inputMode="tel"
-            className="bg-white/[0.04] border-white/10 text-[#FAFAFC] placeholder:text-white/30 flex-1"
+            className="bg-white/[0.04] border-white/10 text-[#FAFAFC] placeholder:text-white/30 w-full"
           />
-          <Button onClick={savePhone} disabled={savingPhone} variant="outline" className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10">
-            {savingPhone && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-            Save
-          </Button>
+          <SavedIndicator state={phoneState} className="mt-2" />
         </div>
       </div>
 
       <div className="border-t sheet-divider pt-6">
         <p className="text-[15px] text-[#FAFAFC]">Pronouns</p>
         <p className="mt-1 text-[13px] sheet-muted">Optional. Shown to people you share with.</p>
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3">
           <Input
             value={pronouns}
             onChange={(e) => setPronouns(e.target.value)}
             placeholder="she/her, he/him, they/them…"
             disabled={loading}
-            className="bg-white/[0.04] border-white/10 text-[#FAFAFC] placeholder:text-white/30 flex-1"
+            className="bg-white/[0.04] border-white/10 text-[#FAFAFC] placeholder:text-white/30 w-full"
           />
-          <Button onClick={savePronouns} disabled={savingPronouns || loading} variant="outline" className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10">
-            {savingPronouns && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-            Save
-          </Button>
+          <SavedIndicator state={pronounsState} className="mt-2" />
         </div>
       </div>
+    </div>
+  );
+}
+
+type SaveState = "idle" | "saving" | "saved" | "error";
+
+function useAutosave<T>(value: T | null, save: (v: T) => Promise<void>, delay = 600) {
+  const first = React.useRef(true);
+  const lastJson = React.useRef<string>("");
+  React.useEffect(() => {
+    if (value === null || value === undefined) return;
+    const json = JSON.stringify(value);
+    if (first.current) { first.current = false; lastJson.current = json; return; }
+    if (json === lastJson.current) return;
+    lastJson.current = json;
+    const id = window.setTimeout(() => { void save(value); }, delay);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(value)]);
+}
+
+function SavedIndicator({ state, className }: { state: SaveState; className?: string }) {
+  if (state === "idle") return <div className={className} style={{ minHeight: 18 }} />;
+  return (
+    <div className={`flex items-center gap-1.5 text-[12px] sheet-muted ${className ?? ""}`}>
+      {state === "saving" && (<><Loader2 className="h-3 w-3 animate-spin" /> Saving…</>)}
+      {state === "saved" && (<><Check className="h-3 w-3 text-emerald-400" /> Saved</>)}
+      {state === "error" && <span className="text-destructive">Couldn't save — try again</span>}
     </div>
   );
 }
