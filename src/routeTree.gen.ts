@@ -69,6 +69,7 @@ import { Route as AppCareOwnerIdRouteImport } from './routes/_app/care.$ownerId'
 import { Route as AppBiometricsMetricRouteImport } from './routes/_app/biometrics.$metric'
 import { Route as AppAdminUsersRouteImport } from './routes/_app/admin.users'
 import { Route as AppAdminResourcesRouteImport } from './routes/_app/admin.resources'
+import { Route as AppAdminPromoRouteImport } from './routes/_app/admin.promo'
 import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin.messages'
 import { Route as AppAdminFeedbackRouteImport } from './routes/_app/admin.feedback'
 import { Route as AppAdminContactRouteImport } from './routes/_app/admin.contact'
@@ -385,6 +386,11 @@ const AppAdminResourcesRoute = AppAdminResourcesRouteImport.update({
   path: '/resources',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminPromoRoute = AppAdminPromoRouteImport.update({
+  id: '/promo',
+  path: '/promo',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminMessagesRoute = AppAdminMessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
@@ -514,6 +520,7 @@ export interface FileRoutesByFullPath {
   '/admin/contact': typeof AppAdminContactRoute
   '/admin/feedback': typeof AppAdminFeedbackRoute
   '/admin/messages': typeof AppAdminMessagesRoute
+  '/admin/promo': typeof AppAdminPromoRoute
   '/admin/resources': typeof AppAdminResourcesRoute
   '/admin/users': typeof AppAdminUsersRoute
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
@@ -589,6 +596,7 @@ export interface FileRoutesByTo {
   '/admin/contact': typeof AppAdminContactRoute
   '/admin/feedback': typeof AppAdminFeedbackRoute
   '/admin/messages': typeof AppAdminMessagesRoute
+  '/admin/promo': typeof AppAdminPromoRoute
   '/admin/resources': typeof AppAdminResourcesRoute
   '/admin/users': typeof AppAdminUsersRoute
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
@@ -667,6 +675,7 @@ export interface FileRoutesById {
   '/_app/admin/contact': typeof AppAdminContactRoute
   '/_app/admin/feedback': typeof AppAdminFeedbackRoute
   '/_app/admin/messages': typeof AppAdminMessagesRoute
+  '/_app/admin/promo': typeof AppAdminPromoRoute
   '/_app/admin/resources': typeof AppAdminResourcesRoute
   '/_app/admin/users': typeof AppAdminUsersRoute
   '/_app/biometrics/$metric': typeof AppBiometricsMetricRoute
@@ -745,6 +754,7 @@ export interface FileRouteTypes {
     | '/admin/contact'
     | '/admin/feedback'
     | '/admin/messages'
+    | '/admin/promo'
     | '/admin/resources'
     | '/admin/users'
     | '/biometrics/$metric'
@@ -820,6 +830,7 @@ export interface FileRouteTypes {
     | '/admin/contact'
     | '/admin/feedback'
     | '/admin/messages'
+    | '/admin/promo'
     | '/admin/resources'
     | '/admin/users'
     | '/biometrics/$metric'
@@ -897,6 +908,7 @@ export interface FileRouteTypes {
     | '/_app/admin/contact'
     | '/_app/admin/feedback'
     | '/_app/admin/messages'
+    | '/_app/admin/promo'
     | '/_app/admin/resources'
     | '/_app/admin/users'
     | '/_app/biometrics/$metric'
@@ -1386,6 +1398,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminResourcesRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/admin/promo': {
+      id: '/_app/admin/promo'
+      path: '/promo'
+      fullPath: '/admin/promo'
+      preLoaderRoute: typeof AppAdminPromoRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/admin/messages': {
       id: '/_app/admin/messages'
       path: '/messages'
@@ -1499,6 +1518,7 @@ interface AppAdminRouteChildren {
   AppAdminContactRoute: typeof AppAdminContactRoute
   AppAdminFeedbackRoute: typeof AppAdminFeedbackRoute
   AppAdminMessagesRoute: typeof AppAdminMessagesRoute
+  AppAdminPromoRoute: typeof AppAdminPromoRoute
   AppAdminResourcesRoute: typeof AppAdminResourcesRoute
   AppAdminUsersRoute: typeof AppAdminUsersRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
@@ -1509,6 +1529,7 @@ const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminContactRoute: AppAdminContactRoute,
   AppAdminFeedbackRoute: AppAdminFeedbackRoute,
   AppAdminMessagesRoute: AppAdminMessagesRoute,
+  AppAdminPromoRoute: AppAdminPromoRoute,
   AppAdminResourcesRoute: AppAdminResourcesRoute,
   AppAdminUsersRoute: AppAdminUsersRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
