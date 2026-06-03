@@ -13,6 +13,9 @@ import { useTranslation } from "react-i18next";
 const PreferencesSection = lazy(() =>
   import("@/components/settings/preferences-section").then((m) => ({ default: m.PreferencesSection })),
 );
+const WhatITrackSection = lazy(() =>
+  import("@/components/settings/what-i-track-section").then((m) => ({ default: m.WhatITrackSection })),
+);
 const DataSection = lazy(() =>
   import("@/components/settings/data-section").then((m) => ({ default: m.DataSection })),
 );
@@ -146,6 +149,10 @@ function SettingsPage() {
 
       <Suspense fallback={<SectionSkeleton />}>
         <PreferencesSection />
+      </Suspense>
+
+      <Suspense fallback={<SectionSkeleton />}>
+        <WhatITrackSection />
       </Suspense>
 
       <GroupLabel>{t("settings.groups.data")}</GroupLabel>

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
+import { useFeatureFlags } from "@/hooks/use-feature-flags";
 
 export const Route = createFileRoute("/_app/hydration")({
   head: () => ({
@@ -44,6 +45,8 @@ function HydrationPage() {
   const [day, setDay] = useState<Date>(() => startOfDay(new Date()));
   const { session } = useAuth();
   const userId = session?.user.id;
+  const flags = useFeatureFlags();
+  const showAura = flags.enabled("aura");
 
   const from = day.toISOString();
   const to = new Date(day.getTime() + 86400000).toISOString();
@@ -58,6 +61,7 @@ function HydrationPage() {
   const auras = useQuery({
     queryKey: ["auras", day.toISOString()],
     queryFn: () => listA({ data: { from, to } }),
+    enabled: showAura,
   });
 
   const goal = useQuery({
@@ -83,11 +87,12 @@ function HydrationPage() {
 
       <p className="mt-8 label-eyebrow text-muted-foreground">Hydration & auras</p>
       <h1 className="mt-2 font-serif text-[40px] sm:text-5xl leading-[1.05] tracking-[-0.02em]">
-        Water, salt,<br/>and warning signs.
+        {showAura ? <>Water, salt,<br/>and warning signs.</> : <>Water and<br/>electrolytes.</>}
       </h1>
       <p className="mt-3 text-sm text-muted-foreground max-w-lg">
-        Track every drink to the minute and capture déjà vu the moment it happens.
-        Patterns often hide in plain sight.
+        {showAura
+          ? "Track every drink to the minute and capture déjà vu the moment it happens. Patterns often hide in plain sight."
+          : "Track every drink to the minute. Patterns often hide in plain sight."}
       </p>
 
       {/* Day navigator */}
@@ -114,7 +119,7 @@ function HydrationPage() {
       {isToday && (
         <div className="mt-6 space-y-3">
           <QuickAddWater />
-          <div><LogAuraSheet /></div>
+          {showAura && <div><LogAuraSheet /></div>}
         </div>
       )}
 
@@ -122,7 +127,7 @@ function HydrationPage() {
         <HydrationTimeline
           day={day}
           hydration={(hydration.data ?? []) as HydrationRow[]}
-          auras={auras.data ?? []}
+          auras={showAura ? (auras.data ?? []) : []}
           goalMl={goal.data ?? 2000}
         />
       </div>
