@@ -113,7 +113,22 @@ export const listReports = createServerFn({ method: "GET" })
       .select("id, title, report_type, report_date, file_mime, status, created_at")
       .order("report_date", { ascending: false, nullsFirst: false });
     if (error) throw new Error(error.message);
-    return { reports: data ?? [] };
+    const reports = data ?? [];
+    // Cheap metric counts in one round-trip.
+    const ids = reports.map((r) => r.id);
+    let counts: Record<string, number> = {};
+    if (ids.length > 0) {
+      const { data: rows } = await supabase
+        .from("report_metrics")
+        .select("report_id")
+        .in("report_id", ids);
+      for (const m of rows ?? []) {
+        counts[m.report_id] = (counts[m.report_id] ?? 0) + 1;
+      }
+    }
+    return {
+      reports: reports.map((r) => ({ ...r, metric_count: counts[r.id] ?? 0 })),
+    };
   });
 
 export const getReport = createServerFn({ method: "GET" })
