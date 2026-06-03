@@ -9,13 +9,11 @@ export const Route = createFileRoute("/api/public/cron/dose-reminders")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // Lightweight gate: CRON_SECRET if present, otherwise allow (pg_cron only).
         const cronSecret = process.env.CRON_SECRET;
-        if (cronSecret) {
-          const provided = request.headers.get("x-cron-secret") ?? request.headers.get("apikey");
-          if (provided !== cronSecret && provided !== process.env.SUPABASE_ANON_KEY) {
-            // Still accept Supabase anon key for legacy pg_cron jobs.
-          }
+        const provided =
+          request.headers.get("x-cron-secret") ?? request.headers.get("apikey");
+        if (!cronSecret || provided !== cronSecret) {
+          return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         const now = new Date();
