@@ -279,6 +279,9 @@ Deno.serve(async (req) => {
       const end = fmt(new Date());
       const start = fmt(new Date(Date.now() - 90 * 24 * 3600 * 1000));
       const result = await syncRange(user_id, start, end);
+      await admin.from("oura_tokens")
+        .update({ last_sync_at: new Date().toISOString() })
+        .eq("user_id", user_id);
       return new Response(JSON.stringify({ ok: true, ...result }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
