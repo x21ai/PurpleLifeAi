@@ -10,8 +10,9 @@ function makeCode(): string {
 }
 
 export const getOrCreatePersonalShareCode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { userId } = (context as { userId: string });
+    const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const existing = await supabaseAdmin
@@ -43,4 +44,3 @@ export const getOrCreatePersonalShareCode = createServerFn({ method: "POST" })
     }
     throw new Error("Could not generate invite code");
   });
-(getOrCreatePersonalShareCode as unknown as { middleware: (m: unknown[]) => unknown }).middleware([requireSupabaseAuth]);
