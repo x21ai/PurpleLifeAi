@@ -1,0 +1,1 @@
+ALTER TABLE public.oura_tokens ADD COLUMN IF NOT EXISTS last_sync_at timestamptz;
