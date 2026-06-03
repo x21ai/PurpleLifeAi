@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Sparkles, BookOpen, Clock, TrendingUp, Shield, Users, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { useEffect } from "react";
+import { captureInviteFromUrl } from "@/lib/invite-storage";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,6 +27,9 @@ export const Route = createFileRoute("/")({
 });
 
 function MarketingHome() {
+  useEffect(() => {
+    captureInviteFromUrl();
+  }, []);
   return (
     <div className="min-h-screen bg-background text-foreground">
       <MarketingHeader />

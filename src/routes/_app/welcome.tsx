@@ -25,6 +25,9 @@ import { Switch } from "@/components/ui/switch";
 import { LocaleFields, type LocaleValues } from "@/components/locale/locale-fields";
 import { setLocale, detectBrowserLocale, type SupportedLocale } from "@/i18n";
 import { useTranslation } from "react-i18next";
+import { useServerFn } from "@tanstack/react-start";
+import { redeemInviteCode } from "@/lib/invite-codes.functions";
+import { getStoredInvite, clearStoredInvite, setStoredInvite } from "@/lib/invite-storage";
 
 const LOCALE_PREFILL_KEY = "purple-locale-prefill";
 
@@ -66,6 +69,29 @@ function WelcomePage() {
     }
     return { country: null, timezone: null, locale: detectBrowserLocale() };
   });
+  const [inviteCode, setInviteCode] = useState<string>(() => getStoredInvite() ?? "");
+  const redeem = useServerFn(redeemInviteCode);
+
+  // Auto-redeem any stored invite as soon as we have a session.
+  useEffect(() => {
+    if (!userId) return;
+    const stored = getStoredInvite();
+    if (!stored) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await redeem({ data: { code: stored } });
+        if (cancelled) return;
+        if (res.ok) {
+          clearStoredInvite();
+          toast.success("Invite code applied");
+        }
+      } catch {
+        /* non-fatal */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [userId, redeem]);
 
   useEffect(() => {
     if (typeof Notification !== "undefined") {
@@ -275,6 +301,22 @@ function WelcomePage() {
                 values={localeValues}
                 onChange={setLocaleValues}
                 compact
+              />
+            </div>
+            <div className="pt-2 border-t border-border">
+              <Label htmlFor="invite-code" className="label-eyebrow mt-4 mb-2 block">
+                Invite code (optional)
+              </Label>
+              <Input
+                id="invite-code"
+                value={inviteCode}
+                onChange={(e) => {
+                  const v = e.target.value.toUpperCase();
+                  setInviteCode(v);
+                  setStoredInvite(v || null);
+                }}
+                placeholder="If a friend shared one"
+                className="mt-1.5 font-mono tracking-widest"
               />
             </div>
           </div>
