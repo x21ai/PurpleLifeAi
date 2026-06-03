@@ -38,11 +38,11 @@ export function OuraConnection() {
     const uid = sess.session.user.id;
     const { data } = await supabase
       .from("oura_tokens")
-      .select("updated_at, sync_interval_hours")
+      .select("updated_at, last_sync_at, sync_interval_hours")
       .eq("user_id", uid)
       .maybeSingle();
     setConnected(!!data);
-    setLastSync(data?.updated_at ?? null);
+    setLastSync((data as any)?.last_sync_at ?? data?.updated_at ?? null);
     if (data?.sync_interval_hours != null) setIntervalHours(data.sync_interval_hours);
 
     if (data) {
