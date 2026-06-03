@@ -777,7 +777,15 @@ function ReportsPanel({ ownerId }: { ownerId: string }) {
 }
 
 /* ----- Hydration ----- */
-function HydrationPanel({ ownerId, canWrite }: { ownerId: string; canWrite: boolean }) {
+function HydrationPanel({
+  ownerId,
+  canWrite,
+  auraEnabled = false,
+}: {
+  ownerId: string;
+  canWrite: boolean;
+  auraEnabled?: boolean;
+}) {
   const day = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -810,7 +818,7 @@ function HydrationPanel({ ownerId, canWrite }: { ownerId: string; canWrite: bool
           </p>
           <div className="mt-3 space-y-3">
             <QuickAddWater ownerId={ownerId} />
-            <div><LogAuraSheet ownerId={ownerId} /></div>
+            {auraEnabled && <div><LogAuraSheet ownerId={ownerId} /></div>}
           </div>
         </Section>
       )}
