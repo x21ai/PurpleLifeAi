@@ -10,6 +10,12 @@ export const Route = createFileRoute("/api/public/cron/care-daily-digest")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const cronSecret = process.env.CRON_SECRET;
+        const provided =
+          request.headers.get("x-cron-secret") ?? request.headers.get("apikey");
+        if (!cronSecret || provided !== cronSecret) {
+          return Response.json({ error: "Unauthorized" }, { status: 401 });
+        }
         const origin =
           process.env.PUBLIC_SITE_URL || new URL(request.url).origin;
         try {
@@ -17,20 +23,6 @@ export const Route = createFileRoute("/api/public/cron/care-daily-digest")({
           return Response.json({ ok: true, ...summary });
         } catch (err) {
           console.error("[cron] care-daily-digest failed", err);
-          return Response.json(
-            { ok: false, error: err instanceof Error ? err.message : "Unknown error" },
-            { status: 500 },
-          );
-        }
-      },
-      GET: async ({ request }) => {
-        // Allow GET for manual testing
-        const origin =
-          process.env.PUBLIC_SITE_URL || new URL(request.url).origin;
-        try {
-          const summary = await runDailyDigest(origin, 24);
-          return Response.json({ ok: true, ...summary });
-        } catch (err) {
           return Response.json(
             { ok: false, error: err instanceof Error ? err.message : "Unknown error" },
             { status: 500 },

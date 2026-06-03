@@ -15,7 +15,16 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/public/cron/oura-sync-all")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const cronSecret = process.env.CRON_SECRET;
+        const provided =
+          request.headers.get("x-cron-secret") ?? request.headers.get("apikey");
+        if (!cronSecret || provided !== cronSecret) {
+          return new Response(
+            JSON.stringify({ error: "Unauthorized" }),
+            { status: 401, headers: { "Content-Type": "application/json" } },
+          );
+        }
         const url = process.env.SUPABASE_URL!;
         const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY!;
         if (!url || !serviceRole) {

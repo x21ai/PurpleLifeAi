@@ -6,7 +6,13 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 export const Route = createFileRoute("/api/public/cron/purge-deleted-accounts")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const cronSecret = process.env.CRON_SECRET;
+        const provided =
+          request.headers.get("x-cron-secret") ?? request.headers.get("apikey");
+        if (!cronSecret || provided !== cronSecret) {
+          return Response.json({ error: "Unauthorized" }, { status: 401 });
+        }
         const nowIso = new Date().toISOString();
 
         const { data: due, error: dueErr } = await supabaseAdmin

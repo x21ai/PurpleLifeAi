@@ -2,10 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 function makeCode(): string {
-  // 8-char readable code, no ambiguous chars
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  // 8-char readable code, no ambiguous chars. CSPRNG-backed.
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 32 chars (256 % 32 === 0, no modulo bias)
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
   let s = "";
-  for (let i = 0; i < 8; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
+  for (let i = 0; i < 8; i++) s += alphabet[bytes[i] % alphabet.length];
   return s;
 }
 
