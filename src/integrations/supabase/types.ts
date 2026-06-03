@@ -1499,6 +1499,7 @@ export type Database = {
           purge_after: string | null
           sleep_time: string
           snooze_minutes: number
+          suggestions_dismissed: Json
           suspended_at: string | null
           timezone: string | null
           updated_at: string
@@ -1539,6 +1540,7 @@ export type Database = {
           purge_after?: string | null
           sleep_time?: string
           snooze_minutes?: number
+          suggestions_dismissed?: Json
           suspended_at?: string | null
           timezone?: string | null
           updated_at?: string
@@ -1579,6 +1581,7 @@ export type Database = {
           purge_after?: string | null
           sleep_time?: string
           snooze_minutes?: number
+          suggestions_dismissed?: Json
           suspended_at?: string | null
           timezone?: string | null
           updated_at?: string

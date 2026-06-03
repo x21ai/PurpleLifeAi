@@ -10,6 +10,7 @@ import { listReports } from "@/lib/reports.functions";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { useTranslation } from "react-i18next";
 import { TrendsSection } from "@/components/reports/trends-section";
+import { ConditionSuggestionsCard } from "@/components/reports/condition-suggestions-card";
 
 export const Route = createFileRoute("/_app/reports")({
   head: () => ({
@@ -90,6 +91,8 @@ function ReportsPage() {
       </div>
 
       <MedicalDisclaimer className="mt-6" />
+
+      <ConditionSuggestionsCard />
 
       {reports.length > 0 && (
         <div className="mt-6">

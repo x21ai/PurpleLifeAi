@@ -1,129 +1,92 @@
+## What's left from the personalization plan
 
-# Personalize Purple by condition
+Reviewed `.lovable/plan.md` against the codebase:
 
-Goal: stop showing every user every tracker. Each person's conditions decide what's visible by default; the user can flip anything on or off; reports turn into trend charts over time.
+- Phase 0 (hide aura): done
+- Phase 1 (feature catalog + flags + Settings "What I track" + onboarding step): done
+- Phase 3 (reports list search + metric counts + Trends tab + per-metric chart route): done
+- Phase 4 (caregiver mirrors owner flags + local hide): done
+- Phase 2 (condition lifecycle):
+  - DB columns `conditions_archived`, `family_history`: done
+  - Settings "Condition history" UI (archive/remission, family history): done
+  - **Not done**: AI suggestion card on `/reports` ("Want to add 'diabetes' to your profile?")
+  - **Not done**: "Turn on trackers for this?" prompt after adding a new condition mid-life
 
----
+Plus polish: add "X21 Ai" to the footer copyright line.
 
-## Phase 0 — Hide aura now (small, ships first)
+## Plan
 
-Aura/déjà vu currently shows for everyone. Gate it immediately by `profiles.conditions.includes('epilepsy')`:
+### 1. Footer copyright — add "X21 Ai"
 
-- Hide the aura "Log aura" action on `/hydration` and Today for users without epilepsy in `conditions`.
-- Keep the data and route reachable for existing epilepsy users (no destructive change).
+`src/components/layout/site-footer.tsx` line 29: change
 
-This is a 10-minute fix and unblocks the inconsistency you saw. Full flag system comes in Phase 1.
+```
+© {year} Purple · Free forever. Your data stays yours.
+```
 
----
+to
 
-## Phase 1 — Feature flags driven by conditions, user-overridable
+```
+© {year} Purple · Free forever. Your data stays yours. · Built by X21 Ai
+```
 
-### Data
-- New column: `profiles.feature_overrides jsonb default '{}'::jsonb` (e.g. `{ "aura": false, "bp_trend": true }`).
-- New file `src/lib/feature-catalog.ts` — the source of truth mapping each feature to:
-  - `key` (e.g. `"aura"`, `"seizure_log"`, `"hydration"`, `"bp_trend"`, `"glucose_trend"`, `"lipid_trend"`, `"oura_sync"`)
-  - `defaultFor: Condition[]` (e.g. aura → `["epilepsy"]`, bp_trend → `["hypertension"]`, hydration → all)
-  - `requiresDevice?: boolean` (Oura, etc.)
-  - `label`, `description`, `icon`
+(Single line; same `text-xs text-muted-foreground`. Wording — "Built by X21 Ai" — is my proposal; tell me if you'd rather have "by X21 Ai", "X21 Ai", or a link target.)
 
-### Hook
-- `useFeatureFlags()` resolves: `defaults from conditions ⨁ feature_overrides`. Returns `{ enabled(key), all() }`.
-- Server equivalent for serverFns that need to filter caregiver views.
+### 2. Phase 2a — AI condition suggestion card on `/reports`
 
-### Gates
-- `src/components/layout/nav-items.ts` — filter nav by flags.
-- Today route — only show cards for enabled features.
-- `/hydration`, `/vitals`, aura sheet, seizure log, rescue meds — gated.
-- Caregiver route mirrors the owner's enabled set (you only see what the owner tracks).
+Rule-based, not LLM (cheap, deterministic, never auto-writes):
 
-### Settings → new "What I track" section
-- Grouped by category (Neuro, Cardio-metabolic, Hydration, Sleep & recovery, Reports).
-- Each row: toggle, label, "default for {condition}" badge.
-- "Reset to defaults" button.
-- Honors the "stays as-is for existing users" requirement: we **never** write defaults retroactively. Existing users keep what they have; flags only resolve at read-time.
+- New helper `src/lib/condition-suggestions.ts` with thresholds:
+  - HbA1c ≥ 6.5 in ≥2 reports → suggest `diabetes`
+  - LDL ≥ 160 in ≥2 reports → suggest `high_cholesterol`
+  - Fasting glucose ≥ 126 in ≥2 reports → suggest `diabetes`
+  - Systolic ≥ 140 or diastolic ≥ 90 in ≥2 reports → suggest `hypertension`
+  - eGFR < 60 in ≥2 reports → suggest `ckd`
+- New serverFn `suggestConditionsFromReports` reads `report_metrics` for the user, applies thresholds, excludes anything already in `profiles.conditions` or `conditions_archived`, returns `[{ conditionKey, label, reason, sampleMetric }]`.
+- New `ConditionSuggestionsCard` on top of `/reports` (collapsible, dismissible). Two actions per suggestion:
+  - "Add to my profile" → appends to `profiles.conditions`, then opens the Phase 2b "turn on trackers?" sheet
+  - "Not now" → writes the suggestion key to a new `profiles.suggestions_dismissed jsonb default '[]'` so it doesn't reappear
+- Migration adds `profiles.suggestions_dismissed jsonb default '[]'` (read-only RLS already covers profiles).
 
-### Onboarding ("ask during onboarding" path)
-- After the conditions step, add a "What would you like to track?" review step.
-- Each suggested feature is pre-checked based on the conditions just picked, with a one-line "why".
-- User can uncheck anything. Saves to `feature_overrides`.
-- "I'll decide later" skips and uses pure defaults.
+Always-visible disclaimer line: "Suggestions only — not a diagnosis."
 
----
+### 3. Phase 2b — "Turn on trackers?" prompt
 
-## Phase 2 — Conditions you can grow into
+Reusable `<EnableTrackersSheet condition={...} />`:
+- Reads `FEATURE_CATALOG`, lists every feature where `defaultFor.includes(condition)` and currently not enabled in the user's resolved flags.
+- Each row: checkbox (pre-checked) + label + one-line "why".
+- "Turn on" merges those keys into `profiles.feature_overrides` set to `true`. "Skip" closes.
 
-Match how `devynrosewalker@gmail.com` and `pmt@eigital.com` actually live: conditions evolve.
+Triggered from:
+- The new suggestions card (after "Add to my profile")
+- The existing `ConditionHistorySection` "Add condition" path in Settings (when a user adds a condition mid-life)
 
-- Settings → "My health" section already exists; extend it:
-  - Add conditions: free multi-select with the standard set + free-text additions saved to `conditions_note`.
-  - Mark as **resolved / in remission**: don't delete, archive with `resolved_at`. Add `profiles.conditions_archived jsonb` (`[{ key, resolved_at }]`). Trend charts can still pull historical data for an archived condition (e.g. gout history matters even if currently in remission).
-  - Family history: new optional jsonb `profiles.family_history` (`[{ condition, relation, notes }]`) — used by Ask-Purple context, never by feature gates.
-- When the user adds a condition mid-life, prompt: "Turn on the trackers for this? [Review] [Skip]".
-- AI-suggested conditions from reports: when the lab extractor sees, e.g., HbA1c ≥ 6.5% twice or LDL ≥ 160, surface a non-pushy "Want to add 'diabetes' / 'high cholesterol' to your profile?" card on `/reports`. Never auto-write.
+### 4. Smoke testing
 
----
+After the edits I'll:
+- Read worker logs (`stack_modern--server-function-logs`) for any runtime errors from the recent serverFns (`listReports`, `caregiverReadOverview`, `setCaregiverHiddenFeatures`, `reportTrends`).
+- Open the preview at `/` (footer), `/settings` (What I track + Condition history), `/reports` (search + suggestions card), `/reports/trends/$metricKey`, `/welcome` step 4, `/care/$ownerId` (Customize tabs dropdown) — screenshot each and visually verify.
+- Run `supabase--linter` after the migration.
 
-## Phase 3 — Reports become a real medical history
+### 5. Technical notes
 
-The data model (`report_documents`, `report_metrics`) already captures what we need. The UI doesn't surface it.
+- One new migration: `profiles.suggestions_dismissed jsonb default '[]'`.
+- No new edge functions; everything via `createServerFn`.
+- All thresholds live in `condition-suggestions.ts` so they're easy to tune.
+- Suggestions card uses `useQuery` with the existing query client; stale time 5 min.
 
-### Reports list (`/reports`)
-- Show **report date** (when the test was taken), source/lab name, and number of metrics extracted — not just upload time.
-- Group by `report_type` (already exists) with counts.
-- Search by metric ("show me all reports with LDL").
+## Files
 
-### New: Trends tab on `/reports`
-- Top: pinned/important metrics as draggable tiles (BP, HbA1c, LDL, eGFR — driven by user's conditions, but user can reorder via drag-and-drop and pin/unpin).
-- Below: every `metric_key` that appears in ≥2 reports gets a sparkline row.
-- Status badges: `active` / `inactive` (user toggle) and `pinned`.
-- New table `report_metric_preferences` (`user_id`, `metric_key`, `pinned`, `sort_order`, `active`) — drives the layout.
+- Edit: `src/components/layout/site-footer.tsx`
+- Create: `supabase/migrations/<ts>_add_suggestions_dismissed.sql`
+- Create: `src/lib/condition-suggestions.ts`
+- Create: `src/lib/condition-suggestions.functions.ts` (serverFn)
+- Create: `src/components/reports/condition-suggestions-card.tsx`
+- Create: `src/components/conditions/enable-trackers-sheet.tsx`
+- Edit: `src/routes/_app/reports.tsx` (mount suggestions card)
+- Edit: `src/components/settings/condition-history-section.tsx` (open EnableTrackersSheet after add)
 
-### New route `/reports/trends/$metricKey`
-- Recharts line chart over time using `report_metrics.measured_at`.
-- Reference range band (from `reference_low`/`reference_high`).
-- Annotations: medication changes (from `medications.start_date`/`end_date`), trip periods (from `trips`), so user can see "my BP dropped when I started losartan".
-- Date range filter (3m, 6m, 1y, all).
-- Export CSV.
+## Out of scope
 
-### Report detail page (`/reports/$reportId`)
-- Already shows extracted metrics; add "View trend →" link next to each metric that appears in other reports.
-- Show `report_date`, source, file preview, AI confidence per metric.
-
----
-
-## Phase 4 — Caregiver mirrors owner's choices
-
-- Caregiver tabs on `/care/$ownerId` filter by the **owner's** resolved flags, not the caregiver's.
-- Caregiver cannot enable features the owner has turned off (respects autonomy).
-- Caregiver-of-epilepsy-patient who wants aura off for themselves: separate `care_caregiver_visits.hidden_features` jsonb — caregiver-local visibility preference, doesn't affect the owner.
-
----
-
-## Order of work
-
-1. **Today**: Phase 0 (hide aura for non-epilepsy). ~10 min.
-2. Phase 1 — feature catalog, hook, settings UI, onboarding review step. Bulk of the work.
-3. Phase 3 — reports trends (Trends tab + per-metric chart route + drag-to-reorder).
-4. Phase 2 — condition lifecycle (resolve, family history, AI suggestions from reports).
-5. Phase 4 — caregiver mirroring.
-
----
-
-## Technical notes
-
-- All gates resolve at read-time from `profiles.conditions` + `feature_overrides`. No data migration for existing users — their current visibility is preserved because defaults only kick in for the *resolution function*, not for stored state.
-- `feature-catalog.ts` is the single source of truth; both client (`useFeatureFlags`) and server (`resolveFlags(userId)` in a serverFn helper) read from it.
-- Drag-to-reorder uses `@dnd-kit/sortable` (already a TanStack-friendly small lib; add via `bun add`).
-- Trend charts use the existing Recharts dependency.
-- Two migrations total:
-  1. `profiles.feature_overrides jsonb`, `profiles.conditions_archived jsonb`, `profiles.family_history jsonb`.
-  2. `report_metric_preferences` table with RLS scoped to `auth.uid()`.
-- No new Supabase Edge Functions; everything via `createServerFn`.
-
----
-
-## Out of scope (ask before adding)
-
-- AI auto-diagnosing conditions from reports (we *suggest*, never auto-add).
-- Native device SDKs beyond Oura (kept "light tailoring" per project knowledge).
-- Sharing trend charts publicly.
+- Replacing the rule-based suggester with an LLM call (can swap later behind the same serverFn).
+- Real medical thresholds review by a clinician — the values above are common screening cutoffs, not clinical advice; we keep the "not a diagnosis" disclaimer.
