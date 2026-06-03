@@ -14,6 +14,14 @@ import dawn from "@/assets/hero-readiness-dawn.jpg";
 import mist from "@/assets/hero-readiness-mist.jpg";
 import { CONDITION_OPTIONS, type ConditionTag } from "@/lib/condition-prompts";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  FEATURE_CATALOG,
+  CATEGORY_LABELS,
+  isFeatureEnabled,
+  type FeatureKey,
+  type FeatureCategory,
+} from "@/lib/feature-catalog";
+import { Switch } from "@/components/ui/switch";
 import { LocaleFields, type LocaleValues } from "@/components/locale/locale-fields";
 import { setLocale, detectBrowserLocale, type SupportedLocale } from "@/i18n";
 import { useTranslation } from "react-i18next";
@@ -41,6 +49,11 @@ function WelcomePage() {
   const [saving, setSaving] = useState(false);
   const [conditions, setConditions] = useState<string[]>([]);
   const [conditionsNote, setConditionsNote] = useState("");
+  // Feature toggles user picked on the "What I track" step. Only keys the user
+  // explicitly flipped away from the condition-derived default are persisted
+  // into profiles.feature_overrides, so existing users' resolved state never
+  // changes unless they touch a toggle.
+  const [featureToggles, setFeatureToggles] = useState<Record<string, boolean>>({});
   const [localeValues, setLocaleValues] = useState<LocaleValues>(() => {
     if (typeof window === "undefined") {
       return { country: null, timezone: null, locale: "en" };
@@ -65,7 +78,7 @@ function WelcomePage() {
     if (!userId) return;
     supabase
       .from("profiles")
-      .select("first_name, last_name, emergency_contact_name, emergency_contact_phone, conditions, conditions_note, country, timezone, locale")
+      .select("first_name, last_name, emergency_contact_name, emergency_contact_phone, conditions, conditions_note, country, timezone, locale, feature_overrides")
       .eq("id", userId)
       .maybeSingle()
       .then(({ data }) => {
@@ -82,6 +95,9 @@ function WelcomePage() {
           setConditions(data.conditions);
         }
         if (data.conditions_note) setConditionsNote(data.conditions_note);
+        const fo = (data as { feature_overrides?: Record<string, boolean> | null })
+          .feature_overrides;
+        if (fo && typeof fo === "object") setFeatureToggles(fo);
         const row = data as {
           country?: string | null;
           timezone?: string | null;
@@ -129,6 +145,7 @@ function WelcomePage() {
         country: localeValues.country,
         timezone: localeValues.timezone,
         locale: localeValues.locale,
+        feature_overrides: featureToggles,
         onboarded_at: new Date().toISOString(),
       });
       setLocale(localeValues.locale);
