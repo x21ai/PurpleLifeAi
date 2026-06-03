@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SheetPage, SheetCard, SheetSectionLabel } from "@/components/sheet/sheet-page";
 import { ProfileFields } from "@/components/account/profile-fields";
+import { AvatarCard } from "@/components/account/avatar-card";
 import { PasswordSection } from "@/components/account/password-section";
 import { TwoFactorSection } from "@/components/account/two-factor-section";
 import { LocaleFields, type LocaleValues } from "@/components/locale/locale-fields";
@@ -82,6 +83,9 @@ function AccountPage() {
   return (
     <SheetPage title={t("account.title")}>
       <SheetSectionLabel>{t("account.profile")}</SheetSectionLabel>
+      <SheetCard>
+        <AvatarCard />
+      </SheetCard>
       <SheetCard>
         <ProfileFields />
       </SheetCard>
