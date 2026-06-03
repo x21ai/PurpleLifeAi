@@ -26,7 +26,7 @@ export function SiteFooter({ variant = "app" }: { variant?: "app" | "marketing" 
             GitHub
           </a>
         </nav>
-        <p className="text-xs">© {year} Purple · Free forever. Your data stays yours.</p>
+        <p className="text-xs">© {year} Purple · Free forever. Your data stays yours. · Built by X21 Ai</p>
       </div>
     </footer>
   );
