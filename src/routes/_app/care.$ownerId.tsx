@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-r
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, MessageCircle, EyeOff, Eye } from "lucide-react";
+import { ArrowLeft, Loader2, MessageCircle, EyeOff } from "lucide-react";
 import { useEffect, useMemo } from "react";
 
 import { Badge } from "@/components/ui/badge";
