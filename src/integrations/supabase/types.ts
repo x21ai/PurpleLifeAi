@@ -1469,6 +1469,7 @@ export type Database = {
           community_display_name: string | null
           community_opted_in: boolean
           conditions: string[]
+          conditions_archived: Json
           conditions_note: string | null
           consent_research: boolean
           consent_share_with_caregivers: boolean
@@ -1481,6 +1482,8 @@ export type Database = {
           diagnosis: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
+          family_history: Json
+          feature_overrides: Json
           first_name: string | null
           floating_ask_enabled: boolean
           id: string
@@ -1506,6 +1509,7 @@ export type Database = {
           community_display_name?: string | null
           community_opted_in?: boolean
           conditions?: string[]
+          conditions_archived?: Json
           conditions_note?: string | null
           consent_research?: boolean
           consent_share_with_caregivers?: boolean
@@ -1518,6 +1522,8 @@ export type Database = {
           diagnosis?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          family_history?: Json
+          feature_overrides?: Json
           first_name?: string | null
           floating_ask_enabled?: boolean
           id: string
@@ -1543,6 +1549,7 @@ export type Database = {
           community_display_name?: string | null
           community_opted_in?: boolean
           conditions?: string[]
+          conditions_archived?: Json
           conditions_note?: string | null
           consent_research?: boolean
           consent_share_with_caregivers?: boolean
@@ -1555,6 +1562,8 @@ export type Database = {
           diagnosis?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          family_history?: Json
+          feature_overrides?: Json
           first_name?: string | null
           floating_ask_enabled?: boolean
           id?: string

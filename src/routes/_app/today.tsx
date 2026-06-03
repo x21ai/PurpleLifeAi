@@ -20,6 +20,7 @@ import { useTranslation } from "react-i18next";
 import { QuickAddWater } from "@/components/hydration/quick-add-water";
 import { LogAuraSheet } from "@/components/hydration/log-aura-sheet";
 import { PatternHintCard } from "@/components/hydration/pattern-hint-card";
+import { useFeatureFlags } from "@/hooks/use-feature-flags";
 
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
@@ -57,6 +58,9 @@ function TodayPage() {
 
   const { session } = useAuth();
   const userId = session?.user.id;
+  const flags = useFeatureFlags();
+  const showHydration = flags.enabled("hydration");
+  const showAura = flags.enabled("aura");
 
   const [now, setNow] = useState<Date | null>(null);
   const [bio, setBio] = useState<Bio | null>(null);
@@ -325,27 +329,39 @@ function TodayPage() {
       <TodayDoses />
 
       {/* Hydration & auras quick-capture */}
-      <section className="mt-10 rounded-2xl ring-1 ring-border bg-card p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="label-eyebrow text-muted-foreground">Hydration & auras</p>
-            <p className="mt-1 text-sm text-foreground">Log every drink. Capture déjà vu the moment it lands.</p>
+      {showHydration && (
+        <section className="mt-10 rounded-2xl ring-1 ring-border bg-card p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="label-eyebrow text-muted-foreground">
+                {showAura ? "Hydration & auras" : "Hydration"}
+              </p>
+              <p className="mt-1 text-sm text-foreground">
+                {showAura
+                  ? "Log every drink. Capture déjà vu the moment it lands."
+                  : "Log every drink — water and electrolytes."}
+              </p>
+            </div>
+            <Link
+              to="/hydration"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <Droplets className="h-3.5 w-3.5" /> Day view <ChevronRight className="h-3 w-3" />
+            </Link>
           </div>
-          <Link
-            to="/hydration"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <Droplets className="h-3.5 w-3.5" /> Day view <ChevronRight className="h-3 w-3" />
-          </Link>
-        </div>
-        <div className="mt-4">
-          <QuickAddWater />
-        </div>
-        <div className="mt-3">
-          <LogAuraSheet />
-        </div>
-        <PatternHintCard />
-      </section>
+          <div className="mt-4">
+            <QuickAddWater />
+          </div>
+          {showAura && (
+            <>
+              <div className="mt-3">
+                <LogAuraSheet />
+              </div>
+              <PatternHintCard />
+            </>
+          )}
+        </section>
+      )}
 
       {bio && (
         <div className="mt-10 flex flex-col items-center gap-3">

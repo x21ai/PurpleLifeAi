@@ -1,55 +1,129 @@
 
-## Why
-Sunday/Monday episode suggests a pattern: high water intake → low sodium → aura (déjà vu) → seizure risk. Purple needs to capture **what went in (water + electrolytes)** and **what came out as warning signs (déjà vu auras)** with precise timestamps, so the pattern is visible the next time it builds.
+# Personalize Purple by condition
 
-## What we'll build
+Goal: stop showing every user every tracker. Each person's conditions decide what's visible by default; the user can flip anything on or off; reports turn into trend charts over time.
 
-### 1. Hydration log (new)
-A lightweight log of every drink, timestamped to the minute.
+---
 
-- New table `hydration_intake`: `user_id`, `consumed_at`, `volume_ml`, `kind` (`water` | `electrolyte` | `coffee` | `tea` | `other`), `electrolyte_mg_sodium` (nullable), `notes`, `created_by_kind/_id` (so caregivers can log too).
-- Quick-add chips on Today + a sheet: "250 ml water", "500 ml water", "Electrolyte drink", custom amount + time picker (defaults to now, editable like the biometric sheet).
-- Caregiver can add from the care dashboard (same pattern as `AddBiometricSheet`).
+## Phase 0 — Hide aura now (small, ships first)
 
-### 2. Aura / déjà vu log (new)
-Separate from full seizure events — these are the warning signs we want to catch *before* a seizure.
+Aura/déjà vu currently shows for everyone. Gate it immediately by `profiles.conditions.includes('epilepsy')`:
 
-- New table `aura_events`: `user_id`, `occurred_at`, `kind` (`deja_vu` | `jamais_vu` | `epigastric` | `visual` | `other`), `duration_seconds` (nullable), `notes`, `led_to_seizure` (bool, default false, can be linked later), `created_by_kind/_id`.
-- One-tap "Log aura" button on Today and on the caregiver dashboard. Time defaults to now, editable.
-- When a seizure is logged within ~30 min of an aura, offer to link them.
+- Hide the aura "Log aura" action on `/hydration` and Today for users without epilepsy in `conditions`.
+- Keep the data and route reachable for existing epilepsy users (no destructive change).
 
-### 3. Daily hydration + aura timeline (new view)
-A single screen — `/vitals` gets a new "Hydration & auras" card, plus a dedicated `/hydration` route — that shows:
+This is a 10-minute fix and unblocks the inconsistency you saw. Full flag system comes in Phase 1.
 
-- **Today total**: total ml, water vs electrolyte split, estimated sodium intake, a soft target (default 2000 ml, configurable).
-- **Hourly bars** (0–23h): stacked bar per hour showing water (blue) vs electrolyte (purple). Drinks render at their exact minute on a thin timeline underneath.
-- **Aura markers**: small dots on the same timeline at the exact minute each déjà vu happened, with hover/tap to see kind + notes.
-- **Day picker**: jump to any past day. Default: today.
-- Caregiver dashboard gets the same card (read-only) under the existing tabs.
+---
 
-### 4. Pattern hint (light, non-medical)
-On Today, if **>2 L water in the last 6 hours AND zero electrolytes AND ≥1 aura logged today**, show a quiet info card: *"You've had a lot of water today without electrolytes. Some people find this lowers sodium. Worth mentioning to your care team."* Always with the medical disclaimer. No alarms, no scoring.
+## Phase 1 — Feature flags driven by conditions, user-overridable
 
-## Files
+### Data
+- New column: `profiles.feature_overrides jsonb default '{}'::jsonb` (e.g. `{ "aura": false, "bp_trend": true }`).
+- New file `src/lib/feature-catalog.ts` — the source of truth mapping each feature to:
+  - `key` (e.g. `"aura"`, `"seizure_log"`, `"hydration"`, `"bp_trend"`, `"glucose_trend"`, `"lipid_trend"`, `"oura_sync"`)
+  - `defaultFor: Condition[]` (e.g. aura → `["epilepsy"]`, bp_trend → `["hypertension"]`, hydration → all)
+  - `requiresDevice?: boolean` (Oura, etc.)
+  - `label`, `description`, `icon`
 
-**New**
-- `supabase/migrations/<ts>_hydration_and_auras.sql` — both tables, RLS scoped to `auth.uid()`, grants for `authenticated` + `service_role`, indexes on `(user_id, consumed_at)` and `(user_id, occurred_at)`.
-- `src/lib/hydration.functions.ts` — `logHydration`, `listHydrationForDay`, `deleteHydration`, caregiver variants.
-- `src/lib/auras.functions.ts` — `logAura`, `listAurasForDay`, `deleteAura`, caregiver variants.
-- `src/components/hydration/quick-add-water.tsx` — chip row + sheet.
-- `src/components/hydration/log-aura-sheet.tsx`.
-- `src/components/hydration/hydration-timeline.tsx` — hourly bars + minute-precision drink/aura markers, responsive (mobile stacks bars + scrollable timeline; tablet/desktop full-width).
-- `src/routes/_app/hydration.tsx` — dedicated day view with picker.
-- `src/components/care/hydration-timeline-readonly.tsx` — caregiver view.
+### Hook
+- `useFeatureFlags()` resolves: `defaults from conditions ⨁ feature_overrides`. Returns `{ enabled(key), all() }`.
+- Server equivalent for serverFns that need to filter caregiver views.
 
-**Edited**
-- `src/routes/_app/today.tsx` — add quick-add water row + "Log aura" button + pattern hint.
-- `src/routes/_app/vitals.tsx` — add hydration card linking to `/hydration`.
-- `src/routes/_app/care.$ownerId.tsx` — add hydration to the dashboard (new tab or inside existing Vitals tab) + caregiver "Add drink" / "Log aura" sheets.
-- `src/components/layout/nav-items.ts` — add Hydration link (mobile + desktop).
+### Gates
+- `src/components/layout/nav-items.ts` — filter nav by flags.
+- Today route — only show cards for enabled features.
+- `/hydration`, `/vitals`, aura sheet, seizure log, rescue meds — gated.
+- Caregiver route mirrors the owner's enabled set (you only see what the owner tracks).
 
-## Open questions
-1. **Daily water target** — default to 2000 ml, or ask during onboarding? I'd default to 2000 ml and make it editable in Settings → Preferences.
-2. **Sodium tracking depth** — full mg-per-drink (precise but tedious) or just a boolean "electrolytes yes/no" per drink (faster)? I'd do a hybrid: pick from preset electrolyte brands (LMNT, Liquid IV, Pedialyte, custom) that auto-fill sodium mg, with a manual override.
-3. **Aura linking to seizures** — auto-suggest a link if a seizure is logged within 30 min of an aura, or always leave it manual?
-4. **Pattern hint thresholds** — happy with >2 L water / 6 h + no electrolytes + aura present? Or should this just be a passive observation in the journal AI extraction rather than a Today card?
+### Settings → new "What I track" section
+- Grouped by category (Neuro, Cardio-metabolic, Hydration, Sleep & recovery, Reports).
+- Each row: toggle, label, "default for {condition}" badge.
+- "Reset to defaults" button.
+- Honors the "stays as-is for existing users" requirement: we **never** write defaults retroactively. Existing users keep what they have; flags only resolve at read-time.
+
+### Onboarding ("ask during onboarding" path)
+- After the conditions step, add a "What would you like to track?" review step.
+- Each suggested feature is pre-checked based on the conditions just picked, with a one-line "why".
+- User can uncheck anything. Saves to `feature_overrides`.
+- "I'll decide later" skips and uses pure defaults.
+
+---
+
+## Phase 2 — Conditions you can grow into
+
+Match how `devynrosewalker@gmail.com` and `pmt@eigital.com` actually live: conditions evolve.
+
+- Settings → "My health" section already exists; extend it:
+  - Add conditions: free multi-select with the standard set + free-text additions saved to `conditions_note`.
+  - Mark as **resolved / in remission**: don't delete, archive with `resolved_at`. Add `profiles.conditions_archived jsonb` (`[{ key, resolved_at }]`). Trend charts can still pull historical data for an archived condition (e.g. gout history matters even if currently in remission).
+  - Family history: new optional jsonb `profiles.family_history` (`[{ condition, relation, notes }]`) — used by Ask-Purple context, never by feature gates.
+- When the user adds a condition mid-life, prompt: "Turn on the trackers for this? [Review] [Skip]".
+- AI-suggested conditions from reports: when the lab extractor sees, e.g., HbA1c ≥ 6.5% twice or LDL ≥ 160, surface a non-pushy "Want to add 'diabetes' / 'high cholesterol' to your profile?" card on `/reports`. Never auto-write.
+
+---
+
+## Phase 3 — Reports become a real medical history
+
+The data model (`report_documents`, `report_metrics`) already captures what we need. The UI doesn't surface it.
+
+### Reports list (`/reports`)
+- Show **report date** (when the test was taken), source/lab name, and number of metrics extracted — not just upload time.
+- Group by `report_type` (already exists) with counts.
+- Search by metric ("show me all reports with LDL").
+
+### New: Trends tab on `/reports`
+- Top: pinned/important metrics as draggable tiles (BP, HbA1c, LDL, eGFR — driven by user's conditions, but user can reorder via drag-and-drop and pin/unpin).
+- Below: every `metric_key` that appears in ≥2 reports gets a sparkline row.
+- Status badges: `active` / `inactive` (user toggle) and `pinned`.
+- New table `report_metric_preferences` (`user_id`, `metric_key`, `pinned`, `sort_order`, `active`) — drives the layout.
+
+### New route `/reports/trends/$metricKey`
+- Recharts line chart over time using `report_metrics.measured_at`.
+- Reference range band (from `reference_low`/`reference_high`).
+- Annotations: medication changes (from `medications.start_date`/`end_date`), trip periods (from `trips`), so user can see "my BP dropped when I started losartan".
+- Date range filter (3m, 6m, 1y, all).
+- Export CSV.
+
+### Report detail page (`/reports/$reportId`)
+- Already shows extracted metrics; add "View trend →" link next to each metric that appears in other reports.
+- Show `report_date`, source, file preview, AI confidence per metric.
+
+---
+
+## Phase 4 — Caregiver mirrors owner's choices
+
+- Caregiver tabs on `/care/$ownerId` filter by the **owner's** resolved flags, not the caregiver's.
+- Caregiver cannot enable features the owner has turned off (respects autonomy).
+- Caregiver-of-epilepsy-patient who wants aura off for themselves: separate `care_caregiver_visits.hidden_features` jsonb — caregiver-local visibility preference, doesn't affect the owner.
+
+---
+
+## Order of work
+
+1. **Today**: Phase 0 (hide aura for non-epilepsy). ~10 min.
+2. Phase 1 — feature catalog, hook, settings UI, onboarding review step. Bulk of the work.
+3. Phase 3 — reports trends (Trends tab + per-metric chart route + drag-to-reorder).
+4. Phase 2 — condition lifecycle (resolve, family history, AI suggestions from reports).
+5. Phase 4 — caregiver mirroring.
+
+---
+
+## Technical notes
+
+- All gates resolve at read-time from `profiles.conditions` + `feature_overrides`. No data migration for existing users — their current visibility is preserved because defaults only kick in for the *resolution function*, not for stored state.
+- `feature-catalog.ts` is the single source of truth; both client (`useFeatureFlags`) and server (`resolveFlags(userId)` in a serverFn helper) read from it.
+- Drag-to-reorder uses `@dnd-kit/sortable` (already a TanStack-friendly small lib; add via `bun add`).
+- Trend charts use the existing Recharts dependency.
+- Two migrations total:
+  1. `profiles.feature_overrides jsonb`, `profiles.conditions_archived jsonb`, `profiles.family_history jsonb`.
+  2. `report_metric_preferences` table with RLS scoped to `auth.uid()`.
+- No new Supabase Edge Functions; everything via `createServerFn`.
+
+---
+
+## Out of scope (ask before adding)
+
+- AI auto-diagnosing conditions from reports (we *suggest*, never auto-add).
+- Native device SDKs beyond Oura (kept "light tailoring" per project knowledge).
+- Sharing trend charts publicly.
