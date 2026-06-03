@@ -401,6 +401,58 @@ Deno.serve(async (req) => {
       });
     }
 
+    // 9. Auto-create a seizure_event when the entry describes one.
+    // Source of truth stays the seizure_events table so Timeline, Patterns,
+    // Care alerts and Caregiver mirror all see it. Dedupe within ±10 min so
+    // we don't double-count a journal entry written right after a manual log.
+    try {
+      const events = ((result.extracted as any)?.events ?? []) as Array<{
+        type?: string; detail?: string;
+      }>;
+      const tags = result.tags ?? [];
+      const mentionsSeizure =
+        events.some((e) => e?.type === "seizure") ||
+        tags.includes("event:seizure");
+      if (mentionsSeizure && !entry.linked_seizure_id) {
+        const startedAt = entry.captured_at || new Date().toISOString();
+        const winStart = new Date(new Date(startedAt).getTime() - 10 * 60 * 1000).toISOString();
+        const winEnd = new Date(new Date(startedAt).getTime() + 10 * 60 * 1000).toISOString();
+        const { data: dupe } = await admin
+          .from("seizure_events")
+          .select("id")
+          .eq("user_id", entry.user_id)
+          .gte("started_at", winStart)
+          .lte("started_at", winEnd)
+          .limit(1)
+          .maybeSingle();
+        let seizureId = dupe?.id as string | undefined;
+        if (!seizureId) {
+          const detail = events.find((e) => e?.type === "seizure")?.detail ?? null;
+          const { data: ins } = await admin
+            .from("seizure_events")
+            .insert({
+              user_id: entry.user_id,
+              started_at: startedAt,
+              notes: detail,
+              auto_detected: true,
+              detection_source: "journal",
+              created_by_kind: "self",
+            })
+            .select("id")
+            .single();
+          seizureId = ins?.id;
+        }
+        if (seizureId) {
+          await admin
+            .from("journal_entries")
+            .update({ linked_seizure_id: seizureId })
+            .eq("id", entry_id);
+        }
+      }
+    } catch (e) {
+      console.error("seizure auto-link failed", e);
+    }
+
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
