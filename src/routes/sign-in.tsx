@@ -306,6 +306,19 @@ function SignInPage() {
                             onChange={setLocaleValues}
                             compact
                           />
+                          <label htmlFor="invite" className="label-eyebrow block mt-5 mb-2">
+                            Invite code (optional)
+                          </label>
+                          <Input
+                            id="invite"
+                            type="text"
+                            autoComplete="off"
+                            placeholder="If a friend shared one"
+                            value={inviteCode}
+                            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                            className="h-12 font-mono tracking-widest rounded-xl"
+                            disabled={status === "submitting"}
+                          />
                         </div>
                       )}
                       {mode === "signin" && (
