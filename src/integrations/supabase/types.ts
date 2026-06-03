@@ -1340,6 +1340,7 @@ export type Database = {
           access_token: string
           created_at: string
           expires_at: string | null
+          last_sync_at: string | null
           refresh_token: string | null
           scope: string | null
           sync_interval_hours: number
@@ -1351,6 +1352,7 @@ export type Database = {
           access_token: string
           created_at?: string
           expires_at?: string | null
+          last_sync_at?: string | null
           refresh_token?: string | null
           scope?: string | null
           sync_interval_hours?: number
@@ -1362,6 +1364,7 @@ export type Database = {
           access_token?: string
           created_at?: string
           expires_at?: string | null
+          last_sync_at?: string | null
           refresh_token?: string | null
           scope?: string | null
           sync_interval_hours?: number
