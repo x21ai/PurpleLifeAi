@@ -102,7 +102,7 @@ export const setMetricPreference = createServerFn({ method: "POST" })
     if (typeof data.sortOrder === "number") patch.sort_order = data.sortOrder;
     const { error } = await supabase
       .from("report_metric_preferences")
-      .upsert(patch, { onConflict: "user_id,metric_key" });
+      .upsert(patch as any, { onConflict: "user_id,metric_key" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
