@@ -83,6 +83,7 @@ import { Route as ApiPublicCronPurgeDeletedAccountsRouteImport } from './routes/
 import { Route as ApiPublicCronOuraSyncAllRouteImport } from './routes/api/public/cron/oura-sync-all'
 import { Route as ApiPublicCronDoseRemindersRouteImport } from './routes/api/public/cron/dose-reminders'
 import { Route as ApiPublicCronCareDailyDigestRouteImport } from './routes/api/public/cron/care-daily-digest'
+import { Route as AppReportsTrendsMetricKeyRouteImport } from './routes/_app/reports.trends.$metricKey'
 
 const UsersRoute = UsersRouteImport.update({
   id: '/users',
@@ -462,6 +463,12 @@ const ApiPublicCronCareDailyDigestRoute =
     path: '/api/public/cron/care-daily-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AppReportsTrendsMetricKeyRoute =
+  AppReportsTrendsMetricKeyRouteImport.update({
+    id: '/trends/$metricKey',
+    path: '/trends/$metricKey',
+    getParentRoute: () => AppReportsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -527,6 +534,7 @@ export interface FileRoutesByFullPath {
   '/biometrics/': typeof AppBiometricsIndexRoute
   '/care/': typeof AppCareIndexRoute
   '/journal/': typeof AppJournalIndexRoute
+  '/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
   '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
@@ -601,6 +609,7 @@ export interface FileRoutesByTo {
   '/biometrics': typeof AppBiometricsIndexRoute
   '/care': typeof AppCareIndexRoute
   '/journal': typeof AppJournalIndexRoute
+  '/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
   '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
@@ -678,6 +687,7 @@ export interface FileRoutesById {
   '/_app/biometrics/': typeof AppBiometricsIndexRoute
   '/_app/care/': typeof AppCareIndexRoute
   '/_app/journal/': typeof AppJournalIndexRoute
+  '/_app/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
   '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
@@ -755,6 +765,7 @@ export interface FileRouteTypes {
     | '/biometrics/'
     | '/care/'
     | '/journal/'
+    | '/reports/trends/$metricKey'
     | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
     | '/api/public/cron/oura-sync-all'
@@ -829,6 +840,7 @@ export interface FileRouteTypes {
     | '/biometrics'
     | '/care'
     | '/journal'
+    | '/reports/trends/$metricKey'
     | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
     | '/api/public/cron/oura-sync-all'
@@ -905,6 +917,7 @@ export interface FileRouteTypes {
     | '/_app/biometrics/'
     | '/_app/care/'
     | '/_app/journal/'
+    | '/_app/reports/trends/$metricKey'
     | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
     | '/api/public/cron/oura-sync-all'
@@ -1471,6 +1484,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronCareDailyDigestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/reports/trends/$metricKey': {
+      id: '/_app/reports/trends/$metricKey'
+      path: '/trends/$metricKey'
+      fullPath: '/reports/trends/$metricKey'
+      preLoaderRoute: typeof AppReportsTrendsMetricKeyRouteImport
+      parentRoute: typeof AppReportsRoute
+    }
   }
 }
 
@@ -1512,11 +1532,13 @@ const AppMedsRouteWithChildren =
 interface AppReportsRouteChildren {
   AppReportsReportIdRoute: typeof AppReportsReportIdRoute
   AppReportsNewRoute: typeof AppReportsNewRoute
+  AppReportsTrendsMetricKeyRoute: typeof AppReportsTrendsMetricKeyRoute
 }
 
 const AppReportsRouteChildren: AppReportsRouteChildren = {
   AppReportsReportIdRoute: AppReportsReportIdRoute,
   AppReportsNewRoute: AppReportsNewRoute,
+  AppReportsTrendsMetricKeyRoute: AppReportsTrendsMetricKeyRoute,
 }
 
 const AppReportsRouteWithChildren = AppReportsRoute._addFileChildren(

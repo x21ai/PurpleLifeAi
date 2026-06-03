@@ -1664,6 +1664,39 @@ export type Database = {
         }
         Relationships: []
       }
+      report_metric_preferences: {
+        Row: {
+          created_at: string
+          hidden: boolean
+          id: string
+          metric_key: string
+          pinned: boolean
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          metric_key: string
+          pinned?: boolean
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          metric_key?: string
+          pinned?: boolean
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       report_metrics: {
         Row: {
           created_at: string
