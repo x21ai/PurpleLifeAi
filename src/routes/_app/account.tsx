@@ -165,3 +165,97 @@ function AppearancePicker() {
     </div>
   );
 }
+
+function InviteCodeCard() {
+  const fetchCode = useServerFn(getOrCreatePersonalShareCode);
+  const [code, setCode] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+
+  const generate = async () => {
+    setLoading(true);
+    try {
+      const res = await fetchCode({ data: undefined } as never);
+      setCode((res as { code: string }).code);
+    } catch (e) {
+      toast.error("Couldn't get an invite code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const shareUrl = code ? `${typeof window !== "undefined" ? window.location.origin : "https://purplelife.org"}/?invite=${code}` : "";
+
+  const copy = async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Couldn't copy");
+    }
+  };
+
+  const share = async () => {
+    if (!shareUrl) return;
+    if (typeof navigator !== "undefined" && (navigator as Navigator & { share?: (d: ShareData) => Promise<void> }).share) {
+      try {
+        await (navigator as Navigator & { share: (d: ShareData) => Promise<void> }).share({
+          title: "Purple",
+          text: "Try Purple — a quiet, private health journal.",
+          url: shareUrl,
+        });
+      } catch {
+        /* user cancelled */
+      }
+    } else {
+      void copy();
+    }
+  };
+
+  return (
+    <div>
+      <p className="text-[15px] text-[#FAFAFC]">Get an invite code</p>
+      <p className="mt-1 text-[13px] sheet-muted">
+        Share Purple with someone who could use a calmer way to track their health.
+      </p>
+      {!code ? (
+        <div className="mt-4">
+          <Button
+            onClick={generate}
+            disabled={loading}
+            variant="outline"
+            className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create my invite code"}
+          </Button>
+        </div>
+      ) : (
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
+            <code className="text-[15px] tracking-widest text-[#FAFAFC]">{code}</code>
+            <span className="text-[12px] sheet-muted">Unlimited uses</span>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={copy}
+              variant="outline"
+              className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10"
+            >
+              {copied ? <Check className="mr-2 h-4 w-4 text-emerald-400" /> : <Copy className="mr-2 h-4 w-4" />}
+              {copied ? "Copied" : "Copy link"}
+            </Button>
+            <Button
+              onClick={share}
+              variant="outline"
+              className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10"
+            >
+              <Share2 className="mr-2 h-4 w-4" /> Share
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
