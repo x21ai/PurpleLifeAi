@@ -186,7 +186,7 @@ function WelcomePage() {
     <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-8 sm:pt-12 pb-16">
       <div className="flex items-center justify-between mb-8">
         <div className="flex gap-1.5" aria-hidden="true">
-          {[0, 1, 2, 3].map((i) => (
+          {[0, 1, 2, 3, 4].map((i) => (
             <span
               key={i}
               className={`h-1.5 w-8 rounded-full transition-colors ${
@@ -342,6 +342,17 @@ function WelcomePage() {
       )}
 
       {step === 3 && (
+        <WhatITrackStep
+          conditions={conditions}
+          overrides={featureToggles}
+          onChange={setFeatureToggles}
+          onBack={() => setStep(2)}
+          onNext={() => setStep(4)}
+          t={t}
+        />
+      )}
+
+      {step === 4 && (
         <div>
           <div className="relative overflow-hidden rounded-3xl border border-border mb-8 aspect-[16/9]">
             <img
@@ -382,13 +393,111 @@ function WelcomePage() {
             />
           </div>
           <div className="mt-10 flex items-center justify-between gap-3">
-            <Button variant="ghost" onClick={() => setStep(2)}>{t("welcome.back")}</Button>
+            <Button variant="ghost" onClick={() => setStep(3)}>{t("welcome.back")}</Button>
             <Button className="rounded-full" onClick={finish} disabled={saving}>
               {saving ? t("welcome.saving") : t("welcome.takeMeIn")}
             </Button>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function WhatITrackStep({
+  conditions,
+  overrides,
+  onChange,
+  onBack,
+  onNext,
+  t,
+}: {
+  conditions: string[];
+  overrides: Record<string, boolean>;
+  onChange: (next: Record<string, boolean>) => void;
+  onBack: () => void;
+  onNext: () => void;
+  t: (k: string) => string;
+}) {
+  const grouped = FEATURE_CATALOG.reduce<Record<FeatureCategory, typeof FEATURE_CATALOG>>(
+    (acc, f) => {
+      (acc[f.category] ??= [] as typeof FEATURE_CATALOG).push(f);
+      return acc;
+    },
+    {} as Record<FeatureCategory, typeof FEATURE_CATALOG>,
+  );
+  const toggle = (key: FeatureKey, on: boolean) => {
+    const def = isFeatureEnabled(key, conditions, {});
+    const next = { ...overrides };
+    if (on === def) {
+      delete next[key];
+    } else {
+      next[key] = on;
+    }
+    onChange(next);
+  };
+  return (
+    <div>
+      <p className="label-eyebrow mb-4">What you'll track</p>
+      <h1 className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight text-foreground">
+        Pick what shows up
+      </h1>
+      <p className="mt-5 text-lg text-muted-foreground max-w-lg">
+        We pre-picked these from your conditions. Flip anything off — you can change it
+        any time in Settings.
+      </p>
+      <div className="mt-8 space-y-6">
+        {(Object.keys(grouped) as FeatureCategory[]).map((cat) => (
+          <section key={cat}>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+              {CATEGORY_LABELS[cat]}
+            </p>
+            <ul className="rounded-2xl border border-border bg-card divide-y divide-border overflow-hidden">
+              {grouped[cat].map((f) => {
+                const enabled = isFeatureEnabled(f.key, conditions, overrides);
+                const defaultOn = isFeatureEnabled(f.key, conditions, {});
+                const matchedCondition = f.defaultFor.find((c) => conditions.includes(c));
+                return (
+                  <li key={f.key} className="flex items-start justify-between gap-3 p-4">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground">{f.label}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{f.description}</p>
+                      <div className="mt-1 flex flex-wrap gap-1.5">
+                        {defaultOn && matchedCondition && (
+                          <span className="text-[10px] uppercase tracking-wide text-primary">
+                            default for {matchedCondition}
+                          </span>
+                        )}
+                        {f.defaultOnGlobally && (
+                          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            on by default
+                          </span>
+                        )}
+                        {f.requiresDevice && (
+                          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            needs a device
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <Switch
+                      checked={enabled}
+                      onCheckedChange={(v) => toggle(f.key, Boolean(v))}
+                      aria-label={`Toggle ${f.label}`}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+      </div>
+      <div className="mt-10 flex items-center justify-between gap-3">
+        <Button variant="ghost" onClick={onBack}>{t("welcome.back")}</Button>
+        <Button className="rounded-full" onClick={onNext}>
+          {t("welcome.continue")} <ArrowRight className="h-4 w-4 ml-2" />
+        </Button>
+      </div>
     </div>
   );
 }
