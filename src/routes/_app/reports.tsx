@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { FileText, Upload, Loader2, ChevronRight, AlertCircle } from "lucide-react";
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_app/reports")({
       { name: "description", content: "Upload lab reports and track changes over time." },
     ],
   }),
-  component: ReportsPage,
+  component: ReportsLayout,
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-3xl px-5 py-16">
       <p className="text-sm text-destructive">Couldn't load reports: {error.message}</p>
@@ -27,6 +27,12 @@ export const Route = createFileRoute("/_app/reports")({
   ),
   notFoundComponent: () => <div className="p-8">Not found.</div>,
 });
+
+function ReportsLayout() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  if (pathname !== "/reports") return <Outlet />;
+  return <ReportsPage />;
+}
 
 type ReportRow = {
   id: string;
