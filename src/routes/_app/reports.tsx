@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { FileText, Upload, Loader2, ChevronRight, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { listReports } from "@/lib/reports.functions";
@@ -34,6 +35,7 @@ type ReportRow = {
   file_mime: string;
   status: string;
   created_at: string;
+  metric_count?: number;
 };
 
 function ReportsPage() {
@@ -51,14 +53,24 @@ function ReportsPage() {
   });
 
   const reports = (data?.reports ?? []) as ReportRow[];
+  const [query, setQuery] = React.useState("");
+  const filtered = React.useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return reports;
+    return reports.filter(
+      (r) =>
+        r.title?.toLowerCase().includes(q) ||
+        (r.report_type ?? "").toLowerCase().includes(q),
+    );
+  }, [reports, query]);
   const grouped = React.useMemo(() => {
     const byType: Record<string, ReportRow[]> = {};
-    for (const r of reports) {
+    for (const r of filtered) {
       const key = r.report_type ?? "uncategorized";
       (byType[key] ??= []).push(r);
     }
     return byType;
-  }, [reports]);
+  }, [filtered]);
 
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-10 sm:pt-16 pb-24">
@@ -78,6 +90,17 @@ function ReportsPage() {
       </div>
 
       <MedicalDisclaimer className="mt-6" />
+
+      {reports.length > 0 && (
+        <div className="mt-6">
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search reports by title or type…"
+            className="rounded-full"
+          />
+        </div>
+      )}
 
       <section className="mt-8">
         {isLoading ? (
@@ -128,7 +151,10 @@ function ReportsPage() {
                                 <AlertCircle className="h-3 w-3" /> Extraction failed
                               </span>
                             )}
-                            {r.status === "ready" && "Ready"}
+                            {r.status === "ready" &&
+                              ((r.metric_count ?? 0) > 0
+                                ? `${r.metric_count} metric${r.metric_count === 1 ? "" : "s"}`
+                                : "Ready")}
                           </p>
                         </div>
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
