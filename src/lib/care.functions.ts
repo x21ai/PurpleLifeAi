@@ -595,7 +595,7 @@ export const caregiverReadOverview = createServerFn({ method: "POST" })
     const { userId } = context;
     const { data: rel, error } = await supabaseAdmin
       .from("care_relationships")
-      .select("id, role, status, expires_at")
+      .select("id, role, status, expires_at, caregiver_hidden_features")
       .eq("owner_id", data.owner_id)
       .eq("caregiver_id", userId)
       .eq("status", "active")
@@ -612,7 +612,7 @@ export const caregiverReadOverview = createServerFn({ method: "POST" })
 
     const { data: profile } = await supabaseAdmin
       .from("profiles")
-      .select("first_name, last_name, community_display_name, diagnosis, timezone, phone, pronouns")
+      .select("first_name, last_name, community_display_name, diagnosis, timezone, phone, pronouns, conditions, feature_overrides")
       .eq("id", data.owner_id)
       .maybeSingle();
 
@@ -620,7 +620,42 @@ export const caregiverReadOverview = createServerFn({ method: "POST" })
       relationship: rel,
       scopes: (scopes ?? []).filter((s) => s.granted).map((s) => s.scope),
       profile,
+      ownerConditions: (profile?.conditions as string[] | null) ?? [],
+      ownerFeatureOverrides:
+        (profile?.feature_overrides as Record<string, boolean> | null) ?? {},
+      caregiverHiddenFeatures:
+        ((rel as { caregiver_hidden_features?: string[] | null })
+          .caregiver_hidden_features as string[] | null) ?? [],
     };
+  });
+
+export const setCaregiverHiddenFeatures = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { relationship_id: string; hidden: string[] }) =>
+    z
+      .object({
+        relationship_id: z.string().uuid(),
+        hidden: z.array(z.string().min(1).max(64)).max(64),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: rel, error: relErr } = await supabaseAdmin
+      .from("care_relationships")
+      .select("id")
+      .eq("id", data.relationship_id)
+      .eq("caregiver_id", userId)
+      .eq("status", "active")
+      .maybeSingle();
+    if (relErr) throw new Error(relErr.message);
+    if (!rel) throw new Error("No active relationship");
+    const { error } = await supabaseAdmin
+      .from("care_relationships")
+      .update({ caregiver_hidden_features: data.hidden })
+      .eq("id", rel.id);
+    if (error) throw new Error(error.message);
+    return { ok: true, hidden: data.hidden };
   });
 
 export const caregiverReadMeds = createServerFn({ method: "POST" })

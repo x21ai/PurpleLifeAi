@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-r
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, MessageCircle } from "lucide-react";
+import { ArrowLeft, Loader2, MessageCircle, EyeOff } from "lucide-react";
 import { useEffect, useMemo } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -50,9 +50,19 @@ import {
   caregiverMarkDose,
   getOwnerActivityCounts,
   markOwnerSeen,
+  setCaregiverHiddenFeatures,
 } from "@/lib/care.functions";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { ROLE_LABELS, type CareRole } from "@/lib/care.scopes";
+import { isFeatureEnabled, type FeatureKey } from "@/lib/feature-catalog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/care/$ownerId")({
@@ -61,6 +71,13 @@ export const Route = createFileRoute("/_app/care/$ownerId")({
 });
 
 type TabKey = "today" | "meds" | "biometrics" | "hydration" | "journal" | "seizures" | "reports" | "chat";
+
+// Owner-driven feature gates per tab. Tabs not listed here are always shown
+// when the caregiver has the scope (they're not condition-specific).
+const TAB_OWNER_FEATURE: Partial<Record<TabKey, FeatureKey>> = {
+  hydration: "hydration",
+  seizures: "seizure_log",
+};
 
 function CareDashboardPage() {
   useRouteTheme("light");
@@ -77,7 +94,17 @@ function CareDashboardPage() {
   const scopes = overview.data?.scopes ?? [];
   const has = (s: string) => scopes.includes(s);
 
-  const tabs: { key: TabKey; label: string; scope: string }[] = useMemo(
+  const ownerConditions = (overview.data as any)?.ownerConditions ?? [];
+  const ownerOverrides = (overview.data as any)?.ownerFeatureOverrides ?? {};
+  const caregiverHidden: string[] =
+    (overview.data as any)?.caregiverHiddenFeatures ?? [];
+  const ownerEnables = (key: TabKey) => {
+    const f = TAB_OWNER_FEATURE[key];
+    if (!f) return true;
+    return isFeatureEnabled(f, ownerConditions, ownerOverrides);
+  };
+
+  const allScopedTabs: { key: TabKey; label: string; scope: string }[] = useMemo(
     () =>
       [
         { key: "biometrics" as TabKey, label: "Biometrics", scope: "biometrics:read" },
@@ -91,6 +118,35 @@ function CareDashboardPage() {
       ].filter((t) => has(t.scope)),
     [scopes.join(",")],
   );
+
+  // Owner-allowed tabs (after owner condition/overrides). Caregiver can
+  // additionally hide any of these locally via the "Customize" menu.
+  const ownerAllowedTabs = useMemo(
+    () => allScopedTabs.filter((t) => ownerEnables(t.key)),
+    [allScopedTabs, ownerConditions.join(","), JSON.stringify(ownerOverrides)],
+  );
+  const tabs = useMemo(
+    () => ownerAllowedTabs.filter((t) => !caregiverHidden.includes(t.key)),
+    [ownerAllowedTabs, caregiverHidden.join(",")],
+  );
+
+  const setHiddenFn = useServerFn(setCaregiverHiddenFeatures);
+  const setHidden = useMutation({
+    mutationFn: (hidden: string[]) =>
+      setHiddenFn({
+        data: { relationship_id: overview.data!.relationship.id, hidden },
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["care", "overview", ownerId] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't update"),
+  });
+  const toggleHide = (key: TabKey, show: boolean) => {
+    const next = show
+      ? caregiverHidden.filter((k) => k !== key)
+      : Array.from(new Set([...caregiverHidden, key]));
+    setHidden.mutate(next);
+  };
 
   const [active, setActive] = useState<TabKey>("biometrics");
   const current: TabKey = tabs.some((t) => t.key === active) ? active : (tabs[0]?.key ?? "today");
@@ -231,7 +287,40 @@ function CareDashboardPage() {
               </SelectContent>
             </Select>
           </div>
-          <Tabs value={current} onValueChange={(v) => setActive(v as TabKey)} className="mt-4">
+          <div className="mt-4 flex items-center justify-end gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <EyeOff className="h-3 w-3" /> Customize tabs
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="text-xs">Show tabs (just for you)</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {ownerAllowedTabs.map((t) => {
+                  const shown = !caregiverHidden.includes(t.key);
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={t.key}
+                      checked={shown}
+                      onCheckedChange={(v) => toggleHide(t.key, Boolean(v))}
+                    >
+                      {t.label}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+                {ownerAllowedTabs.length === 0 && (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    Nothing to customize.
+                  </div>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <Tabs value={current} onValueChange={(v) => setActive(v as TabKey)} className="mt-2">
             <TabsList className="hidden sm:flex sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 overflow-x-auto">
               {tabs.map((t) => (
                 <TabsTrigger key={t.key} value={t.key} className="relative">
@@ -277,6 +366,7 @@ function CareDashboardPage() {
                 <HydrationPanel
                   ownerId={ownerId}
                   canWrite={has("biometrics:write")}
+                  auraEnabled={isFeatureEnabled("aura", ownerConditions, ownerOverrides)}
                 />
               </TabsContent>
             )}
@@ -687,7 +777,15 @@ function ReportsPanel({ ownerId }: { ownerId: string }) {
 }
 
 /* ----- Hydration ----- */
-function HydrationPanel({ ownerId, canWrite }: { ownerId: string; canWrite: boolean }) {
+function HydrationPanel({
+  ownerId,
+  canWrite,
+  auraEnabled = false,
+}: {
+  ownerId: string;
+  canWrite: boolean;
+  auraEnabled?: boolean;
+}) {
   const day = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -720,7 +818,7 @@ function HydrationPanel({ ownerId, canWrite }: { ownerId: string; canWrite: bool
           </p>
           <div className="mt-3 space-y-3">
             <QuickAddWater ownerId={ownerId} />
-            <div><LogAuraSheet ownerId={ownerId} /></div>
+            {auraEnabled && <div><LogAuraSheet ownerId={ownerId} /></div>}
           </div>
         </Section>
       )}
