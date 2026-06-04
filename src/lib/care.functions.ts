@@ -332,18 +332,30 @@ export const decidePendingChange = createServerFn({ method: "POST" })
           .from("journal_entries")
           .select("text")
           .eq("id", change.target_id)
+          .eq("user_id", change.owner_id)
           .single();
+        if (!row) throw new Error("Target journal entry not found for this owner");
         const newText = (row?.text ?? "") + stamp;
-        await supabaseAdmin.from("journal_entries").update({ text: newText }).eq("id", change.target_id);
+        await supabaseAdmin
+          .from("journal_entries")
+          .update({ text: newText })
+          .eq("id", change.target_id)
+          .eq("user_id", change.owner_id);
       } else if (type === "add_meds_note" && change.target_id) {
         const note = String((change.payload as any)?.text ?? "").slice(0, 1000);
         const { data: row } = await supabaseAdmin
           .from("medications")
           .select("notes")
           .eq("id", change.target_id)
+          .eq("user_id", change.owner_id)
           .single();
+        if (!row) throw new Error("Target medication not found for this owner");
         const newNotes = ((row?.notes ?? "") + "\n— Caregiver: " + note).trim();
-        await supabaseAdmin.from("medications").update({ notes: newNotes }).eq("id", change.target_id);
+        await supabaseAdmin
+          .from("medications")
+          .update({ notes: newNotes })
+          .eq("id", change.target_id)
+          .eq("user_id", change.owner_id);
       }
     }
 
@@ -454,6 +466,19 @@ export const proposeChange = createServerFn({ method: "POST" })
     if (!ok) throw new Error("Missing scope: " + requiredScope);
 
     const target_table = data.type === "add_journal_comment" ? "journal_entries" : "medications";
+
+    // Verify the target record actually belongs to the relationship's owner.
+    // Without this check, a caregiver could submit any record UUID and have it
+    // applied against another user's data once their own owner approves.
+    const { data: targetRow, error: tErr } = await supabaseAdmin
+      .from(target_table)
+      .select("id, user_id")
+      .eq("id", data.target_id)
+      .eq("user_id", rel.owner_id)
+      .maybeSingle();
+    if (tErr) throw new Error(tErr.message);
+    if (!targetRow) throw new Error("Target record not found for this owner");
+
     const { data: change, error: cErr } = await supabaseAdmin
       .from("pending_changes")
       .insert({
@@ -1702,6 +1727,7 @@ export const listPendingChangesDetailed = createServerFn({ method: "GET" })
             .from("journal_entries")
             .select("text, captured_at")
             .eq("id", c.target_id)
+            .eq("user_id", c.owner_id)
             .maybeSingle();
           currentValue = data?.text ?? null;
         } else if (c.type === "add_meds_note" && c.target_id) {
@@ -1709,6 +1735,7 @@ export const listPendingChangesDetailed = createServerFn({ method: "GET" })
             .from("medications")
             .select("name, notes")
             .eq("id", c.target_id)
+            .eq("user_id", c.owner_id)
             .maybeSingle();
           currentValue = data ? `${data.name}\n${data.notes ?? ""}` : null;
         }
