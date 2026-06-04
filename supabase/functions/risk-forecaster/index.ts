@@ -11,7 +11,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
-const MODEL_VERSION = "v1-scorecard-2026.05";
+const MODEL_VERSION = "v2-scorecard-2026.06";
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
 type Factor = {
@@ -91,6 +91,8 @@ async function runForUser(userId: string): Promise<{ ok: boolean; reason?: strin
   const since14 = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString();
   const cutoffRecent = new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString();
   const since48h = new Date(Date.now() - 48 * 3600 * 1000).toISOString();
+  const since7d = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+  const sincePrior7d = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString();
 
   const { data: bios, error: biosErr } = await admin
     .from("biometrics")
@@ -186,6 +188,73 @@ async function runForUser(userId: string): Promise<{ ok: boolean; reason?: strin
       key: "missed_doses",
       label: missed === 1 ? "A missed dose" : `${missed} missed doses`,
       detail: `In the last 48 hours${missed >= 2 ? ", capped at +20 to the score" : ""}.`,
+      weight: w,
+    });
+  }
+
+  // v2: recent seizure pressure (last 7d vs prior 7d)
+  const { data: seizures7d } = await admin
+    .from("seizure_events")
+    .select("started_at")
+    .eq("user_id", userId)
+    .gte("started_at", sincePrior7d);
+  const sz = seizures7d ?? [];
+  const szRecent = sz.filter((s) => s.started_at >= since7d).length;
+  const szPrior = sz.length - szRecent;
+  if (szRecent >= 2 || (szRecent > 0 && szRecent > szPrior)) {
+    const w = Math.min(18, szRecent * 6);
+    score += w;
+    factors.push({
+      key: "seizure_pressure",
+      label: szRecent === 1 ? "Recent seizure" : `${szRecent} seizures this week`,
+      detail:
+        szPrior > 0
+          ? `Up from ${szPrior} the week before.`
+          : `None the week before — worth taking it easy.`,
+      weight: w,
+    });
+  }
+
+  // v2: aura signals in last 48h
+  const { data: auras } = await admin
+    .from("aura_events")
+    .select("occurred_at, led_to_seizure")
+    .eq("user_id", userId)
+    .gte("occurred_at", since48h);
+  const auraCount = auras?.length ?? 0;
+  if (auraCount > 0) {
+    const w = Math.min(14, 6 + auraCount * 2);
+    score += w;
+    factors.push({
+      key: "recent_auras",
+      label: auraCount === 1 ? "An aura in the last 48h" : `${auraCount} auras in the last 48h`,
+      detail: "Auras are a signal your nervous system is more reactive right now.",
+      weight: w,
+    });
+  }
+
+  // v2: journal symptom signal — symptom-laden tags in last 3 days
+  const SYMPTOM_TAGS = new Set([
+    "headache","migraine","aura","poor_sleep","insomnia","stress","anxiety",
+    "fatigue","exhaustion","missed_meds","nausea","dizzy","pain","mood_low",
+    "overstimulated","sensory_overload","seizure_warning",
+  ]);
+  const { data: journal } = await admin
+    .from("journal_entries")
+    .select("captured_at, ai_tags")
+    .eq("user_id", userId)
+    .gte("captured_at", cutoffRecent);
+  const symptomEntries = (journal ?? []).filter((j) => {
+    const tags = (j.ai_tags as string[] | null) ?? [];
+    return tags.some((t) => SYMPTOM_TAGS.has(String(t).toLowerCase()));
+  }).length;
+  if (symptomEntries >= 2) {
+    const w = Math.min(10, symptomEntries * 3);
+    score += w;
+    factors.push({
+      key: "journal_symptoms",
+      label: "You've been noting symptoms",
+      detail: `${symptomEntries} journal entries in the last 3 days mention symptoms.`,
       weight: w,
     });
   }
