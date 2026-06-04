@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { loadAndDerivePatternCards } from "./insights-patterns.functions";
 
 const SectionsSchema = z.object({
   snapshot: z.boolean().default(true),
