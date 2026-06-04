@@ -160,3 +160,90 @@ function formatBytes(n: number): string {
   if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
   return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
+
+/**
+ * Stream-unzip the Apple Health export and extract just `export.xml`.
+ *
+ * Uses fflate's `Unzip` class on the main thread so we never postMessage
+ * the whole archive into a Web Worker (which OOMs the structured clone for
+ * multi-hundred-MB exports). Memory peak ~= size of export.xml itself.
+ */
+async function extractExportXmlStreaming(file: File): Promise<File | null> {
+  const { Unzip, UnzipInflate } = await import("fflate");
+
+  return await new Promise<File | null>((resolve, reject) => {
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    let found = false;
+    let done = false;
+
+    const finish = (result: File | null) => {
+      if (done) return;
+      done = true;
+      resolve(result);
+    };
+
+    const unzip = new Unzip((stream) => {
+      const name = stream.name.toLowerCase();
+      const isExport = name === "export.xml" || name.endsWith("/export.xml");
+      if (!isExport) return; // skip — fflate discards the data
+      found = true;
+      stream.ondata = (err, data, final) => {
+        if (done) return;
+        if (err) {
+          done = true;
+          reject(err);
+          return;
+        }
+        if (data && data.length) {
+          chunks.push(data);
+          total += data.length;
+        }
+        if (final) {
+          const merged = new Uint8Array(total);
+          let off = 0;
+          for (const c of chunks) {
+            merged.set(c, off);
+            off += c.length;
+          }
+          chunks.length = 0;
+          const ab = merged.buffer.slice(
+            merged.byteOffset,
+            merged.byteOffset + merged.byteLength,
+          ) as ArrayBuffer;
+          finish(new File([ab], "export.xml", { type: "application/xml" }));
+        }
+      };
+      stream.start();
+    });
+    unzip.register(UnzipInflate);
+
+    (async () => {
+      const reader = file.stream().getReader();
+      try {
+        while (!done) {
+          const { value, done: streamDone } = await reader.read();
+          if (streamDone) {
+            unzip.push(new Uint8Array(0), true);
+            if (!done) finish(found ? null : null);
+            return;
+          }
+          if (value && value.length) {
+            unzip.push(value, false);
+          }
+        }
+      } catch (e) {
+        if (!done) {
+          done = true;
+          reject(e);
+        }
+      } finally {
+        try {
+          reader.releaseLock();
+        } catch {
+          /* noop */
+        }
+      }
+    })();
+  });
+}
