@@ -28,6 +28,7 @@ interface Props {
   total?: number;
   inboxUrl?: string;
   pendingCount?: number;
+  attention?: string[];
 }
 
 const fmtTime = (iso: string) => {
@@ -49,6 +50,7 @@ const CareDailyDigestEmail = ({
   total = 0,
   inboxUrl,
   pendingCount = 0,
+  attention = [],
 }: Props) => {
   const greeting = ownerFirstName?.trim() ? `Hi ${ownerFirstName},` : "Hi,";
   const count = total || rows.length;
@@ -60,6 +62,16 @@ const CareDailyDigestEmail = ({
         <Container style={container}>
           <Heading style={h1}>Your caregiver activity, last 24 hours</Heading>
           <Text style={text}>{greeting}</Text>
+
+          {attention.length > 0 ? (
+            <Container style={attentionBox}>
+              <Text style={attentionTitle}>Needs your attention</Text>
+              {attention.map((line, i) => (
+                <Text key={i} style={attentionLine}>• {line}</Text>
+              ))}
+            </Container>
+          ) : null}
+
           <Text style={text}>
             Here's what the people who care for you did on {SITE_NAME} yesterday.
           </Text>
@@ -113,6 +125,7 @@ export const template = {
     pendingCount: 1,
     inboxUrl: "https://purplelife.org/care/inbox",
     total: 3,
+    attention: ["2 missed doses in the last 24h", "No journal entry in the last 72 hours"],
     rows: [
       {
         caregiverName: "Pat",
@@ -154,3 +167,19 @@ const row = {
 };
 const rowTitle = { fontSize: "14px", color: TEXT, fontWeight: 600, margin: "0 0 2px" };
 const rowMeta = { fontSize: "11px", color: MUTED, margin: "0 0 4px", textTransform: "uppercase" as const };
+const attentionBox = {
+  padding: "12px 14px",
+  margin: "0 0 16px",
+  borderRadius: "8px",
+  backgroundColor: "#fff4e5",
+  border: "1px solid #f0c987",
+};
+const attentionTitle = {
+  fontSize: "13px",
+  fontWeight: 700,
+  color: "#7a4a00",
+  margin: "0 0 6px",
+  textTransform: "uppercase" as const,
+  letterSpacing: "0.04em",
+};
+const attentionLine = { fontSize: "14px", color: "#3d2400", margin: "2px 0", lineHeight: "1.5" };
