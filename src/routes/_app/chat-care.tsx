@@ -81,6 +81,109 @@ function formatTime(iso: string) {
   return d.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
+function NewChatPicker({ onPicked }: { onPicked: (threadId: string) => void }) {
+  const [open, setOpen] = React.useState(false);
+  const [busy, setBusy] = React.useState<string | null>(null);
+  const fetchMine = useServerFn(listMyCaregivers);
+  const fetchShared = useServerFn(listPeopleSharingWithMe);
+  const openDirect = useServerFn(getOrCreateDirectThread);
+  const mine = useQuery({
+    queryKey: ["care", "mine"],
+    queryFn: () => fetchMine(),
+    enabled: open,
+  });
+  const shared = useQuery({
+    queryKey: ["care", "shared-with-me"],
+    queryFn: () => fetchShared(),
+    enabled: open,
+  });
+
+  const handlePick = async (relationshipId: string) => {
+    if (busy) return;
+    setBusy(relationshipId);
+    try {
+      const r = await openDirect({ data: { relationshipId } });
+      onPicked(r.threadId);
+      setOpen(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't open chat");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const mineList = (mine.data?.relationships ?? []).filter(
+    (r) => r.status === "active" && r.caregiver_id,
+  );
+  const sharedList = (shared.data?.relationships ?? []).filter(
+    (r) => r.status === "active",
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="ghost" className="h-8 gap-1.5 text-xs" title="Start a new chat">
+          <Plus className="h-3.5 w-3.5" />
+          New
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Start a new chat</DialogTitle>
+        </DialogHeader>
+        {mine.isLoading || shared.isLoading ? (
+          <div className="flex justify-center py-6">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : mineList.length === 0 && sharedList.length === 0 ? (
+          <p className="py-4 text-sm text-muted-foreground">
+            No active care relationships yet. Invite someone from Settings → Sharing.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {mineList.map((r) => (
+              <li key={r.id}>
+                <button
+                  type="button"
+                  onClick={() => void handlePick(r.id)}
+                  disabled={busy === r.id}
+                  className="flex w-full items-center justify-between gap-3 py-3 text-left hover:bg-secondary/40 px-2 rounded-lg"
+                >
+                  <span className="text-sm text-foreground truncate">{r.invite_email}</span>
+                  {busy === r.id ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                  ) : (
+                    <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
+                </button>
+              </li>
+            ))}
+            {sharedList.map((r) => (
+              <li key={r.id}>
+                <button
+                  type="button"
+                  onClick={() => void handlePick(r.id)}
+                  disabled={busy === r.id}
+                  className="flex w-full items-center justify-between gap-3 py-3 text-left hover:bg-secondary/40 px-2 rounded-lg"
+                >
+                  <span className="text-sm text-foreground truncate">
+                    Person sharing with you
+                  </span>
+                  {busy === r.id ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                  ) : (
+                    <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function CareChatPage() {
   useRouteTheme("light");
   const { session } = useAuth();
