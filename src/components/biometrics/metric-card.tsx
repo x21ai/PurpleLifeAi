@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ResponsiveContainer, AreaChart, Area, YAxis } from "recharts";
+import { ResponsiveContainer, LineChart, Line, YAxis, Tooltip } from "recharts";
 import {
   METRICS,
   type MetricKey,
@@ -9,27 +9,72 @@ import {
 } from "@/lib/biometric-metrics";
 
 type Series = Array<{ date: string; value: number | null }>;
+type SourceKey = "oura" | "whoop" | "apple_health" | "manual";
+
+const SOURCE_META: Record<SourceKey, { label: string; color: string; short: string }> = {
+  oura:         { label: "Oura",         color: "var(--purple-primary)", short: "O" },
+  whoop:        { label: "Whoop",        color: "#34D399",               short: "W" },
+  apple_health: { label: "Apple Health", color: "#F472B6",               short: "A" },
+  manual:       { label: "Manual",       color: "#A1A1AA",               short: "M" },
+};
 
 export function MetricCard({
   metric,
   series,
+  seriesBySource,
   disableLink = false,
 }: {
   metric: MetricKey;
-  series: Series;
+  /** Single-source series (legacy). Used as fallback when seriesBySource not provided. */
+  series?: Series;
+  /** Per-source series. When provided, the card renders one line per source. */
+  seriesBySource?: Partial<Record<SourceKey, Series>>;
   /** When true, render as a plain card instead of a Link to /biometrics/$metric.
    *  Used by the caregiver view, where the link would point to the wrong user. */
   disableLink?: boolean;
 }) {
   const meta = METRICS[metric];
-  const recent = series.slice(-14);
-  const baselineWindow = series.slice(-30, -3);
+
+  // Normalize input: prefer seriesBySource; fall back to single-source `series`.
+  const bySource: Partial<Record<SourceKey, Series>> = seriesBySource ?? {
+    oura: series ?? [],
+  };
+  const sources = (Object.keys(bySource) as SourceKey[]).filter(
+    (s) => (bySource[s] ?? []).some((d) => d.value != null),
+  );
+
+  // Build a merged date axis (union of all source dates) for the sparkline.
+  const dateSet = new Set<string>();
+  for (const s of sources) for (const r of bySource[s] ?? []) dateSet.add(r.date);
+  const allDates = Array.from(dateSet).sort();
+  const recentDates = allDates.slice(-14);
+
+  // For headline value + baseline + status, prefer the source with the most recent reading.
+  const headlineSource: SourceKey =
+    sources
+      .map<[SourceKey, string | undefined]>((s) => [
+        s,
+        [...(bySource[s] ?? [])].reverse().find((d) => d.value != null)?.date,
+      ])
+      .sort((a, b) => (b[1] ?? "").localeCompare(a[1] ?? ""))[0]?.[0] ?? "oura";
+  const headlineSeries = bySource[headlineSource] ?? [];
+  const baselineWindow = headlineSeries.slice(-30, -3);
   const baseline = stats(baselineWindow.map((d) => d.value));
-  const current = [...series].reverse().find((d) => d.value != null)?.value ?? null;
+  const current = [...headlineSeries].reverse().find((d) => d.value != null)?.value ?? null;
   const status = classifyValue(meta, current, baseline);
   const tone = statusTone(meta, status);
-  const sparkData = recent.map((d) => ({ x: d.date, y: d.value }));
-  const hasSpark = sparkData.some((d) => typeof d.y === "number");
+
+  // Build chart rows: one row per date, one column per source.
+  const sparkData = recentDates.map((d) => {
+    const row: Record<string, string | number | null> = { x: d };
+    for (const s of sources) {
+      const found = (bySource[s] ?? []).find((r) => r.date === d);
+      row[s] = found?.value ?? null;
+    }
+    return row;
+  });
+  const hasSpark = sources.some((s) => (bySource[s] ?? []).some((r) => r.value != null));
+  const multi = sources.length > 1;
 
   const delta =
     current != null && baseline.mean != null ? current - baseline.mean : null;
@@ -38,7 +83,24 @@ export function MetricCard({
     <>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="label-eyebrow text-muted-foreground">{meta.label}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="label-eyebrow text-muted-foreground">{meta.label}</p>
+            {multi && (
+              <span className="flex items-center gap-0.5">
+                {sources.map((s) => (
+                  <span
+                    key={s}
+                    title={SOURCE_META[s].label}
+                    aria-label={SOURCE_META[s].label}
+                    className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[8px] font-bold text-background"
+                    style={{ background: SOURCE_META[s].color }}
+                  >
+                    {SOURCE_META[s].short}
+                  </span>
+                ))}
+              </span>
+            )}
+          </div>
           <p className="mt-2 font-serif text-3xl sm:text-4xl text-foreground leading-none">
             {meta.format(current)}
           </p>
@@ -53,25 +115,40 @@ export function MetricCard({
       {hasSpark && (
         <div className="mt-3 h-12 -mx-1">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={sparkData} margin={{ top: 2, right: 2, bottom: 0, left: 2 }}>
+            <LineChart data={sparkData} margin={{ top: 2, right: 2, bottom: 0, left: 2 }}>
               <YAxis hide domain={["auto", "auto"]} />
-              <defs>
-                <linearGradient id={`spark-${metric}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--purple-primary)" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="var(--purple-primary)" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <Area
-                type="monotone"
-                dataKey="y"
-                stroke="var(--purple-primary)"
-                strokeWidth={1.5}
-                fill={`url(#spark-${metric})`}
-                isAnimationActive={false}
-                connectNulls
-                dot={false}
-              />
-            </AreaChart>
+              {multi && (
+                <Tooltip
+                  cursor={{ stroke: "var(--border)" }}
+                  contentStyle={{
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "10px",
+                    fontSize: "11px",
+                  }}
+                  formatter={(v, name) => {
+                    const s = name as SourceKey;
+                    return [
+                      meta.format(typeof v === "number" ? v : Number(v)),
+                      SOURCE_META[s]?.label ?? String(name),
+                    ];
+                  }}
+                  labelFormatter={() => ""}
+                />
+              )}
+              {sources.map((s) => (
+                <Line
+                  key={s}
+                  type="monotone"
+                  dataKey={s}
+                  stroke={SOURCE_META[s].color}
+                  strokeWidth={1.5}
+                  isAnimationActive={false}
+                  connectNulls
+                  dot={false}
+                />
+              ))}
+            </LineChart>
           </ResponsiveContainer>
         </div>
       )}
