@@ -9,6 +9,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { ensureServiceWorker, requestPermission } from "@/lib/med-notifications";
 import { toast } from "sonner";
 import { OuraConnection } from "@/components/connections/oura-connection";
+import { WhoopConnection } from "@/components/connections/whoop-connection";
 import { PhoneInput, parsePhone, formatPhone } from "@/components/ui/phone-input";
 import dawn from "@/assets/hero-readiness-dawn.jpg";
 import mist from "@/assets/hero-readiness-mist.jpg";
@@ -417,13 +418,9 @@ function WelcomePage() {
             <div className="rounded-xl border border-border bg-card px-4">
               <OuraConnection />
             </div>
-            <ConnectCard
-              icon={Watch}
-              title={t("welcome.whoopTitle")}
-              body={t("welcome.whoopBody")}
-              actionLabel={t("welcome.comingSoon")}
-              disabled
-            />
+            <div className="rounded-xl border border-border bg-card px-4">
+              <WhoopConnection />
+            </div>
             <ConnectCard
               icon={Bell}
               title={t("welcome.notifTitle")}

@@ -19,7 +19,10 @@ export type MetricKey =
   | "stress"
   | "resilience"
   | "activity_score"
-  | "steps";
+  | "steps"
+  | "whoop_recovery"
+  | "whoop_strain"
+  | "whoop_sleep_performance";
 
 export type MetricDirection = "higher_better" | "lower_better" | "neutral";
 
@@ -230,11 +233,49 @@ export const METRICS: Record<MetricKey, MetricMeta> = {
       "Total steps for the day. Useful as a movement baseline rather than a target — sudden drops can hint at fatigue or a brewing bad day.",
     baselineHint: "A 50%+ drop from your usual is worth noticing.",
   },
+  whoop_recovery: {
+    key: "whoop_recovery",
+    label: "Recovery",
+    short: "Recovery",
+    unit: "%",
+    column: "whoop_recovery_pct",
+    direction: "higher_better",
+    format: (v) => num(v, "%"),
+    meaning:
+      "Whoop's read on how well your body has recovered overnight. Green (67%+) means take on the day; under 34% is the body asking for a lighter load.",
+    baselineHint: "Two days under 34% in a row is a clear ask to slow down.",
+  },
+  whoop_strain: {
+    key: "whoop_strain",
+    label: "Strain",
+    short: "Strain",
+    unit: "",
+    column: "whoop_strain",
+    direction: "neutral",
+    format: (v) => dec(v, 1),
+    meaning:
+      "Whoop's 0–21 measure of cardiovascular load across the day. Light days sit under 10; high strain stretches past 14. Pair it with recovery, not in isolation.",
+    baselineHint: "Several high-strain days without recovery is the soft alarm.",
+  },
+  whoop_sleep_performance: {
+    key: "whoop_sleep_performance",
+    label: "Sleep performance",
+    short: "Sleep perf",
+    unit: "%",
+    column: "whoop_sleep_performance_pct",
+    direction: "higher_better",
+    format: (v) => num(v, "%"),
+    meaning:
+      "How much of the sleep Whoop thinks you needed you actually got. Above 85% is restorative; sustained 70% and below means a deepening sleep debt.",
+    baselineHint: "Two nights below 70% in a row is worth noticing.",
+  },
 };
 
 export const METRIC_ORDER: MetricKey[] = [
   "readiness",
+  "whoop_recovery",
   "sleep_score",
+  "whoop_sleep_performance",
   "sleep_total",
   "hrv",
   "resting_hr",
@@ -247,6 +288,7 @@ export const METRIC_ORDER: MetricKey[] = [
   "stress",
   "resilience",
   "activity_score",
+  "whoop_strain",
   "steps",
 ];
 
