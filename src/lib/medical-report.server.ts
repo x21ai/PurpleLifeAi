@@ -418,6 +418,25 @@ export async function buildMedicalReportPdf(data: ReportSourceData): Promise<Uin
     }
   }
 
+  // Patterns Purple noticed (descriptive, cited to the patient's own data)
+  if (data.sections.snapshot && data.patterns && data.patterns.length > 0) {
+    newPage(c);
+    H1(c, "Patterns Purple noticed");
+    P(
+      c,
+      "Descriptive observations from the patient's own logs over the window above. Not causal claims — for discussion.",
+      { color: MUTED, size: 9 },
+    );
+    spacer(c, 6);
+    for (const card of data.patterns) {
+      ensureSpace(c, 40);
+      P(c, card.title, { bold: true, size: 11 });
+      P(c, card.detail);
+      if (card.evidence) P(c, card.evidence, { color: MUTED, size: 9 });
+      spacer(c, 6);
+    }
+  }
+
   // Medications
   if (data.sections.meds) {
     newPage(c);
