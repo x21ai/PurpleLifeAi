@@ -1139,6 +1139,92 @@ export type Database = {
           },
         ]
       }
+      medical_report_shares: {
+        Row: {
+          channel: string
+          created_at: string
+          id: string
+          message: string | null
+          recipient_email: string | null
+          recipient_user_id: string | null
+          report_id: string
+          thread_id: string | null
+          user_id: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          recipient_email?: string | null
+          recipient_user_id?: string | null
+          report_id: string
+          thread_id?: string | null
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          recipient_email?: string | null
+          recipient_user_id?: string | null
+          report_id?: string
+          thread_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_report_shares_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "medical_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medical_reports: {
+        Row: {
+          created_at: string
+          file_path: string
+          id: string
+          sections: Json
+          share_expires_at: string | null
+          share_token: string | null
+          summary: string | null
+          updated_at: string
+          user_id: string
+          window_from: string
+          window_to: string
+        }
+        Insert: {
+          created_at?: string
+          file_path: string
+          id?: string
+          sections?: Json
+          share_expires_at?: string | null
+          share_token?: string | null
+          summary?: string | null
+          updated_at?: string
+          user_id: string
+          window_from: string
+          window_to: string
+        }
+        Update: {
+          created_at?: string
+          file_path?: string
+          id?: string
+          sections?: Json
+          share_expires_at?: string | null
+          share_token?: string | null
+          summary?: string | null
+          updated_at?: string
+          user_id?: string
+          window_from?: string
+          window_to?: string
+        }
+        Relationships: []
+      }
       medication_doses: {
         Row: {
           amount: number | null
