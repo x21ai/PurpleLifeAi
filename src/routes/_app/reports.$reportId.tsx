@@ -33,6 +33,20 @@ type Metric = {
   flag: string | null;
 };
 
+const PANEL_LABELS: Record<string, string> = {
+  lipids: "Lipids",
+  cardiometabolic: "Cardiometabolic",
+  thyroid: "Thyroid",
+  liver: "Liver",
+  kidney: "Kidney",
+  hematology: "Blood count & iron",
+  vitamins: "Vitamins",
+  hormones: "Hormones",
+  inflammation: "Inflammation",
+  imaging: "Imaging",
+  other: "Other",
+};
+
 function ReportDetailPage() {
   useRouteTheme("light");
   const { reportId } = Route.useParams();
@@ -110,6 +124,34 @@ function ReportDetailPage() {
       </div>
 
       <MedicalDisclaimer className="mt-5" />
+
+      {report.summary && (
+        <section className="mt-6 rounded-2xl border border-border bg-card p-4">
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Summary</h2>
+          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{report.summary}</p>
+        </section>
+      )}
+
+      {(report.findings || report.impressions) && (
+        <section className="mt-4 grid sm:grid-cols-2 gap-4">
+          {report.findings && Array.isArray(report.findings) && (report.findings as string[]).length > 0 && (
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Findings</h3>
+              <ul className="text-sm text-foreground space-y-1.5 list-disc pl-4">
+                {(report.findings as string[]).map((f, i) => <li key={i}>{f}</li>)}
+              </ul>
+            </div>
+          )}
+          {report.impressions && Array.isArray(report.impressions) && (report.impressions as string[]).length > 0 && (
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Impressions</h3>
+              <ul className="text-sm text-foreground space-y-1.5 list-disc pl-4">
+                {(report.impressions as string[]).map((f, i) => <li key={i}>{f}</li>)}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
 
       {report.status === "processing" && (
         <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
