@@ -41,7 +41,9 @@ function AppleHealthImportPage() {
           toast.error("That zip doesn't look like an Apple Health export — it should contain apple_health_export/export.xml");
           return;
         }
-        xmlFile = new File([entries[key]], "export.xml", { type: "application/xml" });
+        const bytes = entries[key];
+        const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+        xmlFile = new File([ab], "export.xml", { type: "application/xml" });
       } catch (e) {
         setPhase("idle");
         toast.error(e instanceof Error ? `Couldn't unzip: ${e.message}` : "Couldn't unzip the file");
