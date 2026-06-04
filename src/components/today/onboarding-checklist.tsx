@@ -14,7 +14,7 @@ type Item = {
   key: string;
   label: string;
   done: boolean;
-  to: "/settings/profile" | "/welcome" | "/journal" | "/settings/connections";
+  to: "/settings" | "/welcome" | "/journal";
 };
 
 const STORAGE_KEY = "purple-checklist-dismissed";
@@ -75,7 +75,7 @@ export function OnboardingChecklist() {
       key: "emergency",
       label: "Add an emergency contact",
       done: !!profile.emergency_contact_phone,
-      to: "/settings/profile",
+      to: "/settings",
     },
     {
       key: "journal",
@@ -87,7 +87,7 @@ export function OnboardingChecklist() {
       key: "tracker",
       label: "Connect a tracker (optional)",
       done: hasConnection,
-      to: "/settings/connections",
+      to: "/settings",
     },
   ];
 
