@@ -417,13 +417,9 @@ function WelcomePage() {
             <div className="rounded-xl border border-border bg-card px-4">
               <OuraConnection />
             </div>
-            <ConnectCard
-              icon={Watch}
-              title={t("welcome.whoopTitle")}
-              body={t("welcome.whoopBody")}
-              actionLabel={t("welcome.comingSoon")}
-              disabled
-            />
+            <div className="rounded-xl border border-border bg-card px-4">
+              <WhoopConnection />
+            </div>
             <ConnectCard
               icon={Bell}
               title={t("welcome.notifTitle")}

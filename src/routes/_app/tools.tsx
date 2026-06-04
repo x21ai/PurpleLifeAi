@@ -9,6 +9,9 @@ import { useTranslation } from "react-i18next";
 const OuraConnection = lazy(() =>
   import("@/components/connections/oura-connection").then((m) => ({ default: m.OuraConnection })),
 );
+const WhoopConnection = lazy(() =>
+  import("@/components/connections/whoop-connection").then((m) => ({ default: m.WhoopConnection })),
+);
 const PhoneAlarmsSection = lazy(() =>
   import("@/components/settings/phone-alarms-section").then((m) => ({ default: m.PhoneAlarmsSection })),
 );
@@ -48,6 +51,14 @@ function ToolsPage() {
         <Suspense fallback={<div className="h-24 animate-pulse" aria-hidden />}>
           <div className="p-5 sm:p-7 [&_button]:bg-white/[0.04] [&_button]:border-white/10 [&_button]:text-[#FAFAFC] [&_button]:hover:bg-white/10 [&_h2]:text-[#FAFAFC] [&_p]:text-white/70 [&_a]:text-[#82B4FF]">
             <OuraConnection />
+          </div>
+        </Suspense>
+      </SheetCard>
+
+      <SheetCard className="!p-0">
+        <Suspense fallback={<div className="h-24 animate-pulse" aria-hidden />}>
+          <div className="p-5 sm:p-7 [&_button]:bg-white/[0.04] [&_button]:border-white/10 [&_button]:text-[#FAFAFC] [&_button]:hover:bg-white/10 [&_h2]:text-[#FAFAFC] [&_p]:text-white/70 [&_a]:text-[#82B4FF]">
+            <WhoopConnection />
           </div>
         </Suspense>
       </SheetCard>
