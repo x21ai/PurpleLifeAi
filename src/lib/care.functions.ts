@@ -1727,6 +1727,7 @@ export const listPendingChangesDetailed = createServerFn({ method: "GET" })
             .from("journal_entries")
             .select("text, captured_at")
             .eq("id", c.target_id)
+            .eq("user_id", c.owner_id)
             .maybeSingle();
           currentValue = data?.text ?? null;
         } else if (c.type === "add_meds_note" && c.target_id) {
@@ -1734,6 +1735,7 @@ export const listPendingChangesDetailed = createServerFn({ method: "GET" })
             .from("medications")
             .select("name, notes")
             .eq("id", c.target_id)
+            .eq("user_id", c.owner_id)
             .maybeSingle();
           currentValue = data ? `${data.name}\n${data.notes ?? ""}` : null;
         }
