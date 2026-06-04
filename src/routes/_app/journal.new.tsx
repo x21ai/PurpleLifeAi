@@ -12,6 +12,8 @@ import { VoiceWave } from "@/components/journal/voice-wave";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { useTranslation } from "react-i18next";
+import { useServerFn } from "@tanstack/react-start";
+import { autoRouteJournalToReports } from "@/lib/journal-classify.functions";
 
 export const Route = createFileRoute("/_app/journal/new")({
   head: () => ({ meta: [{ title: "New entry — Purple" }] }),
@@ -85,6 +87,7 @@ function JournalNewPage() {
   const [saving, setSaving] = React.useState(false);
   const [capturedAt, setCapturedAt] = React.useState<Date>(new Date());
   const voice = useVoiceCapture();
+  const autoRoute = useServerFn(autoRouteJournalToReports);
 
   // Persist text draft across reloads / pull-to-refresh.
   React.useEffect(() => {
@@ -226,6 +229,14 @@ function JournalNewPage() {
       supabase.functions
         .invoke("journal-processor", { body: { entry_id: entryId } })
         .catch(() => { /* edge fn may not be deployed yet */ });
+
+      // Auto-route clinical attachments (PDF/photo of lab/imaging report)
+      // into the Reports section. Fire-and-forget — runs in parallel.
+      if (attachments.length > 0) {
+        void autoRoute({ data: { journalEntryId: entryId } }).catch(() => {
+          /* best effort */
+        });
+      }
 
       navigate({ to: "/journal" });
     } catch (err: any) {
