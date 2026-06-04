@@ -40,6 +40,7 @@ import {
   getRelationshipWriteState,
   setCareDigestPreference,
   getCareDigestPreference,
+  setRelationshipDigestMuted,
 } from "@/lib/care.functions";
 import { getOrCreateDirectThread } from "@/lib/care-chat.functions";
 import {
@@ -212,6 +213,12 @@ function SharingPage() {
                   </div>
                   {r.status === "active" && (
                     <PauseWritesRow relationshipId={r.id} />
+                  )}
+                  {r.status === "active" && (
+                    <DigestMuteRow
+                      relationshipId={r.id}
+                      initialMuted={Boolean((r as any).digest_muted)}
+                    />
                   )}
                   {r.status === "pending" && (
                     <div className="mt-2 flex items-center gap-2">
@@ -423,6 +430,52 @@ function DigestPreferenceCard() {
         onCheckedChange={(v) => m.mutate(v)}
       />
     </section>
+  );
+}
+
+/* ----------------- Per-caregiver digest mute ----------------- */
+
+function DigestMuteRow({
+  relationshipId,
+  initialMuted,
+}: {
+  relationshipId: string;
+  initialMuted: boolean;
+}) {
+  const qc = useQueryClient();
+  const setFn = useServerFn(setRelationshipDigestMuted);
+  const [muted, setMuted] = useState(initialMuted);
+  const m = useMutation({
+    mutationFn: (next: boolean) =>
+      setFn({ data: { relationship_id: relationshipId, muted: next } }),
+    onSuccess: (_, next) => {
+      qc.invalidateQueries({ queryKey: ["care", "mine"] });
+      toast.success(next ? "Muted in your daily digest" : "Will appear in your daily digest");
+    },
+    onError: (e: any) => {
+      setMuted(initialMuted);
+      toast.error(e?.message ?? "Couldn't update");
+    },
+  });
+  return (
+    <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2">
+      <div>
+        <p className="text-xs font-medium text-foreground">Mute in daily digest</p>
+        <p className="text-[11px] text-muted-foreground">
+          {muted
+            ? "Their activity is excluded from your daily summary email."
+            : "Their activity appears in your daily summary email."}
+        </p>
+      </div>
+      <Switch
+        checked={muted}
+        disabled={m.isPending}
+        onCheckedChange={(v) => {
+          setMuted(v);
+          m.mutate(v);
+        }}
+      />
+    </div>
   );
 }
 
