@@ -50,10 +50,6 @@ const METRICS: Array<{
     hint: "Daily step count." },
 ];
 
-function ymd(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
 async function assembleReportData(userId: string, from: string, to: string, sections: Section) {
   const fromISO = new Date(`${from}T00:00:00Z`).toISOString();
   const toISO = new Date(`${to}T23:59:59Z`).toISOString();
