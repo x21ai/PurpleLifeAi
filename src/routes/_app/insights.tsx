@@ -1,7 +1,7 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { format, subDays, startOfDay, parseISO } from "date-fns";
-import { Zap, Plus } from "lucide-react";
+import { Zap, Plus, Sparkles, AlertTriangle, Info } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,9 @@ import { WaveTrend, type WaveSeries } from "@/components/ui-oura/wave-trend";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { computeUserPatterns, type PatternCard } from "@/lib/insights-patterns.functions";
 
 type SeizureRow = {
   id: string;
@@ -50,12 +53,16 @@ function InsightsPage() {
         <TabsList className="h-11 rounded-full bg-secondary/60 p-1">
           <TabsTrigger value="seizures" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">{t("insights.tabSeizures")}</TabsTrigger>
           <TabsTrigger value="trends" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">{t("insights.tabTrends")}</TabsTrigger>
+          <TabsTrigger value="patterns" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Patterns</TabsTrigger>
         </TabsList>
         <TabsContent value="seizures" className="mt-6">
           <SeizuresTab />
         </TabsContent>
         <TabsContent value="trends" className="mt-6">
           <TrendsTab />
+        </TabsContent>
+        <TabsContent value="patterns" className="mt-6">
+          <PatternsTab />
         </TabsContent>
       </Tabs>
     </div>
