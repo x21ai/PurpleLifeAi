@@ -470,14 +470,33 @@ export async function buildMedicalReportPdf(data: ReportSourceData): Promise<Uin
   if (data.sections.biometrics) {
     newPage(c);
     H1(c, "Biometric trends");
+    const seizureDates = new Set<string>();
+    for (const s of data.seizures) {
+      seizureDates.add(s.started_at.slice(0, 10));
+    }
     const entries = Object.entries(data.biometrics).filter(([, v]) => v.points.length > 1);
     if (entries.length === 0)
       P(c, "No biometric data in this window.", { color: MUTED });
     for (const [label, series] of entries) {
       H2(c, label);
-      lineChart(c, series.points, { label, unit: series.unit ? ` ${series.unit}` : "" });
+      const seriesMap = series.series && Object.keys(series.series).length > 0
+        ? series.series
+        : { combined: series.points };
+      overlayChart(c, seriesMap, {
+        label,
+        unit: series.unit ? ` ${series.unit}` : "",
+        refLow: series.refLow,
+        refHigh: series.refHigh,
+        seizureDates,
+        windowFrom: data.window.from,
+        windowTo: data.window.to,
+      });
       P(c, series.hint, { color: MUTED, size: 9 });
-      spacer(c, 8);
+      const sources = Object.keys(series.series ?? {});
+      if (sources.length > 0) {
+        P(c, `Sources: ${sources.join(", ")}`, { color: MUTED, size: 8 });
+      }
+      spacer(c, 10);
     }
   }
 
