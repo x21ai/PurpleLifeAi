@@ -11,13 +11,20 @@ export const listCareThreads = createServerFn({ method: "GET" })
 
     const { data: parts, error: pErr } = await supabaseAdmin
       .from("care_thread_participants")
-      .select("thread_id, role, last_read_at")
+      .select("thread_id, role, last_read_at, muted, muted_until")
       .eq("user_id", userId);
     if (pErr) throw new Error(pErr.message);
     if (!parts || parts.length === 0) return { threads: [] as Array<any> };
 
     const threadIds = parts.map((p) => p.thread_id);
     const lastReadByThread = new Map(parts.map((p) => [p.thread_id, p.last_read_at]));
+    const muteByThread = new Map(
+      parts.map((p) => {
+        const until = p.muted_until ? new Date(p.muted_until).getTime() : 0;
+        const active = p.muted || (until > 0 && until > Date.now());
+        return [p.thread_id, active];
+      }),
+    );
 
     const { data: threads, error: tErr } = await supabaseAdmin
       .from("care_threads")
@@ -90,6 +97,7 @@ export const listCareThreads = createServerFn({ method: "GET" })
           ? { body: last.body, sender_id: last.sender_id, created_at: last.created_at }
           : null,
         unread: unreadByThread.get(t.id) ?? 0,
+        muted: muteByThread.get(t.id) ?? false,
       };
     });
 
