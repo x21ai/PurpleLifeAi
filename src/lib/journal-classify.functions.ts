@@ -176,7 +176,7 @@ export const autoRouteJournalToReports = createServerFn({ method: "POST" })
       .from("journal_entries")
       .update({
         ai_tags: newTags,
-        ai_extracted: { ...prevExtracted, report_document_ids: created },
+        ai_extracted: { ...prevExtracted, report_document_ids: created } as never,
       })
       .eq("id", entry.id);
 
