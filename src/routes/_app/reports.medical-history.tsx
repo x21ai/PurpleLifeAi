@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Download, Mail, Share2, Trash2, FileText } from "lucide-react";
+import { Loader2, Download, Mail, Share2, Trash2, FileText, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,7 @@ import {
   shareMedicalReportInThread,
 } from "@/lib/medical-report.functions";
 import { listCareThreads } from "@/lib/care-chat.functions";
+import { createMedicalReportShareLink } from "@/lib/medical-report-share.functions";
 
 export const Route = createFileRoute("/_app/reports/medical-history")({
   component: MedicalHistoryPage,
@@ -55,6 +56,7 @@ function MedicalHistoryPage() {
   const email = useServerFn(emailMedicalReport);
   const share = useServerFn(shareMedicalReportInThread);
   const threadsFn = useServerFn(listCareThreads);
+  const createLink = useServerFn(createMedicalReportShareLink);
 
   const reports = useQuery({
     queryKey: ["medical-history", "list"],
@@ -166,6 +168,13 @@ function MedicalHistoryPage() {
                 await share({ data: { reportId: r.id, threadId, message } });
                 toast.success("Shared in chat");
               }}
+              onCreateLink={async (days, viewerLabel) => {
+                const res = await createLink({ data: { reportId: r.id, expiresInDays: days, viewerLabel } });
+                const url = `${window.location.origin}/share/report/${res.link.token}`;
+                try { await navigator.clipboard.writeText(url); } catch { /* ignore */ }
+                toast.success("Share link copied to clipboard");
+                return url;
+              }}
             />
           ))}
         </ul>
@@ -175,7 +184,7 @@ function MedicalHistoryPage() {
 }
 
 function ReportRow({
-  report, threads, onDownload, onDelete, onEmail, onShareThread,
+  report, threads, onDownload, onDelete, onEmail, onShareThread, onCreateLink,
 }: {
   report: { id: string; window_from: string; window_to: string; created_at: string };
   threads: Array<{ id: string; title?: string | null }>;
@@ -183,11 +192,15 @@ function ReportRow({
   onDelete: () => void;
   onEmail: (email: string, message: string, self: boolean) => Promise<void>;
   onShareThread: (threadId: string, message: string) => Promise<void>;
+  onCreateLink: (days: number, viewerLabel?: string) => Promise<string>;
 }) {
-  const [mode, setMode] = useState<"none" | "email" | "thread">("none");
+  const [mode, setMode] = useState<"none" | "email" | "thread" | "link">("none");
   const [providerEmail, setProviderEmail] = useState("");
   const [message, setMessage] = useState("");
   const [threadId, setThreadId] = useState("");
+  const [linkDays, setLinkDays] = useState(7);
+  const [linkLabel, setLinkLabel] = useState("");
+  const [createdUrl, setCreatedUrl] = useState<string | null>(null);
 
   return (
     <li className="rounded-xl border border-white/10 bg-card/40 p-4">
@@ -207,6 +220,9 @@ function ReportRow({
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setMode(mode === "thread" ? "none" : "thread")}>
             <Share2 className="h-4 w-4" />
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setMode(mode === "link" ? "none" : "link")}>
+            <Link2 className="h-4 w-4" />
           </Button>
           <Button size="sm" variant="ghost" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
         </div>
@@ -266,6 +282,45 @@ function ReportRow({
                 Share in chat
               </Button>
             </>
+          )}
+        </div>
+      )}
+
+      {mode === "link" && (
+        <div className="mt-3 space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Anyone with the link can view the PDF until it expires. No sign-in needed.
+          </p>
+          <div className="flex gap-2">
+            {[1, 7, 30].map((d) => (
+              <Button
+                key={d}
+                size="sm"
+                variant={linkDays === d ? "default" : "outline"}
+                onClick={() => setLinkDays(d)}
+              >
+                {d}d
+              </Button>
+            ))}
+          </div>
+          <Input
+            placeholder="Viewer label (e.g. Dr. Smith)"
+            value={linkLabel}
+            onChange={(e) => setLinkLabel(e.target.value)}
+          />
+          <Button
+            size="sm"
+            onClick={async () => {
+              const url = await onCreateLink(linkDays, linkLabel || undefined);
+              setCreatedUrl(url);
+            }}
+          >
+            Create share link
+          </Button>
+          {createdUrl && (
+            <p className="text-xs break-all rounded-md bg-accent/40 p-2 text-foreground">
+              {createdUrl}
+            </p>
           )}
         </div>
       )}
