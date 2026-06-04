@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, PDFPage, PDFFont } from "pdf-lib";
+import type { PatternCard } from "./insights-patterns.functions";
 
 /**
  * Server-only PDF builder for the "Medical history report".
@@ -58,6 +59,7 @@ export type ReportSourceData = {
   journalSummary: string | null;
   hydration: { total_logs: number; avg_ml_per_day: number | null } | null;
   auras: { count: number; led_to_seizure: number } | null;
+  patterns?: PatternCard[];
   sections: {
     snapshot: boolean;
     meds: boolean;
