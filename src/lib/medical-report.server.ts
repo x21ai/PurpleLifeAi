@@ -49,6 +49,9 @@ export type ReportSourceData = {
       direction: "higher_better" | "lower_better" | "neutral";
       points: Array<{ date: string; value: number }>;
       hint: string;
+      series?: Record<string, Array<{ date: string; value: number }>>;
+      refLow?: number;
+      refHigh?: number;
     }
   >;
   labs: Array<{ title: string; created_at: string; metric_count: number }>;

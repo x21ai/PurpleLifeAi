@@ -51,7 +51,7 @@ export async function assembleReportDataAdmin(
 
   const [profileQ, medsQ, dosesQ, seizQ, bioQ, auraQ, journalQ] = await Promise.all([
     supabaseAdmin.from("profiles")
-      .select("first_name, last_name, date_of_birth, conditions, conditions_note, email")
+      .select("first_name, last_name, date_of_birth, conditions, conditions_note")
       .eq("id", userId).maybeSingle(),
     supabaseAdmin.from("medications")
       .select("id, name, dosage, dosage_amount, dosage_unit, times_of_day, start_date, end_date, active")
@@ -200,7 +200,7 @@ export async function assembleReportDataAdmin(
       date_of_birth: profileQ.data?.date_of_birth ?? null,
       conditions: (profileQ.data?.conditions as string[] | null) ?? null,
       conditions_note: profileQ.data?.conditions_note ?? null,
-      email: profileQ.data?.email ?? null,
+      email: null,
     },
     window: { from, to },
     generatedAt: new Date().toISOString(),
