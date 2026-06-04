@@ -25,6 +25,7 @@ import { ConditionTipCard } from "@/components/today/condition-tip-card";
 import { FeatureSuggestionCard } from "@/components/today/feature-suggestion-card";
 import { OnboardingChecklist } from "@/components/today/onboarding-checklist";
 import { WeeklyRecapCard } from "@/components/today/weekly-recap-card";
+import { SevenDayTrendStrip } from "@/components/today/seven-day-trend-strip";
 
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
@@ -336,6 +337,7 @@ function TodayPage() {
       <ConditionTipCard conditions={profile?.conditions} />
       <FeatureSuggestionCard />
       <WeeklyRecapCard />
+      <SevenDayTrendStrip />
 
       {/* Hydration & auras quick-capture */}
       {showHydration && (

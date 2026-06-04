@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
+import { queueEntry } from "@/lib/offline-journal-queue";
 import { toast } from "sonner";
 import { useVoiceCapture } from "./use-voice-capture";
 import { promptsForConditions } from "@/lib/condition-prompts";
@@ -176,6 +177,22 @@ export function CaptureSheet({
       const liveTranscript = voice.transcript.trim();
       const finalText = text.trim();
       const kind = inferKind(finalText, liveTranscript, attachments);
+
+      // Offline fallback — text/voice-transcript only (no media uploads).
+      const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+      const hasMedia = attachments.length > 0 || !!voice.audioBlob;
+      if (isOffline && !hasMedia) {
+        queueEntry({
+          userId,
+          kind,
+          text: finalText || null,
+          voiceTranscript: liveTranscript || null,
+        });
+        toast.success("Saved offline — will sync when you're back online");
+        onSaved?.();
+        onOpenChange(false);
+        return;
+      }
 
       // 1. Insert processing row
       const { data: inserted, error: insertErr } = await supabase

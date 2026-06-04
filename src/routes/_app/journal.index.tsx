@@ -8,6 +8,7 @@ import { EntryCard } from "@/components/journal/entry-card";
 import type { Database } from "@/integrations/supabase/types";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useTranslation } from "react-i18next";
+import { OfflineQueueBanner } from "@/components/journal/offline-queue-banner";
 
 type Entry = Database["public"]["Tables"]["journal_entries"]["Row"];
 
@@ -128,6 +129,8 @@ function JournalPage() {
           <RefreshCw className={pull > 60 || refreshing ? "animate-spin h-4 w-4 mt-2" : "h-4 w-4 mt-2"} />
         </div>
       )}
+
+      <OfflineQueueBanner />
 
       {loading ? (
         <div className="space-y-3">
