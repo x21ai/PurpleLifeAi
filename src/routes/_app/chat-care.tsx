@@ -236,6 +236,32 @@ function ConversationPanel({
   const messagesFn = useServerFn(getCareMessages);
   const sendFn = useServerFn(sendCareMessage);
   const markReadFn = useServerFn(markCareThreadRead);
+  const muteFn = useServerFn(setCareThreadMute);
+  const leaveFn = useServerFn(leaveCareThread);
+  const navigate = useNavigate({ from: "/chat-care" });
+  const isOwner = thread.owner_id === meId;
+
+  const handleMute = async () => {
+    try {
+      const r = await muteFn({ data: { threadId: thread.id, muted: !thread.muted } });
+      toast.success(r.muted ? "Muted" : "Unmuted");
+      void qc.invalidateQueries({ queryKey: ["care-chat", "threads"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't update");
+    }
+  };
+
+  const handleLeave = async () => {
+    if (!confirm("Leave this chat? You can be re-added later by the chat owner.")) return;
+    try {
+      await leaveFn({ data: { threadId: thread.id } });
+      toast.success("You left the chat");
+      void qc.invalidateQueries({ queryKey: ["care-chat", "threads"] });
+      void navigate({ search: {} });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't leave");
+    }
+  };
 
   const msgsQ = useQuery({
     queryKey: ["care-chat", "messages", thread.id],
@@ -332,6 +358,33 @@ function ConversationPanel({
             </p>
           )}
         </div>
+        {thread.muted && (
+          <BellOff className="h-4 w-4 text-muted-foreground" aria-label="Muted" />
+        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="Chat options">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => void handleMute()}>
+              {thread.muted ? (
+                <><Bell className="h-4 w-4 mr-2" /> Unmute notifications</>
+              ) : (
+                <><BellOff className="h-4 w-4 mr-2" /> Mute notifications</>
+              )}
+            </DropdownMenuItem>
+            {!isOwner && (
+              <DropdownMenuItem
+                onSelect={() => void handleLeave()}
+                className="text-destructive focus:text-destructive"
+              >
+                <LogOut className="h-4 w-4 mr-2" /> Leave chat
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 md:px-6">
