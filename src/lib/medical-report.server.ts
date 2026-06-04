@@ -190,46 +190,148 @@ function truncate(s: string, maxW: number, font: PDFFont, size: number): string 
   return s.slice(0, lo) + "…";
 }
 
-function lineChart(
+const SERIES_COLORS = [
+  rgb(0.357, 0.173, 0.51), // purple (brand)
+  rgb(0.13, 0.49, 0.78),   // blue
+  rgb(0.86, 0.45, 0.16),   // orange
+  rgb(0.20, 0.56, 0.30),   // green
+  rgb(0.55, 0.27, 0.55),   // magenta
+];
+
+function dateRange(from: string, to: string): string[] {
+  const out: string[] = [];
+  const start = new Date(from + "T00:00:00Z");
+  const end = new Date(to + "T00:00:00Z");
+  for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    out.push(d.toISOString().slice(0, 10));
+  }
+  return out;
+}
+
+function overlayChart(
   c: Ctx,
-  points: Array<{ date: string; value: number }>,
-  opts: { label: string; height?: number; unit?: string } = { label: "" },
+  series: Record<string, Array<{ date: string; value: number }>>,
+  opts: {
+    label: string;
+    height?: number;
+    unit?: string;
+    refLow?: number;
+    refHigh?: number;
+    seizureDates?: Set<string>;
+    windowFrom: string;
+    windowTo: string;
+  },
 ) {
-  const h = opts.height ?? 90;
+  const h = opts.height ?? 96;
   const w = PAGE_W - MARGIN * 2;
-  ensureSpace(c, h + 16);
+  ensureSpace(c, h + 30);
   const x0 = MARGIN;
   const y0 = c.y - h;
-  // frame
-  c.page.drawRectangle({ x: x0, y: y0, width: w, height: h, borderColor: FAINT, borderWidth: 0.5 });
-  if (points.length < 2) {
-    c.page.drawText("Not enough data", { x: x0 + 8, y: y0 + h / 2, size: 9, font: c.font, color: MUTED });
-    c.y = y0 - 6;
+
+  c.page.drawRectangle({
+    x: x0, y: y0, width: w, height: h, borderColor: FAINT, borderWidth: 0.5,
+  });
+
+  const dates = dateRange(opts.windowFrom, opts.windowTo);
+  const sourceNames = Object.keys(series).filter((s) => (series[s]?.length ?? 0) > 0);
+  const allVals: number[] = [];
+  for (const s of sourceNames) for (const p of series[s]) allVals.push(p.value);
+  if (opts.refLow != null) allVals.push(opts.refLow);
+  if (opts.refHigh != null) allVals.push(opts.refHigh);
+
+  if (allVals.length === 0 || dates.length < 2) {
+    c.page.drawText("Not enough data", {
+      x: x0 + 8, y: y0 + h / 2, size: 9, font: c.font, color: MUTED,
+    });
+    c.y = y0 - 12;
     return;
   }
-  const vals = points.map((p) => p.value);
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
+
+  const min = Math.min(...allVals);
+  const max = Math.max(...allVals);
   const span = max - min || 1;
-  const stepX = w / (points.length - 1);
-  let prev = { x: x0, y: y0 + ((points[0].value - min) / span) * (h - 8) + 4 };
-  for (let i = 1; i < points.length; i++) {
-    const x = x0 + i * stepX;
-    const y = y0 + ((points[i].value - min) / span) * (h - 8) + 4;
-    c.page.drawLine({ start: prev, end: { x, y }, thickness: 1.1, color: BRAND });
-    prev = { x, y };
+  const xFor = (d: string) => {
+    const idx = dates.indexOf(d);
+    if (idx < 0) return -1;
+    return x0 + (idx / (dates.length - 1)) * w;
+  };
+  const yFor = (v: number) => y0 + ((v - min) / span) * (h - 10) + 5;
+
+  // Reference band
+  if (opts.refLow != null && opts.refHigh != null && opts.refHigh > opts.refLow) {
+    const ya = yFor(opts.refLow);
+    const yb = yFor(opts.refHigh);
+    c.page.drawRectangle({
+      x: x0, y: ya, width: w, height: yb - ya,
+      color: rgb(0.6, 0.85, 0.6), opacity: 0.12,
+    });
   }
-  // min/max labels
+
+  // Seizure markers as vertical ticks along the x-axis
+  if (opts.seizureDates && opts.seizureDates.size > 0) {
+    for (const d of opts.seizureDates) {
+      const x = xFor(d);
+      if (x < 0) continue;
+      c.page.drawLine({
+        start: { x, y: y0 }, end: { x, y: y0 + 8 },
+        thickness: 0.8, color: rgb(0.78, 0.17, 0.17),
+      });
+    }
+  }
+
+  // Series lines
+  sourceNames.forEach((src, idx) => {
+    const color = SERIES_COLORS[idx % SERIES_COLORS.length];
+    const pts = [...series[src]].sort((a, b) => (a.date < b.date ? -1 : 1));
+    let prev: { x: number; y: number } | null = null;
+    for (const p of pts) {
+      const x = xFor(p.date);
+      if (x < 0) continue;
+      const y = yFor(p.value);
+      if (prev) {
+        c.page.drawLine({ start: prev, end: { x, y }, thickness: 1.2, color });
+      }
+      prev = { x, y };
+    }
+  });
+
+  // Min/max labels
   c.page.drawText(`${formatNum(max)}${opts.unit ?? ""}`, {
-    x: x0 + w - 50, y: y0 + h - 10, size: 8, font: c.font, color: MUTED,
+    x: x0 + w - 54, y: y0 + h - 10, size: 8, font: c.font, color: MUTED,
   });
   c.page.drawText(`${formatNum(min)}${opts.unit ?? ""}`, {
-    x: x0 + w - 50, y: y0 + 2, size: 8, font: c.font, color: MUTED,
+    x: x0 + w - 54, y: y0 + 2, size: 8, font: c.font, color: MUTED,
   });
-  c.page.drawText(`${points[0].date} → ${points[points.length - 1].date}`, {
+  c.page.drawText(`${dates[0]} → ${dates[dates.length - 1]}`, {
     x: x0 + 4, y: y0 - 10, size: 8, font: c.font, color: MUTED,
   });
-  c.y = y0 - 16;
+
+  // Legend
+  let lx = x0;
+  const ly = y0 - 22;
+  sourceNames.forEach((src, idx) => {
+    const color = SERIES_COLORS[idx % SERIES_COLORS.length];
+    c.page.drawLine({
+      start: { x: lx, y: ly + 3 }, end: { x: lx + 14, y: ly + 3 },
+      thickness: 1.5, color,
+    });
+    const label = src.length > 0 ? src : "other";
+    c.page.drawText(label, {
+      x: lx + 18, y: ly, size: 8, font: c.font, color: TEXT,
+    });
+    lx += 24 + c.font.widthOfTextAtSize(label, 8);
+  });
+  if (opts.seizureDates && opts.seizureDates.size > 0) {
+    c.page.drawLine({
+      start: { x: lx, y: ly + 3 }, end: { x: lx + 14, y: ly + 3 },
+      thickness: 0.8, color: rgb(0.78, 0.17, 0.17),
+    });
+    c.page.drawText("seizure day", {
+      x: lx + 18, y: ly, size: 8, font: c.font, color: TEXT,
+    });
+  }
+
+  c.y = y0 - 30;
 }
 function formatNum(n: number): string {
   if (Math.abs(n) >= 100) return n.toFixed(0);
