@@ -18,20 +18,46 @@ function AppleHealthImportPage() {
   useRouteTheme("dark");
   const backfill = useServerFn(applyAppleHealthBackfill);
   const [progress, setProgress] = useState<ParseProgress | null>(null);
-  const [phase, setPhase] = useState<"idle" | "parsing" | "uploading" | "done">("idle");
+  const [phase, setPhase] = useState<"idle" | "unzipping" | "parsing" | "uploading" | "done">("idle");
   const [inserted, setInserted] = useState(0);
 
   const onFile = async (file: File | null) => {
     if (!file) return;
-    if (!file.name.toLowerCase().endsWith(".xml")) {
-      toast.error("Please select export.xml from the Apple Health export ZIP");
+    const lower = file.name.toLowerCase();
+    let xmlFile: File;
+    if (lower.endsWith(".zip")) {
+      setPhase("unzipping");
+      try {
+        const { unzip } = await import("fflate");
+        const buf = new Uint8Array(await file.arrayBuffer());
+        const entries = await new Promise<Record<string, Uint8Array>>((resolve, reject) => {
+          unzip(buf, (err, data) => (err ? reject(err) : resolve(data)));
+        });
+        const key = Object.keys(entries).find(
+          (k) => k === "export.xml" || k.toLowerCase().endsWith("/export.xml"),
+        );
+        if (!key) {
+          setPhase("idle");
+          toast.error("That zip doesn't look like an Apple Health export — it should contain apple_health_export/export.xml");
+          return;
+        }
+        xmlFile = new File([entries[key]], "export.xml", { type: "application/xml" });
+      } catch (e) {
+        setPhase("idle");
+        toast.error(e instanceof Error ? `Couldn't unzip: ${e.message}` : "Couldn't unzip the file");
+        return;
+      }
+    } else if (lower.endsWith(".xml")) {
+      xmlFile = file;
+    } else {
+      toast.error("Please select export.zip or export.xml from the Apple Health export");
       return;
     }
     setPhase("parsing");
-    setProgress({ bytesRead: 0, totalBytes: file.size, recordsParsed: 0, daysFound: 0 });
+    setProgress({ bytesRead: 0, totalBytes: xmlFile.size, recordsParsed: 0, daysFound: 0 });
     let days;
     try {
-      days = await parseHealthExport(file, setProgress);
+      days = await parseHealthExport(xmlFile, setProgress);
     } catch (e) {
       setPhase("idle");
       toast.error(e instanceof Error ? e.message : "Couldn't parse the XML file");
@@ -72,8 +98,8 @@ function AppleHealthImportPage() {
         <ol className="mt-3 space-y-2 text-[13px] text-white/70 list-decimal pl-5">
           <li>Open the Health app on your iPhone.</li>
           <li>Tap your profile photo (top right) and choose <span className="text-[#FAFAFC]">Export All Health Data</span>.</li>
-          <li>Save the ZIP to Files, then unzip it. Inside you'll find <code className="font-mono text-[#FAFAFC]">export.xml</code>.</li>
-          <li>Pick that <code className="font-mono">export.xml</code> below. The file never leaves your device — Purple parses it locally and only uploads daily summaries.</li>
+          <li>Save the <code className="font-mono text-[#FAFAFC]">export.zip</code> to Files (or AirDrop it to your computer).</li>
+          <li>Pick that <code className="font-mono">export.zip</code> below — Purple unzips and parses it locally in your browser, then uploads only daily summaries. The raw file never leaves your device.</li>
         </ol>
       </SheetCard>
 
@@ -81,15 +107,23 @@ function AppleHealthImportPage() {
         {phase === "idle" && (
           <label className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/15 p-10 cursor-pointer hover:bg-white/[0.03] transition">
             <FileUp className="h-8 w-8 text-white/70" />
-            <p className="text-[15px] text-[#FAFAFC]">Choose export.xml</p>
-            <p className="text-[12px] text-white/60">Files up to several hundred MB are fine.</p>
+            <p className="text-[15px] text-[#FAFAFC]">Choose export.zip (or export.xml)</p>
+            <p className="text-[12px] text-white/60">Drop the file straight from Apple Health. Up to several hundred MB is fine.</p>
             <input
               type="file"
-              accept=".xml,text/xml,application/xml"
+              accept=".zip,.xml,application/zip,text/xml,application/xml"
               className="hidden"
               onChange={(e) => void onFile(e.currentTarget.files?.[0] ?? null)}
             />
           </label>
+        )}
+
+        {phase === "unzipping" && (
+          <div className="space-y-3 py-6 text-center">
+            <Loader2 className="mx-auto h-6 w-6 animate-spin text-white/70" />
+            <p className="text-[15px] text-[#FAFAFC]">Unzipping your export…</p>
+            <p className="text-[12px] text-white/60">Looking for export.xml inside the archive.</p>
+          </div>
         )}
 
         {(phase === "parsing" || phase === "uploading") && progress && (
