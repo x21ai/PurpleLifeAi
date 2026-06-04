@@ -1609,6 +1609,47 @@ export const dismissCaregiverAlert = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Dismiss every alert currently visible to the caregiver for one owner.
+ * Caller passes the ids it just rendered — we append them to the visit's
+ * dismissed_alert_ids list (capped at the most recent 200 entries).
+ */
+export const dismissAllCaregiverAlerts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { owner_id: string; alert_ids: string[] }) =>
+    z
+      .object({
+        owner_id: z.string().uuid(),
+        alert_ids: z.array(z.string().min(1).max(200)).min(1).max(100),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const caregiverId = context.userId;
+    const rel = await getActiveRelationshipForCaregiver(data.owner_id, caregiverId);
+    const { data: existing } = await supabaseAdmin
+      .from("care_caregiver_visits")
+      .select("dismissed_alert_ids")
+      .eq("relationship_id", rel.id)
+      .maybeSingle();
+    const prev = ((existing?.dismissed_alert_ids as string[]) ?? []);
+    const merged = Array.from(new Set([...prev, ...data.alert_ids])).slice(-200);
+    const now = new Date().toISOString();
+    const { error } = await supabaseAdmin
+      .from("care_caregiver_visits")
+      .upsert(
+        {
+          relationship_id: rel.id,
+          caregiver_id: caregiverId,
+          dismissed_alert_ids: merged,
+          updated_at: now,
+        },
+        { onConflict: "relationship_id" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true, dismissed: data.alert_ids.length };
+  });
+
 /* ---------- Phase 4: owner controls & audit ---------- */
 
 function csvEscape(value: unknown): string {
