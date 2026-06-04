@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, Mic, MicOff, BookmarkPlus, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { getSuggestedQuestions, getFollowUps } from "@/lib/condition-prompts";
 import { DisclaimerFooter } from "@/components/chat/disclaimer-footer";
 import { FollowUpChips } from "@/components/chat/follow-up-chips";
+import { useVoiceCapture } from "@/components/journal/use-voice-capture";
 
 type Proposal = {
   kind:
@@ -59,6 +60,27 @@ function AskPage() {
   const [thinking, setThinking] = React.useState(false);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
+  const voice = useVoiceCapture();
+
+  // Mirror live transcript into the input while listening.
+  React.useEffect(() => {
+    if (voice.listening && voice.transcript) setInput(voice.transcript);
+  }, [voice.listening, voice.transcript]);
+
+  const toggleMic = async () => {
+    if (voice.listening) {
+      await voice.stop();
+      // Auto-send once the user stops, if we got something.
+      const text = voice.transcript.trim();
+      if (text) {
+        setInput("");
+        voice.reset();
+        void send(text);
+      }
+    } else {
+      await voice.start();
+    }
+  };
 
   React.useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -181,6 +203,17 @@ function AskPage() {
                         onPick={(s) => void send(s)}
                       />
                     )}
+                  {m.role === "assistant" && !thinking && (
+                    <SaveToJournalButton
+                      question={
+                        i > 0 && messages[i - 1].role === "user"
+                          ? messages[i - 1].content
+                          : ""
+                      }
+                      answer={m.content}
+                      userId={userId}
+                    />
+                  )}
                 </React.Fragment>
               ))}
               {thinking && <ThinkingDots />}
@@ -201,6 +234,18 @@ function AskPage() {
             rows={1}
             className="flex-1 resize-none rounded-2xl border border-border bg-secondary/40 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 max-h-40"
           />
+          {voice.supported && (
+            <Button
+              size="icon"
+              variant={voice.listening ? "default" : "outline"}
+              onClick={() => void toggleMic()}
+              disabled={thinking}
+              aria-label={voice.listening ? "Stop voice input" : "Start voice input"}
+              className="h-11 w-11 rounded-full shrink-0"
+            >
+              {voice.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            </Button>
+          )}
           <Button
             size="icon"
             onClick={() => void send(input)}
@@ -212,6 +257,54 @@ function AskPage() {
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SaveToJournalButton({
+  question,
+  answer,
+  userId,
+}: {
+  question: string;
+  answer: string;
+  userId: string | undefined;
+}) {
+  const [saved, setSaved] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+  const save = async () => {
+    if (!userId || saved || busy) return;
+    setBusy(true);
+    const body = question
+      ? `**Q:** ${question}\n\n**Purple:** ${answer}`
+      : `**Purple:** ${answer}`;
+    const { error } = await supabase.from("journal_entries").insert({
+      user_id: userId,
+      kind: "text",
+      status: "complete",
+      text: body,
+      ai_tags: ["ask-purple"],
+      captured_at: new Date().toISOString(),
+    });
+    setBusy(false);
+    if (error) {
+      toast.error("Couldn't save to your journal.");
+      return;
+    }
+    setSaved(true);
+    toast.success("Saved to your journal.");
+  };
+  return (
+    <div className="flex justify-start pl-1">
+      <button
+        type="button"
+        onClick={() => void save()}
+        disabled={busy || saved || !userId}
+        className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-60 transition-colors"
+      >
+        {saved ? <Check className="h-3 w-3" /> : <BookmarkPlus className="h-3 w-3" />}
+        {saved ? "Saved to journal" : "Save to journal"}
+      </button>
     </div>
   );
 }
