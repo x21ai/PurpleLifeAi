@@ -418,6 +418,36 @@ function Section({ children }: { children: React.ReactNode }) {
   return <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">{children}</div>;
 }
 
+function QuickLogBar({
+  ownerId,
+  ownerName,
+  canSeizure,
+  canJournal,
+  canBiometric,
+}: {
+  ownerId: string;
+  ownerName: string;
+  canSeizure: boolean;
+  canJournal: boolean;
+  canBiometric: boolean;
+}) {
+  if (!canSeizure && !canJournal && !canBiometric) return null;
+  return (
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 pb-[max(env(safe-area-inset-bottom),12px)]">
+      <div className="mx-auto max-w-3xl px-4">
+        <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-border bg-background/95 px-3 py-2 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <span className="mr-1 hidden text-[11px] uppercase tracking-wide text-muted-foreground sm:inline">
+            Quick log
+          </span>
+          {canSeizure && <LogSeizureSheet ownerId={ownerId} ownerName={ownerName} />}
+          {canJournal && <AddJournalSheet ownerId={ownerId} ownerName={ownerName} />}
+          {canBiometric && <AddBiometricSheet ownerId={ownerId} ownerName={ownerName} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ChatPanel({
   relationshipId,
   ownerName,
