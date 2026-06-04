@@ -29,36 +29,52 @@ export const computeUserPatterns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const since = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString();
+    const cards = await loadAndDerivePatternCards(supabase, userId);
+    return { cards };
+  });
 
-    const [biosRes, szRes, journalRes, dosesRes] = await Promise.all([
-      supabase
-        .from("biometrics")
-        .select("recorded_at, sleep_total_min, hrv_rmssd_ms, resting_hr_bpm")
-        .eq("user_id", userId)
-        .gte("recorded_at", since),
-      supabase
-        .from("seizure_events")
-        .select("started_at, severity")
-        .eq("user_id", userId)
-        .gte("started_at", since),
-      supabase
-        .from("journal_entries")
-        .select("captured_at, ai_tags")
-        .eq("user_id", userId)
-        .gte("captured_at", since),
-      supabase
-        .from("medication_doses")
-        .select("scheduled_at, status")
-        .eq("user_id", userId)
-        .gte("scheduled_at", since),
-    ]);
+/** Server-side helper that other server functions can reuse (e.g. PDF reports). */
+export async function loadAndDerivePatternCards(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userId: string,
+  daysBack = 90,
+): Promise<PatternCard[]> {
+  const since = new Date(Date.now() - daysBack * 24 * 3600 * 1000).toISOString();
+  const [biosRes, szRes, journalRes, dosesRes] = await Promise.all([
+    supabase.from("biometrics")
+      .select("recorded_at, sleep_total_min, hrv_rmssd_ms, resting_hr_bpm")
+      .eq("user_id", userId).gte("recorded_at", since),
+    supabase.from("seizure_events")
+      .select("started_at, severity")
+      .eq("user_id", userId).gte("started_at", since),
+    supabase.from("journal_entries")
+      .select("captured_at, ai_tags")
+      .eq("user_id", userId).gte("captured_at", since),
+    supabase.from("medication_doses")
+      .select("scheduled_at, status")
+      .eq("user_id", userId).gte("scheduled_at", since),
+  ]);
+  return derivePatternCards({
+    bios: (biosRes.data as PatternBio[] | null) ?? [],
+    sz: (szRes.data as PatternSeizure[] | null) ?? [],
+    journal: (journalRes.data as PatternJournal[] | null) ?? [],
+    doses: (dosesRes.data as PatternDose[] | null) ?? [],
+  });
+}
 
-    const bios = biosRes.data ?? [];
-    const sz = szRes.data ?? [];
-    const journal = journalRes.data ?? [];
-    const doses = dosesRes.data ?? [];
+type PatternBio = { recorded_at: string; sleep_total_min: number | null; hrv_rmssd_ms: number | null; resting_hr_bpm: number | null };
+type PatternSeizure = { started_at: string; severity: number | null };
+type PatternJournal = { captured_at: string; ai_tags: string[] | null };
+type PatternDose = { scheduled_at: string; status: string | null };
 
+export function derivePatternCards(input: {
+  bios: PatternBio[];
+  sz: PatternSeizure[];
+  journal: PatternJournal[];
+  doses: PatternDose[];
+}): PatternCard[] {
+  const { bios, sz, journal, doses } = input;
     // Day → sleep minutes
     const sleepByDay = new Map<string, number>();
     for (const b of bios) {
@@ -246,5 +262,5 @@ export const computeUserPatterns = createServerFn({ method: "GET" })
       }
     }
 
-    return { cards };
-  });
+  return cards;
+}

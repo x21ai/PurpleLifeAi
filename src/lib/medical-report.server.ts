@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, PDFPage, PDFFont } from "pdf-lib";
+import type { PatternCard } from "./insights-patterns.functions";
 
 /**
  * Server-only PDF builder for the "Medical history report".
@@ -58,6 +59,7 @@ export type ReportSourceData = {
   journalSummary: string | null;
   hydration: { total_logs: number; avg_ml_per_day: number | null } | null;
   auras: { count: number; led_to_seizure: number } | null;
+  patterns?: PatternCard[];
   sections: {
     snapshot: boolean;
     meds: boolean;
@@ -413,6 +415,25 @@ export async function buildMedicalReportPdf(data: ReportSourceData): Promise<Uin
     if (hrv.length) {
       const avg = hrv.reduce((a, b) => a + b.value, 0) / hrv.length;
       P(c, `Average HRV: ${avg.toFixed(0)} ms`);
+    }
+  }
+
+  // Patterns Purple noticed (descriptive, cited to the patient's own data)
+  if (data.sections.snapshot && data.patterns && data.patterns.length > 0) {
+    newPage(c);
+    H1(c, "Patterns Purple noticed");
+    P(
+      c,
+      "Descriptive observations from the patient's own logs over the window above. Not causal claims — for discussion.",
+      { color: MUTED, size: 9 },
+    );
+    spacer(c, 6);
+    for (const card of data.patterns) {
+      ensureSpace(c, 40);
+      P(c, card.title, { bold: true, size: 11 });
+      P(c, card.detail);
+      if (card.evidence) P(c, card.evidence, { color: MUTED, size: 9 });
+      spacer(c, 6);
     }
   }
 
