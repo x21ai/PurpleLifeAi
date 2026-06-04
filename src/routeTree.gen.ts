@@ -54,6 +54,7 @@ import { Route as AppJournalIndexRouteImport } from './routes/_app/journal.index
 import { Route as AppCareIndexRouteImport } from './routes/_app/care.index'
 import { Route as AppBiometricsIndexRouteImport } from './routes/_app/biometrics.index'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin.index'
+import { Route as ShareReportTokenRouteImport } from './routes/share.report.$token'
 import { Route as OauthWhoopCallbackRouteImport } from './routes/oauth.whoop.callback'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
@@ -315,6 +316,11 @@ const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const ShareReportTokenRoute = ShareReportTokenRouteImport.update({
+  id: '/share/report/$token',
+  path: '/share/report/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OauthWhoopCallbackRoute = OauthWhoopCallbackRouteImport.update({
   id: '/oauth/whoop/callback',
   path: '/oauth/whoop/callback',
@@ -573,6 +579,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
+  '/share/report/$token': typeof ShareReportTokenRoute
   '/admin/': typeof AppAdminIndexRoute
   '/biometrics/': typeof AppBiometricsIndexRoute
   '/care/': typeof AppCareIndexRoute
@@ -654,6 +661,7 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
+  '/share/report/$token': typeof ShareReportTokenRoute
   '/admin': typeof AppAdminIndexRoute
   '/biometrics': typeof AppBiometricsIndexRoute
   '/care': typeof AppCareIndexRoute
@@ -738,6 +746,7 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
+  '/share/report/$token': typeof ShareReportTokenRoute
   '/_app/admin/': typeof AppAdminIndexRoute
   '/_app/biometrics/': typeof AppBiometricsIndexRoute
   '/_app/care/': typeof AppCareIndexRoute
@@ -822,6 +831,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
+    | '/share/report/$token'
     | '/admin/'
     | '/biometrics/'
     | '/care/'
@@ -903,6 +913,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
+    | '/share/report/$token'
     | '/admin'
     | '/biometrics'
     | '/care'
@@ -986,6 +997,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
+    | '/share/report/$token'
     | '/_app/admin/'
     | '/_app/biometrics/'
     | '/_app/care/'
@@ -1028,6 +1040,7 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   OauthWhoopCallbackRoute: typeof OauthWhoopCallbackRoute
+  ShareReportTokenRoute: typeof ShareReportTokenRoute
   ApiPublicCronCareDailyDigestRoute: typeof ApiPublicCronCareDailyDigestRoute
   ApiPublicCronDoseRemindersRoute: typeof ApiPublicCronDoseRemindersRoute
   ApiPublicCronOuraSyncAllRoute: typeof ApiPublicCronOuraSyncAllRoute
@@ -1358,6 +1371,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AppAdminIndexRouteImport
       parentRoute: typeof AppAdminRoute
+    }
+    '/share/report/$token': {
+      id: '/share/report/$token'
+      path: '/share/report/$token'
+      fullPath: '/share/report/$token'
+      preLoaderRoute: typeof ShareReportTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/oauth/whoop/callback': {
       id: '/oauth/whoop/callback'
@@ -1798,6 +1818,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   OauthWhoopCallbackRoute: OauthWhoopCallbackRoute,
+  ShareReportTokenRoute: ShareReportTokenRoute,
   ApiPublicCronCareDailyDigestRoute: ApiPublicCronCareDailyDigestRoute,
   ApiPublicCronDoseRemindersRoute: ApiPublicCronDoseRemindersRoute,
   ApiPublicCronOuraSyncAllRoute: ApiPublicCronOuraSyncAllRoute,

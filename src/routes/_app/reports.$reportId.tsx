@@ -31,6 +31,21 @@ type Metric = {
   reference_low: number | null;
   reference_high: number | null;
   flag: string | null;
+  panel?: string | null;
+};
+
+const PANEL_LABELS: Record<string, string> = {
+  lipids: "Lipids",
+  cardiometabolic: "Cardiometabolic",
+  thyroid: "Thyroid",
+  liver: "Liver",
+  kidney: "Kidney",
+  hematology: "Blood count & iron",
+  vitamins: "Vitamins",
+  hormones: "Hormones",
+  inflammation: "Inflammation",
+  imaging: "Imaging",
+  other: "Other",
 };
 
 function ReportDetailPage() {
@@ -111,6 +126,34 @@ function ReportDetailPage() {
 
       <MedicalDisclaimer className="mt-5" />
 
+      {report.summary && (
+        <section className="mt-6 rounded-2xl border border-border bg-card p-4">
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Summary</h2>
+          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{report.summary}</p>
+        </section>
+      )}
+
+      {(report.findings || report.impressions) && (
+        <section className="mt-4 grid sm:grid-cols-2 gap-4">
+          {report.findings && Array.isArray(report.findings) && (report.findings as string[]).length > 0 && (
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Findings</h3>
+              <ul className="text-sm text-foreground space-y-1.5 list-disc pl-4">
+                {(report.findings as string[]).map((f, i) => <li key={i}>{f}</li>)}
+              </ul>
+            </div>
+          )}
+          {report.impressions && Array.isArray(report.impressions) && (report.impressions as string[]).length > 0 && (
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Impressions</h3>
+              <ul className="text-sm text-foreground space-y-1.5 list-disc pl-4">
+                {(report.impressions as string[]).map((f, i) => <li key={i}>{f}</li>)}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
+
       {report.status === "processing" && (
         <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Extracting values… this can take up to a minute.
@@ -126,49 +169,11 @@ function ReportDetailPage() {
       )}
 
       {metrics.length > 0 && (
-        <section className="mt-6">
-          <h2 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-            Extracted values
-          </h2>
-          <ul className="rounded-2xl border border-border bg-card divide-y divide-border overflow-hidden">
-            {metrics.map((m) => (
-              <li key={m.id}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedMetric(m.metric_key === selectedMetric ? null : m.metric_key)}
-                  className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-accent/40 transition-colors text-left"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm text-foreground">{m.display_name ?? m.metric_key}</p>
-                    {(m.reference_low != null || m.reference_high != null) && (
-                      <p className="text-xs text-muted-foreground">
-                        ref {m.reference_low ?? "—"}–{m.reference_high ?? "—"} {m.unit ?? ""}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span
-                      className={`text-sm font-medium ${
-                        m.flag === "high"
-                          ? "text-destructive"
-                          : m.flag === "low"
-                            ? "text-amber-600 dark:text-amber-400"
-                            : "text-foreground"
-                      }`}
-                    >
-                      {m.value ?? m.value_text ?? "—"}
-                      {m.unit ? <span className="text-xs text-muted-foreground ml-1">{m.unit}</span> : null}
-                    </span>
-                    <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
-                  </div>
-                </button>
-                {selectedMetric === m.metric_key && (
-                  <MetricTrend metricKey={m.metric_key} unit={m.unit} />
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
+        <PanelGroups
+          metrics={metrics}
+          selectedMetric={selectedMetric}
+          setSelectedMetric={setSelectedMetric}
+        />
       )}
 
       {report.status === "ready" && metrics.length === 0 && (
@@ -255,6 +260,80 @@ function MetricTrend({ metricKey, unit }: { metricKey: string; unit: string | nu
       <p className="mt-2 text-[11px] text-muted-foreground">
         Shaded band = typical reference range. Always discuss results with your medical practitioner.
       </p>
+    </div>
+  );
+}
+
+function PanelGroups({
+  metrics,
+  selectedMetric,
+  setSelectedMetric,
+}: {
+  metrics: Metric[];
+  selectedMetric: string | null;
+  setSelectedMetric: (k: string | null) => void;
+}) {
+  const grouped = React.useMemo(() => {
+    const out: Record<string, Metric[]> = {};
+    for (const m of metrics) {
+      const key = m.panel || "other";
+      (out[key] ??= []).push(m);
+    }
+    return out;
+  }, [metrics]);
+
+  const order = ["lipids", "cardiometabolic", "thyroid", "liver", "kidney", "hematology", "vitamins", "hormones", "inflammation", "imaging", "other"];
+  const entries = Object.entries(grouped).sort(
+    ([a], [b]) => order.indexOf(a) - order.indexOf(b),
+  );
+
+  return (
+    <div className="mt-6 space-y-6">
+      {entries.map(([panel, rows]) => (
+        <section key={panel}>
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+            {PANEL_LABELS[panel] ?? panel} · {rows.length}
+          </h2>
+          <ul className="rounded-2xl border border-border bg-card divide-y divide-border overflow-hidden">
+            {rows.map((m) => (
+              <li key={m.id}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedMetric(m.metric_key === selectedMetric ? null : m.metric_key)}
+                  className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-accent/40 transition-colors text-left"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm text-foreground">{m.display_name ?? m.metric_key}</p>
+                    {(m.reference_low != null || m.reference_high != null) && (
+                      <p className="text-xs text-muted-foreground">
+                        ref {m.reference_low ?? "—"}–{m.reference_high ?? "—"} {m.unit ?? ""}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span
+                      className={`text-sm font-medium ${
+                        m.flag === "high"
+                          ? "text-destructive"
+                          : m.flag === "low"
+                            ? "text-amber-600 dark:text-amber-400"
+                            : "text-foreground"
+                      }`}
+                    >
+                      {m.value ?? m.value_text ?? "—"}
+                      {m.unit ? <span className="text-xs text-muted-foreground ml-1">{m.unit}</span> : null}
+                    </span>
+                    <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                </button>
+                {selectedMetric === m.metric_key && (
+                  <MetricTrend metricKey={m.metric_key} unit={m.unit} />
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 }
