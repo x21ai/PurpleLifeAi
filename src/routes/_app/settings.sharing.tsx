@@ -433,6 +433,52 @@ function DigestPreferenceCard() {
   );
 }
 
+/* ----------------- Per-caregiver digest mute ----------------- */
+
+function DigestMuteRow({
+  relationshipId,
+  initialMuted,
+}: {
+  relationshipId: string;
+  initialMuted: boolean;
+}) {
+  const qc = useQueryClient();
+  const setFn = useServerFn(setRelationshipDigestMuted);
+  const [muted, setMuted] = useState(initialMuted);
+  const m = useMutation({
+    mutationFn: (next: boolean) =>
+      setFn({ data: { relationship_id: relationshipId, muted: next } }),
+    onSuccess: (_, next) => {
+      qc.invalidateQueries({ queryKey: ["care", "mine"] });
+      toast.success(next ? "Muted in your daily digest" : "Will appear in your daily digest");
+    },
+    onError: (e: any) => {
+      setMuted(initialMuted);
+      toast.error(e?.message ?? "Couldn't update");
+    },
+  });
+  return (
+    <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2">
+      <div>
+        <p className="text-xs font-medium text-foreground">Mute in daily digest</p>
+        <p className="text-[11px] text-muted-foreground">
+          {muted
+            ? "Their activity is excluded from your daily summary email."
+            : "Their activity appears in your daily summary email."}
+        </p>
+      </div>
+      <Switch
+        checked={muted}
+        disabled={m.isPending}
+        onCheckedChange={(v) => {
+          setMuted(v);
+          m.mutate(v);
+        }}
+      />
+    </div>
+  );
+}
+
 /* ----------------- Activity feed ----------------- */
 
 function ActivitySection({
