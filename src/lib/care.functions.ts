@@ -1866,6 +1866,31 @@ export const getCareDigestPreference = createServerFn({ method: "GET" })
     return { enabled: data?.care_daily_digest_enabled ?? true };
   });
 
+/**
+ * Per-caregiver digest mute. When `muted` is true, that caregiver's actions
+ * are excluded from the owner's daily digest email (without revoking access).
+ */
+export const setRelationshipDigestMuted = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { relationship_id: string; muted: boolean }) =>
+    z
+      .object({
+        relationship_id: z.string().uuid(),
+        muted: z.boolean(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { error } = await supabaseAdmin
+      .from("care_relationships")
+      .update({ digest_muted: data.muted })
+      .eq("id", data.relationship_id)
+      .eq("owner_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const sendCareDigestNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
