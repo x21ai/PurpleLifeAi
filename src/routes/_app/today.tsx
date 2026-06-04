@@ -21,6 +21,9 @@ import { QuickAddWater } from "@/components/hydration/quick-add-water";
 import { LogAuraSheet } from "@/components/hydration/log-aura-sheet";
 import { PatternHintCard } from "@/components/hydration/pattern-hint-card";
 import { useFeatureFlags } from "@/hooks/use-feature-flags";
+import { ConditionTipCard } from "@/components/today/condition-tip-card";
+import { FeatureSuggestionCard } from "@/components/today/feature-suggestion-card";
+import { OnboardingChecklist } from "@/components/today/onboarding-checklist";
 
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
@@ -327,6 +330,10 @@ function TodayPage() {
 
       <TripBanner />
       <TodayDoses />
+
+      <OnboardingChecklist />
+      <ConditionTipCard conditions={profile?.conditions} />
+      <FeatureSuggestionCard />
 
       {/* Hydration & auras quick-capture */}
       {showHydration && (
