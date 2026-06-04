@@ -1250,7 +1250,9 @@ export const listCaregiverOwners = createServerFn({ method: "GET" })
           const visit = visitsByRel[r.id];
           const fallback = new Date(Date.now() - 30 * 86400_000).toISOString();
           const since = visit?.last_seen_at ?? fallback;
-          const [meds, journal, seizures, biometrics] = await Promise.all([
+          const since24h = new Date(Date.now() - 24 * 3600_000).toISOString();
+          const since72h = new Date(Date.now() - 72 * 3600_000).toISOString();
+          const [meds, journal, seizures, biometrics, missed24h, seizures24h, lastJournal] = await Promise.all([
             supabaseAdmin
               .from("medication_doses")
               .select("id", { count: "exact", head: true })
@@ -1271,6 +1273,24 @@ export const listCaregiverOwners = createServerFn({ method: "GET" })
               .select("id", { count: "exact", head: true })
               .eq("user_id", r.owner_id)
               .gt("created_at", since),
+            supabaseAdmin
+              .from("medication_doses")
+              .select("id", { count: "exact", head: true })
+              .eq("user_id", r.owner_id)
+              .eq("status", "missed")
+              .gte("scheduled_at", since24h),
+            supabaseAdmin
+              .from("seizure_events")
+              .select("id", { count: "exact", head: true })
+              .eq("user_id", r.owner_id)
+              .gte("started_at", since24h),
+            supabaseAdmin
+              .from("journal_entries")
+              .select("created_at")
+              .eq("user_id", r.owner_id)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle(),
           ]);
           const counts = {
             meds: meds.count ?? 0,
@@ -1279,6 +1299,16 @@ export const listCaregiverOwners = createServerFn({ method: "GET" })
             biometrics: biometrics.count ?? 0,
           };
           const total = counts.meds + counts.journal + counts.seizures + counts.biometrics;
+          // Health signal: red if seizure in 24h or ≥3 missed doses; amber if
+          // ≥1 missed dose or journal silence > 72h; otherwise green.
+          const missedCount = missed24h.count ?? 0;
+          const seizureCount = seizures24h.count ?? 0;
+          const lastJournalAt = (lastJournal.data as { created_at?: string } | null)?.created_at ?? null;
+          const journalSilence =
+            !lastJournalAt || new Date(lastJournalAt).toISOString() < since72h;
+          let health_signal: "green" | "amber" | "red" = "green";
+          if (seizureCount > 0 || missedCount >= 3) health_signal = "red";
+          else if (missedCount >= 1 || journalSilence) health_signal = "amber";
           return {
             relationship_id: r.id,
             owner_id: r.owner_id,
@@ -1289,6 +1319,12 @@ export const listCaregiverOwners = createServerFn({ method: "GET" })
             last_seen_at: visit?.last_seen_at ?? null,
             unread_total: total,
             unread_by_tab: counts,
+            health_signal,
+            health_reasons: {
+              missed_doses_24h: missedCount,
+              seizures_24h: seizureCount,
+              journal_silence_72h: journalSilence,
+            },
           };
         }),
     );
