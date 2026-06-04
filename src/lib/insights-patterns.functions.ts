@@ -191,5 +191,60 @@ export const computeUserPatterns = createServerFn({ method: "GET" })
       });
     }
 
+    // --- Pattern 5: top recurring triggers in journal tags (last 30d)
+    const TRIGGER_TAGS = new Set([
+      "stress","poor_sleep","insomnia","missed_meds","alcohol","caffeine",
+      "menstrual","heat","dehydration","flashing_lights","overstimulated",
+      "screen_time","skipped_meal","travel","illness",
+    ]);
+    const since30 = Date.now() - 30 * 86400000;
+    const triggerCounts = new Map<string, number>();
+    for (const j of journal) {
+      if (new Date(j.captured_at).getTime() < since30) continue;
+      const tags = (j.ai_tags as string[] | null) ?? [];
+      for (const t of tags) {
+        const k = String(t).toLowerCase();
+        if (TRIGGER_TAGS.has(k)) triggerCounts.set(k, (triggerCounts.get(k) ?? 0) + 1);
+      }
+    }
+    const topTriggers = Array.from(triggerCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+    if (topTriggers.length > 0 && topTriggers[0][1] >= 3) {
+      const pretty = (s: string) => s.replace(/_/g, " ");
+      cards.push({
+        key: "top_triggers_30d",
+        title: "Recurring triggers in your journal",
+        detail:
+          "Over the last 30 days you've mentioned " +
+          topTriggers
+            .map(([k, n]) => `${pretty(k)} (${n}×)`)
+            .join(", ") +
+          ". Worth a glance with your clinician.",
+        tone: "info",
+        evidence: "Tagged in your own entries",
+      });
+    }
+
+    // --- Pattern 6: time-of-day clustering for seizures
+    if (sz.length >= 6) {
+      const buckets = [0, 0, 0, 0]; // night 0-6, morning 6-12, afternoon 12-18, evening 18-24
+      for (const s of sz) {
+        const h = new Date(s.started_at).getHours();
+        buckets[Math.min(3, Math.floor(h / 6))]++;
+      }
+      const labels = ["overnight (12am–6am)", "morning (6am–12pm)", "afternoon (12pm–6pm)", "evening (6pm–12am)"];
+      const maxIdx = buckets.indexOf(Math.max(...buckets));
+      const share = buckets[maxIdx] / sz.length;
+      if (share >= 0.45) {
+        cards.push({
+          key: "time_of_day_cluster",
+          title: `Events cluster ${labels[maxIdx]}`,
+          detail: `${buckets[maxIdx]} of your last ${sz.length} seizures happened ${labels[maxIdx]}. A timing-aware med schedule or sleep check may help.`,
+          tone: "watch",
+        });
+      }
+    }
+
     return { cards };
   });
