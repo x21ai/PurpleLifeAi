@@ -81,6 +81,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
+import { Route as ApiPublicHooksAppleHealthRouteImport } from './routes/api/public/hooks/apple-health'
 import { Route as ApiPublicCronWhoopSyncAllRouteImport } from './routes/api/public/cron/whoop-sync-all'
 import { Route as ApiPublicCronPurgeDeletedAccountsRouteImport } from './routes/api/public/cron/purge-deleted-accounts'
 import { Route as ApiPublicCronOuraSyncAllRouteImport } from './routes/api/public/cron/oura-sync-all'
@@ -452,6 +453,12 @@ const ApiPublicHooksRiskForecasterRoute =
     path: '/api/public/hooks/risk-forecaster',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksAppleHealthRoute =
+  ApiPublicHooksAppleHealthRouteImport.update({
+    id: '/api/public/hooks/apple-health',
+    path: '/api/public/hooks/apple-health',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronWhoopSyncAllRoute =
   ApiPublicCronWhoopSyncAllRouteImport.update({
     id: '/api/public/cron/whoop-sync-all',
@@ -561,6 +568,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
   '/api/public/cron/whoop-sync-all': typeof ApiPublicCronWhoopSyncAllRoute
+  '/api/public/hooks/apple-health': typeof ApiPublicHooksAppleHealthRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -639,6 +647,7 @@ export interface FileRoutesByTo {
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
   '/api/public/cron/whoop-sync-all': typeof ApiPublicCronWhoopSyncAllRoute
+  '/api/public/hooks/apple-health': typeof ApiPublicHooksAppleHealthRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -720,6 +729,7 @@ export interface FileRoutesById {
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
   '/api/public/cron/whoop-sync-all': typeof ApiPublicCronWhoopSyncAllRoute
+  '/api/public/hooks/apple-health': typeof ApiPublicHooksAppleHealthRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -801,6 +811,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/oura-sync-all'
     | '/api/public/cron/purge-deleted-accounts'
     | '/api/public/cron/whoop-sync-all'
+    | '/api/public/hooks/apple-health'
     | '/api/public/hooks/risk-forecaster'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -879,6 +890,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/oura-sync-all'
     | '/api/public/cron/purge-deleted-accounts'
     | '/api/public/cron/whoop-sync-all'
+    | '/api/public/hooks/apple-health'
     | '/api/public/hooks/risk-forecaster'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -959,6 +971,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/oura-sync-all'
     | '/api/public/cron/purge-deleted-accounts'
     | '/api/public/cron/whoop-sync-all'
+    | '/api/public/hooks/apple-health'
     | '/api/public/hooks/risk-forecaster'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -995,6 +1008,7 @@ export interface RootRouteChildren {
   ApiPublicCronOuraSyncAllRoute: typeof ApiPublicCronOuraSyncAllRoute
   ApiPublicCronPurgeDeletedAccountsRoute: typeof ApiPublicCronPurgeDeletedAccountsRoute
   ApiPublicCronWhoopSyncAllRoute: typeof ApiPublicCronWhoopSyncAllRoute
+  ApiPublicHooksAppleHealthRoute: typeof ApiPublicHooksAppleHealthRoute
   ApiPublicHooksRiskForecasterRoute: typeof ApiPublicHooksRiskForecasterRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1509,6 +1523,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRiskForecasterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/apple-health': {
+      id: '/api/public/hooks/apple-health'
+      path: '/api/public/hooks/apple-health'
+      fullPath: '/api/public/hooks/apple-health'
+      preLoaderRoute: typeof ApiPublicHooksAppleHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/whoop-sync-all': {
       id: '/api/public/cron/whoop-sync-all'
       path: '/api/public/cron/whoop-sync-all'
@@ -1740,6 +1761,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronPurgeDeletedAccountsRoute:
     ApiPublicCronPurgeDeletedAccountsRoute,
   ApiPublicCronWhoopSyncAllRoute: ApiPublicCronWhoopSyncAllRoute,
+  ApiPublicHooksAppleHealthRoute: ApiPublicHooksAppleHealthRoute,
   ApiPublicHooksRiskForecasterRoute: ApiPublicHooksRiskForecasterRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
