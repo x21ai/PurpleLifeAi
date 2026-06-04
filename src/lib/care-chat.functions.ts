@@ -11,13 +11,20 @@ export const listCareThreads = createServerFn({ method: "GET" })
 
     const { data: parts, error: pErr } = await supabaseAdmin
       .from("care_thread_participants")
-      .select("thread_id, role, last_read_at")
+      .select("thread_id, role, last_read_at, muted, muted_until")
       .eq("user_id", userId);
     if (pErr) throw new Error(pErr.message);
     if (!parts || parts.length === 0) return { threads: [] as Array<any> };
 
     const threadIds = parts.map((p) => p.thread_id);
     const lastReadByThread = new Map(parts.map((p) => [p.thread_id, p.last_read_at]));
+    const muteByThread = new Map(
+      parts.map((p) => {
+        const until = p.muted_until ? new Date(p.muted_until).getTime() : 0;
+        const active = p.muted || (until > 0 && until > Date.now());
+        return [p.thread_id, active];
+      }),
+    );
 
     const { data: threads, error: tErr } = await supabaseAdmin
       .from("care_threads")
@@ -90,6 +97,7 @@ export const listCareThreads = createServerFn({ method: "GET" })
           ? { body: last.body, sender_id: last.sender_id, created_at: last.created_at }
           : null,
         unread: unreadByThread.get(t.id) ?? 0,
+        muted: muteByThread.get(t.id) ?? false,
       };
     });
 
@@ -304,6 +312,61 @@ export const sendCareMessage = createServerFn({ method: "POST" })
       .eq("thread_id", data.threadId)
       .eq("user_id", userId);
 
+    // Notify the other (non-muted) participants via web push. Best-effort.
+    try {
+      const { data: parts } = await supabaseAdmin
+        .from("care_thread_participants")
+        .select("user_id, muted, muted_until")
+        .eq("thread_id", data.threadId)
+        .neq("user_id", userId);
+      const now = Date.now();
+      const recipients = (parts ?? []).filter((p) => {
+        if (p.muted) return false;
+        if (p.muted_until && new Date(p.muted_until).getTime() > now) return false;
+        return true;
+      });
+      if (recipients.length > 0) {
+        const { data: sender } = await supabaseAdmin
+          .from("profiles")
+          .select("first_name, last_name")
+          .eq("id", userId)
+          .maybeSingle();
+        const senderName =
+          [sender?.first_name, sender?.last_name].filter(Boolean).join(" ").trim() ||
+          "Someone";
+        const preview =
+          data.body.length > 140 ? `${data.body.slice(0, 140)}…` : data.body;
+        const { data: subs } = await supabaseAdmin
+          .from("push_subscriptions")
+          .select("endpoint, p256dh, auth, user_id")
+          .in("user_id", recipients.map((r) => r.user_id));
+        if (subs && subs.length > 0) {
+          const { sendPushToSubscription } = await import("./push.server");
+          await Promise.all(
+            subs.map(async (s) => {
+              const r = await sendPushToSubscription(
+                { endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth },
+                {
+                  title: `${senderName} · Care chat`,
+                  body: preview,
+                  url: `/chat-care?thread=${data.threadId}`,
+                  tag: `care-${data.threadId}`,
+                },
+              );
+              if (r.gone) {
+                await supabaseAdmin
+                  .from("push_subscriptions")
+                  .delete()
+                  .eq("endpoint", s.endpoint);
+              }
+            }),
+          );
+        }
+      }
+    } catch (err) {
+      console.warn("[care-chat] push notify failed", err);
+    }
+
     return { message: msg };
   });
 
@@ -318,6 +381,48 @@ export const markCareThreadRead = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin
       .from("care_thread_participants")
       .update({ last_read_at: new Date().toISOString() })
+      .eq("thread_id", data.threadId)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Toggle mute on a thread for the current user. */
+export const setCareThreadMute = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { threadId: string; muted: boolean }) =>
+    z.object({ threadId: z.string().uuid(), muted: z.boolean() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await supabaseAdmin
+      .from("care_thread_participants")
+      .update({ muted: data.muted, muted_until: null })
+      .eq("thread_id", data.threadId)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true, muted: data.muted };
+  });
+
+/** Leave a thread (removes the current user as a participant). */
+export const leaveCareThread = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { threadId: string }) =>
+    z.object({ threadId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    // Owner of the thread cannot leave their own thread.
+    const { data: thread } = await supabaseAdmin
+      .from("care_threads")
+      .select("owner_id")
+      .eq("id", data.threadId)
+      .maybeSingle();
+    if (thread?.owner_id === userId) {
+      throw new Error("You own this chat; you can't leave it. You can mute it instead.");
+    }
+    const { error } = await supabaseAdmin
+      .from("care_thread_participants")
+      .delete()
       .eq("thread_id", data.threadId)
       .eq("user_id", userId);
     if (error) throw new Error(error.message);

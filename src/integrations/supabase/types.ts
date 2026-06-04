@@ -568,6 +568,8 @@ export type Database = {
         Row: {
           joined_at: string
           last_read_at: string | null
+          muted: boolean
+          muted_until: string | null
           role: string
           thread_id: string
           user_id: string
@@ -575,6 +577,8 @@ export type Database = {
         Insert: {
           joined_at?: string
           last_read_at?: string | null
+          muted?: boolean
+          muted_until?: string | null
           role: string
           thread_id: string
           user_id: string
@@ -582,6 +586,8 @@ export type Database = {
         Update: {
           joined_at?: string
           last_read_at?: string | null
+          muted?: boolean
+          muted_until?: string | null
           role?: string
           thread_id?: string
           user_id?: string

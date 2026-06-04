@@ -76,7 +76,8 @@ export const Route = createFileRoute("/_app/biometrics/$metric")({
 });
 
 type Row = { recorded_at: string; value: number | null; source: string };
-type Range = 7 | 30 | 90;
+type Range = 1 | 7 | 30 | 90 | 365;
+type CompareMode = "none" | "previous" | "year_ago";
 type SourceKey = "oura" | "whoop" | "apple_health" | "manual";
 const SOURCE_COLORS: Record<SourceKey, string> = {
   oura:         "var(--purple-primary)",
@@ -100,12 +101,16 @@ function MetricDrillPage() {
   const uid = session?.user.id;
 
   const [range, setRange] = useState<Range>(30);
+  const [compare, setCompare] = useState<CompareMode>("previous");
   const [rows, setRows] = useState<Row[] | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!uid || !meta) return;
-    const since = new Date(Date.now() - range * 24 * 3600 * 1000).toISOString();
+    // Fetch enough history to cover the comparison window too.
+    const daysBack =
+      compare === "year_ago" ? 365 + range : compare === "previous" ? range * 2 : range;
+    const since = new Date(Date.now() - daysBack * 24 * 3600 * 1000).toISOString();
     void (async () => {
       const query = supabase
         .from("biometrics")
@@ -127,37 +132,100 @@ function MetricDrillPage() {
       });
       setRows(mapped);
     })();
-  }, [uid, meta, range, refreshKey]);
+  }, [uid, meta, range, compare, refreshKey]);
 
-  const { chartData, sourcesPresent, baseline, current, status } = useMemo(() => {
+  const {
+    chartData,
+    sourcesPresent,
+    baseline,
+    current,
+    status,
+    currentAvg,
+    compareAvg,
+    delta,
+  } = useMemo(() => {
     const allRows = rows ?? [];
-    // Union of dates across all sources, sorted.
+    const now = Date.now();
+    const dayMs = 24 * 3600 * 1000;
+    const curStart = now - range * dayMs;
+    const cmpOffset =
+      compare === "year_ago"
+        ? 365 * dayMs
+        : compare === "previous"
+          ? range * dayMs
+          : 0;
+    const curRows = allRows.filter((r) => new Date(r.recorded_at).getTime() >= curStart);
+    const cmpRows =
+      compare === "none"
+        ? []
+        : allRows.filter((r) => {
+            const t = new Date(r.recorded_at).getTime();
+            return t >= curStart - cmpOffset && t < now - cmpOffset;
+          });
+
     const dateSet = new Set<string>();
-    for (const r of allRows) dateSet.add(r.recorded_at);
+    for (const r of curRows) dateSet.add(r.recorded_at);
     const dates = Array.from(dateSet).sort();
-    const present = Array.from(new Set(allRows.map((r) => r.source))) as SourceKey[];
+    const present = Array.from(new Set(curRows.map((r) => r.source))) as SourceKey[];
+
+    // Shift comparison rows forward so they overlay on the current axis.
+    const cmpByDate = new Map<string, number | null>();
+    if (compare !== "none") {
+      for (const r of cmpRows) {
+        const shifted = new Date(new Date(r.recorded_at).getTime() + cmpOffset)
+          .toISOString()
+          .slice(0, 10);
+        if (r.value != null) cmpByDate.set(shifted, r.value);
+      }
+    }
+
     const data = dates.map((d) => {
       const row: Record<string, string | number | null> = {
         x: d,
-        label: format(new Date(d), "MMM d"),
+        label: format(new Date(d), range >= 90 ? "MMM" : "MMM d"),
       };
       for (const s of present) {
-        const found = allRows.find((r) => r.recorded_at === d && r.source === s);
+        const found = curRows.find((r) => r.recorded_at === d && r.source === s);
         row[s] = found?.value ?? null;
       }
+      const key = d.slice(0, 10);
+      const cmp = cmpByDate.get(key);
+      if (cmp != null) row.__compare = cmp;
       return row;
     });
-    // Headline = most recent value from any source; baseline from Oura if present else first source.
+
+    const avg = (rs: Row[]) => {
+      const vs = rs.map((r) => r.value).filter((v): v is number => v != null);
+      if (vs.length === 0) return null;
+      return vs.reduce((a, b) => a + b, 0) / vs.length;
+    };
+    const curAvg = avg(curRows);
+    const cmpAvg = avg(cmpRows);
+    const dlt =
+      curAvg != null && cmpAvg != null && cmpAvg !== 0
+        ? ((curAvg - cmpAvg) / Math.abs(cmpAvg)) * 100
+        : null;
+
+    // Baseline + status from full history (preferred source).
     const preferred: SourceKey = present.includes("oura" as SourceKey)
       ? ("oura" as SourceKey)
       : (present[0] ?? ("oura" as SourceKey));
     const headlineRows = allRows.filter((r) => r.source === preferred);
     const baseSet = headlineRows.slice(-30, -3).map((r) => r.value);
     const baselineStats = stats(baseSet);
-    const last = [...allRows].reverse().find((r) => r.value != null)?.value ?? null;
+    const last = [...curRows].reverse().find((r) => r.value != null)?.value ?? null;
     const cls = classifyValue(meta, last, baselineStats);
-    return { chartData: data, sourcesPresent: present, baseline: baselineStats, current: last, status: cls };
-  }, [rows, meta]);
+    return {
+      chartData: data,
+      sourcesPresent: present,
+      baseline: baselineStats,
+      current: last,
+      status: cls,
+      currentAvg: curAvg,
+      compareAvg: cmpAvg,
+      delta: dlt,
+    };
+  }, [rows, meta, range, compare]);
 
   if (!meta) return null;
   const tone = statusTone(meta, status);
@@ -208,7 +276,7 @@ function MetricDrillPage() {
       </div>
 
       <div className="mt-8 flex items-center gap-2">
-        {([7, 30, 90] as const).map((r) => (
+        {([1, 7, 30, 90, 365] as const).map((r) => (
           <button
             key={r}
             type="button"
@@ -220,10 +288,58 @@ function MetricDrillPage() {
                 : "bg-secondary text-foreground hover:bg-secondary/70")
             }
           >
-            {r}d
+            {r === 1 ? "Today" : r === 365 ? "1y" : `${r}d`}
+          </button>
+        ))}
+        <span className="mx-2 text-[11px] text-muted-foreground">vs</span>
+        {(
+          [
+            { v: "previous", l: range === 1 ? "Yesterday" : range === 7 ? "Last week" : range === 30 ? "Last month" : range === 90 ? "Prev 90d" : "Prev year" },
+            { v: "year_ago", l: "Year ago" },
+            { v: "none", l: "None" },
+          ] as Array<{ v: CompareMode; l: string }>
+        ).map((opt) => (
+          <button
+            key={opt.v}
+            type="button"
+            onClick={() => setCompare(opt.v)}
+            className={
+              "rounded-full px-3 py-1.5 text-[11px] font-medium transition " +
+              (compare === opt.v
+                ? "bg-foreground text-background"
+                : "bg-secondary/50 text-foreground hover:bg-secondary/70")
+            }
+          >
+            {opt.l}
           </button>
         ))}
       </div>
+
+      {compare !== "none" && currentAvg != null && compareAvg != null && (
+        <div className="mt-3 flex flex-wrap items-baseline gap-3 text-sm">
+          <span className="text-muted-foreground">
+            Avg this window: <span className="text-foreground">{meta.format(currentAvg)}</span>
+          </span>
+          <span className="text-muted-foreground">
+            · vs <span className="text-foreground">{meta.format(compareAvg)}</span>
+          </span>
+          {delta != null && (
+            <span
+              className={
+                "rounded-full px-2 py-0.5 text-[11px] font-medium " +
+                (Math.abs(delta) < 1
+                  ? "bg-secondary text-foreground"
+                  : delta > 0
+                    ? "bg-emerald-500/15 text-emerald-400"
+                    : "bg-rose-500/15 text-rose-400")
+              }
+            >
+              {delta > 0 ? "+" : ""}
+              {delta.toFixed(1)}%
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="mt-4 rounded-2xl border border-border bg-card p-4 sm:p-6 h-[340px]">
         {rows === null ? (
@@ -269,7 +385,9 @@ function MetricDrillPage() {
                 }}
                 formatter={(v, name) => [
                   meta.format(typeof v === "number" ? v : Number(v)),
-                  SOURCE_LABELS[name as SourceKey] ?? meta.label,
+                  name === "__compare"
+                    ? "Comparison"
+                    : SOURCE_LABELS[name as SourceKey] ?? meta.label,
                 ]}
               />
               {sourcesPresent.map((s) => (
@@ -285,6 +403,19 @@ function MetricDrillPage() {
                   dot={false}
                 />
               ))}
+              {compare !== "none" && (
+                <Line
+                  type="monotone"
+                  dataKey="__compare"
+                  name="__compare"
+                  stroke="var(--muted-foreground)"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 4"
+                  connectNulls
+                  isAnimationActive={false}
+                  dot={false}
+                />
+              )}
             </LineChart>
           </ResponsiveContainer>
         )}
