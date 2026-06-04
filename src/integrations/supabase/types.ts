@@ -139,6 +139,33 @@ export type Database = {
         }
         Relationships: []
       }
+      apple_health_tokens: {
+        Row: {
+          created_at: string
+          last_sync_at: string | null
+          last_webhook_at: string | null
+          updated_at: string
+          user_id: string
+          webhook_secret: string
+        }
+        Insert: {
+          created_at?: string
+          last_sync_at?: string | null
+          last_webhook_at?: string | null
+          updated_at?: string
+          user_id: string
+          webhook_secret: string
+        }
+        Update: {
+          created_at?: string
+          last_sync_at?: string | null
+          last_webhook_at?: string | null
+          updated_at?: string
+          user_id?: string
+          webhook_secret?: string
+        }
+        Relationships: []
+      }
       aura_events: {
         Row: {
           created_at: string
@@ -254,6 +281,7 @@ export type Database = {
           spo2_pct: number | null
           steps: number | null
           user_id: string
+          vo2_max: number | null
           whoop_recovery_pct: number | null
           whoop_sleep_performance_pct: number | null
           whoop_strain: number | null
@@ -292,6 +320,7 @@ export type Database = {
           spo2_pct?: number | null
           steps?: number | null
           user_id: string
+          vo2_max?: number | null
           whoop_recovery_pct?: number | null
           whoop_sleep_performance_pct?: number | null
           whoop_strain?: number | null
@@ -330,6 +359,7 @@ export type Database = {
           spo2_pct?: number | null
           steps?: number | null
           user_id?: string
+          vo2_max?: number | null
           whoop_recovery_pct?: number | null
           whoop_sleep_performance_pct?: number | null
           whoop_strain?: number | null
