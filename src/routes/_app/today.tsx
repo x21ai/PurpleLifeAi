@@ -335,6 +335,7 @@ function TodayPage() {
       <OnboardingChecklist />
       <ConditionTipCard conditions={profile?.conditions} />
       <FeatureSuggestionCard />
+      <WeeklyRecapCard />
 
       {/* Hydration & auras quick-capture */}
       {showHydration && (
