@@ -2102,8 +2102,10 @@ export type Database = {
           access_token: string
           created_at: string
           expires_at: string | null
+          last_sync_at: string | null
           refresh_token: string | null
           scope: string | null
+          sync_interval_hours: number
           token_type: string | null
           updated_at: string
           user_id: string
@@ -2112,8 +2114,10 @@ export type Database = {
           access_token: string
           created_at?: string
           expires_at?: string | null
+          last_sync_at?: string | null
           refresh_token?: string | null
           scope?: string | null
+          sync_interval_hours?: number
           token_type?: string | null
           updated_at?: string
           user_id: string
@@ -2122,8 +2126,10 @@ export type Database = {
           access_token?: string
           created_at?: string
           expires_at?: string | null
+          last_sync_at?: string | null
           refresh_token?: string | null
           scope?: string | null
+          sync_interval_hours?: number
           token_type?: string | null
           updated_at?: string
           user_id?: string
