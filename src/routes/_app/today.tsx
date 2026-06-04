@@ -27,6 +27,7 @@ import { OnboardingChecklist } from "@/components/today/onboarding-checklist";
 import { WeeklyRecapCard } from "@/components/today/weekly-recap-card";
 import { SevenDayTrendStrip } from "@/components/today/seven-day-trend-strip";
 import { ReEngagementNudge } from "@/components/today/re-engagement-nudge";
+import { TopInsightCard } from "@/components/today/top-insight-card";
 
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
@@ -346,6 +347,7 @@ function TodayPage() {
       <FeatureSuggestionCard />
       <WeeklyRecapCard />
       <SevenDayTrendStrip />
+      <TopInsightCard />
 
       {/* Hydration & auras quick-capture */}
       {showHydration && (
