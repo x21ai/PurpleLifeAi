@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ExpiryControl } from "@/components/care/expiry-control";
+import { AppleHealthCard } from "@/components/settings/apple-health-card";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useTranslation } from "react-i18next";
 import {
@@ -143,6 +144,9 @@ function SharingPage() {
 
       {/* Daily digest preference */}
       <DigestPreferenceCard />
+
+      {/* Apple Health auto-sync */}
+      <AppleHealthCard />
 
       {/* People I share with */}
       <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
