@@ -26,6 +26,7 @@ import { FeatureSuggestionCard } from "@/components/today/feature-suggestion-car
 import { OnboardingChecklist } from "@/components/today/onboarding-checklist";
 import { WeeklyRecapCard } from "@/components/today/weekly-recap-card";
 import { SevenDayTrendStrip } from "@/components/today/seven-day-trend-strip";
+import { ReEngagementNudge } from "@/components/today/re-engagement-nudge";
 
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
@@ -176,6 +177,13 @@ function TodayPage() {
             sessionStorage.setItem("purple-today-empty-dismissed", "1");
             setEmptyDismissed(true);
           }}
+        />
+      )}
+
+      {journalCount != null && journalCount > 0 && (
+        <ReEngagementNudge
+          conditions={profile?.conditions ?? []}
+          hasAnyEntries
         />
       )}
 
