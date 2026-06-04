@@ -31,6 +31,7 @@ type Metric = {
   reference_low: number | null;
   reference_high: number | null;
   flag: string | null;
+  panel?: string | null;
 };
 
 const PANEL_LABELS: Record<string, string> = {
@@ -168,49 +169,11 @@ function ReportDetailPage() {
       )}
 
       {metrics.length > 0 && (
-        <section className="mt-6">
-          <h2 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-            Extracted values
-          </h2>
-          <ul className="rounded-2xl border border-border bg-card divide-y divide-border overflow-hidden">
-            {metrics.map((m) => (
-              <li key={m.id}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedMetric(m.metric_key === selectedMetric ? null : m.metric_key)}
-                  className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-accent/40 transition-colors text-left"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm text-foreground">{m.display_name ?? m.metric_key}</p>
-                    {(m.reference_low != null || m.reference_high != null) && (
-                      <p className="text-xs text-muted-foreground">
-                        ref {m.reference_low ?? "—"}–{m.reference_high ?? "—"} {m.unit ?? ""}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span
-                      className={`text-sm font-medium ${
-                        m.flag === "high"
-                          ? "text-destructive"
-                          : m.flag === "low"
-                            ? "text-amber-600 dark:text-amber-400"
-                            : "text-foreground"
-                      }`}
-                    >
-                      {m.value ?? m.value_text ?? "—"}
-                      {m.unit ? <span className="text-xs text-muted-foreground ml-1">{m.unit}</span> : null}
-                    </span>
-                    <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
-                  </div>
-                </button>
-                {selectedMetric === m.metric_key && (
-                  <MetricTrend metricKey={m.metric_key} unit={m.unit} />
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
+        <PanelGroups
+          metrics={metrics}
+          selectedMetric={selectedMetric}
+          setSelectedMetric={setSelectedMetric}
+        />
       )}
 
       {report.status === "ready" && metrics.length === 0 && (
