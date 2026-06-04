@@ -24,6 +24,7 @@ import { useFeatureFlags } from "@/hooks/use-feature-flags";
 import { ConditionTipCard } from "@/components/today/condition-tip-card";
 import { FeatureSuggestionCard } from "@/components/today/feature-suggestion-card";
 import { OnboardingChecklist } from "@/components/today/onboarding-checklist";
+import { WeeklyRecapCard } from "@/components/today/weekly-recap-card";
 
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
