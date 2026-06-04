@@ -214,6 +214,12 @@ function SharingPage() {
                   {r.status === "active" && (
                     <PauseWritesRow relationshipId={r.id} />
                   )}
+                  {r.status === "active" && (
+                    <DigestMuteRow
+                      relationshipId={r.id}
+                      initialMuted={Boolean((r as any).digest_muted)}
+                    />
+                  )}
                   {r.status === "pending" && (
                     <div className="mt-2 flex items-center gap-2">
                       <code className="flex-1 truncate rounded-md bg-muted px-2 py-1 text-[11px] text-foreground">
