@@ -30,8 +30,8 @@ export const computeUserPatterns = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const cards = await loadAndDerivePatternCards(supabase, userId);
-    return { cards };
-  });
+  return cards;
+}
 
 type AnyClient = {
   from: (t: string) => {
