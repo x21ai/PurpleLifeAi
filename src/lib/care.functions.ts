@@ -390,6 +390,119 @@ export const decidePendingChange = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Bulk decide N pending changes at once. Reuses the same apply logic as
+ * decidePendingChange (kept simple — we just loop). Returns how many were
+ * processed and how many failed so the UI can surface partial failures.
+ */
+export const decidePendingChangesBulk = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { ids: string[]; decision: "approved" | "rejected"; note?: string }) =>
+    z
+      .object({
+        ids: z.array(z.string().uuid()).min(1).max(50),
+        decision: z.enum(["approved", "rejected"]),
+        note: z.string().max(500).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    let ok = 0;
+    let failed = 0;
+    const errors: string[] = [];
+    for (const id of data.ids) {
+      try {
+        const { data: change } = await supabaseAdmin
+          .from("pending_changes")
+          .select("*")
+          .eq("id", id)
+          .single();
+        if (!change) {
+          failed++;
+          continue;
+        }
+        if (change.owner_id !== userId) {
+          failed++;
+          continue;
+        }
+        if (change.status !== "pending") {
+          // already decided — skip silently
+          continue;
+        }
+        if (data.decision === "approved") {
+          const type = change.type as string;
+          if (type === "add_journal_comment" && change.target_id) {
+            const note = String((change.payload as any)?.text ?? "").slice(0, 2000);
+            const stamp = `\n\n— Caregiver note (approved ${new Date()
+              .toISOString()
+              .slice(0, 10)}):\n${note}`;
+            const { data: row } = await supabaseAdmin
+              .from("journal_entries")
+              .select("text")
+              .eq("id", change.target_id)
+              .eq("user_id", change.owner_id)
+              .single();
+            if (row) {
+              await supabaseAdmin
+                .from("journal_entries")
+                .update({ text: (row?.text ?? "") + stamp })
+                .eq("id", change.target_id)
+                .eq("user_id", change.owner_id);
+            }
+          } else if (type === "add_meds_note" && change.target_id) {
+            const note = String((change.payload as any)?.text ?? "").slice(0, 1000);
+            const { data: row } = await supabaseAdmin
+              .from("medications")
+              .select("notes")
+              .eq("id", change.target_id)
+              .eq("user_id", change.owner_id)
+              .single();
+            if (row) {
+              const newNotes = ((row?.notes ?? "") + "\n— Caregiver: " + note).trim();
+              await supabaseAdmin
+                .from("medications")
+                .update({ notes: newNotes })
+                .eq("id", change.target_id)
+                .eq("user_id", change.owner_id);
+            }
+          }
+        }
+        await supabaseAdmin
+          .from("pending_changes")
+          .update({
+            status: data.decision,
+            decided_at: new Date().toISOString(),
+            decision_note: data.note ?? null,
+          })
+          .eq("id", id);
+        await supabaseAdmin.from("care_audit_log").insert({
+          relationship_id: change.relationship_id,
+          owner_id: userId,
+          actor_id: userId,
+          action: data.decision,
+          resource_type: "pending_change",
+          resource_id: change.id,
+          metadata: { type: change.type, bulk: true },
+        });
+        if (change.caregiver_id) {
+          void notifyCaregiverOfDecision({
+            caregiverId: change.caregiver_id,
+            ownerId: userId,
+            changeType: String(change.type),
+            decision: data.decision,
+            decisionNote: data.note ?? null,
+          });
+        }
+        ok++;
+      } catch (err) {
+        failed++;
+        errors.push(err instanceof Error ? err.message : "Unknown");
+      }
+    }
+    return { ok, failed, errors };
+  });
+
 /* ---------- Caregiver-facing ---------- */
 
 export const acceptInvite = createServerFn({ method: "POST" })
