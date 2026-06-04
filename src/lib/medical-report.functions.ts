@@ -58,7 +58,7 @@ async function assembleReportData(userId: string, from: string, to: string, sect
   const fromISO = new Date(`${from}T00:00:00Z`).toISOString();
   const toISO = new Date(`${to}T23:59:59Z`).toISOString();
 
-  const [profileQ, medsQ, dosesQ, seizQ, bioQ, labsQ, hydQ, auraQ] = await Promise.all([
+  const [profileQ, medsQ, dosesQ, seizQ, bioQ, auraQ] = await Promise.all([
     supabaseAdmin.from("profiles")
       .select("first_name, last_name, date_of_birth, conditions, conditions_note")
       .eq("id", userId).maybeSingle(),
@@ -78,17 +78,6 @@ async function assembleReportData(userId: string, from: string, to: string, sect
       .select("recorded_at, source, " + METRICS.map((m) => m.column).join(", "))
       .eq("user_id", userId)
       .gte("recorded_at", fromISO).lte("recorded_at", toISO),
-    supabaseAdmin.from("reports")
-      .select("id, title, created_at")
-      .eq("user_id", userId)
-      .gte("created_at", fromISO).lte("created_at", toISO)
-      .order("created_at", { ascending: false }),
-    sections.extras
-      ? supabaseAdmin.from("hydration_logs")
-          .select("amount_ml, logged_at")
-          .eq("user_id", userId)
-          .gte("logged_at", fromISO).lte("logged_at", toISO)
-      : Promise.resolve({ data: [] as Array<{ amount_ml: number; logged_at: string }>, error: null }),
     sections.extras
       ? supabaseAdmin.from("aura_events")
           .select("occurred_at, led_to_seizure")
@@ -137,7 +126,8 @@ async function assembleReportData(userId: string, from: string, to: string, sect
   }> = {};
   for (const meta of METRICS) {
     const buckets = new Map<string, number[]>();
-    for (const row of (bioQ.data ?? []) as Array<Record<string, unknown>>) {
+    const bioRows = ((bioQ.data ?? []) as unknown) as Array<Record<string, unknown>>;
+    for (const row of bioRows) {
       const v = row[meta.column];
       if (v == null || typeof v !== "number") continue;
       const date = String(row.recorded_at).slice(0, 10);
@@ -151,52 +141,38 @@ async function assembleReportData(userId: string, from: string, to: string, sect
     biometrics[meta.label] = { unit: meta.unit, direction: meta.direction, points, hint: meta.hint };
   }
 
-  // Hydration summary
-  let hydration: { total_logs: number; avg_ml_per_day: number | null } | null = null;
-  if (sections.extras) {
-    const rows = (hydQ.data ?? []) as Array<{ amount_ml: number; logged_at: string }>;
-    if (rows.length) {
-      const byDay = new Map<string, number>();
-      for (const r of rows) {
-        const d = String(r.logged_at).slice(0, 10);
-        byDay.set(d, (byDay.get(d) ?? 0) + (Number(r.amount_ml) || 0));
-      }
-      const avg = Math.round(
-        Array.from(byDay.values()).reduce((a, b) => a + b, 0) / byDay.size,
-      );
-      hydration = { total_logs: rows.length, avg_ml_per_day: avg };
-    } else hydration = { total_logs: 0, avg_ml_per_day: null };
-  }
+  // Hydration summary intentionally skipped — not in the generated types.
+  const hydration: { total_logs: number; avg_ml_per_day: number | null } | null = null;
 
   // Auras
   let auras: { count: number; led_to_seizure: number } | null = null;
   if (sections.extras) {
-    const rows = (auraQ.data ?? []) as Array<{ led_to_seizure: boolean }>;
+    const rows = ((auraQ.data ?? []) as unknown) as Array<{ led_to_seizure: boolean }>;
     auras = { count: rows.length, led_to_seizure: rows.filter((r) => r.led_to_seizure).length };
   }
 
-  // Labs metric counts (separate count query per report would be expensive — leave 0 for now)
-  const labs = (labsQ.data ?? []).map((r) => ({
-    title: r.title ?? "Lab report",
-    created_at: r.created_at as string,
-    metric_count: 0,
-  }));
+  // Labs intentionally skipped — handled by the existing /reports route.
+  const labs: Array<{ title: string; created_at: string; metric_count: number }> = [];
 
-  // Journal summary — keep simple: top recurring tags from journal_entries.
+  // Journal summary — simple count + tag frequency.
   let journalSummary: string | null = null;
   if (sections.journal) {
     const { data: entries } = await supabaseAdmin
       .from("journal_entries")
-      .select("created_at, mood_score, energy_score")
+      .select("created_at, ai_tags")
       .eq("user_id", userId)
       .gte("created_at", fromISO).lte("created_at", toISO);
     if (entries && entries.length) {
-      const moods = entries.map((e) => e.mood_score).filter((n): n is number => typeof n === "number");
-      const energy = entries.map((e) => e.energy_score).filter((n): n is number => typeof n === "number");
-      const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+      const tagCounts = new Map<string, number>();
+      for (const e of entries) {
+        for (const t of (e.ai_tags ?? []) as string[]) {
+          tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
+        }
+      }
+      const topTags = Array.from(tagCounts.entries())
+        .sort((a, b) => b[1] - a[1]).slice(0, 6).map(([t, n]) => `${t} (${n})`);
       const parts: string[] = [`${entries.length} journal entries in this window.`];
-      if (moods.length) parts.push(`Average mood ${avg(moods).toFixed(1)}/10.`);
-      if (energy.length) parts.push(`Average energy ${avg(energy).toFixed(1)}/10.`);
+      if (topTags.length) parts.push(`Recurring themes: ${topTags.join(", ")}.`);
       journalSummary = parts.join(" ");
     }
   }
