@@ -276,7 +276,7 @@ function MetricDrillPage() {
       </div>
 
       <div className="mt-8 flex items-center gap-2">
-        {([7, 30, 90] as const).map((r) => (
+        {([1, 7, 30, 90, 365] as const).map((r) => (
           <button
             key={r}
             type="button"
@@ -288,10 +288,58 @@ function MetricDrillPage() {
                 : "bg-secondary text-foreground hover:bg-secondary/70")
             }
           >
-            {r}d
+            {r === 1 ? "Today" : r === 365 ? "1y" : `${r}d`}
+          </button>
+        ))}
+        <span className="mx-2 text-[11px] text-muted-foreground">vs</span>
+        {(
+          [
+            { v: "previous", l: range === 1 ? "Yesterday" : range === 7 ? "Last week" : range === 30 ? "Last month" : range === 90 ? "Prev 90d" : "Prev year" },
+            { v: "year_ago", l: "Year ago" },
+            { v: "none", l: "None" },
+          ] as Array<{ v: CompareMode; l: string }>
+        ).map((opt) => (
+          <button
+            key={opt.v}
+            type="button"
+            onClick={() => setCompare(opt.v)}
+            className={
+              "rounded-full px-3 py-1.5 text-[11px] font-medium transition " +
+              (compare === opt.v
+                ? "bg-foreground text-background"
+                : "bg-secondary/50 text-foreground hover:bg-secondary/70")
+            }
+          >
+            {opt.l}
           </button>
         ))}
       </div>
+
+      {compare !== "none" && currentAvg != null && compareAvg != null && (
+        <div className="mt-3 flex flex-wrap items-baseline gap-3 text-sm">
+          <span className="text-muted-foreground">
+            Avg this window: <span className="text-foreground">{meta.format(currentAvg)}</span>
+          </span>
+          <span className="text-muted-foreground">
+            · vs <span className="text-foreground">{meta.format(compareAvg)}</span>
+          </span>
+          {delta != null && (
+            <span
+              className={
+                "rounded-full px-2 py-0.5 text-[11px] font-medium " +
+                (Math.abs(delta) < 1
+                  ? "bg-secondary text-foreground"
+                  : delta > 0
+                    ? "bg-emerald-500/15 text-emerald-400"
+                    : "bg-rose-500/15 text-rose-400")
+              }
+            >
+              {delta > 0 ? "+" : ""}
+              {delta.toFixed(1)}%
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="mt-4 rounded-2xl border border-border bg-card p-4 sm:p-6 h-[340px]">
         {rows === null ? (
@@ -353,6 +401,19 @@ function MetricDrillPage() {
                   dot={false}
                 />
               ))}
+              {compare !== "none" && (
+                <Line
+                  type="monotone"
+                  dataKey="__compare"
+                  name="__compare"
+                  stroke="var(--muted-foreground)"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 4"
+                  connectNulls
+                  isAnimationActive={false}
+                  dot={false}
+                />
+              )}
             </LineChart>
           </ResponsiveContainer>
         )}
