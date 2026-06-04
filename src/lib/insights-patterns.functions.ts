@@ -271,5 +271,5 @@ export function derivePatternCards(input: {
       }
     }
 
-    return { cards };
-  });
+  return cards;
+}
