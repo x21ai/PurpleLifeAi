@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { Send, ChevronLeft, Users, MessageCircle, Loader2, Bell, BellOff, LogOut, MoreVertical } from "lucide-react";
+import { Send, ChevronLeft, Users, MessageCircle, Loader2, Bell, BellOff, LogOut, MoreVertical, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -24,7 +24,16 @@ import {
   getOrCreateGroupThread,
   setCareThreadMute,
   leaveCareThread,
+  getOrCreateDirectThread,
 } from "@/lib/care-chat.functions";
+import { listMyCaregivers, listPeopleSharingWithMe } from "@/lib/care.functions";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const searchSchema = z.object({ thread: z.string().uuid().optional() });
 
@@ -120,16 +129,19 @@ function CareChatPage() {
         >
           <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border">
             <h1 className="text-base font-semibold">Care chat</h1>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 gap-1.5 text-xs"
-              onClick={handleNewGroup}
-              title="Open or create group chat with all your caregivers"
-            >
-              <Users className="h-3.5 w-3.5" />
-              Group
-            </Button>
+            <div className="flex items-center gap-1">
+              <NewChatPicker onPicked={setActive} />
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 gap-1.5 text-xs"
+                onClick={handleNewGroup}
+                title="Open or create group chat with all your caregivers"
+              >
+                <Users className="h-3.5 w-3.5" />
+                Group
+              </Button>
+            </div>
           </header>
           <div className="flex-1 overflow-y-auto">
             {threadsQ.isLoading && (
