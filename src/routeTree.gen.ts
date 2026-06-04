@@ -63,6 +63,7 @@ import { Route as AppSettingsSharingRouteImport } from './routes/_app/settings.s
 import { Route as AppSettingsHowPurpleThinksRouteImport } from './routes/_app/settings.how-purple-thinks'
 import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
 import { Route as AppReportsNewRouteImport } from './routes/_app/reports.new'
+import { Route as AppReportsMedicalHistoryRouteImport } from './routes/_app/reports.medical-history'
 import { Route as AppReportsReportIdRouteImport } from './routes/_app/reports.$reportId'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
 import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
@@ -360,6 +361,12 @@ const AppReportsNewRoute = AppReportsNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AppReportsRoute,
 } as any)
+const AppReportsMedicalHistoryRoute =
+  AppReportsMedicalHistoryRouteImport.update({
+    id: '/medical-history',
+    path: '/medical-history',
+    getParentRoute: () => AppReportsRoute,
+  } as any)
 const AppReportsReportIdRoute = AppReportsReportIdRouteImport.update({
   id: '/$reportId',
   path: '/$reportId',
@@ -556,6 +563,7 @@ export interface FileRoutesByFullPath {
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/reports/$reportId': typeof AppReportsReportIdRoute
+  '/reports/medical-history': typeof AppReportsMedicalHistoryRoute
   '/reports/new': typeof AppReportsNewRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
@@ -636,6 +644,7 @@ export interface FileRoutesByTo {
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/reports/$reportId': typeof AppReportsReportIdRoute
+  '/reports/medical-history': typeof AppReportsMedicalHistoryRoute
   '/reports/new': typeof AppReportsNewRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
@@ -719,6 +728,7 @@ export interface FileRoutesById {
   '/_app/journal/new': typeof AppJournalNewRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
   '/_app/reports/$reportId': typeof AppReportsReportIdRoute
+  '/_app/reports/medical-history': typeof AppReportsMedicalHistoryRoute
   '/_app/reports/new': typeof AppReportsNewRoute
   '/_app/seizures/new': typeof AppSeizuresNewRoute
   '/_app/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
@@ -802,6 +812,7 @@ export interface FileRouteTypes {
     | '/journal/new'
     | '/meds/$medId'
     | '/reports/$reportId'
+    | '/reports/medical-history'
     | '/reports/new'
     | '/seizures/new'
     | '/settings/how-purple-thinks'
@@ -882,6 +893,7 @@ export interface FileRouteTypes {
     | '/journal/new'
     | '/meds/$medId'
     | '/reports/$reportId'
+    | '/reports/medical-history'
     | '/reports/new'
     | '/seizures/new'
     | '/settings/how-purple-thinks'
@@ -964,6 +976,7 @@ export interface FileRouteTypes {
     | '/_app/journal/new'
     | '/_app/meds/$medId'
     | '/_app/reports/$reportId'
+    | '/_app/reports/medical-history'
     | '/_app/reports/new'
     | '/_app/seizures/new'
     | '/_app/settings/how-purple-thinks'
@@ -1409,6 +1422,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReportsNewRouteImport
       parentRoute: typeof AppReportsRoute
     }
+    '/_app/reports/medical-history': {
+      id: '/_app/reports/medical-history'
+      path: '/medical-history'
+      fullPath: '/reports/medical-history'
+      preLoaderRoute: typeof AppReportsMedicalHistoryRouteImport
+      parentRoute: typeof AppReportsRoute
+    }
     '/_app/reports/$reportId': {
       id: '/_app/reports/$reportId'
       path: '/$reportId'
@@ -1633,12 +1653,14 @@ const AppMedsRouteWithChildren =
 
 interface AppReportsRouteChildren {
   AppReportsReportIdRoute: typeof AppReportsReportIdRoute
+  AppReportsMedicalHistoryRoute: typeof AppReportsMedicalHistoryRoute
   AppReportsNewRoute: typeof AppReportsNewRoute
   AppReportsTrendsMetricKeyRoute: typeof AppReportsTrendsMetricKeyRoute
 }
 
 const AppReportsRouteChildren: AppReportsRouteChildren = {
   AppReportsReportIdRoute: AppReportsReportIdRoute,
+  AppReportsMedicalHistoryRoute: AppReportsMedicalHistoryRoute,
   AppReportsNewRoute: AppReportsNewRoute,
   AppReportsTrendsMetricKeyRoute: AppReportsTrendsMetricKeyRoute,
 }
