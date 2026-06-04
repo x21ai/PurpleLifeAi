@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, Pill, Activity, BookOpen, Zap, X } from "lucide-react";
+import { AlertTriangle, Pill, Activity, BookOpen, Zap, X, Radio } from "lucide-react";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   caregiverReadAlerts,
@@ -32,6 +34,23 @@ export function CaregiverAlertsCard({
     queryKey: ["care", "alerts", ownerId],
     queryFn: () => fn({ data: { owner_id: ownerId } }),
   });
+
+  // Live: refresh alerts on any new owner-side activity.
+  useEffect(() => {
+    const filter = `user_id=eq.${ownerId}`;
+    const channel = supabase
+      .channel(`care-alerts-${ownerId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "seizure_events", filter }, () =>
+        qc.invalidateQueries({ queryKey: ["care", "alerts", ownerId] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "medication_doses", filter }, () =>
+        qc.invalidateQueries({ queryKey: ["care", "alerts", ownerId] }))
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "alerts", filter }, () =>
+        qc.invalidateQueries({ queryKey: ["care", "alerts", ownerId] }))
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [ownerId, qc]);
 
   const dismiss = useMutation({
     mutationFn: (alert_id: string) =>
@@ -67,6 +86,13 @@ export function CaregiverAlertsCard({
           <h2 className="font-serif text-lg text-foreground">
             {alerts.length} {alerts.length === 1 ? "alert" : "alerts"} since your last visit
           </h2>
+          <span
+            className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400"
+            title="Updates in real time"
+          >
+            <Radio className="h-2.5 w-2.5" />
+            Live
+          </span>
         </div>
         <Button
           size="sm"
