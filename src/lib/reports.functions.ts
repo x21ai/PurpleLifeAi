@@ -24,12 +24,17 @@ type ExtractedMetric = {
   unit?: string | null;
   reference_low?: number | null;
   reference_high?: number | null;
+  panel?: string | null;
 };
 
 type ExtractionResult = {
   report_type: string | null;
   report_date: string | null;
   metrics: ExtractedMetric[];
+  summary?: string | null;
+  panel_keys?: string[];
+  findings?: string[];
+  impressions?: string[];
 };
 
 function flagFor(v: number | null | undefined, low: number | null | undefined, high: number | null | undefined): string | null {
@@ -39,30 +44,41 @@ function flagFor(v: number | null | undefined, low: number | null | undefined, h
   return "normal";
 }
 
-async function extractWithAI(text: string, imageDataUrl: string | null, dictionary: Array<{ metric_key: string; display_name: string; aliases: string[]; default_unit: string | null; default_ref_low: number | null; default_ref_high: number | null }>): Promise<ExtractionResult> {
+async function extractWithAI(text: string, imageDataUrl: string | null, dictionary: Array<{ metric_key: string; display_name: string; aliases: string[]; default_unit: string | null; default_ref_low: number | null; default_ref_high: number | null; panel?: string | null }>): Promise<ExtractionResult> {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
 
   const dictPrompt = dictionary
-    .map((d) => `- ${d.metric_key} ("${d.display_name}", aliases: ${d.aliases.join(", ") || "none"}, typical unit: ${d.default_unit ?? "?"})`)
+    .map((d) => `- ${d.metric_key} ("${d.display_name}", panel: ${d.panel ?? "other"}, aliases: ${d.aliases.join(", ") || "none"}, typical unit: ${d.default_unit ?? "?"})`)
     .join("\n");
 
-  const systemPrompt = `You are a medical lab report extractor. Extract structured data from medical / lab reports.
-Match each lab value to a metric_key from this canonical dictionary. If a value doesn't match, use a normalized snake_case key.
+  const systemPrompt = `You are a medical report extractor for a patient-facing health journal app.
+Extract structured data from medical reports — labs (blood/urine), imaging (CT/MRI/ultrasound/X-ray), and clinical narratives.
+Match each lab value to a metric_key from this canonical dictionary. For values not in the dictionary, use a normalized snake_case key and assign a panel from this list:
+lipids, cardiometabolic, thyroid, liver, kidney, hematology, vitamins, hormones, inflammation, imaging, other.
 
 CANONICAL METRICS:
 ${dictPrompt}
 
+Always include:
+- A 2-3 sentence plain-language "summary" written for a layperson (no diagnoses, no prescribing).
+- "panel_keys": distinct list of panels present in this report.
+- For imaging/narrative reports: "findings" (short bullets of objective observations) and "impressions" (short bullets of the radiologist/clinician's overall read).
+
 Return ONLY a JSON object with this exact shape:
 {
-  "report_type": "blood_panel" | "lipid_panel" | "thyroid_panel" | "metabolic_panel" | "vitamin_panel" | "hormone_panel" | "other",
+  "report_type": "blood_panel" | "lipid_panel" | "thyroid_panel" | "metabolic_panel" | "vitamin_panel" | "hormone_panel" | "imaging_ct" | "imaging_mri" | "imaging_ultrasound" | "imaging_xray" | "narrative" | "other",
   "report_date": "YYYY-MM-DD" or null,
+  "summary": "Plain-language 2-3 sentence summary",
+  "panel_keys": ["lipids", "liver"],
+  "findings": ["..."],
+  "impressions": ["..."],
   "metrics": [
-    { "key": "vitamin_d", "display_name": "Vitamin D", "value": 32, "unit": "ng/mL", "reference_low": 30, "reference_high": 100 }
+    { "key": "vitamin_d", "display_name": "Vitamin D", "value": 32, "unit": "ng/mL", "reference_low": 30, "reference_high": 100, "panel": "vitamins" }
   ]
 }
 
-Do NOT include diagnoses, treatments, or recommendations. Only extract the raw values.`;
+Do NOT include diagnoses, treatments, prescriptions, or recommendations. Only extract what is on the page.`;
 
   const userContent: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
   if (text.trim().length > 0) {
