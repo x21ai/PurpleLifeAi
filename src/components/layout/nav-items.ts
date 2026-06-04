@@ -72,6 +72,7 @@ export const navTree: NavGroup[] = [
     children: [
       { to: "/insights", label: "Patterns",  icon: TrendingUp },
       { to: "/reports",  label: "Reports",   icon: FileText   },
+      { to: "/reports/medical-history", label: "Medical history PDF", icon: FileText },
     ],
   },
   {

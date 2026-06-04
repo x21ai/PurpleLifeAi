@@ -3,6 +3,7 @@ import { template as careInviteTemplate } from './care-invite'
 import { template as caregiverWriteNoticeTemplate } from './caregiver-write-notice'
 import { template as caregiverProposalDecisionTemplate } from './caregiver-proposal-decision'
 import { template as careDailyDigestTemplate } from './care-daily-digest'
+import { template as medicalReportShareTemplate } from './medical-report-share'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -26,4 +27,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'caregiver-write-notice': caregiverWriteNoticeTemplate,
   'caregiver-proposal-decision': caregiverProposalDecisionTemplate,
   'care-daily-digest': careDailyDigestTemplate,
+  'medical-report-share': medicalReportShareTemplate,
 }
