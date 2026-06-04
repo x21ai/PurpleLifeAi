@@ -333,3 +333,66 @@ function Heatmap({ events, days }: { events: SeizureRow[]; days: number }) {
     </div>
   );
 }
+function PatternsTab() {
+  const fn = useServerFn(computeUserPatterns);
+  const q = useQuery({ queryKey: ["insights", "patterns"], queryFn: () => fn() });
+  if (q.isLoading) {
+    return <div className="h-48 rounded-2xl border border-border bg-card animate-pulse" />;
+  }
+  if (q.isError) {
+    return (
+      <div className="rounded-2xl border border-border p-8 text-center text-sm text-muted-foreground">
+        Couldn't load patterns. {(q.error as any)?.message ?? ""}
+      </div>
+    );
+  }
+  const cards = q.data?.cards ?? [];
+  if (cards.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-border p-8 text-center">
+        <Sparkles className="mx-auto h-7 w-7 text-muted-foreground mb-2" />
+        <p className="font-serif text-foreground">Not enough data yet</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Keep logging seizures, journal entries, and wearing your tracker. Patterns appear once there's enough signal.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <ul className="space-y-3">
+      {cards.map((c: PatternCard) => <PatternCardItem key={c.key} card={c} />)}
+    </ul>
+  );
+}
+
+function PatternCardItem({ card }: { card: PatternCard }) {
+  const Icon = card.tone === "watch" ? AlertTriangle : card.tone === "supportive" ? Sparkles : Info;
+  const accent =
+    card.tone === "watch"
+      ? "border-amber-200/60 bg-amber-50/40 dark:border-amber-900/40 dark:bg-amber-950/20"
+      : card.tone === "supportive"
+        ? "border-emerald-200/60 bg-emerald-50/40 dark:border-emerald-900/40 dark:bg-emerald-950/20"
+        : "border-border bg-card";
+  const iconClass =
+    card.tone === "watch"
+      ? "text-amber-600 dark:text-amber-400"
+      : card.tone === "supportive"
+        ? "text-emerald-600 dark:text-emerald-400"
+        : "text-muted-foreground";
+  return (
+    <li className={cn("rounded-2xl border p-5 sm:p-6", accent)}>
+      <div className="flex items-start gap-3">
+        <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", iconClass)} />
+        <div className="min-w-0">
+          <p className="font-serif text-lg text-foreground">{card.title}</p>
+          <p className="mt-2 text-sm text-foreground/80 leading-relaxed">{card.detail}</p>
+          {card.evidence && (
+            <p className="mt-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+              {card.evidence}
+            </p>
+          )}
+        </div>
+      </div>
+    </li>
+  );
+}
