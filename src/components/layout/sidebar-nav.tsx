@@ -5,6 +5,7 @@ import { navTree, type NavGroup, type NavLeaf } from "./nav-items";
 import { cn } from "@/lib/utils";
 import { PendingInboxBadge } from "@/components/care/pending-inbox-badge";
 import { CaregiverNavLink } from "./caregiver-nav-link";
+import { ChatUnreadBadge } from "./chat-unread-badge";
 
 const STORAGE_KEY = "purple-sidebar-open-groups";
 
@@ -220,6 +221,7 @@ function SubLink({
     >
       <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.6} />
       <span>{label}</span>
+      {to === "/chat-care" && <ChatUnreadBadge />}
     </Link>
   );
 }

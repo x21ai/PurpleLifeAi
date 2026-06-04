@@ -23,6 +23,7 @@ export function MetricCard({
   series,
   seriesBySource,
   disableLink = false,
+  compare,
 }: {
   metric: MetricKey;
   /** Single-source series (legacy). Used as fallback when seriesBySource not provided. */
@@ -32,6 +33,12 @@ export function MetricCard({
   /** When true, render as a plain card instead of a Link to /biometrics/$metric.
    *  Used by the caregiver view, where the link would point to the wrong user. */
   disableLink?: boolean;
+  /** Optional comparison summary (e.g. vs previous period / vs year ago). */
+  compare?: {
+    label: string;
+    deltaPct: number | null;
+    compareValue: number | null;
+  };
 }) {
   const meta = METRICS[metric];
 
@@ -79,6 +86,23 @@ export function MetricCard({
   const delta =
     current != null && baseline.mean != null ? current - baseline.mean : null;
 
+  // Source-agreement chip: when 2+ sources reported in the last window, compare
+  // their most recent values and flag divergence > 10%.
+  let agreement: "agree" | "diverge" | null = null;
+  if (sources.length >= 2) {
+    const latestPerSource: number[] = [];
+    for (const s of sources) {
+      const v = [...(bySource[s] ?? [])].reverse().find((d) => d.value != null)?.value;
+      if (v != null) latestPerSource.push(v);
+    }
+    if (latestPerSource.length >= 2) {
+      const mean = latestPerSource.reduce((a, b) => a + b, 0) / latestPerSource.length;
+      const maxDev = Math.max(...latestPerSource.map((v) => Math.abs(v - mean)));
+      const pct = mean !== 0 ? (maxDev / Math.abs(mean)) * 100 : 0;
+      agreement = pct > 10 ? "diverge" : "agree";
+    }
+  }
+
   const inner = (
     <>
       <div className="flex items-start justify-between gap-3">
@@ -99,6 +123,18 @@ export function MetricCard({
                   </span>
                 ))}
               </span>
+            )}
+            {agreement && (
+              <span
+                title={
+                  agreement === "agree"
+                    ? "Sources agree (within 10%)"
+                    : "Sources disagree (>10% spread)"
+                }
+                className={`inline-block h-1.5 w-1.5 rounded-full ${
+                  agreement === "agree" ? "bg-emerald-400" : "bg-amber-400"
+                }`}
+              />
             )}
           </div>
           <p className="mt-2 font-serif text-3xl sm:text-4xl text-foreground leading-none">
@@ -165,6 +201,28 @@ export function MetricCard({
           </span>
         )}
       </div>
+
+      {compare && (
+        <div className="mt-1 flex items-center justify-between text-[11px]">
+          <span className="text-muted-foreground">{compare.label}</span>
+          {compare.deltaPct == null ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            <span
+              className={
+                Math.abs(compare.deltaPct) < 1
+                  ? "text-muted-foreground"
+                  : compare.deltaPct > 0
+                    ? "text-emerald-500"
+                    : "text-rose-500"
+              }
+            >
+              {compare.deltaPct > 0 ? "+" : ""}
+              {compare.deltaPct.toFixed(1)}%
+            </span>
+          )}
+        </div>
+      )}
     </>
   );
 
