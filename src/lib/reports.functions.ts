@@ -248,7 +248,7 @@ export const processReport = createServerFn({ method: "POST" })
 
       const { data: dict } = await supabase
         .from("metric_dictionary")
-        .select("metric_key, display_name, aliases, default_unit, default_ref_low, default_ref_high");
+        .select("metric_key, display_name, aliases, default_unit, default_ref_low, default_ref_high, panel");
 
       const extraction = await extractWithAI(text, imageDataUrl, dict ?? []);
 
@@ -283,6 +283,16 @@ export const processReport = createServerFn({ method: "POST" })
         await supabase.from("report_metrics").insert(rows);
       }
 
+      // Derive panel_keys from extraction or from dictionary lookup
+      const panelSet = new Set<string>();
+      for (const p of extraction.panel_keys ?? []) {
+        if (typeof p === "string" && p.length <= 40) panelSet.add(p);
+      }
+      for (const m of extraction.metrics) {
+        const panel = m.panel ?? dictByKey.get(m.key)?.panel;
+        if (panel) panelSet.add(panel);
+      }
+
       await supabase
         .from("report_documents")
         .update({
@@ -290,6 +300,10 @@ export const processReport = createServerFn({ method: "POST" })
           report_type: extraction.report_type ?? null,
           report_date: extraction.report_date ?? null,
           ocr_text: text.length > 0 ? text.slice(0, 50000) : null,
+          summary: extraction.summary ?? null,
+          panel_keys: Array.from(panelSet),
+          findings: extraction.findings && extraction.findings.length > 0 ? extraction.findings : null,
+          impressions: extraction.impressions && extraction.impressions.length > 0 ? extraction.impressions : null,
         })
         .eq("id", doc.id);
 
