@@ -1139,6 +1139,101 @@ export type Database = {
           },
         ]
       }
+      medical_report_public_links: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          last_opened_at: string | null
+          opened_count: number
+          report_id: string
+          revoked_at: string | null
+          token: string
+          user_id: string
+          viewer_label: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          last_opened_at?: string | null
+          opened_count?: number
+          report_id: string
+          revoked_at?: string | null
+          token: string
+          user_id: string
+          viewer_label?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          last_opened_at?: string | null
+          opened_count?: number
+          report_id?: string
+          revoked_at?: string | null
+          token?: string
+          user_id?: string
+          viewer_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_report_public_links_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "medical_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medical_report_schedules: {
+        Row: {
+          active: boolean
+          cadence: string
+          created_at: string
+          day_of_month: number
+          id: string
+          last_error: string | null
+          last_run_at: string | null
+          recipients: Json
+          sections: Json
+          timezone: string
+          updated_at: string
+          user_id: string
+          window_days: number
+        }
+        Insert: {
+          active?: boolean
+          cadence?: string
+          created_at?: string
+          day_of_month?: number
+          id?: string
+          last_error?: string | null
+          last_run_at?: string | null
+          recipients?: Json
+          sections?: Json
+          timezone?: string
+          updated_at?: string
+          user_id: string
+          window_days?: number
+        }
+        Update: {
+          active?: boolean
+          cadence?: string
+          created_at?: string
+          day_of_month?: number
+          id?: string
+          last_error?: string | null
+          last_run_at?: string | null
+          recipients?: Json
+          sections?: Json
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+          window_days?: number
+        }
+        Relationships: []
+      }
       medical_report_shares: {
         Row: {
           channel: string
@@ -1430,6 +1525,8 @@ export type Database = {
           hints: string | null
           id: string
           metric_key: string
+          panel: string | null
+          unit_si: string | null
         }
         Insert: {
           aliases?: string[]
@@ -1442,6 +1539,8 @@ export type Database = {
           hints?: string | null
           id?: string
           metric_key: string
+          panel?: string | null
+          unit_si?: string | null
         }
         Update: {
           aliases?: string[]
@@ -1454,6 +1553,8 @@ export type Database = {
           hints?: string | null
           id?: string
           metric_key?: string
+          panel?: string | null
+          unit_si?: string | null
         }
         Relationships: []
       }
@@ -1826,11 +1927,15 @@ export type Database = {
           error_message: string | null
           file_mime: string
           file_path: string
+          findings: Json | null
           id: string
+          impressions: Json | null
           ocr_text: string | null
+          panel_keys: string[] | null
           report_date: string | null
           report_type: string | null
           status: string
+          summary: string | null
           title: string
           updated_at: string
           user_id: string
@@ -1842,11 +1947,15 @@ export type Database = {
           error_message?: string | null
           file_mime: string
           file_path: string
+          findings?: Json | null
           id?: string
+          impressions?: Json | null
           ocr_text?: string | null
+          panel_keys?: string[] | null
           report_date?: string | null
           report_type?: string | null
           status?: string
+          summary?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -1858,11 +1967,15 @@ export type Database = {
           error_message?: string | null
           file_mime?: string
           file_path?: string
+          findings?: Json | null
           id?: string
+          impressions?: Json | null
           ocr_text?: string | null
+          panel_keys?: string[] | null
           report_date?: string | null
           report_type?: string | null
           status?: string
+          summary?: string | null
           title?: string
           updated_at?: string
           user_id?: string
