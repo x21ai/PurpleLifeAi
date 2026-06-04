@@ -216,7 +216,7 @@ export const markJournalNotMedical = createServerFn({ method: "POST" })
     delete (extracted as Record<string, unknown>).report_document_ids;
     await supabase
       .from("journal_entries")
-      .update({ ai_tags: next, ai_extracted: extracted })
+      .update({ ai_tags: next, ai_extracted: extracted as never })
       .eq("id", data.journalEntryId);
     return { ok: true };
   });
