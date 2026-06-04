@@ -166,6 +166,21 @@ export const getReport = createServerFn({ method: "GET" })
       .eq("report_id", data.id)
       .order("metric_key");
 
+    // Attach panel from dictionary so the UI can group tiles.
+    const keys = Array.from(new Set((metrics ?? []).map((m) => m.metric_key)));
+    let panelByKey = new Map<string, string | null>();
+    if (keys.length > 0) {
+      const { data: dictRows } = await supabase
+        .from("metric_dictionary")
+        .select("metric_key, panel")
+        .in("metric_key", keys);
+      panelByKey = new Map((dictRows ?? []).map((r) => [r.metric_key, r.panel ?? null]));
+    }
+    const metricsWithPanel = (metrics ?? []).map((m) => ({
+      ...m,
+      panel: panelByKey.get(m.metric_key) ?? "other",
+    }));
+
     // Audit log
     await supabase.from("phi_access_log").insert({
       user_id: userId,
@@ -179,7 +194,7 @@ export const getReport = createServerFn({ method: "GET" })
       .from("reports")
       .createSignedUrl(doc.file_path, 60);
 
-    return { report: doc, metrics: metrics ?? [], signedUrl: signed?.signedUrl ?? null };
+    return { report: doc, metrics: metricsWithPanel, signedUrl: signed?.signedUrl ?? null };
   });
 
 export const getMetricTrend = createServerFn({ method: "GET" })
