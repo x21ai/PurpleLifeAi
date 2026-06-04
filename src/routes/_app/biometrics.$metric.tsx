@@ -11,7 +11,6 @@ import {
   Tooltip,
   ReferenceArea,
   CartesianGrid,
-  Dot,
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
