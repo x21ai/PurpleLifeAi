@@ -76,8 +76,21 @@ export const Route = createFileRoute("/_app/biometrics/$metric")({
   component: MetricDrillPage,
 });
 
-type Row = { recorded_at: string; value: number | null };
+type Row = { recorded_at: string; value: number | null; source: string };
 type Range = 7 | 30 | 90;
+type SourceKey = "oura" | "whoop" | "apple_health" | "manual";
+const SOURCE_COLORS: Record<SourceKey, string> = {
+  oura:         "var(--purple-primary)",
+  whoop:        "#34D399",
+  apple_health: "#F472B6",
+  manual:       "#A1A1AA",
+};
+const SOURCE_LABELS: Record<SourceKey, string> = {
+  oura: "Oura",
+  whoop: "Whoop",
+  apple_health: "Apple Health",
+  manual: "Manual",
+};
 
 function MetricDrillPage() {
   const { t } = useTranslation();
@@ -98,9 +111,8 @@ function MetricDrillPage() {
       const query = supabase
         .from("biometrics")
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .select(`recorded_at, ${meta.column}` as any)
+        .select(`recorded_at, source, ${meta.column}` as any)
         .eq("user_id", uid)
-        .eq("source", "oura")
         .gte("recorded_at", since)
         .order("recorded_at", { ascending: true });
       const { data } = await query;
@@ -110,6 +122,7 @@ function MetricDrillPage() {
         const n = typeof raw === "number" ? raw : raw == null ? null : Number(raw);
         return {
           recorded_at: String(r.recorded_at ?? ""),
+          source: String(r.source ?? "oura"),
           value: Number.isFinite(n as number) ? (n as number) : null,
         };
       });
@@ -117,17 +130,34 @@ function MetricDrillPage() {
     })();
   }, [uid, meta, range, refreshKey]);
 
-  const { chartData, baseline, current, status } = useMemo(() => {
-    const data = (rows ?? []).map((r) => ({
-      x: r.recorded_at,
-      y: r.value,
-      label: format(new Date(r.recorded_at), "MMM d"),
-    }));
-    const baseSet = (rows ?? []).slice(-30, -3).map((r) => r.value);
+  const { chartData, sourcesPresent, baseline, current, status } = useMemo(() => {
+    const allRows = rows ?? [];
+    // Union of dates across all sources, sorted.
+    const dateSet = new Set<string>();
+    for (const r of allRows) dateSet.add(r.recorded_at);
+    const dates = Array.from(dateSet).sort();
+    const present = Array.from(new Set(allRows.map((r) => r.source))) as SourceKey[];
+    const data = dates.map((d) => {
+      const row: Record<string, string | number | null> = {
+        x: d,
+        label: format(new Date(d), "MMM d"),
+      };
+      for (const s of present) {
+        const found = allRows.find((r) => r.recorded_at === d && r.source === s);
+        row[s] = found?.value ?? null;
+      }
+      return row;
+    });
+    // Headline = most recent value from any source; baseline from Oura if present else first source.
+    const preferred: SourceKey = present.includes("oura" as SourceKey)
+      ? ("oura" as SourceKey)
+      : (present[0] ?? ("oura" as SourceKey));
+    const headlineRows = allRows.filter((r) => r.source === preferred);
+    const baseSet = headlineRows.slice(-30, -3).map((r) => r.value);
     const baselineStats = stats(baseSet);
-    const last = [...(rows ?? [])].reverse().find((r) => r.value != null)?.value ?? null;
+    const last = [...allRows].reverse().find((r) => r.value != null)?.value ?? null;
     const cls = classifyValue(meta, last, baselineStats);
-    return { chartData: data, baseline: baselineStats, current: last, status: cls };
+    return { chartData: data, sourcesPresent: present, baseline: baselineStats, current: last, status: cls };
   }, [rows, meta]);
 
   if (!meta) return null;
@@ -238,46 +268,42 @@ function MetricDrillPage() {
                   borderRadius: "12px",
                   fontSize: "12px",
                 }}
-                formatter={(v) => [
+                formatter={(v, name) => [
                   meta.format(typeof v === "number" ? v : Number(v)),
-                  meta.label,
+                  SOURCE_LABELS[name as SourceKey] ?? meta.label,
                 ]}
               />
-              <Line
-                type="monotone"
-                dataKey="y"
-                stroke="var(--purple-primary)"
-                strokeWidth={2}
-                connectNulls
-                isAnimationActive={false}
-                dot={(props: {
-                  cx?: number;
-                  cy?: number;
-                  index?: number;
-                  payload?: { y?: number | null };
-                }) => {
-                  const v = props.payload?.y;
-                  const cx = props.cx ?? 0;
-                  const cy = props.cy ?? 0;
-                  if (v == null) return <></>;
-                  const isAnomaly =
-                    sdHi != null && sdLo != null && (v > sdHi || v < sdLo);
-                  return (
-                    <Dot
-                      key={`d-${props.index ?? 0}`}
-                      cx={cx}
-                      cy={cy}
-                      r={isAnomaly ? 3.5 : 2}
-                      fill={isAnomaly ? "var(--warning)" : "var(--purple-primary)"}
-                      stroke="none"
-                    />
-                  );
-                }}
-              />
+              {sourcesPresent.map((s) => (
+                <Line
+                  key={s}
+                  type="monotone"
+                  dataKey={s}
+                  name={s}
+                  stroke={SOURCE_COLORS[s] ?? "var(--purple-primary)"}
+                  strokeWidth={2}
+                  connectNulls
+                  isAnimationActive={false}
+                  dot={false}
+                />
+              ))}
             </LineChart>
           </ResponsiveContainer>
         )}
       </div>
+
+      {sourcesPresent.length > 1 && (
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-[12px] text-muted-foreground">
+          {sourcesPresent.map((s) => (
+            <span key={s} className="inline-flex items-center gap-1.5">
+              <span
+                className="inline-block h-2 w-5 rounded-full"
+                style={{ background: SOURCE_COLORS[s] ?? "var(--purple-primary)" }}
+              />
+              {SOURCE_LABELS[s] ?? s}
+            </span>
+          ))}
+        </div>
+      )}
 
       <section className="mt-10">
         <p className="label-eyebrow text-muted-foreground">What this means for you</p>
