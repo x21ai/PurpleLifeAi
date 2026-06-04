@@ -43,6 +43,8 @@ type ReportRow = {
   status: string;
   created_at: string;
   metric_count?: number;
+  summary?: string | null;
+  panel_keys?: string[] | null;
 };
 
 function ReportsPage() {
@@ -168,6 +170,22 @@ function ReportsPage() {
                         </div>
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </Link>
+                      {(r.summary || (r.panel_keys && r.panel_keys.length > 0)) && (
+                        <div className="px-4 pb-3 -mt-1">
+                          {r.summary && (
+                            <p className="text-xs text-foreground/80 leading-relaxed line-clamp-3">{r.summary}</p>
+                          )}
+                          {r.panel_keys && r.panel_keys.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {r.panel_keys.map((p) => (
+                                <span key={p} className="inline-flex items-center rounded-full bg-accent/40 px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                                  {p.replace(/_/g, " ")}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>
