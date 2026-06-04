@@ -33,15 +33,17 @@ const METRICS: Array<{
   unit: string;
   direction: "higher_better" | "lower_better" | "neutral";
   hint: string;
+  refLow?: number;
+  refHigh?: number;
 }> = [
   { label: "Total sleep", column: "sleep_total_min", unit: "min", direction: "higher_better",
-    hint: "Minutes asleep per night. Most adults do best 420–540." },
+    hint: "Minutes asleep per night. Most adults do best 420–540.", refLow: 420, refHigh: 540 },
   { label: "HRV", column: "hrv_rmssd_ms", unit: "ms", direction: "higher_better",
     hint: "Overnight RMSSD. Sustained 15%+ drops can flag stress or illness." },
   { label: "Resting HR", column: "resting_hr_bpm", unit: "bpm", direction: "lower_better",
-    hint: "Overnight resting heart rate. +7 bpm above baseline is notable." },
+    hint: "Overnight resting heart rate. +7 bpm above baseline is notable.", refLow: 50, refHigh: 75 },
   { label: "SpO2", column: "spo2_pct", unit: "%", direction: "higher_better",
-    hint: "Overnight blood oxygen. Below 94% is worth flagging clinically." },
+    hint: "Overnight blood oxygen. Below 94% is worth flagging clinically.", refLow: 94, refHigh: 100 },
   { label: "Readiness", column: "oura_readiness_score", unit: "", direction: "higher_better",
     hint: "Oura readiness score (0–100)." },
   { label: "Recovery", column: "whoop_recovery_pct", unit: "%", direction: "higher_better",
@@ -119,22 +121,43 @@ async function assembleReportData(userId: string, from: string, to: string, sect
     direction: "higher_better" | "lower_better" | "neutral";
     points: Array<{ date: string; value: number }>;
     hint: string;
+    series?: Record<string, Array<{ date: string; value: number }>>;
+    refLow?: number;
+    refHigh?: number;
   }> = {};
   for (const meta of METRICS) {
-    const buckets = new Map<string, number[]>();
+    const bySource = new Map<string, Map<string, number[]>>();
     const bioRows = ((bioQ.data ?? []) as unknown) as Array<Record<string, unknown>>;
     for (const row of bioRows) {
       const v = row[meta.column];
       if (v == null || typeof v !== "number") continue;
       const date = String(row.recorded_at).slice(0, 10);
-      if (!buckets.has(date)) buckets.set(date, []);
-      buckets.get(date)!.push(v);
+      const source = String(row.source ?? "other");
+      if (!bySource.has(source)) bySource.set(source, new Map());
+      const m = bySource.get(source)!;
+      if (!m.has(date)) m.set(date, []);
+      m.get(date)!.push(v);
     }
-    if (buckets.size === 0) continue;
-    const points = Array.from(buckets.entries())
+    if (bySource.size === 0) continue;
+    const series: Record<string, Array<{ date: string; value: number }>> = {};
+    const combined = new Map<string, number[]>();
+    for (const [src, m] of bySource.entries()) {
+      const pts = Array.from(m.entries())
+        .sort(([a], [b]) => (a < b ? -1 : 1))
+        .map(([d, vs]) => ({ date: d, value: vs.reduce((a, b) => a + b, 0) / vs.length }));
+      series[src] = pts;
+      for (const p of pts) {
+        if (!combined.has(p.date)) combined.set(p.date, []);
+        combined.get(p.date)!.push(p.value);
+      }
+    }
+    const points = Array.from(combined.entries())
       .sort(([a], [b]) => (a < b ? -1 : 1))
-      .map(([date, vs]) => ({ date, value: vs.reduce((a, b) => a + b, 0) / vs.length }));
-    biometrics[meta.label] = { unit: meta.unit, direction: meta.direction, points, hint: meta.hint };
+      .map(([d, vs]) => ({ date: d, value: vs.reduce((a, b) => a + b, 0) / vs.length }));
+    biometrics[meta.label] = {
+      unit: meta.unit, direction: meta.direction, points, hint: meta.hint,
+      series, refLow: meta.refLow, refHigh: meta.refHigh,
+    };
   }
 
   // Hydration summary intentionally skipped — not in the generated types.
