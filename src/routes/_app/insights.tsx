@@ -234,6 +234,7 @@ function SeizuresTab() {
 }
 
 function SeizureRowItem({ event }: { event: SeizureRow }) {
+  // unchanged below
   const d = parseISO(event.started_at);
   return (
     <li className="rounded-xl border border-border bg-card p-4">
