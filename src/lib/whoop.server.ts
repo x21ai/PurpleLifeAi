@@ -271,7 +271,7 @@ export async function syncWhoopRange(
     const stage = s?.score?.stage_summary;
     const recordedAt = new Date(`${day}T12:00:00Z`).toISOString();
 
-    const row: Record<string, unknown> = {
+    const row = {
       user_id,
       source: "whoop",
       recorded_at: recordedAt,
