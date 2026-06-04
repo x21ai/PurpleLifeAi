@@ -23,6 +23,18 @@ type BioRow = Record<string, number | string | null>;
 type SourceKey = "oura" | "whoop" | "apple_health" | "manual";
 const SOURCES: SourceKey[] = ["oura", "whoop", "apple_health", "manual"];
 
+type RangeKey = "1d" | "7d" | "30d" | "90d" | "365d";
+type CompareMode = "none" | "previous" | "year_ago";
+
+const RANGE_DAYS: Record<RangeKey, number> = { "1d": 1, "7d": 7, "30d": 30, "90d": 90, "365d": 365 };
+const RANGE_LABELS: Record<RangeKey, string> = {
+  "1d": "Today",
+  "7d": "7d",
+  "30d": "30d",
+  "90d": "90d",
+  "365d": "1y",
+};
+
 function BiometricsIndex() {
   useRouteTheme("dark");
   const { t } = useTranslation();
@@ -30,6 +42,9 @@ function BiometricsIndex() {
   const uid = session?.user.id;
   const [rows, setRows] = useState<BioRow[] | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [rangeKey, setRangeKey] = useState<RangeKey>("30d");
+  const [compareMode, setCompareMode] = useState<CompareMode>("none");
+  const windowDays = RANGE_DAYS[rangeKey];
 
   useEffect(() => {
     if (!uid) return;
@@ -38,7 +53,14 @@ function BiometricsIndex() {
       "source",
       ...new Set(Object.values(METRICS).map((m) => m.column)),
     ].join(", ");
-    const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
+    // Pull enough history to cover the chosen window + comparison window.
+    const lookbackDays =
+      compareMode === "year_ago"
+        ? 365 + windowDays
+        : compareMode === "previous"
+          ? windowDays * 2
+          : windowDays;
+    const since = new Date(Date.now() - lookbackDays * 24 * 3600 * 1000).toISOString();
     void (async () => {
       const { data } = await supabase
         .from("biometrics")
@@ -49,7 +71,7 @@ function BiometricsIndex() {
         .order("recorded_at", { ascending: true });
       setRows((data as unknown as BioRow[] | null) ?? []);
     })();
-  }, [uid, refreshKey]);
+  }, [uid, refreshKey, windowDays, compareMode]);
 
   const seriesByMetric = useMemo(() => {
     const out: Record<MetricKey, Partial<Record<SourceKey, Array<{ date: string; value: number | null }>>>> = {} as never;
@@ -76,6 +98,46 @@ function BiometricsIndex() {
     return out;
   }, [rows]);
 
+  // Compute per-metric averages across the current window vs the comparison window.
+  const comparison = useMemo(() => {
+    const now = Date.now();
+    const day = 24 * 3600 * 1000;
+    const curStart = now - windowDays * day;
+    let cmpStart: number | null = null;
+    let cmpEnd: number | null = null;
+    if (compareMode === "previous") {
+      cmpStart = now - windowDays * 2 * day;
+      cmpEnd = curStart;
+    } else if (compareMode === "year_ago") {
+      cmpStart = now - (365 + windowDays) * day;
+      cmpEnd = now - 365 * day;
+    }
+    const avg = (arr: number[]) =>
+      arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+    const out: Record<
+      MetricKey,
+      { current: number | null; compare: number | null; deltaPct: number | null }
+    > = {} as never;
+    for (const key of METRIC_ORDER) {
+      const meta = METRICS[key];
+      const cur: number[] = [];
+      const cmp: number[] = [];
+      for (const r of rows ?? []) {
+        const t = new Date(String(r.recorded_at ?? "")).getTime();
+        const raw = r[meta.column];
+        const num = typeof raw === "number" ? raw : raw == null ? null : Number(raw);
+        if (num == null || !Number.isFinite(num)) continue;
+        if (t >= curStart && t <= now) cur.push(num);
+        else if (cmpStart != null && cmpEnd != null && t >= cmpStart && t < cmpEnd) cmp.push(num);
+      }
+      const a = avg(cur);
+      const b = avg(cmp);
+      const deltaPct = a != null && b != null && b !== 0 ? ((a - b) / Math.abs(b)) * 100 : null;
+      out[key] = { current: a, compare: b, deltaPct };
+    }
+    return out;
+  }, [rows, windowDays, compareMode]);
+
   const empty = rows !== null && rows.length === 0;
 
   return (
@@ -99,6 +161,38 @@ function BiometricsIndex() {
         <OuraSyncStatus onSynced={() => setRefreshKey((k) => k + 1)} />
       </div>
 
+      {/* Range + comparison pickers */}
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="inline-flex rounded-full border border-border bg-card p-0.5">
+          {(Object.keys(RANGE_LABELS) as RangeKey[]).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setRangeKey(k)}
+              className={`rounded-full px-3 py-1 text-[12px] transition ${
+                rangeKey === k ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {RANGE_LABELS[k]}
+            </button>
+          ))}
+        </div>
+        <div className="inline-flex rounded-full border border-border bg-card p-0.5">
+          {(["none", "previous", "year_ago"] as CompareMode[]).map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCompareMode(c)}
+              className={`rounded-full px-3 py-1 text-[12px] transition ${
+                compareMode === c ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {c === "none" ? "No compare" : c === "previous" ? "vs previous" : "vs year ago"}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {rows === null ? (
         <div className="mt-8 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
@@ -115,7 +209,20 @@ function BiometricsIndex() {
       ) : (
         <div className="mt-8 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
           {METRIC_ORDER.map((m) => (
-            <MetricCard key={m} metric={m} seriesBySource={seriesByMetric[m]} />
+            <MetricCard
+              key={m}
+              metric={m}
+              seriesBySource={seriesByMetric[m]}
+              compare={
+                compareMode === "none"
+                  ? undefined
+                  : {
+                      label: compareMode === "previous" ? "vs previous" : "vs year ago",
+                      deltaPct: comparison[m].deltaPct,
+                      compareValue: comparison[m].compare,
+                    }
+              }
+            />
           ))}
         </div>
       )}
