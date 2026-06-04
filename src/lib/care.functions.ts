@@ -332,18 +332,30 @@ export const decidePendingChange = createServerFn({ method: "POST" })
           .from("journal_entries")
           .select("text")
           .eq("id", change.target_id)
+          .eq("user_id", change.owner_id)
           .single();
+        if (!row) throw new Error("Target journal entry not found for this owner");
         const newText = (row?.text ?? "") + stamp;
-        await supabaseAdmin.from("journal_entries").update({ text: newText }).eq("id", change.target_id);
+        await supabaseAdmin
+          .from("journal_entries")
+          .update({ text: newText })
+          .eq("id", change.target_id)
+          .eq("user_id", change.owner_id);
       } else if (type === "add_meds_note" && change.target_id) {
         const note = String((change.payload as any)?.text ?? "").slice(0, 1000);
         const { data: row } = await supabaseAdmin
           .from("medications")
           .select("notes")
           .eq("id", change.target_id)
+          .eq("user_id", change.owner_id)
           .single();
+        if (!row) throw new Error("Target medication not found for this owner");
         const newNotes = ((row?.notes ?? "") + "\n— Caregiver: " + note).trim();
-        await supabaseAdmin.from("medications").update({ notes: newNotes }).eq("id", change.target_id);
+        await supabaseAdmin
+          .from("medications")
+          .update({ notes: newNotes })
+          .eq("id", change.target_id)
+          .eq("user_id", change.owner_id);
       }
     }
 
