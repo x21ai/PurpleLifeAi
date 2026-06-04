@@ -3,11 +3,17 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { Send, ChevronLeft, Users, MessageCircle, Loader2 } from "lucide-react";
+import { Send, ChevronLeft, Users, MessageCircle, Loader2, Bell, BellOff, LogOut, MoreVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -16,6 +22,8 @@ import {
   sendCareMessage,
   markCareThreadRead,
   getOrCreateGroupThread,
+  setCareThreadMute,
+  leaveCareThread,
 } from "@/lib/care-chat.functions";
 
 const searchSchema = z.object({ thread: z.string().uuid().optional() });
@@ -36,6 +44,7 @@ type ThreadSummary = {
   others: Array<{ user_id: string; name: string; role: string }>;
   last_message: { body: string; sender_id: string; created_at: string } | null;
   unread: number;
+  muted: boolean;
 };
 
 type Message = {
