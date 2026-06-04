@@ -88,6 +88,7 @@ import { Route as ApiPublicHooksAppleHealthRouteImport } from './routes/api/publ
 import { Route as ApiPublicCronWhoopSyncAllRouteImport } from './routes/api/public/cron/whoop-sync-all'
 import { Route as ApiPublicCronPurgeDeletedAccountsRouteImport } from './routes/api/public/cron/purge-deleted-accounts'
 import { Route as ApiPublicCronOuraSyncAllRouteImport } from './routes/api/public/cron/oura-sync-all'
+import { Route as ApiPublicCronMedicalReportsRouteImport } from './routes/api/public/cron/medical-reports'
 import { Route as ApiPublicCronDoseRemindersRouteImport } from './routes/api/public/cron/dose-reminders'
 import { Route as ApiPublicCronCareDailyDigestRouteImport } from './routes/api/public/cron/care-daily-digest'
 import { Route as AppReportsTrendsMetricKeyRouteImport } from './routes/_app/reports.trends.$metricKey'
@@ -496,6 +497,12 @@ const ApiPublicCronOuraSyncAllRoute =
     path: '/api/public/cron/oura-sync-all',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronMedicalReportsRoute =
+  ApiPublicCronMedicalReportsRouteImport.update({
+    id: '/api/public/cron/medical-reports',
+    path: '/api/public/cron/medical-reports',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronDoseRemindersRoute =
   ApiPublicCronDoseRemindersRouteImport.update({
     id: '/api/public/cron/dose-reminders',
@@ -587,6 +594,7 @@ export interface FileRoutesByFullPath {
   '/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
   '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
+  '/api/public/cron/medical-reports': typeof ApiPublicCronMedicalReportsRoute
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
   '/api/public/cron/whoop-sync-all': typeof ApiPublicCronWhoopSyncAllRoute
@@ -669,6 +677,7 @@ export interface FileRoutesByTo {
   '/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
   '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
+  '/api/public/cron/medical-reports': typeof ApiPublicCronMedicalReportsRoute
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
   '/api/public/cron/whoop-sync-all': typeof ApiPublicCronWhoopSyncAllRoute
@@ -754,6 +763,7 @@ export interface FileRoutesById {
   '/_app/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
   '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
+  '/api/public/cron/medical-reports': typeof ApiPublicCronMedicalReportsRoute
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
   '/api/public/cron/whoop-sync-all': typeof ApiPublicCronWhoopSyncAllRoute
@@ -839,6 +849,7 @@ export interface FileRouteTypes {
     | '/reports/trends/$metricKey'
     | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
+    | '/api/public/cron/medical-reports'
     | '/api/public/cron/oura-sync-all'
     | '/api/public/cron/purge-deleted-accounts'
     | '/api/public/cron/whoop-sync-all'
@@ -921,6 +932,7 @@ export interface FileRouteTypes {
     | '/reports/trends/$metricKey'
     | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
+    | '/api/public/cron/medical-reports'
     | '/api/public/cron/oura-sync-all'
     | '/api/public/cron/purge-deleted-accounts'
     | '/api/public/cron/whoop-sync-all'
@@ -1005,6 +1017,7 @@ export interface FileRouteTypes {
     | '/_app/reports/trends/$metricKey'
     | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
+    | '/api/public/cron/medical-reports'
     | '/api/public/cron/oura-sync-all'
     | '/api/public/cron/purge-deleted-accounts'
     | '/api/public/cron/whoop-sync-all'
@@ -1043,6 +1056,7 @@ export interface RootRouteChildren {
   ShareReportTokenRoute: typeof ShareReportTokenRoute
   ApiPublicCronCareDailyDigestRoute: typeof ApiPublicCronCareDailyDigestRoute
   ApiPublicCronDoseRemindersRoute: typeof ApiPublicCronDoseRemindersRoute
+  ApiPublicCronMedicalReportsRoute: typeof ApiPublicCronMedicalReportsRoute
   ApiPublicCronOuraSyncAllRoute: typeof ApiPublicCronOuraSyncAllRoute
   ApiPublicCronPurgeDeletedAccountsRoute: typeof ApiPublicCronPurgeDeletedAccountsRoute
   ApiPublicCronWhoopSyncAllRoute: typeof ApiPublicCronWhoopSyncAllRoute
@@ -1610,6 +1624,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronOuraSyncAllRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/medical-reports': {
+      id: '/api/public/cron/medical-reports'
+      path: '/api/public/cron/medical-reports'
+      fullPath: '/api/public/cron/medical-reports'
+      preLoaderRoute: typeof ApiPublicCronMedicalReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/dose-reminders': {
       id: '/api/public/cron/dose-reminders'
       path: '/api/public/cron/dose-reminders'
@@ -1821,6 +1842,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShareReportTokenRoute: ShareReportTokenRoute,
   ApiPublicCronCareDailyDigestRoute: ApiPublicCronCareDailyDigestRoute,
   ApiPublicCronDoseRemindersRoute: ApiPublicCronDoseRemindersRoute,
+  ApiPublicCronMedicalReportsRoute: ApiPublicCronMedicalReportsRoute,
   ApiPublicCronOuraSyncAllRoute: ApiPublicCronOuraSyncAllRoute,
   ApiPublicCronPurgeDeletedAccountsRoute:
     ApiPublicCronPurgeDeletedAccountsRoute,

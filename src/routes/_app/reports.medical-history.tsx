@@ -19,6 +19,11 @@ import {
 } from "@/lib/medical-report.functions";
 import { listCareThreads } from "@/lib/care-chat.functions";
 import { createMedicalReportShareLink } from "@/lib/medical-report-share.functions";
+import {
+  listMedicalReportSchedules,
+  upsertMedicalReportSchedule,
+  deleteMedicalReportSchedule,
+} from "@/lib/medical-report-schedules.functions";
 
 export const Route = createFileRoute("/_app/reports/medical-history")({
   component: MedicalHistoryPage,
@@ -57,6 +62,54 @@ function MedicalHistoryPage() {
   const share = useServerFn(shareMedicalReportInThread);
   const threadsFn = useServerFn(listCareThreads);
   const createLink = useServerFn(createMedicalReportShareLink);
+  const listSch = useServerFn(listMedicalReportSchedules);
+  const upsertSch = useServerFn(upsertMedicalReportSchedule);
+  const delSch = useServerFn(deleteMedicalReportSchedule);
+
+  const schedules = useQuery({
+    queryKey: ["medical-history", "schedules"],
+    queryFn: () => listSch(),
+  });
+  const [schActive, setSchActive] = useState(false);
+  const [schDay, setSchDay] = useState(1);
+  const [schWindow, setSchWindow] = useState(30);
+  const [schRecipients, setSchRecipients] = useState("");
+  const existing = schedules.data?.schedules?.[0];
+  const saveSchedule = useMutation({
+    mutationFn: () =>
+      upsertSch({
+        data: {
+          id: existing?.id,
+          active: schActive,
+          day_of_month: schDay,
+          window_days: schWindow,
+          recipients: schRecipients
+            .split(/[,\n]/)
+            .map((s) => s.trim())
+            .filter((s) => /\S+@\S+\.\S+/.test(s))
+            .map((email) => ({ email })),
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Schedule saved");
+      queryClient.invalidateQueries({ queryKey: ["medical-history", "schedules"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
+
+  // Hydrate the form once when the schedule loads
+  const [hydrated, setHydrated] = useState(false);
+  if (!hydrated && existing) {
+    setHydrated(true);
+    setSchActive(existing.active);
+    setSchDay(existing.day_of_month);
+    setSchWindow(existing.window_days);
+    setSchRecipients(
+      ((existing.recipients ?? []) as Array<{ email: string }>)
+        .map((r) => r.email)
+        .join(", "),
+    );
+  }
 
   const reports = useQuery({
     queryKey: ["medical-history", "list"],
@@ -178,6 +231,78 @@ function MedicalHistoryPage() {
             />
           ))}
         </ul>
+      </section>
+
+      <section className="rounded-2xl border border-white/10 bg-card/60 p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-serif text-lg">Monthly auto-report</h2>
+            <p className="text-xs text-muted-foreground">
+              Generate and email a fresh PDF on the same day every month.
+            </p>
+          </div>
+          <Switch checked={schActive} onCheckedChange={setSchActive} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs">Day of month</Label>
+            <Input
+              type="number"
+              min={1}
+              max={28}
+              value={schDay}
+              onChange={(e) => setSchDay(Math.min(28, Math.max(1, Number(e.target.value) || 1)))}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Window</Label>
+            <select
+              className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+              value={schWindow}
+              onChange={(e) => setSchWindow(Number(e.target.value))}
+            >
+              <option value={30}>Last 30 days</option>
+              <option value={60}>Last 60 days</option>
+              <option value={90}>Last 90 days</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <Label className="text-xs">Recipients (comma-separated emails)</Label>
+          <Textarea
+            rows={2}
+            value={schRecipients}
+            placeholder="dr.smith@clinic.org, you@example.com"
+            onChange={(e) => setSchRecipients(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={() => saveSchedule.mutate()} disabled={saveSchedule.isPending}>
+            {existing ? "Update schedule" : "Save schedule"}
+          </Button>
+          {existing && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={async () => {
+                if (!confirm("Delete schedule?")) return;
+                await delSch({ data: { id: existing.id } });
+                setHydrated(false);
+                setSchActive(false);
+                setSchRecipients("");
+                queryClient.invalidateQueries({ queryKey: ["medical-history", "schedules"] });
+              }}
+            >
+              Delete
+            </Button>
+          )}
+        </div>
+        {existing?.last_run_at && (
+          <p className="text-xs text-muted-foreground">
+            Last sent {new Date(existing.last_run_at).toLocaleString()}
+            {existing.last_error ? ` — error: ${existing.last_error}` : ""}
+          </p>
+        )}
       </section>
     </div>
   );
