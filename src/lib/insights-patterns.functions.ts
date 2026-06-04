@@ -33,19 +33,10 @@ export const computeUserPatterns = createServerFn({ method: "GET" })
     return { cards };
   });
 
-type AnyClient = {
-  from: (t: string) => {
-    select: (cols: string) => {
-      eq: (col: string, val: string) => {
-        gte: (col: string, val: string) => Promise<{ data: unknown[] | null }>;
-      };
-    };
-  };
-};
-
 /** Server-side helper that other server functions can reuse (e.g. PDF reports). */
 export async function loadAndDerivePatternCards(
-  supabase: AnyClient,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
   userId: string,
   daysBack = 90,
 ): Promise<PatternCard[]> {
