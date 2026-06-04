@@ -312,6 +312,61 @@ export const sendCareMessage = createServerFn({ method: "POST" })
       .eq("thread_id", data.threadId)
       .eq("user_id", userId);
 
+    // Notify the other (non-muted) participants via web push. Best-effort.
+    try {
+      const { data: parts } = await supabaseAdmin
+        .from("care_thread_participants")
+        .select("user_id, muted, muted_until")
+        .eq("thread_id", data.threadId)
+        .neq("user_id", userId);
+      const now = Date.now();
+      const recipients = (parts ?? []).filter((p) => {
+        if (p.muted) return false;
+        if (p.muted_until && new Date(p.muted_until).getTime() > now) return false;
+        return true;
+      });
+      if (recipients.length > 0) {
+        const { data: sender } = await supabaseAdmin
+          .from("profiles")
+          .select("first_name, last_name")
+          .eq("id", userId)
+          .maybeSingle();
+        const senderName =
+          [sender?.first_name, sender?.last_name].filter(Boolean).join(" ").trim() ||
+          "Someone";
+        const preview =
+          data.body.length > 140 ? `${data.body.slice(0, 140)}…` : data.body;
+        const { data: subs } = await supabaseAdmin
+          .from("push_subscriptions")
+          .select("endpoint, p256dh, auth, user_id")
+          .in("user_id", recipients.map((r) => r.user_id));
+        if (subs && subs.length > 0) {
+          const { sendPushToSubscription } = await import("./push.server");
+          await Promise.all(
+            subs.map(async (s) => {
+              const r = await sendPushToSubscription(
+                { endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth },
+                {
+                  title: `${senderName} · Care chat`,
+                  body: preview,
+                  url: `/chat-care?thread=${data.threadId}`,
+                  tag: `care-${data.threadId}`,
+                },
+              );
+              if (r.gone) {
+                await supabaseAdmin
+                  .from("push_subscriptions")
+                  .delete()
+                  .eq("endpoint", s.endpoint);
+              }
+            }),
+          );
+        }
+      }
+    } catch (err) {
+      console.warn("[care-chat] push notify failed", err);
+    }
+
     return { message: msg };
   });
 
