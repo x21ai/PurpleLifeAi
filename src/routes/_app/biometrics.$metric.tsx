@@ -385,7 +385,9 @@ function MetricDrillPage() {
                 }}
                 formatter={(v, name) => [
                   meta.format(typeof v === "number" ? v : Number(v)),
-                  SOURCE_LABELS[name as SourceKey] ?? meta.label,
+                  name === "__compare"
+                    ? "Comparison"
+                    : SOURCE_LABELS[name as SourceKey] ?? meta.label,
                 ]}
               />
               {sourcesPresent.map((s) => (
