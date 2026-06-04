@@ -220,6 +220,7 @@ async function assembleReportData(userId: string, from: string, to: string, sect
     journalSummary,
     hydration,
     auras,
+    patterns: await loadAndDerivePatternCards(supabaseAdmin, userId, 90).catch(() => []),
     sections,
   };
 }
