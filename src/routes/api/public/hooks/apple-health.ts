@@ -14,6 +14,27 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/public/hooks/apple-health")({
   server: {
     handlers: {
+      GET: async ({ request }) => {
+        // Lightweight ping so users can verify their webhook token from a
+        // browser tab, Health Auto Export "Test", or curl. Returns 200 only
+        // if the token resolves to a real user; touches last_webhook_at so
+        // the settings card shows the test went through.
+        const url = new URL(request.url);
+        const token =
+          url.searchParams.get("token") ??
+          request.headers.get("x-purple-token") ??
+          "";
+        if (!token || token.length < 16) {
+          return json({ error: "Missing token" }, 401);
+        }
+        const { findUserBySecret, touchAppleHealthSync } = await import(
+          "@/lib/apple-health.server"
+        );
+        const userId = await findUserBySecret(token);
+        if (!userId) return json({ error: "Invalid token" }, 401);
+        await touchAppleHealthSync(userId, "webhook");
+        return json({ ok: true, message: "Token valid. Purple is listening." });
+      },
       POST: async ({ request }) => {
         const url = new URL(request.url);
         const token =
