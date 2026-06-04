@@ -466,6 +466,19 @@ export const proposeChange = createServerFn({ method: "POST" })
     if (!ok) throw new Error("Missing scope: " + requiredScope);
 
     const target_table = data.type === "add_journal_comment" ? "journal_entries" : "medications";
+
+    // Verify the target record actually belongs to the relationship's owner.
+    // Without this check, a caregiver could submit any record UUID and have it
+    // applied against another user's data once their own owner approves.
+    const { data: targetRow, error: tErr } = await supabaseAdmin
+      .from(target_table)
+      .select("id, user_id")
+      .eq("id", data.target_id)
+      .eq("user_id", rel.owner_id)
+      .maybeSingle();
+    if (tErr) throw new Error(tErr.message);
+    if (!targetRow) throw new Error("Target record not found for this owner");
+
     const { data: change, error: cErr } = await supabaseAdmin
       .from("pending_changes")
       .insert({
