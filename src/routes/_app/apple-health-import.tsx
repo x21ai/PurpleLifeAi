@@ -28,22 +28,13 @@ function AppleHealthImportPage() {
     if (lower.endsWith(".zip")) {
       setPhase("unzipping");
       try {
-        const { unzip } = await import("fflate");
-        const buf = new Uint8Array(await file.arrayBuffer());
-        const entries = await new Promise<Record<string, Uint8Array>>((resolve, reject) => {
-          unzip(buf, (err, data) => (err ? reject(err) : resolve(data)));
-        });
-        const key = Object.keys(entries).find(
-          (k) => k === "export.xml" || k.toLowerCase().endsWith("/export.xml"),
-        );
-        if (!key) {
+        const extracted = await extractExportXmlStreaming(file);
+        if (!extracted) {
           setPhase("idle");
           toast.error("That zip doesn't look like an Apple Health export — it should contain apple_health_export/export.xml");
           return;
         }
-        const bytes = entries[key];
-        const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-        xmlFile = new File([ab], "export.xml", { type: "application/xml" });
+        xmlFile = extracted;
       } catch (e) {
         setPhase("idle");
         toast.error(e instanceof Error ? `Couldn't unzip: ${e.message}` : "Couldn't unzip the file");
