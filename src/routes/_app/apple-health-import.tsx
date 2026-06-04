@@ -150,6 +150,31 @@ function AppleHealthImportPage() {
           </div>
         )}
       </SheetCard>
+
+      {phase === "done" && (
+        <SheetCard>
+          <h3 className="text-[18px] font-light text-[#FAFAFC]">Keep it synced from now on</h3>
+          <p className="mt-2 text-[13px] text-white/70">
+            Apple does not let web apps talk to HealthKit directly — iOS only allows native apps.
+            The two practical bridges:
+          </p>
+          <ul className="mt-4 space-y-3 text-[13px] text-white/70">
+            <li>
+              <span className="text-[#FAFAFC] font-medium">Health Auto Export</span> (App Store, paid) —
+              add an automation that POSTs JSON to your personal Purple webhook every 1–6 hours.
+              Find your webhook URL in <Link to="/settings/sharing" className="underline text-[#82B4FF]">Connections → Apple Health</Link>.
+            </li>
+            <li>
+              <span className="text-[#FAFAFC] font-medium">iOS Shortcuts</span> (free) — build a
+              Shortcut that reads recent Health samples and POSTs to the same webhook on a daily
+              automation trigger.
+            </li>
+          </ul>
+          <p className="mt-3 text-[12px] text-white/50">
+            Re-running this ZIP import any time is also fine — duplicates are skipped.
+          </p>
+        </SheetCard>
+      )}
     </SheetPage>
   );
 }
