@@ -47,6 +47,7 @@ import { Route as AppCommunityNewRouteImport } from './routes/_app/community-new
 import { Route as AppChatCareRouteImport } from './routes/_app/chat-care'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
 import { Route as AppCharterRouteImport } from './routes/_app/charter'
+import { Route as AppAppleHealthImportRouteImport } from './routes/_app/apple-health-import'
 import { Route as AppAdminRouteImport } from './routes/_app/admin'
 import { Route as AppAccountRouteImport } from './routes/_app/account'
 import { Route as AppJournalIndexRouteImport } from './routes/_app/journal.index'
@@ -276,6 +277,11 @@ const AppChatRoute = AppChatRouteImport.update({
 const AppCharterRoute = AppCharterRouteImport.update({
   id: '/charter',
   path: '/charter',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAppleHealthImportRoute = AppAppleHealthImportRouteImport.update({
+  id: '/apple-health-import',
+  path: '/apple-health-import',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminRoute = AppAdminRouteImport.update({
@@ -515,6 +521,7 @@ export interface FileRoutesByFullPath {
   '/users': typeof UsersRoute
   '/account': typeof AppAccountRoute
   '/admin': typeof AppAdminRouteWithChildren
+  '/apple-health-import': typeof AppAppleHealthImportRoute
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/chat-care': typeof AppChatCareRoute
@@ -594,6 +601,7 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
   '/account': typeof AppAccountRoute
+  '/apple-health-import': typeof AppAppleHealthImportRoute
   '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/chat-care': typeof AppChatCareRoute
@@ -676,6 +684,7 @@ export interface FileRoutesById {
   '/users': typeof UsersRoute
   '/_app/account': typeof AppAccountRoute
   '/_app/admin': typeof AppAdminRouteWithChildren
+  '/_app/apple-health-import': typeof AppAppleHealthImportRoute
   '/_app/charter': typeof AppCharterRoute
   '/_app/chat': typeof AppChatRoute
   '/_app/chat-care': typeof AppChatCareRoute
@@ -758,6 +767,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/account'
     | '/admin'
+    | '/apple-health-import'
     | '/charter'
     | '/chat'
     | '/chat-care'
@@ -837,6 +847,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/users'
     | '/account'
+    | '/apple-health-import'
     | '/charter'
     | '/chat'
     | '/chat-care'
@@ -918,6 +929,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/_app/account'
     | '/_app/admin'
+    | '/_app/apple-health-import'
     | '/_app/charter'
     | '/_app/chat'
     | '/_app/chat-care'
@@ -1283,6 +1295,13 @@ declare module '@tanstack/react-router' {
       path: '/charter'
       fullPath: '/charter'
       preLoaderRoute: typeof AppCharterRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/apple-health-import': {
+      id: '/_app/apple-health-import'
+      path: '/apple-health-import'
+      fullPath: '/apple-health-import'
+      preLoaderRoute: typeof AppAppleHealthImportRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/admin': {
@@ -1659,6 +1678,7 @@ const AppTodayRouteWithChildren = AppTodayRoute._addFileChildren(
 interface AppRouteChildren {
   AppAccountRoute: typeof AppAccountRoute
   AppAdminRoute: typeof AppAdminRouteWithChildren
+  AppAppleHealthImportRoute: typeof AppAppleHealthImportRoute
   AppCharterRoute: typeof AppCharterRoute
   AppChatRoute: typeof AppChatRoute
   AppChatCareRoute: typeof AppChatCareRoute
@@ -1689,6 +1709,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAccountRoute: AppAccountRoute,
   AppAdminRoute: AppAdminRouteWithChildren,
+  AppAppleHealthImportRoute: AppAppleHealthImportRoute,
   AppCharterRoute: AppCharterRoute,
   AppChatRoute: AppChatRoute,
   AppChatCareRoute: AppChatCareRoute,

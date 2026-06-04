@@ -12,6 +12,9 @@ const OuraConnection = lazy(() =>
 const WhoopConnection = lazy(() =>
   import("@/components/connections/whoop-connection").then((m) => ({ default: m.WhoopConnection })),
 );
+const AppleHealthConnection = lazy(() =>
+  import("@/components/connections/apple-health-connection").then((m) => ({ default: m.AppleHealthConnection })),
+);
 const PhoneAlarmsSection = lazy(() =>
   import("@/components/settings/phone-alarms-section").then((m) => ({ default: m.PhoneAlarmsSection })),
 );
@@ -59,6 +62,14 @@ function ToolsPage() {
         <Suspense fallback={<div className="h-24 animate-pulse" aria-hidden />}>
           <div className="p-5 sm:p-7 [&_button]:bg-white/[0.04] [&_button]:border-white/10 [&_button]:text-[#FAFAFC] [&_button]:hover:bg-white/10 [&_h2]:text-[#FAFAFC] [&_p]:text-white/70 [&_a]:text-[#82B4FF]">
             <WhoopConnection />
+          </div>
+        </Suspense>
+      </SheetCard>
+
+      <SheetCard className="!p-0">
+        <Suspense fallback={<div className="h-24 animate-pulse" aria-hidden />}>
+          <div className="p-5 sm:p-7 [&_button]:bg-white/[0.04] [&_button]:border-white/10 [&_button]:text-[#FAFAFC] [&_button]:hover:bg-white/10 [&_h2]:text-[#FAFAFC] [&_p]:text-white/70 [&_a]:text-[#82B4FF]">
+            <AppleHealthConnection />
           </div>
         </Suspense>
       </SheetCard>
