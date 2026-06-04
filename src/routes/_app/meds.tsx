@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { MedKind } from "@/components/meds/medication-form-sheet";
+import { RefillForecastCard, AdherenceExtrasCard } from "@/components/meds/med-intelligence-cards";
 
 type Medication = {
   id: string;
@@ -213,6 +214,8 @@ function MedsPage() {
         <MedRemindersBanner />
       </div>
 
+      {activeMeds.length > 0 && <RefillForecastCard />}
+
       {activeMeds.length > 0 && (
         <>
           <TodayDosesSection
@@ -222,6 +225,7 @@ function MedsPage() {
             markingAll={markingAll}
           />
           <AdherenceCard />
+          <AdherenceExtrasCard />
         </>
       )}
 
