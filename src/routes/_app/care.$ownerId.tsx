@@ -403,6 +403,13 @@ function CareDashboardPage() {
           </Tabs>
         </div>
       )}
+      <QuickLogBar
+        ownerId={ownerId}
+        ownerName={displayName}
+        canSeizure={has("seizures:write") && isFeatureEnabled("seizure_log", ownerConditions, ownerOverrides)}
+        canJournal={has("journal:write")}
+        canBiometric={has("biometrics:write")}
+      />
     </div>
   );
 }
