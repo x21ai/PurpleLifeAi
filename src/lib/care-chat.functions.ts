@@ -331,3 +331,45 @@ export const markCareThreadRead = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Toggle mute on a thread for the current user. */
+export const setCareThreadMute = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { threadId: string; muted: boolean }) =>
+    z.object({ threadId: z.string().uuid(), muted: z.boolean() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await supabaseAdmin
+      .from("care_thread_participants")
+      .update({ muted: data.muted, muted_until: null })
+      .eq("thread_id", data.threadId)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true, muted: data.muted };
+  });
+
+/** Leave a thread (removes the current user as a participant). */
+export const leaveCareThread = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { threadId: string }) =>
+    z.object({ threadId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    // Owner of the thread cannot leave their own thread.
+    const { data: thread } = await supabaseAdmin
+      .from("care_threads")
+      .select("owner_id")
+      .eq("id", data.threadId)
+      .maybeSingle();
+    if (thread?.owner_id === userId) {
+      throw new Error("You own this chat; you can't leave it. You can mute it instead.");
+    }
+    const { error } = await supabaseAdmin
+      .from("care_thread_participants")
+      .delete()
+      .eq("thread_id", data.threadId)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
