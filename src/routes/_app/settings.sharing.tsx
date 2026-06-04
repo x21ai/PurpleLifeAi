@@ -40,6 +40,7 @@ import {
   getRelationshipWriteState,
   setCareDigestPreference,
   getCareDigestPreference,
+  setRelationshipDigestMuted,
 } from "@/lib/care.functions";
 import { getOrCreateDirectThread } from "@/lib/care-chat.functions";
 import {
