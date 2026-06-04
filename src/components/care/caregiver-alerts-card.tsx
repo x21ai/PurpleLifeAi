@@ -2,7 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, Pill, Activity, BookOpen, Zap, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { caregiverReadAlerts, dismissCaregiverAlert } from "@/lib/care.functions";
+import {
+  caregiverReadAlerts,
+  dismissCaregiverAlert,
+  dismissAllCaregiverAlerts,
+} from "@/lib/care.functions";
 
 type Tab = "today" | "meds" | "biometrics" | "journal" | "seizures" | "reports";
 
@@ -22,6 +26,7 @@ export function CaregiverAlertsCard({
 }) {
   const fn = useServerFn(caregiverReadAlerts);
   const dismissFn = useServerFn(dismissCaregiverAlert);
+  const dismissAllFn = useServerFn(dismissAllCaregiverAlerts);
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["care", "alerts", ownerId],
@@ -34,21 +39,53 @@ export function CaregiverAlertsCard({
     onSuccess: () =>
       qc.invalidateQueries({ queryKey: ["care", "alerts", ownerId] }),
   });
+  const dismissAll = useMutation({
+    mutationFn: (ids: string[]) =>
+      dismissAllFn({ data: { owner_id: ownerId, alert_ids: ids } }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["care", "alerts", ownerId] }),
+  });
 
   if (q.isLoading || q.isError) return null;
   const alerts = q.data?.alerts ?? [];
   if (alerts.length === 0) return null;
 
+  // Group by local day for readability
+  const groups = new Map<string, typeof alerts>();
+  for (const a of alerts) {
+    const day = new Date(a.at).toLocaleDateString();
+    const list = groups.get(day) ?? [];
+    list.push(a);
+    groups.set(day, list);
+  }
+
   return (
     <div className="rounded-2xl border border-amber-200/60 bg-amber-50/40 dark:border-amber-900/40 dark:bg-amber-950/20 p-5 sm:p-6">
-      <div className="flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-        <h2 className="font-serif text-lg text-foreground">
-          {alerts.length} {alerts.length === 1 ? "alert" : "alerts"} since your last visit
-        </h2>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <h2 className="font-serif text-lg text-foreground">
+            {alerts.length} {alerts.length === 1 ? "alert" : "alerts"} since your last visit
+          </h2>
+        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 text-xs"
+          onClick={() => dismissAll.mutate(alerts.map((a) => a.id))}
+          disabled={dismissAll.isPending}
+        >
+          Dismiss all
+        </Button>
       </div>
-      <ul className="mt-4 space-y-2">
-        {alerts.map((a) => {
+      <div className="mt-4 space-y-4">
+        {Array.from(groups.entries()).map(([day, items]) => (
+          <div key={day}>
+            <p className="mb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+              {day}
+            </p>
+            <ul className="space-y-2">
+              {items.map((a) => {
           const Icon = ICON[a.kind] ?? AlertTriangle;
           return (
             <li
@@ -86,8 +123,11 @@ export function CaregiverAlertsCard({
               </div>
             </li>
           );
-        })}
-      </ul>
+              })}
+            </ul>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

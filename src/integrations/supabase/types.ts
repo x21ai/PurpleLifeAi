@@ -490,6 +490,7 @@ export type Database = {
           caregiver_hidden_features: Json
           caregiver_id: string | null
           created_at: string
+          digest_muted: boolean
           expires_at: string | null
           id: string
           invite_email: string
@@ -505,6 +506,7 @@ export type Database = {
           caregiver_hidden_features?: Json
           caregiver_id?: string | null
           created_at?: string
+          digest_muted?: boolean
           expires_at?: string | null
           id?: string
           invite_email: string
@@ -520,6 +522,7 @@ export type Database = {
           caregiver_hidden_features?: Json
           caregiver_id?: string | null
           created_at?: string
+          digest_muted?: boolean
           expires_at?: string | null
           id?: string
           invite_email?: string

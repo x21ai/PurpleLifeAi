@@ -390,6 +390,119 @@ export const decidePendingChange = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Bulk decide N pending changes at once. Reuses the same apply logic as
+ * decidePendingChange (kept simple — we just loop). Returns how many were
+ * processed and how many failed so the UI can surface partial failures.
+ */
+export const decidePendingChangesBulk = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { ids: string[]; decision: "approved" | "rejected"; note?: string }) =>
+    z
+      .object({
+        ids: z.array(z.string().uuid()).min(1).max(50),
+        decision: z.enum(["approved", "rejected"]),
+        note: z.string().max(500).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    let ok = 0;
+    let failed = 0;
+    const errors: string[] = [];
+    for (const id of data.ids) {
+      try {
+        const { data: change } = await supabaseAdmin
+          .from("pending_changes")
+          .select("*")
+          .eq("id", id)
+          .single();
+        if (!change) {
+          failed++;
+          continue;
+        }
+        if (change.owner_id !== userId) {
+          failed++;
+          continue;
+        }
+        if (change.status !== "pending") {
+          // already decided — skip silently
+          continue;
+        }
+        if (data.decision === "approved") {
+          const type = change.type as string;
+          if (type === "add_journal_comment" && change.target_id) {
+            const note = String((change.payload as any)?.text ?? "").slice(0, 2000);
+            const stamp = `\n\n— Caregiver note (approved ${new Date()
+              .toISOString()
+              .slice(0, 10)}):\n${note}`;
+            const { data: row } = await supabaseAdmin
+              .from("journal_entries")
+              .select("text")
+              .eq("id", change.target_id)
+              .eq("user_id", change.owner_id)
+              .single();
+            if (row) {
+              await supabaseAdmin
+                .from("journal_entries")
+                .update({ text: (row?.text ?? "") + stamp })
+                .eq("id", change.target_id)
+                .eq("user_id", change.owner_id);
+            }
+          } else if (type === "add_meds_note" && change.target_id) {
+            const note = String((change.payload as any)?.text ?? "").slice(0, 1000);
+            const { data: row } = await supabaseAdmin
+              .from("medications")
+              .select("notes")
+              .eq("id", change.target_id)
+              .eq("user_id", change.owner_id)
+              .single();
+            if (row) {
+              const newNotes = ((row?.notes ?? "") + "\n— Caregiver: " + note).trim();
+              await supabaseAdmin
+                .from("medications")
+                .update({ notes: newNotes })
+                .eq("id", change.target_id)
+                .eq("user_id", change.owner_id);
+            }
+          }
+        }
+        await supabaseAdmin
+          .from("pending_changes")
+          .update({
+            status: data.decision,
+            decided_at: new Date().toISOString(),
+            decision_note: data.note ?? null,
+          })
+          .eq("id", id);
+        await supabaseAdmin.from("care_audit_log").insert({
+          relationship_id: change.relationship_id,
+          owner_id: userId,
+          actor_id: userId,
+          action: data.decision,
+          resource_type: "pending_change",
+          resource_id: change.id,
+          metadata: { type: change.type, bulk: true },
+        });
+        if (change.caregiver_id) {
+          void notifyCaregiverOfDecision({
+            caregiverId: change.caregiver_id,
+            ownerId: userId,
+            changeType: String(change.type),
+            decision: data.decision,
+            decisionNote: data.note ?? null,
+          });
+        }
+        ok++;
+      } catch (err) {
+        failed++;
+        errors.push(err instanceof Error ? err.message : "Unknown");
+      }
+    }
+    return { ok, failed, errors };
+  });
+
 /* ---------- Caregiver-facing ---------- */
 
 export const acceptInvite = createServerFn({ method: "POST" })
@@ -1137,7 +1250,9 @@ export const listCaregiverOwners = createServerFn({ method: "GET" })
           const visit = visitsByRel[r.id];
           const fallback = new Date(Date.now() - 30 * 86400_000).toISOString();
           const since = visit?.last_seen_at ?? fallback;
-          const [meds, journal, seizures, biometrics] = await Promise.all([
+          const since24h = new Date(Date.now() - 24 * 3600_000).toISOString();
+          const since72h = new Date(Date.now() - 72 * 3600_000).toISOString();
+          const [meds, journal, seizures, biometrics, missed24h, seizures24h, lastJournal] = await Promise.all([
             supabaseAdmin
               .from("medication_doses")
               .select("id", { count: "exact", head: true })
@@ -1158,6 +1273,24 @@ export const listCaregiverOwners = createServerFn({ method: "GET" })
               .select("id", { count: "exact", head: true })
               .eq("user_id", r.owner_id)
               .gt("created_at", since),
+            supabaseAdmin
+              .from("medication_doses")
+              .select("id", { count: "exact", head: true })
+              .eq("user_id", r.owner_id)
+              .eq("status", "missed")
+              .gte("scheduled_at", since24h),
+            supabaseAdmin
+              .from("seizure_events")
+              .select("id", { count: "exact", head: true })
+              .eq("user_id", r.owner_id)
+              .gte("started_at", since24h),
+            supabaseAdmin
+              .from("journal_entries")
+              .select("created_at")
+              .eq("user_id", r.owner_id)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle(),
           ]);
           const counts = {
             meds: meds.count ?? 0,
@@ -1166,6 +1299,16 @@ export const listCaregiverOwners = createServerFn({ method: "GET" })
             biometrics: biometrics.count ?? 0,
           };
           const total = counts.meds + counts.journal + counts.seizures + counts.biometrics;
+          // Health signal: red if seizure in 24h or ≥3 missed doses; amber if
+          // ≥1 missed dose or journal silence > 72h; otherwise green.
+          const missedCount = missed24h.count ?? 0;
+          const seizureCount = seizures24h.count ?? 0;
+          const lastJournalAt = (lastJournal.data as { created_at?: string } | null)?.created_at ?? null;
+          const journalSilence =
+            !lastJournalAt || new Date(lastJournalAt).toISOString() < since72h;
+          let health_signal: "green" | "amber" | "red" = "green";
+          if (seizureCount > 0 || missedCount >= 3) health_signal = "red";
+          else if (missedCount >= 1 || journalSilence) health_signal = "amber";
           return {
             relationship_id: r.id,
             owner_id: r.owner_id,
@@ -1176,6 +1319,12 @@ export const listCaregiverOwners = createServerFn({ method: "GET" })
             last_seen_at: visit?.last_seen_at ?? null,
             unread_total: total,
             unread_by_tab: counts,
+            health_signal,
+            health_reasons: {
+              missed_doses_24h: missedCount,
+              seizures_24h: seizureCount,
+              journal_silence_72h: journalSilence,
+            },
           };
         }),
     );
@@ -1460,6 +1609,47 @@ export const dismissCaregiverAlert = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Dismiss every alert currently visible to the caregiver for one owner.
+ * Caller passes the ids it just rendered — we append them to the visit's
+ * dismissed_alert_ids list (capped at the most recent 200 entries).
+ */
+export const dismissAllCaregiverAlerts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { owner_id: string; alert_ids: string[] }) =>
+    z
+      .object({
+        owner_id: z.string().uuid(),
+        alert_ids: z.array(z.string().min(1).max(200)).min(1).max(100),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const caregiverId = context.userId;
+    const rel = await getActiveRelationshipForCaregiver(data.owner_id, caregiverId);
+    const { data: existing } = await supabaseAdmin
+      .from("care_caregiver_visits")
+      .select("dismissed_alert_ids")
+      .eq("relationship_id", rel.id)
+      .maybeSingle();
+    const prev = ((existing?.dismissed_alert_ids as string[]) ?? []);
+    const merged = Array.from(new Set([...prev, ...data.alert_ids])).slice(-200);
+    const now = new Date().toISOString();
+    const { error } = await supabaseAdmin
+      .from("care_caregiver_visits")
+      .upsert(
+        {
+          relationship_id: rel.id,
+          caregiver_id: caregiverId,
+          dismissed_alert_ids: merged,
+          updated_at: now,
+        },
+        { onConflict: "relationship_id" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true, dismissed: data.alert_ids.length };
+  });
+
 /* ---------- Phase 4: owner controls & audit ---------- */
 
 function csvEscape(value: unknown): string {
@@ -1674,6 +1864,31 @@ export const getCareDigestPreference = createServerFn({ method: "GET" })
       .eq("id", userId)
       .maybeSingle();
     return { enabled: data?.care_daily_digest_enabled ?? true };
+  });
+
+/**
+ * Per-caregiver digest mute. When `muted` is true, that caregiver's actions
+ * are excluded from the owner's daily digest email (without revoking access).
+ */
+export const setRelationshipDigestMuted = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { relationship_id: string; muted: boolean }) =>
+    z
+      .object({
+        relationship_id: z.string().uuid(),
+        muted: z.boolean(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { error } = await supabaseAdmin
+      .from("care_relationships")
+      .update({ digest_muted: data.muted })
+      .eq("id", data.relationship_id)
+      .eq("owner_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const sendCareDigestNow = createServerFn({ method: "POST" })

@@ -1,14 +1,32 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowLeft, Check, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouteTheme } from "@/lib/use-route-theme";
-import { decidePendingChange, listPendingChangesDetailed } from "@/lib/care.functions";
+import {
+  decidePendingChange,
+  decidePendingChangesBulk,
+  listPendingChangesDetailed,
+} from "@/lib/care.functions";
+
+type FilterKey = "all" | "meds" | "journal" | "other";
+const FILTERS: Array<{ key: FilterKey; label: string }> = [
+  { key: "all", label: "All" },
+  { key: "meds", label: "Meds" },
+  { key: "journal", label: "Journal" },
+  { key: "other", label: "Other" },
+];
+
+function bucketOf(type: string): FilterKey {
+  if (type.includes("meds")) return "meds";
+  if (type.includes("journal")) return "journal";
+  return "other";
+}
 
 export const Route = createFileRoute("/_app/care/inbox")({
   head: () => ({ meta: [{ title: "Changes waiting for you — Purple" }] }),
@@ -36,6 +54,8 @@ function InboxPage() {
   const qc = useQueryClient();
   const fetchPending = useServerFn(listPendingChangesDetailed);
   const decide = useServerFn(decidePendingChange);
+  const bulk = useServerFn(decidePendingChangesBulk);
+  const [filter, setFilter] = useState<FilterKey>("all");
 
   const pending = useQuery({
     queryKey: ["care", "pending-detailed"],
@@ -52,8 +72,35 @@ function InboxPage() {
     },
     onError: (e: any) => toast.error(e?.message ?? "Couldn't save decision"),
   });
+  const bulkMut = useMutation({
+    mutationFn: (vars: { ids: string[]; decision: "approved" | "rejected" }) =>
+      bulk({ data: vars }),
+    onSuccess: (res, vars) => {
+      qc.invalidateQueries({ queryKey: ["care", "pending-detailed"] });
+      qc.invalidateQueries({ queryKey: ["care", "pending"] });
+      const verb = vars.decision === "approved" ? "approved" : "rejected";
+      toast.success(
+        `${res.ok} ${verb}${res.failed ? ` · ${res.failed} failed` : ""}`,
+      );
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't save decisions"),
+  });
 
-  const changes = pending.data?.changes ?? [];
+  const allChanges = pending.data?.changes ?? [];
+  const counts = useMemo(() => {
+    const c: Record<FilterKey, number> = { all: allChanges.length, meds: 0, journal: 0, other: 0 };
+    for (const ch of allChanges) c[bucketOf(String(ch.type))]++;
+    return c;
+  }, [allChanges]);
+  const changes = useMemo(
+    () =>
+      filter === "all"
+        ? allChanges
+        : allChanges.filter((c) => bucketOf(String(c.type)) === filter),
+    [allChanges, filter],
+  );
+  const visibleIds = changes.map((c) => c.id);
+  const bulkBusy = bulkMut.isPending || decideMut.isPending;
 
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
@@ -72,6 +119,52 @@ function InboxPage() {
       </p>
 
       <section className="mt-10">
+        {/* Filter chips */}
+        {allChanges.length > 0 && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setFilter(f.key)}
+                className={
+                  "rounded-full border px-3 py-1 text-xs " +
+                  (filter === f.key
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-muted-foreground hover:text-foreground")
+                }
+              >
+                {f.label} <span className="ml-1 tabular-nums opacity-70">{counts[f.key]}</span>
+              </button>
+            ))}
+            {visibleIds.length > 1 && (
+              <div className="ml-auto flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={bulkBusy}
+                  onClick={() => {
+                    if (!confirm(`Approve ${visibleIds.length} changes?`)) return;
+                    bulkMut.mutate({ ids: visibleIds, decision: "approved" });
+                  }}
+                >
+                  <Check className="h-3 w-3 mr-1" /> Approve all
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={bulkBusy}
+                  onClick={() => {
+                    if (!confirm(`Reject ${visibleIds.length} changes?`)) return;
+                    bulkMut.mutate({ ids: visibleIds, decision: "rejected" });
+                  }}
+                >
+                  <X className="h-3 w-3 mr-1" /> Reject all
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
         {pending.isLoading ? (
           <p className="text-sm text-muted-foreground">
             <Loader2 className="inline h-3 w-3 animate-spin" /> Loading…

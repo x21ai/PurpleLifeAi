@@ -96,9 +96,68 @@ export async function sendCareDailyDigest(params: {
     .order("at", { ascending: false })
     .limit(50);
 
-  const entries = log ?? [];
+  let entries = log ?? [];
+
+  // Filter out caregivers the owner has muted for digest purposes.
+  if (entries.length > 0) {
+    const { data: mutedRels } = await supabaseAdmin
+      .from("care_relationships")
+      .select("caregiver_id")
+      .eq("owner_id", ownerId)
+      .eq("digest_muted", true);
+    const mutedIds = new Set(
+      (mutedRels ?? [])
+        .map((r) => r.caregiver_id)
+        .filter((id): id is string => Boolean(id)),
+    );
+    if (mutedIds.size > 0) {
+      entries = entries.filter((e) => !mutedIds.has(e.actor_id));
+    }
+  }
+
+  // Compute "needs your attention" signals from the owner's own data so the
+  // digest leads with what matters, not a flat activity list.
+  const since24h = new Date(Date.now() - 24 * 3600_000).toISOString();
+  const since72h = new Date(Date.now() - 72 * 3600_000).toISOString();
+  const [missed, seizures, lastJournal] = await Promise.all([
+    supabaseAdmin
+      .from("medication_doses")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", ownerId)
+      .eq("status", "missed")
+      .gte("scheduled_at", since24h),
+    supabaseAdmin
+      .from("seizure_events")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", ownerId)
+      .gte("started_at", since24h),
+    supabaseAdmin
+      .from("journal_entries")
+      .select("created_at")
+      .eq("user_id", ownerId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  const lastJournalAt = (lastJournal.data as { created_at?: string } | null)?.created_at ?? null;
+  const attention: string[] = [];
+  if ((missed.count ?? 0) >= 2) {
+    attention.push(`${missed.count} missed doses in the last 24h`);
+  }
+  if ((seizures.count ?? 0) > 0) {
+    attention.push(
+      `${seizures.count} seizure ${seizures.count === 1 ? "event" : "events"} in the last 24h`,
+    );
+  }
+  if (!lastJournalAt || new Date(lastJournalAt).toISOString() < since72h) {
+    attention.push("No journal entry in the last 72 hours");
+  }
+
   if (entries.length === 0) {
-    return { sent: false, rowCount: 0, reason: "no_activity" };
+    // Still send if there are attention signals worth flagging.
+    if (attention.length === 0) {
+      return { sent: false, rowCount: 0, reason: "no_activity" };
+    }
   }
 
   const caregiverIds = Array.from(
@@ -151,6 +210,7 @@ export async function sendCareDailyDigest(params: {
       total: rows.length,
       pendingCount: pendingCount ?? 0,
       inboxUrl: `${origin}/care/inbox`,
+      attention,
     },
   });
 

@@ -10,6 +10,12 @@ export type OwnerCardData = {
   expires_at: string | null;
   last_seen_at: string | null;
   unread_total: number;
+  health_signal?: "green" | "amber" | "red";
+  health_reasons?: {
+    missed_doses_24h?: number;
+    seizures_24h?: number;
+    journal_silence_72h?: boolean;
+  };
   profile: {
     first_name: string | null;
     last_name: string | null;
@@ -44,6 +50,24 @@ export function OwnerCard({ owner }: { owner: OwnerCardData }) {
   const name = displayName(owner.profile);
   const conditions = (owner.profile?.conditions ?? []).slice(0, 3);
   const initial = name.charAt(0).toUpperCase();
+  const signal = owner.health_signal ?? "green";
+  const dotClass =
+    signal === "red"
+      ? "bg-red-500"
+      : signal === "amber"
+        ? "bg-amber-500"
+        : "bg-emerald-500";
+  const reasons = owner.health_reasons;
+  const tooltip =
+    signal === "green"
+      ? "Nothing urgent in the last 24 hours"
+      : [
+          reasons?.seizures_24h ? `${reasons.seizures_24h} seizure event(s) in 24h` : null,
+          reasons?.missed_doses_24h ? `${reasons.missed_doses_24h} missed dose(s) in 24h` : null,
+          reasons?.journal_silence_72h ? "No journal in 72h" : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
 
   return (
     <Link
@@ -52,11 +76,18 @@ export function OwnerCard({ owner }: { owner: OwnerCardData }) {
       className="group block rounded-2xl border border-border bg-card p-5 transition hover:border-primary/40 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
     >
       <div className="flex items-start gap-4">
-        <div
-          aria-hidden
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 font-serif text-xl text-primary"
-        >
-          {initial}
+        <div className="relative shrink-0">
+          <div
+            aria-hidden
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 font-serif text-xl text-primary"
+          >
+            {initial}
+          </div>
+          <span
+            title={tooltip}
+            aria-label={`Status: ${signal}. ${tooltip}`}
+            className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-card ${dotClass}`}
+          />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
