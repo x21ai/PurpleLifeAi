@@ -11,6 +11,7 @@ import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { useTranslation } from "react-i18next";
 import { TrendsSection } from "@/components/reports/trends-section";
 import { ConditionSuggestionsCard } from "@/components/reports/condition-suggestions-card";
+import { QuickClinicianPdf } from "@/components/reports/quick-clinician-pdf";
 
 export const Route = createFileRoute("/_app/reports")({
   head: () => ({
@@ -100,6 +101,7 @@ function ReportsPage() {
 
       <MedicalDisclaimer className="mt-6" />
 
+      <QuickClinicianPdf />
       <ConditionSuggestionsCard />
 
       {reports.length > 0 && (
