@@ -100,6 +100,25 @@ export function CaptureSheet({
     return list[day % list.length];
   }, [conditions]);
 
+  const promptChips = React.useMemo(() => {
+    const list = promptsForConditions(conditions);
+    // Rotate daily so the same 3 don't appear forever, but keep tailoring light.
+    const day = Math.floor(Date.now() / 86_400_000);
+    if (list.length <= 3) return list;
+    const start = day % list.length;
+    return [0, 1, 2].map((i) => list[(start + i) % list.length]);
+  }, [conditions]);
+
+  const insertPrompt = (prompt: string) => {
+    setText((prev) => {
+      const scaffold = `${prompt}\n`;
+      if (!prev.trim()) return scaffold;
+      if (prev.includes(prompt)) return prev;
+      return prev.trimEnd() + "\n\n" + scaffold;
+    });
+    setTimeout(() => textareaRef.current?.focus(), 0);
+  };
+
   React.useEffect(() => {
     if (open) {
       setTimeout(() => textareaRef.current?.focus(), 50);
@@ -285,6 +304,21 @@ export function CaptureSheet({
             placeholder={placeholder}
             className="min-h-[180px] border-0 shadow-none focus-visible:ring-0 px-0 text-base resize-none font-serif placeholder:text-muted-foreground/60 placeholder:font-sans"
           />
+
+          {!text.trim() && promptChips.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {promptChips.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => insertPrompt(p)}
+                  className="rounded-full border border-border bg-card/60 px-3 py-1 text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          )}
 
           {voice.listening || voice.transcript ? (
             <div
