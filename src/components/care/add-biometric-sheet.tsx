@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmCareWriteButton } from "@/components/care/confirm-care-write";
 import {
   Dialog,
   DialogContent,
@@ -137,9 +138,13 @@ export function AddBiometricSheet({
           <Button variant="ghost" onClick={() => setOpen(false)} disabled={m.isPending}>
             Cancel
           </Button>
-          <Button onClick={() => m.mutate()} disabled={m.isPending || empty || !recordedAt}>
-            {m.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
-          </Button>
+          <ConfirmCareWriteButton
+            ownerName={ownerName}
+            summary="Add a biometric reading to their record"
+            onConfirm={() => m.mutate()}
+            pending={m.isPending}
+            disabled={empty || !recordedAt}
+          />
         </DialogFooter>
       </DialogContent>
     </Dialog>
