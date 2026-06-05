@@ -24,6 +24,7 @@ import { useFeatureFlags } from "@/hooks/use-feature-flags";
 import { ConditionTipCard } from "@/components/today/condition-tip-card";
 import { FeatureSuggestionCard } from "@/components/today/feature-suggestion-card";
 import { OnboardingChecklist } from "@/components/today/onboarding-checklist";
+import { FirstEntryNudge } from "@/components/today/first-entry-nudge";
 import { WeeklyRecapCard } from "@/components/today/weekly-recap-card";
 import { SevenDayTrendStrip } from "@/components/today/seven-day-trend-strip";
 import { ReEngagementNudge } from "@/components/today/re-engagement-nudge";
@@ -352,6 +353,9 @@ function TodayPage() {
 
       <TodayWidgetBoundary name="setup">
         <OnboardingChecklist />
+      </TodayWidgetBoundary>
+      <TodayWidgetBoundary name="first-entry-nudge">
+        <FirstEntryNudge />
       </TodayWidgetBoundary>
       <TodayWidgetBoundary name="tips">
         <ConditionTipCard conditions={profile?.conditions} />
