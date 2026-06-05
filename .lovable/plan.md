@@ -1,29 +1,51 @@
-## What's left
+## Goal
 
-1. **Revert `/` (home) to the pre-imagery version** — the typographic layout that worked before I added the editorial photo hero, zigzag scenes, and the coastal "your data stays yours" band. Keep the shared `MarketingHeader` and `SiteFooter` so nav stays consistent with the rest of the marketing site.
+Both `/sign-in` and `/home2` should breathe the same calm-nature visual system: a soft landscape underneath, a quiet gradient that fades the image into the page, a small PURPLE/eyebrow label, and the headline sitting in the lower-left. Today `/sign-in` does this inline; `/home2` uses a different (busier) photo treatment. Extract the shared system into two reusable components and have both routes consume them.
 
-2. **Create `/home2` as the imagery playground** — move the current image-heavy index (hero photo, zigzag FeatureScenes, device showcase, coast band, final CTA) into a new route `src/routes/home2.tsx` so we can keep iterating without touching the live home. Add `noindex` on `/home2` so it doesn't get crawled.
+## What I'll build
 
-3. **Establish a calm-nature image system** — like the sign-in page and the mountain/cloud screenshot you shared. Use soft, atmospheric landscapes (mist, coast, dawn light, alpine clouds) as **backgrounds with heavy darkening overlays**, not as foreground subject matter. Type sits over them quietly, the way Oura does. I'll standardize three reusable patterns:
-   - **Atmospheric hero band** — full-bleed landscape, 50–60% dark overlay, serif headline + one line of body.
-   - **Quiet section background** — landscape behind a centered statement, used sparingly between text sections.
-   - **Editorial portrait** — only when the page genuinely needs a human moment (about page, caregiver section).
-   
-   Generate 2–3 new calm-nature images (alpine clouds at dawn, soft coastal mist, quiet forest light) and retire the lifestyle/hands photography from the home2 page where it feels staged.
+### 1. Shared "calm scene" components — `src/components/marketing/calm-scene.tsx`
 
-4. **Apply the pattern where it earns its place** (after /home2 is approved):
-   - `/features` — one atmospheric band between sections, otherwise text-first.
-   - `/about` — keep the human portrait, swap the craft image for a calm landscape.
-   - `/pricing` — keep the mist hero + coast band (already on-pattern).
-   - `/contact` — add one quiet landscape band, otherwise text-first.
+Two small, presentation-only React components built from the existing sign-in markup:
 
-### Technical notes
+- **`<CalmHero>`** — full-bleed landscape with the sign-in-style gradient (`from-background/0 via-background/0 to-background/85`, switching axis at `lg:` for split layouts). Props: `image`, `alt`, `eyebrow`, `headline`, `body?`, `children?` (for CTAs), `height` (`full` for hero pages, `tall` for sign-in's split layout, `band` for mid-page bands), `align` (`bottom-left` default, `center` for bands), `overlay` (`fade` for sign-in style, `dim` for headline-over-photo bands).
+- **`<CalmBand>`** — a thinner version meant to live between text sections (e.g. the "Your data stays yours" moment). Same image + overlay system, smaller height, centered type.
 
-- Move the existing `src/routes/index.tsx` body verbatim into a new `src/routes/home2.tsx` (route id `/home2`, `meta` with `robots: noindex`).
-- Rewrite `src/routes/index.tsx` back to the typographic version: `MarketingHeader`, eyebrow + serif H1 + body + CTAs, the "Epilepsy. Migraine. Diabetes…" promise band, three short text feature blocks, a privacy line, and the final CTA — no `<img>` tags, no `FeatureScene`.
-- Leave the home-* image assets in `src/assets/` for `/home2` to keep using; nothing to delete.
-- No changes to backend, routes, or other pages in this step.
+Both render the eyebrow with the existing `.label-eyebrow` token and headline in `font-serif` so the system stays tied to the design tokens already in `src/styles.css`. No new colors, no new spacing scale.
 
-### Open question
+### 2. Calm image library — `src/lib/calm-images.ts`
 
-Are you good with route name `/home2`, or do you prefer `/preview-home`, `/v2`, or something else? I'll use `/home2` if you don't say.
+A small typed registry that imports the existing on-brand landscape assets (`sign-in-hero.jpg`, `hero-readiness-coast.jpg`, `hero-readiness-mist.jpg`) and re-exports them under semantic names (`dawn`, `coast`, `mist`). One place to swap or add images later. No new image generation in this pass — we reuse what's already on-brand.
+
+### 3. Refactor `/sign-in` to use `<CalmHero>`
+
+Replace the inline hero `<div>` (lines ~197–217) with `<CalmHero image={calmImages.dawn} eyebrow="PURPLE" headline={t("signIn.freeForever")} variant="split" />`. The form panel on the right is untouched. Visual output stays identical — this is a structural extraction, not a redesign.
+
+### 4. Rebuild `/home2` on the calm system
+
+Replace the current image-heavy `/home2` body (lifestyle photo of hands + phone, zigzag FeatureScenes, device showcase) with a layout built from `<CalmHero>` and `<CalmBand>`:
+
+- `<CalmHero>` hero — landscape (`dawn`), eyebrow "A quiet companion for your health", headline "Your health, remembered.", body line, two CTAs.
+- Typographic "Epilepsy. Migraine. Diabetes…" promise section (no image).
+- Three pillar text blocks (no images) — same content as the reverted `/`.
+- `<CalmBand>` — `coast` image behind "Your data stays yours."
+- Typographic final CTA — "Begin where you are."
+
+Result: `/home2` matches the calm, quiet feeling of sign-in. Imagery only appears as atmospheric backgrounds with type laid over them. No staged lifestyle photos, no zigzag scenes.
+
+### 5. Retire the unused lifestyle assets (from `/home2` only)
+
+Stop importing `home-caregiver.jpg`, `home-walk.jpg`, `home-device.jpg`, `home-hero-morning.jpg`, `about-craft.jpg` from `/home2`. Leave the files on disk for now (they're still referenced from `/about` and may be wanted later); we can delete after the system is approved.
+
+## Out of scope this turn
+
+- No changes to `/`, `/features`, `/about`, `/pricing`, `/contact`. Once `/home2` is approved we can roll the same `<CalmHero>` / `<CalmBand>` into them in a follow-up.
+- No new image generation. We'll add fresh calm landscapes only after the system shape is locked.
+- No copy changes beyond what's needed for the new layout.
+
+## Files touched
+
+- **add** `src/components/marketing/calm-scene.tsx`
+- **add** `src/lib/calm-images.ts`
+- **edit** `src/routes/sign-in.tsx` (swap the inline hero block for `<CalmHero variant="split">`)
+- **edit** `src/routes/home2.tsx` (rebuild on `<CalmHero>` + `<CalmBand>`)

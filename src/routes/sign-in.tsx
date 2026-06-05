@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import heroImage from "@/assets/sign-in-hero.jpg";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { CalmHero } from "@/components/marketing/calm-scene";
+import { calmImages } from "@/lib/calm-images";
 import { SocialSignInButtons } from "@/components/auth/social-sign-in-buttons";
 import { isOAuthCallbackUrl, waitForOAuthSession } from "@/lib/auth-oauth";
 import { toast } from "sonner";
@@ -193,28 +194,18 @@ function SignInPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="lg:grid lg:grid-cols-[1.1fr_1fr] xl:grid-cols-[1.25fr_1fr]">
-        {/* Hero — full bleed image, top on mobile, left on desktop */}
-        <div className="relative h-[42vh] sm:h-[52vh] lg:h-screen lg:sticky lg:top-0 overflow-hidden">
-          <img
-            src={heroImage}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-            width={1280}
-            height={1600}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b lg:bg-gradient-to-r from-background/0 via-background/0 to-background/85" />
-          <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-10 lg:p-14">
-            <p
-              className="font-sans font-semibold text-sm sm:text-base text-foreground/80"
-              style={{ letterSpacing: "0.45em" }}
-            >
-              PURPLE
-            </p>
-            <p className="mt-3 font-serif italic text-base sm:text-lg text-foreground/75 max-w-md">
+        {/* Hero — shared calm-nature treatment */}
+        <CalmHero
+          image={calmImages.dawn}
+          variant="split"
+          as="div"
+          eyebrow="PURPLE"
+          headline={
+            <span className="font-serif italic text-base sm:text-lg text-foreground/75 max-w-md block">
               {t("signIn.freeForever")}
-            </p>
-          </div>
-        </div>
+            </span>
+          }
+        />
 
         {/* Form panel */}
         <main className="flex items-center justify-center px-6 sm:px-10 lg:px-14 py-12 lg:py-16 min-h-screen">
