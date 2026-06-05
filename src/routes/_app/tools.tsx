@@ -3,7 +3,6 @@ import * as React from "react";
 import { lazy, Suspense } from "react";
 import { Bell, ChevronRight, ExternalLink, Plus, Smartphone, Activity } from "lucide-react";
 import { SheetPage, SheetCard, SheetSectionLabel } from "@/components/sheet/sheet-page";
-import { useRouteTheme } from "@/lib/use-route-theme";
 import { useTranslation } from "react-i18next";
 
 const OuraConnection = lazy(() =>
