@@ -23,7 +23,6 @@ import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CommunityRouteImport } from './routes/community'
-import { Route as AboutRouteImport } from './routes/about'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
@@ -162,11 +161,6 @@ const ContactRoute = ContactRouteImport.update({
 const CommunityRoute = CommunityRouteImport.update({
   id: '/community',
   path: '/community',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -531,7 +525,6 @@ const AppReportsTrendsMetricKeyRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
   '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
@@ -616,7 +609,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
   '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
@@ -702,7 +694,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
-  '/about': typeof AboutRoute
   '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
@@ -789,7 +780,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/about'
     | '/community'
     | '/contact'
     | '/features'
@@ -874,7 +864,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/about'
     | '/community'
     | '/contact'
     | '/features'
@@ -959,7 +948,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_app'
-    | '/about'
     | '/community'
     | '/contact'
     | '/features'
@@ -1046,7 +1034,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
-  AboutRoute: typeof AboutRoute
   CommunityRoute: typeof CommunityRouteWithChildren
   ContactRoute: typeof ContactRoute
   FeaturesRoute: typeof FeaturesRoute
@@ -1181,13 +1168,6 @@ declare module '@tanstack/react-router' {
       path: '/community'
       fullPath: '/community'
       preLoaderRoute: typeof CommunityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -1840,7 +1820,6 @@ const CommunityRouteWithChildren = CommunityRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
-  AboutRoute: AboutRoute,
   CommunityRoute: CommunityRouteWithChildren,
   ContactRoute: ContactRoute,
   FeaturesRoute: FeaturesRoute,
