@@ -1,51 +1,70 @@
 ## Goal
 
-Both `/sign-in` and `/home2` should breathe the same calm-nature visual system: a soft landscape underneath, a quiet gradient that fades the image into the page, a small PURPLE/eyebrow label, and the headline sitting in the lower-left. Today `/sign-in` does this inline; `/home2` uses a different (busier) photo treatment. Extract the shared system into two reusable components and have both routes consume them.
+Walk through the open work in a sensible order. Each step is a separate turn — I'll plan, you approve, I build, we verify, then move to the next. Steps that need you (Supabase access, secrets) are flagged so we can park them until you're ready.
 
-## What I'll build
+## Sequence
 
-### 1. Shared "calm scene" components — `src/components/marketing/calm-scene.tsx`
+### Step 1 — Roll the calm system into `/features`
+Replace the current `/features` hero with `<CalmHero>` (calm landscape, eyebrow, serif headline, body, CTA). Keep the existing feature content below. Give the route its own `head()` — unique title, description, og:title, og:description, og:url, canonical. No copy rewrite beyond what the hero needs.
 
-Two small, presentation-only React components built from the existing sign-in markup:
+### Step 2 — `/about`
+Same treatment: `<CalmHero>` at the top using a different calm image (e.g. `mist`), keep the story body, add a `<CalmBand>` between sections if it earns its place. Per-route metadata. Leave existing `about-craft.jpg` for now.
 
-- **`<CalmHero>`** — full-bleed landscape with the sign-in-style gradient (`from-background/0 via-background/0 to-background/85`, switching axis at `lg:` for split layouts). Props: `image`, `alt`, `eyebrow`, `headline`, `body?`, `children?` (for CTAs), `height` (`full` for hero pages, `tall` for sign-in's split layout, `band` for mid-page bands), `align` (`bottom-left` default, `center` for bands), `overlay` (`fade` for sign-in style, `dim` for headline-over-photo bands).
-- **`<CalmBand>`** — a thinner version meant to live between text sections (e.g. the "Your data stays yours" moment). Same image + overlay system, smaller height, centered type.
+### Step 3 — `/pricing`
+`<CalmHero>` (smaller, `variant="band"` height) above the "Free forever" content. Per-route metadata + `Product` / `Offer` JSON-LD so search engines see the price.
 
-Both render the eyebrow with the existing `.label-eyebrow` token and headline in `font-serif` so the system stays tied to the design tokens already in `src/styles.css`. No new colors, no new spacing scale.
+### Step 4 — `/contact`
+Quiet `<CalmHero band>` over the form. Per-route metadata. No JSON-LD needed.
 
-### 2. Calm image library — `src/lib/calm-images.ts`
+### Step 5 — Generate 2–3 fresh calm landscapes
+After the four pages are wired, the reuse of `dawn` / `coast` / `mist` will be visible. Generate on-brand alternates (dawn-meadow, coast-fog, forest-quiet) at 1920×1280, add to `src/lib/calm-images.ts`, and distribute them so no two adjacent routes share a photo.
 
-A small typed registry that imports the existing on-brand landscape assets (`sign-in-hero.jpg`, `hero-readiness-coast.jpg`, `hero-readiness-mist.jpg`) and re-exports them under semantic names (`dawn`, `coast`, `mist`). One place to swap or add images later. No new image generation in this pass — we reuse what's already on-brand.
+### Step 6 — Promote or retire `/home2`
+Decide together: either swap `/home2` → `/` (and delete the typographic version), or keep both and link `/home2` only from internal QA. Default recommendation after step 5 looks right: promote.
 
-### 3. Refactor `/sign-in` to use `<CalmHero>`
+### Step 7 — SEO + sitemap pass
+- Audit `public/sitemap.xml` against the now-final route list.
+- Add per-leaf `og:image` (using each page's calm hero image — the content image IS the share image).
+- Confirm canonical is on leaves only (TanStack dedupe caveat).
+- Resolve any open findings via `seo_chat--list_findings` / `update_findings`.
 
-Replace the inline hero `<div>` (lines ~197–217) with `<CalmHero image={calmImages.dawn} eyebrow="PURPLE" headline={t("signIn.freeForever")} variant="split" />`. The form panel on the right is untouched. Visual output stays identical — this is a structural extraction, not a redesign.
+### Step 8 — E2E smoke for marketing routes
+Extend `tests/e2e/routes-smoke.spec.ts` to cover `/features`, `/about`, `/pricing`, `/contact`, `/home2` (or its replacement) — assert 200, h1 present, no console errors.
 
-### 4. Rebuild `/home2` on the calm system
+### Step 9 — Accessibility pass on image-heavy sections
+Check contrast of light type over `overlay="dim"` bands, add meaningful `alt` text where the image carries meaning (decorative stays `alt=""`), verify focus rings on CTAs over photos.
 
-Replace the current image-heavy `/home2` body (lifestyle photo of hands + phone, zigzag FeatureScenes, device showcase) with a layout built from `<CalmHero>` and `<CalmBand>`:
+### Step 10 — Wave 1 deploy (needs you)
+Parked until you can act on `docs/wave-1-final.md`:
+- Grant Supabase access on `lzuodgpqseijhhyzgfky`, then apply `docs/manual-deploy-bundle.md` Section 1 SQL.
+- Set Edge Function secrets (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`); deploy functions per Section 2.
+- Run `bun run seed:research`, smoke-test Ask with a levetiracetam question, confirm citation chip.
+- Configure Google + Apple OAuth per `docs/oauth-provider-setup.md`.
 
-- `<CalmHero>` hero — landscape (`dawn`), eyebrow "A quiet companion for your health", headline "Your health, remembered.", body line, two CTAs.
-- Typographic "Epilepsy. Migraine. Diabetes…" promise section (no image).
-- Three pillar text blocks (no images) — same content as the reverted `/`.
-- `<CalmBand>` — `coast` image behind "Your data stays yours."
-- Typographic final CTA — "Begin where you are."
+I can't do step 10 myself — it requires dashboard access. Ping me when ready and I'll write the verification scripts.
 
-Result: `/home2` matches the calm, quiet feeling of sign-in. Imagery only appears as atmospheric backgrounds with type laid over them. No staged lifestyle photos, no zigzag scenes.
+### Step 11 — Product polish (queue, pick later)
+Not blocking, worth knowing about:
+- Empty / first-run states for Today, Journal, Reports.
+- Caregiver "confirm to write" UX review.
+- `/community` and `/resources` content pass.
+- Travel mode end-to-end test with a multi-leg trip.
 
-### 5. Retire the unused lifestyle assets (from `/home2` only)
+## How we'll work it
 
-Stop importing `home-caregiver.jpg`, `home-walk.jpg`, `home-device.jpg`, `home-hero-morning.jpg`, `about-craft.jpg` from `/home2`. Leave the files on disk for now (they're still referenced from `/about` and may be wanted later); we can delete after the system is approved.
+Approve this plan and I'll start with **Step 1 (`/features`)**. After each step lands and you confirm it looks right, I'll propose the next one. If you'd rather jump to a specific step or reorder, just say which.
 
-## Out of scope this turn
+## Files touched per step (technical)
 
-- No changes to `/`, `/features`, `/about`, `/pricing`, `/contact`. Once `/home2` is approved we can roll the same `<CalmHero>` / `<CalmBand>` into them in a follow-up.
-- No new image generation. We'll add fresh calm landscapes only after the system shape is locked.
-- No copy changes beyond what's needed for the new layout.
+- Steps 1–4: edit `src/routes/{features,about,pricing,contact}.tsx`; possibly add image keys to `src/lib/calm-images.ts`.
+- Step 5: add `src/assets/calm-*.jpg` via imagegen; extend `src/lib/calm-images.ts`.
+- Step 6: edit `src/routes/index.tsx` + `src/routes/home2.tsx` (or delete one).
+- Step 7: edit `public/sitemap.xml`, leaf route `head()` blocks.
+- Step 8: edit `tests/e2e/routes-smoke.spec.ts`.
+- Step 9: small edits across the marketing routes + `src/components/marketing/calm-scene.tsx` if contrast needs tuning.
 
-## Files touched
+## Out of scope this plan
 
-- **add** `src/components/marketing/calm-scene.tsx`
-- **add** `src/lib/calm-images.ts`
-- **edit** `src/routes/sign-in.tsx` (swap the inline hero block for `<CalmHero variant="split">`)
-- **edit** `src/routes/home2.tsx` (rebuild on `<CalmHero>` + `<CalmBand>`)
+- Native mobile work (PWA only).
+- New AI features beyond Wave 1.
+- Marketing copy rewrite — only the lines the new layout needs.
