@@ -1,4 +1,19 @@
 import { PDFDocument, StandardFonts, rgb, PDFPage, PDFFont } from "pdf-lib";
+// QA #19: pdf-lib Helvetica is WinAnsi-only. Strip/replace non-encodable chars.
+function safe(input: string): string {
+  return (input ?? "")
+    .replace(/[\u2192\u279C\u27A4]/g, "->")
+    .replace(/[\u2190]/g, "<-")
+    .replace(/[\u2013\u2014]/g, "-")
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2022]/g, "*")
+    .replace(/[\u00A0]/g, " ")
+    .replace(/[\u2026]/g, "...")
+    // Drop any remaining non-WinAnsi (outside basic latin + latin-1 supplement)
+    .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, "");
+}
+
 import type { PatternCard } from "./insights-patterns.functions";
 
 /**
@@ -94,20 +109,18 @@ function ensureSpace(c: Ctx, needed: number) {
 }
 
 function drawFooter(c: Ctx) {
-  c.page.drawText(
-    `Purple — generated medical history. Not a medical record. Page ${c.pageNo}`,
-    { x: MARGIN, y: 24, size: 8, font: c.font, color: MUTED },
+  c.page.drawText(safe(`Purple — generated medical history. Not a medical record. Page ${c.pageNo}`), { x: MARGIN, y: 24, size: 8, font: c.font, color: MUTED },
   );
 }
 
 function H1(c: Ctx, text: string) {
   ensureSpace(c, 32);
-  c.page.drawText(text, { x: MARGIN, y: c.y, size: 20, font: c.bold, color: BRAND });
+  c.page.drawText(safe(text), { x: MARGIN, y: c.y, size: 20, font: c.bold, color: BRAND });
   c.y -= 28;
 }
 function H2(c: Ctx, text: string) {
   ensureSpace(c, 26);
-  c.page.drawText(text, { x: MARGIN, y: c.y, size: 14, font: c.bold, color: TEXT });
+  c.page.drawText(safe(text), { x: MARGIN, y: c.y, size: 14, font: c.bold, color: TEXT });
   c.y -= 18;
 }
 function P(c: Ctx, text: string, opts: { size?: number; color?: ReturnType<typeof rgb>; bold?: boolean } = {}) {
@@ -118,7 +131,7 @@ function P(c: Ctx, text: string, opts: { size?: number; color?: ReturnType<typeo
   const lines = wrap(text || "—", font, size, maxW);
   for (const line of lines) {
     ensureSpace(c, size + 4);
-    c.page.drawText(line, { x: MARGIN, y: c.y, size, font, color });
+    c.page.drawText(safe(line), { x: MARGIN, y: c.y, size, font, color });
     c.y -= size + 4;
   }
 }
@@ -155,7 +168,7 @@ function table(
   });
   let x = x0 + 4;
   for (const col of cols) {
-    c.page.drawText(col.label, { x, y: c.y + 2, size: 9, font: c.bold, color: TEXT });
+    c.page.drawText(safe(col.label), { x, y: c.y + 2, size: 9, font: c.bold, color: TEXT });
     x += col.w;
   }
   c.y -= rowH;
@@ -169,7 +182,7 @@ function table(
       const tx = col.align === "right"
         ? xc + col.w - 6 - c.font.widthOfTextAtSize(txt, 9)
         : xc;
-      c.page.drawText(txt, { x: tx, y: c.y + 2, size: 9, font: c.font, color: TEXT });
+      c.page.drawText(safe(txt), { x: tx, y: c.y + 2, size: 9, font: c.font, color: TEXT });
       xc += col.w;
     }
     c.page.drawLine({
@@ -242,7 +255,7 @@ function overlayChart(
   if (opts.refHigh != null) allVals.push(opts.refHigh);
 
   if (allVals.length === 0 || dates.length < 2) {
-    c.page.drawText("Not enough data", {
+    c.page.drawText(safe("Not enough data"), {
       x: x0 + 8, y: y0 + h / 2, size: 9, font: c.font, color: MUTED,
     });
     c.y = y0 - 12;
@@ -298,13 +311,13 @@ function overlayChart(
   });
 
   // Min/max labels
-  c.page.drawText(`${formatNum(max)}${opts.unit ?? ""}`, {
+  c.page.drawText(safe(`${formatNum(max)}${opts.unit ?? ""}`), {
     x: x0 + w - 54, y: y0 + h - 10, size: 8, font: c.font, color: MUTED,
   });
-  c.page.drawText(`${formatNum(min)}${opts.unit ?? ""}`, {
+  c.page.drawText(safe(`${formatNum(min)}${opts.unit ?? ""}`), {
     x: x0 + w - 54, y: y0 + 2, size: 8, font: c.font, color: MUTED,
   });
-  c.page.drawText(`${dates[0]} → ${dates[dates.length - 1]}`, {
+  c.page.drawText(safe(`${dates[0]} → ${dates[dates.length - 1]}`), {
     x: x0 + 4, y: y0 - 10, size: 8, font: c.font, color: MUTED,
   });
 
@@ -318,7 +331,7 @@ function overlayChart(
       thickness: 1.5, color,
     });
     const label = src.length > 0 ? src : "other";
-    c.page.drawText(label, {
+    c.page.drawText(safe(label), {
       x: lx + 18, y: ly, size: 8, font: c.font, color: TEXT,
     });
     lx += 24 + c.font.widthOfTextAtSize(label, 8);
@@ -328,7 +341,7 @@ function overlayChart(
       start: { x: lx, y: ly + 3 }, end: { x: lx + 14, y: ly + 3 },
       thickness: 0.8, color: rgb(0.78, 0.17, 0.17),
     });
-    c.page.drawText("seizure day", {
+    c.page.drawText(safe("seizure day"), {
       x: lx + 18, y: ly, size: 8, font: c.font, color: TEXT,
     });
   }
@@ -370,7 +383,7 @@ export async function buildMedicalReportPdf(data: ReportSourceData): Promise<Uin
   newPage(c);
 
   // Cover
-  c.page.drawText("Medical history report", { x: MARGIN, y: c.y, size: 26, font: bold, color: BRAND });
+  c.page.drawText(safe("Medical history report"), { x: MARGIN, y: c.y, size: 26, font: bold, color: BRAND });
   c.y -= 36;
   const name = [data.profile.first_name, data.profile.last_name].filter(Boolean).join(" ") || "Patient";
   P(c, name, { size: 16, bold: true });
