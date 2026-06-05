@@ -2,17 +2,30 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
-import { PenSquare, Heart, MessageCircle, BookMarked } from "lucide-react";
+import { PenSquare, Heart, MessageCircle } from "lucide-react";
+import { MarketingHeader } from "@/components/layout/marketing-header";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { CalmHero, HumanMoment } from "@/components/marketing/calm-scene";
+import { calmImages, humanImages } from "@/lib/calm-images";
+import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/community")({
   head: () => ({
     meta: [
-      { title: "Community — Purple" },
-      { name: "description", content: "A supportive space for people living with epilepsy to share, learn, and connect." },
-      { property: "og:title", content: "Purple Community" },
-      { property: "og:description", content: "Share experiences, find resources, and connect with others who understand." },
+      { title: "Community. Purple." },
+      {
+        name: "description",
+        content:
+          "A quiet, moderated space for people living with conditions that need daily attention — and the people who help them carry it.",
+      },
+      { property: "og:title", content: "Community. Purple." },
+      {
+        property: "og:description",
+        content: "Share what's working. Ask what isn't. You're not alone.",
+      },
+      { property: "og:url", content: "https://www.purplelife.org/community" },
     ],
-    links: [{ rel: "canonical", href: "/community" }],
+    links: [{ rel: "canonical", href: "https://www.purplelife.org/community" }],
   }),
   component: CommunityFeed,
 });
@@ -28,6 +41,7 @@ type Post = {
 };
 
 function CommunityFeed() {
+  useRevealOnScroll();
   const { session } = useAuth();
   const [posts, setPosts] = React.useState<Post[]>([]);
   const [topic, setTopic] = React.useState<string>("all");
@@ -50,32 +64,21 @@ function CommunityFeed() {
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      <header className="border-b border-border">
-        <div className="mx-auto max-w-3xl px-5 sm:px-8 py-4 flex items-center justify-between">
-          <Link to="/" className="font-serif text-xl">Purple</Link>
-          <div className="flex items-center gap-3 text-sm">
-            <Link to="/community/resources" className="text-foreground/70 hover:text-foreground inline-flex items-center gap-1">
-              <BookMarked className="h-4 w-4" /> Resources
-            </Link>
-            {session ? (
-              <Link to="/today" className="text-foreground/70 hover:text-foreground">My day</Link>
-            ) : (
-              <Link to="/sign-in" className="text-foreground/70 hover:text-foreground">Sign in</Link>
-            )}
-          </div>
-        </div>
-      </header>
+      <MarketingHeader />
 
-      <div className="mx-auto max-w-3xl px-5 sm:px-8 pt-10 pb-24">
-        <p className="label-eyebrow text-muted-foreground">Community</p>
-        <h1 className="mt-3 font-serif text-5xl sm:text-6xl leading-[1.02] tracking-[-0.02em]">
-          You're not alone.
-        </h1>
-        <p className="mt-4 body-serif text-foreground/75 max-w-[600px]">
-          Share what's working, ask what isn't, and find people who understand. Not medical advice — always check with your care team.
-        </p>
+      {/* Calm hero — same vocabulary as the rest of marketing */}
+      <CalmHero
+        image={calmImages.coast}
+        alt=""
+        eyebrow="Community"
+        headline={<>You&rsquo;re<br />not alone.</>}
+        body="A quiet, moderated space to share what's working and ask what isn't. Not medical advice — always check with your care team."
+        variant="full"
+      />
 
-        <div className="mt-8 flex items-center justify-between gap-4 flex-wrap">
+      {/* Feed */}
+      <section className="mx-auto max-w-3xl px-5 sm:px-8 pt-20 pb-24">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex gap-2 overflow-x-auto">
             {topics.map((t) => (
               <button
@@ -122,7 +125,17 @@ function CommunityFeed() {
             <p className="text-muted-foreground">No posts yet. Be the first to share.</p>
           )}
         </ul>
-      </div>
+      </section>
+
+      {/* A human moment to close the page */}
+      <HumanMoment
+        image={humanImages.walkGrass}
+        alt="A person walking through tall grass at golden hour, seen from behind."
+        quote="The people who get it are already here."
+        attribution="Why community matters"
+      />
+
+      <SiteFooter variant="marketing" />
     </div>
   );
 }
