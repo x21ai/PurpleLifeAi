@@ -135,7 +135,7 @@ export function ReminderAlarmSheet() {
           </DialogTitle>
           <DialogDescription className="text-center">
             {dose.medication?.dosage ? `${dose.medication.dosage} · ` : ""}
-            scheduled {format(new Date(dose.scheduled_at), "h:mm a")}
+            scheduled {formatLocaleTime(dose.scheduled_at)}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-2 mt-2">

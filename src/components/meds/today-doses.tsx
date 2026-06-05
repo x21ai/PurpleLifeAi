@@ -333,7 +333,7 @@ export function TodayDoses() {
                 {traveling && homeTz ? (
                   <DualTime iso={d.scheduled_at} homeTz={homeTz} />
                 ) : (
-                  <span>{format(new Date(d.scheduled_at), "h:mm a")}</span>
+                  <span>{formatLocaleTime(d.scheduled_at)}</span>
                 )}
               </span>
               <div className="flex-1 min-w-0">

@@ -13,7 +13,7 @@ import { ProgressPill } from "@/components/ui-oura/progress-pill";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, formatLocaleTime } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
