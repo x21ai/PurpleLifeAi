@@ -25,7 +25,6 @@ export const Route = createFileRoute("/_app/tools")({
 });
 
 function ToolsPage() {
-  useRouteTheme("dark");
   const { t } = useTranslation();
   return (
     <SheetPage title={t("tools.title")}>
