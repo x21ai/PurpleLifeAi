@@ -7,6 +7,17 @@ import { Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   getOrCreateAppleHealthConfig,
   rotateAppleHealthSecret,
   disconnectAppleHealth,
@@ -49,6 +60,7 @@ export function AppleHealthCard() {
   const token = cfg.data?.webhook_secret ?? "";
   const webhookUrl = token ? `${origin}/api/public/hooks/apple-health?token=${token}` : "";
   const lastWebhookAt = cfg.data?.last_webhook_at ?? null;
+  const lastSyncAt = cfg.data?.last_sync_at ?? null;
   const [pinging, setPinging] = useState(false);
 
   const handleCopy = () => {
@@ -119,9 +131,15 @@ export function AppleHealthCard() {
 
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
             <span>
-              Last received:{" "}
+              Last webhook:{" "}
               <span className="text-foreground">
                 {lastWebhookAt ? new Date(lastWebhookAt).toLocaleString() : "never"}
+              </span>
+            </span>
+            <span>
+              Last sync (any):{" "}
+              <span className="text-foreground">
+                {lastSyncAt ? new Date(lastSyncAt).toLocaleString() : "never"}
               </span>
             </span>
             <button
@@ -171,19 +189,33 @@ export function AppleHealthCard() {
             >
               <RefreshCw className="h-3 w-3 mr-1" /> Rotate token
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                if (confirm("Disconnect Apple Health auto-sync? Past data stays.")) {
-                  disconnectMut.mutate();
-                }
-              }}
-              disabled={disconnectMut.isPending}
-              className="text-destructive hover:text-destructive"
-            >
-              <Trash2 className="h-3 w-3 mr-1" /> Disconnect
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={disconnectMut.isPending}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-3 w-3 mr-1" /> Disconnect
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Disconnect Apple Health auto-sync?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Your webhook URL will stop accepting new data. Past readings stay in Purple,
+                    and you can reconnect any time by generating a new URL.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => disconnectMut.mutate()}>
+                    Disconnect
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </>
       )}
