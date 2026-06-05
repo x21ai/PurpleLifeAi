@@ -128,7 +128,7 @@ function P(c: Ctx, text: string, opts: { size?: number; color?: ReturnType<typeo
   const color = opts.color ?? TEXT;
   const font = opts.bold ? c.bold : c.font;
   const maxW = PAGE_W - MARGIN * 2;
-  const lines = wrap(text || "—", font, size, maxW);
+  const lines = wrap(safe(text || "-"), font, size, maxW);
   for (const line of lines) {
     ensureSpace(c, size + 4);
     c.page.drawText(safe(line), { x: MARGIN, y: c.y, size, font, color });
