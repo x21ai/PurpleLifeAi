@@ -1,5 +1,5 @@
 import { useNavigate, useRouterState, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronDown, User, HeartHandshake, Settings, LogOut, UserCircle } from "lucide-react";
 import {
@@ -27,6 +27,7 @@ export function ProfileMenu() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const { session, signOut } = useAuth();
+  const queryClient = useQueryClient();
 
   const fetchOwners = useServerFn(listCaregiverOwners);
   const ownersQ = useQuery({
@@ -55,8 +56,10 @@ export function ProfileMenu() {
     "Account";
 
   const handleSignOut = async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
     await signOut();
-    navigate({ to: "/sign-in" });
+    navigate({ to: "/sign-in", replace: true });
   };
 
   if (!session) return null;
