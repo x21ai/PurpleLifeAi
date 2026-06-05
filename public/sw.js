@@ -1,6 +1,6 @@
 // Purple service worker — medication reminders, offline app shell.
 
-const CACHE = "purple-shell-v2";
+const CACHE = "purple-shell-v3";
 const SHELL = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 const DB_NAME = "purple-med-schedule";
 const STORE = "doses";
@@ -175,8 +175,14 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put("/", copy)).catch(() => {});
+          // Only cache successful HTML responses, and only cache the home
+          // page under "/". Never cache 4xx/5xx (avoids poisoning the
+          // offline fallback with the SSR error page).
+          const ct = res.headers.get("content-type") || "";
+          if (res.ok && res.status === 200 && ct.includes("text/html") && url.pathname === "/") {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put("/", copy)).catch(() => {});
+          }
           return res;
         })
         .catch(() => caches.match("/").then((r) => r || new Response("Offline", { status: 503 }))),
