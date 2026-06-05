@@ -20,9 +20,19 @@ function AppleHealthImportPage() {
   const [progress, setProgress] = useState<ParseProgress | null>(null);
   const [phase, setPhase] = useState<"idle" | "unzipping" | "parsing" | "uploading" | "done">("idle");
   const [inserted, setInserted] = useState(0);
+  const [upload, setUpload] = useState<{ done: number; total: number } | null>(null);
+
+  const reset = () => {
+    setProgress(null);
+    setUpload(null);
+    setInserted(0);
+    setPhase("idle");
+  };
 
   const onFile = async (file: File | null) => {
     if (!file) return;
+    setUpload(null);
+    setInserted(0);
     const lower = file.name.toLowerCase();
     let xmlFile: File;
     if (lower.endsWith(".zip")) {
@@ -66,17 +76,21 @@ function AppleHealthImportPage() {
     setPhase("uploading");
     const CHUNK = 500;
     let total = 0;
+    const totalChunks = Math.ceil(days.length / CHUNK);
+    setUpload({ done: 0, total: totalChunks });
     try {
       for (let i = 0; i < days.length; i += CHUNK) {
         const slice = days.slice(i, i + CHUNK);
         const r = await backfill({ data: { days: slice } });
         total += r.inserted;
+        setUpload({ done: Math.floor(i / CHUNK) + 1, total: totalChunks });
       }
       setInserted(total);
       setPhase("done");
       toast.success(`Imported ${total} days of Apple Health data`);
     } catch (e) {
       setPhase("idle");
+      setUpload(null);
       toast.error(e instanceof Error ? e.message : "Upload failed");
     }
   };
@@ -126,14 +140,23 @@ function AppleHealthImportPage() {
               {phase === "parsing" ? "Reading your export…" : "Uploading daily summaries…"}
             </p>
             <p className="text-[12px] text-white/60">
-              {formatBytes(progress.bytesRead)} / {formatBytes(progress.totalBytes)} ·{" "}
-              {progress.recordsParsed.toLocaleString()} records · {progress.daysFound} days
+              {phase === "parsing"
+                ? `${formatBytes(progress.bytesRead)} / ${formatBytes(progress.totalBytes)} · ${progress.recordsParsed.toLocaleString()} records · ${progress.daysFound} days`
+                : upload
+                ? `Batch ${upload.done} of ${upload.total} · ${progress.daysFound} days total`
+                : `${progress.daysFound} days`}
             </p>
             <div className="mx-auto h-1 w-full max-w-md overflow-hidden rounded-full bg-white/10">
               <div
                 className="h-full bg-white/70 transition-all"
                 style={{
-                  width: `${Math.min(100, (progress.bytesRead / Math.max(1, progress.totalBytes)) * 100)}%`,
+                  width: `${
+                    phase === "parsing"
+                      ? Math.min(100, (progress.bytesRead / Math.max(1, progress.totalBytes)) * 100)
+                      : upload
+                      ? Math.min(100, (upload.done / Math.max(1, upload.total)) * 100)
+                      : 0
+                  }%`,
                 }}
               />
             </div>
@@ -144,9 +167,14 @@ function AppleHealthImportPage() {
           <div className="space-y-4 py-6 text-center">
             <Check className="mx-auto h-8 w-8 text-[#82B4FF]" />
             <p className="text-[18px] font-light text-[#FAFAFC]">Imported {inserted} days</p>
-            <Button asChild variant="outline">
-              <Link to="/biometrics" className="text-[#FAFAFC]">View biometrics</Link>
-            </Button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button asChild variant="outline">
+                <Link to="/biometrics" className="text-[#FAFAFC]">View biometrics</Link>
+              </Button>
+              <Button variant="ghost" onClick={reset} className="text-[#FAFAFC]">
+                Import another file
+              </Button>
+            </div>
           </div>
         )}
       </SheetCard>
