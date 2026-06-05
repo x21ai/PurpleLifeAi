@@ -12,6 +12,7 @@ export const Route = createFileRoute("/community")({
       { property: "og:title", content: "Purple Community" },
       { property: "og:description", content: "Share experiences, find resources, and connect with others who understand." },
     ],
+    links: [{ rel: "canonical", href: "/community" }],
   }),
   component: CommunityFeed,
 });

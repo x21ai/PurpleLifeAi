@@ -22,6 +22,37 @@ export const Route = createFileRoute("/")({
       { property: "og:url", content: "/" },
     ],
     links: [{ rel: "canonical", href: "/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              name: "Purple",
+              url: "https://purplelife.org",
+              logo: "https://purplelife.org/icon-512.png",
+              sameAs: ["https://purplelife.lovable.app"],
+            },
+            {
+              "@type": "WebSite",
+              name: "Purple",
+              url: "https://purplelife.org",
+            },
+            {
+              "@type": "SoftwareApplication",
+              name: "Purple",
+              applicationCategory: "HealthApplication",
+              operatingSystem: "Web",
+              offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+              description:
+                "Private, AI-powered health journal for people living with epilepsy, migraine, diabetes, mental health, and other pattern-driven conditions.",
+            },
+          ],
+        }),
+      },
+    ],
   }),
   component: MarketingHome,
 });
