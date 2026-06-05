@@ -20,7 +20,6 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as HowPurpleThinksRouteImport } from './routes/how-purple-thinks'
 import { Route as FeedbackRouteImport } from './routes/feedback'
-import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CommunityRouteImport } from './routes/community'
 import { Route as AboutRouteImport } from './routes/about'
@@ -147,11 +146,6 @@ const HowPurpleThinksRoute = HowPurpleThinksRouteImport.update({
 const FeedbackRoute = FeedbackRouteImport.update({
   id: '/feedback',
   path: '/feedback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeaturesRoute = FeaturesRouteImport.update({
-  id: '/features',
-  path: '/features',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -534,7 +528,6 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
-  '/features': typeof FeaturesRoute
   '/feedback': typeof FeedbackRoute
   '/how-purple-thinks': typeof HowPurpleThinksRoute
   '/messages': typeof MessagesRoute
@@ -619,7 +612,6 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
-  '/features': typeof FeaturesRoute
   '/feedback': typeof FeedbackRoute
   '/how-purple-thinks': typeof HowPurpleThinksRoute
   '/messages': typeof MessagesRoute
@@ -705,7 +697,6 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
-  '/features': typeof FeaturesRoute
   '/feedback': typeof FeedbackRoute
   '/how-purple-thinks': typeof HowPurpleThinksRoute
   '/messages': typeof MessagesRoute
@@ -792,7 +783,6 @@ export interface FileRouteTypes {
     | '/about'
     | '/community'
     | '/contact'
-    | '/features'
     | '/feedback'
     | '/how-purple-thinks'
     | '/messages'
@@ -877,7 +867,6 @@ export interface FileRouteTypes {
     | '/about'
     | '/community'
     | '/contact'
-    | '/features'
     | '/feedback'
     | '/how-purple-thinks'
     | '/messages'
@@ -962,7 +951,6 @@ export interface FileRouteTypes {
     | '/about'
     | '/community'
     | '/contact'
-    | '/features'
     | '/feedback'
     | '/how-purple-thinks'
     | '/messages'
@@ -1049,7 +1037,6 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   CommunityRoute: typeof CommunityRouteWithChildren
   ContactRoute: typeof ContactRoute
-  FeaturesRoute: typeof FeaturesRoute
   FeedbackRoute: typeof FeedbackRoute
   HowPurpleThinksRoute: typeof HowPurpleThinksRoute
   MessagesRoute: typeof MessagesRoute
@@ -1160,13 +1147,6 @@ declare module '@tanstack/react-router' {
       path: '/feedback'
       fullPath: '/feedback'
       preLoaderRoute: typeof FeedbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/features': {
-      id: '/features'
-      path: '/features'
-      fullPath: '/features'
-      preLoaderRoute: typeof FeaturesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -1843,7 +1823,6 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   CommunityRoute: CommunityRouteWithChildren,
   ContactRoute: ContactRoute,
-  FeaturesRoute: FeaturesRoute,
   FeedbackRoute: FeedbackRoute,
   HowPurpleThinksRoute: HowPurpleThinksRoute,
   MessagesRoute: MessagesRoute,
