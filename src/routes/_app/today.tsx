@@ -421,6 +421,26 @@ function TodayPage() {
   );
 }
 
+class TodayWidgetBoundary extends Component<
+  { name: string; children: ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.warn(`[today] ${this.props.name} widget failed`, error);
+  }
+
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
+
 function QuickAction({
   icon: Icon,
   label,
