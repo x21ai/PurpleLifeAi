@@ -10,6 +10,7 @@ import { MarketingHeader } from "@/components/layout/marketing-header";
 import { supabase } from "@/integrations/supabase/client";
 import { CalmHero } from "@/components/marketing/calm-scene";
 import { humanImages } from "@/lib/calm-images";
+import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/contact")({
 });
 
 function ContactPage() {
+  useRevealOnScroll();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");

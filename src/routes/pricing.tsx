@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { CalmHero, CalmBand, HumanMoment } from "@/components/marketing/calm-scene";
 import { calmImages, humanImages } from "@/lib/calm-images";
+import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -62,6 +63,7 @@ const included = [
 ];
 
 function PricingPage() {
+  useRevealOnScroll();
   return (
     <div className="min-h-screen bg-background text-foreground">
       <MarketingHeader />
