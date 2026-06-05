@@ -101,11 +101,11 @@ function AccountPage() {
       <SheetSectionLabel>{t("account.language")}</SheetSectionLabel>
       <SheetCard>
         <div className="flex items-center gap-2">
-          <p className="text-[15px] text-[#FAFAFC]">{t("locale.title")}</p>
-          {savingLocale && <Loader2 className="h-3 w-3 animate-spin text-white/40" />}
+          <p className="text-[15px] text-foreground">{t("locale.title")}</p>
+          {savingLocale && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
         </div>
         <p className="mt-1 text-[13px] sheet-muted">{t("locale.subtitle")}</p>
-        <div className="mt-5 [&_label]:text-white/80 [&_input]:bg-white/[0.04] [&_input]:border-white/10 [&_input]:text-[#FAFAFC] [&_button[role=combobox]]:bg-white/[0.04] [&_button[role=combobox]]:border-white/10 [&_button[role=combobox]]:text-[#FAFAFC]">
+        <div className="mt-5 [&_label]:text-foreground/80 [&_input]:bg-muted [&_input]:border-border [&_input]:text-foreground [&_button[role=combobox]]:bg-muted [&_button[role=combobox]]:border-border [&_button[role=combobox]]:text-foreground">
           <LocaleFields values={locale} onChange={onLocaleChange} disabled={loading} />
         </div>
       </SheetCard>
@@ -122,10 +122,10 @@ function AccountPage() {
 
       <SheetSectionLabel>Session</SheetSectionLabel>
       <SheetCard>
-        <p className="text-[15px] text-[#FAFAFC]">Signed in as</p>
+        <p className="text-[15px] text-foreground">Signed in as</p>
         <p className="mt-1 text-[13px] sheet-muted">{session?.user?.email ?? "—"}</p>
         <div className="mt-5">
-          <Button onClick={handleSignOut} variant="outline" className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10">
+          <Button onClick={handleSignOut} variant="outline" className="bg-muted border-border text-foreground hover:bg-muted/80">
             {t("account.signOut")}
           </Button>
         </div>
@@ -143,7 +143,7 @@ function AppearancePicker() {
   ];
   return (
     <div>
-      <p className="text-[15px] text-[#FAFAFC]">Appearance</p>
+      <p className="text-[15px] text-foreground">Appearance</p>
       <p className="mt-1 text-[13px] sheet-muted">Choose how Purple looks across every page.</p>
       <div className="mt-4 grid grid-cols-3 gap-2">
         {opts.map((o) => {
@@ -155,8 +155,8 @@ function AppearancePicker() {
               onClick={() => setMode(o.v)}
               className={`rounded-2xl border p-4 text-left transition-colors ${
                 active
-                  ? "border-[#B084D1] bg-[#B084D1]/15 text-[#FAFAFC]"
-                  : "border-white/10 bg-white/[0.03] text-[#FAFAFC] hover:bg-white/[0.06]"
+                  ? "border-primary bg-primary/15 text-foreground"
+                  : "border-border bg-muted/60 text-foreground hover:bg-muted"
               }`}
               aria-pressed={active}
             >
@@ -220,7 +220,7 @@ function InviteCodeCard() {
 
   return (
     <div>
-      <p className="text-[15px] text-[#FAFAFC]">Get an invite code</p>
+      <p className="text-[15px] text-foreground">Get an invite code</p>
       <p className="mt-1 text-[13px] sheet-muted">
         Share Purple with someone who could use a calmer way to track their health.
       </p>
@@ -230,22 +230,22 @@ function InviteCodeCard() {
             onClick={generate}
             disabled={loading}
             variant="outline"
-            className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10"
+            className="bg-muted border-border text-foreground hover:bg-muted/80"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create my invite code"}
           </Button>
         </div>
       ) : (
         <div className="mt-4 space-y-3">
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
-            <code className="text-[15px] tracking-widest text-[#FAFAFC]">{code}</code>
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted px-4 py-3">
+            <code className="text-[15px] tracking-widest text-foreground">{code}</code>
             <span className="text-[12px] sheet-muted">Unlimited uses</span>
           </div>
           <div className="flex gap-2">
             <Button
               onClick={copy}
               variant="outline"
-              className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10"
+              className="bg-muted border-border text-foreground hover:bg-muted/80"
             >
               {copied ? <Check className="mr-2 h-4 w-4 text-emerald-400" /> : <Copy className="mr-2 h-4 w-4" />}
               {copied ? "Copied" : "Copy link"}
@@ -253,7 +253,7 @@ function InviteCodeCard() {
             <Button
               onClick={share}
               variant="outline"
-              className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10"
+              className="bg-muted border-border text-foreground hover:bg-muted/80"
             >
               <Share2 className="mr-2 h-4 w-4" /> Share
             </Button>
