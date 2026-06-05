@@ -18,7 +18,7 @@ export function SiteFooter({ variant = "app" }: { variant?: "app" | "marketing" 
           <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
           <Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link>
           <a
-            href="https://github.com/lovable-dev/purple"
+            href="https://github.com/purplelife/purple"
             target="_blank"
             rel="noreferrer noopener"
             className="hover:text-foreground transition-colors"

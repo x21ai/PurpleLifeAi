@@ -74,7 +74,11 @@ function oauthErrorMessage(): string | null {
 
 function SignInPage() {
   const { t } = useTranslation();
-  const [mode, setMode] = useState<"signin" | "register">("signin");
+  const [mode, setMode] = useState<"signin" | "register">(() => {
+    if (typeof window === "undefined") return "signin";
+    const hash = window.location.hash.replace(/^#/, "");
+    return hash === "register" ? "register" : "signin";
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [inviteCode, setInviteCode] = useState("");

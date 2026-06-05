@@ -63,7 +63,7 @@ export function MobileTopBar() {
             <Link to="/privacy" onClick={() => setOpen(false)} className="block px-3 py-2 text-muted-foreground hover:text-foreground">Privacy & safety</Link>
             <Link to="/terms" onClick={() => setOpen(false)} className="block px-3 py-2 text-muted-foreground hover:text-foreground">Terms</Link>
             <a
-              href="https://github.com/lovable-dev/purple"
+              href="https://github.com/purplelife/purple"
               target="_blank"
               rel="noreferrer noopener"
               className="block px-3 py-2 text-muted-foreground hover:text-foreground"
