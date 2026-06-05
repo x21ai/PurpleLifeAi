@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /_app/
+Disallow: /api/
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /reset-password
+Disallow: /oauth/
+Disallow: /care/accept
+Disallow: /share/
+Disallow: /unsubscribe
+
+Sitemap: https://purplelife.org/sitemap.xml
