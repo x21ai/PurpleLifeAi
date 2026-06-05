@@ -9,6 +9,17 @@ html, body {
   overflow-x: hidden;
 }
 
+/* Hide scrollbars but keep scroll behavior (QA #16). */
+html, body, .hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /*
  * Purple Design System v2.
  * Spec lives in chat; this file is the source of truth.
