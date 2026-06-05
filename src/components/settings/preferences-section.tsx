@@ -458,6 +458,70 @@ export function PreferencesSection() {
           </div>
         </div>
 
+        <div className="border-t border-border pt-5">
+          <Label className="flex items-center gap-2 font-serif text-base text-foreground">
+            <BedDouble className="h-4 w-4 text-primary" />
+            Quiet hours
+          </Label>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Dose reminders go silent during this window. The dose still shows on Today — Purple just doesn't push a notification.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="quiet-start" className="text-sm text-muted-foreground">From</Label>
+              <input
+                id="quiet-start"
+                type="time"
+                value={quietStart}
+                onChange={(e) => void saveQuietHours({ start: e.target.value })}
+                disabled={loading}
+                className="rounded-md border border-input bg-background px-2 py-1 text-sm"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="quiet-end" className="text-sm text-muted-foreground">Until</Label>
+              <input
+                id="quiet-end"
+                type="time"
+                value={quietEnd}
+                onChange={(e) => void saveQuietHours({ end: e.target.value })}
+                disabled={loading}
+                className="rounded-md border border-input bg-background px-2 py-1 text-sm"
+              />
+            </div>
+            {(quietStart || quietEnd) && (
+              <button
+                type="button"
+                onClick={() => void saveQuietHours({ start: "", end: "" })}
+                className="text-xs text-muted-foreground underline underline-offset-4"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-start justify-between gap-4 border-t border-border pt-5">
+          <div className="flex-1">
+            <Label
+              htmlFor="weekly-digest"
+              className="flex items-center gap-2 font-serif text-base text-foreground"
+            >
+              <MailCheck className="h-4 w-4 text-primary" />
+              Weekly recap email
+            </Label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              A short Sunday summary of your week — events, doses, and one pattern Purple noticed.
+            </p>
+          </div>
+          <Switch
+            id="weekly-digest"
+            checked={weeklyDigest}
+            onCheckedChange={saveWeeklyDigest}
+            disabled={loading}
+          />
+        </div>
+
         <Link
           to="/settings/how-purple-thinks"
           className="flex items-center justify-between border-t border-border pt-5 -mx-1 px-1 rounded-lg hover:bg-secondary/40 transition-colors"
