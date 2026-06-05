@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Pill, AlertCircle, CheckCheck, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2 } from "lucide-react";
+import { Plus, Pill, AlertCircle, CheckCheck, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { MedKind } from "@/components/meds/medication-form-sheet";
 import { RefillForecastCard, AdherenceExtrasCard } from "@/components/meds/med-intelligence-cards";
+import { buildIcs, downloadIcs, medicationToIcsEvents } from "@/lib/ics";
 
 type Medication = {
   id: string;
@@ -198,6 +199,38 @@ function MedsPage() {
     setOpen(true);
   };
 
+  const exportAllToCalendar = async () => {
+    if (!userId) return;
+    const scheduled = activeMeds.filter((m) => !isRescueMed(m) && (m.times_of_day?.length ?? 0) > 0);
+    if (scheduled.length === 0) {
+      toast.error("No scheduled medications to export");
+      return;
+    }
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("timezone")
+      .eq("id", userId)
+      .maybeSingle();
+    const homeTz = (prof?.timezone as string | null) || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const events = scheduled.flatMap((m) =>
+      medicationToIcsEvents({
+        medId: m.id,
+        medName: m.name,
+        dosage: m.dosage,
+        timesOfDay: m.times_of_day,
+        days: 30,
+        homeTz,
+      }),
+    );
+    if (events.length === 0) {
+      toast.error("No dose times to export");
+      return;
+    }
+    const ics = buildIcs("Medications — Purple", events);
+    downloadIcs("purple-medications-30d", ics);
+    toast.success("Calendar file downloaded");
+  };
+
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-32 relative">
       <p className="label-eyebrow text-muted-foreground">{t("meds.eyebrow")}</p>
@@ -248,6 +281,16 @@ function MedsPage() {
               )}
             </button>
           ))}
+          {activeMeds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => void exportAllToCalendar()}
+              className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              title="Download a 30-day .ics with every scheduled dose"
+            >
+              <CalendarDays className="h-3.5 w-3.5" /> Export to calendar
+            </button>
+          )}
         </div>
       )}
 
