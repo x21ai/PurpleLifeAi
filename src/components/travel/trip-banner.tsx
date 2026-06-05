@@ -291,6 +291,39 @@ function shortCity(tz: string): string {
   return last.replace(/_/g, " ");
 }
 
+/** Difference in hours between `tz` and `homeTz` at the current instant. */
+function tzOffsetDiffHours(tz: string, homeTz: string): number | null {
+  try {
+    const at = new Date();
+    const off = (zone: string) => {
+      const dtf = new Intl.DateTimeFormat("en-US", {
+        timeZone: zone,
+        hour12: false,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+      const parts = dtf.formatToParts(at);
+      const g = (t: string) => Number(parts.find((p) => p.type === t)!.value);
+      const asUtc = Date.UTC(
+        g("year"),
+        g("month") - 1,
+        g("day"),
+        g("hour") === 24 ? 0 : g("hour"),
+        g("minute"),
+        g("second"),
+      );
+      return Math.round((asUtc - at.getTime()) / 60_000);
+    };
+    return Math.round((off(tz) - off(homeTz)) / 60);
+  } catch {
+    return null;
+  }
+}
+
 /** Plain-language nudge derived from the trip's shift strategy. */
 function strategyText(
   strategy: "home" | "snap" | "gradual" | null,
