@@ -13,7 +13,7 @@ import { ProgressPill } from "@/components/ui-oura/progress-pill";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, formatLocaleTime } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
@@ -417,7 +417,7 @@ function TodayDosesSection({
           {doses.map((d) => (
             <li key={d.id} className="flex items-center justify-between py-2 text-sm">
               <span className="text-muted-foreground tabular-nums">
-                {format(new Date(d.scheduled_at), "h:mm a")}
+                {formatLocaleTime(d.scheduled_at)}
               </span>
               <span className="text-foreground truncate mx-3 flex-1">
                 {d.medication?.name ?? "Medication"}

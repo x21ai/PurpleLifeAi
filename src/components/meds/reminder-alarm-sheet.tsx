@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { startAlarmLoop, type AlarmSoundId, DEFAULT_ALARM_SOUND } from "@/lib/alarm-sounds";
+import { formatLocaleTime } from "@/lib/utils";
 
 type CriticalDose = {
   id: string;
@@ -135,7 +136,7 @@ export function ReminderAlarmSheet() {
           </DialogTitle>
           <DialogDescription className="text-center">
             {dose.medication?.dosage ? `${dose.medication.dosage} · ` : ""}
-            scheduled {format(new Date(dose.scheduled_at), "h:mm a")}
+            scheduled {formatLocaleTime(dose.scheduled_at)}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-2 mt-2">

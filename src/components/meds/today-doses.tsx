@@ -2,7 +2,7 @@ import * as React from "react";
 import { format } from "date-fns";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatLocaleTime } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
@@ -333,7 +333,7 @@ export function TodayDoses() {
                 {traveling && homeTz ? (
                   <DualTime iso={d.scheduled_at} homeTz={homeTz} />
                 ) : (
-                  <span>{format(new Date(d.scheduled_at), "h:mm a")}</span>
+                  <span>{formatLocaleTime(d.scheduled_at)}</span>
                 )}
               </span>
               <div className="flex-1 min-w-0">

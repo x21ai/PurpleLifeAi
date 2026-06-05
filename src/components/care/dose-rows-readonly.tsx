@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, formatLocaleTime } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { CaregiverBadge } from "@/components/care/caregiver-badge";
 
@@ -68,7 +68,7 @@ export function DoseRowsReadOnly({
                 statusPillClass(d.status),
               )}
             >
-              {format(new Date(d.scheduled_at), "h:mm a")}
+              {formatLocaleTime(d.scheduled_at)}
             </span>
             <div className="flex-1 min-w-0">
               <p className="text-sm text-foreground truncate">
@@ -103,7 +103,7 @@ export function DoseRowsReadOnly({
               <span className="text-xs text-muted-foreground capitalize">
                 {d.status}
                 {d.taken_at && d.status === "taken"
-                  ? ` · ${format(new Date(d.taken_at), "h:mm a")}`
+                  ? ` · ${formatLocaleTime(d.taken_at)}`
                   : ""}
               </span>
             )}
