@@ -50,9 +50,9 @@ export function FirstEntryNudge() {
             .eq("user_id", userId)
             .eq("active", true),
           supabase
-            .from("care_circle_members")
+            .from("care_relationships")
             .select("id", { count: "exact", head: true })
-            .eq("owner_user_id", userId),
+            .eq("owner_id", userId),
         ]);
       if (!active) return;
       setProfile((p as Profile | null) ?? null);
