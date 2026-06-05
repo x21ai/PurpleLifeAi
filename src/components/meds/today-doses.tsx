@@ -207,6 +207,8 @@ export function TodayDoses() {
     next: "taken" | "skipped" | "pending",
   ) => {
     const prev = doses;
+    const prevStatus = prev?.find((d) => d.id === id)?.status;
+    const medId = prev?.find((d) => d.id === id)?.medication?.id ?? null;
     setDoses((d) => d?.map((x) => (x.id === id ? { ...x, status: next } : x)) ?? null);
     const update: { status: string; taken_at: string | null } = {
       status: next,
@@ -220,6 +222,11 @@ export function TodayDoses() {
       setDoses(prev);
       toast.error("Could not update dose");
       return;
+    }
+    // QA #22: keep pills_remaining in sync with retroactive edits.
+    if (medId) {
+      if (next === "taken" && prevStatus !== "taken") await decrementPillCount(medId, 1);
+      else if (next !== "taken" && prevStatus === "taken") await decrementPillCount(medId, -1);
     }
     toast.success(
       next === "taken" ? "Marked as taken" : next === "skipped" ? "Marked as skipped" : "Reset to pending",
