@@ -153,6 +153,7 @@ export function TodayDoses() {
 
   const runAction = async (id: string, action: "taken" | "skip" | "snooze") => {
     const prev = doses;
+    const dose = doses?.find((d) => d.id === id) ?? null;
     const now = new Date().toISOString();
     setDoses((d) =>
       d?.map((x) => {
@@ -170,6 +171,10 @@ export function TodayDoses() {
         .update({ status: "taken", taken_at: now })
         .eq("id", id);
       error = res.error;
+      // QA #22: decrement pill stock when a scheduled dose is marked taken.
+      if (!error && dose?.medication?.id && (prev?.find((d) => d.id === id)?.status !== "taken")) {
+        await decrementPillCount(dose.medication.id, 1);
+      }
     } else if (action === "skip") {
       const res = await supabase
         .from("medication_doses")
