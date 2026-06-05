@@ -147,3 +147,148 @@ export function CalmBand(props: CalmBandProps) {
     />
   );
 }
+
+/**
+ * HumanMoment — a portrait/hand/detail photo paired with one quiet sentence.
+ * Two layouts: "portrait" (image left, caption right) and "quote" (image as
+ * backdrop with a centered pull-quote).
+ */
+interface HumanMomentProps {
+  image: string;
+  alt: string;
+  quote: ReactNode;
+  attribution?: ReactNode;
+  layout?: "portrait" | "quote";
+  reverse?: boolean;
+  className?: string;
+}
+
+export function HumanMoment({
+  image,
+  alt,
+  quote,
+  attribution,
+  layout = "portrait",
+  reverse = false,
+  className,
+}: HumanMomentProps) {
+  if (layout === "quote") {
+    return (
+      <section
+        className={cn(
+          "relative overflow-hidden h-[70vh] min-h-[480px] max-h-[820px]",
+          className,
+        )}
+      >
+        <img
+          src={image}
+          alt={alt}
+          className="absolute inset-0 h-full w-full object-cover"
+          width={1920}
+          height={1280}
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-foreground/55" aria-hidden="true" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="mx-auto max-w-3xl px-6 sm:px-10 text-center">
+            <p
+              className="font-serif text-3xl sm:text-5xl leading-[1.15] tracking-tight"
+              style={{ color: "var(--background)" }}
+            >
+              &ldquo;{quote}&rdquo;
+            </p>
+            {attribution ? (
+              <p
+                className="mt-8 text-sm tracking-wide uppercase"
+                style={{ color: "var(--background)", opacity: 0.75 }}
+              >
+                {attribution}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </section>
+    );
+  }
+  return (
+    <section className={cn("mx-auto max-w-6xl px-6 sm:px-10 py-24 sm:py-32", className)}>
+      <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
+        <div className={cn("relative overflow-hidden rounded-3xl aspect-[4/5]", reverse && "lg:order-2")}>
+          <img
+            src={image}
+            alt={alt}
+            className="absolute inset-0 h-full w-full object-cover"
+            width={1600}
+            height={2000}
+            loading="lazy"
+          />
+        </div>
+        <div className={cn(reverse && "lg:order-1")}>
+          <p className="font-serif text-3xl sm:text-4xl lg:text-5xl leading-[1.12] tracking-tight text-foreground max-w-[20ch]">
+            &ldquo;{quote}&rdquo;
+          </p>
+          {attribution ? (
+            <p className="mt-8 text-sm tracking-wide uppercase text-muted-foreground">
+              {attribution}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * QuietStat — a single oversized phrase, Apple-style, with one line of context.
+ * Use sparingly. Once per page at most.
+ */
+interface QuietStatProps {
+  stat: ReactNode;
+  caption?: ReactNode;
+  className?: string;
+}
+
+export function QuietStat({ stat, caption, className }: QuietStatProps) {
+  return (
+    <section className={cn("mx-auto max-w-4xl px-6 sm:px-10 py-28 sm:py-40 text-center", className)}>
+      <p className="font-serif text-5xl sm:text-7xl lg:text-8xl leading-[1.02] tracking-tight text-foreground">
+        {stat}
+      </p>
+      {caption ? (
+        <p className="mt-8 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
+          {caption}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+/**
+ * StillLife — a small detail shot used as a punctuation mark between sections.
+ * No headline; just the image and breathing room.
+ */
+interface StillLifeProps {
+  image: string;
+  alt: string;
+  className?: string;
+}
+
+export function StillLife({ image, alt, className }: StillLifeProps) {
+  return (
+    <section
+      className={cn(
+        "relative overflow-hidden h-[55vh] min-h-[360px] max-h-[640px]",
+        className,
+      )}
+    >
+      <img
+        src={image}
+        alt={alt}
+        className="absolute inset-0 h-full w-full object-cover"
+        width={1920}
+        height={1280}
+        loading="lazy"
+      />
+    </section>
+  );
+}
