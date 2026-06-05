@@ -1,113 +1,63 @@
-## The shift
+Four phases, executed one at a time, with a pause for review between each so tone and behavior stay in-bounds.
 
-Calm landscapes alone are pretty but distant. Apple's depth comes from **people** — a hand, a face, a quiet moment of use — paired with restraint. We add a human layer to the calm system, then roll it across every marketing page with intent, not as a template.
+## Phase 1 — Caregiver "confirm to write"
 
-Each page gets one **human anchor moment** (a person, a hand, a small real detail) plus the calm landscape language we already have. Copy gets shorter, more specific, more first-person. Less "feature." More "this is what it feels like at 2am when you can't sleep and you remember to log it."
+Goal: every caregiver-initiated write goes through one shared confirmation step, and the audit row makes the source obvious.
 
----
+Current state: `AddJournalSheet`, `AddBiometricSheet`, `LogSeizureSheet`, the propose-change paths, and the dose-mark-taken row on `care.$ownerId.tsx` all call their server functions directly. `ProposeChangeDialog` already exists but is only used in two spots. There is no single confirm component.
 
-## Step 1 — Extend the calm system with a Human layer
+What I'll build:
+- New `src/components/care/confirm-write-dialog.tsx` — a single AlertDialog component with consistent copy: "You're writing to {ownerName}'s record. They'll see this in their audit log. Continue?" Accepts `summary` (what the write does, one line), `onConfirm`, and an optional `destructive` flag.
+- Wire it into the four caregiver write paths in `src/components/care/`:
+  1. `add-journal-sheet.tsx`
+  2. `add-biometric-sheet.tsx`
+  3. `log-seizure-sheet.tsx`
+  4. dose-mark-taken in `care.$ownerId.tsx` (and any other inline writes I find while threading it through)
+- Verify each caregiver server fn in `src/lib/care.functions.ts` already writes a `care_audit_log` row; if any path is missing one, add it server-side (audit is the security record — the dialog is the UX layer).
+- Quick visual QA: open `/care/$ownerId` as a caregiver viewport, confirm dialog appears, copy reads calmly (not alarming), and an entry persists with `created_by_kind = "caregiver"`.
 
-Add to `src/components/marketing/calm-scene.tsx`:
+Out of scope here: changing the propose-change flow (already has its own dialog), or touching owner-initiated writes.
 
-- **`<HumanMoment>`** — a portrait/hand/detail image with a single sentence of testimonial-style copy or a quiet caption. Two layouts: `portrait` (image left, caption right, generous whitespace) and `quote` (image as backdrop, pull-quote centered, small attribution).
-- **`<QuietStat>`** — a single number/word treated like Apple's "1 trillion" moments. Serif, oversized, one line of context. Used sparingly (once per page max).
-- **`<StillLife>`** — a small detail shot (a pill bottle on a windowsill, a phone on a nightstand, a hand holding a mug) used as a punctuation mark between sections. No headline required.
+## Phase 2 — Travel: trip-wrapup + pre-trip checklist wiring
 
-All three reuse the same overlay/typography vocabulary as `<CalmHero>` so the system stays coherent.
+Goal: the two existing Today cards (`pre-trip-checklist.tsx`, `trip-wrapup-card.tsx`) drive real state — schedule regenerates cleanly when a trip is created, edited, or ended.
 
-## Step 2 — Generate the human imagery
+What I'll verify and finish:
+- `pre-trip-checklist.tsx`: confirm it appears when a trip with `start_date` in the next 14 days exists and has unmet items (meds packed flag, itinerary complete, rescue meds noted). If any items are mocked, wire to real fields on `trips` or compute from `medications`/`medication_doses`.
+- `trip-wrapup-card.tsx`: confirm it appears when `now > trip.end_date` for the active trip. The "End trip" action must (a) mark trip inactive, (b) delete future `medication_doses` rows where `trip_id = trip.id`, (c) regenerate the home-schedule doses from `medications.schedule` using `src/lib/travel-scheduler.ts`.
+- Re-run schedule regeneration on trip edits via `src/lib/travel.functions.ts` — confirm the existing serverFn already drops `trip_id`-tagged future doses before re-inserting (this is the clean-regeneration invariant from project knowledge).
+- Smoke test via browser: create a short trip, accept the schedule, end it from the wrap-up card, confirm the timeline shows home-schedule doses again.
 
-Generate ~6 on-brand human/detail photos (premium quality, since these carry the brand). All shot in the same calm palette as the landscapes — soft natural light, muted tones, never stocky, never smiling-at-camera.
+## Phase 3 — Weekly recap email end-to-end
 
-Proposed shots:
-1. Hands holding a warm mug at a kitchen window, morning light
-2. A person sitting on a bed at dusk, phone in hand, face soft/unreadable
-3. A caregiver's hand resting on someone's shoulder, both blurred slightly
-4. A pill organizer on a wooden table, late afternoon light
-5. A walk through tall grass, back of figure, golden hour
-6. A phone on a nightstand beside a glass of water, lamp glow
+Goal: prove the weekly-recap path actually delivers a rendered email, and the layout doesn't have any visual breakage.
 
-Stored in `src/assets/human-*.jpg`, registered in `src/lib/calm-images.ts` under a new `humanImages` export.
+What I'll do:
+- Read `src/lib/email-templates/weekly-recap.tsx`, `src/routes/api/public/cron/weekly-recap.ts`, and `src/lib/email/render-and-enqueue.server.ts` to confirm shapes line up.
+- Trigger the cron route once via `invoke-server-function` against a test user that has a week of seed data; check `email_send_log` for a `sent` row with `template_name = "weekly_recap"`.
+- Use the `/lovable/email/transactional/preview` route (or the renderer directly) to render the email to HTML, capture as image via headless preview, and visually QA — checking the header lockup, stat blocks, journal-moment block, footer/unsubscribe.
+- Fix any rendering issues (most likely: empty-state when a user has no journal entries; long medication-name overflow; dark-mode-only colors that fail in email clients).
 
-## Step 3 — Rewrite each marketing page around one human truth
+## Phase 4 — Apple Health import polish
 
-Each page gets a single human anchor, tighter copy, and one quiet stat.
+Goal: the import UX feels finished — clear states, no orphaned spinners, accurate counts.
 
-**`/` (home)** — Anchor: hands/mug at window. Headline stays calm-landscape; first scroll reveals `<HumanMoment>` "Last night I wrote three sentences. That was enough." `<QuietStat>` "Free. Forever. For the people who need it most."
+What I'll review in `src/routes/_app/apple-health-import.tsx` and `src/components/connections/apple-health-connection.tsx`:
+- Upload progress: bytes shown, parse step shown, write step shown — no single "Loading..." that hides everything.
+- Result summary: counts per metric category (sleep, HR, HRV, workouts, etc.), with a "View in biometrics" link.
+- Error handling: corrupt zip or wrong file type fails with a calm message, not a stack trace.
+- Idempotency: re-importing the same export does not duplicate rows (verify the dedupe key in `src/lib/apple-health.server.ts`).
+- Settings card (`src/components/settings/apple-health-card.tsx`): last-import date + size, "Import again" CTA, "Remove all imported data" with confirm.
 
-**`/features`** — Already has the calm hero. Add `<StillLife>` (pill organizer) between Capture and Ask Purple. Replace the generic "And the rest" grid intro with a `<HumanMoment>` (caregiver hand) — "For the people who help you carry it."
+## Execution order and check-ins
 
-**`/about`** — Lead with `<CalmHero>` (mist) → `<HumanMoment>` portrait → the founder/why-we-exist story in the voice of the charter page (it already nails the tone — borrow from `_app/charter.tsx`). One `<QuietStat>`: "Named for the color of epilepsy awareness. Built for anyone carrying something heavy."
+I'll do Phase 1 end-to-end first and pause for your reaction (the confirm dialog copy is the most opinionated piece). Then Phase 2, then 3, then 4 — pausing briefly after each so you can redirect if anything feels off.
 
-**`/pricing`** — Anchor: the nightstand still life. Hero is a `<CalmBand>` with "Free. Always." Below: one short paragraph on *why* it's free (not a feature table). `<HumanMoment>` closes the page — "Because nobody should pay to remember their own life." JSON-LD `Product` + `Offer` (price 0).
+## Out of scope
 
-**`/contact`** — Quiet `<CalmHero variant="band">` over a small human detail (walk-through-grass). Form stays as-is but gets a one-line human intro: "A real person reads every message. Usually within a day."
+- New features (no new caregiver scopes, no new travel modes, no new email types).
+- Marketing pages (done in previous plan).
+- Native mobile or condition-specific SDK work.
+- Multi-trip overlap (project knowledge: one active trip).
 
-## Step 4 — Tighten the typography & motion
-
-- Marketing pages: bump body line-height, widen letter-spacing on eyebrows, add subtle fade-in-on-scroll for `<HumanMoment>` (CSS-only `@starting-style` or a tiny IntersectionObserver hook — no Motion dependency).
-- Audit every headline: max 6 words, max 2 lines. Apple writes "Think different," not paragraphs.
-- Replace any remaining "Get started" / "Learn more" CTAs with verbs that match the page ("Begin today," "Read our promises," "Say hello").
-
-## Step 5 — Per-route metadata & SEO
-
-Every marketing leaf route gets:
-- Unique `<title>` (~50 chars, includes "Purple")
-- Unique meta description (~150 chars, human voice, not feature-list)
-- `og:image` pointing at that page's hero image
-- Canonical URL
-- JSON-LD where it earns its place (`Organization` on `/about`, `Product`+`Offer` on `/pricing`)
-
-Audit `public/sitemap.xml` against actual routes.
-
-## Step 6 — Accessibility pass on the new image-heavy layouts
-
-- Meaningful `alt` on every human/detail image (not decorative — these carry meaning).
-- Contrast check on light type over dimmed photos (`overlay="dim"` may need to go to 0.55 in places).
-- Visible focus rings on every CTA over a photo background.
-- Reduced-motion: disable scroll fade-ins under `prefers-reduced-motion`.
-
-## Step 7 — Promote `/home2` to `/`
-
-Once steps 1–6 land, swap `/home2` content into `/` and delete `/home2`. Keep route history clean.
-
-## Step 8 — E2E smoke
-
-Extend `tests/e2e/routes-smoke.spec.ts` to load each marketing route, check `<h1>` exists, hero image loads, no console errors.
-
----
-
-## Out of scope for this plan
-
-- Wave 1 deploy (still blocked on Supabase access).
-- New product features.
-- App-shell (signed-in) pages — this is marketing only.
-
-## Files touched
-
-- `src/components/marketing/calm-scene.tsx` — add HumanMoment, QuietStat, StillLife
-- `src/lib/calm-images.ts` — add `humanImages` export
-- `src/assets/human-*.jpg` — 6 new images via imagegen (premium)
-- `src/routes/index.tsx`, `home2.tsx`, `features.tsx`, `about.tsx`, `pricing.tsx`, `contact.tsx`
-- `public/sitemap.xml`
-- `tests/e2e/routes-smoke.spec.ts`
-
-## Order of work
-
-I'll do steps 1 → 2 → 3 (page by page, pausing after each so you can react to tone) → 4 → 5 → 6 → 7 → 8. Tone is the risky part — we'll know after `/about` whether the human voice is landing.
-
-Approve and I'll start with Step 1 (the Human layer components) + Step 2 (generate the 6 images) in parallel.
-
----
-
-## Progress
-
-- [x] Step 1 — Human layer components (`HumanMoment`, `QuietStat`, `StillLife`)
-- [x] Step 2 — 6 human/detail images generated & registered
-- [x] Step 3 — `/`, `/features`, `/about`, `/pricing`, `/contact` rewritten around human anchors
-- [x] Step 4 — Fade-in-on-scroll via `data-reveal` + `useRevealOnScroll` hook; reduced-motion respected in `src/styles.css`
-- [x] Step 5 — Per-route head() metadata + canonicals + JSON-LD (Organization/SoftwareApplication, AboutPage, Product/Offer); sitemap on `www.purplelife.org`
-- [x] Step 6 — A11y: meaningful alts, sitewide focus ring, reduced-motion override
-- [x] Step 7 — `/home2` promoted to `/`, file deleted
-- [x] Step 8 — Smoke test extended (status < 500, no Application error, no console errors)
+Approve and I'll start with Phase 1.
