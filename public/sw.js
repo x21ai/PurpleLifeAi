@@ -1,7 +1,7 @@
-// Purple service worker — medication reminders, offline app shell.
+// Purple service worker — medication reminders and static assets.
 
-const CACHE = "purple-shell-v3";
-const SHELL = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
+const CACHE = "purple-shell-v4";
+const SHELL = ["/manifest.json", "/icon-192.png", "/icon-512.png"];
 const DB_NAME = "purple-med-schedule";
 const STORE = "doses";
 const CHECK_INTERVAL_MS = 60_000;
@@ -172,21 +172,9 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/oauth/")) return;
 
   if (req.mode === "navigate") {
-    event.respondWith(
-      fetch(req)
-        .then((res) => {
-          // Only cache successful HTML responses, and only cache the home
-          // page under "/". Never cache 4xx/5xx (avoids poisoning the
-          // offline fallback with the SSR error page).
-          const ct = res.headers.get("content-type") || "";
-          if (res.ok && res.status === 200 && ct.includes("text/html") && url.pathname === "/") {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put("/", copy)).catch(() => {});
-          }
-          return res;
-        })
-        .catch(() => caches.match("/").then((r) => r || new Response("Offline", { status: 503 }))),
-    );
+    // Never serve cached HTML for app routes. A previous worker cached the
+    // SSR error page under "/", which could strand signed-in users on
+    // "This page didn't load" after navigating to /today.
     return;
   }
 
