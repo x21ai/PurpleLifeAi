@@ -114,7 +114,7 @@ export const resolveMedicalReportShareLink = createServerFn({ method: "POST" })
 
     await supabaseAdmin.from("phi_access_log").insert({
       user_id: link.user_id,
-      actor_id: null,
+      actor_id: link.id,
       action: "read",
       resource_type: "medical_report_public_link",
       resource_id: link.id,
