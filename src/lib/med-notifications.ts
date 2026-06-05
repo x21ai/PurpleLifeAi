@@ -30,6 +30,49 @@ export function notificationsSupported(): boolean {
   );
 }
 
+function isPreviewHost(host: string): boolean {
+  return (
+    host.startsWith("id-preview--") ||
+    host.startsWith("preview--") ||
+    host === "lovableproject.com" ||
+    host.endsWith(".lovableproject.com") ||
+    host === "lovableproject-dev.com" ||
+    host.endsWith(".lovableproject-dev.com") ||
+    host === "beta.lovable.dev" ||
+    host.endsWith(".beta.lovable.dev")
+  );
+}
+
+async function clearAppShellCaches(): Promise<void> {
+  if (typeof caches === "undefined") return;
+  await Promise.allSettled(
+    ["purple-shell-v2", "purple-shell-v3"].map((name) => caches.delete(name)),
+  );
+}
+
+async function unregisterPurpleServiceWorkers(): Promise<void> {
+  if (!("serviceWorker" in navigator)) return;
+  const regs = await navigator.serviceWorker.getRegistrations();
+  await Promise.allSettled(
+    regs
+      .filter((reg) => new URL(reg.scope).origin === window.location.origin)
+      .map((reg) => reg.unregister()),
+  );
+  await clearAppShellCaches();
+}
+
+function shouldRegisterServiceWorker(): boolean {
+  if (typeof window === "undefined") return false;
+  if (!import.meta.env.PROD) return false;
+  if (new URLSearchParams(window.location.search).get("sw") === "off") return false;
+  try {
+    if (window.self !== window.top) return false;
+  } catch {
+    return false;
+  }
+  return !isPreviewHost(window.location.hostname);
+}
+
 export function isStandalonePwa(): boolean {
   if (typeof window === "undefined") return false;
   return (
@@ -51,8 +94,16 @@ export function dismissReminderBanner(): void {
 export async function ensureServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (!notificationsSupported()) return null;
   try {
+    if (!shouldRegisterServiceWorker()) {
+      await unregisterPurpleServiceWorkers();
+      return null;
+    }
+    await clearAppShellCaches();
     const existing = await navigator.serviceWorker.getRegistration("/sw.js");
-    if (existing) return existing;
+    if (existing) {
+      existing.update().catch(() => {});
+      return existing;
+    }
     return await navigator.serviceWorker.register("/sw.js");
   } catch (e) {
     console.warn("[purple] sw register failed", e);
