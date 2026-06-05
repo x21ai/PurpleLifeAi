@@ -14,7 +14,7 @@ import { AuthProvider } from "@/integrations/supabase/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
-import { rearmMedicationNotifications } from "@/lib/med-notifications";
+import { ensureServiceWorker, rearmMedicationNotifications } from "@/lib/med-notifications";
 import { ThemeProvider, themeBootstrapScript } from "@/lib/theme-provider";
 import { useOuraDailyAutoSync } from "@/hooks/use-oura-daily-autosync";
 import "@/i18n";
@@ -187,21 +187,12 @@ function RootComponent() {
     return () => subscription.unsubscribe();
   }, [router, queryClient]);
 
-  // Register the service worker for offline shell + notifications.
-  // Guard against iframe / preview hosts so the dev preview is never wedged.
+  // Register the service worker for medication reminders only. The helper
+  // refuses registration in preview/iframe/dev and clears stale app-shell caches.
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator)) return;
-    let inIframe = false;
-    try { inIframe = window.self !== window.top; } catch { inIframe = true; }
-    const host = window.location.hostname;
-    const isPreview =
-      host.includes("id-preview--") || host.includes("lovableproject.com");
-    if (inIframe || isPreview) {
-      navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister()));
-      return;
-    }
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
+    void ensureServiceWorker();
     // Repopulate the SW's IndexedDB schedule after every reload so dose
     // reminders survive page refreshes / app restarts.
     if (typeof Notification !== "undefined" && Notification.permission === "granted") {
