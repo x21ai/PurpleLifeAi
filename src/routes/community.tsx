@@ -38,6 +38,8 @@ type Post = {
   topic: string;
   created_at: string;
   pinned: boolean;
+  likes?: number;
+  comments?: number;
 };
 
 function CommunityFeed() {
@@ -58,7 +60,18 @@ function CommunityFeed() {
         .limit(50);
       if (topic !== "all") q = q.eq("topic", topic);
       const { data } = await q;
-      setPosts((data ?? []) as Post[]);
+      const base = (data ?? []) as Post[];
+      if (base.length === 0) { setPosts(base); return; }
+      const ids = base.map((p) => p.id);
+      const [{ data: reacts }, { data: cmts }] = await Promise.all([
+        supabase.from("community_reactions").select("post_id").in("post_id", ids).eq("kind", "like"),
+        supabase.from("community_comments").select("post_id").in("post_id", ids).eq("hidden", false),
+      ]);
+      const likeCount = new Map<string, number>();
+      for (const r of reacts ?? []) likeCount.set(r.post_id as string, (likeCount.get(r.post_id as string) ?? 0) + 1);
+      const cmtCount = new Map<string, number>();
+      for (const c of cmts ?? []) cmtCount.set(c.post_id as string, (cmtCount.get(c.post_id as string) ?? 0) + 1);
+      setPosts(base.map((p) => ({ ...p, likes: likeCount.get(p.id) ?? 0, comments: cmtCount.get(p.id) ?? 0 })));
     })();
   }, [topic]);
 
@@ -115,8 +128,8 @@ function CommunityFeed() {
                 <h3 className="mt-2 font-serif text-xl">{p.title}</h3>
                 <p className="mt-2 text-sm text-foreground/75 line-clamp-2">{p.body}</p>
                 <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-                  <span className="inline-flex items-center gap-1"><Heart className="h-3.5 w-3.5" /> Like</span>
-                  <span className="inline-flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" /> Discuss</span>
+                  <span className="inline-flex items-center gap-1"><Heart className="h-3.5 w-3.5" /> {p.likes ?? 0}</span>
+                  <span className="inline-flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" /> {p.comments ?? 0}</span>
                 </div>
               </Link>
             </li>
