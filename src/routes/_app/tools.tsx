@@ -162,12 +162,13 @@ function BatteryRing({ percent }: { percent: number }) {
   const offset = c * (1 - Math.min(Math.max(percent, 0), 100) / 100);
   return (
     <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
+      <svg width={size} height={size} className="-rotate-90 text-foreground">
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke="rgba(255,255,255,0.08)"
+          stroke="currentColor"
+          strokeOpacity={0.12}
           strokeWidth={stroke}
           fill="none"
         />
@@ -175,7 +176,7 @@ function BatteryRing({ percent }: { percent: number }) {
           cx={size / 2}
           cy={size / 2}
           r={r}
-          stroke="#FAFAFC"
+          stroke="currentColor"
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={c}
