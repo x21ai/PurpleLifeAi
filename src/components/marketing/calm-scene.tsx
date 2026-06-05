@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ElementType, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 type Variant = "full" | "split" | "band";
@@ -87,7 +87,7 @@ export function CalmHero({
             </p>
           ) : null}
           {(() => {
-            const Tag = as as keyof JSX.IntrinsicElements;
+            const Tag = as as ElementType;
             return (
               <Tag
             className={cn(
