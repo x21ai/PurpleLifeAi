@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { MarketingHeader } from "@/components/layout/marketing-header";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/contact")({
@@ -53,12 +54,7 @@ function ContactPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border">
-        <div className="mx-auto max-w-6xl px-6 sm:px-10 h-16 flex items-center justify-between">
-          <Link to="/" className="wordmark text-[14px]">Purple</Link>
-          <Button asChild size="sm" variant="outline"><Link to="/sign-in">Sign in</Link></Button>
-        </div>
-      </header>
+      <MarketingHeader />
       <main className="mx-auto max-w-xl px-6 sm:px-10 py-16 sm:py-24">
         <p className="label-eyebrow">Contact</p>
         <h1 className="mt-4 font-serif text-4xl sm:text-5xl tracking-tight">Say hello.</h1>
