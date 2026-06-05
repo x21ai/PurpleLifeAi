@@ -51,7 +51,6 @@ export const navTree: NavGroup[] = [
     children: [
       { to: "/journal",     label: "All entries", icon: BookOpen },
       { to: "/journal/new", label: "New entry",   icon: Sparkles },
-      { to: "/insights",    label: "Patterns",    icon: TrendingUp },
     ],
   },
   {
