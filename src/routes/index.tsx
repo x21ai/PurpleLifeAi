@@ -1,9 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sparkles, BookOpen, Clock, TrendingUp, Shield, Users, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { useEffect } from "react";
 import { captureInviteFromUrl } from "@/lib/invite-storage";
+import heroMorning from "@/assets/home-hero-morning.jpg";
+import caregiverImg from "@/assets/home-caregiver.jpg";
+import walkImg from "@/assets/home-walk.jpg";
+import deviceImg from "@/assets/home-device.jpg";
+import coastImg from "@/assets/hero-readiness-coast.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
