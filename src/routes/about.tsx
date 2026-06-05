@@ -9,6 +9,7 @@ import {
   QuietStat,
 } from "@/components/marketing/calm-scene";
 import { calmImages, humanImages } from "@/lib/calm-images";
+import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -48,6 +49,7 @@ export const Route = createFileRoute("/about")({
 });
 
 function AboutPage() {
+  useRevealOnScroll();
   return (
     <div className="min-h-screen bg-background text-foreground">
       <MarketingHeader />

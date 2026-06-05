@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { captureInviteFromUrl } from "@/lib/invite-storage";
+import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 import {
   CalmHero,
   CalmBand,
@@ -67,6 +68,7 @@ export const Route = createFileRoute("/")({
 });
 
 function MarketingHome() {
+  useRevealOnScroll();
   useEffect(() => {
     captureInviteFromUrl();
   }, []);

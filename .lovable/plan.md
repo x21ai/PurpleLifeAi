@@ -98,3 +98,16 @@ Extend `tests/e2e/routes-smoke.spec.ts` to load each marketing route, check `<h1
 I'll do steps 1 → 2 → 3 (page by page, pausing after each so you can react to tone) → 4 → 5 → 6 → 7 → 8. Tone is the risky part — we'll know after `/about` whether the human voice is landing.
 
 Approve and I'll start with Step 1 (the Human layer components) + Step 2 (generate the 6 images) in parallel.
+
+---
+
+## Progress
+
+- [x] Step 1 — Human layer components (`HumanMoment`, `QuietStat`, `StillLife`)
+- [x] Step 2 — 6 human/detail images generated & registered
+- [x] Step 3 — `/`, `/features`, `/about`, `/pricing`, `/contact` rewritten around human anchors
+- [x] Step 4 — Fade-in-on-scroll via `data-reveal` + `useRevealOnScroll` hook; reduced-motion respected in `src/styles.css`
+- [x] Step 5 — Per-route head() metadata + canonicals + JSON-LD (Organization/SoftwareApplication, AboutPage, Product/Offer); sitemap on `www.purplelife.org`
+- [x] Step 6 — A11y: meaningful alts, sitewide focus ring, reduced-motion override
+- [x] Step 7 — `/home2` promoted to `/`, file deleted
+- [x] Step 8 — Smoke test extended (status < 500, no Application error, no console errors)

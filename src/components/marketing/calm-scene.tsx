@@ -175,6 +175,7 @@ export function HumanMoment({
   if (layout === "quote") {
     return (
       <section
+        data-reveal
         className={cn(
           "relative overflow-hidden h-[70vh] min-h-[480px] max-h-[820px]",
           className,
@@ -211,7 +212,7 @@ export function HumanMoment({
     );
   }
   return (
-    <section className={cn("mx-auto max-w-6xl px-6 sm:px-10 py-24 sm:py-32", className)}>
+    <section data-reveal className={cn("mx-auto max-w-6xl px-6 sm:px-10 py-24 sm:py-32", className)}>
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
         <div className={cn("relative overflow-hidden rounded-3xl aspect-[4/5]", reverse && "lg:order-2")}>
           <img
@@ -250,7 +251,7 @@ interface QuietStatProps {
 
 export function QuietStat({ stat, caption, className }: QuietStatProps) {
   return (
-    <section className={cn("mx-auto max-w-4xl px-6 sm:px-10 py-28 sm:py-40 text-center", className)}>
+    <section data-reveal className={cn("mx-auto max-w-4xl px-6 sm:px-10 py-28 sm:py-40 text-center", className)}>
       <p className="font-serif text-5xl sm:text-7xl lg:text-8xl leading-[1.02] tracking-tight text-foreground">
         {stat}
       </p>
@@ -276,6 +277,7 @@ interface StillLifeProps {
 export function StillLife({ image, alt, className }: StillLifeProps) {
   return (
     <section
+      data-reveal
       className={cn(
         "relative overflow-hidden h-[55vh] min-h-[360px] max-h-[640px]",
         className,
