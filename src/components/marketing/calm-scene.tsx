@@ -15,6 +15,8 @@ interface CalmHeroProps {
   overlay?: "fade" | "dim";
   align?: "bottom-left" | "center";
   className?: string;
+  /** Heading tag for the headline. Default h1. Use "div" to render no heading (e.g. when the page already has an h1). */
+  as?: "h1" | "h2" | "div";
 }
 
 /**
@@ -32,6 +34,7 @@ export function CalmHero({
   overlay = "fade",
   align = "bottom-left",
   className,
+  as = "h1",
 }: CalmHeroProps) {
   const heightCls =
     variant === "split"
@@ -83,7 +86,10 @@ export function CalmHero({
               {eyebrow}
             </p>
           ) : null}
-          <h1
+          {(() => {
+            const Tag = as as keyof JSX.IntrinsicElements;
+            return (
+              <Tag
             className={cn(
               "font-serif tracking-tight",
               eyebrow ? "mt-5" : "",
@@ -96,7 +102,9 @@ export function CalmHero({
             style={useLightType ? { color: "var(--background)" } : undefined}
           >
             {headline}
-          </h1>
+              </Tag>
+            );
+          })()}
           {body ? (
             <p
               className={cn(
