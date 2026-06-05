@@ -177,7 +177,7 @@ function table(
     ensureSpace(c, rowH);
     let xc = x0 + 4;
     for (const col of cols) {
-      const raw = row[col.key] ?? "—";
+      const raw = safe(row[col.key] ?? "-");
       const txt = truncate(raw, col.w - 6, c.font, 9);
       const tx = col.align === "right"
         ? xc + col.w - 6 - c.font.widthOfTextAtSize(txt, 9)
