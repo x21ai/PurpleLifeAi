@@ -26,8 +26,6 @@ export const Route = createFileRoute("/_app/account")({
 
 function AccountPage() {
   const { t } = useTranslation();
-  // Force dark chrome so the sheet treatment looks identical in either theme.
-  useRouteTheme("dark");
   const { session, signOut } = useAuth();
   const navigate = useNavigate();
   const userId = session?.user?.id;
