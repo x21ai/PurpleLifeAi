@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { Sparkles, MessageCircle, Loader2, BookOpen, ChevronRight, Moon, Bell, Plus, X, Droplets } from "lucide-react";
+import { Sparkles, MessageCircle, Loader2, BookOpen, ChevronRight, Moon, Bell, Plus, X, Droplets, MailCheck, BedDouble } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -42,6 +42,9 @@ export function PreferencesSection() {
   const [snoozeMinutes, setSnoozeMinutes] = React.useState<string>("10");
   const [waterGoalMl, setWaterGoalMl] = React.useState<string>("2000");
   const [savingGoal, setSavingGoal] = React.useState(false);
+  const [quietStart, setQuietStart] = React.useState<string>("");
+  const [quietEnd, setQuietEnd] = React.useState<string>("");
+  const [weeklyDigest, setWeeklyDigest] = React.useState<boolean>(true);
   const [conditions, setConditions] = React.useState<string[]>([]);
   const [customDraft, setCustomDraft] = React.useState<string>("");
   const [savingConditions, setSavingConditions] = React.useState(false);
@@ -55,7 +58,7 @@ export function PreferencesSection() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("ai_model_preference, floating_ask_enabled, wake_time, sleep_time, snooze_minutes, conditions, conditions_note, daily_water_goal_ml")
+        .select("ai_model_preference, floating_ask_enabled, wake_time, sleep_time, snooze_minutes, conditions, conditions_note, daily_water_goal_ml, quiet_hours_start, quiet_hours_end, weekly_digest_enabled")
         .eq("id", userId)
         .maybeSingle();
       if (cancelled) return;
@@ -67,6 +70,12 @@ export function PreferencesSection() {
         if (data.snooze_minutes != null) setSnoozeMinutes(String(data.snooze_minutes));
         if ((data as any).daily_water_goal_ml != null)
           setWaterGoalMl(String((data as any).daily_water_goal_ml));
+        const qs = (data as any).quiet_hours_start;
+        const qe = (data as any).quiet_hours_end;
+        if (qs) setQuietStart(String(qs).slice(0, 5));
+        if (qe) setQuietEnd(String(qe).slice(0, 5));
+        if ((data as any).weekly_digest_enabled != null)
+          setWeeklyDigest(Boolean((data as any).weekly_digest_enabled));
         // Merge legacy free-text conditions_note into chips, then drain the column.
         const existing: string[] = Array.isArray(data.conditions) ? data.conditions : [];
         const legacy: string[] = (data.conditions_note ?? "")
@@ -147,6 +156,35 @@ export function PreferencesSection() {
       .eq("id", userId);
     setSavingGoal(false);
     if (error) toast.error("Couldn't save water goal");
+  };
+
+  const saveQuietHours = async (next: { start?: string; end?: string }) => {
+    if (!userId) return;
+    if (next.start !== undefined) setQuietStart(next.start);
+    if (next.end !== undefined) setQuietEnd(next.end);
+    const start = next.start ?? quietStart;
+    const end = next.end ?? quietEnd;
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        quiet_hours_start: start || null,
+        quiet_hours_end: end || null,
+      } as any)
+      .eq("id", userId);
+    if (error) toast.error("Couldn't save quiet hours");
+  };
+
+  const saveWeeklyDigest = async (next: boolean) => {
+    if (!userId) return;
+    setWeeklyDigest(next);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ weekly_digest_enabled: next } as any)
+      .eq("id", userId);
+    if (error) {
+      toast.error("Couldn't save preference");
+      setWeeklyDigest(!next);
+    }
   };
 
   const onFabChange = async (next: boolean) => {
