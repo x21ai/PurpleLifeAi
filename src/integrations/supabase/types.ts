@@ -1331,6 +1331,7 @@ export type Database = {
           created_by_kind: string
           id: string
           medication_id: string
+          missed_notified_at: string | null
           notes: string | null
           notified_at: string | null
           scheduled_at: string
@@ -1347,6 +1348,7 @@ export type Database = {
           created_by_kind?: string
           id?: string
           medication_id: string
+          missed_notified_at?: string | null
           notes?: string | null
           notified_at?: string | null
           scheduled_at: string
@@ -1363,6 +1365,7 @@ export type Database = {
           created_by_kind?: string
           id?: string
           medication_id?: string
+          missed_notified_at?: string | null
           notes?: string | null
           notified_at?: string | null
           scheduled_at?: string
@@ -1727,6 +1730,8 @@ export type Database = {
           phone: string | null
           pronouns: string | null
           purge_after: string | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
           sleep_time: string
           snooze_minutes: number
           suggestions_dismissed: Json
@@ -1734,6 +1739,7 @@ export type Database = {
           timezone: string | null
           updated_at: string
           wake_time: string
+          weekly_digest_enabled: boolean
         }
         Insert: {
           ai_model_preference?: string
@@ -1769,6 +1775,8 @@ export type Database = {
           phone?: string | null
           pronouns?: string | null
           purge_after?: string | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
           sleep_time?: string
           snooze_minutes?: number
           suggestions_dismissed?: Json
@@ -1776,6 +1784,7 @@ export type Database = {
           timezone?: string | null
           updated_at?: string
           wake_time?: string
+          weekly_digest_enabled?: boolean
         }
         Update: {
           ai_model_preference?: string
@@ -1811,6 +1820,8 @@ export type Database = {
           phone?: string | null
           pronouns?: string | null
           purge_after?: string | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
           sleep_time?: string
           snooze_minutes?: number
           suggestions_dismissed?: Json
@@ -1818,6 +1829,7 @@ export type Database = {
           timezone?: string | null
           updated_at?: string
           wake_time?: string
+          weekly_digest_enabled?: boolean
         }
         Relationships: []
       }
