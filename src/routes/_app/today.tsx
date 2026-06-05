@@ -28,6 +28,8 @@ import { WeeklyRecapCard } from "@/components/today/weekly-recap-card";
 import { SevenDayTrendStrip } from "@/components/today/seven-day-trend-strip";
 import { ReEngagementNudge } from "@/components/today/re-engagement-nudge";
 import { TopInsightCard } from "@/components/today/top-insight-card";
+import { PreTripChecklist } from "@/components/today/pre-trip-checklist";
+import { TripWrapupCard } from "@/components/today/trip-wrapup-card";
 
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
@@ -340,6 +342,8 @@ function TodayPage() {
       )}
 
       <TripBanner />
+      <PreTripChecklist />
+      <TripWrapupCard />
       <TodayDoses />
 
       <OnboardingChecklist />

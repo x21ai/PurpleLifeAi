@@ -120,6 +120,12 @@ export function TripBanner() {
     const active = legs.filter((l) => new Date(l.from_at).getTime() <= nowMs).pop();
     const currentTz = active?.tz ?? activeTrip.destination_tz;
     const currentLabel = active?.label?.trim() || shortCity(currentTz);
+    // Leg-transition nudge: highlight if we landed in this leg within the last 12h.
+    const justLanded =
+      active && active.tz !== (activeTrip.home_tz_snapshot ?? profile?.timezone ?? "")
+        ? nowMs - new Date(active.from_at).getTime() < 12 * 60 * 60 * 1000
+        : false;
+    const offsetVsHome = homeTz ? tzOffsetDiffHours(currentTz, homeTz) : null;
     const strategyNudge = strategyText(
       activeTrip.shift_strategy,
       activeTrip.shift_hours_per_day,
@@ -133,11 +139,20 @@ export function TripBanner() {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-primary">
               <Plane className="h-3.5 w-3.5" />
-              <p className="label-eyebrow text-primary">Travel mode</p>
+              <p className="label-eyebrow text-primary">
+                {justLanded ? "Just landed" : "Travel mode"}
+              </p>
             </div>
             <p className="mt-2 text-sm text-foreground">
-              You're in <span className="font-medium">{currentLabel}</span>
+              {justLanded ? "You're now in " : "You're in "}
+              <span className="font-medium">{currentLabel}</span>
               <span className="text-muted-foreground"> · {currentTz}</span>
+              {offsetVsHome !== null && offsetVsHome !== 0 && (
+                <span className="text-muted-foreground">
+                  {" "}· {offsetVsHome > 0 ? "+" : ""}
+                  {offsetVsHome}h from home
+                </span>
+              )}
             </p>
             {strategyNudge && (
               <p className="mt-1 text-xs text-muted-foreground">{strategyNudge}</p>
@@ -274,6 +289,39 @@ export function TripBanner() {
 function shortCity(tz: string): string {
   const last = tz.split("/").pop() ?? tz;
   return last.replace(/_/g, " ");
+}
+
+/** Difference in hours between `tz` and `homeTz` at the current instant. */
+function tzOffsetDiffHours(tz: string, homeTz: string): number | null {
+  try {
+    const at = new Date();
+    const off = (zone: string) => {
+      const dtf = new Intl.DateTimeFormat("en-US", {
+        timeZone: zone,
+        hour12: false,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+      const parts = dtf.formatToParts(at);
+      const g = (t: string) => Number(parts.find((p) => p.type === t)!.value);
+      const asUtc = Date.UTC(
+        g("year"),
+        g("month") - 1,
+        g("day"),
+        g("hour") === 24 ? 0 : g("hour"),
+        g("minute"),
+        g("second"),
+      );
+      return Math.round((asUtc - at.getTime()) / 60_000);
+    };
+    return Math.round((off(tz) - off(homeTz)) / 60);
+  } catch {
+    return null;
+  }
 }
 
 /** Plain-language nudge derived from the trip's shift strategy. */
