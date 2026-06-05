@@ -16,6 +16,7 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as RiskRouteImport } from './routes/risk'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as HowPurpleThinksRouteImport } from './routes/how-purple-thinks'
 import { Route as FeedbackRouteImport } from './routes/feedback'
@@ -126,6 +127,11 @@ const ResourcesRoute = ResourcesRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MessagesRoute = MessagesRouteImport.update({
@@ -532,6 +538,7 @@ export interface FileRoutesByFullPath {
   '/feedback': typeof FeedbackRoute
   '/how-purple-thinks': typeof HowPurpleThinksRoute
   '/messages': typeof MessagesRoute
+  '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/resources': typeof ResourcesRoute
   '/risk': typeof RiskRoute
@@ -616,6 +623,7 @@ export interface FileRoutesByTo {
   '/feedback': typeof FeedbackRoute
   '/how-purple-thinks': typeof HowPurpleThinksRoute
   '/messages': typeof MessagesRoute
+  '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/resources': typeof ResourcesRoute
   '/risk': typeof RiskRoute
@@ -701,6 +709,7 @@ export interface FileRoutesById {
   '/feedback': typeof FeedbackRoute
   '/how-purple-thinks': typeof HowPurpleThinksRoute
   '/messages': typeof MessagesRoute
+  '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/resources': typeof ResourcesRoute
   '/risk': typeof RiskRoute
@@ -787,6 +796,7 @@ export interface FileRouteTypes {
     | '/feedback'
     | '/how-purple-thinks'
     | '/messages'
+    | '/pricing'
     | '/reset-password'
     | '/resources'
     | '/risk'
@@ -871,6 +881,7 @@ export interface FileRouteTypes {
     | '/feedback'
     | '/how-purple-thinks'
     | '/messages'
+    | '/pricing'
     | '/reset-password'
     | '/resources'
     | '/risk'
@@ -955,6 +966,7 @@ export interface FileRouteTypes {
     | '/feedback'
     | '/how-purple-thinks'
     | '/messages'
+    | '/pricing'
     | '/reset-password'
     | '/resources'
     | '/risk'
@@ -1041,6 +1053,7 @@ export interface RootRouteChildren {
   FeedbackRoute: typeof FeedbackRoute
   HowPurpleThinksRoute: typeof HowPurpleThinksRoute
   MessagesRoute: typeof MessagesRoute
+  PricingRoute: typeof PricingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ResourcesRoute: typeof ResourcesRoute
   RiskRoute: typeof RiskRoute
@@ -1119,6 +1132,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/messages': {
@@ -1827,6 +1847,7 @@ const rootRouteChildren: RootRouteChildren = {
   FeedbackRoute: FeedbackRoute,
   HowPurpleThinksRoute: HowPurpleThinksRoute,
   MessagesRoute: MessagesRoute,
+  PricingRoute: PricingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ResourcesRoute: ResourcesRoute,
   RiskRoute: RiskRoute,
