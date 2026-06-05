@@ -285,20 +285,46 @@ function MarketingHeader() {
   );
 }
 
-function FeatureCard({
-  icon: Icon,
+function FeatureScene({
+  eyebrow,
   title,
   body,
+  image,
+  alt,
+  imageSide,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  eyebrow: string;
   title: string;
   body: string;
+  image: string;
+  alt: string;
+  imageSide: "left" | "right";
 }) {
   return (
-    <article className="rounded-2xl border border-border bg-card p-6">
-      <Icon className="h-6 w-6 text-[color:var(--purple-primary)]" />
-      <h3 className="mt-4 font-serif text-xl text-foreground">{title}</h3>
-      <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{body}</p>
-    </article>
+    <section className="mx-auto max-w-6xl px-6 sm:px-10 py-20 sm:py-28">
+      <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        <div className={imageSide === "right" ? "lg:order-1" : "lg:order-2"}>
+          <p className="label-eyebrow">{eyebrow}</p>
+          <h2 className="mt-5 font-serif text-4xl sm:text-5xl lg:text-6xl leading-[1.04] tracking-tight">
+            {title}
+          </h2>
+          <p className="mt-6 text-base sm:text-lg text-muted-foreground leading-relaxed max-w-lg">
+            {body}
+          </p>
+        </div>
+        <div className={imageSide === "right" ? "lg:order-2" : "lg:order-1"}>
+          <div className="relative overflow-hidden rounded-3xl aspect-[4/3]">
+            <img
+              src={image}
+              alt={alt}
+              className="absolute inset-0 h-full w-full object-cover"
+              width={1600}
+              height={1200}
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
