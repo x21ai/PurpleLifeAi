@@ -716,11 +716,14 @@ function PreviewBody({
                 >
                   <div className="min-w-0">
                     <p className="text-foreground truncate">{d.medication_name}</p>
-                    {d.amount != null && (
-                      <p className="text-xs text-muted-foreground">
-                        {d.amount} {d.unit ?? ""}
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
+                      {d.amount != null && (
+                        <span>{d.amount} {d.unit ?? ""}</span>
+                      )}
+                      <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-1.5 py-0.5 text-[10px] font-medium">
+                        {(d.leg_tz.split("/").pop() ?? d.leg_tz).replace(/_/g, " ")}
+                      </span>
+                    </p>
                   </div>
                   <DualTime
                     iso={d.scheduled_at}
