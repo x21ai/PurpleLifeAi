@@ -86,6 +86,7 @@ import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/em
 import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
 import { Route as ApiPublicHooksAppleHealthRouteImport } from './routes/api/public/hooks/apple-health'
 import { Route as ApiPublicCronWhoopSyncAllRouteImport } from './routes/api/public/cron/whoop-sync-all'
+import { Route as ApiPublicCronWeeklyRecapRouteImport } from './routes/api/public/cron/weekly-recap'
 import { Route as ApiPublicCronPurgeDeletedAccountsRouteImport } from './routes/api/public/cron/purge-deleted-accounts'
 import { Route as ApiPublicCronOuraSyncAllRouteImport } from './routes/api/public/cron/oura-sync-all'
 import { Route as ApiPublicCronMedicalReportsRouteImport } from './routes/api/public/cron/medical-reports'
@@ -485,6 +486,12 @@ const ApiPublicCronWhoopSyncAllRoute =
     path: '/api/public/cron/whoop-sync-all',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronWeeklyRecapRoute =
+  ApiPublicCronWeeklyRecapRouteImport.update({
+    id: '/api/public/cron/weekly-recap',
+    path: '/api/public/cron/weekly-recap',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronPurgeDeletedAccountsRoute =
   ApiPublicCronPurgeDeletedAccountsRouteImport.update({
     id: '/api/public/cron/purge-deleted-accounts',
@@ -597,6 +604,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/medical-reports': typeof ApiPublicCronMedicalReportsRoute
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
+  '/api/public/cron/weekly-recap': typeof ApiPublicCronWeeklyRecapRoute
   '/api/public/cron/whoop-sync-all': typeof ApiPublicCronWhoopSyncAllRoute
   '/api/public/hooks/apple-health': typeof ApiPublicHooksAppleHealthRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
@@ -680,6 +688,7 @@ export interface FileRoutesByTo {
   '/api/public/cron/medical-reports': typeof ApiPublicCronMedicalReportsRoute
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
+  '/api/public/cron/weekly-recap': typeof ApiPublicCronWeeklyRecapRoute
   '/api/public/cron/whoop-sync-all': typeof ApiPublicCronWhoopSyncAllRoute
   '/api/public/hooks/apple-health': typeof ApiPublicHooksAppleHealthRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
@@ -766,6 +775,7 @@ export interface FileRoutesById {
   '/api/public/cron/medical-reports': typeof ApiPublicCronMedicalReportsRoute
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
+  '/api/public/cron/weekly-recap': typeof ApiPublicCronWeeklyRecapRoute
   '/api/public/cron/whoop-sync-all': typeof ApiPublicCronWhoopSyncAllRoute
   '/api/public/hooks/apple-health': typeof ApiPublicHooksAppleHealthRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
@@ -852,6 +862,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/medical-reports'
     | '/api/public/cron/oura-sync-all'
     | '/api/public/cron/purge-deleted-accounts'
+    | '/api/public/cron/weekly-recap'
     | '/api/public/cron/whoop-sync-all'
     | '/api/public/hooks/apple-health'
     | '/api/public/hooks/risk-forecaster'
@@ -935,6 +946,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/medical-reports'
     | '/api/public/cron/oura-sync-all'
     | '/api/public/cron/purge-deleted-accounts'
+    | '/api/public/cron/weekly-recap'
     | '/api/public/cron/whoop-sync-all'
     | '/api/public/hooks/apple-health'
     | '/api/public/hooks/risk-forecaster'
@@ -1020,6 +1032,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/medical-reports'
     | '/api/public/cron/oura-sync-all'
     | '/api/public/cron/purge-deleted-accounts'
+    | '/api/public/cron/weekly-recap'
     | '/api/public/cron/whoop-sync-all'
     | '/api/public/hooks/apple-health'
     | '/api/public/hooks/risk-forecaster'
@@ -1059,6 +1072,7 @@ export interface RootRouteChildren {
   ApiPublicCronMedicalReportsRoute: typeof ApiPublicCronMedicalReportsRoute
   ApiPublicCronOuraSyncAllRoute: typeof ApiPublicCronOuraSyncAllRoute
   ApiPublicCronPurgeDeletedAccountsRoute: typeof ApiPublicCronPurgeDeletedAccountsRoute
+  ApiPublicCronWeeklyRecapRoute: typeof ApiPublicCronWeeklyRecapRoute
   ApiPublicCronWhoopSyncAllRoute: typeof ApiPublicCronWhoopSyncAllRoute
   ApiPublicHooksAppleHealthRoute: typeof ApiPublicHooksAppleHealthRoute
   ApiPublicHooksRiskForecasterRoute: typeof ApiPublicHooksRiskForecasterRoute
@@ -1610,6 +1624,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronWhoopSyncAllRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/weekly-recap': {
+      id: '/api/public/cron/weekly-recap'
+      path: '/api/public/cron/weekly-recap'
+      fullPath: '/api/public/cron/weekly-recap'
+      preLoaderRoute: typeof ApiPublicCronWeeklyRecapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/purge-deleted-accounts': {
       id: '/api/public/cron/purge-deleted-accounts'
       path: '/api/public/cron/purge-deleted-accounts'
@@ -1846,6 +1867,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronOuraSyncAllRoute: ApiPublicCronOuraSyncAllRoute,
   ApiPublicCronPurgeDeletedAccountsRoute:
     ApiPublicCronPurgeDeletedAccountsRoute,
+  ApiPublicCronWeeklyRecapRoute: ApiPublicCronWeeklyRecapRoute,
   ApiPublicCronWhoopSyncAllRoute: ApiPublicCronWhoopSyncAllRoute,
   ApiPublicHooksAppleHealthRoute: ApiPublicHooksAppleHealthRoute,
   ApiPublicHooksRiskForecasterRoute: ApiPublicHooksRiskForecasterRoute,
