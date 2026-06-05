@@ -4,6 +4,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Prevent stray horizontal scrollbars from oversized hero images or grids. */
+html, body {
+  overflow-x: hidden;
+}
+
 /*
  * Purple Design System v2.
  * Spec lives in chat; this file is the source of truth.
