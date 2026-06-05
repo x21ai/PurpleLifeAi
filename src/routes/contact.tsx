@@ -8,16 +8,26 @@ import { Label } from "@/components/ui/label";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { supabase } from "@/integrations/supabase/client";
+import { CalmHero } from "@/components/marketing/calm-scene";
+import { humanImages } from "@/lib/calm-images";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact — Purple" },
-      { name: "description", content: "Get in touch with the Purple team." },
-      { property: "og:title", content: "Contact — Purple" },
-      { property: "og:description", content: "Get in touch with the Purple team." },
+      { title: "Say hello — Purple" },
+      {
+        name: "description",
+        content:
+          "A real person reads every message. Usually within a day. Questions, feedback, or just want to chat — we&rsquo;re here.",
+      },
+      { property: "og:title", content: "Say hello — Purple" },
+      {
+        property: "og:description",
+        content: "A real person reads every message. Usually within a day.",
+      },
+      { property: "og:url", content: "https://www.purplelife.org/contact" },
     ],
-    links: [{ rel: "canonical", href: "/contact" }],
+    links: [{ rel: "canonical", href: "https://www.purplelife.org/contact" }],
   }),
   component: ContactPage,
 });
@@ -55,10 +65,15 @@ function ContactPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <MarketingHeader />
+      <CalmHero
+        image={humanImages.walkGrass}
+        alt=""
+        eyebrow="Contact"
+        headline="Say hello."
+        body="A real person reads every message. Usually within a day."
+        variant="band"
+      />
       <main className="mx-auto max-w-xl px-6 sm:px-10 py-16 sm:py-24">
-        <p className="label-eyebrow">Contact</p>
-        <h1 className="mt-4 font-serif text-4xl sm:text-5xl tracking-tight">Say hello.</h1>
-        <p className="mt-4 text-muted-foreground">Questions, feedback, or just want to chat? We read every message.</p>
 
         {sent ? (
           <div className="mt-10 rounded-2xl border border-border bg-card p-6">
@@ -66,7 +81,7 @@ function ContactPage() {
             <p className="mt-2 text-sm text-muted-foreground">We&rsquo;ll get back to you at {email} as soon as we can.</p>
           </div>
         ) : (
-          <form onSubmit={onSubmit} className="mt-10 space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4">
             <div>
               <Label htmlFor="name">Your name</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} required className="mt-1.5 h-12 rounded-xl" />

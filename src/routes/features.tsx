@@ -3,8 +3,8 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { MarketingHeader } from "@/components/layout/marketing-header";
-import { CalmHero, CalmBand } from "@/components/marketing/calm-scene";
-import { calmImages } from "@/lib/calm-images";
+import { CalmHero, CalmBand, HumanMoment, StillLife } from "@/components/marketing/calm-scene";
+import { calmImages, humanImages } from "@/lib/calm-images";
 
 export const Route = createFileRoute("/features")({
   head: () => ({
@@ -49,6 +49,12 @@ function FeaturesPage() {
           imageSide="right"
         />
 
+        {/* Still life — punctuation between sections */}
+        <StillLife
+          image={humanImages.pillOrganizer}
+          alt="A weekly pill organizer beside a glass of water, late afternoon light."
+        />
+
         {/* Ask Purple — text only, centered */}
         <section className="mx-auto max-w-3xl px-6 sm:px-10 py-24 sm:py-32 text-center">
           <p className="label-eyebrow">Ask Purple</p>
@@ -75,6 +81,14 @@ function FeaturesPage() {
           image={calmImages.dawnAlt}
           alt="Soft morning mist over a quiet field."
           imageSide="left"
+        />
+
+        {/* Caregiver human moment — introduces "the rest" */}
+        <HumanMoment
+          image={humanImages.caregiverHand}
+          alt="A caregiver&rsquo;s hand resting gently on another person&rsquo;s shoulder."
+          quote="For the people who help you carry it."
+          attribution="Caregivers, family, anyone you trust"
         />
 
         {/* The rest, as a quiet list */}

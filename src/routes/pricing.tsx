@@ -3,23 +3,46 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { MarketingHeader } from "@/components/layout/marketing-header";
-import mistImg from "@/assets/hero-readiness-mist.jpg";
-import coastImg from "@/assets/hero-readiness-coast.jpg";
+import { CalmHero, CalmBand, HumanMoment } from "@/components/marketing/calm-scene";
+import { calmImages, humanImages } from "@/lib/calm-images";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "Pricing. Purple." },
+      { title: "Free. Forever. Purple." },
       {
         name: "description",
         content:
-          "Purple is free forever. No ads, no selling your data, no third-party trackers. Funded by goodwill, not by you.",
+          "Purple is free forever. No ads, no selling your data, no third-party trackers. Because nobody should pay to remember their own life.",
       },
-      { property: "og:title", content: "Pricing. Purple." },
-      { property: "og:description", content: "Free forever. No ads. No selling your data." },
+      { property: "og:title", content: "Free. Forever. Purple." },
+      {
+        property: "og:description",
+        content: "Nobody should pay to remember their own life.",
+      },
       { property: "og:url", content: "https://www.purplelife.org/pricing" },
     ],
     links: [{ rel: "canonical", href: "https://www.purplelife.org/pricing" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: "Purple",
+          description:
+            "Private health journal for people living with conditions that need daily attention.",
+          brand: { "@type": "Organization", name: "Purple" },
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            availability: "https://schema.org/InStock",
+            url: "https://www.purplelife.org/pricing",
+          },
+        }),
+      },
+    ],
   }),
   component: PricingPage,
 });
@@ -44,40 +67,14 @@ function PricingPage() {
       <MarketingHeader />
 
       <main>
-        {/* Hero — soft mist */}
-        <section className="relative">
-          <div className="relative h-[64vh] min-h-[420px] max-h-[720px] w-full overflow-hidden">
-            <img
-              src={mistImg}
-              alt="Soft morning mist over a quiet field."
-              className="absolute inset-0 h-full w-full object-cover"
-              width={1920}
-              height={1080}
-              fetchPriority="high"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-foreground/30 via-foreground/10 to-foreground/55" />
-            <div className="absolute inset-0 flex items-end">
-              <div className="mx-auto w-full max-w-6xl px-6 sm:px-10 pb-14 sm:pb-20">
-                <p className="label-eyebrow" style={{ color: "var(--background)", opacity: 0.85 }}>
-                  Pricing
-                </p>
-                <h1
-                  className="mt-5 font-serif text-5xl sm:text-7xl leading-[1.02] tracking-tight"
-                  style={{ color: "var(--background)" }}
-                >
-                  Free.<br />Forever.
-                </h1>
-                <p
-                  className="mt-6 text-base sm:text-lg max-w-xl leading-relaxed"
-                  style={{ color: "var(--background)", opacity: 0.85 }}
-                >
-                  Health tools shouldn't come with a paywall. Purple is funded by goodwill,
-                  not by you.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* Hero — mist */}
+        <CalmHero
+          image={calmImages.mist}
+          alt=""
+          eyebrow="Pricing"
+          headline={<>Free.<br />Forever.</>}
+          body="Health tools shouldn&rsquo;t come with a paywall. Purple is funded by goodwill, not by you."
+        />
 
         {/* The card — quieter, more editorial */}
         <section className="mx-auto max-w-4xl px-6 sm:px-10 py-24 sm:py-32">
@@ -107,37 +104,20 @@ function PricingPage() {
           </div>
         </section>
 
-        {/* Why free — quiet promise */}
-        <section className="relative overflow-hidden">
-          <div className="relative h-[58vh] min-h-[400px] w-full">
-            <img
-              src={coastImg}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-              width={1920}
-              height={1080}
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-foreground/50" />
-            <div className="absolute inset-0 flex items-center">
-              <div className="mx-auto max-w-3xl px-6 sm:px-10 text-center">
-                <h2
-                  className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight"
-                  style={{ color: "var(--background)" }}
-                >
-                  Funded by goodwill.
-                </h2>
-                <p
-                  className="mt-6 text-base sm:text-lg max-w-xl mx-auto leading-relaxed"
-                  style={{ color: "var(--background)", opacity: 0.85 }}
-                >
-                  Open source on GitHub. No ads. No selling your data. No third-party trackers,
-                  ever. The product is the product — not you.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* The human reason it's free */}
+        <HumanMoment
+          image={humanImages.pillOrganizer}
+          alt="A weekly pill organizer resting on a worn wooden table, late afternoon light from a window."
+          quote="Because nobody should pay to remember their own life."
+          attribution="Why Purple is free"
+        />
+
+        {/* Quiet promise band */}
+        <CalmBand
+          image={calmImages.coast}
+          headline="Funded by goodwill."
+          body="Open source on GitHub. No ads. No selling your data. No third-party trackers — ever. The product is the product, not you."
+        />
 
         {/* CTA */}
         <section className="mx-auto max-w-2xl px-6 sm:px-10 py-28 sm:py-40 text-center">
