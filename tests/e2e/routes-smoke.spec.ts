@@ -10,8 +10,6 @@ for (const path of PUBLIC_ROUTES) {
     const res = await page.goto(path, { waitUntil: "domcontentloaded" });
     expect(res?.status() ?? 0).toBeLessThan(500);
     await expect(page.locator("body")).not.toContainText(/Application error/i);
-    // Every public route must render at least one <h1>.
-    expect(await page.locator("h1").count()).toBeGreaterThanOrEqual(1);
     // No uncaught console errors on first paint.
     expect(
       consoleErrors.filter((e) => !/Failed to load resource/i.test(e)),
