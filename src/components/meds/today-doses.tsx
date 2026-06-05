@@ -2,7 +2,7 @@ import * as React from "react";
 import { format } from "date-fns";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatLocaleTime } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";

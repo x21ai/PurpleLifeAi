@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { startAlarmLoop, type AlarmSoundId, DEFAULT_ALARM_SOUND } from "@/lib/alarm-sounds";
+import { formatLocaleTime } from "@/lib/utils";
 
 type CriticalDose = {
   id: string;

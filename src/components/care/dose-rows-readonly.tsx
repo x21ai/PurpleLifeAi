@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, formatLocaleTime } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { CaregiverBadge } from "@/components/care/caregiver-badge";
 
