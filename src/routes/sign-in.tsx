@@ -198,6 +198,7 @@ function SignInPage() {
         <CalmHero
           image={calmImages.dawn}
           variant="split"
+          as="div"
           eyebrow="PURPLE"
           headline={
             <span className="font-serif italic text-base sm:text-lg text-foreground/75 max-w-md block">
