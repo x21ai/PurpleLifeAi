@@ -23,6 +23,21 @@ import { DualTime } from "@/components/travel/dual-time";
 
 const PERM_DISMISSED_KEY = "purple-perm-nudge-dismissed";
 
+/**
+ * QA #22: decrement (or restore) the pill stock when a dose flips to/from
+ * "taken". Best-effort: clamps at 0 and no-ops when stock isn't tracked.
+ */
+async function decrementPillCount(medicationId: string, by: number) {
+  const { data, error } = await supabase
+    .from("medications")
+    .select("pills_remaining")
+    .eq("id", medicationId)
+    .maybeSingle();
+  if (error || !data || data.pills_remaining == null) return;
+  const next = Math.max(0, (data.pills_remaining as number) - by);
+  await supabase.from("medications").update({ pills_remaining: next }).eq("id", medicationId);
+}
+
 type Dose = {
   id: string;
   scheduled_at: string;
