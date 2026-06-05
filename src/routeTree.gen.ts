@@ -11,11 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as RiskRouteImport } from './routes/risk'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as HowPurpleThinksRouteImport } from './routes/how-purple-thinks'
@@ -23,6 +25,7 @@ import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CommunityRouteImport } from './routes/community'
+import { Route as CharterRouteImport } from './routes/charter'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -35,10 +38,8 @@ import { Route as AppVitalsRouteImport } from './routes/_app/vitals'
 import { Route as AppToolsRouteImport } from './routes/_app/tools'
 import { Route as AppTodayRouteImport } from './routes/_app/today'
 import { Route as AppTimelineRouteImport } from './routes/_app/timeline'
-import { Route as AppTermsRouteImport } from './routes/_app/terms'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppReportsRouteImport } from './routes/_app/reports'
-import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
 import { Route as AppMyHealthRouteImport } from './routes/_app/my-health'
 import { Route as AppMedsRouteImport } from './routes/_app/meds'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
@@ -46,7 +47,6 @@ import { Route as AppHydrationRouteImport } from './routes/_app/hydration'
 import { Route as AppCommunityNewRouteImport } from './routes/_app/community-new'
 import { Route as AppChatCareRouteImport } from './routes/_app/chat-care'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
-import { Route as AppCharterRouteImport } from './routes/_app/charter'
 import { Route as AppAppleHealthImportRouteImport } from './routes/_app/apple-health-import'
 import { Route as AppAdminRouteImport } from './routes/_app/admin'
 import { Route as AppAccountRouteImport } from './routes/_app/account'
@@ -104,6 +104,11 @@ const UnsubscribeRoute = UnsubscribeRouteImport.update({
   path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignUpRoute = SignUpRouteImport.update({
   id: '/sign-up',
   path: '/sign-up',
@@ -127,6 +132,11 @@ const ResourcesRoute = ResourcesRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -162,6 +172,11 @@ const ContactRoute = ContactRouteImport.update({
 const CommunityRoute = CommunityRouteImport.update({
   id: '/community',
   path: '/community',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CharterRoute = CharterRouteImport.update({
+  id: '/charter',
+  path: '/charter',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -223,11 +238,6 @@ const AppTimelineRoute = AppTimelineRouteImport.update({
   path: '/timeline',
   getParentRoute: () => AppRoute,
 } as any)
-const AppTermsRoute = AppTermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -236,11 +246,6 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppReportsRoute = AppReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPrivacyRoute = AppPrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMyHealthRoute = AppMyHealthRouteImport.update({
@@ -276,11 +281,6 @@ const AppChatCareRoute = AppChatCareRouteImport.update({
 const AppChatRoute = AppChatRouteImport.update({
   id: '/chat',
   path: '/chat',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppCharterRoute = AppCharterRouteImport.update({
-  id: '/charter',
-  path: '/charter',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAppleHealthImportRoute = AppAppleHealthImportRouteImport.update({
@@ -532,6 +532,7 @@ const AppReportsTrendsMetricKeyRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/charter': typeof CharterRoute
   '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
@@ -539,17 +540,18 @@ export interface FileRoutesByFullPath {
   '/how-purple-thinks': typeof HowPurpleThinksRoute
   '/messages': typeof MessagesRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/resources': typeof ResourcesRoute
   '/risk': typeof RiskRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
   '/account': typeof AppAccountRoute
   '/admin': typeof AppAdminRouteWithChildren
   '/apple-health-import': typeof AppAppleHealthImportRoute
-  '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/chat-care': typeof AppChatCareRoute
   '/community-new': typeof AppCommunityNewRoute
@@ -557,10 +559,8 @@ export interface FileRoutesByFullPath {
   '/insights': typeof AppInsightsRoute
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
-  '/privacy': typeof AppPrivacyRoute
   '/reports': typeof AppReportsRouteWithChildren
   '/settings': typeof AppSettingsRouteWithChildren
-  '/terms': typeof AppTermsRoute
   '/timeline': typeof AppTimelineRoute
   '/today': typeof AppTodayRouteWithChildren
   '/tools': typeof AppToolsRoute
@@ -617,6 +617,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/charter': typeof CharterRoute
   '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
@@ -624,16 +625,17 @@ export interface FileRoutesByTo {
   '/how-purple-thinks': typeof HowPurpleThinksRoute
   '/messages': typeof MessagesRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/resources': typeof ResourcesRoute
   '/risk': typeof RiskRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
   '/account': typeof AppAccountRoute
   '/apple-health-import': typeof AppAppleHealthImportRoute
-  '/charter': typeof AppCharterRoute
   '/chat': typeof AppChatRoute
   '/chat-care': typeof AppChatCareRoute
   '/community-new': typeof AppCommunityNewRoute
@@ -641,10 +643,8 @@ export interface FileRoutesByTo {
   '/insights': typeof AppInsightsRoute
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
-  '/privacy': typeof AppPrivacyRoute
   '/reports': typeof AppReportsRouteWithChildren
   '/settings': typeof AppSettingsRouteWithChildren
-  '/terms': typeof AppTermsRoute
   '/timeline': typeof AppTimelineRoute
   '/today': typeof AppTodayRouteWithChildren
   '/tools': typeof AppToolsRoute
@@ -703,6 +703,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/about': typeof AboutRoute
+  '/charter': typeof CharterRoute
   '/community': typeof CommunityRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
@@ -710,17 +711,18 @@ export interface FileRoutesById {
   '/how-purple-thinks': typeof HowPurpleThinksRoute
   '/messages': typeof MessagesRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/resources': typeof ResourcesRoute
   '/risk': typeof RiskRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/terms': typeof TermsRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
   '/_app/account': typeof AppAccountRoute
   '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/apple-health-import': typeof AppAppleHealthImportRoute
-  '/_app/charter': typeof AppCharterRoute
   '/_app/chat': typeof AppChatRoute
   '/_app/chat-care': typeof AppChatCareRoute
   '/_app/community-new': typeof AppCommunityNewRoute
@@ -728,10 +730,8 @@ export interface FileRoutesById {
   '/_app/insights': typeof AppInsightsRoute
   '/_app/meds': typeof AppMedsRouteWithChildren
   '/_app/my-health': typeof AppMyHealthRoute
-  '/_app/privacy': typeof AppPrivacyRoute
   '/_app/reports': typeof AppReportsRouteWithChildren
   '/_app/settings': typeof AppSettingsRouteWithChildren
-  '/_app/terms': typeof AppTermsRoute
   '/_app/timeline': typeof AppTimelineRoute
   '/_app/today': typeof AppTodayRouteWithChildren
   '/_app/tools': typeof AppToolsRoute
@@ -790,6 +790,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/charter'
     | '/community'
     | '/contact'
     | '/features'
@@ -797,17 +798,18 @@ export interface FileRouteTypes {
     | '/how-purple-thinks'
     | '/messages'
     | '/pricing'
+    | '/privacy'
     | '/reset-password'
     | '/resources'
     | '/risk'
     | '/sign-in'
     | '/sign-up'
+    | '/terms'
     | '/unsubscribe'
     | '/users'
     | '/account'
     | '/admin'
     | '/apple-health-import'
-    | '/charter'
     | '/chat'
     | '/chat-care'
     | '/community-new'
@@ -815,10 +817,8 @@ export interface FileRouteTypes {
     | '/insights'
     | '/meds'
     | '/my-health'
-    | '/privacy'
     | '/reports'
     | '/settings'
-    | '/terms'
     | '/timeline'
     | '/today'
     | '/tools'
@@ -875,6 +875,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/charter'
     | '/community'
     | '/contact'
     | '/features'
@@ -882,16 +883,17 @@ export interface FileRouteTypes {
     | '/how-purple-thinks'
     | '/messages'
     | '/pricing'
+    | '/privacy'
     | '/reset-password'
     | '/resources'
     | '/risk'
     | '/sign-in'
     | '/sign-up'
+    | '/terms'
     | '/unsubscribe'
     | '/users'
     | '/account'
     | '/apple-health-import'
-    | '/charter'
     | '/chat'
     | '/chat-care'
     | '/community-new'
@@ -899,10 +901,8 @@ export interface FileRouteTypes {
     | '/insights'
     | '/meds'
     | '/my-health'
-    | '/privacy'
     | '/reports'
     | '/settings'
-    | '/terms'
     | '/timeline'
     | '/today'
     | '/tools'
@@ -960,6 +960,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/about'
+    | '/charter'
     | '/community'
     | '/contact'
     | '/features'
@@ -967,17 +968,18 @@ export interface FileRouteTypes {
     | '/how-purple-thinks'
     | '/messages'
     | '/pricing'
+    | '/privacy'
     | '/reset-password'
     | '/resources'
     | '/risk'
     | '/sign-in'
     | '/sign-up'
+    | '/terms'
     | '/unsubscribe'
     | '/users'
     | '/_app/account'
     | '/_app/admin'
     | '/_app/apple-health-import'
-    | '/_app/charter'
     | '/_app/chat'
     | '/_app/chat-care'
     | '/_app/community-new'
@@ -985,10 +987,8 @@ export interface FileRouteTypes {
     | '/_app/insights'
     | '/_app/meds'
     | '/_app/my-health'
-    | '/_app/privacy'
     | '/_app/reports'
     | '/_app/settings'
-    | '/_app/terms'
     | '/_app/timeline'
     | '/_app/today'
     | '/_app/tools'
@@ -1047,6 +1047,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AboutRoute: typeof AboutRoute
+  CharterRoute: typeof CharterRoute
   CommunityRoute: typeof CommunityRouteWithChildren
   ContactRoute: typeof ContactRoute
   FeaturesRoute: typeof FeaturesRoute
@@ -1054,11 +1055,13 @@ export interface RootRouteChildren {
   HowPurpleThinksRoute: typeof HowPurpleThinksRoute
   MessagesRoute: typeof MessagesRoute
   PricingRoute: typeof PricingRoute
+  PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ResourcesRoute: typeof ResourcesRoute
   RiskRoute: typeof RiskRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
+  TermsRoute: typeof TermsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   UsersRoute: typeof UsersRoute
   CareAcceptRoute: typeof CareAcceptRoute
@@ -1099,6 +1102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sign-up': {
       id: '/sign-up'
       path: '/sign-up'
@@ -1132,6 +1142,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -1181,6 +1198,13 @@ declare module '@tanstack/react-router' {
       path: '/community'
       fullPath: '/community'
       preLoaderRoute: typeof CommunityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/charter': {
+      id: '/charter'
+      path: '/charter'
+      fullPath: '/charter'
+      preLoaderRoute: typeof CharterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -1267,13 +1291,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTimelineRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/terms': {
-      id: '/_app/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof AppTermsRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -1286,13 +1303,6 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof AppReportsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/privacy': {
-      id: '/_app/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof AppPrivacyRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/my-health': {
@@ -1342,13 +1352,6 @@ declare module '@tanstack/react-router' {
       path: '/chat'
       fullPath: '/chat'
       preLoaderRoute: typeof AppChatRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/charter': {
-      id: '/_app/charter'
-      path: '/charter'
-      fullPath: '/charter'
-      preLoaderRoute: typeof AppCharterRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/apple-health-import': {
@@ -1763,7 +1766,6 @@ interface AppRouteChildren {
   AppAccountRoute: typeof AppAccountRoute
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppAppleHealthImportRoute: typeof AppAppleHealthImportRoute
-  AppCharterRoute: typeof AppCharterRoute
   AppChatRoute: typeof AppChatRoute
   AppChatCareRoute: typeof AppChatCareRoute
   AppCommunityNewRoute: typeof AppCommunityNewRoute
@@ -1771,10 +1773,8 @@ interface AppRouteChildren {
   AppInsightsRoute: typeof AppInsightsRoute
   AppMedsRoute: typeof AppMedsRouteWithChildren
   AppMyHealthRoute: typeof AppMyHealthRoute
-  AppPrivacyRoute: typeof AppPrivacyRoute
   AppReportsRoute: typeof AppReportsRouteWithChildren
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
-  AppTermsRoute: typeof AppTermsRoute
   AppTimelineRoute: typeof AppTimelineRoute
   AppTodayRoute: typeof AppTodayRouteWithChildren
   AppToolsRoute: typeof AppToolsRoute
@@ -1794,7 +1794,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppAccountRoute: AppAccountRoute,
   AppAdminRoute: AppAdminRouteWithChildren,
   AppAppleHealthImportRoute: AppAppleHealthImportRoute,
-  AppCharterRoute: AppCharterRoute,
   AppChatRoute: AppChatRoute,
   AppChatCareRoute: AppChatCareRoute,
   AppCommunityNewRoute: AppCommunityNewRoute,
@@ -1802,10 +1801,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppInsightsRoute: AppInsightsRoute,
   AppMedsRoute: AppMedsRouteWithChildren,
   AppMyHealthRoute: AppMyHealthRoute,
-  AppPrivacyRoute: AppPrivacyRoute,
   AppReportsRoute: AppReportsRouteWithChildren,
   AppSettingsRoute: AppSettingsRouteWithChildren,
-  AppTermsRoute: AppTermsRoute,
   AppTimelineRoute: AppTimelineRoute,
   AppTodayRoute: AppTodayRouteWithChildren,
   AppToolsRoute: AppToolsRoute,
@@ -1841,6 +1838,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AboutRoute: AboutRoute,
+  CharterRoute: CharterRoute,
   CommunityRoute: CommunityRouteWithChildren,
   ContactRoute: ContactRoute,
   FeaturesRoute: FeaturesRoute,
@@ -1848,11 +1846,13 @@ const rootRouteChildren: RootRouteChildren = {
   HowPurpleThinksRoute: HowPurpleThinksRoute,
   MessagesRoute: MessagesRoute,
   PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ResourcesRoute: ResourcesRoute,
   RiskRoute: RiskRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
+  TermsRoute: TermsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   UsersRoute: UsersRoute,
   CareAcceptRoute: CareAcceptRoute,
@@ -1880,3 +1880,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

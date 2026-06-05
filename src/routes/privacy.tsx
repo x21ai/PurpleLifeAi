@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useRouteTheme } from "@/lib/use-route-theme";
 
-export const Route = createFileRoute("/_app/privacy")({
+export const Route = createFileRoute("/privacy")({
   head: () => ({ meta: [{ title: "Privacy & safety — Purple" }] }),
   component: PrivacyPage,
 });

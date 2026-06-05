@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useRouteTheme } from "@/lib/use-route-theme";
 
-export const Route = createFileRoute("/_app/charter")({
+export const Route = createFileRoute("/charter")({
   head: () => ({
     meta: [
       { title: "Why Purple exists" },

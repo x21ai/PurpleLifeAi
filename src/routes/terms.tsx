@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/_app/terms")({
+export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
       { title: "Terms — Purple" },
