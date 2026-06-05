@@ -284,15 +284,6 @@ function SignInPage() {
                         className="h-14 text-lg font-serif rounded-xl"
                         disabled={status === "submitting"}
                       />
-                      <Button
-                        type="submit"
-                        className="w-full h-14 text-base rounded-xl"
-                        disabled={status === "submitting"}
-                      >
-                        {status === "submitting"
-                          ? mode === "signin" ? t("signIn.signingIn") : t("signIn.creating")
-                          : mode === "signin" ? t("signIn.signIn") : t("signIn.createAccount")}
-                      </Button>
                       {mode === "register" && (
                         <div className="pt-4 border-t border-border mt-2">
                           <p className="label-eyebrow mb-3">{t("welcome.regionLanguage")}</p>
@@ -316,6 +307,15 @@ function SignInPage() {
                           />
                         </div>
                       )}
+                      <Button
+                        type="submit"
+                        className="w-full h-14 text-base rounded-xl"
+                        disabled={status === "submitting"}
+                      >
+                        {status === "submitting"
+                          ? mode === "signin" ? t("signIn.signingIn") : t("signIn.creating")
+                          : mode === "signin" ? t("signIn.signIn") : t("signIn.createAccount")}
+                      </Button>
                       {mode === "signin" && (
                         <div className="pt-1 text-right">
                           <button
