@@ -69,7 +69,7 @@ export const Route = createFileRoute("/api/public/hooks/apple-health")({
           return json({ ok: true, days: days.length, inserted });
         } catch (e) {
           console.error("apple-health webhook failed:", e);
-          return json({ error: e instanceof Error ? e.message : String(e) }, 500);
+          return json({ error: "Processing failed" }, 500);
         }
       },
     },
