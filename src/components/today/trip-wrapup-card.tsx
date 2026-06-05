@@ -48,6 +48,15 @@ export function TripWrapupCard() {
       // Auto-flip status to ended so other UI (TripBanner, etc.) stops treating it as live.
       if (t.status !== "ended") {
         await supabase.from("trips").update({ status: "ended" }).eq("id", t.id);
+        // Drop any future trip-tagged pending doses so the daily home-schedule
+        // seed can repopulate from now forward (project rule: trip-generated
+        // doses carry medication_doses.trip_id for clean regeneration).
+        await supabase
+          .from("medication_doses")
+          .delete()
+          .eq("trip_id", t.id)
+          .eq("status", "pending")
+          .gte("scheduled_at", nowIso);
       }
       try {
         setDismissed(localStorage.getItem(DISMISS_PREFIX + t.id) === "1");

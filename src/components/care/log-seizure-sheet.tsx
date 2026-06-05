@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ConfirmCareWriteButton } from "@/components/care/confirm-care-write";
 import {
   Dialog,
   DialogContent,
@@ -165,9 +166,13 @@ export function LogSeizureSheet({
           <Button variant="ghost" onClick={() => setOpen(false)} disabled={m.isPending}>
             Cancel
           </Button>
-          <Button onClick={() => m.mutate()} disabled={m.isPending || !startedAt}>
-            {m.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
-          </Button>
+          <ConfirmCareWriteButton
+            ownerName={ownerName}
+            summary="Log a seizure on their record"
+            onConfirm={() => m.mutate()}
+            pending={m.isPending}
+            disabled={!startedAt}
+          />
         </DialogFooter>
       </DialogContent>
     </Dialog>

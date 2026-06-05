@@ -23,6 +23,16 @@ import { SeizureListReadOnly } from "@/components/care/seizure-list-readonly";
 import { ReportsListReadOnly } from "@/components/care/reports-list-readonly";
 import { LogSeizureSheet } from "@/components/care/log-seizure-sheet";
 import { AddJournalSheet } from "@/components/care/add-journal-sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { getOrCreateDirectThread } from "@/lib/care-chat.functions";
 import { AddBiometricSheet } from "@/components/care/add-biometric-sheet";
 import { OwnerSwitcher } from "@/components/care/owner-switcher";
@@ -346,6 +356,7 @@ function CareDashboardPage() {
               <TabsContent value="meds" className="mt-4">
                 <MedsPanel
                   ownerId={ownerId}
+                  ownerName={displayName}
                   relationshipId={relationship.id}
                   canPropose={has("meds:propose")}
                   canWrite={has("meds:write")}
@@ -560,11 +571,13 @@ function TodayPanel({
 /* ----- Meds ----- */
 function MedsPanel({
   ownerId,
+  ownerName,
   relationshipId,
   canPropose,
   canWrite,
 }: {
   ownerId: string;
+  ownerName: string;
   relationshipId: string;
   canPropose: boolean;
   canWrite: boolean;
@@ -572,6 +585,9 @@ function MedsPanel({
   const fn = useServerFn(caregiverReadMeds);
   const markDoseFn = useServerFn(caregiverMarkDose);
   const queryClient = useQueryClient();
+  const [confirm, setConfirm] = useState<
+    { doseId: string; action: "taken" | "skip" } | null
+  >(null);
   const q = useQuery({
     queryKey: ["care", "meds", ownerId],
     queryFn: () => fn({ data: { owner_id: ownerId } }),
@@ -621,7 +637,7 @@ function MedsPanel({
             meds={meds}
             onAction={
               canWrite
-                ? (doseId, action) => markDose.mutate({ doseId, action })
+                ? (doseId, action) => setConfirm({ doseId, action })
                 : undefined
             }
             pendingId={markDose.isPending ? (markDose.variables?.doseId ?? null) : null}
@@ -645,6 +661,36 @@ function MedsPanel({
           }
         />
       </div>
+      <AlertDialog
+        open={confirm !== null}
+        onOpenChange={(o) => !o && setConfirm(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif text-2xl">
+              Write to {ownerName}'s record?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirm?.action === "taken"
+                ? `Mark this dose as taken on ${ownerName}'s record`
+                : `Mark this dose as skipped on ${ownerName}'s record`}
+              . They&rsquo;ll see this in their audit log, tagged as added by
+              you.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirm) markDose.mutate(confirm);
+                setConfirm(null);
+              }}
+            >
+              Yes, write it
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
