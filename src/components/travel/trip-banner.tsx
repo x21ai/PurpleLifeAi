@@ -120,6 +120,12 @@ export function TripBanner() {
     const active = legs.filter((l) => new Date(l.from_at).getTime() <= nowMs).pop();
     const currentTz = active?.tz ?? activeTrip.destination_tz;
     const currentLabel = active?.label?.trim() || shortCity(currentTz);
+    // Leg-transition nudge: highlight if we landed in this leg within the last 12h.
+    const justLanded =
+      active && active.tz !== (activeTrip.home_tz_snapshot ?? profile?.timezone ?? "")
+        ? nowMs - new Date(active.from_at).getTime() < 12 * 60 * 60 * 1000
+        : false;
+    const offsetVsHome = homeTz ? tzOffsetDiffHours(currentTz, homeTz) : null;
     const strategyNudge = strategyText(
       activeTrip.shift_strategy,
       activeTrip.shift_hours_per_day,
@@ -133,11 +139,20 @@ export function TripBanner() {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-primary">
               <Plane className="h-3.5 w-3.5" />
-              <p className="label-eyebrow text-primary">Travel mode</p>
+              <p className="label-eyebrow text-primary">
+                {justLanded ? "Just landed" : "Travel mode"}
+              </p>
             </div>
             <p className="mt-2 text-sm text-foreground">
-              You're in <span className="font-medium">{currentLabel}</span>
+              {justLanded ? "You're now in " : "You're in "}
+              <span className="font-medium">{currentLabel}</span>
               <span className="text-muted-foreground"> · {currentTz}</span>
+              {offsetVsHome !== null && offsetVsHome !== 0 && (
+                <span className="text-muted-foreground">
+                  {" "}· {offsetVsHome > 0 ? "+" : ""}
+                  {offsetVsHome}h from home
+                </span>
+              )}
             </p>
             {strategyNudge && (
               <p className="mt-1 text-xs text-muted-foreground">{strategyNudge}</p>
