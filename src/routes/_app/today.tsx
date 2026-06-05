@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
 import { format } from "date-fns";
 import { BookOpen, Pill, Zap, ChevronRight, Activity, Droplets } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -341,17 +341,33 @@ function TodayPage() {
         </div>
       )}
 
-      <TripBanner />
-      <PreTripChecklist />
-      <TripWrapupCard />
-      <TodayDoses />
+      <TodayWidgetBoundary name="travel">
+        <TripBanner />
+        <PreTripChecklist />
+        <TripWrapupCard />
+      </TodayWidgetBoundary>
+      <TodayWidgetBoundary name="doses">
+        <TodayDoses />
+      </TodayWidgetBoundary>
 
-      <OnboardingChecklist />
-      <ConditionTipCard conditions={profile?.conditions} />
-      <FeatureSuggestionCard />
-      <WeeklyRecapCard />
-      <SevenDayTrendStrip />
-      <TopInsightCard />
+      <TodayWidgetBoundary name="setup">
+        <OnboardingChecklist />
+      </TodayWidgetBoundary>
+      <TodayWidgetBoundary name="tips">
+        <ConditionTipCard conditions={profile?.conditions} />
+      </TodayWidgetBoundary>
+      <TodayWidgetBoundary name="suggestions">
+        <FeatureSuggestionCard />
+      </TodayWidgetBoundary>
+      <TodayWidgetBoundary name="recap">
+        <WeeklyRecapCard />
+      </TodayWidgetBoundary>
+      <TodayWidgetBoundary name="trends">
+        <SevenDayTrendStrip />
+      </TodayWidgetBoundary>
+      <TodayWidgetBoundary name="insight">
+        <TopInsightCard />
+      </TodayWidgetBoundary>
 
       {/* Hydration & auras quick-capture */}
       {showHydration && (
