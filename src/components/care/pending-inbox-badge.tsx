@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Inbox } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getPendingChangesCount } from "@/lib/care.functions";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ type Props = {
 };
 
 export function PendingInboxBadge({ variant = "compact", onNavigate, className }: Props) {
+  const channelId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const fetchCount = useServerFn(getPendingChangesCount);
   const qc = useQueryClient();
   const { data } = useQuery({
@@ -27,7 +28,7 @@ export function PendingInboxBadge({ variant = "compact", onNavigate, className }
   // Live: caregivers' new proposals show up immediately for the owner.
   useEffect(() => {
     const channel = supabase
-      .channel("care-pending-inbox")
+      .channel(`care-pending-inbox-${channelId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "pending_changes" },
@@ -37,7 +38,7 @@ export function PendingInboxBadge({ variant = "compact", onNavigate, className }
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [qc]);
+  }, [channelId, qc]);
 
   const count = data?.count ?? 0;
   if (count <= 0) return null;
