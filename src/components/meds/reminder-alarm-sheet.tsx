@@ -96,6 +96,17 @@ export function ReminderAlarmSheet() {
           .from("medication_doses")
           .update({ status: "taken", taken_at: new Date().toISOString() })
           .eq("id", dose.id);
+        // QA #22: decrement pill stock alongside the dose status change.
+        const medId = dose?.medication?.id ?? null;
+        if (medId) {
+          const { data: m } = await supabase
+            .from("medications").select("pills_remaining").eq("id", medId).maybeSingle();
+          if (m && m.pills_remaining != null) {
+            await supabase.from("medications")
+              .update({ pills_remaining: Math.max(0, (m.pills_remaining as number) - 1) })
+              .eq("id", medId);
+          }
+        }
         toast.success("Marked taken");
       } else {
         const next = new Date(Date.now() + snoozeMinutes * 60_000).toISOString();
