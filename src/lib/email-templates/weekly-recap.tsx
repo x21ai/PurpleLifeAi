@@ -41,7 +41,7 @@ const WeeklyRecapEmail = ({
   return (
     <Html lang="en" dir="ltr">
       <Head />
-      <Preview>Your week on {SITE_NAME} — a quiet summary</Preview>
+      <Preview>Your week on {SITE_NAME}, a quiet summary</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>Your week, in a few lines</Heading>

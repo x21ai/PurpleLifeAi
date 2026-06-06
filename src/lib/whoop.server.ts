@@ -1,5 +1,5 @@
 /**
- * Whoop API helpers — server-only.
+ * Whoop API helpers, server-only.
  * Mirrors the shape of the Oura edge function but runs in TanStack Start
  * server fns instead of a Supabase Edge Function (per project rule).
  *

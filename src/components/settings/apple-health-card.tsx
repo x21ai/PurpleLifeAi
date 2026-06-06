@@ -77,7 +77,7 @@ export function AppleHealthCard() {
     try {
       const r = await fetch(webhookUrl, { method: "GET" });
       if (r.ok) {
-        toast.success("Connection works — Purple is listening.");
+        toast.success("Connection works · Purple is listening.");
         qc.invalidateQueries({ queryKey: ["apple-health", "config"] });
       } else {
         toast.error(`Test failed (${r.status})`);
@@ -95,7 +95,7 @@ export function AppleHealthCard() {
         <div>
           <h2 className="font-serif text-xl text-foreground">Apple Health auto-sync</h2>
           <p className="mt-1 text-xs text-muted-foreground max-w-md">
-            Apple HealthKit is iOS-only — there's no web API for it. Use{" "}
+            Apple HealthKit is iOS-only, there's no web API for it. Use{" "}
             <span className="text-foreground">Health Auto Export</span> or{" "}
             <span className="text-foreground">iOS Shortcuts</span> on your iPhone to POST
             new readings to your personal Purple webhook.

@@ -1,7 +1,7 @@
 import * as React from "react";
 
 /**
- * Render a UTC instant in two timezones — primary (local/device) and a small
+ * Render a UTC instant in two timezones, primary (local/device) and a small
  * secondary chip showing the home timezone. Used during travel so the user can
  * see "3:00 AM HKT · 10:00 PM EST home" and know which scheduled dose this is.
  */

@@ -175,7 +175,7 @@ export function TodayDoses() {
         if (x.id !== id) return x;
         if (action === "taken") return { ...x, status: "taken" };
         if (action === "skip") return { ...x, status: "skipped" };
-        // snooze: optimistic — keep visible
+        // snooze: optimistic, keep visible
         return x;
       }) ?? null,
     );
@@ -249,7 +249,7 @@ export function TodayDoses() {
   };
 
   const enableReminders = async () => {
-    // Must run synchronously inside the click handler — no awaits before the
+    // Must run synchronously inside the click handler, no awaits before the
     // permission request, otherwise Safari/iOS drops the user gesture.
     void (async () => {
       const perm = await requestPermission();

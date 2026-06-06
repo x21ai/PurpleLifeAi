@@ -11,7 +11,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceArea, ResponsiveContai
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/reports/$reportId")({
-  head: () => ({ meta: [{ title: "Report — Purple" }] }),
+  head: () => ({ meta: [{ title: "Report · Purple" }] }),
   component: ReportDetailPage,
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-3xl px-5 py-16">
@@ -306,7 +306,7 @@ function PanelGroups({
                     <p className="text-sm text-foreground">{m.display_name ?? m.metric_key}</p>
                     {(m.reference_low != null || m.reference_high != null) && (
                       <p className="text-xs text-muted-foreground">
-                        ref {m.reference_low ?? "—"}–{m.reference_high ?? "—"} {m.unit ?? ""}
+                        ref {m.reference_low ?? "–"}–{m.reference_high ?? "–"} {m.unit ?? ""}
                       </p>
                     )}
                   </div>
@@ -320,7 +320,7 @@ function PanelGroups({
                             : "text-foreground"
                       }`}
                     >
-                      {m.value ?? m.value_text ?? "—"}
+                      {m.value ?? m.value_text ?? "–"}
                       {m.unit ? <span className="text-xs text-muted-foreground ml-1">{m.unit}</span> : null}
                     </span>
                     <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />

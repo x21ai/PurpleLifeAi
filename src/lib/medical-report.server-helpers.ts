@@ -176,7 +176,7 @@ export async function assembleReportDataAdmin(
     }
   }
 
-  // Labs — list user's report_documents in window
+  // Labs, list user's report_documents in window
   const labs: ReportSourceData["labs"] = [];
   if (sections.labs) {
     const { data: docs } = await supabaseAdmin

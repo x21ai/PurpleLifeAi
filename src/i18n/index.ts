@@ -90,7 +90,7 @@ export function setLocale(locale: SupportedLocale) {
   try {
     window.localStorage.setItem(STORAGE_KEY, locale);
   } catch {
-    // ignore — private mode
+    // ignore, private mode
   }
 }
 
@@ -120,7 +120,7 @@ export function seedLocaleFromProfile(raw: string | null | undefined) {
   try {
     window.localStorage.setItem(STORAGE_KEY, next);
   } catch {
-    // ignore — private mode
+    // ignore, private mode
   }
   if (i18n.language !== next) void i18n.changeLanguage(next);
 }

@@ -19,7 +19,7 @@ import { useRouteTheme } from "@/lib/use-route-theme";
 
 export const Route = createFileRoute("/_app/reports/trends/$metricKey")({
   head: ({ params }) => ({
-    meta: [{ title: `Trend · ${params.metricKey} — Purple` }],
+    meta: [{ title: `Trend · ${params.metricKey} · Purple` }],
   }),
   component: TrendDetailPage,
   errorComponent: ({ error }) => (
@@ -232,7 +232,7 @@ function TrendDetailPage() {
                         {r.unit ? <span className="text-muted-foreground"> {r.unit}</span> : null}
                       </>
                     ) : (
-                      <span className="text-muted-foreground">{r.value_text ?? "—"}</span>
+                      <span className="text-muted-foreground">{r.value_text ?? "–"}</span>
                     )}
                     {r.flag && r.flag !== "normal" && (
                       <span

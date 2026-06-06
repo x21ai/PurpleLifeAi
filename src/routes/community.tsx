@@ -16,7 +16,7 @@ export const Route = createFileRoute("/community")({
       {
         name: "description",
         content:
-          "A quiet, moderated space for people living with conditions that need daily attention — and the people who help them carry it.",
+          "A quiet, moderated space for people living with conditions that need daily attention, and the people who help them carry it.",
       },
       { property: "og:title", content: "Community. Purple." },
       {
@@ -79,13 +79,13 @@ function CommunityFeed() {
     <div className="min-h-dvh bg-background text-foreground">
       <MarketingHeader />
 
-      {/* Calm hero — same vocabulary as the rest of marketing */}
+      {/* Calm hero, same vocabulary as the rest of marketing */}
       <CalmHero
         image={calmImages.coast}
         alt=""
         eyebrow="Community"
         headline={<>You&rsquo;re<br />not alone.</>}
-        body="A quiet, moderated space to share what's working and ask what isn't. Not medical advice — always check with your care team."
+        body="A quiet, moderated space to share what's working and ask what isn't. Not medical advice, always check with your care team."
         variant="full"
       />
 

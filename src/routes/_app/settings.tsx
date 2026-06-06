@@ -36,7 +36,7 @@ function SectionSkeleton() {
 }
 
 export const Route = createFileRoute("/_app/settings")({
-  head: () => ({ meta: [{ title: "Settings — Purple" }] }),
+  head: () => ({ meta: [{ title: "Settings · Purple" }] }),
   component: SettingsLayout,
 });
 

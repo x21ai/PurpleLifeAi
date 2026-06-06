@@ -11,7 +11,7 @@ const STATUS_COLOR: Record<ScoreBand, string> = {
 };
 
 /**
- * 1:1.2 card — title top, status (band color), large value bottom-left.
+ * 1:1.2 card, title top, status (band color), large value bottom-left.
  * Optional tap target via `to`.
  */
 export function MetricCard({

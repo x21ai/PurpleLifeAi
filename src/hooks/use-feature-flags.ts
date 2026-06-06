@@ -13,7 +13,7 @@ type State = {
  * Client hook that resolves per-feature visibility from
  * profiles.conditions + profiles.feature_overrides.
  *
- * Read-time only — never writes defaults back into the DB so existing
+ * Read-time only, never writes defaults back into the DB so existing
  * users keep whatever they already have.
  */
 export function useFeatureFlags() {

@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
- * Weekly journal recap — last 7 days at a glance.
+ * Weekly journal recap, last 7 days at a glance.
  * Counts entries, mines simple trigger keywords from text/voice transcript,
  * rolls up top ai_tags, plus seizure & missed-dose counts.
  * Purely descriptive, no clinical advice.

@@ -9,7 +9,7 @@ const STORAGE_PREFIX = "purple-reengage-dismissed:";
 
 type Props = {
   conditions: string[] | null | undefined;
-  /** Only render when the user has at least one entry — empty state covers zero. */
+  /** Only render when the user has at least one entry, empty state covers zero. */
   hasAnyEntries: boolean;
 };
 

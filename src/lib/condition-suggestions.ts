@@ -3,13 +3,13 @@
  * Looks at report_metrics values and proposes adding common chronic
  * conditions when thresholds are crossed in ≥2 reports.
  *
- * Suggestions are never auto-written — users opt in from the UI.
+ * Suggestions are never auto-written, users opt in from the UI.
  */
 
 import type { FeatureKey } from "./feature-catalog";
 
 export type SuggestionRule = {
-  /** Stable key — also used as the value stored in profiles.conditions */
+  /** Stable key, also used as the value stored in profiles.conditions */
   conditionKey: string;
   /** Display label for the suggestion card */
   label: string;

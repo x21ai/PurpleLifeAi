@@ -73,7 +73,7 @@ const KIND_LABEL_KEYS: Record<MedKind, string> = {
 };
 
 export const Route = createFileRoute("/_app/meds")({
-  head: () => ({ meta: [{ title: "Meds — Purple" }] }),
+  head: () => ({ meta: [{ title: "Meds · Purple" }] }),
   component: MedsPage,
 });
 
@@ -226,7 +226,7 @@ function MedsPage() {
       toast.error("No dose times to export");
       return;
     }
-    const ics = buildIcs("Medications — Purple", events);
+    const ics = buildIcs("Medications · Purple", events);
     downloadIcs("purple-medications-30d", ics);
     toast.success("Calendar file downloaded");
   };
@@ -596,7 +596,7 @@ function AdherenceCard() {
       <div className="flex items-end justify-between gap-6">
         <MetricNumber
           size="lg"
-          value={pct == null ? "—" : `${pct}%`}
+          value={pct == null ? "–" : `${pct}%`}
           label="Adherence · 14d"
         />
         {counts && counts.total > 0 && (
@@ -608,7 +608,7 @@ function AdherenceCard() {
       <div className="mt-5">
         <ProgressPill
           label="On schedule"
-          value={pct == null ? "—" : `${pct}%`}
+          value={pct == null ? "–" : `${pct}%`}
           pct={pct ?? 0}
           tone={pct != null && pct < 70 ? "alert" : "ink"}
         />

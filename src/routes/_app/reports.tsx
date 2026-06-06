@@ -16,7 +16,7 @@ import { QuickClinicianPdf } from "@/components/reports/quick-clinician-pdf";
 export const Route = createFileRoute("/_app/reports")({
   head: () => ({
     meta: [
-      { title: "Reports — Purple" },
+      { title: "Reports · Purple" },
       { name: "description", content: "Upload lab reports and track changes over time." },
     ],
   }),

@@ -3,7 +3,7 @@ import { runDailyDigest } from "@/lib/care-digest.server";
 
 /**
  * Daily caregiver-activity digest. Called by pg_cron once per day.
- * No body required. Same lightweight gate as dose-reminders — accepts the
+ * No body required. Same lightweight gate as dose-reminders, accepts the
  * Supabase anon key in `apikey` and pg_cron runs as anon.
  */
 export const Route = createFileRoute("/api/public/cron/care-daily-digest")({

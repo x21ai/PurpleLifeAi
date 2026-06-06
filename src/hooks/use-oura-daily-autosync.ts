@@ -7,7 +7,7 @@ const STALE_AFTER_MS = 20 * 60 * 60 * 1000; // 20h
 /**
  * Once per browser session, if the user has Oura connected and the last sync
  * is older than 20 hours, kick a background incremental sync. Silent on
- * success; only surfaces failures via console (no toast — this is invisible
+ * success; only surfaces failures via console (no toast, this is invisible
  * housekeeping).
  *
  * Mounted at the root so it fires shortly after the user authenticates,

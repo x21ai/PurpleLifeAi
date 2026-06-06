@@ -38,7 +38,7 @@ import {
 const searchSchema = z.object({ thread: z.string().uuid().optional() });
 
 export const Route = createFileRoute("/_app/chat-care")({
-  head: () => ({ meta: [{ title: "Care chat — Purple" }] }),
+  head: () => ({ meta: [{ title: "Care chat · Purple" }] }),
   validateSearch: searchSchema,
   component: CareChatPage,
 });

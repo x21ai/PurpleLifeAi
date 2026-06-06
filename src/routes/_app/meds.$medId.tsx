@@ -57,7 +57,7 @@ type SideEffect = {
 };
 
 export const Route = createFileRoute("/_app/meds/$medId")({
-  head: () => ({ meta: [{ title: "Medication — Purple" }] }),
+  head: () => ({ meta: [{ title: "Medication · Purple" }] }),
   component: MedDetail,
   errorComponent: ({ reset }) => {
     const router = useRouter();
@@ -204,7 +204,7 @@ function MedDetail() {
       toast.error("Could not build calendar events.");
       return;
     }
-    const ics = buildIcs(`${med.name} — Purple`, events);
+    const ics = buildIcs(`${med.name} · Purple`, events);
     downloadIcs(`${med.name.replace(/\s+/g, "-").toLowerCase()}-30d`, ics);
     toast.success("Calendar file downloaded. Open it to add to Apple or Google Calendar.");
   };
@@ -255,7 +255,7 @@ function MedDetail() {
       <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
         <h2 className="font-serif text-xl text-foreground">Schedule</h2>
         {isRescueMed(med) ? (
-          <p className="mt-2 text-sm text-muted-foreground">Rescue medication — taken as needed.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Rescue medication, taken as needed.</p>
         ) : med.times_of_day.length === 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">No times set.</p>
         ) : (
@@ -268,7 +268,7 @@ function MedDetail() {
         {med.pills_remaining !== null && (
           <p className={`mt-4 text-sm ${lowStock ? "text-destructive" : "text-muted-foreground"}`}>
             Pills remaining: <span className="font-medium">{med.pills_remaining}</span>
-            {lowStock && " — time to refill"}
+            {lowStock && ", time to refill"}
           </p>
         )}
       </section>
@@ -288,7 +288,7 @@ function MedDetail() {
               <li key={e.id} className="py-3 text-sm">
                 <p className="text-foreground">{e.side_effect}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Severity {e.severity ?? "—"}/10 · {format(new Date(e.noted_at), "MMM d, yyyy")}
+                  Severity {e.severity ?? "–"}/10 · {format(new Date(e.noted_at), "MMM d, yyyy")}
                 </p>
               </li>
             ))}

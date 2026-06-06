@@ -257,7 +257,7 @@ body::-webkit-scrollbar,
 
   /* ===== Purple v2 utility classes ===== */
 
-  /* label.medium — uppercase tracked metric caption, used everywhere */
+  /* label.medium, uppercase tracked metric caption, used everywhere */
   .label-eyebrow {
     font-family: var(--font-sans);
     font-size: 12px;
@@ -268,7 +268,7 @@ body::-webkit-scrollbar,
     line-height: 1;
   }
 
-  /* label.small — tag pills, footnotes */
+  /* label.small, tag pills, footnotes */
   .label-small {
     font-family: var(--font-sans);
     font-size: 11px;
@@ -277,13 +277,13 @@ body::-webkit-scrollbar,
     line-height: 1;
   }
 
-  /* Tabular, lined numeric — applied to ANY number on screen */
+  /* Tabular, lined numeric, applied to ANY number on screen */
   .numeric {
     font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum", "lnum";
   }
 
-  /* Hero numeric display — Inter, ultra-light, tabular, tight */
+  /* Hero numeric display, Inter, ultra-light, tabular, tight */
   .numeric-display {
     font-family: var(--font-sans);
     font-weight: 300;
@@ -293,7 +293,7 @@ body::-webkit-scrollbar,
     line-height: 1;
   }
 
-  /* The AI's voice — Source Serif 4 paragraphs */
+  /* The AI's voice, Source Serif 4 paragraphs */
   .body-serif {
     font-family: var(--font-serif);
     font-size: 17px;
@@ -301,7 +301,7 @@ body::-webkit-scrollbar,
     color: var(--text-secondary);
   }
 
-  /* Brand wordmark — tracked-out Inter */
+  /* Brand wordmark, tracked-out Inter */
   .wordmark {
     font-family: var(--font-sans);
     font-weight: 600;
@@ -321,7 +321,7 @@ body::-webkit-scrollbar,
   }
 
   /* ===== Sheet surfaces (Oura-like dark device/account/tools pages) =====
-   * Deep near-black canvas with lifted card "sheets" — used by Account,
+   * Deep near-black canvas with lifted card "sheets", used by Account,
    * Tools, and the slim Settings hub regardless of theme. Tokens force a
    * dark treatment locally so the surface looks identical in light + dark.
    */

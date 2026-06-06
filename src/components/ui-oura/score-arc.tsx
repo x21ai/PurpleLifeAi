@@ -1,7 +1,7 @@
 import { useId } from "react";
 
 /**
- * Curved score arc — the lower 200° of a circle, traced with a track + fill.
+ * Curved score arc, the lower 200° of a circle, traced with a track + fill.
  * Used on the hero score card; sits centered over a landscape image.
  */
 export function ScoreArc({

@@ -18,7 +18,7 @@ import { useFeatureFlags } from "@/hooks/use-feature-flags";
 export const Route = createFileRoute("/_app/hydration")({
   head: () => ({
     meta: [
-      { title: "Hydration & auras — Purple" },
+      { title: "Hydration & auras · Purple" },
       { name: "description", content: "Track water, electrolytes, and aura warnings throughout the day." },
     ],
   }),

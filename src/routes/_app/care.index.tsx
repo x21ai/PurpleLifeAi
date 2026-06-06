@@ -10,7 +10,7 @@ import { useRouteTheme } from "@/lib/use-route-theme";
 
 export const Route = createFileRoute("/_app/care/")({
   head: () => ({
-    meta: [{ title: "People you care for — Purple" }],
+    meta: [{ title: "People you care for · Purple" }],
   }),
   component: CareIndexPage,
 });

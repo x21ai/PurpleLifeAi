@@ -49,17 +49,17 @@ export const Route = createFileRoute("/pricing")({
 });
 
 const included = [
-  "Unlimited journal entries — text, voice, photo, video",
+  "Unlimited journal entries, text, voice, photo, video",
   "Daily AI risk forecast tailored to your history",
   "Unified timeline with filters and free-text search",
   "Medication tracking, reminders, adherence, refills",
   "Seizure log with backdating",
   "Oura, Whoop & Apple Health biometrics",
-  "Ask Purple — choose Gemini Flash, Pro, or Claude Sonnet",
+  "Ask Purple, choose Gemini Flash, Pro, or Claude Sonnet",
   "Caregiver sharing with read-only by default",
   "Travel mode that shifts your meds across time zones",
   "Community access",
-  "Export everything to JSON or PDF — delete any time",
+  "Export everything to JSON or PDF, delete any time",
 ];
 
 function PricingPage() {
@@ -69,7 +69,7 @@ function PricingPage() {
       <MarketingHeader />
 
       <main>
-        {/* Hero — mist */}
+        {/* Hero, mist */}
         <CalmHero
           image={calmImages.mist}
           alt=""
@@ -78,7 +78,7 @@ function PricingPage() {
           body="Health tools shouldn&rsquo;t come with a paywall. Purple is funded by goodwill, not by you."
         />
 
-        {/* The card — quieter, more editorial */}
+        {/* The card, quieter, more editorial */}
         <section className="mx-auto max-w-4xl px-6 sm:px-10 py-24 sm:py-32">
           <div className="grid lg:grid-cols-[1fr_1.4fr] gap-12 lg:gap-16 items-start">
             <div>
@@ -118,7 +118,7 @@ function PricingPage() {
         <CalmBand
           image={calmImages.coast}
           headline="Funded by goodwill."
-          body="Open source on GitHub. No ads. No selling your data. No third-party trackers — ever. The product is the product, not you."
+          body="Open source on GitHub. No ads. No selling your data. No third-party trackers, ever. The product is the product, not you."
         />
 
         {/* CTA */}

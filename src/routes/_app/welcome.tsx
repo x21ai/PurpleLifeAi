@@ -482,7 +482,7 @@ function WhatITrackStep({
         Pick what shows up
       </h1>
       <p className="mt-5 text-lg text-muted-foreground max-w-lg">
-        We pre-picked these from your conditions. Flip anything off — you can change it
+        We pre-picked these from your conditions. Flip anything off, you can change it
         any time in Settings.
       </p>
       <div className="mt-8 space-y-6">

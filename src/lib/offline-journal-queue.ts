@@ -34,7 +34,7 @@ function write(entries: QueuedEntry[]) {
     window.localStorage.setItem(KEY, JSON.stringify(entries));
     window.dispatchEvent(new CustomEvent("purple:offline-journal-changed"));
   } catch {
-    // quota / private mode — swallow
+    // quota / private mode, swallow
   }
 }
 

@@ -327,7 +327,7 @@ export const decidePendingChange = createServerFn({ method: "POST" })
       const type = change.type as string;
       if (type === "add_journal_comment" && change.target_id) {
         const note = String((change.payload as any)?.text ?? "").slice(0, 2000);
-        const stamp = `\n\n— Caregiver note (approved ${new Date().toISOString().slice(0, 10)}):\n${note}`;
+        const stamp = `\n\n- Caregiver note (approved ${new Date().toISOString().slice(0, 10)}):\n${note}`;
         const { data: row } = await supabaseAdmin
           .from("journal_entries")
           .select("text")
@@ -350,7 +350,7 @@ export const decidePendingChange = createServerFn({ method: "POST" })
           .eq("user_id", change.owner_id)
           .single();
         if (!row) throw new Error("Target medication not found for this owner");
-        const newNotes = ((row?.notes ?? "") + "\n— Caregiver: " + note).trim();
+        const newNotes = ((row?.notes ?? "") + "\n- Caregiver: " + note).trim();
         await supabaseAdmin
           .from("medications")
           .update({ notes: newNotes })
@@ -392,7 +392,7 @@ export const decidePendingChange = createServerFn({ method: "POST" })
 
 /**
  * Bulk decide N pending changes at once. Reuses the same apply logic as
- * decidePendingChange (kept simple — we just loop). Returns how many were
+ * decidePendingChange (kept simple, we just loop). Returns how many were
  * processed and how many failed so the UI can surface partial failures.
  */
 export const decidePendingChangesBulk = createServerFn({ method: "POST" })
@@ -427,14 +427,14 @@ export const decidePendingChangesBulk = createServerFn({ method: "POST" })
           continue;
         }
         if (change.status !== "pending") {
-          // already decided — skip silently
+          // already decided, skip silently
           continue;
         }
         if (data.decision === "approved") {
           const type = change.type as string;
           if (type === "add_journal_comment" && change.target_id) {
             const note = String((change.payload as any)?.text ?? "").slice(0, 2000);
-            const stamp = `\n\n— Caregiver note (approved ${new Date()
+            const stamp = `\n\n- Caregiver note (approved ${new Date()
               .toISOString()
               .slice(0, 10)}):\n${note}`;
             const { data: row } = await supabaseAdmin
@@ -459,7 +459,7 @@ export const decidePendingChangesBulk = createServerFn({ method: "POST" })
               .eq("user_id", change.owner_id)
               .single();
             if (row) {
-              const newNotes = ((row?.notes ?? "") + "\n— Caregiver: " + note).trim();
+              const newNotes = ((row?.notes ?? "") + "\n- Caregiver: " + note).trim();
               await supabaseAdmin
                 .from("medications")
                 .update({ notes: newNotes })
@@ -1453,7 +1453,7 @@ export const caregiverReadAlerts = createServerFn({ method: "POST" })
     const caregiverId = context.userId;
     const rel = await getActiveRelationshipForCaregiver(data.owner_id, caregiverId);
 
-    // Get caregiver scopes — drive each section by what they can see
+    // Get caregiver scopes, drive each section by what they can see
     const { data: scopeRows } = await supabaseAdmin
       .from("care_scopes")
       .select("scope, granted")
@@ -1611,7 +1611,7 @@ export const dismissCaregiverAlert = createServerFn({ method: "POST" })
 
 /**
  * Dismiss every alert currently visible to the caregiver for one owner.
- * Caller passes the ids it just rendered — we append them to the visit's
+ * Caller passes the ids it just rendered, we append them to the visit's
  * dismissed_alert_ids list (capped at the most recent 200 entries).
  */
 export const dismissAllCaregiverAlerts = createServerFn({ method: "POST" })

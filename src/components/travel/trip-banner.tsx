@@ -210,7 +210,7 @@ export function TripBanner() {
       toast.error("Could not start travel mode");
       return;
     }
-    toast.success("Travel mode on — doses stay on home time");
+    toast.success("Travel mode on, doses stay on home time");
     void refresh();
   };
 
@@ -269,7 +269,7 @@ export function TripBanner() {
             disabled={busy}
             className="inline-flex items-center rounded-full border border-border bg-background px-3 py-1.5 text-xs text-foreground hover:bg-secondary/60 disabled:opacity-50"
           >
-            I moved — update home
+            I moved, update home
           </button>
         </div>
       </div>

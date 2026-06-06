@@ -55,7 +55,7 @@ function AboutPage() {
       <MarketingHeader />
 
       <main>
-        {/* Hero — mist */}
+        {/* Hero, mist */}
         <CalmHero
           image={calmImages.mist}
           alt=""
@@ -83,7 +83,7 @@ function AboutPage() {
           </div>
         </section>
 
-        {/* Human moment — bedside */}
+        {/* Human moment, bedside */}
         <HumanMoment
           image={humanImages.bedsideDusk}
           alt="A person sitting on the edge of a bed at dusk, holding a phone, lamp light behind."
@@ -91,7 +91,7 @@ function AboutPage() {
           attribution="What we&rsquo;re building toward"
         />
 
-        {/* Quiet stat — the origin of the name */}
+        {/* Quiet stat, the origin of the name */}
         <QuietStat
           stat={<>Named for the color of epilepsy awareness.</>}
           caption="Built for anyone carrying something heavy."
@@ -122,7 +122,7 @@ function AboutPage() {
         <CalmBand
           image={calmImages.dawnAlt}
           headline="Free, open, yours."
-          body="Open source on GitHub. No ads. No selling your data. No third-party trackers — ever."
+          body="Open source on GitHub. No ads. No selling your data. No third-party trackers, ever."
         />
 
         {/* CTA */}

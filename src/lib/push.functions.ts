@@ -60,7 +60,7 @@ export const sendTestPush = createServerFn({ method: "POST" })
     let sent = 0;
     for (const sub of subs) {
       const res = await sendPushToSubscription(sub, {
-        title: "Purple — test alarm",
+        title: "Purple, test alarm",
         body: "Phone alarms are working. You'll get one for each scheduled dose.",
         url: "/meds",
         tag: "purple-test",

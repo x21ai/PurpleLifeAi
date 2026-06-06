@@ -9,7 +9,7 @@ import { resolveMedicalReportShareLink } from "@/lib/medical-report-share.functi
 export const Route = createFileRoute("/share/report/$token")({
   head: () => ({
     meta: [
-      { title: "Shared medical history — Purple" },
+      { title: "Shared medical history · Purple" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

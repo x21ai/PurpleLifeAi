@@ -206,7 +206,7 @@ export function TripEditDialog({ trip, homeTz, onOpenChange, onSaved }: TripEdit
           <DialogTitle className="font-serif text-2xl">Edit trip</DialogTitle>
           <DialogDescription>
             Changes to dates, timezone, strategy, or legs may need a fresh
-            dose schedule — you'll be asked before anything is replaced.
+            dose schedule, you'll be asked before anything is replaced.
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-4 pb-2">

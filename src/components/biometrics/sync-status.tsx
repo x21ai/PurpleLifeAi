@@ -119,7 +119,7 @@ export function OuraSyncStatus({ variant = "detailed", onSynced, className }: Pr
         <p className="text-[11px] text-muted-foreground">
           Data through{" "}
           <span className="text-foreground/80">
-            {dataDate ? format(dataDate, "EEE h:mm a") : "—"}
+            {dataDate ? format(dataDate, "EEE h:mm a") : "–"}
           </span>
         </p>
         <p className="text-[11px] text-muted-foreground">

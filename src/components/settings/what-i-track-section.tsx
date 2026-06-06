@@ -16,7 +16,7 @@ import {
 import { labelForCondition } from "@/lib/condition-prompts";
 
 /**
- * "What I track" — per-feature toggles, grouped by category, with the
+ * "What I track", per-feature toggles, grouped by category, with the
  * resolved default explained inline. Writes to profiles.feature_overrides.
  * Defaults are NEVER written retroactively; absence = "use default for my conditions".
  */
@@ -94,7 +94,7 @@ export function WhatITrackSection() {
           </h2>
           <p className="mt-1 text-sm text-muted-foreground max-w-prose">
             Each tracker turns on by default for the conditions it helps with.
-            Turn anything on or off — your call, not your diagnosis's.
+            Turn anything on or off, your call, not your diagnosis's.
           </p>
         </div>
         {Object.keys(overrides).length > 0 && (
@@ -122,7 +122,7 @@ export function WhatITrackSection() {
                 const reason = f.defaultOnGlobally
                   ? "On for everyone by default"
                   : f.defaultFor.length === 0
-                    ? "Off by default — opt in if useful"
+                    ? "Off by default, opt in if useful"
                     : `Default-on for ${f.defaultFor.map(labelForCondition).join(", ")}`;
                 return (
                   <div key={f.key} className="flex items-start justify-between gap-4">

@@ -4,8 +4,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
  * Phase-3 auto-routing: when a journal entry has an attached medical document
- * (PDF or photo of a lab/imaging report), classify it with Gemini and — if it
- * looks clinical — copy it into the `reports` bucket, create a report_documents
+ * (PDF or photo of a lab/imaging report), classify it with Gemini and, if it
+ * looks clinical, copy it into the `reports` bucket, create a report_documents
  * row, kick off the same extraction pipeline as a manual upload, and tag the
  * journal entry.
  *
@@ -161,7 +161,7 @@ export const autoRouteJournalToReports = createServerFn({ method: "POST" })
         const { processReport } = await import("./reports.functions");
         void processReport({ data: { reportId: doc.id } }).catch(() => {});
       } catch {
-        // ignore — report row is still created
+        // ignore, report row is still created
       }
       created.push(doc.id);
     }

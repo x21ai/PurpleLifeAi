@@ -206,7 +206,7 @@ export function MetricCard({
         <div className="mt-1 flex items-center justify-between text-[11px]">
           <span className="text-muted-foreground">{compare.label}</span>
           {compare.deltaPct == null ? (
-            <span className="text-muted-foreground">—</span>
+            <span className="text-muted-foreground">, </span>
           ) : (
             <span
               className={

@@ -46,7 +46,7 @@ const CaregiverProposalDecisionEmail = ({
           {decisionNote ? (
             <Text style={small}>Note from {who}: {decisionNote}</Text>
           ) : null}
-          <Text style={footer}>— The {SITE_NAME} team</Text>
+          <Text style={footer}>, The {SITE_NAME} team</Text>
         </Container>
       </Body>
     </Html>

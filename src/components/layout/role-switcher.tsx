@@ -14,7 +14,7 @@ import { listCaregiverOwners } from "@/lib/care.functions";
 import { cn } from "@/lib/utils";
 
 /**
- * Role switcher pill — only renders when the user is BOTH a patient (always
+ * Role switcher pill, only renders when the user is BOTH a patient (always
  * true, they have their own account) AND a caregiver (has at least one
  * incoming care relationship). Lets them flip context cleanly between
  * "My account" (their own data) and "Caregiver" (someone else's dashboard).

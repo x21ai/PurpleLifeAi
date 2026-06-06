@@ -16,7 +16,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { autoRouteJournalToReports } from "@/lib/journal-classify.functions";
 
 export const Route = createFileRoute("/_app/journal/new")({
-  head: () => ({ meta: [{ title: "New entry — Purple" }] }),
+  head: () => ({ meta: [{ title: "New entry · Purple" }] }),
   component: JournalNewPage,
 });
 
@@ -118,12 +118,12 @@ function JournalNewPage() {
     for (const f of Array.from(files)) {
       if (kind === "video") {
         if (f.size > MAX_VIDEO_BYTES) {
-          toast.error(`Video too large — keep under 50 MB (${f.name})`);
+          toast.error(`Video too large, keep under 50 MB (${f.name})`);
           continue;
         }
         const dur = await checkVideoDuration(f);
         if (dur > MAX_VIDEO_SECONDS + 0.5) {
-          toast.error(`Video too long — keep under 60s (${Math.round(dur)}s)`);
+          toast.error(`Video too long, keep under 60s (${Math.round(dur)}s)`);
           continue;
         }
       }
@@ -231,7 +231,7 @@ function JournalNewPage() {
         .catch(() => { /* edge fn may not be deployed yet */ });
 
       // Auto-route clinical attachments (PDF/photo of lab/imaging report)
-      // into the Reports section. Fire-and-forget — runs in parallel.
+      // into the Reports section. Fire-and-forget, runs in parallel.
       if (attachments.length > 0) {
         void autoRoute({ data: { journalEntryId: entryId } }).catch(() => {
           /* best effort */
@@ -246,7 +246,7 @@ function JournalNewPage() {
       return;
     }
 
-    // Saved successfully — clear draft.
+    // Saved successfully, clear draft.
     try {
       localStorage.removeItem(DRAFT_KEY);
     } catch {

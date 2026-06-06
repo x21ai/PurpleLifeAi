@@ -7,7 +7,7 @@ import { createFileRoute } from "@tanstack/react-router";
  * Lookup the user via `apple_health_tokens.webhook_secret`, parse the JSON
  * payload into daily rows, and upsert into `biometrics` with source='apple_health'.
  *
- * The route lives under /api/public/* so it bypasses session auth — the
+ * The route lives under /api/public/* so it bypasses session auth, the
  * secret in the URL IS the auth. The handler MUST verify it before doing
  * anything else with the body.
  */

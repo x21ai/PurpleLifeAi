@@ -60,7 +60,7 @@ const CareInviteEmail = ({
               This invite expires {new Date(expiresAt).toLocaleString()}.
             </Text>
           ) : null}
-          <Text style={footer}>— The {SITE_NAME} team</Text>
+          <Text style={footer}>, The {SITE_NAME} team</Text>
         </Container>
       </Body>
     </Html>

@@ -121,7 +121,7 @@ export function ItineraryEditor({
 
       {value.length === 0 ? (
         <p className="mt-2 text-xs text-muted-foreground">
-          Optional. Add a leg for each flight or layover — e.g. arrival in
+          Optional. Add a leg for each flight or layover, e.g. arrival in
           Dubai at 22:10 local, then Hong Kong at 14:25 local. Without legs,
           Purple uses your final destination from departure.
         </p>

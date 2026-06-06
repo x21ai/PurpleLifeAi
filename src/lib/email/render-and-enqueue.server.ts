@@ -11,7 +11,7 @@ const SENDER_DOMAIN = "notify.purplelife.org";
  * Render a registered template and enqueue it directly via the email queue,
  * skipping the HTTP `/lovable/email/transactional/send` route. Use this from
  * server contexts that have no Bearer token (cron jobs, internal jobs).
- * Returns { ok, messageId } and never throws — callers can ignore failures.
+ * Returns { ok, messageId } and never throws, callers can ignore failures.
  */
 export async function enqueueRenderedEmail(params: {
   templateName: string;
@@ -43,7 +43,7 @@ export async function enqueueRenderedEmail(params: {
       return { ok: false, messageId: null, reason: "suppressed" };
     }
   } catch {
-    // ignore — proceed
+    // ignore, proceed
   }
 
   const messageId = crypto.randomUUID();
@@ -76,7 +76,7 @@ export async function enqueueRenderedEmail(params: {
       status: "pending",
     });
   } catch {
-    // ignore — log row is best-effort
+    // ignore, log row is best-effort
   }
 
   const { error } = await supabaseAdmin.rpc("enqueue_email", {

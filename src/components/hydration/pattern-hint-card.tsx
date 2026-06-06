@@ -9,7 +9,7 @@ import { listAurasForDay } from "@/lib/auras.functions";
 /**
  * Quiet pattern hint surfaced on Today when the signature
  * "lots of water, no electrolytes, aura present" combo appears.
- * Not a diagnosis — a nudge. Tap-through goes to /hydration.
+ * Not a diagnosis, a nudge. Tap-through goes to /hydration.
  */
 export function PatternHintCard() {
   const day = useMemo(() => {
@@ -80,12 +80,12 @@ export function PatternHintCard() {
         <div className="flex-1">
           <p className="text-sm font-medium text-foreground">
             {isAlert
-              ? "Heads up — a pattern to watch right now"
+              ? "Heads up, a pattern to watch right now"
               : "A lot of plain water with no electrolytes"}
           </p>
           <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
             {isAlert
-              ? "High water intake in the last 6 hours, little to no sodium, and an aura logged today. This combo can drop sodium — a known trigger. Consider electrolytes and tell someone you trust."
+              ? "High water intake in the last 6 hours, little to no sodium, and an aura logged today. This combo can drop sodium, a known trigger. Consider electrolytes and tell someone you trust."
               : "Drinking a lot of plain water without sodium can dilute electrolytes over time. Add a pinch of salt or an electrolyte drink if you feel off."}
           </p>
           <p className="mt-2 inline-flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">

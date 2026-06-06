@@ -114,7 +114,7 @@ export function PreTripChecklist() {
             <p className="label-eyebrow text-primary">Trip in {departLocal}</p>
           </div>
           <p className="mt-1.5 text-sm text-foreground">
-            {destShort} — {remaining === 0 ? "you're all set" : `${remaining} thing${remaining === 1 ? "" : "s"} to check off`}
+            {destShort}, {remaining === 0 ? "you're all set" : `${remaining} thing${remaining === 1 ? "" : "s"} to check off`}
           </p>
         </div>
         <ChevronRight

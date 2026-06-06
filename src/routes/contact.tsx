@@ -15,13 +15,13 @@ import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Say hello — Purple" },
+      { title: "Say hello · Purple" },
       {
         name: "description",
         content:
-          "A real person reads every message. Usually within a day. Questions, feedback, or just want to chat — we&rsquo;re here.",
+          "A real person reads every message. Usually within a day. Questions, feedback, or just want to chat, we&rsquo;re here.",
       },
-      { property: "og:title", content: "Say hello — Purple" },
+      { property: "og:title", content: "Say hello · Purple" },
       {
         property: "og:description",
         content: "A real person reads every message. Usually within a day.",

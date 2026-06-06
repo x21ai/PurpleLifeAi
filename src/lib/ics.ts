@@ -28,7 +28,7 @@ export type IcsEvent = {
   description?: string;
   /** Start datetime in UTC. */
   start: Date;
-  /** Duration minutes — defaults to 15. */
+  /** Duration minutes, defaults to 15. */
   durationMinutes?: number;
   /** RRULE string, e.g. "FREQ=DAILY;COUNT=30". */
   rrule?: string;
@@ -89,7 +89,7 @@ export function downloadIcs(filename: string, contents: string) {
 
 /**
  * Build .ics events for a medication schedule, anchored to the user's home tz.
- * `homeTz` is informational only — the times are converted to absolute UTC
+ * `homeTz` is informational only, the times are converted to absolute UTC
  * instants when the schedule is generated, then exported as UTC datetimes,
  * which calendar apps then render in the device's local time.
  */

@@ -12,7 +12,7 @@
  *  - "gradual": shift the home HH:MM by `shiftHoursPerDay` per day after arrival
  *               until aligned with the destination leg, then snap.
  *
- * Pure functions — no I/O. Tested via the server fn that calls it.
+ * Pure functions, no I/O. Tested via the server fn that calls it.
  */
 
 export type TripLeg = {
@@ -186,7 +186,7 @@ export function generateTripDoses(input: GenerateInput): GeneratedDose[] {
     }
   }
 
-  // De-dupe by (med, instant) — DST edges or overlapping legs can produce ties.
+  // De-dupe by (med, instant), DST edges or overlapping legs can produce ties.
   const seen = new Set<string>();
   return out.filter((d) => {
     const key = `${d.medication_id}|${d.scheduled_at}`;

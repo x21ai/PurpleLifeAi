@@ -139,12 +139,12 @@ export function CaptureSheet({
     for (const f of Array.from(files)) {
       if (kind === "video") {
         if (f.size > MAX_VIDEO_BYTES) {
-          toast.error(`Video too large — keep under 50 MB (${f.name})`);
+          toast.error(`Video too large, keep under 50 MB (${f.name})`);
           continue;
         }
         const dur = await checkVideoDuration(f);
         if (dur > MAX_VIDEO_SECONDS + 0.5) {
-          toast.error(`Video too long — keep under 60s (${Math.round(dur)}s)`);
+          toast.error(`Video too long, keep under 60s (${Math.round(dur)}s)`);
           continue;
         }
       }
@@ -197,7 +197,7 @@ export function CaptureSheet({
       const finalText = text.trim();
       const kind = inferKind(finalText, liveTranscript, attachments);
 
-      // Offline fallback — text/voice-transcript only (no media uploads).
+      // Offline fallback, text/voice-transcript only (no media uploads).
       const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
       const hasMedia = attachments.length > 0 || !!voice.audioBlob;
       if (isOffline && !hasMedia) {
@@ -207,7 +207,7 @@ export function CaptureSheet({
           text: finalText || null,
           voiceTranscript: liveTranscript || null,
         });
-        toast.success("Saved offline — will sync when you're back online");
+        toast.success("Saved offline, will sync when you're back online");
         onSaved?.();
         onOpenChange(false);
         return;

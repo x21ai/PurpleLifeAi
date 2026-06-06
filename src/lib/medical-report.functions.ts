@@ -116,7 +116,7 @@ async function assembleReportData(userId: string, from: string, to: string, sect
     };
   });
 
-  // Biometrics — collapse per-day average across sources
+  // Biometrics, collapse per-day average across sources
   const biometrics: Record<string, {
     unit: string;
     direction: "higher_better" | "lower_better" | "neutral";
@@ -161,7 +161,7 @@ async function assembleReportData(userId: string, from: string, to: string, sect
     };
   }
 
-  // Hydration summary intentionally skipped — not in the generated types.
+  // Hydration summary intentionally skipped, not in the generated types.
   const hydration: { total_logs: number; avg_ml_per_day: number | null } | null = null;
 
   // Auras
@@ -171,10 +171,10 @@ async function assembleReportData(userId: string, from: string, to: string, sect
     auras = { count: rows.length, led_to_seizure: rows.filter((r) => r.led_to_seizure).length };
   }
 
-  // Labs intentionally skipped — handled by the existing /reports route.
+  // Labs intentionally skipped, handled by the existing /reports route.
   const labs: Array<{ title: string; created_at: string; metric_count: number }> = [];
 
-  // Journal summary — simple count + tag frequency.
+  // Journal summary, simple count + tag frequency.
   let journalSummary: string | null = null;
   if (sections.journal) {
     const { data: entries } = await supabaseAdmin
