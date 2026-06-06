@@ -8,7 +8,7 @@ import type { LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/vitals")({
-  head: () => ({ meta: [{ title: "Vitals — Purple" }] }),
+  head: () => ({ meta: [{ title: "Vitals · Purple" }] }),
   component: VitalsPage,
 });
 
@@ -60,27 +60,27 @@ function VitalsPage() {
 
       <Section icon={Sparkles} name="Readiness">
         <MetricCard title="Readiness Score" status="Pay attention" band="fair" value="58" />
-        <MetricCard title="Symptom Radar" status="No signs" band="good" value="—" />
+        <MetricCard title="Symptom Radar" status="No signs" band="good" value="–" />
       </Section>
 
       <Section icon={Moon} name="Sleep">
         <MetricCard title="Sleep Score" status="Pay attention" band="fair" value="70" />
-        <MetricCard title="Body Clock" status="Aligned" band="good" value="—" />
+        <MetricCard title="Body Clock" status="Aligned" band="good" value="–" />
       </Section>
 
       <Section icon={Activity} name="Activity">
         <MetricCard title="Activity Score" status="Optimal" band="excellent" value="87" />
-        <MetricCard title="Activity Goal" status="20 / 9,000 steps" band="fair" value="—" />
+        <MetricCard title="Activity Goal" status="20 / 9,000 steps" band="fair" value="–" />
       </Section>
 
       <Section icon={Waves} name="Stress">
-        <MetricCard title="Daytime Stress" status="Restored" band="good" value="—" />
-        <MetricCard title="Resilience" status="Adequate" band="good" value="—" />
+        <MetricCard title="Daytime Stress" status="Restored" band="good" value="–" />
+        <MetricCard title="Resilience" status="Adequate" band="good" value="–" />
       </Section>
 
       <Section icon={Utensils} name="Metabolic Health">
-        <MetricCard title="Glucose" status="No data" band="fair" value="—" />
-        <MetricCard title="Meals" status="Log a meal" band="fair" value="—" />
+        <MetricCard title="Glucose" status="No data" band="fair" value="–" />
+        <MetricCard title="Meals" status="Log a meal" band="fair" value="–" />
       </Section>
 
       <section className="mt-12">

@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_app/biometrics/$metric")({
     const label = meta?.label ?? "Metric";
     return {
       meta: [
-        { title: `${label} — Purple` },
+        { title: `${label} · Purple` },
         { name: "description", content: meta?.meaning ?? "" },
       ],
     };

@@ -49,12 +49,12 @@ export async function exportAllUserData(): Promise<void> {
     `Exported ${new Date().toISOString()} for ${user.email ?? user.id}.`,
     "",
     "Folders:",
-    "- journal/ — one markdown file per entry",
-    "- biometrics.csv — every biometric reading we have on file",
-    "- medications.json — your medication list",
-    "- medication_doses.json — every scheduled, taken, missed, or skipped dose",
-    "- seizures.json — every event you have logged",
-    "- profile.json, risk_forecasts.json, alerts.json — supporting context",
+    "- journal/, one markdown file per entry",
+    "- biometrics.csv, every biometric reading we have on file",
+    "- medications.json, your medication list",
+    "- medication_doses.json, every scheduled, taken, missed, or skipped dose",
+    "- seizures.json, every event you have logged",
+    "- profile.json, risk_forecasts.json, alerts.json, supporting context",
     "",
     "Your data is yours. Take it with you anywhere.",
   ].join("\n"));
@@ -170,7 +170,7 @@ export async function softDeleteUserData(password: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-/** Clear the deletion request — restores full access. */
+/** Clear the deletion request, restores full access. */
 export async function restoreUserData(): Promise<void> {
   const { data: sess } = await supabase.auth.getSession();
   const user = sess.session?.user;

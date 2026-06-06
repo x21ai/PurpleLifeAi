@@ -57,7 +57,7 @@ export function HeroScoreCard({ onNarrative }: { onNarrative?: (n: string | null
     return <div className="mt-8 h-64 rounded-3xl bg-card animate-pulse border border-border" />;
   }
 
-  // Empty state — no forecast yet
+  // Empty state, no forecast yet
   if (!forecast) {
     return (
       <section className="mt-8 relative overflow-hidden rounded-3xl border border-border bg-card">
@@ -94,7 +94,7 @@ export function HeroScoreCard({ onNarrative }: { onNarrative?: (n: string | null
     <Link
       to="/today/risk"
       className="mt-8 group relative block overflow-hidden rounded-3xl border border-border bg-card transition hover:border-foreground/30"
-      aria-label={`Today's read — ${caption}, ${readiness} out of 100. Open details.`}
+      aria-label={`Today's read, ${caption}, ${readiness} out of 100. Open details.`}
     >
       <div className="relative h-80 sm:h-[420px]">
         <img

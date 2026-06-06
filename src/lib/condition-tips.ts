@@ -1,7 +1,6 @@
 /**
  * Light, practical, evidence-informed daily tips per condition.
- * Surfaced on /today as a single rotating card. Never medical advice —
- * always pair with the standard disclaimer wherever displayed.
+ * Surfaced on /today as a single rotating card. Never medical advice, * always pair with the standard disclaimer wherever displayed.
  */
 import type { ConditionTag } from "./condition-prompts";
 
@@ -13,9 +12,9 @@ export interface ConditionTip {
 
 const TIPS: Record<ConditionTag, ConditionTip[]> = {
   epilepsy: [
-    { id: "epi-sleep", body: "Aim for a consistent bedtime — short sleep is the most common seizure trigger people log here." },
+    { id: "epi-sleep", body: "Aim for a consistent bedtime, short sleep is the most common seizure trigger people log here." },
     { id: "epi-dose", body: "Even one missed dose can shift your threshold. The Meds tab shows what's still due today." },
-    { id: "epi-aura", body: "If you feel an aura, capture it right then — even a one-word note helps the pattern engine." },
+    { id: "epi-aura", body: "If you feel an aura, capture it right then, even a one-word note helps the pattern engine." },
     { id: "epi-stress", body: "Notice rising stress? A 4-7-8 breath cycle a few times a day costs nothing and tends to help." },
   ],
   migraine: [
@@ -30,28 +29,28 @@ const TIPS: Record<ConditionTag, ConditionTip[]> = {
   ],
   mental_health: [
     { id: "mh-sun", body: "Even 5 minutes of morning daylight helps the rest of the day settle." },
-    { id: "mh-name", body: "Name the feeling — anxious, sad, flat. Naming it gives your brain something to work with." },
+    { id: "mh-name", body: "Name the feeling, anxious, sad, flat. Naming it gives your brain something to work with." },
     { id: "mh-one", body: "Pick one small thing for today. Not a list. One." },
   ],
   autoimmune: [
-    { id: "ai-pace", body: "Pacing isn't laziness — it's the work. Bank some energy now, spend it intentionally." },
+    { id: "ai-pace", body: "Pacing isn't laziness, it's the work. Bank some energy now, spend it intentionally." },
     { id: "ai-flare", body: "Catch early flare signs in the journal. Patterns become legible after a few weeks." },
   ],
   pots: [
-    { id: "pots-salt", body: "Stay ahead on fluids and salt — electrolytes before you feel light-headed, not after." },
+    { id: "pots-salt", body: "Stay ahead on fluids and salt, electrolytes before you feel light-headed, not after." },
     { id: "pots-rise", body: "Sit on the edge of the bed for 30 seconds before standing. It's not weakness, it's physics." },
   ],
   long_covid: [
     { id: "lc-envelope", body: "Stay inside your energy envelope today. PEM is a tax, not a punishment." },
-    { id: "lc-rest", body: "Rest before you need to — proactive rest counts more than recovery rest." },
+    { id: "lc-rest", body: "Rest before you need to, proactive rest counts more than recovery rest." },
   ],
   chronic_pain: [
-    { id: "cp-move", body: "Gentle movement often helps more than stillness — even 5 minutes of walking or stretching." },
+    { id: "cp-move", body: "Gentle movement often helps more than stillness, even 5 minutes of walking or stretching." },
     { id: "cp-track", body: "Log what helped today, however small. Patterns are easier to spot than to remember." },
   ],
   caregiver: [
     { id: "cg-self", body: "Your nervous system carries theirs. A short break for you protects them too." },
-    { id: "cg-log", body: "Log what you noticed — even hunches. Future-you will thank present-you." },
+    { id: "cg-log", body: "Log what you noticed, even hunches. Future-you will thank present-you." },
   ],
   general: [
     { id: "gen-sleep", body: "Sleep is the single biggest lever. A consistent wake time beats a perfect bedtime." },

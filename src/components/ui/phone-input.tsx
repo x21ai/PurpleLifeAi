@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Small curated list — covers ~95% of likely users. Order matters (most common first).
+// Small curated list, covers ~95% of likely users. Order matters (most common first).
 export const COUNTRY_CODES: { code: string; dial: string; flag: string; name: string }[] = [
   { code: "US", dial: "+1", flag: "🇺🇸", name: "United States" },
   { code: "CA", dial: "+1", flag: "🇨🇦", name: "Canada" },

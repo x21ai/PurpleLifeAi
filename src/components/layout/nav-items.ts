@@ -115,7 +115,7 @@ export const navTree: NavGroup[] = [
   },
 ];
 
-/** Legacy flat list — kept for the mobile bottom nav. */
+/** Legacy flat list, kept for the mobile bottom nav. */
 export type NavItem = {
   to: "/today" | "/journal" | "/timeline" | "/insights" | "/account" | "/tools" | "/settings" | "/hydration";
   label: string;

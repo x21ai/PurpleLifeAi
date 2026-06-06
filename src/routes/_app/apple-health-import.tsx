@@ -10,7 +10,7 @@ import { parseHealthExport, type ParseProgress } from "@/lib/apple-health-xml";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/apple-health-import")({
-  head: () => ({ meta: [{ title: "Apple Health import — Purple" }] }),
+  head: () => ({ meta: [{ title: "Apple Health import · Purple" }] }),
   component: AppleHealthImportPage,
 });
 
@@ -41,7 +41,7 @@ function AppleHealthImportPage() {
         const extracted = await extractExportXmlStreaming(file);
         if (!extracted) {
           setPhase("idle");
-          toast.error("That zip doesn't look like an Apple Health export — it should contain apple_health_export/export.xml");
+          toast.error("That zip doesn't look like an Apple Health export, it should contain apple_health_export/export.xml");
           return;
         }
         xmlFile = extracted;
@@ -106,7 +106,7 @@ function AppleHealthImportPage() {
           <li>Open the Health app on your iPhone.</li>
           <li>Tap your profile photo (top right) and choose <span className="text-[#FAFAFC]">Export All Health Data</span>.</li>
           <li>Save the <code className="font-mono text-[#FAFAFC]">export.zip</code> to Files (or AirDrop it to your computer).</li>
-          <li>Pick that <code className="font-mono">export.zip</code> below — Purple unzips and parses it locally in your browser, then uploads only daily summaries. The raw file never leaves your device.</li>
+          <li>Pick that <code className="font-mono">export.zip</code> below · Purple unzips and parses it locally in your browser, then uploads only daily summaries. The raw file never leaves your device.</li>
         </ol>
       </SheetCard>
 
@@ -183,23 +183,22 @@ function AppleHealthImportPage() {
         <SheetCard>
           <h3 className="text-[18px] font-light text-[#FAFAFC]">Keep it synced from now on</h3>
           <p className="mt-2 text-[13px] text-white/70">
-            Apple does not let web apps talk to HealthKit directly — iOS only allows native apps.
+            Apple does not let web apps talk to HealthKit directly, iOS only allows native apps.
             The two practical bridges:
           </p>
           <ul className="mt-4 space-y-3 text-[13px] text-white/70">
             <li>
-              <span className="text-[#FAFAFC] font-medium">Health Auto Export</span> (App Store, paid) —
-              add an automation that POSTs JSON to your personal Purple webhook every 1–6 hours.
+              <span className="text-[#FAFAFC] font-medium">Health Auto Export</span> (App Store, paid), add an automation that POSTs JSON to your personal Purple webhook every 1–6 hours.
               Find your webhook URL in <Link to="/settings/sharing" className="underline text-[#82B4FF]">Connections → Apple Health</Link>.
             </li>
             <li>
-              <span className="text-[#FAFAFC] font-medium">iOS Shortcuts</span> (free) — build a
+              <span className="text-[#FAFAFC] font-medium">iOS Shortcuts</span> (free), build a
               Shortcut that reads recent Health samples and POSTs to the same webhook on a daily
               automation trigger.
             </li>
           </ul>
           <p className="mt-3 text-[12px] text-white/50">
-            Re-running this ZIP import any time is also fine — duplicates are skipped.
+            Re-running this ZIP import any time is also fine, duplicates are skipped.
           </p>
         </SheetCard>
       )}
@@ -239,7 +238,7 @@ async function extractExportXmlStreaming(file: File): Promise<File | null> {
     const unzip = new Unzip((stream) => {
       const name = stream.name.toLowerCase();
       const isExport = name === "export.xml" || name.endsWith("/export.xml");
-      if (!isExport) return; // skip — fflate discards the data
+      if (!isExport) return; // skip, fflate discards the data
       found = true;
       stream.ondata = (err, data, final) => {
         if (done) return;

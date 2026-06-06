@@ -7,7 +7,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy & safety — Purple" },
+      { title: "Privacy & safety · Purple" },
       {
         name: "description",
         content:

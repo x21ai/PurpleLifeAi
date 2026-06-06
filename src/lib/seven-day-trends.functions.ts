@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
- * 7-day trend strip — descriptive snapshot of sleep, HRV, and adherence
+ * 7-day trend strip, descriptive snapshot of sleep, HRV, and adherence
  * over the past week. Used on Today as a quick risk-context card.
  */
 

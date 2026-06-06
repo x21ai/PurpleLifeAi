@@ -91,7 +91,7 @@ export function PhoneAlarmsSection() {
         <h2 className="font-serif text-xl text-foreground">Phone alarms</h2>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
-        Get a real phone notification for every scheduled dose — even when Purple is closed.
+        Get a real phone notification for every scheduled dose, even when Purple is closed.
       </p>
 
       {!supported && (

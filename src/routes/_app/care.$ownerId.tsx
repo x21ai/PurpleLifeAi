@@ -76,7 +76,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/care/$ownerId")({
-  head: () => ({ meta: [{ title: "Caregiver dashboard — Purple" }] }),
+  head: () => ({ meta: [{ title: "Caregiver dashboard · Purple" }] }),
   component: CareDashboardPage,
 });
 
@@ -215,7 +215,7 @@ function CareDashboardPage() {
     profile?.community_display_name?.trim() ||
     [profile?.first_name, profile?.last_name].filter(Boolean).join(" ").trim() ||
     "Their account";
-  // "Devyn's Dashboard" — use first name when we have it, fall back to the
+  // "Devyn's Dashboard", use first name when we have it, fall back to the
   // full display name otherwise. Possessive suffix follows simple English rule.
   const firstName = profile?.first_name?.trim();
   const dashboardTitle = firstName
@@ -478,7 +478,7 @@ function ChatPanel({
       <div className="flex flex-col items-start gap-3">
         <p className="label-eyebrow text-muted-foreground">Direct chat</p>
         <p className="text-sm text-muted-foreground">
-          Send a private message to {ownerName}. Saved like WhatsApp — full history is kept.
+          Send a private message to {ownerName}. Saved like WhatsApp, full history is kept.
         </p>
         <button
           type="button"

@@ -69,7 +69,7 @@ export function TodayBiometrics() {
   }
 
   const fmtSleep = (m: number | null) => {
-    if (m == null) return "—";
+    if (m == null) return "–";
     const h = Math.floor(m / 60);
     const mm = m % 60;
     return mm === 0 ? `${h}h` : `${h}h ${mm}m`;
@@ -92,18 +92,18 @@ export function TodayBiometrics() {
         />
         <MetricNumber
           size="sm"
-          value={row.oura_readiness_score?.toString() ?? "—"}
+          value={row.oura_readiness_score?.toString() ?? "–"}
           label="Readiness"
         />
         <MetricNumber
           size="sm"
-          value={row.hrv_rmssd_ms ? Math.round(row.hrv_rmssd_ms) : "—"}
+          value={row.hrv_rmssd_ms ? Math.round(row.hrv_rmssd_ms) : "–"}
           label="HRV ms"
           sub={row.resting_hr_bpm ? `${Math.round(row.resting_hr_bpm)} bpm rest` : undefined}
         />
         <MetricNumber
           size="sm"
-          value={row.steps?.toLocaleString() ?? "—"}
+          value={row.steps?.toLocaleString() ?? "–"}
           label="Steps"
         />
       </div>

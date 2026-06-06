@@ -47,7 +47,7 @@ function groupedTimezones() {
 
 /**
  * Shared region + language fields used by sign-up, welcome, and settings.
- * Controlled — the parent persists values when the user is ready.
+ * Controlled, the parent persists values when the user is ready.
  */
 export function LocaleFields({ values, onChange, disabled, compact, showTitle }: Props) {
   const { t } = useTranslation();

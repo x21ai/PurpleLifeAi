@@ -14,7 +14,7 @@ import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/reports/new")({
-  head: () => ({ meta: [{ title: "Upload report — Purple" }] }),
+  head: () => ({ meta: [{ title: "Upload report · Purple" }] }),
   component: UploadReportPage,
 });
 
@@ -78,7 +78,7 @@ function UploadReportPage() {
         console.error("processReport failed", e);
       });
 
-      toast.success("Uploaded — Purple is extracting the values now");
+      toast.success("Uploaded · Purple is extracting the values now");
       navigate({ to: "/reports" });
     } catch (err) {
       console.error(err);

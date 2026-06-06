@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
- * Medication intelligence — derived signals from the user's own meds &
+ * Medication intelligence, derived signals from the user's own meds &
  * dose history. Purely descriptive, no clinical advice. Used on /meds.
  */
 
@@ -103,7 +103,7 @@ export const getMedIntelligence = createServerFn({ method: "GET" })
     }
     refills.sort((a, b) => a.daysLeft - b.daysLeft);
 
-    // --- On-time pct (14d) — independent of existing card, used for digest. ---
+    // --- On-time pct (14d), independent of existing card, used for digest. ---
     const recent14 = doses.filter((d) => new Date(d.scheduled_at) >= since14);
     const total14 = recent14.length;
     const taken14 = recent14.filter((d) => d.status === "taken").length;

@@ -32,7 +32,7 @@ type Msg = {
 };
 
 export const Route = createFileRoute("/_app/chat")({
-  head: () => ({ meta: [{ title: "Ask — Purple" }] }),
+  head: () => ({ meta: [{ title: "Ask · Purple" }] }),
   component: AskPage,
 });
 

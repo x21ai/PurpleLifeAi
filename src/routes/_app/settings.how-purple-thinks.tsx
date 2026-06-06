@@ -4,7 +4,7 @@ import { useRouteTheme } from "@/lib/use-route-theme";
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/settings/how-purple-thinks")({
-  head: () => ({ meta: [{ title: "How Purple thinks — Purple" }] }),
+  head: () => ({ meta: [{ title: "How Purple thinks · Purple" }] }),
   component: HowPage,
 });
 

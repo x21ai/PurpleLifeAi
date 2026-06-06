@@ -3,7 +3,7 @@ import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/admin/feedback")({
-  head: () => ({ meta: [{ title: "Feedback — Purple" }] }),
+  head: () => ({ meta: [{ title: "Feedback · Purple" }] }),
   component: AdminFeedback,
 });
 

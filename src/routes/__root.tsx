@@ -22,7 +22,7 @@ import { hydrateLocale } from "@/i18n";
 
 function NotFoundComponent() {
   // Compatibility: the internal `_app` segment is a TanStack route-group,
-  // not a public URL. Old links to `/_app/admin/...` 404 — strip the prefix
+  // not a public URL. Old links to `/_app/admin/...` 404, strip the prefix
   // and forward to the real route before showing the 404 screen.
   if (typeof window !== "undefined") {
     const { pathname, search, hash } = window.location;
@@ -121,7 +121,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Purple is an open-source, AI-powered health journal for people managing epilepsy and other pattern-driven conditions. Write, speak, snap — Purple remembers.",
+          "Purple is an open-source, AI-powered health journal for people managing epilepsy and other pattern-driven conditions. Write, speak, snap · Purple remembers.",
       },
       { name: "theme-color", content: "#5B2C82" },
       { name: "author", content: "Devyn Walker" },

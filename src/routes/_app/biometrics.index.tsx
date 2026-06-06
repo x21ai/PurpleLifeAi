@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 export const Route = createFileRoute("/_app/biometrics/")({
   head: () => ({
     meta: [
-      { title: "Your body — Purple" },
+      { title: "Your body · Purple" },
       { name: "description", content: "All the signals Purple is reading from your body." },
     ],
   }),
@@ -272,7 +272,7 @@ function SourceFieldMatrix() {
     { label: "Workout minutes",    oura: true,  whoop: true,  apple: true  },
   ];
   const cell = (yes: boolean) => (
-    <td className="px-3 py-1.5 text-center text-foreground/70">{yes ? "✓" : "—"}</td>
+    <td className="px-3 py-1.5 text-center text-foreground/70">{yes ? "✓" : "–"}</td>
   );
   return (
     <details className="mt-6 rounded-2xl border border-border bg-card p-5">

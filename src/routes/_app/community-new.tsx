@@ -5,7 +5,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/community-new")({
-  head: () => ({ meta: [{ title: "New post — Community" }] }),
+  head: () => ({ meta: [{ title: "New post, Community" }] }),
   component: NewPost,
 });
 

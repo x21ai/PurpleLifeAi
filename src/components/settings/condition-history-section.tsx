@@ -213,7 +213,7 @@ export function ConditionHistorySection() {
           <Users className="h-4 w-4 text-primary" /> Family history
         </Label>
         <p className="mt-1 text-xs text-muted-foreground">
-          What runs in your family. Used as context for patterns and AI suggestions — never shared.
+          What runs in your family. Used as context for patterns and AI suggestions, never shared.
         </p>
         {family.length > 0 && (
           <ul className="mt-3 flex flex-wrap gap-2">

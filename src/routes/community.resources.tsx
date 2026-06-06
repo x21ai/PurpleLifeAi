@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/community/resources")({
   head: () => ({
     meta: [
-      { title: "Resources — Purple Community" },
+      { title: "Resources · Purple Community" },
       { name: "description", content: "Curated resources for people living with epilepsy and their care partners." },
     ],
   }),

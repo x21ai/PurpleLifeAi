@@ -60,7 +60,7 @@ export function ConditionSuggestionsCard() {
       setSheetFor(null);
       await qc.invalidateQueries({ queryKey: ["condition-suggestions"] });
     } catch (e) {
-      toast.error("Couldn't save — please try again");
+      toast.error("Couldn't save, please try again");
     } finally {
       setBusy(false);
     }
@@ -74,7 +74,7 @@ export function ConditionSuggestionsCard() {
           <h2 className="font-serif text-lg text-foreground">Patterns we noticed</h2>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          Suggestions only — not a diagnosis. Talk to a clinician for anything that matters.
+          Suggestions only, not a diagnosis. Talk to a clinician for anything that matters.
         </p>
 
         <ul className="mt-4 space-y-3">

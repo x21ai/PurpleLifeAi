@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
 /**
- * Spec'd empty state — 48px icon, Source Serif 4 message, generous padding.
+ * Spec'd empty state, 48px icon, Source Serif 4 message, generous padding.
  */
 export function EmptyState({
   icon: Icon,

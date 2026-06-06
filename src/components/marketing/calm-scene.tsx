@@ -20,7 +20,7 @@ interface CalmHeroProps {
 }
 
 /**
- * CalmHero — the calm-nature image treatment shared by /sign-in and /home2.
+ * CalmHero, the calm-nature image treatment shared by /sign-in and /home2.
  * A full-bleed landscape, a quiet gradient, an eyebrow, and a serif headline.
  */
 export function CalmHero({
@@ -132,7 +132,7 @@ interface CalmBandProps {
   className?: string;
 }
 
-/** CalmBand — a quieter mid-page atmospheric band. Light type over a dimmed landscape. */
+/** CalmBand, a quieter mid-page atmospheric band. Light type over a dimmed landscape. */
 export function CalmBand(props: CalmBandProps) {
   return (
     <CalmHero
@@ -149,7 +149,7 @@ export function CalmBand(props: CalmBandProps) {
 }
 
 /**
- * HumanMoment — a portrait/hand/detail photo paired with one quiet sentence.
+ * HumanMoment, a portrait/hand/detail photo paired with one quiet sentence.
  * Two layouts: "portrait" (image left, caption right) and "quote" (image as
  * backdrop with a centered pull-quote).
  */
@@ -240,7 +240,7 @@ export function HumanMoment({
 }
 
 /**
- * QuietStat — a single oversized phrase, Apple-style, with one line of context.
+ * QuietStat, a single oversized phrase, Apple-style, with one line of context.
  * Use sparingly. Once per page at most.
  */
 interface QuietStatProps {
@@ -265,7 +265,7 @@ export function QuietStat({ stat, caption, className }: QuietStatProps) {
 }
 
 /**
- * StillLife — a small detail shot used as a punctuation mark between sections.
+ * StillLife, a small detail shot used as a punctuation mark between sections.
  * No headline; just the image and breathing room.
  */
 interface StillLifeProps {

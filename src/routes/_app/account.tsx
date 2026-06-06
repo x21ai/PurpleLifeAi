@@ -19,7 +19,7 @@ import { getOrCreatePersonalShareCode } from "@/lib/share-codes.functions";
 import { Check, Copy, Share2 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/account")({
-  head: () => ({ meta: [{ title: "Account — Purple" }] }),
+  head: () => ({ meta: [{ title: "Account · Purple" }] }),
   component: AccountPage,
 });
 
@@ -120,7 +120,7 @@ function AccountPage() {
       <SheetSectionLabel>Session</SheetSectionLabel>
       <SheetCard>
         <p className="text-[15px] text-foreground">Signed in as</p>
-        <p className="mt-1 text-[13px] sheet-muted">{session?.user?.email ?? "—"}</p>
+        <p className="mt-1 text-[13px] sheet-muted">{session?.user?.email ?? "–"}</p>
         <div className="mt-5">
           <Button onClick={handleSignOut} variant="outline" className="bg-muted border-border text-foreground hover:bg-muted/80">
             {t("account.signOut")}
@@ -204,7 +204,7 @@ function InviteCodeCard() {
       try {
         await (navigator as Navigator & { share: (d: ShareData) => Promise<void> }).share({
           title: "Purple",
-          text: "Try Purple — a quiet, private health journal.",
+          text: "Try Purple, a quiet, private health journal.",
           url: shareUrl,
         });
       } catch {

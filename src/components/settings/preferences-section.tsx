@@ -464,7 +464,7 @@ export function PreferencesSection() {
             Quiet hours
           </Label>
           <p className="mt-1 text-xs text-muted-foreground">
-            Dose reminders go silent during this window. The dose still shows on Today — Purple just doesn't push a notification.
+            Dose reminders go silent during this window. The dose still shows on Today · Purple just doesn't push a notification.
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
@@ -511,7 +511,7 @@ export function PreferencesSection() {
               Weekly recap email
             </Label>
             <p className="mt-1 text-xs text-muted-foreground">
-              A short Sunday summary of your week — events, doses, and one pattern Purple noticed.
+              A short Sunday summary of your week, events, doses, and one pattern Purple noticed.
             </p>
           </div>
           <Switch

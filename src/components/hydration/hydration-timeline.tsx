@@ -222,7 +222,7 @@ export function HydrationTimeline({ day, hydration, auras, goalMl = 2000 }: Prop
                   <li key={`a-${it.row.id}`} className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2 text-amber-500">
                       <Sparkles className="h-3.5 w-3.5" />
-                      <span className="text-foreground">{it.row.kind.replace("_", " ")}{it.row.notes ? ` — ${it.row.notes}` : ""}</span>
+                      <span className="text-foreground">{it.row.kind.replace("_", " ")}{it.row.notes ? `, ${it.row.notes}` : ""}</span>
                     </span>
                     <span className="tabular-nums text-muted-foreground">{fmtTime(it.row.occurred_at)}</span>
                   </li>

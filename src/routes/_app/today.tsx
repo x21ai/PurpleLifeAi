@@ -35,7 +35,7 @@ import { TripWrapupCard } from "@/components/today/trip-wrapup-card";
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
     meta: [
-      { title: "Today — Purple" },
+      { title: "Today · Purple" },
       { name: "description", content: "Your calm space to capture what's happening today." },
     ],
   }),
@@ -227,7 +227,7 @@ function TodayPage() {
 
       <section className="mt-12 sm:mt-16 grid grid-cols-3 items-center gap-2">
         <ScoreTile
-          value={readiness ?? "—"}
+          value={readiness ?? "–"}
           label="Readiness"
           active={focus === "readiness"}
           onClick={() => {
@@ -236,7 +236,7 @@ function TodayPage() {
           }}
         />
         <ScoreTile
-          value={sleep ?? "—"}
+          value={sleep ?? "–"}
           label="Sleep"
           active={focus === "sleep"}
           onClick={() => {
@@ -245,7 +245,7 @@ function TodayPage() {
           }}
         />
         <ScoreTile
-          value={activity ?? "—"}
+          value={activity ?? "–"}
           label="Activity"
           active={focus === "activity"}
           onClick={() => {
@@ -326,15 +326,15 @@ function TodayPage() {
                 value:
                   bio.body_temp_deviation_c != null
                     ? `${bio.body_temp_deviation_c > 0 ? "+" : ""}${bio.body_temp_deviation_c.toFixed(1)}°`
-                    : "—",
+                    : "–",
                 label: "Temp Δ",
               },
               {
-                value: bio.respiratory_rate_bpm ? Math.round(bio.respiratory_rate_bpm) : "—",
+                value: bio.respiratory_rate_bpm ? Math.round(bio.respiratory_rate_bpm) : "–",
                 label: "Resp /min",
               },
               {
-                value: bio.spo2_pct ? `${Math.round(bio.spo2_pct)}%` : "—",
+                value: bio.spo2_pct ? `${Math.round(bio.spo2_pct)}%` : "–",
                 label: "SpO₂",
               },
             ]}
@@ -384,7 +384,7 @@ function TodayPage() {
               <p className="mt-1 text-sm text-foreground">
                 {showAura
                   ? "Log every drink. Capture déjà vu the moment it lands."
-                  : "Log every drink — water and electrolytes."}
+                  : "Log every drink, water and electrolytes."}
               </p>
             </div>
             <Link

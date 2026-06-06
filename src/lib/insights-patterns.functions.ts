@@ -21,7 +21,7 @@ function addDayKey(d: string, delta: number): string {
 }
 
 /**
- * Cross-signal pattern detection — purely descriptive heuristics over the
+ * Cross-signal pattern detection, purely descriptive heuristics over the
  * user's last 90 days of biometrics, seizures, journal entries, and missed
  * doses. We never claim causation; cards always say "appears" / "noticed".
  */
@@ -127,7 +127,7 @@ export function derivePatternCards(input: {
           key: "sleep_no_signal",
           title: "Short sleep isn't lining up with seizure days",
           detail:
-            "Across the last 90 days, low-sleep nights aren't reliably followed by events. Sleep still matters — it's just not the strongest signal for you.",
+            "Across the last 90 days, low-sleep nights aren't reliably followed by events. Sleep still matters, it's just not the strongest signal for you.",
           tone: "info",
         });
       }

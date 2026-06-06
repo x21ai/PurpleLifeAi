@@ -41,7 +41,7 @@ const CaregiverWriteNoticeEmail = ({
             {who} just {what} on your Purple account. Open Purple to review the new entry.
           </Text>
           {summary ? <Text style={small}>{summary}</Text> : null}
-          <Text style={footer}>— The {SITE_NAME} team</Text>
+          <Text style={footer}>, The {SITE_NAME} team</Text>
         </Container>
       </Body>
     </Html>

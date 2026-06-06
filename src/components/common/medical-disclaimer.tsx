@@ -21,7 +21,7 @@ export function MedicalDisclaimer({
         )}
       >
         <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
-        <span>Educational only — not medical advice. Always consult your medical practitioner.</span>
+        <span>Educational only, not medical advice. Always consult your medical practitioner.</span>
       </p>
     );
   }

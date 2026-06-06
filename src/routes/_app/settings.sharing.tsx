@@ -57,7 +57,7 @@ import {
 } from "@/lib/care.scopes";
 
 export const Route = createFileRoute("/_app/settings/sharing")({
-  head: () => ({ meta: [{ title: "Sharing & access — Purple" }] }),
+  head: () => ({ meta: [{ title: "Sharing & access · Purple" }] }),
   component: SharingPage,
   errorComponent: ({ error, reset }) => (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 pt-16 pb-24">
@@ -381,7 +381,7 @@ function PauseWritesRow({ relationshipId }: { relationshipId: string }) {
     onSuccess: (_, paused) => {
       qc.invalidateQueries({ queryKey: ["care", "write-state", relationshipId] });
       qc.invalidateQueries({ queryKey: ["care", "mine"] });
-      toast.success(paused ? "Writes paused — read-only access" : "Writes resumed");
+      toast.success(paused ? "Writes paused, read-only access" : "Writes resumed");
     },
     onError: (e: any) => toast.error(e?.message ?? "Couldn't update"),
   });
@@ -393,7 +393,7 @@ function PauseWritesRow({ relationshipId }: { relationshipId: string }) {
       <div>
         <p className="text-xs font-medium text-foreground">Pause all writes</p>
         <p className="text-[11px] text-muted-foreground">
-          {paused ? "Read-only — they can view but not change anything." : "They can write within their scopes."}
+          {paused ? "Read-only, they can view but not change anything." : "They can write within their scopes."}
         </p>
       </div>
       <Switch checked={paused} disabled={m.isPending} onCheckedChange={(v) => m.mutate(v)} />
@@ -634,7 +634,7 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
             : undefined,
         });
       } else {
-        toast.message("Invite created — share the link", {
+        toast.message("Invite created, share the link", {
           description:
             "Email couldn't be delivered automatically. Copy the link and send it yourself.",
           duration: 10000,

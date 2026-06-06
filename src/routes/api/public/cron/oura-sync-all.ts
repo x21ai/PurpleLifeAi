@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 /**
- * Daily cron — triggers an incremental Oura sync for every connected user.
+ * Daily cron, triggers an incremental Oura sync for every connected user.
  * Delegates to the `oura-sync` edge function with `action:"incremental"` +
  * `all:true`, which is service-role gated. The function itself respects each
  * user's `sync_interval_hours` so users on a 24h cadence don't re-sync if
@@ -9,7 +9,7 @@ import { createFileRoute } from "@tanstack/react-router";
  *
  * Auth: this route lives under `/api/public/*` (auth bypassed at the edge);
  * pg_cron calls it with the project's anon key in an `apikey` header. The
- * service-role key never leaves the server — we use it only when invoking
+ * service-role key never leaves the server, we use it only when invoking
  * the edge function.
  */
 export const Route = createFileRoute("/api/public/cron/oura-sync-all")({

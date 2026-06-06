@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/promo")({
-  head: () => ({ meta: [{ title: "Promo codes — Purple" }] }),
+  head: () => ({ meta: [{ title: "Promo codes · Purple" }] }),
   component: AdminPromo,
 });
 

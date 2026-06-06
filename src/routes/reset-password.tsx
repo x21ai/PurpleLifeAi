@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
     meta: [
-      { title: "Reset password — Purple" },
+      { title: "Reset password · Purple" },
       { name: "description", content: "Choose a new password for your Purple account." },
     ],
   }),

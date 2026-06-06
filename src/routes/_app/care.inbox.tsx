@@ -29,7 +29,7 @@ function bucketOf(type: string): FilterKey {
 }
 
 export const Route = createFileRoute("/_app/care/inbox")({
-  head: () => ({ meta: [{ title: "Changes waiting for you — Purple" }] }),
+  head: () => ({ meta: [{ title: "Changes waiting for you · Purple" }] }),
   component: InboxPage,
   errorComponent: ({ error, reset }) => (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 pt-16 pb-24">

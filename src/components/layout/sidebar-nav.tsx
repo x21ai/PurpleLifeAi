@@ -64,7 +64,7 @@ export function SidebarNav() {
   return (
     <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-16 lg:w-64 border-r border-border bg-sidebar text-sidebar-foreground">
       <div className="flex items-center h-20 px-4 lg:px-6 border-b border-border">
-        <Link to="/today" className="flex items-center flex-1" aria-label="Purple — home">
+        <Link to="/today" className="flex items-center flex-1" aria-label="Purple, home">
           <span className="hidden lg:inline wordmark text-[14px] text-foreground">Purple</span>
           <span
             className="lg:hidden inline-block h-7 w-7 rounded-full"

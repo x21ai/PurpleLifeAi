@@ -19,7 +19,7 @@ const PhoneAlarmsSection = lazy(() =>
 );
 
 export const Route = createFileRoute("/_app/tools")({
-  head: () => ({ meta: [{ title: "Tools — Purple" }] }),
+  head: () => ({ meta: [{ title: "Tools · Purple" }] }),
   component: ToolsPage,
 });
 
@@ -27,7 +27,7 @@ function ToolsPage() {
   const { t } = useTranslation();
   return (
     <SheetPage title={t("tools.title")}>
-      {/* Hero device card — mirrors Oura's ring/battery treatment */}
+      {/* Hero device card, mirrors Oura's ring/battery treatment */}
       <SheetCard className="overflow-hidden">
         <div className="flex items-start justify-between gap-3">
           <div>

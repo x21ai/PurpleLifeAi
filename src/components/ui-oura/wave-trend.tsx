@@ -11,7 +11,7 @@ export type WaveSeries = {
 };
 
 /**
- * Hand-rolled smooth multi-line trend. No axis chrome — endpoint dot + label
+ * Hand-rolled smooth multi-line trend. No axis chrome, endpoint dot + label
  * on the right, faint baseline. Mirrors Oura's "Resting Heart Rate" /
  * stacked-metrics styling.
  */

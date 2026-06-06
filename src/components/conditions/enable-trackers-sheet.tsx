@@ -65,7 +65,7 @@ export function EnableTrackersSheet({
         <div className="mt-5 space-y-3">
           {defs.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No extra trackers needed — the condition has been added to your profile.
+              No extra trackers needed, the condition has been added to your profile.
             </p>
           ) : (
             defs.map((f) => (

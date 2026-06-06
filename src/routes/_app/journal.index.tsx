@@ -13,7 +13,7 @@ import { OfflineQueueBanner } from "@/components/journal/offline-queue-banner";
 type Entry = Database["public"]["Tables"]["journal_entries"]["Row"];
 
 export const Route = createFileRoute("/_app/journal/")({
-  head: () => ({ meta: [{ title: "Journal — Purple" }] }),
+  head: () => ({ meta: [{ title: "Journal · Purple" }] }),
   component: JournalPage,
 });
 

@@ -17,7 +17,7 @@ const KIND_LABEL: Record<CaregiverWriteKind, string> = {
  * their caregivers writes on their behalf. Throttled per (owner, caregiver)
  * pair so a flurry of dose taps doesn't spam them.
  *
- * Never throws — caller treats notify as fire-and-forget. Throttle state is
+ * Never throws, caller treats notify as fire-and-forget. Throttle state is
  * derived from `care_audit_log` (action='notified') so it survives restarts
  * without an extra table.
  */

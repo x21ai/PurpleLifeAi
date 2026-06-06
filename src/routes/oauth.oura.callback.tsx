@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/oauth/oura/callback")({
-  head: () => ({ meta: [{ title: "Connecting Oura — Purple" }] }),
+  head: () => ({ meta: [{ title: "Connecting Oura · Purple" }] }),
   component: OuraCallback,
 });
 

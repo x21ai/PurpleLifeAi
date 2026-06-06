@@ -4,7 +4,7 @@ import { Activity, Moon, Pill } from "lucide-react";
 import { getSevenDayTrends, type SevenDayTrends, type DayPoint } from "@/lib/seven-day-trends.functions";
 
 function fmtSleep(min: number | null) {
-  if (min == null) return "—";
+  if (min == null) return "–";
   const h = Math.floor(min / 60);
   const m = Math.round(min % 60);
   return `${h}h ${m.toString().padStart(2, "0")}m`;
@@ -77,7 +77,7 @@ export function SevenDayTrendStrip() {
             <p className="text-xs text-muted-foreground">HRV avg</p>
           </div>
           <p className="mt-1 font-serif text-lg text-foreground">
-            {data.hrvAvgMs != null ? `${data.hrvAvgMs} ms` : "—"}
+            {data.hrvAvgMs != null ? `${data.hrvAvgMs} ms` : "–"}
           </p>
           {data.hrvDelta14d != null && (
             <p

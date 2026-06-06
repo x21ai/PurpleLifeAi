@@ -105,7 +105,7 @@ export function DataSection() {
       <h2 className="font-serif text-xl text-foreground">Your data</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         Take it with you anytime. Deletion is reversible for {RESTORE_WINDOW_DAYS} days
-        — after that, everything is permanently erased.
+       , after that, everything is permanently erased.
       </p>
 
       {pendingDeletion && (

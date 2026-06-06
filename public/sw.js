@@ -1,4 +1,4 @@
-// Purple service worker — medication reminders and static assets.
+// Purple service worker, medication reminders and static assets.
 
 const CACHE = "purple-shell-v4";
 const SHELL = ["/manifest.json", "/icon-192.png", "/icon-512.png"];

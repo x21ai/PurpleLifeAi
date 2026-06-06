@@ -24,7 +24,7 @@ function formatTime(t: string): string {
 
 /**
  * Read-only medications list mirroring <MedRow> on /meds. No edit/archive
- * dropdown — caregiver writes come in Step 3.
+ * dropdown, caregiver writes come in Step 3.
  */
 export function MedsListReadOnly({
   meds,

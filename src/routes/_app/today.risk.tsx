@@ -28,7 +28,7 @@ type Forecast = {
 export const Route = createFileRoute("/_app/today/risk")({
   head: () => ({
     meta: [
-      { title: "Today's reading — Purple" },
+      { title: "Today's reading · Purple" },
       { name: "description", content: "Why today reads the way it does." },
     ],
   }),

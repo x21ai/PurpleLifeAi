@@ -34,7 +34,7 @@ import { ItineraryEditor, legsAreChronological, type LegDraft } from "@/componen
 import { TripEditDialog, type EditableTrip } from "@/components/travel/trip-edit-dialog";
 
 export const Route = createFileRoute("/_app/settings/travel")({
-  head: () => ({ meta: [{ title: "Travel mode — Purple" }] }),
+  head: () => ({ meta: [{ title: "Travel mode · Purple" }] }),
   component: TravelPage,
   errorComponent: ({ error, reset }) => (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 pt-16 pb-24">
@@ -320,7 +320,7 @@ function TravelPage() {
       return;
     }
     const titleLabel = trip.label ?? `Trip to ${trip.destination_tz}`;
-    const ics = buildIcs(`${titleLabel} — Purple`, events);
+    const ics = buildIcs(`${titleLabel} · Purple`, events);
     downloadIcs(`${titleLabel.replace(/\s+/g, "-").toLowerCase()}-meds`, ics);
     toast.success("Calendar file downloaded.");
   };

@@ -1,4 +1,4 @@
-// Web Audio alarm presets — no asset files, all synthesized at runtime.
+// Web Audio alarm presets, no asset files, all synthesized at runtime.
 // Used by the critical-dose alarm modal and the medication form preview button.
 
 export type AlarmSoundId =
@@ -14,7 +14,7 @@ export const ALARM_SOUNDS: Array<{ id: AlarmSoundId; label: string; description:
   { id: "classic-beep", label: "Classic beep", description: "Familiar single tone" },
   { id: "urgent-pulse", label: "Urgent pulse", description: "Fast triple beep, attention-grabbing" },
   { id: "rooster", label: "Rooster", description: "Rising crow, hard to sleep through" },
-  { id: "vibrate-only", label: "Vibrate only", description: "Silent — vibrates the phone instead" },
+  { id: "vibrate-only", label: "Vibrate only", description: "Silent, vibrates the phone instead" },
   { id: "silent", label: "Silent", description: "Visual prompt only" },
 ];
 

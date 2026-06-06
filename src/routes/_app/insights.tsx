@@ -28,7 +28,7 @@ type SeizureRow = {
 };
 
 export const Route = createFileRoute("/_app/insights")({
-  head: () => ({ meta: [{ title: "Patterns — Purple" }] }),
+  head: () => ({ meta: [{ title: "Patterns · Purple" }] }),
   component: InsightsPage,
 });
 
@@ -110,7 +110,7 @@ function TrendsHeader() {
   const rhr = rows ? avg(rows.map((r) => r.resting_hr_bpm)) : null;
 
   const fmtSleep = (m: number | null) => {
-    if (m == null) return "—";
+    if (m == null) return "–";
     const h = Math.floor(m / 60);
     const mm = Math.round(m % 60);
     return `${h}h ${mm}m`;
@@ -119,8 +119,8 @@ function TrendsHeader() {
   return (
     <section className="mt-14 grid grid-cols-3 gap-x-6 sm:gap-x-10 gap-y-2 border-y border-border py-8 sm:py-10">
       <MetricNumber size="lg" value={fmtSleep(sleepMin)} label={t("insights.avgSleep")} />
-      <MetricNumber size="lg" value={hrv ? Math.round(hrv) : "—"} label={t("insights.hrvMs")} />
-      <MetricNumber size="lg" value={rhr ? Math.round(rhr) : "—"} label={t("insights.restBpm")} />
+      <MetricNumber size="lg" value={hrv ? Math.round(hrv) : "–"} label={t("insights.hrvMs")} />
+      <MetricNumber size="lg" value={rhr ? Math.round(rhr) : "–"} label={t("insights.restBpm")} />
       <p className="col-span-3 mt-3 label-eyebrow text-muted-foreground">
         {t("insights.last14")}
       </p>
@@ -313,7 +313,7 @@ function Heatmap({ events, days }: { events: SeizureRow[]; days: number }) {
           cell ? (
             <div
               key={cell.key}
-              title={`${format(cell.date, "MMM d")} — ${cell.count} ${cell.count === 1 ? "event" : "events"}`}
+              title={`${format(cell.date, "MMM d")}, ${cell.count} ${cell.count === 1 ? "event" : "events"}`}
               className={cn("aspect-square rounded-[3px]", intensity(cell.count))}
             />
           ) : (

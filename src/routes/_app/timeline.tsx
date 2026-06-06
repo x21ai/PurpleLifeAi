@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/timeline")({
-  head: () => ({ meta: [{ title: "Timeline — Purple" }] }),
+  head: () => ({ meta: [{ title: "Timeline · Purple" }] }),
   component: TimelinePage,
 });
 
@@ -350,7 +350,7 @@ function TimelinePage() {
         Want to add older history? Go to{" "}
         <Link to="/meds" className="underline">Medications</Link> or{" "}
         <Link to="/seizures/new" className="underline">Log past event</Link>{" "}
-        — both accept any date.
+       , both accept any date.
       </p>
     </div>
   );

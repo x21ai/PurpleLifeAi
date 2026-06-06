@@ -300,7 +300,7 @@ function MedicalHistoryPage() {
         {existing?.last_run_at && (
           <p className="text-xs text-muted-foreground">
             Last sent {new Date(existing.last_run_at).toLocaleString()}
-            {existing.last_error ? ` — error: ${existing.last_error}` : ""}
+            {existing.last_error ? `, error: ${existing.last_error}` : ""}
           </p>
         )}
       </section>

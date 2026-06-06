@@ -143,7 +143,7 @@ export function EntryCard({ entry }: { entry: Entry }) {
   }, [entry.ai_summary]);
   const processing = entry.status === "processing";
   const failed = entry.status === "failed";
-  // After 5 minutes, a "processing" entry has almost certainly stalled — offer a retry.
+  // After 5 minutes, a "processing" entry has almost certainly stalled, offer a retry.
   const stale =
     processing &&
     Date.now() - new Date(entry.created_at).getTime() > 5 * 60 * 1000;
@@ -201,7 +201,7 @@ export function EntryCard({ entry }: { entry: Entry }) {
               className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-50"
             >
               {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-              {failed ? "Retry reading" : "Stuck — retry"}
+              {failed ? "Retry reading" : "Stuck, retry"}
             </button>
           )}
           <DropdownMenu>

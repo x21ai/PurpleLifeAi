@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 /**
- * Caregiver "confirm to write" — a single, calm confirmation step shared by
+ * Caregiver "confirm to write", a single, calm confirmation step shared by
  * every caregiver-initiated write. Per project rules: any write by a caregiver
  * requires an explicit confirmation. The audit row is written server-side.
  */

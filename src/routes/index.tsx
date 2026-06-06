@@ -22,7 +22,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "A private journal for the people carrying something heavy. Write a sentence. Say a thought. Snap a photo. Purple remembers — quietly, for as long as you need it.",
+          "A private journal for the people carrying something heavy. Write a sentence. Say a thought. Snap a photo. Purple remembers, quietly, for as long as you need it.",
       },
       { property: "og:title", content: "Purple. A quiet companion for your health." },
       {
@@ -78,13 +78,13 @@ function MarketingHome() {
       <MarketingHeader />
 
       <main>
-        {/* Hero — calm landscape */}
+        {/* Hero, calm landscape */}
         <CalmHero
           image={calmImages.dawn}
           alt=""
           eyebrow="A quiet companion for your health"
           headline={<>Your health,<br />remembered.</>}
-          body="Write it. Say it. Snap it. Purple keeps it — and helps you see what matters."
+          body="Write it. Say it. Snap it. Purple keeps it, and helps you see what matters."
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <Button asChild className="h-12 px-7 text-base rounded-full">
@@ -101,7 +101,7 @@ function MarketingHome() {
           </div>
         </CalmHero>
 
-        {/* First human moment — sets the tone */}
+        {/* First human moment, sets the tone */}
         <HumanMoment
           image={humanImages.mugMorning}
           alt="Two pairs of hands holding a warm ceramic mug at a kitchen window in soft morning light."
@@ -109,15 +109,14 @@ function MarketingHome() {
           attribution="What using Purple actually feels like"
         />
 
-        {/* Who it's for — quiet, specific */}
+        {/* Who it's for, quiet, specific */}
         <section className="mx-auto max-w-4xl px-6 sm:px-10 py-20 sm:py-28 text-center">
           <p className="label-eyebrow">For the days that need attention</p>
           <p className="mt-6 font-serif text-3xl sm:text-5xl leading-[1.1] tracking-tight">
             Epilepsy. Migraine. Diabetes.<br className="hidden sm:block" /> Mental health. And more.
           </p>
           <p className="mt-8 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            The alternatives feel cold and clinical. Purple is warm, quiet, and patient —
-            the way a journal should be.
+            The alternatives feel cold and clinical. Purple is warm, quiet, and patient, the way a journal should be.
           </p>
         </section>
 
@@ -140,16 +139,16 @@ function MarketingHome() {
           />
         </section>
 
-        {/* A still life — punctuation */}
+        {/* A still life, punctuation */}
         <StillLife
           image={humanImages.nightstand}
           alt="A phone resting face-down on a wooden nightstand beside a glass of water and a small lamp."
         />
 
-        {/* The quiet stat — what makes Purple different */}
+        {/* The quiet stat, what makes Purple different */}
         <QuietStat
           stat={<>Free. Forever.</>}
-          caption="For the people who need it most — and the people who help them carry it."
+          caption="For the people who need it most, and the people who help them carry it."
         />
 
         {/* Caregiver moment */}
@@ -165,7 +164,7 @@ function MarketingHome() {
         <CalmBand
           image={calmImages.coast}
           headline="Your story is yours."
-          body="Encrypted at rest. Export or delete anything, any time. No ads. No selling. No third-party trackers — ever."
+          body="Encrypted at rest. Export or delete anything, any time. No ads. No selling. No third-party trackers, ever."
         />
 
         {/* Final CTA */}

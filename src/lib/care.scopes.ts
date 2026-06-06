@@ -37,12 +37,12 @@ export const ROLE_DESCRIPTIONS: Record<CareRole, string> = {
   caregiver:
     "Day-to-day partner or family. Sees most things and can suggest edits to meds and journal.",
   provider:
-    "Clinician access. Sees biometrics, meds, seizures, journal — read-only.",
+    "Clinician access. Sees biometrics, meds, seizures, journal, read-only.",
   viewer: "Only sees your Today screen. Nothing else.",
 };
 
 // Purely a human label for how the caregiver relates to the owner.
-// Does NOT affect permissions — those still come from CareRole + CareScope.
+// Does NOT affect permissions, those still come from CareRole + CareScope.
 export const RELATIONSHIP_LABELS = [
   "Parent",
   "Child",

@@ -15,7 +15,7 @@ import {
 } from "@/lib/admin-users.functions";
 
 export const Route = createFileRoute("/_app/admin/users")({
-  head: () => ({ meta: [{ title: "Admin users — Purple" }] }),
+  head: () => ({ meta: [{ title: "Admin users · Purple" }] }),
   component: AdminUsers,
 });
 
@@ -102,7 +102,7 @@ function AdminUsers() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-serif text-lg truncate">
-                  {(r.first_name || r.last_name) ? `${r.first_name ?? ""} ${r.last_name ?? ""}` : "—"}
+                  {(r.first_name || r.last_name) ? `${r.first_name ?? ""} ${r.last_name ?? ""}` : "–"}
                 </p>
                 <p className="font-mono text-[11px] text-muted-foreground mt-0.5">{r.id.slice(0, 8)}…</p>
               </div>
@@ -112,7 +112,7 @@ function AdminUsers() {
             </div>
             <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
               <span>Joined {new Date(r.created_at).toLocaleDateString()}</span>
-              <span>Community: {r.community_opted_in ? "Yes" : "—"}</span>
+              <span>Community: {r.community_opted_in ? "Yes" : "–"}</span>
             </div>
           </li>
         ))}
@@ -133,10 +133,10 @@ function AdminUsers() {
           <tbody>
             {filtered.map((r) => (
               <tr key={r.id} className="border-t border-border cursor-pointer hover:bg-secondary/40" onClick={() => setSelected(r)}>
-                <td className="px-4 py-3">{(r.first_name || r.last_name) ? `${r.first_name ?? ""} ${r.last_name ?? ""}` : "—"}</td>
+                <td className="px-4 py-3">{(r.first_name || r.last_name) ? `${r.first_name ?? ""} ${r.last_name ?? ""}` : "–"}</td>
                 <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.id.slice(0, 8)}…</td>
                 <td className="px-4 py-3 text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
-                <td className="px-4 py-3">{r.community_opted_in ? "Yes" : "—"}</td>
+                <td className="px-4 py-3">{r.community_opted_in ? "Yes" : "–"}</td>
                 <td className="px-4 py-3">
                   {r.deleted_at ? <span className="text-destructive">Archived</span> :
                     r.purge_after ? <span className="text-destructive">Scheduled</span> :

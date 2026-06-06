@@ -53,7 +53,7 @@ async function extractWithAI(text: string, imageDataUrl: string | null, dictiona
     .join("\n");
 
   const systemPrompt = `You are a medical report extractor for a patient-facing health journal app.
-Extract structured data from medical reports — labs (blood/urine), imaging (CT/MRI/ultrasound/X-ray), and clinical narratives.
+Extract structured data from medical reports, labs (blood/urine), imaging (CT/MRI/ultrasound/X-ray), and clinical narratives.
 Match each lab value to a metric_key from this canonical dictionary. For values not in the dictionary, use a normalized snake_case key and assign a panel from this list:
 lipids, cardiometabolic, thyroid, liver, kidney, hematology, vitamins, hormones, inflammation, imaging, other.
 

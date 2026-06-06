@@ -48,7 +48,7 @@ export function PendingInboxBadge({ variant = "compact", onNavigate, className }
       <Link
         to="/care/inbox"
         onClick={onNavigate}
-        aria-label={`Caregiver inbox — ${count} pending`}
+        aria-label={`Caregiver inbox, ${count} pending`}
         className={cn(
           "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] transition-colors",
           "text-[color:var(--text-tertiary)] hover:bg-secondary/60 hover:text-foreground",
@@ -68,7 +68,7 @@ export function PendingInboxBadge({ variant = "compact", onNavigate, className }
     <Link
       to="/care/inbox"
       onClick={onNavigate}
-      aria-label={`Caregiver inbox — ${count} pending`}
+      aria-label={`Caregiver inbox, ${count} pending`}
       className={cn(
         "relative inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:text-foreground",
         className,

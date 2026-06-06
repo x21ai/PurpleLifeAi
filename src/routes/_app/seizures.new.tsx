@@ -23,7 +23,7 @@ import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/seizures/new")({
-  head: () => ({ meta: [{ title: "Log seizure — Purple" }] }),
+  head: () => ({ meta: [{ title: "Log seizure · Purple" }] }),
   component: LogSeizurePage,
 });
 
@@ -207,7 +207,7 @@ function LogSeizurePage() {
       // 3. Parallel journal entry
       const typeLabel = SEIZURE_TYPES.find((t) => t.value === type)?.label;
       const journalText = [
-        `Seizure logged${typeLabel ? ` — ${typeLabel}` : ""}.`,
+        `Seizure logged${typeLabel ? `, ${typeLabel}` : ""}.`,
         notes.trim(),
       ]
         .filter(Boolean)
@@ -320,7 +320,7 @@ function LogSeizurePage() {
           <div className="flex items-center justify-between">
             <Label>Duration</Label>
             <span className="text-sm text-muted-foreground tabular-nums">
-              {duration === 0 ? "—" : `${duration}s`}
+              {duration === 0 ? "–" : `${duration}s`}
             </span>
           </div>
           <Slider

@@ -17,7 +17,7 @@ export function MobileTopBar() {
       className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-12 bg-background/90 backdrop-blur border-b border-border"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <Link to="/today" className="wordmark text-[12px] text-foreground" aria-label="Purple — home">
+      <Link to="/today" className="wordmark text-[12px] text-foreground" aria-label="Purple, home">
         Purple
       </Link>
       <div className="flex items-center gap-1">

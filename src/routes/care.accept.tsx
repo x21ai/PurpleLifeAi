@@ -13,7 +13,7 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/care/accept")({
-  head: () => ({ meta: [{ title: "Accept invite — Purple" }] }),
+  head: () => ({ meta: [{ title: "Accept invite · Purple" }] }),
   validateSearch: (s) => searchSchema.parse(s),
   component: AcceptInvitePage,
 });

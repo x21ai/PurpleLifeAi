@@ -46,7 +46,7 @@ export const Route = createFileRoute("/sign-in")({
   },
   head: () => ({
     meta: [
-      { title: "Sign in — Purple" },
+      { title: "Sign in · Purple" },
       {
         name: "description",
         content: "Sign in or create your Purple account. A quiet intelligence for your health.",
@@ -198,7 +198,7 @@ function SignInPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="lg:grid lg:grid-cols-[1.1fr_1fr] xl:grid-cols-[1.25fr_1fr]">
-        {/* Hero — shared calm-nature treatment */}
+        {/* Hero, shared calm-nature treatment */}
         <CalmHero
           image={calmImages.dawn}
           variant="split"

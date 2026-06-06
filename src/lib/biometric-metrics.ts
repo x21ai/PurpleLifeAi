@@ -42,11 +42,11 @@ export type MetricMeta = {
   yPad?: number;
 };
 
-const num = (v: number | null, suffix = "") => (v == null ? "—" : `${Math.round(v)}${suffix}`);
+const num = (v: number | null, suffix = "") => (v == null ? "–" : `${Math.round(v)}${suffix}`);
 const dec = (v: number | null, dp = 1, suffix = "") =>
-  v == null ? "—" : `${v.toFixed(dp)}${suffix}`;
+  v == null ? "–" : `${v.toFixed(dp)}${suffix}`;
 const hm = (v: number | null) => {
-  if (v == null) return "—";
+  if (v == null) return "–";
   const h = Math.floor(v / 60);
   const m = Math.round(v % 60);
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
@@ -62,7 +62,7 @@ export const METRICS: Record<MetricKey, MetricMeta> = {
     direction: "higher_better",
     format: hm,
     meaning:
-      "How long you actually slept last night. Sleep loss is one of the most consistent triggers for seizures and mood dips — most adults do best between 7 and 9 hours.",
+      "How long you actually slept last night. Sleep loss is one of the most consistent triggers for seizures and mood dips, most adults do best between 7 and 9 hours.",
     baselineHint: "Lower than your usual by 60+ minutes is worth noticing.",
   },
   sleep_score: {
@@ -168,7 +168,7 @@ export const METRICS: Record<MetricKey, MetricMeta> = {
     unit: "°C",
     column: "body_temp_deviation_c",
     direction: "neutral",
-    format: (v) => (v == null ? "—" : `${v > 0 ? "+" : ""}${v.toFixed(2)}°C`),
+    format: (v) => (v == null ? "–" : `${v > 0 ? "+" : ""}${v.toFixed(2)}°C`),
     meaning:
       "How far your overnight skin temperature drifted from your personal baseline. Bigger swings (positive or negative) often line up with illness, hormonal shifts, or poor recovery.",
     baselineHint: "More than ±0.4°C from your baseline is a notable shift.",
@@ -192,9 +192,9 @@ export const METRICS: Record<MetricKey, MetricMeta> = {
     unit: "",
     column: "oura_stress_score",
     direction: "lower_better",
-    format: (v) => (v == null ? "—" : v.toFixed(0)),
+    format: (v) => (v == null ? "–" : v.toFixed(0)),
     meaning:
-      "Oura's daytime stress reading. Brief spikes are normal — the thing to watch is many high-stress hours stacking across the week.",
+      "Oura's daytime stress reading. Brief spikes are normal, the thing to watch is many high-stress hours stacking across the week.",
     baselineHint: "25%+ above your baseline for several days is the signal.",
   },
   resilience: {
@@ -204,9 +204,9 @@ export const METRICS: Record<MetricKey, MetricMeta> = {
     unit: "",
     column: "oura_resilience_level",
     direction: "higher_better",
-    format: (v) => (v == null ? "—" : String(v)),
+    format: (v) => (v == null ? "–" : String(v)),
     meaning:
-      "How well your body is absorbing daily stress over the long term. This one moves slowly — pay attention to multi-week trends rather than day-to-day.",
+      "How well your body is absorbing daily stress over the long term. This one moves slowly, pay attention to multi-week trends rather than day-to-day.",
     baselineHint: "Stays stable; watch the multi-week trend.",
   },
   activity_score: {
@@ -218,7 +218,7 @@ export const METRICS: Record<MetricKey, MetricMeta> = {
     direction: "higher_better",
     format: (v) => num(v),
     meaning:
-      "Your overall movement for the day. Consistency matters more than peaks — most people feel best when this stays between 70 and 90.",
+      "Your overall movement for the day. Consistency matters more than peaks, most people feel best when this stays between 70 and 90.",
     baselineHint: "Big swings either way can ripple into sleep and HRV.",
   },
   steps: {
@@ -228,9 +228,9 @@ export const METRICS: Record<MetricKey, MetricMeta> = {
     unit: "",
     column: "steps",
     direction: "neutral",
-    format: (v) => (v == null ? "—" : v.toLocaleString()),
+    format: (v) => (v == null ? "–" : v.toLocaleString()),
     meaning:
-      "Total steps for the day. Useful as a movement baseline rather than a target — sudden drops can hint at fatigue or a brewing bad day.",
+      "Total steps for the day. Useful as a movement baseline rather than a target, sudden drops can hint at fatigue or a brewing bad day.",
     baselineHint: "A 50%+ drop from your usual is worth noticing.",
   },
   whoop_recovery: {
@@ -324,7 +324,7 @@ export function statusTone(
   meta: MetricMeta,
   status: "in_range" | "low" | "high" | "unknown",
 ): { label: string; cls: string } {
-  if (status === "unknown") return { label: "—", cls: "bg-secondary text-muted-foreground" };
+  if (status === "unknown") return { label: "–", cls: "bg-secondary text-muted-foreground" };
   if (status === "in_range") return { label: "In range", cls: "bg-secondary text-foreground" };
   // direction-aware tone
   const bad =

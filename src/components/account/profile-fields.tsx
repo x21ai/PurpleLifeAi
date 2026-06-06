@@ -102,7 +102,7 @@ export function ProfileFields() {
 
       <div className="border-t sheet-divider pt-6">
         <p className="text-[15px] text-[#FAFAFC]">Email</p>
-        <p className="mt-1 text-[13px] sheet-muted">{session?.user?.email ?? "—"}</p>
+        <p className="mt-1 text-[13px] sheet-muted">{session?.user?.email ?? "–"}</p>
       </div>
 
       <div className="border-t sheet-divider pt-6">
@@ -163,7 +163,7 @@ function SavedIndicator({ state, className }: { state: SaveState; className?: st
     <div className={`flex items-center gap-1.5 text-[12px] sheet-muted ${className ?? ""}`}>
       {state === "saving" && (<><Loader2 className="h-3 w-3 animate-spin" /> Saving…</>)}
       {state === "saved" && (<><Check className="h-3 w-3 text-emerald-400" /> Saved</>)}
-      {state === "error" && <span className="text-destructive">Couldn't save — try again</span>}
+      {state === "error" && <span className="text-destructive">Couldn't save, try again</span>}
     </div>
   );
 }

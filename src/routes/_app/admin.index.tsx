@@ -3,7 +3,7 @@ import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/admin/")({
-  head: () => ({ meta: [{ title: "Admin overview — Purple" }] }),
+  head: () => ({ meta: [{ title: "Admin overview · Purple" }] }),
   component: AdminDashboard,
 });
 
@@ -45,7 +45,7 @@ function AdminDashboard() {
         {cards.map((c) => (
           <div key={c.label} className="rounded-2xl border border-border bg-card p-6">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">{c.label}</p>
-            <p className="mt-3 font-serif text-4xl">{c.value ?? "—"}</p>
+            <p className="mt-3 font-serif text-4xl">{c.value ?? "–"}</p>
           </div>
         ))}
       </div>

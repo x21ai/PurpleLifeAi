@@ -18,7 +18,7 @@ import type { PatternCard } from "./insights-patterns.functions";
 
 /**
  * Server-only PDF builder for the "Medical history report".
- * Pure pdf-lib (works in the Cloudflare Worker runtime — no native deps).
+ * Pure pdf-lib (works in the Cloudflare Worker runtime, no native deps).
  */
 
 const PAGE_W = 612;
@@ -109,7 +109,7 @@ function ensureSpace(c: Ctx, needed: number) {
 }
 
 function drawFooter(c: Ctx) {
-  c.page.drawText(safe(`Purple — generated medical history. Not a medical record. Page ${c.pageNo}`), { x: MARGIN, y: 24, size: 8, font: c.font, color: MUTED },
+  c.page.drawText(safe(`Purple, generated medical history. Not a medical record. Page ${c.pageNo}`), { x: MARGIN, y: 24, size: 8, font: c.font, color: MUTED },
   );
 }
 
@@ -354,7 +354,7 @@ function formatNum(n: number): string {
   return n.toFixed(2);
 }
 function fmtDate(s: string | null | undefined): string {
-  if (!s) return "—";
+  if (!s) return "–";
   try {
     return new Date(s).toLocaleDateString();
   } catch {
@@ -362,7 +362,7 @@ function fmtDate(s: string | null | undefined): string {
   }
 }
 function fmtDuration(sec: number | null | undefined): string {
-  if (sec == null) return "—";
+  if (sec == null) return "–";
   if (sec < 60) return `${sec}s`;
   const m = Math.floor(sec / 60);
   const s = sec % 60;
@@ -371,7 +371,7 @@ function fmtDuration(sec: number | null | undefined): string {
 
 export async function buildMedicalReportPdf(data: ReportSourceData): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
-  doc.setTitle("Purple — Medical history");
+  doc.setTitle("Purple, Medical history");
   doc.setAuthor("Purple");
   doc.setProducer("Purple");
   const font = await doc.embedFont(StandardFonts.Helvetica);
@@ -404,7 +404,7 @@ export async function buildMedicalReportPdf(data: ReportSourceData): Promise<Uin
   spacer(c, 16);
   P(
     c,
-    "This document was generated from self-tracked data in the Purple app. It is not a medical record and is intended to support — not replace — clinical judgement.",
+    "This document was generated from self-tracked data in the Purple app. It is not a medical record and is intended to support, not replace, clinical judgement.",
     { color: MUTED, size: 9 },
   );
 
@@ -418,7 +418,7 @@ export async function buildMedicalReportPdf(data: ReportSourceData): Promise<Uin
     const avgAdh = adh.length
       ? Math.round(adh.reduce((a, b) => a + (b.adherence_pct ?? 0), 0) / adh.length)
       : null;
-    P(c, `Average medication adherence: ${avgAdh != null ? avgAdh + "%" : "—"}`);
+    P(c, `Average medication adherence: ${avgAdh != null ? avgAdh + "%" : "–"}`);
     const sleep = data.biometrics["Total sleep"]?.points ?? [];
     if (sleep.length) {
       const avg = sleep.reduce((a, b) => a + b.value, 0) / sleep.length;
@@ -437,7 +437,7 @@ export async function buildMedicalReportPdf(data: ReportSourceData): Promise<Uin
     H1(c, "Patterns Purple noticed");
     P(
       c,
-      "Descriptive observations from the patient's own logs over the window above. Not causal claims — for discussion.",
+      "Descriptive observations from the patient's own logs over the window above. Not causal claims, for discussion.",
       { color: MUTED, size: 9 },
     );
     spacer(c, 6);
@@ -467,9 +467,9 @@ export async function buildMedicalReportPdf(data: ReportSourceData): Promise<Uin
         ],
         data.meds.map((m) => ({
           name: m.name + (m.active ? "" : " (inactive)"),
-          dosage: m.dosage ?? "—",
+          dosage: m.dosage ?? "–",
           schedule: m.schedule_summary,
-          adherence: m.adherence_pct != null ? `${m.adherence_pct}%` : "—",
+          adherence: m.adherence_pct != null ? `${m.adherence_pct}%` : "–",
           last: fmtDate(m.last_taken),
         })),
       );
@@ -493,9 +493,9 @@ export async function buildMedicalReportPdf(data: ReportSourceData): Promise<Uin
         data.seizures.map((s) => ({
           date: new Date(s.started_at).toLocaleString(),
           duration: fmtDuration(s.duration_seconds),
-          type: s.type ?? "—",
-          severity: s.severity != null ? String(s.severity) : "—",
-          notes: s.notes ?? "—",
+          type: s.type ?? "–",
+          severity: s.severity != null ? String(s.severity) : "–",
+          notes: s.notes ?? "–",
         })),
       );
   }
@@ -567,7 +567,7 @@ export async function buildMedicalReportPdf(data: ReportSourceData): Promise<Uin
     if (data.hydration) {
       H2(c, "Hydration");
       P(c, `Logs: ${data.hydration.total_logs}`);
-      P(c, `Average per day: ${data.hydration.avg_ml_per_day ?? "—"} ml`);
+      P(c, `Average per day: ${data.hydration.avg_ml_per_day ?? "–"} ml`);
       spacer(c, 6);
     }
     if (data.auras) {
@@ -577,10 +577,10 @@ export async function buildMedicalReportPdf(data: ReportSourceData): Promise<Uin
     }
   }
 
-  // Appendix — raw biometrics table
+  // Appendix, raw biometrics table
   if (data.sections.appendix) {
     newPage(c);
-    H1(c, "Appendix — daily biometrics");
+    H1(c, "Appendix, daily biometrics");
     const metrics = Object.keys(data.biometrics);
     if (metrics.length === 0) {
       P(c, "No raw data.", { color: MUTED });
@@ -606,7 +606,7 @@ export async function buildMedicalReportPdf(data: ReportSourceData): Promise<Uin
           const row: Record<string, string> = { date: d };
           for (const m of shown) {
             const v = byDate.get(d)?.[m];
-            row[m] = v == null ? "—" : formatNum(v);
+            row[m] = v == null ? "–" : formatNum(v);
           }
           return row;
         }),

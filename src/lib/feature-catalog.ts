@@ -1,5 +1,5 @@
 /**
- * Feature catalog — single source of truth for what trackers exist
+ * Feature catalog, single source of truth for what trackers exist
  * and which conditions turn them on by default. Users can override
  * any default via profiles.feature_overrides.
  *

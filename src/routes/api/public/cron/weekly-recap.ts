@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-// Weekly recap email — called by pg_cron Sunday mornings.
+// Weekly recap email, called by pg_cron Sunday mornings.
 // Sends one email per user whose profiles.weekly_digest_enabled = true
 // and who has at least one journal entry in the last 7 days.
 export const Route = createFileRoute("/api/public/cron/weekly-recap")({

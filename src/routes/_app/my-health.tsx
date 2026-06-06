@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 export const Route = createFileRoute("/_app/my-health")({
   head: () => ({
     meta: [
-      { title: "My Health — Purple" },
+      { title: "My Health · Purple" },
       { name: "description", content: "The long view of your body, your patterns, your year." },
     ],
   }),
@@ -80,7 +80,7 @@ function MyHealthPage() {
           Strong overall balance,<br/>with recent shifts<br/>to note.
         </h2>
         <p className="mt-6 body-serif text-foreground/70 max-w-[600px]">
-          Your long-term balance looks strong, with stress management improving to a thriving level over the past 90 days. Sleep health and heart health are looking good but have dipped slightly recently — consider small, consistent habits like a regular bedtime routine and gentle daily movement to support both.
+          Your long-term balance looks strong, with stress management improving to a thriving level over the past 90 days. Sleep health and heart health are looking good but have dipped slightly recently, consider small, consistent habits like a regular bedtime routine and gentle daily movement to support both.
         </p>
 
         <button

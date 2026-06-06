@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { exchangeWhoopAuthCode } from "@/lib/whoop.functions";
 
 export const Route = createFileRoute("/oauth/whoop/callback")({
-  head: () => ({ meta: [{ title: "Connecting Whoop — Purple" }] }),
+  head: () => ({ meta: [{ title: "Connecting Whoop · Purple" }] }),
   component: WhoopCallback,
 });
 

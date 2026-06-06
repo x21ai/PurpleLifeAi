@@ -5,7 +5,7 @@ import { isOAuthCallbackUrl, waitForOAuthSession } from "@/lib/auth-oauth";
 
 export const Route = createFileRoute("/_app")({
   beforeLoad: async ({ location }) => {
-    // Only enforce on the client — SSR/prerender has no session.
+    // Only enforce on the client, SSR/prerender has no session.
     if (typeof window === "undefined") return;
     if (isOAuthCallbackUrl()) {
       await waitForOAuthSession();

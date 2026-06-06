@@ -82,7 +82,7 @@ export function LogAuraSheet({
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl">Log an aura</DialogTitle>
           <DialogDescription>
-            A warning sensation before a possible seizure — déjà vu, a rising
+            A warning sensation before a possible seizure, déjà vu, a rising
             feeling in the stomach, a smell, sudden emotion. Capture it the
             moment it happens.
           </DialogDescription>

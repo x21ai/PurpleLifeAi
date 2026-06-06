@@ -32,32 +32,32 @@ function FeaturesPage() {
       <MarketingHeader />
 
       <main>
-        {/* Hero — calm landscape */}
+        {/* Hero, calm landscape */}
         <CalmHero
           image={calmImages.dawn}
           alt=""
           eyebrow="Features"
           headline={<>A quiet tool,<br />deeply useful.</>}
-          body="Everything Purple does — without the spreadsheet feeling."
+          body="Everything Purple does, without the spreadsheet feeling."
         />
 
         {/* Capture */}
         <FeatureBand
           eyebrow="Capture"
           title="Type it. Say it. Snap it."
-          body="A sentence. A 60-second voice memo. A photo of how a rash looks today. A short video. Purple transcribes, tags, and summarizes — so nothing slips through, and you don't think about filing."
+          body="A sentence. A 60-second voice memo. A photo of how a rash looks today. A short video. Purple transcribes, tags, and summarizes, so nothing slips through, and you don't think about filing."
           image={calmImages.mist}
           alt=""
           imageSide="right"
         />
 
-        {/* Still life — punctuation between sections */}
+        {/* Still life, punctuation between sections */}
         <StillLife
           image={humanImages.pillOrganizer}
           alt="A weekly pill organizer beside a glass of water, late afternoon light."
         />
 
-        {/* Ask Purple — text only, centered */}
+        {/* Ask Purple, text only, centered */}
         <section className="mx-auto max-w-3xl px-6 sm:px-10 py-24 sm:py-32 text-center">
           <p className="label-eyebrow">Ask Purple</p>
           <h2 className="mt-5 font-serif text-4xl sm:text-5xl lg:text-6xl leading-[1.02] tracking-tight">
@@ -65,13 +65,13 @@ function FeaturesPage() {
           </h2>
           <p className="mt-6 text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto">
             A quiet bubble waits on every screen. Choose Gemini Flash, Gemini Pro, or Claude
-            Sonnet from settings. Purple already knows your history — and asks before changing
+            Sonnet from settings. Purple already knows your history, and asks before changing
             anything.
           </p>
           <ul className="mt-7 space-y-2 text-sm text-muted-foreground">
             <li>Three AI models. Switch any time.</li>
             <li>Confirm-to-write on every action.</li>
-            <li>Your entries are the prompt — never the training data.</li>
+            <li>Your entries are the prompt, never the training data.</li>
           </ul>
         </section>
 
@@ -79,13 +79,13 @@ function FeaturesPage() {
         <FeatureBand
           eyebrow="See"
           title="One timeline. The whole picture."
-          body="Seizures, meds, journal moments, sleep, HRV — in one feed you can filter by day, week, month, or year. A daily forecast watches your sleep, missed doses, menstrual phase, and your own trigger history."
+          body="Seizures, meds, journal moments, sleep, HRV, in one feed you can filter by day, week, month, or year. A daily forecast watches your sleep, missed doses, menstrual phase, and your own trigger history."
           image={calmImages.dawnAlt}
           alt="Soft morning mist over a quiet field."
           imageSide="left"
         />
 
-        {/* Caregiver human moment — introduces "the rest" */}
+        {/* Caregiver human moment, introduces "the rest" */}
         <HumanMoment
           image={humanImages.caregiverHand}
           alt="A caregiver&rsquo;s hand resting gently on another person&rsquo;s shoulder."

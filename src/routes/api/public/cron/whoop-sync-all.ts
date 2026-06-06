@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 /**
- * Daily cron — incremental Whoop sync for every connected user.
+ * Daily cron, incremental Whoop sync for every connected user.
  * Gated by x-cron-secret header (set CRON_SECRET in backend settings).
  */
 export const Route = createFileRoute("/api/public/cron/whoop-sync-all")({
