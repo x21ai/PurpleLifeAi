@@ -1,68 +1,43 @@
-# Pass 3 — QA Report Fixes
+## Goal
+Remove every em dash (—) from user-facing content across the platform, replacing each one with a more appropriate connector: `,`, `and`, `or`, `:`, `.`, parentheses, or a simple space — chosen per sentence so the copy still reads naturally. Going forward, em dashes will not be used anywhere.
 
-QA filed 26 issues across the marketing site, auth, Today, Tools, Care, Community, Reports, Journal, and Travel. Below is the full list grouped by area, with the fix for each. I'll work them in batches (1 → 6) so you can review after each.
+## Scope
+About **352 occurrences across ~149 files**, spread across:
 
----
+- **Routes / pages** (marketing + app): `index.tsx`, `features.tsx`, `pricing.tsx`, `privacy.tsx`, `terms.tsx`, `contact.tsx`, `sign-in.tsx`, `community.tsx`, `community.resources.tsx`, `care.accept.tsx`, `reset-password.tsx`, `share.report.$token.tsx`, `oauth.*.callback.tsx`, `_app.tsx`, `__root.tsx`, etc.
+- **Components**: today/journal/meds/care/chat/biometrics/locale/account/conditions/ui-oura/layout/common.
+- **i18n strings**: `src/i18n/locales/en.json` and `es.json` (the largest concentration of user-visible copy).
+- **Server/email/cron files** with copy strings: `lib/medical-report.server.ts`, `email-templates/*`, `routes/api/public/cron/*`, `routes/lovable/email/*`, `routes/email/unsubscribe.ts`, `lib/travel-scheduler.ts` (any user-visible strings), etc.
+- **Misc**: `public/sw.js` (offline copy), `src/styles.css` (only if used in `content:` rules — will inspect; CSS comments left alone).
 
-## Batch 1 — Marketing site & auth polish (QA #1–9)
+Code-only occurrences (comments, JSDoc, internal log messages never shown to users) will also be normalized so the rule is uniform and easy to enforce later — replaced with `,` / `:` / `-` as fits.
 
-1. **Internal pages (Features / About / Pricing / Community / Contact) missing header nav** — add the same header nav links to those routes (currently only on `/`).
-2. **Footer GitHub link 404** — points to `github.com/lovable-dev/purple`. Either remove it or point to the real repo. I'll ask you which.
-3. **Footer "Charter / Privacy / Terms" redirect to sign-in** — those routes don't exist. Create stub pages with real content placeholders, or hide the links until ready.
-4. **Header "Sign in" + "Get started" both go to `/signin`** — "Get started" should go to `/signup`.
-5. **No email verification on signup** — enable email confirmation in Cloud auth settings (changes the flow: user must click verify link before login).
-6. **Google sign-in shows "Lovable" branding** — this is the Lovable OAuth broker. To remove it you need your *own* Google OAuth app + custom Supabase Google provider (you have client ID/secret already — we wired them, but the broker still shows because the integration uses Lovable's redirect). Need to switch the client to call Supabase directly instead of the broker for Google. Same fix path for Apple (#7).
-7. **Apple sign-in shows "Lovable" branding** — same as #6, applies once Apple is set up.
-8. **Signup form: "Create account" button is in the middle of the form** — move it to after the last field (Invite code).
-9. **After sign-in, marketing homepage still shows "Sign in / Get started"** — make the marketing header session-aware: if logged in, show "Open app" instead.
+## Replacement rules (applied per sentence, not blindly)
+1. Parenthetical aside → wrap in commas, or split into two sentences. Example: `Purple listens — and remembers.` → `Purple listens, and remembers.`
+2. List/definition lead-in → use `:`. Example: `Three things — sleep, HRV, mood.` → `Three things: sleep, HRV, mood.`
+3. "X — Y" appositive label → use `,` or `.`. Example: `Purple — a quiet journal` → `Purple, a quiet journal`.
+4. Range/connector between clauses → use `and` / `or` as appropriate.
+5. Numeric/date ranges (`9—5`, `Mon—Fri`) → use `–` is NOT allowed either per spec; use `to`. (`9 to 5`, `Mon to Fri`.)
+6. Title/eyebrow ornaments like `— Purple` suffix in `<title>` → drop the dash, use `· Purple` or `| Purple` (will pick one consistent separator, default `· Purple` to match existing tone).
 
-## Batch 2 — Oura + Tools tab (QA #10–13)
+## Execution approach
+- **Manual, file-by-file pass** (NOT a blanket sed) so each replacement reads naturally. Em dashes appear in copy where punctuation matters; a global substitution would produce awkward sentences.
+- Batched by area to keep diffs reviewable:
+  1. i18n locale files (`en.json`, `es.json`) — biggest single win.
+  2. Marketing routes (`index`, `features`, `pricing`, `privacy`, `terms`, `contact`, `sign-in`, `community*`).
+  3. App routes + components (today, journal, meds, care, biometrics, chat, account, locale, conditions, ui-oura, layout, common).
+  4. Email templates + server/cron user-visible strings.
+  5. `<title>` / meta separators standardized to `·`.
+  6. Remaining code comments and internal strings.
+- After each batch, re-run `rg -c "—"` to confirm count drops, ending at **0**.
 
-10. **Oura Connect → `400 invalid_request`** — root cause is the OAuth start step. Investigate `oura-sync` `action:"config"` handler: most likely `redirect_uri` mismatch with what's registered in the Oura developer console, or `OURA_CLIENT_ID` is stale. I'll pull logs for the failing call and confirm before changing anything.
-11. **"Set up a new device" button does nothing** — wire it. Proposed flow: opens a sheet with (a) QR code containing a magic deep-link to `/auth/device-link?token=…`, (b) "Email me the link" option, (c) instructions. Confirm this UX before I build.
-12. **Light mode: Tools + Account tabs still render dark** — those two screens have hard-coded dark colors instead of semantic tokens. Audit and replace `bg-slate-900` / `text-white` style classes with `bg-background` / `text-foreground` etc.
-13. **Settings only reachable via Add Trip → back** — add a top-level "Settings" link to the sidebar (and remove the trip-detour as the only path).
+## Guardrail to prevent reintroduction
+Add a tiny check to `scripts/check-no-test-data.mjs` (or a new sibling script `scripts/check-no-em-dash.mjs` wired into the same npm script) that greps the repo for `—` and fails the build if any are found in `src/` or `public/`. This makes the "never use it" rule enforceable.
 
-## Batch 3 — Care + Caregiver (QA #14, #17)
+## Out of scope
+- Translations of meaning — only punctuation/connector swaps; no rewording beyond what's needed for the new connector to read correctly.
+- Auto-generated files (`routeTree.gen.ts`, `integrations/supabase/*`, `.env`, `supabase/config.toml`) — left untouched per project rules.
+- En dashes (`–`) and hyphens (`-`) — only the em dash `—` (U+2014) is removed.
 
-14. **Caregiver invite sends no email + no in-app notification** — wire the caregiver invite through the transactional email pipeline (Resend, one-by-one as we agreed). Also create an in-app notification when the recipient is already a Purple user.
-17. **Caregiver tab only shows "accounts you're a caregiver for", not "your caregivers"** — add the inverse list (people you've shared access with) to the same page.
-
-## Batch 4 — Reports + Medications (QA #18, #19, #20, #22)
-
-18. **Medication time format mismatch** — add field is 24h, list view is 12h. Pick one (recommend 12h with AM/PM everywhere) and unify.
-19. **Generate PDF fails with `WinAnsi cannot encode (0x2192)`** — pdf-lib's WinAnsi font can't encode the `→` arrow we use somewhere in the report. Switch the report font to a TTF (or sanitize the text to ASCII) so non-WinAnsi glyphs render.
-20. **Report calendar icon: should be white in dark mode + clicking the field should open the calendar** — restyle icon to `text-foreground` and make the input wrapper trigger the popover.
-22. **Med pill count not decrementing daily** — the consumption decrement isn't running when a dose is marked taken. Wire `medication_doses` "taken" → `medications.pills_remaining -= 1` (server function).
-
-## Batch 5 — Today + Journal + Sidebar (QA #16, #21, #23, #24, #25, #26)
-
-16. **Hide scrollbar** on the indicated panel (cosmetic CSS).
-21. **Feed and Resources go to the same page** — they're wired to the same route. Split into two routes with their own content, or rename one.
-23. **"Today's Feeling" selection lost on refresh** — currently held in component state only. Persist to DB (`daily_logs` row, keyed by user + date) and hydrate on mount.
-24. **"Patterns" appears twice in the sidebar** — dedupe.
-25. **Trip-generated reminders not showing in daily journal** — Today/Journal queries filter out doses with `trip_id`. Include them.
-26. **Journal entries (hydration, biometrics, etc.) not flowing into Tools** — Tools cards query their own tables (`hydration_logs`, `biometrics`) but journal write only inserts into `journal_entries`. Add an extractor that, when a journal entry mentions hydration/biometrics, writes to the corresponding table too (or change Tools to read from extracted facts).
-
-## Batch 6 — Community (QA #15)
-
-15. **Likes and Comments on community posts do nothing** — wire the buttons to the existing endpoints, or build the endpoints if missing.
-
----
-
-## Order of execution
-1. Batch 2 first (Oura is the loudest blocker, plus quick Tools wins).
-2. Batch 4 (PDF crash + meds correctness are user-trust issues).
-3. Batch 3 (caregiver email — needs Resend key from you).
-4. Batch 5 (data flow correctness).
-5. Batch 1 (marketing/auth polish).
-6. Batch 6 (community).
-
-## Questions before I start
-- **#2 GitHub footer link**: real repo URL, or remove?
-- **#3 Charter/Privacy/Terms**: create stub pages now, or hide the links until you have copy?
-- **#5 email verification**: turn on now? (existing users unaffected; new signups will need to click a link.)
-- **#11 "Set up a new device"**: OK with the QR + email-link flow, or different idea?
-- **#18 med time format**: 12h everywhere (recommended) or 24h everywhere?
-
-I'll wait for answers on those, then start Batch 2.
+## Deliverable
+Zero `—` characters anywhere under `src/` and `public/`, plus a guardrail script that keeps it that way.
