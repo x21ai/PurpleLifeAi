@@ -374,8 +374,19 @@ export function statusTone(
   const bad =
     (meta.direction === "higher_better" && status === "low") ||
     (meta.direction === "lower_better" && status === "high");
-  if (bad) return { label: status === "low" ? "Low" : "High", cls: "bg-[color:var(--warning)]/15 text-[color:var(--warning)]" };
+  if (bad) return { label: "Pay attention", cls: "bg-[color:var(--warning)]/15 text-[color:var(--warning)]" };
   if (meta.direction === "neutral")
-    return { label: status === "low" ? "Low" : "High", cls: "bg-[color:var(--warning)]/15 text-[color:var(--warning)]" };
+    return { label: "Pay attention", cls: "bg-[color:var(--warning)]/15 text-[color:var(--warning)]" };
   return { label: status === "low" ? "Low" : "High", cls: "bg-secondary text-foreground" };
+}
+
+/** Whether this status warrants a "needs a look" flag. */
+export function isAttention(
+  meta: MetricMeta,
+  status: "in_range" | "low" | "high" | "unknown",
+): boolean {
+  if (status === "unknown" || status === "in_range") return false;
+  if (meta.direction === "higher_better") return status === "low";
+  if (meta.direction === "lower_better") return status === "high";
+  return true; // neutral, any out-of-range is worth noting
 }
