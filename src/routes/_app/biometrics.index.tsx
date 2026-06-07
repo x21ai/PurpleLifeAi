@@ -1,13 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
-import { METRIC_ORDER, METRICS, type MetricKey } from "@/lib/biometric-metrics";
+import {
+  METRIC_ORDER,
+  METRICS,
+  type MetricKey,
+  METRIC_CATEGORY,
+  CATEGORY_ORDER,
+  CATEGORY_LABEL,
+  type MetricCategory,
+  classifyValue,
+  stats,
+  isAttention,
+} from "@/lib/biometric-metrics";
 import { MetricCard } from "@/components/biometrics/metric-card";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/biometrics/")({
   head: () => ({
@@ -44,7 +56,41 @@ function BiometricsIndex() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [rangeKey, setRangeKey] = useState<RangeKey>("30d");
   const [compareMode, setCompareMode] = useState<CompareMode>("none");
+  const [pinned, setPinned] = useState<string[]>([]);
   const windowDays = RANGE_DAYS[rangeKey];
+
+  // Load pinned metrics from profile.
+  useEffect(() => {
+    if (!uid) return;
+    void (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .select("biometrics_pinned" as any)
+        .eq("id", uid)
+        .maybeSingle();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const list = (data as any)?.biometrics_pinned;
+      if (Array.isArray(list)) setPinned(list as string[]);
+    })();
+  }, [uid]);
+
+  const togglePin = async (key: MetricKey) => {
+    if (!uid) return;
+    const next = pinned.includes(key)
+      ? pinned.filter((k) => k !== key)
+      : [...pinned, key];
+    setPinned(next); // optimistic
+    const { error } = await supabase
+      .from("profiles")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ biometrics_pinned: next } as any)
+      .eq("id", uid);
+    if (error) {
+      setPinned(pinned); // rollback
+      toast.error("Could not save pin");
+    }
+  };
 
   useEffect(() => {
     if (!uid) return;
@@ -140,6 +186,54 @@ function BiometricsIndex() {
 
   const empty = rows !== null && rows.length === 0;
 
+  // Status per metric, used for "needs a look" summary and attention pills.
+  const statusByMetric = useMemo(() => {
+    const out: Record<MetricKey, "in_range" | "low" | "high" | "unknown"> =
+      {} as never;
+    for (const m of METRIC_ORDER) {
+      const bySource = seriesByMetric[m];
+      // Pick the source with most-recent reading for the headline.
+      const srcKeys = Object.keys(bySource ?? {}) as SourceKey[];
+      let headline: { date: string; value: number | null } | null = null;
+      let series: Array<{ date: string; value: number | null }> = [];
+      for (const s of srcKeys) {
+        const arr = bySource[s] ?? [];
+        const last = [...arr].reverse().find((d) => d.value != null);
+        if (last && (!headline || last.date > headline.date)) {
+          headline = last;
+          series = arr;
+        }
+      }
+      if (!series.length) {
+        out[m] = "unknown";
+        continue;
+      }
+      const baseline = stats(series.slice(-30, -3).map((d) => d.value));
+      out[m] = classifyValue(METRICS[m], headline?.value ?? null, baseline);
+    }
+    return out;
+  }, [seriesByMetric]);
+
+  const attentionKeys = useMemo(
+    () => METRIC_ORDER.filter((m) => isAttention(METRICS[m], statusByMetric[m])),
+    [statusByMetric],
+  );
+
+  // Group available metrics by category, hide categories with no data.
+  const byCategory = useMemo(() => {
+    const out: Partial<Record<MetricCategory, MetricKey[]>> = {};
+    for (const m of METRIC_ORDER) {
+      if (pinned.includes(m)) continue; // pinned shown in hero strip
+      const hasData = Object.values(seriesByMetric[m] ?? {}).some(
+        (arr) => arr && arr.some((d) => d.value != null),
+      );
+      if (!hasData) continue;
+      const cat = METRIC_CATEGORY[m];
+      (out[cat] ||= []).push(m);
+    }
+    return out;
+  }, [seriesByMetric, pinned]);
+
   return (
     <div className="mx-auto max-w-5xl px-5 sm:px-10 lg:px-16 pt-8 sm:pt-12 pb-24">
       <Link
@@ -207,23 +301,91 @@ function BiometricsIndex() {
           </p>
         </div>
       ) : (
-        <div className="mt-8 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-          {METRIC_ORDER.map((m) => (
-            <MetricCard
-              key={m}
-              metric={m}
-              seriesBySource={seriesByMetric[m]}
-              compare={
-                compareMode === "none"
-                  ? undefined
-                  : {
-                      label: compareMode === "previous" ? "vs previous" : "vs year ago",
-                      deltaPct: comparison[m].deltaPct,
-                      compareValue: comparison[m].compare,
-                    }
-              }
-            />
-          ))}
+        <div className="mt-6 space-y-10">
+          {/* Attention summary */}
+          {attentionKeys.length > 0 && (
+            <div className="rounded-2xl border border-[color:var(--warning)]/30 bg-[color:var(--warning)]/5 px-5 py-4 flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 mt-0.5 text-[color:var(--warning)] shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">
+                  {attentionKeys.length === 1
+                    ? "1 signal needs a look"
+                    : `${attentionKeys.length} signals need a look`}
+                </p>
+                <p className="mt-0.5 text-[12px] text-muted-foreground">
+                  {attentionKeys
+                    .map((m) => METRICS[m].short)
+                    .slice(0, 6)
+                    .join(", ")}
+                  {attentionKeys.length > 6 ? "…" : ""}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Pinned hero strip */}
+          {pinned.length > 0 && (
+            <section>
+              <p className="label-eyebrow text-muted-foreground mb-3">Pinned</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {pinned
+                  .filter((k): k is MetricKey => (METRIC_ORDER as string[]).includes(k))
+                  .map((m) => (
+                    <MetricCard
+                      key={m}
+                      metric={m}
+                      seriesBySource={seriesByMetric[m]}
+                      size="hero"
+                      pinned
+                      onTogglePin={() => togglePin(m)}
+                      compare={
+                        compareMode === "none"
+                          ? undefined
+                          : {
+                              label: compareMode === "previous" ? "vs previous" : "vs year ago",
+                              deltaPct: comparison[m].deltaPct,
+                              compareValue: comparison[m].compare,
+                            }
+                      }
+                    />
+                  ))}
+              </div>
+            </section>
+          )}
+
+          {/* Grouped by category */}
+          {CATEGORY_ORDER.map((cat) => {
+            const metrics = byCategory[cat];
+            if (!metrics || metrics.length === 0) return null;
+            return (
+              <section key={cat}>
+                <p className="label-eyebrow text-muted-foreground mb-3">
+                  {CATEGORY_LABEL[cat]}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {metrics.map((m) => (
+                    <MetricCard
+                      key={m}
+                      metric={m}
+                      seriesBySource={seriesByMetric[m]}
+                      pinned={false}
+                      onTogglePin={() => togglePin(m)}
+                      compare={
+                        compareMode === "none"
+                          ? undefined
+                          : {
+                              label:
+                                compareMode === "previous" ? "vs previous" : "vs year ago",
+                              deltaPct: comparison[m].deltaPct,
+                              compareValue: comparison[m].compare,
+                            }
+                      }
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </div>
       )}
 
