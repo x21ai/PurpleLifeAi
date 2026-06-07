@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listCareThreads } from "@/lib/care-chat.functions";
+import { useAuth } from "@/integrations/supabase/auth-context";
 
 /**
  * Tiny unread-count badge for the sidebar "Messages" link.
@@ -8,10 +9,12 @@ import { listCareThreads } from "@/lib/care-chat.functions";
  * across all threads the user participates in.
  */
 export function ChatUnreadBadge() {
+  const { session } = useAuth();
   const fetchThreads = useServerFn(listCareThreads);
   const q = useQuery({
     queryKey: ["care-chat", "threads"],
     queryFn: () => fetchThreads(),
+    enabled: !!session,
     refetchInterval: 30_000,
     staleTime: 15_000,
   });
