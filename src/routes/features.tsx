@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { CalmHero, CalmBand, HumanMoment, StillLife } from "@/components/marketing/calm-scene";
+import { ResponsiveImage } from "@/components/marketing/responsive-image";
 import { featuresImages } from "@/lib/calm-images";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
