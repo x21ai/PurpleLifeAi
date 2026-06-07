@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ResponsiveContainer, LineChart, Line, YAxis, Tooltip } from "recharts";
+import { Pin, PinOff } from "lucide-react";
 import {
   METRICS,
   type MetricKey,
@@ -24,6 +25,9 @@ export function MetricCard({
   seriesBySource,
   disableLink = false,
   compare,
+  size = "default",
+  pinned,
+  onTogglePin,
 }: {
   metric: MetricKey;
   /** Single-source series (legacy). Used as fallback when seriesBySource not provided. */
@@ -39,6 +43,11 @@ export function MetricCard({
     deltaPct: number | null;
     compareValue: number | null;
   };
+  /** "hero" renders a larger, more readable card for pinned favorites. */
+  size?: "default" | "hero";
+  /** Pin state. When `onTogglePin` is provided, a pin toggle is rendered. */
+  pinned?: boolean;
+  onTogglePin?: () => void;
 }) {
   const meta = METRICS[metric];
 
@@ -137,15 +146,42 @@ export function MetricCard({
               />
             )}
           </div>
-          <p className="mt-2 font-serif text-3xl sm:text-4xl text-foreground leading-none">
+          <p
+            className={
+              size === "hero"
+                ? "mt-3 font-serif text-5xl sm:text-6xl text-foreground leading-none"
+                : "mt-2 font-serif text-3xl sm:text-4xl text-foreground leading-none"
+            }
+          >
             {meta.format(current)}
           </p>
         </div>
-        <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] tracking-wide uppercase font-medium ${tone.cls}`}
-        >
-          {tone.label}
-        </span>
+        <div className="shrink-0 flex items-center gap-1.5">
+          <span
+            className={`rounded-full px-2 py-0.5 text-[10px] tracking-wide uppercase font-medium ${tone.cls}`}
+          >
+            {tone.label}
+          </span>
+          {onTogglePin && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onTogglePin();
+              }}
+              aria-label={pinned ? `Unpin ${meta.label}` : `Pin ${meta.label}`}
+              aria-pressed={!!pinned}
+              className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition ${
+                pinned
+                  ? "border-transparent bg-[color:var(--purple-primary)]/15 text-[color:var(--purple-primary)]"
+                  : "border-border text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+              }`}
+            >
+              {pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+            </button>
+          )}
+        </div>
       </div>
 
       {hasSpark && (
@@ -228,7 +264,11 @@ export function MetricCard({
 
   if (disableLink) {
     return (
-      <div className="block rounded-2xl border border-border bg-card p-4 sm:p-5">
+      <div
+        className={`block rounded-2xl border border-border bg-card ${
+          size === "hero" ? "p-5 sm:p-7" : "p-4 sm:p-5"
+        }`}
+      >
         {inner}
       </div>
     );
@@ -237,7 +277,9 @@ export function MetricCard({
     <Link
       to="/biometrics/$metric"
       params={{ metric }}
-      className="group block rounded-2xl border border-border bg-card p-4 sm:p-5 transition hover:border-foreground/30 hover:shadow-sm"
+      className={`group block rounded-2xl border border-border bg-card transition hover:border-foreground/30 hover:shadow-sm ${
+        size === "hero" ? "p-5 sm:p-7" : "p-4 sm:p-5"
+      }`}
     >
       {inner}
     </Link>
