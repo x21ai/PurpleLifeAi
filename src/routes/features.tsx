@@ -35,7 +35,7 @@ function FeaturesPage() {
         {/* Hero, calm landscape */}
         <CalmHero
           image={featuresImages.hero}
-          alt=""
+          priority
           eyebrow="Features"
           headline={<>A quiet tool,<br />deeply useful.</>}
           body="Everything Purple does, without the spreadsheet feeling."
@@ -46,16 +46,12 @@ function FeaturesPage() {
           eyebrow="Capture"
           title="Type it. Say it. Snap it."
           body="A sentence. A 60-second voice memo. A photo of how a rash looks today. A short video. Purple transcribes, tags, and summarizes, so nothing slips through, and you don't think about filing."
-          image={featuresImages.hero}
-          alt=""
+          image={featuresImages.pillOrganizer}
           imageSide="right"
         />
 
         {/* Still life, punctuation between sections */}
-        <StillLife
-          image={featuresImages.pillOrganizer}
-          alt="A weekly pill organizer beside a glass of water, late afternoon light."
-        />
+        <StillLife image={featuresImages.phoneTyping} />
 
         {/* Ask Purple, text only, centered */}
         <section className="mx-auto max-w-3xl px-6 sm:px-10 py-24 sm:py-32 text-center">
@@ -80,15 +76,13 @@ function FeaturesPage() {
           eyebrow="See"
           title="One timeline. The whole picture."
           body="Seizures, meds, journal moments, sleep, HRV, in one feed you can filter by day, week, month, or year. A daily forecast watches your sleep, missed doses, menstrual phase, and your own trigger history."
-          image={featuresImages.phoneTyping}
-          alt="Hands typing a quiet thought into a phone in warm evening light."
+          image={featuresImages.handOnShoulder}
           imageSide="left"
         />
 
         {/* Caregiver human moment, introduces "the rest" */}
         <HumanMoment
-          image={featuresImages.handOnShoulder}
-          alt="A caregiver&rsquo;s hand resting gently on another person&rsquo;s shoulder."
+          image={featuresImages.hero}
           quote="For the people who help you carry it."
           attribution="Caregivers, family, anyone you trust"
         />
@@ -159,14 +153,12 @@ function FeatureBand({
   title,
   body,
   image,
-  alt,
   imageSide,
 }: {
   eyebrow: string;
   title: string;
   body: string;
-  image: string;
-  alt: string;
+  image: import("@/components/marketing/responsive-image").PictureAsset;
   imageSide: "left" | "right";
 }) {
   return (
@@ -183,13 +175,10 @@ function FeatureBand({
         </div>
         <div className={imageSide === "right" ? "lg:order-2" : "lg:order-1"}>
           <div className="relative overflow-hidden rounded-3xl aspect-[4/3]">
-            <img
-              src={image}
-              alt={alt}
+            <ResponsiveImage
+              asset={image}
+              sizes="(min-width: 1024px) 50vw, 100vw"
               className="absolute inset-0 h-full w-full object-cover"
-              width={1600}
-              height={1200}
-              loading="lazy"
             />
           </div>
         </div>
