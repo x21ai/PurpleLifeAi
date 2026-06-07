@@ -58,3 +58,7 @@ Rename "Hydration" → "Intake" in nav and copy. One page covers water, electrol
 ## Order of execution
 1. Phase 5 migration (food_entries) → wait for approval → app code
 2. Phase 6 (no schema changes needed; reuses `medications` + `medication_doses`)
+
+## Status
+- Phase 5: **shipped** — `food_entries` table, AI photo recognition (Lovable AI Gateway, Gemini vision), Snap Intake sheet with confirm flow, food list under hydration timeline, nav renamed to "Intake".
+- Phase 6: pending — meds scan + inline mini-timeline.
