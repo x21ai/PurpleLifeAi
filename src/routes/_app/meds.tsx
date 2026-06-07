@@ -365,25 +365,48 @@ function MedsPage() {
         </ul>
       )}
 
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label={t("meds.addMedication")}
-        className="fixed bottom-24 md:bottom-8 right-5 md:right-8 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
+      <div
+        className="fixed bottom-24 md:bottom-8 right-5 md:right-8 z-40 flex flex-col gap-2"
         style={{ marginBottom: "env(safe-area-inset-bottom)" }}
       >
-        <Plus className="h-6 w-6" />
-      </button>
+        <button
+          type="button"
+          onClick={() => setScanOpen(true)}
+          aria-label="Scan medication"
+          className="h-12 w-12 rounded-full bg-card text-foreground ring-1 ring-border shadow-md hover:shadow-lg transition-shadow flex items-center justify-center"
+        >
+          <Camera className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => { setPrefill(null); setOpen(true); }}
+          aria-label={t("meds.addMedication")}
+          className="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
+      </div>
 
       <MedicationFormSheet
         open={open}
         onOpenChange={(v) => {
           setOpen(v);
-          if (!v) setEditingMedId(null);
+          if (!v) { setEditingMedId(null); setPrefill(null); }
         }}
         onSaved={load}
         isFirstMedication={isFirst}
         editingMedId={editingMedId}
+        prefill={prefill}
+      />
+
+      <ScanMedSheet
+        open={scanOpen}
+        onOpenChange={setScanOpen}
+        onRecognized={(p) => {
+          setEditingMedId(null);
+          setPrefill(p);
+          setOpen(true);
+        }}
       />
     </div>
   );
