@@ -272,9 +272,8 @@ function SignInPage() {
                       <label htmlFor="password" className="label-eyebrow block pt-1">
                         {t("signIn.password")}
                       </label>
-                      <Input
+                      <PasswordInput
                         id="password"
-                        type="password"
                         required
                         minLength={8}
                         autoComplete={mode === "signin" ? "current-password" : "new-password"}
