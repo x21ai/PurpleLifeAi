@@ -104,6 +104,8 @@ function MedsPage() {
   const [open, setOpen] = React.useState(false);
   const [editingMedId, setEditingMedId] = React.useState<string | null>(null);
   const [markingAll, setMarkingAll] = React.useState(false);
+  const [scanOpen, setScanOpen] = React.useState(false);
+  const [prefill, setPrefill] = React.useState<MedPrefill | null>(null);
 
   const load = React.useCallback(async () => {
     if (!userId) return;
