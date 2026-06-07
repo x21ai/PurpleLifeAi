@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { callAIForUser, tryParseJson } from "./ai-provider.server";
 
 const RecogSchema = z.object({
   name: z.string().min(1).max(120).nullable().optional(),
@@ -34,81 +36,70 @@ Rules:
 - "warnings": short alerts you noticed (e.g. "label partially blurred", "expiration date unreadable").
 - Never fabricate a name or strength. If you can't read it, return null with low confidence.`;
 
-const tool = {
-  type: "function" as const,
-  function: {
-    name: "log_medication",
-    description: "Extract structured medication info from a label or prescription.",
-    parameters: {
-      type: "object",
-      properties: {
-        name: { type: "string" },
-        generic_name: { type: "string" },
-        dosage_amount: { type: "number" },
-        dosage_unit: { type: "string" },
-        dosage_form: { type: "string" },
-        instructions: { type: "string" },
-        times_per_day: { type: "number" },
-        with_food: { type: "boolean" },
-        prescriber_name: { type: "string" },
-        pharmacy_name: { type: "string" },
-        prescription_number: { type: "string" },
-        pills_remaining: { type: "number" },
-        confidence: { type: "number" },
-        warnings: { type: "array", items: { type: "string" } },
-      },
-      required: ["confidence"],
-      additionalProperties: false,
-    },
-  },
-};
-
-export async function recognizeMedicationFromImage(dataUrl: string): Promise<MedRecognition> {
-  return callGateway([
-    {
-      role: "user",
-      content: [
-        { type: "text", text: "Extract medication details from this label or prescription." },
-        { type: "image_url", image_url: { url: dataUrl } },
-      ],
-    },
-  ]);
+function parseDataUrl(dataUrl: string): { mime: string; base64: string } {
+  const m = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!m) throw new Error("Invalid image data URL.");
+  return { mime: m[1], base64: m[2] };
 }
 
-export async function recognizeMedicationFromText(text: string): Promise<MedRecognition> {
-  return callGateway([
-    {
-      role: "user",
-      content: `Extract medication details from this voice note: """${text.slice(0, 800)}"""`,
-    },
-  ]);
-}
+const JSON_SHAPE = `Return ONLY a JSON object of this shape (all fields nullable except confidence):
+{
+  "name": "string|null",
+  "generic_name": "string|null",
+  "dosage_amount": number|null,
+  "dosage_unit": "string|null",
+  "dosage_form": "string|null",
+  "instructions": "string|null",
+  "times_per_day": number|null,
+  "with_food": boolean|null,
+  "prescriber_name": "string|null",
+  "pharmacy_name": "string|null",
+  "prescription_number": "string|null",
+  "pills_remaining": number|null,
+  "confidence": number,
+  "warnings": ["string"]
+}`;
 
-async function callGateway(messages: any[]): Promise<MedRecognition> {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("AI gateway is not configured.");
-
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
-      messages: [{ role: "system", content: SYSTEM }, ...messages],
-      tools: [tool],
-      tool_choice: { type: "function", function: { name: "log_medication" } },
-    }),
+async function recognize(
+  supabase: SupabaseClient,
+  userId: string,
+  prompt: string,
+  media: { mime: string; base64: string } | null,
+): Promise<MedRecognition> {
+  const text = await callAIForUser(supabase, userId, {
+    system: `${SYSTEM}\n\n${JSON_SHAPE}`,
+    prompt,
+    media,
+    jsonMode: true,
+    maxTokens: 1500,
   });
+  const parsed = tryParseJson<unknown>(text);
+  if (!parsed) throw new Error("AI returned no parseable result.");
+  return RecogSchema.parse(parsed);
+}
 
-  if (res.status === 429) throw new Error("Too many requests right now. Please try again in a moment.");
-  if (res.status === 402) throw new Error("AI credits exhausted. Add credits in workspace settings.");
-  if (!res.ok) {
-    const t = await res.text();
-    console.error("AI gateway error", res.status, t);
-    throw new Error("Couldn't reach the AI service.");
-  }
+export function recognizeMedicationFromImage(
+  supabase: SupabaseClient,
+  userId: string,
+  dataUrl: string,
+): Promise<MedRecognition> {
+  return recognize(
+    supabase,
+    userId,
+    "Extract medication details from this label or prescription.",
+    parseDataUrl(dataUrl),
+  );
+}
 
-  const json = await res.json();
-  const call = json?.choices?.[0]?.message?.tool_calls?.[0];
-  if (!call?.function?.arguments) throw new Error("AI returned no result.");
-  return RecogSchema.parse(JSON.parse(call.function.arguments));
+export function recognizeMedicationFromText(
+  supabase: SupabaseClient,
+  userId: string,
+  text: string,
+): Promise<MedRecognition> {
+  return recognize(
+    supabase,
+    userId,
+    `Extract medication details from this voice note: """${text.slice(0, 800)}"""`,
+    null,
+  );
 }

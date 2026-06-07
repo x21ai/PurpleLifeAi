@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { callAIForUser, tryParseJson } from "./ai-provider.server";
 
 const ItemSchema = z.object({
   name: z.string().min(1).max(120),
@@ -29,88 +31,64 @@ Return JSON only via the provided tool. Rules:
 - Keep names short and human (e.g. "Latte with oat milk", not "Coffee beverage prepared with...").
 - Never invent specific brand names you can't see. Generic descriptions are fine.`;
 
-const tool = {
-  type: "function" as const,
-  function: {
-    name: "log_intake",
-    description: "Return a structured intake recognition.",
-    parameters: {
-      type: "object",
-      properties: {
-        kind: { type: "string", enum: ["water", "drink", "food", "unknown"] },
-        items: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              portion: { type: "string" },
-              calories_kcal: { type: "number" },
-              protein_g: { type: "number" },
-              carbs_g: { type: "number" },
-              fat_g: { type: "number" },
-              volume_ml: { type: "number" },
-            },
-            required: ["name"],
-            additionalProperties: false,
-          },
-        },
-        confidence: { type: "number" },
-        notes: { type: "string" },
-      },
-      required: ["kind", "items", "confidence"],
-      additionalProperties: false,
-    },
-  },
-};
+function parseDataUrl(dataUrl: string): { mime: string; base64: string } {
+  const m = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!m) throw new Error("Invalid image data URL.");
+  return { mime: m[1], base64: m[2] };
+}
 
-async function callGateway(messages: any[]): Promise<IntakeRecognition> {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("AI gateway is not configured.");
+const JSON_SHAPE = `Return ONLY a JSON object of this shape:
+{
+  "kind": "water" | "drink" | "food" | "unknown",
+  "items": [
+    { "name": "string", "portion": "string|null", "calories_kcal": number|null,
+      "protein_g": number|null, "carbs_g": number|null, "fat_g": number|null,
+      "volume_ml": number|null }
+  ],
+  "confidence": number,
+  "notes": "string|null"
+}`;
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
-      messages: [{ role: "system", content: SYSTEM }, ...messages],
-      tools: [tool],
-      tool_choice: { type: "function", function: { name: "log_intake" } },
-    }),
+async function recognize(
+  supabase: SupabaseClient,
+  userId: string,
+  prompt: string,
+  media: { mime: string; base64: string } | null,
+): Promise<IntakeRecognition> {
+  const text = await callAIForUser(supabase, userId, {
+    system: `${SYSTEM}\n\n${JSON_SHAPE}`,
+    prompt,
+    media,
+    jsonMode: true,
+    maxTokens: 1500,
   });
-
-  if (res.status === 429) throw new Error("Too many requests right now. Please try again in a moment.");
-  if (res.status === 402) throw new Error("AI credits exhausted. Add credits in workspace settings.");
-  if (!res.ok) {
-    const t = await res.text();
-    console.error("AI gateway error", res.status, t);
-    throw new Error("Couldn't reach the AI service.");
-  }
-
-  const json = await res.json();
-  const call = json?.choices?.[0]?.message?.tool_calls?.[0];
-  if (!call?.function?.arguments) throw new Error("AI returned no result.");
-  const parsed = RecognitionSchema.parse(JSON.parse(call.function.arguments));
-  return parsed;
+  const parsed = tryParseJson<unknown>(text);
+  if (!parsed) throw new Error("AI returned no parseable result.");
+  return RecognitionSchema.parse(parsed);
 }
 
-export function recognizeFromImageBase64(dataUrl: string): Promise<IntakeRecognition> {
-  return callGateway([
-    {
-      role: "user",
-      content: [
-        { type: "text", text: "Identify what's in this photo for an intake log." },
-        { type: "image_url", image_url: { url: dataUrl } },
-      ],
-    },
-  ]);
+export function recognizeFromImageBase64(
+  supabase: SupabaseClient,
+  userId: string,
+  dataUrl: string,
+): Promise<IntakeRecognition> {
+  return recognize(
+    supabase,
+    userId,
+    "Identify what's in this photo for an intake log.",
+    parseDataUrl(dataUrl),
+  );
 }
 
-export function recognizeFromText(text: string): Promise<IntakeRecognition> {
-  return callGateway([
-    {
-      role: "user",
-      content: `Identify what I had: """${text.slice(0, 800)}"""`,
-    },
-  ]);
+export function recognizeFromText(
+  supabase: SupabaseClient,
+  userId: string,
+  text: string,
+): Promise<IntakeRecognition> {
+  return recognize(
+    supabase,
+    userId,
+    `Identify what I had: """${text.slice(0, 800)}"""`,
+    null,
+  );
 }
