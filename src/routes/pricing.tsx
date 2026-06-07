@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { CalmHero, CalmBand, HumanMoment } from "@/components/marketing/calm-scene";
-import { calmImages, humanImages } from "@/lib/calm-images";
+import { pricingImages } from "@/lib/calm-images";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/pricing")({
@@ -71,7 +71,7 @@ function PricingPage() {
       <main>
         {/* Hero, mist */}
         <CalmHero
-          image={calmImages.mist}
+          image={pricingImages.hero}
           alt=""
           eyebrow="Pricing"
           headline={<>Free.<br />Forever.</>}
@@ -108,7 +108,7 @@ function PricingPage() {
 
         {/* The human reason it's free */}
         <HumanMoment
-          image={humanImages.pillOrganizer}
+          image={pricingImages.pillTray}
           alt="A weekly pill organizer resting on a worn wooden table, late afternoon light from a window."
           quote="Because nobody should pay to remember their own life."
           attribution="Why Purple is free"
@@ -116,7 +116,7 @@ function PricingPage() {
 
         {/* Quiet promise band */}
         <CalmBand
-          image={calmImages.coast}
+          image={pricingImages.hero}
           headline="Funded by goodwill."
           body="Open source on GitHub. No ads. No selling your data. No third-party trackers, ever. The product is the product, not you."
         />

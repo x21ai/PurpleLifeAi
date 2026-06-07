@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { CalmHero, CalmBand, HumanMoment, StillLife } from "@/components/marketing/calm-scene";
-import { calmImages, humanImages } from "@/lib/calm-images";
+import { featuresImages } from "@/lib/calm-images";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/features")({
@@ -34,7 +34,7 @@ function FeaturesPage() {
       <main>
         {/* Hero, calm landscape */}
         <CalmHero
-          image={calmImages.dawn}
+          image={featuresImages.hero}
           alt=""
           eyebrow="Features"
           headline={<>A quiet tool,<br />deeply useful.</>}
@@ -46,14 +46,14 @@ function FeaturesPage() {
           eyebrow="Capture"
           title="Type it. Say it. Snap it."
           body="A sentence. A 60-second voice memo. A photo of how a rash looks today. A short video. Purple transcribes, tags, and summarizes, so nothing slips through, and you don't think about filing."
-          image={calmImages.mist}
+          image={featuresImages.hero}
           alt=""
           imageSide="right"
         />
 
         {/* Still life, punctuation between sections */}
         <StillLife
-          image={humanImages.pillOrganizer}
+          image={featuresImages.pillOrganizer}
           alt="A weekly pill organizer beside a glass of water, late afternoon light."
         />
 
@@ -80,14 +80,14 @@ function FeaturesPage() {
           eyebrow="See"
           title="One timeline. The whole picture."
           body="Seizures, meds, journal moments, sleep, HRV, in one feed you can filter by day, week, month, or year. A daily forecast watches your sleep, missed doses, menstrual phase, and your own trigger history."
-          image={calmImages.dawnAlt}
+          image={featuresImages.heroAlt}
           alt="Soft morning mist over a quiet field."
           imageSide="left"
         />
 
         {/* Caregiver human moment, introduces "the rest" */}
         <HumanMoment
-          image={humanImages.caregiverHand}
+          image={featuresImages.handOnShoulder}
           alt="A caregiver&rsquo;s hand resting gently on another person&rsquo;s shoulder."
           quote="For the people who help you carry it."
           attribution="Caregivers, family, anyone you trust"
@@ -136,7 +136,7 @@ function FeaturesPage() {
 
         {/* Final calm band + CTA */}
         <CalmBand
-          image={calmImages.coast}
+          image={featuresImages.hero}
           headline="Begin today."
           body="Free forever. No ads. No selling your data."
         />
