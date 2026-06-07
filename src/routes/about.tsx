@@ -8,7 +8,7 @@ import {
   HumanMoment,
   QuietStat,
 } from "@/components/marketing/calm-scene";
-import { calmImages, humanImages } from "@/lib/calm-images";
+import { aboutImages } from "@/lib/calm-images";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/about")({
@@ -57,7 +57,7 @@ function AboutPage() {
       <main>
         {/* Hero, mist */}
         <CalmHero
-          image={calmImages.mist}
+          image={aboutImages.hero}
           alt=""
           eyebrow="About Purple"
           headline={<>Calm, quiet,<br />on your side.</>}
@@ -85,7 +85,7 @@ function AboutPage() {
 
         {/* Human moment, bedside */}
         <HumanMoment
-          image={humanImages.bedsideDusk}
+          image={aboutImages.bedsideLamp}
           alt="A person sitting on the edge of a bed at dusk, holding a phone, lamp light behind."
           quote="It&rsquo;s here when I need it, and quiet when I don&rsquo;t."
           attribution="What we&rsquo;re building toward"
@@ -99,7 +99,7 @@ function AboutPage() {
 
         {/* Caregiver moment */}
         <HumanMoment
-          image={humanImages.caregiverHand}
+          image={aboutImages.armAround}
           alt="A caregiver&rsquo;s hand resting gently on another person&rsquo;s shoulder."
           quote="No one should do this alone."
           attribution="On caregivers, family, and the people who help"
@@ -120,7 +120,7 @@ function AboutPage() {
 
         {/* Promise band */}
         <CalmBand
-          image={calmImages.dawnAlt}
+          image={aboutImages.hero}
           headline="Free, open, yours."
           body="Open source on GitHub. No ads. No selling your data. No third-party trackers, ever."
         />

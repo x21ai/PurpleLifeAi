@@ -13,7 +13,7 @@ import {
   QuietStat,
   StillLife,
 } from "@/components/marketing/calm-scene";
-import { calmImages, humanImages } from "@/lib/calm-images";
+import { homeImages } from "@/lib/calm-images";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -80,7 +80,7 @@ function MarketingHome() {
       <main>
         {/* Hero, calm landscape */}
         <CalmHero
-          image={calmImages.dawn}
+          image={homeImages.hero}
           alt=""
           eyebrow="A quiet companion for your health"
           headline={<>Your health,<br />remembered.</>}
@@ -103,7 +103,7 @@ function MarketingHome() {
 
         {/* First human moment, sets the tone */}
         <HumanMoment
-          image={humanImages.mugMorning}
+          image={homeImages.mugWindow}
           alt="Two pairs of hands holding a warm ceramic mug at a kitchen window in soft morning light."
           quote="Last night I wrote three sentences. That was enough."
           attribution="What using Purple actually feels like"
@@ -141,7 +141,7 @@ function MarketingHome() {
 
         {/* A still life, punctuation */}
         <StillLife
-          image={humanImages.nightstand}
+          image={homeImages.nightstandNotebook}
           alt="A phone resting face-down on a wooden nightstand beside a glass of water and a small lamp."
         />
 
@@ -153,7 +153,7 @@ function MarketingHome() {
 
         {/* Caregiver moment */}
         <HumanMoment
-          image={humanImages.caregiverHand}
+          image={homeImages.shoulderHand}
           alt="A caregiver's hand resting gently on another person's shoulder."
           quote="My mom can see my week without me having to explain it again."
           attribution="On sharing with the people who help"
@@ -162,7 +162,7 @@ function MarketingHome() {
 
         {/* Privacy band */}
         <CalmBand
-          image={calmImages.coast}
+          image={homeImages.hero}
           headline="Your story is yours."
           body="Encrypted at rest. Export or delete anything, any time. No ads. No selling. No third-party trackers, ever."
         />

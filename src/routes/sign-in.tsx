@@ -7,7 +7,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { CalmHero } from "@/components/marketing/calm-scene";
-import { calmImages } from "@/lib/calm-images";
+import { signInImages } from "@/lib/calm-images";
 import { SocialSignInButtons } from "@/components/auth/social-sign-in-buttons";
 import { isOAuthCallbackUrl, waitForOAuthSession } from "@/lib/auth-oauth";
 import { toast } from "sonner";
@@ -201,7 +201,7 @@ function SignInPage() {
       <div className="lg:grid lg:grid-cols-[1.1fr_1fr] xl:grid-cols-[1.25fr_1fr]">
         {/* Hero, shared calm-nature treatment */}
         <CalmHero
-          image={calmImages.dawn}
+          image={signInImages.hero}
           variant="split"
           as="div"
           eyebrow="PURPLE"

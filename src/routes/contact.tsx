@@ -9,7 +9,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { supabase } from "@/integrations/supabase/client";
 import { CalmHero } from "@/components/marketing/calm-scene";
-import { humanImages } from "@/lib/calm-images";
+import { contactImages } from "@/lib/calm-images";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/contact")({
@@ -68,7 +68,7 @@ function ContactPage() {
     <div className="min-h-screen bg-background text-foreground">
       <MarketingHeader />
       <CalmHero
-        image={humanImages.walkGrass}
+        image={contactImages.handwrittenNote}
         alt=""
         eyebrow="Contact"
         headline="Say hello."

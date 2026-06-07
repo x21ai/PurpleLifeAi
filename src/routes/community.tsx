@@ -6,7 +6,7 @@ import { PenSquare, Heart, MessageCircle } from "lucide-react";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { CalmHero, HumanMoment } from "@/components/marketing/calm-scene";
-import { calmImages, humanImages } from "@/lib/calm-images";
+import { communityImages } from "@/lib/calm-images";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/community")({
@@ -81,7 +81,7 @@ function CommunityFeed() {
 
       {/* Calm hero, same vocabulary as the rest of marketing */}
       <CalmHero
-        image={calmImages.coast}
+        image={communityImages.hero}
         alt=""
         eyebrow="Community"
         headline={<>You&rsquo;re<br />not alone.</>}
@@ -142,7 +142,7 @@ function CommunityFeed() {
 
       {/* A human moment to close the page */}
       <HumanMoment
-        image={humanImages.walkGrass}
+        image={communityImages.walkingPath}
         alt="A person walking through tall grass at golden hour, seen from behind."
         quote="The people who get it are already here."
         attribution="Why community matters"
