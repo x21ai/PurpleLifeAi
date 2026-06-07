@@ -1758,6 +1758,7 @@ export type Database = {
       profiles: {
         Row: {
           ai_model_preference: string
+          ai_provider: string
           avatar_path: string | null
           biometrics_order: Json
           biometrics_pinned: string[]
@@ -1805,6 +1806,7 @@ export type Database = {
         }
         Insert: {
           ai_model_preference?: string
+          ai_provider?: string
           avatar_path?: string | null
           biometrics_order?: Json
           biometrics_pinned?: string[]
@@ -1852,6 +1854,7 @@ export type Database = {
         }
         Update: {
           ai_model_preference?: string
+          ai_provider?: string
           avatar_path?: string | null
           biometrics_order?: Json
           biometrics_pinned?: string[]
