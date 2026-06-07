@@ -1,14 +1,15 @@
 import * as React from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronLeft, Loader2, Trash2, ExternalLink, TrendingUp } from "lucide-react";
+import { Loader2, Trash2, ExternalLink, TrendingUp, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { getReport, deleteReport, getMetricTrend } from "@/lib/reports.functions";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceArea, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
+import { ReportShell, ReportCard, ReportPill } from "@/components/reports/report-shell";
 
 export const Route = createFileRoute("/_app/reports/$reportId")({
   head: () => ({ meta: [{ title: "Report · Purple" }] }),
@@ -49,7 +50,7 @@ const PANEL_LABELS: Record<string, string> = {
 };
 
 function ReportDetailPage() {
-  useRouteTheme("light");
+  useRouteTheme("dark");
   const { reportId } = Route.useParams();
   const navigate = useNavigate();
   const fetchReport = useServerFn(getReport);
@@ -78,9 +79,11 @@ function ReportDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-3xl px-5 py-16">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
+      <ReportShell title="Clinical report" back={{ to: "/reports", label: "Reports" }}>
+        <div className="flex items-center gap-2 text-white/60 text-sm">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+        </div>
+      </ReportShell>
     );
   }
 
@@ -89,64 +92,74 @@ function ReportDetailPage() {
   const signedUrl = data?.signedUrl;
 
   if (!report) {
-    return <div className="p-8">Report not found.</div>;
+    return (
+      <ReportShell title="Clinical report" back={{ to: "/reports", label: "Reports" }}>
+        <p className="text-white/70">Report not found.</p>
+      </ReportShell>
+    );
   }
 
+  const statusTone: "success" | "alert" | "warning" =
+    report.status === "ready" ? "success" :
+    report.status === "failed" ? "alert" :
+    "warning";
+  const statusLabel =
+    report.status === "ready" ? "Ready" :
+    report.status === "failed" ? "Failed" :
+    "Processing";
+
   return (
-    <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-10 sm:pt-16 pb-24">
-      <Link
-        to="/reports"
-        className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground gap-1"
-      >
-        <ChevronLeft className="h-3.5 w-3.5" /> Reports
-      </Link>
-      <div className="mt-4 flex items-start justify-between gap-3 flex-wrap">
-        <div className="min-w-0">
-          <h1 className="font-serif text-3xl sm:text-4xl text-foreground truncate">
-            {report.title}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {report.report_date ?? new Date(report.created_at).toLocaleDateString()}
-            {report.report_type ? ` · ${report.report_type.replace(/_/g, " ")}` : ""}
-          </p>
-        </div>
-        <div className="flex gap-2 shrink-0">
+    <ReportShell title="Clinical report" back={{ to: "/reports", label: "Reports" }}>
+      <section className="report-card-strong p-6 sm:p-8">
+        <ReportPill tone={statusTone}>{statusLabel}</ReportPill>
+        <h2 className="mt-4 font-serif text-3xl sm:text-4xl text-white leading-tight break-words">
+          {report.title}
+        </h2>
+        <p className="mt-2 text-sm text-white/65">
+          {report.report_date ?? new Date(report.created_at).toLocaleDateString()}
+          {report.report_type ? ` · ${report.report_type.replace(/_/g, " ")}` : ""}
+          {metrics.length > 0 ? ` · ${metrics.length} value${metrics.length === 1 ? "" : "s"}` : ""}
+        </p>
+        <div className="mt-5 flex flex-wrap gap-2">
           {signedUrl && (
-            <Button asChild variant="outline" size="sm" className="rounded-full">
+            <Button asChild size="sm" className="rounded-full bg-white text-[#07090C] hover:bg-white/90">
               <a href={signedUrl} target="_blank" rel="noreferrer">
                 <ExternalLink className="h-4 w-4 mr-1.5" /> View file
               </a>
             </Button>
           )}
-          <Button onClick={handleDelete} variant="ghost" size="sm" className="rounded-full text-destructive">
-            <Trash2 className="h-4 w-4" />
+          <Button
+            onClick={handleDelete}
+            variant="ghost"
+            size="sm"
+            className="rounded-full text-[#FFA8BD] hover:bg-white/5 hover:text-[#FFA8BD]"
+          >
+            <Trash2 className="h-4 w-4 mr-1.5" /> Delete
           </Button>
         </div>
-      </div>
-
-      <MedicalDisclaimer className="mt-5" />
+      </section>
 
       {report.summary && (
-        <section className="mt-6 rounded-2xl border border-border bg-card p-4">
-          <h2 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Summary</h2>
-          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{report.summary}</p>
+        <section className="mt-6 report-card">
+          <p className="report-eyebrow text-white/55">Summary</p>
+          <p className="mt-3 text-[15px] text-white/85 leading-relaxed whitespace-pre-wrap">{report.summary}</p>
         </section>
       )}
 
       {(report.findings || report.impressions) && (
         <section className="mt-4 grid sm:grid-cols-2 gap-4">
           {report.findings && Array.isArray(report.findings) && (report.findings as string[]).length > 0 && (
-            <div className="rounded-2xl border border-border bg-card p-4">
-              <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Findings</h3>
-              <ul className="text-sm text-foreground space-y-1.5 list-disc pl-4">
+            <div className="report-card">
+              <p className="report-eyebrow text-white/55">Findings</p>
+              <ul className="mt-3 text-sm text-white/85 space-y-1.5 list-disc pl-4 marker:text-white/40">
                 {(report.findings as string[]).map((f, i) => <li key={i}>{f}</li>)}
               </ul>
             </div>
           )}
           {report.impressions && Array.isArray(report.impressions) && (report.impressions as string[]).length > 0 && (
-            <div className="rounded-2xl border border-border bg-card p-4">
-              <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Impressions</h3>
-              <ul className="text-sm text-foreground space-y-1.5 list-disc pl-4">
+            <div className="report-card">
+              <p className="report-eyebrow text-white/55">Impressions</p>
+              <ul className="mt-3 text-sm text-white/85 space-y-1.5 list-disc pl-4 marker:text-white/40">
                 {(report.impressions as string[]).map((f, i) => <li key={i}>{f}</li>)}
               </ul>
             </div>
@@ -155,17 +168,23 @@ function ReportDetailPage() {
       )}
 
       {report.status === "processing" && (
-        <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Extracting values… this can take up to a minute.
-        </div>
+        <ReportCard className="mt-6">
+          <div className="flex items-center gap-2 text-sm text-[#F3D58B]">
+            <Loader2 className="h-4 w-4 animate-spin" /> Extracting values… this can take up to a minute.
+          </div>
+        </ReportCard>
       )}
       {report.status === "failed" && (
-        <div className="mt-6 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
-          <p className="text-destructive">Extraction failed: {report.error_message ?? "Unknown error"}</p>
-          <Button onClick={() => void refetch()} variant="outline" size="sm" className="mt-2">
+        <ReportCard className="mt-6">
+          <p className="text-sm text-[#FFA8BD]">Extraction failed: {report.error_message ?? "Unknown error"}</p>
+          <Button
+            onClick={() => void refetch()}
+            size="sm"
+            className="mt-3 rounded-full bg-white text-[#07090C] hover:bg-white/90"
+          >
             Retry
           </Button>
-        </div>
+        </ReportCard>
       )}
 
       {metrics.length > 0 && (
@@ -177,11 +196,28 @@ function ReportDetailPage() {
       )}
 
       {report.status === "ready" && metrics.length === 0 && (
-        <p className="mt-6 text-sm text-muted-foreground">
+        <p className="mt-6 text-sm text-white/65">
           No structured values extracted. You can still view the original file above.
         </p>
       )}
-    </div>
+
+      <ReportCard className="mt-10">
+        <div className="flex items-start gap-3">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/75 shrink-0">
+            <ShieldCheck className="h-4 w-4" />
+          </span>
+          <div>
+            <h3 className="text-white text-base font-medium">Medical disclaimer</h3>
+            <p className="mt-1.5 text-sm text-white/65 leading-relaxed">
+              Values shown here are extracted from the document you uploaded and surfaced for personal
+              context and pattern-tracking. Purple is not a laboratory or healthcare provider. Always
+              discuss results with your medical practitioner.
+            </p>
+          </div>
+        </div>
+      </ReportCard>
+      <MedicalDisclaimer className="mt-4 text-white/70 [&_*]:text-white/70" />
+    </ReportShell>
   );
 }
 
