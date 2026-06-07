@@ -1,54 +1,133 @@
-# Three improvements
+# Reports redesign plan
 
-## 1. Upload report — drop title/date, support multi-file, AI auto-detects
+## Goal
+Redesign Purple’s reports experience to follow the final reference set: a premium mobile-first health data system with two coordinated visual modes:
+- **Dark report shell** for reports overview, upload, clinical report, marketplace/additional tests, disclaimers, and education
+- **Light metric drilldowns** for individual biomarker detail, data records, scorecards, and AI follow-up prompts
 
-**`src/routes/_app/reports.new.tsx`** — simplify the form:
-- Remove Title and Report date inputs entirely.
-- Replace single `<input type="file">` with a multi-file picker (`multiple` attr) + drag-and-drop zone. Accept PDF/JPG/PNG/HEIC/WEBP, 15 MB each.
-- For each picked file: upload to `reports` bucket, insert a `report_documents` row with a placeholder title (filename) and `status: 'processing'`, then fire `processReport({ reportId })`. Run uploads in parallel with a per-file progress row.
-- After all kick off, navigate to `/reports` with a toast like "3 reports uploading · Purple is reading them now".
+The redesign will stay inside the existing reports/insights/biometrics surfaces and will not expand scope beyond what your references show.
 
-**`src/lib/reports.functions.ts` / `reports.server.ts`** (extraction handler): ensure the AI extraction prompt also returns a detected `title` and `report_date`, and the handler writes them back to `report_documents` when the row's current title is the placeholder filename. (Already extracts values; just add title + date to the output schema and the update statement.)
+## What will change
 
-**Reports list page** (`src/routes/_app/reports.tsx`): no change needed — it already renders extracted values and per-report charts/logs. Verify the "processing" → "ready" transition still shows nicely for multiple rows arriving together.
+### 1) Reports overview becomes a guided report hub
+Rework `/reports` into a more editorial, app-like report home:
+- Dark background with soft green-teal wash at the top
+- Hero summary block that highlights the latest uploaded report and overall counts/status
+- Strong section hierarchy for:
+  - Labs summary / latest report snapshot
+  - Contributing tests / history
+  - Pending tests
+  - Upload/add-more-tests callout
+  - Educational/privacy/disclaimer modules lower on the page
+- Existing search and report listing stay, but get redesigned as high-contrast, large-tap cards instead of generic lists
+- Trends section becomes more intentional and visually integrated instead of feeling appended
 
-## 2. Insights — hide Seizures tab when the user hasn't opted into seizures
+### 2) Upload flow becomes a polished intake experience
+Rework `/reports/new` to match the references:
+- Dark upload screen with a more premium dropzone and clearer “processing takes a few minutes” guidance
+- Better staged communication:
+  - upload state
+  - processing state
+  - privacy reassurance
+  - medical disclaimer
+- Uploaded file queue becomes more structured and readable
+- Copy and layout will reflect a calmer, more productized experience
 
-**`src/routes/_app/insights.tsx`**:
-- Read `profiles.conditions` (text[]) for the current user.
-- Treat the user as a "seizure tracker" only if `conditions` includes `"epilepsy"` or `"seizures"` (matching the same keys used in `src/lib/condition-prompts.ts`).
-- If not: hide the Seizures `TabsTrigger` + `TabsContent`, and set `defaultValue="trends"`.
-- Keep the existing layout for users who do track seizures.
+### 3) Report detail becomes a clinical report surface
+Rework `/reports/$reportId` into a dark “clinical report” experience:
+- Top summary card for reviewed insights / key findings
+- Cleaner findings/impressions modules
+- Metrics grouped in richer panel sections with stronger state color usage
+- Expandable metric rows that feel like report insights rather than raw accordions
+- Better visual treatment for processing / failed extraction states
+- Lower-page privacy / disclaimer / educational blocks using the same language hierarchy as the references
 
-(Why this hits pmt@eigital.com: their profile has no seizure condition selected, so Seizures should not appear.)
+### 4) Metric trend pages become light diagnostic drilldowns
+Rework `/reports/trends/$metricKey` and align `/biometrics/$metric` visually with the reference metric pages:
+- Light canvas with large metric title and status pill
+- Reference-range chart area styled like the screenshots
+- Dual stat cards for latest result + optimal range
+- AI question prompt cards beneath the chart
+- Cleaner readings/history list below
+- Stronger distinction between out-of-range, normal, and optimal states
 
-## 3. Care chat — attachments + visible date/time on every message
+### 5) Biometrics metric pages align to the same light detail system
+Update `/biometrics/$metric` so it visually matches the final reference direction:
+- Same light diagnostic layout language as report trends
+- Refined segmented controls/range controls
+- More polished chart framing and stat cards
+- Better continuity between reports-derived metrics and wearable metrics
 
-**Storage**: new private bucket `care-chat-attachments` with RLS so only thread participants can read/write their own files. Path shape: `{thread_id}/{message_id}/{filename}`. Files served via short-lived `createSignedUrl` (per the project's private-media rule).
+### 6) Data records / biomarker catalog styling direction
+Where applicable in current data/report-related screens, restyle list rows to match the “Data / Records” reference:
+- Softer white cards
+- Compact category + metric + value structure
+- Right-aligned mini range indicators / trend marks
+- Stronger visual grouping for repeated rows
 
-**Schema**: `care_messages.attachments` (jsonb) already exists. Standardize shape:
-```
-[{ path: string, name: string, mime: string, size: number, kind: "image"|"file" }]
-```
+### 7) Keep the epilepsy/seizures behavior already specified
+Preserve the condition-aware logic already discussed:
+- **Insights: Seizures tab + content render only when profile conditions include `epilepsy` or `seizures`**
+- Otherwise default to **Trends**
+- Users without those conditions, including `pmt@eigital.com`, should not see Seizures
 
-**Server fns** (`src/lib/care-chat.functions.ts`):
-- `sendCareMessage`: accept optional `attachments` array, validate with Zod, allow empty body when attachments are present.
-- New `getCareAttachmentUrl({ messageId, path })`: verify caller is a participant of the message's thread, return a signed URL (5 min TTL).
+## Design system direction to implement
 
-**UI** (`src/routes/_app/chat-care.tsx`):
-- Composer: add a paperclip button that opens a file picker (images + PDFs + common docs, multi-select, ~15 MB each). Show pending thumbnails/filenames above the input with a remove (×) button. Send uploads files to storage first, then calls `sendCareMessage` with the attachments metadata.
-- Message bubble:
-  - Always render a visible timestamp under each bubble in the user's locale (e.g. "Jun 5 · 9:24 PM" if not today, "9:24 PM" if today). Today's chat shows only "hi · Jun 5" with no time — fix by always rendering time, plus the date when it's not today.
-  - Render image attachments as inline thumbnails (click → lightbox / open in new tab) and non-image attachments as a download chip with filename + size. URLs come from `getCareAttachmentUrl` (cached per messageId via React Query).
-- Day separators: insert a centered "Today / Yesterday / Jun 3, 2026" divider between messages when the date changes.
+### Dark report shell
+- Deep charcoal/near-black base
+- Teal-green atmospheric top glow only where used by the report shell
+- Large uppercase navigation headers where appropriate
+- Rounded modules with subtle inner contrast, not bright borders
+- White typography with muted gray secondary text
+- Status accents:
+  - green/teal for optimal/positive
+  - amber for caution
+  - slate/gray for pending/inactive
+
+### Light metric drilldowns
+- Bright warm-white background
+- Very soft card shadows and thin borders
+- Pink/magenta for out-of-range markers
+- Green for optimal range bands
+- Yellow for “normal but not optimal” where applicable
+- Large readable charts and oversized metric titles
+- Question prompt cards styled as tappable AI follow-up actions
+
+## Implementation approach
+
+### Phase 1: foundation + tokens
+- Extend shared tokens/styles so both dark report shell and light metric detail themes are supported cleanly
+- Introduce reusable report-specific UI pieces instead of scattering one-off classes
+
+### Phase 2: reports shell screens
+- Rebuild `/reports`
+- Rebuild `/reports/new`
+- Rebuild `/reports/$reportId`
+
+### Phase 3: metric detail system
+- Rebuild `/reports/trends/$metricKey`
+- Restyle `/biometrics/$metric` to the same design language
+
+### Phase 4: supporting modules
+- Upgrade trends list rows, metric cards, status pills, prompt cards, disclaimer cards, and upload/process states
+- Align educational/privacy sections to the final references
+
+### Phase 5: polish and responsive QA
+- Mobile-first tuning based on your screenshots
+- Make sure desktop/tablet scale gracefully without losing the mobile visual language
+- Check contrast, overflow, long metric names, and loading/empty/error states
 
 ## Technical notes
-- All three work items are scoped, additive, and keep existing copy/branding.
-- Storage bucket + RLS goes through one migration (private bucket, policies scoped to `care_thread_participants`).
-- `processReport` already runs as a background server fn — multi-file just fans out N parallel invocations.
-- No new dependencies.
+- Reuse current routes and data flows; this is primarily a UI/UX redesign, not a backend rewrite
+- Keep current private storage behavior and disclaimer requirements intact
+- Likely files touched first:
+  - `src/routes/_app/reports.tsx`
+  - `src/routes/_app/reports.new.tsx`
+  - `src/routes/_app/reports.$reportId.tsx`
+  - `src/routes/_app/reports.trends.$metricKey.tsx`
+  - `src/routes/_app/biometrics.$metric.tsx`
+  - `src/components/reports/trends-section.tsx`
+  - shared UI/token files as needed
 
-## Out of scope (ask separately if wanted)
-- Voice notes in chat
-- Typing indicators / read receipts in chat UI
-- Reordering / deleting uploaded report files before extraction starts
+## Expected result
+A cohesive reports experience that feels much closer to your references: premium, clinical, mobile-native, and visually differentiated between overview/reporting screens and individual metric analysis screens.
