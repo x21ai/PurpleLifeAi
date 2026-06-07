@@ -257,46 +257,62 @@ function JournalNewPage() {
   const showTranscript = voice.listening || voice.transcript.length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background text-foreground">
-      {/* Top bar */}
-      <header className="flex items-center justify-between px-4 pt-[max(env(safe-area-inset-top),12px)] pb-3">
-        <button
-          type="button"
-          onClick={close}
-          aria-label={t("common.close")}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground/80 hover:bg-secondary/60"
-        >
-          <X className="h-5 w-5" />
-        </button>
-        <h1 className="font-serif text-base font-normal text-foreground/80">{t("journalNew.title")}</h1>
-        <Button
-          onClick={handleSave}
-          disabled={!hasContent || saving}
-          size="sm"
-          className="rounded-full px-5"
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.save")}
-        </Button>
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Sticky top bar, matches sheet-page rhythm but with a Save action on the right */}
+      <header
+        className="sticky top-0 z-20 bg-background/85 backdrop-blur border-b border-border/60"
+        style={{ paddingTop: "max(env(safe-area-inset-top), 0px)" }}
+      >
+        <div className="mx-auto max-w-3xl flex items-center justify-between px-4 sm:px-6 py-3">
+          <button
+            type="button"
+            onClick={close}
+            aria-label={t("common.close")}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground/80 hover:bg-secondary/60"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <h1 className="text-[15px] font-medium text-foreground">{t("journalNew.title")}</h1>
+          <Button
+            onClick={handleSave}
+            disabled={!hasContent || saving}
+            size="sm"
+            className="rounded-full px-5"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.save")}
+          </Button>
+        </div>
       </header>
 
       {/* Body */}
-      <main className="flex-1 overflow-y-auto px-5 pt-2 pb-4">
-        <div className="mb-3 -mt-1">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1.5">When did this happen?</p>
+      <main
+        className="mx-auto max-w-3xl px-4 sm:px-6 pt-5 sm:pt-8 space-y-5"
+        style={{ paddingBottom: "max(env(safe-area-inset-bottom), 24px)" }}
+      >
+        {/* When */}
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-2">
+            When did this happen?
+          </p>
           <DateTimePicker value={capturedAt} onChange={(d) => d && setCapturedAt(d)} disableFuture />
         </div>
-        <Textarea
-          autoFocus
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="What is happening, or what just happened?"
-          className="min-h-[160px] border-0 shadow-none focus-visible:ring-0 px-0 text-lg resize-none font-serif bg-transparent placeholder:text-foreground/40 placeholder:font-sans"
-        />
 
+        {/* Text — large serif input on a card so it reads like a page, not a sheet */}
+        <div className="rounded-2xl border border-border/60 bg-card p-5 sm:p-6">
+          <Textarea
+            autoFocus
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="What is happening, or what just happened?"
+            className="min-h-[200px] sm:min-h-[260px] border-0 shadow-none focus-visible:ring-0 px-0 text-lg resize-none font-serif bg-transparent placeholder:text-foreground/40 placeholder:font-sans"
+          />
+        </div>
+
+        {/* Voice transcript */}
         {showTranscript && (
           <div
             className={cn(
-              "mt-4 surface-ai rounded-[20px] p-4 max-w-[600px]",
+              "surface-ai rounded-[20px] p-4",
               voice.listening && "ring-1 ring-[color:var(--purple-primary)]/40",
             )}
           >
@@ -310,8 +326,9 @@ function JournalNewPage() {
           </div>
         )}
 
+        {/* Attachments */}
         {attachments.length > 0 && (
-          <div className="mt-5 grid grid-cols-3 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {attachments.map((a) => (
               <div
                 key={a.id}
@@ -334,36 +351,34 @@ function JournalNewPage() {
             ))}
           </div>
         )}
-      </main>
 
-      {/* Bottom dock */}
-      <footer className="border-t border-border/60 bg-card/40 backdrop-blur px-4 pt-4 pb-[max(env(safe-area-inset-bottom),16px)]">
-        <div className="flex flex-col items-center gap-4">
-          {/* Mic */}
-          <button
-            type="button"
-            onClick={toggleVoice}
-            aria-label={voice.listening ? "Stop recording" : "Start recording"}
-            disabled={!voice.supported && !voice.listening && false}
-            className={cn(
-              "relative inline-flex h-14 w-14 items-center justify-center rounded-full transition-transform active:scale-95",
-              voice.listening
-                ? "bg-destructive text-destructive-foreground shadow-lg shadow-destructive/40"
-                : "bg-[var(--purple-primary)] text-white shadow-lg shadow-[color:var(--purple-primary)]/40",
-            )}
-          >
-            {voice.listening && (
-              <span className="absolute inset-0 rounded-full bg-destructive/40 animate-ping" />
-            )}
-            {voice.listening ? (
-              <Square className="h-5 w-5 relative" fill="currentColor" />
-            ) : (
-              <Mic className="h-6 w-6 relative" />
-            )}
-          </button>
-
-          {/* Secondary actions */}
-          <div className="flex items-center justify-center gap-2">
+        {/* Capture toolbar — lives inside a card at the bottom of the scroll area, not floating */}
+        <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-3">
+            Add to this entry
+          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={toggleVoice}
+              aria-label={voice.listening ? "Stop recording" : "Start recording"}
+              className={cn(
+                "relative inline-flex items-center gap-2 rounded-full px-4 h-11 text-sm font-medium transition-transform active:scale-95",
+                voice.listening
+                  ? "bg-destructive text-destructive-foreground shadow shadow-destructive/30"
+                  : "bg-[var(--purple-primary)] text-white shadow shadow-[color:var(--purple-primary)]/30",
+              )}
+            >
+              {voice.listening && (
+                <span className="absolute inset-0 rounded-full bg-destructive/40 animate-ping" />
+              )}
+              {voice.listening ? (
+                <Square className="h-4 w-4 relative" fill="currentColor" />
+              ) : (
+                <Mic className="h-4 w-4 relative" />
+              )}
+              <span className="relative">{voice.listening ? "Stop" : "Record"}</span>
+            </button>
             <DockButton label="Photo" onClick={() => photoInput.current?.click()}>
               <Camera className="h-5 w-5" />
             </DockButton>
@@ -400,7 +415,7 @@ function JournalNewPage() {
           className="hidden"
           onChange={(e) => { addFiles(e.target.files, "video"); e.target.value = ""; }}
         />
-      </footer>
+      </main>
     </div>
   );
 }
@@ -419,7 +434,7 @@ function DockButton({
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="inline-flex h-11 w-11 items-center justify-center rounded-full text-foreground/70 hover:text-foreground hover:bg-secondary/60 transition"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-full text-foreground/70 hover:text-foreground hover:bg-secondary/60 border border-border/60 transition"
     >
       {children}
     </button>
