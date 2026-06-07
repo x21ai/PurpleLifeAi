@@ -388,8 +388,48 @@ function renderWithSourceCitations(text: string) {
   return parts.length > 0 ? parts : <ReactMarkdown>{text}</ReactMarkdown>;
 }
 
-function Bubble({ msg }: { msg: Msg }) {
-  const isUser = msg.role === "user";
+function extractText(message: UIMessage): string {
+  if (!Array.isArray(message.parts)) return "";
+  return message.parts
+    .map((p) => (p.type === "text" ? (p as { text?: string }).text ?? "" : ""))
+    .join("")
+    .trim();
+}
+
+type ExtractedProposal = { proposal: Proposal; key: string };
+
+function extractProposals(message: UIMessage): ExtractedProposal[] {
+  if (message.role !== "assistant" || !Array.isArray(message.parts)) return [];
+  const out: ExtractedProposal[] = [];
+  for (let i = 0; i < message.parts.length; i++) {
+    const part = message.parts[i] as {
+      type: string;
+      toolCallId?: string;
+      input?: Record<string, unknown>;
+      args?: Record<string, unknown>;
+    };
+    if (part.type !== "tool-proposeAction") continue;
+    const raw = (part.input ?? part.args ?? {}) as {
+      kind?: ProposalKind;
+      summary?: string;
+      params?: Record<string, unknown>;
+    };
+    if (!raw.kind || !raw.summary) continue;
+    out.push({
+      proposal: {
+        kind: raw.kind,
+        summary: raw.summary,
+        params: (raw.params ?? {}) as Record<string, unknown>,
+      },
+      key: `${message.id ?? ""}:${part.toolCallId ?? i}`,
+    });
+  }
+  return out;
+}
+
+function Bubble({ role, text }: { role: UIMessage["role"]; text: string }) {
+  const isUser = role === "user";
+  if (!text) return null;
   return (
     <div className={isUser ? "flex justify-end" : "flex justify-start"}>
       <div
@@ -399,7 +439,7 @@ function Bubble({ msg }: { msg: Msg }) {
             : "max-w-[90%] rounded-2xl rounded-bl-md bg-card border border-border text-foreground px-4 py-3 text-sm leading-relaxed prose prose-sm dark:prose-invert prose-p:my-2 prose-ul:my-2 max-w-none font-serif [&_a.source-chip]:no-underline"
         }
       >
-        {isUser ? msg.content : renderWithSourceCitations(msg.content)}
+        {isUser ? text : renderWithSourceCitations(text)}
       </div>
     </div>
   );
