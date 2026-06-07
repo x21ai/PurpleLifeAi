@@ -10,6 +10,7 @@ import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 import { BodyMeasurementsRow } from "@/components/ui-oura/v2/body-measurements-row";
 import { ScoreHero, bandForReadiness } from "@/components/ui-oura/v2/score-hero";
 import { TodayDoses } from "@/components/meds/today-doses";
+import { MedsMiniTimeline } from "@/components/meds/meds-mini-timeline";
 import { TripBanner } from "@/components/travel/trip-banner";
 import { TodayInstallBanner } from "@/components/pwa/today-install-banner";
 import { RestoreBanner } from "@/components/settings/restore-banner";
@@ -348,6 +349,7 @@ function TodayPage() {
         <TripWrapupCard />
       </TodayWidgetBoundary>
       <TodayWidgetBoundary name="doses">
+        <MedsMiniTimeline className="mb-3" />
         <TodayDoses />
       </TodayWidgetBoundary>
 

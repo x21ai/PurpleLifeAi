@@ -1,11 +1,13 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Pill, AlertCircle, CheckCheck, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2, CalendarDays } from "lucide-react";
+import { Plus, Pill, AlertCircle, CheckCheck, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2, CalendarDays, Camera } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
-import { MedicationFormSheet } from "@/components/meds/medication-form-sheet";
+import { MedicationFormSheet, type MedPrefill } from "@/components/meds/medication-form-sheet";
+import { ScanMedSheet } from "@/components/meds/scan-med-sheet";
+import { MedsMiniTimeline } from "@/components/meds/meds-mini-timeline";
 import { MedRemindersBanner } from "@/components/meds/med-reminders-banner";
 import { scheduleMedications } from "@/lib/med-notifications";
 import { MetricNumber } from "@/components/ui-oura/metric-number";
@@ -102,6 +104,8 @@ function MedsPage() {
   const [open, setOpen] = React.useState(false);
   const [editingMedId, setEditingMedId] = React.useState<string | null>(null);
   const [markingAll, setMarkingAll] = React.useState(false);
+  const [scanOpen, setScanOpen] = React.useState(false);
+  const [prefill, setPrefill] = React.useState<MedPrefill | null>(null);
 
   const load = React.useCallback(async () => {
     if (!userId) return;
@@ -247,6 +251,12 @@ function MedsPage() {
         <MedRemindersBanner />
       </div>
 
+      {activeMeds.length > 0 && (
+        <div className="mt-6">
+          <MedsMiniTimeline />
+        </div>
+      )}
+
       {activeMeds.length > 0 && <RefillForecastCard />}
 
       {activeMeds.length > 0 && (
@@ -355,25 +365,48 @@ function MedsPage() {
         </ul>
       )}
 
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label={t("meds.addMedication")}
-        className="fixed bottom-24 md:bottom-8 right-5 md:right-8 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
+      <div
+        className="fixed bottom-24 md:bottom-8 right-5 md:right-8 z-40 flex flex-col gap-2"
         style={{ marginBottom: "env(safe-area-inset-bottom)" }}
       >
-        <Plus className="h-6 w-6" />
-      </button>
+        <button
+          type="button"
+          onClick={() => setScanOpen(true)}
+          aria-label="Scan medication"
+          className="h-12 w-12 rounded-full bg-card text-foreground ring-1 ring-border shadow-md hover:shadow-lg transition-shadow flex items-center justify-center"
+        >
+          <Camera className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => { setPrefill(null); setOpen(true); }}
+          aria-label={t("meds.addMedication")}
+          className="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
+      </div>
 
       <MedicationFormSheet
         open={open}
         onOpenChange={(v) => {
           setOpen(v);
-          if (!v) setEditingMedId(null);
+          if (!v) { setEditingMedId(null); setPrefill(null); }
         }}
         onSaved={load}
         isFirstMedication={isFirst}
         editingMedId={editingMedId}
+        prefill={prefill}
+      />
+
+      <ScanMedSheet
+        open={scanOpen}
+        onOpenChange={setScanOpen}
+        onRecognized={(p) => {
+          setEditingMedId(null);
+          setPrefill(p);
+          setOpen(true);
+        }}
       />
     </div>
   );
