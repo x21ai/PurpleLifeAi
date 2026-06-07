@@ -78,12 +78,14 @@ export function MedicationFormSheet({
   onSaved,
   isFirstMedication,
   editingMedId,
+  prefill,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onSaved?: () => void;
   isFirstMedication: boolean;
   editingMedId?: string | null;
+  prefill?: MedPrefill | null;
 }) {
   const { session } = useAuth();
   const userId = session?.user.id;
