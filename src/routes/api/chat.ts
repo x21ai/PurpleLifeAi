@@ -59,10 +59,11 @@ export const Route = createFileRoute("/api/chat")({
           const gateway = createLovableAiGatewayProvider(lovableKey);
           const model = gateway(modelForProvider(provider));
 
+          const modelMessages = await convertToModelMessages(messages);
           const result = streamText({
             model,
             system,
-            messages: convertToModelMessages(messages),
+            messages: modelMessages,
             tools: buildPurpleTools(userId),
             stopWhen: stepCountIs(50),
           });

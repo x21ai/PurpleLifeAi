@@ -33,6 +33,7 @@ import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe
 import { Route as CommunityResourcesRouteImport } from './routes/community.resources'
 import { Route as CommunityPostIdRouteImport } from './routes/community.$postId'
 import { Route as CareAcceptRouteImport } from './routes/care.accept'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
 import { Route as AppVitalsRouteImport } from './routes/_app/vitals'
 import { Route as AppToolsRouteImport } from './routes/_app/tools'
@@ -211,6 +212,11 @@ const CommunityPostIdRoute = CommunityPostIdRouteImport.update({
 const CareAcceptRoute = CareAcceptRouteImport.update({
   id: '/care/accept',
   path: '/care/accept',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppWelcomeRoute = AppWelcomeRouteImport.update({
@@ -566,6 +572,7 @@ export interface FileRoutesByFullPath {
   '/tools': typeof AppToolsRoute
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
+  '/api/chat': typeof ApiChatRoute
   '/care/accept': typeof CareAcceptRoute
   '/community/$postId': typeof CommunityPostIdRoute
   '/community/resources': typeof CommunityResourcesRoute
@@ -650,6 +657,7 @@ export interface FileRoutesByTo {
   '/tools': typeof AppToolsRoute
   '/vitals': typeof AppVitalsRoute
   '/welcome': typeof AppWelcomeRoute
+  '/api/chat': typeof ApiChatRoute
   '/care/accept': typeof CareAcceptRoute
   '/community/$postId': typeof CommunityPostIdRoute
   '/community/resources': typeof CommunityResourcesRoute
@@ -737,6 +745,7 @@ export interface FileRoutesById {
   '/_app/tools': typeof AppToolsRoute
   '/_app/vitals': typeof AppVitalsRoute
   '/_app/welcome': typeof AppWelcomeRoute
+  '/api/chat': typeof ApiChatRoute
   '/care/accept': typeof CareAcceptRoute
   '/community/$postId': typeof CommunityPostIdRoute
   '/community/resources': typeof CommunityResourcesRoute
@@ -824,6 +833,7 @@ export interface FileRouteTypes {
     | '/tools'
     | '/vitals'
     | '/welcome'
+    | '/api/chat'
     | '/care/accept'
     | '/community/$postId'
     | '/community/resources'
@@ -908,6 +918,7 @@ export interface FileRouteTypes {
     | '/tools'
     | '/vitals'
     | '/welcome'
+    | '/api/chat'
     | '/care/accept'
     | '/community/$postId'
     | '/community/resources'
@@ -994,6 +1005,7 @@ export interface FileRouteTypes {
     | '/_app/tools'
     | '/_app/vitals'
     | '/_app/welcome'
+    | '/api/chat'
     | '/care/accept'
     | '/community/$postId'
     | '/community/resources'
@@ -1064,6 +1076,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   UsersRoute: typeof UsersRoute
+  ApiChatRoute: typeof ApiChatRoute
   CareAcceptRoute: typeof CareAcceptRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -1254,6 +1267,13 @@ declare module '@tanstack/react-router' {
       path: '/care/accept'
       fullPath: '/care/accept'
       preLoaderRoute: typeof CareAcceptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/welcome': {
@@ -1855,6 +1875,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   UsersRoute: UsersRoute,
+  ApiChatRoute: ApiChatRoute,
   CareAcceptRoute: CareAcceptRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
