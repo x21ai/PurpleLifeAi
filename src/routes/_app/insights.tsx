@@ -35,6 +35,24 @@ export const Route = createFileRoute("/_app/insights")({
 function InsightsPage() {
   useRouteTheme("light");
   const { t } = useTranslation();
+  const { session } = useAuth();
+  const [tracksSeizures, setTracksSeizures] = React.useState<boolean | null>(null);
+  React.useEffect(() => {
+    const uid = session?.user.id;
+    if (!uid) return;
+    void (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("conditions")
+        .eq("id", uid)
+        .maybeSingle();
+      const conds = (data?.conditions ?? []) as string[];
+      setTracksSeizures(
+        conds.includes("epilepsy") || conds.includes("seizures"),
+      );
+    })();
+  }, [session?.user.id]);
+
   return (
     <div className="mx-auto max-w-4xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-32">
       <p className="label-eyebrow text-muted-foreground">{t("insights.eyebrow")}</p>
@@ -49,22 +67,31 @@ function InsightsPage() {
 
       <TrendsHeader />
 
-      <Tabs defaultValue="seizures" className="mt-14">
-        <TabsList className="h-11 rounded-full bg-secondary/60 p-1">
-          <TabsTrigger value="seizures" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">{t("insights.tabSeizures")}</TabsTrigger>
-          <TabsTrigger value="trends" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">{t("insights.tabTrends")}</TabsTrigger>
-          <TabsTrigger value="patterns" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Patterns</TabsTrigger>
-        </TabsList>
-        <TabsContent value="seizures" className="mt-6">
-          <SeizuresTab />
-        </TabsContent>
-        <TabsContent value="trends" className="mt-6">
-          <TrendsTab />
-        </TabsContent>
-        <TabsContent value="patterns" className="mt-6">
-          <PatternsTab />
-        </TabsContent>
-      </Tabs>
+      {tracksSeizures !== null && (
+        <Tabs
+          defaultValue={tracksSeizures ? "seizures" : "trends"}
+          className="mt-14"
+        >
+          <TabsList className="h-11 rounded-full bg-secondary/60 p-1">
+            {tracksSeizures && (
+              <TabsTrigger value="seizures" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">{t("insights.tabSeizures")}</TabsTrigger>
+            )}
+            <TabsTrigger value="trends" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">{t("insights.tabTrends")}</TabsTrigger>
+            <TabsTrigger value="patterns" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Patterns</TabsTrigger>
+          </TabsList>
+          {tracksSeizures && (
+            <TabsContent value="seizures" className="mt-6">
+              <SeizuresTab />
+            </TabsContent>
+          )}
+          <TabsContent value="trends" className="mt-6">
+            <TrendsTab />
+          </TabsContent>
+          <TabsContent value="patterns" className="mt-6">
+            <PatternsTab />
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }

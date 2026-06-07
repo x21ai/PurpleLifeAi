@@ -30,6 +30,7 @@ type ExtractedMetric = {
 type ExtractionResult = {
   report_type: string | null;
   report_date: string | null;
+  title?: string | null;
   metrics: ExtractedMetric[];
   summary?: string | null;
   panel_keys?: string[];
@@ -62,6 +63,7 @@ ${dictPrompt}
 
 Always include:
 - A 2-3 sentence plain-language "summary" written for a layperson (no diagnoses, no prescribing).
+- A short "title" (max 80 chars) summarizing what the report is (e.g. "Quest CBC + lipids", "Brain MRI", "TSH panel").
 - "panel_keys": distinct list of panels present in this report.
 - For imaging/narrative reports: "findings" (short bullets of objective observations) and "impressions" (short bullets of the radiologist/clinician's overall read).
 
@@ -69,6 +71,7 @@ Return ONLY a JSON object with this exact shape:
 {
   "report_type": "blood_panel" | "lipid_panel" | "thyroid_panel" | "metabolic_panel" | "vitamin_panel" | "hormone_panel" | "imaging_ct" | "imaging_mri" | "imaging_ultrasound" | "imaging_xray" | "narrative" | "other",
   "report_date": "YYYY-MM-DD" or null,
+  "title": "Short report title",
   "summary": "Plain-language 2-3 sentence summary",
   "panel_keys": ["lipids", "liver"],
   "findings": ["..."],
@@ -314,6 +317,13 @@ export const processReport = createServerFn({ method: "POST" })
           status: "ready",
           report_type: extraction.report_type ?? null,
           report_date: extraction.report_date ?? null,
+          // Overwrite title with the AI-detected one when the current title is the
+          // placeholder filename (no spaces, looks like a filename slug, or the
+          // default "Untitled report"). This is a heuristic — keep user-edited
+          // titles intact.
+          ...(extraction.title && extraction.title.trim().length > 0
+            ? { title: extraction.title.trim().slice(0, 200) }
+            : {}),
           ocr_text: text.length > 0 ? text.slice(0, 50000) : null,
           summary: extraction.summary ?? null,
           panel_keys: Array.from(panelSet),

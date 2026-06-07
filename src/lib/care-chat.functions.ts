@@ -276,12 +276,28 @@ export const getCareMessages = createServerFn({ method: "GET" })
 /** Send a message to a thread. */
 export const sendCareMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { threadId: string; body: string }) =>
+  .inputValidator((input: { threadId: string; body: string; attachments?: Array<{ path: string; name: string; mime: string; size: number; kind: "image" | "file" }> }) =>
     z
       .object({
         threadId: z.string().uuid(),
-        body: z.string().trim().min(1).max(4000),
+        body: z.string().trim().max(4000),
+        attachments: z
+          .array(
+            z.object({
+              path: z.string().min(1).max(500),
+              name: z.string().min(1).max(255),
+              mime: z.string().min(1).max(100),
+              size: z.number().int().min(0).max(15 * 1024 * 1024),
+              kind: z.enum(["image", "file"]),
+            }),
+          )
+          .max(10)
+          .optional(),
       })
+      .refine(
+        (v) => v.body.length > 0 || (v.attachments && v.attachments.length > 0),
+        { message: "Message body or attachments required" },
+      )
       .parse(input),
   )
   .handler(async ({ data, context }) => {
@@ -300,6 +316,7 @@ export const sendCareMessage = createServerFn({ method: "POST" })
         thread_id: data.threadId,
         sender_id: userId,
         body: data.body,
+        attachments: data.attachments ?? [],
       })
       .select("id, thread_id, sender_id, body, attachments, created_at, deleted_at")
       .single();
@@ -334,8 +351,14 @@ export const sendCareMessage = createServerFn({ method: "POST" })
         const senderName =
           [sender?.first_name, sender?.last_name].filter(Boolean).join(" ").trim() ||
           "Someone";
-        const preview =
+        const attachmentCount = data.attachments?.length ?? 0;
+        const previewBase =
           data.body.length > 140 ? `${data.body.slice(0, 140)}…` : data.body;
+        const preview = previewBase
+          ? previewBase
+          : attachmentCount > 0
+            ? `Sent ${attachmentCount} attachment${attachmentCount === 1 ? "" : "s"}`
+            : "";
         const { data: subs } = await supabaseAdmin
           .from("push_subscriptions")
           .select("endpoint, p256dh, auth, user_id")
@@ -368,6 +391,39 @@ export const sendCareMessage = createServerFn({ method: "POST" })
     }
 
     return { message: msg };
+  });
+
+/** Signed URL for a care-chat attachment. Caller must be a participant of the thread. */
+export const getCareAttachmentUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { threadId: string; path: string }) =>
+    z
+      .object({
+        threadId: z.string().uuid(),
+        path: z.string().min(1).max(500),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: part } = await supabaseAdmin
+      .from("care_thread_participants")
+      .select("thread_id")
+      .eq("thread_id", data.threadId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!part) throw new Error("Not a participant");
+    // Defense in depth: path must live under this thread's folder.
+    if (!data.path.startsWith(`${data.threadId}/`)) {
+      throw new Error("Path does not belong to this thread");
+    }
+    const { data: signed, error } = await supabaseAdmin.storage
+      .from("care-chat-attachments")
+      .createSignedUrl(data.path, 300);
+    if (error || !signed?.signedUrl) {
+      throw new Error(error?.message ?? "Could not sign URL");
+    }
+    return { url: signed.signedUrl };
   });
 
 /** Mark a thread as read up to now. */
