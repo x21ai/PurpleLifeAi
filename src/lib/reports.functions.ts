@@ -112,6 +112,16 @@ Do NOT include diagnoses, treatments, prescriptions, or recommendations. Only ex
   });
   if (!res.ok) {
     const err = await res.text();
+    if (res.status === 402) {
+      const e = new Error("AI credits exhausted. Add credits in Settings → Workspace → Plans & Credits, then re-upload.");
+      (e as Error & { code?: string }).code = "ai_credits_exhausted";
+      throw e;
+    }
+    if (res.status === 429) {
+      const e = new Error("Purple is rate-limited right now. Please try again in a minute.");
+      (e as Error & { code?: string }).code = "ai_rate_limited";
+      throw e;
+    }
     throw new Error(`AI extraction failed (${res.status}): ${err.slice(0, 200)}`);
   }
   const json = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
