@@ -173,47 +173,57 @@ function AskPage() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-10 lg:px-16 pb-28 md:pb-6">
         <div className="mx-auto max-w-3xl py-8">
           {messages.length === 0 ? (
-            <EmptyState onPick={(s) => void send(s)} suggestions={suggestions} />
+            <EmptyState onPick={(s) => send(s)} suggestions={suggestions} />
           ) : (
             <div className="space-y-4">
-              {messages.map((m, i) => (
-                <React.Fragment key={i}>
-                  <Bubble msg={m} />
-                  {m.proposals?.map((p, pi) => (
-                    <ActionConfirmCard
-                      key={pi}
-                      proposal={p}
-                      status={m.proposalStatus?.[pi] ?? "pending"}
-                      onConfirm={() => void onConfirm(i, pi, p)}
-                      onCancel={() => updateProposalStatus(i, pi, "cancelled")}
-                    />
-                  ))}
-                  {m.role === "assistant" &&
-                    !m.proposals?.length &&
-                    i === messages.length - 1 &&
-                    !thinking && (
-                      <FollowUpChips
-                        suggestions={getFollowUps(
-                          conditions,
-                          [...messages].reverse().find((x) => x.role === "user")?.content ?? "",
-                        )}
-                        onPick={(s) => void send(s)}
+              {messages.map((m, i) => {
+                const text = extractText(m);
+                const proposals = extractProposals(m);
+                return (
+                  <React.Fragment key={m.id ?? i}>
+                    {(text || m.role === "user") && (
+                      <Bubble role={m.role} text={text} />
+                    )}
+                    {proposals.map(({ proposal, key }) => (
+                      <ActionConfirmCard
+                        key={key}
+                        proposal={proposal}
+                        status={proposalStatus[key] ?? "pending"}
+                        onConfirm={() => void onConfirm(key, proposal)}
+                        onCancel={() => onCancel(key)}
+                      />
+                    ))}
+                    {m.role === "assistant" &&
+                      proposals.length === 0 &&
+                      i === messages.length - 1 &&
+                      !thinking && (
+                        <FollowUpChips
+                          suggestions={getFollowUps(
+                            conditions,
+                            [...messages].reverse().find((x) => x.role === "user")
+                              ? extractText(
+                                  [...messages].reverse().find((x) => x.role === "user")!,
+                                )
+                              : "",
+                          )}
+                          onPick={(s) => send(s)}
+                        />
+                      )}
+                    {m.role === "assistant" && !thinking && text && (
+                      <SaveToJournalButton
+                        question={
+                          i > 0 && messages[i - 1].role === "user"
+                            ? extractText(messages[i - 1])
+                            : ""
+                        }
+                        answer={text}
+                        userId={userId}
                       />
                     )}
-                  {m.role === "assistant" && !thinking && (
-                    <SaveToJournalButton
-                      question={
-                        i > 0 && messages[i - 1].role === "user"
-                          ? messages[i - 1].content
-                          : ""
-                      }
-                      answer={m.content}
-                      userId={userId}
-                    />
-                  )}
-                </React.Fragment>
-              ))}
-              {thinking && <ThinkingDots />}
+                  </React.Fragment>
+                );
+              })}
+              {status === "submitted" && <ThinkingDots />}
             </div>
           )}
         </div>
