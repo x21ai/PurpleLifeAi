@@ -3,6 +3,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Send, Loader2, Mic, MicOff, BookmarkPlus, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -12,24 +15,22 @@ import { getSuggestedQuestions, getFollowUps } from "@/lib/condition-prompts";
 import { DisclaimerFooter } from "@/components/chat/disclaimer-footer";
 import { FollowUpChips } from "@/components/chat/follow-up-chips";
 import { useVoiceCapture } from "@/components/journal/use-voice-capture";
+import { executePurpleAction } from "@/lib/purple-actions.functions";
+
+type ProposalKind =
+  | "add_medication"
+  | "log_seizure"
+  | "create_journal_entry"
+  | "mark_dose_taken"
+  | "archive_medication";
 
 type Proposal = {
-  kind:
-    | "add_medication"
-    | "log_seizure"
-    | "create_journal_entry"
-    | "mark_dose_taken"
-    | "archive_medication";
+  kind: ProposalKind;
   summary: string;
   params: Record<string, unknown>;
 };
 
-type Msg = {
-  role: "user" | "assistant";
-  content: string;
-  proposals?: Proposal[];
-  proposalStatus?: Array<"pending" | "confirmed" | "cancelled" | "failed">;
-};
+type ProposalStatus = "pending" | "confirmed" | "cancelled" | "failed";
 
 export const Route = createFileRoute("/_app/chat")({
   head: () => ({ meta: [{ title: "Ask · Purple" }] }),
@@ -41,6 +42,7 @@ function AskPage() {
   const { t } = useTranslation();
   const { session } = useAuth();
   const userId = session?.user.id;
+  const accessToken = session?.access_token;
   const [conditions, setConditions] = React.useState<string[] | null>(null);
   React.useEffect(() => {
     if (!userId) return;
@@ -55,27 +57,59 @@ function AskPage() {
     () => getSuggestedQuestions(conditions),
     [conditions],
   );
-  const [messages, setMessages] = React.useState<Msg[]>([]);
   const [input, setInput] = React.useState("");
-  const [thinking, setThinking] = React.useState(false);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
   const voice = useVoiceCapture();
+
+  // Per-call Authorization header so the chat route can identify the user.
+  const transport = React.useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        headers: () =>
+          accessToken ? ({ Authorization: `Bearer ${accessToken}` } as Record<string, string>) : ({} as Record<string, string>),
+      }),
+    [accessToken],
+  );
+
+  const { messages, sendMessage, status, setMessages } = useChat({
+    transport,
+    onError: (err) => {
+      console.error(err);
+      toast.error("Couldn't reach Purple just now. Try again in a moment.");
+    },
+  });
+  const thinking = status === "submitted" || status === "streaming";
+  const [proposalStatus, setProposalStatus] = React.useState<
+    Record<string, ProposalStatus>
+  >({});
+
+  const executeAction = useServerFn(executePurpleAction);
 
   // Mirror live transcript into the input while listening.
   React.useEffect(() => {
     if (voice.listening && voice.transcript) setInput(voice.transcript);
   }, [voice.listening, voice.transcript]);
 
+  const send = React.useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed || thinking) return;
+      setInput("");
+      void sendMessage({ text: trimmed });
+    },
+    [sendMessage, thinking],
+  );
+
   const toggleMic = async () => {
     if (voice.listening) {
       await voice.stop();
-      // Auto-send once the user stops, if we got something.
       const text = voice.transcript.trim();
       if (text) {
         setInput("");
         voice.reset();
-        void send(text);
+        send(text);
       }
     } else {
       await voice.start();
@@ -83,82 +117,45 @@ function AskPage() {
   };
 
   React.useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: "smooth",
+    });
   }, [messages, thinking]);
 
-  const send = async (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed || thinking) return;
-    const history = messages.map(({ role, content }) => ({ role, content }));
-    const next: Msg[] = [...messages, { role: "user", content: trimmed }];
-    setMessages(next);
-    setInput("");
-    setThinking(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("ai-orchestrator", {
-        body: { action: "chat", message: trimmed, history },
-      });
-      if (error) throw error;
-      const d = data as { reply?: string; proposals?: Proposal[] };
-      const reply = d?.reply || "I couldn't put together an answer just now.";
-      const proposals = Array.isArray(d?.proposals) ? d.proposals : [];
-      setMessages([
-        ...next,
-        {
-          role: "assistant",
-          content: reply,
-          proposals: proposals.length ? proposals : undefined,
-          proposalStatus: proposals.length ? proposals.map(() => "pending") : undefined,
-        },
-      ]);
-    } catch (e) {
-      console.error(e);
-      toast.error("Couldn't reach Purple just now. Try again in a moment.");
-      setMessages(next);
-    } finally {
-      setThinking(false);
-      inputRef.current?.focus();
-    }
-  };
+  // Refocus the composer after a stream finishes.
+  React.useEffect(() => {
+    if (status === "ready") inputRef.current?.focus();
+  }, [status]);
 
-  const updateProposalStatus = (
-    msgIdx: number,
-    propIdx: number,
-    status: "confirmed" | "cancelled" | "failed",
-  ) => {
-    setMessages((prev) =>
-      prev.map((m, i) => {
-        if (i !== msgIdx || !m.proposalStatus) return m;
-        const next = m.proposalStatus.slice();
-        next[propIdx] = status;
-        return { ...m, proposalStatus: next };
-      }),
-    );
-  };
-
-  const onConfirm = async (msgIdx: number, propIdx: number, proposal: Proposal) => {
+  const onConfirm = async (key: string, proposal: Proposal) => {
+    setProposalStatus((s) => ({ ...s, [key]: "pending" }));
     try {
-      const { data, error } = await supabase.functions.invoke("ai-orchestrator", {
-        body: { action: "execute_action", proposal },
-      });
-      if (error) throw error;
-      const ok = (data as { ok?: boolean })?.ok;
-      if (!ok) throw new Error((data as { error?: string })?.error || "Action failed");
-      updateProposalStatus(msgIdx, propIdx, "confirmed");
+      const res = await executeAction({ data: proposal });
+      if (!res?.ok) throw new Error(res?.error || "Action failed");
+      setProposalStatus((s) => ({ ...s, [key]: "confirmed" }));
       toast.success("Done.");
     } catch (e) {
       console.error(e);
-      updateProposalStatus(msgIdx, propIdx, "failed");
+      setProposalStatus((s) => ({ ...s, [key]: "failed" }));
       toast.error(e instanceof Error ? e.message : "Couldn't complete that action.");
     }
+  };
+
+  const onCancel = (key: string) => {
+    setProposalStatus((s) => ({ ...s, [key]: "cancelled" }));
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      void send(input);
+      send(input);
     }
   };
+
+  // Suppress unused-variable warning for setMessages (kept for potential future
+  // "clear conversation" affordance).
+  void setMessages;
 
   return (
     <div className="flex flex-col h-[100dvh] md:h-screen">
@@ -176,47 +173,57 @@ function AskPage() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-10 lg:px-16 pb-28 md:pb-6">
         <div className="mx-auto max-w-3xl py-8">
           {messages.length === 0 ? (
-            <EmptyState onPick={(s) => void send(s)} suggestions={suggestions} />
+            <EmptyState onPick={(s) => send(s)} suggestions={suggestions} />
           ) : (
             <div className="space-y-4">
-              {messages.map((m, i) => (
-                <React.Fragment key={i}>
-                  <Bubble msg={m} />
-                  {m.proposals?.map((p, pi) => (
-                    <ActionConfirmCard
-                      key={pi}
-                      proposal={p}
-                      status={m.proposalStatus?.[pi] ?? "pending"}
-                      onConfirm={() => void onConfirm(i, pi, p)}
-                      onCancel={() => updateProposalStatus(i, pi, "cancelled")}
-                    />
-                  ))}
-                  {m.role === "assistant" &&
-                    !m.proposals?.length &&
-                    i === messages.length - 1 &&
-                    !thinking && (
-                      <FollowUpChips
-                        suggestions={getFollowUps(
-                          conditions,
-                          [...messages].reverse().find((x) => x.role === "user")?.content ?? "",
-                        )}
-                        onPick={(s) => void send(s)}
+              {messages.map((m, i) => {
+                const text = extractText(m);
+                const proposals = extractProposals(m);
+                return (
+                  <React.Fragment key={m.id ?? i}>
+                    {(text || m.role === "user") && (
+                      <Bubble role={m.role} text={text} />
+                    )}
+                    {proposals.map(({ proposal, key }) => (
+                      <ActionConfirmCard
+                        key={key}
+                        proposal={proposal}
+                        status={proposalStatus[key] ?? "pending"}
+                        onConfirm={() => void onConfirm(key, proposal)}
+                        onCancel={() => onCancel(key)}
+                      />
+                    ))}
+                    {m.role === "assistant" &&
+                      proposals.length === 0 &&
+                      i === messages.length - 1 &&
+                      !thinking && (
+                        <FollowUpChips
+                          suggestions={getFollowUps(
+                            conditions,
+                            [...messages].reverse().find((x) => x.role === "user")
+                              ? extractText(
+                                  [...messages].reverse().find((x) => x.role === "user")!,
+                                )
+                              : "",
+                          )}
+                          onPick={(s) => send(s)}
+                        />
+                      )}
+                    {m.role === "assistant" && !thinking && text && (
+                      <SaveToJournalButton
+                        question={
+                          i > 0 && messages[i - 1].role === "user"
+                            ? extractText(messages[i - 1])
+                            : ""
+                        }
+                        answer={text}
+                        userId={userId}
                       />
                     )}
-                  {m.role === "assistant" && !thinking && (
-                    <SaveToJournalButton
-                      question={
-                        i > 0 && messages[i - 1].role === "user"
-                          ? messages[i - 1].content
-                          : ""
-                      }
-                      answer={m.content}
-                      userId={userId}
-                    />
-                  )}
-                </React.Fragment>
-              ))}
-              {thinking && <ThinkingDots />}
+                  </React.Fragment>
+                );
+              })}
+              {status === "submitted" && <ThinkingDots />}
             </div>
           )}
         </div>
@@ -381,8 +388,48 @@ function renderWithSourceCitations(text: string) {
   return parts.length > 0 ? parts : <ReactMarkdown>{text}</ReactMarkdown>;
 }
 
-function Bubble({ msg }: { msg: Msg }) {
-  const isUser = msg.role === "user";
+function extractText(message: UIMessage): string {
+  if (!Array.isArray(message.parts)) return "";
+  return message.parts
+    .map((p) => (p.type === "text" ? (p as { text?: string }).text ?? "" : ""))
+    .join("")
+    .trim();
+}
+
+type ExtractedProposal = { proposal: Proposal; key: string };
+
+function extractProposals(message: UIMessage): ExtractedProposal[] {
+  if (message.role !== "assistant" || !Array.isArray(message.parts)) return [];
+  const out: ExtractedProposal[] = [];
+  for (let i = 0; i < message.parts.length; i++) {
+    const part = message.parts[i] as {
+      type: string;
+      toolCallId?: string;
+      input?: Record<string, unknown>;
+      args?: Record<string, unknown>;
+    };
+    if (part.type !== "tool-proposeAction") continue;
+    const raw = (part.input ?? part.args ?? {}) as {
+      kind?: ProposalKind;
+      summary?: string;
+      params?: Record<string, unknown>;
+    };
+    if (!raw.kind || !raw.summary) continue;
+    out.push({
+      proposal: {
+        kind: raw.kind,
+        summary: raw.summary,
+        params: (raw.params ?? {}) as Record<string, unknown>,
+      },
+      key: `${message.id ?? ""}:${part.toolCallId ?? i}`,
+    });
+  }
+  return out;
+}
+
+function Bubble({ role, text }: { role: UIMessage["role"]; text: string }) {
+  const isUser = role === "user";
+  if (!text) return null;
   return (
     <div className={isUser ? "flex justify-end" : "flex justify-start"}>
       <div
@@ -392,7 +439,7 @@ function Bubble({ msg }: { msg: Msg }) {
             : "max-w-[90%] rounded-2xl rounded-bl-md bg-card border border-border text-foreground px-4 py-3 text-sm leading-relaxed prose prose-sm dark:prose-invert prose-p:my-2 prose-ul:my-2 max-w-none font-serif [&_a.source-chip]:no-underline"
         }
       >
-        {isUser ? msg.content : renderWithSourceCitations(msg.content)}
+        {isUser ? text : renderWithSourceCitations(text)}
       </div>
     </div>
   );
