@@ -93,8 +93,8 @@ export function IntakeRangeView({ range }: { range: "week" | "month" }) {
             <BarChart data={buckets} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={range === "week" ? 0 : 4} />
               <YAxis tick={{ fontSize: 10 }} width={32} />
-              <Tooltip cursor={{ fill: "hsl(var(--muted) / 0.4)" }} contentStyle={{ fontSize: 12 }} />
-              <Bar dataKey="water_ml" name="Water" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              <Tooltip cursor={{ fill: "var(--muted)" }} contentStyle={{ fontSize: 12 }} />
+              <Bar dataKey="water_ml" name="Water" fill="var(--primary)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -107,8 +107,8 @@ export function IntakeRangeView({ range }: { range: "week" | "month" }) {
             <BarChart data={buckets} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={range === "week" ? 0 : 4} />
               <YAxis tick={{ fontSize: 10 }} width={32} />
-              <Tooltip cursor={{ fill: "hsl(var(--muted) / 0.4)" }} contentStyle={{ fontSize: 12 }} />
-              <Bar dataKey="kcal" name="kcal" fill="hsl(var(--foreground))" radius={[4, 4, 0, 0]} />
+              <Tooltip cursor={{ fill: "var(--muted)" }} contentStyle={{ fontSize: 12 }} />
+              <Bar dataKey="kcal" name="kcal" fill="var(--foreground)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
