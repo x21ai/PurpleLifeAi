@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { callAIForUser, tryParseJson } from "./ai-provider.server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Phase-3 auto-routing: when a journal entry has an attached medical document
@@ -22,46 +24,26 @@ type Classification = {
 };
 
 async function classifyAttachment(
+  supabase: SupabaseClient,
+  userId: string,
   mime: string,
   bytes: ArrayBuffer,
 ): Promise<Classification> {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
-
-  const b64 = Buffer.from(bytes).toString("base64");
-  const dataUrl = `data:${mime};base64,${b64}`;
-
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You decide whether an uploaded file is a clinical document (lab report, blood/urine panel, imaging report, discharge summary, prescription, doctor's note). Reply strictly with JSON: {\"is_clinical\": boolean, \"title\": string|null, \"report_type\": \"blood_panel\"|\"lipid_panel\"|\"imaging_ct\"|\"imaging_mri\"|\"imaging_ultrasound\"|\"imaging_xray\"|\"narrative\"|\"prescription\"|\"other\"|null, \"confidence\": 0-1}. A casual food/selfie/screenshot is NOT clinical. A printout, scan, or photo of a lab/imaging/clinical document IS clinical.",
-        },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Classify this attachment." },
-            { type: "image_url", image_url: { url: dataUrl } },
-          ],
-        },
-      ],
-      response_format: { type: "json_object" },
-    }),
-  });
-  if (!res.ok) {
-    return { is_clinical: false, title: null, report_type: null, confidence: 0 };
-  }
-  const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
   try {
-    const parsed = JSON.parse(json.choices?.[0]?.message?.content ?? "{}");
+    const text = await callAIForUser(supabase, userId, {
+      system:
+        "You decide whether an uploaded file is a clinical document (lab report, blood/urine panel, imaging report, discharge summary, prescription, doctor's note). Reply strictly with JSON: {\"is_clinical\": boolean, \"title\": string|null, \"report_type\": \"blood_panel\"|\"lipid_panel\"|\"imaging_ct\"|\"imaging_mri\"|\"imaging_ultrasound\"|\"imaging_xray\"|\"narrative\"|\"prescription\"|\"other\"|null, \"confidence\": 0-1}. A casual food/selfie/screenshot is NOT clinical. A printout, scan, or photo of a lab/imaging/clinical document IS clinical.",
+      prompt: "Classify this attachment.",
+      media: { base64: Buffer.from(bytes).toString("base64"), mime },
+      jsonMode: true,
+      maxTokens: 256,
+    });
+    const parsed = tryParseJson<{
+      is_clinical?: boolean;
+      title?: string | null;
+      report_type?: string | null;
+      confidence?: number | null;
+    }>(text) ?? {};
     return {
       is_clinical: !!parsed.is_clinical,
       title: typeof parsed.title === "string" ? parsed.title.slice(0, 180) : null,
@@ -123,7 +105,7 @@ export const autoRouteJournalToReports = createServerFn({ method: "POST" })
 
       let cls: Classification;
       try {
-        cls = await classifyAttachment(mime, bytes);
+        cls = await classifyAttachment(supabase, userId, mime, bytes);
       } catch {
         continue;
       }
