@@ -1,10 +1,12 @@
 import type { ElementType, ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { ResponsiveImage, type PictureAsset } from "@/components/marketing/responsive-image";
 
 type Variant = "full" | "split" | "band";
 
 interface CalmHeroProps {
-  image: string;
+  image: PictureAsset;
+  /** Override alt text from the asset when context demands it. */
   alt?: string;
   eyebrow?: string;
   headline: ReactNode;
@@ -17,6 +19,10 @@ interface CalmHeroProps {
   className?: string;
   /** Heading tag for the headline. Default h1. Use "div" to render no heading (e.g. when the page already has an h1). */
   as?: "h1" | "h2" | "div";
+  /** Mark this hero as the LCP image. Loads eager with fetchpriority="high". */
+  priority?: boolean;
+  /** Override the sizes attribute. Defaults to full-bleed (100vw). */
+  sizes?: string;
 }
 
 /**
@@ -25,7 +31,7 @@ interface CalmHeroProps {
  */
 export function CalmHero({
   image,
-  alt = "",
+  alt,
   eyebrow,
   headline,
   body,
@@ -35,6 +41,8 @@ export function CalmHero({
   align = "bottom-left",
   className,
   as = "h1",
+  priority = false,
+  sizes,
 }: CalmHeroProps) {
   const heightCls =
     variant === "split"
@@ -68,12 +76,14 @@ export function CalmHero({
 
   return (
     <section className={cn("relative overflow-hidden", heightCls, className)}>
-      <img
-        src={image}
+      <ResponsiveImage
+        asset={image}
         alt={alt}
+        priority={priority}
+        sizes={
+          sizes ?? (variant === "split" ? "(min-width: 1024px) 55vw, 100vw" : "100vw")
+        }
         className="absolute inset-0 h-full w-full object-cover"
-        width={1920}
-        height={1280}
       />
       <div className={cn("absolute inset-0", overlayCls)} aria-hidden="true" />
       <div className={cn("absolute inset-0 flex", alignCls)}>
@@ -129,7 +139,7 @@ export function CalmHero({
 }
 
 interface CalmBandProps {
-  image: string;
+  image: PictureAsset;
   eyebrow?: string;
   headline: ReactNode;
   body?: ReactNode;
@@ -148,6 +158,7 @@ export function CalmBand(props: CalmBandProps) {
       overlay="dim"
       align="center"
       className={props.className}
+      sizes="100vw"
     />
   );
 }
@@ -158,8 +169,9 @@ export function CalmBand(props: CalmBandProps) {
  * backdrop with a centered pull-quote).
  */
 interface HumanMomentProps {
-  image: string;
-  alt: string;
+  image: PictureAsset;
+  /** Override alt text from the asset. Optional — asset carries its own. */
+  alt?: string;
   quote: ReactNode;
   attribution?: ReactNode;
   layout?: "portrait" | "quote";
@@ -185,13 +197,11 @@ export function HumanMoment({
           className,
         )}
       >
-        <img
-          src={image}
+        <ResponsiveImage
+          asset={image}
           alt={alt}
+          sizes="100vw"
           className="absolute inset-0 h-full w-full object-cover"
-          width={1920}
-          height={1280}
-          loading="lazy"
         />
         <div className="absolute inset-0 bg-foreground/55" aria-hidden="true" />
         <div className="absolute inset-0 flex items-center justify-center">
@@ -219,13 +229,11 @@ export function HumanMoment({
     <section data-reveal className={cn("mx-auto max-w-6xl px-6 sm:px-10 py-24 sm:py-32", className)}>
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
         <div className={cn("relative overflow-hidden rounded-3xl aspect-[4/5]", reverse && "lg:order-2")}>
-          <img
-            src={image}
+          <ResponsiveImage
+            asset={image}
             alt={alt}
+            sizes="(min-width: 1024px) 50vw, 100vw"
             className="absolute inset-0 h-full w-full object-cover"
-            width={1600}
-            height={2000}
-            loading="lazy"
           />
         </div>
         <div className={cn(reverse && "lg:order-1")}>
@@ -273,8 +281,8 @@ export function QuietStat({ stat, caption, className }: QuietStatProps) {
  * No headline; just the image and breathing room.
  */
 interface StillLifeProps {
-  image: string;
-  alt: string;
+  image: PictureAsset;
+  alt?: string;
   className?: string;
 }
 
@@ -287,13 +295,11 @@ export function StillLife({ image, alt, className }: StillLifeProps) {
         className,
       )}
     >
-      <img
-        src={image}
+      <ResponsiveImage
+        asset={image}
         alt={alt}
+        sizes="100vw"
         className="absolute inset-0 h-full w-full object-cover"
-        width={1920}
-        height={1280}
-        loading="lazy"
       />
     </section>
   );
