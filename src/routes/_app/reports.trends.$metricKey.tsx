@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -12,10 +12,11 @@ import {
   ResponsiveContainer,
   ReferenceArea,
 } from "recharts";
-import { ArrowLeft, Download, Loader2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { getMetricSeries } from "@/lib/report-trends.functions";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { MetricShell, MetricTitle, MetricStatCards, AskPurpleRail } from "@/components/reports/metric-shell";
 
 export const Route = createFileRoute("/_app/reports/trends/$metricKey")({
   head: ({ params }) => ({
@@ -82,6 +83,7 @@ function TrendDetailPage() {
   const fetchSeries = useServerFn(getMetricSeries);
   const [rangeIdx, setRangeIdx] = React.useState(2);
   const days = RANGES[rangeIdx].days;
+  const navigate = useNavigate();
 
   const { data, isLoading } = useQuery({
     queryKey: ["metric-series", metricKey, days],
@@ -94,6 +96,15 @@ function TrendDetailPage() {
   const unit = rows[rows.length - 1]?.unit ?? null;
   const refLow = rows[rows.length - 1]?.reference_low ?? null;
   const refHigh = rows[rows.length - 1]?.reference_high ?? null;
+  const latest = [...rows].reverse().find((r) => r.value != null);
+  const latestTone: "alert" | "warn" | "good" | "neutral" =
+    latest?.flag === "high" ? "alert" :
+    latest?.flag === "low"  ? "warn"  :
+    latest?.flag === "normal" ? "good" : "neutral";
+  const statusLabel =
+    latest?.flag === "high" ? "Out of range — high" :
+    latest?.flag === "low"  ? "Out of range — low"  :
+    latest?.flag === "normal" ? "In optimal range"  : "No status yet";
 
   const chartData = rows
     .filter((r) => r.value != null)
@@ -105,32 +116,41 @@ function TrendDetailPage() {
     }));
 
   return (
-    <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-10 sm:pt-16 pb-24">
-      <Link
-        to="/reports"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" /> Reports
-      </Link>
+    <MetricShell back={{ to: "/reports", label: "Reports" }}>
+      <MetricTitle
+        title={label}
+        status={{
+          tone: latestTone,
+          label: statusLabel,
+          value: latest?.value != null ? `${latest.value}${unit ? ` ${unit}` : ""}` : undefined,
+        }}
+      />
 
-      <div className="mt-4 flex items-end justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="font-serif text-4xl text-foreground capitalize">{label}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {rows.length} {rows.length === 1 ? "reading" : "readings"}
-            {unit ? ` · ${unit}` : ""}
-            {refLow != null && refHigh != null ? ` · reference ${refLow}–${refHigh}` : ""}
-          </p>
-        </div>
+      <MetricStatCards
+        latest={{
+          value: latest?.value != null ? latest.value : (latest?.value_text ?? "—"),
+          unit,
+          tone: latestTone,
+        }}
+        optimal={{
+          value: refLow != null && refHigh != null ? `${refLow}–${refHigh}` : "—",
+          unit,
+        }}
+      />
+
+      <div className="mt-6 flex items-center justify-between gap-3 flex-wrap">
+        <p className="text-sm text-foreground/65">
+          {rows.length} {rows.length === 1 ? "reading" : "readings"} tracked
+        </p>
         <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-full border border-border bg-card p-0.5 text-xs">
+          <div className="inline-flex rounded-full border border-border/60 bg-white p-0.5 text-xs shadow-sm">
             {RANGES.map((r, i) => (
               <button
                 key={r.label}
                 type="button"
                 onClick={() => setRangeIdx(i)}
                 className={`rounded-full px-3 py-1 transition-colors ${
-                  i === rangeIdx ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  i === rangeIdx ? "bg-foreground text-background" : "text-foreground/60 hover:text-foreground"
                 }`}
               >
                 {r.label}
@@ -141,20 +161,20 @@ function TrendDetailPage() {
             type="button"
             onClick={() => downloadCsv(`${metricKey}.csv`, rows)}
             disabled={rows.length === 0}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-foreground hover:bg-secondary disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-white px-3 py-1.5 text-xs text-foreground shadow-sm hover:bg-secondary/40 disabled:opacity-50"
           >
             <Download className="h-3 w-3" /> CSV
           </button>
         </div>
       </div>
 
-      <div className="mt-6 rounded-2xl border border-border bg-card p-4">
+      <div className="metric-sheet mt-4 p-4 sm:p-6">
         {isLoading ? (
-          <div className="flex h-72 items-center justify-center text-muted-foreground">
+          <div className="flex h-72 items-center justify-center text-foreground/50">
             <Loader2 className="h-4 w-4 animate-spin" />
           </div>
         ) : chartData.length < 2 ? (
-          <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">
+          <div className="flex h-72 items-center justify-center text-sm text-foreground/55">
             Not enough numeric readings yet for a chart.
           </div>
         ) : (
@@ -209,12 +229,10 @@ function TrendDetailPage() {
       <MedicalDisclaimer variant="compact" className="mt-4" />
 
       <section className="mt-8">
-        <h2 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-          Readings
-        </h2>
-        <ul className="rounded-2xl border border-border bg-card divide-y divide-border overflow-hidden">
+        <h2 className="font-serif text-2xl text-foreground mb-3">Readings</h2>
+        <ul className="metric-sheet divide-y divide-border/60 overflow-hidden">
           {rows.length === 0 && (
-            <li className="px-4 py-6 text-center text-sm text-muted-foreground">
+            <li className="px-4 py-6 text-center text-sm text-foreground/55">
               No readings yet.
             </li>
           )}
@@ -229,22 +247,22 @@ function TrendDetailPage() {
                     {r.value != null ? (
                       <>
                         <span className="font-medium">{r.value}</span>
-                        {r.unit ? <span className="text-muted-foreground"> {r.unit}</span> : null}
+                        {r.unit ? <span className="text-foreground/55"> {r.unit}</span> : null}
                       </>
                     ) : (
-                      <span className="text-muted-foreground">{r.value_text ?? "–"}</span>
+                      <span className="text-foreground/55">{r.value_text ?? "–"}</span>
                     )}
                     {r.flag && r.flag !== "normal" && (
                       <span
                         className={`ml-2 text-[11px] uppercase tracking-wide ${
-                          r.flag === "high" ? "text-rose-500" : "text-amber-500"
+                          r.flag === "high" ? "text-[color:var(--metric-alert,#E84A8A)]" : "text-amber-600"
                         }`}
                       >
                         {r.flag}
                       </span>
                     )}
                   </p>
-                  <p className="text-[11px] text-muted-foreground truncate">
+                  <p className="text-[11px] text-foreground/55 truncate">
                     {(r.measured_at ?? r.created_at).slice(0, 10)}
                     {r.report_documents?.title ? ` · ${r.report_documents.title}` : ""}
                   </p>
@@ -252,7 +270,7 @@ function TrendDetailPage() {
                 <Link
                   to="/reports/$reportId"
                   params={{ reportId: r.report_id }}
-                  className="text-xs text-muted-foreground hover:text-foreground shrink-0"
+                  className="text-xs text-foreground/55 hover:text-foreground shrink-0"
                 >
                   View →
                 </Link>
@@ -260,6 +278,15 @@ function TrendDetailPage() {
             ))}
         </ul>
       </section>
-    </div>
+
+      <AskPurpleRail
+        prompts={[
+          `How has my ${label.toLowerCase()} been trending?`,
+          `What was happening on days my ${label.toLowerCase()} changed most?`,
+          `What does the research say about ${label.toLowerCase()}?`,
+        ]}
+        onPick={(q) => navigate({ to: "/chat", search: { q } })}
+      />
+    </MetricShell>
   );
 }
