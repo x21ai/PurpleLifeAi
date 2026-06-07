@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,9 +33,8 @@ export function PasswordSection() {
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
         <div>
           <Label htmlFor="new-pwd" className="sr-only">New password</Label>
-          <Input
+          <PasswordInput
             id="new-pwd"
-            type="password"
             value={pwd}
             onChange={(e) => setPwd(e.target.value)}
             placeholder="New password"
@@ -44,9 +43,8 @@ export function PasswordSection() {
         </div>
         <div>
           <Label htmlFor="confirm-pwd" className="sr-only">Confirm password</Label>
-          <Input
+          <PasswordInput
             id="confirm-pwd"
-            type="password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             placeholder="Confirm"

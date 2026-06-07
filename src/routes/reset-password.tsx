@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/reset-password")({
@@ -74,9 +75,8 @@ function ResetPasswordPage() {
         ) : (
           <form onSubmit={handleSubmit} className="mt-10 space-y-4">
             <label htmlFor="new-password" className="label-eyebrow block">{t("resetPassword.newPassword")}</label>
-            <Input
+            <PasswordInput
               id="new-password"
-              type="password"
               required
               minLength={8}
               autoComplete="new-password"
@@ -87,9 +87,8 @@ function ResetPasswordPage() {
               disabled={!ready || status === "submitting"}
             />
             <label htmlFor="confirm-password" className="label-eyebrow block pt-1">{t("resetPassword.confirmPassword")}</label>
-            <Input
+            <PasswordInput
               id="confirm-password"
-              type="password"
               required
               minLength={8}
               autoComplete="new-password"
