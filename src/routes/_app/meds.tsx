@@ -1,11 +1,13 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Pill, AlertCircle, CheckCheck, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2, CalendarDays } from "lucide-react";
+import { Plus, Pill, AlertCircle, CheckCheck, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2, CalendarDays, Camera } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
-import { MedicationFormSheet } from "@/components/meds/medication-form-sheet";
+import { MedicationFormSheet, type MedPrefill } from "@/components/meds/medication-form-sheet";
+import { ScanMedSheet } from "@/components/meds/scan-med-sheet";
+import { MedsMiniTimeline } from "@/components/meds/meds-mini-timeline";
 import { MedRemindersBanner } from "@/components/meds/med-reminders-banner";
 import { scheduleMedications } from "@/lib/med-notifications";
 import { MetricNumber } from "@/components/ui-oura/metric-number";
