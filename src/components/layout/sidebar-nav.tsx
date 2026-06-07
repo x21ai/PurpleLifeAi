@@ -116,36 +116,78 @@ function GroupItem({
 }) {
   const Icon = group.icon;
   const containsActive = isPathInGroup(group, pathname);
+  const isExactActive = !!group.to && pathname === group.to;
+
+  const rowClass = cn(
+    "group w-full flex items-center gap-3 rounded-xl pl-3 pr-1 py-2.5 text-[14px] transition-colors",
+    "justify-center lg:justify-start",
+    isExactActive
+      ? "bg-secondary text-foreground font-medium"
+      : containsActive
+        ? "text-foreground font-medium"
+        : "text-[color:var(--text-tertiary)] hover:bg-secondary/60 hover:text-foreground",
+  );
+
+  const iconEl = (
+    <Icon
+      className={cn(
+        "h-5 w-5 shrink-0",
+        containsActive && "text-[color:var(--purple-primary)]",
+      )}
+      strokeWidth={containsActive ? 2 : 1.6}
+    />
+  );
+
+  const chevron = (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onToggle();
+      }}
+      aria-expanded={open}
+      aria-label={open ? `Collapse ${group.label}` : `Expand ${group.label}`}
+      className="hidden lg:inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors"
+    >
+      <ChevronDown
+        className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")}
+      />
+    </button>
+  );
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        className={cn(
-          "group w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] transition-colors",
-          "justify-center lg:justify-start",
-          containsActive
-            ? "text-foreground font-medium"
-            : "text-[color:var(--text-tertiary)] hover:bg-secondary/60 hover:text-foreground",
-        )}
-      >
-        <Icon
-          className={cn(
-            "h-5 w-5 shrink-0",
-            containsActive && "text-[color:var(--purple-primary)]",
-          )}
-          strokeWidth={containsActive ? 2 : 1.6}
-        />
-        <span className="hidden lg:inline flex-1 text-left">{group.label}</span>
-        <ChevronDown
-          className={cn(
-            "hidden lg:inline h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
-            open && "rotate-180",
-          )}
-        />
-      </button>
+      {group.to ? (
+        <div className={rowClass}>
+          <Link
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            to={group.to as any}
+            aria-current={isExactActive ? "page" : undefined}
+            className="flex items-center gap-3 flex-1 min-w-0 -ml-3 pl-3 -my-2.5 py-2.5 rounded-xl"
+          >
+            {iconEl}
+            <span className="hidden lg:inline flex-1 text-left">{group.label}</span>
+          </Link>
+          {chevron}
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          className={rowClass}
+        >
+          {iconEl}
+          <span className="hidden lg:inline flex-1 text-left">{group.label}</span>
+          <ChevronDown
+            className={cn(
+              "hidden lg:inline h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
+              open && "rotate-180",
+            )}
+          />
+        </button>
+      )}
       {open && group.children && (
         <div className="hidden lg:block ml-3 pl-3 mt-0.5 mb-1.5 border-l border-border/60 space-y-0.5">
           {group.children.map((c) => (
