@@ -61,4 +61,4 @@ Rename "Hydration" → "Intake" in nav and copy. One page covers water, electrol
 
 ## Status
 - Phase 5: **shipped** — `food_entries` table, AI photo recognition (Lovable AI Gateway, Gemini vision), Snap Intake sheet with confirm flow, food list under hydration timeline, nav renamed to "Intake".
-- Phase 6: pending — meds scan + inline mini-timeline.
+- Phase 6: **shipped** — `scanMedicationFromPhoto` server fn (Gemini vision), `ScanMedSheet` with review step, `MedicationFormSheet` accepts `prefill` so scanned data flows into the existing safety-confirmed form. New `MedsMiniTimeline` horizontal day-strip embedded on `/meds` and above `TodayDoses` on `/today`. No silent creates — scan always lands in the editable form.
