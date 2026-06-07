@@ -349,6 +349,7 @@ function TodayPage() {
         <TripWrapupCard />
       </TodayWidgetBoundary>
       <TodayWidgetBoundary name="doses">
+        <MedsMiniTimeline className="mb-3" />
         <TodayDoses />
       </TodayWidgetBoundary>
 
