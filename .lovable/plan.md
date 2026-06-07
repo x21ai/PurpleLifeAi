@@ -1,66 +1,72 @@
-## Phase 5 — Intake (drinks + food in one place)
+## The duplication today
 
-Rename "Hydration" → "Intake" in nav and copy. One page covers water, electrolytes, other drinks, and food. No new sidebar entry.
+`src/lib/calm-images.ts` exposes 4 calm landscapes and 6 human/still moments. Most marketing pages share the same handful, so heroes and section photos repeat across `/`, `/features`, `/pricing`, `/about`, `/community`, `/contact`:
 
-**New: `food_entries` table**
-- `user_id`, `consumed_at`, `name`, `portion` (text), `calories_kcal`, `protein_g`, `carbs_g`, `fat_g`, `photo_path` (storage), `source` ('manual' | 'photo' | 'voice'), `ai_confidence`, `note`
-- RLS: owner-only. Grants for `authenticated` + `service_role`.
+```text
+Image                  Used on
+calmImages.dawn        index hero, sign-in hero, features hero
+calmImages.mist        pricing hero, features mid-band, about hero
+calmImages.coast       index footer, pricing footer, features footer, community hero
+calmImages.dawnAlt     features, about
+humanImages.caregiverHand  index, features, about
+humanImages.pillOrganizer  pricing, features
+humanImages.walkGrass  contact, community
+humanImages.mugMorning index only
+humanImages.bedsideDusk about only
+humanImages.nightstand index only
+```
 
-**Storage:** reuse private `journal-media` bucket under `food/{user_id}/...` (already private, signed-URL workflow).
+The user-visible result: pricing's hero is identical to features', the coast plate closes three different pages, and the caregiver hand appears in three places.
 
-**Capture flow (works for water/drink/food):**
-1. Bottom action bar on `/intake`: `+ Water` | `+ Drink` | `+ Food` | `📷 Snap` | `🎙 Voice`
-2. **Snap** → upload photo → call `recognizeIntakeFromPhoto` server fn → Lovable AI Gateway (`google/gemini-3-flash-preview`, vision) returns `{ kind: 'water'|'drink'|'food', items: [{name, portion, calories_kcal, macros}], confidence }`
-3. Always show a **confirm sheet** with editable fields before save. Never silent-save. Adds disclaimer "AI estimate — please confirm".
-4. **Voice** → existing transcription path → same AI extractor in text mode → confirm sheet.
+## Approach
 
-**Day/Week/Month view (also Phase 5):**
-- Add a segmented control `Day | Week | Month` at top of `/intake`.
-- Day: existing timeline + new food/drink entries interleaved by `consumed_at`.
-- Week/Month: small summary cards (water total, kcal total, top drinks, top foods) + a thin bar chart. Reuse `recharts` (already in stack).
+Generate one fresh image per slot so every page has its own hero and its own section moments, while staying inside Purple's existing aesthetic: cinematic, soft, dawn/dusk light, no faces (or backs-of-heads only), no medical imagery. Then remap `calm-images.ts` so each page imports per-page exports — that makes future drift impossible.
 
-**Files**
-- migration: `food_entries` + grants + RLS + updated_at trigger
-- `src/lib/food.functions.ts` — `listFoodForRange`, `createFoodEntry`, `recognizeIntakeFromPhoto`, `recognizeIntakeFromText`
-- `src/lib/food.server.ts` — AI gateway call (vision)
-- `src/components/intake/snap-intake-sheet.tsx` — capture + confirm
-- `src/components/intake/intake-action-bar.tsx`
-- `src/components/intake/intake-range-view.tsx` (day/week/month)
-- update `src/routes/_app/hydration.tsx` → keep route id but rename page title/copy to "Intake"; add range view + action bar
-- update sidebar nav label "Hydration" → "Intake"
+Generation uses `imagegen--generate_image` (`fast` tier, jpg, written to `src/assets/`). Heroes are 1920×1080; section/portrait moments are 1280×1280 or 1280×960 depending on slot.
 
-(Keep the `/hydration` URL to avoid breaking existing links; add a small `/intake` redirect alias.)
+## Image plan (one per slot)
 
-## Phase 6 — Medications: scan + inline mini-timeline
+Hero landscapes (one per page):
 
-**Scan / photo / prescription add**
-- Add `+` menu on `/meds`: `Manual` | `📷 Scan bottle` | `📄 Upload prescription` | `🎙 Voice`
-- Photo/PDF → upload to private storage → server fn `recognizeMedicationFromImage` calls Lovable AI vision → returns `{ name, strength, form, instructions, schedule_hint }`
-- **Always opens the existing `medication-form-sheet` pre-filled** with a "Review AI suggestion" banner. User confirms before save. No silent create.
+```text
+File                                  Page       Subject
+hero-home-mountains-dawn.jpg          /          Same mountain/cloud composition as today (keep current hero)
+hero-features-misty-valley.jpg        /features  Layered misty valley, cool blue, pre-sunrise
+hero-pricing-coastal-fog.jpg          /pricing   Soft headlands receding into fog, warm/cool blend
+hero-about-quiet-hills.jpg            /about     Rolling hills at golden hour, low haze
+hero-community-river-bend.jpg         /community Wide river bend through forest, soft overcast
+hero-contact-lake-stillness.jpg       /contact   Glass-flat lake at first light, distant treeline
+hero-signin-night-coast.jpg           /sign-in   Dusky coastline, deeper blues (distinct from home)
+```
 
-**Mini-timeline (today's doses only)**
-- New `src/components/meds/meds-mini-timeline.tsx` — horizontal strip of today's scheduled `medication_doses` with `taken|due|missed` states.
-- Embed on `/meds` (top of page) and `/today` (under greeting).
-- Keep full `/timeline` page intact.
+Human/still moments (one per use site):
 
-**Files**
-- `src/lib/med-recognition.functions.ts` + `.server.ts`
-- `src/components/meds/scan-med-sheet.tsx`
-- `src/components/meds/meds-mini-timeline.tsx`
-- update `src/routes/_app/meds.tsx` (add scan menu + mini-timeline)
-- update `src/routes/_app/today.tsx` (embed mini-timeline)
+```text
+File                                  Replaces / used at
+moment-home-mug-window.jpg            index "Last night I wrote three sentences"
+moment-home-nightstand-notebook.jpg   index "A second is enough"
+moment-home-shoulder-hand.jpg         index "No one should do this alone"
+moment-features-phone-typing.jpg      features "Type it. Say it. Snap it."
+moment-features-pill-organizer.jpg    features biometrics band (new shot, distinct from pricing)
+moment-features-hand-on-shoulder.jpg  features caregiver mode
+moment-pricing-pill-tray-window.jpg   pricing "Because nobody should pay…"
+moment-about-bedside-lamp.jpg         about "It's here when I need it"
+moment-about-arm-around.jpg           about "No one should do this alone"
+moment-community-walking-path.jpg     community "For the people who help…"
+moment-contact-handwritten-note.jpg   contact section
+```
 
-## Out of scope (explicit)
-- Barcode scanning (camera-only image recognition for now; barcode is a later iteration)
-- Pharmacy API integrations
-- Editing the auto-generated `/timeline` route's behaviour
+Style brief shared across every prompt: shot on a 35mm lens, natural light, muted palette, deep shadows that sit on Purple's near-black background, soft grain, no text, no logos, no recognizable faces. Hero images frame the subject so the page's serif headline reads cleanly over the upper-left.
 
-## Order of execution
-1. Phase 5 migration (food_entries) → wait for approval → app code
-2. Phase 6 (no schema changes needed; reuses `medications` + `medication_doses`)
+## File changes
 
-## Status
-- Phase 5: **shipped** — `food_entries` table, AI photo recognition (Lovable AI Gateway, Gemini vision), Snap Intake sheet with confirm flow, food list under hydration timeline, nav renamed to "Intake".
-- Phase 6: **shipped** — `scanMedicationFromPhoto` server fn (Gemini vision), `ScanMedSheet` with review step, `MedicationFormSheet` accepts `prefill` so scanned data flows into the existing safety-confirmed form. New `MedsMiniTimeline` horizontal day-strip embedded on `/meds` and above `TodayDoses` on `/today`. No silent creates — scan always lands in the editable form.
-- Phase 5 follow-ups: **shipped** — `VoiceIntakeSheet` (Web Speech → `recognizeIntakeFromText` → same confirm flow); Day/Week/Month segmented control on `/intake` with `IntakeRangeView` (avg water + kcal cards, per-day water and calorie bar charts, most-logged list).
-- Phase 6 follow-ups: **shipped** — AI menu FAB on `/meds` with Scan bottle / Upload prescription photo / Voice. `ScanMedSheet` accepts a `mode` to toggle camera vs library. `scanMedicationFromText` server fn + `VoiceMedSheet`. All three paths land in the existing `MedicationFormSheet` for review-before-save.
+1. `src/lib/calm-images.ts` — replace the flat `calmImages` / `humanImages` maps with per-page named exports: `homeImages`, `featuresImages`, `pricingImages`, `aboutImages`, `communityImages`, `contactImages`, `signInImages`. Each holds only the images that page actually uses.
+2. Update the six route files (`index.tsx`, `features.tsx`, `pricing.tsx`, `about.tsx`, `community.tsx`, `contact.tsx`, `sign-in.tsx`) to import their own page's image map.
+3. Delete the now-unused asset files (`hero-readiness-dawn.jpg`, `hero-readiness-mist.jpg`, `hero-readiness-coast.jpg`, `human-mug-morning.jpg`, `human-bedside-dusk.jpg`, `human-caregiver-hand.jpg`, `human-walk-grass.jpg`, `still-pill-organizer.jpg`, `still-nightstand.jpg`, `sign-in-hero.jpg`).
+4. Leave `src/routes/_app/welcome.tsx` alone — it imports `hero-readiness-dawn.jpg` / `hero-readiness-mist.jpg` directly. Either keep those two assets or update welcome to import from the new `homeImages` map; plan to do the latter to avoid keeping dead duplicates.
+
+## Out of scope
+
+- In-app routes under `/_app/*` (only marketing/landing pages are duplicating).
+- Brand identity / wordmark / favicons.
+- Generating multiple variants per slot — one image per slot, chosen for fit, not a gallery.
