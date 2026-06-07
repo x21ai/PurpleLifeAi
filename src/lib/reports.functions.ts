@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callAIForUser, tryParseJson } from "./ai-provider.server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const ProcessInput = z.object({
   reportId: z.string().uuid(),
@@ -47,7 +48,7 @@ function flagFor(v: number | null | undefined, low: number | null | undefined, h
 }
 
 async function extractWithAI(
-  supabase: Parameters<typeof callAIForUser>[0],
+  supabase: SupabaseClient,
   userId: string,
   text: string,
   media: { base64: string; mime: string } | null,
