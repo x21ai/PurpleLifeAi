@@ -68,7 +68,7 @@ function AskPage() {
       new DefaultChatTransport({
         api: "/api/chat",
         headers: () =>
-          accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+          accessToken ? ({ Authorization: `Bearer ${accessToken}` } as Record<string, string>) : ({} as Record<string, string>),
       }),
     [accessToken],
   );
