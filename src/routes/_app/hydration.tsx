@@ -6,9 +6,12 @@ import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { listHydrationForDay } from "@/lib/hydration.functions";
 import { listAurasForDay } from "@/lib/auras.functions";
+import { listFoodForRange } from "@/lib/food.functions";
 import { HydrationTimeline, type HydrationRow } from "@/components/hydration/hydration-timeline";
 import { QuickAddWater } from "@/components/hydration/quick-add-water";
 import { LogAuraSheet } from "@/components/hydration/log-aura-sheet";
+import { SnapIntakeSheet } from "@/components/intake/snap-intake-sheet";
+import { FoodTodayList, type FoodRow } from "@/components/intake/food-today-list";
 import { Button } from "@/components/ui/button";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,8 +21,8 @@ import { useFeatureFlags } from "@/hooks/use-feature-flags";
 export const Route = createFileRoute("/_app/hydration")({
   head: () => ({
     meta: [
-      { title: "Hydration & auras · Purple" },
-      { name: "description", content: "Track water, electrolytes, and aura warnings throughout the day." },
+      { title: "Intake · Purple" },
+      { name: "description", content: "Log water, drinks, and food in one place — by tap, photo, or voice." },
     ],
   }),
   component: HydrationPage,
@@ -53,6 +56,7 @@ function HydrationPage() {
 
   const listH = useServerFn(listHydrationForDay);
   const listA = useServerFn(listAurasForDay);
+  const listF = useServerFn(listFoodForRange);
 
   const hydration = useQuery({
     queryKey: ["hydration", day.toISOString()],
@@ -62,6 +66,10 @@ function HydrationPage() {
     queryKey: ["auras", day.toISOString()],
     queryFn: () => listA({ data: { from, to } }),
     enabled: showAura,
+  });
+  const food = useQuery({
+    queryKey: ["food", day.toISOString()],
+    queryFn: () => listF({ data: { from, to } }),
   });
 
   const goal = useQuery({
@@ -85,14 +93,12 @@ function HydrationPage() {
         <ArrowLeft className="h-4 w-4" /> Back
       </Link>
 
-      <p className="mt-8 label-eyebrow text-muted-foreground">Hydration & auras</p>
+      <p className="mt-8 label-eyebrow text-muted-foreground">Intake</p>
       <h1 className="mt-2 font-serif text-[40px] sm:text-5xl leading-[1.05] tracking-[-0.02em]">
-        {showAura ? <>Water, salt,<br/>and warning signs.</> : <>Water and<br/>electrolytes.</>}
+        What you took in<br/>today.
       </h1>
       <p className="mt-3 text-sm text-muted-foreground max-w-lg">
-        {showAura
-          ? "Track every drink to the minute and capture déjà vu the moment it happens. Patterns often hide in plain sight."
-          : "Track every drink to the minute. Patterns often hide in plain sight."}
+        Water, drinks, and food in one place. Tap to add, or snap a photo and let AI suggest the details.
       </p>
 
       {/* Day navigator */}
@@ -119,7 +125,10 @@ function HydrationPage() {
       {isToday && (
         <div className="mt-6 space-y-3">
           <QuickAddWater />
-          {showAura && <div><LogAuraSheet /></div>}
+          <div className="flex flex-wrap gap-2">
+            <SnapIntakeSheet />
+            {showAura && <LogAuraSheet />}
+          </div>
         </div>
       )}
 
@@ -130,6 +139,10 @@ function HydrationPage() {
           auras={showAura ? (auras.data ?? []) : []}
           goalMl={goal.data ?? 2000}
         />
+      </div>
+
+      <div className="mt-6">
+        <FoodTodayList rows={(food.data ?? []) as FoodRow[]} />
       </div>
 
       <div className="mt-8">

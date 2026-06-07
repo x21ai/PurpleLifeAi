@@ -1025,6 +1025,66 @@ export type Database = {
         }
         Relationships: []
       }
+      food_entries: {
+        Row: {
+          ai_confidence: number | null
+          calories_kcal: number | null
+          carbs_g: number | null
+          consumed_at: string
+          created_at: string
+          created_by_id: string | null
+          created_by_kind: string
+          fat_g: number | null
+          id: string
+          name: string
+          note: string | null
+          photo_path: string | null
+          portion: string | null
+          protein_g: number | null
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_confidence?: number | null
+          calories_kcal?: number | null
+          carbs_g?: number | null
+          consumed_at?: string
+          created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
+          fat_g?: number | null
+          id?: string
+          name: string
+          note?: string | null
+          photo_path?: string | null
+          portion?: string | null
+          protein_g?: number | null
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_confidence?: number | null
+          calories_kcal?: number | null
+          carbs_g?: number | null
+          consumed_at?: string
+          created_at?: string
+          created_by_id?: string | null
+          created_by_kind?: string
+          fat_g?: number | null
+          id?: string
+          name?: string
+          note?: string | null
+          photo_path?: string | null
+          portion?: string | null
+          protein_g?: number | null
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       hydration_intake: {
         Row: {
           consumed_at: string
