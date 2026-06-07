@@ -48,6 +48,7 @@ export const navTree: NavGroup[] = [
     id: "body",
     label: "My Body",
     icon: HeartPulse,
+    to: "/my-health",
     children: [
       { to: "/biometrics", label: "Biometrics",  icon: Activity   },
       { to: "/hydration",  label: "Hydration",   icon: Droplets   },
@@ -59,8 +60,8 @@ export const navTree: NavGroup[] = [
     id: "insights",
     label: "Insights",
     icon: TrendingUp,
+    to: "/insights",
     children: [
-      { to: "/insights", label: "Patterns",  icon: TrendingUp },
       { to: "/reports",  label: "Reports",   icon: FileText   },
       { to: "/reports/medical-history", label: "Medical history PDF", icon: FileText },
     ],
@@ -69,8 +70,8 @@ export const navTree: NavGroup[] = [
     id: "care",
     label: "Care",
     icon: Users,
+    to: "/care",
     children: [
-      { to: "/care",      label: "Caregivers", icon: Users         },
       { to: "/chat-care", label: "Messages",   icon: MessageCircle },
     ],
   },
@@ -78,8 +79,8 @@ export const navTree: NavGroup[] = [
     id: "community",
     label: "Community",
     icon: Globe,
+    to: "/community",
     children: [
-      { to: "/community",           label: "Feed",      icon: Globe    },
       { to: "/community/resources", label: "Resources", icon: FileText },
     ],
   },
@@ -87,8 +88,8 @@ export const navTree: NavGroup[] = [
     id: "tools",
     label: "Tools",
     icon: Wrench,
+    to: "/tools",
     children: [
-      { to: "/tools",                label: "All tools",        icon: Wrench },
       { to: "/apple-health-import",  label: "Apple Health import", icon: Bolt },
       { to: "/settings/travel",      label: "Travel",           icon: Plane  },
     ],
