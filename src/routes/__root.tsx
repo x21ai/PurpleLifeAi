@@ -129,7 +129,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         property: "og:description",
         content:
-          "Open-source health intelligence for epilepsy and pattern-driven conditions. Free forever. No ads. Your data stays yours.",
+          "Open-source health intelligence for epilepsy and pattern-driven conditions. Free forever. No ads.",
       },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Purple" },
@@ -138,7 +138,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "twitter:description",
         content:
-          "Open-source health intelligence for epilepsy and pattern-driven conditions. Free forever. No ads. Your data stays yours.",
+          "Open-source health intelligence for epilepsy and pattern-driven conditions. Free forever. No ads.",
       },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/31c0effc-cee5-466e-980a-6e840d1e73d2/id-preview-e618ecd3--f43135c6-2e21-4f4c-9c81-6a19bf99587f.lovable.app-1779606381200.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/31c0effc-cee5-466e-980a-6e840d1e73d2/id-preview-e618ecd3--f43135c6-2e21-4f4c-9c81-6a19bf99587f.lovable.app-1779606381200.png" },

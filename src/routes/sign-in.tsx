@@ -356,9 +356,6 @@ function SignInPage() {
               </div>
             )}
 
-            <p className="mt-10 text-xs text-muted-foreground/80">
-              {t("signIn.dataStaysYours")}
-            </p>
           </div>
         </main>
       </div>
