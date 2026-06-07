@@ -354,9 +354,16 @@ export const processReport = createServerFn({ method: "POST" })
       return { ok: true, metricCount: rows.length };
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
+      const code = (err as { code?: string } | null)?.code;
+      const status =
+        code === "ai_credits_exhausted"
+          ? "needs_credits"
+          : code === "ai_rate_limited"
+            ? "rate_limited"
+            : "failed";
       await supabase
         .from("report_documents")
-        .update({ status: "failed", error_message: msg })
+        .update({ status, error_message: msg })
         .eq("id", doc.id);
       throw new Error(msg);
     }
