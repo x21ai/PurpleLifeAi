@@ -26,6 +26,50 @@ export type MetricKey =
 
 export type MetricDirection = "higher_better" | "lower_better" | "neutral";
 
+export type MetricCategory =
+  | "recovery"
+  | "sleep"
+  | "cardio"
+  | "movement"
+  | "stress";
+
+export const CATEGORY_ORDER: MetricCategory[] = [
+  "recovery",
+  "sleep",
+  "cardio",
+  "movement",
+  "stress",
+];
+
+export const CATEGORY_LABEL: Record<MetricCategory, string> = {
+  recovery: "Recovery",
+  sleep: "Sleep",
+  cardio: "Cardio",
+  movement: "Movement",
+  stress: "Stress & body",
+};
+
+export const METRIC_CATEGORY: Record<MetricKey, MetricCategory> = {
+  readiness: "recovery",
+  whoop_recovery: "recovery",
+  sleep_score: "sleep",
+  whoop_sleep_performance: "sleep",
+  sleep_total: "sleep",
+  sleep_deep: "sleep",
+  sleep_rem: "sleep",
+  sleep_efficiency: "sleep",
+  hrv: "cardio",
+  resting_hr: "cardio",
+  respiratory_rate: "cardio",
+  spo2: "cardio",
+  activity_score: "movement",
+  steps: "movement",
+  whoop_strain: "movement",
+  stress: "stress",
+  resilience: "stress",
+  temp_deviation: "stress",
+};
+
 export type MetricMeta = {
   key: MetricKey;
   label: string;
