@@ -42,10 +42,12 @@ export function ScanMedSheet({
   open,
   onOpenChange,
   onRecognized,
+  mode = "camera",
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onRecognized: (prefill: MedPrefill) => void;
+  mode?: "camera" | "library";
 }) {
   const fileRef = React.useRef<HTMLInputElement>(null);
   const [stage, setStage] = React.useState<"pick" | "analyzing" | "review">("pick");
@@ -111,7 +113,7 @@ export function ScanMedSheet({
                 ref={fileRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
+                {...(mode === "camera" ? { capture: "environment" as const } : {})}
                 hidden
                 onChange={(e) => {
                   const f = e.target.files?.[0];
@@ -119,7 +121,7 @@ export function ScanMedSheet({
                 }}
               />
               <Button onClick={() => fileRef.current?.click()} className="w-full h-12 rounded-2xl">
-                <Camera className="h-5 w-5 mr-2" /> Take or choose a photo
+                <Camera className="h-5 w-5 mr-2" /> {mode === "camera" ? "Take a photo" : "Choose a photo"}
               </Button>
               <p className="text-xs text-muted-foreground text-center">
                 AI estimate — always review every field before saving.

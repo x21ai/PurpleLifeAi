@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { recognizeMedicationFromImage } from "./med-recognition.server";
+import { recognizeMedicationFromImage, recognizeMedicationFromText } from "./med-recognition.server";
 
 export const scanMedicationFromPhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -16,4 +16,13 @@ export const scanMedicationFromPhoto = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     return recognizeMedicationFromImage(data.image_data_url);
+  });
+
+export const scanMedicationFromText = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { text: string }) =>
+    z.object({ text: z.string().trim().min(3).max(800) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    return recognizeMedicationFromText(data.text);
   });

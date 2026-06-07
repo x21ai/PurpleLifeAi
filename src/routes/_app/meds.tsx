@@ -1,12 +1,13 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Pill, AlertCircle, CheckCheck, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2, CalendarDays, Camera } from "lucide-react";
+import { Plus, Pill, AlertCircle, CheckCheck, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2, CalendarDays, Camera, Image as ImageIcon, Mic, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { MedicationFormSheet, type MedPrefill } from "@/components/meds/medication-form-sheet";
 import { ScanMedSheet } from "@/components/meds/scan-med-sheet";
+import { VoiceMedSheet } from "@/components/meds/voice-med-sheet";
 import { MedsMiniTimeline } from "@/components/meds/meds-mini-timeline";
 import { MedRemindersBanner } from "@/components/meds/med-reminders-banner";
 import { scheduleMedications } from "@/lib/med-notifications";
@@ -105,6 +106,9 @@ function MedsPage() {
   const [editingMedId, setEditingMedId] = React.useState<string | null>(null);
   const [markingAll, setMarkingAll] = React.useState(false);
   const [scanOpen, setScanOpen] = React.useState(false);
+  const [scanMode, setScanMode] = React.useState<"camera" | "library">("camera");
+  const [voiceOpen, setVoiceOpen] = React.useState(false);
+  const [aiMenuOpen, setAiMenuOpen] = React.useState(false);
   const [prefill, setPrefill] = React.useState<MedPrefill | null>(null);
 
   const load = React.useCallback(async () => {
@@ -369,14 +373,28 @@ function MedsPage() {
         className="fixed bottom-24 md:bottom-8 right-5 md:right-8 z-40 flex flex-col gap-2"
         style={{ marginBottom: "env(safe-area-inset-bottom)" }}
       >
-        <button
-          type="button"
-          onClick={() => setScanOpen(true)}
-          aria-label="Scan medication"
-          className="h-12 w-12 rounded-full bg-card text-foreground ring-1 ring-border shadow-md hover:shadow-lg transition-shadow flex items-center justify-center"
-        >
-          <Camera className="h-5 w-5" />
-        </button>
+        <DropdownMenu open={aiMenuOpen} onOpenChange={setAiMenuOpen}>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label="Add with AI"
+              className="h-12 w-12 rounded-full bg-card text-foreground ring-1 ring-border shadow-md hover:shadow-lg transition-shadow flex items-center justify-center"
+            >
+              <Sparkles className="h-5 w-5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" side="top" className="w-56">
+            <DropdownMenuItem onClick={() => { setScanMode("camera"); setScanOpen(true); }}>
+              <Camera className="h-4 w-4 mr-2" /> Scan bottle
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setScanMode("library"); setScanOpen(true); }}>
+              <ImageIcon className="h-4 w-4 mr-2" /> Upload prescription photo
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setVoiceOpen(true)}>
+              <Mic className="h-4 w-4 mr-2" /> Voice
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <button
           type="button"
           onClick={() => { setPrefill(null); setOpen(true); }}
@@ -402,6 +420,17 @@ function MedsPage() {
       <ScanMedSheet
         open={scanOpen}
         onOpenChange={setScanOpen}
+        mode={scanMode}
+        onRecognized={(p) => {
+          setEditingMedId(null);
+          setPrefill(p);
+          setOpen(true);
+        }}
+      />
+
+      <VoiceMedSheet
+        open={voiceOpen}
+        onOpenChange={setVoiceOpen}
         onRecognized={(p) => {
           setEditingMedId(null);
           setPrefill(p);
