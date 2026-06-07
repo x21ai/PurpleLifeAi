@@ -17,7 +17,6 @@ import {
   Plane,
   Globe,
   Shield,
-  Sparkles,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
