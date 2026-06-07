@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { Send, ChevronLeft, Users, MessageCircle, Loader2, Bell, BellOff, LogOut, MoreVertical, Plus } from "lucide-react";
+import { Send, ChevronLeft, Users, MessageCircle, Loader2, Bell, BellOff, LogOut, MoreVertical, Plus, Paperclip, X, FileText, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -25,6 +25,7 @@ import {
   setCareThreadMute,
   leaveCareThread,
   getOrCreateDirectThread,
+  getCareAttachmentUrl,
 } from "@/lib/care-chat.functions";
 import { listMyCaregivers, listPeopleSharingWithMe } from "@/lib/care.functions";
 import {
@@ -56,6 +57,14 @@ type ThreadSummary = {
   muted: boolean;
 };
 
+type Attachment = {
+  path: string;
+  name: string;
+  mime: string;
+  size: number;
+  kind: "image" | "file";
+};
+
 type Message = {
   id: string;
   thread_id: string;
@@ -79,6 +88,112 @@ function formatTime(iso: string) {
     return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   }
   return d.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+function formatMessageTime(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  if (d.toDateString() === today.toDateString()) return time;
+  const yest = new Date(today);
+  yest.setDate(today.getDate() - 1);
+  if (d.toDateString() === yest.toDateString()) return `Yesterday · ${time}`;
+  return `${d.toLocaleDateString([], { month: "short", day: "numeric" })} · ${time}`;
+}
+
+function dayLabel(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  if (d.toDateString() === today.toDateString()) return "Today";
+  const yest = new Date(today);
+  yest.setDate(today.getDate() - 1);
+  if (d.toDateString() === yest.toDateString()) return "Yesterday";
+  return d.toLocaleDateString([], {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+    year: d.getFullYear() === today.getFullYear() ? undefined : "numeric",
+  });
+}
+
+function parseAttachments(value: unknown): Attachment[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (a): a is Attachment =>
+      !!a &&
+      typeof a === "object" &&
+      typeof (a as Attachment).path === "string" &&
+      typeof (a as Attachment).name === "string",
+  );
+}
+
+const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
+const ATTACHMENT_ACCEPT =
+  "image/*,application/pdf,.doc,.docx,.txt,.csv,.xlsx,.pages,.numbers";
+
+function AttachmentView({
+  threadId,
+  attachment,
+  mine,
+}: {
+  threadId: string;
+  attachment: Attachment;
+  mine: boolean;
+}) {
+  const fetchUrl = useServerFn(getCareAttachmentUrl);
+  const urlQ = useQuery({
+    queryKey: ["care-chat", "attachment-url", attachment.path],
+    queryFn: () => fetchUrl({ data: { threadId, path: attachment.path } }),
+    staleTime: 4 * 60 * 1000,
+  });
+  const url = urlQ.data?.url;
+
+  if (attachment.kind === "image") {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block overflow-hidden rounded-xl border border-border/60 max-w-[260px]"
+        aria-label={attachment.name}
+      >
+        {url ? (
+          <img
+            src={url}
+            alt={attachment.name}
+            loading="lazy"
+            className="h-auto w-full max-h-[300px] object-cover"
+          />
+        ) : (
+          <div className="grid aspect-square w-[200px] place-items-center bg-secondary/50">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        )}
+      </a>
+    );
+  }
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      download={attachment.name}
+      className={cn(
+        "flex items-center gap-2 rounded-xl border px-3 py-2 max-w-[260px] transition-colors",
+        mine
+          ? "border-primary-foreground/30 bg-primary-foreground/10 hover:bg-primary-foreground/15"
+          : "border-border bg-background hover:bg-secondary/60",
+      )}
+    >
+      <FileText className="h-4 w-4 shrink-0" />
+      <span className="min-w-0 flex-1 truncate text-xs">{attachment.name}</span>
+      <span className="text-[10px] opacity-70">
+        {(attachment.size / 1024 / 1024).toFixed(2)} MB
+      </span>
+      {url && <Download className="h-3.5 w-3.5 shrink-0 opacity-70" />}
+    </a>
+  );
 }
 
 function NewChatPicker({ onPicked }: { onPicked: (threadId: string) => void }) {
@@ -429,14 +544,57 @@ function ConversationPanel({
 
   const [input, setInput] = React.useState("");
   const [sending, setSending] = React.useState(false);
+  const [pending, setPending] = React.useState<File[]>([]);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const addPending = (incoming: FileList | File[] | null) => {
+    if (!incoming) return;
+    const arr = Array.from(incoming);
+    const tooBig = arr.filter((f) => f.size > MAX_ATTACHMENT_BYTES);
+    const ok = arr.filter((f) => f.size <= MAX_ATTACHMENT_BYTES);
+    if (tooBig.length > 0) {
+      toast.error(`${tooBig.length} file(s) skipped — over 15 MB`);
+    }
+    setPending((prev) => [...prev, ...ok].slice(0, 10));
+  };
 
   const handleSend = async () => {
     const body = input.trim();
-    if (!body || sending) return;
+    if (sending) return;
+    if (!body && pending.length === 0) return;
     setSending(true);
+    const filesToSend = pending;
     setInput("");
+    setPending([]);
     try {
-      const r = await sendFn({ data: { threadId: thread.id, body } });
+      // Upload files first.
+      const uploaded: Attachment[] = [];
+      for (const f of filesToSend) {
+        const ext = f.name.split(".").pop()?.toLowerCase() ?? "bin";
+        const path = `${thread.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("care-chat-attachments")
+          .upload(path, f, {
+            contentType: f.type || "application/octet-stream",
+            upsert: false,
+          });
+        if (upErr) throw upErr;
+        uploaded.push({
+          path,
+          name: f.name,
+          mime: f.type || "application/octet-stream",
+          size: f.size,
+          kind: (f.type || "").startsWith("image/") ? "image" : "file",
+        });
+      }
+
+      const r = await sendFn({
+        data: {
+          threadId: thread.id,
+          body,
+          attachments: uploaded.length > 0 ? uploaded : undefined,
+        },
+      });
       setMessages((prev) =>
         prev.some((x) => x.id === r.message.id)
           ? prev
@@ -446,6 +604,7 @@ function ConversationPanel({
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't send");
       setInput(body);
+      setPending(filesToSend);
     } finally {
       setSending(false);
     }
@@ -509,48 +668,101 @@ function ConversationPanel({
           </div>
         )}
         <ul className="space-y-2">
-          {messages.map((m) => {
+          {messages.map((m, idx) => {
             const mine = m.sender_id === meId;
             const senderName = thread.others.find((o) => o.user_id === m.sender_id)?.name;
+            const attachments = parseAttachments(m.attachments);
+            const prev = idx > 0 ? messages[idx - 1] : null;
+            const showDaySep =
+              !prev ||
+              new Date(prev.created_at).toDateString() !==
+                new Date(m.created_at).toDateString();
             return (
-              <li
-                key={m.id}
-                className={cn("flex", mine ? "justify-end" : "justify-start")}
-              >
-                <div
-                  className={cn(
-                    "max-w-[75%] rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap break-words",
-                    mine
-                      ? "bg-primary text-primary-foreground rounded-br-md"
-                      : "bg-secondary text-foreground rounded-bl-md",
-                  )}
-                >
-                  {!mine && thread.kind === "group" && senderName && (
-                    <div className="mb-0.5 text-[11px] font-medium opacity-70">
-                      {senderName}
-                    </div>
-                  )}
-                  {m.deleted_at ? (
-                    <em className="opacity-60">Message deleted</em>
-                  ) : (
-                    m.body
-                  )}
+              <React.Fragment key={m.id}>
+                {showDaySep && (
+                  <li className="flex justify-center pt-3 pb-1">
+                    <span className="rounded-full bg-secondary/60 px-3 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {dayLabel(m.created_at)}
+                    </span>
+                  </li>
+                )}
+                <li className={cn("flex", mine ? "justify-end" : "justify-start")}>
                   <div
                     className={cn(
-                      "mt-1 text-[10px] tabular-nums",
-                      mine ? "text-primary-foreground/70" : "text-muted-foreground",
+                      "max-w-[75%] rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap break-words space-y-2",
+                      mine
+                        ? "bg-primary text-primary-foreground rounded-br-md"
+                        : "bg-secondary text-foreground rounded-bl-md",
                     )}
                   >
-                    {formatTime(m.created_at)}
+                    {!mine && thread.kind === "group" && senderName && (
+                      <div className="text-[11px] font-medium opacity-70">
+                        {senderName}
+                      </div>
+                    )}
+                    {m.deleted_at ? (
+                      <em className="opacity-60">Message deleted</em>
+                    ) : (
+                      <>
+                        {attachments.length > 0 && (
+                          <div className="space-y-1.5">
+                            {attachments.map((a) => (
+                              <AttachmentView
+                                key={a.path}
+                                threadId={thread.id}
+                                attachment={a}
+                                mine={mine}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {m.body && <div>{m.body}</div>}
+                      </>
+                    )}
+                    <div
+                      className={cn(
+                        "text-[10px] tabular-nums",
+                        mine ? "text-primary-foreground/70" : "text-muted-foreground",
+                      )}
+                    >
+                      {formatMessageTime(m.created_at)}
+                    </div>
                   </div>
-                </div>
-              </li>
+                </li>
+              </React.Fragment>
             );
           })}
         </ul>
       </div>
 
       <footer className="border-t border-border bg-card/40 p-3 md:p-4">
+        {pending.length > 0 && (
+          <ul className="mb-2 flex flex-wrap gap-2">
+            {pending.map((f, i) => (
+              <li
+                key={`${f.name}-${i}`}
+                className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-xs"
+              >
+                {f.type.startsWith("image/") ? (
+                  <span className="h-3.5 w-3.5 rounded bg-secondary" />
+                ) : (
+                  <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                )}
+                <span className="max-w-[160px] truncate">{f.name}</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPending((prev) => prev.filter((_, j) => j !== i))
+                  }
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label={`Remove ${f.name}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -558,6 +770,29 @@ function ConversationPanel({
           }}
           className="flex items-end gap-2"
         >
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept={ATTACHMENT_ACCEPT}
+            className="sr-only"
+            onChange={(e) => {
+              addPending(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-10 w-10 rounded-full shrink-0"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={sending}
+            aria-label="Attach files"
+            title="Attach files"
+          >
+            <Paperclip className="h-4 w-4" />
+          </Button>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -574,7 +809,7 @@ function ConversationPanel({
           <Button
             type="submit"
             size="icon"
-            disabled={!input.trim() || sending}
+            disabled={(!input.trim() && pending.length === 0) || sending}
             className="h-10 w-10 rounded-full shrink-0"
             aria-label="Send"
           >
