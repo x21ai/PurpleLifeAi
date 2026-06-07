@@ -590,12 +590,24 @@ Deno.serve(async (req) => {
     // without action proposals.
     const { data: profileRow } = await admin
       .from("profiles")
-      .select("ai_model_preference, conditions, conditions_note")
+      .select("ai_model_preference, ai_provider, conditions, conditions_note")
       .eq("id", userId)
       .maybeSingle();
-    const modelPref = String(
-      (profileRow as any)?.ai_model_preference || "claude-sonnet",
-    );
+    // New top-level `ai_provider` (Settings → AI provider) takes precedence
+    // over the legacy `ai_model_preference`. Map each provider onto the
+    // orchestrator's existing model lanes so chat respects the user's choice.
+    const aiProvider = String((profileRow as any)?.ai_provider || "").toLowerCase();
+    const PROVIDER_TO_PREF: Record<string, string> = {
+      claude: "claude-sonnet",
+      openai: "gpt-5-mini",
+      gemini: "gemini-flash",
+      grok: "claude-sonnet", // Grok not on Lovable Gateway; keep tool-use lane
+      maya: "claude-sonnet",  // not configured; fall back
+      lovable: "gemini-flash",
+    };
+    const modelPref = aiProvider && PROVIDER_TO_PREF[aiProvider]
+      ? PROVIDER_TO_PREF[aiProvider]
+      : String((profileRow as any)?.ai_model_preference || "claude-sonnet");
 
     // Build per-user system prompt with light condition context so replies feel
     // condition-aware without changing the underlying tone.
