@@ -25,6 +25,9 @@ const DataSection = lazy(() =>
 const AboutSection = lazy(() =>
   import("@/components/settings/about-section").then((m) => ({ default: m.AboutSection })),
 );
+const AiProviderSection = lazy(() =>
+  import("@/components/settings/ai-provider-section").then((m) => ({ default: m.AiProviderSection })),
+);
 
 function SectionSkeleton() {
   return (
@@ -152,6 +155,10 @@ function SettingsPage() {
 
       <Suspense fallback={<SectionSkeleton />}>
         <PreferencesSection />
+      </Suspense>
+
+      <Suspense fallback={<SectionSkeleton />}>
+        <AiProviderSection />
       </Suspense>
 
       <Suspense fallback={<SectionSkeleton />}>

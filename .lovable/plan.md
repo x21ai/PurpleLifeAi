@@ -1,133 +1,62 @@
-# Reports redesign plan
+# Multi-provider AI + finish reports redesign
 
-## Goal
-Redesign Purple’s reports experience to follow the final reference set: a premium mobile-first health data system with two coordinated visual modes:
-- **Dark report shell** for reports overview, upload, clinical report, marketplace/additional tests, disclaimers, and education
-- **Light metric drilldowns** for individual biomarker detail, data records, scorecards, and AI follow-up prompts
+## Goals
 
-The redesign will stay inside the existing reports/insights/biometrics surfaces and will not expand scope beyond what your references show.
+1. Route every AI call (report extraction, chat, insights, journal/med classify, recaps, suggestions) through a shared provider layer.
+2. Default provider = **Anthropic Claude**.
+3. Let each user pick their provider in Settings → AI (Claude / OpenAI / Gemini / Grok / Lovable AI). **Maya** added as a stub, disabled until you give the endpoint.
+4. Finish the light-mode metric drilldown polish from the previous turn (light `/biometrics/$metric`, trends list rows, responsive QA).
 
-## What will change
+## 1. Shared AI provider layer
 
-### 1) Reports overview becomes a guided report hub
-Rework `/reports` into a more editorial, app-like report home:
-- Dark background with soft green-teal wash at the top
-- Hero summary block that highlights the latest uploaded report and overall counts/status
-- Strong section hierarchy for:
-  - Labs summary / latest report snapshot
-  - Contributing tests / history
-  - Pending tests
-  - Upload/add-more-tests callout
-  - Educational/privacy/disclaimer modules lower on the page
-- Existing search and report listing stay, but get redesigned as high-contrast, large-tap cards instead of generic lists
-- Trends section becomes more intentional and visually integrated instead of feeling appended
+New file `src/lib/ai-provider.server.ts`:
+- Exports `getProviderForUser(userId)` → reads `profiles.ai_provider` (new column) with fallback to `'claude'`.
+- Exports `callAI({ userId, task, messages, jsonMode, image })` — wraps the AI SDK with `@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`, OpenAI-compatible adapter for Grok (`https://api.x.ai/v1`), and Lovable Gateway fallback.
+- Each provider reads its own key from `process.env` (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GROK_API_KEY`, `MAYA_API_KEY`, plus existing `LOVABLE_API_KEY`).
+- Maya: stubbed to throw `provider_not_configured` until endpoint is supplied.
+- Default models per provider (override-able later): Claude `claude-sonnet-4-5`, OpenAI `gpt-5-mini`, Gemini `gemini-2.5-pro`, Grok `grok-4`, Lovable `google/gemini-3-flash-preview`.
 
-### 2) Upload flow becomes a polished intake experience
-Rework `/reports/new` to match the references:
-- Dark upload screen with a more premium dropzone and clearer “processing takes a few minutes” guidance
-- Better staged communication:
-  - upload state
-  - processing state
-  - privacy reassurance
-  - medical disclaimer
-- Uploaded file queue becomes more structured and readable
-- Copy and layout will reflect a calmer, more productized experience
+## 2. Database
 
-### 3) Report detail becomes a clinical report surface
-Rework `/reports/$reportId` into a dark “clinical report” experience:
-- Top summary card for reviewed insights / key findings
-- Cleaner findings/impressions modules
-- Metrics grouped in richer panel sections with stronger state color usage
-- Expandable metric rows that feel like report insights rather than raw accordions
-- Better visual treatment for processing / failed extraction states
-- Lower-page privacy / disclaimer / educational blocks using the same language hierarchy as the references
+One migration:
+- Add `profiles.ai_provider text` with check constraint in `('claude','openai','gemini','grok','maya','lovable')` and default `'claude'`.
 
-### 4) Metric trend pages become light diagnostic drilldowns
-Rework `/reports/trends/$metricKey` and align `/biometrics/$metric` visually with the reference metric pages:
-- Light canvas with large metric title and status pill
-- Reference-range chart area styled like the screenshots
-- Dual stat cards for latest result + optimal range
-- AI question prompt cards beneath the chart
-- Cleaner readings/history list below
-- Stronger distinction between out-of-range, normal, and optimal states
+## 3. Rewire AI call sites to use the shared layer
 
-### 5) Biometrics metric pages align to the same light detail system
-Update `/biometrics/$metric` so it visually matches the final reference direction:
-- Same light diagnostic layout language as report trends
-- Refined segmented controls/range controls
-- More polished chart framing and stat cards
-- Better continuity between reports-derived metrics and wearable metrics
+Touch these files so they call `callAI(...)` instead of hitting the gateway directly:
+- `src/lib/reports.functions.ts` (extraction — keep image/PDF multimodal support, route per user)
+- `src/lib/care-chat.functions.ts` and Ask Purple chat endpoint
+- `src/lib/insights-patterns.functions.ts`
+- `src/lib/journal-classify.functions.ts`, `src/lib/journal-recap.functions.ts`
+- `src/lib/med-recognition.functions.ts`, `src/lib/med-intelligence.functions.ts`
+- `src/lib/condition-suggestions.functions.ts`, `src/lib/feature-suggestions.functions.ts`
+- `src/lib/medical-report.functions.ts`
 
-### 6) Data records / biomarker catalog styling direction
-Where applicable in current data/report-related screens, restyle list rows to match the “Data / Records” reference:
-- Softer white cards
-- Compact category + metric + value structure
-- Right-aligned mini range indicators / trend marks
-- Stronger visual grouping for repeated rows
+Keep prompts identical; only swap the transport. Preserve existing error handling (429 / 402) and translate provider errors into the same surface codes.
 
-### 7) Keep the epilepsy/seizures behavior already specified
-Preserve the condition-aware logic already discussed:
-- **Insights: Seizures tab + content render only when profile conditions include `epilepsy` or `seizures`**
-- Otherwise default to **Trends**
-- Users without those conditions, including `pmt@eigital.com`, should not see Seizures
+## 4. Settings UI
 
-## Design system direction to implement
+New section in `src/routes/_app/settings.tsx` (or `settings.how-purple-thinks.tsx`):
+- "AI Provider" card with 6 radio options (Claude default, OpenAI, Gemini, Grok, Maya [disabled], Lovable AI).
+- Saves to `profiles.ai_provider` via new server fn `setAiProvider`.
+- Small explainer: "Your reports, chat, and insights run on the provider you pick. Keys are stored server-side."
 
-### Dark report shell
-- Deep charcoal/near-black base
-- Teal-green atmospheric top glow only where used by the report shell
-- Large uppercase navigation headers where appropriate
-- Rounded modules with subtle inner contrast, not bright borders
-- White typography with muted gray secondary text
-- Status accents:
-  - green/teal for optimal/positive
-  - amber for caution
-  - slate/gray for pending/inactive
+## 5. Finish reports redesign (carryover)
 
-### Light metric drilldowns
-- Bright warm-white background
-- Very soft card shadows and thin borders
-- Pink/magenta for out-of-range markers
-- Green for optimal range bands
-- Yellow for “normal but not optimal” where applicable
-- Large readable charts and oversized metric titles
-- Question prompt cards styled as tappable AI follow-up actions
+- `src/routes/_app/biometrics.$metric.tsx` → light `MetricShell` treatment matching `/reports/trends/$metricKey`.
+- `src/components/reports/trends-section.tsx` → update list rows to match new dark report shell.
+- Responsive QA pass on `/reports`, `/reports/new`, `/reports/$reportId`, `/reports/trends/$metricKey`, `/biometrics/$metric` at mobile + desktop.
 
-## Implementation approach
+## 6. Out of scope (this round)
 
-### Phase 1: foundation + tokens
-- Extend shared tokens/styles so both dark report shell and light metric detail themes are supported cleanly
-- Introduce reusable report-specific UI pieces instead of scattering one-off classes
+- Maya wiring (waiting on endpoint).
+- Per-feature provider override (one provider per user, all features).
+- BYO-key (users pasting their own keys).
 
-### Phase 2: reports shell screens
-- Rebuild `/reports`
-- Rebuild `/reports/new`
-- Rebuild `/reports/$reportId`
+## Dependencies to install
 
-### Phase 3: metric detail system
-- Rebuild `/reports/trends/$metricKey`
-- Restyle `/biometrics/$metric` to the same design language
+`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`. Grok uses the existing `@ai-sdk/openai-compatible` already in the project.
 
-### Phase 4: supporting modules
-- Upgrade trends list rows, metric cards, status pills, prompt cards, disclaimer cards, and upload/process states
-- Align educational/privacy sections to the final references
+---
 
-### Phase 5: polish and responsive QA
-- Mobile-first tuning based on your screenshots
-- Make sure desktop/tablet scale gracefully without losing the mobile visual language
-- Check contrast, overflow, long metric names, and loading/empty/error states
-
-## Technical notes
-- Reuse current routes and data flows; this is primarily a UI/UX redesign, not a backend rewrite
-- Keep current private storage behavior and disclaimer requirements intact
-- Likely files touched first:
-  - `src/routes/_app/reports.tsx`
-  - `src/routes/_app/reports.new.tsx`
-  - `src/routes/_app/reports.$reportId.tsx`
-  - `src/routes/_app/reports.trends.$metricKey.tsx`
-  - `src/routes/_app/biometrics.$metric.tsx`
-  - `src/components/reports/trends-section.tsx`
-  - shared UI/token files as needed
-
-## Expected result
-A cohesive reports experience that feels much closer to your references: premium, clinical, mobile-native, and visually differentiated between overview/reporting screens and individual metric analysis screens.
+Reply **go** to start. I'll do the migration first, wait for approval, then rewire and ship the Settings card.
