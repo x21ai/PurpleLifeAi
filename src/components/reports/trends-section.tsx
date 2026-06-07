@@ -29,10 +29,10 @@ import {
 } from "@/lib/report-trends.functions";
 
 function flagTone(flag: string | null) {
-  if (flag === "high") return "text-rose-500";
-  if (flag === "low") return "text-amber-500";
-  if (flag === "normal") return "text-emerald-500";
-  return "text-muted-foreground";
+  if (flag === "high") return "text-[#FFA8BD]";
+  if (flag === "low") return "text-[#F3D58B]";
+  if (flag === "normal") return "text-[#5CE0AC]";
+  return "report-muted";
 }
 
 function MetricRow({
@@ -61,12 +61,12 @@ function MetricRow({
     <li
       ref={setNodeRef}
       style={style}
-      className="group flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-3"
+      className="group report-card flex items-center gap-3 px-4 py-3.5"
     >
       <button
         type="button"
         aria-label="Drag to reorder"
-        className="cursor-grab touch-none text-muted-foreground/60 hover:text-foreground"
+        className="cursor-grab touch-none text-white/30 hover:text-white"
         {...attributes}
         {...listeners}
       >
@@ -79,8 +79,8 @@ function MetricRow({
         className="flex flex-1 items-center gap-3 min-w-0"
       >
         <div className="min-w-0 flex-1">
-          <p className="text-sm text-foreground truncate capitalize">{label}</p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-sm text-white truncate capitalize">{label}</p>
+          <p className="text-[11px] report-muted">
             {m.count} readings
             {m.latest_value != null && (
               <>
@@ -101,8 +101,7 @@ function MetricRow({
                 <Line
                   type="monotone"
                   dataKey="v"
-                  stroke="currentColor"
-                  className="text-primary"
+                  stroke="#5CE0AC"
                   strokeWidth={1.5}
                   dot={false}
                   isAnimationActive={false}
@@ -110,10 +109,10 @@ function MetricRow({
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-full w-full rounded bg-muted/40" />
+            <div className="h-full w-full rounded bg-white/5" />
           )}
         </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+        <ChevronRight className="h-4 w-4 text-white/30 shrink-0" />
       </Link>
 
       <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
@@ -122,7 +121,7 @@ function MetricRow({
           onClick={onTogglePin}
           aria-label={m.pinned ? "Unpin" : "Pin to top"}
           title={m.pinned ? "Unpin" : "Pin to top"}
-          className="rounded-full p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+          className="rounded-full p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
         >
           {m.pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
         </button>
@@ -131,7 +130,7 @@ function MetricRow({
           onClick={onHide}
           aria-label="Hide"
           title="Hide from trends"
-          className="rounded-full p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+          className="rounded-full p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
         >
           <EyeOff className="h-3.5 w-3.5" />
         </button>
@@ -192,10 +191,10 @@ export function TrendsSection() {
     <section className="mt-10">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="flex items-center gap-2 font-serif text-2xl text-foreground">
-            <TrendingUp className="h-4 w-4 text-primary" /> Trends
+          <h2 className="flex items-center gap-2 font-serif text-2xl text-white">
+            <TrendingUp className="h-4 w-4 text-[#5CE0AC]" /> Trends
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm report-muted">
             Metrics that appear in two or more reports. Drag to reorder, pin the ones that matter most.
           </p>
         </div>
@@ -203,7 +202,7 @@ export function TrendsSection() {
           <button
             type="button"
             onClick={() => setShowHidden((v) => !v)}
-            className="text-xs text-muted-foreground hover:text-foreground"
+            className="text-xs text-white/60 hover:text-white"
           >
             {showHidden ? "Hide hidden" : "Show hidden"}
           </button>
