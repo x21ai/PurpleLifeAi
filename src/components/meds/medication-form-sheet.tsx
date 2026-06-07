@@ -142,6 +142,33 @@ export function MedicationFormSheet({
     }
   }, [open]);
 
+  // Apply scan/voice prefill when sheet opens without an existing med id.
+  React.useEffect(() => {
+    if (!open || editingMedId || !prefill) return;
+    if (prefill.name) setName(prefill.name);
+    if (prefill.dosage_form) setDosageForm(prefill.dosage_form);
+    if (prefill.dosage_amount != null) setDosageAmount(String(prefill.dosage_amount));
+    if (prefill.dosage_unit) {
+      setDosageUnit(prefill.dosage_unit);
+      setUnitMode(DOSAGE_UNITS.includes(prefill.dosage_unit) ? "preset" : "custom");
+    }
+    if (prefill.with_food != null) setWithFood(prefill.with_food);
+    if (prefill.prescriber_name) setPrescriberName(prefill.prescriber_name);
+    if (prefill.pharmacy_name) setPharmacyName(prefill.pharmacy_name);
+    if (prefill.prescription_number) setPrescriptionNumber(prefill.prescription_number);
+    if (prefill.pills_remaining != null) setPillsRemaining(String(prefill.pills_remaining));
+    if (prefill.prescriber_name || prefill.pharmacy_name || prefill.prescription_number) {
+      setPrescriberOpen(true);
+    }
+    if (prefill.times_per_day && prefill.times_per_day > 0) {
+      const defaults = ["08:00", "20:00", "12:00", "16:00"];
+      const n = Math.min(prefill.times_per_day, 4);
+      const slots = defaults.slice(0, n).sort();
+      setTimes(slots);
+      setTimeAmounts(slots.map(() => ""));
+    }
+  }, [open, editingMedId, prefill]);
+
   // Load existing medication when opening in edit mode.
   React.useEffect(() => {
     if (!open || !editingMedId) return;
