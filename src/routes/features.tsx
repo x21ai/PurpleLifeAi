@@ -81,7 +81,7 @@ function FeaturesPage() {
           title="One timeline. The whole picture."
           body="Seizures, meds, journal moments, sleep, HRV, in one feed you can filter by day, week, month, or year. A daily forecast watches your sleep, missed doses, menstrual phase, and your own trigger history."
           image={featuresImages.phoneTyping}
-          alt="Soft morning mist over a quiet field."
+          alt="Hands typing a quiet thought into a phone in warm evening light."
           imageSide="left"
         />
 
