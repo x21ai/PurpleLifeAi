@@ -28,6 +28,19 @@ import { Volume2 } from "lucide-react";
 
 export type MedKind = "medication" | "supplement" | "vitamin" | "herbal" | "rescue";
 
+export type MedPrefill = {
+  name?: string | null;
+  dosage_amount?: number | null;
+  dosage_unit?: string | null;
+  dosage_form?: string | null;
+  with_food?: boolean | null;
+  times_per_day?: number | null;
+  prescriber_name?: string | null;
+  pharmacy_name?: string | null;
+  prescription_number?: string | null;
+  pills_remaining?: number | null;
+};
+
 const KIND_OPTIONS: { value: MedKind; label: string }[] = [
   { value: "medication", label: "Medication" },
   { value: "supplement", label: "Supplement" },
