@@ -69,7 +69,7 @@ function ContactPage() {
       <MarketingHeader />
       <CalmHero
         image={contactImages.handwrittenNote}
-        alt=""
+        priority
         eyebrow="Contact"
         headline="Say hello."
         body="A real person reads every message. Usually within a day."

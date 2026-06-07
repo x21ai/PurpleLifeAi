@@ -58,7 +58,7 @@ function AboutPage() {
         {/* Hero, mist */}
         <CalmHero
           image={aboutImages.hero}
-          alt=""
+          priority
           eyebrow="About Purple"
           headline={<>Calm, quiet,<br />on your side.</>}
         />
@@ -86,7 +86,6 @@ function AboutPage() {
         {/* Human moment, bedside */}
         <HumanMoment
           image={aboutImages.bedsideLamp}
-          alt="A person sitting on the edge of a bed at dusk, holding a phone, lamp light behind."
           quote="It&rsquo;s here when I need it, and quiet when I don&rsquo;t."
           attribution="What we&rsquo;re building toward"
         />
@@ -100,7 +99,6 @@ function AboutPage() {
         {/* Caregiver moment */}
         <HumanMoment
           image={aboutImages.armAround}
-          alt="A caregiver&rsquo;s hand resting gently on another person&rsquo;s shoulder."
           quote="No one should do this alone."
           attribution="On caregivers, family, and the people who help"
           reverse

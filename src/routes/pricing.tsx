@@ -72,7 +72,7 @@ function PricingPage() {
         {/* Hero, mist */}
         <CalmHero
           image={pricingImages.hero}
-          alt=""
+          priority
           eyebrow="Pricing"
           headline={<>Free.<br />Forever.</>}
           body="Health tools shouldn&rsquo;t come with a paywall. Purple is funded by goodwill, not by you."
@@ -109,7 +109,6 @@ function PricingPage() {
         {/* The human reason it's free */}
         <HumanMoment
           image={pricingImages.pillTray}
-          alt="A weekly pill organizer resting on a worn wooden table, late afternoon light from a window."
           quote="Because nobody should pay to remember their own life."
           attribution="Why Purple is free"
         />

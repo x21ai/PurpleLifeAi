@@ -6,31 +6,47 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SiteFooter } from "@/components/layout/site-footer";
-import { CalmHero } from "@/components/marketing/calm-scene";
+import { ResponsiveImage } from "@/components/marketing/responsive-image";
 import { signInImages } from "@/lib/calm-images";
 import { SocialSignInButtons } from "@/components/auth/social-sign-in-buttons";
 import { isOAuthCallbackUrl, waitForOAuthSession } from "@/lib/auth-oauth";
 import { toast } from "sonner";
-import { LocaleFields, type LocaleValues } from "@/components/locale/locale-fields";
 import { setLocale, detectBrowserLocale, type SupportedLocale } from "@/i18n";
 import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { redeemInviteCode } from "@/lib/invite-codes.functions";
-import { captureInviteFromUrl, getStoredInvite, setStoredInvite, clearStoredInvite } from "@/lib/invite-storage";
+import { captureInviteFromUrl, getStoredInvite, clearStoredInvite } from "@/lib/invite-storage";
 
 const LOCALE_PREFILL_KEY = "purple-locale-prefill";
 
-function readPrefill(): LocaleValues {
-  if (typeof window === "undefined") {
-    return { country: null, timezone: null, locale: "en" };
-  }
+/**
+ * Auto-detect a sensible locale prefill for /welcome. The user doesn't see this
+ * during sign-up — /welcome shows it pre-filled so they can confirm or change.
+ */
+function detectAndStorePrefill(): { country: string | null; timezone: string | null; locale: SupportedLocale } {
+  const locale = detectBrowserLocale();
+  let timezone: string | null = null;
+  let country: string | null = null;
   try {
-    const raw = localStorage.getItem(LOCALE_PREFILL_KEY);
-    if (raw) return JSON.parse(raw) as LocaleValues;
+    const opts = Intl.DateTimeFormat().resolvedOptions();
+    timezone = opts.timeZone ?? null;
+    // Browser locale often carries region (e.g. en-US → US)
+    const region = new Intl.Locale(opts.locale ?? locale).region;
+    if (region) country = region;
   } catch {
-    // ignore
+    // older browsers — leave nulls; /welcome will ask
   }
-  return { country: null, timezone: null, locale: detectBrowserLocale() };
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(
+        LOCALE_PREFILL_KEY,
+        JSON.stringify({ country, timezone, locale }),
+      );
+    } catch {
+      // ignore
+    }
+  }
+  return { country, timezone, locale };
 }
 
 export const Route = createFileRoute("/sign-in")({
@@ -82,19 +98,17 @@ function SignInPage() {
   });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
   const [status, setStatus] = useState<
     "idle" | "submitting" | "verify-sent" | "reset-sent" | "error"
   >("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [localeValues, setLocaleValues] = useState<LocaleValues>(() => readPrefill());
   const navigate = Route.useNavigate();
   const redeem = useServerFn(redeemInviteCode);
 
   useEffect(() => {
+    // Silently capture invite codes from URL and detect locale for /welcome.
     captureInviteFromUrl();
-    const stored = getStoredInvite();
-    if (stored) setInviteCode(stored);
+    detectAndStorePrefill();
   }, []);
 
   useEffect(() => {
@@ -158,26 +172,18 @@ function SignInPage() {
       setStatus("error");
       return;
     }
-    // Persist locale prefill so /welcome (post-verification) can apply it.
-    try {
-      localStorage.setItem(LOCALE_PREFILL_KEY, JSON.stringify(localeValues));
-    } catch {
-      // ignore
-    }
-    setLocale(localeValues.locale as SupportedLocale);
-    // Persist invite for later redemption (after email verification, etc.)
-    if (inviteCode.trim()) setStoredInvite(inviteCode.trim().toUpperCase());
+    // Persist auto-detected locale prefill so /welcome shows sensible defaults.
+    const prefill = detectAndStorePrefill();
+    setLocale(prefill.locale);
     if (data.session) {
-      // Try to redeem immediately when we already have a session.
-      const code = inviteCode.trim().toUpperCase();
+      // Redeem any invite captured from URL silently.
+      const code = (getStoredInvite() ?? "").trim().toUpperCase();
       if (code) {
         try {
           const res = await redeem({ data: { code } });
           if (res.ok) {
             clearStoredInvite();
             toast.success("Invite code applied");
-          } else {
-            toast.error(`Invite code ${res.reason}`);
           }
         } catch {
           /* non-fatal */
@@ -186,9 +192,9 @@ function SignInPage() {
       // Save immediately so a fresh profile starts with the right locale.
       void supabase.from("profiles").upsert({
         id: data.session.user.id,
-        country: localeValues.country,
-        timezone: localeValues.timezone,
-        locale: localeValues.locale,
+        country: prefill.country,
+        timezone: prefill.timezone,
+        locale: prefill.locale,
       });
       await navigate({ to: "/today" });
       return;
@@ -197,23 +203,41 @@ function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="lg:grid lg:grid-cols-[1.1fr_1fr] xl:grid-cols-[1.25fr_1fr]">
-        {/* Hero, shared calm-nature treatment */}
-        <CalmHero
-          image={signInImages.hero}
-          variant="split"
-          as="div"
-          eyebrow="PURPLE"
-          headline={
-            <span className="font-serif italic text-base sm:text-lg text-foreground/75 max-w-md block">
-              {t("signIn.freeForever")}
-            </span>
-          }
+    <div className="relative min-h-dvh bg-background text-foreground">
+      {/* Full-bleed hero photo */}
+      <div className="fixed inset-0 -z-10">
+        <ResponsiveImage
+          asset={signInImages.hero}
+          priority
+          sizes="100vw"
+          className="absolute inset-0 h-full w-full object-cover"
         />
+        {/* Right-side gradient so the form column reads cleanly over the photo */}
+        <div
+          className="absolute inset-0 bg-gradient-to-l from-background via-background/85 to-background/10 lg:from-background lg:via-background/70 lg:to-background/0"
+          aria-hidden="true"
+        />
+      </div>
+
+      <div className="lg:grid lg:grid-cols-[1fr_minmax(420px,560px)]">
+        {/* Wordmark column — left, breathing room on the photo */}
+        <aside className="hidden lg:flex flex-col justify-end p-14 min-h-dvh">
+          <p
+            className="label-eyebrow"
+            style={{ color: "#FFFFFF", opacity: 0.92, textShadow: "0 1px 2px rgba(0,0,0,0.45)" }}
+          >
+            PURPLE
+          </p>
+          <p
+            className="mt-4 font-serif italic text-lg max-w-sm leading-relaxed"
+            style={{ color: "#FFFFFF", opacity: 0.85, textShadow: "0 1px 2px rgba(0,0,0,0.45)" }}
+          >
+            {t("signIn.freeForever")}
+          </p>
+        </aside>
 
         {/* Form panel */}
-        <main className="flex items-center justify-center px-6 sm:px-10 lg:px-14 py-12 lg:py-16 min-h-screen">
+        <main className="flex items-center justify-center px-6 sm:px-10 lg:px-14 py-12 lg:py-16 min-h-dvh">
           <div className="w-full max-w-md">
             <p className="label-eyebrow">{t("signIn.eyebrow")}</p>
             <h1 className="mt-5 font-serif text-5xl sm:text-6xl lg:text-7xl leading-[1.02] tracking-tight text-foreground">
@@ -285,27 +309,9 @@ function SignInPage() {
                         disabled={status === "submitting"}
                       />
                       {mode === "register" && (
-                        <div className="pt-4 border-t border-border mt-2">
-                          <p className="label-eyebrow mb-3">{t("welcome.regionLanguage")}</p>
-                          <LocaleFields
-                            values={localeValues}
-                            onChange={setLocaleValues}
-                            compact
-                          />
-                          <label htmlFor="invite" className="label-eyebrow block mt-5 mb-2">
-                            Invite code (optional)
-                          </label>
-                          <Input
-                            id="invite"
-                            type="text"
-                            autoComplete="off"
-                            placeholder="If a friend shared one"
-                            value={inviteCode}
-                            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                            className="h-12 font-mono tracking-widest rounded-xl"
-                            disabled={status === "submitting"}
-                          />
-                        </div>
+                        <p className="text-xs text-muted-foreground pt-1">
+                          We&rsquo;ll ask a few quick things after you confirm your email — region, conditions, and anything else that helps Purple help you.
+                        </p>
                       )}
                       <Button
                         type="submit"

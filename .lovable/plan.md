@@ -1,72 +1,75 @@
-## The duplication today
+# Plan
 
-`src/lib/calm-images.ts` exposes 4 calm landscapes and 6 human/still moments. Most marketing pages share the same handful, so heroes and section photos repeat across `/`, `/features`, `/pricing`, `/about`, `/community`, `/contact`:
+Four related changes. Image-quality work (alt text, responsive sizing, dedupe check) is mostly mechanical; the sign-in changes need one decision from you before I build.
 
-```text
-Image                  Used on
-calmImages.dawn        index hero, sign-in hero, features hero
-calmImages.mist        pricing hero, features mid-band, about hero
-calmImages.coast       index footer, pricing footer, features footer, community hero
-calmImages.dawnAlt     features, about
-humanImages.caregiverHand  index, features, about
-humanImages.pillOrganizer  pricing, features
-humanImages.walkGrass  contact, community
-humanImages.mugMorning index only
-humanImages.bedsideDusk about only
-humanImages.nightstand index only
+## 1. Sign-in / sign-up: cut the noise, fix the layout
+
+**Strip the sign-up form down to the essentials.** Country, time zone, language, and invite code all move off the create-account form. They're auto-detected or asked later in `/welcome`, which already collects them.
+
+Create-account form keeps: **email + password** only. We still:
+- detect browser locale and write it to `LOCALE_PREFILL_KEY` so `/welcome` shows it pre-filled
+- detect timezone via `Intl.DateTimeFormat().resolvedOptions().timeZone` and stash it the same way
+- keep invite-code capture from URL (`captureInviteFromUrl`) silently — `/welcome` can show a small "Have an invite code?" field
+
+This matches the brand voice (quiet, low-friction) and gets people into the app faster.
+
+**Sign-in hero layout.** Today the image is locked to the left half of the page (`lg:grid-cols-[1.1fr_1fr]`). You're asking why. I'd like to confirm which direction before I rebuild:
+
+- **A. Full-bleed background**, form floats in a translucent card on the right. Most immersive, photo dominates.
+- **B. Wider image (≈60/40)**, form stays in its own column. Smallest change, just rebalances.
+- **C. Keep split but make the image taller / full-height on all breakpoints** and remove the dead dark area under it.
+
+If you don't pick, I'll go with **A** (full-bleed) since the night-coast photo is strong enough to carry the page.
+
+## 2. Descriptive alt text on every marketing/moment image
+
+Right now every `<img>` in `CalmHero`, `HumanMoment`, `StillLife`, etc. either has `alt=""` or a generic alt. I'll:
+
+- Add an `alt` prop to `CalmHero` (currently defaults to `""`) and require it from every caller.
+- Write specific alt text per route image (e.g. *"Misty coastal cliffs at dawn under a deep blue sky"* for the sign-in hero, *"A warm mug held by both hands at a sunlit window"* for the home moment).
+- Keep `alt=""` only for purely decorative thumbnails (e.g. attachment previews in `journal.new.tsx`).
+
+Alt text lives next to the image map in `src/lib/calm-images.ts` so each asset ships with its description:
+
+```ts
+export const signInImages = {
+  hero: { src: signInHero, alt: "Misty coastal cliffs at dawn under a deep blue sky" },
+} as const;
 ```
 
-The user-visible result: pricing's hero is identical to features', the coast plate closes three different pages, and the caregiver hand appears in three places.
+Callers change from `image={signInImages.hero}` to `image={signInImages.hero.src} alt={signInImages.hero.alt}`.
 
-## Approach
+## 3. Responsive sizes + lazy-loading
 
-Generate one fresh image per slot so every page has its own hero and its own section moments, while staying inside Purple's existing aesthetic: cinematic, soft, dawn/dusk light, no faces (or backs-of-heads only), no medical imagery. Then remap `calm-images.ts` so each page imports per-page exports — that makes future drift impossible.
+- Add `vite-imagetools` and import each marketing image as a `?w=640;1024;1600;1920&format=avif;webp;jpg&as=picture` source set. Vite generates the variants at build time.
+- Replace the bare `<img>` in `CalmHero` / `HumanMoment` / `StillLife` with a `<ResponsiveImage>` wrapper that renders `<picture>` + `<source>` + `<img sizes="...">`.
+- `loading="lazy"` + `decoding="async"` on everything except the LCP image on each route (sign-in hero, home hero, etc.), which gets `fetchpriority="high"` and a `<link rel="preload" as="image" imagesrcset=...>` in that route's `head().links`.
+- Mobile-first `sizes`: heroes `(min-width: 1024px) 60vw, 100vw`; moment images `(min-width: 1024px) 50vw, 100vw`.
 
-Generation uses `imagegen--generate_image` (`fast` tier, jpg, written to `src/assets/`). Heroes are 1920×1080; section/portrait moments are 1280×1280 or 1280×960 depending on slot.
+Net effect on mobile: hero drops from ~1.5 MB JPG to ~120 KB AVIF; below-the-fold moments don't download until scrolled near.
 
-## Image plan (one per slot)
+## 4. Build-time check: no shared hero / moment assets across routes
 
-Hero landscapes (one per page):
+A small script wired into the existing build:
 
-```text
-File                                  Page       Subject
-hero-home-mountains-dawn.jpg          /          Same mountain/cloud composition as today (keep current hero)
-hero-features-misty-valley.jpg        /features  Layered misty valley, cool blue, pre-sunrise
-hero-pricing-coastal-fog.jpg          /pricing   Soft headlands receding into fog, warm/cool blend
-hero-about-quiet-hills.jpg            /about     Rolling hills at golden hour, low haze
-hero-community-river-bend.jpg         /community Wide river bend through forest, soft overcast
-hero-contact-lake-stillness.jpg       /contact   Glass-flat lake at first light, distant treeline
-hero-signin-night-coast.jpg           /sign-in   Dusky coastline, deeper blues (distinct from home)
-```
+- `scripts/check-unique-route-images.mjs` parses each `src/routes/*.tsx` (skip `_app/*`), extracts every image import that resolves under `src/assets/`, and builds a `{ route → [assetPath...] }` map.
+- For any asset that appears under more than one route, fail the script with a readable error listing the duplicate routes.
+- Added to `package.json` as `"check:images"` and invoked from `"build"` (`bun run check:images && vite build`). Also runs in lint step so the agent catches it before commit.
+- The home page is allowed to keep `sign-in-hero.jpg` only if we explicitly rename it; otherwise the check will flag it (good — it's a leftover).
 
-Human/still moments (one per use site):
+## Technical notes
 
-```text
-File                                  Replaces / used at
-moment-home-mug-window.jpg            index "Last night I wrote three sentences"
-moment-home-nightstand-notebook.jpg   index "A second is enough"
-moment-home-shoulder-hand.jpg         index "No one should do this alone"
-moment-features-phone-typing.jpg      features "Type it. Say it. Snap it."
-moment-features-pill-organizer.jpg    features biometrics band (new shot, distinct from pricing)
-moment-features-hand-on-shoulder.jpg  features caregiver mode
-moment-pricing-pill-tray-window.jpg   pricing "Because nobody should pay…"
-moment-about-bedside-lamp.jpg         about "It's here when I need it"
-moment-about-arm-around.jpg           about "No one should do this alone"
-moment-community-walking-path.jpg     community "For the people who help…"
-moment-contact-handwritten-note.jpg   contact section
-```
-
-Style brief shared across every prompt: shot on a 35mm lens, natural light, muted palette, deep shadows that sit on Purple's near-black background, soft grain, no text, no logos, no recognizable faces. Hero images frame the subject so the page's serif headline reads cleanly over the upper-left.
-
-## File changes
-
-1. `src/lib/calm-images.ts` — replace the flat `calmImages` / `humanImages` maps with per-page named exports: `homeImages`, `featuresImages`, `pricingImages`, `aboutImages`, `communityImages`, `contactImages`, `signInImages`. Each holds only the images that page actually uses.
-2. Update the six route files (`index.tsx`, `features.tsx`, `pricing.tsx`, `about.tsx`, `community.tsx`, `contact.tsx`, `sign-in.tsx`) to import their own page's image map.
-3. Delete the now-unused asset files (`hero-readiness-dawn.jpg`, `hero-readiness-mist.jpg`, `hero-readiness-coast.jpg`, `human-mug-morning.jpg`, `human-bedside-dusk.jpg`, `human-caregiver-hand.jpg`, `human-walk-grass.jpg`, `still-pill-organizer.jpg`, `still-nightstand.jpg`, `sign-in-hero.jpg`).
-4. Leave `src/routes/_app/welcome.tsx` alone — it imports `hero-readiness-dawn.jpg` / `hero-readiness-mist.jpg` directly. Either keep those two assets or update welcome to import from the new `homeImages` map; plan to do the latter to avoid keeping dead duplicates.
+- `LocaleFields` import + `inviteCode` UI block in `src/routes/sign-in.tsx` gets removed; the state for `localeValues` shrinks to just the auto-detected prefill write on submit.
+- `CalmHero` `alt` becomes required (TS will surface every caller that needs updating).
+- `vite-imagetools` is Worker-safe (build-time only, no runtime). No effect on SSR.
+- The build-time check is plain Node (`node:fs`, `node:path`) — no extra deps.
 
 ## Out of scope
 
-- In-app routes under `/_app/*` (only marketing/landing pages are duplicating).
-- Brand identity / wordmark / favicons.
-- Generating multiple variants per slot — one image per slot, chosen for fit, not a gallery.
+- Changing `/welcome` itself beyond making sure locale prefill still lands there.
+- Re-cropping or regenerating any existing image.
+- In-app routes under `/_app/*`.
+
+---
+
+**One decision needed:** sign-in hero layout — A (full-bleed), B (60/40 split), or C (taller split)?
