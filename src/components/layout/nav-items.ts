@@ -51,7 +51,7 @@ export const navTree: NavGroup[] = [
     to: "/my-health",
     children: [
       { to: "/biometrics", label: "Biometrics",  icon: Activity   },
-      { to: "/hydration",  label: "Hydration",   icon: Droplets   },
+      { to: "/hydration",  label: "Intake",      icon: Droplets   },
       { to: "/meds",       label: "Medications", icon: Pill       },
       { to: "/timeline",   label: "Timeline",    icon: Clock      },
     ],
@@ -117,7 +117,7 @@ export type NavItem = {
 export const navItems: NavItem[] = [
   { to: "/today",     label: "Today",     icon: Sun       },
   { to: "/journal",   label: "Journal",   icon: BookOpen  },
-  { to: "/hydration", label: "Hydration", icon: Droplets  },
+  { to: "/hydration", label: "Intake",    icon: Droplets  },
   { to: "/timeline",  label: "Timeline",  icon: Clock     },
   { to: "/insights",  label: "Patterns",  icon: TrendingUp },
   { to: "/tools",     label: "Tools",     icon: Wrench    },
