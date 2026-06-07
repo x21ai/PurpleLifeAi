@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { callAIForUser, tryParseJson } from "./ai-provider.server";
 
 const ProcessInput = z.object({
   reportId: z.string().uuid(),
@@ -45,10 +46,13 @@ function flagFor(v: number | null | undefined, low: number | null | undefined, h
   return "normal";
 }
 
-async function extractWithAI(text: string, imageDataUrl: string | null, dictionary: Array<{ metric_key: string; display_name: string; aliases: string[]; default_unit: string | null; default_ref_low: number | null; default_ref_high: number | null; panel?: string | null }>): Promise<ExtractionResult> {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
-
+async function extractWithAI(
+  supabase: Parameters<typeof callAIForUser>[0],
+  userId: string,
+  text: string,
+  media: { base64: string; mime: string } | null,
+  dictionary: Array<{ metric_key: string; display_name: string; aliases: string[]; default_unit: string | null; default_ref_low: number | null; default_ref_high: number | null; panel?: string | null }>,
+): Promise<ExtractionResult> {
   const dictPrompt = dictionary
     .map((d) => `- ${d.metric_key} ("${d.display_name}", panel: ${d.panel ?? "other"}, aliases: ${d.aliases.join(", ") || "none"}, typical unit: ${d.default_unit ?? "?"})`)
     .join("\n");
@@ -83,54 +87,19 @@ Return ONLY a JSON object with this exact shape:
 
 Do NOT include diagnoses, treatments, prescriptions, or recommendations. Only extract what is on the page.`;
 
-  const userContent: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
-  if (text.trim().length > 0) {
-    userContent.push({ type: "text", text: `Extract from this lab report text:\n\n${text.slice(0, 30000)}` });
-  }
-  if (imageDataUrl) {
-    userContent.push({ type: "text", text: "Extract from this lab report image:" });
-    userContent.push({ type: "image_url", image_url: { url: imageDataUrl } });
-  }
-  if (userContent.length === 0) {
-    throw new Error("Nothing to extract");
-  }
+  const prompt = text.trim().length > 0
+    ? `Extract from this lab report text:\n\n${text.slice(0, 30000)}`
+    : "Extract from this lab report file.";
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-pro",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userContent },
-      ],
-      response_format: { type: "json_object" },
-    }),
+  const responseText = await callAIForUser(supabase, userId, {
+    system: systemPrompt,
+    prompt,
+    media,
+    jsonMode: true,
+    maxTokens: 8192,
   });
-  if (!res.ok) {
-    const err = await res.text();
-    if (res.status === 402) {
-      const e = new Error("AI credits exhausted. Add credits in Settings → Workspace → Plans & Credits, then re-upload.");
-      (e as Error & { code?: string }).code = "ai_credits_exhausted";
-      throw e;
-    }
-    if (res.status === 429) {
-      const e = new Error("Purple is rate-limited right now. Please try again in a minute.");
-      (e as Error & { code?: string }).code = "ai_rate_limited";
-      throw e;
-    }
-    throw new Error(`AI extraction failed (${res.status}): ${err.slice(0, 200)}`);
-  }
-  const json = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
-  const content = json.choices?.[0]?.message?.content ?? "{}";
-  try {
-    return JSON.parse(content) as ExtractionResult;
-  } catch {
-    return { report_type: null, report_date: null, metrics: [] };
-  }
+  const parsed = tryParseJson<ExtractionResult>(responseText);
+  return parsed ?? { report_type: null, report_date: null, metrics: [] };
 }
 
 export const listReports = createServerFn({ method: "GET" })
@@ -261,15 +230,12 @@ export const processReport = createServerFn({ method: "POST" })
       const fileBuf = await fileRes.arrayBuffer();
 
       let text = "";
-      let imageDataUrl: string | null = null;
+      let media: { base64: string; mime: string } | null = null;
 
       if (doc.file_mime.startsWith("image/")) {
-        const b64 = Buffer.from(fileBuf).toString("base64");
-        imageDataUrl = `data:${doc.file_mime};base64,${b64}`;
+        media = { base64: Buffer.from(fileBuf).toString("base64"), mime: doc.file_mime };
       } else if (doc.file_mime === "application/pdf") {
-        // Send PDF to Gemini directly as inline data; Gemini handles PDFs.
-        const b64 = Buffer.from(fileBuf).toString("base64");
-        imageDataUrl = `data:application/pdf;base64,${b64}`;
+        media = { base64: Buffer.from(fileBuf).toString("base64"), mime: "application/pdf" };
       } else {
         text = new TextDecoder().decode(fileBuf);
       }
@@ -278,7 +244,7 @@ export const processReport = createServerFn({ method: "POST" })
         .from("metric_dictionary")
         .select("metric_key, display_name, aliases, default_unit, default_ref_low, default_ref_high, panel");
 
-      const extraction = await extractWithAI(text, imageDataUrl, dict ?? []);
+      const extraction = await extractWithAI(supabase, doc.user_id, text, media, dict ?? []);
 
       // Clear existing extracted metrics for this report (idempotent re-process)
       await supabase.from("report_metrics").delete().eq("report_id", doc.id);
