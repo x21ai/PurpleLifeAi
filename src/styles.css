@@ -357,6 +357,123 @@ body::-webkit-scrollbar,
     background-color: rgba(255, 255, 255, 0.04);
   }
 
+  /* ===== Reports surface system =====
+   * Two coordinated modes for the reports experience:
+   *  - report-canvas  : dark, premium "clinical" shell (reports home, upload,
+   *                     report detail). Top has a teal-green atmospheric wash.
+   *  - metric-canvas  : warm-white light surface for metric drilldowns
+   *                     (trend pages, biomarker detail). Soft cards, pink
+   *                     out-of-range markers, green optimal bands.
+   * Tokens are forced locally so the surface looks identical in light + dark.
+   */
+  .report-canvas {
+    background-color: #07090C;
+    color: #F4F6F8;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-image:
+      radial-gradient(120% 60% at 50% -10%,
+        rgba(46, 175, 138, 0.28) 0%,
+        rgba(46, 175, 138, 0.10) 28%,
+        rgba(7, 9, 12, 0) 60%),
+      linear-gradient(180deg, #0A1014 0%, #07090C 40%);
+  }
+  .report-card {
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1.5rem;
+    backdrop-filter: blur(8px);
+  }
+  .report-card-strong {
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.5rem;
+  }
+  .report-divider {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .report-muted {
+    color: #9AA3AC;
+  }
+  .report-eyebrow {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: #D8DEE3;
+  }
+  .report-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background-color: rgba(255, 255, 255, 0.06);
+    color: #D8DEE3;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .report-pill-success {
+    background-color: rgba(52, 199, 145, 0.14);
+    color: #5CE0AC;
+    border-color: rgba(52, 199, 145, 0.28);
+  }
+  .report-pill-warning {
+    background-color: rgba(235, 196, 110, 0.14);
+    color: #F3D58B;
+    border-color: rgba(235, 196, 110, 0.28);
+  }
+  .report-pill-alert {
+    background-color: rgba(255, 138, 168, 0.14);
+    color: #FFA8BD;
+    border-color: rgba(255, 138, 168, 0.28);
+  }
+
+  /* Light metric drilldown */
+  .metric-canvas {
+    background-color: #F4F2EE;
+    color: #0A0A0F;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  .metric-sheet {
+    background-color: #FFFFFF;
+    border-radius: 1.75rem;
+    box-shadow: 0 1px 0 rgba(10, 10, 15, 0.04);
+  }
+  .metric-card {
+    background-color: #FFFFFF;
+    border: 1px solid #ECEAE4;
+    border-radius: 1.25rem;
+  }
+  .metric-prompt {
+    background-color: #FFFFFF;
+    border: 1px solid #E7E5DF;
+    border-radius: 999px;
+    transition: background-color 150ms ease;
+  }
+  .metric-prompt:hover {
+    background-color: #FAF8F4;
+  }
+  .metric-pill-alert {
+    background-color: #FDE7EF;
+    color: #D6336C;
+  }
+  .metric-pill-warn {
+    background-color: #FBF3D8;
+    color: #B58A1E;
+  }
+  .metric-pill-good {
+    background-color: #DDF4E7;
+    color: #1F8E5A;
+  }
+  .metric-value-alert { color: #E84A8A; }
+  .metric-value-warn  { color: #C29024; }
+  .metric-value-good  { color: #1F8E5A; }
+
   /* Keyboard focus ring per spec */
   :focus-visible {
     outline: 2px solid var(--purple-primary);
