@@ -81,7 +81,7 @@ function MarketingHome() {
         {/* Hero, calm landscape */}
         <CalmHero
           image={homeImages.hero}
-          alt=""
+          priority
           eyebrow="A quiet companion for your health"
           headline={<>Your health,<br />remembered.</>}
           body="Write it. Say it. Snap it. Purple keeps it, and helps you see what matters."
@@ -104,7 +104,6 @@ function MarketingHome() {
         {/* First human moment, sets the tone */}
         <HumanMoment
           image={homeImages.mugWindow}
-          alt="Two pairs of hands holding a warm ceramic mug at a kitchen window in soft morning light."
           quote="Last night I wrote three sentences. That was enough."
           attribution="What using Purple actually feels like"
         />
@@ -140,10 +139,7 @@ function MarketingHome() {
         </section>
 
         {/* A still life, punctuation */}
-        <StillLife
-          image={homeImages.nightstandNotebook}
-          alt="A phone resting face-down on a wooden nightstand beside a glass of water and a small lamp."
-        />
+        <StillLife image={homeImages.nightstandNotebook} />
 
         {/* The quiet stat, what makes Purple different */}
         <QuietStat
@@ -154,7 +150,6 @@ function MarketingHome() {
         {/* Caregiver moment */}
         <HumanMoment
           image={homeImages.shoulderHand}
-          alt="A caregiver's hand resting gently on another person's shoulder."
           quote="My mom can see my week without me having to explain it again."
           attribution="On sharing with the people who help"
           reverse
