@@ -64,6 +64,27 @@ const tool = {
 };
 
 export async function recognizeMedicationFromImage(dataUrl: string): Promise<MedRecognition> {
+  return callGateway([
+    {
+      role: "user",
+      content: [
+        { type: "text", text: "Extract medication details from this label or prescription." },
+        { type: "image_url", image_url: { url: dataUrl } },
+      ],
+    },
+  ]);
+}
+
+export async function recognizeMedicationFromText(text: string): Promise<MedRecognition> {
+  return callGateway([
+    {
+      role: "user",
+      content: `Extract medication details from this voice note: """${text.slice(0, 800)}"""`,
+    },
+  ]);
+}
+
+async function callGateway(messages: any[]): Promise<MedRecognition> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("AI gateway is not configured.");
 
@@ -72,16 +93,7 @@ export async function recognizeMedicationFromImage(dataUrl: string): Promise<Med
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "google/gemini-3-flash-preview",
-      messages: [
-        { role: "system", content: SYSTEM },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Extract medication details from this label or prescription." },
-            { type: "image_url", image_url: { url: dataUrl } },
-          ],
-        },
-      ],
+      messages: [{ role: "system", content: SYSTEM }, ...messages],
       tools: [tool],
       tool_choice: { type: "function", function: { name: "log_medication" } },
     }),
