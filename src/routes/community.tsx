@@ -82,7 +82,7 @@ function CommunityFeed() {
       {/* Calm hero, same vocabulary as the rest of marketing */}
       <CalmHero
         image={communityImages.hero}
-        alt=""
+        priority
         eyebrow="Community"
         headline={<>You&rsquo;re<br />not alone.</>}
         body="A quiet, moderated space to share what's working and ask what isn't. Not medical advice, always check with your care team."
@@ -143,7 +143,6 @@ function CommunityFeed() {
       {/* A human moment to close the page */}
       <HumanMoment
         image={communityImages.walkingPath}
-        alt="A person walking through tall grass at golden hour, seen from behind."
         quote="The people who get it are already here."
         attribution="Why community matters"
       />
