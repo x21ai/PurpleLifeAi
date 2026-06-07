@@ -251,6 +251,12 @@ function MedsPage() {
         <MedRemindersBanner />
       </div>
 
+      {activeMeds.length > 0 && (
+        <div className="mt-6">
+          <MedsMiniTimeline />
+        </div>
+      )}
+
       {activeMeds.length > 0 && <RefillForecastCard />}
 
       {activeMeds.length > 0 && (
