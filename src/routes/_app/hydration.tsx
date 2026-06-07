@@ -11,8 +11,11 @@ import { HydrationTimeline, type HydrationRow } from "@/components/hydration/hyd
 import { QuickAddWater } from "@/components/hydration/quick-add-water";
 import { LogAuraSheet } from "@/components/hydration/log-aura-sheet";
 import { SnapIntakeSheet } from "@/components/intake/snap-intake-sheet";
+import { VoiceIntakeSheet } from "@/components/intake/voice-intake-sheet";
+import { IntakeRangeView } from "@/components/intake/intake-range-view";
 import { FoodTodayList, type FoodRow } from "@/components/intake/food-today-list";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
@@ -46,6 +49,7 @@ function fmtDay(d: Date) {
 function HydrationPage() {
   useRouteTheme("dark");
   const [day, setDay] = useState<Date>(() => startOfDay(new Date()));
+  const [range, setRange] = useState<"day" | "week" | "month">("day");
   const { session } = useAuth();
   const userId = session?.user.id;
   const flags = useFeatureFlags();
@@ -101,8 +105,25 @@ function HydrationPage() {
         Water, drinks, and food in one place. Tap to add, or snap a photo and let AI suggest the details.
       </p>
 
-      {/* Day navigator */}
-      <div className="mt-8 flex items-center justify-between rounded-full ring-1 ring-border bg-card px-2 py-1.5">
+      {/* Range segmented control */}
+      <div className="mt-8 inline-flex rounded-full ring-1 ring-border bg-card p-1 text-xs">
+        {(["day", "week", "month"] as const).map((r) => (
+          <button
+            key={r}
+            type="button"
+            onClick={() => setRange(r)}
+            className={cn(
+              "px-3 py-1.5 rounded-full capitalize transition-colors",
+              range === r ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {r}
+          </button>
+        ))}
+      </div>
+
+      {range === "day" && (
+      <div className="mt-4 flex items-center justify-between rounded-full ring-1 ring-border bg-card px-2 py-1.5">
         <Button
           variant="ghost" size="sm"
           onClick={() => setDay((d) => new Date(d.getTime() - 86400000))}
@@ -120,30 +141,39 @@ function HydrationPage() {
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
+      )}
 
       {/* Quick actions */}
-      {isToday && (
+      {range === "day" && isToday && (
         <div className="mt-6 space-y-3">
           <QuickAddWater />
           <div className="flex flex-wrap gap-2">
             <SnapIntakeSheet />
+            <VoiceIntakeSheet />
             {showAura && <LogAuraSheet />}
           </div>
         </div>
       )}
 
-      <div className="mt-6">
-        <HydrationTimeline
-          day={day}
-          hydration={(hydration.data ?? []) as HydrationRow[]}
-          auras={showAura ? (auras.data ?? []) : []}
-          goalMl={goal.data ?? 2000}
-        />
-      </div>
-
-      <div className="mt-6">
-        <FoodTodayList rows={(food.data ?? []) as FoodRow[]} />
-      </div>
+      {range === "day" ? (
+        <>
+          <div className="mt-6">
+            <HydrationTimeline
+              day={day}
+              hydration={(hydration.data ?? []) as HydrationRow[]}
+              auras={showAura ? (auras.data ?? []) : []}
+              goalMl={goal.data ?? 2000}
+            />
+          </div>
+          <div className="mt-6">
+            <FoodTodayList rows={(food.data ?? []) as FoodRow[]} />
+          </div>
+        </>
+      ) : (
+        <div className="mt-6">
+          <IntakeRangeView range={range} />
+        </div>
+      )}
 
       <div className="mt-8">
         <MedicalDisclaimer />
