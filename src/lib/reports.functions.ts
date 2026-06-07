@@ -112,6 +112,16 @@ Do NOT include diagnoses, treatments, prescriptions, or recommendations. Only ex
   });
   if (!res.ok) {
     const err = await res.text();
+    if (res.status === 402) {
+      const e = new Error("AI credits exhausted. Add credits in Settings → Workspace → Plans & Credits, then re-upload.");
+      (e as Error & { code?: string }).code = "ai_credits_exhausted";
+      throw e;
+    }
+    if (res.status === 429) {
+      const e = new Error("Purple is rate-limited right now. Please try again in a minute.");
+      (e as Error & { code?: string }).code = "ai_rate_limited";
+      throw e;
+    }
     throw new Error(`AI extraction failed (${res.status}): ${err.slice(0, 200)}`);
   }
   const json = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
@@ -344,9 +354,16 @@ export const processReport = createServerFn({ method: "POST" })
       return { ok: true, metricCount: rows.length };
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
+      const code = (err as { code?: string } | null)?.code;
+      const status =
+        code === "ai_credits_exhausted"
+          ? "needs_credits"
+          : code === "ai_rate_limited"
+            ? "rate_limited"
+            : "failed";
       await supabase
         .from("report_documents")
-        .update({ status: "failed", error_message: msg })
+        .update({ status, error_message: msg })
         .eq("id", doc.id);
       throw new Error(msg);
     }
