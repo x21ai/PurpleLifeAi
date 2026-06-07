@@ -14,8 +14,8 @@ export const scanMedicationFromPhoto = createServerFn({ method: "POST" })
         .regex(/^data:image\//, "Expected a data URL"),
     }).parse(input),
   )
-  .handler(async ({ data }) => {
-    return recognizeMedicationFromImage(data.image_data_url);
+  .handler(async ({ data, context }) => {
+    return recognizeMedicationFromImage(context.supabase, context.userId, data.image_data_url);
   });
 
 export const scanMedicationFromText = createServerFn({ method: "POST" })
@@ -23,6 +23,6 @@ export const scanMedicationFromText = createServerFn({ method: "POST" })
   .inputValidator((input: { text: string }) =>
     z.object({ text: z.string().trim().min(3).max(800) }).parse(input),
   )
-  .handler(async ({ data }) => {
-    return recognizeMedicationFromText(data.text);
+  .handler(async ({ data, context }) => {
+    return recognizeMedicationFromText(context.supabase, context.userId, data.text);
   });

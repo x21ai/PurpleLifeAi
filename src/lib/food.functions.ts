@@ -102,8 +102,8 @@ export const recognizeIntakeFromPhoto = createServerFn({ method: "POST" })
       image_data_url: z.string().min(20).max(15_000_000).regex(/^data:image\//, "Expected a data URL"),
     }).parse(input),
   )
-  .handler(async ({ data }) => {
-    return recognizeFromImageBase64(data.image_data_url);
+  .handler(async ({ data, context }) => {
+    return recognizeFromImageBase64(context.supabase, context.userId, data.image_data_url);
   });
 
 export const recognizeIntakeFromText = createServerFn({ method: "POST" })
@@ -111,6 +111,6 @@ export const recognizeIntakeFromText = createServerFn({ method: "POST" })
   .inputValidator((input: { text: string }) =>
     z.object({ text: z.string().trim().min(2).max(800) }).parse(input),
   )
-  .handler(async ({ data }) => {
-    return recognizeFromText(data.text);
+  .handler(async ({ data, context }) => {
+    return recognizeFromText(context.supabase, context.userId, data.text);
   });
