@@ -1,6 +1,5 @@
-import { createFileRoute, Link, useParams, useRouter, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams, useRouter, useNavigate, notFound } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft } from "lucide-react";
 import { format } from "date-fns";
 import {
   ResponsiveContainer,
@@ -25,6 +24,7 @@ import {
 } from "@/lib/biometric-metrics";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
 import { useTranslation } from "react-i18next";
+import { MetricShell, MetricTitle, MetricStatCards, AskPurpleRail } from "@/components/reports/metric-shell";
 
 const VALID = new Set<MetricKey>(METRIC_ORDER);
 
@@ -94,11 +94,12 @@ const SOURCE_LABELS: Record<SourceKey, string> = {
 
 function MetricDrillPage() {
   const { t } = useTranslation();
-  useRouteTheme("dark");
+  useRouteTheme("light");
   const { metric } = useParams({ from: "/_app/biometrics/$metric" });
   const meta = METRICS[metric as MetricKey];
   const { session } = useAuth();
   const uid = session?.user.id;
+  const navigate = useNavigate();
 
   const [range, setRange] = useState<Range>(30);
   const [compare, setCompare] = useState<CompareMode>("previous");
@@ -228,7 +229,17 @@ function MetricDrillPage() {
   }, [rows, meta, range, compare]);
 
   if (!meta) return null;
-  const tone = statusTone(meta, status);
+  const tonePill = statusTone(meta, status);
+  const shellTone: "alert" | "warn" | "good" | "neutral" =
+    status === "in_range"
+      ? "good"
+      : status === "unknown"
+        ? "neutral"
+        : ((meta.direction === "higher_better" && status === "low") ||
+            (meta.direction === "lower_better" && status === "high") ||
+            meta.direction === "neutral")
+          ? "warn"
+          : "neutral";
 
   const sdHi =
     baseline.mean != null && baseline.stddev != null ? baseline.mean + baseline.stddev : null;
@@ -236,46 +247,36 @@ function MetricDrillPage() {
     baseline.mean != null && baseline.stddev != null ? baseline.mean - baseline.stddev : null;
 
   return (
-    <div className="mx-auto max-w-4xl px-5 sm:px-10 lg:px-16 pt-8 sm:pt-12 pb-24">
-      <Link
-        to="/biometrics"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        {t("nav.allSignals")}
-      </Link>
+    <MetricShell back={{ to: "/biometrics", label: t("nav.allSignals") }}>
+      <MetricTitle
+        title={meta.label}
+        status={{
+          tone: shellTone,
+          label: tonePill.label,
+          value: current != null ? meta.format(current) : undefined,
+        }}
+      />
 
-      <div className="mt-8 flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <p className="label-eyebrow text-muted-foreground">{meta.short}</p>
-          <h1 className="font-serif text-[40px] sm:text-5xl leading-[1.05] tracking-tight mt-3 text-foreground">
-            {meta.label}
-          </h1>
-          <p className="mt-4 flex items-baseline gap-3">
-            <span className="font-serif text-[64px] sm:text-7xl leading-none">
-              {meta.format(current)}
-            </span>
-            <span
-              className={`rounded-full px-2.5 py-1 text-[11px] tracking-wide uppercase font-medium ${tone.cls}`}
-            >
-              {tone.label}
-            </span>
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {baseline.mean != null
-              ? `Your 30-day baseline: ${meta.format(baseline.mean)}`
-              : "Building your personal baseline…"}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-border bg-card px-4 py-3">
-          <OuraSyncStatus
-            variant="compact"
-            onSynced={() => setRefreshKey((k) => k + 1)}
-          />
-        </div>
+      <MetricStatCards
+        latest={{ value: meta.format(current), tone: shellTone }}
+        optimal={{
+          value: baseline.mean != null ? meta.format(baseline.mean) : "—",
+        }}
+      />
+
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <p className="text-xs text-foreground/60">
+          {baseline.mean != null
+            ? `Your 30-day baseline · ${meta.format(baseline.mean)}`
+            : "Building your personal baseline…"}
+        </p>
+        <OuraSyncStatus
+          variant="compact"
+          onSynced={() => setRefreshKey((k) => k + 1)}
+        />
       </div>
 
-      <div className="mt-8 flex items-center gap-2">
+      <div className="mt-6 flex items-center gap-2 flex-wrap">
         {([1, 7, 30, 90, 365] as const).map((r) => (
           <button
             key={r}
@@ -285,13 +286,13 @@ function MetricDrillPage() {
               "rounded-full px-3 py-1.5 text-xs font-medium transition " +
               (range === r
                 ? "bg-foreground text-background"
-                : "bg-secondary text-foreground hover:bg-secondary/70")
+                : "bg-secondary/60 text-foreground hover:bg-secondary")
             }
           >
             {r === 1 ? "Today" : r === 365 ? "1y" : `${r}d`}
           </button>
         ))}
-        <span className="mx-2 text-[11px] text-muted-foreground">vs</span>
+        <span className="mx-2 text-[11px] text-foreground/60">vs</span>
         {(
           [
             { v: "previous", l: range === 1 ? "Yesterday" : range === 7 ? "Last week" : range === 30 ? "Last month" : range === 90 ? "Prev 90d" : "Prev year" },
@@ -307,7 +308,7 @@ function MetricDrillPage() {
               "rounded-full px-3 py-1.5 text-[11px] font-medium transition " +
               (compare === opt.v
                 ? "bg-foreground text-background"
-                : "bg-secondary/50 text-foreground hover:bg-secondary/70")
+                : "bg-secondary/40 text-foreground hover:bg-secondary")
             }
           >
             {opt.l}
@@ -317,10 +318,10 @@ function MetricDrillPage() {
 
       {compare !== "none" && currentAvg != null && compareAvg != null && (
         <div className="mt-3 flex flex-wrap items-baseline gap-3 text-sm">
-          <span className="text-muted-foreground">
+          <span className="text-foreground/60">
             Avg this window: <span className="text-foreground">{meta.format(currentAvg)}</span>
           </span>
-          <span className="text-muted-foreground">
+          <span className="text-foreground/60">
             · vs <span className="text-foreground">{meta.format(compareAvg)}</span>
           </span>
           {delta != null && (
@@ -330,8 +331,8 @@ function MetricDrillPage() {
                 (Math.abs(delta) < 1
                   ? "bg-secondary text-foreground"
                   : delta > 0
-                    ? "bg-emerald-500/15 text-emerald-400"
-                    : "bg-rose-500/15 text-rose-400")
+                    ? "bg-emerald-500/15 text-emerald-700"
+                    : "bg-rose-500/15 text-rose-700")
               }
             >
               {delta > 0 ? "+" : ""}
@@ -341,11 +342,11 @@ function MetricDrillPage() {
         </div>
       )}
 
-      <div className="mt-4 rounded-2xl border border-border bg-card p-4 sm:p-6 h-[340px]">
+      <div className="metric-sheet mt-4 p-4 sm:p-6 h-[340px]">
         {rows === null ? (
           <div className="h-full w-full animate-pulse" />
         ) : chartData.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+          <div className="h-full flex items-center justify-center text-sm text-foreground/60">
             No readings in this window yet.
           </div>
         ) : (
@@ -422,7 +423,7 @@ function MetricDrillPage() {
       </div>
 
       {sourcesPresent.length > 1 && (
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-[12px] text-muted-foreground">
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-[12px] text-foreground/60">
           {sourcesPresent.map((s) => (
             <span key={s} className="inline-flex items-center gap-1.5">
               <span
@@ -436,32 +437,21 @@ function MetricDrillPage() {
       )}
 
       <section className="mt-10">
-        <p className="label-eyebrow text-muted-foreground">What this means for you</p>
+        <p className="label-eyebrow text-foreground/60">What this means for you</p>
         <p className="mt-3 font-serif text-lg leading-relaxed text-foreground/85 max-w-prose">
           {meta.meaning}
         </p>
-        <p className="mt-3 text-sm text-muted-foreground">{meta.baselineHint}</p>
+        <p className="mt-3 text-sm text-foreground/60">{meta.baselineHint}</p>
       </section>
 
-      <section className="mt-10">
-        <p className="label-eyebrow text-muted-foreground">Ask Purple about this</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {[
-            `How has my ${meta.short.toLowerCase()} been trending?`,
-            `What was happening on days my ${meta.short.toLowerCase()} dropped?`,
-            `What does the research say about ${meta.short.toLowerCase()} and seizures?`,
-          ].map((q) => (
-            <Link
-              key={q}
-              to="/chat"
-              search={{ q }}
-              className="text-left text-sm rounded-full border border-border/60 bg-secondary/40 hover:bg-secondary px-4 py-2 transition"
-            >
-              {q}
-            </Link>
-          ))}
-        </div>
-      </section>
-    </div>
+      <AskPurpleRail
+        prompts={[
+          `How has my ${meta.short.toLowerCase()} been trending?`,
+          `What was happening on days my ${meta.short.toLowerCase()} dropped?`,
+          `What does the research say about ${meta.short.toLowerCase()} and seizures?`,
+        ]}
+        onPick={(q) => navigate({ to: "/chat", search: { q } })}
+      />
+    </MetricShell>
   );
 }
