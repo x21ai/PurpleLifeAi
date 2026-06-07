@@ -200,9 +200,8 @@ export function DataSection() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="confirm-password">Re-enter your password</Label>
-              <Input
+              <PasswordInput
                 id="confirm-password"
-                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
