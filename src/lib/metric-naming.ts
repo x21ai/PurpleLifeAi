@@ -3,7 +3,7 @@
  *
  * Rule (project memory): every chart/card shows the canonical human name as
  * the primary label. The PDF's exact wording is preserved underneath as
- * "as printed: …" — UNLESS the PDF wording already means the same as the
+ * "as printed: …", UNLESS the PDF wording already means the same as the
  * canonical name (case-insensitive match after normalization), in which case
  * the "as printed" line is hidden to avoid duplication.
  */
@@ -133,7 +133,7 @@ export function resolveMetricLabel(
   if (!raw) return { primary, asPrinted: null };
   // Hide "as printed" when PDF wording means the same as canonical.
   if (normalize(raw) === normalize(primary)) return { primary, asPrinted: null };
-  // Hide "as printed" when wording is pure symbol/percentage/very short — it
+  // Hide "as printed" when wording is pure symbol/percentage/very short: it
   // would add noise rather than provenance.
   if (raw.length < 2) return { primary, asPrinted: null };
   return { primary, asPrinted: raw };

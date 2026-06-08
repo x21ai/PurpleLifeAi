@@ -129,7 +129,7 @@ function ReportDetailPage() {
       if (kind === "view") {
         const win = window.open(url, "_blank", "noopener,noreferrer");
         if (!win) {
-          // Pop-up blocked — copy URL as a fallback so the user can paste/open.
+          // Pop-up blocked: copy URL as a fallback so the user can paste/open.
           await navigator.clipboard.writeText(url);
           toast.success("Pop-up blocked. Link copied to clipboard.");
         }
