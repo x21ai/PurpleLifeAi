@@ -141,7 +141,7 @@ export function ItineraryEditor({
                   <select
                     value={leg.tz}
                     onChange={(e) => update(i, { tz: e.target.value })}
-                    className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+                    className="w-full rounded-lg border border-border bg-background text-foreground px-2 py-1.5 text-sm [&>option]:bg-popover [&>option]:text-popover-foreground"
                   >
                     {[leg.tz, ...COMMON_TZS.filter((tz) => tz !== leg.tz)].map(
                       (tz) => (
