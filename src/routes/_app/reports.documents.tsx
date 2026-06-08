@@ -71,6 +71,7 @@ function ReportsDocumentsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const fetchList = useServerFn(listReports);
+  const reprocessOne = useServerFn(processReport);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["reports"],
     queryFn: () => fetchList(),
@@ -85,6 +86,7 @@ function ReportsDocumentsPage() {
   const [yearFilter, setYearFilter] = React.useState<string>("all");
   const [typeFilter, setTypeFilter] = React.useState<string>("all");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
+  const [bulkRetrying, setBulkRetrying] = React.useState(false);
 
   const yearOf = (r: ReportRow) => {
     const d = r.report_date ?? r.created_at;
@@ -120,18 +122,58 @@ function ReportsDocumentsPage() {
     });
   }, [reports, query, yearFilter, typeFilter, statusFilter]);
   const grouped = React.useMemo(() => {
-    const byType: Record<string, ReportRow[]> = {};
-    for (const r of filtered) {
-      const key = r.report_type ?? "uncategorized";
-      (byType[key] ??= []).push(r);
+    // Group by Year → Month, newest first. This matches user expectation:
+    // "latest on top broken by year and month".
+    const byMonth: Record<string, ReportRow[]> = {};
+    const sorted = [...filtered].sort((a, b) => {
+      const da = a.report_date ?? a.created_at;
+      const db = b.report_date ?? b.created_at;
+      return (db ?? "").localeCompare(da ?? "");
+    });
+    for (const r of sorted) {
+      const iso = r.report_date ?? r.created_at;
+      const d = iso ? new Date(iso) : null;
+      const key = d && !Number.isNaN(d.getTime())
+        ? d.toLocaleDateString(undefined, { year: "numeric", month: "long" })
+        : "Date unknown";
+      (byMonth[key] ??= []).push(r);
     }
-    return byType;
+    return byMonth;
   }, [filtered]);
 
   const latest = reports[0];
   const processingCount = reports.filter((r) => r.status === "processing").length;
   const readyCount = reports.filter((r) => r.status === "ready").length;
+  const failedReports = reports.filter(
+    (r) =>
+      r.status === "failed" ||
+      r.status === "needs_credits" ||
+      r.status === "rate_limited",
+  );
   const metricsTotal = reports.reduce((s, r) => s + (r.metric_count ?? 0), 0);
+
+  async function bulkRerunFailed() {
+    if (failedReports.length === 0) return;
+    setBulkRetrying(true);
+    let ok = 0;
+    let fail = 0;
+    for (const r of failedReports) {
+      try {
+        await reprocessOne({ data: { reportId: r.id } });
+        ok += 1;
+      } catch {
+        fail += 1;
+      }
+    }
+    setBulkRetrying(false);
+    if (ok > 0) {
+      toast.success(`Re-queued ${ok} report${ok === 1 ? "" : "s"} for extraction.`);
+    }
+    if (fail > 0) {
+      toast.error(`${fail} could not be re-queued. Try again in a moment.`);
+    }
+    await refetch();
+  }
 
   return (
     <ReportShell title={t("reports.title")}>
