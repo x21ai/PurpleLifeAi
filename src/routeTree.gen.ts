@@ -75,6 +75,7 @@ import { Route as AppCareInboxRouteImport } from './routes/_app/care.inbox'
 import { Route as AppCareOwnerIdRouteImport } from './routes/_app/care.$ownerId'
 import { Route as AppBiometricsMetricRouteImport } from './routes/_app/biometrics.$metric'
 import { Route as AppAdminUsersRouteImport } from './routes/_app/admin.users'
+import { Route as AppAdminRulesRouteImport } from './routes/_app/admin.rules'
 import { Route as AppAdminResourcesRouteImport } from './routes/_app/admin.resources'
 import { Route as AppAdminPromoRouteImport } from './routes/_app/admin.promo'
 import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin.messages'
@@ -428,6 +429,11 @@ const AppAdminUsersRoute = AppAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminRulesRoute = AppAdminRulesRouteImport.update({
+  id: '/rules',
+  path: '/rules',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminResourcesRoute = AppAdminResourcesRouteImport.update({
   id: '/resources',
   path: '/resources',
@@ -595,6 +601,7 @@ export interface FileRoutesByFullPath {
   '/admin/messages': typeof AppAdminMessagesRoute
   '/admin/promo': typeof AppAdminPromoRoute
   '/admin/resources': typeof AppAdminResourcesRoute
+  '/admin/rules': typeof AppAdminRulesRoute
   '/admin/users': typeof AppAdminUsersRoute
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/care/$ownerId': typeof AppCareOwnerIdRoute
@@ -682,6 +689,7 @@ export interface FileRoutesByTo {
   '/admin/messages': typeof AppAdminMessagesRoute
   '/admin/promo': typeof AppAdminPromoRoute
   '/admin/resources': typeof AppAdminResourcesRoute
+  '/admin/rules': typeof AppAdminRulesRoute
   '/admin/users': typeof AppAdminUsersRoute
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/care/$ownerId': typeof AppCareOwnerIdRoute
@@ -772,6 +780,7 @@ export interface FileRoutesById {
   '/_app/admin/messages': typeof AppAdminMessagesRoute
   '/_app/admin/promo': typeof AppAdminPromoRoute
   '/_app/admin/resources': typeof AppAdminResourcesRoute
+  '/_app/admin/rules': typeof AppAdminRulesRoute
   '/_app/admin/users': typeof AppAdminUsersRoute
   '/_app/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/_app/care/$ownerId': typeof AppCareOwnerIdRoute
@@ -862,6 +871,7 @@ export interface FileRouteTypes {
     | '/admin/messages'
     | '/admin/promo'
     | '/admin/resources'
+    | '/admin/rules'
     | '/admin/users'
     | '/biometrics/$metric'
     | '/care/$ownerId'
@@ -949,6 +959,7 @@ export interface FileRouteTypes {
     | '/admin/messages'
     | '/admin/promo'
     | '/admin/resources'
+    | '/admin/rules'
     | '/admin/users'
     | '/biometrics/$metric'
     | '/care/$ownerId'
@@ -1038,6 +1049,7 @@ export interface FileRouteTypes {
     | '/_app/admin/messages'
     | '/_app/admin/promo'
     | '/_app/admin/resources'
+    | '/_app/admin/rules'
     | '/_app/admin/users'
     | '/_app/biometrics/$metric'
     | '/_app/care/$ownerId'
@@ -1587,6 +1599,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminUsersRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/admin/rules': {
+      id: '/_app/admin/rules'
+      path: '/rules'
+      fullPath: '/admin/rules'
+      preLoaderRoute: typeof AppAdminRulesRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/admin/resources': {
       id: '/_app/admin/resources'
       path: '/resources'
@@ -1744,6 +1763,7 @@ interface AppAdminRouteChildren {
   AppAdminMessagesRoute: typeof AppAdminMessagesRoute
   AppAdminPromoRoute: typeof AppAdminPromoRoute
   AppAdminResourcesRoute: typeof AppAdminResourcesRoute
+  AppAdminRulesRoute: typeof AppAdminRulesRoute
   AppAdminUsersRoute: typeof AppAdminUsersRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
 }
@@ -1755,6 +1775,7 @@ const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminMessagesRoute: AppAdminMessagesRoute,
   AppAdminPromoRoute: AppAdminPromoRoute,
   AppAdminResourcesRoute: AppAdminResourcesRoute,
+  AppAdminRulesRoute: AppAdminRulesRoute,
   AppAdminUsersRoute: AppAdminUsersRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
 }

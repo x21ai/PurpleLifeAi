@@ -153,6 +153,11 @@ function TrendDetailPage() {
             </button>
           )}
         </div>
+        <p className="mt-2 text-[11px] text-foreground/55 leading-relaxed">
+          <span className="font-medium text-foreground/70">Why:</span> AI insights look only at your
+          latest reading for this metric plus your profile conditions and reference range — older
+          entries are already on the chart. Running uses a small amount of AI credits.
+        </p>
         {insightRunning ? (
           <div className="mt-3 flex items-center gap-2 text-sm text-foreground/55">
             <Loader2 className="h-3.5 w-3.5 animate-spin" /> Reading your trend…

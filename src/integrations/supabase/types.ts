@@ -1788,6 +1788,45 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_rule_audit: {
+        Row: {
+          action: string
+          actor_id: string | null
+          after: Json | null
+          at: string
+          before: Json | null
+          id: string
+          key: string
+          rule_id: string | null
+          scope: string | null
+          scope_value: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          after?: Json | null
+          at?: string
+          before?: Json | null
+          id?: string
+          key: string
+          rule_id?: string | null
+          scope?: string | null
+          scope_value?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          after?: Json | null
+          at?: string
+          before?: Json | null
+          id?: string
+          key?: string
+          rule_id?: string | null
+          scope?: string | null
+          scope_value?: string | null
+        }
+        Relationships: []
+      }
       platform_rules: {
         Row: {
           created_at: string
@@ -2077,6 +2116,7 @@ export type Database = {
       }
       report_documents: {
         Row: {
+          content_hash: string | null
           created_at: string
           created_by_id: string | null
           created_by_kind: string
@@ -2098,9 +2138,11 @@ export type Database = {
           summary: string | null
           title: string
           updated_at: string
+          user_decision: string | null
           user_id: string
         }
         Insert: {
+          content_hash?: string | null
           created_at?: string
           created_by_id?: string | null
           created_by_kind?: string
@@ -2122,9 +2164,11 @@ export type Database = {
           summary?: string | null
           title: string
           updated_at?: string
+          user_decision?: string | null
           user_id: string
         }
         Update: {
+          content_hash?: string | null
           created_at?: string
           created_by_id?: string | null
           created_by_kind?: string
@@ -2146,6 +2190,7 @@ export type Database = {
           summary?: string | null
           title?: string
           updated_at?: string
+          user_decision?: string | null
           user_id?: string
         }
         Relationships: [
