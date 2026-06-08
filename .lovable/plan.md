@@ -1,91 +1,68 @@
-## Why the sparkline looks "empty"
+Three fixes plus one new admin area. Scoped tightly — no metric-card visual rewrite.
 
-`MetricCard` currently renders a Recharts `LineChart` with no XAxis, no YAxis, no tooltip, no dots, no reference band. It's pure "shape only". So even though values + dates are loaded, the user sees only a curve — no numbers, no time axis, no high/low markers. That's the core complaint.
+## 1. Why "% Saturation" shows two readings on the same date
 
-Each `TrendMetricRow` already carries everything we need (series of `{at, value}`, unit, reference_low/high, latest_value, latest_flag, latest_at, count). No DB or server-fn changes are required for the card upgrade.
+Two uploads ("Comprehensive Blood Panel (Quest)" and "Quest Comprehensive Health Panel" on 2025-11-08) both extracted the same value. Today nothing dedupes them and nothing verifies the report belongs to the signed-in user.
 
----
+### Extract patient identity on every report
 
-## 1. Make each metric card readable at a glance
+- Extend report extraction (`src/lib/medical-report.server.ts` / report processor) so the AI returns `patient_name` and `patient_dob` (ISO date) alongside the existing fields.
+- Add columns on `report_documents`: `patient_name text`, `patient_dob date`, `identity_status text default 'unverified'` (`'verified' | 'mismatch' | 'unverified' | 'manual_approved'`), `duplicate_of uuid null references report_documents(id)`.
+- After extraction, compare normalized `patient_name` + `patient_dob` against `profiles.full_name` + `profiles.date_of_birth`:
+  - Match → `identity_status = 'verified'`, metrics flow into trends normally.
+  - Mismatch or missing → `identity_status = 'mismatch'`, metrics are stored but **excluded** from `listTrendMetrics` / `getMetricSeries` until the user resolves it.
+- Surface a yellow banner on the report detail page and on `/reports/documents` for any report with `identity_status != 'verified'`, with two actions: "This is me — approve" (sets `manual_approved`) or "Not me — delete".
 
-Rewrite `MetricCard` in `src/components/reports/trends-section.tsx` so the chart itself carries the story. No click needed for the basics.
+### Duplicate detection
 
-Card layout (taller, ~180–200px):
+- After identity check, look for an existing report with the same `(user_id, patient_dob, report_date)` and ≥60% overlap of `(metric_key, value)` pairs. If found, set `duplicate_of` and `identity_status='manual_approved'` is **not** auto-applied — instead show a "Possible duplicate of X" prompt on the document row with "Keep both / Replace older / Delete this".
+- `listTrendMetrics` filters out metrics whose `report_id.duplicate_of IS NOT NULL` so the saturation card stops double-counting.
 
-```text
-┌───────────────────────────────────────────────────────┐
-│ % SATURATION                  [⤴ share] [⤓] [📌] [👁] │
-│ 4 readings · normal range 95–100 %                    │
-│                                                       │
-│   100 ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄  (ref band)      │
-│    98  •────•                                         │
-│    96         \                                       │
-│    94          •─────•                                │
-│    92                                                 │
-│      Jul 12   Aug 30   Oct 4    Nov 8                 │
-│                                                       │
-│ Latest 28 % · Nov 8, 2025  ↓ −4 vs prev               │
-└───────────────────────────────────────────────────────┘
-```
+## 2. Dropdown looks wrong (white OS chrome on dark page)
 
-What changes in the chart:
-- Add `XAxis` with date ticks (compact `MMM d`, only first/last/middle tick to avoid clutter on small cards).
-- Add `YAxis` with 2–3 ticks, including unit suffix.
-- Add a `ReferenceArea` for `reference_low`/`reference_high` when present (soft green band) so out-of-range readings visually pop.
-- Add small dots per reading, color-coded by `flag` (high=pink, low=amber, normal=green).
-- Add `Tooltip` on hover showing date + value + report title.
-- Use `flagTone` to color the latest reading.
-- Show "↓ −4 vs prev" delta line under the chart when ≥2 numeric readings exist.
-- Keep an empty-state pill if `< 2` numeric points.
+The Trends sort uses a native `<select>`, which the OS renders with white background and dark text — that's what's in the screenshot.
 
-Two-per-row default (already in place), three on very wide screens, with a comfortable min height so the axes are legible. Drag handle stays in custom mode.
+- Replace it in `src/components/reports/trends-section.tsx` with the existing shadcn `Select` (`@/components/ui/select`) so it inherits the dark `report-card` styling: dark `#0F1418` bg, white text, hover row in `bg-white/8`, border `white/10`.
+- Sweep `rg "<select"` across the app: only one other native select in `src/routes/_app/community-new.tsx` — convert that one too so the rule holds platform-wide.
 
-## 2. Per-card actions: share + download
+## 3. AI Insights — on-demand, not auto
 
-Add a small action cluster to the top-right of every card:
-- **Pin / Hide** (already there)
-- **Download** — exports just this metric's series as CSV (reuse the `downloadCsv` helper pattern from `reports.trends.$metricKey.tsx`; lift it into a shared `src/lib/metric-export.ts`).
-- **Share** — uses `navigator.share` when available with a generated PNG of the card chart + a short text summary ("My % Saturation — 4 readings, latest 28% on Nov 8, 2025"). Falls back to copying a link to the metric detail page when Web Share isn't available. Image is generated client-side via `html-to-image` (already small dep — add only if not present) of the card's chart node.
+Today `getMetricInsight` runs in `useQuery` on every detail-page visit, burning credits and showing "Insights unavailable right now" before it resolves or when the user has only 2 readings.
 
-A single "Download all (CSV)" / "Share all" pair lives in the Trends header for the whole dashboard.
+- Remove the auto `useQuery` for insights in `src/routes/_app/reports.trends.$metricKey.tsx`.
+- Replace the panel with an empty state: "Get an AI read on your latest %Saturation trend" + **Run AI insights** button.
+- Clicking calls `getMetricInsight` once via `useMutation`. The server fn already considers the full series with the latest reading as anchor — that stays.
+- Cache the result in a new `metric_insights` table keyed by `(user_id, metric_key, latest_at)` so re-opens within the same latest reading don't re-bill. Old readings get no insight UI — only the latest reading shows the button.
+- If credits fail (402) or rate-limited (429), show the actual reason inline instead of the generic "unavailable".
 
-## 3. Refocus the detail page on AI insights
+## 4. Platform rules admin area
 
-`reports.trends.$metricKey.tsx` keeps the bigger chart + readings table, but the hero block becomes **AI Insights**, not just stat cards:
+New super-admin section at `/admin/rules` (gated by existing `has_role(_, 'admin')`).
 
-- Add an "Insights" panel above the chart that calls a new server fn `getMetricInsight({ metricKey })` which:
-  - Pulls the user's series for that metric (already available via `getMetricSeries`).
-  - Pulls the user's `profiles.conditions` for context.
-  - Calls Lovable AI Gateway (default `google/gemini-3-flash-preview`) with a tight system prompt: trend direction, notable spikes/drops with dates, possible patterns relative to their conditions, suggested questions to discuss with their clinician. Always appends `MedicalDisclaimer` copy.
-  - Returns `{ summary, bullets[], suggestedQuestions[] }`. Cached server-side per `(userId, metricKey, latest_at)` so we don't re-bill for unchanged data.
-- The existing "Ask Purple" prompt rail stays underneath, pre-filled from `suggestedQuestions`.
-- Keep stat cards (Latest / Optimal range) but de-emphasize — they're a sidebar, not the hero.
-- Add the same Share / Download buttons used on the dashboard cards.
-
-## 4. What else can be added (small, intelligent extras)
-
-Implement these now since they're cheap and directly serve "see at a glance":
-- **Status chip** on each card: `In range` / `Out of range` / `Trending up` / `Trending down`, derived from the last 3 points vs the reference band.
-- **Sparkline color** follows the *latest* `flagTone` (green/amber/pink), not always green — so a glance at the wall of cards immediately surfaces concerns.
-- **Sort: "Needs attention"** already exists; promote it to default when at least one metric is out of range.
-
-Skipped for now (mention only): annotating the chart with medication/journal events (would need a join across `medication_doses` and `journal_entries` — worth a follow-up).
-
----
+- New table `platform_rules`: `id`, `scope text` (`'platform' | 'role' | 'user'`), `scope_value text null` (role name or user_id when scoped), `key text`, `value jsonb`, `enabled boolean`, audit cols.
+- Seed it with the first rule the user just asked for: `require_identity_match_for_metrics = true`. The report processor reads this rule before deciding to gate metrics on identity match.
+- Admin UI: list rules grouped by scope, add / edit / toggle. Three scope pickers (Platform-wide / By role / By user), key+value editor with JSON validation.
+- A `usePlatformRule(key, { scope, scopeValue })` server fn resolves rules with precedence user > role > platform.
 
 ## Files to touch
 
-- `src/components/reports/trends-section.tsx` — rewrite `MetricCard` (axes, dots, ref band, tooltip, delta, status chip, share/download, color from latest flag). Add header-level "Download all" / "Share all".
-- `src/lib/metric-export.ts` *(new)* — shared CSV helper + share-image helper.
-- `src/lib/report-trends.functions.ts` — add `getMetricInsight` server fn (AI Gateway call), plus a tiny `getAllMetricsCsv` server fn for the dashboard-wide CSV.
-- `src/routes/_app/reports.trends.$metricKey.tsx` — add Insights panel at the top, wire suggested questions into the Ask Purple rail, add Share/Download buttons, demote stat cards.
-- `src/components/reports/metric-shell.tsx` — minor: a new `MetricInsightsPanel` component.
+**Migrations**
+- `report_documents`: add `patient_name`, `patient_dob`, `identity_status`, `duplicate_of`.
+- New `metric_insights` table (`user_id`, `metric_key`, `latest_at`, payload jsonb).
+- New `platform_rules` table + GRANTs + RLS (admins write, authenticated read where enabled).
+- Seed `require_identity_match_for_metrics=true`.
 
-No DB migrations. No new tables. Uses existing `report_metrics`, `report_metric_preferences`, `profiles.conditions`, and Lovable AI Gateway.
+**Server**
+- `src/lib/medical-report.server.ts` — extract & save identity fields, run identity match + duplicate detection.
+- `src/lib/report-trends.functions.ts` — filter out unverified + duplicate reports; cache AI insights via `metric_insights`.
+- New `src/lib/platform-rules.functions.ts` — get/set/list rules; helper `getRule(key, ctx)`.
 
-## Technical notes
+**Client**
+- `src/components/reports/trends-section.tsx` — swap native `<select>` for shadcn `Select`.
+- `src/routes/_app/community-new.tsx` — same swap.
+- `src/routes/_app/reports.trends.$metricKey.tsx` — on-demand "Run AI insights" button, latest-only.
+- `src/routes/_app/reports.documents.tsx` + `reports.$reportId.tsx` — identity / duplicate banners + actions.
+- `src/routes/_app/reports.new.tsx` — show identity check result after upload.
+- New `src/routes/_app/admin.rules.tsx` + small `RulesEditor` component.
 
-- For per-card Recharts: keep `isAnimationActive={false}` for grid performance; lazy-render charts below the fold with `IntersectionObserver` to avoid jank on long lists.
-- Web Share API requires HTTPS + user gesture — already true in the preview/published environment. Feature-detect `navigator.canShare?.({ files: [...] })` before offering image share; fall back to text+url share, then to clipboard copy.
-- AI insights server fn uses `try/catch` and returns `{ summary: null, bullets: [], error }` on failure so the panel degrades gracefully (no blank screen).
-- Caching: insights cached in a new lightweight `metric_insights` table keyed by `(user_id, metric_key, latest_at)` — actually, to avoid a migration, cache in memory per request and rely on TanStack Query's `staleTime: 5min` on the client; regenerate when `latest_at` advances. Confirmed simpler — no schema change needed.
+No changes to brand, nav order, or metric card layout.
