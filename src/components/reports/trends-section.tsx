@@ -115,8 +115,8 @@ function MetricCard({
     transition: sortable.transition,
   };
   const { primary: label, secondary: subLabel } = metricLabel(m);
-  const numeric = m.series.filter((p) => p.value != null) as Array<{ at: string; value: number }>;
-  const chartData = numeric.map((p) => ({ at: p.at, v: p.value, ts: new Date(p.at).getTime() }));
+  const numeric = m.series.filter((p) => p.value != null) as Array<{ at: string; value: number; source_text: string | null; report_id: string }>;
+  const chartData = numeric.map((p) => ({ at: p.at, v: p.value, ts: new Date(p.at).getTime(), source_text: p.source_text, report_id: p.report_id }));
   const spansMultipleYears = (() => {
     if (numeric.length < 2) return false;
     const years = new Set(numeric.map((p) => new Date(p.at).getFullYear()));
@@ -301,10 +301,29 @@ function MetricCard({
                     color: "#E6EAEE",
                   }}
                   labelFormatter={(v: string) => formatTickWithYear(v)}
-                  formatter={(val: number) => [
-                    `${val}${m.unit ? ` ${m.unit}` : ""}`,
-                    label,
-                  ]}
+                  formatter={(val: number, _name: string, props: any) => {
+                    const pt = props?.payload;
+                    const source = pt?.source_text;
+                    const reportId = pt?.report_id;
+                    const reportLabel = source ? `PDF wording: ${source}` : null;
+                    const valueStr = `${val}${m.unit ? ` ${m.unit}` : ""}`;
+                    return [
+                      <div key="v" className="space-y-0.5">
+                        <div>{valueStr}</div>
+                        {reportLabel && <div className="text-white/50 text-[10px]">{reportLabel}</div>}
+                        {reportId && (
+                          <a
+                            href={`/reports/${reportId}`}
+                            className="text-[color:var(--purple-primary)] text-[10px] hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            View source report
+                          </a>
+                        )}
+                      </div>,
+                      label,
+                    ];
+                  }}
                 />
                 <Line
                   type="monotone"
