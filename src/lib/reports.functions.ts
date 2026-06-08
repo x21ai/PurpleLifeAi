@@ -38,6 +38,8 @@ type ExtractionResult = {
   panel_keys?: string[];
   findings?: string[];
   impressions?: string[];
+  patient_name?: string | null;
+  patient_dob?: string | null;
 };
 
 function flagFor(v: number | null | undefined, low: number | null | undefined, high: number | null | undefined): string | null {
@@ -71,6 +73,7 @@ Always include:
 - A short "title" (max 80 chars) summarizing what the report is (e.g. "Quest CBC + lipids", "Brain MRI", "TSH panel").
 - "panel_keys": distinct list of panels present in this report.
 - For imaging/narrative reports: "findings" (short bullets of objective observations) and "impressions" (short bullets of the radiologist/clinician's overall read).
+- "patient_name" (full name on the report, as printed) and "patient_dob" (ISO YYYY-MM-DD) when visible on the document, or null.
 
 Return ONLY a JSON object with this exact shape:
 {
@@ -81,6 +84,8 @@ Return ONLY a JSON object with this exact shape:
   "panel_keys": ["lipids", "liver"],
   "findings": ["..."],
   "impressions": ["..."],
+  "patient_name": "Jane Q. Doe" or null,
+  "patient_dob": "1985-04-12" or null,
   "metrics": [
     { "key": "vitamin_d", "display_name": "Vitamin D", "value": 32, "unit": "ng/mL", "reference_low": 30, "reference_high": 100, "panel": "vitamins" }
   ]
