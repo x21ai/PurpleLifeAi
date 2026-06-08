@@ -44,7 +44,19 @@ type ReportRow = {
   metric_count?: number;
   summary?: string | null;
   panel_keys?: string[] | null;
+  error_message?: string | null;
 };
+
+/** Storage-hash-looking titles render as "Untitled upload" so the row stays readable. */
+function displayTitle(raw: string | null | undefined): string {
+  const t = (raw ?? "").trim();
+  if (!t) return "Untitled upload";
+  // No spaces, long, and looks like a hash/slug (mixed alnum with - or _)
+  if (!/\s/.test(t) && t.length > 28 && /[A-Za-z]/.test(t) && /[0-9]/.test(t)) {
+    return "Untitled upload";
+  }
+  return t;
+}
 
 function ReportsDocumentsPage() {
   const { t } = useTranslation();
@@ -180,7 +192,18 @@ function ReportsDocumentsPage() {
                   {type.replace(/_/g, " ")} · {rows.length}
                 </p>
                 <ul className="space-y-2">
-                  {rows.map((r) => (
+                  {rows.map((r) => {
+                    const isFailed =
+                      r.status === "failed" ||
+                      r.status === "needs_credits" ||
+                      r.status === "rate_limited";
+                    const failedLabel =
+                      r.status === "needs_credits"
+                        ? "Needs AI credits"
+                        : r.status === "rate_limited"
+                          ? "Rate limited — try again"
+                          : "Extraction failed";
+                    return (
                     <li key={r.id} className="report-card overflow-hidden">
                       <div className="flex items-center gap-2 px-3 py-3 sm:px-5 sm:py-4">
                         <Link
@@ -192,7 +215,9 @@ function ReportsDocumentsPage() {
                             <FileText className="h-4 w-4" />
                           </span>
                           <div className="min-w-0 flex-1">
-                            <p className="text-[15px] text-white truncate">{r.title}</p>
+                            <p className="text-[15px] text-white truncate" title={r.title}>
+                              {displayTitle(r.title)}
+                            </p>
                             <p className="mt-0.5 text-xs text-white/55">
                               {r.report_date ?? new Date(r.created_at).toLocaleDateString()}
                               {" · "}
@@ -201,9 +226,9 @@ function ReportsDocumentsPage() {
                                   <Loader2 className="h-3 w-3 animate-spin" /> Extracting…
                                 </span>
                               )}
-                              {r.status === "failed" && (
+                              {isFailed && (
                                 <span className="inline-flex items-center gap-1 text-[#FFA8BD]">
-                                  <AlertCircle className="h-3 w-3" /> Extraction failed
+                                  <AlertCircle className="h-3 w-3" /> {failedLabel}
                                 </span>
                               )}
                               {r.status === "ready" &&
@@ -211,9 +236,23 @@ function ReportsDocumentsPage() {
                                   ? `${r.metric_count} metric${r.metric_count === 1 ? "" : "s"}`
                                   : "Ready")}
                             </p>
+                            {isFailed && r.error_message && (
+                              <p
+                                className="mt-1 text-xs text-[#FFA8BD]/70 line-clamp-2"
+                                title={r.error_message}
+                              >
+                                {r.error_message.length > 160
+                                  ? `${r.error_message.slice(0, 160)}…`
+                                  : r.error_message}
+                              </p>
+                            )}
                           </div>
                         </Link>
-                        <ReportRowActions reportId={r.id} />
+                        <ReportRowActions
+                          reportId={r.id}
+                          status={r.status}
+                          onChanged={() => void refetch()}
+                        />
                       </div>
                       {(r.summary || (r.panel_keys && r.panel_keys.length > 0)) && (
                         <div className="px-3 pb-4 sm:px-5">
@@ -230,7 +269,8 @@ function ReportsDocumentsPage() {
                         </div>
                       )}
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               </div>
             ))}
