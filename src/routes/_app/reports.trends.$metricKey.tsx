@@ -12,7 +12,7 @@ import {
   ResponsiveContainer,
   ReferenceArea,
 } from "recharts";
-import { Download, Loader2, Share2, Sparkles, Wand2 } from "lucide-react";
+import { Download, Loader2, Share2, Sparkles, Wand2, ChevronRight } from "lucide-react";
 import { getMetricSeries, getMetricInsight } from "@/lib/report-trends.functions";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -45,6 +45,7 @@ type Row = {
   measured_at: string | null;
   created_at: string;
   display_name: string | null;
+  source_text: string | null;
   report_id: string;
   report_documents?: { title: string | null; report_date: string | null } | null;
 };
@@ -120,6 +121,8 @@ function TrendDetailPage() {
       ts: new Date(r.measured_at ?? r.created_at).getTime(),
       v: r.value as number,
       report: r.report_documents?.title ?? "",
+      source_text: r.source_text,
+      report_id: r.report_id,
     }));
 
   return (
@@ -311,7 +314,30 @@ function TrendDetailPage() {
                     borderRadius: 8,
                     fontSize: 12,
                   }}
-                  formatter={(v: number) => [`${v}${unit ? ` ${unit}` : ""}`, label]}
+                  formatter={(v: number, _name: string, props: any) => {
+                    const pt = props?.payload;
+                    const source = pt?.source_text;
+                    const report = pt?.report;
+                    const reportId = pt?.report_id;
+                    const valueStr = `${v}${unit ? ` ${unit}` : ""}`;
+                    return [
+                      <div key="v" className="space-y-0.5">
+                        <div>{valueStr}</div>
+                        {source && <div className="text-muted-foreground text-[10px]">PDF wording: {source}</div>}
+                        {report && <div className="text-muted-foreground text-[10px]">{report}</div>}
+                        {reportId && (
+                          <a
+                            href={`/reports/${reportId}`}
+                            className="text-[color:var(--purple-primary)] text-[10px] hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            View source report
+                          </a>
+                        )}
+                      </div>,
+                      label,
+                    ];
+                  }}
                 />
                 <Line
                   type="monotone"
@@ -344,7 +370,7 @@ function TrendDetailPage() {
               (b.measured_at ?? b.created_at).localeCompare(a.measured_at ?? a.created_at),
             )
             .map((r) => (
-              <li key={r.id} className="flex items-center justify-between gap-3 px-4 py-3">
+              <li key={r.id} className="flex items-start justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
                   <p className="text-sm text-foreground">
                     {r.value != null ? (
@@ -369,13 +395,18 @@ function TrendDetailPage() {
                     {(r.measured_at ?? r.created_at).slice(0, 10)}
                     {r.report_documents?.title ? ` · ${r.report_documents.title}` : ""}
                   </p>
+                  {r.source_text && (
+                    <p className="text-[10px] text-foreground/40 truncate">
+                      as printed: {r.source_text}
+                    </p>
+                  )}
                 </div>
                 <Link
                   to="/reports/$reportId"
                   params={{ reportId: r.report_id }}
-                  className="text-xs text-foreground/55 hover:text-foreground shrink-0"
+                  className="shrink-0 mt-0.5 inline-flex items-center gap-1 text-xs text-foreground/55 hover:text-foreground"
                 >
-                  View →
+                  <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
               </li>
             ))}

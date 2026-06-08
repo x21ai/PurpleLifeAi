@@ -185,7 +185,7 @@ function MarketingHome() {
         </section>
       </main>
 
-      <SiteFooter variant="marketing" />
+      <SiteFooter />
     </div>
   );
 }

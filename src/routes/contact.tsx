@@ -106,7 +106,7 @@ function ContactPage() {
           </form>
         )}
       </main>
-      <SiteFooter variant="marketing" />
+      <SiteFooter />
     </div>
   );
 }

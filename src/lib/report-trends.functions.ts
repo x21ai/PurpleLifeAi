@@ -18,7 +18,7 @@ export type TrendMetricRow = {
   pinned: boolean;
   hidden: boolean;
   sort_order: number;
-  series: Array<{ at: string; value: number | null }>;
+  series: Array<{ at: string; value: number | null; source_text: string | null; report_id: string }>;
 };
 
 /** List every metric the user has in ≥2 reports plus its sparkline series + prefs. */
@@ -29,7 +29,7 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
     const [{ data: metrics, error: mErr }, { data: prefs, error: pErr }, { data: docs }] = await Promise.all([
       supabase
         .from("report_metrics")
-        .select("metric_key, display_name, value, value_text, unit, flag, reference_low, reference_high, measured_at, created_at, report_id")
+        .select("metric_key, display_name, value, value_text, unit, flag, reference_low, reference_high, measured_at, created_at, report_id, source_text")
         .order("created_at", { ascending: true }),
       supabase
         .from("report_metric_preferences")
@@ -75,7 +75,7 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
         series: [],
       };
       row.count += 1;
-      row.series.push({ at, value: m.value as number | null });
+      row.series.push({ at, value: m.value as number | null, source_text: (m.source_text as string | null), report_id: m.report_id as string });
       if (!row.latest_at || at > row.latest_at) {
         row.latest_at = at;
         row.latest_value = m.value as number | null;
@@ -94,8 +94,8 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
     // Prevents future double-uploads from producing doubled dots even if duplicate_of
     // is not yet set on the report_document.
     for (const row of byKey.values()) {
-      const byDay = new Map<string, { sum: number; n: number; at: string }>();
-      const nonNumeric: Array<{ at: string; value: number | null }> = [];
+      const byDay = new Map<string, { sum: number; n: number; at: string; source_text: string | null; report_id: string }>();
+      const nonNumeric: Array<{ at: string; value: number | null; source_text: string | null; report_id: string }> = [];
       for (const p of row.series) {
         if (p.value == null) {
           nonNumeric.push(p);
@@ -106,14 +106,20 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
         if (cur) {
           cur.sum += p.value;
           cur.n += 1;
-          if (p.at > cur.at) cur.at = p.at;
+          if (p.at > cur.at) {
+            cur.at = p.at;
+            cur.source_text = p.source_text;
+            cur.report_id = p.report_id;
+          }
         } else {
-          byDay.set(day, { sum: p.value, n: 1, at: p.at });
+          byDay.set(day, { sum: p.value, n: 1, at: p.at, source_text: p.source_text, report_id: p.report_id });
         }
       }
       const collapsed = Array.from(byDay.values()).map((b) => ({
         at: b.at,
         value: b.sum / b.n,
+        source_text: b.source_text,
+        report_id: b.report_id,
       }));
       row.series = [...collapsed, ...nonNumeric].sort((a, b) => (a.at < b.at ? -1 : 1));
       row.count = row.series.length;
@@ -184,7 +190,7 @@ export const getMetricSeries = createServerFn({ method: "GET" })
     const { supabase } = context;
     let q = supabase
       .from("report_metrics")
-      .select("id, value, value_text, unit, flag, reference_low, reference_high, measured_at, created_at, display_name, report_id, report_documents(title, report_date, identity_status, duplicate_of)")
+      .select("id, value, value_text, unit, flag, reference_low, reference_high, measured_at, created_at, display_name, source_text, report_id, report_documents(title, report_date, identity_status, duplicate_of)")
       .eq("metric_key", data.metricKey)
       .order("measured_at", { ascending: true, nullsFirst: true });
     if (data.days) {

@@ -147,7 +147,7 @@ function CommunityFeed() {
         attribution="Why community matters"
       />
 
-      <SiteFooter variant="marketing" />
+      <SiteFooter />
     </div>
   );
 }

@@ -2274,6 +2274,7 @@ export type Database = {
           reference_high: number | null
           reference_low: number | null
           report_id: string
+          source_text: string | null
           unit: string | null
           user_corrected: boolean
           user_id: string
@@ -2290,6 +2291,7 @@ export type Database = {
           reference_high?: number | null
           reference_low?: number | null
           report_id: string
+          source_text?: string | null
           unit?: string | null
           user_corrected?: boolean
           user_id: string
@@ -2306,6 +2308,7 @@ export type Database = {
           reference_high?: number | null
           reference_low?: number | null
           report_id?: string
+          source_text?: string | null
           unit?: string | null
           user_corrected?: boolean
           user_id?: string

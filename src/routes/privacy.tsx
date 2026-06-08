@@ -107,7 +107,7 @@ function PrivacyPage() {
           </section>
         </div>
       </div>
-      <SiteFooter variant="marketing" />
+      <SiteFooter />
     </div>
   );
 }
