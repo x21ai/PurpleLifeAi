@@ -6,6 +6,34 @@ import { cn } from "@/lib/utils";
 import { PendingInboxBadge } from "@/components/care/pending-inbox-badge";
 import { CaregiverNavLink } from "./caregiver-nav-link";
 import { ChatUnreadBadge } from "./chat-unread-badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+/**
+ * Wraps a rail row in a tooltip that only shows when the sidebar is in
+ * its collapsed (md, icon-only) state. On lg+ the label is already visible
+ * inline, so the TooltipContent stays hidden via `lg:hidden`.
+ */
+function RailTooltip({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip delayDuration={150}>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="right" className="lg:hidden">
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 const STORAGE_KEY = "purple-sidebar-open-groups";
 
@@ -62,6 +90,7 @@ export function SidebarNav() {
     });
 
   return (
+    <TooltipProvider>
     <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-16 lg:w-64 border-r border-border bg-sidebar text-sidebar-foreground">
       <div className="flex items-center h-20 px-4 lg:px-6 border-b border-border">
         <Link to="/today" className="flex items-center flex-1" aria-label="Purple, home">
@@ -100,6 +129,7 @@ export function SidebarNav() {
         </div>
       </nav>
     </aside>
+    </TooltipProvider>
   );
 }
 
