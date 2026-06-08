@@ -81,6 +81,27 @@ function formatTick(iso: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function formatTickWithYear(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const y = String(d.getFullYear()).slice(-2);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + ` '${y}`;
+}
+
+function titleCase(s: string): string {
+  return s.toLowerCase().replace(/\b([a-z])/g, (_, c) => c.toUpperCase());
+}
+
+function metricLabel(m: TrendMetricRow): { primary: string; secondary: string | null } {
+  const raw = (m.display_name ?? "").trim();
+  const fromKey = titleCase(m.metric_key.replace(/_/g, " "));
+  // If the PDF label is non-descriptive (starts with %, is pure unit/symbol,
+  // or shorter than 3 chars), use the humanized key instead.
+  const nonDescriptive = !raw || raw.startsWith("%") || raw.length < 3 || /^[^a-z]+$/i.test(raw);
+  if (nonDescriptive) return { primary: fromKey, secondary: raw || null };
+  return { primary: titleCase(raw), secondary: null };
+}
+
 type SortMode = "alpha" | "attention" | "recent" | "count" | "custom";
 const SORT_KEY = "purple.trends.sort";
 
@@ -100,9 +121,15 @@ function MetricCard({
     transform: CSS.Transform.toString(sortable.transform),
     transition: sortable.transition,
   };
-  const label = m.display_name ?? m.metric_key.replace(/_/g, " ");
+  const { primary: label, secondary: subLabel } = metricLabel(m);
   const numeric = m.series.filter((p) => p.value != null) as Array<{ at: string; value: number }>;
   const chartData = numeric.map((p) => ({ at: p.at, v: p.value, ts: new Date(p.at).getTime() }));
+  const spansMultipleYears = (() => {
+    if (numeric.length < 2) return false;
+    const years = new Set(numeric.map((p) => new Date(p.at).getFullYear()));
+    return years.size > 1;
+  })();
+  const tickFmt = spansMultipleYears ? formatTickWithYear : formatTick;
   const latestDate = formatDate(m.latest_at);
   const stroke = flagStroke(m.latest_flag);
   const prev = numeric.length >= 2 ? numeric[numeric.length - 2].value : null;
@@ -226,7 +253,10 @@ function MetricCard({
         className="flex flex-col gap-2 min-w-0"
       >
         <div className="min-w-0 pr-32">
-          <p className="text-sm text-white capitalize line-clamp-2 leading-snug">{label}</p>
+          <p className="text-sm text-white line-clamp-2 leading-snug">{label}</p>
+          {subLabel && (
+            <p className="text-[10px] text-white/40 leading-tight">as printed: {subLabel}</p>
+          )}
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] report-muted">
             <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${statusChip.cls}`}>
               {statusChip.label}
@@ -257,7 +287,7 @@ function MetricCard({
                 <XAxis
                   dataKey="at"
                   tick={{ fontSize: 10, fill: "#9AA3AC" }}
-                  tickFormatter={formatTick}
+                  tickFormatter={tickFmt}
                   axisLine={false}
                   tickLine={false}
                   minTickGap={28}
@@ -277,7 +307,7 @@ function MetricCard({
                     fontSize: 11,
                     color: "#E6EAEE",
                   }}
-                  labelFormatter={(v: string) => formatTick(v)}
+                  labelFormatter={(v: string) => formatTickWithYear(v)}
                   formatter={(val: number) => [
                     `${val}${m.unit ? ` ${m.unit}` : ""}`,
                     label,
