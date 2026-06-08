@@ -91,13 +91,13 @@ export const upsertPlatformRule = createServerFn({ method: "POST" })
         .maybeSingle();
       before = prev ?? null;
     } else {
-      const { data: prev } = await supabase
+      let q = supabase
         .from("platform_rules")
         .select("id, scope, scope_value, key, value, enabled, description")
         .eq("scope", data.scope)
-        .eq("key", data.key)
-        .is("scope_value", data.scope_value ?? null)
-        .maybeSingle();
+        .eq("key", data.key);
+      q = data.scope_value == null ? q.is("scope_value", null) : q.eq("scope_value", data.scope_value);
+      const { data: prev } = await q.maybeSingle();
       before = prev ?? null;
     }
 
@@ -105,11 +105,11 @@ export const upsertPlatformRule = createServerFn({ method: "POST" })
       scope: data.scope,
       scope_value: data.scope === "platform" ? null : data.scope_value ?? null,
       key: data.key,
-      value: data.value as any,
+      value: data.value as never,
       enabled: data.enabled ?? true,
       description: data.description ?? null,
       created_by: userId,
-    };
+    } as any;
     const { data: saved, error } = await supabase
       .from("platform_rules")
       .upsert(row, { onConflict: "scope,scope_value,key" })
