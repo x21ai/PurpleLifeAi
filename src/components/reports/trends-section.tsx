@@ -2,8 +2,27 @@ import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
-import { Pin, PinOff, EyeOff, TrendingUp, GripVertical } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ReferenceArea,
+  CartesianGrid,
+} from "recharts";
+import {
+  Pin,
+  PinOff,
+  EyeOff,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  GripVertical,
+  Download,
+  Share2,
+} from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -25,6 +44,8 @@ import {
   reorderMetrics,
   type TrendMetricRow,
 } from "@/lib/report-trends.functions";
+import { downloadMetricCsv, shareMetric } from "@/lib/metric-export";
+import { toast } from "sonner";
 
 function flagTone(flag: string | null) {
   if (flag === "high") return "text-[#FFA8BD]";
@@ -33,11 +54,24 @@ function flagTone(flag: string | null) {
   return "report-muted";
 }
 
+function flagStroke(flag: string | null) {
+  if (flag === "high") return "#FFA8BD";
+  if (flag === "low") return "#F3D58B";
+  if (flag === "normal") return "#5CE0AC";
+  return "#9AA3AC";
+}
+
 function formatDate(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function formatTick(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 type SortMode = "alpha" | "attention" | "recent" | "count" | "custom";
@@ -60,17 +94,63 @@ function MetricCard({
     transition: sortable.transition,
   };
   const label = m.display_name ?? m.metric_key.replace(/_/g, " ");
-  const chartData = m.series
-    .filter((p) => p.value != null)
-    .map((p) => ({ at: p.at, v: p.value as number }));
+  const numeric = m.series.filter((p) => p.value != null) as Array<{ at: string; value: number }>;
+  const chartData = numeric.map((p) => ({ at: p.at, v: p.value, ts: new Date(p.at).getTime() }));
   const latestDate = formatDate(m.latest_at);
+  const stroke = flagStroke(m.latest_flag);
+  const prev = numeric.length >= 2 ? numeric[numeric.length - 2].value : null;
+  const latestNum = numeric.length >= 1 ? numeric[numeric.length - 1].value : null;
+  const delta = latestNum != null && prev != null ? latestNum - prev : null;
+  const deltaPct = delta != null && prev !== 0 && prev != null ? (delta / Math.abs(prev)) * 100 : null;
+  const refLow = m.reference_low;
+  const refHigh = m.reference_high;
+  const inRange =
+    latestNum != null && refLow != null && refHigh != null
+      ? latestNum >= refLow && latestNum <= refHigh
+      : null;
+
+  const statusChip = (() => {
+    if (m.latest_flag === "high") return { label: "Out of range — high", cls: "bg-[#FFA8BD]/15 text-[#FFA8BD] border-[#FFA8BD]/30" };
+    if (m.latest_flag === "low") return { label: "Out of range — low", cls: "bg-[#F3D58B]/15 text-[#F3D58B] border-[#F3D58B]/30" };
+    if (inRange === true || m.latest_flag === "normal")
+      return { label: "In range", cls: "bg-[#5CE0AC]/15 text-[#5CE0AC] border-[#5CE0AC]/30" };
+    if (delta != null && delta > 0) return { label: "Trending up", cls: "bg-white/8 text-white/70 border-white/15" };
+    if (delta != null && delta < 0) return { label: "Trending down", cls: "bg-white/8 text-white/70 border-white/15" };
+    return { label: `${m.count} readings`, cls: "bg-white/8 text-white/70 border-white/15" };
+  })();
+
+  async function handleDownload(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const rows = m.series.map((p) => ({
+      at: p.at,
+      value: p.value,
+      unit: m.unit,
+      report: null,
+    }));
+    downloadMetricCsv(`${m.metric_key}.csv`, rows);
+  }
+
+  async function handleShare(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = typeof window !== "undefined"
+      ? `${window.location.origin}/reports/trends/${encodeURIComponent(m.metric_key)}`
+      : undefined;
+    const text = `${label} — ${m.count} readings${
+      m.latest_value != null ? `, latest ${m.latest_value}${m.unit ? ` ${m.unit}` : ""}` : ""
+    }${latestDate ? ` on ${latestDate}` : ""}`;
+    const status = await shareMetric({ title: `Purple · ${label}`, text, url });
+    if (status === "copied") toast.success("Link copied to clipboard");
+    else if (status === "failed") toast.error("Couldn't share");
+  }
 
   return (
     <div
       ref={sortable.setNodeRef}
       style={style}
       className={
-        "group report-card relative flex flex-col gap-3 p-4 " +
+        "group report-card relative flex flex-col gap-2 p-4 " +
         (sortable.isDragging ? "opacity-60 ring-1 ring-white/30" : "")
       }
     >
@@ -87,6 +167,24 @@ function MetricCard({
             <GripVertical className="h-3.5 w-3.5" />
           </button>
         )}
+        <button
+          type="button"
+          onClick={handleShare}
+          aria-label="Share"
+          title="Share"
+          className="rounded-full p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
+        >
+          <Share2 className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={handleDownload}
+          aria-label="Download CSV"
+          title="Download CSV"
+          className="rounded-full p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
+        >
+          <Download className="h-3.5 w-3.5" />
+        </button>
         <button
           type="button"
           onClick={(e) => {
@@ -120,39 +218,111 @@ function MetricCard({
         params={{ metricKey: m.metric_key }}
         className="flex flex-col gap-2 min-w-0"
       >
-        <div className="min-w-0 pr-20">
+        <div className="min-w-0 pr-32">
           <p className="text-sm text-white capitalize line-clamp-2 leading-snug">{label}</p>
-          <p className="mt-1 text-[11px] report-muted">
-            {m.count} readings
-            {m.latest_value != null && (
-              <>
-                {" · latest "}
-                <span className={flagTone(m.latest_flag)}>
-                  {m.latest_value}
-                  {m.unit ? ` ${m.unit}` : ""}
-                </span>
-              </>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] report-muted">
+            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${statusChip.cls}`}>
+              {statusChip.label}
+            </span>
+            <span>{m.count} readings</span>
+            {refLow != null && refHigh != null && (
+              <span>
+                · ref {refLow}–{refHigh}
+                {m.unit ? ` ${m.unit}` : ""}
+              </span>
             )}
-            {latestDate && <span className="text-white/45"> · {latestDate}</span>}
-          </p>
+          </div>
         </div>
-        <div className="h-14 w-full">
+        <div className="h-32 w-full">
           {chartData.length >= 2 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 4, right: 2, bottom: 4, left: 2 }}>
-                <YAxis hide domain={["dataMin", "dataMax"]} />
+              <LineChart data={chartData} margin={{ top: 6, right: 8, bottom: 0, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                {refLow != null && refHigh != null && (
+                  <ReferenceArea
+                    y1={refLow}
+                    y2={refHigh}
+                    fill="#5CE0AC"
+                    fillOpacity={0.08}
+                    ifOverflow="extendDomain"
+                  />
+                )}
+                <XAxis
+                  dataKey="at"
+                  tick={{ fontSize: 10, fill: "#9AA3AC" }}
+                  tickFormatter={formatTick}
+                  axisLine={false}
+                  tickLine={false}
+                  minTickGap={28}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: "#9AA3AC" }}
+                  width={30}
+                  axisLine={false}
+                  tickLine={false}
+                  domain={["auto", "auto"]}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "#0F1418",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: 8,
+                    fontSize: 11,
+                    color: "#E6EAEE",
+                  }}
+                  labelFormatter={(v: string) => formatTick(v)}
+                  formatter={(val: number) => [
+                    `${val}${m.unit ? ` ${m.unit}` : ""}`,
+                    label,
+                  ]}
+                />
                 <Line
                   type="monotone"
                   dataKey="v"
-                  stroke="#5CE0AC"
-                  strokeWidth={1.5}
-                  dot={false}
+                  stroke={stroke}
+                  strokeWidth={1.75}
+                  dot={{ r: 2.5, stroke: stroke, fill: stroke }}
+                  activeDot={{ r: 4 }}
                   isAnimationActive={false}
                 />
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-full w-full rounded bg-white/5" />
+            <div className="flex h-full w-full items-center justify-center rounded bg-white/5 text-[11px] report-muted">
+              Need ≥2 numeric readings
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-between text-[11px] report-muted">
+          <span>
+            {m.latest_value != null ? (
+              <>
+                Latest{" "}
+                <span className={flagTone(m.latest_flag)}>
+                  {m.latest_value}
+                  {m.unit ? ` ${m.unit}` : ""}
+                </span>
+                {latestDate && <span className="text-white/45"> · {latestDate}</span>}
+              </>
+            ) : (
+              latestDate
+            )}
+          </span>
+          {delta != null && (
+            <span className="inline-flex items-center gap-0.5 text-white/65">
+              {delta > 0 ? (
+                <TrendingUp className="h-3 w-3" />
+              ) : delta < 0 ? (
+                <TrendingDown className="h-3 w-3" />
+              ) : (
+                <Minus className="h-3 w-3" />
+              )}
+              {delta > 0 ? "+" : ""}
+              {Math.abs(delta) >= 100 ? delta.toFixed(0) : delta.toFixed(2)}
+              {deltaPct != null && Number.isFinite(deltaPct) && (
+                <span className="text-white/40"> ({deltaPct > 0 ? "+" : ""}{deltaPct.toFixed(0)}%)</span>
+              )}
+            </span>
           )}
         </div>
       </Link>
