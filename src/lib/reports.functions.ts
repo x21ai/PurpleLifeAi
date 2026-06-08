@@ -99,12 +99,40 @@ export const setReportIdentityDecision = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       return { ok: true, deleted: true };
     }
+    // Approve path: also remember the (patient_name, dob) printed on the doc
+    // so future uploads with the same identity skip the banner.
+    const { data: doc } = await supabase
+      .from("report_documents")
+      .select("user_id, patient_name, patient_dob")
+      .eq("id", data.reportId)
+      .maybeSingle();
     const { error } = await supabase
       .from("report_documents")
       .update({ identity_status: "manual_approved", user_decision: "kept" })
       .eq("id", data.reportId);
     if (error) throw new Error(error.message);
-    return { ok: true, deleted: false };
+    let aliasRemembered = false;
+    if (doc?.patient_name) {
+      const nameNormalized = doc.patient_name
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+      if (nameNormalized.length > 0) {
+        const { error: aliasErr } = await supabase
+          .from("report_identity_aliases")
+          .upsert(
+            {
+              user_id: doc.user_id,
+              name_normalized: nameNormalized,
+              dob: doc.patient_dob ?? null,
+              source: "approval",
+            },
+            { onConflict: "user_id,name_normalized,dob", ignoreDuplicates: true },
+          );
+        if (!aliasErr) aliasRemembered = true;
+      }
+    }
+    return { ok: true, deleted: false, aliasRemembered };
   });
 
 async function extractWithAI(
