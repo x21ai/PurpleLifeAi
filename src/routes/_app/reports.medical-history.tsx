@@ -257,7 +257,7 @@ function MedicalHistoryPage() {
           <div>
             <Label className="text-xs">Window</Label>
             <select
-              className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+              className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm [&>option]:bg-popover [&>option]:text-popover-foreground text-foreground"
               value={schWindow}
               onChange={(e) => setSchWindow(Number(e.target.value))}
             >
@@ -388,7 +388,7 @@ function ReportRow({
           ) : (
             <>
               <select
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm [&>option]:bg-popover [&>option]:text-popover-foreground text-foreground"
                 value={threadId}
                 onChange={(e) => setThreadId(e.target.value)}
               >
