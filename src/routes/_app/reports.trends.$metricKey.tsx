@@ -12,7 +12,7 @@ import {
   ResponsiveContainer,
   ReferenceArea,
 } from "recharts";
-import { Download, Loader2, Share2, Sparkles, Wand2 } from "lucide-react";
+import { Download, Loader2, Share2, Sparkles, Wand2, ChevronRight } from "lucide-react";
 import { getMetricSeries, getMetricInsight } from "@/lib/report-trends.functions";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { useRouteTheme } from "@/lib/use-route-theme";
