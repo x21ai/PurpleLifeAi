@@ -2,29 +2,11 @@ import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-  arrayMove,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { LineChart, Line, ResponsiveContainer, YAxis } from "recharts";
-import { GripVertical, Pin, PinOff, EyeOff, ChevronRight, TrendingUp } from "lucide-react";
+import { Pin, PinOff, EyeOff, TrendingUp } from "lucide-react";
 import {
   listTrendMetrics,
   setMetricPreference,
-  reorderMetrics,
   type TrendMetricRow,
 } from "@/lib/report-trends.functions";
 
@@ -35,7 +17,7 @@ function flagTone(flag: string | null) {
   return "report-muted";
 }
 
-function MetricRow({
+function MetricCard({
   m,
   onTogglePin,
   onHide,
@@ -44,43 +26,50 @@ function MetricRow({
   onTogglePin: () => void;
   onHide: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: m.metric_key,
-  });
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.6 : 1,
-  };
   const label = m.display_name ?? m.metric_key.replace(/_/g, " ");
   const chartData = m.series
     .filter((p) => p.value != null)
     .map((p) => ({ at: p.at, v: p.value as number }));
 
   return (
-    <li
-      ref={setNodeRef}
-      style={style}
-      className="group report-card flex items-center gap-3 px-4 py-3.5"
-    >
-      <button
-        type="button"
-        aria-label="Drag to reorder"
-        className="cursor-grab touch-none text-white/30 hover:text-white"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="h-4 w-4" />
-      </button>
+    <div className="group report-card relative flex flex-col gap-3 p-4">
+      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity z-10">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onTogglePin();
+          }}
+          aria-label={m.pinned ? "Unpin" : "Pin to top"}
+          title={m.pinned ? "Unpin" : "Pin to top"}
+          className="rounded-full p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
+        >
+          {m.pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onHide();
+          }}
+          aria-label="Hide"
+          title="Hide from trends"
+          className="rounded-full p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
+        >
+          <EyeOff className="h-3.5 w-3.5" />
+        </button>
+      </div>
 
       <Link
         to="/reports/trends/$metricKey"
         params={{ metricKey: m.metric_key }}
-        className="flex flex-1 items-center gap-3 min-w-0"
+        className="flex flex-col gap-2 min-w-0"
       >
-        <div className="min-w-0 flex-1">
-          <p className="text-sm text-white truncate capitalize">{label}</p>
-          <p className="text-[11px] report-muted">
+        <div className="min-w-0 pr-16">
+          <p className="text-sm text-white capitalize line-clamp-2 leading-snug">{label}</p>
+          <p className="mt-1 text-[11px] report-muted">
             {m.count} readings
             {m.latest_value != null && (
               <>
@@ -93,7 +82,7 @@ function MetricRow({
             )}
           </p>
         </div>
-        <div className="h-10 w-28 shrink-0">
+        <div className="h-14 w-full">
           {chartData.length >= 2 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 4, right: 2, bottom: 4, left: 2 }}>
@@ -112,37 +101,14 @@ function MetricRow({
             <div className="h-full w-full rounded bg-white/5" />
           )}
         </div>
-        <ChevronRight className="h-4 w-4 text-white/30 shrink-0" />
       </Link>
-
-      <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-        <button
-          type="button"
-          onClick={onTogglePin}
-          aria-label={m.pinned ? "Unpin" : "Pin to top"}
-          title={m.pinned ? "Unpin" : "Pin to top"}
-          className="rounded-full p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
-        >
-          {m.pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
-        </button>
-        <button
-          type="button"
-          onClick={onHide}
-          aria-label="Hide"
-          title="Hide from trends"
-          className="rounded-full p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
-        >
-          <EyeOff className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    </li>
+    </div>
   );
 }
 
 export function TrendsSection() {
   const fetchList = useServerFn(listTrendMetrics);
   const setPref = useServerFn(setMetricPreference);
-  const reorder = useServerFn(reorderMetrics);
   const qc = useQueryClient();
   const [showHidden, setShowHidden] = React.useState(false);
   const { data, isLoading } = useQuery({
@@ -152,27 +118,12 @@ export function TrendsSection() {
   const metrics = (data?.metrics ?? []) as TrendMetricRow[];
   const visible = metrics.filter((m) => showHidden || !m.hidden);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-
-  const [localOrder, setLocalOrder] = React.useState<string[] | null>(null);
-  const orderedKeys = localOrder ?? visible.map((m) => m.metric_key);
-  const byKey = new Map(metrics.map((m) => [m.metric_key, m]));
-
-  async function onDragEnd(e: DragEndEvent) {
-    const { active, over } = e;
-    if (!over || active.id === over.id) return;
-    const oldIndex = orderedKeys.indexOf(String(active.id));
-    const newIndex = orderedKeys.indexOf(String(over.id));
-    if (oldIndex < 0 || newIndex < 0) return;
-    const next = arrayMove(orderedKeys, oldIndex, newIndex);
-    setLocalOrder(next);
-    await reorder({ data: { order: next } });
-    await qc.invalidateQueries({ queryKey: ["report-trend-metrics"] });
-    setLocalOrder(null);
-  }
+  const labelOf = (m: TrendMetricRow) =>
+    (m.display_name ?? m.metric_key.replace(/_/g, " ")).toLowerCase();
+  const sorted = [...visible].sort((a, b) => {
+    if (!!b.pinned !== !!a.pinned) return b.pinned ? 1 : -1;
+    return labelOf(a).localeCompare(labelOf(b));
+  });
 
   async function togglePin(m: TrendMetricRow) {
     await setPref({ data: { metricKey: m.metric_key, pinned: !m.pinned } });
@@ -195,7 +146,7 @@ export function TrendsSection() {
             <TrendingUp className="h-4 w-4 text-[#5CE0AC]" /> Trends
           </h2>
           <p className="mt-1 text-sm report-muted">
-            Metrics that appear in two or more reports. Drag to reorder, pin the ones that matter most.
+            Every metric from your reports, in alphabetical order. Pin the ones that matter most.
           </p>
         </div>
         {metrics.some((m) => m.hidden) && (
@@ -209,24 +160,16 @@ export function TrendsSection() {
         )}
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        <SortableContext items={orderedKeys} strategy={verticalListSortingStrategy}>
-          <ul className="mt-4 space-y-2">
-            {orderedKeys.map((k) => {
-              const m = byKey.get(k);
-              if (!m) return null;
-              return (
-                <MetricRow
-                  key={k}
-                  m={m}
-                  onTogglePin={() => void togglePin(m)}
-                  onHide={() => void hide(m)}
-                />
-              );
-            })}
-          </ul>
-        </SortableContext>
-      </DndContext>
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+        {sorted.map((m) => (
+          <MetricCard
+            key={m.metric_key}
+            m={m}
+            onTogglePin={() => void togglePin(m)}
+            onHide={() => void hide(m)}
+          />
+        ))}
+      </div>
     </section>
   );
 }
