@@ -1624,6 +1624,39 @@ export type Database = {
         }
         Relationships: []
       }
+      metric_insights: {
+        Row: {
+          bullets: Json
+          created_at: string
+          id: string
+          latest_at: string
+          metric_key: string
+          suggested_questions: Json
+          summary: string | null
+          user_id: string
+        }
+        Insert: {
+          bullets?: Json
+          created_at?: string
+          id?: string
+          latest_at: string
+          metric_key: string
+          suggested_questions?: Json
+          summary?: string | null
+          user_id: string
+        }
+        Update: {
+          bullets?: Json
+          created_at?: string
+          id?: string
+          latest_at?: string
+          metric_key?: string
+          suggested_questions?: Json
+          summary?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       oura_tokens: {
         Row: {
           access_token: string
@@ -1752,6 +1785,45 @@ export type Database = {
           resource_type?: string
           user_agent?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      platform_rules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          enabled: boolean
+          id: string
+          key: string
+          scope: string
+          scope_value: string | null
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key: string
+          scope: string
+          scope_value?: string | null
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key?: string
+          scope?: string
+          scope_value?: string | null
+          updated_at?: string
+          value?: Json
         }
         Relationships: []
       }
@@ -2008,14 +2080,18 @@ export type Database = {
           created_at: string
           created_by_id: string | null
           created_by_kind: string
+          duplicate_of: string | null
           error_message: string | null
           file_mime: string
           file_path: string
           findings: Json | null
           id: string
+          identity_status: string
           impressions: Json | null
           ocr_text: string | null
           panel_keys: string[] | null
+          patient_dob: string | null
+          patient_name: string | null
           report_date: string | null
           report_type: string | null
           status: string
@@ -2028,14 +2104,18 @@ export type Database = {
           created_at?: string
           created_by_id?: string | null
           created_by_kind?: string
+          duplicate_of?: string | null
           error_message?: string | null
           file_mime: string
           file_path: string
           findings?: Json | null
           id?: string
+          identity_status?: string
           impressions?: Json | null
           ocr_text?: string | null
           panel_keys?: string[] | null
+          patient_dob?: string | null
+          patient_name?: string | null
           report_date?: string | null
           report_type?: string | null
           status?: string
@@ -2048,14 +2128,18 @@ export type Database = {
           created_at?: string
           created_by_id?: string | null
           created_by_kind?: string
+          duplicate_of?: string | null
           error_message?: string | null
           file_mime?: string
           file_path?: string
           findings?: Json | null
           id?: string
+          identity_status?: string
           impressions?: Json | null
           ocr_text?: string | null
           panel_keys?: string[] | null
+          patient_dob?: string | null
+          patient_name?: string | null
           report_date?: string | null
           report_type?: string | null
           status?: string
@@ -2064,7 +2148,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "report_documents_duplicate_of_fkey"
+            columns: ["duplicate_of"]
+            isOneToOne: false
+            referencedRelation: "report_documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       report_metric_preferences: {
         Row: {

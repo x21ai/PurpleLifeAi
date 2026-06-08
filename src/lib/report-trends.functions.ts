@@ -26,7 +26,7 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
-    const [{ data: metrics, error: mErr }, { data: prefs, error: pErr }] = await Promise.all([
+    const [{ data: metrics, error: mErr }, { data: prefs, error: pErr }, { data: docs }] = await Promise.all([
       supabase
         .from("report_metrics")
         .select("metric_key, display_name, value, value_text, unit, flag, reference_low, reference_high, measured_at, created_at, report_id")
@@ -34,6 +34,9 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
       supabase
         .from("report_metric_preferences")
         .select("metric_key, pinned, hidden, sort_order"),
+      supabase
+        .from("report_documents")
+        .select("id, identity_status, duplicate_of"),
     ]);
     if (mErr) throw new Error(mErr.message);
     if (pErr) throw new Error(pErr.message);
@@ -41,8 +44,18 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
     const prefMap = new Map<string, { pinned: boolean; hidden: boolean; sort_order: number }>();
     for (const p of prefs ?? []) prefMap.set(p.metric_key, { pinned: !!p.pinned, hidden: !!p.hidden, sort_order: p.sort_order ?? 0 });
 
+    // Only include metrics from reports whose identity is verified/manual_approved
+    // AND that aren't marked as duplicates of another report.
+    const includedReports = new Set<string>();
+    for (const d of docs ?? []) {
+      const status = (d.identity_status as string | null) ?? "unverified";
+      if (d.duplicate_of) continue;
+      if (status === "verified" || status === "manual_approved") includedReports.add(d.id as string);
+    }
+
     const byKey = new Map<string, TrendMetricRow>();
     for (const m of metrics ?? []) {
+      if (!includedReports.has(m.report_id as string)) continue;
       const key = m.metric_key;
       const at = (m.measured_at as string | null) ?? (m.created_at as string);
       const row = byKey.get(key) ?? {
@@ -143,7 +156,7 @@ export const getMetricSeries = createServerFn({ method: "GET" })
     const { supabase } = context;
     let q = supabase
       .from("report_metrics")
-      .select("id, value, value_text, unit, flag, reference_low, reference_high, measured_at, created_at, display_name, report_id, report_documents(title, report_date)")
+      .select("id, value, value_text, unit, flag, reference_low, reference_high, measured_at, created_at, display_name, report_id, report_documents(title, report_date, identity_status, duplicate_of)")
       .eq("metric_key", data.metricKey)
       .order("measured_at", { ascending: true, nullsFirst: true });
     if (data.days) {
@@ -152,14 +165,24 @@ export const getMetricSeries = createServerFn({ method: "GET" })
     }
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return { rows: rows ?? [] };
+    const filtered = (rows ?? []).filter((r: any) => {
+      const d = r.report_documents;
+      if (!d) return true;
+      if (d.duplicate_of) return false;
+      const status = d.identity_status ?? "unverified";
+      return status === "verified" || status === "manual_approved";
+    });
+    return { rows: filtered };
   });
 
 const InsightInput = z.object({
   metricKey: z.string().min(1).max(80),
+  force: z.boolean().optional(),
 });
 
-/** AI-generated trend summary for a single metric. Best-effort; degrades gracefully. */
+/** AI-generated trend summary for a single metric.
+ *  On-demand: only runs when force=true; otherwise returns cached value if any.
+ *  Cached per (user_id, metric_key, latest_at) so re-opens don't re-bill. */
 export const getMetricInsight = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InsightInput.parse(input))
@@ -173,7 +196,7 @@ export const getMetricInsight = createServerFn({ method: "POST" })
         .order("measured_at", { ascending: true, nullsFirst: true }),
       supabase.from("profiles").select("conditions, conditions_note").eq("id", userId).maybeSingle(),
     ]);
-    if (error) return { summary: null, bullets: [], suggestedQuestions: [], error: error.message };
+    if (error) return { summary: null, bullets: [], suggestedQuestions: [], error: error.message, cached: false, latestAt: null };
 
     const points = (rows ?? [])
       .map((r: any) => ({
@@ -186,8 +209,33 @@ export const getMetricInsight = createServerFn({ method: "POST" })
       }))
       .filter((p) => p.value != null || p.text);
     if (points.length < 2) {
-      return { summary: null, bullets: [], suggestedQuestions: [], error: null };
+      return { summary: null, bullets: [], suggestedQuestions: [], error: "not_enough_data", cached: false, latestAt: null };
     }
+    const latestAt = points[points.length - 1].at;
+
+    // Check cache first
+    const { data: cached } = await supabase
+      .from("metric_insights")
+      .select("summary, bullets, suggested_questions")
+      .eq("user_id", userId)
+      .eq("metric_key", data.metricKey)
+      .eq("latest_at", latestAt)
+      .maybeSingle();
+    if (cached && !data.force) {
+      return {
+        summary: cached.summary,
+        bullets: (cached.bullets as string[]) ?? [],
+        suggestedQuestions: (cached.suggested_questions as string[]) ?? [],
+        error: null,
+        cached: true,
+        latestAt,
+      };
+    }
+    if (!cached && !data.force) {
+      // Don't run AI automatically; wait for the user to click "Run AI insights".
+      return { summary: null, bullets: [], suggestedQuestions: [], error: null, cached: false, latestAt };
+    }
+
     const label = (rows?.[0] as any)?.display_name ?? data.metricKey.replace(/_/g, " ");
     const unit = (rows?.[rows.length - 1] as any)?.unit ?? null;
     const refLow = (rows?.[rows.length - 1] as any)?.reference_low ?? null;
@@ -195,7 +243,7 @@ export const getMetricInsight = createServerFn({ method: "POST" })
     const conditions = (profile?.conditions as string[] | null) ?? [];
 
     const key = process.env.LOVABLE_API_KEY;
-    if (!key) return { summary: null, bullets: [], suggestedQuestions: [], error: "AI unavailable" };
+    if (!key) return { summary: null, bullets: [], suggestedQuestions: [], error: "AI unavailable", cached: false, latestAt };
 
     try {
       const gateway = createLovableAiGatewayProvider(key);
@@ -222,13 +270,30 @@ export const getMetricInsight = createServerFn({ method: "POST" })
         prompt,
       });
 
+      // Cache the result keyed by the latest reading anchor.
+      await supabase.from("metric_insights").upsert(
+        {
+          user_id: userId,
+          metric_key: data.metricKey,
+          latest_at: latestAt,
+          summary: output.summary,
+          bullets: output.bullets ?? [],
+          suggested_questions: output.suggestedQuestions ?? [],
+        },
+        { onConflict: "user_id,metric_key,latest_at" },
+      );
+
       return {
         summary: output.summary,
         bullets: output.bullets ?? [],
         suggestedQuestions: output.suggestedQuestions ?? [],
         error: null,
+        cached: false,
+        latestAt,
       };
     } catch (e: any) {
-      return { summary: null, bullets: [], suggestedQuestions: [], error: e?.message ?? "AI request failed" };
+      const msg = e?.message ?? "AI request failed";
+      const kind = /429|rate/i.test(msg) ? "rate_limited" : /402|credit/i.test(msg) ? "credits_exhausted" : msg;
+      return { summary: null, bullets: [], suggestedQuestions: [], error: kind, cached: false, latestAt };
     }
   });

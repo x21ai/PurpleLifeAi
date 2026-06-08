@@ -2,10 +2,10 @@ import * as React from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Trash2, ExternalLink, TrendingUp, ShieldCheck } from "lucide-react";
+import { Loader2, Trash2, ExternalLink, TrendingUp, ShieldCheck, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouteTheme } from "@/lib/use-route-theme";
-import { getReport, deleteReport, getMetricTrend, processReport } from "@/lib/reports.functions";
+import { getReport, deleteReport, getMetricTrend, processReport, setReportIdentityDecision } from "@/lib/reports.functions";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceArea, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
@@ -67,7 +67,9 @@ function ReportDetailPage() {
   const fetchReport = useServerFn(getReport);
   const removeReport = useServerFn(deleteReport);
   const reprocess = useServerFn(processReport);
+  const decideIdentity = useServerFn(setReportIdentityDecision);
   const [retrying, setRetrying] = React.useState(false);
+  const [deciding, setDeciding] = React.useState(false);
   const [selectedMetric, setSelectedMetric] = React.useState<string | null>(null);
 
   const { data, isLoading, refetch } = useQuery({
@@ -117,6 +119,10 @@ function ReportDetailPage() {
   const report = data?.report;
   const metrics = (data?.metrics ?? []) as Metric[];
   const signedUrl = data?.signedUrl;
+  const identityStatus = (report as { identity_status?: string } | undefined)?.identity_status;
+  const duplicateOf = (report as { duplicate_of?: string | null } | undefined)?.duplicate_of ?? null;
+  const patientName = (report as { patient_name?: string | null } | undefined)?.patient_name ?? null;
+  const patientDob = (report as { patient_dob?: string | null } | undefined)?.patient_dob ?? null;
 
   if (!report) {
     return (
@@ -218,6 +224,69 @@ function ReportDetailPage() {
               "Retry"
             )}
           </Button>
+        </ReportCard>
+      )}
+
+      {report.status === "ready" && (identityStatus === "mismatch" || identityStatus === "unverified" || duplicateOf) && (
+        <ReportCard className="mt-6 border-[#F3D58B]/30 bg-[#F3D58B]/5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-[#F3D58B]" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-white font-medium">
+                {duplicateOf
+                  ? "Possible duplicate report"
+                  : identityStatus === "mismatch"
+                    ? "Patient details don't match your profile"
+                    : "We couldn't verify whose report this is"}
+              </p>
+              <p className="mt-1 text-xs text-white/65 leading-relaxed">
+                {duplicateOf
+                  ? "Another report on the same date already has overlapping values. Its metrics are excluded from trends to avoid double-counting."
+                  : `Found on the document: ${patientName ?? "no name"}${patientDob ? `, DOB ${patientDob}` : ""}. Its metrics are hidden from your trends until you confirm.`}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  onClick={async () => {
+                    setDeciding(true);
+                    try {
+                      await decideIdentity({ data: { reportId, decision: "approve" } });
+                      toast.success("Report approved — metrics will appear in trends");
+                      await refetch();
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : "Failed");
+                    } finally {
+                      setDeciding(false);
+                    }
+                  }}
+                  disabled={deciding}
+                  size="sm"
+                  className="rounded-full bg-white text-[#07090C] hover:bg-white/90"
+                >
+                  This is me — approve
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (!confirm("Delete this report?")) return;
+                    setDeciding(true);
+                    try {
+                      await decideIdentity({ data: { reportId, decision: "reject" } });
+                      toast.success("Report deleted");
+                      navigate({ to: "/reports/documents" });
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : "Failed");
+                      setDeciding(false);
+                    }
+                  }}
+                  disabled={deciding}
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full text-[#FFA8BD] hover:bg-white/5 hover:text-[#FFA8BD]"
+                >
+                  Not me — delete
+                </Button>
+              </div>
+            </div>
+          </div>
         </ReportCard>
       )}
 

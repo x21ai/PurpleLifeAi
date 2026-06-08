@@ -3,6 +3,13 @@ import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_app/community-new")({
   head: () => ({ meta: [{ title: "New post, Community" }] }),
@@ -40,9 +47,16 @@ function NewPost() {
       <h1 className="mt-3 font-serif text-4xl">New post</h1>
       <p className="mt-2 text-muted-foreground">Be kind. No medical advice. Don't share other people's info.</p>
       <div className="mt-8 space-y-3">
-        <select value={topic} onChange={(e) => setTopic(e.target.value)} className="rounded-xl border border-border bg-card px-3 py-2 text-sm">
-          {["general","wins","questions","vent","tips"].map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
+        <Select value={topic} onValueChange={setTopic}>
+          <SelectTrigger className="w-[200px] rounded-xl border-border bg-card text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {["general","wins","questions","vent","tips"].map((t) => (
+              <SelectItem key={t} value={t}>{t}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}

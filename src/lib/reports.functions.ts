@@ -38,6 +38,8 @@ type ExtractionResult = {
   panel_keys?: string[];
   findings?: string[];
   impressions?: string[];
+  patient_name?: string | null;
+  patient_dob?: string | null;
 };
 
 function flagFor(v: number | null | undefined, low: number | null | undefined, high: number | null | undefined): string | null {
@@ -46,6 +48,45 @@ function flagFor(v: number | null | undefined, low: number | null | undefined, h
   if (high != null && v > high) return "high";
   return "normal";
 }
+
+async function isPlatformRuleEnabled(supabase: SupabaseClient, key: string): Promise<boolean> {
+  try {
+    const { data } = await supabase
+      .from("platform_rules")
+      .select("value, enabled, scope")
+      .eq("key", key)
+      .eq("scope", "platform")
+      .eq("enabled", true)
+      .maybeSingle();
+    if (!data) return false;
+    return data.value === true || data.value === "true";
+  } catch {
+    return false;
+  }
+}
+
+export const setReportIdentityDecision = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      reportId: z.string().uuid(),
+      decision: z.enum(["approve", "reject"]),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    if (data.decision === "reject") {
+      const { error } = await supabase.from("report_documents").delete().eq("id", data.reportId);
+      if (error) throw new Error(error.message);
+      return { ok: true, deleted: true };
+    }
+    const { error } = await supabase
+      .from("report_documents")
+      .update({ identity_status: "manual_approved" })
+      .eq("id", data.reportId);
+    if (error) throw new Error(error.message);
+    return { ok: true, deleted: false };
+  });
 
 async function extractWithAI(
   supabase: SupabaseClient,
@@ -71,6 +112,7 @@ Always include:
 - A short "title" (max 80 chars) summarizing what the report is (e.g. "Quest CBC + lipids", "Brain MRI", "TSH panel").
 - "panel_keys": distinct list of panels present in this report.
 - For imaging/narrative reports: "findings" (short bullets of objective observations) and "impressions" (short bullets of the radiologist/clinician's overall read).
+- "patient_name" (full name on the report, as printed) and "patient_dob" (ISO YYYY-MM-DD) when visible on the document, or null.
 
 Return ONLY a JSON object with this exact shape:
 {
@@ -81,6 +123,8 @@ Return ONLY a JSON object with this exact shape:
   "panel_keys": ["lipids", "liver"],
   "findings": ["..."],
   "impressions": ["..."],
+  "patient_name": "Jane Q. Doe" or null,
+  "patient_dob": "1985-04-12" or null,
   "metrics": [
     { "key": "vitamin_d", "display_name": "Vitamin D", "value": 32, "unit": "ng/mL", "reference_low": 30, "reference_high": 100, "panel": "vitamins" }
   ]
@@ -109,7 +153,7 @@ export const listReports = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data, error } = await supabase
       .from("report_documents")
-      .select("id, title, report_type, report_date, file_mime, status, created_at, summary, panel_keys, error_message")
+      .select("id, title, report_type, report_date, file_mime, status, created_at, summary, panel_keys, error_message, identity_status, patient_name, patient_dob, duplicate_of")
       .order("report_date", { ascending: false, nullsFirst: false });
     if (error) throw new Error(error.message);
     const reports = data ?? [];
@@ -306,6 +350,74 @@ export const processReport = createServerFn({ method: "POST" })
           panel_keys: Array.from(panelSet),
           findings: extraction.findings && extraction.findings.length > 0 ? extraction.findings : null,
           impressions: extraction.impressions && extraction.impressions.length > 0 ? extraction.impressions : null,
+          patient_name: extraction.patient_name ?? null,
+          patient_dob: extraction.patient_dob ?? null,
+        })
+        .eq("id", doc.id);
+
+      // 1) Identity verification: compare extracted patient_name / patient_dob with profile.
+      // 2) Duplicate detection: same user + dob + report_date with overlapping metrics.
+      const ruleEnabled = await isPlatformRuleEnabled(supabase, "require_identity_match_for_metrics");
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("first_name, last_name, date_of_birth")
+        .eq("id", doc.user_id)
+        .maybeSingle();
+      const profName = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ").trim().toLowerCase();
+      const extName = (extraction.patient_name ?? "").trim().toLowerCase();
+      const extDob = extraction.patient_dob ?? null;
+      const profDob = (profile?.date_of_birth as string | null) ?? null;
+      let identity: "verified" | "mismatch" | "unverified" = "unverified";
+      if (ruleEnabled) {
+        if (profName && extName && profDob && extDob) {
+          const nameOk =
+            extName === profName ||
+            (profName.length >= 4 && extName.includes(profName)) ||
+            (extName.length >= 4 && profName.includes(extName));
+          const dobOk = extDob === profDob;
+          identity = nameOk && dobOk ? "verified" : "mismatch";
+        } else if (!extName && !extDob) {
+          identity = "unverified";
+        } else {
+          identity = "mismatch";
+        }
+      } else {
+        identity = "verified";
+      }
+
+      // Duplicate: same user + same patient_dob (when known) + same report_date (when known)
+      let duplicateOf: string | null = null;
+      if (extraction.report_date) {
+        const { data: candidates } = await supabase
+          .from("report_documents")
+          .select("id")
+          .eq("user_id", doc.user_id)
+          .eq("report_date", extraction.report_date)
+          .neq("id", doc.id)
+          .is("duplicate_of", null);
+        for (const c of candidates ?? []) {
+          const { data: otherRows } = await supabase
+            .from("report_metrics")
+            .select("metric_key, value")
+            .eq("report_id", c.id);
+          const otherKeys = new Set((otherRows ?? []).map((r) => `${r.metric_key}=${r.value ?? ""}`));
+          if (otherKeys.size === 0) continue;
+          const mine = new Set(rows.map((r) => `${r.metric_key}=${r.value ?? ""}`));
+          let overlap = 0;
+          for (const k of mine) if (otherKeys.has(k)) overlap += 1;
+          const ratio = overlap / Math.max(mine.size, otherKeys.size);
+          if (ratio >= 0.6) {
+            duplicateOf = c.id as string;
+            break;
+          }
+        }
+      }
+
+      await supabase
+        .from("report_documents")
+        .update({
+          identity_status: identity,
+          ...(duplicateOf ? { duplicate_of: duplicateOf } : {}),
         })
         .eq("id", doc.id);
 
