@@ -411,10 +411,61 @@ export function TrendsSection() {
     await qc.invalidateQueries({ queryKey: ["report-trend-metrics"] });
   }
 
-  if (isLoading) return null;
-  if (metrics.length === 0) return null;
-
   const draggable = sortMode === "custom";
+
+  if (isLoading) {
+    return (
+      <section className="mt-10">
+        <div className="flex items-end justify-between gap-3 flex-wrap">
+          <div>
+            <h2 className="flex items-center gap-2 font-serif text-2xl text-white">
+              <TrendingUp className="h-4 w-4 text-[#5CE0AC]" /> Trends
+            </h2>
+            <p className="mt-1 text-sm report-muted">Loading your lab values…</p>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="report-card h-48 animate-pulse bg-white/[0.03]"
+            />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (metrics.length === 0) {
+    return (
+      <section className="mt-10">
+        <h2 className="flex items-center gap-2 font-serif text-2xl text-white">
+          <TrendingUp className="h-4 w-4 text-[#5CE0AC]" /> Trends
+        </h2>
+        <div className="mt-4 report-card p-8 text-center">
+          <p className="text-base text-white">No lab values yet</p>
+          <p className="mt-2 text-sm report-muted max-w-[420px] mx-auto">
+            Upload a blood panel, lab report, or imaging PDF. Purple reads each file
+            and trends every value over time, with reference ranges.
+          </p>
+          <div className="mt-5 flex items-center justify-center gap-3">
+            <Link
+              to="/reports/new"
+              className="inline-flex items-center rounded-full bg-white text-[#07090C] px-4 py-2 text-sm hover:bg-white/90"
+            >
+              Upload a report
+            </Link>
+            <Link
+              to="/reports/documents"
+              className="inline-flex items-center rounded-full border border-white/15 px-4 py-2 text-sm text-white/80 hover:bg-white/5"
+            >
+              View reports
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="mt-10">
