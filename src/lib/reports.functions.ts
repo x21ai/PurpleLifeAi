@@ -49,6 +49,45 @@ function flagFor(v: number | null | undefined, low: number | null | undefined, h
   return "normal";
 }
 
+async function isPlatformRuleEnabled(supabase: SupabaseClient, key: string): Promise<boolean> {
+  try {
+    const { data } = await supabase
+      .from("platform_rules")
+      .select("value, enabled, scope")
+      .eq("key", key)
+      .eq("scope", "platform")
+      .eq("enabled", true)
+      .maybeSingle();
+    if (!data) return false;
+    return data.value === true || data.value === "true";
+  } catch {
+    return false;
+  }
+}
+
+export const setReportIdentityDecision = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      reportId: z.string().uuid(),
+      decision: z.enum(["approve", "reject"]),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    if (data.decision === "reject") {
+      const { error } = await supabase.from("report_documents").delete().eq("id", data.reportId);
+      if (error) throw new Error(error.message);
+      return { ok: true, deleted: true };
+    }
+    const { error } = await supabase
+      .from("report_documents")
+      .update({ identity_status: "manual_approved" })
+      .eq("id", data.reportId);
+    if (error) throw new Error(error.message);
+    return { ok: true, deleted: false };
+  });
+
 async function extractWithAI(
   supabase: SupabaseClient,
   userId: string,
