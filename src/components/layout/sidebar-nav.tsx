@@ -6,6 +6,34 @@ import { cn } from "@/lib/utils";
 import { PendingInboxBadge } from "@/components/care/pending-inbox-badge";
 import { CaregiverNavLink } from "./caregiver-nav-link";
 import { ChatUnreadBadge } from "./chat-unread-badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+/**
+ * Wraps a rail row in a tooltip that only shows when the sidebar is in
+ * its collapsed (md, icon-only) state. On lg+ the label is already visible
+ * inline, so the TooltipContent stays hidden via `lg:hidden`.
+ */
+function RailTooltip({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip delayDuration={150}>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="right" className="lg:hidden">
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 const STORAGE_KEY = "purple-sidebar-open-groups";
 
@@ -62,6 +90,7 @@ export function SidebarNav() {
     });
 
   return (
+    <TooltipProvider>
     <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-16 lg:w-64 border-r border-border bg-sidebar text-sidebar-foreground">
       <div className="flex items-center h-20 px-4 lg:px-6 border-b border-border">
         <Link to="/today" className="flex items-center flex-1" aria-label="Purple, home">
@@ -100,6 +129,7 @@ export function SidebarNav() {
         </div>
       </nav>
     </aside>
+    </TooltipProvider>
   );
 }
 
@@ -159,34 +189,40 @@ function GroupItem({
   return (
     <div>
       {group.to ? (
-        <div className={rowClass}>
-          <Link
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            to={group.to as any}
-            aria-current={isExactActive ? "page" : undefined}
-            className="flex items-center gap-3 flex-1 min-w-0 -ml-3 pl-3 -my-2.5 py-2.5 rounded-xl"
+        <RailTooltip label={group.label}>
+          <div className={rowClass}>
+            <Link
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              to={group.to as any}
+              aria-current={isExactActive ? "page" : undefined}
+              aria-label={group.label}
+              className="flex items-center gap-3 flex-1 min-w-0 -ml-3 pl-3 -my-2.5 py-2.5 rounded-xl"
+            >
+              {iconEl}
+              <span className="hidden lg:inline flex-1 text-left">{group.label}</span>
+            </Link>
+            {chevron}
+          </div>
+        </RailTooltip>
+      ) : (
+        <RailTooltip label={group.label}>
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={open}
+            aria-label={group.label}
+            className={rowClass}
           >
             {iconEl}
             <span className="hidden lg:inline flex-1 text-left">{group.label}</span>
-          </Link>
-          {chevron}
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={open}
-          className={rowClass}
-        >
-          {iconEl}
-          <span className="hidden lg:inline flex-1 text-left">{group.label}</span>
-          <ChevronDown
-            className={cn(
-              "hidden lg:inline h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
-              open && "rotate-180",
-            )}
-          />
-        </button>
+            <ChevronDown
+              className={cn(
+                "hidden lg:inline h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
+                open && "rotate-180",
+              )}
+            />
+          </button>
+        </RailTooltip>
       )}
       {open && group.children && (
         <div className="hidden lg:block ml-3 pl-3 mt-0.5 mb-1.5 border-l border-border/60 space-y-0.5">
@@ -217,24 +253,27 @@ function LeafLink({
   active: boolean;
 }) {
   return (
-    <Link
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      to={to as any}
-      aria-current={active ? "page" : undefined}
-      className={cn(
-        "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] transition-colors",
-        "justify-center lg:justify-start",
-        active
-          ? "bg-secondary text-foreground font-medium"
-          : "text-[color:var(--text-tertiary)] hover:bg-secondary/60 hover:text-foreground",
-      )}
-    >
-      <Icon
-        className={cn("h-5 w-5 shrink-0", active && "text-[color:var(--purple-primary)]")}
-        strokeWidth={active ? 2 : 1.6}
-      />
-      <span className="hidden lg:inline">{label}</span>
-    </Link>
+    <RailTooltip label={label}>
+      <Link
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        to={to as any}
+        aria-current={active ? "page" : undefined}
+        aria-label={label}
+        className={cn(
+          "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] transition-colors",
+          "justify-center lg:justify-start",
+          active
+            ? "bg-secondary text-foreground font-medium"
+            : "text-[color:var(--text-tertiary)] hover:bg-secondary/60 hover:text-foreground",
+        )}
+      >
+        <Icon
+          className={cn("h-5 w-5 shrink-0", active && "text-[color:var(--purple-primary)]")}
+          strokeWidth={active ? 2 : 1.6}
+        />
+        <span className="hidden lg:inline">{label}</span>
+      </Link>
+    </RailTooltip>
   );
 }
 
