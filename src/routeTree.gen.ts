@@ -97,6 +97,7 @@ import { Route as ApiPublicCronMedicalReportsRouteImport } from './routes/api/pu
 import { Route as ApiPublicCronDoseRemindersRouteImport } from './routes/api/public/cron/dose-reminders'
 import { Route as ApiPublicCronCareDailyDigestRouteImport } from './routes/api/public/cron/care-daily-digest'
 import { Route as AppReportsTrendsMetricKeyRouteImport } from './routes/_app/reports.trends.$metricKey'
+import { Route as AppAdminReportsDuplicatesRouteImport } from './routes/_app/admin.reports.duplicates'
 
 const UsersRoute = UsersRouteImport.update({
   id: '/users',
@@ -552,6 +553,12 @@ const AppReportsTrendsMetricKeyRoute =
     path: '/trends/$metricKey',
     getParentRoute: () => AppReportsRoute,
   } as any)
+const AppAdminReportsDuplicatesRoute =
+  AppAdminReportsDuplicatesRouteImport.update({
+    id: '/reports/duplicates',
+    path: '/reports/duplicates',
+    getParentRoute: () => AppAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -626,6 +633,7 @@ export interface FileRoutesByFullPath {
   '/biometrics/': typeof AppBiometricsIndexRoute
   '/care/': typeof AppCareIndexRoute
   '/journal/': typeof AppJournalIndexRoute
+  '/admin/reports/duplicates': typeof AppAdminReportsDuplicatesRoute
   '/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
   '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
@@ -714,6 +722,7 @@ export interface FileRoutesByTo {
   '/biometrics': typeof AppBiometricsIndexRoute
   '/care': typeof AppCareIndexRoute
   '/journal': typeof AppJournalIndexRoute
+  '/admin/reports/duplicates': typeof AppAdminReportsDuplicatesRoute
   '/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
   '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
@@ -805,6 +814,7 @@ export interface FileRoutesById {
   '/_app/biometrics/': typeof AppBiometricsIndexRoute
   '/_app/care/': typeof AppCareIndexRoute
   '/_app/journal/': typeof AppJournalIndexRoute
+  '/_app/admin/reports/duplicates': typeof AppAdminReportsDuplicatesRoute
   '/_app/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
   '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
@@ -896,6 +906,7 @@ export interface FileRouteTypes {
     | '/biometrics/'
     | '/care/'
     | '/journal/'
+    | '/admin/reports/duplicates'
     | '/reports/trends/$metricKey'
     | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
@@ -984,6 +995,7 @@ export interface FileRouteTypes {
     | '/biometrics'
     | '/care'
     | '/journal'
+    | '/admin/reports/duplicates'
     | '/reports/trends/$metricKey'
     | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
@@ -1074,6 +1086,7 @@ export interface FileRouteTypes {
     | '/_app/biometrics/'
     | '/_app/care/'
     | '/_app/journal/'
+    | '/_app/admin/reports/duplicates'
     | '/_app/reports/trends/$metricKey'
     | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
@@ -1753,6 +1766,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReportsTrendsMetricKeyRouteImport
       parentRoute: typeof AppReportsRoute
     }
+    '/_app/admin/reports/duplicates': {
+      id: '/_app/admin/reports/duplicates'
+      path: '/reports/duplicates'
+      fullPath: '/admin/reports/duplicates'
+      preLoaderRoute: typeof AppAdminReportsDuplicatesRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
   }
 }
 
@@ -1766,6 +1786,7 @@ interface AppAdminRouteChildren {
   AppAdminRulesRoute: typeof AppAdminRulesRoute
   AppAdminUsersRoute: typeof AppAdminUsersRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
+  AppAdminReportsDuplicatesRoute: typeof AppAdminReportsDuplicatesRoute
 }
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
@@ -1778,6 +1799,7 @@ const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminRulesRoute: AppAdminRulesRoute,
   AppAdminUsersRoute: AppAdminUsersRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
+  AppAdminReportsDuplicatesRoute: AppAdminReportsDuplicatesRoute,
 }
 
 const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
