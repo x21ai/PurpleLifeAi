@@ -253,7 +253,7 @@ export const getMetricInsight = createServerFn({ method: "POST" })
         conditions.length ? `User conditions: ${conditions.join(", ")}` : "User conditions: not specified",
         "",
         "Readings (chronological):",
-        ...points.map((p) => `- ${p.at}: ${p.value ?? p.text}${p.flag ? ` [${p.flag}]` : ""}${p.report ? ` — ${p.report}` : ""}`),
+        ...points.map((p) => `- ${p.at}: ${p.value ?? p.text}${p.flag ? ` [${p.flag}]` : ""}${p.report ? `, ${p.report}` : ""}`),
       ].join("\n");
 
       const { experimental_output: output } = await generateText({

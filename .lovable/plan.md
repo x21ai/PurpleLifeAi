@@ -1,53 +1,62 @@
-## Status check
+# Three fixes
 
-I went through the three asks. Items 1 and 2 are already implemented; item 3 has a small gap worth closing. Plan below covers a quick polish pass + an end-to-end verification.
+## 1. Metrics page renders blank
 
-### 1. Theme/color tokens on native dropdowns — DONE
+`src/components/reports/trends-section.tsx` returns `null` when loading and when the list is empty, so the Metrics tab shows nothing if you have no extracted metrics yet (e.g. all reports were rejected or still processing). Fix:
 
-Every native `<select>` in the repo (admin.promo, settings.travel, settings.sharing, reports.medical-history, trip-edit-dialog, itinerary-editor) now carries `bg-background text-foreground` plus `[&>option]:bg-popover [&>option]:text-popover-foreground` so the dropdown list reads correctly in both themes. Nothing left to change here — no action needed unless you spot a specific page still looking wrong.
+- Show a loading skeleton (3 placeholder cards) while `isLoading`.
+- Show a friendly empty state when `metrics.length === 0`: short copy explaining "No lab values yet" + a primary button linking to `/reports/new` to upload a report, and a secondary link to the Reports tab.
+- Keep the section heading visible in both states so the page never looks broken.
 
-### 2. Run AI insights — DONE, verify only
+No data-layer changes. `listTrendMetrics` is already correct.
 
-`reports.trends.$metricKey.tsx` already:
-- Loads cached insight without calling the model.
-- Always shows a "Run AI insights" / "Re-run" button (never a dead-end "Insights unavailable").
-- Shows specific copy for `credits_exhausted`, `rate_limited`, `not_enough_data`.
-- Limits scope to the latest reading + profile conditions + reference range (per the "Why" explainer).
+## 2. Identity approval: remember the decision + apply it to future uploads
 
-Verification only — I'll click through `/reports/trends/<key>` for a metric with no cached insight, confirm the button is visible, run it, and confirm the cached card renders after.
+Today every uploaded report is identity-checked against `profiles.first_name/last_name/date_of_birth` independently. If you approve a doc with name "AKASH OP, AURORA" / DOB 1973-08-10, the next upload with the same printed name still shows the banner. Fix it so an approval is sticky for that identity, and so the user understands what's happening with many docs.
 
-### 3. Duplicate report decision memory — small gap to close
+### Data
+New table `public.report_identity_aliases` (with GRANTs, RLS, `auth.uid()` policies):
 
-The upload path in `src/lib/reports.functions.ts` already:
-- Computes a `content_hash` (report_date + sorted metric=value pairs).
-- Blocks re-uploads when a prior row for the same `(user_id, content_hash)` has `user_decision = 'rejected'`.
-- Auto-links to the kept original when prior `user_decision = 'kept'`.
-- Persists Approve → `user_decision: 'kept'` / Reject → `user_decision: 'rejected'` via `setReportIdentityDecision`.
+- `id uuid pk`, `user_id uuid` (auth.users), `name_normalized text`, `dob date null`, `source` (`'approval' | 'profile'`), `created_at`.
+- Unique `(user_id, name_normalized, dob)`.
 
-Two small gaps to close before testing:
+### Server
+`src/lib/reports.functions.ts`:
 
-a) **Surface the "previously rejected" block to the user.** Today `processReport` returns `{ blocked: "previously_rejected" }` but `reports.new.tsx` ignores the field, so the upload looks successful. Add a toast/inline message ("You previously rejected a report with these readings — it wasn't re-added.") on upload completion when `blocked === "previously_rejected"`, and surface the same message in the report detail page for that tombstoned row (currently it just shows `error_message`, which is fine — verify it renders).
+- In `setReportIdentityDecision` when `decision === "approve"`: look up the report's `patient_name` + `patient_dob`, insert a normalized alias row (lowercase, trimmed, collapsed whitespace).
+- In `processReport` identity step: before flagging `mismatch`, check `report_identity_aliases` for `(user_id, name_normalized, dob)` match. If hit → `identity_status = 'verified'` and skip the banner. Profile name/DOB still wins first.
+- `getReport` (the report detail loader) returns a new `aliasCount` so the banner can show "Approving will also remember this name/DOB so future uploads with the same identity skip this check."
 
-b) **Backfill `content_hash` for existing kept/rejected rows.** Without this, a user who already rejected a report before this feature shipped won't get the sticky behaviour. One-time migration: after `processReport` finishes a successful extraction, if `content_hash IS NULL` on the row, compute and write it. (Already covered by line 388–391, so this only matters for rows that never get re-processed. Acceptable to leave as-is — flag for follow-up only.)
+### UI
+`src/routes/_app/reports.$reportId.tsx` identity banner copy:
 
-### Verification steps (end-to-end)
+- Replace current single-sentence explanation with a two-line block:
+  1. "Found on the document: NAME, DOB YYYY-MM-DD. Its metrics are hidden from your trends until you confirm."
+  2. "Approving remembers this name and DOB. Future uploads that match will skip this check automatically. Rejecting deletes this report and blocks re-uploads of the same readings."
+- Keep the two buttons but rename without em dashes (see §3).
 
-1. **Insights:** open `/reports/trends/iron_saturation` (current route). Confirm: button visible when no cached insight, click runs, result caches, "Re-run" appears after.
-2. **Duplicate — reject:** upload a report, open it, click "Not me — delete" on the identity banner. Re-upload the same file. Confirm: upload finishes with the new toast, no metrics added, report row exists with `status='rejected'`.
-3. **Duplicate — approve:** upload a report flagged as duplicate, click "This is me — approve". Re-upload. Confirm: new row auto-linked as `duplicate_of`, no banner shown, metrics excluded from trends.
+`src/routes/_app/reports.new.tsx` upload result toast: when one of N uploaded files is flagged as identity mismatch, surface a count ("2 of 5 reports need you to confirm the patient identity") with a link to `/reports/documents`. This answers the "what happens with 10 different names" question: each unique identity prompts once, after which it's remembered.
 
-### Files touched in this plan
+### Settings surface (lightweight)
+Add a section in `src/routes/_app/settings.sharing.tsx` (or a new `settings.identities.tsx` if cleaner) listing remembered identities with a delete button, so a caregiver who approved the wrong alias can revoke it.
 
-**Modified**
-- `src/routes/_app/reports.new.tsx` — handle `blocked: "previously_rejected"` from upload response, show toast.
+## 3. Purge em dashes project-wide
 
-**Read-only verification**
-- `src/routes/_app/reports.trends.$metricKey.tsx`
-- `src/lib/reports.functions.ts`
-- `src/lib/report-trends.functions.ts`
+The `mem://constraint/no-em-dash` rule exists and `scripts/check-no-em-dash.mjs` exists, but it's only wired as an npm script, not run in any build step, so regressions slipped in.
 
-### Out of scope
+- Run `npm run check:em-dash`, fix every hit in `src/` and `public/` by replacing per the rule (`,` / `:` / `and` / split sentence / `·` for title separators).
+- High-traffic hits I already see: `reports.$reportId.tsx` ("This is me — approve" / "Not me — delete"), `trends-section.tsx` status chips ("Out of range — high/low"), `reports.trends.$metricKey.tsx`, `reports.functions.ts` error messages, `reports.new.tsx` toast, `purple-chat-prompt.server.ts`, many marketing/intake sheets.
+- Add `bun run check:em-dash` to the `prebuild` script in `package.json` so any future em dash fails CI.
 
-- No new migrations.
-- No retroactive hashing of pre-feature reports.
-- No further dropdown sweeps — all native selects are already token-safe.
+## Files touched (summary)
+
+- New migration: `report_identity_aliases` table + grants + policies.
+- `src/lib/reports.functions.ts` — sticky alias logic on approve + match check in processReport, return `aliasCount`.
+- `src/components/reports/trends-section.tsx` — loading skeleton + empty state.
+- `src/routes/_app/reports.$reportId.tsx` — clearer banner copy + em dash fix.
+- `src/routes/_app/reports.new.tsx` — identity-needs-review toast + em dash fix.
+- `src/routes/_app/settings.sharing.tsx` (or new file) — remembered identities list.
+- Sweep across `src/` + `public/` for em dashes.
+- `package.json` — add `prebuild` hook running `check:em-dash`.
+
+No new external services, no AI changes, no schema changes beyond the one alias table.

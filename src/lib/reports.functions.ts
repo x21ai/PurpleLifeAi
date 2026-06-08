@@ -93,18 +93,55 @@ export const setReportIdentityDecision = createServerFn({ method: "POST" })
         .update({
           user_decision: "rejected",
           status: "rejected",
-          error_message: "You rejected this report — its readings are excluded from trends.",
+          error_message: "You rejected this report, its readings are excluded from trends.",
         })
         .eq("id", data.reportId);
       if (error) throw new Error(error.message);
       return { ok: true, deleted: true };
     }
+    // Approve path: also remember the (patient_name, dob) printed on the doc
+    // so future uploads with the same identity skip the banner.
+    const { data: doc } = await supabase
+      .from("report_documents")
+      .select("user_id, patient_name, patient_dob")
+      .eq("id", data.reportId)
+      .maybeSingle();
     const { error } = await supabase
       .from("report_documents")
       .update({ identity_status: "manual_approved", user_decision: "kept" })
       .eq("id", data.reportId);
     if (error) throw new Error(error.message);
-    return { ok: true, deleted: false };
+    let aliasRemembered = false;
+    if (doc?.patient_name) {
+      const nameNormalized = doc.patient_name
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+      if (nameNormalized.length > 0) {
+        let q = supabase
+          .from("report_identity_aliases")
+          .select("id")
+          .eq("user_id", doc.user_id)
+          .eq("name_normalized", nameNormalized)
+          .limit(1);
+        q = doc.patient_dob ? q.eq("dob", doc.patient_dob) : q.is("dob", null);
+        const { data: existingRows } = await q;
+        if (!existingRows || existingRows.length === 0) {
+          const { error: aliasErr } = await supabase
+            .from("report_identity_aliases")
+            .insert({
+              user_id: doc.user_id,
+              name_normalized: nameNormalized,
+              dob: doc.patient_dob ?? null,
+              source: "approval",
+            });
+          if (!aliasErr) aliasRemembered = true;
+        } else {
+          aliasRemembered = true;
+        }
+      }
+    }
+    return { ok: true, deleted: false, aliasRemembered };
   });
 
 async function extractWithAI(
@@ -376,7 +413,7 @@ export const processReport = createServerFn({ method: "POST" })
             user_decision: "rejected",
             content_hash: contentHash,
             error_message:
-              "You previously rejected a report with these same readings — it was not added again.",
+              "You previously rejected a report with these same readings, it was not added again.",
           })
           .eq("id", doc.id);
         return { ok: true, metricCount: 0, blocked: "previously_rejected" };
@@ -414,7 +451,7 @@ export const processReport = createServerFn({ method: "POST" })
           report_date: extraction.report_date ?? null,
           // Overwrite title with the AI-detected one when the current title is the
           // placeholder filename (no spaces, looks like a filename slug, or the
-          // default "Untitled report"). This is a heuristic — keep user-edited
+          // default "Untitled report"). This is a heuristic, keep user-edited
           // titles intact.
           ...(extraction.title && extraction.title.trim().length > 0
             ? { title: extraction.title.trim().slice(0, 200) }
@@ -454,6 +491,22 @@ export const processReport = createServerFn({ method: "POST" })
           identity = "unverified";
         } else {
           identity = "mismatch";
+        }
+        // If profile didn't match, check the user's remembered aliases.
+        // An approved alias for the same (normalized name, dob) auto-verifies.
+        if (identity !== "verified" && extName) {
+          const aliasName = extName.replace(/\s+/g, " ").trim();
+          let aq = supabase
+            .from("report_identity_aliases")
+            .select("id")
+            .eq("user_id", doc.user_id)
+            .eq("name_normalized", aliasName)
+            .limit(1);
+          aq = extDob ? aq.eq("dob", extDob) : aq.is("dob", null);
+          const { data: aliasRows } = await aq;
+          if (aliasRows && aliasRows.length > 0) {
+            identity = "verified";
+          }
         }
       } else {
         identity = "verified";

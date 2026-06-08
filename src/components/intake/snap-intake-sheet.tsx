@@ -197,7 +197,7 @@ export function SnapIntakeSheet() {
         <SheetHeader>
           <SheetTitle className="font-serif text-2xl">Snap intake</SheetTitle>
           <SheetDescription>
-            Take a photo of your food, drink, or water. We'll suggest the details — you review before saving.
+            Take a photo of your food, drink, or water. We'll suggest the details, you review before saving.
           </SheetDescription>
         </SheetHeader>
 
@@ -219,7 +219,7 @@ export function SnapIntakeSheet() {
                 <Camera className="h-5 w-5 mr-2" /> Take or choose a photo
               </Button>
               <p className="text-xs text-muted-foreground text-center">
-                AI estimate — please confirm everything before saving.
+                AI estimate, please confirm everything before saving.
               </p>
             </>
           )}
@@ -241,7 +241,7 @@ export function SnapIntakeSheet() {
                   <div className="text-xs label-eyebrow text-muted-foreground">Detected</div>
                   <div className="text-sm font-medium capitalize">{recog.kind}</div>
                   <div className="text-xs text-muted-foreground">
-                    Confidence {Math.round(recog.confidence * 100)}% — please review.
+                    Confidence {Math.round(recog.confidence * 100)}%, please review.
                   </div>
                 </div>
               </div>

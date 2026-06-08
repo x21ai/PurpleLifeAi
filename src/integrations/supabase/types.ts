@@ -2203,6 +2203,33 @@ export type Database = {
           },
         ]
       }
+      report_identity_aliases: {
+        Row: {
+          created_at: string
+          dob: string | null
+          id: string
+          name_normalized: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dob?: string | null
+          id?: string
+          name_normalized: string
+          source?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dob?: string | null
+          id?: string
+          name_normalized?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       report_metric_preferences: {
         Row: {
           created_at: string

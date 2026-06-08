@@ -170,7 +170,7 @@ export function CalmBand(props: CalmBandProps) {
  */
 interface HumanMomentProps {
   image: PictureAsset;
-  /** Override alt text from the asset. Optional — asset carries its own. */
+  /** Override alt text from the asset. Optional, asset carries its own. */
   alt?: string;
   quote: ReactNode;
   attribution?: ReactNode;

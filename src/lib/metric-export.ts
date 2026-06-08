@@ -51,7 +51,7 @@ export async function shareMetric(opts: {
       return "shared";
     }
   } catch {
-    // user cancel or unsupported — fall through to clipboard
+    // user cancel or unsupported, fall through to clipboard
   }
   try {
     await navigator.clipboard.writeText(`${opts.text}\n${url}`);

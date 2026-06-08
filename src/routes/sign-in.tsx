@@ -21,7 +21,7 @@ const LOCALE_PREFILL_KEY = "purple-locale-prefill";
 
 /**
  * Auto-detect a sensible locale prefill for /welcome. The user doesn't see this
- * during sign-up — /welcome shows it pre-filled so they can confirm or change.
+ * during sign-up, /welcome shows it pre-filled so they can confirm or change.
  */
 function detectAndStorePrefill(): { country: string | null; timezone: string | null; locale: SupportedLocale } {
   const locale = detectBrowserLocale();
@@ -34,7 +34,7 @@ function detectAndStorePrefill(): { country: string | null; timezone: string | n
     const region = new Intl.Locale(opts.locale ?? locale).region;
     if (region) country = region;
   } catch {
-    // older browsers — leave nulls; /welcome will ask
+    // older browsers, leave nulls; /welcome will ask
   }
   if (typeof window !== "undefined") {
     try {
@@ -220,7 +220,7 @@ function SignInPage() {
       </div>
 
       <div className="lg:grid lg:grid-cols-[1fr_minmax(420px,560px)]">
-        {/* Wordmark column — left, breathing room on the photo */}
+        {/* Wordmark column, left, breathing room on the photo */}
         <aside className="hidden lg:flex flex-col justify-end p-14 min-h-dvh">
           <p
             className="label-eyebrow"
@@ -310,7 +310,7 @@ function SignInPage() {
                       />
                       {mode === "register" && (
                         <p className="text-xs text-muted-foreground pt-1">
-                          We&rsquo;ll ask a few quick things after you confirm your email — region, conditions, and anything else that helps Purple help you.
+                          We&rsquo;ll ask a few quick things after you confirm your email, region, conditions, and anything else that helps Purple help you.
                         </p>
                       )}
                       <Button

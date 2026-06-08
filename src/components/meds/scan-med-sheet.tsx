@@ -102,7 +102,7 @@ export function ScanMedSheet({
         <SheetHeader>
           <SheetTitle className="font-serif text-2xl">Scan medication</SheetTitle>
           <SheetDescription>
-            Take a photo of the label, bottle, or prescription. We&rsquo;ll suggest the details — you review and save in the next step.
+            Take a photo of the label, bottle, or prescription. We&rsquo;ll suggest the details, you review and save in the next step.
           </SheetDescription>
         </SheetHeader>
 
@@ -124,7 +124,7 @@ export function ScanMedSheet({
                 <Camera className="h-5 w-5 mr-2" /> {mode === "camera" ? "Take a photo" : "Choose a photo"}
               </Button>
               <p className="text-xs text-muted-foreground text-center">
-                AI estimate — always review every field before saving.
+                AI estimate, always review every field before saving.
               </p>
             </>
           )}
@@ -192,7 +192,7 @@ function Row({ label, value }: { label: string; value: string | null }) {
   return (
     <div className="flex items-start gap-3 px-3 py-2.5">
       <div className="w-32 shrink-0 text-xs text-muted-foreground">{label}</div>
-      <div className={value ? "text-sm" : "text-sm text-muted-foreground italic"}>{value ?? "—"}</div>
+      <div className={value ? "text-sm" : "text-sm text-muted-foreground italic"}>{value ?? "–"}</div>
     </div>
   );
 }

@@ -260,7 +260,7 @@ function MetricDrillPage() {
       <MetricStatCards
         latest={{ value: meta.format(current), tone: shellTone }}
         optimal={{
-          value: baseline.mean != null ? meta.format(baseline.mean) : "—",
+          value: baseline.mean != null ? meta.format(baseline.mean) : "–",
         }}
       />
 

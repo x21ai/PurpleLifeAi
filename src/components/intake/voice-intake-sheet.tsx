@@ -118,7 +118,7 @@ export function VoiceIntakeSheet() {
         <SheetHeader>
           <SheetTitle className="font-serif text-2xl">Voice intake</SheetTitle>
           <SheetDescription>
-            Say what you had — e.g. "a large oat-milk latte and a banana". We'll extract the details for you to confirm.
+            Say what you had, e.g. "a large oat-milk latte and a banana". We'll extract the details for you to confirm.
           </SheetDescription>
         </SheetHeader>
 
@@ -134,7 +134,7 @@ export function VoiceIntakeSheet() {
                   {voice.listening ? <Square className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  {voice.listening ? "Listening… tap to stop" : voice.supported ? "Tap to start" : "Voice not supported — type below"}
+                  {voice.listening ? "Listening… tap to stop" : voice.supported ? "Tap to start" : "Voice not supported, type below"}
                 </p>
               </div>
               <Textarea
@@ -163,7 +163,7 @@ export function VoiceIntakeSheet() {
               <div className="rounded-2xl ring-1 ring-border bg-card p-3">
                 <div className="text-xs label-eyebrow text-muted-foreground">Detected</div>
                 <div className="text-sm font-medium capitalize">{recog.kind}</div>
-                <div className="text-xs text-muted-foreground">Confidence {Math.round(recog.confidence * 100)}% — please review.</div>
+                <div className="text-xs text-muted-foreground">Confidence {Math.round(recog.confidence * 100)}%, please review.</div>
               </div>
               <div className="space-y-3">
                 {items.map((it, idx) => (

@@ -244,13 +244,18 @@ function ReportDetailPage() {
                   ? "Another report on the same date already has overlapping values. Its metrics are excluded from trends to avoid double-counting."
                   : `Found on the document: ${patientName ?? "no name"}${patientDob ? `, DOB ${patientDob}` : ""}. Its metrics are hidden from your trends until you confirm.`}
               </p>
+              {!duplicateOf && (
+                <p className="mt-2 text-xs text-white/55 leading-relaxed">
+                  Approving remembers this name and date of birth so future uploads that match are auto-approved. Rejecting deletes this report and blocks re-uploads of the same readings.
+                </p>
+              )}
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button
                   onClick={async () => {
                     setDeciding(true);
                     try {
                       await decideIdentity({ data: { reportId, decision: "approve" } });
-                      toast.success("Report approved — metrics will appear in trends");
+                      toast.success("Approved. We'll remember this identity for future uploads.");
                       await refetch();
                     } catch (e) {
                       toast.error(e instanceof Error ? e.message : "Failed");
@@ -262,7 +267,7 @@ function ReportDetailPage() {
                   size="sm"
                   className="rounded-full bg-white text-[#07090C] hover:bg-white/90"
                 >
-                  This is me — approve
+                  Yes, this is me
                 </Button>
                 <Button
                   onClick={async () => {
@@ -282,7 +287,7 @@ function ReportDetailPage() {
                   size="sm"
                   className="rounded-full text-[#FFA8BD] hover:bg-white/5 hover:text-[#FFA8BD]"
                 >
-                  Not me — delete
+                  Not me, delete it
                 </Button>
               </div>
             </div>
