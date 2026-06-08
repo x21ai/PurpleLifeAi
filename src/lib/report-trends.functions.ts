@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { generateText, Output } from "ai";
 
 export type TrendMetricRow = {
   metric_key: string;
