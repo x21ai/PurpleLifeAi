@@ -227,14 +227,61 @@ function ReportsDocumentsPage() {
             placeholder="Search reports by title or type…"
             className="rounded-full bg-white/5 border-white/10 text-white placeholder:text-white/40"
           />
-          <FilterRow label="Year" value={yearFilter} onChange={setYearFilter} options={[{ v: "all", l: "All" }, ...years.map((y) => ({ v: y, l: y }))]} />
-          <FilterRow label="Type" value={typeFilter} onChange={setTypeFilter} options={[{ v: "all", l: "All" }, ...types.map((tp) => ({ v: tp, l: tp.replace(/_/g, " ") }))]} />
-          <FilterRow label="Status" value={statusFilter} onChange={setStatusFilter} options={[
-            { v: "all", l: "All" },
-            { v: "ready", l: "Ready" },
-            { v: "processing", l: "Processing" },
-            { v: "failed", l: "Failed" },
-          ]} />
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterSelect
+              label="Year"
+              value={yearFilter}
+              onChange={setYearFilter}
+              options={[{ v: "all", l: "All years" }, ...years.map((y) => ({ v: y, l: y }))]}
+            />
+            <FilterSelect
+              label="Type"
+              value={typeFilter}
+              onChange={setTypeFilter}
+              options={[
+                { v: "all", l: "All types" },
+                ...types.map((tp) => ({ v: tp, l: tp.replace(/_/g, " ") })),
+              ]}
+            />
+            <FilterSelect
+              label="Status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { v: "all", l: "All statuses" },
+                { v: "ready", l: "Ready" },
+                { v: "processing", l: "Processing" },
+                { v: "failed", l: "Failed" },
+              ]}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Bulk re-run failed banner */}
+      {failedReports.length > 1 && (
+        <div className="mt-4 rounded-2xl border border-[#FFA8BD]/25 bg-[#FFA8BD]/[0.06] p-3 sm:p-4 flex items-center gap-3 flex-wrap">
+          <AlertCircle className="h-4 w-4 text-[#FFA8BD] shrink-0" />
+          <p className="text-sm text-white/80 flex-1 min-w-[200px]">
+            <span className="text-[#FFA8BD]">{failedReports.length}</span> reports failed
+            extraction. Re-run them in one go.
+          </p>
+          <Button
+            onClick={() => void bulkRerunFailed()}
+            disabled={bulkRetrying}
+            size="sm"
+            className="rounded-full bg-white text-[#07090C] hover:bg-white/90"
+          >
+            {bulkRetrying ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Re-running…
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" /> Re-run all failed
+              </>
+            )}
+          </Button>
         </div>
       )}
 
