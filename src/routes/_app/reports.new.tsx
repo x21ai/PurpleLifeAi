@@ -85,17 +85,34 @@ function UploadReportPage() {
             .single();
           if (insErr || !doc) throw insErr ?? new Error("Insert failed");
 
-          // Fire AI extraction; don't await — UX shows "processing" on the list page.
-          void triggerProcess({ data: { reportId: doc.id } }).catch((e) => {
+          // Fire AI extraction. We await so we can surface decision-memory
+          // blocks (e.g. "previously rejected") inline before navigating.
+          try {
+            const res = await triggerProcess({ data: { reportId: doc.id } });
+            const blocked = (res as { blocked?: string } | undefined)?.blocked;
+            if (blocked === "previously_rejected") {
+              return { blocked: "previously_rejected" as const, name: file.name };
+            }
+          } catch (e) {
             console.error("processReport failed", e);
-          });
+          }
+          return { ok: true as const, name: file.name };
         }),
       );
-      const okCount = results.filter((r) => r.status === "fulfilled").length;
-      const failCount = results.length - okCount;
+      const fulfilled = results.filter((r) => r.status === "fulfilled") as Array<
+        PromiseFulfilledResult<{ blocked?: "previously_rejected"; ok?: true; name?: string }>
+      >;
+      const blockedCount = fulfilled.filter((r) => r.value?.blocked === "previously_rejected").length;
+      const okCount = fulfilled.length - blockedCount;
+      const failCount = results.length - fulfilled.length;
       if (okCount > 0) {
         toast.success(
           `${okCount} report${okCount === 1 ? "" : "s"} uploading · Purple is reading ${okCount === 1 ? "it" : "them"} now`,
+        );
+      }
+      if (blockedCount > 0) {
+        toast.info(
+          `${blockedCount} file${blockedCount === 1 ? "" : "s"} matched a report you previously rejected — not re-added.`,
         );
       }
       if (failCount > 0) {
