@@ -93,7 +93,7 @@ function AdminPromo() {
         <select
           value={kind}
           onChange={(e) => setKind(e.target.value as Code["kind"])}
-          className="rounded-full border border-border bg-background px-4 py-2 text-sm"
+          className="rounded-full border border-border bg-background text-foreground px-4 py-2 text-sm [&>option]:bg-popover [&>option]:text-popover-foreground"
         >
           <option value="invite">Invite</option>
           <option value="discount">Discount</option>
