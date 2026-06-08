@@ -154,3 +154,81 @@ export const getMetricSeries = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return { rows: rows ?? [] };
   });
+
+const InsightInput = z.object({
+  metricKey: z.string().min(1).max(80),
+});
+
+/** AI-generated trend summary for a single metric. Best-effort; degrades gracefully. */
+export const getMetricInsight = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => InsightInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const [{ data: rows, error }, { data: profile }] = await Promise.all([
+      supabase
+        .from("report_metrics")
+        .select("value, value_text, unit, flag, reference_low, reference_high, measured_at, created_at, display_name, report_documents(title, report_date)")
+        .eq("metric_key", data.metricKey)
+        .order("measured_at", { ascending: true, nullsFirst: true }),
+      supabase.from("profiles").select("conditions, conditions_note").eq("id", userId).maybeSingle(),
+    ]);
+    if (error) return { summary: null, bullets: [], suggestedQuestions: [], error: error.message };
+
+    const points = (rows ?? [])
+      .map((r: any) => ({
+        at: (r.measured_at ?? r.created_at ?? "").slice(0, 10),
+        value: r.value as number | null,
+        text: r.value_text as string | null,
+        flag: r.flag as string | null,
+        unit: r.unit as string | null,
+        report: r.report_documents?.title ?? null,
+      }))
+      .filter((p) => p.value != null || p.text);
+    if (points.length < 2) {
+      return { summary: null, bullets: [], suggestedQuestions: [], error: null };
+    }
+    const label = (rows?.[0] as any)?.display_name ?? data.metricKey.replace(/_/g, " ");
+    const unit = (rows?.[rows.length - 1] as any)?.unit ?? null;
+    const refLow = (rows?.[rows.length - 1] as any)?.reference_low ?? null;
+    const refHigh = (rows?.[rows.length - 1] as any)?.reference_high ?? null;
+    const conditions = (profile?.conditions as string[] | null) ?? [];
+
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) return { summary: null, bullets: [], suggestedQuestions: [], error: "AI unavailable" };
+
+    try {
+      const gateway = createLovableAiGatewayProvider(key);
+      const prompt = [
+        `Metric: ${label}${unit ? ` (${unit})` : ""}`,
+        refLow != null && refHigh != null ? `Reference range: ${refLow}–${refHigh}${unit ? ` ${unit}` : ""}` : "Reference range: unknown",
+        conditions.length ? `User conditions: ${conditions.join(", ")}` : "User conditions: not specified",
+        "",
+        "Readings (chronological):",
+        ...points.map((p) => `- ${p.at}: ${p.value ?? p.text}${p.flag ? ` [${p.flag}]` : ""}${p.report ? ` — ${p.report}` : ""}`),
+      ].join("\n");
+
+      const { experimental_output: output } = await generateText({
+        model: gateway("google/gemini-3-flash-preview"),
+        experimental_output: Output.object({
+          schema: z.object({
+            summary: z.string(),
+            bullets: z.array(z.string()).max(5),
+            suggestedQuestions: z.array(z.string()).max(4),
+          }),
+        }),
+        system:
+          "You are Purple, a calm, careful health-journal assistant. Summarize a single lab/biomarker trend for the user (not a clinician). 2–3 sentence summary describing direction and any notable spikes/dips with dates. 3–5 short bullets calling out specifics (out-of-range readings, deltas, possible patterns relative to their conditions). 2–4 short questions the user could ask their clinician. Never diagnose. Never recommend treatment changes. If the data is sparse or noisy, say so.",
+        prompt,
+      });
+
+      return {
+        summary: output.summary,
+        bullets: output.bullets ?? [],
+        suggestedQuestions: output.suggestedQuestions ?? [],
+        error: null,
+      };
+    } catch (e: any) {
+      return { summary: null, bullets: [], suggestedQuestions: [], error: e?.message ?? "AI request failed" };
+    }
+  });
