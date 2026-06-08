@@ -2122,6 +2122,7 @@ export type Database = {
           created_by_kind: string
           duplicate_of: string | null
           error_message: string | null
+          excluded_from_trends: boolean
           file_mime: string
           file_path: string
           findings: Json | null
@@ -2148,6 +2149,7 @@ export type Database = {
           created_by_kind?: string
           duplicate_of?: string | null
           error_message?: string | null
+          excluded_from_trends?: boolean
           file_mime: string
           file_path: string
           findings?: Json | null
@@ -2174,6 +2176,7 @@ export type Database = {
           created_by_kind?: string
           duplicate_of?: string | null
           error_message?: string | null
+          excluded_from_trends?: boolean
           file_mime?: string
           file_path?: string
           findings?: Json | null

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Shield, Users, MessageSquare, Mail, MessageCircle, Flag, BookMarked, Ticket, SlidersHorizontal } from "lucide-react";
+import { Shield, Users, MessageSquare, Mail, MessageCircle, Flag, BookMarked, Ticket, SlidersHorizontal, Copy } from "lucide-react";
 import { useIsAdmin } from "@/lib/use-is-admin";
 
 const navItems: Array<{ to: string; label: string; icon: typeof Shield; exact?: boolean }> = [
@@ -13,6 +13,7 @@ const navItems: Array<{ to: string; label: string; icon: typeof Shield; exact?: 
   { to: "/admin/community", label: "Community", icon: Flag },
   { to: "/admin/resources", label: "Resources", icon: BookMarked },
   { to: "/admin/rules", label: "Platform rules", icon: SlidersHorizontal },
+  { to: "/admin/reports/duplicates", label: "Duplicates", icon: Copy },
 ];
 
 export function AdminShell({ children }: { children?: React.ReactNode }) {

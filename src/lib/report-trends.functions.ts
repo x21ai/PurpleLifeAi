@@ -36,7 +36,7 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
         .select("metric_key, pinned, hidden, sort_order"),
       supabase
         .from("report_documents")
-        .select("id, identity_status, duplicate_of"),
+        .select("id, identity_status, duplicate_of, excluded_from_trends"),
     ]);
     if (mErr) throw new Error(mErr.message);
     if (pErr) throw new Error(pErr.message);
@@ -50,6 +50,7 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
     for (const d of docs ?? []) {
       const status = (d.identity_status as string | null) ?? "unverified";
       if (d.duplicate_of) continue;
+      if (d.excluded_from_trends) continue;
       if (status === "verified" || status === "manual_approved") includedReports.add(d.id as string);
     }
 
@@ -190,7 +191,7 @@ export const getMetricSeries = createServerFn({ method: "GET" })
     const { supabase } = context;
     let q = supabase
       .from("report_metrics")
-      .select("id, value, value_text, unit, flag, reference_low, reference_high, measured_at, created_at, display_name, source_text, report_id, report_documents(title, report_date, identity_status, duplicate_of)")
+      .select("id, value, value_text, unit, flag, reference_low, reference_high, measured_at, created_at, display_name, source_text, report_id, report_documents(title, report_date, identity_status, duplicate_of, excluded_from_trends)")
       .eq("metric_key", data.metricKey)
       .order("measured_at", { ascending: true, nullsFirst: true });
     if (data.days) {
@@ -203,6 +204,7 @@ export const getMetricSeries = createServerFn({ method: "GET" })
       const d = r.report_documents;
       if (!d) return true;
       if (d.duplicate_of) return false;
+      if (d.excluded_from_trends) return false;
       const status = d.identity_status ?? "unverified";
       return status === "verified" || status === "manual_approved";
     });
