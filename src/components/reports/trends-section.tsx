@@ -46,6 +46,13 @@ import {
 } from "@/lib/report-trends.functions";
 import { downloadMetricCsv, shareMetric } from "@/lib/metric-export";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 function flagTone(flag: string | null) {
   if (flag === "high") return "text-[#FFA8BD]";
@@ -421,20 +428,21 @@ export function TrendsSection() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <label className="text-xs text-white/55 inline-flex items-center gap-2">
+          <div className="text-xs text-white/55 inline-flex items-center gap-2">
             Sort
-            <select
-              value={sortMode}
-              onChange={(e) => setSortMode(e.target.value as SortMode)}
-              className="rounded-full bg-white/5 border border-white/10 text-white text-xs px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-white/30"
-            >
-              <option value="alpha">Alphabetical</option>
-              <option value="attention">Needs attention</option>
-              <option value="recent">Most recent</option>
-              <option value="count">Most readings</option>
-              <option value="custom">Custom (drag)</option>
-            </select>
-          </label>
+            <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
+              <SelectTrigger className="h-8 w-[170px] rounded-full bg-white/5 border-white/10 text-white text-xs px-3 hover:bg-white/10 focus:ring-white/20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#0F1418] border-white/10 text-white">
+                <SelectItem value="alpha" className="text-white focus:bg-white/10 focus:text-white">Alphabetical</SelectItem>
+                <SelectItem value="attention" className="text-white focus:bg-white/10 focus:text-white">Needs attention</SelectItem>
+                <SelectItem value="recent" className="text-white focus:bg-white/10 focus:text-white">Most recent</SelectItem>
+                <SelectItem value="count" className="text-white focus:bg-white/10 focus:text-white">Most readings</SelectItem>
+                <SelectItem value="custom" className="text-white focus:bg-white/10 focus:text-white">Custom (drag)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           {metrics.some((m) => m.hidden) && (
             <button
               type="button"
