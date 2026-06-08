@@ -133,7 +133,7 @@ function PricingPage() {
         </section>
       </main>
 
-      <SiteFooter variant="marketing" />
+      <SiteFooter />
     </div>
   );
 }

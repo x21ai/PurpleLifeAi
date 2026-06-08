@@ -31,7 +31,7 @@ function TermsPage() {
           <p>See also our <Link to="/privacy" className="underline underline-offset-4">privacy & safety</Link> page and our <Link to="/charter" className="underline underline-offset-4">founding charter</Link>.</p>
         </div>
       </article>
-      <SiteFooter variant="marketing" />
+      <SiteFooter />
     </div>
   );
 }

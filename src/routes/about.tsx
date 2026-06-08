@@ -136,7 +136,7 @@ function AboutPage() {
         </section>
       </main>
 
-      <SiteFooter variant="marketing" />
+      <SiteFooter />
     </div>
   );
 }

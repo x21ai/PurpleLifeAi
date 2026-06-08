@@ -359,7 +359,7 @@ function SignInPage() {
           </div>
         </main>
       </div>
-      <SiteFooter variant="marketing" />
+      <SiteFooter />
     </div>
   );
 }
