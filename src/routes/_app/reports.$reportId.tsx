@@ -2,10 +2,10 @@ import * as React from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Trash2, ExternalLink, TrendingUp, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Loader2, Trash2, ExternalLink, TrendingUp, ShieldCheck, AlertTriangle, Share2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouteTheme } from "@/lib/use-route-theme";
-import { getReport, deleteReport, getMetricTrend, processReport, setReportIdentityDecision } from "@/lib/reports.functions";
+import { getReport, deleteReport, getMetricTrend, processReport, setReportIdentityDecision, getReportFileUrl } from "@/lib/reports.functions";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceArea, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
@@ -68,6 +68,8 @@ function ReportDetailPage() {
   const removeReport = useServerFn(deleteReport);
   const reprocess = useServerFn(processReport);
   const decideIdentity = useServerFn(setReportIdentityDecision);
+  const fetchFileUrl = useServerFn(getReportFileUrl);
+  const [openingFile, setOpeningFile] = React.useState<null | "view" | "download" | "share">(null);
   const [retrying, setRetrying] = React.useState(false);
   const [deciding, setDeciding] = React.useState(false);
   const [selectedMetric, setSelectedMetric] = React.useState<string | null>(null);
@@ -119,6 +121,45 @@ function ReportDetailPage() {
   const report = data?.report;
   const metrics = (data?.metrics ?? []) as Metric[];
   const signedUrl = data?.signedUrl;
+
+  async function openOrShare(kind: "view" | "download" | "share") {
+    setOpeningFile(kind);
+    try {
+      const { url, title } = await fetchFileUrl({ data: { id: reportId } });
+      if (kind === "view") {
+        const win = window.open(url, "_blank", "noopener,noreferrer");
+        if (!win) {
+          // Pop-up blocked — copy URL as a fallback so the user can paste/open.
+          await navigator.clipboard.writeText(url);
+          toast.success("Pop-up blocked. Link copied to clipboard.");
+        }
+      } else if (kind === "download") {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = title ?? "report";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else {
+        // Share: copy a fresh signed URL.
+        if (navigator.share) {
+          try {
+            await navigator.share({ title: title ?? "Purple report", url });
+          } catch {
+            await navigator.clipboard.writeText(url);
+            toast.success("Link copied to clipboard");
+          }
+        } else {
+          await navigator.clipboard.writeText(url);
+          toast.success("Link copied to clipboard");
+        }
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't open file");
+    } finally {
+      setOpeningFile(null);
+    }
+  }
   const identityStatus = (report as { identity_status?: string } | undefined)?.identity_status;
   const duplicateOf = (report as { duplicate_of?: string | null } | undefined)?.duplicate_of ?? null;
   const patientName = (report as { patient_name?: string | null } | undefined)?.patient_name ?? null;
@@ -154,13 +195,47 @@ function ReportDetailPage() {
           {metrics.length > 0 ? ` · ${metrics.length} value${metrics.length === 1 ? "" : "s"}` : ""}
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
-          {signedUrl && (
-            <Button asChild size="sm" className="rounded-full bg-white text-[#07090C] hover:bg-white/90">
-              <a href={signedUrl} target="_blank" rel="noreferrer">
-                <ExternalLink className="h-4 w-4 mr-1.5" /> View file
-              </a>
-            </Button>
-          )}
+          <Button
+            onClick={() => void openOrShare("view")}
+            disabled={openingFile !== null}
+            size="sm"
+            className="rounded-full bg-white text-[#07090C] hover:bg-white/90"
+          >
+            {openingFile === "view" ? (
+              <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+            ) : (
+              <ExternalLink className="h-4 w-4 mr-1.5" />
+            )}
+            View file
+          </Button>
+          <Button
+            onClick={() => void openOrShare("download")}
+            disabled={openingFile !== null}
+            variant="ghost"
+            size="sm"
+            className="rounded-full text-white/85 hover:bg-white/5 hover:text-white"
+          >
+            {openingFile === "download" ? (
+              <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-1.5" />
+            )}
+            Download
+          </Button>
+          <Button
+            onClick={() => void openOrShare("share")}
+            disabled={openingFile !== null}
+            variant="ghost"
+            size="sm"
+            className="rounded-full text-white/85 hover:bg-white/5 hover:text-white"
+          >
+            {openingFile === "share" ? (
+              <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+            ) : (
+              <Share2 className="h-4 w-4 mr-1.5" />
+            )}
+            Share
+          </Button>
           <Button
             onClick={handleDelete}
             variant="ghost"

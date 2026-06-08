@@ -45,6 +45,7 @@ import {
   type TrendMetricRow,
 } from "@/lib/report-trends.functions";
 import { downloadMetricCsv, shareMetric } from "@/lib/metric-export";
+import { resolveMetricLabel } from "@/lib/metric-naming";
 import { toast } from "sonner";
 import {
   Select,
@@ -88,22 +89,14 @@ function formatTickWithYear(iso: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + ` '${y}`;
 }
 
-function titleCase(s: string): string {
-  return s.toLowerCase().replace(/\b([a-z])/g, (_, c) => c.toUpperCase());
-}
-
 function metricLabel(m: TrendMetricRow): { primary: string; secondary: string | null } {
-  const raw = (m.display_name ?? "").trim();
-  const fromKey = titleCase(m.metric_key.replace(/_/g, " "));
-  // If the PDF label is non-descriptive (starts with %, is pure unit/symbol,
-  // or shorter than 3 chars), use the humanized key instead.
-  const nonDescriptive = !raw || raw.startsWith("%") || raw.length < 3 || /^[^a-z]+$/i.test(raw);
-  if (nonDescriptive) return { primary: fromKey, secondary: raw || null };
-  return { primary: titleCase(raw), secondary: null };
+  const r = resolveMetricLabel(m.metric_key, m.display_name);
+  return { primary: r.primary, secondary: r.asPrinted };
 }
 
 type SortMode = "alpha" | "attention" | "recent" | "count" | "custom";
-const SORT_KEY = "purple.trends.sort";
+// localStorage so the choice persists across logout/login on the same device.
+const SORT_KEY = "purple.trends.sort.v2";
 
 function MetricCard({
   m,
@@ -375,10 +368,16 @@ export function TrendsSection() {
   const [showHidden, setShowHidden] = React.useState(false);
   const [sortMode, setSortMode] = React.useState<SortMode>(() => {
     if (typeof window === "undefined") return "alpha";
-    return (window.sessionStorage.getItem(SORT_KEY) as SortMode) || "alpha";
+    // Prefer localStorage (survives logout); fall back to legacy sessionStorage.
+    const stored =
+      window.localStorage.getItem(SORT_KEY) ||
+      window.sessionStorage.getItem("purple.trends.sort");
+    return (stored as SortMode) || "alpha";
   });
   React.useEffect(() => {
-    if (typeof window !== "undefined") window.sessionStorage.setItem(SORT_KEY, sortMode);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(SORT_KEY, sortMode);
+    }
   }, [sortMode]);
 
   const { data, isLoading } = useQuery({

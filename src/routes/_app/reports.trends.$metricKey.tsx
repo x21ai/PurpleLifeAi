@@ -18,6 +18,7 @@ import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { MetricShell, MetricTitle, MetricStatCards, AskPurpleRail } from "@/components/reports/metric-shell";
 import { downloadMetricCsv, shareMetric } from "@/lib/metric-export";
+import { resolveMetricLabel } from "@/lib/metric-naming";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/reports/trends/$metricKey")({
@@ -70,7 +71,8 @@ function downloadRowsCsv(filename: string, rows: Row[]) {
 }
 
 function TrendDetailPage() {
-  useRouteTheme("light");
+  // Match the Trends grid (dark) so theme is consistent across the section.
+  useRouteTheme("dark");
   const { metricKey } = Route.useParams();
   const fetchSeries = useServerFn(getMetricSeries);
   const fetchInsight = useServerFn(getMetricInsight);
@@ -96,8 +98,8 @@ function TrendDetailPage() {
   const insightRunning = runInsight.isPending;
 
   const rows = (data?.rows ?? []) as Row[];
-  const label =
-    rows[0]?.display_name ?? metricKey.replace(/_/g, " ");
+  const pdfWording = rows[rows.length - 1]?.display_name ?? rows[0]?.display_name ?? null;
+  const { primary: label, asPrinted } = resolveMetricLabel(metricKey, pdfWording);
   const unit = rows[rows.length - 1]?.unit ?? null;
   const refLow = rows[rows.length - 1]?.reference_low ?? null;
   const refHigh = rows[rows.length - 1]?.reference_high ?? null;
@@ -130,6 +132,9 @@ function TrendDetailPage() {
           value: latest?.value != null ? `${latest.value}${unit ? ` ${unit}` : ""}` : undefined,
         }}
       />
+      {asPrinted && (
+        <p className="mt-1 text-[11px] text-foreground/45">as printed on report: {asPrinted}</p>
+      )}
 
       <section className="metric-sheet mt-4 p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -274,6 +279,16 @@ function TrendDetailPage() {
                   dataKey="at"
                   tick={{ fontSize: 11 }}
                   className="text-muted-foreground"
+                  tickFormatter={(v: string) => {
+                    const d = new Date(v);
+                    if (Number.isNaN(d.getTime())) return v;
+                    const years = new Set(chartData.map((p) => new Date(p.at).getFullYear()));
+                    const fmt: Intl.DateTimeFormatOptions =
+                      years.size > 1
+                        ? { month: "short", day: "numeric", year: "numeric" }
+                        : { month: "short", day: "numeric" };
+                    return d.toLocaleDateString(undefined, fmt);
+                  }}
                 />
                 <YAxis
                   tick={{ fontSize: 11 }}

@@ -11,10 +11,19 @@ import {
   ShieldCheck,
   FlaskConical,
   Sparkles,
+  RefreshCw,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { listReports } from "@/lib/reports.functions";
+import { listReports, processReport } from "@/lib/reports.functions";
+import { toast } from "sonner";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { useTranslation } from "react-i18next";
 import { ConditionSuggestionsCard } from "@/components/reports/condition-suggestions-card";
@@ -62,6 +71,7 @@ function ReportsDocumentsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const fetchList = useServerFn(listReports);
+  const reprocessOne = useServerFn(processReport);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["reports"],
     queryFn: () => fetchList(),
@@ -76,6 +86,7 @@ function ReportsDocumentsPage() {
   const [yearFilter, setYearFilter] = React.useState<string>("all");
   const [typeFilter, setTypeFilter] = React.useState<string>("all");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
+  const [bulkRetrying, setBulkRetrying] = React.useState(false);
 
   const yearOf = (r: ReportRow) => {
     const d = r.report_date ?? r.created_at;
@@ -111,18 +122,58 @@ function ReportsDocumentsPage() {
     });
   }, [reports, query, yearFilter, typeFilter, statusFilter]);
   const grouped = React.useMemo(() => {
-    const byType: Record<string, ReportRow[]> = {};
-    for (const r of filtered) {
-      const key = r.report_type ?? "uncategorized";
-      (byType[key] ??= []).push(r);
+    // Group by Year → Month, newest first. This matches user expectation:
+    // "latest on top broken by year and month".
+    const byMonth: Record<string, ReportRow[]> = {};
+    const sorted = [...filtered].sort((a, b) => {
+      const da = a.report_date ?? a.created_at;
+      const db = b.report_date ?? b.created_at;
+      return (db ?? "").localeCompare(da ?? "");
+    });
+    for (const r of sorted) {
+      const iso = r.report_date ?? r.created_at;
+      const d = iso ? new Date(iso) : null;
+      const key = d && !Number.isNaN(d.getTime())
+        ? d.toLocaleDateString(undefined, { year: "numeric", month: "long" })
+        : "Date unknown";
+      (byMonth[key] ??= []).push(r);
     }
-    return byType;
+    return byMonth;
   }, [filtered]);
 
   const latest = reports[0];
   const processingCount = reports.filter((r) => r.status === "processing").length;
   const readyCount = reports.filter((r) => r.status === "ready").length;
+  const failedReports = reports.filter(
+    (r) =>
+      r.status === "failed" ||
+      r.status === "needs_credits" ||
+      r.status === "rate_limited",
+  );
   const metricsTotal = reports.reduce((s, r) => s + (r.metric_count ?? 0), 0);
+
+  async function bulkRerunFailed() {
+    if (failedReports.length === 0) return;
+    setBulkRetrying(true);
+    let ok = 0;
+    let fail = 0;
+    for (const r of failedReports) {
+      try {
+        await reprocessOne({ data: { reportId: r.id } });
+        ok += 1;
+      } catch {
+        fail += 1;
+      }
+    }
+    setBulkRetrying(false);
+    if (ok > 0) {
+      toast.success(`Re-queued ${ok} report${ok === 1 ? "" : "s"} for extraction.`);
+    }
+    if (fail > 0) {
+      toast.error(`${fail} could not be re-queued. Try again in a moment.`);
+    }
+    await refetch();
+  }
 
   return (
     <ReportShell title={t("reports.title")}>
@@ -176,14 +227,61 @@ function ReportsDocumentsPage() {
             placeholder="Search reports by title or type…"
             className="rounded-full bg-white/5 border-white/10 text-white placeholder:text-white/40"
           />
-          <FilterRow label="Year" value={yearFilter} onChange={setYearFilter} options={[{ v: "all", l: "All" }, ...years.map((y) => ({ v: y, l: y }))]} />
-          <FilterRow label="Type" value={typeFilter} onChange={setTypeFilter} options={[{ v: "all", l: "All" }, ...types.map((tp) => ({ v: tp, l: tp.replace(/_/g, " ") }))]} />
-          <FilterRow label="Status" value={statusFilter} onChange={setStatusFilter} options={[
-            { v: "all", l: "All" },
-            { v: "ready", l: "Ready" },
-            { v: "processing", l: "Processing" },
-            { v: "failed", l: "Failed" },
-          ]} />
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterSelect
+              label="Year"
+              value={yearFilter}
+              onChange={setYearFilter}
+              options={[{ v: "all", l: "All years" }, ...years.map((y) => ({ v: y, l: y }))]}
+            />
+            <FilterSelect
+              label="Type"
+              value={typeFilter}
+              onChange={setTypeFilter}
+              options={[
+                { v: "all", l: "All types" },
+                ...types.map((tp) => ({ v: tp, l: tp.replace(/_/g, " ") })),
+              ]}
+            />
+            <FilterSelect
+              label="Status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { v: "all", l: "All statuses" },
+                { v: "ready", l: "Ready" },
+                { v: "processing", l: "Processing" },
+                { v: "failed", l: "Failed" },
+              ]}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Bulk re-run failed banner */}
+      {failedReports.length > 1 && (
+        <div className="mt-4 rounded-2xl border border-[#FFA8BD]/25 bg-[#FFA8BD]/[0.06] p-3 sm:p-4 flex items-center gap-3 flex-wrap">
+          <AlertCircle className="h-4 w-4 text-[#FFA8BD] shrink-0" />
+          <p className="text-sm text-white/80 flex-1 min-w-[200px]">
+            <span className="text-[#FFA8BD]">{failedReports.length}</span> reports failed
+            extraction. Re-run them in one go.
+          </p>
+          <Button
+            onClick={() => void bulkRerunFailed()}
+            disabled={bulkRetrying}
+            size="sm"
+            className="rounded-full bg-white text-[#07090C] hover:bg-white/90"
+          >
+            {bulkRetrying ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Re-running…
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" /> Re-run all failed
+              </>
+            )}
+          </Button>
         </div>
       )}
 
@@ -233,10 +331,10 @@ function ReportsDocumentsPage() {
           </ReportCard>
         ) : (
           <div className="mt-4 space-y-6">
-            {Object.entries(grouped).map(([type, rows]) => (
-              <div key={type}>
+            {Object.entries(grouped).map(([monthLabel, rows]) => (
+              <div key={monthLabel}>
                 <p className="report-eyebrow text-white/55 mb-2">
-                  {type.replace(/_/g, " ")} · {rows.length}
+                  {monthLabel} · {rows.length}
                 </p>
                 <ul className="space-y-2">
                   {rows.map((r) => {
@@ -423,6 +521,42 @@ function FilterRow({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: Array<{ v: string; l: string }>;
+}) {
+  return (
+    <div className="inline-flex items-center gap-2">
+      <span className="text-[11px] uppercase tracking-[0.18em] text-white/45 shrink-0">
+        {label}
+      </span>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="h-8 min-w-[140px] rounded-full bg-white/5 border-white/10 text-white text-xs px-3 hover:bg-white/10 focus:ring-white/20 capitalize">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="bg-[#0F1418] border-white/10 text-white">
+          {options.map((o) => (
+            <SelectItem
+              key={o.v}
+              value={o.v}
+              className="text-white focus:bg-white/10 focus:text-white capitalize"
+            >
+              {o.l}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
