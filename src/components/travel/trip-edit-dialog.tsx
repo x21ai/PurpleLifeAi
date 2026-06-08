@@ -226,7 +226,7 @@ export function TripEditDialog({ trip, homeTz, onOpenChange, onSaved }: TripEdit
                 id="edit-trip-dest"
                 value={destinationTz}
                 onChange={(e) => setDestinationTz(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-border bg-background text-foreground px-3 py-2 text-sm [&>option]:bg-popover [&>option]:text-popover-foreground"
               >
                 {[destinationTz, ...COMMON_TZS.filter((tz) => tz !== destinationTz)].map(
                   (tz) => (
@@ -243,7 +243,7 @@ export function TripEditDialog({ trip, homeTz, onOpenChange, onSaved }: TripEdit
                 id="edit-trip-strategy"
                 value={strategy}
                 onChange={(e) => setStrategy(e.target.value as typeof strategy)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-border bg-background text-foreground px-3 py-2 text-sm [&>option]:bg-popover [&>option]:text-popover-foreground"
               >
                 <option value="gradual">Gradual (shift 2h/day)</option>
                 <option value="snap">Snap to local time</option>

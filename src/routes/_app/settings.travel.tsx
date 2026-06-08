@@ -358,7 +358,7 @@ function TravelPage() {
             value={homeTz}
             onChange={(e) => void saveHome(e.target.value)}
             disabled={savingHome}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="rounded-lg border border-border bg-background text-foreground px-3 py-2 text-sm [&>option]:bg-popover [&>option]:text-popover-foreground"
           >
             {[homeTz, ...COMMON_TZS.filter((t) => t !== homeTz)].map((tz) => (
               <option key={tz} value={tz}>
@@ -392,7 +392,7 @@ function TravelPage() {
               id="trip-dest"
               value={destinationTz}
               onChange={(e) => setDestinationTz(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-border bg-background text-foreground px-3 py-2 text-sm [&>option]:bg-popover [&>option]:text-popover-foreground"
             >
               {COMMON_TZS.map((tz) => (
                 <option key={tz} value={tz}>
@@ -407,7 +407,7 @@ function TravelPage() {
               id="trip-strategy"
               value={strategy}
               onChange={(e) => setStrategy(e.target.value as typeof strategy)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-border bg-background text-foreground px-3 py-2 text-sm [&>option]:bg-popover [&>option]:text-popover-foreground"
             >
               <option value="gradual">Gradual (shift 2h/day)</option>
               <option value="snap">Snap to local time</option>

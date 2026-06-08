@@ -546,7 +546,7 @@ function ActivitySection({
         <select
           value={caregiverFilter}
           onChange={(e) => setCaregiverFilter(e.target.value as any)}
-          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground [&>option]:bg-popover [&>option]:text-popover-foreground"
         >
           <option value="all">All caregivers</option>
           {relationships.map((r) => (
@@ -558,7 +558,7 @@ function ActivitySection({
         <select
           value={resourceFilter}
           onChange={(e) => setResourceFilter(e.target.value)}
-          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground [&>option]:bg-popover [&>option]:text-popover-foreground"
         >
           <option value="all">All resources</option>
           {resourceTypes.map((rt) => (
@@ -686,7 +686,7 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
               id="invite-relationship"
               value={relationshipLabel}
               onChange={(e) => setRelationshipLabelValue(e.target.value as RelationshipLabel | "")}
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground [&>option]:bg-popover [&>option]:text-popover-foreground"
             >
               <option value="">Not specified</option>
               {RELATIONSHIP_LABELS.map((l) => (
@@ -761,7 +761,7 @@ function RelationshipLabelEditor({
         value={value ?? ""}
         disabled={m.isPending}
         onChange={(e) => m.mutate(e.target.value ? e.target.value : null)}
-        className="rounded-md border border-border bg-background px-2 py-1 text-[11px] text-foreground"
+        className="rounded-md border border-border bg-background px-2 py-1 text-[11px] text-foreground [&>option]:bg-popover [&>option]:text-popover-foreground"
       >
         <option value="">Not specified</option>
         {RELATIONSHIP_LABELS.map((l) => (
