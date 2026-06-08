@@ -331,10 +331,10 @@ function ReportsDocumentsPage() {
           </ReportCard>
         ) : (
           <div className="mt-4 space-y-6">
-            {Object.entries(grouped).map(([type, rows]) => (
-              <div key={type}>
+            {Object.entries(grouped).map(([monthLabel, rows]) => (
+              <div key={monthLabel}>
                 <p className="report-eyebrow text-white/55 mb-2">
-                  {type.replace(/_/g, " ")} · {rows.length}
+                  {monthLabel} · {rows.length}
                 </p>
                 <ul className="space-y-2">
                   {rows.map((r) => {
