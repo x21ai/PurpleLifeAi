@@ -11,10 +11,20 @@ import {
   ShieldCheck,
   FlaskConical,
   Sparkles,
+  RefreshCw,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { listReports } from "@/lib/reports.functions";
+import { listReports, processReport } from "@/lib/reports.functions";
+import { useServerFn as useServerFn2 } from "@tanstack/react-start";
+import { toast } from "sonner";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { useTranslation } from "react-i18next";
 import { ConditionSuggestionsCard } from "@/components/reports/condition-suggestions-card";
