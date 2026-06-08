@@ -107,8 +107,8 @@ function TrendDetailPage() {
     latest?.flag === "low"  ? "warn"  :
     latest?.flag === "normal" ? "good" : "neutral";
   const statusLabel =
-    latest?.flag === "high" ? "Out of range — high" :
-    latest?.flag === "low"  ? "Out of range — low"  :
+    latest?.flag === "high" ? "Out of range, high" :
+    latest?.flag === "low"  ? "Out of range, low"  :
     latest?.flag === "normal" ? "In optimal range"  : "No status yet";
 
   const chartData = rows
@@ -155,7 +155,7 @@ function TrendDetailPage() {
         </div>
         <p className="mt-2 text-[11px] text-foreground/55 leading-relaxed">
           <span className="font-medium text-foreground/70">Why:</span> AI insights look only at your
-          latest reading for this metric plus your profile conditions and reference range — older
+          latest reading for this metric plus your profile conditions and reference range, older
           entries are already on the chart. Running uses a small amount of AI credits.
         </p>
         {insightRunning ? (
@@ -192,7 +192,7 @@ function TrendDetailPage() {
           <p className="mt-3 text-sm text-foreground/55">{insight.error}</p>
         ) : (
           <p className="mt-3 text-sm text-foreground/65">
-            Get a personalized read on your latest {label.toLowerCase()} trend — direction, notable
+            Get a personalized read on your latest {label.toLowerCase()} trend, direction, notable
             readings, and questions to bring up with your clinician. Runs only when you click; uses your AI credits.
           </p>
         )}
@@ -200,12 +200,12 @@ function TrendDetailPage() {
 
       <MetricStatCards
         latest={{
-          value: latest?.value != null ? latest.value : (latest?.value_text ?? "—"),
+          value: latest?.value != null ? latest.value : (latest?.value_text ?? "–"),
           unit,
           tone: latestTone,
         }}
         optimal={{
-          value: refLow != null && refHigh != null ? `${refLow}–${refHigh}` : "—",
+          value: refLow != null && refHigh != null ? `${refLow}–${refHigh}` : "–",
           unit,
         }}
       />
@@ -242,7 +242,7 @@ function TrendDetailPage() {
             onClick={async () => {
               const status = await shareMetric({
                 title: `Purple · ${label}`,
-                text: `${label} — ${rows.length} readings${
+                text: `${label}, ${rows.length} readings${
                   latest?.value != null ? `, latest ${latest.value}${unit ? ` ${unit}` : ""}` : ""
                 }`,
               });

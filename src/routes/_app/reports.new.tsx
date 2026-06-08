@@ -40,7 +40,7 @@ function UploadReportPage() {
     const ok = arr.filter((f) => f.size <= MAX_SIZE);
     if (tooBig.length > 0) {
       toast.error(
-        `${tooBig.length} file${tooBig.length === 1 ? "" : "s"} skipped — over 15 MB`,
+        `${tooBig.length} file${tooBig.length === 1 ? "" : "s"} skipped, over 15 MB`,
       );
     }
     setFiles((prev) => [...prev, ...ok]);
@@ -112,7 +112,7 @@ function UploadReportPage() {
       }
       if (blockedCount > 0) {
         toast.info(
-          `${blockedCount} file${blockedCount === 1 ? "" : "s"} matched a report you previously rejected — not re-added.`,
+          `${blockedCount} file${blockedCount === 1 ? "" : "s"} matched a report you previously rejected, not re-added.`,
         );
       }
       if (failCount > 0) {

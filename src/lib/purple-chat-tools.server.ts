@@ -198,9 +198,9 @@ export function buildPurpleTools(userId: string) {
 
     proposeAction: tool({
       description:
-        "Propose a write action for the user to confirm BEFORE it is executed. NEVER perform writes silently — always propose first. Use when the user asks you to: add a medication, log a seizure, create a journal entry, mark a dose as taken, or archive a medication. After calling this tool, finish your turn with one short sentence asking the user to confirm in the card.",
+        "Propose a write action for the user to confirm BEFORE it is executed. NEVER perform writes silently, always propose first. Use when the user asks you to: add a medication, log a seizure, create a journal entry, mark a dose as taken, or archive a medication. After calling this tool, finish your turn with one short sentence asking the user to confirm in the card.",
       inputSchema: ProposalSchema,
-      // No execute() — the client renders a confirm card and calls executePurpleAction.
+      // No execute(), the client renders a confirm card and calls executePurpleAction.
     }),
   } as const;
 }

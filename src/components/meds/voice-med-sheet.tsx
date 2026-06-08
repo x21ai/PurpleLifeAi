@@ -93,7 +93,7 @@ export function VoiceMedSheet({
         <SheetHeader>
           <SheetTitle className="font-serif text-2xl">Voice add medication</SheetTitle>
           <SheetDescription>
-            Say the name and dose — e.g. "Levetiracetam 500 milligrams, twice a day with food".
+            Say the name and dose, e.g. "Levetiracetam 500 milligrams, twice a day with food".
           </SheetDescription>
         </SheetHeader>
 
@@ -109,7 +109,7 @@ export function VoiceMedSheet({
                   {voice.listening ? <Square className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  {voice.listening ? "Listening… tap to stop" : voice.supported ? "Tap to start" : "Voice not supported — type below"}
+                  {voice.listening ? "Listening… tap to stop" : voice.supported ? "Tap to start" : "Voice not supported, type below"}
                 </p>
               </div>
               <Textarea
@@ -168,7 +168,7 @@ function Row({ label, value }: { label: string; value: string | null }) {
   return (
     <div className="flex items-start gap-3 px-3 py-2.5">
       <div className="w-32 shrink-0 text-xs text-muted-foreground">{label}</div>
-      <div className={value ? "text-sm" : "text-sm text-muted-foreground italic"}>{value ?? "—"}</div>
+      <div className={value ? "text-sm" : "text-sm text-muted-foreground italic"}>{value ?? "–"}</div>
     </div>
   );
 }

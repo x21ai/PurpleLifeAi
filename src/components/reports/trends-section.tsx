@@ -117,8 +117,8 @@ function MetricCard({
       : null;
 
   const statusChip = (() => {
-    if (m.latest_flag === "high") return { label: "Out of range — high", cls: "bg-[#FFA8BD]/15 text-[#FFA8BD] border-[#FFA8BD]/30" };
-    if (m.latest_flag === "low") return { label: "Out of range — low", cls: "bg-[#F3D58B]/15 text-[#F3D58B] border-[#F3D58B]/30" };
+    if (m.latest_flag === "high") return { label: "Out of range, high", cls: "bg-[#FFA8BD]/15 text-[#FFA8BD] border-[#FFA8BD]/30" };
+    if (m.latest_flag === "low") return { label: "Out of range, low", cls: "bg-[#F3D58B]/15 text-[#F3D58B] border-[#F3D58B]/30" };
     if (inRange === true || m.latest_flag === "normal")
       return { label: "In range", cls: "bg-[#5CE0AC]/15 text-[#5CE0AC] border-[#5CE0AC]/30" };
     if (delta != null && delta > 0) return { label: "Trending up", cls: "bg-white/8 text-white/70 border-white/15" };
@@ -144,7 +144,7 @@ function MetricCard({
     const url = typeof window !== "undefined"
       ? `${window.location.origin}/reports/trends/${encodeURIComponent(m.metric_key)}`
       : undefined;
-    const text = `${label} — ${m.count} readings${
+    const text = `${label}, ${m.count} readings${
       m.latest_value != null ? `, latest ${m.latest_value}${m.unit ? ` ${m.unit}` : ""}` : ""
     }${latestDate ? ` on ${latestDate}` : ""}`;
     const status = await shareMetric({ title: `Purple · ${label}`, text, url });

@@ -297,7 +297,7 @@ function JournalNewPage() {
           <DateTimePicker value={capturedAt} onChange={(d) => d && setCapturedAt(d)} disableFuture />
         </div>
 
-        {/* Text — large serif input on a card so it reads like a page, not a sheet */}
+        {/* Text, large serif input on a card so it reads like a page, not a sheet */}
         <div className="rounded-2xl border border-border/60 bg-card p-5 sm:p-6">
           <Textarea
             autoFocus
@@ -352,7 +352,7 @@ function JournalNewPage() {
           </div>
         )}
 
-        {/* Capture toolbar — lives inside a card at the bottom of the scroll area, not floating */}
+        {/* Capture toolbar, lives inside a card at the bottom of the scroll area, not floating */}
         <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
           <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-3">
             Add to this entry

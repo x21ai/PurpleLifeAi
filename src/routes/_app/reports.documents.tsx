@@ -248,7 +248,7 @@ function ReportsDocumentsPage() {
                       r.status === "needs_credits"
                         ? "Needs AI credits"
                         : r.status === "rate_limited"
-                          ? "Rate limited — try again"
+                          ? "Rate limited, try again"
                           : "Extraction failed";
                     return (
                     <li key={r.id} className="report-card overflow-hidden">
@@ -356,7 +356,7 @@ function ReportsDocumentsPage() {
               <h3 className="text-white text-base font-medium">Important Note</h3>
               <p className="mt-1.5 text-sm text-white/65 leading-relaxed">
                 Purple is not a laboratory or healthcare provider. The values you see here are extracted from
-                documents you upload and surfaced for context and pattern-tracking — not for diagnosis or
+                documents you upload and surfaced for context and pattern-tracking, not for diagnosis or
                 treatment. Always discuss results with your medical practitioner.
               </p>
             </div>

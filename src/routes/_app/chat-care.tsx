@@ -553,7 +553,7 @@ function ConversationPanel({
     const tooBig = arr.filter((f) => f.size > MAX_ATTACHMENT_BYTES);
     const ok = arr.filter((f) => f.size <= MAX_ATTACHMENT_BYTES);
     if (tooBig.length > 0) {
-      toast.error(`${tooBig.length} file(s) skipped — over 15 MB`);
+      toast.error(`${tooBig.length} file(s) skipped, over 15 MB`);
     }
     setPending((prev) => [...prev, ...ok].slice(0, 10));
   };

@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_app/hydration")({
   head: () => ({
     meta: [
       { title: "Intake · Purple" },
-      { name: "description", content: "Log water, drinks, and food in one place — by tap, photo, or voice." },
+      { name: "description", content: "Log water, drinks, and food in one place, by tap, photo, or voice." },
     ],
   }),
   component: HydrationPage,

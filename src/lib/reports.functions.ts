@@ -93,7 +93,7 @@ export const setReportIdentityDecision = createServerFn({ method: "POST" })
         .update({
           user_decision: "rejected",
           status: "rejected",
-          error_message: "You rejected this report — its readings are excluded from trends.",
+          error_message: "You rejected this report, its readings are excluded from trends.",
         })
         .eq("id", data.reportId);
       if (error) throw new Error(error.message);
@@ -376,7 +376,7 @@ export const processReport = createServerFn({ method: "POST" })
             user_decision: "rejected",
             content_hash: contentHash,
             error_message:
-              "You previously rejected a report with these same readings — it was not added again.",
+              "You previously rejected a report with these same readings, it was not added again.",
           })
           .eq("id", doc.id);
         return { ok: true, metricCount: 0, blocked: "previously_rejected" };
@@ -414,7 +414,7 @@ export const processReport = createServerFn({ method: "POST" })
           report_date: extraction.report_date ?? null,
           // Overwrite title with the AI-detected one when the current title is the
           // placeholder filename (no spaces, looks like a filename slug, or the
-          // default "Untitled report"). This is a heuristic — keep user-edited
+          // default "Untitled report"). This is a heuristic, keep user-edited
           // titles intact.
           ...(extraction.title && extraction.title.trim().length > 0
             ? { title: extraction.title.trim().slice(0, 200) }

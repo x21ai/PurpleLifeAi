@@ -1,9 +1,9 @@
-// Each marketing page gets its own unique imagery — no shared photos across pages.
+// Each marketing page gets its own unique imagery, no shared photos across pages.
 // If you need a new slot, generate a new asset rather than reusing another page's image.
 //
 // Every image goes through vite-imagetools (as=picture) so we ship AVIF + WebP + JPG
 // with multiple widths for a real srcset. Each image also carries descriptive alt text
-// for accessibility — the alt lives next to the asset, not at the call site, so it's
+// for accessibility, the alt lives next to the asset, not at the call site, so it's
 // hard to forget.
 
 import type { PictureAsset } from "@/components/marketing/responsive-image";

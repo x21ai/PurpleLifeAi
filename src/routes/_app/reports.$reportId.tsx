@@ -250,7 +250,7 @@ function ReportDetailPage() {
                     setDeciding(true);
                     try {
                       await decideIdentity({ data: { reportId, decision: "approve" } });
-                      toast.success("Report approved — metrics will appear in trends");
+                      toast.success("Report approved, metrics will appear in trends");
                       await refetch();
                     } catch (e) {
                       toast.error(e instanceof Error ? e.message : "Failed");
@@ -262,7 +262,7 @@ function ReportDetailPage() {
                   size="sm"
                   className="rounded-full bg-white text-[#07090C] hover:bg-white/90"
                 >
-                  This is me — approve
+                  This is me, approve
                 </Button>
                 <Button
                   onClick={async () => {
@@ -282,7 +282,7 @@ function ReportDetailPage() {
                   size="sm"
                   className="rounded-full text-[#FFA8BD] hover:bg-white/5 hover:text-[#FFA8BD]"
                 >
-                  Not me — delete
+                  Not me, delete
                 </Button>
               </div>
             </div>
