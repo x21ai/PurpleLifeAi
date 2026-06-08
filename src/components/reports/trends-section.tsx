@@ -368,10 +368,16 @@ export function TrendsSection() {
   const [showHidden, setShowHidden] = React.useState(false);
   const [sortMode, setSortMode] = React.useState<SortMode>(() => {
     if (typeof window === "undefined") return "alpha";
-    return (window.sessionStorage.getItem(SORT_KEY) as SortMode) || "alpha";
+    // Prefer localStorage (survives logout); fall back to legacy sessionStorage.
+    const stored =
+      window.localStorage.getItem(SORT_KEY) ||
+      window.sessionStorage.getItem("purple.trends.sort");
+    return (stored as SortMode) || "alpha";
   });
   React.useEffect(() => {
-    if (typeof window !== "undefined") window.sessionStorage.setItem(SORT_KEY, sortMode);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(SORT_KEY, sortMode);
+    }
   }, [sortMode]);
 
   const { data, isLoading } = useQuery({
