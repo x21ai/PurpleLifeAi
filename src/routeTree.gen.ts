@@ -65,7 +65,9 @@ import { Route as AppSettingsSharingRouteImport } from './routes/_app/settings.s
 import { Route as AppSettingsHowPurpleThinksRouteImport } from './routes/_app/settings.how-purple-thinks'
 import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
 import { Route as AppReportsNewRouteImport } from './routes/_app/reports.new'
+import { Route as AppReportsMetricsRouteImport } from './routes/_app/reports.metrics'
 import { Route as AppReportsMedicalHistoryRouteImport } from './routes/_app/reports.medical-history'
+import { Route as AppReportsDocumentsRouteImport } from './routes/_app/reports.documents'
 import { Route as AppReportsReportIdRouteImport } from './routes/_app/reports.$reportId'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
 import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
@@ -375,12 +377,22 @@ const AppReportsNewRoute = AppReportsNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AppReportsRoute,
 } as any)
+const AppReportsMetricsRoute = AppReportsMetricsRouteImport.update({
+  id: '/metrics',
+  path: '/metrics',
+  getParentRoute: () => AppReportsRoute,
+} as any)
 const AppReportsMedicalHistoryRoute =
   AppReportsMedicalHistoryRouteImport.update({
     id: '/medical-history',
     path: '/medical-history',
     getParentRoute: () => AppReportsRoute,
   } as any)
+const AppReportsDocumentsRoute = AppReportsDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => AppReportsRoute,
+} as any)
 const AppReportsReportIdRoute = AppReportsReportIdRouteImport.update({
   id: '/$reportId',
   path: '/$reportId',
@@ -590,7 +602,9 @@ export interface FileRoutesByFullPath {
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/reports/$reportId': typeof AppReportsReportIdRoute
+  '/reports/documents': typeof AppReportsDocumentsRoute
   '/reports/medical-history': typeof AppReportsMedicalHistoryRoute
+  '/reports/metrics': typeof AppReportsMetricsRoute
   '/reports/new': typeof AppReportsNewRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
@@ -675,7 +689,9 @@ export interface FileRoutesByTo {
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/reports/$reportId': typeof AppReportsReportIdRoute
+  '/reports/documents': typeof AppReportsDocumentsRoute
   '/reports/medical-history': typeof AppReportsMedicalHistoryRoute
+  '/reports/metrics': typeof AppReportsMetricsRoute
   '/reports/new': typeof AppReportsNewRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
@@ -763,7 +779,9 @@ export interface FileRoutesById {
   '/_app/journal/new': typeof AppJournalNewRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
   '/_app/reports/$reportId': typeof AppReportsReportIdRoute
+  '/_app/reports/documents': typeof AppReportsDocumentsRoute
   '/_app/reports/medical-history': typeof AppReportsMedicalHistoryRoute
+  '/_app/reports/metrics': typeof AppReportsMetricsRoute
   '/_app/reports/new': typeof AppReportsNewRoute
   '/_app/seizures/new': typeof AppSeizuresNewRoute
   '/_app/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
@@ -851,7 +869,9 @@ export interface FileRouteTypes {
     | '/journal/new'
     | '/meds/$medId'
     | '/reports/$reportId'
+    | '/reports/documents'
     | '/reports/medical-history'
+    | '/reports/metrics'
     | '/reports/new'
     | '/seizures/new'
     | '/settings/how-purple-thinks'
@@ -936,7 +956,9 @@ export interface FileRouteTypes {
     | '/journal/new'
     | '/meds/$medId'
     | '/reports/$reportId'
+    | '/reports/documents'
     | '/reports/medical-history'
+    | '/reports/metrics'
     | '/reports/new'
     | '/seizures/new'
     | '/settings/how-purple-thinks'
@@ -1023,7 +1045,9 @@ export interface FileRouteTypes {
     | '/_app/journal/new'
     | '/_app/meds/$medId'
     | '/_app/reports/$reportId'
+    | '/_app/reports/documents'
     | '/_app/reports/medical-history'
+    | '/_app/reports/metrics'
     | '/_app/reports/new'
     | '/_app/seizures/new'
     | '/_app/settings/how-purple-thinks'
@@ -1493,11 +1517,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReportsNewRouteImport
       parentRoute: typeof AppReportsRoute
     }
+    '/_app/reports/metrics': {
+      id: '/_app/reports/metrics'
+      path: '/metrics'
+      fullPath: '/reports/metrics'
+      preLoaderRoute: typeof AppReportsMetricsRouteImport
+      parentRoute: typeof AppReportsRoute
+    }
     '/_app/reports/medical-history': {
       id: '/_app/reports/medical-history'
       path: '/medical-history'
       fullPath: '/reports/medical-history'
       preLoaderRoute: typeof AppReportsMedicalHistoryRouteImport
+      parentRoute: typeof AppReportsRoute
+    }
+    '/_app/reports/documents': {
+      id: '/_app/reports/documents'
+      path: '/documents'
+      fullPath: '/reports/documents'
+      preLoaderRoute: typeof AppReportsDocumentsRouteImport
       parentRoute: typeof AppReportsRoute
     }
     '/_app/reports/$reportId': {
@@ -1738,14 +1776,18 @@ const AppMedsRouteWithChildren =
 
 interface AppReportsRouteChildren {
   AppReportsReportIdRoute: typeof AppReportsReportIdRoute
+  AppReportsDocumentsRoute: typeof AppReportsDocumentsRoute
   AppReportsMedicalHistoryRoute: typeof AppReportsMedicalHistoryRoute
+  AppReportsMetricsRoute: typeof AppReportsMetricsRoute
   AppReportsNewRoute: typeof AppReportsNewRoute
   AppReportsTrendsMetricKeyRoute: typeof AppReportsTrendsMetricKeyRoute
 }
 
 const AppReportsRouteChildren: AppReportsRouteChildren = {
   AppReportsReportIdRoute: AppReportsReportIdRoute,
+  AppReportsDocumentsRoute: AppReportsDocumentsRoute,
   AppReportsMedicalHistoryRoute: AppReportsMedicalHistoryRoute,
+  AppReportsMetricsRoute: AppReportsMetricsRoute,
   AppReportsNewRoute: AppReportsNewRoute,
   AppReportsTrendsMetricKeyRoute: AppReportsTrendsMetricKeyRoute,
 }
@@ -1901,13 +1943,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
