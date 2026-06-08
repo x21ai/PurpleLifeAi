@@ -101,7 +101,7 @@ function UploadReportPage() {
       if (failCount > 0) {
         toast.error(`${failCount} file${failCount === 1 ? "" : "s"} failed to upload`);
       }
-      if (okCount > 0) navigate({ to: "/reports" });
+      if (okCount > 0) navigate({ to: "/reports/documents" });
     } catch (err) {
       console.error(err);
       const msg = err instanceof Error ? err.message : "Upload failed";
@@ -112,7 +112,7 @@ function UploadReportPage() {
   };
 
   return (
-    <ReportShell title="Upload report" back={{ to: "/reports", label: t("reportsNew.back") }}>
+    <ReportShell title="Upload report" back={{ to: "/reports/documents", label: t("reportsNew.back") }}>
       <section className="report-card-strong p-6 sm:p-8">
         <p className="report-eyebrow text-white/70">Add a report</p>
         <h2 className="mt-3 font-serif text-3xl sm:text-4xl text-white leading-tight">

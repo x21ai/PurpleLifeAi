@@ -73,15 +73,43 @@ function ReportsDocumentsPage() {
 
   const reports = (data?.reports ?? []) as ReportRow[];
   const [query, setQuery] = React.useState("");
+  const [yearFilter, setYearFilter] = React.useState<string>("all");
+  const [typeFilter, setTypeFilter] = React.useState<string>("all");
+  const [statusFilter, setStatusFilter] = React.useState<string>("all");
+
+  const yearOf = (r: ReportRow) => {
+    const d = r.report_date ?? r.created_at;
+    return d ? new Date(d).getFullYear().toString() : "unknown";
+  };
+  const years = React.useMemo(() => {
+    const s = new Set<string>();
+    for (const r of reports) s.add(yearOf(r));
+    return Array.from(s).sort((a, b) => b.localeCompare(a));
+  }, [reports]);
+  const types = React.useMemo(() => {
+    const s = new Set<string>();
+    for (const r of reports) s.add(r.report_type ?? "uncategorized");
+    return Array.from(s).sort();
+  }, [reports]);
+
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return reports;
-    return reports.filter(
-      (r) =>
-        r.title?.toLowerCase().includes(q) ||
-        (r.report_type ?? "").toLowerCase().includes(q),
-    );
-  }, [reports, query]);
+    return reports.filter((r) => {
+      if (yearFilter !== "all" && yearOf(r) !== yearFilter) return false;
+      if (typeFilter !== "all" && (r.report_type ?? "uncategorized") !== typeFilter) return false;
+      if (statusFilter !== "all") {
+        const isFailedAny =
+          r.status === "failed" || r.status === "needs_credits" || r.status === "rate_limited";
+        if (statusFilter === "failed" && !isFailedAny) return false;
+        if (statusFilter !== "failed" && r.status !== statusFilter) return false;
+      }
+      if (q) {
+        const hay = `${r.title ?? ""} ${r.report_type ?? ""} ${r.summary ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [reports, query, yearFilter, typeFilter, statusFilter]);
   const grouped = React.useMemo(() => {
     const byType: Record<string, ReportRow[]> = {};
     for (const r of filtered) {
@@ -141,13 +169,21 @@ function ReportsDocumentsPage() {
 
       {/* Search */}
       {reports.length > 0 && (
-        <div className="mt-6">
+        <div className="mt-6 space-y-3">
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search reports by title or type…"
             className="rounded-full bg-white/5 border-white/10 text-white placeholder:text-white/40"
           />
+          <FilterRow label="Year" value={yearFilter} onChange={setYearFilter} options={[{ v: "all", l: "All" }, ...years.map((y) => ({ v: y, l: y }))]} />
+          <FilterRow label="Type" value={typeFilter} onChange={setTypeFilter} options={[{ v: "all", l: "All" }, ...types.map((tp) => ({ v: tp, l: tp.replace(/_/g, " ") }))]} />
+          <FilterRow label="Status" value={statusFilter} onChange={setStatusFilter} options={[
+            { v: "all", l: "All" },
+            { v: "ready", l: "Ready" },
+            { v: "processing", l: "Processing" },
+            { v: "failed", l: "Failed" },
+          ]} />
         </div>
       )}
 
@@ -183,6 +219,17 @@ function ReportsDocumentsPage() {
             >
               <Upload className="h-4 w-4 mr-2" /> Upload report
             </Button>
+          </ReportCard>
+        ) : filtered.length === 0 ? (
+          <ReportCard className="mt-4 text-center">
+            <p className="text-sm text-white/65">No reports match these filters.</p>
+            <button
+              type="button"
+              onClick={() => { setYearFilter("all"); setTypeFilter("all"); setStatusFilter("all"); setQuery(""); }}
+              className="mt-3 text-xs text-white/70 underline hover:text-white"
+            >
+              Clear filters
+            </button>
           </ReportCard>
         ) : (
           <div className="mt-4 space-y-6">
@@ -338,6 +385,44 @@ function Stat({
     <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] px-3 py-3 sm:px-4">
       <p className="text-[11px] uppercase tracking-[0.18em] text-white/55">{label}</p>
       <p className={`mt-2 numeric text-2xl font-light ${valueCls}`}>{value}</p>
+    </div>
+  );
+}
+
+function FilterRow({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: Array<{ v: string; l: string }>;
+}) {
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-[11px] uppercase tracking-[0.18em] text-white/45 shrink-0">{label}</span>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((o) => {
+          const active = o.v === value;
+          return (
+            <button
+              key={o.v}
+              type="button"
+              onClick={() => onChange(o.v)}
+              className={
+                "rounded-full px-3 py-1 text-xs transition capitalize " +
+                (active
+                  ? "bg-white text-[#07090C]"
+                  : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10")
+              }
+            >
+              {o.l}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

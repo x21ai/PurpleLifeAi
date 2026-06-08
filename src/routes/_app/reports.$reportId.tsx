@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Trash2, ExternalLink, TrendingUp, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouteTheme } from "@/lib/use-route-theme";
-import { getReport, deleteReport, getMetricTrend } from "@/lib/reports.functions";
+import { getReport, deleteReport, getMetricTrend, processReport } from "@/lib/reports.functions";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceArea, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
@@ -66,6 +66,8 @@ function ReportDetailPage() {
   const navigate = useNavigate();
   const fetchReport = useServerFn(getReport);
   const removeReport = useServerFn(deleteReport);
+  const reprocess = useServerFn(processReport);
+  const [retrying, setRetrying] = React.useState(false);
   const [selectedMetric, setSelectedMetric] = React.useState<string | null>(null);
 
   const { data, isLoading, refetch } = useQuery({
@@ -83,15 +85,28 @@ function ReportDetailPage() {
     try {
       await removeReport({ data: { id: reportId } });
       toast.success("Report deleted");
-      navigate({ to: "/reports" });
+      navigate({ to: "/reports/documents" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Delete failed");
     }
   };
 
+  const handleRetry = async () => {
+    setRetrying(true);
+    try {
+      await reprocess({ data: { reportId } });
+      toast.success("Re-running extraction…");
+      await refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Retry failed");
+    } finally {
+      setRetrying(false);
+    }
+  };
+
   if (isLoading) {
     return (
-      <ReportShell title="Clinical report" back={{ to: "/reports", label: "Reports" }}>
+      <ReportShell title="Clinical report" back={{ to: "/reports/documents", label: "Reports" }}>
         <div className="flex items-center gap-2 text-white/60 text-sm">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading…
         </div>
@@ -105,7 +120,7 @@ function ReportDetailPage() {
 
   if (!report) {
     return (
-      <ReportShell title="Clinical report" back={{ to: "/reports", label: "Reports" }}>
+      <ReportShell title="Clinical report" back={{ to: "/reports/documents", label: "Reports" }}>
         <p className="text-white/70">Report not found.</p>
       </ReportShell>
     );
@@ -121,7 +136,7 @@ function ReportDetailPage() {
     "Processing";
 
   return (
-    <ReportShell title="Clinical report" back={{ to: "/reports", label: "Reports" }}>
+    <ReportShell title="Clinical report" back={{ to: "/reports/documents", label: "Reports" }}>
       <section className="report-card-strong p-6 sm:p-8">
         <ReportPill tone={statusTone}>{statusLabel}</ReportPill>
         <h2 className="mt-4 font-serif text-3xl sm:text-4xl text-white leading-tight break-words">
@@ -190,11 +205,18 @@ function ReportDetailPage() {
         <ReportCard className="mt-6">
           <p className="text-sm text-[#FFA8BD]">Extraction failed: {report.error_message ?? "Unknown error"}</p>
           <Button
-            onClick={() => void refetch()}
+            onClick={() => void handleRetry()}
+            disabled={retrying}
             size="sm"
             className="mt-3 rounded-full bg-white text-[#07090C] hover:bg-white/90"
           >
-            Retry
+            {retrying ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Retrying…
+              </>
+            ) : (
+              "Retry"
+            )}
           </Button>
         </ReportCard>
       )}

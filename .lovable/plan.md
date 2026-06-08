@@ -1,36 +1,44 @@
-## Reports → Metrics-first, responsive grid
+# Fix Reports & Metrics issues
 
-### 1. Tab order + default landing
-- `src/components/reports/reports-tabs.tsx` — swap order to **Metrics** (first) then **Reports**.
-- `src/routes/_app/reports.tsx` — change the index redirect from `/reports/documents` → `/reports/metrics` so `/reports` lands on Metrics.
-- Keep `/reports/documents` working unchanged.
+Four targeted fixes — UI/wiring only, no DB changes.
 
-### 2. Metrics list → responsive card grid (in `src/components/reports/trends-section.tsx`)
-Replace the current single-column `<ul>` with a responsive grid:
-- `grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3`
-- Each `MetricRow` becomes a card tile (same dark `report-card` look as today, same `#5CE0AC` line color):
-  - Top: metric name (capitalized, truncated, 2-line clamp)
-  - Sub: `N readings · latest <value> <unit>` with the existing `flagTone` color (green/pink/yellow)
-  - Bottom: the same sparkline chart, full card width, height ~56px, same Recharts `LineChart` config as the detail page sparkline (monotone, no dots, `dataMin/dataMax` Y domain) so it matches the click-through chart visually
-  - Pin / hide buttons move to a small top-right cluster (icon-only, show on hover, always visible on touch)
-  - Drag handle stays top-left
-  - Whole card remains a `<Link>` to `/reports/trends/$metricKey`
+## 1. Retry actually retries (report detail page)
+`src/routes/_app/reports.$reportId.tsx` — the "Retry" button on a failed report currently calls `refetch()`, which just re-reads the same failed row. Wire it to the existing `processReport` server fn (already used by `ReportRowActions`):
+- Add `const reprocess = useServerFn(processReport);` and a `retrying` state.
+- On click: `await reprocess({ data: { reportId } })`, then `refetch()` and toast.
+- Show a spinner while in-flight; disable button.
 
-### 3. Alphabetical ordering
-- Sort `metrics` by `display_name ?? metric_key` (case-insensitive) before rendering.
-- **Keep pinned items first** (pinned block sorted A→Z, then unpinned A→Z) — preserves the existing pin feature.
-- Drag-to-reorder: since the list is now alphabetical, remove the drag handle + `DndContext` + `reorderMetrics` call from this view (ordering is derived, not manual). Pin/hide still work. This is the cleanest reconciliation; alternative is to keep drag but it fights the alphabetical rule.
+## 2. Back link goes back to where the user came from
+- `ReportShell` `back` on the detail page currently points to `/reports` which redirects to `/reports/metrics`. Change the back target on `reports.$reportId.tsx` to `/reports/documents` (label "Reports") so it lands on the documents tab.
+- Sweep other "back to /reports" links (`reports.new.tsx`, `reports.medical-history.tsx`, `reports.trends.$metricKey.tsx`) and point each to the tab they came from (`/reports/documents` or `/reports/metrics`).
 
-### 4. Page header copy
-- `src/routes/_app/reports.metrics.tsx` — drop the duplicate "All your metrics" header block (TrendsSection has its own header). Keep the page title + ReportsTabs only, so the grid gets full vertical space.
+## 3. Contributing reports — filters / categorization
+`src/routes/_app/reports.documents.tsx` — keep the current `report_type` grouping, but add a filter bar above the list with:
+- **Year** chips (derived from `report_date ?? created_at`, distinct, newest first, plus "All").
+- **Type** chips (distinct `report_type`, plus "All").
+- **Status** chips (All / Ready / Failed / Processing) — lets the user find broken ones fast.
+- Free-text search (already exists).
 
-### Files touched
-- `src/components/reports/reports-tabs.tsx` (tab order)
-- `src/routes/_app/reports.tsx` (index redirect)
-- `src/routes/_app/reports.metrics.tsx` (trim header)
-- `src/components/reports/trends-section.tsx` (grid layout, alphabetical sort, remove DnD, card chart styling)
+Filters compose (AND). Empty state when filters exclude everything. "Lab" and "Country" aren't reliably extracted today; we'll skip those rather than show empty filters. If you want them later, we'd need to extend extraction + DB columns — call that out as a follow-up.
 
-No DB changes, no server-fn changes, no new routes.
+## 4. Metrics page — real dates, sort modes, drag
+`src/components/reports/trends-section.tsx` + the existing `reorderMetrics` server fn (still in `report-trends.functions.ts`).
 
-### Open question
-Drag-to-reorder vs strict alphabetical — confirm you're OK dropping manual reorder in favor of A→Z (pinned first). If you want to keep drag, I'll keep DnD and only sort newly-seen metrics alphabetically on first insert.
+- **Show latest date** on every card: under "N readings · latest <value> <unit>" add `· <formatted latest_at>` using `latest_at` already on `TrendMetricRow`. This means dates show without clicking.
+- **Sort dropdown** at the top of the section with options:
+  - Alphabetical (A→Z) — current default
+  - Needs attention (out-of-range first: `latest_flag` high/low before normal/null, then A→Z)
+  - Most recent (by `latest_at` desc)
+  - Most readings (by `count` desc)
+  - Custom (drag) — only enabled when user has dragged at least once; respects `sort_order`
+- Pinned metrics always float to the top within the chosen sort.
+- **Drag to reorder** (Custom mode only): reintroduce `@dnd-kit` `DndContext` + `SortableContext` around the grid, persist via `reorderMetrics`. When the user starts dragging, auto-switch sort to "Custom".
+- Sort choice is local state (sessionStorage) — no schema change.
+
+## Files touched
+- `src/routes/_app/reports.$reportId.tsx` — wire Retry to `processReport`, change back target.
+- `src/routes/_app/reports.documents.tsx` — add Year / Type / Status filter chips.
+- `src/components/reports/trends-section.tsx` — latest date, sort dropdown, optional drag.
+- `src/routes/_app/reports.new.tsx`, `reports.medical-history.tsx`, `reports.trends.$metricKey.tsx` — back-link sweep.
+
+No DB migrations, no server-fn signature changes (everything we need already exists: `processReport`, `reorderMetrics`, `latest_at`).
