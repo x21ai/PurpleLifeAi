@@ -61,7 +61,7 @@ function PlatformRulesPage() {
   });
 
   const upsertMut = useMutation({
-    mutationFn: (input: Parameters<typeof upsert>[0]["data"]) => upsert({ data: input }),
+    mutationFn: (input: any) => upsert({ data: input }),
     onSuccess: () => {
       toast.success("Rule saved");
       void refetch();
