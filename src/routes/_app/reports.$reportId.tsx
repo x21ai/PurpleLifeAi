@@ -11,8 +11,19 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceArea, ResponsiveContai
 import { toast } from "sonner";
 import { ReportShell, ReportCard, ReportPill } from "@/components/reports/report-shell";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const Route = createFileRoute("/_app/reports/$reportId")({
   head: () => ({ meta: [{ title: "Report · Purple" }] }),
+  params: {
+    parse: (raw: Record<string, string>) => {
+      if (!UUID_RE.test(raw.reportId ?? "")) {
+        throw new Error("not-a-report-id");
+      }
+      return { reportId: raw.reportId };
+    },
+    stringify: (p: { reportId: string }) => ({ reportId: p.reportId }),
+  },
   component: ReportDetailPage,
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-3xl px-5 py-16">
