@@ -337,8 +337,63 @@ export const processReport = createServerFn({ method: "POST" })
           };
         });
 
+      // Content hash: normalised metric pairs + report_date. Identifies re-uploads of the
+      // same data even when the file path or filename differs.
+      const hashBasis = [
+        extraction.report_date ?? "",
+        ...rows
+          .map((r) => `${r.metric_key}=${r.value ?? r.value_text ?? ""}`)
+          .sort(),
+      ].join("|");
+      const contentHash = createHash("sha256").update(hashBasis).digest("hex");
+
+      // Look for a prior decision on the same content for this user.
+      const { data: priorDecided } = await supabase
+        .from("report_documents")
+        .select("id, user_decision, created_at")
+        .eq("user_id", doc.user_id)
+        .eq("content_hash", contentHash)
+        .neq("id", doc.id)
+        .not("user_decision", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      const prior = priorDecided?.[0] ?? null;
+
+      if (prior?.user_decision === "rejected") {
+        // Don't insert metrics. Mark this report as rejected to keep the decision sticky.
+        const { data: signedFile } = await supabase
+          .from("report_documents")
+          .select("file_path")
+          .eq("id", doc.id)
+          .maybeSingle();
+        if (signedFile?.file_path) {
+          await supabase.storage.from("reports").remove([signedFile.file_path]);
+        }
+        await supabase
+          .from("report_documents")
+          .update({
+            status: "rejected",
+            user_decision: "rejected",
+            content_hash: contentHash,
+            error_message:
+              "You previously rejected a report with these same readings — it was not added again.",
+          })
+          .eq("id", doc.id);
+        return { ok: true, metricCount: 0, blocked: "previously_rejected" };
+      }
+
       if (rows.length > 0) {
         await supabase.from("report_metrics").insert(rows);
+      }
+      await supabase
+        .from("report_documents")
+        .update({ content_hash: contentHash })
+        .eq("id", doc.id);
+
+      // If a previously kept duplicate exists, auto-link without prompting.
+      let autoDuplicateOf: string | null = null;
+      if (prior?.user_decision === "kept") {
+        autoDuplicateOf = prior.id as string;
       }
 
       // Derive panel_keys from extraction or from dictionary lookup
@@ -406,6 +461,7 @@ export const processReport = createServerFn({ method: "POST" })
 
       // Duplicate: same user + same patient_dob (when known) + same report_date (when known)
       let duplicateOf: string | null = null;
+      if (autoDuplicateOf) duplicateOf = autoDuplicateOf;
       if (extraction.report_date) {
         const { data: candidates } = await supabase
           .from("report_documents")
