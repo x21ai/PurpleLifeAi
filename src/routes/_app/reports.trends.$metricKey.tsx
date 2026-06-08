@@ -116,7 +116,7 @@ function TrendDetailPage() {
     }));
 
   return (
-    <MetricShell back={{ to: "/reports", label: "Reports" }}>
+    <MetricShell back={{ to: "/reports/metrics", label: "Metrics" }}>
       <MetricTitle
         title={label}
         status={{
