@@ -1,92 +1,67 @@
 
-# Ask Purple → AI SDK rewrite + what's left
+## Why the earlier 504 errors
 
-## What's left overall
+The blank screen + `504 for /node_modules/.vite/deps/chunk-…js` was not an app bug. It was Vite's dep-optimization cache going stale after we installed three new packages (`ai`, `@ai-sdk/react`, `@ai-sdk/openai-compatible`) for the Ask Purple rewrite. Vite re-bundles `node_modules/.vite/deps` on the next request; the in-flight request for an old chunk hash 504s until the new bundle is ready. Restarting the dev server + reloading clears it. There is nothing left to fix in code, but to prevent it next time I'll restart the dev server immediately after adding deps.
 
-1. **Ask Purple full AI-SDK rewrite** (this plan) — replace the `ai-orchestrator` Edge Function chat path with a TanStack streaming server route using the AI SDK, real tool calling, and provider routing through Lovable AI Gateway.
-2. **Maya provider** — still blocked on you sharing endpoint URL + auth scheme.
-3. **Responsive QA pass** — quick visual sweep of `/reports`, `/reports/$id`, `/biometrics/$metric` on mobile widths after the rewrite lands. No code unless something breaks.
+## What's left from prior phases
 
-Everything else from the prior plan (provider routing for `care-chat`, `insights-patterns`, `journal-recap`, `med-intelligence`, `condition-suggestions`, `feature-suggestions`, `medical-report`, trends-list polish) is done.
+1. **Reports surface split** (this plan, biggest item).
+2. **Responsive QA sweep** of `/reports`, `/reports/$id`, `/biometrics/$metric`, `/chat`, `/timeline` at 375 / 390 / 414 widths. Fix-as-found, no big rewrites.
+3. **Maya provider** — still blocked on you sharing endpoint URL + auth scheme. Skipping unless you drop the details.
+4. Everything else from earlier phases (Ask Purple AI-SDK rewrite, provider routing across care-chat / insights / journal-recap / med-intelligence / condition-suggestions / feature-suggestions / medical-report, dark report shell, light metric drilldown) is done.
 
 ---
 
-## Ask Purple rewrite
+## Reports surface split
 
-### Goals
-- Stream replies token-by-token via AI SDK (`useChat` + `streamText`).
-- Preserve the "propose action → confirm card" flow (no silent writes).
-- Honor the user's `ai_provider` choice (Claude / Gemini / GPT-5 / Lovable default) through Lovable AI Gateway with one unified code path.
-- Keep all the existing grounded tools (journal memory, biometrics, seizures, adherence, today's risk, research library).
-- Keep system prompt + condition-awareness identical.
-- No new persistence — chat stays in-memory per session (matches current UX). Flag for future if you want history.
+Today `/reports` mashes upload, report list, the clinician PDF box, and the giant "Trends" metric list onto one dark scroll. You want a clean two-tab structure: **Reports** (the documents themselves) and **Metrics** (the trended data points across all reports).
 
-### Architecture
+### New routes
 
 ```text
-src/routes/_app/chat.tsx          ← uses @ai-sdk/react useChat, DefaultChatTransport
-src/routes/api/chat.ts            ← streamText, tools, stopWhen, toUIMessageStreamResponse
-src/lib/ai-gateway.server.ts      ← already exists (shared Lovable Gateway provider)
-src/lib/purple-chat-tools.server.ts  (new)  ← tool definitions + execute() handlers
-src/lib/purple-chat-prompt.server.ts (new)  ← SYSTEM_PROMPT + condition prelude builder
+/reports                    → redirect to /reports/documents
+/reports/documents          → list of uploaded reports + upload + clinician PDF
+/reports/$reportId          → existing report detail (unchanged)
+/reports/metrics            → searchable list of all tracked metrics (was the "Trends" section)
+/reports/trends/$metricKey  → existing drilldown (already shows graph + range + history)
 ```
 
-The existing `supabase/functions/ai-orchestrator/index.ts` stays only for its non-chat duty:
-- `extract_behaviors_from_text` (service-role only, called by journal-processor).
-- `execute_action` migrates to a `createServerFn` (`src/lib/purple-actions.functions.ts`) called from the confirm card — no need to keep that path on the Edge Function once chat moves.
+`reports.tsx` becomes a thin layout that renders an `<Outlet />` plus a top tab bar (Reports · Metrics). Both child routes inherit the dark `ReportShell` theme already in place.
 
-### Tools (AI SDK `tool({ inputSchema, execute })`)
-Ported 1:1 from the orchestrator's `runTool`, using Zod input schemas:
-- `searchJournalMemory` (server-side embedding via existing OpenAI call, then `match_ai_memory` RPC)
-- `getRecentBiometrics`
-- `getSeizureEvents`
-- `getMedicationAdherence`
-- `getTodaysRisk`
-- `searchResearchLibrary`
-- `proposeAction` — `needsApproval: true`. Returns a structured proposal part; the client renders the existing `ActionConfirmCard`. Execution runs through the new `executePurpleAction` server fn, not as a tool result.
+### `/reports/documents` (tab 1)
+Pulls the existing pieces out of `reports.tsx`:
+- Upload card
+- "One-tap PDF for your next visit" clinician card (`QuickClinicianPdf`)
+- Search input
+- Report list with status pill, metric count, panel chips
+- Each row links to `/reports/$reportId`
+- Row action menu: **View PDF** (opens existing signed-URL viewer), **Share** (existing share-token flow via `medical-report-share.functions`), **Download** (signed URL with `download` attr). Today this is only available inside the detail page; we surface it on each list row as a kebab menu.
 
-`stopWhen: stepCountIs(50)`.
+### `/reports/metrics` (tab 2)
+- Reuses `TrendsSection` content but as its own page (header, search, sort by name / latest date / # readings, "pinned" toggle).
+- Each row shows: metric name, # readings, latest value + unit, mini sparkline, in/out-of-range pill.
+- Row click → `/reports/trends/$metricKey` (already implemented; that page already shows the full-history line chart with reference range band, value + date per reading, CSV export). No changes needed there beyond a small responsive tweak below.
 
-### Provider routing
-Inside the chat route, read the auth'd user's `profiles.ai_provider` (fallback `ai_model_preference`) and map to a Gateway model id:
+### Responsive fixes bundled in
+While moving things around:
+- `ReportShell` header: stack title + actions under 480px (currently overflows on 375).
+- Report row meta line: switch to 2-line layout on narrow screens so panel chips don't squeeze the chevron off-screen.
+- `/reports/trends/$metricKey` range pill row + CSV: wrap to a second row under 380px (already mostly fine, one `flex-wrap` tweak).
+- `/chat`: bottom composer safe-area padding on iOS PWA (your screenshots are 375×550-ish).
+- `/timeline`: filter pills wrap, currently they do; just verify.
 
-| `ai_provider` | Model passed to gateway |
-| --- | --- |
-| `claude` | `anthropic/claude-sonnet-4-5` |
-| `openai` | `openai/gpt-5-mini` |
-| `gemini` (default) | `google/gemini-3-flash-preview` |
-| `grok` | `xai/grok-...` (or fallback if not on gateway) |
-| `lovable` | `google/gemini-3-flash-preview` |
-| `maya` | fallback to gemini until endpoint is provided |
-
-One code path, one set of tools — AI SDK handles tool calling uniformly across providers that support it. Gemini Flash supports tools, so the previous "no tools on Gemini" limitation goes away.
-
-### Client (`src/routes/_app/chat.tsx`)
-- Replace `useState<Msg[]>` + manual `supabase.functions.invoke` with `useChat({ id, transport: new DefaultChatTransport({ api: "/api/chat" }) })`.
-- Render `message.parts`:
-  - `text` parts → existing `Bubble` with `ReactMarkdown`.
-  - `tool-proposeAction` part in `input-available` state → `ActionConfirmCard`. On confirm, call new `executePurpleAction` server fn and mark the part resolved via `addToolResult` (so the model sees the outcome if user keeps chatting).
-- Keep mic, suggestion chips, follow-up chips, empty state — pure UI, no API change.
-- Disable submit while `status === 'submitted' | 'streaming'`. Keep textarea focused after send / stream end.
-- Surface 429 / 402 / generic errors via toast (same wording as today).
-
-### Server fn for confirm
-`src/lib/purple-actions.functions.ts` — `executePurpleAction` server fn, `requireSupabaseAuth` middleware, Zod-validated proposal, same logic as the orchestrator's `executeAction`. Confirm card calls this directly instead of round-tripping through the Edge Function.
-
-### Edge Function cleanup
-- Remove the chat + execute_action branches from `supabase/functions/ai-orchestrator/index.ts`.
-- Keep `extract_behaviors_from_text` (background processor still calls it).
-- Rename internally / leave name as-is (callers in journal-processor unchanged).
+### Out of scope
+- No schema changes (metrics + `report_documents` + `report_metrics` already power this).
+- No new server fns; reuse `listReports`, `getMetricSeries`, existing share/download.
+- No changes to the `/reports/$reportId` detail page beyond linking back to `/reports/documents`.
 
 ### Verification
-- `/chat`: ask "how did I sleep this week?" → streams, calls `getRecentBiometrics`.
-- "Add melatonin 5mg at 22:00" → proposal card appears, confirm writes a medication, follow-up message acknowledges.
-- Switch provider in Settings → Gemini → ask same question → still streams + uses tools.
-- Reload page → conversation clears (matches today's behavior, no regression).
-- Network tab: single POST to `/api/chat`, SSE response, no Edge Function call for chat path.
+- Tab bar switches without full reload, URL updates.
+- Kebab on a report row: View PDF opens in a new tab, Share copies a link + toast, Download saves the PDF.
+- `/reports/metrics` shows the same metrics the old Trends section did; clicking HDL Cholesterol opens the multi-year graph with the reference band and per-reading dates.
+- All four mobile viewports (375 / 390 / 414 / 320) render without horizontal scroll on `/reports/documents`, `/reports/metrics`, `/reports/trends/$metricKey`, `/chat`.
 
-### Out of scope (call out before starting if you want them in)
-- Persisting conversations / thread list.
-- Resumable streams.
-- Maya provider wiring.
-- Voice streaming changes (mic flow stays as-is).
+### Technical notes
+- `reports.tsx` already gates content with `pathname !== "/reports"` → `<Outlet />`. I'll change that to: if pathname is exactly `/reports`, `throw redirect({ to: "/reports/documents" })` in `beforeLoad`; otherwise render the tab shell + outlet.
+- New files: `src/routes/_app/reports.documents.tsx`, `src/routes/_app/reports.metrics.tsx`, `src/components/reports/report-row-actions.tsx` (the kebab menu).
+- `TrendsSection` gets a `variant="page"` prop so it can render full-bleed inside the new metrics route without the "section header" it currently uses on the dashboard.
