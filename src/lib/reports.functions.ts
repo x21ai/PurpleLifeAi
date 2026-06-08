@@ -109,7 +109,7 @@ export const listReports = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data, error } = await supabase
       .from("report_documents")
-      .select("id, title, report_type, report_date, file_mime, status, created_at, summary, panel_keys")
+      .select("id, title, report_type, report_date, file_mime, status, created_at, summary, panel_keys, error_message")
       .order("report_date", { ascending: false, nullsFirst: false });
     if (error) throw new Error(error.message);
     const reports = data ?? [];

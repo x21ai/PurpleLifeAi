@@ -434,8 +434,27 @@ body::-webkit-scrollbar,
 
   /* Light metric drilldown */
   .metric-canvas {
+    /* Re-declare shadcn tokens to LIGHT values so descendant utilities
+       (text-foreground, border-border, bg-secondary, text-muted-foreground)
+       resolve correctly even when the global theme is dark. */
+    --background: 30 14% 95%;
+    --foreground: 240 10% 6%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 6%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 6%;
+    --muted: 30 10% 92%;
+    --muted-foreground: 240 4% 36%;
+    --secondary: 30 10% 94%;
+    --secondary-foreground: 240 10% 6%;
+    --accent: 30 10% 94%;
+    --accent-foreground: 240 10% 6%;
+    --border: 36 12% 88%;
+    --input: 36 12% 88%;
+    --primary: 270 45% 50%;
+    --primary-foreground: 0 0% 100%;
     background-color: #F4F2EE;
-    color: #0A0A0F;
+    color: hsl(var(--foreground));
     min-height: 100vh;
     min-height: 100dvh;
   }
