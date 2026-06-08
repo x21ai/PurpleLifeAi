@@ -492,6 +492,22 @@ export const processReport = createServerFn({ method: "POST" })
         } else {
           identity = "mismatch";
         }
+        // If profile didn't match, check the user's remembered aliases.
+        // An approved alias for the same (normalized name, dob) auto-verifies.
+        if (identity !== "verified" && extName) {
+          const aliasName = extName.replace(/\s+/g, " ").trim();
+          let aq = supabase
+            .from("report_identity_aliases")
+            .select("id")
+            .eq("user_id", doc.user_id)
+            .eq("name_normalized", aliasName)
+            .limit(1);
+          aq = extDob ? aq.eq("dob", extDob) : aq.is("dob", null);
+          const { data: aliasRows } = await aq;
+          if (aliasRows && aliasRows.length > 0) {
+            identity = "verified";
+          }
+        }
       } else {
         identity = "verified";
       }
