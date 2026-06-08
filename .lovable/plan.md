@@ -1,62 +1,47 @@
-# Three fixes
+# Fix Trends: duplicates, missing year, % Saturation label
 
-## 1. Metrics page renders blank
+## 1. Collapse same-day duplicate readings (the Oct 18 ×2 / Nov 8 ×2 dots)
 
-`src/components/reports/trends-section.tsx` returns `null` when loading and when the list is empty, so the Metrics tab shows nothing if you have no extracted metrics yet (e.g. all reports were rejected or still processing). Fix:
+**Root cause:** Several of your existing lab reports were uploaded twice. Both copies live in `report_documents` without `duplicate_of` set, so `report_metrics` has two identical rows per metric per date. The Trends chart plots both, creating the doubled dots.
 
-- Show a loading skeleton (3 placeholder cards) while `isLoading`.
-- Show a friendly empty state when `metrics.length === 0`: short copy explaining "No lab values yet" + a primary button linking to `/reports/new` to upload a report, and a secondary link to the Reports tab.
-- Keep the section heading visible in both states so the page never looks broken.
+**Two-part fix (data + code), no deletions:**
 
-No data-layer changes. `listTrendMetrics` is already correct.
+**a. Mark the duplicate uploads in the DB (one-time migration, safe & reversible)**
+- For every group of `report_documents` belonging to the same user where `report_date` is identical AND the set of `(metric_key, value)` extracted is identical, keep the earliest-created one and set `duplicate_of = <earliest>.id` on the rest.
+- Nothing is deleted. `report_metrics` rows stay intact. The existing trends query already filters out reports where `duplicate_of IS NOT NULL`, so the chart will immediately stop double-plotting.
+- The Documents page can later show "duplicate of …" with an unmark button if you ever want one back.
 
-## 2. Identity approval: remember the decision + apply it to future uploads
+**b. Defensive dedupe in `listTrendMetrics` (`src/lib/report-trends.functions.ts`)**
+- Even after the DB cleanup, collapse same-day points within a metric by averaging (or taking the most recent `created_at` if values differ slightly) before pushing to `row.series`. This prevents future duplicates from re-creating the visual issue if two PDFs slip through.
 
-Today every uploaded report is identity-checked against `profiles.first_name/last_name/date_of_birth` independently. If you approve a doc with name "AKASH OP, AURORA" / DOB 1973-08-10, the next upload with the same printed name still shows the banner. Fix it so an approval is sticky for that identity, and so the user understands what's happening with many docs.
+## 2. Show the year on the X axis
 
-### Data
-New table `public.report_identity_aliases` (with GRANTs, RLS, `auth.uid()` policies):
+In `src/components/reports/trends-section.tsx`:
+- Update `formatTick()` to include a 2-digit year when the series spans more than one calendar year, e.g. `"Nov 8 '25"`. When all points are within one year, keep the compact `"Nov 8"` form to save horizontal space on small cards.
+- The "Latest …" footer line already includes the year (uses `formatDate` with `year: "numeric"`), so no change there.
 
-- `id uuid pk`, `user_id uuid` (auth.users), `name_normalized text`, `dob date null`, `source` (`'approval' | 'profile'`), `created_at`.
-- Unique `(user_id, name_normalized, dob)`.
+## 3. "% Saturation" vs "iron Saturation"
 
-### Server
-`src/lib/reports.functions.ts`:
+The card title uses whatever `display_name` the lab PDF printed (`"% Saturation"`, `"% SATURATION"`). Our internal `metric_key` is `iron_saturation`, hence the URL.
 
-- In `setReportIdentityDecision` when `decision === "approve"`: look up the report's `patient_name` + `patient_dob`, insert a normalized alias row (lowercase, trimmed, collapsed whitespace).
-- In `processReport` identity step: before flagging `mismatch`, check `report_identity_aliases` for `(user_id, name_normalized, dob)` match. If hit → `identity_status = 'verified'` and skip the banner. Profile name/DOB still wins first.
-- `getReport` (the report detail loader) returns a new `aliasCount` so the banner can show "Approving will also remember this name/DOB so future uploads with the same identity skip this check."
+**Fix in `src/components/reports/trends-section.tsx`:**
+- When the `display_name` is non-descriptive on its own (starts with `%`, or is just a unit/abbreviation), fall back to a humanized `metric_key` instead — so this card reads **"Iron Saturation"** with `% Saturation` shown as a small subtitle/secondary label. For all other metrics that already have a clear name (e.g. `"HDL CHOLESTEROL"`), keep the PDF wording but Title Case it.
+- This way the route, the chart title, and what's printed on the PDF are all reconciled visually.
 
-### UI
-`src/routes/_app/reports.$reportId.tsx` identity banner copy:
+## 4. Where the data comes from (no code change, FYI)
 
-- Replace current single-sentence explanation with a two-line block:
-  1. "Found on the document: NAME, DOB YYYY-MM-DD. Its metrics are hidden from your trends until you confirm."
-  2. "Approving remembers this name and DOB. Future uploads that match will skip this check automatically. Rejecting deletes this report and blocks re-uploads of the same readings."
-- Keep the two buttons but rename without em dashes (see §3).
+`report_metrics` is populated by the lab-PDF extractor when you upload via `/reports/new`. Each metric becomes one row keyed to one `report_documents` row. The extractor doesn't currently check whether the same file was already uploaded, which is why duplicates accumulated. A separate follow-up could add an upload-time SHA hash check on the PDF bytes — out of scope for this fix but happy to plan it next if you want.
 
-`src/routes/_app/reports.new.tsx` upload result toast: when one of N uploaded files is flagged as identity mismatch, surface a count ("2 of 5 reports need you to confirm the patient identity") with a link to `/reports/documents`. This answers the "what happens with 10 different names" question: each unique identity prompts once, after which it's remembered.
+---
 
-### Settings surface (lightweight)
-Add a section in `src/routes/_app/settings.sharing.tsx` (or a new `settings.identities.tsx` if cleaner) listing remembered identities with a delete button, so a caregiver who approved the wrong alias can revoke it.
+## Files touched
 
-## 3. Purge em dashes project-wide
+- New migration `supabase/migrations/<ts>_dedupe_report_documents.sql` — sets `duplicate_of` on duplicate uploads. No data deleted.
+- `src/lib/report-trends.functions.ts` — defensive same-day dedupe inside the series builder.
+- `src/components/reports/trends-section.tsx` — smarter `formatTick` (year when needed), smarter title label.
 
-The `mem://constraint/no-em-dash` rule exists and `scripts/check-no-em-dash.mjs` exists, but it's only wired as an npm script, not run in any build step, so regressions slipped in.
+## Out of scope (ask if you want any of these next)
 
-- Run `npm run check:em-dash`, fix every hit in `src/` and `public/` by replacing per the rule (`,` / `:` / `and` / split sentence / `·` for title separators).
-- High-traffic hits I already see: `reports.$reportId.tsx` ("This is me — approve" / "Not me — delete"), `trends-section.tsx` status chips ("Out of range — high/low"), `reports.trends.$metricKey.tsx`, `reports.functions.ts` error messages, `reports.new.tsx` toast, `purple-chat-prompt.server.ts`, many marketing/intake sheets.
-- Add `bun run check:em-dash` to the `prebuild` script in `package.json` so any future em dash fails CI.
-
-## Files touched (summary)
-
-- New migration: `report_identity_aliases` table + grants + policies.
-- `src/lib/reports.functions.ts` — sticky alias logic on approve + match check in processReport, return `aliasCount`.
-- `src/components/reports/trends-section.tsx` — loading skeleton + empty state.
-- `src/routes/_app/reports.$reportId.tsx` — clearer banner copy + em dash fix.
-- `src/routes/_app/reports.new.tsx` — identity-needs-review toast + em dash fix.
-- `src/routes/_app/settings.sharing.tsx` (or new file) — remembered identities list.
-- Sweep across `src/` + `public/` for em dashes.
-- `package.json` — add `prebuild` hook running `check:em-dash`.
-
-No new external services, no AI changes, no schema changes beyond the one alias table.
+- Upload-time PDF hash to prevent future duplicates.
+- A "Mark as duplicate" / "Restore" button on the Documents page.
+- Re-running the extractor on existing reports to fill in missing reference ranges.
