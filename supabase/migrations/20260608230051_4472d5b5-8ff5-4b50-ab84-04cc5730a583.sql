@@ -1,0 +1,2 @@
+ALTER TABLE public.report_documents ADD COLUMN IF NOT EXISTS excluded_from_trends boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_report_documents_excluded ON public.report_documents (user_id, excluded_from_trends);
