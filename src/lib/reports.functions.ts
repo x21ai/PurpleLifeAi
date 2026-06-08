@@ -462,7 +462,7 @@ export const processReport = createServerFn({ method: "POST" })
       // Duplicate: same user + same patient_dob (when known) + same report_date (when known)
       let duplicateOf: string | null = null;
       if (autoDuplicateOf) duplicateOf = autoDuplicateOf;
-      if (extraction.report_date) {
+      if (!duplicateOf && extraction.report_date) {
         const { data: candidates } = await supabase
           .from("report_documents")
           .select("id")
