@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_app/reports")({
   }),
   beforeLoad: ({ location }) => {
     if (location.pathname === "/reports" || location.pathname === "/reports/") {
-      throw redirect({ to: "/reports/documents" });
+      throw redirect({ to: "/reports/metrics" });
     }
   },
   component: () => <Outlet />,
