@@ -1,7 +1,7 @@
 import * as React from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   LineChart,
   Line,
@@ -12,7 +12,7 @@ import {
   ResponsiveContainer,
   ReferenceArea,
 } from "recharts";
-import { Download, Loader2, Share2, Sparkles } from "lucide-react";
+import { Download, Loader2, Share2, Sparkles, Wand2 } from "lucide-react";
 import { getMetricSeries, getMetricInsight } from "@/lib/report-trends.functions";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -83,11 +83,17 @@ function TrendDetailPage() {
     queryFn: () => fetchSeries({ data: { metricKey, days } }),
   });
 
-  const { data: insight, isLoading: insightLoading } = useQuery({
+  // Load cached insight only (does not call the model). The user runs it on demand.
+  const { data: insight, refetch: refetchInsight } = useQuery({
     queryKey: ["metric-insight", metricKey],
     queryFn: () => fetchInsight({ data: { metricKey } }),
     staleTime: 5 * 60 * 1000,
   });
+  const runInsight = useMutation({
+    mutationFn: () => fetchInsight({ data: { metricKey, force: true } }),
+    onSuccess: () => refetchInsight(),
+  });
+  const insightRunning = runInsight.isPending;
 
   const rows = (data?.rows ?? []) as Row[];
   const label =
@@ -126,13 +132,28 @@ function TrendDetailPage() {
       />
 
       <section className="metric-sheet mt-4 p-5 sm:p-6">
-        <div className="flex items-center gap-2 text-foreground/70">
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--purple-soft)] text-[color:var(--purple-primary)]">
-            <Sparkles className="h-3.5 w-3.5" />
-          </span>
-          <h2 className="font-serif text-xl text-foreground">AI insights</h2>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 text-foreground/70">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--purple-soft)] text-[color:var(--purple-primary)]">
+              <Sparkles className="h-3.5 w-3.5" />
+            </span>
+            <h2 className="font-serif text-xl text-foreground">AI insights</h2>
+            {insight?.cached && (
+              <span className="text-[11px] text-foreground/45">cached</span>
+            )}
+          </div>
+          {!insightRunning && (
+            <button
+              type="button"
+              onClick={() => runInsight.mutate()}
+              className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--purple-primary)] text-white px-3 py-1.5 text-xs hover:opacity-90"
+            >
+              <Wand2 className="h-3 w-3" />
+              {insight?.summary ? "Re-run" : "Run AI insights"}
+            </button>
+          )}
         </div>
-        {insightLoading ? (
+        {insightRunning ? (
           <div className="mt-3 flex items-center gap-2 text-sm text-foreground/55">
             <Loader2 className="h-3.5 w-3.5 animate-spin" /> Reading your trend…
           </div>
@@ -150,9 +171,24 @@ function TrendDetailPage() {
               </ul>
             )}
           </>
-        ) : (
+        ) : insight?.error === "not_enough_data" ? (
           <p className="mt-3 text-sm text-foreground/55">
-            {insight?.error ? "Insights unavailable right now." : "Not enough data yet for insights."}
+            Upload another report with this metric to unlock AI insights.
+          </p>
+        ) : insight?.error === "credits_exhausted" ? (
+          <p className="mt-3 text-sm text-foreground/65">
+            AI credits exhausted. Add credits in Settings → Workspace → Usage, then re-run.
+          </p>
+        ) : insight?.error === "rate_limited" ? (
+          <p className="mt-3 text-sm text-foreground/65">
+            AI is rate-limited right now. Try again in a moment.
+          </p>
+        ) : insight?.error ? (
+          <p className="mt-3 text-sm text-foreground/55">{insight.error}</p>
+        ) : (
+          <p className="mt-3 text-sm text-foreground/65">
+            Get a personalized read on your latest {label.toLowerCase()} trend — direction, notable
+            readings, and questions to bring up with your clinician. Runs only when you click; uses your AI credits.
           </p>
         )}
       </section>
