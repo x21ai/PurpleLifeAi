@@ -1,14 +1,11 @@
 import { Link } from "@tanstack/react-router";
 
-export function SiteFooter({ variant = "app" }: { variant?: "app" | "marketing" }) {
+export function SiteFooter() {
   const year = new Date().getFullYear();
   return (
     <footer
       data-testid="site-footer"
-      className={
-        "border-t border-border bg-background/60 " +
-        (variant === "app" ? "mt-12" : "mt-0")
-      }
+      className="border-t border-border bg-background/60 mt-0"
     >
       <div className="mx-auto max-w-6xl px-5 sm:px-8 py-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between text-sm text-muted-foreground">
         <nav className="flex flex-wrap items-center gap-x-5 gap-y-2" aria-label="Legal">
