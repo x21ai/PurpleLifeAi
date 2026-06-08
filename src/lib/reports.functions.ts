@@ -118,18 +118,34 @@ export const setReportIdentityDecision = createServerFn({ method: "POST" })
         .replace(/\s+/g, " ")
         .trim();
       if (nameNormalized.length > 0) {
-        const { error: aliasErr } = await supabase
+        const existing = await supabase
           .from("report_identity_aliases")
-          .upsert(
-            {
+          .select("id")
+          .eq("user_id", doc.user_id)
+          .eq("name_normalized", nameNormalized)
+          .is("dob", doc.patient_dob ? null : null);
+        const existsForDob = doc.patient_dob
+          ? await supabase
+              .from("report_identity_aliases")
+              .select("id")
+              .eq("user_id", doc.user_id)
+              .eq("name_normalized", nameNormalized)
+              .eq("dob", doc.patient_dob)
+              .maybeSingle()
+          : { data: existing.data?.[0] ?? null };
+        if (!existsForDob.data) {
+          const { error: aliasErr } = await supabase
+            .from("report_identity_aliases")
+            .insert({
               user_id: doc.user_id,
               name_normalized: nameNormalized,
               dob: doc.patient_dob ?? null,
               source: "approval",
-            },
-            { onConflict: "user_id,name_normalized,dob", ignoreDuplicates: true },
-          );
-        if (!aliasErr) aliasRemembered = true;
+            });
+          if (!aliasErr) aliasRemembered = true;
+        } else {
+          aliasRemembered = true;
+        }
       }
     }
     return { ok: true, deleted: false, aliasRemembered };
