@@ -118,22 +118,15 @@ export const setReportIdentityDecision = createServerFn({ method: "POST" })
         .replace(/\s+/g, " ")
         .trim();
       if (nameNormalized.length > 0) {
-        const existing = await supabase
+        let q = supabase
           .from("report_identity_aliases")
           .select("id")
           .eq("user_id", doc.user_id)
           .eq("name_normalized", nameNormalized)
-          .is("dob", doc.patient_dob ? null : null);
-        const existsForDob = doc.patient_dob
-          ? await supabase
-              .from("report_identity_aliases")
-              .select("id")
-              .eq("user_id", doc.user_id)
-              .eq("name_normalized", nameNormalized)
-              .eq("dob", doc.patient_dob)
-              .maybeSingle()
-          : { data: existing.data?.[0] ?? null };
-        if (!existsForDob.data) {
+          .limit(1);
+        q = doc.patient_dob ? q.eq("dob", doc.patient_dob) : q.is("dob", null);
+        const { data: existingRows } = await q;
+        if (!existingRows || existingRows.length === 0) {
           const { error: aliasErr } = await supabase
             .from("report_identity_aliases")
             .insert({
