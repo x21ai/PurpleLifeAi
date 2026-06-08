@@ -77,12 +77,25 @@ export const setReportIdentityDecision = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     if (data.decision === "reject") {
-      // Remember the rejection so future re-uploads of the same content are blocked.
-      await supabase
+      // Keep the row as a tombstone so future re-uploads of the same content
+      // are recognised and blocked. Remove metrics + file to free space.
+      const { data: doc } = await supabase
         .from("report_documents")
-        .update({ user_decision: "rejected" })
+        .select("file_path")
+        .eq("id", data.reportId)
+        .maybeSingle();
+      await supabase.from("report_metrics").delete().eq("report_id", data.reportId);
+      if (doc?.file_path) {
+        await supabase.storage.from("reports").remove([doc.file_path]);
+      }
+      const { error } = await supabase
+        .from("report_documents")
+        .update({
+          user_decision: "rejected",
+          status: "rejected",
+          error_message: "You rejected this report — its readings are excluded from trends.",
+        })
         .eq("id", data.reportId);
-      const { error } = await supabase.from("report_documents").delete().eq("id", data.reportId);
       if (error) throw new Error(error.message);
       return { ok: true, deleted: true };
     }
