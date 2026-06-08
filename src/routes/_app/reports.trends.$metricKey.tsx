@@ -132,6 +132,9 @@ function TrendDetailPage() {
           value: latest?.value != null ? `${latest.value}${unit ? ` ${unit}` : ""}` : undefined,
         }}
       />
+      {asPrinted && (
+        <p className="mt-1 text-[11px] text-foreground/45">as printed on report: {asPrinted}</p>
+      )}
 
       <section className="metric-sheet mt-4 p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -276,6 +279,16 @@ function TrendDetailPage() {
                   dataKey="at"
                   tick={{ fontSize: 11 }}
                   className="text-muted-foreground"
+                  tickFormatter={(v: string) => {
+                    const d = new Date(v);
+                    if (Number.isNaN(d.getTime())) return v;
+                    const years = new Set(chartData.map((p) => new Date(p.at).getFullYear()));
+                    const fmt: Intl.DateTimeFormatOptions =
+                      years.size > 1
+                        ? { month: "short", day: "numeric", year: "numeric" }
+                        : { month: "short", day: "numeric" };
+                    return d.toLocaleDateString(undefined, fmt);
+                  }}
                 />
                 <YAxis
                   tick={{ fontSize: 11 }}
