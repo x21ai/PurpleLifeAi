@@ -364,6 +364,7 @@ export const processReport = createServerFn({ method: "POST" })
             user_id: doc.user_id,
             metric_key: m.key,
             display_name: m.display_name ?? known?.display_name ?? m.key,
+            source_text: m.display_name ?? known?.display_name ?? m.key,
             value: m.value ?? null,
             value_text: m.value_text ?? null,
             unit: m.unit ?? known?.default_unit ?? null,
