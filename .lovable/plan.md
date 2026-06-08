@@ -1,68 +1,83 @@
-Three fixes plus one new admin area. Scoped tightly — no metric-card visual rewrite.
+## Goal
 
-## 1. Why "% Saturation" shows two readings on the same date
+Close out the open threads from the last few rounds: a real admin UI for Platform Rules, consistent dropdown/theme tokens across pages, a clean Run-AI-Insights flow with a "Why" explainer, and a duplicate-report decision that sticks across future uploads.
 
-Two uploads ("Comprehensive Blood Panel (Quest)" and "Quest Comprehensive Health Panel" on 2025-11-08) both extracted the same value. Today nothing dedupes them and nothing verifies the report belongs to the signed-in user.
+## 1. Super admin Platform Rules page
 
-### Extract patient identity on every report
+New route `src/routes/_app/admin.rules.tsx` (gated by `is_super_admin`, linked from `admin.index.tsx`).
 
-- Extend report extraction (`src/lib/medical-report.server.ts` / report processor) so the AI returns `patient_name` and `patient_dob` (ISO date) alongside the existing fields.
-- Add columns on `report_documents`: `patient_name text`, `patient_dob date`, `identity_status text default 'unverified'` (`'verified' | 'mismatch' | 'unverified' | 'manual_approved'`), `duplicate_of uuid null references report_documents(id)`.
-- After extraction, compare normalized `patient_name` + `patient_dob` against `profiles.full_name` + `profiles.date_of_birth`:
-  - Match → `identity_status = 'verified'`, metrics flow into trends normally.
-  - Mismatch or missing → `identity_status = 'mismatch'`, metrics are stored but **excluded** from `listTrendMetrics` / `getMetricSeries` until the user resolves it.
-- Surface a yellow banner on the report detail page and on `/reports/documents` for any report with `identity_status != 'verified'`, with two actions: "This is me — approve" (sets `manual_approved`) or "Not me — delete".
+- List all rows from `platform_rules` grouped by scope (Platform / Role / User).
+- Each row: `key`, `value` (JSON editor with validation), `enabled` toggle, `description`, scope_value picker (role select or user search when scope ≠ platform).
+- Actions: Add rule, Edit, Enable/Disable, Delete. Save writes through new server fns in `src/lib/platform-rules.functions.ts` (`listRules`, `upsertRule`, `deleteRule`) — all guarded by `requireSupabaseAuth` + `is_super_admin` check.
+- Audit logging: new table `platform_rule_audit` (`id, rule_id, actor_id, action, before jsonb, after jsonb, at`). Every mutation inserts a row. Audit list shown at the bottom of the page (latest 50).
+- Seed known rule keys with friendly labels/descriptions in a small registry (`require_identity_match_for_metrics`, `require_dob_for_metrics`, `dedupe_overlap_threshold`) so admins see them even before first edit.
 
-### Duplicate detection
+DB migration: create `platform_rule_audit` + RLS (super_admin only) + grants.
 
-- After identity check, look for an existing report with the same `(user_id, patient_dob, report_date)` and ≥60% overlap of `(metric_key, value)` pairs. If found, set `duplicate_of` and `identity_status='manual_approved'` is **not** auto-applied — instead show a "Possible duplicate of X" prompt on the document row with "Keep both / Replace older / Delete this".
-- `listTrendMetrics` filters out metrics whose `report_id.duplicate_of IS NOT NULL` so the saturation card stops double-counting.
+## 2. Dropdown + theme color audit
 
-## 2. Dropdown looks wrong (white OS chrome on dark page)
+Sweep every native `<select>` and any hand-rolled menus that still use light-mode defaults; replace with shadcn `Select` (or `DropdownMenu`) using semantic tokens. Files to check based on prior grep:
 
-The Trends sort uses a native `<select>`, which the OS renders with white background and dark text — that's what's in the screenshot.
+- `src/routes/_app/community-new.tsx`, `reports.documents.tsx`, `reports.metrics.tsx`, `reports.new.tsx`, `meds.tsx`, `settings.*.tsx`, `admin.*.tsx`, `journal.new.tsx`, `today.tsx`.
+- Also audit any `bg-white`, `text-black`, `border-gray-*` literals in those files and replace with `bg-card / bg-popover`, `text-foreground / text-muted-foreground`, `border-border`.
+- Add a focused visual pass on the trends page (where the issue was first reported) and admin pages.
 
-- Replace it in `src/components/reports/trends-section.tsx` with the existing shadcn `Select` (`@/components/ui/select`) so it inherits the dark `report-card` styling: dark `#0F1418` bg, white text, hover row in `bg-white/8`, border `white/10`.
-- Sweep `rg "<select"` across the app: only one other native select in `src/routes/_app/community-new.tsx` — convert that one too so the rule holds platform-wide.
+No design changes — token replacement only.
 
-## 3. AI Insights — on-demand, not auto
+## 3. Run AI insights — never a dead end
 
-Today `getMetricInsight` runs in `useQuery` on every detail-page visit, burning credits and showing "Insights unavailable right now" before it resolves or when the user has only 2 readings.
+In `src/routes/_app/reports.trends.$metricKey.tsx`:
 
-- Remove the auto `useQuery` for insights in `src/routes/_app/reports.trends.$metricKey.tsx`.
-- Replace the panel with an empty state: "Get an AI read on your latest %Saturation trend" + **Run AI insights** button.
-- Clicking calls `getMetricInsight` once via `useMutation`. The server fn already considers the full series with the latest reading as anchor — that stays.
-- Cache the result in a new `metric_insights` table keyed by `(user_id, metric_key, latest_at)` so re-opens within the same latest reading don't re-bill. Old readings get no insight UI — only the latest reading shows the button.
-- If credits fail (402) or rate-limited (429), show the actual reason inline instead of the generic "unavailable".
+- If a cached `metric_insights` row exists for `(user_id, metric_key, latest_at)` → render it.
+- Else render an empty state with: short "Why" explainer + **Run AI insights** button (always visible, never the bare "Insights unavailable" text).
+- On error (credits, rate-limit, network), keep the button and show the specific reason inline with a Retry.
+- Remove any path that renders "Insights unavailable right now." without the button.
 
-## 4. Platform rules admin area
+Server fn `getMetricInsight` already returns cached; add `runMetricInsight` mutation that forces a fresh run for the latest reading only and writes to cache.
 
-New super-admin section at `/admin/rules` (gated by existing `has_role(_, 'admin')`).
+## 4. "Why" explainer under AI insights
 
-- New table `platform_rules`: `id`, `scope text` (`'platform' | 'role' | 'user'`), `scope_value text null` (role name or user_id when scoped), `key text`, `value jsonb`, `enabled boolean`, audit cols.
-- Seed it with the first rule the user just asked for: `require_identity_match_for_metrics = true`. The report processor reads this rule before deciding to gate metrics on identity match.
-- Admin UI: list rules grouped by scope, add / edit / toggle. Three scope pickers (Platform-wide / By role / By user), key+value editor with JSON validation.
-- A `usePlatformRule(key, { scope, scopeValue })` server fn resolves rules with precedence user > role > platform.
+Small collapsible block above the Run button:
 
-## Files to touch
+> AI insights look only at your **latest reading** for this metric, plus your profile conditions and reference range. They do not reanalyze older entries — those are already on the chart. Running costs a small amount of AI credits.
 
-**Migrations**
-- `report_documents`: add `patient_name`, `patient_dob`, `identity_status`, `duplicate_of`.
-- New `metric_insights` table (`user_id`, `metric_key`, `latest_at`, payload jsonb).
-- New `platform_rules` table + GRANTs + RLS (admins write, authenticated read where enabled).
-- Seed `require_identity_match_for_metrics=true`.
+Copy lives in a constant so it's easy to tune. Same block shown in cached state (collapsed by default) so users always know the scope.
 
-**Server**
-- `src/lib/medical-report.server.ts` — extract & save identity fields, run identity match + duplicate detection.
-- `src/lib/report-trends.functions.ts` — filter out unverified + duplicate reports; cache AI insights via `metric_insights`.
-- New `src/lib/platform-rules.functions.ts` — get/set/list rules; helper `getRule(key, ctx)`.
+## 5. Duplicate report decision memory
 
-**Client**
-- `src/components/reports/trends-section.tsx` — swap native `<select>` for shadcn `Select`.
-- `src/routes/_app/community-new.tsx` — same swap.
-- `src/routes/_app/reports.trends.$metricKey.tsx` — on-demand "Run AI insights" button, latest-only.
-- `src/routes/_app/reports.documents.tsx` + `reports.$reportId.tsx` — identity / duplicate banners + actions.
-- `src/routes/_app/reports.new.tsx` — show identity check result after upload.
-- New `src/routes/_app/admin.rules.tsx` + small `RulesEditor` component.
+Today duplicates are flagged via `report_documents.duplicate_of` and a banner offers Approve/Delete. Problem: a future re-upload of the same file re-creates the row and re-flags.
 
-No changes to brand, nav order, or metric card layout.
+Changes:
+
+- Add `report_documents.content_hash text` (sha256 of normalized OCR text + report_date + key metrics) and `user_decision text` (`'kept' | 'rejected' | null`) with index on `(user_id, content_hash)`.
+- During upload (`src/lib/reports.functions.ts`):
+  1. Compute `content_hash` after OCR.
+  2. If a prior row with same `(user_id, content_hash)` exists and `user_decision = 'rejected'` → reject upload immediately with a clear message ("You previously rejected this report on <date>.") and do not insert metrics.
+  3. If prior `user_decision = 'kept'` → mark new upload as `duplicate_of` that row automatically, no banner needed.
+  4. Otherwise behave as today (run identity + overlap check, show banner).
+- Banner Approve / Reject buttons set `user_decision` accordingly so the decision sticks.
+- `listTrendMetrics` / `getMetricSeries` already exclude `duplicate_of IS NOT NULL` — no change needed.
+
+DB migration: add the two columns + index.
+
+## Files
+
+**New**
+- `src/routes/_app/admin.rules.tsx`
+- `src/lib/platform-rules.functions.ts`
+- `src/components/admin/rule-editor.tsx`
+- Migration: `platform_rule_audit` table; `report_documents.content_hash`, `user_decision` columns.
+
+**Modified**
+- `src/routes/_app/admin.index.tsx` (link to Rules)
+- `src/routes/_app/reports.trends.$metricKey.tsx` (button always present, Why block)
+- `src/lib/report-trends.functions.ts` (add `runMetricInsight`)
+- `src/lib/reports.functions.ts` (hash + decision-aware upload)
+- `src/routes/_app/reports.$reportId.tsx` (Approve/Reject writes `user_decision`)
+- Dropdown/theme sweep across the files listed in section 2.
+
+## Out of scope
+
+- No changes to the metric card layout, brand, or nav.
+- No new AI providers — still Lovable AI Gateway / Gemini.
+- No retroactive hashing of old reports (hash only set on new uploads; old duplicates still resolvable via the banner).
