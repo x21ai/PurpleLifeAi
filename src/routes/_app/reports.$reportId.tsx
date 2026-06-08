@@ -71,6 +71,7 @@ function ReportDetailPage() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["report", reportId],
     queryFn: () => fetchReport({ data: { id: reportId } }),
+    enabled: UUID_RE.test(reportId ?? ""),
     refetchInterval: (q) => {
       const status = (q.state.data as { report?: { status?: string } } | undefined)?.report?.status;
       return status === "processing" ? 3000 : false;
