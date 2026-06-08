@@ -524,3 +524,39 @@ function FilterRow({
     </div>
   );
 }
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: Array<{ v: string; l: string }>;
+}) {
+  return (
+    <div className="inline-flex items-center gap-2">
+      <span className="text-[11px] uppercase tracking-[0.18em] text-white/45 shrink-0">
+        {label}
+      </span>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="h-8 min-w-[140px] rounded-full bg-white/5 border-white/10 text-white text-xs px-3 hover:bg-white/10 focus:ring-white/20 capitalize">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="bg-[#0F1418] border-white/10 text-white">
+          {options.map((o) => (
+            <SelectItem
+              key={o.v}
+              value={o.v}
+              className="text-white focus:bg-white/10 focus:text-white capitalize"
+            >
+              {o.l}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
