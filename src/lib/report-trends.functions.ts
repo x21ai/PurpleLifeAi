@@ -36,7 +36,7 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
         .select("metric_key, pinned, hidden, sort_order"),
       supabase
         .from("report_documents")
-        .select("id, identity_status, duplicate_of"),
+        .select("id, identity_status, duplicate_of, excluded_from_trends"),
     ]);
     if (mErr) throw new Error(mErr.message);
     if (pErr) throw new Error(pErr.message);
@@ -50,6 +50,7 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
     for (const d of docs ?? []) {
       const status = (d.identity_status as string | null) ?? "unverified";
       if (d.duplicate_of) continue;
+      if (d.excluded_from_trends) continue;
       if (status === "verified" || status === "manual_approved") includedReports.add(d.id as string);
     }
 
