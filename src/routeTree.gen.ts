@@ -66,6 +66,7 @@ import { Route as AppSettingsHowPurpleThinksRouteImport } from './routes/_app/se
 import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
 import { Route as AppReportsNewRouteImport } from './routes/_app/reports.new'
 import { Route as AppReportsMedicalHistoryRouteImport } from './routes/_app/reports.medical-history'
+import { Route as AppReportsDocumentsRouteImport } from './routes/_app/reports.documents'
 import { Route as AppReportsReportIdRouteImport } from './routes/_app/reports.$reportId'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
 import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
@@ -381,6 +382,11 @@ const AppReportsMedicalHistoryRoute =
     path: '/medical-history',
     getParentRoute: () => AppReportsRoute,
   } as any)
+const AppReportsDocumentsRoute = AppReportsDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => AppReportsRoute,
+} as any)
 const AppReportsReportIdRoute = AppReportsReportIdRouteImport.update({
   id: '/$reportId',
   path: '/$reportId',
@@ -590,6 +596,7 @@ export interface FileRoutesByFullPath {
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/reports/$reportId': typeof AppReportsReportIdRoute
+  '/reports/documents': typeof AppReportsDocumentsRoute
   '/reports/medical-history': typeof AppReportsMedicalHistoryRoute
   '/reports/new': typeof AppReportsNewRoute
   '/seizures/new': typeof AppSeizuresNewRoute
@@ -675,6 +682,7 @@ export interface FileRoutesByTo {
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/reports/$reportId': typeof AppReportsReportIdRoute
+  '/reports/documents': typeof AppReportsDocumentsRoute
   '/reports/medical-history': typeof AppReportsMedicalHistoryRoute
   '/reports/new': typeof AppReportsNewRoute
   '/seizures/new': typeof AppSeizuresNewRoute
@@ -763,6 +771,7 @@ export interface FileRoutesById {
   '/_app/journal/new': typeof AppJournalNewRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
   '/_app/reports/$reportId': typeof AppReportsReportIdRoute
+  '/_app/reports/documents': typeof AppReportsDocumentsRoute
   '/_app/reports/medical-history': typeof AppReportsMedicalHistoryRoute
   '/_app/reports/new': typeof AppReportsNewRoute
   '/_app/seizures/new': typeof AppSeizuresNewRoute
@@ -851,6 +860,7 @@ export interface FileRouteTypes {
     | '/journal/new'
     | '/meds/$medId'
     | '/reports/$reportId'
+    | '/reports/documents'
     | '/reports/medical-history'
     | '/reports/new'
     | '/seizures/new'
@@ -936,6 +946,7 @@ export interface FileRouteTypes {
     | '/journal/new'
     | '/meds/$medId'
     | '/reports/$reportId'
+    | '/reports/documents'
     | '/reports/medical-history'
     | '/reports/new'
     | '/seizures/new'
@@ -1023,6 +1034,7 @@ export interface FileRouteTypes {
     | '/_app/journal/new'
     | '/_app/meds/$medId'
     | '/_app/reports/$reportId'
+    | '/_app/reports/documents'
     | '/_app/reports/medical-history'
     | '/_app/reports/new'
     | '/_app/seizures/new'
@@ -1500,6 +1512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReportsMedicalHistoryRouteImport
       parentRoute: typeof AppReportsRoute
     }
+    '/_app/reports/documents': {
+      id: '/_app/reports/documents'
+      path: '/documents'
+      fullPath: '/reports/documents'
+      preLoaderRoute: typeof AppReportsDocumentsRouteImport
+      parentRoute: typeof AppReportsRoute
+    }
     '/_app/reports/$reportId': {
       id: '/_app/reports/$reportId'
       path: '/$reportId'
@@ -1738,6 +1757,7 @@ const AppMedsRouteWithChildren =
 
 interface AppReportsRouteChildren {
   AppReportsReportIdRoute: typeof AppReportsReportIdRoute
+  AppReportsDocumentsRoute: typeof AppReportsDocumentsRoute
   AppReportsMedicalHistoryRoute: typeof AppReportsMedicalHistoryRoute
   AppReportsNewRoute: typeof AppReportsNewRoute
   AppReportsTrendsMetricKeyRoute: typeof AppReportsTrendsMetricKeyRoute
@@ -1745,6 +1765,7 @@ interface AppReportsRouteChildren {
 
 const AppReportsRouteChildren: AppReportsRouteChildren = {
   AppReportsReportIdRoute: AppReportsReportIdRoute,
+  AppReportsDocumentsRoute: AppReportsDocumentsRoute,
   AppReportsMedicalHistoryRoute: AppReportsMedicalHistoryRoute,
   AppReportsNewRoute: AppReportsNewRoute,
   AppReportsTrendsMetricKeyRoute: AppReportsTrendsMetricKeyRoute,
