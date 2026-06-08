@@ -65,6 +65,7 @@ import { Route as AppSettingsSharingRouteImport } from './routes/_app/settings.s
 import { Route as AppSettingsHowPurpleThinksRouteImport } from './routes/_app/settings.how-purple-thinks'
 import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
 import { Route as AppReportsNewRouteImport } from './routes/_app/reports.new'
+import { Route as AppReportsMetricsRouteImport } from './routes/_app/reports.metrics'
 import { Route as AppReportsMedicalHistoryRouteImport } from './routes/_app/reports.medical-history'
 import { Route as AppReportsDocumentsRouteImport } from './routes/_app/reports.documents'
 import { Route as AppReportsReportIdRouteImport } from './routes/_app/reports.$reportId'
@@ -376,6 +377,11 @@ const AppReportsNewRoute = AppReportsNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AppReportsRoute,
 } as any)
+const AppReportsMetricsRoute = AppReportsMetricsRouteImport.update({
+  id: '/metrics',
+  path: '/metrics',
+  getParentRoute: () => AppReportsRoute,
+} as any)
 const AppReportsMedicalHistoryRoute =
   AppReportsMedicalHistoryRouteImport.update({
     id: '/medical-history',
@@ -598,6 +604,7 @@ export interface FileRoutesByFullPath {
   '/reports/$reportId': typeof AppReportsReportIdRoute
   '/reports/documents': typeof AppReportsDocumentsRoute
   '/reports/medical-history': typeof AppReportsMedicalHistoryRoute
+  '/reports/metrics': typeof AppReportsMetricsRoute
   '/reports/new': typeof AppReportsNewRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
@@ -684,6 +691,7 @@ export interface FileRoutesByTo {
   '/reports/$reportId': typeof AppReportsReportIdRoute
   '/reports/documents': typeof AppReportsDocumentsRoute
   '/reports/medical-history': typeof AppReportsMedicalHistoryRoute
+  '/reports/metrics': typeof AppReportsMetricsRoute
   '/reports/new': typeof AppReportsNewRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
@@ -773,6 +781,7 @@ export interface FileRoutesById {
   '/_app/reports/$reportId': typeof AppReportsReportIdRoute
   '/_app/reports/documents': typeof AppReportsDocumentsRoute
   '/_app/reports/medical-history': typeof AppReportsMedicalHistoryRoute
+  '/_app/reports/metrics': typeof AppReportsMetricsRoute
   '/_app/reports/new': typeof AppReportsNewRoute
   '/_app/seizures/new': typeof AppSeizuresNewRoute
   '/_app/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
@@ -862,6 +871,7 @@ export interface FileRouteTypes {
     | '/reports/$reportId'
     | '/reports/documents'
     | '/reports/medical-history'
+    | '/reports/metrics'
     | '/reports/new'
     | '/seizures/new'
     | '/settings/how-purple-thinks'
@@ -948,6 +958,7 @@ export interface FileRouteTypes {
     | '/reports/$reportId'
     | '/reports/documents'
     | '/reports/medical-history'
+    | '/reports/metrics'
     | '/reports/new'
     | '/seizures/new'
     | '/settings/how-purple-thinks'
@@ -1036,6 +1047,7 @@ export interface FileRouteTypes {
     | '/_app/reports/$reportId'
     | '/_app/reports/documents'
     | '/_app/reports/medical-history'
+    | '/_app/reports/metrics'
     | '/_app/reports/new'
     | '/_app/seizures/new'
     | '/_app/settings/how-purple-thinks'
@@ -1505,6 +1517,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReportsNewRouteImport
       parentRoute: typeof AppReportsRoute
     }
+    '/_app/reports/metrics': {
+      id: '/_app/reports/metrics'
+      path: '/metrics'
+      fullPath: '/reports/metrics'
+      preLoaderRoute: typeof AppReportsMetricsRouteImport
+      parentRoute: typeof AppReportsRoute
+    }
     '/_app/reports/medical-history': {
       id: '/_app/reports/medical-history'
       path: '/medical-history'
@@ -1759,6 +1778,7 @@ interface AppReportsRouteChildren {
   AppReportsReportIdRoute: typeof AppReportsReportIdRoute
   AppReportsDocumentsRoute: typeof AppReportsDocumentsRoute
   AppReportsMedicalHistoryRoute: typeof AppReportsMedicalHistoryRoute
+  AppReportsMetricsRoute: typeof AppReportsMetricsRoute
   AppReportsNewRoute: typeof AppReportsNewRoute
   AppReportsTrendsMetricKeyRoute: typeof AppReportsTrendsMetricKeyRoute
 }
@@ -1767,6 +1787,7 @@ const AppReportsRouteChildren: AppReportsRouteChildren = {
   AppReportsReportIdRoute: AppReportsReportIdRoute,
   AppReportsDocumentsRoute: AppReportsDocumentsRoute,
   AppReportsMedicalHistoryRoute: AppReportsMedicalHistoryRoute,
+  AppReportsMetricsRoute: AppReportsMetricsRoute,
   AppReportsNewRoute: AppReportsNewRoute,
   AppReportsTrendsMetricKeyRoute: AppReportsTrendsMetricKeyRoute,
 }
