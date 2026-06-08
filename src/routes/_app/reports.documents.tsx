@@ -388,3 +388,41 @@ function Stat({
     </div>
   );
 }
+
+function FilterRow({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: Array<{ v: string; l: string }>;
+}) {
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-[11px] uppercase tracking-[0.18em] text-white/45 shrink-0">{label}</span>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((o) => {
+          const active = o.v === value;
+          return (
+            <button
+              key={o.v}
+              type="button"
+              onClick={() => onChange(o.v)}
+              className={
+                "rounded-full px-3 py-1 text-xs transition capitalize " +
+                (active
+                  ? "bg-white text-[#07090C]"
+                  : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10")
+              }
+            >
+              {o.l}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
