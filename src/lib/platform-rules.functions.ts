@@ -8,7 +8,7 @@ export const KNOWN_RULE_KEYS: Array<{
   key: string;
   label: string;
   description: string;
-  defaultValue: unknown;
+  defaultValue: string | number | boolean;
 }> = [
   {
     key: "require_identity_match_for_metrics",
