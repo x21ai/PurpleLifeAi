@@ -124,9 +124,9 @@ export const upsertPlatformRule = createServerFn({ method: "POST" })
       key: saved.key,
       actor_id: userId,
       action: before ? "update" : "create",
-      before,
-      after: saved,
-    });
+      before: (before ?? null) as any,
+      after: saved as any,
+    } as any);
 
     return { rule: saved };
   });
@@ -152,9 +152,9 @@ export const deletePlatformRule = createServerFn({ method: "POST" })
         key: before.key,
         actor_id: userId,
         action: "delete",
-        before,
+        before: before as any,
         after: null,
-      });
+      } as any);
     }
     return { ok: true };
   });
