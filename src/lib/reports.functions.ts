@@ -391,3 +391,22 @@ export const deleteReport = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+/** Short-lived signed URL for the uploaded report file (PDF/image/text). */
+export const getReportFileUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: doc, error } = await supabase
+      .from("report_documents")
+      .select("file_path, file_mime, title")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error || !doc) throw new Error("Report not found");
+    const { data: signed, error: sErr } = await supabase.storage
+      .from("reports")
+      .createSignedUrl(doc.file_path, 300);
+    if (sErr || !signed?.signedUrl) throw new Error("Could not sign URL");
+    return { url: signed.signedUrl, mime: doc.file_mime, title: doc.title };
+  });
