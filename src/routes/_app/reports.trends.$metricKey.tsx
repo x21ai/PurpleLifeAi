@@ -18,6 +18,7 @@ import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { MetricShell, MetricTitle, MetricStatCards, AskPurpleRail } from "@/components/reports/metric-shell";
 import { downloadMetricCsv, shareMetric } from "@/lib/metric-export";
+import { resolveMetricLabel } from "@/lib/metric-naming";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/reports/trends/$metricKey")({
@@ -70,7 +71,8 @@ function downloadRowsCsv(filename: string, rows: Row[]) {
 }
 
 function TrendDetailPage() {
-  useRouteTheme("light");
+  // Match the Trends grid (dark) so theme is consistent across the section.
+  useRouteTheme("dark");
   const { metricKey } = Route.useParams();
   const fetchSeries = useServerFn(getMetricSeries);
   const fetchInsight = useServerFn(getMetricInsight);
@@ -96,8 +98,8 @@ function TrendDetailPage() {
   const insightRunning = runInsight.isPending;
 
   const rows = (data?.rows ?? []) as Row[];
-  const label =
-    rows[0]?.display_name ?? metricKey.replace(/_/g, " ");
+  const pdfWording = rows[rows.length - 1]?.display_name ?? rows[0]?.display_name ?? null;
+  const { primary: label, asPrinted } = resolveMetricLabel(metricKey, pdfWording);
   const unit = rows[rows.length - 1]?.unit ?? null;
   const refLow = rows[rows.length - 1]?.reference_low ?? null;
   const refHigh = rows[rows.length - 1]?.reference_high ?? null;
