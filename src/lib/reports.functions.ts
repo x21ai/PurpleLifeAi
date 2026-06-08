@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callAIForUser, tryParseJson } from "./ai-provider.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createHash } from "crypto";
 
 const ProcessInput = z.object({
   reportId: z.string().uuid(),
@@ -76,13 +77,18 @@ export const setReportIdentityDecision = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     if (data.decision === "reject") {
+      // Remember the rejection so future re-uploads of the same content are blocked.
+      await supabase
+        .from("report_documents")
+        .update({ user_decision: "rejected" })
+        .eq("id", data.reportId);
       const { error } = await supabase.from("report_documents").delete().eq("id", data.reportId);
       if (error) throw new Error(error.message);
       return { ok: true, deleted: true };
     }
     const { error } = await supabase
       .from("report_documents")
-      .update({ identity_status: "manual_approved" })
+      .update({ identity_status: "manual_approved", user_decision: "kept" })
       .eq("id", data.reportId);
     if (error) throw new Error(error.message);
     return { ok: true, deleted: false };
