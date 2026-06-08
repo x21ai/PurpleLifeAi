@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
 export function ReportsTabs() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const tabs: Array<{ to: "/reports/documents" | "/reports/metrics"; label: string }> = [
-    { to: "/reports/documents", label: "Reports" },
     { to: "/reports/metrics", label: "Metrics" },
+    { to: "/reports/documents", label: "Reports" },
   ];
   return (
     <div className="mb-6 inline-flex rounded-full border border-white/10 bg-white/[0.04] p-1 text-sm">
