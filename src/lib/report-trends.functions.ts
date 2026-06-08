@@ -90,6 +90,34 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
     }
 
     // Only metrics with ≥2 data points get a trend row; everyone else stays on detail pages.
+    // Defensive dedupe: collapse same-day points within a metric by averaging.
+    // Prevents future double-uploads from producing doubled dots even if duplicate_of
+    // is not yet set on the report_document.
+    for (const row of byKey.values()) {
+      const byDay = new Map<string, { sum: number; n: number; at: string }>();
+      const nonNumeric: Array<{ at: string; value: number | null }> = [];
+      for (const p of row.series) {
+        if (p.value == null) {
+          nonNumeric.push(p);
+          continue;
+        }
+        const day = p.at.slice(0, 10);
+        const cur = byDay.get(day);
+        if (cur) {
+          cur.sum += p.value;
+          cur.n += 1;
+          if (p.at > cur.at) cur.at = p.at;
+        } else {
+          byDay.set(day, { sum: p.value, n: 1, at: p.at });
+        }
+      }
+      const collapsed = Array.from(byDay.values()).map((b) => ({
+        at: b.at,
+        value: b.sum / b.n,
+      }));
+      row.series = [...collapsed, ...nonNumeric].sort((a, b) => (a.at < b.at ? -1 : 1));
+      row.count = row.series.length;
+    }
     const list = Array.from(byKey.values()).filter((r) => r.count >= 2);
     list.sort((a, b) => {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
