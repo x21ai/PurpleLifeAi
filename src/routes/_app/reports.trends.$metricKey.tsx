@@ -12,11 +12,13 @@ import {
   ResponsiveContainer,
   ReferenceArea,
 } from "recharts";
-import { Download, Loader2 } from "lucide-react";
-import { getMetricSeries } from "@/lib/report-trends.functions";
+import { Download, Loader2, Share2, Sparkles } from "lucide-react";
+import { getMetricSeries, getMetricInsight } from "@/lib/report-trends.functions";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { MetricShell, MetricTitle, MetricStatCards, AskPurpleRail } from "@/components/reports/metric-shell";
+import { downloadMetricCsv, shareMetric } from "@/lib/metric-export";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/reports/trends/$metricKey")({
   head: ({ params }) => ({
@@ -53,34 +55,25 @@ const RANGES: Array<{ label: string; days: number | undefined }> = [
   { label: "All", days: undefined },
 ];
 
-function downloadCsv(filename: string, rows: Row[]) {
-  const header = ["date", "value", "value_text", "unit", "flag", "report"];
-  const lines = [header.join(",")];
-  for (const r of rows) {
-    const date = (r.measured_at ?? r.created_at).slice(0, 10);
-    const cells = [
-      date,
-      r.value ?? "",
-      JSON.stringify(r.value_text ?? ""),
-      r.unit ?? "",
-      r.flag ?? "",
-      JSON.stringify(r.report_documents?.title ?? ""),
-    ];
-    lines.push(cells.join(","));
-  }
-  const blob = new Blob([lines.join("\n")], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+function downloadRowsCsv(filename: string, rows: Row[]) {
+  downloadMetricCsv(
+    filename,
+    rows.map((r) => ({
+      at: r.measured_at ?? r.created_at,
+      value: r.value,
+      value_text: r.value_text,
+      unit: r.unit,
+      flag: r.flag,
+      report: r.report_documents?.title ?? null,
+    })),
+  );
 }
 
 function TrendDetailPage() {
   useRouteTheme("light");
   const { metricKey } = Route.useParams();
   const fetchSeries = useServerFn(getMetricSeries);
+  const fetchInsight = useServerFn(getMetricInsight);
   const [rangeIdx, setRangeIdx] = React.useState(2);
   const days = RANGES[rangeIdx].days;
   const navigate = useNavigate();
@@ -88,6 +81,12 @@ function TrendDetailPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["metric-series", metricKey, days],
     queryFn: () => fetchSeries({ data: { metricKey, days } }),
+  });
+
+  const { data: insight, isLoading: insightLoading } = useQuery({
+    queryKey: ["metric-insight", metricKey],
+    queryFn: () => fetchInsight({ data: { metricKey } }),
+    staleTime: 5 * 60 * 1000,
   });
 
   const rows = (data?.rows ?? []) as Row[];
@@ -126,6 +125,38 @@ function TrendDetailPage() {
         }}
       />
 
+      <section className="metric-sheet mt-4 p-5 sm:p-6">
+        <div className="flex items-center gap-2 text-foreground/70">
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--purple-soft)] text-[color:var(--purple-primary)]">
+            <Sparkles className="h-3.5 w-3.5" />
+          </span>
+          <h2 className="font-serif text-xl text-foreground">AI insights</h2>
+        </div>
+        {insightLoading ? (
+          <div className="mt-3 flex items-center gap-2 text-sm text-foreground/55">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Reading your trend…
+          </div>
+        ) : insight?.summary ? (
+          <>
+            <p className="mt-3 text-[15px] leading-relaxed text-foreground/85">{insight.summary}</p>
+            {insight.bullets && insight.bullets.length > 0 && (
+              <ul className="mt-3 space-y-1.5">
+                {insight.bullets.map((b, i) => (
+                  <li key={i} className="flex gap-2 text-sm text-foreground/75">
+                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-foreground/40" />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <p className="mt-3 text-sm text-foreground/55">
+            {insight?.error ? "Insights unavailable right now." : "Not enough data yet for insights."}
+          </p>
+        )}
+      </section>
+
       <MetricStatCards
         latest={{
           value: latest?.value != null ? latest.value : (latest?.value_text ?? "—"),
@@ -159,11 +190,27 @@ function TrendDetailPage() {
           </div>
           <button
             type="button"
-            onClick={() => downloadCsv(`${metricKey}.csv`, rows)}
+            onClick={() => downloadRowsCsv(`${metricKey}.csv`, rows)}
             disabled={rows.length === 0}
             className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-white px-3 py-1.5 text-xs text-foreground shadow-sm hover:bg-secondary/40 disabled:opacity-50"
           >
             <Download className="h-3 w-3" /> CSV
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              const status = await shareMetric({
+                title: `Purple · ${label}`,
+                text: `${label} — ${rows.length} readings${
+                  latest?.value != null ? `, latest ${latest.value}${unit ? ` ${unit}` : ""}` : ""
+                }`,
+              });
+              if (status === "copied") toast.success("Link copied to clipboard");
+              else if (status === "failed") toast.error("Couldn't share");
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-white px-3 py-1.5 text-xs text-foreground shadow-sm hover:bg-secondary/40"
+          >
+            <Share2 className="h-3 w-3" /> Share
           </button>
         </div>
       </div>
@@ -280,11 +327,15 @@ function TrendDetailPage() {
       </section>
 
       <AskPurpleRail
-        prompts={[
-          `How has my ${label.toLowerCase()} been trending?`,
-          `What was happening on days my ${label.toLowerCase()} changed most?`,
-          `What does the research say about ${label.toLowerCase()}?`,
-        ]}
+        prompts={
+          insight?.suggestedQuestions && insight.suggestedQuestions.length > 0
+            ? insight.suggestedQuestions
+            : [
+                `How has my ${label.toLowerCase()} been trending?`,
+                `What was happening on days my ${label.toLowerCase()} changed most?`,
+                `What does the research say about ${label.toLowerCase()}?`,
+              ]
+        }
         onPick={(q) => navigate({ to: "/chat", search: { q } })}
       />
     </MetricShell>
