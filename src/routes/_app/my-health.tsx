@@ -129,6 +129,32 @@ function MyHealthPage() {
         </div>
       </section>
 
+      {/* Your conditions — deep-link into each one */}
+      {userConditions.length > 0 && (
+        <section className="mt-16">
+          <p className="label-eyebrow text-muted-foreground">Your conditions</p>
+          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+            {userConditions.map((c) => (
+              <li key={c.slug}>
+                <Link
+                  to="/condition/$slug"
+                  params={{ slug: c.slug }}
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 hover:bg-secondary/40 transition"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{c.label}</p>
+                    <p className="mt-0.5 text-[11px] uppercase tracking-wider text-muted-foreground">
+                      {c.category.replace(/_/g, " ")}
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <p className="mt-12 text-[11px] text-muted-foreground/60 text-center">
         <Link to="/today" className="hover:text-foreground">Back to today</Link>
       </p>
