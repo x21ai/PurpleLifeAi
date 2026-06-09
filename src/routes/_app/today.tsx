@@ -73,6 +73,9 @@ function TodayPage() {
   const flags = useFeatureFlags();
   const showHydration = flags.enabled("hydration");
   const showAura = flags.enabled("aura");
+  const careProfile = useCareProfile();
+  const carePrompts = careProfile?.journalPrompts ?? null;
+  const careGreeting = careProfile?.todayGreeting ?? null;
 
   const [now, setNow] = useState<Date | null>(null);
   const [bio, setBio] = useState<Bio | null>(null);
