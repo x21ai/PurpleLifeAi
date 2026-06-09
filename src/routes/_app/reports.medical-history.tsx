@@ -272,7 +272,7 @@ function MedicalHistoryPage() {
           <Textarea
             rows={2}
             value={schRecipients}
-            placeholder="dr.smith@clinic.org, you@example.com" // live-data-guard:allow
+            placeholder={"dr.smith@clinic.org, you@example.com" /* live-data-guard:allow */}
             onChange={(e) => setSchRecipients(e.target.value)}
           />
         </div>

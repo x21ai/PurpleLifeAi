@@ -50,8 +50,8 @@ export function parseDnaText(text: string): ParseResult {
       if (!rsid || !CURATED_RSID_SET.has(rsid) || seen.has(rsid)) continue;
       const ref = cols[3];
       const alt = cols[4];
-      const sample = sampleColIdx >= 0 ? cols[sampleColIdx] : undefined;
-      const gt = sample?.split(":")[0] ?? "";
+      const genoCol = genoColIdx >= 0 ? cols[genoColIdx] : undefined;
+      const gt = genoCol?.split(":")[0] ?? "";
       let genotype = "";
       for (const a of gt.split(/[\/|]/)) {
         if (a === "0") genotype += ref;
