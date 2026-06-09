@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { acceptFriendInvite } from "@/lib/friendships.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { Link } from "@tanstack/react-router";
 
 const searchSchema = z.object({
   token: z.string().min(20).max(128).optional(),
@@ -79,6 +80,13 @@ function AcceptFriendPage() {
         {state === "error" && (
           <p className="mt-6 text-sm text-destructive">{message}</p>
         )}
+        <p className="mt-8 text-xs text-muted-foreground">
+          Got a code instead of a link?{" "}
+          <Link to="/friend/join" className="underline">
+            Enter a code
+          </Link>
+          .
+        </p>
       </div>
     </div>
   );
