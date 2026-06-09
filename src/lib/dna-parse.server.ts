@@ -34,14 +34,14 @@ export function parseDnaText(text: string): ParseResult {
 
   // VCF needs a different shape entirely.
   if (provider === "vcf") {
-    let sampleColIdx = -1;
+    let genoColIdx = -1;
     let formatColIdx = -1;
     for (const line of lines) {
       if (!line || line.startsWith("##")) continue;
       if (line.startsWith("#CHROM")) {
         const cols = line.split("\t");
         formatColIdx = cols.indexOf("FORMAT");
-        sampleColIdx = formatColIdx + 1;
+        genoColIdx = formatColIdx + 1;
         continue;
       }
       const cols = line.split("\t");
