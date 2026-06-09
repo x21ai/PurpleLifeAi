@@ -48,8 +48,8 @@ export function CalmHero({
     variant === "split"
       ? "h-[42vh] sm:h-[52vh] lg:h-screen lg:sticky lg:top-0"
       : variant === "band"
-        ? "h-[60vh] min-h-[420px]"
-        : "h-[88vh] min-h-[560px] max-h-[920px]";
+        ? "h-[clamp(360px,52vh,560px)]"
+        : "h-[clamp(520px,78vh,820px)]";
 
   // Overlay: "fade" keeps the photo visible and fades to background so type sits on the page color.
   // "dim" tints the photo so light type reads anywhere.
@@ -193,7 +193,7 @@ export function HumanMoment({
       <section
         data-reveal
         className={cn(
-          "relative overflow-hidden h-[70vh] min-h-[480px] max-h-[820px]",
+        "relative mx-auto max-w-6xl my-12 sm:my-16 overflow-hidden rounded-3xl h-[clamp(360px,55vh,520px)] sm:h-[clamp(420px,58vh,600px)]",
           className,
         )}
       >
@@ -226,13 +226,18 @@ export function HumanMoment({
     );
   }
   return (
-    <section data-reveal className={cn("mx-auto max-w-6xl px-6 sm:px-10 py-24 sm:py-32", className)}>
+    <section data-reveal className={cn("mx-auto max-w-6xl px-6 sm:px-10 py-16 sm:py-24 lg:py-28", className)}>
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
-        <div className={cn("relative overflow-hidden rounded-3xl aspect-[4/5]", reverse && "lg:order-2")}>
+        <div
+          className={cn(
+            "relative overflow-hidden rounded-3xl aspect-[4/5] max-w-[420px] w-full mx-auto lg:max-w-none lg:mx-0 lg:aspect-[3/4]",
+            reverse && "lg:order-2",
+          )}
+        >
           <ResponsiveImage
             asset={image}
             alt={alt}
-            sizes="(min-width: 1024px) 50vw, 100vw"
+            sizes="(min-width: 1024px) 560px, (min-width: 640px) 420px, 88vw"
             className="absolute inset-0 h-full w-full object-cover"
           />
         </div>
