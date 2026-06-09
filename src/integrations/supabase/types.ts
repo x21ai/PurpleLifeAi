@@ -1234,6 +1234,7 @@ export type Database = {
           invite_token: string | null
           note_a: string | null
           note_b: string | null
+          refer_code: string | null
           requested_by: string
           status: string
           updated_at: string
@@ -1248,6 +1249,7 @@ export type Database = {
           invite_token?: string | null
           note_a?: string | null
           note_b?: string | null
+          refer_code?: string | null
           requested_by: string
           status?: string
           updated_at?: string
@@ -1262,6 +1264,7 @@ export type Database = {
           invite_token?: string | null
           note_a?: string | null
           note_b?: string | null
+          refer_code?: string | null
           requested_by?: string
           status?: string
           updated_at?: string
