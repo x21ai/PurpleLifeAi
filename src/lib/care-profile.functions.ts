@@ -24,6 +24,7 @@ import {
  */
 
 const STALE_MS = 30 * 24 * 3600 * 1000;
+const FORCE_DEDUPE_MS = 30 * 1000; // coalesce burst regenerations within 30s
 
 const CareProfileSchema = z.object({
   todayGreeting: z.string().min(4).max(140),
@@ -185,6 +186,21 @@ export const generateCareProfile = createServerFn({ method: "POST" })
       row.care_profile_conditions_hash === hash &&
       Date.now() - generatedAt < STALE_MS;
     if (!data.force && fresh) {
+      return {
+        profile: row.ai_care_profile as CareProfile,
+        cached: true as const,
+      };
+    }
+
+    // Force-dedupe: even when force=true (onboarding, condition pick, DNA parse,
+    // etc. can all fire close together), don't re-run the AI call if one ran
+    // for the same conditions hash within FORCE_DEDUPE_MS.
+    if (
+      data.force &&
+      row?.ai_care_profile &&
+      row.care_profile_conditions_hash === hash &&
+      Date.now() - generatedAt < FORCE_DEDUPE_MS
+    ) {
       return {
         profile: row.ai_care_profile as CareProfile,
         cached: true as const,
