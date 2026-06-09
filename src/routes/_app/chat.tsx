@@ -12,6 +12,7 @@ import { useRouteTheme } from "@/lib/use-route-theme";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { getSuggestedQuestions, getFollowUps } from "@/lib/condition-prompts";
+import { useCareProfile } from "@/hooks/use-care-profile";
 import { DisclaimerFooter } from "@/components/chat/disclaimer-footer";
 import { FollowUpChips } from "@/components/chat/follow-up-chips";
 import { useVoiceCapture } from "@/components/journal/use-voice-capture";
@@ -53,10 +54,13 @@ function AskPage() {
       .maybeSingle()
       .then(({ data }) => setConditions(data?.conditions ?? []));
   }, [userId]);
-  const suggestions = React.useMemo(
-    () => getSuggestedQuestions(conditions),
-    [conditions],
-  );
+  const careProfile = useCareProfile();
+  const suggestions = React.useMemo(() => {
+    if (careProfile?.askPurpleStarters && careProfile.askPurpleStarters.length > 0) {
+      return careProfile.askPurpleStarters;
+    }
+    return getSuggestedQuestions(conditions);
+  }, [conditions, careProfile]);
   const [input, setInput] = React.useState("");
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
