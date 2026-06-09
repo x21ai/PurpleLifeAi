@@ -222,6 +222,7 @@ export const listMyCircle = createServerFn({ method: "GET" })
         iInvited: r.requested_by === userId,
         invite_email: r.invite_email,
         invite_token: r.invite_token,
+        refer_code: (r as any).refer_code ?? null,
         displayName,
         otherId,
         myNote: myNote ?? null,
