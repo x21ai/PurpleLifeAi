@@ -52,7 +52,7 @@ export const Route = createFileRoute("/api/public/cron/oura-sync-all")({
         } catch (e) {
           console.error("oura cron failed:", e);
           return new Response(
-            JSON.stringify({ error: String(e) }),
+            JSON.stringify({ error: "Internal server error" }),
             { status: 502, headers: { "Content-Type": "application/json" } },
           );
         }

@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/public/cron/whoop-sync-all")({
         } catch (e) {
           console.error("whoop cron failed:", e);
           return new Response(
-            JSON.stringify({ error: String(e) }),
+            JSON.stringify({ error: "Internal server error" }),
             { status: 502, headers: { "Content-Type": "application/json" } },
           );
         }

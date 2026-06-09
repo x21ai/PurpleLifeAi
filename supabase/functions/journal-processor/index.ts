@@ -120,9 +120,42 @@ function photoMime(e: string) {
 }
 
 async function fetchBytes(url: string): Promise<Uint8Array> {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`fetch ${url} -> ${r.status}`);
-  return new Uint8Array(await r.arrayBuffer());
+  if (!isAllowedStorageUrl(url)) {
+    throw new Error("disallowed media url");
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
+  try {
+    const r = await fetch(url, { signal: controller.signal });
+    if (!r.ok) throw new Error(`fetch failed: ${r.status}`);
+    const buf = await r.arrayBuffer();
+    if (buf.byteLength > 50 * 1024 * 1024) {
+      throw new Error("media too large");
+    }
+    return new Uint8Array(buf);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function isAllowedStorageUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== "https:") return false;
+    let supabaseHost: string | null = null;
+    try {
+      supabaseHost = new URL(SUPABASE_URL).hostname;
+    } catch {
+      supabaseHost = null;
+    }
+    const hostOk =
+      (supabaseHost && u.hostname === supabaseHost) ||
+      u.hostname.endsWith(".supabase.co") ||
+      u.hostname.endsWith(".supabase.in");
+    return hostOk && u.pathname.includes("/storage/v1/");
+  } catch {
+    return false;
+  }
 }
 
 function toBase64(bytes: Uint8Array): string {

@@ -85,7 +85,7 @@ export const Route = createFileRoute("/api/chat")({
         } catch (e) {
           console.error("[/api/chat] error", e);
           return new Response(
-            JSON.stringify({ error: e instanceof Error ? e.message : "unknown" }),
+            JSON.stringify({ error: "Internal server error" }),
             { status: 500, headers: { "Content-Type": "application/json" } },
           );
         }
