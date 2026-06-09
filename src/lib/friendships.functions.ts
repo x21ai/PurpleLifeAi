@@ -3,12 +3,14 @@ import { z } from "zod";
 import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { sendTransactionalEmail } from "./email/send";
 
 /**
  * Friends (Circle): zero-data social connections.
  * Separate from caregivers. A friend cannot see ANY of the other user's data.
  * Friendship rows just record the link so both sides know who's in their circle.
+ *
+ * Purple never sends friend invites itself. The inviter shares the link or
+ * a short refer code from their own iMessage / WhatsApp / email / etc.
  */
 
 function newInviteToken(): string {
@@ -20,45 +22,66 @@ function newInviteToken(): string {
 
 const emailSchema = z.string().trim().toLowerCase().email().max(255);
 
+// Unambiguous alphabet (no 0/O/1/I/L) for refer codes.
+const REFER_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+function newReferCode(): string {
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  const chars = Array.from(bytes, (b) => REFER_ALPHABET[b % REFER_ALPHABET.length]);
+  return chars.slice(0, 4).join("") + "-" + chars.slice(4).join("");
+}
+
+function normalizeReferCode(input: string): string {
+  const cleaned = input.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (cleaned.length !== 8) return cleaned;
+  return cleaned.slice(0, 4) + "-" + cleaned.slice(4);
+}
+
 /* ---------------------------- Invite ---------------------------- */
 
 export const inviteFriend = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { email: string; note?: string | null }) =>
+  .inputValidator((input: { email?: string | null; note?: string | null }) =>
     z
       .object({
-        email: emailSchema,
+        email: emailSchema.optional().nullable(),
         note: z.string().trim().min(1).max(60).optional().nullable(),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { userId, supabase } = context;
-
-    // Self-invite guard
-    const { data: me } = await supabase
-      .from("profiles")
-      .select("first_name, last_name")
-      .eq("id", userId)
-      .maybeSingle();
+    const { userId } = context;
 
     const invite_token = newInviteToken();
 
-    // user_a = current user; user_b stays null until accept (canonicalized then).
-    const { data: row, error } = await supabaseAdmin
-      .from("friendships")
-      .insert({
-        user_a: userId,
-        user_b: null,
-        requested_by: userId,
-        status: "pending",
-        invite_email: data.email,
-        invite_token,
-        note_a: data.note ?? null,
-      })
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
+    // Retry refer-code generation on the very unlikely unique collision.
+    let row: any = null;
+    let lastErr: any = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const refer_code = newReferCode();
+      const { data: inserted, error } = await supabaseAdmin
+        .from("friendships")
+        .insert({
+          user_a: userId,
+          user_b: null,
+          requested_by: userId,
+          status: "pending",
+          invite_email: data.email ?? null,
+          invite_token,
+          refer_code,
+          note_a: data.note ?? null,
+        })
+        .select()
+        .single();
+      if (!error) {
+        row = inserted;
+        break;
+      }
+      lastErr = error;
+      // 23505 = unique violation; retry if it's the refer_code index
+      if (error.code !== "23505") throw new Error(error.message);
+    }
+    if (!row) throw new Error(lastErr?.message ?? "Couldn't create invite.");
 
     const req = getRequest();
     const origin =
@@ -66,27 +89,12 @@ export const inviteFriend = createServerFn({ method: "POST" })
       (req ? new URL(req.url).origin : "https://purplelife.org");
     const acceptUrl = `${origin}/friend/accept?token=${invite_token}`;
 
-    let emailSent = false;
-    try {
-      const inviterName = [me?.first_name, me?.last_name]
-        .filter(Boolean)
-        .join(" ")
-        .trim();
-      const result = await sendTransactionalEmail({
-        templateName: "friend-invite",
-        recipientEmail: data.email,
-        idempotencyKey: `friend-invite-${row.id}`,
-        templateData: {
-          inviterName: inviterName || undefined,
-          acceptUrl,
-        },
-      });
-      emailSent = !!result?.ok;
-    } catch (err) {
-      console.warn("friend-invite email failed (link still available in UI)", err);
-    }
-
-    return { friendship: row, invite_token, acceptUrl, emailSent };
+    return {
+      friendship: row,
+      invite_token,
+      refer_code: row.refer_code as string,
+      acceptUrl,
+    };
   });
 
 /* ---------------------------- Accept ---------------------------- */
@@ -106,6 +114,31 @@ export const acceptFriendInvite = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) throw new Error("This invite link is invalid or has already been used.");
+    return acceptPendingRow(row, userId);
+  });
+
+export const acceptFriendByCode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { code: string }) =>
+    z.object({ code: z.string().trim().min(4).max(32) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const normalized = normalizeReferCode(data.code);
+    const { data: row, error } = await supabaseAdmin
+      .from("friendships")
+      .select("*")
+      .eq("refer_code", normalized)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("That code doesn't match an active invite.");
+    return acceptPendingRow(row, userId);
+  });
+
+async function acceptPendingRow(
+  row: { id: string; status: string; user_a: string },
+  userId: string,
+) {
     if (row.status !== "pending") {
       throw new Error("This invite has already been accepted or revoked.");
     }
@@ -135,12 +168,13 @@ export const acceptFriendInvite = createServerFn({ method: "POST" })
         status: "active",
         accepted_at: new Date().toISOString(),
         invite_token: null,
+        refer_code: null,
       })
       .eq("id", row.id);
     if (upErr) throw new Error(upErr.message);
 
     return { ok: true, friendshipId: row.id, alreadyLinked: false as const };
-  });
+}
 
 /* ---------------------------- List ---------------------------- */
 
