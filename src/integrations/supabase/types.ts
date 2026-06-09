@@ -962,6 +962,92 @@ export type Database = {
           },
         ]
       }
+      dna_files: {
+        Row: {
+          byte_size: number
+          created_at: string
+          error_message: string | null
+          id: string
+          original_filename: string
+          parsed_at: string | null
+          provider: string
+          share_with_caregivers: boolean
+          status: string
+          storage_path: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          byte_size?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          original_filename: string
+          parsed_at?: string | null
+          provider?: string
+          share_with_caregivers?: boolean
+          status?: string
+          storage_path: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          byte_size?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          original_filename?: string
+          parsed_at?: string | null
+          provider?: string
+          share_with_caregivers?: boolean
+          status?: string
+          storage_path?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dna_variants: {
+        Row: {
+          chromosome: string | null
+          created_at: string
+          file_id: string
+          genotype: string
+          id: string
+          position: number | null
+          rsid: string
+          user_id: string
+        }
+        Insert: {
+          chromosome?: string | null
+          created_at?: string
+          file_id: string
+          genotype: string
+          id?: string
+          position?: number | null
+          rsid: string
+          user_id: string
+        }
+        Update: {
+          chromosome?: string | null
+          created_at?: string
+          file_id?: string
+          genotype?: string
+          id?: string
+          position?: number | null
+          rsid?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dna_variants_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "dna_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string
