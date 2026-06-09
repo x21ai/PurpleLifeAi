@@ -229,7 +229,7 @@ export const readConditionPage = createServerFn({ method: "POST" })
     const def = getCondition(data.slug);
     if (!def) {
       // Unknown slug — keep API stable and let UI render a "not in catalog" state.
-      return { def: null as const, hasIt: false, profile: null as CareProfile | null };
+      return { def: null, hasIt: false, profile: null as CareProfile | null };
     }
     const { data: row } = await supabase
       .from("profiles")
