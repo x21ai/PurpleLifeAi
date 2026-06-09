@@ -821,6 +821,60 @@ export type Database = {
         }
         Relationships: []
       }
+      condition_catalog: {
+        Row: {
+          aka: string[]
+          category: string
+          common_meds: string[]
+          common_symptoms: string[]
+          created_at: string
+          disclaimer_tier: string
+          key_metrics: string[]
+          label: string
+          monitoring_cadence: string
+          red_flags: string[]
+          short_label: string
+          slug: string
+          sort_order: number
+          traits: string[]
+          updated_at: string
+        }
+        Insert: {
+          aka?: string[]
+          category: string
+          common_meds?: string[]
+          common_symptoms?: string[]
+          created_at?: string
+          disclaimer_tier?: string
+          key_metrics?: string[]
+          label: string
+          monitoring_cadence?: string
+          red_flags?: string[]
+          short_label: string
+          slug: string
+          sort_order?: number
+          traits?: string[]
+          updated_at?: string
+        }
+        Update: {
+          aka?: string[]
+          category?: string
+          common_meds?: string[]
+          common_symptoms?: string[]
+          created_at?: string
+          disclaimer_tier?: string
+          key_metrics?: string[]
+          label?: string
+          monitoring_cadence?: string
+          red_flags?: string[]
+          short_label?: string
+          slug?: string
+          sort_order?: number
+          traits?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contact_messages: {
         Row: {
           created_at: string
@@ -1868,12 +1922,15 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_care_profile: Json | null
           ai_model_preference: string
           ai_provider: string
           avatar_path: string | null
           biometrics_order: Json
           biometrics_pinned: string[]
           care_daily_digest_enabled: boolean
+          care_profile_conditions_hash: string | null
+          care_profile_generated_at: string | null
           caregiver_emails: string[]
           community_bio: string | null
           community_display_name: string | null
@@ -1916,12 +1973,15 @@ export type Database = {
           weekly_digest_enabled: boolean
         }
         Insert: {
+          ai_care_profile?: Json | null
           ai_model_preference?: string
           ai_provider?: string
           avatar_path?: string | null
           biometrics_order?: Json
           biometrics_pinned?: string[]
           care_daily_digest_enabled?: boolean
+          care_profile_conditions_hash?: string | null
+          care_profile_generated_at?: string | null
           caregiver_emails?: string[]
           community_bio?: string | null
           community_display_name?: string | null
@@ -1964,12 +2024,15 @@ export type Database = {
           weekly_digest_enabled?: boolean
         }
         Update: {
+          ai_care_profile?: Json | null
           ai_model_preference?: string
           ai_provider?: string
           avatar_path?: string | null
           biometrics_order?: Json
           biometrics_pinned?: string[]
           care_daily_digest_enabled?: boolean
+          care_profile_conditions_hash?: string | null
+          care_profile_generated_at?: string | null
           caregiver_emails?: string[]
           community_bio?: string | null
           community_display_name?: string | null
