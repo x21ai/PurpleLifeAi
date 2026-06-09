@@ -20,8 +20,6 @@ import {
   TrendingDown,
   Minus,
   GripVertical,
-  Download,
-  Share2,
 } from "lucide-react";
 import {
   DndContext,
@@ -44,9 +42,12 @@ import {
   reorderMetrics,
   type TrendMetricRow,
 } from "@/lib/report-trends.functions";
-import { downloadMetricCsv, shareMetric } from "@/lib/metric-export";
-import { resolveMetricLabel } from "@/lib/metric-naming";
-import { toast } from "sonner";
+import {
+  resolveMetricLabel,
+  getMetricCategory,
+  METRIC_CATEGORY_ORDER,
+  type MetricCategory,
+} from "@/lib/metric-naming";
 import {
   Select,
   SelectTrigger,
@@ -66,7 +67,19 @@ function flagStroke(flag: string | null) {
   if (flag === "high") return "#FFA8BD";
   if (flag === "low") return "#F3D58B";
   if (flag === "normal") return "#5CE0AC";
-  return "#9AA3AC";
+  // Calmer neutral for unflagged metrics so the page isn't a wall of mint.
+  return "rgba(255,255,255,0.55)";
+}
+
+/** Compact axis ticks: 4200 → "4.2k", 850 → "850". */
+function compactTick(v: number): string {
+  const abs = Math.abs(v);
+  if (abs >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+  if (abs >= 10_000) return `${Math.round(v / 1000)}k`;
+  if (abs >= 1_000) return `${(v / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+  if (abs >= 100) return `${Math.round(v)}`;
+  if (abs >= 10) return v.toFixed(0);
+  return v.toFixed(abs < 1 ? 2 : 1);
 }
 
 function formatDate(iso: string | null): string {
@@ -146,38 +159,12 @@ function MetricCard({
     return { label: `${m.count} readings`, cls: "bg-white/8 text-white/70 border-white/15" };
   })();
 
-  async function handleDownload(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    const rows = m.series.map((p) => ({
-      at: p.at,
-      value: p.value,
-      unit: m.unit,
-      report: null,
-    }));
-    downloadMetricCsv(`${m.metric_key}.csv`, rows);
-  }
-
-  async function handleShare(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    const url = typeof window !== "undefined"
-      ? `${window.location.origin}/reports/trends/${encodeURIComponent(m.metric_key)}`
-      : undefined;
-    const text = `${label}, ${m.count} readings${
-      m.latest_value != null ? `, latest ${m.latest_value}${m.unit ? ` ${m.unit}` : ""}` : ""
-    }${latestDate ? ` on ${latestDate}` : ""}`;
-    const status = await shareMetric({ title: `Purple · ${label}`, text, url });
-    if (status === "copied") toast.success("Link copied to clipboard");
-    else if (status === "failed") toast.error("Couldn't share");
-  }
-
   return (
     <div
       ref={sortable.setNodeRef}
       style={style}
       className={
-        "group report-card relative flex flex-col gap-2 p-4 " +
+        "group report-card relative flex flex-col gap-2 p-5 " +
         (sortable.isDragging ? "opacity-60 ring-1 ring-white/30" : "")
       }
     >
@@ -194,24 +181,6 @@ function MetricCard({
             <GripVertical className="h-3.5 w-3.5" />
           </button>
         )}
-        <button
-          type="button"
-          onClick={handleShare}
-          aria-label="Share"
-          title="Share"
-          className="rounded-full p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
-        >
-          <Share2 className="h-3.5 w-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={handleDownload}
-          aria-label="Download CSV"
-          title="Download CSV"
-          className="rounded-full p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
-        >
-          <Download className="h-3.5 w-3.5" />
-        </button>
         <button
           type="button"
           onClick={(e) => {
@@ -245,11 +214,8 @@ function MetricCard({
         params={{ metricKey: m.metric_key }}
         className="flex flex-col gap-2 min-w-0"
       >
-        <div className="min-w-0 pr-32">
+        <div className="min-w-0 pr-16">
           <p className="text-sm text-white line-clamp-2 leading-snug">{label}</p>
-          {subLabel && (
-            <p className="text-[10px] text-white/40 leading-tight">as printed: {subLabel}</p>
-          )}
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] report-muted">
             <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${statusChip.cls}`}>
               {statusChip.label}
@@ -262,11 +228,14 @@ function MetricCard({
               </span>
             )}
           </div>
+          {subLabel && subLabel.length >= 4 && (
+            <p className="mt-1 text-[10px] text-white/35 leading-tight">as printed: {subLabel}</p>
+          )}
         </div>
         <div className="h-32 w-full">
           {chartData.length >= 2 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 6, right: 8, bottom: 0, left: 0 }}>
+              <LineChart data={chartData} margin={{ top: 6, right: 8, bottom: 0, left: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 {refLow != null && refHigh != null && (
                   <ReferenceArea
@@ -287,7 +256,8 @@ function MetricCard({
                 />
                 <YAxis
                   tick={{ fontSize: 10, fill: "#9AA3AC" }}
-                  width={30}
+                  width={44}
+                  tickFormatter={compactTick}
                   axisLine={false}
                   tickLine={false}
                   domain={["auto", "auto"]}
@@ -347,7 +317,7 @@ function MetricCard({
             {m.latest_value != null ? (
               <>
                 Latest{" "}
-                <span className={flagTone(m.latest_flag)}>
+                <span className={`${flagTone(m.latest_flag)} tabular-nums`}>
                   {m.latest_value}
                   {m.unit ? ` ${m.unit}` : ""}
                 </span>
@@ -358,7 +328,7 @@ function MetricCard({
             )}
           </span>
           {delta != null && (
-            <span className="inline-flex items-center gap-0.5 text-white/65">
+            <span className="inline-flex items-center gap-0.5 text-white/65 tabular-nums">
               {delta > 0 ? (
                 <TrendingUp className="h-3 w-3" />
               ) : delta < 0 ? (
@@ -385,13 +355,14 @@ export function TrendsSection() {
   const reorder = useServerFn(reorderMetrics);
   const qc = useQueryClient();
   const [showHidden, setShowHidden] = React.useState(false);
+  const [onlyOutOfRange, setOnlyOutOfRange] = React.useState(false);
   const [sortMode, setSortMode] = React.useState<SortMode>(() => {
-    if (typeof window === "undefined") return "alpha";
+    if (typeof window === "undefined") return "attention";
     // Prefer localStorage (survives logout); fall back to legacy sessionStorage.
     const stored =
       window.localStorage.getItem(SORT_KEY) ||
       window.sessionStorage.getItem("purple.trends.sort");
-    return (stored as SortMode) || "alpha";
+    return (stored as SortMode) || "attention";
   });
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -404,7 +375,11 @@ export function TrendsSection() {
     queryFn: () => fetchList(),
   });
   const metrics = (data?.metrics ?? []) as TrendMetricRow[];
-  const visible = metrics.filter((m) => showHidden || !m.hidden);
+  const visible = metrics.filter((m) => {
+    if (!showHidden && m.hidden) return false;
+    if (onlyOutOfRange && m.latest_flag !== "high" && m.latest_flag !== "low") return false;
+    return true;
+  });
 
   const labelOf = (m: TrendMetricRow) =>
     (m.display_name ?? m.metric_key.replace(/_/g, " ")).toLowerCase();
@@ -433,6 +408,45 @@ export function TrendsSection() {
     });
     return arr;
   }, [visible, sortMode]);
+
+  // Group cards by body-system category. Pinned rows always float into their
+  // own "Pinned" group first. Only used for `alpha` and `attention` sorts;
+  // explicit sorts (recent/count/custom) stay flat.
+  const grouped = React.useMemo(() => {
+    const useGroups = sortMode === "alpha" || sortMode === "attention";
+    if (!useGroups) return null;
+    const buckets = new Map<string, TrendMetricRow[]>();
+    const pinned: TrendMetricRow[] = [];
+    for (const m of sorted) {
+      if (m.pinned) {
+        pinned.push(m);
+        continue;
+      }
+      const cat: MetricCategory = getMetricCategory(m.metric_key);
+      if (!buckets.has(cat)) buckets.set(cat, []);
+      buckets.get(cat)!.push(m);
+    }
+    const out: Array<{ key: string; label: string; rows: TrendMetricRow[]; outCount: number }> = [];
+    if (pinned.length) {
+      out.push({
+        key: "__pinned",
+        label: "Pinned",
+        rows: pinned,
+        outCount: pinned.filter((m) => m.latest_flag === "high" || m.latest_flag === "low").length,
+      });
+    }
+    for (const cat of METRIC_CATEGORY_ORDER) {
+      const rows = buckets.get(cat);
+      if (!rows || rows.length === 0) continue;
+      out.push({
+        key: cat,
+        label: cat,
+        rows,
+        outCount: rows.filter((m) => m.latest_flag === "high" || m.latest_flag === "low").length,
+      });
+    }
+    return out;
+  }, [sorted, sortMode]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -527,6 +541,19 @@ export function TrendsSection() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setOnlyOutOfRange((v) => !v)}
+            className={
+              "inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-xs transition " +
+              (onlyOutOfRange
+                ? "border-[#FFA8BD]/40 bg-[#FFA8BD]/15 text-[#FFA8BD]"
+                : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white")
+            }
+            aria-pressed={onlyOutOfRange}
+          >
+            Only out of range
+          </button>
           <div className="text-xs text-white/55 inline-flex items-center gap-2">
             Sort
             <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
@@ -534,8 +561,8 @@ export function TrendsSection() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-[#0F1418] border-white/10 text-white">
-                <SelectItem value="alpha" className="text-white focus:bg-white/10 focus:text-white">Alphabetical</SelectItem>
                 <SelectItem value="attention" className="text-white focus:bg-white/10 focus:text-white">Needs attention</SelectItem>
+                <SelectItem value="alpha" className="text-white focus:bg-white/10 focus:text-white">Alphabetical</SelectItem>
                 <SelectItem value="recent" className="text-white focus:bg-white/10 focus:text-white">Most recent</SelectItem>
                 <SelectItem value="count" className="text-white focus:bg-white/10 focus:text-white">Most readings</SelectItem>
                 <SelectItem value="custom" className="text-white focus:bg-white/10 focus:text-white">Custom (drag)</SelectItem>
@@ -556,17 +583,57 @@ export function TrendsSection() {
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={sorted.map((m) => m.metric_key)} strategy={rectSortingStrategy}>
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-            {sorted.map((m) => (
-              <MetricCard
-                key={m.metric_key}
-                m={m}
-                draggable={draggable}
-                onTogglePin={() => void togglePin(m)}
-                onHide={() => void hide(m)}
-              />
-            ))}
-          </div>
+          {grouped ? (
+            <div className="mt-6 space-y-8">
+              {grouped.map((g) => (
+                <div key={g.key}>
+                  <div className="flex items-baseline justify-between gap-3 border-b border-white/8 pb-2 mb-3">
+                    <h3 className="font-serif text-lg text-white">
+                      {g.label}
+                      <span className="ml-2 text-xs text-white/45 tabular-nums">
+                        {g.rows.length}
+                      </span>
+                    </h3>
+                    {g.outCount > 0 && (
+                      <span className="inline-flex items-center rounded-full border border-[#FFA8BD]/30 bg-[#FFA8BD]/10 text-[#FFA8BD] text-[11px] px-2 py-0.5 tabular-nums">
+                        {g.outCount} out of range
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {g.rows.map((m) => (
+                      <MetricCard
+                        key={m.metric_key}
+                        m={m}
+                        draggable={draggable}
+                        onTogglePin={() => void togglePin(m)}
+                        onHide={() => void hide(m)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {grouped.length === 0 && (
+                <p className="text-sm report-muted">
+                  {onlyOutOfRange
+                    ? "Nothing out of range. Everything's within your reference bands."
+                    : "No metrics match the current filter."}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {sorted.map((m) => (
+                <MetricCard
+                  key={m.metric_key}
+                  m={m}
+                  draggable={draggable}
+                  onTogglePin={() => void togglePin(m)}
+                  onHide={() => void hide(m)}
+                />
+              ))}
+            </div>
+          )}
         </SortableContext>
       </DndContext>
     </section>
