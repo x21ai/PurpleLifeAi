@@ -3,8 +3,17 @@ import { Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
+
+const GENDER_PRESETS = ["Female", "Male", "Non-binary", "Prefer not to say"] as const;
 
 export function ProfileFields() {
   const { session } = useAuth();
@@ -12,11 +21,12 @@ export function ProfileFields() {
   const [first, setFirst] = React.useState("");
   const [last, setLast] = React.useState("");
   const [phone, setPhone] = React.useState(session?.user?.phone ?? "");
-  const [pronouns, setPronouns] = React.useState("");
+  const [gender, setGender] = React.useState<string>("");
+  const [genderCustom, setGenderCustom] = React.useState("");
   const [loading, setLoading] = React.useState(true);
   const [nameState, setNameState] = React.useState<SaveState>("idle");
   const [phoneState, setPhoneState] = React.useState<SaveState>("idle");
-  const [pronounsState, setPronounsState] = React.useState<SaveState>("idle");
+  const [genderState, setGenderState] = React.useState<SaveState>("idle");
 
   React.useEffect(() => {
     if (!userId) return;
@@ -24,14 +34,21 @@ export function ProfileFields() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("first_name, last_name, phone, pronouns")
+        .select("first_name, last_name, phone, gender")
         .eq("id", userId)
         .maybeSingle();
       if (cancelled) return;
       setFirst(data?.first_name ?? "");
       setLast(data?.last_name ?? "");
       if ((data as any)?.phone) setPhone((data as any).phone);
-      setPronouns((data as any)?.pronouns ?? "");
+      const g = (data as any)?.gender ?? "";
+      if (g && (GENDER_PRESETS as readonly string[]).includes(g)) {
+        setGender(g);
+        setGenderCustom("");
+      } else if (g) {
+        setGender("__self__");
+        setGenderCustom(g);
+      }
       setLoading(false);
     })();
     return () => {
@@ -60,13 +77,22 @@ export function ProfileFields() {
     else setPhoneState("saved");
   });
 
-  useAutosave(loading || !userId ? null : pronouns, async (v) => {
-    setPronounsState("saving");
-    const { error } = await supabase
-      .from("profiles").update({ pronouns: v.trim() || null }).eq("id", userId!);
-    if (error) { setPronounsState("error"); toast.error("Couldn't save pronouns"); }
-    else setPronounsState("saved");
-  });
+  useAutosave(
+    loading || !userId ? null : { gender, genderCustom },
+    async (v) => {
+      setGenderState("saving");
+      const value =
+        v.gender === "__self__"
+          ? v.genderCustom.trim() || null
+          : v.gender || null;
+      const { error } = await supabase
+        .from("profiles")
+        .update({ gender: value })
+        .eq("id", userId!);
+      if (error) { setGenderState("error"); toast.error("Couldn't save gender"); }
+      else setGenderState("saved");
+    },
+  );
 
   return (
     <div className="space-y-6">
@@ -126,14 +152,30 @@ export function ProfileFields() {
         <p className="text-[15px] text-[#FAFAFC]">Pronouns</p>
         <p className="mt-1 text-[13px] sheet-muted">Optional. Shown to people you share with.</p>
         <div className="mt-3">
-          <Input
-            value={pronouns}
-            onChange={(e) => setPronouns(e.target.value)}
-            placeholder="she/her, he/him, they/them…"
-            disabled={loading}
-            className="bg-white/[0.04] border-white/10 text-[#FAFAFC] placeholder:text-white/30 w-full"
-          />
-          <SavedIndicator state={pronounsState} className="mt-2" />
+          <p className="text-[15px] text-[#FAFAFC]">Gender</p>
+          <p className="mt-1 text-[13px] sheet-muted">Optional. Shown to people you share with.</p>
+          <div className="mt-3 space-y-2">
+            <Select value={gender} onValueChange={setGender} disabled={loading}>
+              <SelectTrigger className="bg-white/[0.04] border-white/10 text-[#FAFAFC]">
+                <SelectValue placeholder="Select…" />
+              </SelectTrigger>
+              <SelectContent>
+                {GENDER_PRESETS.map((g) => (
+                  <SelectItem key={g} value={g}>{g}</SelectItem>
+                ))}
+                <SelectItem value="__self__">Self-describe…</SelectItem>
+              </SelectContent>
+            </Select>
+            {gender === "__self__" && (
+              <Input
+                value={genderCustom}
+                onChange={(e) => setGenderCustom(e.target.value)}
+                placeholder="Describe in your own words"
+                className="bg-white/[0.04] border-white/10 text-[#FAFAFC] placeholder:text-white/30 w-full"
+              />
+            )}
+          </div>
+          <SavedIndicator state={genderState} className="mt-2" />
         </div>
       </div>
     </div>
