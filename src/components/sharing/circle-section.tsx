@@ -248,8 +248,7 @@ function InviteFriendSheet({ onInvited }: { onInvited: () => void }) {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              // live-data-guard:allow
-              placeholder="friend@example.com"
+              placeholder="their email address"
               className="mt-1"
             />
           </div>
