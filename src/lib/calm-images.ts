@@ -11,30 +11,33 @@ import type { PictureAsset } from "@/components/marketing/responsive-image";
 // Shared transform: 4 widths × 3 formats, returned as a <picture>-ready object.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 // prettier-ignore
-import homeHero from "@/assets/sign-in-hero.jpg?w=640;1024;1600;1920&format=avif;webp;jpg&as=picture";
-import homeMugWindow from "@/assets/moment-home-mug-window.jpg?w=640;1024;1600&format=avif;webp;jpg&as=picture";
-import homeNightstandNotebook from "@/assets/moment-home-nightstand-notebook.jpg?w=640;1024;1600;1920&format=avif;webp;jpg&as=picture";
-import homeShoulderHand from "@/assets/moment-home-shoulder-hand.jpg?w=640;1024;1600&format=avif;webp;jpg&as=picture";
+// Single-width per asset (one AVIF + WebP + JPG each). Avoids missing
+// width-variant 404s on the deployed Cloudflare static-assets manifest
+// and keeps payloads small via format negotiation.
+import homeHero from "@/assets/sign-in-hero.jpg?w=1600&format=avif;webp;jpg&as=picture";
+import homeMugWindow from "@/assets/moment-home-mug-window.jpg?w=1280&format=avif;webp;jpg&as=picture";
+import homeNightstandNotebook from "@/assets/moment-home-nightstand-notebook.jpg?w=1280&format=avif;webp;jpg&as=picture";
+import homeShoulderHand from "@/assets/moment-home-shoulder-hand.jpg?w=1280&format=avif;webp;jpg&as=picture";
 
-import featuresHero from "@/assets/hero-features-misty-valley.jpg?w=640;1024;1600;1920&format=avif;webp;jpg&as=picture";
-import featuresPhoneTyping from "@/assets/moment-features-phone-typing.jpg?w=640;1024;1600&format=avif;webp;jpg&as=picture";
-import featuresPillOrganizer from "@/assets/moment-features-pill-organizer.jpg?w=640;1024;1600;1920&format=avif;webp;jpg&as=picture";
-import featuresHandOnShoulder from "@/assets/moment-features-hand-on-shoulder.jpg?w=640;1024;1600&format=avif;webp;jpg&as=picture";
+import featuresHero from "@/assets/hero-features-misty-valley.jpg?w=1600&format=avif;webp;jpg&as=picture";
+import featuresPhoneTyping from "@/assets/moment-features-phone-typing.jpg?w=1280&format=avif;webp;jpg&as=picture";
+import featuresPillOrganizer from "@/assets/moment-features-pill-organizer.jpg?w=1280&format=avif;webp;jpg&as=picture";
+import featuresHandOnShoulder from "@/assets/moment-features-hand-on-shoulder.jpg?w=1280&format=avif;webp;jpg&as=picture";
 
-import pricingHero from "@/assets/hero-pricing-coastal-fog.jpg?w=640;1024;1600;1920&format=avif;webp;jpg&as=picture";
-import pricingPillTray from "@/assets/moment-pricing-pill-tray-window.jpg?w=640;1024;1600&format=avif;webp;jpg&as=picture";
+import pricingHero from "@/assets/hero-pricing-coastal-fog.jpg?w=1600&format=avif;webp;jpg&as=picture";
+import pricingPillTray from "@/assets/moment-pricing-pill-tray-window.jpg?w=1280&format=avif;webp;jpg&as=picture";
 
-import aboutHero from "@/assets/hero-about-quiet-hills.jpg?w=640;1024;1600;1920&format=avif;webp;jpg&as=picture";
-import aboutBedsideLamp from "@/assets/moment-about-bedside-lamp.jpg?w=640;1024;1600&format=avif;webp;jpg&as=picture";
-import aboutArmAround from "@/assets/moment-about-arm-around.jpg?w=640;1024;1600&format=avif;webp;jpg&as=picture";
+import aboutHero from "@/assets/hero-about-quiet-hills.jpg?w=1600&format=avif;webp;jpg&as=picture";
+import aboutBedsideLamp from "@/assets/moment-about-bedside-lamp.jpg?w=1280&format=avif;webp;jpg&as=picture";
+import aboutArmAround from "@/assets/moment-about-arm-around.jpg?w=1280&format=avif;webp;jpg&as=picture";
 
-import communityHero from "@/assets/hero-community-river-bend.jpg?w=640;1024;1600;1920&format=avif;webp;jpg&as=picture";
-import communityWalkingPath from "@/assets/moment-community-walking-path.jpg?w=640;1024;1600&format=avif;webp;jpg&as=picture";
+import communityHero from "@/assets/hero-community-river-bend.jpg?w=1600&format=avif;webp;jpg&as=picture";
+import communityWalkingPath from "@/assets/moment-community-walking-path.jpg?w=1280&format=avif;webp;jpg&as=picture";
 
-import contactHero from "@/assets/hero-contact-lake-stillness.jpg?w=640;1024;1600;1920&format=avif;webp;jpg&as=picture";
-import contactHandwrittenNote from "@/assets/moment-contact-handwritten-note.jpg?w=640;1024;1600&format=avif;webp;jpg&as=picture";
+import contactHero from "@/assets/hero-contact-lake-stillness.jpg?w=1600&format=avif;webp;jpg&as=picture";
+import contactHandwrittenNote from "@/assets/moment-contact-handwritten-note.jpg?w=1280&format=avif;webp;jpg&as=picture";
 
-import signInHero from "@/assets/hero-signin-night-coast.jpg?w=640;1024;1600;1920&format=avif;webp;jpg&as=picture";
+import signInHero from "@/assets/hero-signin-night-coast.jpg?w=1600&format=avif;webp;jpg&as=picture";
 
 const asset = (picture: PictureAsset["picture"], alt: string): PictureAsset => ({ picture, alt });
 
