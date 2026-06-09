@@ -296,14 +296,14 @@ export function StillLife({ image, alt, className }: StillLifeProps) {
     <section
       data-reveal
       className={cn(
-        "relative overflow-hidden h-[55vh] min-h-[360px] max-h-[640px]",
+        "relative mx-auto max-w-5xl my-12 sm:my-16 overflow-hidden rounded-3xl h-[clamp(260px,40vh,440px)]",
         className,
       )}
     >
       <ResponsiveImage
         asset={image}
         alt={alt}
-        sizes="100vw"
+        sizes="(min-width: 1024px) 1024px, 100vw"
         className="absolute inset-0 h-full w-full object-cover"
       />
     </section>
