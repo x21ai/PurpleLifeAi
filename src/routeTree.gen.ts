@@ -29,6 +29,7 @@ import { Route as CharterRouteImport } from './routes/charter'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as FriendJoinRouteImport } from './routes/friend.join'
 import { Route as FriendAcceptRouteImport } from './routes/friend.accept'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as CommunityResourcesRouteImport } from './routes/community.resources'
@@ -199,6 +200,11 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FriendJoinRoute = FriendJoinRouteImport.update({
+  id: '/friend/join',
+  path: '/friend/join',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FriendAcceptRoute = FriendAcceptRouteImport.update({
@@ -622,6 +628,7 @@ export interface FileRoutesByFullPath {
   '/community/resources': typeof CommunityResourcesRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/friend/accept': typeof FriendAcceptRoute
+  '/friend/join': typeof FriendJoinRoute
   '/admin/community': typeof AppAdminCommunityRoute
   '/admin/contact': typeof AppAdminContactRoute
   '/admin/feedback': typeof AppAdminFeedbackRoute
@@ -714,6 +721,7 @@ export interface FileRoutesByTo {
   '/community/resources': typeof CommunityResourcesRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/friend/accept': typeof FriendAcceptRoute
+  '/friend/join': typeof FriendJoinRoute
   '/admin/community': typeof AppAdminCommunityRoute
   '/admin/contact': typeof AppAdminContactRoute
   '/admin/feedback': typeof AppAdminFeedbackRoute
@@ -809,6 +817,7 @@ export interface FileRoutesById {
   '/community/resources': typeof CommunityResourcesRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/friend/accept': typeof FriendAcceptRoute
+  '/friend/join': typeof FriendJoinRoute
   '/_app/admin/community': typeof AppAdminCommunityRoute
   '/_app/admin/contact': typeof AppAdminContactRoute
   '/_app/admin/feedback': typeof AppAdminFeedbackRoute
@@ -904,6 +913,7 @@ export interface FileRouteTypes {
     | '/community/resources'
     | '/email/unsubscribe'
     | '/friend/accept'
+    | '/friend/join'
     | '/admin/community'
     | '/admin/contact'
     | '/admin/feedback'
@@ -996,6 +1006,7 @@ export interface FileRouteTypes {
     | '/community/resources'
     | '/email/unsubscribe'
     | '/friend/accept'
+    | '/friend/join'
     | '/admin/community'
     | '/admin/contact'
     | '/admin/feedback'
@@ -1090,6 +1101,7 @@ export interface FileRouteTypes {
     | '/community/resources'
     | '/email/unsubscribe'
     | '/friend/accept'
+    | '/friend/join'
     | '/_app/admin/community'
     | '/_app/admin/contact'
     | '/_app/admin/feedback'
@@ -1165,6 +1177,7 @@ export interface RootRouteChildren {
   CareAcceptRoute: typeof CareAcceptRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   FriendAcceptRoute: typeof FriendAcceptRoute
+  FriendJoinRoute: typeof FriendJoinRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   OauthWhoopCallbackRoute: typeof OauthWhoopCallbackRoute
@@ -1325,6 +1338,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/friend/join': {
+      id: '/friend/join'
+      path: '/friend/join'
+      fullPath: '/friend/join'
+      preLoaderRoute: typeof FriendJoinRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/friend/accept': {
@@ -2026,6 +2046,7 @@ const rootRouteChildren: RootRouteChildren = {
   CareAcceptRoute: CareAcceptRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   FriendAcceptRoute: FriendAcceptRoute,
+  FriendJoinRoute: FriendJoinRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   OauthWhoopCallbackRoute: OauthWhoopCallbackRoute,
