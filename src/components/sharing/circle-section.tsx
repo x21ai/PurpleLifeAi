@@ -32,7 +32,7 @@ import {
 
 /**
  * Settings → Sharing card for the user's social Circle.
- * Friends in this list see NONE of the user's health data — they're just
+ * Friends in this list see NONE of the user's health data; they're just
  * people the user is socially connected to on Purple.
  */
 export function CircleSection() {
