@@ -48,7 +48,6 @@ import {
   METRIC_CATEGORY_ORDER,
   type MetricCategory,
 } from "@/lib/metric-naming";
-import { toast } from "sonner";
 import {
   Select,
   SelectTrigger,
