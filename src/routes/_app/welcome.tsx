@@ -13,7 +13,8 @@ import { WhoopConnection } from "@/components/connections/whoop-connection";
 import { PhoneInput, parsePhone, formatPhone } from "@/components/ui/phone-input";
 import dawn from "@/assets/hero-readiness-dawn.jpg";
 import mist from "@/assets/hero-readiness-mist.jpg";
-import { CONDITION_OPTIONS, type ConditionTag } from "@/lib/condition-prompts";
+import { type ConditionTag } from "@/lib/condition-prompts";
+import { ConditionPicker } from "@/components/conditions/condition-picker";
 import { Textarea } from "@/components/ui/textarea";
 import {
   FEATURE_CATALOG,
@@ -29,6 +30,7 @@ import { setLocale, detectBrowserLocale, type SupportedLocale } from "@/i18n";
 import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { redeemInviteCode } from "@/lib/invite-codes.functions";
+import { generateCareProfile } from "@/lib/care-profile.functions";
 import { getStoredInvite, clearStoredInvite, setStoredInvite } from "@/lib/invite-storage";
 
 const LOCALE_PREFILL_KEY = "purple-locale-prefill";
@@ -73,6 +75,7 @@ function WelcomePage() {
   });
   const [inviteCode, setInviteCode] = useState<string>(() => getStoredInvite() ?? "");
   const redeem = useServerFn(redeemInviteCode);
+  const regenerateCareProfile = useServerFn(generateCareProfile);
 
   // Auto-redeem any stored invite as soon as we have a session.
   useEffect(() => {
@@ -183,6 +186,11 @@ function WelcomePage() {
         // ignore
       }
       localStorage.setItem("purple-onboarded", "1");
+      // Fire-and-forget: build the AI care profile so Today/Journal/Ask Purple
+      // are already personalized on first paint. Never block onboarding on it.
+      void regenerateCareProfile({ data: { force: true } }).catch((err) => {
+        console.warn("[welcome] care profile generation failed", err);
+      });
       navigate({ to: "/" });
     } catch (e) {
       const msg = e instanceof Error ? e.message : t("welcome.couldNotSave");
