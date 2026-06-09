@@ -348,31 +348,11 @@ function WelcomePage() {
           <p className="mt-5 text-lg text-muted-foreground max-w-lg">
             {t("welcome.bringsBody")}
           </p>
-          <div className="mt-8 flex flex-wrap gap-2">
-            {CONDITION_OPTIONS.map((opt) => {
-              const active = conditions.includes(opt.id);
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() =>
-                    setConditions((prev) =>
-                      prev.includes(opt.id)
-                        ? prev.filter((c) => c !== opt.id)
-                        : [...prev, opt.id as ConditionTag],
-                    )
-                  }
-                  className={`rounded-full border px-4 py-2 text-sm transition-colors ${
-                    active
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card text-foreground hover:bg-secondary"
-                  }`}
-                  aria-pressed={active}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
+          <div className="mt-8">
+            <ConditionPicker
+              value={conditions}
+              onChange={(next) => setConditions(next as ConditionTag[])}
+            />
           </div>
           <div className="mt-6">
             <Label htmlFor="conditions-note">{t("welcome.anythingElse")}</Label>
