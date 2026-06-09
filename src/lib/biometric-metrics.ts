@@ -212,7 +212,7 @@ export const METRICS: Record<MetricKey, MetricMeta> = {
     unit: "°C",
     column: "body_temp_deviation_c",
     direction: "neutral",
-    format: (v) => (v == null ? "–" : `${v > 0 ? "+" : ""}${v.toFixed(2)}°C`),
+    format: (v) => (v == null ? "–" : `${v > 0 ? "+" : ""}${v.toFixed(1)}°C`),
     meaning:
       "How far your overnight skin temperature drifted from your personal baseline. Bigger swings (positive or negative) often line up with illness, hormonal shifts, or poor recovery.",
     baselineHint: "More than ±0.4°C from your baseline is a notable shift.",

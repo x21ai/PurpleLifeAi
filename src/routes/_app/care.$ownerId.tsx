@@ -250,7 +250,7 @@ function CareDashboardPage() {
         )}
       </div>
 
-      {(profile as any)?.phone || (profile as any)?.pronouns ? (
+      {(profile as any)?.phone ? (
         <div className="mt-4 rounded-xl border border-border bg-card p-4 text-sm">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Contact</p>
           <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-foreground">
@@ -258,9 +258,6 @@ function CareDashboardPage() {
               <a href={`tel:${(profile as any).phone}`} className="hover:underline">
                 📞 {(profile as any).phone}
               </a>
-            )}
-            {(profile as any)?.pronouns && (
-              <span className="text-muted-foreground">{(profile as any).pronouns}</span>
             )}
           </div>
         </div>

@@ -2087,13 +2087,13 @@ export type Database = {
           feature_overrides: Json
           first_name: string | null
           floating_ask_enabled: boolean
+          gender: string | null
           id: string
           idle_timeout_minutes: number
           last_name: string | null
           locale: string
           onboarded_at: string | null
           phone: string | null
-          pronouns: string | null
           purge_after: string | null
           quiet_hours_end: string | null
           quiet_hours_start: string | null
@@ -2138,13 +2138,13 @@ export type Database = {
           feature_overrides?: Json
           first_name?: string | null
           floating_ask_enabled?: boolean
+          gender?: string | null
           id: string
           idle_timeout_minutes?: number
           last_name?: string | null
           locale?: string
           onboarded_at?: string | null
           phone?: string | null
-          pronouns?: string | null
           purge_after?: string | null
           quiet_hours_end?: string | null
           quiet_hours_start?: string | null
@@ -2189,13 +2189,13 @@ export type Database = {
           feature_overrides?: Json
           first_name?: string | null
           floating_ask_enabled?: boolean
+          gender?: string | null
           id?: string
           idle_timeout_minutes?: number
           last_name?: string | null
           locale?: string
           onboarded_at?: string | null
           phone?: string | null
-          pronouns?: string | null
           purge_after?: string | null
           quiet_hours_end?: string | null
           quiet_hours_start?: string | null

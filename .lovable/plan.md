@@ -1,49 +1,103 @@
-## Goal
+## What's still left to build (quick answer)
 
-Stop sending invite emails from Purple's server. The invite always comes from the user's own phone — through iMessage, WhatsApp, Mail, or whatever they pick — so the recipient sees a name they recognize, not a "no-reply from Purple" email they'll ignore.
+Nothing big in core flows — the major systems are in: Today, Journal, My Body (biometrics/intake/meds/timeline), Insights/Reports, Care/sharing, Community, Travel, Apple Health import, friend circle, invite codes, PWA. What's outstanding is mostly polish + the rough edges you're catching now:
 
-Three ways to send:
-1. **Share** — one tap opens the phone's native share sheet (iOS/Android), letting them pick iMessage, WhatsApp, Mail, Signal, etc. Desktop falls back to copy.
-2. **Copy link** — the existing `/friend/accept?token=...` link.
-3. **Refer code** — a short, human-typeable code (e.g. `JAMIE-7K3Q`) the recipient can enter on sign-up or on a "Join a friend's circle" screen. Good for in-person ("just type my code") and voice ("text me your code").
+- The sidebar/account/menu cleanup below (this plan)
+- Gender field (this plan)
+- A short "what does Purple track for my condition?" onboarding nudge after sign-up (not in this plan)
+- Pricing/billing wiring (not started — you haven't asked)
+- The "fun/social-only" friend permission tiers we discussed last turn (data model done, UI for granting "social tier" not built)
 
-## What changes
+Everything else is iteration on what exists. If you want a written backlog file I can drop one in `/docs/whats-left.md` next round.
 
-### Invite sheet (`circle-section.tsx`)
-- Email field becomes **optional** ("Their email (optional, just so you remember who you invited)").
-- After clicking **Create invite**, the sheet flips to a "share" view showing:
-  - A friendly message preview (editable): _"Hey — I'm using Purple, a private health journal. Want to be in my circle? {link}"_
-  - **Share** button → `navigator.share({ title, text, url })`. Falls back to Copy on desktop.
-  - **Copy link** button.
-  - **Refer code** displayed large, with **Copy code** button.
-  - Quick-launch chips for **iMessage** (`sms:&body=...` on iOS), **WhatsApp** (`https://wa.me/?text=...`), **Mail** (`mailto:?subject=...&body=...`). All client-side deep links — no server sending.
+---
 
-### Backend (`friendships.functions.ts`)
-- `inviteFriend`:
-  - `email` becomes optional.
-  - Generate a short `refer_code` alongside the long `invite_token`. Format: 8 chars from an unambiguous alphabet (no `0/O/1/I`), uppercased, with a dash for readability (`AB3C-9KPM`). Retry on unique-constraint collision.
-  - **Remove** the `sendTransactionalEmail` call and the `email-templates/friend-invite.tsx` template (and its registry entry). Purple no longer sends friend invites.
-  - Return `{ friendship, invite_token, refer_code, acceptUrl }`.
-- New `acceptFriendByCode` server fn: looks up the pending row by `refer_code` (case-insensitive), then runs the same accept logic as `acceptFriendInvite`.
-- `listMyCircle` returns `refer_code` for pending rows so the UI can show it.
+## Your 5 questions — what I'll change
 
-### Accept route (`/friend/accept`)
-- Already handles `?token=`. Add a "Have a code instead?" link that points to a new tiny route `/friend/join` with a single input for the refer code → calls `acceptFriendByCode`.
+### 1. "Account" vs "My account" — they mean different things
 
-### Database
-- New migration: `ALTER TABLE friendships ADD COLUMN refer_code text`; partial unique index `WHERE refer_code IS NOT NULL`; make `invite_email` nullable (it already is per the original migration — confirm and leave alone if so).
+- **Sidebar → Account** = the settings hub (Profile / Settings / Sharing / Privacy).
+- **Top-right menu → "My account"** = a *role switch* back to viewing your own data, shown only when you're also a caregiver for someone else. It's not a page, it's "stop looking at Devyn's data, show mine."
 
-## Files touched
+Both labels say "account" so it reads like duplicate links. Fix:
 
-- `supabase/migrations/<new>.sql` — add `refer_code` + unique index.
-- `src/lib/friendships.functions.ts` — generate code, drop email send, add `acceptFriendByCode`, expose `refer_code`.
-- `src/components/sharing/circle-section.tsx` — two-step sheet (compose → share), share sheet integration, deep-link chips, refer-code display, optional email.
-- `src/routes/friend.accept.tsx` — add "use a code instead" affordance.
-- `src/routes/friend.join.tsx` (new) — code-entry page.
-- **Delete:** `src/lib/email-templates/friend-invite.tsx` and its `registry.ts` entry. (Purple no longer sends this email.)
+- Rename the role-switch row from **"My account / Your own data"** → **"View as myself / Your own data"**.
+- Keep the bottom **Account** link in the dropdown (it opens `/account`) as-is.
+- Apple does the same thing in Family Sharing — that row says "Use This iPhone with your Apple ID," not "My account."
 
-## Out of scope (confirm if you want them)
+### 2. Purple circle at top of collapsed sidebar + icon misalignment
 
-- Twilio SMS from Purple — explicitly **not** doing this, per your reasoning. All sending is from the user's own device.
-- Auto-applying a refer code during email/Google sign-up. v1: recipient signs up first, then enters the code on `/friend/join`. We can add a `?code=` query param flow later if you want it built-in to the auth screen.
-- Tracking which channel was used (iMessage vs WhatsApp vs Mail). Skipped — would require analytics.
+- The round purple circle is the **Purple logomark** for the collapsed (md, 64px) rail. It's a placeholder I dropped in when there wasn't a real mark. Remove it. Show the wordmark "P" in the same typeface as the expanded "PURPLE" wordmark instead — quieter and on-brand. (Branding rule: PURPLE wordmark stands alone, no controls next to it — a single-letter mark in the same face is the cleanest collapsed form.)
+- Icon misalignment: group rows use `pl-3 pr-1` even when the rail is collapsed, so the icon sits left of center while leaf rows are centered. Switch the collapsed rail to symmetric padding (`px-0` + `justify-center`) for both group and leaf rows. All icons line up on the same vertical axis.
+
+### 3. Account page redesign + drop pronouns, add gender
+
+Restructure `/account` to the order Apple uses (identity → security → preferences → session):
+
+````text
+PROFILE
+  Avatar + name + email (read-only with "change email" link) + phone
+
+IDENTITY            ← new section name
+  Gender (Female / Male / Non-binary / Prefer not to say / Self-describe)
+  Date of birth (already collected at onboarding — surface read-only here)
+
+SECURITY
+  Password
+  Two-factor
+
+REGION & LANGUAGE
+  (unchanged)
+
+APPEARANCE
+  (unchanged)
+
+INVITE
+  Get an invite code  (unchanged — but only ONE card, the duplicate "INVITE" labels in your screenshot are an empty state of the same card rendering 3x; fix that bug)
+
+SESSION
+  Signed in as · Sign out
+  Delete account  (move from settings to here, it belongs with sign-out)
+````
+
+- **Remove** the Pronouns field everywhere it appears (account, profile, caregiver-visible profile). Drop the `pronouns` column from `profiles` in a new migration.
+- **Add** `gender` text column to `profiles` with the five-option select above (free-text when "Self-describe"). Autosaves like the other fields.
+- Fix the **triple "INVITE" headers** rendering bug — that's a layout issue where `SheetSectionLabel` is being rendered alongside the card's own header. Render the label once.
+
+### 4. Open (expanded) sidebar is confusing — fixes
+
+From your screenshots:
+
+- Account group has too many cousins (Profile, Settings, Sharing, Privacy) — collapse to **Profile, Settings, Sharing**. Privacy is content-policy info, move it to the Settings page footer where Privacy/Terms/Charter already live.
+- "Caregiver" pill at the bottom — leave it. It's role-specific and the right place.
+- Insights only has `Reports` and `Medical history PDF` (which is also a Report). Merge them: keep `Reports` as a single link, drop `Medical history PDF` from the rail (it's reachable from inside Reports).
+- Community → currently only has `Resources`. Promote Community itself to a leaf link, drop the child.
+- Tools → keep `Apple Health import` + `Travel`. Fine.
+- **Bug in screenshot 1 (account page sidebar shows "My Body" repeated ~30 times):** that's the collapsed-sidebar's icon-only rows getting the same tooltip label rendered as visible text on a viewport between md and lg. The `RailTooltip` shouldn't render `TooltipContent` inline. Fix by gating `TooltipContent` with `lg:hidden` *and* ensuring it only mounts on hover (already Radix default — likely a `pointerEvents` regression). I'll verify and patch.
+
+### 5. Skin temperature card — value collides with status pill
+
+`MetricCard` renders the value (e.g. `-0.27°C`) in a `min-w-0` left column and the status pill (`PAY ATTENTION`) in a `shrink-0` right column, same flex row. With a long-format pill ("PAY ATTENTION" = 12 chars) the pill eats the right gutter and the value's serif `text-6xl` glyphs cross under it. Fix:
+
+- Move the status pill to its **own line above** the value (eyebrow → pill on the eyebrow row), so the value gets the full card width.
+- For skin temperature specifically, format as `−0.3°C` (1 decimal) — the second decimal is noise on a baseline-delta metric.
+- Add `whitespace-nowrap` to the value and a smaller responsive type ramp when the formatted string is > 6 chars.
+
+---
+
+## Files I'll touch
+
+- `src/components/layout/profile-menu.tsx` — relabel "My account" → "View as myself"
+- `src/components/layout/sidebar-nav.tsx` — replace purple circle with wordmark "P", symmetric padding on collapsed rail, fix RailTooltip leak
+- `src/components/layout/nav-items.ts` — collapse Account/Insights/Community children
+- `src/routes/_app/account.tsx` + `src/components/account/profile-fields.tsx` — new section order, gender field, drop pronouns, dedupe INVITE label, add Delete account row
+- `src/components/biometrics/metric-card.tsx` — pill on eyebrow row, responsive value sizing
+- `src/lib/biometric-metrics.ts` — skin temp 1-decimal format
+- New migration: add `gender text`, drop `pronouns` from `profiles`
+
+## Out of scope (ask if you want them)
+
+- Avatar redesign / new logomark file
+- Friend-tier permission UI (separate plan)
+- Pricing/billing
+- Backfilling existing `pronouns` data anywhere (it's just dropped)
