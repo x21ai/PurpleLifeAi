@@ -6,7 +6,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendTransactionalEmail } from "./email/send";
 
 /**
- * Friends (Circle) — zero-data social connections.
+ * Friends (Circle): zero-data social connections.
  * Separate from caregivers. A friend cannot see ANY of the other user's data.
  * Friendship rows just record the link so both sides know who's in their circle.
  */
