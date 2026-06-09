@@ -185,3 +185,33 @@ export function searchConditions(query: string): ConditionDef[] {
     })
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
+
+/** Human-readable label for a trait. Used by Settings to explain why a tracker is on. */
+export const TRAIT_LABELS: Record<ConditionTrait, string> = {
+  seizure_prone: "Seizure-prone",
+  headache: "Headache",
+  glycemic: "Blood sugar",
+  cardiovascular: "Cardiovascular",
+  autonomic: "Autonomic",
+  inflammatory: "Inflammatory",
+  respiratory: "Breathing",
+  mood: "Mood",
+  cognitive_load: "Cognitive load",
+  neurodevelopmental: "Neurodevelopmental",
+  neuro: "Neurological",
+  motor: "Motor",
+  pacing_required: "Pacing",
+  gi: "Digestive",
+  pain: "Pain",
+  sleep_critical: "Sleep-sensitive",
+  sensory: "Sensory",
+  routine_sensitive: "Routine",
+  nutritional: "Nutritional",
+  autoimmune: "Autoimmune",
+  caregiver: "Caregiving",
+  caregiver_helpful: "Caregiver-aware",
+};
+
+export function labelForTrait(t: ConditionTrait): string {
+  return TRAIT_LABELS[t] ?? t;
+}

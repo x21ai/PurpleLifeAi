@@ -8,12 +8,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import {
   FEATURE_CATALOG,
+  defaultForLabels,
   CATEGORY_LABELS,
   isFeatureEnabled,
   type FeatureKey,
   type FeatureCategory,
 } from "@/lib/feature-catalog";
-import { labelForCondition } from "@/lib/condition-prompts";
 
 /**
  * "What I track", per-feature toggles, grouped by category, with the
@@ -123,7 +123,7 @@ export function WhatITrackSection() {
                   ? "On for everyone by default"
                   : f.defaultFor.length === 0
                     ? "Off by default, opt in if useful"
-                    : `Default-on for ${f.defaultFor.map(labelForCondition).join(", ")}`;
+                    : `Default-on for ${defaultForLabels(f).toLowerCase()}`;
                 return (
                   <div key={f.key} className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">

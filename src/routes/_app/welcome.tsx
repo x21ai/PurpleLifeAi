@@ -17,6 +17,7 @@ import { CONDITION_OPTIONS, type ConditionTag } from "@/lib/condition-prompts";
 import { Textarea } from "@/components/ui/textarea";
 import {
   FEATURE_CATALOG,
+  defaultForLabels,
   CATEGORY_LABELS,
   isFeatureEnabled,
   type FeatureKey,
@@ -495,16 +496,16 @@ function WhatITrackStep({
               {grouped[cat].map((f) => {
                 const enabled = isFeatureEnabled(f.key, conditions, overrides);
                 const defaultOn = isFeatureEnabled(f.key, conditions, {});
-                const matchedCondition = f.defaultFor.find((c) => conditions.includes(c));
+                const reason = f.defaultFor.length > 0 ? defaultForLabels(f).toLowerCase() : "";
                 return (
                   <li key={f.key} className="flex items-start justify-between gap-3 p-4">
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground">{f.label}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">{f.description}</p>
                       <div className="mt-1 flex flex-wrap gap-1.5">
-                        {defaultOn && matchedCondition && (
+                        {defaultOn && reason && (
                           <span className="text-[10px] uppercase tracking-wide text-primary">
-                            default for {matchedCondition}
+                            default for {reason}
                           </span>
                         )}
                         {f.defaultOnGlobally && (
