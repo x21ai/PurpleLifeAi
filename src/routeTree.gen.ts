@@ -41,6 +41,7 @@ import { Route as AppTodayRouteImport } from './routes/_app/today'
 import { Route as AppTimelineRouteImport } from './routes/_app/timeline'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppReportsRouteImport } from './routes/_app/reports'
+import { Route as AppMyHealthDnaRouteImport } from './routes/_app/my-health-dna'
 import { Route as AppMyHealthRouteImport } from './routes/_app/my-health'
 import { Route as AppMedsRouteImport } from './routes/_app/meds'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
@@ -257,6 +258,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppReportsRoute = AppReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyHealthDnaRoute = AppMyHealthDnaRouteImport.update({
+  id: '/my-health-dna',
+  path: '/my-health-dna',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMyHealthRoute = AppMyHealthRouteImport.update({
@@ -596,6 +602,7 @@ export interface FileRoutesByFullPath {
   '/insights': typeof AppInsightsRoute
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
+  '/my-health-dna': typeof AppMyHealthDnaRoute
   '/reports': typeof AppReportsRouteWithChildren
   '/settings': typeof AppSettingsRouteWithChildren
   '/timeline': typeof AppTimelineRoute
@@ -686,6 +693,7 @@ export interface FileRoutesByTo {
   '/insights': typeof AppInsightsRoute
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
+  '/my-health-dna': typeof AppMyHealthDnaRoute
   '/reports': typeof AppReportsRouteWithChildren
   '/settings': typeof AppSettingsRouteWithChildren
   '/timeline': typeof AppTimelineRoute
@@ -779,6 +787,7 @@ export interface FileRoutesById {
   '/_app/insights': typeof AppInsightsRoute
   '/_app/meds': typeof AppMedsRouteWithChildren
   '/_app/my-health': typeof AppMyHealthRoute
+  '/_app/my-health-dna': typeof AppMyHealthDnaRoute
   '/_app/reports': typeof AppReportsRouteWithChildren
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/timeline': typeof AppTimelineRoute
@@ -872,6 +881,7 @@ export interface FileRouteTypes {
     | '/insights'
     | '/meds'
     | '/my-health'
+    | '/my-health-dna'
     | '/reports'
     | '/settings'
     | '/timeline'
@@ -962,6 +972,7 @@ export interface FileRouteTypes {
     | '/insights'
     | '/meds'
     | '/my-health'
+    | '/my-health-dna'
     | '/reports'
     | '/settings'
     | '/timeline'
@@ -1054,6 +1065,7 @@ export interface FileRouteTypes {
     | '/_app/insights'
     | '/_app/meds'
     | '/_app/my-health'
+    | '/_app/my-health-dna'
     | '/_app/reports'
     | '/_app/settings'
     | '/_app/timeline'
@@ -1384,6 +1396,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof AppReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-health-dna': {
+      id: '/_app/my-health-dna'
+      path: '/my-health-dna'
+      fullPath: '/my-health-dna'
+      preLoaderRoute: typeof AppMyHealthDnaRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/my-health': {
@@ -1897,6 +1916,7 @@ interface AppRouteChildren {
   AppInsightsRoute: typeof AppInsightsRoute
   AppMedsRoute: typeof AppMedsRouteWithChildren
   AppMyHealthRoute: typeof AppMyHealthRoute
+  AppMyHealthDnaRoute: typeof AppMyHealthDnaRoute
   AppReportsRoute: typeof AppReportsRouteWithChildren
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppTimelineRoute: typeof AppTimelineRoute
@@ -1926,6 +1946,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppInsightsRoute: AppInsightsRoute,
   AppMedsRoute: AppMedsRouteWithChildren,
   AppMyHealthRoute: AppMyHealthRoute,
+  AppMyHealthDnaRoute: AppMyHealthDnaRoute,
   AppReportsRoute: AppReportsRouteWithChildren,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppTimelineRoute: AppTimelineRoute,
