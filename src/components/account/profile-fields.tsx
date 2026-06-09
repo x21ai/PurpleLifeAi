@@ -149,12 +149,10 @@ export function ProfileFields() {
       </div>
 
       <div className="border-t sheet-divider pt-6">
-        <p className="text-[15px] text-[#FAFAFC]">Pronouns</p>
+        <p className="text-[15px] text-[#FAFAFC]">Gender</p>
         <p className="mt-1 text-[13px] sheet-muted">Optional. Shown to people you share with.</p>
         <div className="mt-3">
-          <p className="text-[15px] text-[#FAFAFC]">Gender</p>
-          <p className="mt-1 text-[13px] sheet-muted">Optional. Shown to people you share with.</p>
-          <div className="mt-3 space-y-2">
+          <div className="space-y-2">
             <Select value={gender} onValueChange={setGender} disabled={loading}>
               <SelectTrigger className="bg-white/[0.04] border-white/10 text-[#FAFAFC]">
                 <SelectValue placeholder="Select…" />
