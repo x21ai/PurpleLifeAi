@@ -6,6 +6,9 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { CONDITION_OPTIONS } from "@/lib/condition-prompts";
+import { ConditionPicker } from "@/components/conditions/condition-picker";
+import { useServerFn } from "@tanstack/react-start";
+import { generateCareProfile } from "@/lib/care-profile.functions";
 
 const LABELS = new Map<string, string>(CONDITION_OPTIONS.map((o) => [o.id, o.label]));
 const labelOf = (id: string) => LABELS.get(id) ?? id;
@@ -37,6 +40,8 @@ export function ConditionHistorySection() {
   const [saving, setSaving] = React.useState(false);
   const [famDraft, setFamDraft] = React.useState("");
   const [famRelation, setFamRelation] = React.useState("");
+  const [picking, setPicking] = React.useState(false);
+  const regenerateCareProfile = useServerFn(generateCareProfile);
 
   React.useEffect(() => {
     if (!userId) return;
@@ -71,6 +76,11 @@ export function ConditionHistorySection() {
       .eq("id", userId);
     setSaving(false);
     if (error) toast.error("Couldn't save");
+    else if (next.conditions) {
+      // Regenerate the AI care profile when the condition list changes
+      // so Today/Journal/Ask Purple stay personalized.
+      void regenerateCareProfile({ data: { force: true } }).catch(() => {});
+    }
   }
 
   async function archive(condition: string, status: "resolved" | "remission") {
@@ -164,6 +174,26 @@ export function ConditionHistorySection() {
               </li>
             ))}
           </ul>
+        )}
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setPicking((p) => !p)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-foreground hover:bg-secondary"
+          >
+            <Plus className="h-3 w-3" /> {picking ? "Done" : "Add condition"}
+          </button>
+        </div>
+        {picking && (
+          <div className="mt-4 rounded-2xl border border-border bg-background/40 p-4">
+            <ConditionPicker
+              value={active}
+              onChange={(next) => {
+                setActive(next);
+                void persist({ conditions: next });
+              }}
+            />
+          </div>
         )}
       </div>
 
