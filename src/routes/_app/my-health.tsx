@@ -6,6 +6,10 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getCareProfile } from "@/lib/care-profile.functions";
+import { getConditions } from "@/lib/condition-catalog";
 
 export const Route = createFileRoute("/_app/my-health")({
   head: () => ({
@@ -40,6 +44,12 @@ const STATUS_GRAD: Record<Status, string> = {
 function MyHealthPage() {
   useRouteTheme("dark");
   const { t } = useTranslation();
+  const fetchProfile = useServerFn(getCareProfile);
+  const { data } = useQuery({
+    queryKey: ["care-profile-summary"],
+    queryFn: () => fetchProfile(),
+  });
+  const userConditions = getConditions(data?.conditions ?? []);
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-6 sm:pt-10 pb-32">
       {/* Header */}
