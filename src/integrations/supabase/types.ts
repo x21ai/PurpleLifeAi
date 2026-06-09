@@ -1225,6 +1225,51 @@ export type Database = {
         }
         Relationships: []
       }
+      friendships: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          id: string
+          invite_email: string | null
+          invite_token: string | null
+          note_a: string | null
+          note_b: string | null
+          requested_by: string
+          status: string
+          updated_at: string
+          user_a: string
+          user_b: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invite_email?: string | null
+          invite_token?: string | null
+          note_a?: string | null
+          note_b?: string | null
+          requested_by: string
+          status?: string
+          updated_at?: string
+          user_a: string
+          user_b?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invite_email?: string | null
+          invite_token?: string | null
+          note_a?: string | null
+          note_b?: string | null
+          requested_by?: string
+          status?: string
+          updated_at?: string
+          user_a?: string
+          user_b?: string | null
+        }
+        Relationships: []
+      }
       hydration_intake: {
         Row: {
           consumed_at: string

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ExpiryControl } from "@/components/care/expiry-control";
 import { AppleHealthCard } from "@/components/settings/apple-health-card";
+import { CircleSection } from "@/components/sharing/circle-section";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useTranslation } from "react-i18next";
 import {
@@ -280,6 +281,9 @@ function SharingPage() {
           </ul>
         )}
       </section>
+
+      {/* Your circle (friends, zero data access) */}
+      <CircleSection />
     </div>
   );
 }

@@ -29,6 +29,7 @@ import { Route as CharterRouteImport } from './routes/charter'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as FriendAcceptRouteImport } from './routes/friend.accept'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as CommunityResourcesRouteImport } from './routes/community.resources'
 import { Route as CommunityPostIdRouteImport } from './routes/community.$postId'
@@ -198,6 +199,11 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FriendAcceptRoute = FriendAcceptRouteImport.update({
+  id: '/friend/accept',
+  path: '/friend/accept',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
@@ -615,6 +621,7 @@ export interface FileRoutesByFullPath {
   '/community/$postId': typeof CommunityPostIdRoute
   '/community/resources': typeof CommunityResourcesRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/friend/accept': typeof FriendAcceptRoute
   '/admin/community': typeof AppAdminCommunityRoute
   '/admin/contact': typeof AppAdminContactRoute
   '/admin/feedback': typeof AppAdminFeedbackRoute
@@ -706,6 +713,7 @@ export interface FileRoutesByTo {
   '/community/$postId': typeof CommunityPostIdRoute
   '/community/resources': typeof CommunityResourcesRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/friend/accept': typeof FriendAcceptRoute
   '/admin/community': typeof AppAdminCommunityRoute
   '/admin/contact': typeof AppAdminContactRoute
   '/admin/feedback': typeof AppAdminFeedbackRoute
@@ -800,6 +808,7 @@ export interface FileRoutesById {
   '/community/$postId': typeof CommunityPostIdRoute
   '/community/resources': typeof CommunityResourcesRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
+  '/friend/accept': typeof FriendAcceptRoute
   '/_app/admin/community': typeof AppAdminCommunityRoute
   '/_app/admin/contact': typeof AppAdminContactRoute
   '/_app/admin/feedback': typeof AppAdminFeedbackRoute
@@ -894,6 +903,7 @@ export interface FileRouteTypes {
     | '/community/$postId'
     | '/community/resources'
     | '/email/unsubscribe'
+    | '/friend/accept'
     | '/admin/community'
     | '/admin/contact'
     | '/admin/feedback'
@@ -985,6 +995,7 @@ export interface FileRouteTypes {
     | '/community/$postId'
     | '/community/resources'
     | '/email/unsubscribe'
+    | '/friend/accept'
     | '/admin/community'
     | '/admin/contact'
     | '/admin/feedback'
@@ -1078,6 +1089,7 @@ export interface FileRouteTypes {
     | '/community/$postId'
     | '/community/resources'
     | '/email/unsubscribe'
+    | '/friend/accept'
     | '/_app/admin/community'
     | '/_app/admin/contact'
     | '/_app/admin/feedback'
@@ -1152,6 +1164,7 @@ export interface RootRouteChildren {
   ApiChatRoute: typeof ApiChatRoute
   CareAcceptRoute: typeof CareAcceptRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  FriendAcceptRoute: typeof FriendAcceptRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   OauthWhoopCallbackRoute: typeof OauthWhoopCallbackRoute
@@ -1312,6 +1325,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/friend/accept': {
+      id: '/friend/accept'
+      path: '/friend/accept'
+      fullPath: '/friend/accept'
+      preLoaderRoute: typeof FriendAcceptRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/email/unsubscribe': {
@@ -2005,6 +2025,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiChatRoute: ApiChatRoute,
   CareAcceptRoute: CareAcceptRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  FriendAcceptRoute: FriendAcceptRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   OauthWhoopCallbackRoute: OauthWhoopCallbackRoute,
