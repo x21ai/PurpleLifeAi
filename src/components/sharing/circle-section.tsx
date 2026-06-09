@@ -1,8 +1,16 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Copy, Loader2, Trash2, UserPlus } from "lucide-react";
+import { Copy, Loader2, Mail, MessageCircle, Share2, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
+function inviteText(url: string, code: string) {
+  return `Hey — I'm using Purple, a private health journal. Want to be in my circle? ${url}  (or use code ${code} at purplelife.org/friend/join)`;
+}
+
+function isIOS() {
+  if (typeof navigator === "undefined") return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+}
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,30 +104,10 @@ export function CircleSection() {
                   <StatusPill status={f.status} />
                 </p>
                 {f.status === "pending" && f.iInvited && f.invite_token && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <code className="flex-1 truncate rounded-md bg-muted px-2 py-1 text-[11px] text-foreground">
-                      {typeof window !== "undefined" ? window.location.origin : ""}
-                      /friend/accept?token={f.invite_token}
-                    </code>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        const url =
-                          (typeof window !== "undefined"
-                            ? window.location.origin
-                            : "") +
-                          "/friend/accept?token=" +
-                          f.invite_token;
-                        navigator.clipboard?.writeText(url).then(
-                          () => toast.success("Invite link copied"),
-                          () => toast.error("Couldn't copy"),
-                        );
-                      }}
-                    >
-                      <Copy className="h-3 w-3 mr-1" /> Copy link
-                    </Button>
-                  </div>
+                  <PendingInviteShare
+                    inviteToken={f.invite_token}
+                    referCode={f.refer_code}
+                  />
                 )}
               </div>
               <RemoveFriendButton
