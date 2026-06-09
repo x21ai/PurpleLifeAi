@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Moon, Activity, Heart, Clock, Waves, ChevronRight,
-  Sparkles, Info, UserCircle,
+  Sparkles, Info, UserCircle, Dna,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -154,6 +154,25 @@ function MyHealthPage() {
           </ul>
         </section>
       )}
+
+      {/* DNA insights (optional, off by default) */}
+      <section className="mt-12">
+        <Link
+          to="/my-health-dna"
+          className="group flex items-center gap-4 rounded-3xl border border-border bg-card px-5 py-4 hover:bg-secondary/40 transition"
+        >
+          <div className="h-11 w-11 grid place-items-center rounded-full bg-[color:var(--purple-primary)]/15 text-[color:var(--purple-primary)]">
+            <Dna className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[15px] font-semibold text-foreground">DNA insights (optional)</p>
+            <p className="mt-0.5 text-[12px] text-muted-foreground">
+              Upload a raw file. We look at a small, curated set — never your whole genome.
+            </p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition" />
+        </Link>
+      </section>
 
       <p className="mt-12 text-[11px] text-muted-foreground/60 text-center">
         <Link to="/today" className="hover:text-foreground">Back to today</Link>
