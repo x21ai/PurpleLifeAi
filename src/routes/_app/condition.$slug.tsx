@@ -195,7 +195,7 @@ function ConditionPage() {
               ))}
           </ul>
           <p className="mt-3 text-[11px] text-muted-foreground">
-            These are signals to bring to a clinician — not a diagnosis. If something feels
+            These are signals to bring to a clinician, not a diagnosis. If something feels
             urgent, contact your care team or local emergency services.
           </p>
         </section>
@@ -208,7 +208,7 @@ function ConditionPage() {
           <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
             {def.commonSymptoms.length > 0
               ? def.commonSymptoms.map((s) => <li key={s}>· {s}</li>)
-              : <li>—</li>}
+              : <li>-</li>}
           </ul>
         </div>
         <div className="rounded-2xl border border-border bg-card p-5">
@@ -216,14 +216,14 @@ function ConditionPage() {
           <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
             {def.commonMeds.length > 0
               ? def.commonMeds.map((m) => <li key={m}>· {m}</li>)
-              : <li>—</li>}
+              : <li>-</li>}
           </ul>
         </div>
       </section>
 
       <p className="mt-10 text-[11px] text-muted-foreground">
         Purple is a private journal, not a medical device. Information here is educational
-        and shaped by what you've told us — never a substitute for your clinician.
+        and shaped by what you've told us, never a substitute for your clinician.
       </p>
     </div>
   );

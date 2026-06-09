@@ -8,7 +8,7 @@ import {
 
 /**
  * Client-side reader for the user's AI Care Profile. Returns `null` while
- * loading or if none has been generated yet — every caller MUST have a
+ * loading or if none has been generated yet, every caller MUST have a
  * trait-based fallback so the UI is never blank.
  */
 export function useCareProfile(): CareProfile | null {

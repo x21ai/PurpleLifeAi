@@ -129,7 +129,7 @@ function MyHealthPage() {
         </div>
       </section>
 
-      {/* Your conditions — deep-link into each one */}
+      {/* Your conditions, deep-link into each one */}
       {userConditions.length > 0 && (
         <section className="mt-16">
           <p className="label-eyebrow text-muted-foreground">Your conditions</p>
@@ -167,7 +167,7 @@ function MyHealthPage() {
           <div className="min-w-0 flex-1">
             <p className="text-[15px] font-semibold text-foreground">DNA insights (optional)</p>
             <p className="mt-0.5 text-[12px] text-muted-foreground">
-              Upload a raw file. We look at a small, curated set — never your whole genome.
+              Upload a raw file. We look at a small, curated set, never your whole genome.
             </p>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition" />
