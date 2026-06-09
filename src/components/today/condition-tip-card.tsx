@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Sparkles, X } from "lucide-react";
 import { pickDailyTip } from "@/lib/condition-tips";
+import { useCareProfile } from "@/hooks/use-care-profile";
 
 const STORAGE_KEY = "purple-tip-dismissed";
 
@@ -15,6 +16,20 @@ export function ConditionTipCard({
 }) {
   const [now, setNow] = React.useState<Date | null>(null);
   const [dismissed, setDismissed] = React.useState(false);
+  const careProfile = useCareProfile();
+
+  // Pick a tip from the AI care profile pool when available, otherwise fall
+  // back to the static trait-based tip. Rotates daily by date.
+  function resolveTip(d: Date): { id: string; body: string } {
+    const pool = careProfile?.dailyTipPool;
+    if (pool && pool.length > 0) {
+      const day = Math.floor(d.getTime() / 86_400_000);
+      const t = pool[day % pool.length];
+      return { id: t.id, body: t.body };
+    }
+    const { tip } = pickDailyTip(conditions ?? null, d.getTime());
+    return { id: tip.id, body: tip.body };
+  }
 
   React.useEffect(() => {
     const d = new Date();
@@ -23,17 +38,17 @@ export function ConditionTipCard({
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const { id, day } = JSON.parse(raw) as { id: string; day: string };
-        const { tip } = pickDailyTip(conditions ?? null, d.getTime());
+        const tip = resolveTip(d);
         if (id === tip.id && day === dayKey(d)) setDismissed(true);
       }
     } catch {
       // ignore
     }
-  }, [conditions]);
+  }, [conditions, careProfile]);
 
   if (!now || dismissed) return null;
 
-  const { tip } = pickDailyTip(conditions ?? null, now.getTime());
+  const tip = resolveTip(now);
 
   return (
     <section className="mt-8 rounded-2xl ring-1 ring-border bg-card p-5">

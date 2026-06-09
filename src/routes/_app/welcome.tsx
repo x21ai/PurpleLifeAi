@@ -13,7 +13,8 @@ import { WhoopConnection } from "@/components/connections/whoop-connection";
 import { PhoneInput, parsePhone, formatPhone } from "@/components/ui/phone-input";
 import dawn from "@/assets/hero-readiness-dawn.jpg";
 import mist from "@/assets/hero-readiness-mist.jpg";
-import { CONDITION_OPTIONS, type ConditionTag } from "@/lib/condition-prompts";
+import { type ConditionTag } from "@/lib/condition-prompts";
+import { ConditionPicker } from "@/components/conditions/condition-picker";
 import { Textarea } from "@/components/ui/textarea";
 import {
   FEATURE_CATALOG,
@@ -29,6 +30,7 @@ import { setLocale, detectBrowserLocale, type SupportedLocale } from "@/i18n";
 import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { redeemInviteCode } from "@/lib/invite-codes.functions";
+import { generateCareProfile } from "@/lib/care-profile.functions";
 import { getStoredInvite, clearStoredInvite, setStoredInvite } from "@/lib/invite-storage";
 
 const LOCALE_PREFILL_KEY = "purple-locale-prefill";
@@ -73,6 +75,7 @@ function WelcomePage() {
   });
   const [inviteCode, setInviteCode] = useState<string>(() => getStoredInvite() ?? "");
   const redeem = useServerFn(redeemInviteCode);
+  const regenerateCareProfile = useServerFn(generateCareProfile);
 
   // Auto-redeem any stored invite as soon as we have a session.
   useEffect(() => {
@@ -183,6 +186,11 @@ function WelcomePage() {
         // ignore
       }
       localStorage.setItem("purple-onboarded", "1");
+      // Fire-and-forget: build the AI care profile so Today/Journal/Ask Purple
+      // are already personalized on first paint. Never block onboarding on it.
+      void regenerateCareProfile({ data: { force: true } }).catch((err) => {
+        console.warn("[welcome] care profile generation failed", err);
+      });
       navigate({ to: "/" });
     } catch (e) {
       const msg = e instanceof Error ? e.message : t("welcome.couldNotSave");
@@ -340,31 +348,11 @@ function WelcomePage() {
           <p className="mt-5 text-lg text-muted-foreground max-w-lg">
             {t("welcome.bringsBody")}
           </p>
-          <div className="mt-8 flex flex-wrap gap-2">
-            {CONDITION_OPTIONS.map((opt) => {
-              const active = conditions.includes(opt.id);
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() =>
-                    setConditions((prev) =>
-                      prev.includes(opt.id)
-                        ? prev.filter((c) => c !== opt.id)
-                        : [...prev, opt.id as ConditionTag],
-                    )
-                  }
-                  className={`rounded-full border px-4 py-2 text-sm transition-colors ${
-                    active
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card text-foreground hover:bg-secondary"
-                  }`}
-                  aria-pressed={active}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
+          <div className="mt-8">
+            <ConditionPicker
+              value={conditions}
+              onChange={(next) => setConditions(next as ConditionTag[])}
+            />
           </div>
           <div className="mt-6">
             <Label htmlFor="conditions-note">{t("welcome.anythingElse")}</Label>
