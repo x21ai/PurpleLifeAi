@@ -71,6 +71,7 @@ import { Route as AppReportsDocumentsRouteImport } from './routes/_app/reports.d
 import { Route as AppReportsReportIdRouteImport } from './routes/_app/reports.$reportId'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
 import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
+import { Route as AppConditionSlugRouteImport } from './routes/_app/condition.$slug'
 import { Route as AppCareInboxRouteImport } from './routes/_app/care.inbox'
 import { Route as AppCareOwnerIdRouteImport } from './routes/_app/care.$ownerId'
 import { Route as AppBiometricsMetricRouteImport } from './routes/_app/biometrics.$metric'
@@ -410,6 +411,11 @@ const AppJournalNewRoute = AppJournalNewRouteImport.update({
   path: '/journal/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppConditionSlugRoute = AppConditionSlugRouteImport.update({
+  id: '/condition/$slug',
+  path: '/condition/$slug',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCareInboxRoute = AppCareInboxRouteImport.update({
   id: '/care/inbox',
   path: '/care/inbox',
@@ -613,6 +619,7 @@ export interface FileRoutesByFullPath {
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/care/$ownerId': typeof AppCareOwnerIdRoute
   '/care/inbox': typeof AppCareInboxRoute
+  '/condition/$slug': typeof AppConditionSlugRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/reports/$reportId': typeof AppReportsReportIdRoute
@@ -702,6 +709,7 @@ export interface FileRoutesByTo {
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/care/$ownerId': typeof AppCareOwnerIdRoute
   '/care/inbox': typeof AppCareInboxRoute
+  '/condition/$slug': typeof AppConditionSlugRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/reports/$reportId': typeof AppReportsReportIdRoute
@@ -794,6 +802,7 @@ export interface FileRoutesById {
   '/_app/biometrics/$metric': typeof AppBiometricsMetricRoute
   '/_app/care/$ownerId': typeof AppCareOwnerIdRoute
   '/_app/care/inbox': typeof AppCareInboxRoute
+  '/_app/condition/$slug': typeof AppConditionSlugRoute
   '/_app/journal/new': typeof AppJournalNewRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
   '/_app/reports/$reportId': typeof AppReportsReportIdRoute
@@ -886,6 +895,7 @@ export interface FileRouteTypes {
     | '/biometrics/$metric'
     | '/care/$ownerId'
     | '/care/inbox'
+    | '/condition/$slug'
     | '/journal/new'
     | '/meds/$medId'
     | '/reports/$reportId'
@@ -975,6 +985,7 @@ export interface FileRouteTypes {
     | '/biometrics/$metric'
     | '/care/$ownerId'
     | '/care/inbox'
+    | '/condition/$slug'
     | '/journal/new'
     | '/meds/$medId'
     | '/reports/$reportId'
@@ -1066,6 +1077,7 @@ export interface FileRouteTypes {
     | '/_app/biometrics/$metric'
     | '/_app/care/$ownerId'
     | '/_app/care/inbox'
+    | '/_app/condition/$slug'
     | '/_app/journal/new'
     | '/_app/meds/$medId'
     | '/_app/reports/$reportId'
@@ -1584,6 +1596,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppJournalNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/condition/$slug': {
+      id: '/_app/condition/$slug'
+      path: '/condition/$slug'
+      fullPath: '/condition/$slug'
+      preLoaderRoute: typeof AppConditionSlugRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/care/inbox': {
       id: '/_app/care/inbox'
       path: '/care/inbox'
@@ -1888,6 +1907,7 @@ interface AppRouteChildren {
   AppBiometricsMetricRoute: typeof AppBiometricsMetricRoute
   AppCareOwnerIdRoute: typeof AppCareOwnerIdRoute
   AppCareInboxRoute: typeof AppCareInboxRoute
+  AppConditionSlugRoute: typeof AppConditionSlugRoute
   AppJournalNewRoute: typeof AppJournalNewRoute
   AppSeizuresNewRoute: typeof AppSeizuresNewRoute
   AppBiometricsIndexRoute: typeof AppBiometricsIndexRoute
@@ -1916,6 +1936,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppBiometricsMetricRoute: AppBiometricsMetricRoute,
   AppCareOwnerIdRoute: AppCareOwnerIdRoute,
   AppCareInboxRoute: AppCareInboxRoute,
+  AppConditionSlugRoute: AppConditionSlugRoute,
   AppJournalNewRoute: AppJournalNewRoute,
   AppSeizuresNewRoute: AppSeizuresNewRoute,
   AppBiometricsIndexRoute: AppBiometricsIndexRoute,
