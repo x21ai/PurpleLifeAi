@@ -20,10 +20,11 @@ import {
  *   - the conditions list changes (hash mismatch), or
  *   - it's older than 30 days
  *
- * Falls back to trait-derived defaults if the AI call fails — never blocks UX.
+ * Falls back to trait-derived defaults if the AI call fails, never blocks UX.
  */
 
 const STALE_MS = 30 * 24 * 3600 * 1000;
+const FORCE_DEDUPE_MS = 30 * 1000; // coalesce burst regenerations within 30s
 
 const CareProfileSchema = z.object({
   todayGreeting: z.string().min(4).max(140),
@@ -110,7 +111,7 @@ Rules:
 - Never give medical advice or dosing. Never diagnose. Never moralize.
 - Be respectful of low-energy users (chronic illness, pacing).
 ${tier === "sensitive" ? "- Sensitive topic mode: extra gentle. Avoid trigger phrases. Never imply blame." : ""}
-- "watchFor" = short red-flag prompts to bring to a clinician — observational, not diagnostic.
+- "watchFor" = short red-flag prompts to bring to a clinician, observational, not diagnostic.
 - Keep each string short: greetings <120 chars, prompts <140 chars, tips <240 chars.`;
 
   const prompt = `User's conditions / context:\n${profileSummary(slugs, note)}\n\nGenerate the personalized care profile JSON now.`;
@@ -191,6 +192,21 @@ export const generateCareProfile = createServerFn({ method: "POST" })
       };
     }
 
+    // Force-dedupe: even when force=true (onboarding, condition pick, DNA parse,
+    // etc. can all fire close together), don't re-run the AI call if one ran
+    // for the same conditions hash within FORCE_DEDUPE_MS.
+    if (
+      data.force &&
+      row?.ai_care_profile &&
+      row.care_profile_conditions_hash === hash &&
+      Date.now() - generatedAt < FORCE_DEDUPE_MS
+    ) {
+      return {
+        profile: row.ai_care_profile as CareProfile,
+        cached: true as const,
+      };
+    }
+
     let profile: CareProfile;
     let usedFallback = false;
     try {
@@ -217,7 +233,7 @@ export const generateCareProfile = createServerFn({ method: "POST" })
 /**
  * Read just the per-condition deep-page slice. Pulls catalog data + the
  * matching slice of the AI care profile (if present). Safe to call from a
- * loader — does NOT trigger an AI call.
+ * loader, does NOT trigger an AI call.
  */
 const ReadConditionInput = z.object({ slug: z.string().min(1).max(60) });
 
@@ -228,7 +244,7 @@ export const readConditionPage = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const def = getCondition(data.slug);
     if (!def) {
-      // Unknown slug — keep API stable and let UI render a "not in catalog" state.
+      // Unknown slug, keep API stable and let UI render a "not in catalog" state.
       return { def: null, hasIt: false, profile: null as CareProfile | null };
     }
     const { data: row } = await supabase
@@ -244,7 +260,7 @@ export const readConditionPage = createServerFn({ method: "POST" })
     };
   });
 
-/** Static list of catalog slugs — used by clients to validate route params. */
+/** Static list of catalog slugs, used by clients to validate route params. */
 export const KNOWN_CONDITION_SLUGS: ReadonlySet<string> = new Set(
   CONDITION_CATALOG.map((c) => c.slug),
 );

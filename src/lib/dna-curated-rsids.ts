@@ -21,7 +21,7 @@ export interface CuratedRsid {
 }
 
 export const CURATED_RSIDS: readonly CuratedRsid[] = [
-  // APOE — gated, sensitive
+  // APOE, gated, sensitive
   {
     rsid: "rs429358",
     gene: "APOE",
@@ -42,7 +42,7 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
     gene: "APOE",
     trait: "Long-term brain & heart load",
     plainLanguage:
-      "Pairs with rs429358 to read the APOE ε pattern. We never show a risk score — just a calm note.",
+      "Pairs with rs429358 to read the APOE ε pattern. We never show a risk score, just a calm note.",
     genotypeNotes: {
       CC: "No ε2 copy at this spot.",
       CT: "One ε2 copy at this spot.",
@@ -57,12 +57,12 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
     gene: "MTHFR",
     trait: "B-vitamin processing",
     plainLanguage:
-      "Affects how your body handles folate and B12. Mostly a nutrition note — a varied diet covers it.",
+      "Affects how your body handles folate and B12. Mostly a nutrition note, a varied diet covers it.",
     genotypeNotes: {
       GG: "Typical pattern.",
-      AG: "One variant copy — slightly slower processing.",
-      GA: "One variant copy — slightly slower processing.",
-      AA: "Two variant copies — slower processing; food-form folate often suits people best.",
+      AG: "One variant copy, slightly slower processing.",
+      GA: "One variant copy, slightly slower processing.",
+      AA: "Two variant copies, slower processing; food-form folate often suits people best.",
     },
   },
   {
@@ -77,7 +77,7 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
       GG: "Two variant copies.",
     },
   },
-  // HLA-B27 — autoimmune
+  // HLA-B27, autoimmune
   {
     rsid: "rs4349859",
     gene: "HLA-B",
@@ -92,18 +92,18 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
       AA: "Stronger signal worth noting to a clinician.",
     },
   },
-  // Factor V Leiden — clotting
+  // Factor V Leiden, clotting
   {
     rsid: "rs6025",
     gene: "F5",
     trait: "Clotting tendency",
     plainLanguage:
-      "Factor V Leiden. Worth knowing before long flights or hormonal medications — mention it to your doctor.",
+      "Factor V Leiden. Worth knowing before long flights or hormonal medications, mention it to your doctor.",
     genotypeNotes: {
       CC: "Typical pattern.",
-      CT: "One Leiden copy — mention to your doctor.",
-      TC: "One Leiden copy — mention to your doctor.",
-      TT: "Two Leiden copies — please discuss with your doctor.",
+      CT: "One Leiden copy, mention to your doctor.",
+      TC: "One Leiden copy, mention to your doctor.",
+      TT: "Two Leiden copies, please discuss with your doctor.",
     },
     sensitive: true,
   },
@@ -116,24 +116,24 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
       "Prothrombin G20210A. Like F5, mostly a flag for your medical team around clotting risk.",
     genotypeNotes: {
       GG: "Typical pattern.",
-      AG: "One variant copy — mention to your doctor.",
-      GA: "One variant copy — mention to your doctor.",
-      AA: "Two variant copies — please discuss with your doctor.",
+      AG: "One variant copy, mention to your doctor.",
+      GA: "One variant copy, mention to your doctor.",
+      AA: "Two variant copies, please discuss with your doctor.",
     },
     sensitive: true,
   },
-  // CYP2D6 / CYP2C19 — med metabolism
+  // CYP2D6 / CYP2C19, med metabolism
   {
     rsid: "rs3892097",
     gene: "CYP2D6",
     trait: "Medication metabolism",
     plainLanguage:
-      "Affects how some common medications (certain antidepressants, codeine, beta-blockers) are processed. A pharmacist can use this — we don't recommend doses.",
+      "Affects how some common medications (certain antidepressants, codeine, beta-blockers) are processed. A pharmacist can use this, we don't recommend doses.",
     genotypeNotes: {
       CC: "Typical processing.",
-      CT: "Slower processing — worth mentioning at pharmacy.",
-      TC: "Slower processing — worth mentioning at pharmacy.",
-      TT: "Much slower processing — please mention.",
+      CT: "Slower processing, worth mentioning at pharmacy.",
+      TC: "Slower processing, worth mentioning at pharmacy.",
+      TT: "Much slower processing, please mention.",
     },
   },
   {
@@ -160,7 +160,7 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
       AA: "Fast caffeine clearance.",
       AC: "Slower clearance.",
       CA: "Slower clearance.",
-      CC: "Slow clearance — caffeine lingers.",
+      CC: "Slow clearance, caffeine lingers.",
     },
   },
   // Lactose persistence
@@ -188,7 +188,7 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
       TT: "Typical levels.",
       GT: "Slightly lower levels.",
       TG: "Slightly lower levels.",
-      GG: "Often lower levels — ask about a vitamin D test.",
+      GG: "Often lower levels, ask about a vitamin D test.",
     },
   },
   // Migraine

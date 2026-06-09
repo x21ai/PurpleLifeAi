@@ -107,7 +107,7 @@ export const template = {
       : `${(d.senderName as string)?.trim() || "A Purple user"} shared a medical history report`,
   displayName: "Medical history report shared",
   previewData: {
-    senderName: "Jane Doe",
+    senderName: "Jane Doe", // live-data-guard:allow
     message: "Sharing this ahead of our visit next week.",
     windowFrom: "2026-03-01",
     windowTo: "2026-06-01",

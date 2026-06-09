@@ -1,113 +1,62 @@
-## What's left from the previous phase
+## Audit — what's actually still open
 
-Two things didn't land cleanly, both visible on the screenshots you sent:
+Walked the previous waves and the live `purplelife.org` build. Status:
 
-### A. Marketing images are too big on every breakpoint
-Looking at `src/components/marketing/calm-scene.tsx`:
+| Item | Status |
+|---|---|
+| Wave 4 — duplicate-reports admin page + server fns | Shipped, empty state already present |
+| Wave 4 — types regen after migration | Done (dna_files/dna_variants types are in `types.ts`, no `as any` casts in `admin-reports.functions.ts`) |
+| Wave 5 — DNA tables + bucket + parser + UI + Care Profile hook | Shipped |
+| Marketing image sizing pass (Apple-restraint) | Done in code (`calm-scene.tsx`, `calm-images.ts`) |
+| Image 404 class-of-bug fix (single width per asset) | Done in code |
+| **Care Profile dedupe — `generateCareProfile` is now called from 4 places** (welcome, condition-history, condition.$slug, my-health-dna) and can double-fire on first-run | **Open** |
+| **Republish + verify** marketing image fixes on `www.purplelife.org` (live build still serves the old 3-width variants because we haven't shipped) | **Open** |
+| **Full pre-launch QA sweep** | **Open** |
 
-- `HumanMoment` (portrait) renders inside `aspect-[4/5]` — on mobile that becomes ~85% of viewport height for a single quote. Apple uses ~1:1 or 3:4 at most on phones.
-- `HumanMoment` (quote-over-photo) is `h-[70vh] min-h-[480px] max-h-[820px]`. On a 13" laptop that's a 600px+ wall.
-- `StillLife` is `h-[55vh] min-h-[360px]`. The notebook/mountain "punctuation" shots dominate scroll.
-- `sizes="100vw"` everywhere even when the image visually occupies ~600px max, so browsers download the 1600w/1920w variant unnecessarily.
-- No max-width cap on `HumanMoment` quote layout, so on desktop the hero image stretches edge-to-edge instead of sitting in a contained frame.
+Re: "images broke" — the published site at `www.purplelife.org` is still the *old* build (3 width variants per asset, all 200 OK). The preview is on the *new* single-width code. If preview images look wrong, it's almost certainly that the dev cache hasn't picked up the new `vite-imagetools` query strings — a dev-server restart fixes it. Real verification happens after republish.
 
-### B. Some image variants 404 on the published worker
-`vite-imagetools` emits 3–4 widths × 3 formats per asset. The Cloudflare static-assets manifest in production drops some of the smaller width variants (sandbox preview is fine because Vite serves them live). You asked previously to pick option 1 or 2 — I'll go with **option 1** since it's deterministic and removes the class of bug entirely.
+## Plan
 
-## The plan
+### Step 1 — Care Profile regen dedupe (small)
+Add a tiny debounce/coalesce in `src/lib/care-profile.functions.ts` (server-side: skip a regen if one ran for the same user in the last 30 s and `force: false` wasn't set). Keeps onboarding-finish + first-condition-pick + first-DNA-parse from triple-firing the AI call.
 
-### Step 1 — Right-size the marketing imagery (Apple-restraint pass)
+### Step 2 — Restart dev server + sanity-check preview images
+Force-restart Vite so the new single-width `?w=1600&format=avif;webp;jpg&as=picture` imports re-emit cleanly. Visually confirm `/`, `/features`, `/pricing`, `/about`, `/contact` at 390, 820, 1440.
 
-In `src/components/marketing/calm-scene.tsx`:
+### Step 3 — Full pre-launch QA pass (read-only, no code unless something's broken)
 
-- `HumanMoment` portrait layout: change the image frame from `aspect-[4/5]` to `aspect-[4/5] max-w-[420px] mx-auto lg:max-w-none lg:aspect-[3/4]`. Add `sizes="(min-width: 1024px) 560px, (min-width: 640px) 420px, 88vw"`.
-- `HumanMoment` quote-over-photo layout: cap to `h-[clamp(420px,60vh,640px)]` and wrap in `max-w-6xl mx-auto rounded-3xl` so it's a framed cinematic moment, not a wall. Mobile-only override to `h-[clamp(360px,55vh,520px)]`.
-- `StillLife`: `h-[clamp(280px,42vh,460px)]`, wrap in `max-w-5xl mx-auto rounded-3xl my-16`.
-- `CalmHero`: shrink mobile hero to `min-h-[clamp(520px,78vh,720px)]` (currently fills the viewport, pushing all content below the fold).
-- Tighten section vertical rhythm: replace `py-24 sm:py-32` on `HumanMoment` portrait with `py-16 sm:py-24 lg:py-28`.
+Walked as a real user across the three device widths (390 / 820 / 1440):
 
-In `src/components/marketing/responsive-image.tsx`: no API change; the new `sizes` props above shrink download weight automatically.
+1. **Marketing & auth** — `/`, `/features`, `/pricing`, `/about`, `/contact`, `/community`, `/charter`, `/privacy`, `/terms`, `/sign-in`, `/sign-up`, `/reset-password`. Check image weights in DevTools Network (target hero <120 KB AVIF, moments <90 KB).
+2. **Onboarding** — `/welcome` end-to-end: name → conditions → done → lands on `/today`.
+3. **Today + capture** — Today greeting, quick capture (text/voice/snap sheets open), condition tip card.
+4. **Journal / Chat / Ask-Purple** — entry creation, condition-aware prompt, disclaimer footer present.
+5. **My Health** — entry cards (incl. new DNA card), `/condition/$slug`, `/my-health/dna` upload + parse + sensitive toggle + delete + caregiver-share toggle.
+6. **Meds** — list, add, scan sheet, voice sheet, reminders banner, dose marking.
+7. **Reports** — `/reports`, trends, metrics, documents, medical history, new report, share link.
+8. **Biometrics / Hydration / Vitals / Insights / Timeline / Tools / Travel / Seizures**.
+9. **Care** — inbox, owner view, caregiver write-confirm path.
+10. **Settings** — account, sharing, travel, conditions history, how-purple-thinks, locale.
+11. **Admin** (admin user only) — users, reports/duplicates, rules, feedback, contact, community, promo, resources, messages.
+12. **PWA / SW** — install prompt surface, offline journal queue banner.
+13. **Smoke tests** — run the existing Playwright suite (`routes-smoke`, `theme-footer`, `onboarding`, `today`, `meds`, `journal`, `biometrics`, `community`, `sharing`, `admin`, `settings`, `auth`).
 
-### Step 2 — Eliminate the 404 image variant class of bug
+For each surface I'll log: ✓ OK / ⚠ minor / ✗ blocker. Anything that blocks go-live gets fixed in this same pass; minor polish gets a Wave 6 note.
 
-Switch `vite-imagetools` calls in `src/lib/calm-images.ts` from multi-width picture sets to a **single optimized width per format**, keeping AVIF/WebP/JPG fallback:
+### Step 4 — Final republish prep
+- Confirm `mem://` core rules respected (no third-party trackers, private buckets, account menu top-right, wordmark left alone).
+- Re-run `scripts/check-no-em-dash.mjs`, `scripts/check-no-test-data.mjs`, `scripts/check-unique-route-images.mjs`.
+- Surface the publish action so you can ship.
 
-```ts
-// before
-"...?w=640;1024;1600;1920&format=avif;webp;jpg&as=picture"
-// after
-"...?w=1280&format=avif;webp;jpg&as=picture"
-```
+### What I will NOT touch
+- Auto-generated files (types.ts, routeTree.gen.ts, supabase client files, .env).
+- New features outside the previous waves.
+- The wordmark / account-menu placement.
 
-- Heroes: `w=1600`
-- HumanMoment / StillLife: `w=1280`
-- Inline quotes / small details: `w=900`
+### Order of execution
+1. Care-profile dedupe (≤10 min).
+2. Restart dev + preview image check.
+3. Full QA walk (will take a chunk of tool calls — I'll batch where possible).
+4. Fix any blockers found, re-verify, then surface Publish.
 
-This produces 3 files per asset instead of 12, every one referenced and emitted, no missing widths. `ResponsiveImage` keeps its current `<picture>` shape so AVIF/WebP/JPG negotiation still works.
-
-### Step 3 — Verify
-
-- Build + open `/`, `/features`, `/pricing`, `/about`, `/contact` at 390×844, 820×1180, 1440×900.
-- DevTools → Network: confirm AVIF served, payloads drop (target hero <120KB, moment shots <90KB).
-- `curl -I` each emitted variant URL on the published worker after deploy to confirm no 404s.
-
----
-
-## Wave 5 — DNA uploads (the next major slice)
-
-Goal: let users upload a raw DNA file (23andMe, AncestryDNA, MyHeritage TSV/TXT, or generic VCF) and have Purple extract a small, condition-relevant set of variants — never a clinical report, always disclaimered.
-
-### Scope (kept tight on purpose)
-
-1. **Upload + storage**
-   - Private bucket `dna-uploads/{user_id}/{file_id}` (signed URLs only, never public — matches existing journal-media/reports rules in memory).
-   - New table `public.dna_files`: `user_id`, `provider` ('23andme' | 'ancestry' | 'myheritage' | 'vcf' | 'unknown'), `original_filename`, `storage_path`, `byte_size`, `status` ('uploaded' | 'parsing' | 'parsed' | 'error'), `error_message`, `parsed_at`.
-   - Standard four-step pattern: CREATE TABLE → GRANT (authenticated + service_role only, no anon) → ENABLE RLS → policies scoped to `auth.uid()`.
-
-2. **Parser** (`src/lib/dna-parse.server.ts`, called from `parseDnaFile` server fn)
-   - Detects format by header line.
-   - Streams the file from storage; extracts only SNPs in a curated **allow-list** of ~50 RSIDs tied to traits we already model (e.g. APOE for Alzheimer's risk awareness, MTHFR, HLA-B27 for autoimmune, CYP2D6 for med metabolism notes, F5 Leiden for clotting). No whole-genome ingestion.
-   - Stores extracted rows in `dna_variants` (file_id, rsid, genotype, chromosome, position).
-
-3. **UI**
-   - New route `/_app/my-health/dna` with:
-     - Upload card (drag-drop, accepts .txt/.tsv/.vcf/.zip, ≤30MB)
-     - "What we look at and why" disclosure (lists the 50 RSIDs in plain language, links to evidence)
-     - Results: grouped by trait, each row shows genotype + a calm "what this means" note from `condition_catalog.evidence_refs`
-     - Delete-and-purge button (deletes file from storage + rows from both tables)
-   - Entry from `/my-health` as a "DNA insights (optional)" card, off by default.
-
-4. **AI integration**
-   - On parse success, regenerate the Care Profile with a new `dnaContext` summary input so journal prompts can be subtly informed (e.g. "Your APOE pattern is associated with sleep being especially load-bearing — want to log last night?").
-   - Same graceful fallback rules: if AI is down, the DNA page still shows the static catalog notes.
-
-5. **Safety**
-   - Hard-coded `MedicalDisclaimer` on every DNA surface with explicit "This is not a clinical genetic test. Do not make medical decisions from this."
-   - Sensitive findings (APOE ε4/ε4, BRCA-related) gated behind an extra "Show sensitive results" toggle defaulted off, with crisis/genetic-counselor resource links.
-   - No sharing to caregivers without explicit opt-in (new column `dna_files.share_with_caregivers boolean default false`).
-
-### Out of scope for Wave 5 (call out so we don't drift)
-
-- Pharmacogenomics dosing recommendations (medical-device territory).
-- Ancestry / ethnicity breakdowns.
-- Imputation or polygenic risk scores.
-- Re-analysis of old files when the allow-list grows (we'll add a "re-scan" button in a later wave).
-
----
-
-## Anything else outstanding
-
-From previous waves I'm tracking:
-
-- **Wave 4 type regen**: the `admin-reports.functions.ts` queries reference `duplicate_of` / `excluded_from_trends` / `identity_status` columns; once the migration runs and `src/integrations/supabase/types.ts` regenerates, confirm no `as any` casts slipped in.
-- **`/admin/reports/duplicates` empty state**: needs a "Nothing to review" card — small polish, I'll fold it into Step 3 verification.
-- **Care Profile cache invalidation**: when DNA finishes parsing OR conditions change, both call the same `regenerateCareProfile` helper. Need to make sure we're not double-firing on onboarding finish.
-
-## Order of execution
-
-1. Steps 1–3 above (images) — ship together, ~1 round of build + visual QA.
-2. Wave 5 migration (DNA tables + bucket) for your approval.
-3. Wave 5 parser + UI + AI hook.
-4. Tiny polish pass: duplicates empty state + Care Profile dedupe.
-
-Reply **go** to start with the image fixes, or tell me to reorder (e.g. "DNA first").
+Reply **go** to start, or tell me to skip any section (e.g. "skip admin" or "skip Playwright").

@@ -16,7 +16,7 @@ import {
   type ConditionTrait,
 } from "./condition-catalog";
 
-/** Kept as a string alias — many call sites still import this type. */
+/** Kept as a string alias, many call sites still import this type. */
 export type ConditionTag = string;
 
 export interface ConditionOption {

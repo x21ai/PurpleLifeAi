@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_app/my-health-dna")({
   head: () => ({
     meta: [
       { title: "DNA insights · Purple" },
-      { name: "description", content: "Upload a raw DNA file. Purple looks at a small, curated set of variants — never a clinical report." },
+      { name: "description", content: "Upload a raw DNA file. Purple looks at a small, curated set of variants, never a clinical report." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -125,7 +125,7 @@ function DnaPage() {
         <p className="mt-5 body-serif text-foreground/70 max-w-[560px]">
           Upload a raw file from 23andMe, AncestryDNA, MyHeritage, or any standard VCF.
           Purple only looks at a small, curated set of variants tied to traits we already
-          track — never your whole genome.
+          track, never your whole genome.
         </p>
       </section>
 
@@ -139,7 +139,7 @@ function DnaPage() {
           </div>
           <div>
             <p className="font-medium">Upload a DNA file</p>
-            <p className="text-xs text-muted-foreground">.txt, .tsv, .csv, or .vcf — up to 30 MB</p>
+            <p className="text-xs text-muted-foreground">.txt, .tsv, .csv, or .vcf, up to 30 MB</p>
           </div>
         </div>
         <input
@@ -276,7 +276,7 @@ function DnaPage() {
           {latestVariants.length === 0 && (
             <div className="mt-4 rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground inline-flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-              <p>We didn't find any curated variants in this file. It may use a non-standard format — try another export.</p>
+              <p>We didn't find any curated variants in this file. It may use a non-standard format, try another export.</p>
             </div>
           )}
 

@@ -36,7 +36,7 @@ export interface FeatureDef {
   /**
    * Condition *traits* for which this feature is on by default. Empty =
    * opt-in only. Trait-based so every catalog condition that maps to one
-   * of these traits gets the default automatically — we don't have to
+   * of these traits gets the default automatically, we don't have to
    * enumerate slugs.
    */
   defaultFor: ConditionTrait[];

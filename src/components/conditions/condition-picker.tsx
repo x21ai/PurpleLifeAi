@@ -90,7 +90,7 @@ export function ConditionPicker({
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search 40+ conditions — e.g. autism, migraine, lupus"
+          placeholder="Search 40+ conditions, e.g. autism, migraine, lupus"
           className="w-full rounded-full border border-border bg-card pl-10 pr-9 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
           aria-label="Search conditions"
         />
