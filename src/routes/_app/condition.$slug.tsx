@@ -160,17 +160,20 @@ function ConditionPage() {
           <Activity className="h-4 w-4 text-primary" />
           <h2 className="font-serif text-lg text-foreground">Ask Purple</h2>
         </div>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <ul className="mt-3 space-y-2">
           {(profile?.askPurpleStarters ?? conditionScopedQuestions).map((q) => (
-            <Link
+            <li
               key={q}
-              to="/chat"
-              search={{ q } as never}
-              className="rounded-full border border-border bg-card hover:bg-secondary px-3 py-1.5 text-xs text-foreground"
+              className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground"
             >
               {q}
-            </Link>
+            </li>
           ))}
+        </ul>
+        <div className="mt-3">
+          <Link to="/chat">
+            <Button variant="outline" size="sm">Open Ask Purple</Button>
+          </Link>
         </div>
       </section>
 
