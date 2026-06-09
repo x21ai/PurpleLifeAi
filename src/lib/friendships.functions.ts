@@ -237,11 +237,18 @@ export const setFriendNickname = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) throw new Error("Friendship not found.");
-    const field = row.user_a === userId ? "note_a" : row.user_b === userId ? "note_b" : null;
-    if (!field) throw new Error("You're not part of this friendship.");
+    const patch: { note_a?: string | null; note_b?: string | null } =
+      row.user_a === userId
+        ? { note_a: data.note }
+        : row.user_b === userId
+          ? { note_b: data.note }
+          : {};
+    if (Object.keys(patch).length === 0) {
+      throw new Error("You're not part of this friendship.");
+    }
     const { error: upErr } = await supabaseAdmin
       .from("friendships")
-      .update({ [field]: data.note })
+      .update(patch)
       .eq("id", data.friendship_id);
     if (upErr) throw new Error(upErr.message);
     return { ok: true };
