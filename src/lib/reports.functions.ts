@@ -320,15 +320,13 @@ export const processReport = createServerFn({ method: "POST" })
       .eq("id", doc.id);
 
     try {
-      // Download file via signed URL
-      const { data: signed } = await supabase.storage
+      // Download the file directly via the storage API (avoids signed-URL
+      // outbound fetch which can fail in the Worker dev runtime).
+      const { data: blob, error: dlErr } = await supabase.storage
         .from("reports")
-        .createSignedUrl(doc.file_path, 300);
-      if (!signed?.signedUrl) throw new Error("Could not access file");
-
-      const fileRes = await fetch(signed.signedUrl);
-      if (!fileRes.ok) throw new Error("File download failed");
-      const fileBuf = await fileRes.arrayBuffer();
+        .download(doc.file_path);
+      if (dlErr || !blob) throw new Error(`File download failed: ${dlErr?.message ?? "no data"}`);
+      const fileBuf = await blob.arrayBuffer();
 
       let text = "";
       let media: { base64: string; mime: string } | null = null;
