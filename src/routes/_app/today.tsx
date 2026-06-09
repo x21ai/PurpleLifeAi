@@ -16,6 +16,7 @@ import { TodayInstallBanner } from "@/components/pwa/today-install-banner";
 import { RestoreBanner } from "@/components/settings/restore-banner";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
 import { promptsForConditions, showsSeizureFeatures, getTodayGreeting } from "@/lib/condition-prompts";
+import { useCareProfile } from "@/hooks/use-care-profile";
 import { TodayEmptyState } from "@/components/today/empty-state";
 import { useTranslation } from "react-i18next";
 import { QuickAddWater } from "@/components/hydration/quick-add-water";
@@ -150,15 +151,20 @@ function TodayPage() {
     if (!now) return "How's today feeling?";
     const { journalPrompt } = getTodayGreeting(profile?.conditions ?? [], now.getHours());
     const list = promptsForConditions(profile?.conditions ?? []);
+    if (carePrompts && carePrompts.length > 0) {
+      const day = Math.floor(now.getTime() / 86_400_000);
+      return carePrompts[day % carePrompts.length];
+    }
     if (list.length === 0) return journalPrompt;
     // Deterministic per-day so the prompt doesn't flicker on re-render.
     const day = Math.floor(now.getTime() / 86_400_000);
     return list[day % list.length];
-  }, [profile?.conditions, now]);
+  }, [profile?.conditions, now, carePrompts]);
   const greetingSuffix = useMemo(() => {
     if (!now) return "";
+    if (careGreeting) return careGreeting;
     return getTodayGreeting(profile?.conditions ?? [], now.getHours()).greetingSuffix;
-  }, [profile?.conditions, now]);
+  }, [profile?.conditions, now, careGreeting]);
 
   const readiness = bio?.oura_readiness_score ?? null;
   const sleep = bio?.sleep_score ?? null;
