@@ -114,10 +114,15 @@ export function MetricCard({
 
   const inner = (
     <>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
             <p className="label-eyebrow text-muted-foreground">{meta.label}</p>
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] tracking-wide uppercase font-medium ${tone.cls}`}
+            >
+              {tone.label}
+            </span>
             {multi && (
               <span className="flex items-center gap-0.5">
                 {sources.map((s) => (
@@ -149,20 +154,15 @@ export function MetricCard({
           <p
             className={
               size === "hero"
-                ? "mt-3 font-serif text-5xl sm:text-6xl text-foreground leading-none"
-                : "mt-2 font-serif text-3xl sm:text-4xl text-foreground leading-none"
+                ? "mt-3 font-serif text-4xl sm:text-5xl text-foreground leading-none whitespace-nowrap"
+                : "mt-2 font-serif text-2xl sm:text-3xl text-foreground leading-none whitespace-nowrap"
             }
           >
             {meta.format(current)}
           </p>
         </div>
-        <div className="shrink-0 flex items-center gap-1.5">
-          <span
-            className={`rounded-full px-2 py-0.5 text-[10px] tracking-wide uppercase font-medium ${tone.cls}`}
-          >
-            {tone.label}
-          </span>
-          {onTogglePin && (
+        {onTogglePin && (
+          <div className="shrink-0">
             <button
               type="button"
               onClick={(e) => {
@@ -180,8 +180,8 @@ export function MetricCard({
             >
               {pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {hasSpark && (

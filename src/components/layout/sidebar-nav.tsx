@@ -92,14 +92,12 @@ export function SidebarNav() {
   return (
     <TooltipProvider>
     <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-16 lg:w-64 border-r border-border bg-sidebar text-sidebar-foreground">
-      <div className="flex items-center h-20 px-4 lg:px-6 border-b border-border">
-        <Link to="/today" className="flex items-center flex-1" aria-label="Purple, home">
+      <div className="flex items-center justify-center lg:justify-start h-20 px-0 lg:px-6 border-b border-border">
+        <Link to="/today" className="flex items-center justify-center lg:justify-start flex-1" aria-label="Purple, home">
           <span className="hidden lg:inline wordmark text-[14px] text-foreground">Purple</span>
-          <span
-            className="lg:hidden inline-block h-7 w-7 rounded-full"
-            style={{ background: "var(--purple-primary)" }}
-            aria-hidden
-          />
+          <span className="lg:hidden wordmark text-[16px] text-foreground" aria-hidden>
+            P
+          </span>
         </Link>
       </div>
 
@@ -149,7 +147,7 @@ function GroupItem({
   const isExactActive = !!group.to && pathname === group.to;
 
   const rowClass = cn(
-    "group w-full flex items-center gap-3 rounded-xl pl-3 pr-1 py-2.5 text-[14px] transition-colors",
+    "group w-full flex items-center gap-3 rounded-xl px-0 lg:pl-3 lg:pr-1 py-2.5 text-[14px] transition-colors",
     "justify-center lg:justify-start",
     isExactActive
       ? "bg-secondary text-foreground font-medium"

@@ -63,7 +63,6 @@ export const navTree: NavGroup[] = [
     to: "/insights",
     children: [
       { to: "/reports",  label: "Reports",   icon: FileText   },
-      { to: "/reports/medical-history", label: "Medical history PDF", icon: FileText },
     ],
   },
   {
@@ -75,15 +74,7 @@ export const navTree: NavGroup[] = [
       { to: "/chat-care", label: "Messages",   icon: MessageCircle },
     ],
   },
-  {
-    id: "community",
-    label: "Community",
-    icon: Globe,
-    to: "/community",
-    children: [
-      { to: "/community/resources", label: "Resources", icon: FileText },
-    ],
-  },
+  { id: "community", label: "Community", icon: Globe, to: "/community" },
   {
     id: "tools",
     label: "Tools",
@@ -102,7 +93,6 @@ export const navTree: NavGroup[] = [
       { to: "/account",          label: "Profile",  icon: User      },
       { to: "/settings",         label: "Settings", icon: Settings2 },
       { to: "/settings/sharing", label: "Sharing",  icon: Shield    },
-      { to: "/privacy",          label: "Privacy",  icon: Shield    },
     ],
   },
 ];

@@ -95,7 +95,7 @@ export function ProfileMenu() {
             >
               <User className="mr-2 h-4 w-4 text-muted-foreground" />
               <div className="flex flex-col">
-                <span>My account</span>
+                <span>View as myself</span>
                 <span className="text-[10px] text-muted-foreground">Your own data</span>
               </div>
             </DropdownMenuItem>
