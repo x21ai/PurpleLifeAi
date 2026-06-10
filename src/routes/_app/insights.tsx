@@ -1,7 +1,7 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { format, subDays, startOfDay, parseISO } from "date-fns";
-import { Zap, Plus, Sparkles, AlertTriangle, Info } from "lucide-react";
+import { Zap, Plus, Sparkles, AlertTriangle, Info, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,11 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { computeUserPatterns, type PatternCard } from "@/lib/insights-patterns.functions";
+import {
+  getVitalsSnapshot,
+  getHealthRecordsCounts,
+} from "@/lib/health-vitals.functions";
+import { REPORT_CATEGORIES } from "@/lib/report-categories";
 
 type SeizureRow = {
   id: string;
@@ -66,6 +71,10 @@ function InsightsPage() {
       </div>
 
       <TrendsHeader />
+
+      <VitalsRow />
+
+      <HealthRecordsHub />
 
       {tracksSeizures !== null && (
         <Tabs
