@@ -105,6 +105,7 @@ import { Route as ApiPublicCronDoseRemindersRouteImport } from './routes/api/pub
 import { Route as ApiPublicCronCareDailyDigestRouteImport } from './routes/api/public/cron/care-daily-digest'
 import { Route as AppReportsTrendsMetricKeyRouteImport } from './routes/_app/reports.trends.$metricKey'
 import { Route as AppAdminReportsDuplicatesRouteImport } from './routes/_app/admin.reports.duplicates'
+import { Route as AppCareOwnerIdReportsReportIdRouteImport } from './routes/_app/care.$ownerId.reports.$reportId'
 
 const UsersRoute = UsersRouteImport.update({
   id: '/users',
@@ -601,6 +602,12 @@ const AppAdminReportsDuplicatesRoute =
     path: '/reports/duplicates',
     getParentRoute: () => AppAdminRoute,
   } as any)
+const AppCareOwnerIdReportsReportIdRoute =
+  AppCareOwnerIdReportsReportIdRouteImport.update({
+    id: '/reports/$reportId',
+    path: '/reports/$reportId',
+    getParentRoute: () => AppCareOwnerIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -657,7 +664,7 @@ export interface FileRoutesByFullPath {
   '/admin/rules': typeof AppAdminRulesRoute
   '/admin/users': typeof AppAdminUsersRoute
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
-  '/care/$ownerId': typeof AppCareOwnerIdRoute
+  '/care/$ownerId': typeof AppCareOwnerIdRouteWithChildren
   '/care/inbox': typeof AppCareInboxRoute
   '/condition/$slug': typeof AppConditionSlugRoute
   '/friends/$friendshipId': typeof AppFriendsFriendshipIdRoute
@@ -698,6 +705,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/care/$ownerId/reports/$reportId': typeof AppCareOwnerIdReportsReportIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -753,7 +761,7 @@ export interface FileRoutesByTo {
   '/admin/rules': typeof AppAdminRulesRoute
   '/admin/users': typeof AppAdminUsersRoute
   '/biometrics/$metric': typeof AppBiometricsMetricRoute
-  '/care/$ownerId': typeof AppCareOwnerIdRoute
+  '/care/$ownerId': typeof AppCareOwnerIdRouteWithChildren
   '/care/inbox': typeof AppCareInboxRoute
   '/condition/$slug': typeof AppConditionSlugRoute
   '/friends/$friendshipId': typeof AppFriendsFriendshipIdRoute
@@ -794,6 +802,7 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/care/$ownerId/reports/$reportId': typeof AppCareOwnerIdReportsReportIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -852,7 +861,7 @@ export interface FileRoutesById {
   '/_app/admin/rules': typeof AppAdminRulesRoute
   '/_app/admin/users': typeof AppAdminUsersRoute
   '/_app/biometrics/$metric': typeof AppBiometricsMetricRoute
-  '/_app/care/$ownerId': typeof AppCareOwnerIdRoute
+  '/_app/care/$ownerId': typeof AppCareOwnerIdRouteWithChildren
   '/_app/care/inbox': typeof AppCareInboxRoute
   '/_app/condition/$slug': typeof AppConditionSlugRoute
   '/_app/friends/$friendshipId': typeof AppFriendsFriendshipIdRoute
@@ -893,6 +902,7 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/_app/care/$ownerId/reports/$reportId': typeof AppCareOwnerIdReportsReportIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -992,6 +1002,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/care/$ownerId/reports/$reportId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1088,6 +1099,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/care/$ownerId/reports/$reportId'
   id:
     | '__root__'
     | '/'
@@ -1186,6 +1198,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/_app/care/$ownerId/reports/$reportId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1909,6 +1922,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminReportsDuplicatesRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/care/$ownerId/reports/$reportId': {
+      id: '/_app/care/$ownerId/reports/$reportId'
+      path: '/reports/$reportId'
+      fullPath: '/care/$ownerId/reports/$reportId'
+      preLoaderRoute: typeof AppCareOwnerIdReportsReportIdRouteImport
+      parentRoute: typeof AppCareOwnerIdRoute
+    }
   }
 }
 
@@ -2005,6 +2025,18 @@ const AppTodayRouteWithChildren = AppTodayRoute._addFileChildren(
   AppTodayRouteChildren,
 )
 
+interface AppCareOwnerIdRouteChildren {
+  AppCareOwnerIdReportsReportIdRoute: typeof AppCareOwnerIdReportsReportIdRoute
+}
+
+const AppCareOwnerIdRouteChildren: AppCareOwnerIdRouteChildren = {
+  AppCareOwnerIdReportsReportIdRoute: AppCareOwnerIdReportsReportIdRoute,
+}
+
+const AppCareOwnerIdRouteWithChildren = AppCareOwnerIdRoute._addFileChildren(
+  AppCareOwnerIdRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAccountRoute: typeof AppAccountRoute
   AppAdminRoute: typeof AppAdminRouteWithChildren
@@ -2025,7 +2057,7 @@ interface AppRouteChildren {
   AppVitalsRoute: typeof AppVitalsRoute
   AppWelcomeRoute: typeof AppWelcomeRoute
   AppBiometricsMetricRoute: typeof AppBiometricsMetricRoute
-  AppCareOwnerIdRoute: typeof AppCareOwnerIdRoute
+  AppCareOwnerIdRoute: typeof AppCareOwnerIdRouteWithChildren
   AppCareInboxRoute: typeof AppCareInboxRoute
   AppConditionSlugRoute: typeof AppConditionSlugRoute
   AppFriendsFriendshipIdRoute: typeof AppFriendsFriendshipIdRoute
@@ -2056,7 +2088,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppVitalsRoute: AppVitalsRoute,
   AppWelcomeRoute: AppWelcomeRoute,
   AppBiometricsMetricRoute: AppBiometricsMetricRoute,
-  AppCareOwnerIdRoute: AppCareOwnerIdRoute,
+  AppCareOwnerIdRoute: AppCareOwnerIdRouteWithChildren,
   AppCareInboxRoute: AppCareInboxRoute,
   AppConditionSlugRoute: AppConditionSlugRoute,
   AppFriendsFriendshipIdRoute: AppFriendsFriendshipIdRoute,
