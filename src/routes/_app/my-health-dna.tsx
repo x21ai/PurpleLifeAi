@@ -18,6 +18,7 @@ import { generateCareProfile } from "@/lib/care-profile.functions";
 import {
   CURATED_RSIDS, getCuratedRsid, type CuratedRsid,
 } from "@/lib/dna-curated-rsids";
+import { ProGate } from "@/components/pro/pro-gate";
 
 export const Route = createFileRoute("/_app/my-health-dna")({
   head: () => ({
@@ -144,6 +145,7 @@ function DnaPage() {
       <MedicalDisclaimer className="mt-6" />
 
       {/* Upload */}
+      <ProGate feature="dna">
       <section
         onDragOver={(e) => {
           e.preventDefault();
@@ -199,6 +201,7 @@ function DnaPage() {
           <ShieldCheck className="h-3 w-3" /> Private storage. Only you can read it. Alignment files (.bam / .cram) are stored but not yet parsed.
         </p>
       </section>
+      </ProGate>
 
       {/* What we look at */}
       <details className="mt-8 rounded-2xl border border-border bg-card/40 px-5 py-4">
