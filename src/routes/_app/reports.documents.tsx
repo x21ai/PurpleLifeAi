@@ -409,9 +409,21 @@ function ReportsDocumentsPage() {
                           params={{ reportId: r.id }}
                           className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-90"
                         >
-                          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/75 shrink-0">
-                            <FileText className="h-4 w-4" />
-                          </span>
+                          {(() => {
+                            const meta = getReportCategoryMeta(r.report_category ?? null);
+                            const Icon = meta.icon;
+                            return (
+                              <span
+                                className={cn(
+                                  "inline-flex h-9 w-9 items-center justify-center rounded-full shrink-0",
+                                  meta.tone,
+                                )}
+                                title={meta.label}
+                              >
+                                <Icon className="h-4 w-4" />
+                              </span>
+                            );
+                          })()}
                           <div className="min-w-0 flex-1">
                             <p className="text-[15px] text-white truncate" title={r.title}>
                               {displayTitle(r.title)}
