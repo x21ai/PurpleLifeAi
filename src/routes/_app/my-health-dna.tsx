@@ -19,6 +19,16 @@ import {
   CURATED_RSIDS, getCuratedRsid, type CuratedRsid,
 } from "@/lib/dna-curated-rsids";
 import { ProGate } from "@/components/pro/pro-gate";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_app/my-health-dna")({
   head: () => ({
