@@ -344,7 +344,8 @@ function DnaPage() {
   );
 }
 
-function statusLabel(s: string): string {
+function statusLabel(s: string, kind?: string | null): string {
+  if (s === "parsed" && isUnparseableKind(kind)) return "Stored · not parsed";
   switch (s) {
     case "uploaded": return "Uploaded";
     case "parsing": return "Reading…";
@@ -352,6 +353,10 @@ function statusLabel(s: string): string {
     case "error": return "Error";
     default: return s;
   }
+}
+
+function isUnparseableKind(kind?: string | null): boolean {
+  return kind === "bam" || kind === "cram" || kind === "index";
 }
 
 // Keep the linter quiet about unused imports in the helper grid.
