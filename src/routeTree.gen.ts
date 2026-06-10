@@ -88,6 +88,7 @@ import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin.messag
 import { Route as AppAdminFeedbackRouteImport } from './routes/_app/admin.feedback'
 import { Route as AppAdminContactRouteImport } from './routes/_app/admin.contact'
 import { Route as AppAdminCommunityRouteImport } from './routes/_app/admin.community'
+import { Route as AppAdminBillingRouteImport } from './routes/_app/admin.billing'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -501,6 +502,11 @@ const AppAdminCommunityRoute = AppAdminCommunityRouteImport.update({
   path: '/community',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminBillingRoute = AppAdminBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -641,6 +647,7 @@ export interface FileRoutesByFullPath {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/friend/accept': typeof FriendAcceptRoute
   '/friend/join': typeof FriendJoinRoute
+  '/admin/billing': typeof AppAdminBillingRoute
   '/admin/community': typeof AppAdminCommunityRoute
   '/admin/contact': typeof AppAdminContactRoute
   '/admin/feedback': typeof AppAdminFeedbackRoute
@@ -736,6 +743,7 @@ export interface FileRoutesByTo {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/friend/accept': typeof FriendAcceptRoute
   '/friend/join': typeof FriendJoinRoute
+  '/admin/billing': typeof AppAdminBillingRoute
   '/admin/community': typeof AppAdminCommunityRoute
   '/admin/contact': typeof AppAdminContactRoute
   '/admin/feedback': typeof AppAdminFeedbackRoute
@@ -834,6 +842,7 @@ export interface FileRoutesById {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/friend/accept': typeof FriendAcceptRoute
   '/friend/join': typeof FriendJoinRoute
+  '/_app/admin/billing': typeof AppAdminBillingRoute
   '/_app/admin/community': typeof AppAdminCommunityRoute
   '/_app/admin/contact': typeof AppAdminContactRoute
   '/_app/admin/feedback': typeof AppAdminFeedbackRoute
@@ -932,6 +941,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/friend/accept'
     | '/friend/join'
+    | '/admin/billing'
     | '/admin/community'
     | '/admin/contact'
     | '/admin/feedback'
@@ -1027,6 +1037,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/friend/accept'
     | '/friend/join'
+    | '/admin/billing'
     | '/admin/community'
     | '/admin/contact'
     | '/admin/feedback'
@@ -1124,6 +1135,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/friend/accept'
     | '/friend/join'
+    | '/_app/admin/billing'
     | '/_app/admin/community'
     | '/_app/admin/contact'
     | '/_app/admin/feedback'
@@ -1778,6 +1790,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminCommunityRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/admin/billing': {
+      id: '/_app/admin/billing'
+      path: '/billing'
+      fullPath: '/admin/billing'
+      preLoaderRoute: typeof AppAdminBillingRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -1894,6 +1913,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppAdminRouteChildren {
+  AppAdminBillingRoute: typeof AppAdminBillingRoute
   AppAdminCommunityRoute: typeof AppAdminCommunityRoute
   AppAdminContactRoute: typeof AppAdminContactRoute
   AppAdminFeedbackRoute: typeof AppAdminFeedbackRoute
@@ -1907,6 +1927,7 @@ interface AppAdminRouteChildren {
 }
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminBillingRoute: AppAdminBillingRoute,
   AppAdminCommunityRoute: AppAdminCommunityRoute,
   AppAdminContactRoute: AppAdminContactRoute,
   AppAdminFeedbackRoute: AppAdminFeedbackRoute,
