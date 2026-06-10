@@ -25,10 +25,20 @@ export interface ParseResult {
   variants: ParsedVariant[];
   kind: "genotype" | "vcf" | "json" | "bam" | "cram" | "index" | "unknown";
   compression: "none" | "gz" | "zip" | "tar" | "tgz";
+  stats: {
+    rowsScanned: number;
+    curatedMatches: number;
+  };
 }
 
 function normalizeGenotype(raw: string): string {
   return raw.replace(/[^ACGT0-9]/gi, "").toUpperCase();
+}
+
+function looksLikeVcf(text: string): boolean {
+  const sample = text.slice(0, 2_000_000);
+  if (/^\s*##fileformat=vcf/i.test(sample)) return true;
+  return /^#CHROM\s+POS\s+ID\s+REF\s+ALT/im.test(sample);
 }
 
 /** Detect file kind/compression from filename + magic bytes. */
@@ -98,6 +108,7 @@ export function parseDnaFileBytes(filename: string, bytes: Uint8Array): ParseRes
     variants: [],
     kind: shape.kind,
     compression: shape.compression,
+    stats: { rowsScanned: 0, curatedMatches: 0 },
   };
 
   // Alignment files & lone indexes: store metadata but skip parsing.
@@ -110,15 +121,17 @@ export function parseDnaFileBytes(filename: string, bytes: Uint8Array): ParseRes
 
   const innerLower = decoded.innerName.toLowerCase();
   if (innerLower.endsWith(".json") || shape.kind === "json") {
-    const { provider, variants } = parseDnaJson(decoded.text);
-    return { provider, variants, kind: "json", compression: shape.compression };
+    const { provider, variants, stats } = parseDnaJson(decoded.text);
+    return { provider, variants, kind: "json", compression: shape.compression, stats };
   }
   const result = parseDnaText(decoded.text);
+  const contentLooksVcf = result.provider === "vcf" || looksLikeVcf(decoded.text);
   return {
-    provider: result.provider,
+    provider: contentLooksVcf ? "vcf" : result.provider,
     variants: result.variants,
-    kind: result.provider === "vcf" ? "vcf" : "genotype",
+    kind: contentLooksVcf ? "vcf" : "genotype",
     compression: shape.compression,
+    stats: result.stats,
   };
 }
 
