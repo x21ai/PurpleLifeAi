@@ -181,3 +181,79 @@ export const getHealthRecordsCounts = createServerFn({ method: "GET" })
     counts.dna = (counts.dna ?? 0) + (dna?.length ?? 0);
     return { counts };
   });
+
+/* ---------- Phase 7: Vital goals / targets ---------- */
+
+export type VitalGoal = {
+  kind: "weight" | "bp" | "glucose" | "spo2" | "temp" | "resp_rate";
+  target_min: number | null;
+  target_max: number | null;
+  target_min2: number | null;
+  target_max2: number | null;
+  unit: string | null;
+  note: string | null;
+};
+
+export const getVitalGoals = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ goals: VitalGoal[] }> => {
+    const { supabase, userId } = context;
+    const { data, error } = await supabase
+      .from("vital_goals")
+      .select("kind, target_min, target_max, target_min2, target_max2, unit, note")
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { goals: (data ?? []) as VitalGoal[] };
+  });
+
+export const setVitalGoal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      kind: z.enum(["weight", "bp", "glucose", "spo2", "temp", "resp_rate"]),
+      target_min: z.number().finite().nullable().optional(),
+      target_max: z.number().finite().nullable().optional(),
+      target_min2: z.number().finite().nullable().optional(),
+      target_max2: z.number().finite().nullable().optional(),
+      unit: z.string().max(20).nullable().optional(),
+      note: z.string().max(280).nullable().optional(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("vital_goals")
+      .upsert(
+        {
+          user_id: userId,
+          kind: data.kind,
+          target_min: data.target_min ?? null,
+          target_max: data.target_max ?? null,
+          target_min2: data.target_min2 ?? null,
+          target_max2: data.target_max2 ?? null,
+          unit: data.unit ?? null,
+          note: data.note ?? null,
+        },
+        { onConflict: "user_id,kind" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteVitalGoal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      kind: z.enum(["weight", "bp", "glucose", "spo2", "temp", "resp_rate"]),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("vital_goals")
+      .delete()
+      .eq("user_id", userId)
+      .eq("kind", data.kind);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
