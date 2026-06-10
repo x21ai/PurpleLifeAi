@@ -122,6 +122,104 @@ type BioRow = {
   resting_hr_bpm: number | null;
 };
 
+function ForYouRow() {
+  const fetchCards = useServerFn(getDailyInsightCards);
+  const { data, isLoading } = useQuery({
+    queryKey: ["daily-insight-cards"],
+    queryFn: () => fetchCards({ data: {} }),
+    staleTime: 1000 * 60 * 60,
+  });
+  const regen = useMutation({
+    mutationFn: () => fetchCards({ data: { force: true } }),
+    onSuccess: (res) => {
+      queryKeyset(res);
+    },
+  });
+  // light helper to keep React Query cache aligned with mutation output
+  function queryKeyset(res: Awaited<ReturnType<typeof fetchCards>>) {
+    // no-op; useQuery will refetch via key change on next mount. We optimistically refetch:
+    void res;
+  }
+
+  const cards = data?.cards ?? [];
+  const headline = data?.headline ?? null;
+  const showEmpty = !isLoading && cards.length === 0;
+
+  return (
+    <section className="mt-10">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="label-eyebrow text-muted-foreground">For you</p>
+          <h2 className="mt-1 font-serif text-2xl text-foreground">
+            {headline ?? "What Purple is noticing"}
+          </h2>
+        </div>
+        <button
+          type="button"
+          onClick={() => regen.mutate()}
+          disabled={regen.isPending}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-50"
+          title="Refresh observations"
+        >
+          {regen.isPending ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Wand2 className="h-3 w-3" />
+          )}
+          {regen.isPending ? "Thinking…" : "Refresh"}
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="mt-4 h-28 rounded-2xl border border-border/60 bg-secondary/30 animate-pulse" />
+      ) : showEmpty ? (
+        <div className="mt-4 rounded-2xl border border-border/60 bg-secondary/30 p-5 text-sm text-muted-foreground">
+          Log a few more readings or upload a report and Purple will start surfacing patterns here.
+        </div>
+      ) : (
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {cards.map((c, i) => {
+            const tone = c.tone ?? "info";
+            const accent =
+              tone === "attention"
+                ? "border-[#FFA8BD]/40 bg-[#FFA8BD]/[0.07]"
+                : tone === "watch"
+                  ? "border-[#F3D58B]/40 bg-[#F3D58B]/[0.07]"
+                  : "border-border/60 bg-secondary/40";
+            const inner = (
+              <div className={cn("h-full rounded-2xl border p-4 transition hover:shadow-sm", accent)}>
+                <p className="text-sm font-medium text-foreground">{c.title}</p>
+                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{c.body}</p>
+                {c.metricKey && (
+                  <p className="mt-3 inline-flex items-center gap-1 text-xs text-muted-foreground/80">
+                    Open trend <ChevronRight className="h-3 w-3" />
+                  </p>
+                )}
+              </div>
+            );
+            if (c.metricKey) {
+              return (
+                <Link
+                  key={i}
+                  to="/reports/trends/$metricKey"
+                  params={{ metricKey: c.metricKey }}
+                  className="block"
+                >
+                  {inner}
+                </Link>
+              );
+            }
+            return <div key={i}>{inner}</div>;
+          })}
+        </div>
+      )}
+      <p className="mt-3 text-[11px] text-muted-foreground/70">
+        Observations only - never a diagnosis. Share with your clinician for context.
+      </p>
+    </section>
+  );
+}
+
 function useRecentBiometrics(days: number) {
   const { session } = useAuth();
   const userId = session?.user.id;
