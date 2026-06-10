@@ -691,6 +691,58 @@ export const getReportShareUrl = createServerFn({ method: "POST" })
   });
 
 /**
+ * Bulk: return short-lived signed download URLs for a set of the user's
+ * reports so the client can zip them locally. Caps at 200 to keep this
+ * responsive — beyond that the user should narrow filters.
+ */
+export const bulkDownloadReports = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      reportIds: z.array(z.string().uuid()).min(1).max(200),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: docs, error } = await supabase
+      .from("report_documents")
+      .select("id, title, file_path, file_mime, report_date, created_at")
+      .in("id", data.reportIds);
+    if (error) throw new Error(error.message);
+    const items: Array<{ id: string; title: string; mime: string; url: string; suggestedName: string }> = [];
+    for (const d of docs ?? []) {
+      const { data: signed } = await supabase.storage
+        .from("reports")
+        .createSignedUrl(d.file_path, 300);
+      if (!signed?.signedUrl) continue;
+      const ext = (() => {
+        if (d.file_mime === "application/pdf") return "pdf";
+        if (d.file_mime?.startsWith("image/")) return d.file_mime.split("/")[1] ?? "img";
+        const m = d.file_path.match(/\.([a-z0-9]+)$/i);
+        return m?.[1] ?? "bin";
+      })();
+      const safe = (d.title ?? "report").replace(/[^\w\-. ]+/g, "_").slice(0, 60);
+      const date = (d.report_date ?? d.created_at ?? "").slice(0, 10);
+      items.push({
+        id: d.id,
+        title: d.title ?? "Untitled",
+        mime: d.file_mime,
+        url: signed.signedUrl,
+        suggestedName: `${date ? date + "_" : ""}${safe}.${ext}`,
+      });
+    }
+    await supabase.from("phi_access_log").insert({
+      user_id: userId,
+      actor_id: userId,
+      action: "bulk_download",
+      resource_type: "report_document",
+      resource_id: null,
+      metadata: { count: items.length },
+    });
+    return { items };
+  });
+
+/**
  * Phase 4: Run an on-demand AI explanation of a report (plain-English summary
  * plus flagged values). Cached on the report row; pass `force=true` to re-run.
  */
