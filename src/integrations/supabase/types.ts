@@ -965,9 +965,11 @@ export type Database = {
       dna_files: {
         Row: {
           byte_size: number
+          compression: string | null
           created_at: string
           error_message: string | null
           id: string
+          kind: string | null
           original_filename: string
           parsed_at: string | null
           provider: string
@@ -979,9 +981,11 @@ export type Database = {
         }
         Insert: {
           byte_size?: number
+          compression?: string | null
           created_at?: string
           error_message?: string | null
           id?: string
+          kind?: string | null
           original_filename: string
           parsed_at?: string | null
           provider?: string
@@ -993,9 +997,11 @@ export type Database = {
         }
         Update: {
           byte_size?: number
+          compression?: string | null
           created_at?: string
           error_message?: string | null
           id?: string
+          kind?: string | null
           original_filename?: string
           parsed_at?: string | null
           provider?: string
