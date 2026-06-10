@@ -992,6 +992,7 @@ export type Database = {
           id: string
           kind: string | null
           original_filename: string
+          parse_stats: Json
           parsed_at: string | null
           provider: string
           share_with_caregivers: boolean
@@ -1008,6 +1009,7 @@ export type Database = {
           id?: string
           kind?: string | null
           original_filename: string
+          parse_stats?: Json
           parsed_at?: string | null
           provider?: string
           share_with_caregivers?: boolean
@@ -1024,6 +1026,7 @@ export type Database = {
           id?: string
           kind?: string | null
           original_filename?: string
+          parse_stats?: Json
           parsed_at?: string | null
           provider?: string
           share_with_caregivers?: boolean
