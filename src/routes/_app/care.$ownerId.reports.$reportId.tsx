@@ -79,11 +79,7 @@ function CaregiverReportDetail() {
     | { summary?: string; flagged?: Array<{ metric: string; value?: string; concern?: string }> }
     | null;
 
-  const byPanel: Record<string, typeof metrics> = {};
-  for (const m of metrics) {
-    const key = m.panel ?? "other";
-    (byPanel[key] ??= []).push(m);
-  }
+  const byPanel: Record<string, typeof metrics> = { all: metrics };
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-10 space-y-6">
@@ -100,7 +96,6 @@ function CaregiverReportDetail() {
           <FileText className="h-3.5 w-3.5" />
           <span>{report.report_type ?? "Report"}</span>
           {report.report_date && <span>· {report.report_date}</span>}
-          {report.lab_name && <span>· {report.lab_name}</span>}
         </div>
         <h1 className="text-2xl font-serif text-foreground">{report.title}</h1>
         <p className="text-xs text-muted-foreground">Read-only view shared with you.</p>
