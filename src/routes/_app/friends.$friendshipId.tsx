@@ -61,7 +61,7 @@ function FriendBasicsPage() {
         </p>
       ) : q.data && !q.data.shared ? (
         <p className="mt-6 text-sm text-muted-foreground">
-          No shared details — just a friend on Purple. They haven't opted to
+          No shared details , just a friend on Purple. They haven't opted to
           share basics, or you haven't either.
         </p>
       ) : q.data && q.data.shared ? (
@@ -108,7 +108,7 @@ function FriendBasicsPage() {
 
           <p className="mt-6 text-[11px] text-muted-foreground leading-relaxed">
             That's all that's shared. No journal, no biometrics, no medications,
-            no reports — ever. Turn this off anytime from Settings → Sharing.
+            no reports , ever. Turn this off anytime from Settings → Sharing.
           </p>
         </section>
       ) : null}

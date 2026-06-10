@@ -117,10 +117,10 @@ function DnaPage() {
       const result = await parseFn({ data: { fileId } });
       if (result.kind === "bam" || result.kind === "cram") {
         toast.message(
-          "Saved. Raw alignment files aren't parsed yet — upload a 23andMe / Ancestry / VCF export for trait insights.",
+          "Saved. Raw alignment files aren't parsed yet , upload a 23andMe / Ancestry / VCF export for trait insights.",
         );
       } else if (result.kind === "index") {
-        toast.message("Saved. Index file noted — we'll need the matching .vcf / .bam / .cram too.");
+        toast.message("Saved. Index file noted , we'll need the matching .vcf / .bam / .cram too.");
       } else {
         toast.success(formatParseToast(result.variantCount, result.stats));
       }
@@ -207,7 +207,7 @@ function DnaPage() {
           <div>
             <p className="font-medium">Drag &amp; drop or choose a DNA file</p>
             <p className="text-xs text-muted-foreground">
-              .txt, .tsv, .csv, .vcf, .json, .gz, .zip, .tar, .tar.gz — up to 500 MB
+              .txt, .tsv, .csv, .vcf, .json, .gz, .zip, .tar, .tar.gz , up to 500 MB
             </p>
           </div>
         </div>
@@ -271,7 +271,7 @@ function DnaPage() {
                   </p>
                   {isUnparseableKind(f.kind) && (
                     <p className="mt-1 text-[11px] text-amber-400/90">
-                      Alignment or index file — upload the matching .vcf.gz or your raw genotype export to extract markers.
+                      Alignment or index file , upload the matching .vcf.gz or your raw genotype export to extract markers.
                     </p>
                   )}
                 </div>

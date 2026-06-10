@@ -416,7 +416,7 @@ function ReportDetailPage() {
 }
 
 function MetricTrend({ metricKey, unit }: { metricKey: string; unit: string | null }) {
-  // (impl below — unchanged)
+  // (impl below , unchanged)
   const fetchTrend = useServerFn(getMetricTrend);
   const { data, isLoading } = useQuery({
     queryKey: ["metric-trend", metricKey],
