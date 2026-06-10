@@ -13,6 +13,8 @@ import {
   Sparkles,
   RefreshCw,
   Download,
+  List,
+  CalendarRange,
 } from "lucide-react";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
@@ -107,6 +109,13 @@ function ReportsDocumentsPage() {
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [bulkRetrying, setBulkRetrying] = React.useState(false);
   const [bulkDownloading, setBulkDownloading] = React.useState(false);
+  const [viewMode, setViewMode] = React.useState<"list" | "timeline">(() => {
+    if (typeof window === "undefined") return "list";
+    return (localStorage.getItem("purple-reports-view") as "list" | "timeline") || "list";
+  });
+  React.useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("purple-reports-view", viewMode);
+  }, [viewMode]);
 
   const yearOf = (r: ReportRow) => {
     const d = r.report_date ?? r.created_at;
@@ -160,6 +169,30 @@ function ReportsDocumentsPage() {
       (byMonth[key] ??= []).push(r);
     }
     return byMonth;
+  }, [filtered]);
+
+  // Year → Month nested grouping for the timeline view.
+  const groupedByYear = React.useMemo(() => {
+    const sorted = [...filtered].sort((a, b) => {
+      const da = a.report_date ?? a.created_at;
+      const db = b.report_date ?? b.created_at;
+      return (db ?? "").localeCompare(da ?? "");
+    });
+    const byYear = new Map<string, Map<string, ReportRow[]>>();
+    for (const r of sorted) {
+      const iso = r.report_date ?? r.created_at;
+      const d = iso ? new Date(iso) : null;
+      const year = d && !Number.isNaN(d.getTime()) ? String(d.getFullYear()) : "Unknown";
+      const month = d && !Number.isNaN(d.getTime())
+        ? d.toLocaleDateString(undefined, { month: "long" })
+        : "Date unknown";
+      let yearMap = byYear.get(year);
+      if (!yearMap) { yearMap = new Map(); byYear.set(year, yearMap); }
+      const list = yearMap.get(month) ?? [];
+      list.push(r);
+      yearMap.set(month, list);
+    }
+    return byYear;
   }, [filtered]);
 
   const latest = reports[0];
