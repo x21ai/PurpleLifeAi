@@ -18,7 +18,11 @@ import {
   shareMedicalReportInThread,
 } from "@/lib/medical-report.functions";
 import { listCareThreads } from "@/lib/care-chat.functions";
-import { createMedicalReportShareLink } from "@/lib/medical-report-share.functions";
+import {
+  createMedicalReportShareLink,
+  listMedicalReportShareLinks,
+  revokeMedicalReportShareLink,
+} from "@/lib/medical-report-share.functions";
 import {
   listMedicalReportSchedules,
   upsertMedicalReportSchedule,
@@ -329,6 +333,13 @@ function ReportRow({
   const [linkDays, setLinkDays] = useState(7);
   const [linkLabel, setLinkLabel] = useState("");
   const [createdUrl, setCreatedUrl] = useState<string | null>(null);
+  const listLinks = useServerFn(listMedicalReportShareLinks);
+  const revokeLink = useServerFn(revokeMedicalReportShareLink);
+  const linksQ = useQuery({
+    queryKey: ["medical-history", "share-links", report.id],
+    queryFn: () => listLinks({ data: { reportId: report.id } }),
+    enabled: mode === "link",
+  });
 
   return (
     <li className="rounded-xl border border-white/10 bg-card/40 p-4">
@@ -441,6 +452,7 @@ function ReportRow({
             onClick={async () => {
               const url = await onCreateLink(linkDays, linkLabel || undefined);
               setCreatedUrl(url);
+              linksQ.refetch();
             }}
           >
             Create share link
@@ -449,6 +461,56 @@ function ReportRow({
             <p className="text-xs break-all rounded-md bg-accent/40 p-2 text-foreground">
               {createdUrl}
             </p>
+          )}
+          {linksQ.data && linksQ.data.links.length > 0 && (
+            <div className="mt-3 space-y-1.5">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                Active links
+              </p>
+              <ul className="space-y-1.5">
+                {linksQ.data.links.map((l) => {
+                  const expired = new Date(l.expires_at) < new Date();
+                  const revoked = !!l.revoked_at;
+                  const active = !expired && !revoked;
+                  return (
+                    <li
+                      key={l.id}
+                      className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-background/40 px-3 py-2 text-xs"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-foreground">
+                          {l.viewer_label || "Untitled link"}
+                        </p>
+                        <p className="text-muted-foreground">
+                          {revoked
+                            ? "Revoked"
+                            : expired
+                              ? "Expired"
+                              : `Expires ${new Date(l.expires_at).toLocaleDateString()}`}
+                          {" · "}
+                          {l.opened_count > 0
+                            ? `Viewed ${l.opened_count}× · last ${l.last_opened_at ? new Date(l.last_opened_at).toLocaleDateString() : "—"}`
+                            : "Not viewed yet"}
+                        </p>
+                      </div>
+                      {active && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={async () => {
+                            await revokeLink({ data: { linkId: l.id } });
+                            toast("Link revoked");
+                            linksQ.refetch();
+                          }}
+                        >
+                          Revoke
+                        </Button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           )}
         </div>
       )}

@@ -880,6 +880,45 @@ export const caregiverReadReports = createServerFn({ method: "POST" })
     return { reports: rows ?? [] };
   });
 
+const caregiverReportInput = (input: { owner_id: string; report_id: string }) =>
+  z.object({
+    owner_id: z.string().uuid(),
+    report_id: z.string().uuid(),
+  }).parse(input);
+
+export const caregiverReadReport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(caregiverReportInput)
+  .handler(async ({ data, context }) => {
+    await assertScope(data.owner_id, context.userId, "reports:read");
+    const { data: report, error: rErr } = await supabaseAdmin
+      .from("report_documents")
+      .select(
+        "id, title, report_type, report_date, file_mime, status, created_at, summary, ai_summary, ai_summary_at"
+      )
+      .eq("id", data.report_id)
+      .eq("user_id", data.owner_id)
+      .maybeSingle();
+    if (rErr) throw new Error(rErr.message);
+    if (!report) throw new Error("Report not found");
+    const { data: metrics } = await supabaseAdmin
+      .from("report_metrics")
+      .select(
+        "id, metric_key, display_name, value, value_text, unit, reference_low, reference_high, flag"
+      )
+      .eq("report_id", data.report_id)
+      .order("metric_key", { ascending: true });
+    // Audit caregiver access to PHI
+    await supabaseAdmin.from("phi_access_log").insert({
+      user_id: data.owner_id,
+      actor_id: context.userId,
+      resource_type: "report_document",
+      resource_id: data.report_id,
+      action: "caregiver_view",
+    });
+    return { report, metrics: metrics ?? [] };
+  });
+
 export const caregiverReadToday = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(ownerInput)
