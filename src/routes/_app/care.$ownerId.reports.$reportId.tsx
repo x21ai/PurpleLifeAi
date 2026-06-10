@@ -79,7 +79,6 @@ function CaregiverReportDetail() {
     | { summary?: string; flagged?: Array<{ metric: string; value?: string; concern?: string }> }
     | null;
 
-  const byPanel: Record<string, typeof metrics> = { all: metrics };
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-10 space-y-6">
