@@ -20,6 +20,7 @@ import {
   getHealthRecordsCounts,
 } from "@/lib/health-vitals.functions";
 import { REPORT_CATEGORIES } from "@/lib/report-categories";
+import { QuickLogVitalSheet, type VitalKind } from "@/components/insights/quick-log-vital-sheet";
 
 type SeizureRow = {
   id: string;
@@ -441,13 +442,15 @@ function VitalsRow() {
     staleTime: 1000 * 60 * 5,
   });
   const v = data ?? null;
-  const tiles: Array<{ label: string; value: string; sub?: string }> = [
+  const [logKind, setLogKind] = React.useState<VitalKind | null>(null);
+  const tiles: Array<{ label: string; value: string; sub?: string; kind: VitalKind }> = [
     {
       label: "Weight",
       value: v?.weightKg != null
         ? `${Math.round(v.weightKg * 10) / 10}`
         : "–",
       sub: v?.weightKg != null ? "kg" : "no reading yet",
+      kind: "weight",
     },
     {
       label: "Blood pressure",
@@ -455,26 +458,31 @@ function VitalsRow() {
         ? `${Math.round(v.bpSystolic)}/${Math.round(v.bpDiastolic)}`
         : "–",
       sub: v?.bpSystolic != null ? "mmHg" : "no reading yet",
+      kind: "bp",
     },
     {
       label: "Glucose",
       value: v?.glucoseMgDl != null ? `${Math.round(v.glucoseMgDl)}` : "–",
       sub: v?.glucoseMgDl != null ? "mg/dL" : "no reading yet",
+      kind: "glucose",
     },
     {
       label: "Blood oxygen",
       value: v?.spo2Pct != null ? `${v.spo2Pct.toFixed(1)}%` : "–",
       sub: v?.spo2Pct != null ? "SpO₂" : "no reading yet",
+      kind: "spo2",
     },
     {
       label: "Body temperature",
       value: v?.bodyTempC != null ? `${v.bodyTempC.toFixed(1)}°C` : "–",
       sub: v?.bodyTempC != null ? "skin temp" : "no reading yet",
+      kind: "temp",
     },
     {
       label: "Respiratory rate",
       value: v?.respRate != null ? `${v.respRate.toFixed(0)}` : "–",
       sub: v?.respRate != null ? "breaths / min" : "no reading yet",
+      kind: "resp_rate",
     },
   ];
   return (
@@ -484,9 +492,18 @@ function VitalsRow() {
         {tiles.map((t) => (
           <div
             key={t.label}
-            className="rounded-2xl border border-border bg-card px-4 py-4"
+            className="group relative rounded-2xl border border-border bg-card px-4 py-4"
           >
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+            <button
+              type="button"
+              onClick={() => setLogKind(t.kind)}
+              title={`Log ${t.label.toLowerCase()}`}
+              aria-label={`Log ${t.label}`}
+              className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground transition opacity-70 group-hover:opacity-100"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground pr-7">
               {t.label}
             </p>
             <p className="mt-2 font-serif text-2xl text-foreground tabular-nums">
@@ -499,9 +516,15 @@ function VitalsRow() {
         ))}
       </div>
       <p className="mt-3 text-[11px] text-muted-foreground">
-        Vitals are pulled from your uploaded reports and connected wearables.
-        Quick-log coming next.
+        Pulled from your uploaded reports and connected wearables. Tap + to quick-log.
       </p>
+      {logKind && (
+        <QuickLogVitalSheet
+          kind={logKind}
+          open={logKind !== null}
+          onOpenChange={(o) => { if (!o) setLogKind(null); }}
+        />
+      )}
     </section>
   );
 }

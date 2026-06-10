@@ -2861,6 +2861,42 @@ export type Database = {
         }
         Relationships: []
       }
+      vitals_log: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          measured_at: string
+          notes: string | null
+          unit: string | null
+          user_id: string
+          value: number | null
+          value2: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          measured_at?: string
+          notes?: string | null
+          unit?: string | null
+          user_id: string
+          value?: number | null
+          value2?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          measured_at?: string
+          notes?: string | null
+          unit?: string | null
+          user_id?: string
+          value?: number | null
+          value2?: number | null
+        }
+        Relationships: []
+      }
       whoop_tokens: {
         Row: {
           access_token: string
