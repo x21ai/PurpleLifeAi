@@ -12,13 +12,15 @@ import {
   FlaskConical,
   Sparkles,
   RefreshCw,
+  Download,
 } from "lucide-react";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { listReports, processReport } from "@/lib/reports.functions";
+import { listReports, processReport, bulkDownloadReports } from "@/lib/reports.functions";
 import { toast } from "sonner";
+import JSZip from "jszip";
 import {
   Select,
   SelectTrigger,
@@ -88,6 +90,7 @@ function ReportsDocumentsPage() {
   const activeCategory = (search.category ?? null) as ReportCategorySlug | null;
   const fetchList = useServerFn(listReports);
   const reprocessOne = useServerFn(processReport);
+  const fetchBulkUrls = useServerFn(bulkDownloadReports);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["reports"],
     queryFn: () => fetchList(),
@@ -103,6 +106,7 @@ function ReportsDocumentsPage() {
   const [typeFilter, setTypeFilter] = React.useState<string>("all");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [bulkRetrying, setBulkRetrying] = React.useState(false);
+  const [bulkDownloading, setBulkDownloading] = React.useState(false);
 
   const yearOf = (r: ReportRow) => {
     const d = r.report_date ?? r.created_at;
@@ -190,6 +194,58 @@ function ReportsDocumentsPage() {
       toast.error(`${fail} could not be re-queued. Try again in a moment.`);
     }
     await refetch();
+  }
+
+  async function downloadFilteredAsZip() {
+    const readyOnes = filtered.filter((r) => r.status === "ready" || r.status === "processing" || r.status === "failed");
+    if (readyOnes.length === 0) {
+      toast.info("No reports to download.");
+      return;
+    }
+    if (readyOnes.length > 200) {
+      toast.error("Too many reports — narrow filters to under 200.");
+      return;
+    }
+    setBulkDownloading(true);
+    try {
+      const { items } = await fetchBulkUrls({ data: { reportIds: readyOnes.map((r) => r.id) } });
+      if (items.length === 0) {
+        toast.error("Couldn't prepare downloads.");
+        return;
+      }
+      const zip = new JSZip();
+      let added = 0;
+      for (const it of items) {
+        try {
+          const res = await fetch(it.url);
+          if (!res.ok) continue;
+          const buf = await res.arrayBuffer();
+          zip.file(it.suggestedName, buf);
+          added += 1;
+        } catch {
+          /* skip */
+        }
+      }
+      if (added === 0) {
+        toast.error("Couldn't download report files.");
+        return;
+      }
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.download = `purple-reports-${stamp}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success(`Downloaded ${added} report${added === 1 ? "" : "s"}.`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Bulk download failed.");
+    } finally {
+      setBulkDownloading(false);
+    }
   }
 
   return (
