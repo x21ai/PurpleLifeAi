@@ -5,7 +5,7 @@ import { useIsPro, type ProFeature } from "@/lib/pro-gate";
 
 interface ProGateProps {
   feature: ProFeature;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   fallback?: React.ReactNode;
   /** "card" (default) renders a full upgrade card. "inline" renders a compact pill that fits inside toolbars/composers. */
   variant?: "card" | "inline";
