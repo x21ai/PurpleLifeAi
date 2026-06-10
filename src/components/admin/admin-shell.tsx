@@ -1,11 +1,12 @@
 import * as React from "react";
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Shield, Users, MessageSquare, Mail, MessageCircle, Flag, BookMarked, Ticket, SlidersHorizontal, Copy } from "lucide-react";
+import { Shield, Users, MessageSquare, Mail, MessageCircle, Flag, BookMarked, Ticket, SlidersHorizontal, Copy, CreditCard } from "lucide-react";
 import { useIsAdmin } from "@/lib/use-is-admin";
 
 const navItems: Array<{ to: string; label: string; icon: typeof Shield; exact?: boolean }> = [
   { to: "/admin", label: "Dashboard", icon: Shield, exact: true },
   { to: "/admin/users", label: "Users", icon: Users },
+  { to: "/admin/billing", label: "Billing", icon: CreditCard },
   { to: "/admin/promo", label: "Promo codes", icon: Ticket },
   { to: "/admin/messages", label: "Messages", icon: MessageSquare },
   { to: "/admin/contact", label: "Contact", icon: Mail },

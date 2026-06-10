@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { getOrCreatePersonalShareCode } from "@/lib/share-codes.functions";
 import { Check, Copy, Share2 } from "lucide-react";
+import { SubscriptionSection } from "@/components/account/subscription-section";
 
 export const Route = createFileRoute("/_app/account")({
   head: () => ({ meta: [{ title: "Account · Purple" }] }),
@@ -110,6 +111,11 @@ function AccountPage() {
       <SheetSectionLabel>{t("account.appearance")}</SheetSectionLabel>
       <SheetCard>
         <AppearancePicker />
+      </SheetCard>
+
+      <SheetSectionLabel>Subscription</SheetSectionLabel>
+      <SheetCard>
+        <SubscriptionSection />
       </SheetCard>
 
       <SheetSectionLabel>Invite</SheetSectionLabel>

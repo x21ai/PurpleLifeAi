@@ -62,6 +62,7 @@ import { Route as ShareReportTokenRouteImport } from './routes/share.report.$tok
 import { Route as OauthWhoopCallbackRouteImport } from './routes/oauth.whoop.callback'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
 import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
 import { Route as AppSettingsTravelRouteImport } from './routes/_app/settings.travel'
 import { Route as AppSettingsSharingRouteImport } from './routes/_app/settings.sharing'
@@ -87,6 +88,7 @@ import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin.messag
 import { Route as AppAdminFeedbackRouteImport } from './routes/_app/admin.feedback'
 import { Route as AppAdminContactRouteImport } from './routes/_app/admin.contact'
 import { Route as AppAdminCommunityRouteImport } from './routes/_app/admin.community'
+import { Route as AppAdminBillingRouteImport } from './routes/_app/admin.billing'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -368,6 +370,11 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
+  id: '/api/public/stripe-webhook',
+  path: '/api/public/stripe-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppTodayRiskRoute = AppTodayRiskRouteImport.update({
   id: '/risk',
   path: '/risk',
@@ -493,6 +500,11 @@ const AppAdminContactRoute = AppAdminContactRouteImport.update({
 const AppAdminCommunityRoute = AppAdminCommunityRouteImport.update({
   id: '/community',
   path: '/community',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminBillingRoute = AppAdminBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
   getParentRoute: () => AppAdminRoute,
 } as any)
 const LovableEmailTransactionalSendRoute =
@@ -635,6 +647,7 @@ export interface FileRoutesByFullPath {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/friend/accept': typeof FriendAcceptRoute
   '/friend/join': typeof FriendJoinRoute
+  '/admin/billing': typeof AppAdminBillingRoute
   '/admin/community': typeof AppAdminCommunityRoute
   '/admin/contact': typeof AppAdminContactRoute
   '/admin/feedback': typeof AppAdminFeedbackRoute
@@ -660,6 +673,7 @@ export interface FileRoutesByFullPath {
   '/settings/sharing': typeof AppSettingsSharingRoute
   '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
+  '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
@@ -729,6 +743,7 @@ export interface FileRoutesByTo {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/friend/accept': typeof FriendAcceptRoute
   '/friend/join': typeof FriendJoinRoute
+  '/admin/billing': typeof AppAdminBillingRoute
   '/admin/community': typeof AppAdminCommunityRoute
   '/admin/contact': typeof AppAdminContactRoute
   '/admin/feedback': typeof AppAdminFeedbackRoute
@@ -754,6 +769,7 @@ export interface FileRoutesByTo {
   '/settings/sharing': typeof AppSettingsSharingRoute
   '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
+  '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
@@ -826,6 +842,7 @@ export interface FileRoutesById {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/friend/accept': typeof FriendAcceptRoute
   '/friend/join': typeof FriendJoinRoute
+  '/_app/admin/billing': typeof AppAdminBillingRoute
   '/_app/admin/community': typeof AppAdminCommunityRoute
   '/_app/admin/contact': typeof AppAdminContactRoute
   '/_app/admin/feedback': typeof AppAdminFeedbackRoute
@@ -851,6 +868,7 @@ export interface FileRoutesById {
   '/_app/settings/sharing': typeof AppSettingsSharingRoute
   '/_app/settings/travel': typeof AppSettingsTravelRoute
   '/_app/today/risk': typeof AppTodayRiskRoute
+  '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
@@ -923,6 +941,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/friend/accept'
     | '/friend/join'
+    | '/admin/billing'
     | '/admin/community'
     | '/admin/contact'
     | '/admin/feedback'
@@ -948,6 +967,7 @@ export interface FileRouteTypes {
     | '/settings/sharing'
     | '/settings/travel'
     | '/today/risk'
+    | '/api/public/stripe-webhook'
     | '/lovable/email/suppression'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
@@ -1017,6 +1037,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/friend/accept'
     | '/friend/join'
+    | '/admin/billing'
     | '/admin/community'
     | '/admin/contact'
     | '/admin/feedback'
@@ -1042,6 +1063,7 @@ export interface FileRouteTypes {
     | '/settings/sharing'
     | '/settings/travel'
     | '/today/risk'
+    | '/api/public/stripe-webhook'
     | '/lovable/email/suppression'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
@@ -1113,6 +1135,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/friend/accept'
     | '/friend/join'
+    | '/_app/admin/billing'
     | '/_app/admin/community'
     | '/_app/admin/contact'
     | '/_app/admin/feedback'
@@ -1138,6 +1161,7 @@ export interface FileRouteTypes {
     | '/_app/settings/sharing'
     | '/_app/settings/travel'
     | '/_app/today/risk'
+    | '/api/public/stripe-webhook'
     | '/lovable/email/suppression'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
@@ -1190,6 +1214,7 @@ export interface RootRouteChildren {
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   FriendAcceptRoute: typeof FriendAcceptRoute
   FriendJoinRoute: typeof FriendJoinRoute
+  ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   OauthWhoopCallbackRoute: typeof OauthWhoopCallbackRoute
@@ -1583,6 +1608,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/stripe-webhook': {
+      id: '/api/public/stripe-webhook'
+      path: '/api/public/stripe-webhook'
+      fullPath: '/api/public/stripe-webhook'
+      preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/today/risk': {
       id: '/_app/today/risk'
       path: '/risk'
@@ -1758,6 +1790,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminCommunityRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/admin/billing': {
+      id: '/_app/admin/billing'
+      path: '/billing'
+      fullPath: '/admin/billing'
+      preLoaderRoute: typeof AppAdminBillingRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -1874,6 +1913,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppAdminRouteChildren {
+  AppAdminBillingRoute: typeof AppAdminBillingRoute
   AppAdminCommunityRoute: typeof AppAdminCommunityRoute
   AppAdminContactRoute: typeof AppAdminContactRoute
   AppAdminFeedbackRoute: typeof AppAdminFeedbackRoute
@@ -1887,6 +1927,7 @@ interface AppAdminRouteChildren {
 }
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminBillingRoute: AppAdminBillingRoute,
   AppAdminCommunityRoute: AppAdminCommunityRoute,
   AppAdminContactRoute: AppAdminContactRoute,
   AppAdminFeedbackRoute: AppAdminFeedbackRoute,
@@ -2068,6 +2109,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   FriendAcceptRoute: FriendAcceptRoute,
   FriendJoinRoute: FriendJoinRoute,
+  ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   OauthWhoopCallbackRoute: OauthWhoopCallbackRoute,
@@ -2091,13 +2133,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

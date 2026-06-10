@@ -1,59 +1,62 @@
-## Direct Stripe Integration + Pro Tier
+## Build Stripe scaffold now, plug in real keys later
 
-Use Stripe directly with your own API keys (not Lovable's payments gateway). Start in **test mode**; flip to live by swapping the secrets later. A global "Pro free for everyone" flag keeps all users on Pro until you say otherwise.
+You don't need Stripe keys yet. I'll build the entire Pro tier with placeholder values so checkout/portal/webhook code is in place but inert. The global **"Pro free for everyone"** flag (already added to the DB and defaulted to `true`) means every user — existing and new sign-ups — gets full Pro access until you flip the switch.
 
-### 1. Stripe setup (you)
-You'll create in Stripe (test mode):
-- Product: "Purple Pro"
-- Price 1: $9.99 / month (recurring)
-- Price 2: $99 / year (recurring)
-- Webhook endpoint pointing at `https://purplelife.org/api/public/stripe-webhook` (events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`)
+When you're ready to go live (test or production), you'll grab the keys from these spots in your Stripe dashboard:
 
-Then I'll request these secrets via the secrets form:
-- `STRIPE_SECRET_KEY` (sk_test_…)
-- `STRIPE_WEBHOOK_SECRET` (whsec_…)
-- `STRIPE_PRICE_MONTHLY` (price_…)
-- `STRIPE_PRICE_YEARLY` (price_…)
+| Secret | Where in Stripe |
+|---|---|
+| `STRIPE_SECRET_KEY` | Developers → API keys → "Secret key" (`sk_test_…` or `sk_live_…`) |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | Same page → "Publishable key" (`pk_test_…`) |
+| `STRIPE_PRICE_MONTHLY` | Product catalog → create "Purple Pro" with a $9.99/mo price → copy the `price_…` ID |
+| `STRIPE_PRICE_YEARLY` | Same product, add a $99/yr price → copy that `price_…` ID |
+| `STRIPE_WEBHOOK_SECRET` | Developers → Webhooks → add endpoint `https://purplelife.org/api/public/stripe-webhook` → copy the signing secret (`whsec_…`) |
 
-`VITE_STRIPE_PUBLISHABLE_KEY` goes in code (publishable, safe).
+### What I'll build right now (no secrets needed)
 
-### 2. Database
-New migration:
-- `subscriptions` table: `user_id` (unique), `stripe_customer_id`, `stripe_subscription_id`, `price_id`, `status` (active/past_due/canceled/trialing), `current_period_end`, `cancel_at_period_end`
-- `app_settings` table (singleton row): `pro_free_for_everyone boolean default true`, `pro_features jsonb` (per-feature toggles)
-- `has_pro(uid)` security-definer function: returns true if global flag is on, user has `super_admin` role, or active subscription exists
+1. **Already done:** `subscriptions` table, `app_settings` (with `pro_free_for_everyone = true`), `has_pro()` function.
 
-All with proper GRANTs + RLS (users read own subscription; only super_admin writes app_settings).
+2. **Server functions** (`src/lib/billing.functions.ts`)
+   - `getMySubscription()` — returns `{ isPro, tier, status, currentPeriodEnd, freeForEveryone }`. Works today: returns `isPro: true` for everyone because of the global flag.
+   - `createCheckoutSession({ interval })` — wraps Stripe SDK call. If `STRIPE_SECRET_KEY` is missing/placeholder, it throws a friendly "Billing isn't configured yet" error.
+   - `createBillingPortalSession()` — same pattern.
+   - `setProFreeForEveryone(enabled)` — super-admin only; flips the global flag.
+   - `grantProToUser({ userId, months })` — super-admin only; inserts a synthetic subscription row with status `active` and a future period end. No Stripe call.
 
-### 3. Server functions (`src/lib/billing.functions.ts`)
-- `createCheckoutSession({ interval: 'monthly' | 'yearly' })` — auth-required; creates/reuses Stripe customer, returns Checkout URL
-- `createBillingPortalSession()` — returns Stripe customer portal URL
-- `getMySubscription()` — returns current sub + computed `isPro`
+3. **Webhook route** (`src/routes/api/public/stripe-webhook.ts`)
+   Full signature verification + handlers for `checkout.session.completed`, `customer.subscription.updated/deleted`, `invoice.payment_failed`. Returns `503` with a clear log line if `STRIPE_WEBHOOK_SECRET` isn't set yet. Safe to leave deployed.
 
-### 4. Webhook route
-`src/routes/api/public/stripe-webhook.ts` — verifies Stripe signature (raw body + `STRIPE_WEBHOOK_SECRET`), upserts `subscriptions` via `supabaseAdmin` on subscription/checkout/invoice events.
+4. **Feature-gate primitives** (`src/lib/pro-gate.ts` + `src/components/pro/pro-gate.tsx`)
+   - `useIsPro()` hook (reads `getMySubscription`).
+   - `<ProGate feature="dna">{children}</ProGate>` — renders children when Pro, otherwise a soft upgrade card.
+   - **No call sites wrapped yet** — gates stay invisible because everyone is Pro. We'll wrap DNA upload, Ask Purple limits, report sharing, and caregiver-seat checks in a follow-up turn so I don't change visible behavior today.
 
-### 5. Feature gates (`src/lib/pro-gate.ts`)
-`useIsPro()` hook + `<ProGate feature="dna">` wrapper. Gated features:
-- **DNA upload & insights** — gate the upload form on `/my-health-dna`
-- **Ask Purple unlimited** — free tier: 10 messages/day (tracked in existing ai_memory); Pro: unlimited
-- **Medical report sharing/scheduling** — gate the "Share" and "Schedule" buttons on reports
-- **Caregiver seats** — free: 1 active caregiver, Pro: unlimited
+5. **`/pricing` page**
+   Already exists — I'll update it to show Monthly $9.99 / Yearly $99 cards with a "Start Pro" button. While `pro_free_for_everyone = true`, the page shows a friendly banner: *"Purple is free for everyone right now. No payment needed."* and the buttons are disabled. When you flip the flag, buttons activate and call `createCheckoutSession`.
 
-Each gate shows a soft paywall card → "Upgrade to Pro" button → Stripe Checkout. While `pro_free_for_everyone=true`, gates pass through silently.
+6. **Account settings → Subscription section**
+   Shows current plan ("Pro · free for everyone" today). When billing is live and the user has a paid sub, shows "Manage billing" → portal link.
 
-### 6. UI
-- `/pricing` route — Monthly $9.99 / Yearly $99 cards, "Start with Pro" buttons → checkout
-- Account settings → "Subscription" section: current plan, "Manage billing" (portal), "Upgrade" if free
-- Admin panel (super_admin only) → toggle for `pro_free_for_everyone` + per-user "Grant Pro" action
+7. **Admin panel** (`/admin` → new "Billing" tab)
+   - Big toggle: **"Pro free for everyone"** (on by default).
+   - Search user → "Grant Pro for N months" action.
+   - Read-only list of paid subscribers (empty until Stripe is wired).
 
-### 7. Technical notes
-- Uses `stripe` npm package server-side (Worker-compatible via fetch).
-- Webhook is under `/api/public/*` so it bypasses auth; signature verification is mandatory.
-- No Lovable payments gateway involved — purely your Stripe account.
+8. **Stripe SDK install**
+   `bun add stripe` — pure JS, Worker-compatible, no native deps. Calls are lazy so the missing key never breaks the build.
 
-### What you do vs what I do
-**You:** create products + webhook in Stripe dashboard, then paste the 4 secrets when I prompt.
-**Me:** everything else — DB, server fns, webhook, gates, pricing page, admin toggle.
+### Visible behavior today
 
-Once you approve, I'll start with the migration and the secret request in parallel.
+- Every signed-in user (existing + new): full Pro access, no paywall anywhere.
+- `/pricing` shows the price cards with the "free for everyone" banner.
+- Account settings shows "Pro · free for everyone".
+- Admin sees the toggle and Grant-Pro tool.
+- Webhook route exists at `/api/public/stripe-webhook` but rejects until secrets are set.
+
+### Later, when you're ready (one turn each)
+
+- Paste the 5 secrets → checkout + portal start working immediately.
+- Say "wrap the gates" → I add `<ProGate>` around DNA upload, Ask Purple limit, report sharing, caregiver seats.
+- Say "flip free-for-everyone off" → done via admin toggle, no redeploy.
+
+Approve and I'll build it now using only the keys' names — no values needed.
