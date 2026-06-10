@@ -24,6 +24,7 @@ import { LogAuraSheet } from "@/components/hydration/log-aura-sheet";
 import { PatternHintCard } from "@/components/hydration/pattern-hint-card";
 import { useFeatureFlags } from "@/hooks/use-feature-flags";
 import { ConditionTipCard } from "@/components/today/condition-tip-card";
+import { ConditionWelcomeNudge } from "@/components/today/condition-welcome-nudge";
 import { FeatureSuggestionCard } from "@/components/today/feature-suggestion-card";
 import { OnboardingChecklist } from "@/components/today/onboarding-checklist";
 import { FirstEntryNudge } from "@/components/today/first-entry-nudge";
@@ -184,6 +185,8 @@ function TodayPage() {
       <div className="mb-6">
         <TodayInstallBanner />
       </div>
+
+      <ConditionWelcomeNudge />
 
       {journalCount === 0 && !emptyDismissed && (
         <TodayEmptyState
