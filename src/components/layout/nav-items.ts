@@ -17,6 +17,7 @@ import {
   Plane,
   Globe,
   Shield,
+  Dna,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -63,6 +64,7 @@ export const navTree: NavGroup[] = [
     to: "/insights",
     children: [
       { to: "/reports",  label: "Reports",   icon: FileText   },
+      { to: "/my-health-dna", label: "DNA",  icon: Dna        },
     ],
   },
   {
