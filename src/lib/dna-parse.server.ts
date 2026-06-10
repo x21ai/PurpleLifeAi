@@ -202,13 +202,14 @@ type TextParseResult = { provider: DnaProvider; variants: ParsedVariant[]; stats
 export function parseDnaText(text: string): TextParseResult {
   const headerSample = text.slice(0, 4000);
   const provider = detectProvider(headerSample);
+  const isVcf = provider === "vcf" || looksLikeVcf(text);
   const out: ParsedVariant[] = [];
   const lines = text.split(/\r?\n/);
   const seen = new Set<string>();
   let rowsScanned = 0;
 
   // VCF needs a different shape entirely.
-  if (provider === "vcf") {
+  if (isVcf) {
     // Detect genome build from header so we pick the right coordinate map first.
     // Fall back to trying both maps when undetectable.
     const headerLower = headerSample.toLowerCase();
@@ -277,7 +278,7 @@ export function parseDnaText(text: string): TextParseResult {
         position: Number.isFinite(Number(cols[1])) ? Number(cols[1]) : null,
       });
     }
-    return { provider, variants: out, stats: { rowsScanned, curatedMatches: out.length } };
+    return { provider: "vcf", variants: out, stats: { rowsScanned, curatedMatches: out.length } };
   }
 
   // Generic tabular: try tab first, then comma. Skip comments / blank.
