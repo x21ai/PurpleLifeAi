@@ -853,7 +853,7 @@ function ReportsPanel({ ownerId }: { ownerId: string }) {
   if (q.isLoading) return <Empty>Loading…</Empty>;
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const reports = q.data!.reports;
-  return <ReportsListReadOnly reports={reports} />;
+  return <ReportsListReadOnly reports={reports} ownerId={ownerId} />;
 }
 
 /* ----- Hydration ----- */
