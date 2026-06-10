@@ -18,9 +18,13 @@ import { computeUserPatterns, type PatternCard } from "@/lib/insights-patterns.f
 import {
   getVitalsSnapshot,
   getHealthRecordsCounts,
+  getVitalGoals,
+  type VitalGoal,
 } from "@/lib/health-vitals.functions";
 import { REPORT_CATEGORIES } from "@/lib/report-categories";
 import { QuickLogVitalSheet, type VitalKind } from "@/components/insights/quick-log-vital-sheet";
+import { SetGoalSheet } from "@/components/insights/set-goal-sheet";
+import { Target } from "lucide-react";
 
 type SeizureRow = {
   id: string;
@@ -436,14 +440,35 @@ function PatternCardItem({ card }: { card: PatternCard }) {
 
 function VitalsRow() {
   const fn = useServerFn(getVitalsSnapshot);
+  const goalsFn = useServerFn(getVitalGoals);
   const { data } = useQuery({
     queryKey: ["insights", "vitals"],
     queryFn: () => fn(),
     staleTime: 1000 * 60 * 5,
   });
+  const { data: goalsData } = useQuery({
+    queryKey: ["insights", "vital-goals"],
+    queryFn: () => goalsFn(),
+    staleTime: 1000 * 60 * 5,
+  });
   const v = data ?? null;
+  const goalsByKind = React.useMemo(() => {
+    const m = new Map<VitalKind, VitalGoal>();
+    for (const g of goalsData?.goals ?? []) m.set(g.kind as VitalKind, g);
+    return m;
+  }, [goalsData]);
   const [logKind, setLogKind] = React.useState<VitalKind | null>(null);
-  const tiles: Array<{ label: string; value: string; sub?: string; kind: VitalKind }> = [
+  const [goalKind, setGoalKind] = React.useState<VitalKind | null>(null);
+  type Tile = {
+    label: string;
+    value: string;
+    sub?: string;
+    kind: VitalKind;
+    numeric: number | null;
+    numeric2?: number | null;
+    metricKey?: string;
+  };
+  const tiles: Array<Tile> = [
     {
       label: "Weight",
       value: v?.weightKg != null
@@ -451,6 +476,8 @@ function VitalsRow() {
         : "–",
       sub: v?.weightKg != null ? "kg" : "no reading yet",
       kind: "weight",
+      numeric: v?.weightKg ?? null,
+      metricKey: "weight",
     },
     {
       label: "Blood pressure",
@@ -459,32 +486,51 @@ function VitalsRow() {
         : "–",
       sub: v?.bpSystolic != null ? "mmHg" : "no reading yet",
       kind: "bp",
+      numeric: v?.bpSystolic ?? null,
+      numeric2: v?.bpDiastolic ?? null,
+      metricKey: "blood_pressure_systolic",
     },
     {
       label: "Glucose",
       value: v?.glucoseMgDl != null ? `${Math.round(v.glucoseMgDl)}` : "–",
       sub: v?.glucoseMgDl != null ? "mg/dL" : "no reading yet",
       kind: "glucose",
+      numeric: v?.glucoseMgDl ?? null,
+      metricKey: "glucose",
     },
     {
       label: "Blood oxygen",
       value: v?.spo2Pct != null ? `${v.spo2Pct.toFixed(1)}%` : "–",
       sub: v?.spo2Pct != null ? "SpO₂" : "no reading yet",
       kind: "spo2",
+      numeric: v?.spo2Pct ?? null,
     },
     {
       label: "Body temperature",
       value: v?.bodyTempC != null ? `${v.bodyTempC.toFixed(1)}°C` : "–",
       sub: v?.bodyTempC != null ? "skin temp" : "no reading yet",
       kind: "temp",
+      numeric: v?.bodyTempC ?? null,
     },
     {
       label: "Respiratory rate",
       value: v?.respRate != null ? `${v.respRate.toFixed(0)}` : "–",
       sub: v?.respRate != null ? "breaths / min" : "no reading yet",
       kind: "resp_rate",
+      numeric: v?.respRate ?? null,
     },
   ];
+  function goalBadge(t: Tile): { tone: "good" | "watch"; label: string } | null {
+    const g = goalsByKind.get(t.kind);
+    if (!g || t.numeric == null) return null;
+    const inPrimary = (g.target_min == null || t.numeric >= g.target_min) && (g.target_max == null || t.numeric <= g.target_max);
+    let ok = inPrimary;
+    if (t.kind === "bp" && t.numeric2 != null && (g.target_min2 != null || g.target_max2 != null)) {
+      const inSecondary = (g.target_min2 == null || t.numeric2 >= g.target_min2) && (g.target_max2 == null || t.numeric2 <= g.target_max2);
+      ok = ok && inSecondary;
+    }
+    return ok ? { tone: "good", label: "In target" } : { tone: "watch", label: "Outside target" };
+  }
   return (
     <section className="mt-10">
       <p className="label-eyebrow text-muted-foreground">Vitals</p>
@@ -494,29 +540,45 @@ function VitalsRow() {
             key={t.label}
             className="group relative rounded-2xl border border-border bg-card px-4 py-4"
           >
-            <button
-              type="button"
-              onClick={() => setLogKind(t.kind)}
-              title={`Log ${t.label.toLowerCase()}`}
-              aria-label={`Log ${t.label}`}
-              className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground transition opacity-70 group-hover:opacity-100"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </button>
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground pr-7">
-              {t.label}
-            </p>
-            <p className="mt-2 font-serif text-2xl text-foreground tabular-nums">
-              {t.value}
-            </p>
-            {t.sub && (
-              <p className="mt-1 text-[11px] text-muted-foreground">{t.sub}</p>
+            <div className="absolute right-2 top-2 flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
+              <button
+                type="button"
+                onClick={() => setGoalKind(t.kind)}
+                title={`Set target for ${t.label.toLowerCase()}`}
+                aria-label={`Set target for ${t.label}`}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+              >
+                <Target className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setLogKind(t.kind)}
+                title={`Log ${t.label.toLowerCase()}`}
+                aria-label={`Log ${t.label}`}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            {t.metricKey ? (
+              <Link
+                to="/reports/trends/$metricKey"
+                params={{ metricKey: t.metricKey }}
+                className="block pr-14"
+              >
+                <TileInner t={t} badge={goalBadge(t)} />
+              </Link>
+            ) : (
+              <div className="pr-14">
+                <TileInner t={t} badge={goalBadge(t)} />
+              </div>
             )}
           </div>
         ))}
       </div>
       <p className="mt-3 text-[11px] text-muted-foreground">
-        Pulled from your uploaded reports and connected wearables. Tap + to quick-log.
+        Pulled from your uploaded reports and connected wearables. Tap a tile to see the trend,
+        the target icon to set a personal range, or + to quick-log.
       </p>
       {logKind && (
         <QuickLogVitalSheet
@@ -525,7 +587,43 @@ function VitalsRow() {
           onOpenChange={(o) => { if (!o) setLogKind(null); }}
         />
       )}
+      {goalKind && (
+        <SetGoalSheet
+          kind={goalKind}
+          current={goalsByKind.get(goalKind) ?? null}
+          open={goalKind !== null}
+          onOpenChange={(o) => { if (!o) setGoalKind(null); }}
+        />
+      )}
     </section>
+  );
+}
+
+function TileInner({
+  t,
+  badge,
+}: {
+  t: { label: string; value: string; sub?: string };
+  badge: { tone: "good" | "watch"; label: string } | null;
+}) {
+  return (
+    <>
+      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{t.label}</p>
+      <p className="mt-2 font-serif text-2xl text-foreground tabular-nums">{t.value}</p>
+      {t.sub && <p className="mt-1 text-[11px] text-muted-foreground">{t.sub}</p>}
+      {badge && (
+        <p
+          className={cn(
+            "mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider",
+            badge.tone === "good"
+              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+              : "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+          )}
+        >
+          {badge.label}
+        </p>
+      )}
+    </>
   );
 }
 
