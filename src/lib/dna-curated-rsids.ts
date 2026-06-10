@@ -18,6 +18,12 @@ export interface CuratedRsid {
   genotypeNotes: Record<string, string>;
   sensitive?: boolean;
   evidenceRef?: string;
+  /** Chromosome (no "chr" prefix). Used to match clinical VCFs that leave the ID column as ".". */
+  chrom?: string;
+  /** 1-based position in GRCh37 / hg19. */
+  pos37?: number;
+  /** 1-based position in GRCh38 / hg38. */
+  pos38?: number;
 }
 
 export const CURATED_RSIDS: readonly CuratedRsid[] = [
