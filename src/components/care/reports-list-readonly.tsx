@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Link } from "@tanstack/react-router";
 import { FileText, Loader2, AlertCircle, ChevronRight } from "lucide-react";
 
 type Report = {
@@ -16,7 +17,13 @@ type Report = {
  * No upload button, no link to per-report page (Step 1 covered reports
  * read-only; per-report caregiver view is a future step).
  */
-export function ReportsListReadOnly({ reports }: { reports: Report[] }) {
+export function ReportsListReadOnly({
+  reports,
+  ownerId,
+}: {
+  reports: Report[];
+  ownerId: string;
+}) {
   const grouped = React.useMemo(() => {
     const byType: Record<string, Report[]> = {};
     for (const r of reports) {
@@ -46,30 +53,33 @@ export function ReportsListReadOnly({ reports }: { reports: Report[] }) {
           </h3>
           <ul className="rounded-2xl border border-border bg-card divide-y divide-border overflow-hidden">
             {rows.map((r) => (
-              <li
-                key={r.id}
-                className="flex items-center gap-3 px-4 py-3"
-              >
-                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-foreground truncate">{r.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {r.report_date ?? new Date(r.created_at).toLocaleDateString()}
-                    {" · "}
-                    {r.status === "processing" && (
-                      <span className="inline-flex items-center gap-1">
-                        <Loader2 className="h-3 w-3 animate-spin" /> Extracting…
-                      </span>
-                    )}
-                    {r.status === "failed" && (
-                      <span className="inline-flex items-center gap-1 text-destructive">
-                        <AlertCircle className="h-3 w-3" /> Extraction failed
-                      </span>
-                    )}
-                    {r.status === "ready" && "Ready"}
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
+              <li key={r.id}>
+                <Link
+                  to="/care/$ownerId/reports/$reportId"
+                  params={{ ownerId, reportId: r.id }}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors"
+                >
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-foreground truncate">{r.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {r.report_date ?? new Date(r.created_at).toLocaleDateString()}
+                      {" · "}
+                      {r.status === "processing" && (
+                        <span className="inline-flex items-center gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" /> Extracting…
+                        </span>
+                      )}
+                      {r.status === "failed" && (
+                        <span className="inline-flex items-center gap-1 text-destructive">
+                          <AlertCircle className="h-3 w-3" /> Extraction failed
+                        </span>
+                      )}
+                      {r.status === "ready" && "Ready"}
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
+                </Link>
               </li>
             ))}
           </ul>
