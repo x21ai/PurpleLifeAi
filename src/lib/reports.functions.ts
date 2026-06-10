@@ -655,3 +655,31 @@ export const getReportFileUrl = createServerFn({ method: "POST" })
     if (sErr || !signed?.signedUrl) throw new Error("Could not sign URL");
     return { url: signed.signedUrl, mime: doc.file_mime, title: doc.title };
   });
+
+/** 7-day signed URL for sharing a report file. */
+export const getReportShareUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: doc, error } = await supabase
+      .from("report_documents")
+      .select("file_path, title")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error || !doc) throw new Error("Report not found");
+    const SEVEN_DAYS = 60 * 60 * 24 * 7;
+    const { data: signed, error: sErr } = await supabase.storage
+      .from("reports")
+      .createSignedUrl(doc.file_path, SEVEN_DAYS);
+    if (sErr || !signed?.signedUrl) throw new Error("Could not sign URL");
+    await supabase.from("phi_access_log").insert({
+      user_id: userId,
+      actor_id: userId,
+      action: "share",
+      resource_type: "report_document",
+      resource_id: data.id,
+      metadata: { ttl_seconds: SEVEN_DAYS },
+    });
+    return { url: signed.signedUrl, title: doc.title, expiresInDays: 7 };
+  });

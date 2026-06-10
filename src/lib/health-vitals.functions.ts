@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { z } from "zod";
 
 /**
  * Apple-style "vitals" snapshot for the Insights header.
@@ -72,18 +73,88 @@ export const getVitalsSnapshot = createServerFn({ method: "GET" })
     const dbp = latestFor(["blood_pressure_diastolic", "diastolic_bp", "dbp"]);
     const glu = latestFor(["glucose", "fasting_glucose", "blood_glucose"]);
 
-    return {
-      weightKg: weight.value,
-      bpSystolic: sbp.value,
-      bpDiastolic: dbp.value,
-      glucoseMgDl: glu.value,
-      spo2Pct: latestNonNull("spo2_pct"),
-      bodyTempC: latestNonNull("skin_temp_c"),
-      respRate: latestNonNull("respiratory_rate_bpm"),
-      weightAt: weight.at,
-      bpAt: sbp.at,
-      glucoseAt: glu.at,
+    // Manual quick-logs win when newer than report/biometrics readings.
+    const { data: logs } = await supabase
+      .from("vitals_log")
+      .select("kind, value, value2, measured_at")
+      .eq("user_id", userId)
+      .order("measured_at", { ascending: false })
+      .limit(200);
+    const latestLog = (kind: string) =>
+      (logs ?? []).find((l) => l.kind === kind) ?? null;
+
+    const pick = (
+      a: { value: number | null; at: string | null },
+      logKind: string,
+    ): { value: number | null; at: string | null } => {
+      const l = latestLog(logKind);
+      if (!l || l.value == null) return a;
+      if (!a.at || (l.measured_at && l.measured_at > a.at)) {
+        return { value: Number(l.value), at: l.measured_at };
+      }
+      return a;
     };
+
+    const pickBp = (): { sys: number | null; dia: number | null; at: string | null } => {
+      const l = latestLog("bp");
+      const fromReport = { sys: sbp.value, dia: dbp.value, at: sbp.at };
+      if (!l || l.value == null) return fromReport;
+      if (!fromReport.at || (l.measured_at && l.measured_at > fromReport.at)) {
+        return { sys: Number(l.value), dia: l.value2 != null ? Number(l.value2) : null, at: l.measured_at };
+      }
+      return fromReport;
+    };
+
+    const w = pick(weight, "weight");
+    const g = pick(glu, "glucose");
+    const bp = pickBp();
+    const spo2Log = latestLog("spo2");
+    const tempLog = latestLog("temp");
+    const respLog = latestLog("resp_rate");
+    const spo2Bio = latestNonNull("spo2_pct");
+    const tempBio = latestNonNull("skin_temp_c");
+    const respBio = latestNonNull("respiratory_rate_bpm");
+
+    return {
+      weightKg: w.value,
+      bpSystolic: bp.sys,
+      bpDiastolic: bp.dia,
+      glucoseMgDl: g.value,
+      spo2Pct: spo2Log?.value != null ? Number(spo2Log.value) : spo2Bio,
+      bodyTempC: tempLog?.value != null ? Number(tempLog.value) : tempBio,
+      respRate: respLog?.value != null ? Number(respLog.value) : respBio,
+      weightAt: w.at,
+      bpAt: bp.at,
+      glucoseAt: g.at,
+    };
+  });
+
+/** Manual quick-log for a vital reading. */
+export const logVital = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      kind: z.enum(["weight", "bp", "glucose", "spo2", "temp", "resp_rate"]),
+      value: z.number().finite(),
+      value2: z.number().finite().nullable().optional(),
+      unit: z.string().max(20).nullable().optional(),
+      notes: z.string().max(500).nullable().optional(),
+      measuredAt: z.string().datetime().optional(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase.from("vitals_log").insert({
+      user_id: userId,
+      kind: data.kind,
+      value: data.value,
+      value2: data.value2 ?? null,
+      unit: data.unit ?? null,
+      notes: data.notes ?? null,
+      measured_at: data.measuredAt ?? new Date().toISOString(),
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 /** Counts per report_category for the Health Records hub tiles. */
