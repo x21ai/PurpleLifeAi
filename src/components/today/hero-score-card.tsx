@@ -4,9 +4,9 @@ import { ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { ScoreArc } from "@/components/ui-oura/score-arc";
-import dawn from "@/assets/hero-readiness-dawn.jpg";
-import mist from "@/assets/hero-readiness-mist.jpg";
-import coast from "@/assets/hero-readiness-coast.jpg";
+import dawn from "@/assets/hero-readiness-dawn.jpg?w=960&format=webp";
+import mist from "@/assets/hero-readiness-mist.jpg?w=960&format=webp";
+import coast from "@/assets/hero-readiness-coast.jpg?w=960&format=webp";
 
 type Forecast = {
   risk_score: number;
