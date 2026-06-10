@@ -86,7 +86,8 @@ Deno.serve(async (req) => {
       .update({ status: "taken", taken_at: now })
       .eq("id", doseId);
     if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
+      console.error("med-dose-action taken error", error);
+      return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -97,7 +98,8 @@ Deno.serve(async (req) => {
       .update({ status: "skipped" })
       .eq("id", doseId);
     if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
+      console.error("med-dose-action skip error", error);
+      return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -109,7 +111,8 @@ Deno.serve(async (req) => {
       .update({ scheduled_at: snoozeUntil, status: "pending" })
       .eq("id", doseId);
     if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
+      console.error("med-dose-action snooze error", error);
+      return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

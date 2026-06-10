@@ -9,8 +9,8 @@ export const Route = createFileRoute("/community/$postId")({
   component: PostDetail,
 });
 
-type Post = { id: string; user_id: string; title: string; body: string; topic: string; created_at: string };
-type Comment = { id: string; user_id: string; body: string; created_at: string };
+type Post = { id: string; title: string; body: string; topic: string; created_at: string };
+type Comment = { id: string; body: string; created_at: string };
 
 function PostDetail() {
   const { postId } = Route.useParams();
@@ -24,8 +24,8 @@ function PostDetail() {
 
   const load = React.useCallback(async () => {
     const [{ data: p }, { data: c }, { data: r }] = await Promise.all([
-      supabase.from("community_posts").select("id, user_id, title, body, topic, created_at").eq("id", postId).eq("hidden", false).maybeSingle(),
-      supabase.from("community_comments").select("id, user_id, body, created_at").eq("post_id", postId).eq("hidden", false).order("created_at"),
+      supabase.from("community_posts").select("id, title, body, topic, created_at").eq("id", postId).eq("hidden", false).maybeSingle(),
+      supabase.from("community_comments").select("id, body, created_at").eq("post_id", postId).eq("hidden", false).order("created_at"),
       supabase.from("community_reactions").select("user_id").eq("post_id", postId).eq("kind", "like"),
     ]);
     setPost((p ?? null) as Post | null);

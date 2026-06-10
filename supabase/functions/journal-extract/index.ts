@@ -81,7 +81,8 @@ Deno.serve(async (req) => {
     });
     if (!orchResp.ok) {
       const errText = await orchResp.text();
-      throw new Error(`extractor ${orchResp.status}: ${errText}`);
+      console.error("journal-extract orchestrator error", orchResp.status, errText);
+      throw new Error(`extractor ${orchResp.status}`);
     }
     const { extractions = [], unmatched_phrases = [] } = await orchResp.json();
 
@@ -129,7 +130,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     console.error("journal-extract error", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "unknown" }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }

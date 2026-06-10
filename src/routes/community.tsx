@@ -32,7 +32,6 @@ export const Route = createFileRoute("/community")({
 
 type Post = {
   id: string;
-  user_id: string;
   title: string;
   body: string;
   topic: string;
@@ -53,7 +52,7 @@ function CommunityFeed() {
     (async () => {
       let q = supabase
         .from("community_posts")
-        .select("id, user_id, title, body, topic, created_at, pinned")
+        .select("id, title, body, topic, created_at, pinned")
         .eq("hidden", false)
         .order("pinned", { ascending: false })
         .order("created_at", { ascending: false })
