@@ -250,6 +250,21 @@ export function getCuratedRsid(rsid: string): CuratedRsid | undefined {
   return CURATED_RSIDS.find((r) => r.rsid === rsid);
 }
 
+/** Normalize a chromosome label: "chr1" → "1", "chrM"/"MT" → "MT". */
+export function normalizeChrom(raw: string): string {
+  const s = raw.trim().replace(/^chr/i, "").toUpperCase();
+  if (s === "M") return "MT";
+  return s;
+}
+
+/** Lookup map: "chrom:pos" → curated rsid, for GRCh37 and GRCh38. */
+export const CURATED_POS37: ReadonlyMap<string, string> = new Map(
+  CURATED_RSIDS.filter((r) => r.chrom && r.pos37).map((r) => [`${r.chrom}:${r.pos37}`, r.rsid]),
+);
+export const CURATED_POS38: ReadonlyMap<string, string> = new Map(
+  CURATED_RSIDS.filter((r) => r.chrom && r.pos38).map((r) => [`${r.chrom}:${r.pos38}`, r.rsid]),
+);
+
 export type DnaProvider = "23andme" | "ancestry" | "myheritage" | "vcf" | "unknown";
 
 export function detectProvider(headerSample: string): DnaProvider {
