@@ -145,6 +145,7 @@ function DnaPage() {
       <MedicalDisclaimer className="mt-6" />
 
       {/* Upload */}
+      <div className="mt-8">
       <ProGate feature="dna">
       <section
         onDragOver={(e) => {
@@ -161,7 +162,7 @@ function DnaPage() {
           const f = e.dataTransfer.files?.[0];
           if (f && !uploading) handleFile(f);
         }}
-        className={`mt-8 rounded-3xl border-2 border-dashed bg-card p-6 sm:p-8 transition ${
+        className={`rounded-3xl border-2 border-dashed bg-card p-6 sm:p-8 transition ${
           dragging
             ? "border-[color:var(--purple-primary)] bg-[color:var(--purple-primary)]/5"
             : "border-border"
@@ -202,6 +203,7 @@ function DnaPage() {
         </p>
       </section>
       </ProGate>
+      </div>
 
       {/* What we look at */}
       <details className="mt-8 rounded-2xl border border-border bg-card/40 px-5 py-4">
