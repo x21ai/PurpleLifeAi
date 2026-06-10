@@ -10,7 +10,7 @@ export function getStripe(): Stripe | null {
   if (!key || !key.startsWith("sk_")) return null;
   return new Stripe(key, {
     httpClient: Stripe.createFetchHttpClient(),
-  } as Stripe.StripeConfig);
+  });
 }
 
 export function stripePrices() {
