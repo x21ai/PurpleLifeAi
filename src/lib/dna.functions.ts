@@ -113,7 +113,7 @@ export const listDnaFiles = createServerFn({ method: "GET" })
     const { data: files, error } = await supabase
       .from("dna_files")
       .select(
-        "id, provider, original_filename, byte_size, status, error_message, parsed_at, share_with_caregivers, created_at",
+        "id, provider, kind, original_filename, byte_size, status, error_message, parsed_at, share_with_caregivers, created_at",
       )
       .eq("user_id", userId)
       .order("created_at", { ascending: false });

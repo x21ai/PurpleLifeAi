@@ -70,6 +70,12 @@ function DnaPage() {
       toast.error("File too large (max 500 MB).");
       return;
     }
+    if (/\.(tbi|crai|bai|csi)$/i.test(file.name)) {
+      toast.error(
+        "That's an index sidecar (.tbi/.crai/.bai/.csi). Upload the matching .vcf.gz, .bam, or .cram instead.",
+      );
+      return;
+    }
     setUploading(true);
     try {
       const { fileId, storagePath } = await createFn({
@@ -182,7 +188,7 @@ function DnaPage() {
         <input
           ref={inputRef}
           type="file"
-          accept=".txt,.tsv,.csv,.vcf,.json,.gz,.zip,.tar,.tgz,.bam,.cram,.tbi,.crai,.bai,.csi"
+          accept=".txt,.tsv,.csv,.vcf,.json,.gz,.zip,.tar,.tgz,.bam,.cram"
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
@@ -234,9 +240,14 @@ function DnaPage() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate">{f.original_filename}</p>
                   <p className="mt-0.5 text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {f.provider} · {statusLabel(f.status)}
+                    {f.provider} · {statusLabel(f.status, f.kind)}
                     {f.error_message ? ` · ${f.error_message}` : ""}
                   </p>
+                  {isUnparseableKind(f.kind) && (
+                    <p className="mt-1 text-[11px] text-amber-400/90">
+                      Alignment or index file — upload the matching .vcf.gz or your raw genotype export to extract markers.
+                    </p>
+                  )}
                 </div>
                 <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   <input
@@ -333,7 +344,8 @@ function DnaPage() {
   );
 }
 
-function statusLabel(s: string): string {
+function statusLabel(s: string, kind?: string | null): string {
+  if (s === "parsed" && isUnparseableKind(kind)) return "Stored · not parsed";
   switch (s) {
     case "uploaded": return "Uploaded";
     case "parsing": return "Reading…";
@@ -341,6 +353,10 @@ function statusLabel(s: string): string {
     case "error": return "Error";
     default: return s;
   }
+}
+
+function isUnparseableKind(kind?: string | null): boolean {
+  return kind === "bam" || kind === "cram" || kind === "index";
 }
 
 // Keep the linter quiet about unused imports in the helper grid.
