@@ -333,3 +333,126 @@ export const getMetricInsight = createServerFn({ method: "POST" })
       return { summary: null, bullets: [], suggestedQuestions: [], error: kind, cached: false, latestAt };
     }
   });
+
+/**
+ * Phase 4.3: Generate 1-3 plain-English "For you" cards summarizing the most
+ * notable recent observations across the user's metrics + vitals. Cached once
+ * per day in metric_insights under the sentinel key `__daily_cards__`.
+ */
+export const getDailyInsightCards = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ force: z.boolean().optional() }).parse(input ?? {}))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const today = new Date().toISOString().slice(0, 10);
+
+    if (!data.force) {
+      const { data: cached } = await supabase
+        .from("metric_insights")
+        .select("summary, bullets")
+        .eq("user_id", userId)
+        .eq("metric_key", "__daily_cards__")
+        .eq("latest_at", today)
+        .maybeSingle();
+      if (cached) {
+        return {
+          cards: (cached.bullets as Array<{ title: string; body: string; tone?: string; metricKey?: string }>) ?? [],
+          headline: cached.summary ?? null,
+          cached: true,
+          generatedFor: today,
+        };
+      }
+    }
+
+    const since = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString();
+    const [{ data: metrics }, { data: vitals }, { data: profile }] = await Promise.all([
+      supabase
+        .from("report_metrics")
+        .select("metric_key, display_name, value, value_text, unit, flag, measured_at, created_at")
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabase
+        .from("vitals_log")
+        .select("metric_key, value, unit, recorded_at")
+        .gte("recorded_at", since)
+        .order("recorded_at", { ascending: false })
+        .limit(80),
+      supabase
+        .from("profiles")
+        .select("conditions, conditions_note")
+        .eq("id", userId)
+        .maybeSingle(),
+    ]);
+
+    const metricLines = (metrics ?? []).slice(0, 80).map((m: any) =>
+      `- [report] ${m.display_name ?? m.metric_key}: ${m.value ?? m.value_text}${m.unit ? ` ${m.unit}` : ""}${m.flag ? ` [${m.flag}]` : ""} on ${(m.measured_at ?? m.created_at).slice(0, 10)}`,
+    );
+    const vitalLines = (vitals ?? []).slice(0, 40).map((v: any) =>
+      `- [vital] ${v.metric_key}: ${v.value}${v.unit ? ` ${v.unit}` : ""} on ${v.recorded_at.slice(0, 10)}`,
+    );
+    if (metricLines.length + vitalLines.length < 3) {
+      await supabase.from("metric_insights").upsert(
+        {
+          user_id: userId,
+          metric_key: "__daily_cards__",
+          latest_at: today,
+          summary: null,
+          bullets: [],
+          suggested_questions: [],
+        },
+        { onConflict: "user_id,metric_key,latest_at" },
+      );
+      return { cards: [], headline: null, cached: false, generatedFor: today };
+    }
+
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) return { cards: [], headline: null, cached: false, generatedFor: today, error: "AI unavailable" };
+
+    try {
+      const gateway = createLovableAiGatewayProvider(key);
+      const conditions = (profile?.conditions as string[] | null) ?? [];
+      const prompt = [
+        conditions.length ? `User conditions: ${conditions.join(", ")}` : "User conditions: not specified",
+        "",
+        "Recent readings (newest first):",
+        ...metricLines,
+        ...vitalLines,
+      ].join("\n");
+
+      const { experimental_output: output } = await generateText({
+        model: gateway("google/gemini-3-flash-preview"),
+        experimental_output: Output.object({
+          schema: z.object({
+            headline: z.string(),
+            cards: z.array(
+              z.object({
+                title: z.string(),
+                body: z.string(),
+                tone: z.enum(["info", "watch", "attention"]),
+                metricKey: z.string().optional(),
+              }),
+            ).min(1).max(3),
+          }),
+        }),
+        system:
+          "You are Purple, a calm, careful health-journal assistant writing a 'For you' summary card row. Surface the 1-3 most notable observations from the user's recent data: out-of-range readings repeating, clear trends across multiple readings, or single dramatic spikes. Skip noise. Never diagnose. Never recommend dosage or treatment changes. If you mention a number, include the date. Tone: quiet, respectful. Headline is one short sentence framing today. Cards have short specific titles like 'LDL trending up' and 1-2 sentence bodies in plain English. tone: info (neutral), watch (worth noticing), attention (repeated abnormal). metricKey: snake_case key from the data when the card is about a specific metric.",
+        prompt,
+      });
+
+      await supabase.from("metric_insights").upsert(
+        {
+          user_id: userId,
+          metric_key: "__daily_cards__",
+          latest_at: today,
+          summary: output.headline,
+          bullets: output.cards,
+          suggested_questions: [],
+        },
+        { onConflict: "user_id,metric_key,latest_at" },
+      );
+      return { cards: output.cards, headline: output.headline, cached: false, generatedFor: today };
+    } catch (e: any) {
+      return { cards: [], headline: null, cached: false, generatedFor: today, error: e?.message ?? "AI failed" };
+    }
+  });
