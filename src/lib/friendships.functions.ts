@@ -226,6 +226,7 @@ export const listMyCircle = createServerFn({ method: "GET" })
         displayName,
         otherId,
         myNote: myNote ?? null,
+        shareBasics: (r as any).share_basics ?? false,
         created_at: r.created_at,
         accepted_at: r.accepted_at,
       };
@@ -287,4 +288,93 @@ export const setFriendNickname = createServerFn({ method: "POST" })
       .eq("id", data.friendship_id);
     if (upErr) throw new Error(upErr.message);
     return { ok: true };
+  });
+
+/* -------------------- Social tier (share_basics) -------------------- */
+
+/**
+ * The viewer side of an active friendship may, optionally, share a tiny
+ * slice of profile info (first name, condition tags). Off by default —
+ * setting this writes `share_basics=true` on the friendship row. The
+ * setting is symmetric: if either side turns it on, both sides can see
+ * the other's basics via getFriendBasics.
+ */
+export const setFriendShareBasics = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { friendship_id: string; enabled: boolean }) =>
+    z
+      .object({
+        friendship_id: z.string().uuid(),
+        enabled: z.boolean(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: row, error } = await supabaseAdmin
+      .from("friendships")
+      .select("user_a, user_b, status")
+      .eq("id", data.friendship_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Friendship not found.");
+    if (row.user_a !== userId && row.user_b !== userId) {
+      throw new Error("You're not part of this friendship.");
+    }
+    if (row.status !== "active") {
+      throw new Error("Both sides need to accept first.");
+    }
+    const { error: upErr } = await supabaseAdmin
+      .from("friendships")
+      .update({ share_basics: data.enabled })
+      .eq("id", data.friendship_id);
+    if (upErr) throw new Error(upErr.message);
+    return { ok: true, enabled: data.enabled };
+  });
+
+/**
+ * Returns the tiny slice of profile info the friend has opted to share.
+ * Throws when share_basics is off, or when the caller isn't a participant.
+ * Never returns health data.
+ */
+export const getFriendBasics = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { friendship_id: string }) =>
+    z.object({ friendship_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: row, error } = await supabaseAdmin
+      .from("friendships")
+      .select("user_a, user_b, status, share_basics")
+      .eq("id", data.friendship_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Friendship not found.");
+    if (row.user_a !== userId && row.user_b !== userId) {
+      throw new Error("You're not part of this friendship.");
+    }
+    if (row.status !== "active") {
+      throw new Error("This friendship isn't active yet.");
+    }
+    if (!(row as any).share_basics) {
+      return { shared: false as const };
+    }
+    const otherId = row.user_a === userId ? row.user_b : row.user_a;
+    if (!otherId) return { shared: false as const };
+    const { data: p } = await supabaseAdmin
+      .from("profiles")
+      .select("first_name, last_name, avatar_url, conditions, country")
+      .eq("id", otherId)
+      .maybeSingle();
+    return {
+      shared: true as const,
+      basics: {
+        first_name: (p as any)?.first_name ?? null,
+        last_name: (p as any)?.last_name ?? null,
+        avatar_url: (p as any)?.avatar_url ?? null,
+        conditions: ((p as any)?.conditions ?? []) as string[],
+        country: (p as any)?.country ?? null,
+      },
+    };
   });

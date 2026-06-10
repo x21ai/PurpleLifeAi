@@ -74,6 +74,7 @@ import { Route as AppReportsDocumentsRouteImport } from './routes/_app/reports.d
 import { Route as AppReportsReportIdRouteImport } from './routes/_app/reports.$reportId'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
 import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
+import { Route as AppFriendsFriendshipIdRouteImport } from './routes/_app/friends.$friendshipId'
 import { Route as AppConditionSlugRouteImport } from './routes/_app/condition.$slug'
 import { Route as AppCareInboxRouteImport } from './routes/_app/care.inbox'
 import { Route as AppCareOwnerIdRouteImport } from './routes/_app/care.$ownerId'
@@ -429,6 +430,11 @@ const AppJournalNewRoute = AppJournalNewRouteImport.update({
   path: '/journal/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppFriendsFriendshipIdRoute = AppFriendsFriendshipIdRouteImport.update({
+  id: '/friends/$friendshipId',
+  path: '/friends/$friendshipId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppConditionSlugRoute = AppConditionSlugRouteImport.update({
   id: '/condition/$slug',
   path: '/condition/$slug',
@@ -641,6 +647,7 @@ export interface FileRoutesByFullPath {
   '/care/$ownerId': typeof AppCareOwnerIdRoute
   '/care/inbox': typeof AppCareInboxRoute
   '/condition/$slug': typeof AppConditionSlugRoute
+  '/friends/$friendshipId': typeof AppFriendsFriendshipIdRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/reports/$reportId': typeof AppReportsReportIdRoute
@@ -734,6 +741,7 @@ export interface FileRoutesByTo {
   '/care/$ownerId': typeof AppCareOwnerIdRoute
   '/care/inbox': typeof AppCareInboxRoute
   '/condition/$slug': typeof AppConditionSlugRoute
+  '/friends/$friendshipId': typeof AppFriendsFriendshipIdRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
   '/reports/$reportId': typeof AppReportsReportIdRoute
@@ -830,6 +838,7 @@ export interface FileRoutesById {
   '/_app/care/$ownerId': typeof AppCareOwnerIdRoute
   '/_app/care/inbox': typeof AppCareInboxRoute
   '/_app/condition/$slug': typeof AppConditionSlugRoute
+  '/_app/friends/$friendshipId': typeof AppFriendsFriendshipIdRoute
   '/_app/journal/new': typeof AppJournalNewRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
   '/_app/reports/$reportId': typeof AppReportsReportIdRoute
@@ -926,6 +935,7 @@ export interface FileRouteTypes {
     | '/care/$ownerId'
     | '/care/inbox'
     | '/condition/$slug'
+    | '/friends/$friendshipId'
     | '/journal/new'
     | '/meds/$medId'
     | '/reports/$reportId'
@@ -1019,6 +1029,7 @@ export interface FileRouteTypes {
     | '/care/$ownerId'
     | '/care/inbox'
     | '/condition/$slug'
+    | '/friends/$friendshipId'
     | '/journal/new'
     | '/meds/$medId'
     | '/reports/$reportId'
@@ -1114,6 +1125,7 @@ export interface FileRouteTypes {
     | '/_app/care/$ownerId'
     | '/_app/care/inbox'
     | '/_app/condition/$slug'
+    | '/_app/friends/$friendshipId'
     | '/_app/journal/new'
     | '/_app/meds/$medId'
     | '/_app/reports/$reportId'
@@ -1655,6 +1667,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppJournalNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/friends/$friendshipId': {
+      id: '/_app/friends/$friendshipId'
+      path: '/friends/$friendshipId'
+      fullPath: '/friends/$friendshipId'
+      preLoaderRoute: typeof AppFriendsFriendshipIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/condition/$slug': {
       id: '/_app/condition/$slug'
       path: '/condition/$slug'
@@ -1968,6 +1987,7 @@ interface AppRouteChildren {
   AppCareOwnerIdRoute: typeof AppCareOwnerIdRoute
   AppCareInboxRoute: typeof AppCareInboxRoute
   AppConditionSlugRoute: typeof AppConditionSlugRoute
+  AppFriendsFriendshipIdRoute: typeof AppFriendsFriendshipIdRoute
   AppJournalNewRoute: typeof AppJournalNewRoute
   AppSeizuresNewRoute: typeof AppSeizuresNewRoute
   AppBiometricsIndexRoute: typeof AppBiometricsIndexRoute
@@ -1998,6 +2018,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCareOwnerIdRoute: AppCareOwnerIdRoute,
   AppCareInboxRoute: AppCareInboxRoute,
   AppConditionSlugRoute: AppConditionSlugRoute,
+  AppFriendsFriendshipIdRoute: AppFriendsFriendshipIdRoute,
   AppJournalNewRoute: AppJournalNewRoute,
   AppSeizuresNewRoute: AppSeizuresNewRoute,
   AppBiometricsIndexRoute: AppBiometricsIndexRoute,
@@ -2070,13 +2091,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Copy, Loader2, Mail, MessageCircle, Share2, Trash2, UserPlus } from "lucide-react";
+import { Copy, Eye, Loader2, Mail, MessageCircle, Share2, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 function inviteText(url: string, code: string) {
   return `Hey — I'm using Purple, a private health journal. Want to be in my circle? ${url}  (or use code ${code} at purplelife.org/friend/join)`;
@@ -13,6 +13,8 @@ function isIOS() {
 }
 
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Link } from "@tanstack/react-router";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -36,6 +38,7 @@ import {
   inviteFriend,
   listMyCircle,
   removeFriend,
+  setFriendShareBasics,
 } from "@/lib/friendships.functions";
 
 /**
@@ -59,6 +62,17 @@ export function CircleSection() {
       toast.success("Removed from your circle");
     },
     onError: (e: any) => toast.error(e?.message ?? "Couldn't remove"),
+  });
+
+  const setBasics = useServerFn(setFriendShareBasics);
+  const basicsMut = useMutation({
+    mutationFn: (args: { friendship_id: string; enabled: boolean }) =>
+      setBasics({ data: args }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["circle", "mine"] });
+      toast.success(res.enabled ? "Sharing your basics" : "Stopped sharing basics");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't update"),
   });
 
   const rows = circle.data?.friendships ?? [];
@@ -108,6 +122,30 @@ export function CircleSection() {
                     inviteToken={f.invite_token}
                     referCode={f.refer_code}
                   />
+                )}
+                {f.status === "active" && (
+                  <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                    <label className="flex items-center gap-2">
+                      <Switch
+                        checked={f.shareBasics}
+                        disabled={basicsMut.isPending}
+                        onCheckedChange={(v) =>
+                          basicsMut.mutate({ friendship_id: f.id, enabled: v })
+                        }
+                        aria-label="Share basics"
+                      />
+                      <span>Share basics</span>
+                    </label>
+                    {f.shareBasics && (
+                      <Link
+                        to="/friends/$friendshipId"
+                        params={{ friendshipId: f.id }}
+                        className="inline-flex items-center gap-1 text-foreground underline-offset-4 hover:underline"
+                      >
+                        <Eye className="h-3 w-3" /> View what they see
+                      </Link>
+                    )}
+                  </div>
                 )}
               </div>
               <RemoveFriendButton
