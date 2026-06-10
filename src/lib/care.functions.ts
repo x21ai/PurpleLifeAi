@@ -521,6 +521,17 @@ export const acceptInvite = createServerFn({ method: "POST" })
     if (rel.status !== "pending") throw new Error("Invite is no longer pending");
     if (rel.owner_id === userId) throw new Error("You can't accept your own invite");
 
+    // Verify the accepting user's email matches the invite email, so a leaked
+    // or forwarded token can't be redeemed by an unintended account.
+    if (rel.invite_email) {
+      const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
+      const accepterEmail = (u?.user?.email ?? "").trim().toLowerCase();
+      const inviteEmail = String(rel.invite_email).trim().toLowerCase();
+      if (!accepterEmail || accepterEmail !== inviteEmail) {
+        throw new Error("This invite was sent to a different email address.");
+      }
+    }
+
     const { error: uErr } = await supabaseAdmin
       .from("care_relationships")
       .update({

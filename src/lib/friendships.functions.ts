@@ -114,7 +114,7 @@ export const acceptFriendInvite = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) throw new Error("This invite link is invalid or has already been used.");
-    return acceptPendingRow(row, userId);
+    return acceptPendingRow(row, userId, true);
   });
 
 export const acceptFriendByCode = createServerFn({ method: "POST" })
@@ -136,14 +136,24 @@ export const acceptFriendByCode = createServerFn({ method: "POST" })
   });
 
 async function acceptPendingRow(
-  row: { id: string; status: string; user_a: string },
+  row: { id: string; status: string; user_a: string; invite_email?: string | null },
   userId: string,
+  checkEmail = false,
 ) {
     if (row.status !== "pending") {
       throw new Error("This invite has already been accepted or revoked.");
     }
     if (row.user_a === userId) {
       throw new Error("You can't accept your own invite.");
+    }
+
+    if (checkEmail && row.invite_email) {
+      const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
+      const accepterEmail = (u?.user?.email ?? "").trim().toLowerCase();
+      const inviteEmail = String(row.invite_email).trim().toLowerCase();
+      if (!accepterEmail || accepterEmail !== inviteEmail) {
+        throw new Error("This invite was sent to a different email address.");
+      }
     }
 
     // Prevent duplicate friendships (already linked to inviter, in either direction)

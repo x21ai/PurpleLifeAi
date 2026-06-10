@@ -36,7 +36,7 @@ export const Route = createFileRoute("/api/public/cron/medical-reports")({
 
         if (error) {
           console.error("[cron] medical-reports fetch error", error);
-          return Response.json({ ok: false, error: error.message }, { status: 500 });
+          return Response.json({ ok: false, error: "Internal server error" }, { status: 500 });
         }
         if (!schedules || schedules.length === 0) {
           return Response.json({ ok: true, processed: 0 });

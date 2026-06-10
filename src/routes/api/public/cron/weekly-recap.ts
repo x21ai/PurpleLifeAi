@@ -23,7 +23,8 @@ export const Route = createFileRoute("/api/public/cron/weekly-recap")({
           .select("id, first_name")
           .eq("weekly_digest_enabled", true);
         if (error) {
-          return Response.json({ ok: false, error: error.message }, { status: 500 });
+          console.error("[cron] weekly-recap fetch error", error);
+          return Response.json({ ok: false, error: "Internal server error" }, { status: 500 });
         }
 
         let sent = 0;

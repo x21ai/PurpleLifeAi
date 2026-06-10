@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/public/cron/purge-deleted-accounts")(
 
         if (dueErr) {
           console.error("[cron] purge fetch error", dueErr);
-          return Response.json({ ok: false, error: dueErr.message }, { status: 500 });
+          return Response.json({ ok: false, error: "Internal server error" }, { status: 500 });
         }
         if (!due || due.length === 0) {
           return Response.json({ ok: true, purged: 0 });
