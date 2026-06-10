@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const MAX_BYTES = 30 * 1024 * 1024;
+const MAX_BYTES = 500 * 1024 * 1024;
 
 const CreateInput = z.object({
   originalFilename: z.string().min(1).max(255),
@@ -65,9 +65,10 @@ export const parseDnaFile = createServerFn({ method: "POST" })
         .from("dna-uploads")
         .download(file.storage_path);
       if (dlErr || !blob) throw new Error(dlErr?.message ?? "Download failed");
-      const text = await blob.text();
-      const { parseDnaText } = await import("./dna-parse.server");
-      const { provider, variants } = parseDnaText(text);
+      const { parseDnaFileBytes } = await import("./dna-parse.server");
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      const fileName = file.storage_path.split("/").pop() ?? "";
+      const { provider, variants, kind, compression } = parseDnaFileBytes(fileName, bytes);
 
       // Replace any existing rows for this file (idempotent re-parse).
       await supabaseAdmin.from("dna_variants").delete().eq("file_id", file.id);
@@ -88,11 +89,13 @@ export const parseDnaFile = createServerFn({ method: "POST" })
         .update({
           status: "parsed",
           provider,
+          kind,
+          compression,
           parsed_at: new Date().toISOString(),
           error_message: null,
         })
         .eq("id", file.id);
-      return { ok: true as const, provider, variantCount: variants.length };
+      return { ok: true as const, provider, variantCount: variants.length, kind, compression };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       await supabase
