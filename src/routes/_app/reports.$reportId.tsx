@@ -257,6 +257,10 @@ function ReportDetailPage() {
         </section>
       )}
 
+      {signedUrl && (
+        <InlineFilePreview url={signedUrl} mime={report.file_mime ?? ""} title={report.title ?? "Report"} />
+      )}
+
       {(report.findings || report.impressions) && (
         <section className="mt-4 grid sm:grid-cols-2 gap-4">
           {report.findings && Array.isArray(report.findings) && (report.findings as string[]).length > 0 && (
@@ -408,6 +412,7 @@ function ReportDetailPage() {
 }
 
 function MetricTrend({ metricKey, unit }: { metricKey: string; unit: string | null }) {
+  // (impl below — unchanged)
   const fetchTrend = useServerFn(getMetricTrend);
   const { data, isLoading } = useQuery({
     queryKey: ["metric-trend", metricKey],
@@ -557,5 +562,49 @@ function PanelGroups({
         </section>
       ))}
     </div>
+  );
+}
+
+function InlineFilePreview({ url, mime, title }: { url: string; mime: string; title: string }) {
+  const [expanded, setExpanded] = React.useState(true);
+  const isImage = mime.startsWith("image/");
+  const isPdf = mime === "application/pdf";
+  if (!isImage && !isPdf) return null;
+  return (
+    <section className="mt-6 report-card overflow-hidden">
+      <div className="flex items-center justify-between gap-3">
+        <p className="report-eyebrow text-white/55">
+          {isImage ? "Image preview" : "Document preview"}
+        </p>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="text-xs text-white/55 hover:text-white"
+        >
+          {expanded ? "Hide" : "Show"}
+        </button>
+      </div>
+      {expanded && (
+        <div className="mt-3 rounded-xl overflow-hidden bg-black/40 border border-white/10">
+          {isImage ? (
+            <img
+              src={url}
+              alt={title}
+              className="w-full max-h-[640px] object-contain bg-black"
+              loading="lazy"
+            />
+          ) : (
+            <iframe
+              src={`${url}#toolbar=1&navpanes=0`}
+              title={title}
+              className="w-full h-[640px] bg-white"
+            />
+          )}
+        </div>
+      )}
+      <p className="mt-2 text-[11px] text-white/45">
+        Loaded via a short-lived signed link from your private storage.
+      </p>
+    </section>
   );
 }
