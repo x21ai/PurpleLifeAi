@@ -515,6 +515,65 @@ function ReportsDocumentsPage() {
               Clear filters
             </button>
           </ReportCard>
+        ) : viewMode === "timeline" ? (
+          <div className="mt-6 relative pl-6">
+            <div className="absolute left-2 top-1 bottom-1 w-px bg-white/10" aria-hidden />
+            <div className="space-y-8">
+              {Array.from(groupedByYear.entries()).map(([year, monthMap]) => {
+                const yearCount = Array.from(monthMap.values()).reduce((s, a) => s + a.length, 0);
+                return (
+                  <div key={year} className="relative">
+                    <div className="absolute -left-[18px] top-1 h-3 w-3 rounded-full bg-white/80 ring-4 ring-[#07090C]" aria-hidden />
+                    <div className="flex items-baseline gap-2">
+                      <h3 className="font-serif text-2xl text-white">{year}</h3>
+                      <span className="text-xs text-white/45">· {yearCount} report{yearCount === 1 ? "" : "s"}</span>
+                    </div>
+                    <div className="mt-3 space-y-5">
+                      {Array.from(monthMap.entries()).map(([month, rows]) => (
+                        <div key={month} className="relative">
+                          <div className="absolute -left-[14px] top-1.5 h-1.5 w-1.5 rounded-full bg-white/40" aria-hidden />
+                          <p className="report-eyebrow text-white/55 mb-2">{month} · {rows.length}</p>
+                          <ul className="space-y-2">
+                            {rows.map((r) => {
+                              const isFailed =
+                                r.status === "failed" ||
+                                r.status === "needs_credits" ||
+                                r.status === "rate_limited";
+                              const meta = getReportCategoryMeta(r.report_category ?? null);
+                              const Icon = meta.icon;
+                              return (
+                                <li key={r.id} className="report-card overflow-hidden">
+                                  <Link
+                                    to="/reports/$reportId"
+                                    params={{ reportId: r.id }}
+                                    className="flex items-center gap-3 px-3 py-3 sm:px-4 sm:py-3 hover:opacity-90"
+                                  >
+                                    <span className={cn("inline-flex h-8 w-8 items-center justify-center rounded-full shrink-0", meta.tone)} title={meta.label}>
+                                      <Icon className="h-3.5 w-3.5" />
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-[14px] text-white truncate">{displayTitle(r.title)}</p>
+                                      <p className="mt-0.5 text-[11px] text-white/55">
+                                        {r.report_date ?? new Date(r.created_at).toLocaleDateString()}
+                                        {r.status === "ready" && (r.metric_count ?? 0) > 0 && ` · ${r.metric_count} metric${r.metric_count === 1 ? "" : "s"}`}
+                                        {r.status === "processing" && " · Extracting…"}
+                                        {isFailed && " · needs attention"}
+                                      </p>
+                                    </div>
+                                    <ChevronRight className="h-4 w-4 text-white/40 shrink-0" />
+                                  </Link>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         ) : (
           <div className="mt-4 space-y-6">
             {Object.entries(grouped).map(([monthLabel, rows]) => (
