@@ -1,103 +1,89 @@
-# Finish the remaining three items
 
-Three open threads from earlier. Plan below covers each end-to-end.
+# Three things: Stripe setup, DNA uploads, what's left
 
-> Heads-up on item 3 — Purple's `/pricing` page commits to **"Free. Forever."** and the brand rule is "no paywall." A traditional billing wiring would contradict that. I'm proposing **optional donations / "support Purple"** instead, using Lovable's built-in payments. If you actually want a paid tier with gated features, say so and I'll swap step 3 for a Pro tier with entitlement checks.
+## 1. Stripe (test mode now, live later)
 
----
-
-## 1. Condition onboarding nudge
-
-A one-screen, dismissible card shown right after sign-up that says "Here's what Purple will track for your conditions" — tailored to the conditions the user picked during `/welcome`.
-
-**Where it appears**
-- New component `<ConditionWelcomeNudge />` rendered at the top of `/today`, above the greeting, only when:
-  - `profiles.conditions` has at least one entry, AND
-  - `profiles.welcome_nudge_dismissed_at` is null.
-- Dismiss writes `welcome_nudge_dismissed_at = now()` (autosave, no toast). Never shown again.
-
-**Content (built from condition list)**
-- Title: "Purple is set up for {first condition} {+N more if applicable}."
-- 3–5 bullet rows generated from `src/lib/condition-prompts.ts` (already condition-aware) — e.g. for epilepsy: "Seizure logging from Today", "Med adherence + dose reminders", "Triggers from sleep, stress, missed meds".
-- Footer: "Adjust anytime in Settings → My Health" + "Got it" dismiss button.
-
-**Files**
-- New: `src/components/today/condition-welcome-nudge.tsx`
-- New helper: `src/lib/condition-welcome-copy.ts` (maps condition slug → bullets, reusing condition-prompts where possible)
-- Edit: `src/routes/_app/today.tsx` — render nudge above greeting
-- Migration: add `welcome_nudge_dismissed_at timestamptz` to `profiles`
-
----
-
-## 2. Friend social-tier permission UI
-
-Data model is already in place (`friendships`, refer codes). What's missing is the UI to optionally **upgrade** a friend from social-only (zero data) to a light "social tier" view — and to revoke it. No new data scopes; this layers on the existing `care_scopes` table with a fixed `tier = 'social'` scope set.
-
-**What "social tier" exposes** (deliberately tiny)
-- First name, profile photo, current condition tag(s) — nothing time-series, nothing journal, nothing biometric.
-- Pulled from `profiles` already.
-
-**UI changes in `Settings → Sharing → Your circle`**
-- Each active friend row gets a new "Share basics" toggle (off by default).
-- Turning on opens a small confirm sheet listing exactly what they'll see; turning off revokes immediately.
-- Status chip on the row: "Social only" (default) or "Sees basics" when on.
-- Friend list re-fetches; toast on change.
-
-**Server**
-- New `setFriendSocialTier({ friendship_id, enabled })` in `src/lib/friendships.functions.ts` — writes a `care_scopes` row scoped to `kind='friend_basics'` (or removes it).
-- `listMyCircle` returns each friendship's current tier so the toggle hydrates correctly.
-- New `getFriendBasics({ friendship_id })` for the viewer side — returns the limited profile fields only when the scope row exists.
-
-**Viewer side**
-- New leaf route `/_app/friends.$friendshipId.tsx` — a minimal "About {name}" page. If no scope, shows "No shared details — just a friend."
-- Add a "Friends" leaf under the Community sidebar group (only visible when the user has at least one active friendship).
-
-**Migration**
-- No new tables. Adds a `kind` value `'friend_basics'` to the existing `care_scopes.kind` check constraint (or extends the enum) and indexes by `(grantee_id, kind)`.
-
-**Files**
-- Edit: `src/lib/friendships.functions.ts`, `src/components/sharing/circle-section.tsx`
-- New: `src/routes/_app/friends.$friendshipId.tsx`
-- Edit: `src/components/layout/nav-items.ts` (conditional Friends leaf)
-- Migration: extend `care_scopes` kind
-
----
-
-## 3. "Support Purple" donations (replaces paywall wiring)
-
-Keep the free-forever promise, but give users a way to contribute. This is the minimum that won't betray the brand.
-
-**Flow**
-- `/pricing` keeps the "$0 / forever" hero. Add a second, quieter section below: **"Support Purple"** with three suggested amounts ($5, $15, $50 — one-time) and a "custom" input. No nag, no popup.
-- Account → Session gets a small "Support Purple" link (same destination).
-- After payment → thank-you page + a tiny "Supporter" badge on the user's profile (purely cosmetic, never gates features).
-
-**Provider**
-- Use Lovable's built-in payments. I'll run `recommend_payment_provider` first to pick Paddle vs Stripe based on the project type and your seller country. Donations are a soft case — likely Stripe with tax calculation only, since donation tax-handling depends on whether you're a registered nonprofit. **I'll ask before enabling** so you can confirm provider + seller country.
+**Approach**
+- Enable Lovable's built-in Stripe Payments via `payments--enable_stripe_payments`. Test environment is provisioned immediately; the user later "claims" the Stripe account to go live. Nothing charges real cards until claimed.
+- Create one **Pro** product in Stripe (monthly + yearly prices). Single tier — "Highest tier" — so everyone you grant gets the full feature set.
+- Add an `is_pro` boolean (server-trusted) on `profiles`, plus a `pro_grant_source` text ('founder', 'stripe', 'comp') and `pro_until timestamptz`. Default `is_pro = true` for now, controlled by an admin action ("all users free until I say so"). When you flip the global flag off later, only users with a live `stripe_subscription` row stay Pro.
 
 **Server / data**
-- New table `public.supporter_contributions` (amount, currency, provider, provider_payment_id, user_id, created_at) with RLS so users only see their own.
-- Webhook route `app/routes/api/public/hooks/payments.ts` records successful payments and flips a `profiles.is_supporter` boolean.
-- Server fn `createSupportCheckout({ amount, currency })` returns a hosted checkout URL.
+- New `pro_entitlements` table: `user_id`, `source`, `stripe_customer_id`, `stripe_subscription_id`, `status`, `current_period_end`. RLS: user reads own; service_role writes.
+- Server fn `createProCheckout({ plan: 'monthly'|'yearly' })` → returns hosted checkout URL.
+- Server fn `openBillingPortal()` → returns Stripe billing portal URL.
+- Webhook route `src/routes/api/public/hooks/stripe.ts` — verifies signature with `STRIPE_WEBHOOK_SECRET`, handles `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, writes `pro_entitlements`.
+- Admin action `setUserPro({ userId, until })` for comps/founders, gated by `super_admin` role.
+- Helper `useIsPro()` hook reads `profiles.is_pro` (server-trusted) and respects the global "free for everyone" flag in `platform_rules`.
 
-**Files**
-- New: `src/components/pricing/support-card.tsx`, `src/routes/support.success.tsx`, `app/routes/api/public/hooks/payments.ts`, `src/lib/support.functions.ts`
-- Edit: `src/routes/pricing.tsx`, `src/routes/_app/account.tsx`
-- Migration: `supporter_contributions` table + `profiles.is_supporter boolean`
+**UI**
+- `/pricing` keeps "Free. Forever." hero. Add a quieter "Purple Pro" section below: highest tier, single price, monthly/yearly toggle, "Currently free for everyone — Pro will arrive soon" badge while the global flag is on.
+- Account → new "Billing" section: shows current plan, "Manage billing" button (Stripe portal) when subscribed.
+- No feature gating wired yet — just the plumbing. We'll add gates per-feature later when you say so.
 
-**Approval gates inside this step**
-1. Confirm donations (not paywall) is what you want.
-2. Confirm seller country so I can pick the provider.
-3. Then enable provider + create products + wire checkout.
+**What I need from you before enabling**
+- Confirm enable Stripe Payments (test mode). I'll run `recommend_payment_provider` first to double-check fit, then `enable_stripe_payments`.
+- Decide Pro pricing now or later (placeholder $9/mo, $79/yr if you don't say).
 
 ---
 
-## Build order
-1. Condition onboarding nudge (smallest, ships first).
-2. Friend social-tier UI.
-3. Support Purple (only after you confirm donations vs paywall and seller country).
+## 2. DNA upload — drag-and-drop + big/compressed files
 
-## Out of scope
-- Gated Pro features behind a paywall (only if you say so in item 3)
-- Recurring donations (one-time first; recurring is a follow-up)
-- Migrating `pronouns` data (already dropped in earlier plan)
+**Current limits to remove**
+- 30 MB cap, text-only formats, click-only file picker.
+
+**Plan**
+- **Drag-and-drop zone** wrapping the existing upload card. Visual highlight on dragenter, drop handler reuses `handleFile`. Keep "Choose file" button for click users.
+- **Raise size cap to 500 MB**. Update the server validator (`MAX_BYTES`) and the client check. Uploads go straight to storage (already direct-to-bucket via `supabase.storage.upload`), so the Worker never streams the payload.
+- **Accept more extensions**:
+  - Text genotype files: `.txt`, `.tsv`, `.csv` (23andMe, Ancestry, MyHeritage)
+  - VCF: `.vcf`, `.vcf.gz`
+  - Compressed bundles: `.zip`, `.gz`, `.tar`, `.tar.gz`
+  - JSON exports (e.g. Nebula, some clinical exports): `.json`
+  - Index files (`.tbi`, `.crai`, `.bai`, `.csi`) — accepted but **flagged as index-only** with a note "We need the matching `.bam`/`.cram`/`.vcf` file too." We don't parse these alone.
+  - BAM/CRAM (`.bam`, `.cram`) — accepted, queued, but parsing is **not supported** in v1; we store + show "Raw alignment files aren't parsed yet. Upload a 23andMe/Ancestry/VCF export for trait insights."
+- **Decompression in the parser** (`src/lib/dna-parse.server.ts`):
+  - `.gz` → `zlib.gunzip` (Node built-in, available in Worker runtime).
+  - `.zip` → `fflate` (pure-JS, Worker-safe). Pick the first `.txt`/`.tsv`/`.vcf` inside.
+  - `.tar` / `.tar.gz` → `nanotar` (pure-JS).
+  - `.json` → new branch: detect 23andMe-style `{ rsid: genotype }` maps and Nebula-style arrays; map into the same curated allowlist.
+- **Streaming text**: for files >50 MB, read with `blob.stream()` and parse line-by-line so we never hold the full text in memory.
+- **Per-file status detail**: show parsed variant count, file size, format detected. Errors stay specific ("Couldn't read .bam — not supported yet").
+
+**Files to edit**
+- `src/routes/_app/my-health-dna.tsx` — drop zone, accept list, copy.
+- `src/lib/dna.functions.ts` — raise `MAX_BYTES`, store detected `compression` and `kind`.
+- `src/lib/dna-parse.server.ts` — decompression + streaming + JSON branch.
+- Migration: `dna_files.compression text`, `dna_files.kind text` ('genotype'|'vcf'|'bam'|'cram'|'index'|'json'|'unknown').
+- New deps: `fflate`, `nanotar` (both Worker-safe, pure JS).
+
+---
+
+## 3. What else is left
+
+From the original Wave-1 list, after this turn the open threads are:
+
+- **Stripe / Pro tier** — covered above. Plumbing only; no gates until you say.
+- **DNA expansion** — covered above.
+- **Condition onboarding nudge** — already shipped (`ConditionWelcomeNudge` on `/today`).
+- **Friend social-tier UI** — already shipped (`/settings/sharing` toggle + `/friends/$id` view).
+
+**Smaller follow-ups I haven't built yet** (call out so you can pick):
+1. **"Supporter" cosmetic badge** for users on Pro — tiny purple dot next to name in community.
+2. **Feature gates** behind `is_pro` (which features? candidates: unlimited AI chat tokens, advanced trend windows, DNA module itself, multi-trip travel). Needs your call per-feature.
+3. **Admin global toggle** — admin page row to flip "Pro free for everyone" on/off. Needed before you can ever turn it off.
+4. **Billing portal link in Account** — only useful once Stripe is live.
+5. **Annual plan discount copy / comparison table** on `/pricing` — only useful once you decide pricing.
+
+**Out of scope unless you ask**
+- Recurring donations (Pro is the monetization path now).
+- BAM/CRAM parsing (huge scope; needs server-side alignment tools).
+- Migrating data from old per-feature flags into `is_pro`.
+
+---
+
+## Build order (after approval)
+
+1. Stripe — `recommend_payment_provider` → `enable_stripe_payments` → product + webhook + entitlements table + Account billing section + pricing page Pro card with "Free for now" badge.
+2. DNA — add deps, migration for new columns, expand parser, drop zone + accept list + size cap.
+3. Wire admin toggle for the "free for everyone" flag so you can flip it later.
