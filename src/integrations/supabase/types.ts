@@ -139,6 +139,27 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          id: boolean
+          pro_features: Json
+          pro_free_for_everyone: boolean
+          updated_at: string
+        }
+        Insert: {
+          id?: boolean
+          pro_features?: Json
+          pro_free_for_everyone?: boolean
+          updated_at?: string
+        }
+        Update: {
+          id?: boolean
+          pro_features?: Json
+          pro_free_for_everyone?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       apple_health_tokens: {
         Row: {
           created_at: string
@@ -2702,6 +2723,45 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          id: string
+          price_id: string | null
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          price_id?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          price_id?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -2872,6 +2932,7 @@ export type Database = {
         Args: { _caregiver_id: string; _owner_id: string; _scope: string }
         Returns: boolean
       }
+      has_pro: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

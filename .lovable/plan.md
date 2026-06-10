@@ -1,89 +1,59 @@
+## Direct Stripe Integration + Pro Tier
 
-# Three things: Stripe setup, DNA uploads, what's left
+Use Stripe directly with your own API keys (not Lovable's payments gateway). Start in **test mode**; flip to live by swapping the secrets later. A global "Pro free for everyone" flag keeps all users on Pro until you say otherwise.
 
-## 1. Stripe (test mode now, live later)
+### 1. Stripe setup (you)
+You'll create in Stripe (test mode):
+- Product: "Purple Pro"
+- Price 1: $9.99 / month (recurring)
+- Price 2: $99 / year (recurring)
+- Webhook endpoint pointing at `https://purplelife.org/api/public/stripe-webhook` (events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`)
 
-**Approach**
-- Enable Lovable's built-in Stripe Payments via `payments--enable_stripe_payments`. Test environment is provisioned immediately; the user later "claims" the Stripe account to go live. Nothing charges real cards until claimed.
-- Create one **Pro** product in Stripe (monthly + yearly prices). Single tier — "Highest tier" — so everyone you grant gets the full feature set.
-- Add an `is_pro` boolean (server-trusted) on `profiles`, plus a `pro_grant_source` text ('founder', 'stripe', 'comp') and `pro_until timestamptz`. Default `is_pro = true` for now, controlled by an admin action ("all users free until I say so"). When you flip the global flag off later, only users with a live `stripe_subscription` row stay Pro.
+Then I'll request these secrets via the secrets form:
+- `STRIPE_SECRET_KEY` (sk_test_…)
+- `STRIPE_WEBHOOK_SECRET` (whsec_…)
+- `STRIPE_PRICE_MONTHLY` (price_…)
+- `STRIPE_PRICE_YEARLY` (price_…)
 
-**Server / data**
-- New `pro_entitlements` table: `user_id`, `source`, `stripe_customer_id`, `stripe_subscription_id`, `status`, `current_period_end`. RLS: user reads own; service_role writes.
-- Server fn `createProCheckout({ plan: 'monthly'|'yearly' })` → returns hosted checkout URL.
-- Server fn `openBillingPortal()` → returns Stripe billing portal URL.
-- Webhook route `src/routes/api/public/hooks/stripe.ts` — verifies signature with `STRIPE_WEBHOOK_SECRET`, handles `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, writes `pro_entitlements`.
-- Admin action `setUserPro({ userId, until })` for comps/founders, gated by `super_admin` role.
-- Helper `useIsPro()` hook reads `profiles.is_pro` (server-trusted) and respects the global "free for everyone" flag in `platform_rules`.
+`VITE_STRIPE_PUBLISHABLE_KEY` goes in code (publishable, safe).
 
-**UI**
-- `/pricing` keeps "Free. Forever." hero. Add a quieter "Purple Pro" section below: highest tier, single price, monthly/yearly toggle, "Currently free for everyone — Pro will arrive soon" badge while the global flag is on.
-- Account → new "Billing" section: shows current plan, "Manage billing" button (Stripe portal) when subscribed.
-- No feature gating wired yet — just the plumbing. We'll add gates per-feature later when you say so.
+### 2. Database
+New migration:
+- `subscriptions` table: `user_id` (unique), `stripe_customer_id`, `stripe_subscription_id`, `price_id`, `status` (active/past_due/canceled/trialing), `current_period_end`, `cancel_at_period_end`
+- `app_settings` table (singleton row): `pro_free_for_everyone boolean default true`, `pro_features jsonb` (per-feature toggles)
+- `has_pro(uid)` security-definer function: returns true if global flag is on, user has `super_admin` role, or active subscription exists
 
-**What I need from you before enabling**
-- Confirm enable Stripe Payments (test mode). I'll run `recommend_payment_provider` first to double-check fit, then `enable_stripe_payments`.
-- Decide Pro pricing now or later (placeholder $9/mo, $79/yr if you don't say).
+All with proper GRANTs + RLS (users read own subscription; only super_admin writes app_settings).
 
----
+### 3. Server functions (`src/lib/billing.functions.ts`)
+- `createCheckoutSession({ interval: 'monthly' | 'yearly' })` — auth-required; creates/reuses Stripe customer, returns Checkout URL
+- `createBillingPortalSession()` — returns Stripe customer portal URL
+- `getMySubscription()` — returns current sub + computed `isPro`
 
-## 2. DNA upload — drag-and-drop + big/compressed files
+### 4. Webhook route
+`src/routes/api/public/stripe-webhook.ts` — verifies Stripe signature (raw body + `STRIPE_WEBHOOK_SECRET`), upserts `subscriptions` via `supabaseAdmin` on subscription/checkout/invoice events.
 
-**Current limits to remove**
-- 30 MB cap, text-only formats, click-only file picker.
+### 5. Feature gates (`src/lib/pro-gate.ts`)
+`useIsPro()` hook + `<ProGate feature="dna">` wrapper. Gated features:
+- **DNA upload & insights** — gate the upload form on `/my-health-dna`
+- **Ask Purple unlimited** — free tier: 10 messages/day (tracked in existing ai_memory); Pro: unlimited
+- **Medical report sharing/scheduling** — gate the "Share" and "Schedule" buttons on reports
+- **Caregiver seats** — free: 1 active caregiver, Pro: unlimited
 
-**Plan**
-- **Drag-and-drop zone** wrapping the existing upload card. Visual highlight on dragenter, drop handler reuses `handleFile`. Keep "Choose file" button for click users.
-- **Raise size cap to 500 MB**. Update the server validator (`MAX_BYTES`) and the client check. Uploads go straight to storage (already direct-to-bucket via `supabase.storage.upload`), so the Worker never streams the payload.
-- **Accept more extensions**:
-  - Text genotype files: `.txt`, `.tsv`, `.csv` (23andMe, Ancestry, MyHeritage)
-  - VCF: `.vcf`, `.vcf.gz`
-  - Compressed bundles: `.zip`, `.gz`, `.tar`, `.tar.gz`
-  - JSON exports (e.g. Nebula, some clinical exports): `.json`
-  - Index files (`.tbi`, `.crai`, `.bai`, `.csi`) — accepted but **flagged as index-only** with a note "We need the matching `.bam`/`.cram`/`.vcf` file too." We don't parse these alone.
-  - BAM/CRAM (`.bam`, `.cram`) — accepted, queued, but parsing is **not supported** in v1; we store + show "Raw alignment files aren't parsed yet. Upload a 23andMe/Ancestry/VCF export for trait insights."
-- **Decompression in the parser** (`src/lib/dna-parse.server.ts`):
-  - `.gz` → `zlib.gunzip` (Node built-in, available in Worker runtime).
-  - `.zip` → `fflate` (pure-JS, Worker-safe). Pick the first `.txt`/`.tsv`/`.vcf` inside.
-  - `.tar` / `.tar.gz` → `nanotar` (pure-JS).
-  - `.json` → new branch: detect 23andMe-style `{ rsid: genotype }` maps and Nebula-style arrays; map into the same curated allowlist.
-- **Streaming text**: for files >50 MB, read with `blob.stream()` and parse line-by-line so we never hold the full text in memory.
-- **Per-file status detail**: show parsed variant count, file size, format detected. Errors stay specific ("Couldn't read .bam — not supported yet").
+Each gate shows a soft paywall card → "Upgrade to Pro" button → Stripe Checkout. While `pro_free_for_everyone=true`, gates pass through silently.
 
-**Files to edit**
-- `src/routes/_app/my-health-dna.tsx` — drop zone, accept list, copy.
-- `src/lib/dna.functions.ts` — raise `MAX_BYTES`, store detected `compression` and `kind`.
-- `src/lib/dna-parse.server.ts` — decompression + streaming + JSON branch.
-- Migration: `dna_files.compression text`, `dna_files.kind text` ('genotype'|'vcf'|'bam'|'cram'|'index'|'json'|'unknown').
-- New deps: `fflate`, `nanotar` (both Worker-safe, pure JS).
+### 6. UI
+- `/pricing` route — Monthly $9.99 / Yearly $99 cards, "Start with Pro" buttons → checkout
+- Account settings → "Subscription" section: current plan, "Manage billing" (portal), "Upgrade" if free
+- Admin panel (super_admin only) → toggle for `pro_free_for_everyone` + per-user "Grant Pro" action
 
----
+### 7. Technical notes
+- Uses `stripe` npm package server-side (Worker-compatible via fetch).
+- Webhook is under `/api/public/*` so it bypasses auth; signature verification is mandatory.
+- No Lovable payments gateway involved — purely your Stripe account.
 
-## 3. What else is left
+### What you do vs what I do
+**You:** create products + webhook in Stripe dashboard, then paste the 4 secrets when I prompt.
+**Me:** everything else — DB, server fns, webhook, gates, pricing page, admin toggle.
 
-From the original Wave-1 list, after this turn the open threads are:
-
-- **Stripe / Pro tier** — covered above. Plumbing only; no gates until you say.
-- **DNA expansion** — covered above.
-- **Condition onboarding nudge** — already shipped (`ConditionWelcomeNudge` on `/today`).
-- **Friend social-tier UI** — already shipped (`/settings/sharing` toggle + `/friends/$id` view).
-
-**Smaller follow-ups I haven't built yet** (call out so you can pick):
-1. **"Supporter" cosmetic badge** for users on Pro — tiny purple dot next to name in community.
-2. **Feature gates** behind `is_pro` (which features? candidates: unlimited AI chat tokens, advanced trend windows, DNA module itself, multi-trip travel). Needs your call per-feature.
-3. **Admin global toggle** — admin page row to flip "Pro free for everyone" on/off. Needed before you can ever turn it off.
-4. **Billing portal link in Account** — only useful once Stripe is live.
-5. **Annual plan discount copy / comparison table** on `/pricing` — only useful once you decide pricing.
-
-**Out of scope unless you ask**
-- Recurring donations (Pro is the monetization path now).
-- BAM/CRAM parsing (huge scope; needs server-side alignment tools).
-- Migrating data from old per-feature flags into `is_pro`.
-
----
-
-## Build order (after approval)
-
-1. Stripe — `recommend_payment_provider` → `enable_stripe_payments` → product + webhook + entitlements table + Account billing section + pricing page Pro card with "Free for now" badge.
-2. DNA — add deps, migration for new columns, expand parser, drop zone + accept list + size cap.
-3. Wire admin toggle for the "free for everyone" flag so you can flip it later.
+Once you approve, I'll start with the migration and the secret request in parallel.
