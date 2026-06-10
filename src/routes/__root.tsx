@@ -153,14 +153,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      // Non-blocking font load: request as print, swap to all once loaded.
-      // <noscript> fallback in RootShell ensures fonts still apply without JS.
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap",
-        media: "print",
-        onLoad: "this.media='all'",
-      } as unknown as { rel: string; href: string },
       { rel: "manifest", href: "/manifest.json" },
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/icon-192.png" },
       { rel: "apple-touch-icon", href: "/icon-192.png" },
@@ -178,6 +170,17 @@ function RootShell({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+        {/* Non-blocking Google Fonts: inject as print stylesheet, swap to all on load.
+            Trimmed to weights actually used: Inter 400/500/600/700, Source Serif 4 400/500/600 + italic 400. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){var h='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap';var l=document.createElement('link');l.rel='stylesheet';l.href=h;l.media='print';l.onload=function(){this.media='all'};document.head.appendChild(l);})();",
+          }}
+        />
+        <noscript>
+          {`<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap" />`}
+        </noscript>
       </head>
       <body suppressHydrationWarning>
         {children}
