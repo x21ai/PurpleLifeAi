@@ -35,21 +35,18 @@ export function ResponsiveImage({
 }: ResponsiveImageProps) {
   const { picture } = asset;
   // vite-imagetools emits `.jpeg` in the manifest for jpg outputs, but the
-  // deployed Cloudflare static-assets host writes the file as `.jpg`. The
-  // resulting <img> fallback 404s on any browser that skips AVIF/WebP. Rewrite
-  // the extension here so the fallback resolves on both hosts.
-  const fallbackSrc = picture.img.src.replace(/\.jpeg(\?|$)/i, ".jpg$1");
-  // Also normalize any .jpeg URLs inside srcSet entries (e.g. the image/jpeg
-  // source). Each srcSet is "url 1x, url 2x" , rewrite extensions in place.
-  const rewriteSrcSet = (srcSet: string) =>
-    srcSet.replace(/\.jpeg(\?[^\s,]*)?/gi, ".jpg$1");
+  // deployed Cloudflare static-assets host writes JPG files with `.jpg`.
+  // The resulting URLs 404 in production. Normalize every srcset URL —
+  // safe for avif/webp/jpg because only `.jpeg` is rewritten.
+  const rewriteJpeg = (s: string) => s.replace(/\.jpeg(\?[^\s,]*)?/gi, ".jpg$1");
+  const fallbackSrc = rewriteJpeg(picture.img.src);
   return (
     <picture>
       {Object.entries(picture.sources).map(([type, srcSet]) => (
         <source
           key={type}
           type={type}
-          srcSet={type === "image/jpeg" ? rewriteSrcSet(srcSet) : srcSet}
+          srcSet={rewriteJpeg(srcSet)}
           sizes={sizes}
         />
       ))}

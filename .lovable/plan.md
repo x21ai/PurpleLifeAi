@@ -1,93 +1,48 @@
-# Plan: Phases 4, 6, 7 — AI, Power Features, Vitals Depth
+## What's actually wrong
 
-Building on the Insights/Reports work already shipped. Three phases, sequenced so each is independently shippable.
+I inspected the running app, the image pipeline, and the page weight. The dev preview shows 240 script requests, that's just Vite dev mode and not what visitors get, so ignore it. The real production-affecting issues are:
 
----
+1. **Marketing images have no responsive widths.** Every asset in `src/lib/calm-images.ts` is imported as a single width (`?w=1600` for heroes, `?w=1280` for moments). The `<picture>` ships AVIF/WebP/JPG, but a 390px iPhone still downloads the 1600px hero. No `srcset` with multiple widths means no real device adaptation.
+2. **A `.jpeg` → `.jpg` rewrite hack lives in `responsive-image.tsx`** to work around the deployed Cloudflare host renaming the file. It only rewrites the `<img>` fallback and the `image/jpeg` source; AVIF/WebP entries are fine but the workaround is fragile. Moving to a stable filename via `&imgname=` (or using consistent extensions) removes the moving part that "images aren't loading" reports keep hitting.
+3. **In-app routes import raw `.jpg` files** (`src/components/today/hero-score-card.tsx`, `src/routes/_app/welcome.tsx`). No format negotiation, no width variants, no width/height attrs, so mobile pays the full JPEG and risks CLS.
+4. **Fonts are render-blocking.** `__root.tsx` loads Inter + Source Serif 4 with five weights + italic axis from Google Fonts as a blocking stylesheet. On 3G/4G this delays FCP. Needs `media="print" onload` swap, or self-hosted subset, plus a `preconnect` (already there) + `preload` for one weight.
+5. **Stale og:image** in `__root.tsx` points to a Lovable preview screenshot URL (`pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/...id-preview-...png`). Shares look broken/generic.
+6. **Service worker (`public/sw.js`) precaches only the manifest + icons.** Hero AVIFs are not cached, so the second visit re-downloads them. Low priority but easy.
 
-## Phase 4 — AI Summaries & Insights
+No actual 404s were captured in console/network for the home route — but the `.jpeg`/`.jpg` mismatch is a known historic failure mode on the deployed host and likely the "images not loading" you're seeing on specific routes.
 
-**Goal:** Every report and every vital tells the user what it *means*, in plain English.
+## The plan
 
-### 4.1 Per-report AI summary
-- New server fn `summarizeReport` in `src/lib/reports.functions.ts` (auth-gated).
-  - Pulls `report_documents` row + `report_metrics` for that report.
-  - Calls Lovable AI (`google/gemini-3-flash-preview`) with a Purple-tone system prompt + medical disclaimer rule.
-  - Returns `{ summary, flagged: [{metric, value, concern}], plain_english_findings }`.
-  - Caches result on `report_documents.ai_summary` (jsonb) + `ai_summary_at`.
-- UI: "Explain this report" button on `reports.$reportId.tsx`. Shows summary card, flagged-values list, and the standard medical disclaimer.
+### A. Real responsive marketing images (the big win)
+- Rewrite `src/lib/calm-images.ts` so every asset uses multi-width AVIF + WebP + JPG via `vite-imagetools`:
+  - Heroes: `?w=640;960;1280;1600;1920&format=avif;webp;jpg&as=picture`
+  - Moments / bands: `?w=480;768;1024;1280&format=avif;webp;jpg&as=picture`
+- Update `src/components/marketing/responsive-image.tsx` to render the full `srcSet` from imagetools (it already does — confirm the multi-width output works and drop the `.jpeg→.jpg` rewrite if imagetools is configured to emit `.jpg`, or keep the rewrite but apply it to the AVIF/WebP srcsets too for safety).
+- Set realistic `sizes` per slot (already mostly correct — full-bleed heroes `100vw`, side-by-side moments `(min-width: 1024px) 560px, (min-width: 640px) 420px, 88vw`).
+- Keep `priority` only on the LCP hero per route.
 
-### 4.2 Cross-report trend insight
-- New server fn `getMetricInsight(metricKey)` — pulls last 3–6 readings for a metric from `report_metrics` + `vitals_log` + `biometrics`, asks AI to describe the trend in one sentence.
-- Persists to existing `metric_insights` table (already exists in schema).
-- UI: "What changed?" link on each metric trend card in Insights.
+### B. Stop shipping desktop images to in-app screens
+- Move `hero-readiness-*.jpg` and `welcome.tsx` heroes to imagetools imports (`?w=640;960;1280&format=avif;webp;jpg&as=picture`) and render them via the same `ResponsiveImage` component. Add explicit `width`/`height` so they don't cause CLS.
 
-### 4.3 Insights home auto-cards
-- New server fn `getDailyInsightCards` — runs once/day per user (cached in `metric_insights` with a `card_kind` tag), surfaces 2–3 top observations ("LDL up across last 3 reports", "BP trending higher in mornings").
-- UI: New "For you" row at the top of `/insights`, above the vitals row.
+### C. Fonts
+- In `__root.tsx`, drop the italic axis and trim to the weights we actually use (likely 400, 500, 600, 700 for Inter; 400, 600 for Source Serif 4 — I'll grep usage and pick the minimum).
+- Load Google Fonts non-blocking: `media="print"` + `onload="this.media='all'"` with a `<noscript>` fallback, and keep the existing `preconnect`.
 
----
+### D. Share metadata
+- Replace the stale `og:image` / `twitter:image` in `src/routes/__root.tsx` with a real hero (use the home AVIF/JPG export from `homeImages.hero` or upload a dedicated 1200x630 share card via the assets CDN). Per-route og:images stay as-is.
 
-## Phase 6 — Polish & Power Features
+### E. Service worker (small)
+- Extend `SHELL` in `public/sw.js` to runtime-cache successful image responses from `/@imagetools/` and `/_build/assets/` with stale-while-revalidate. Skip if the SW behavior is touchy — I'll keep this change behind a feature check.
 
-**Goal:** Make Reports feel like a real records vault.
+### F. Verify
+- `bun run build` to confirm imagetools generates the new variants without errors.
+- Re-run `browser--performance_profile` at 390px and at 1366px on the home + features pages, and report transfer sizes / LCP before vs after.
 
-### 6.1 Timeline view on Reports
-- New tab toggle on `/reports/documents`: **List** (current) | **Timeline**.
-- Timeline groups by Year → Month → Day, with the category icon + title per row. Pure presentation, reuses existing query.
+## Out of scope (ask before doing)
+- Migrating marketing JPGs to the Lovable assets CDN (would lose imagetools' build-time variants — net negative for marketing).
+- A new `og:image` design — I'll reuse an existing hero unless you want a dedicated share card.
 
-### 6.2 Bulk download
-- New server fn `bulkDownloadReports({ category?, from?, to? })` — generates short-lived signed URLs server-side, zips on the client using `client-zip` (browser-friendly, Worker-compatible — no native deps).
-- UI: "Download all" button on category-filtered Reports views.
-
-### 6.3 OCR fallback for scanned PDFs / photo reports
-- Update `processReport` in `src/lib/reports.functions.ts`: when text extraction yields <50 chars from a PDF, route the file through Gemini multimodal (image/PDF input) to OCR + extract metrics.
-- No new tables; reuses the existing parser output path.
-
-### 6.4 Share-with-doctor flow (refinement)
-- Phase 2 already added "Copy share link". Phase 6 adds:
-  - Choice of expiry (1 day / 7 days / 30 days) when generating the link.
-  - "Shared links" panel in report detail showing active links + revoke button.
-  - Access log surfaced from existing `phi_access_log` table ("Viewed 2 times").
-
-### 6.5 Care-circle sharing
-- Reuse `care_relationships`. Add `report_documents` RLS policy: a caregiver with `read_reports` scope in `care_scopes` can SELECT reports for that user.
-- UI: "Share with care circle" toggle per report.
-
----
-
-## Phase 7 — Vitals Depth
-
-**Goal:** Vitals stop being a snapshot and become a story.
-
-### 7.1 Trend charts per vital
-- New route `/_app/vitals/$metric` (e.g. `/vitals/weight`, `/vitals/bp`).
-- Reuses existing `getMetricTrend` server fn. Renders 30d / 90d / 1y toggles with a recharts line chart (BP gets dual-line systolic/diastolic).
-- Tap any vital tile on `/insights` to drill in.
-
-### 7.2 Goals / targets
-- New table `vital_goals` (user_id, metric_key, target_min, target_max, note). RLS scoped to `auth.uid()`.
-- UI: "Set target" on each vital detail page. Tile shows a small ✓ / ⚠ badge against the latest reading.
-- Gentle: no streaks, no scolding. Purple tone.
-
-### 7.3 Apple Health auto-sync (foundation only)
-- `apple_health_tokens` table already exists. Add server fn `syncAppleHealthVitals` that pulls weight/BP/glucose/HR and inserts into `vitals_log` with `source='apple_health'`.
-- Triggered manually from a "Sync now" button in Settings (full background cron is out of scope for this phase).
-- Google Fit deferred — not in current schema.
-
----
-
-## Sequencing & Migrations
-
-Three migrations, one per phase:
-1. `report_documents.ai_summary jsonb`, `ai_summary_at timestamptz`; `metric_insights.card_kind text`.
-2. `report_documents` RLS update for care-circle reads; `report_share_links` table (expiry + revoke + access count) — replaces ad-hoc signed-URL approach.
-3. `vital_goals` table with grants + RLS + updated_at trigger.
-
-## Technical notes
-- All AI calls go through `createServerFn` (no edge functions).
-- All signed URLs remain short-lived; buckets stay private (per core memory).
-- Medical disclaimer included on every AI-generated card.
-- DICOM (Phase 5) stays parked.
-
-## Suggested build order
-Phase 4 first (highest user-visible value), then 7 (charts make 4 feel even better), then 6 (polish). Want me to follow that order, or interleave?
+## Technical notes (for reference)
+- `vite-imagetools` is already wired in `vite.config.ts` and the `&as=picture` pipeline is in `src/types/imagetools.d.ts`.
+- The `.jpeg`/`.jpg` workaround lives in `src/components/marketing/responsive-image.tsx` lines 37-46.
+- `src/routes/__root.tsx` lines 143-156 hold the og/twitter image and the Google Fonts `<link>`.
