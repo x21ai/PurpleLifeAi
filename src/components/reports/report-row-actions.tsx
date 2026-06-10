@@ -93,17 +93,6 @@ export function ReportRowActions({
       setBusy(null);
     }
   }
-    setBusy("retry");
-    try {
-      await reprocess({ data: { reportId } });
-      toast.success("Re-running extraction…");
-      onChanged?.();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't re-run extraction");
-    } finally {
-      setBusy(null);
-    }
-  }
 
   async function doDelete() {
     setBusy("delete");
@@ -152,6 +141,9 @@ export function ReportRowActions({
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => void openFile("download")}>
             <Download className="h-4 w-4 mr-2" /> Download
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => void shareLink()}>
+            <Link2 className="h-4 w-4 mr-2" /> Copy share link
           </DropdownMenuItem>
           {failed && (
             <DropdownMenuItem onSelect={() => void retry()}>
