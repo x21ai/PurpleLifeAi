@@ -6,7 +6,8 @@ import {
   normalizeChrom,
   type DnaProvider,
 } from "./dna-curated-rsids";
-import { gunzipSync, unzipSync, strFromU8 } from "fflate";
+import { unzipSync, strFromU8 } from "fflate";
+import { gunzipSync } from "zlib";
 import { parseTar } from "nanotar";
 
 /**
@@ -76,7 +77,9 @@ function decompressToText(
       return { text: new TextDecoder().decode(bytes), innerName: filename };
     }
     if (compression === "gz") {
-      const out = gunzipSync(bytes);
+      // Clinical VCFs are often BGZF: concatenated gzip blocks. Node's zlib
+      // handles all members; some JS gzip helpers stop after the first block.
+      const out = gunzipSync(Buffer.from(bytes));
       const inner = filename.replace(/\.gz$/i, "");
       return { text: new TextDecoder().decode(out), innerName: inner };
     }
@@ -88,7 +91,7 @@ function decompressToText(
       return { text: strFromU8(entries[pick]), innerName: pick };
     }
     if (compression === "tar" || compression === "tgz") {
-      const raw = compression === "tgz" ? gunzipSync(bytes) : bytes;
+      const raw = compression === "tgz" ? new Uint8Array(gunzipSync(Buffer.from(bytes))) : bytes;
       const files = parseTar(raw);
       const pick = files.find((f) => /\.(txt|tsv|csv|vcf|json)$/i.test(f.name)) ?? files[0];
       if (!pick || !pick.data) return null;
