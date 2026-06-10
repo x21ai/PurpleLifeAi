@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callAIForUser, tryParseJson } from "./ai-provider.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createHash } from "crypto";
+import { guessReportCategory } from "./report-categories";
 
 const ProcessInput = z.object({
   reportId: z.string().uuid(),
@@ -209,7 +210,7 @@ export const listReports = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data, error } = await supabase
       .from("report_documents")
-      .select("id, title, report_type, report_date, file_mime, status, created_at, summary, panel_keys, error_message, identity_status, patient_name, patient_dob, duplicate_of")
+      .select("id, title, report_type, report_category, report_date, file_mime, status, created_at, summary, panel_keys, error_message, identity_status, patient_name, patient_dob, duplicate_of")
       .order("report_date", { ascending: false, nullsFirst: false });
     if (error) throw new Error(error.message);
     const reports = data ?? [];
@@ -447,6 +448,11 @@ export const processReport = createServerFn({ method: "POST" })
         .update({
           status: "ready",
           report_type: extraction.report_type ?? null,
+          report_category: guessReportCategory({
+            title: extraction.title ?? doc.title,
+            filename: doc.file_path,
+            reportType: extraction.report_type ?? null,
+          }),
           report_date: extraction.report_date ?? null,
           // Overwrite title with the AI-detected one when the current title is the
           // placeholder filename (no spaces, looks like a filename slug, or the

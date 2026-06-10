@@ -13,6 +13,8 @@ import {
   Sparkles,
   RefreshCw,
 } from "lucide-react";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { listReports, processReport } from "@/lib/reports.functions";
@@ -31,6 +33,16 @@ import { QuickClinicianPdf } from "@/components/reports/quick-clinician-pdf";
 import { ReportShell, ReportCard, ReportPill } from "@/components/reports/report-shell";
 import { ReportsTabs } from "@/components/reports/reports-tabs";
 import { ReportRowActions } from "@/components/reports/report-row-actions";
+import {
+  REPORT_CATEGORIES,
+  getReportCategoryMeta,
+  type ReportCategorySlug,
+} from "@/lib/report-categories";
+import { cn } from "@/lib/utils";
+
+const searchSchema = z.object({
+  category: fallback(z.string().optional(), undefined),
+});
 
 export const Route = createFileRoute("/_app/reports/documents")({
   head: () => ({
@@ -39,6 +51,7 @@ export const Route = createFileRoute("/_app/reports/documents")({
       { name: "description", content: "Your uploaded lab reports and clinician PDFs." },
     ],
   }),
+  validateSearch: zodValidator(searchSchema),
   component: ReportsDocumentsPage,
 });
 
@@ -46,6 +59,7 @@ type ReportRow = {
   id: string;
   title: string;
   report_type: string | null;
+  report_category?: string | null;
   report_date: string | null;
   file_mime: string;
   status: string;
@@ -70,6 +84,8 @@ function displayTitle(raw: string | null | undefined): string {
 function ReportsDocumentsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const search = Route.useSearch();
+  const activeCategory = (search.category ?? null) as ReportCategorySlug | null;
   const fetchList = useServerFn(listReports);
   const reprocessOne = useServerFn(processReport);
   const { data, isLoading, refetch } = useQuery({
@@ -106,6 +122,7 @@ function ReportsDocumentsPage() {
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase();
     return reports.filter((r) => {
+      if (activeCategory && (r.report_category ?? "other") !== activeCategory) return false;
       if (yearFilter !== "all" && yearOf(r) !== yearFilter) return false;
       if (typeFilter !== "all" && (r.report_type ?? "uncategorized") !== typeFilter) return false;
       if (statusFilter !== "all") {
@@ -120,7 +137,7 @@ function ReportsDocumentsPage() {
       }
       return true;
     });
-  }, [reports, query, yearFilter, typeFilter, statusFilter]);
+  }, [reports, query, yearFilter, typeFilter, statusFilter, activeCategory]);
   const grouped = React.useMemo(() => {
     // Group by Year → Month, newest first. This matches user expectation:
     // "latest on top broken by year and month".
@@ -178,6 +195,42 @@ function ReportsDocumentsPage() {
   return (
     <ReportShell title={t("reports.title")}>
       <ReportsTabs />
+
+      {/* Category chips */}
+      <div className="mt-2 mb-6 flex flex-wrap items-center gap-2">
+        <Link
+          to="/reports/documents"
+          search={{ category: undefined }}
+          className={cn(
+            "rounded-full border px-3 py-1.5 text-xs transition",
+            !activeCategory
+              ? "border-white/30 bg-white/10 text-white"
+              : "border-white/10 text-white/60 hover:text-white",
+          )}
+        >
+          All
+        </Link>
+        {REPORT_CATEGORIES.filter((c) => c.slug !== "dna").map((c) => {
+          const Icon = c.icon;
+          const active = activeCategory === c.slug;
+          return (
+            <Link
+              key={c.slug}
+              to="/reports/documents"
+              search={{ category: c.slug }}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition",
+                active
+                  ? "border-white/30 bg-white/10 text-white"
+                  : "border-white/10 text-white/60 hover:text-white",
+              )}
+            >
+              <Icon className="h-3 w-3" />
+              {c.short}
+            </Link>
+          );
+        })}
+      </div>
 
       {/* Hero summary */}
       <section className="report-card-strong p-6 sm:p-8">
@@ -356,9 +409,21 @@ function ReportsDocumentsPage() {
                           params={{ reportId: r.id }}
                           className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-90"
                         >
-                          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/75 shrink-0">
-                            <FileText className="h-4 w-4" />
-                          </span>
+                          {(() => {
+                            const meta = getReportCategoryMeta(r.report_category ?? null);
+                            const Icon = meta.icon;
+                            return (
+                              <span
+                                className={cn(
+                                  "inline-flex h-9 w-9 items-center justify-center rounded-full shrink-0",
+                                  meta.tone,
+                                )}
+                                title={meta.label}
+                              >
+                                <Icon className="h-4 w-4" />
+                              </span>
+                            );
+                          })()}
                           <div className="min-w-0 flex-1">
                             <p className="text-[15px] text-white truncate" title={r.title}>
                               {displayTitle(r.title)}
