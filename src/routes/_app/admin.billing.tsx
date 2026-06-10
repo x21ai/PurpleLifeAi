@@ -149,7 +149,7 @@ function AdminBillingPage() {
                 <span className="font-mono text-xs text-muted-foreground truncate">{r.user_id}</span>
                 <span className="ml-auto text-xs uppercase tracking-wider">{r.status}</span>
                 <span className="text-xs text-muted-foreground">
-                  {r.current_period_end ? new Date(r.current_period_end).toLocaleDateString() : "—"}
+                  {r.current_period_end ? new Date(r.current_period_end).toLocaleDateString() : ","}
                 </span>
               </li>
             ))}

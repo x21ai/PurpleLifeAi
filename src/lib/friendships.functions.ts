@@ -294,7 +294,7 @@ export const setFriendNickname = createServerFn({ method: "POST" })
 
 /**
  * The viewer side of an active friendship may, optionally, share a tiny
- * slice of profile info (first name, condition tags). Off by default —
+ * slice of profile info (first name, condition tags). Off by default ,
  * setting this writes `share_basics=true` on the friendship row. The
  * setting is symmetric: if either side turns it on, both sides can see
  * the other's basics via getFriendBasics.

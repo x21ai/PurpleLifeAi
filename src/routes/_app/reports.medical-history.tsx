@@ -489,7 +489,7 @@ function ReportRow({
                               : `Expires ${new Date(l.expires_at).toLocaleDateString()}`}
                           {" · "}
                           {l.opened_count > 0
-                            ? `Viewed ${l.opened_count}× · last ${l.last_opened_at ? new Date(l.last_opened_at).toLocaleDateString() : "—"}`
+                            ? `Viewed ${l.opened_count}× · last ${l.last_opened_at ? new Date(l.last_opened_at).toLocaleDateString() : ","}`
                             : "Not viewed yet"}
                         </p>
                       </div>

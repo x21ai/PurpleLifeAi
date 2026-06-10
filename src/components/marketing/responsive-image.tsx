@@ -40,7 +40,7 @@ export function ResponsiveImage({
   // the extension here so the fallback resolves on both hosts.
   const fallbackSrc = picture.img.src.replace(/\.jpeg(\?|$)/i, ".jpg$1");
   // Also normalize any .jpeg URLs inside srcSet entries (e.g. the image/jpeg
-  // source). Each srcSet is "url 1x, url 2x" — rewrite extensions in place.
+  // source). Each srcSet is "url 1x, url 2x" , rewrite extensions in place.
   const rewriteSrcSet = (srcSet: string) =>
     srcSet.replace(/\.jpeg(\?[^\s,]*)?/gi, ".jpg$1");
   return (

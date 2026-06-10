@@ -95,7 +95,7 @@ function CaregiverReportDetail() {
               {summary.flagged.map((f, i) => (
                 <li key={i}>
                   <span className="font-medium">{f.metric}</span>
-                  {f.value ? ` — ${f.value}` : ""}
+                  {f.value ? ` , ${f.value}` : ""}
                   {f.concern ? `. ${f.concern}` : ""}
                 </li>
               ))}
@@ -123,7 +123,7 @@ function CaregiverReportDetail() {
                   const valueStr =
                     m.value != null
                       ? `${m.value}${m.unit ? " " + m.unit : ""}`
-                      : (m.value_text ?? "—");
+                      : (m.value_text ?? ",");
                   const flagColor =
                     m.flag === "high" || m.flag === "low" || m.flag === "abnormal"
                       ? "text-amber-500"
@@ -134,7 +134,7 @@ function CaregiverReportDetail() {
                         <p className="text-sm text-foreground truncate">{display}</p>
                         {(m.reference_low != null || m.reference_high != null) && (
                           <p className="text-xs text-muted-foreground">
-                            Ref: {m.reference_low ?? "—"} – {m.reference_high ?? "—"}
+                            Ref: {m.reference_low ?? ","} – {m.reference_high ?? ","}
                             {m.unit ? ` ${m.unit}` : ""}
                           </p>
                         )}

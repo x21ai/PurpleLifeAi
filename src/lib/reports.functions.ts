@@ -693,7 +693,7 @@ export const getReportShareUrl = createServerFn({ method: "POST" })
 /**
  * Bulk: return short-lived signed download URLs for a set of the user's
  * reports so the client can zip them locally. Caps at 200 to keep this
- * responsive — beyond that the user should narrow filters.
+ * responsive , beyond that the user should narrow filters.
  */
 export const bulkDownloadReports = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -774,7 +774,7 @@ export const summarizeReport = createServerFn({ method: "POST" })
 
     const metricLines = (metrics ?? [])
       .map((m) => {
-        const v = m.value != null ? `${m.value}${m.unit ? ` ${m.unit}` : ""}` : (m.value_text ?? "—");
+        const v = m.value != null ? `${m.value}${m.unit ? ` ${m.unit}` : ""}` : (m.value_text ?? ",");
         const range = m.reference_low != null && m.reference_high != null
           ? ` (ref ${m.reference_low}–${m.reference_high}${m.unit ? ` ${m.unit}` : ""})`
           : "";

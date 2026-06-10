@@ -83,7 +83,7 @@ export function ReportRowActions({
       const { url, expiresInDays } = await fetchShare({ data: { id: reportId } });
       try {
         await navigator.clipboard.writeText(url);
-        toast.success(`Share link copied — expires in ${expiresInDays} days`);
+        toast.success(`Share link copied , expires in ${expiresInDays} days`);
       } catch {
         window.prompt("Share link (expires in 7 days)", url);
       }
