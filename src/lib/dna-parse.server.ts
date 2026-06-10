@@ -1,4 +1,11 @@
-import { CURATED_RSID_SET, detectProvider, type DnaProvider } from "./dna-curated-rsids";
+import {
+  CURATED_POS37,
+  CURATED_POS38,
+  CURATED_RSID_SET,
+  detectProvider,
+  normalizeChrom,
+  type DnaProvider,
+} from "./dna-curated-rsids";
 import { gunzipSync, unzipSync, strFromU8 } from "fflate";
 import { parseTar } from "nanotar";
 
@@ -184,10 +191,25 @@ export function parseDnaText(text: string): TextParseResult {
 
   // VCF needs a different shape entirely.
   if (provider === "vcf") {
+    // Detect genome build from header so we pick the right coordinate map first.
+    // Fall back to trying both maps when undetectable.
+    const headerLower = headerSample.toLowerCase();
+    let build: "37" | "38" | "unknown" = "unknown";
+    if (/grch38|hg38/.test(headerLower)) build = "38";
+    else if (/grch37|hg19|b37/.test(headerLower)) build = "37";
+
     let genoColIdx = -1;
     let formatColIdx = -1;
     for (const line of lines) {
-      if (!line || line.startsWith("##")) continue;
+      if (!line) continue;
+      if (line.startsWith("##")) {
+        if (build === "unknown") {
+          const l = line.toLowerCase();
+          if (/grch38|hg38/.test(l)) build = "38";
+          else if (/grch37|hg19|b37/.test(l)) build = "37";
+        }
+        continue;
+      }
       if (line.startsWith("#CHROM")) {
         const cols = line.split("\t");
         formatColIdx = cols.indexOf("FORMAT");
@@ -196,8 +218,27 @@ export function parseDnaText(text: string): TextParseResult {
       }
       const cols = line.split("\t");
       if (cols.length < 5) continue;
-      const rsid = cols[2];
-      if (!rsid || !CURATED_RSID_SET.has(rsid) || seen.has(rsid)) continue;
+      // Try ID column first (semicolon-separated rsids possible).
+      let rsid: string | undefined;
+      const idField = cols[2];
+      if (idField && idField !== ".") {
+        for (const id of idField.split(";")) {
+          if (CURATED_RSID_SET.has(id)) { rsid = id; break; }
+        }
+      }
+      // Fall back to chrom:pos lookup for clinical VCFs (HaplotypeCaller etc.)
+      // which leave ID as ".".
+      if (!rsid) {
+        const chrom = normalizeChrom(cols[0] ?? "");
+        const pos = cols[1];
+        if (chrom && pos) {
+          const key = `${chrom}:${pos}`;
+          if (build === "38") rsid = CURATED_POS38.get(key) ?? CURATED_POS37.get(key);
+          else if (build === "37") rsid = CURATED_POS37.get(key) ?? CURATED_POS38.get(key);
+          else rsid = CURATED_POS38.get(key) ?? CURATED_POS37.get(key);
+        }
+      }
+      if (!rsid || seen.has(rsid)) continue;
       const ref = cols[3];
       const alt = cols[4];
       const genoCol = genoColIdx >= 0 ? cols[genoColIdx] : undefined;
