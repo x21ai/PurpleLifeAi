@@ -144,7 +144,7 @@ function parseDnaJson(text: string): { provider: DnaProvider; variants: ParsedVa
   try {
     parsed = JSON.parse(text);
   } catch {
-    return { provider: "unknown", variants: out };
+    return { provider: "unknown", variants: out, stats: { rowsScanned: 0, curatedMatches: 0 } };
   }
 
   const push = (rsid: string, genotype: string) => {
