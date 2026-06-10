@@ -19,6 +19,16 @@ import {
   CURATED_RSIDS, getCuratedRsid, type CuratedRsid,
 } from "@/lib/dna-curated-rsids";
 import { ProGate } from "@/components/pro/pro-gate";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_app/my-health-dna")({
   head: () => ({
@@ -44,6 +54,7 @@ function DnaPage() {
   const [showSensitive, setShowSensitive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const { data } = useQuery({
@@ -259,11 +270,7 @@ function DnaPage() {
                 </label>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (confirm("Delete this DNA file and all extracted variants?")) {
-                      remove.mutate(f.id);
-                    }
-                  }}
+                  onClick={() => setPendingDeleteId(f.id)}
                   className="h-9 w-9 grid place-items-center rounded-full hover:bg-secondary text-muted-foreground"
                   aria-label="Delete"
                 >
@@ -340,6 +347,32 @@ function DnaPage() {
           <MedicalDisclaimer className="mt-8" />
         </section>
       )}
+
+      <AlertDialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this DNA file?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The stored file and any extracted variants will be removed. This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingDeleteId) remove.mutate(pendingDeleteId);
+                setPendingDeleteId(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
