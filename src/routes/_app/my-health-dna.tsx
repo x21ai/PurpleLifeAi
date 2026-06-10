@@ -42,6 +42,7 @@ function DnaPage() {
 
   const [showSensitive, setShowSensitive] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const { data } = useQuery({
@@ -64,8 +65,8 @@ function DnaPage() {
   });
 
   async function handleFile(file: File) {
-    if (file.size > 30 * 1024 * 1024) {
-      toast.error("File too large (max 30 MB).");
+    if (file.size > 500 * 1024 * 1024) {
+      toast.error("File too large (max 500 MB).");
       return;
     }
     setUploading(true);
@@ -75,11 +76,22 @@ function DnaPage() {
       });
       const { error: upErr } = await supabase.storage
         .from("dna-uploads")
-        .upload(storagePath, file, { upsert: true, contentType: "text/plain" });
+        .upload(storagePath, file, {
+          upsert: true,
+          contentType: file.type || "application/octet-stream",
+        });
       if (upErr) throw upErr;
       toast.message("Reading your file…");
       const result = await parseFn({ data: { fileId } });
-      toast.success(`Found ${result.variantCount} curated variants.`);
+      if (result.kind === "bam" || result.kind === "cram") {
+        toast.message(
+          "Saved. Raw alignment files aren't parsed yet — upload a 23andMe / Ancestry / VCF export for trait insights.",
+        );
+      } else if (result.kind === "index") {
+        toast.message("Saved. Index file noted — we'll need the matching .vcf / .bam / .cram too.");
+      } else {
+        toast.success(`Found ${result.variantCount} curated variants.`);
+      }
       qc.invalidateQueries({ queryKey: ["dna-files"] });
       // Regenerate care profile so prompts are gently informed.
       regen({ data: { force: true } }).catch(() => undefined);
@@ -132,20 +144,42 @@ function DnaPage() {
       <MedicalDisclaimer className="mt-6" />
 
       {/* Upload */}
-      <section className="mt-8 rounded-3xl border border-border bg-card p-6 sm:p-8">
+      <section
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (!dragging) setDragging(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          setDragging(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          const f = e.dataTransfer.files?.[0];
+          if (f && !uploading) handleFile(f);
+        }}
+        className={`mt-8 rounded-3xl border-2 border-dashed bg-card p-6 sm:p-8 transition ${
+          dragging
+            ? "border-[color:var(--purple-primary)] bg-[color:var(--purple-primary)]/5"
+            : "border-border"
+        }`}
+      >
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 grid place-items-center rounded-full bg-[color:var(--purple-primary)]/15 text-[color:var(--purple-primary)]">
             <Upload className="h-5 w-5" />
           </div>
           <div>
-            <p className="font-medium">Upload a DNA file</p>
-            <p className="text-xs text-muted-foreground">.txt, .tsv, .csv, or .vcf, up to 30 MB</p>
+            <p className="font-medium">Drag &amp; drop or choose a DNA file</p>
+            <p className="text-xs text-muted-foreground">
+              .txt, .tsv, .csv, .vcf, .json, .gz, .zip, .tar, .tar.gz — up to 500 MB
+            </p>
           </div>
         </div>
         <input
           ref={inputRef}
           type="file"
-          accept=".txt,.tsv,.csv,.vcf,text/plain"
+          accept=".txt,.tsv,.csv,.vcf,.json,.gz,.zip,.tar,.tgz,.bam,.cram,.tbi,.crai,.bai,.csi"
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
@@ -159,10 +193,10 @@ function DnaPage() {
           className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-[color:var(--purple-primary)] text-white py-3.5 font-semibold hover:opacity-90 transition disabled:opacity-60"
         >
           {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-          {uploading ? "Reading…" : "Choose file"}
+          {uploading ? "Reading…" : dragging ? "Drop to upload" : "Choose file"}
         </button>
         <p className="mt-3 text-[11px] text-muted-foreground flex items-center gap-1.5">
-          <ShieldCheck className="h-3 w-3" /> Private storage. Only you can read it.
+          <ShieldCheck className="h-3 w-3" /> Private storage. Only you can read it. Alignment files (.bam / .cram) are stored but not yet parsed.
         </p>
       </section>
 
