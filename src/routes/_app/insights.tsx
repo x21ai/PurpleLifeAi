@@ -24,7 +24,9 @@ import {
 import { REPORT_CATEGORIES } from "@/lib/report-categories";
 import { QuickLogVitalSheet, type VitalKind } from "@/components/insights/quick-log-vital-sheet";
 import { SetGoalSheet } from "@/components/insights/set-goal-sheet";
-import { Target } from "lucide-react";
+import { Target, Wand2, Loader2 } from "lucide-react";
+import { getDailyInsightCards } from "@/lib/report-trends.functions";
+import { useMutation } from "@tanstack/react-query";
 
 type SeizureRow = {
   id: string;
@@ -74,6 +76,8 @@ function InsightsPage() {
           {t("insights.intro")}
         </NarrativeBlock>
       </div>
+
+      <ForYouRow />
 
       <TrendsHeader />
 
