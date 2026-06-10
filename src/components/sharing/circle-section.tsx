@@ -64,6 +64,17 @@ export function CircleSection() {
     onError: (e: any) => toast.error(e?.message ?? "Couldn't remove"),
   });
 
+  const setBasics = useServerFn(setFriendShareBasics);
+  const basicsMut = useMutation({
+    mutationFn: (args: { friendship_id: string; enabled: boolean }) =>
+      setBasics({ data: args }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["circle", "mine"] });
+      toast.success(res.enabled ? "Sharing your basics" : "Stopped sharing basics");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't update"),
+  });
+
   const rows = circle.data?.friendships ?? [];
 
   return (
@@ -111,6 +122,30 @@ export function CircleSection() {
                     inviteToken={f.invite_token}
                     referCode={f.refer_code}
                   />
+                )}
+                {f.status === "active" && (
+                  <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                    <label className="flex items-center gap-2">
+                      <Switch
+                        checked={f.shareBasics}
+                        disabled={basicsMut.isPending}
+                        onCheckedChange={(v) =>
+                          basicsMut.mutate({ friendship_id: f.id, enabled: v })
+                        }
+                        aria-label="Share basics"
+                      />
+                      <span>Share basics</span>
+                    </label>
+                    {f.shareBasics && (
+                      <Link
+                        to="/friends/$friendshipId"
+                        params={{ friendshipId: f.id }}
+                        className="inline-flex items-center gap-1 text-foreground underline-offset-4 hover:underline"
+                      >
+                        <Eye className="h-3 w-3" /> View what they see
+                      </Link>
+                    )}
+                  </div>
                 )}
               </div>
               <RemoveFriendButton
