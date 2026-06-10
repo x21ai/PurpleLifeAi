@@ -612,3 +612,131 @@ function InlineFilePreview({ url, mime, title }: { url: string; mime: string; ti
     </section>
   );
 }
+
+type AiSummary = {
+  headline?: string;
+  explanation?: string;
+  flagged?: Array<{ metric: string; value: string; concern: string; severity: "info" | "watch" | "attention" }>;
+  questions?: string[];
+};
+
+function AiExplainSection({ reportId }: { reportId: string }) {
+  const run = useServerFn(summarizeReport);
+  const [loading, setLoading] = React.useState(false);
+  const [data, setData] = React.useState<{ summary: AiSummary; cached: boolean } | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+
+  // Try cached load on mount.
+  React.useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await run({ data: { id: reportId } });
+        if (!cancelled && res.summary) setData({ summary: res.summary as AiSummary, cached: !!res.cached });
+      } catch {
+        /* silent, user can run on demand */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [reportId, run]);
+
+  async function explain(force: boolean) {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await run({ data: { id: reportId, force } });
+      setData({ summary: res.summary as AiSummary, cached: !!res.cached });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't run AI explanation");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const summary = data?.summary;
+  const flagged = summary?.flagged ?? [];
+
+  return (
+    <section className="mt-4 report-card">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--purple-soft)] text-[color:var(--purple-primary)]">
+            <Sparkles className="h-3.5 w-3.5" />
+          </span>
+          <p className="report-eyebrow text-white/55">AI explanation</p>
+          {data?.cached && summary?.headline && (
+            <span className="text-[10px] text-white/40 uppercase tracking-wider">cached</span>
+          )}
+        </div>
+        <Button
+          onClick={() => void explain(!!summary?.headline)}
+          disabled={loading}
+          size="sm"
+          className="rounded-full bg-white text-[#07090C] hover:bg-white/90"
+        >
+          {loading ? (
+            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+          ) : (
+            <Wand2 className="h-3.5 w-3.5 mr-1.5" />
+          )}
+          {summary?.headline ? "Re-run explanation" : "Explain this report"}
+        </Button>
+      </div>
+      {error && <p className="mt-3 text-sm text-[#FFA8BD]">{error}</p>}
+      {!summary && !loading && !error && (
+        <p className="mt-3 text-sm text-white/65">
+          Get a plain-English read of what this report measures and any values worth a closer look.
+          Uses your AI credits.
+        </p>
+      )}
+      {summary?.headline && (
+        <>
+          <p className="mt-3 font-serif text-xl text-white leading-snug">{summary.headline}</p>
+          {summary.explanation && (
+            <p className="mt-3 text-[15px] text-white/80 leading-relaxed">{summary.explanation}</p>
+          )}
+          {flagged.length > 0 && (
+            <ul className="mt-4 space-y-2">
+              {flagged.map((f, i) => (
+                <li
+                  key={i}
+                  className={
+                    "rounded-xl border p-3 " +
+                    (f.severity === "attention"
+                      ? "border-[#FFA8BD]/30 bg-[#FFA8BD]/[0.05]"
+                      : f.severity === "watch"
+                        ? "border-[#F3D58B]/25 bg-[#F3D58B]/[0.05]"
+                        : "border-white/10 bg-white/[0.02]")
+                  }
+                >
+                  <p className="text-sm text-white">
+                    <span className="font-medium">{f.metric}</span>
+                    {f.value ? <span className="text-white/65"> · {f.value}</span> : null}
+                  </p>
+                  {f.concern && <p className="mt-1 text-xs text-white/65 leading-relaxed">{f.concern}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
+          {summary.questions && summary.questions.length > 0 && (
+            <div className="mt-4">
+              <p className="text-[11px] uppercase tracking-wider text-white/45">Bring up with your clinician</p>
+              <ul className="mt-2 space-y-1.5">
+                {summary.questions.map((q, i) => (
+                  <li key={i} className="flex gap-2 text-sm text-white/75">
+                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-white/40" />
+                    <span>{q}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <p className="mt-4 text-[11px] text-white/45 leading-relaxed">
+            Generated by AI from the values in this report. Not a diagnosis. Always discuss results
+            with your medical practitioner.
+          </p>
+        </>
+      )}
+    </section>
+  );
+}
