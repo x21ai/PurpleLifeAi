@@ -432,3 +432,124 @@ function PatternCardItem({ card }: { card: PatternCard }) {
     </li>
   );
 }
+
+function VitalsRow() {
+  const fn = useServerFn(getVitalsSnapshot);
+  const { data } = useQuery({
+    queryKey: ["insights", "vitals"],
+    queryFn: () => fn(),
+    staleTime: 1000 * 60 * 5,
+  });
+  const v = data ?? null;
+  const tiles: Array<{ label: string; value: string; sub?: string }> = [
+    {
+      label: "Weight",
+      value: v?.weightKg != null
+        ? `${Math.round(v.weightKg * 10) / 10}`
+        : "–",
+      sub: v?.weightKg != null ? "kg" : "no reading yet",
+    },
+    {
+      label: "Blood pressure",
+      value: v?.bpSystolic != null && v?.bpDiastolic != null
+        ? `${Math.round(v.bpSystolic)}/${Math.round(v.bpDiastolic)}`
+        : "–",
+      sub: v?.bpSystolic != null ? "mmHg" : "no reading yet",
+    },
+    {
+      label: "Glucose",
+      value: v?.glucoseMgDl != null ? `${Math.round(v.glucoseMgDl)}` : "–",
+      sub: v?.glucoseMgDl != null ? "mg/dL" : "no reading yet",
+    },
+    {
+      label: "Blood oxygen",
+      value: v?.spo2Pct != null ? `${v.spo2Pct.toFixed(1)}%` : "–",
+      sub: v?.spo2Pct != null ? "SpO₂" : "no reading yet",
+    },
+    {
+      label: "Body temperature",
+      value: v?.bodyTempC != null ? `${v.bodyTempC.toFixed(1)}°C` : "–",
+      sub: v?.bodyTempC != null ? "skin temp" : "no reading yet",
+    },
+    {
+      label: "Respiratory rate",
+      value: v?.respRate != null ? `${v.respRate.toFixed(0)}` : "–",
+      sub: v?.respRate != null ? "breaths / min" : "no reading yet",
+    },
+  ];
+  return (
+    <section className="mt-10">
+      <p className="label-eyebrow text-muted-foreground">Vitals</p>
+      <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {tiles.map((t) => (
+          <div
+            key={t.label}
+            className="rounded-2xl border border-border bg-card px-4 py-4"
+          >
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              {t.label}
+            </p>
+            <p className="mt-2 font-serif text-2xl text-foreground tabular-nums">
+              {t.value}
+            </p>
+            {t.sub && (
+              <p className="mt-1 text-[11px] text-muted-foreground">{t.sub}</p>
+            )}
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-[11px] text-muted-foreground">
+        Vitals are pulled from your uploaded reports and connected wearables.
+        Quick-log coming next.
+      </p>
+    </section>
+  );
+}
+
+function HealthRecordsHub() {
+  const fn = useServerFn(getHealthRecordsCounts);
+  const { data } = useQuery({
+    queryKey: ["insights", "records-counts"],
+    queryFn: () => fn(),
+    staleTime: 1000 * 60 * 5,
+  });
+  const counts = data?.counts ?? {};
+  return (
+    <section className="mt-12">
+      <div className="flex items-baseline justify-between">
+        <p className="label-eyebrow text-muted-foreground">Health records</p>
+        <Link
+          to="/reports/documents"
+          className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+        >
+          All reports <ChevronRight className="h-3 w-3" />
+        </Link>
+      </div>
+      <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {REPORT_CATEGORIES.map((c) => {
+          const Icon = c.icon;
+          const n = counts[c.slug] ?? 0;
+          const href =
+            c.slug === "dna"
+              ? "/my-health-dna"
+              : (`/reports/documents?category=${c.slug}` as const);
+          return (
+            <Link
+              key={c.slug}
+              to={href as "/reports/documents"}
+              className="group rounded-2xl border border-border bg-card p-4 hover:bg-secondary/40 transition"
+            >
+              <div className={cn("inline-flex h-9 w-9 items-center justify-center rounded-full", c.tone)}>
+                <Icon className="h-4 w-4" />
+              </div>
+              <p className="mt-3 text-sm font-medium text-foreground">{c.label}</p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                {n === 0 ? "Nothing yet" : `${n} ${n === 1 ? "record" : "records"}`}
+              </p>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
