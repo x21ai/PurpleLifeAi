@@ -9,9 +9,8 @@ export function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key || !key.startsWith("sk_")) return null;
   return new Stripe(key, {
-    apiVersion: "2024-12-18.acacia" as Stripe.LatestApiVersion,
     httpClient: Stripe.createFetchHttpClient(),
-  });
+  } as Stripe.StripeConfig);
 }
 
 export function stripePrices() {
