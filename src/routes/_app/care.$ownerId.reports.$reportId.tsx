@@ -32,20 +32,6 @@ export const Route = createFileRoute(
   notFoundComponent: () => <div className="p-8">Report not found.</div>,
 });
 
-const PANEL_LABELS: Record<string, string> = {
-  lipids: "Lipids",
-  cardiometabolic: "Cardiometabolic",
-  thyroid: "Thyroid",
-  liver: "Liver",
-  kidney: "Kidney",
-  hematology: "Blood count & iron",
-  vitamins: "Vitamins",
-  hormones: "Hormones",
-  inflammation: "Inflammation",
-  imaging: "Imaging",
-  other: "Other",
-};
-
 function CaregiverReportDetail() {
   useRouteTheme("dark");
   const { ownerId, reportId } = Route.useParams();
