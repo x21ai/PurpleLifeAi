@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Copy, Loader2, Mail, MessageCircle, Share2, Trash2, UserPlus } from "lucide-react";
+import { Copy, Eye, Loader2, Mail, MessageCircle, Share2, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 function inviteText(url: string, code: string) {
   return `Hey — I'm using Purple, a private health journal. Want to be in my circle? ${url}  (or use code ${code} at purplelife.org/friend/join)`;
@@ -13,6 +13,8 @@ function isIOS() {
 }
 
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Link } from "@tanstack/react-router";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -36,6 +38,7 @@ import {
   inviteFriend,
   listMyCircle,
   removeFriend,
+  setFriendShareBasics,
 } from "@/lib/friendships.functions";
 
 /**
