@@ -1,8 +1,8 @@
 import * as React from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, ExternalLink, Loader2, MoreVertical, RefreshCw, Trash2 } from "lucide-react";
+import { Download, ExternalLink, Link2, Loader2, MoreVertical, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { getReportFileUrl, processReport, deleteReport } from "@/lib/reports.functions";
+import { getReportFileUrl, getReportShareUrl, processReport, deleteReport } from "@/lib/reports.functions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,9 +35,10 @@ export function ReportRowActions({
   onChanged?: () => void;
 }) {
   const fetchUrl = useServerFn(getReportFileUrl);
+  const fetchShare = useServerFn(getReportShareUrl);
   const reprocess = useServerFn(processReport);
   const remove = useServerFn(deleteReport);
-  const [busy, setBusy] = React.useState<null | "view" | "download" | "retry" | "delete">(null);
+  const [busy, setBusy] = React.useState<null | "view" | "download" | "share" | "retry" | "delete">(null);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
 
   const failed = status === "failed" || status === "needs_credits" || status === "rate_limited";
@@ -64,6 +65,34 @@ export function ReportRowActions({
   }
 
   async function retry() {
+    setBusy("retry");
+    try {
+      await reprocess({ data: { reportId } });
+      toast.success("Re-running extraction…");
+      onChanged?.();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't re-run extraction");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function shareLink() {
+    setBusy("share");
+    try {
+      const { url, expiresInDays } = await fetchShare({ data: { id: reportId } });
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success(`Share link copied — expires in ${expiresInDays} days`);
+      } catch {
+        window.prompt("Share link (expires in 7 days)", url);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not create share link");
+    } finally {
+      setBusy(null);
+    }
+  }
     setBusy("retry");
     try {
       await reprocess({ data: { reportId } });
