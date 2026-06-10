@@ -43,7 +43,7 @@ export const getVitalsSnapshot = createServerFn({ method: "GET" })
       key: K,
     ): number | null => {
       for (const r of bio ?? []) {
-        const v = (r as Record<string, number | null>)[key];
+        const v = (r as unknown as Record<string, number | null>)[key];
         if (v != null) return v;
       }
       return null;
