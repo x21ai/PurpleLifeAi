@@ -1,51 +1,44 @@
-## Why you're seeing no DNA metrics
+## Why DNA isn't under Insights
 
-The three files you uploaded are alignment outputs from a sequencing pipeline, not parseable variant tables:
+Right now `/my-health-dna` lives nowhere in the sidebar — it's only reachable from the My Health page. It was originally filed under **My Body** conceptually (it's body data) but never given a nav slot. That's why you can't see it from Insights.
 
-- `…bqsr.hc.gz` — likely a HaplotypeCaller intermediate (not a `.vcf.gz`, no `#CHROM` header to parse)
-- `…bqsr.hc.vcf.gz.tbi` — **index file only** (Tabix index, ~tens of KB, no data)
-- `…bqsr.cram.crai` — **index file only** (CRAM index, no reads)
+Two reasonable homes:
+- **Insights** — DNA is read-only pattern data we surface back to the user. Fits with Reports.
+- **My Body** — it's literally body data alongside Biometrics / Intake / Meds.
 
-Our parser (`src/lib/dna-parse.server.ts`) only extracts genotypes from:
-- 23andMe / AncestryDNA / MyHeritage / FTDNA raw text exports (`.txt`/`.tsv`/`.csv`)
-- `.vcf` / `.vcf.gz` (full VCF with header + records)
-- `.json` exports
-- inside `.zip` / `.tar.gz` if one of the above is in there
+I'd put it under **Insights** as you suggested — it's interpretive (we tell you what variants mean), not raw logging. Reports + DNA are both "what does my data say about me?"
 
-`.bam`, `.cram`, `.tbi`, `.crai`, `.bai`, `.csi` are explicitly skipped — they're stored privately but produce **zero variants**, which is why no metrics render. The fine-print under the uploader already says this ("Alignment files (.bam / .cram) are stored but not yet parsed"), but the row badges currently say `UNKNOWN · PARSED` which is misleading — "parsed" implies we got data when we didn't.
-
-### What to upload to actually see metrics
-- A real `.vcf.gz` (the file BEFORE `.tbi` — typically a few MB to hundreds of MB, header starts with `##fileformat=VCFv4`)
-- Or your 23andMe / Ancestry raw data export (`.txt` or zipped)
-
-### Small fixes I'd make in this pass
-1. **Honest status badges**: when `kind` is `bam`/`cram`/`index` and `variants.length === 0`, show `STORED · NOT PARSED` (amber) instead of `PARSED`, with a tooltip: "Alignment/index file — upload the matching `.vcf.gz` or raw genotype export to see metrics."
-2. **Inline hint on the uploader** when the last upload was an index/alignment file: "Looks like a sequencing index. We need the `.vcf.gz` (not `.tbi`) or your raw genotype `.txt` to extract markers."
-3. **Reject `.tbi` / `.crai` / `.bai` / `.csi` at the picker** with a friendly toast — they're pure index sidecars, nothing for us to ever do with them alone.
-
-No schema changes; just `dna-parse.server.ts` returning a clearer status and `my-health-dna.tsx` rendering it.
+### Fix
+Add to `src/components/layout/nav-items.ts`, Insights group:
+```
+{ to: "/reports", label: "Reports", icon: FileText },
+{ to: "/my-health-dna", label: "DNA", icon: Dna },   // new
+```
+That's it — one line. The route already exists.
 
 ---
 
-## What's left from the Pro/billing track
+## What's left, ordered by impact
 
-Already done in this session:
-- ✅ `pro_free_for_everyone` flag + `isPro` helper
-- ✅ Billing serverFns + admin toggle at `/admin/billing`
-- ✅ `<ProGate>` wrapping DNA upload, Ask Purple 24h limit, report sharing, monthly auto-report, caregiver seats > 1
-- ✅ Public `/pricing` page with banner, FAQ, JSON-LD
+### Quick wins (today, ~30 min total)
+1. **DNA nav slot** under Insights (above).
+2. **DNA file row regression** — your old uploads still show `UNKNOWN · PARSED` because `kind` was never persisted on those rows. Either delete + re-upload (you already did some), or I can run a one-shot backfill that re-detects `kind` from the stored filename so old rows display the new `Stored · not parsed` label.
+3. **Mobile bottom nav** doesn't include Insights' children. Decide: leave DNA desktop-only in nav, or add a discoverable entry on mobile too.
 
-Still open (parked until you flip the free flag off):
-- Add the 5 Stripe test secrets and run a real checkout end-to-end
-- Server-side enforcement of the Ask Purple 24h limit (today it's client-side only — fine while everyone is free, but trivially bypassable once gated)
-- Stripe customer portal link in `/account` (cancel / change plan / update card)
-- Webhook idempotency log table so retried Stripe events don't double-apply
-- Receipts / invoice history surface in account
-- "Refer a friend → free month" if you want growth loops before launch
+### Billing track — parked until you flip the free flag off
+4. **Add the 5 Stripe test secrets** and run checkout end-to-end.
+5. **Stripe customer portal link** on `/account` (cancel, change plan, update card).
+6. **Webhook idempotency log** so retried Stripe events don't double-apply.
+7. **Server-side Ask Purple 24h limit** (today it's client-side localStorage — fine while free, trivial to bypass once gated).
+8. **Receipts/invoice list** in account.
+
+### Product polish — separate threads, pick when ready
+9. **Today** — anything specific bugging you? (greeting copy, card order, empty state, etc.)
+10. **Care** — caregiver invite flow, read-only by default, "confirm to write" step.
+11. **DNA depth** — right now we just match curated rsids against your variants. Could add: trait-by-trait "what this means for you" using the care profile, or wire findings into Ask Purple's system prompt so it knows about your CYP2D6 / MTHFR / etc. when answering.
 
 ---
 
-## Proposed next move
+## Proposed move
 
-1. **Now (5 min):** ship the three DNA UX fixes above so the page tells the truth about what was and wasn't parsed.
-2. **Then:** you tell me — back to DNA/Today/Care feature work, or knock out the post-flip billing items (portal + webhook log + server-side Ask limit) so flipping the switch is a one-click moment later?
+Do all three **Quick wins** in one small pass (DNA nav + kind backfill + decide mobile), then you pick the next thread. Sound good?
