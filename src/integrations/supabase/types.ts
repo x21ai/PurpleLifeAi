@@ -2349,6 +2349,8 @@ export type Database = {
       }
       report_documents: {
         Row: {
+          ai_summary: Json | null
+          ai_summary_at: string | null
           content_hash: string | null
           created_at: string
           created_by_id: string | null
@@ -2377,6 +2379,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_summary?: Json | null
+          ai_summary_at?: string | null
           content_hash?: string | null
           created_at?: string
           created_by_id?: string | null
@@ -2405,6 +2409,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_summary?: Json | null
+          ai_summary_at?: string | null
           content_hash?: string | null
           created_at?: string
           created_by_id?: string | null
@@ -2857,6 +2863,48 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vital_goals: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          note: string | null
+          target_max: number | null
+          target_max2: number | null
+          target_min: number | null
+          target_min2: number | null
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          note?: string | null
+          target_max?: number | null
+          target_max2?: number | null
+          target_min?: number | null
+          target_min2?: number | null
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          target_max?: number | null
+          target_max2?: number | null
+          target_min?: number | null
+          target_min2?: number | null
+          unit?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
