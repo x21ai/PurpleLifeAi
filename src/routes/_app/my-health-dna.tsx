@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 import {
-  ChevronLeft, Upload, Loader2, Trash2, AlertTriangle, FileText,
+  ChevronLeft, Upload, Loader2, Trash2, AlertTriangle, FileText, RefreshCw,
   Sparkles, ShieldCheck, EyeOff, Eye,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,6 +69,20 @@ function DnaPage() {
       toast.success("Deleted.");
     },
     onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed to delete"),
+  });
+
+  const reparse = useMutation({
+    mutationFn: async (fileId: string) => parseFn({ data: { fileId } }),
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ["dna-files"] });
+      if (result.kind === "bam" || result.kind === "cram" || result.kind === "index") {
+        toast.message("Stored, but this file type isn't parsed.");
+      } else {
+        toast.success(`Found ${result.variantCount} curated variants.`);
+      }
+      regen({ data: { force: true } }).catch(() => undefined);
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Re-analyze failed"),
   });
 
   const setShare = useMutation({
@@ -268,6 +282,20 @@ function DnaPage() {
                   />
                   Share with caregivers
                 </label>
+                {!isUnparseableKind(f.kind) && (
+                  <button
+                    type="button"
+                    onClick={() => reparse.mutate(f.id)}
+                    disabled={reparse.isPending}
+                    className="h-9 w-9 grid place-items-center rounded-full hover:bg-secondary text-muted-foreground disabled:opacity-50"
+                    aria-label="Re-analyze"
+                    title="Re-analyze"
+                  >
+                    {reparse.isPending && reparse.variables === f.id
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : <RefreshCw className="h-4 w-4" />}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setPendingDeleteId(f.id)}
