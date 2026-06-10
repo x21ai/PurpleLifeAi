@@ -894,7 +894,7 @@ export const caregiverReadReport = createServerFn({ method: "POST" })
     const { data: report, error: rErr } = await supabaseAdmin
       .from("report_documents")
       .select(
-        "id, title, report_type, report_date, file_mime, status, created_at, lab_name, ai_summary, ai_summary_at"
+        "id, title, report_type, report_date, file_mime, status, created_at, summary, ai_summary, ai_summary_at"
       )
       .eq("id", data.report_id)
       .eq("user_id", data.owner_id)
@@ -904,10 +904,10 @@ export const caregiverReadReport = createServerFn({ method: "POST" })
     const { data: metrics } = await supabaseAdmin
       .from("report_metrics")
       .select(
-        "id, metric_key, display_name, value, value_text, unit, reference_low, reference_high, flag, panel"
+        "id, metric_key, display_name, value, value_text, unit, reference_low, reference_high, flag"
       )
       .eq("report_id", data.report_id)
-      .order("panel", { ascending: true, nullsFirst: false });
+      .order("metric_key", { ascending: true });
     // Audit caregiver access to PHI
     await supabaseAdmin.from("phi_access_log").insert({
       user_id: data.owner_id,
