@@ -44,6 +44,8 @@ import {
   setRelationshipDigestMuted,
 } from "@/lib/care.functions";
 import { getOrCreateDirectThread } from "@/lib/care-chat.functions";
+import { ProGate } from "@/components/pro/pro-gate";
+import { useIsPro } from "@/lib/pro-gate";
 import {
   CARE_RESOURCES,
   CARE_VERBS,
@@ -97,6 +99,11 @@ function SharingPage() {
   const caregivers = useQuery({ queryKey: ["care", "mine"], queryFn: () => fetchMyCaregivers() });
   const sharedWithMe = useQuery({ queryKey: ["care", "shared-with-me"], queryFn: () => fetchSharingWithMe() });
   const pending = useQuery({ queryKey: ["care", "pending"], queryFn: () => fetchPending() });
+  const { isPro } = useIsPro();
+  const activeCaregiverCount = (caregivers.data?.relationships ?? []).filter(
+    (r) => r.status === "active" || r.status === "pending",
+  ).length;
+  const canInviteFree = isPro || activeCaregiverCount < 1;
 
   const revoke = useServerFn(revokeRelationship);
   const revokeMut = useMutation({
@@ -154,7 +161,11 @@ function SharingPage() {
       <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-serif text-xl text-foreground">People I share with</h2>
-          <InviteCaregiverSheet onInvited={() => qc.invalidateQueries({ queryKey: ["care", "mine"] })} />
+          {canInviteFree ? (
+            <InviteCaregiverSheet onInvited={() => qc.invalidateQueries({ queryKey: ["care", "mine"] })} />
+          ) : (
+            <ProGate feature="caregiver_seats" variant="inline">{null}</ProGate>
+          )}
         </div>
         {caregivers.isLoading ? (
           <p className="mt-3 text-sm text-muted-foreground"><Loader2 className="inline h-3 w-3 animate-spin" /> Loading…</p>
