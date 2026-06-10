@@ -203,7 +203,7 @@ function ReportsDocumentsPage() {
       return;
     }
     if (readyOnes.length > 200) {
-      toast.error("Too many reports — narrow filters to under 200.");
+      toast.error("Too many reports - narrow filters to under 200.");
       return;
     }
     setBulkDownloading(true);
