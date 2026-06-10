@@ -452,6 +452,7 @@ function ReportRow({
             onClick={async () => {
               const url = await onCreateLink(linkDays, linkLabel || undefined);
               setCreatedUrl(url);
+              linksQ.refetch();
             }}
           >
             Create share link
@@ -460,6 +461,56 @@ function ReportRow({
             <p className="text-xs break-all rounded-md bg-accent/40 p-2 text-foreground">
               {createdUrl}
             </p>
+          )}
+          {linksQ.data && linksQ.data.links.length > 0 && (
+            <div className="mt-3 space-y-1.5">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                Active links
+              </p>
+              <ul className="space-y-1.5">
+                {linksQ.data.links.map((l) => {
+                  const expired = new Date(l.expires_at) < new Date();
+                  const revoked = !!l.revoked_at;
+                  const active = !expired && !revoked;
+                  return (
+                    <li
+                      key={l.id}
+                      className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-background/40 px-3 py-2 text-xs"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-foreground">
+                          {l.viewer_label || "Untitled link"}
+                        </p>
+                        <p className="text-muted-foreground">
+                          {revoked
+                            ? "Revoked"
+                            : expired
+                              ? "Expired"
+                              : `Expires ${new Date(l.expires_at).toLocaleDateString()}`}
+                          {" · "}
+                          {l.opened_count > 0
+                            ? `Viewed ${l.opened_count}× · last ${l.last_opened_at ? new Date(l.last_opened_at).toLocaleDateString() : "—"}`
+                            : "Not viewed yet"}
+                        </p>
+                      </div>
+                      {active && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={async () => {
+                            await revokeLink({ data: { linkId: l.id } });
+                            toast("Link revoked");
+                            linksQ.refetch();
+                          }}
+                        >
+                          Revoke
+                        </Button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           )}
         </div>
       )}
