@@ -75,6 +75,7 @@
     "input-otp": "^1.4.2",
     "jszip": "^3.10.1",
     "lucide-react": "^0.575.0",
+    "nanotar": "^0.3.0",
     "nitro": "3.0.260603-beta",
     "pdf-lib": "^1.17.1",
     "react": "^19.2.0",
