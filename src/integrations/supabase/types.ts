@@ -2366,6 +2366,7 @@ export type Database = {
           panel_keys: string[] | null
           patient_dob: string | null
           patient_name: string | null
+          report_category: string | null
           report_date: string | null
           report_type: string | null
           status: string
@@ -2393,6 +2394,7 @@ export type Database = {
           panel_keys?: string[] | null
           patient_dob?: string | null
           patient_name?: string | null
+          report_category?: string | null
           report_date?: string | null
           report_type?: string | null
           status?: string
@@ -2420,6 +2422,7 @@ export type Database = {
           panel_keys?: string[] | null
           patient_dob?: string | null
           patient_name?: string | null
+          report_category?: string | null
           report_date?: string | null
           report_type?: string | null
           status?: string
