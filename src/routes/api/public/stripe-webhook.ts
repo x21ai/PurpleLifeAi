@@ -33,9 +33,10 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         async function upsertFromSubscription(sub: import("stripe").Stripe.Subscription) {
-          const userId =
-            (sub.metadata?.user_id as string | undefined) ??
-            (typeof sub.customer === "object" ? (sub.customer.metadata?.user_id as string | undefined) : undefined);
+          let userId = sub.metadata?.user_id as string | undefined;
+          if (!userId && typeof sub.customer === "object" && !("deleted" in sub.customer && sub.customer.deleted)) {
+            userId = (sub.customer as import("stripe").Stripe.Customer).metadata?.user_id;
+          }
           if (!userId) {
             console.warn("[stripe-webhook] No user_id in subscription metadata", sub.id);
             return;
@@ -73,8 +74,11 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
               break;
             }
             case "invoice.payment_failed": {
-              const inv = event.data.object as import("stripe").Stripe.Invoice;
-              const subId = typeof inv.subscription === "string" ? inv.subscription : inv.subscription?.id;
+              const inv = event.data.object as import("stripe").Stripe.Invoice & {
+                subscription?: string | { id: string } | null;
+              };
+              const subRef = inv.subscription;
+              const subId = typeof subRef === "string" ? subRef : subRef?.id;
               if (subId) {
                 const sub = await stripe.subscriptions.retrieve(subId);
                 await upsertFromSubscription(sub);

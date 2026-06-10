@@ -62,6 +62,7 @@ import { Route as ShareReportTokenRouteImport } from './routes/share.report.$tok
 import { Route as OauthWhoopCallbackRouteImport } from './routes/oauth.whoop.callback'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
 import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
 import { Route as AppSettingsTravelRouteImport } from './routes/_app/settings.travel'
 import { Route as AppSettingsSharingRouteImport } from './routes/_app/settings.sharing'
@@ -368,6 +369,11 @@ const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   path: '/lovable/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
+  id: '/api/public/stripe-webhook',
+  path: '/api/public/stripe-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppTodayRiskRoute = AppTodayRiskRouteImport.update({
   id: '/risk',
   path: '/risk',
@@ -660,6 +666,7 @@ export interface FileRoutesByFullPath {
   '/settings/sharing': typeof AppSettingsSharingRoute
   '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
+  '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
@@ -754,6 +761,7 @@ export interface FileRoutesByTo {
   '/settings/sharing': typeof AppSettingsSharingRoute
   '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
+  '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
@@ -851,6 +859,7 @@ export interface FileRoutesById {
   '/_app/settings/sharing': typeof AppSettingsSharingRoute
   '/_app/settings/travel': typeof AppSettingsTravelRoute
   '/_app/today/risk': typeof AppTodayRiskRoute
+  '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
@@ -948,6 +957,7 @@ export interface FileRouteTypes {
     | '/settings/sharing'
     | '/settings/travel'
     | '/today/risk'
+    | '/api/public/stripe-webhook'
     | '/lovable/email/suppression'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
@@ -1042,6 +1052,7 @@ export interface FileRouteTypes {
     | '/settings/sharing'
     | '/settings/travel'
     | '/today/risk'
+    | '/api/public/stripe-webhook'
     | '/lovable/email/suppression'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
@@ -1138,6 +1149,7 @@ export interface FileRouteTypes {
     | '/_app/settings/sharing'
     | '/_app/settings/travel'
     | '/_app/today/risk'
+    | '/api/public/stripe-webhook'
     | '/lovable/email/suppression'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
@@ -1190,6 +1202,7 @@ export interface RootRouteChildren {
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   FriendAcceptRoute: typeof FriendAcceptRoute
   FriendJoinRoute: typeof FriendJoinRoute
+  ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   OauthWhoopCallbackRoute: typeof OauthWhoopCallbackRoute
@@ -1581,6 +1594,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/suppression'
       fullPath: '/lovable/email/suppression'
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/stripe-webhook': {
+      id: '/api/public/stripe-webhook'
+      path: '/api/public/stripe-webhook'
+      fullPath: '/api/public/stripe-webhook'
+      preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/today/risk': {
@@ -2068,6 +2088,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   FriendAcceptRoute: FriendAcceptRoute,
   FriendJoinRoute: FriendJoinRoute,
+  ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   OauthWhoopCallbackRoute: OauthWhoopCallbackRoute,
