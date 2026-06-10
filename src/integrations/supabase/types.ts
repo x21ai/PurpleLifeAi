@@ -1236,6 +1236,7 @@ export type Database = {
           note_b: string | null
           refer_code: string | null
           requested_by: string
+          share_basics: boolean
           status: string
           updated_at: string
           user_a: string
@@ -1251,6 +1252,7 @@ export type Database = {
           note_b?: string | null
           refer_code?: string | null
           requested_by: string
+          share_basics?: boolean
           status?: string
           updated_at?: string
           user_a: string
@@ -1266,6 +1268,7 @@ export type Database = {
           note_b?: string | null
           refer_code?: string | null
           requested_by?: string
+          share_basics?: boolean
           status?: string
           updated_at?: string
           user_a?: string
@@ -2105,6 +2108,7 @@ export type Database = {
           updated_at: string
           wake_time: string
           weekly_digest_enabled: boolean
+          welcome_nudge_dismissed_at: string | null
         }
         Insert: {
           ai_care_profile?: Json | null
@@ -2156,6 +2160,7 @@ export type Database = {
           updated_at?: string
           wake_time?: string
           weekly_digest_enabled?: boolean
+          welcome_nudge_dismissed_at?: string | null
         }
         Update: {
           ai_care_profile?: Json | null
@@ -2207,6 +2212,7 @@ export type Database = {
           updated_at?: string
           wake_time?: string
           weekly_digest_enabled?: boolean
+          welcome_nudge_dismissed_at?: string | null
         }
         Relationships: []
       }
