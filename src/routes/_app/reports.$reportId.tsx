@@ -223,13 +223,7 @@ function ReportDetailPage() {
             )}
             Download
           </Button>
-          <ProGate
-            feature="report_sharing"
-            variant="inline"
-            fallback={
-              <ProGate feature="report_sharing" variant="inline">{null}</ProGate>
-            }
-          >
+          <ProGate feature="report_sharing" variant="inline">
             <Button
               onClick={() => void openOrShare("share")}
               disabled={openingFile !== null}
