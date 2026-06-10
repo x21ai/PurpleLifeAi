@@ -1,103 +1,103 @@
-## What's still left to build (quick answer)
+# Finish the remaining three items
 
-Nothing big in core flows — the major systems are in: Today, Journal, My Body (biometrics/intake/meds/timeline), Insights/Reports, Care/sharing, Community, Travel, Apple Health import, friend circle, invite codes, PWA. What's outstanding is mostly polish + the rough edges you're catching now:
+Three open threads from earlier. Plan below covers each end-to-end.
 
-- The sidebar/account/menu cleanup below (this plan)
-- Gender field (this plan)
-- A short "what does Purple track for my condition?" onboarding nudge after sign-up (not in this plan)
-- Pricing/billing wiring (not started — you haven't asked)
-- The "fun/social-only" friend permission tiers we discussed last turn (data model done, UI for granting "social tier" not built)
-
-Everything else is iteration on what exists. If you want a written backlog file I can drop one in `/docs/whats-left.md` next round.
+> Heads-up on item 3 — Purple's `/pricing` page commits to **"Free. Forever."** and the brand rule is "no paywall." A traditional billing wiring would contradict that. I'm proposing **optional donations / "support Purple"** instead, using Lovable's built-in payments. If you actually want a paid tier with gated features, say so and I'll swap step 3 for a Pro tier with entitlement checks.
 
 ---
 
-## Your 5 questions — what I'll change
+## 1. Condition onboarding nudge
 
-### 1. "Account" vs "My account" — they mean different things
+A one-screen, dismissible card shown right after sign-up that says "Here's what Purple will track for your conditions" — tailored to the conditions the user picked during `/welcome`.
 
-- **Sidebar → Account** = the settings hub (Profile / Settings / Sharing / Privacy).
-- **Top-right menu → "My account"** = a *role switch* back to viewing your own data, shown only when you're also a caregiver for someone else. It's not a page, it's "stop looking at Devyn's data, show mine."
+**Where it appears**
+- New component `<ConditionWelcomeNudge />` rendered at the top of `/today`, above the greeting, only when:
+  - `profiles.conditions` has at least one entry, AND
+  - `profiles.welcome_nudge_dismissed_at` is null.
+- Dismiss writes `welcome_nudge_dismissed_at = now()` (autosave, no toast). Never shown again.
 
-Both labels say "account" so it reads like duplicate links. Fix:
+**Content (built from condition list)**
+- Title: "Purple is set up for {first condition} {+N more if applicable}."
+- 3–5 bullet rows generated from `src/lib/condition-prompts.ts` (already condition-aware) — e.g. for epilepsy: "Seizure logging from Today", "Med adherence + dose reminders", "Triggers from sleep, stress, missed meds".
+- Footer: "Adjust anytime in Settings → My Health" + "Got it" dismiss button.
 
-- Rename the role-switch row from **"My account / Your own data"** → **"View as myself / Your own data"**.
-- Keep the bottom **Account** link in the dropdown (it opens `/account`) as-is.
-- Apple does the same thing in Family Sharing — that row says "Use This iPhone with your Apple ID," not "My account."
-
-### 2. Purple circle at top of collapsed sidebar + icon misalignment
-
-- The round purple circle is the **Purple logomark** for the collapsed (md, 64px) rail. It's a placeholder I dropped in when there wasn't a real mark. Remove it. Show the wordmark "P" in the same typeface as the expanded "PURPLE" wordmark instead — quieter and on-brand. (Branding rule: PURPLE wordmark stands alone, no controls next to it — a single-letter mark in the same face is the cleanest collapsed form.)
-- Icon misalignment: group rows use `pl-3 pr-1` even when the rail is collapsed, so the icon sits left of center while leaf rows are centered. Switch the collapsed rail to symmetric padding (`px-0` + `justify-center`) for both group and leaf rows. All icons line up on the same vertical axis.
-
-### 3. Account page redesign + drop pronouns, add gender
-
-Restructure `/account` to the order Apple uses (identity → security → preferences → session):
-
-````text
-PROFILE
-  Avatar + name + email (read-only with "change email" link) + phone
-
-IDENTITY            ← new section name
-  Gender (Female / Male / Non-binary / Prefer not to say / Self-describe)
-  Date of birth (already collected at onboarding — surface read-only here)
-
-SECURITY
-  Password
-  Two-factor
-
-REGION & LANGUAGE
-  (unchanged)
-
-APPEARANCE
-  (unchanged)
-
-INVITE
-  Get an invite code  (unchanged — but only ONE card, the duplicate "INVITE" labels in your screenshot are an empty state of the same card rendering 3x; fix that bug)
-
-SESSION
-  Signed in as · Sign out
-  Delete account  (move from settings to here, it belongs with sign-out)
-````
-
-- **Remove** the Pronouns field everywhere it appears (account, profile, caregiver-visible profile). Drop the `pronouns` column from `profiles` in a new migration.
-- **Add** `gender` text column to `profiles` with the five-option select above (free-text when "Self-describe"). Autosaves like the other fields.
-- Fix the **triple "INVITE" headers** rendering bug — that's a layout issue where `SheetSectionLabel` is being rendered alongside the card's own header. Render the label once.
-
-### 4. Open (expanded) sidebar is confusing — fixes
-
-From your screenshots:
-
-- Account group has too many cousins (Profile, Settings, Sharing, Privacy) — collapse to **Profile, Settings, Sharing**. Privacy is content-policy info, move it to the Settings page footer where Privacy/Terms/Charter already live.
-- "Caregiver" pill at the bottom — leave it. It's role-specific and the right place.
-- Insights only has `Reports` and `Medical history PDF` (which is also a Report). Merge them: keep `Reports` as a single link, drop `Medical history PDF` from the rail (it's reachable from inside Reports).
-- Community → currently only has `Resources`. Promote Community itself to a leaf link, drop the child.
-- Tools → keep `Apple Health import` + `Travel`. Fine.
-- **Bug in screenshot 1 (account page sidebar shows "My Body" repeated ~30 times):** that's the collapsed-sidebar's icon-only rows getting the same tooltip label rendered as visible text on a viewport between md and lg. The `RailTooltip` shouldn't render `TooltipContent` inline. Fix by gating `TooltipContent` with `lg:hidden` *and* ensuring it only mounts on hover (already Radix default — likely a `pointerEvents` regression). I'll verify and patch.
-
-### 5. Skin temperature card — value collides with status pill
-
-`MetricCard` renders the value (e.g. `-0.27°C`) in a `min-w-0` left column and the status pill (`PAY ATTENTION`) in a `shrink-0` right column, same flex row. With a long-format pill ("PAY ATTENTION" = 12 chars) the pill eats the right gutter and the value's serif `text-6xl` glyphs cross under it. Fix:
-
-- Move the status pill to its **own line above** the value (eyebrow → pill on the eyebrow row), so the value gets the full card width.
-- For skin temperature specifically, format as `−0.3°C` (1 decimal) — the second decimal is noise on a baseline-delta metric.
-- Add `whitespace-nowrap` to the value and a smaller responsive type ramp when the formatted string is > 6 chars.
+**Files**
+- New: `src/components/today/condition-welcome-nudge.tsx`
+- New helper: `src/lib/condition-welcome-copy.ts` (maps condition slug → bullets, reusing condition-prompts where possible)
+- Edit: `src/routes/_app/today.tsx` — render nudge above greeting
+- Migration: add `welcome_nudge_dismissed_at timestamptz` to `profiles`
 
 ---
 
-## Files I'll touch
+## 2. Friend social-tier permission UI
 
-- `src/components/layout/profile-menu.tsx` — relabel "My account" → "View as myself"
-- `src/components/layout/sidebar-nav.tsx` — replace purple circle with wordmark "P", symmetric padding on collapsed rail, fix RailTooltip leak
-- `src/components/layout/nav-items.ts` — collapse Account/Insights/Community children
-- `src/routes/_app/account.tsx` + `src/components/account/profile-fields.tsx` — new section order, gender field, drop pronouns, dedupe INVITE label, add Delete account row
-- `src/components/biometrics/metric-card.tsx` — pill on eyebrow row, responsive value sizing
-- `src/lib/biometric-metrics.ts` — skin temp 1-decimal format
-- New migration: add `gender text`, drop `pronouns` from `profiles`
+Data model is already in place (`friendships`, refer codes). What's missing is the UI to optionally **upgrade** a friend from social-only (zero data) to a light "social tier" view — and to revoke it. No new data scopes; this layers on the existing `care_scopes` table with a fixed `tier = 'social'` scope set.
 
-## Out of scope (ask if you want them)
+**What "social tier" exposes** (deliberately tiny)
+- First name, profile photo, current condition tag(s) — nothing time-series, nothing journal, nothing biometric.
+- Pulled from `profiles` already.
 
-- Avatar redesign / new logomark file
-- Friend-tier permission UI (separate plan)
-- Pricing/billing
-- Backfilling existing `pronouns` data anywhere (it's just dropped)
+**UI changes in `Settings → Sharing → Your circle`**
+- Each active friend row gets a new "Share basics" toggle (off by default).
+- Turning on opens a small confirm sheet listing exactly what they'll see; turning off revokes immediately.
+- Status chip on the row: "Social only" (default) or "Sees basics" when on.
+- Friend list re-fetches; toast on change.
+
+**Server**
+- New `setFriendSocialTier({ friendship_id, enabled })` in `src/lib/friendships.functions.ts` — writes a `care_scopes` row scoped to `kind='friend_basics'` (or removes it).
+- `listMyCircle` returns each friendship's current tier so the toggle hydrates correctly.
+- New `getFriendBasics({ friendship_id })` for the viewer side — returns the limited profile fields only when the scope row exists.
+
+**Viewer side**
+- New leaf route `/_app/friends.$friendshipId.tsx` — a minimal "About {name}" page. If no scope, shows "No shared details — just a friend."
+- Add a "Friends" leaf under the Community sidebar group (only visible when the user has at least one active friendship).
+
+**Migration**
+- No new tables. Adds a `kind` value `'friend_basics'` to the existing `care_scopes.kind` check constraint (or extends the enum) and indexes by `(grantee_id, kind)`.
+
+**Files**
+- Edit: `src/lib/friendships.functions.ts`, `src/components/sharing/circle-section.tsx`
+- New: `src/routes/_app/friends.$friendshipId.tsx`
+- Edit: `src/components/layout/nav-items.ts` (conditional Friends leaf)
+- Migration: extend `care_scopes` kind
+
+---
+
+## 3. "Support Purple" donations (replaces paywall wiring)
+
+Keep the free-forever promise, but give users a way to contribute. This is the minimum that won't betray the brand.
+
+**Flow**
+- `/pricing` keeps the "$0 / forever" hero. Add a second, quieter section below: **"Support Purple"** with three suggested amounts ($5, $15, $50 — one-time) and a "custom" input. No nag, no popup.
+- Account → Session gets a small "Support Purple" link (same destination).
+- After payment → thank-you page + a tiny "Supporter" badge on the user's profile (purely cosmetic, never gates features).
+
+**Provider**
+- Use Lovable's built-in payments. I'll run `recommend_payment_provider` first to pick Paddle vs Stripe based on the project type and your seller country. Donations are a soft case — likely Stripe with tax calculation only, since donation tax-handling depends on whether you're a registered nonprofit. **I'll ask before enabling** so you can confirm provider + seller country.
+
+**Server / data**
+- New table `public.supporter_contributions` (amount, currency, provider, provider_payment_id, user_id, created_at) with RLS so users only see their own.
+- Webhook route `app/routes/api/public/hooks/payments.ts` records successful payments and flips a `profiles.is_supporter` boolean.
+- Server fn `createSupportCheckout({ amount, currency })` returns a hosted checkout URL.
+
+**Files**
+- New: `src/components/pricing/support-card.tsx`, `src/routes/support.success.tsx`, `app/routes/api/public/hooks/payments.ts`, `src/lib/support.functions.ts`
+- Edit: `src/routes/pricing.tsx`, `src/routes/_app/account.tsx`
+- Migration: `supporter_contributions` table + `profiles.is_supporter boolean`
+
+**Approval gates inside this step**
+1. Confirm donations (not paywall) is what you want.
+2. Confirm seller country so I can pick the provider.
+3. Then enable provider + create products + wire checkout.
+
+---
+
+## Build order
+1. Condition onboarding nudge (smallest, ships first).
+2. Friend social-tier UI.
+3. Support Purple (only after you confirm donations vs paywall and seller country).
+
+## Out of scope
+- Gated Pro features behind a paywall (only if you say so in item 3)
+- Recurring donations (one-time first; recurring is a follow-up)
+- Migrating `pronouns` data (already dropped in earlier plan)
