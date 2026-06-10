@@ -257,6 +257,10 @@ function ReportDetailPage() {
         </section>
       )}
 
+      {signedUrl && (
+        <InlineFilePreview url={signedUrl} mime={report.file_mime ?? ""} title={report.title ?? "Report"} />
+      )}
+
       {(report.findings || report.impressions) && (
         <section className="mt-4 grid sm:grid-cols-2 gap-4">
           {report.findings && Array.isArray(report.findings) && (report.findings as string[]).length > 0 && (
