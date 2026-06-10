@@ -136,9 +136,10 @@ export function parseDnaFileBytes(filename: string, bytes: Uint8Array): ParseRes
 }
 
 /** Parse JSON exports: { rsid: genotype } maps, or arrays of {rsid, genotype}. */
-function parseDnaJson(text: string): { provider: DnaProvider; variants: ParsedVariant[] } {
+function parseDnaJson(text: string): { provider: DnaProvider; variants: ParsedVariant[]; stats: ParseResult["stats"] } {
   const out: ParsedVariant[] = [];
   const seen = new Set<string>();
+  let rowsScanned = 0;
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
@@ -163,6 +164,7 @@ function parseDnaJson(text: string): { provider: DnaProvider; variants: ParsedVa
     if (Array.isArray(nested)) {
       for (const v of nested) {
         if (v && typeof v === "object") {
+          rowsScanned += 1;
           const r = (v as Record<string, unknown>);
           const rsid = String(r.rsid ?? r.id ?? r.snp ?? "");
           const gt = String(r.genotype ?? r.gt ?? r.alleles ?? "");
@@ -171,12 +173,14 @@ function parseDnaJson(text: string): { provider: DnaProvider; variants: ParsedVa
       }
     } else {
       for (const [k, v] of Object.entries(obj)) {
+        rowsScanned += 1;
         if (typeof v === "string") push(k, v);
       }
     }
   } else if (Array.isArray(parsed)) {
     for (const v of parsed) {
       if (v && typeof v === "object") {
+        rowsScanned += 1;
         const r = v as Record<string, unknown>;
         const rsid = String(r.rsid ?? r.id ?? r.snp ?? "");
         const gt = String(r.genotype ?? r.gt ?? r.alleles ?? "");
@@ -184,11 +188,11 @@ function parseDnaJson(text: string): { provider: DnaProvider; variants: ParsedVa
       }
     }
   }
-  return { provider: "unknown", variants: out };
+  return { provider: "unknown", variants: out, stats: { rowsScanned, curatedMatches: out.length } };
 }
 
 // Keep the original text parser available for the streamed path below.
-type TextParseResult = { provider: DnaProvider; variants: ParsedVariant[] };
+type TextParseResult = { provider: DnaProvider; variants: ParsedVariant[]; stats: ParseResult["stats"] };
 
 /**
  * Handles 23andMe (tsv: rsid\tchrom\tpos\tgenotype), AncestryDNA
@@ -201,6 +205,7 @@ export function parseDnaText(text: string): TextParseResult {
   const out: ParsedVariant[] = [];
   const lines = text.split(/\r?\n/);
   const seen = new Set<string>();
+  let rowsScanned = 0;
 
   // VCF needs a different shape entirely.
   if (provider === "vcf") {
@@ -231,6 +236,7 @@ export function parseDnaText(text: string): TextParseResult {
       }
       const cols = line.split("\t");
       if (cols.length < 5) continue;
+      rowsScanned += 1;
       // Try ID column first (semicolon-separated rsids possible).
       let rsid: string | undefined;
       const idField = cols[2];
@@ -271,7 +277,7 @@ export function parseDnaText(text: string): TextParseResult {
         position: Number.isFinite(Number(cols[1])) ? Number(cols[1]) : null,
       });
     }
-    return { provider, variants: out };
+    return { provider, variants: out, stats: { rowsScanned, curatedMatches: out.length } };
   }
 
   // Generic tabular: try tab first, then comma. Skip comments / blank.
@@ -280,6 +286,7 @@ export function parseDnaText(text: string): TextParseResult {
     let cols = raw.split("\t");
     if (cols.length < 4) cols = raw.split(",");
     if (cols.length < 4) continue;
+    rowsScanned += 1;
     const rsid = cols[0]?.trim().replace(/^"|"$/g, "");
     if (!rsid || !rsid.startsWith("rs") || !CURATED_RSID_SET.has(rsid)) continue;
     if (seen.has(rsid)) continue;
@@ -302,5 +309,5 @@ export function parseDnaText(text: string): TextParseResult {
     out.push({ rsid, genotype, chromosome, position });
   }
 
-  return { provider, variants: out };
+  return { provider, variants: out, stats: { rowsScanned, curatedMatches: out.length } };
 }
