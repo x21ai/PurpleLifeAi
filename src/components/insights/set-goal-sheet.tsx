@@ -138,7 +138,7 @@ export function SetGoalSheet({
             </div>
           )}
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Targets are personal reference points. Purple doesn't nudge or score you on them — they're
+            Targets are personal reference points. Purple doesn't nudge or score you on them , they're
             just here so your tiles can show ✓ or ⚠ at a glance.
           </p>
           <div className="flex items-center gap-2 pt-2">

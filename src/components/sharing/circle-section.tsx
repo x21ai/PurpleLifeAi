@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Copy, Eye, Loader2, Mail, MessageCircle, Share2, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 function inviteText(url: string, code: string) {
-  return `Hey — I'm using Purple, a private health journal. Want to be in my circle? ${url}  (or use code ${code} at purplelife.org/friend/join)`;
+  return `Hey , I'm using Purple, a private health journal. Want to be in my circle? ${url}  (or use code ${code} at purplelife.org/friend/join)`;
 }
 
 function isIOS() {
@@ -356,7 +356,7 @@ function ShareInvitePanel({
         url: acceptUrl,
       });
     } catch {
-      // user cancelled — no-op
+      // user cancelled , no-op
     }
   }
 

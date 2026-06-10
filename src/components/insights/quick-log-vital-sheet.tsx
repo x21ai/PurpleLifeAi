@@ -38,7 +38,7 @@ const SPECS: Record<VitalKind, Spec> = {
   glucose: {
     title: "Log glucose",
     primary: { label: "Glucose", unit: "mg/dL", placeholder: "98" },
-    helper: "Fasting or post-meal — note the context below.",
+    helper: "Fasting or post-meal , note the context below.",
   },
   spo2: {
     title: "Log blood oxygen",
