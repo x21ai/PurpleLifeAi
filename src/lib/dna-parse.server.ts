@@ -6,7 +6,8 @@ import {
   normalizeChrom,
   type DnaProvider,
 } from "./dna-curated-rsids";
-import { gunzipSync, unzipSync, strFromU8 } from "fflate";
+import { unzipSync, strFromU8 } from "fflate";
+import { gunzipSync } from "zlib";
 import { parseTar } from "nanotar";
 
 /**
@@ -25,10 +26,20 @@ export interface ParseResult {
   variants: ParsedVariant[];
   kind: "genotype" | "vcf" | "json" | "bam" | "cram" | "index" | "unknown";
   compression: "none" | "gz" | "zip" | "tar" | "tgz";
+  stats: {
+    rowsScanned: number;
+    curatedMatches: number;
+  };
 }
 
 function normalizeGenotype(raw: string): string {
   return raw.replace(/[^ACGT0-9]/gi, "").toUpperCase();
+}
+
+function looksLikeVcf(text: string): boolean {
+  const sample = text.slice(0, 2_000_000);
+  if (/^\s*##fileformat=vcf/i.test(sample)) return true;
+  return /^#CHROM\s+POS\s+ID\s+REF\s+ALT/im.test(sample);
 }
 
 /** Detect file kind/compression from filename + magic bytes. */
@@ -66,7 +77,9 @@ function decompressToText(
       return { text: new TextDecoder().decode(bytes), innerName: filename };
     }
     if (compression === "gz") {
-      const out = gunzipSync(bytes);
+      // Clinical VCFs are often BGZF: concatenated gzip blocks. Node's zlib
+      // handles all members; some JS gzip helpers stop after the first block.
+      const out = gunzipSync(Buffer.from(bytes));
       const inner = filename.replace(/\.gz$/i, "");
       return { text: new TextDecoder().decode(out), innerName: inner };
     }
@@ -78,7 +91,7 @@ function decompressToText(
       return { text: strFromU8(entries[pick]), innerName: pick };
     }
     if (compression === "tar" || compression === "tgz") {
-      const raw = compression === "tgz" ? gunzipSync(bytes) : bytes;
+      const raw = compression === "tgz" ? new Uint8Array(gunzipSync(Buffer.from(bytes))) : bytes;
       const files = parseTar(raw);
       const pick = files.find((f) => /\.(txt|tsv|csv|vcf|json)$/i.test(f.name)) ?? files[0];
       if (!pick || !pick.data) return null;
@@ -98,6 +111,7 @@ export function parseDnaFileBytes(filename: string, bytes: Uint8Array): ParseRes
     variants: [],
     kind: shape.kind,
     compression: shape.compression,
+    stats: { rowsScanned: 0, curatedMatches: 0 },
   };
 
   // Alignment files & lone indexes: store metadata but skip parsing.
@@ -110,27 +124,30 @@ export function parseDnaFileBytes(filename: string, bytes: Uint8Array): ParseRes
 
   const innerLower = decoded.innerName.toLowerCase();
   if (innerLower.endsWith(".json") || shape.kind === "json") {
-    const { provider, variants } = parseDnaJson(decoded.text);
-    return { provider, variants, kind: "json", compression: shape.compression };
+    const { provider, variants, stats } = parseDnaJson(decoded.text);
+    return { provider, variants, kind: "json", compression: shape.compression, stats };
   }
   const result = parseDnaText(decoded.text);
+  const contentLooksVcf = result.provider === "vcf" || looksLikeVcf(decoded.text);
   return {
-    provider: result.provider,
+    provider: contentLooksVcf ? "vcf" : result.provider,
     variants: result.variants,
-    kind: result.provider === "vcf" ? "vcf" : "genotype",
+    kind: contentLooksVcf ? "vcf" : "genotype",
     compression: shape.compression,
+    stats: result.stats,
   };
 }
 
 /** Parse JSON exports: { rsid: genotype } maps, or arrays of {rsid, genotype}. */
-function parseDnaJson(text: string): { provider: DnaProvider; variants: ParsedVariant[] } {
+function parseDnaJson(text: string): { provider: DnaProvider; variants: ParsedVariant[]; stats: ParseResult["stats"] } {
   const out: ParsedVariant[] = [];
   const seen = new Set<string>();
+  let rowsScanned = 0;
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
   } catch {
-    return { provider: "unknown", variants: out };
+    return { provider: "unknown", variants: out, stats: { rowsScanned: 0, curatedMatches: 0 } };
   }
 
   const push = (rsid: string, genotype: string) => {
@@ -150,6 +167,7 @@ function parseDnaJson(text: string): { provider: DnaProvider; variants: ParsedVa
     if (Array.isArray(nested)) {
       for (const v of nested) {
         if (v && typeof v === "object") {
+          rowsScanned += 1;
           const r = (v as Record<string, unknown>);
           const rsid = String(r.rsid ?? r.id ?? r.snp ?? "");
           const gt = String(r.genotype ?? r.gt ?? r.alleles ?? "");
@@ -158,12 +176,14 @@ function parseDnaJson(text: string): { provider: DnaProvider; variants: ParsedVa
       }
     } else {
       for (const [k, v] of Object.entries(obj)) {
+        rowsScanned += 1;
         if (typeof v === "string") push(k, v);
       }
     }
   } else if (Array.isArray(parsed)) {
     for (const v of parsed) {
       if (v && typeof v === "object") {
+        rowsScanned += 1;
         const r = v as Record<string, unknown>;
         const rsid = String(r.rsid ?? r.id ?? r.snp ?? "");
         const gt = String(r.genotype ?? r.gt ?? r.alleles ?? "");
@@ -171,11 +191,11 @@ function parseDnaJson(text: string): { provider: DnaProvider; variants: ParsedVa
       }
     }
   }
-  return { provider: "unknown", variants: out };
+  return { provider: "unknown", variants: out, stats: { rowsScanned, curatedMatches: out.length } };
 }
 
 // Keep the original text parser available for the streamed path below.
-type TextParseResult = { provider: DnaProvider; variants: ParsedVariant[] };
+type TextParseResult = { provider: DnaProvider; variants: ParsedVariant[]; stats: ParseResult["stats"] };
 
 /**
  * Handles 23andMe (tsv: rsid\tchrom\tpos\tgenotype), AncestryDNA
@@ -185,12 +205,14 @@ type TextParseResult = { provider: DnaProvider; variants: ParsedVariant[] };
 export function parseDnaText(text: string): TextParseResult {
   const headerSample = text.slice(0, 4000);
   const provider = detectProvider(headerSample);
+  const isVcf = provider === "vcf" || looksLikeVcf(text);
   const out: ParsedVariant[] = [];
   const lines = text.split(/\r?\n/);
   const seen = new Set<string>();
+  let rowsScanned = 0;
 
   // VCF needs a different shape entirely.
-  if (provider === "vcf") {
+  if (isVcf) {
     // Detect genome build from header so we pick the right coordinate map first.
     // Fall back to trying both maps when undetectable.
     const headerLower = headerSample.toLowerCase();
@@ -218,6 +240,7 @@ export function parseDnaText(text: string): TextParseResult {
       }
       const cols = line.split("\t");
       if (cols.length < 5) continue;
+      rowsScanned += 1;
       // Try ID column first (semicolon-separated rsids possible).
       let rsid: string | undefined;
       const idField = cols[2];
@@ -258,7 +281,7 @@ export function parseDnaText(text: string): TextParseResult {
         position: Number.isFinite(Number(cols[1])) ? Number(cols[1]) : null,
       });
     }
-    return { provider, variants: out };
+    return { provider: "vcf", variants: out, stats: { rowsScanned, curatedMatches: out.length } };
   }
 
   // Generic tabular: try tab first, then comma. Skip comments / blank.
@@ -267,6 +290,7 @@ export function parseDnaText(text: string): TextParseResult {
     let cols = raw.split("\t");
     if (cols.length < 4) cols = raw.split(",");
     if (cols.length < 4) continue;
+    rowsScanned += 1;
     const rsid = cols[0]?.trim().replace(/^"|"$/g, "");
     if (!rsid || !rsid.startsWith("rs") || !CURATED_RSID_SET.has(rsid)) continue;
     if (seen.has(rsid)) continue;
@@ -289,5 +313,5 @@ export function parseDnaText(text: string): TextParseResult {
     out.push({ rsid, genotype, chromosome, position });
   }
 
-  return { provider, variants: out };
+  return { provider, variants: out, stats: { rowsScanned, curatedMatches: out.length } };
 }

@@ -78,7 +78,7 @@ function DnaPage() {
       if (result.kind === "bam" || result.kind === "cram" || result.kind === "index") {
         toast.message("Stored, but this file type isn't parsed.");
       } else {
-        toast.success(`Found ${result.variantCount} curated variants.`);
+        toast.success(formatParseToast(result.variantCount, result.stats));
       }
       regen({ data: { force: true } }).catch(() => undefined);
     },
@@ -122,7 +122,7 @@ function DnaPage() {
       } else if (result.kind === "index") {
         toast.message("Saved. Index file noted — we'll need the matching .vcf / .bam / .cram too.");
       } else {
-        toast.success(`Found ${result.variantCount} curated variants.`);
+        toast.success(formatParseToast(result.variantCount, result.stats));
       }
       qc.invalidateQueries({ queryKey: ["dna-files"] });
       // Regenerate care profile so prompts are gently informed.
@@ -142,6 +142,7 @@ function DnaPage() {
   const latestVariants = latest
     ? variants.filter((v) => v.file_id === latest.id)
     : [];
+  const latestStats = getParseStats(latest?.parse_stats);
   const variantByRsid = new Map(latestVariants.map((v) => [v.rsid, v.genotype]));
 
   // Group curated catalog by trait.
@@ -327,6 +328,17 @@ function DnaPage() {
             </button>
           </div>
 
+          <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl border border-border bg-card p-4">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Rows scanned</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">{formatNumber(latestStats.rowsScanned)}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Curated matches</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">{formatNumber(latestStats.curatedMatches)}</p>
+            </div>
+          </div>
+
           <div className="mt-4 space-y-8">
             {[...grouped.entries()].map(([trait, entries]) => {
               const rows = entries.filter((r) => {
@@ -361,7 +373,9 @@ function DnaPage() {
           {latestVariants.length === 0 && (
             <div className="mt-4 rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground inline-flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-              <p>We didn't find any curated variants in this file. It may use a non-standard format, try another export.</p>
+              <p>
+                The file was read, but none of Purple's small curated variant set was found. This can happen with clinical VCFs that omit or shift the exact marker positions we currently look for.
+              </p>
             </div>
           )}
 
@@ -418,6 +432,27 @@ function statusLabel(s: string, kind?: string | null): string {
 
 function isUnparseableKind(kind?: string | null): boolean {
   return kind === "bam" || kind === "cram" || kind === "index";
+}
+
+function getParseStats(raw: unknown): { rowsScanned: number; curatedMatches: number } {
+  if (!raw || typeof raw !== "object") return { rowsScanned: 0, curatedMatches: 0 };
+  const value = raw as Record<string, unknown>;
+  const rowsScanned = Number(value.rowsScanned ?? 0);
+  const curatedMatches = Number(value.curatedMatches ?? 0);
+  return {
+    rowsScanned: Number.isFinite(rowsScanned) ? rowsScanned : 0,
+    curatedMatches: Number.isFinite(curatedMatches) ? curatedMatches : 0,
+  };
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat().format(value);
+}
+
+function formatParseToast(variantCount: number, stats?: { rowsScanned?: number }): string {
+  const rows = stats?.rowsScanned ?? 0;
+  if (rows > 0) return `Scanned ${formatNumber(rows)} rows · found ${variantCount} curated variants.`;
+  return `Found ${variantCount} curated variants.`;
 }
 
 // Keep the linter quiet about unused imports in the helper grid.

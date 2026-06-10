@@ -68,7 +68,7 @@ export const parseDnaFile = createServerFn({ method: "POST" })
       const { parseDnaFileBytes } = await import("./dna-parse.server");
       const bytes = new Uint8Array(await blob.arrayBuffer());
       const fileName = file.storage_path.split("/").pop() ?? "";
-      const { provider, variants, kind, compression } = parseDnaFileBytes(fileName, bytes);
+      const { provider, variants, kind, compression, stats } = parseDnaFileBytes(fileName, bytes);
 
       // Replace any existing rows for this file (idempotent re-parse).
       await supabaseAdmin.from("dna_variants").delete().eq("file_id", file.id);
@@ -91,11 +91,12 @@ export const parseDnaFile = createServerFn({ method: "POST" })
           provider,
           kind,
           compression,
+          parse_stats: stats,
           parsed_at: new Date().toISOString(),
           error_message: null,
         })
         .eq("id", file.id);
-      return { ok: true as const, provider, variantCount: variants.length, kind, compression };
+      return { ok: true as const, provider, variantCount: variants.length, kind, compression, stats };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       await supabase
@@ -113,7 +114,7 @@ export const listDnaFiles = createServerFn({ method: "GET" })
     const { data: files, error } = await supabase
       .from("dna_files")
       .select(
-        "id, provider, kind, original_filename, byte_size, status, error_message, parsed_at, share_with_caregivers, created_at",
+        "id, provider, kind, original_filename, byte_size, status, error_message, parsed_at, parse_stats, share_with_caregivers, created_at",
       )
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
