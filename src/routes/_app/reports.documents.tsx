@@ -12,13 +12,15 @@ import {
   FlaskConical,
   Sparkles,
   RefreshCw,
+  Download,
 } from "lucide-react";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { listReports, processReport } from "@/lib/reports.functions";
+import { listReports, processReport, bulkDownloadReports } from "@/lib/reports.functions";
 import { toast } from "sonner";
+import JSZip from "jszip";
 import {
   Select,
   SelectTrigger,
@@ -88,6 +90,7 @@ function ReportsDocumentsPage() {
   const activeCategory = (search.category ?? null) as ReportCategorySlug | null;
   const fetchList = useServerFn(listReports);
   const reprocessOne = useServerFn(processReport);
+  const fetchBulkUrls = useServerFn(bulkDownloadReports);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["reports"],
     queryFn: () => fetchList(),
@@ -103,6 +106,7 @@ function ReportsDocumentsPage() {
   const [typeFilter, setTypeFilter] = React.useState<string>("all");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [bulkRetrying, setBulkRetrying] = React.useState(false);
+  const [bulkDownloading, setBulkDownloading] = React.useState(false);
 
   const yearOf = (r: ReportRow) => {
     const d = r.report_date ?? r.created_at;
@@ -190,6 +194,58 @@ function ReportsDocumentsPage() {
       toast.error(`${fail} could not be re-queued. Try again in a moment.`);
     }
     await refetch();
+  }
+
+  async function downloadFilteredAsZip() {
+    const readyOnes = filtered.filter((r) => r.status === "ready" || r.status === "processing" || r.status === "failed");
+    if (readyOnes.length === 0) {
+      toast.info("No reports to download.");
+      return;
+    }
+    if (readyOnes.length > 200) {
+      toast.error("Too many reports - narrow filters to under 200.");
+      return;
+    }
+    setBulkDownloading(true);
+    try {
+      const { items } = await fetchBulkUrls({ data: { reportIds: readyOnes.map((r) => r.id) } });
+      if (items.length === 0) {
+        toast.error("Couldn't prepare downloads.");
+        return;
+      }
+      const zip = new JSZip();
+      let added = 0;
+      for (const it of items) {
+        try {
+          const res = await fetch(it.url);
+          if (!res.ok) continue;
+          const buf = await res.arrayBuffer();
+          zip.file(it.suggestedName, buf);
+          added += 1;
+        } catch {
+          /* skip */
+        }
+      }
+      if (added === 0) {
+        toast.error("Couldn't download report files.");
+        return;
+      }
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.download = `purple-reports-${stamp}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success(`Downloaded ${added} report${added === 1 ? "" : "s"}.`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Bulk download failed.");
+    } finally {
+      setBulkDownloading(false);
+    }
   }
 
   return (
@@ -345,15 +401,33 @@ function ReportsDocumentsPage() {
             <FileText className="h-4 w-4 text-white/70" />
             <h2 className="font-serif text-2xl">Contributing reports</h2>
           </div>
-          {reports.some((r) => r.status === "processing") && (
-            <button
-              type="button"
-              onClick={() => void refetch()}
-              className="text-xs text-white/55 hover:text-white"
-            >
-              Refresh
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {filtered.length > 0 && (
+              <button
+                type="button"
+                onClick={() => void downloadFilteredAsZip()}
+                disabled={bulkDownloading}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/75 hover:bg-white/5 disabled:opacity-50"
+                title={`Download ${filtered.length} report${filtered.length === 1 ? "" : "s"} as a zip`}
+              >
+                {bulkDownloading ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Download className="h-3 w-3" />
+                )}
+                {bulkDownloading ? "Zipping…" : `Download ${filtered.length}`}
+              </button>
+            )}
+            {reports.some((r) => r.status === "processing") && (
+              <button
+                type="button"
+                onClick={() => void refetch()}
+                className="text-xs text-white/55 hover:text-white"
+              >
+                Refresh
+              </button>
+            )}
+          </div>
         </div>
 
         {isLoading ? (
