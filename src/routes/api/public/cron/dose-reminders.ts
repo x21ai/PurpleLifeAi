@@ -63,7 +63,7 @@ export const Route = createFileRoute("/api/public/cron/dose-reminders")({
 
         if (error) {
           console.error("[cron] dose-reminders fetch error", error);
-          return Response.json({ ok: false, error: error.message }, { status: 500 });
+          return Response.json({ ok: false, error: "Internal server error" }, { status: 500 });
         }
 
         // Missed-dose escalation: pending and not yet escalated, scheduled 25–35 min ago.
