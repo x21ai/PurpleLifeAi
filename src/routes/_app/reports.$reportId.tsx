@@ -2,10 +2,10 @@ import * as React from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Trash2, ExternalLink, TrendingUp, ShieldCheck, AlertTriangle, Share2, Download } from "lucide-react";
+import { Loader2, Trash2, ExternalLink, TrendingUp, ShieldCheck, AlertTriangle, Share2, Download, Sparkles, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouteTheme } from "@/lib/use-route-theme";
-import { getReport, deleteReport, getMetricTrend, processReport, setReportIdentityDecision, getReportFileUrl } from "@/lib/reports.functions";
+import { getReport, deleteReport, getMetricTrend, processReport, setReportIdentityDecision, getReportFileUrl, summarizeReport } from "@/lib/reports.functions";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceArea, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
@@ -255,6 +255,10 @@ function ReportDetailPage() {
           <p className="report-eyebrow text-white/55">Summary</p>
           <p className="mt-3 text-[15px] text-white/85 leading-relaxed whitespace-pre-wrap">{report.summary}</p>
         </section>
+      )}
+
+      {report.status === "ready" && (
+        <AiExplainSection reportId={reportId} />
       )}
 
       {signedUrl && (
