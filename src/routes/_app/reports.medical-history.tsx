@@ -306,6 +306,7 @@ function MedicalHistoryPage() {
           </p>
         )}
       </section>
+      </ProGate>
     </div>
   );
 }
