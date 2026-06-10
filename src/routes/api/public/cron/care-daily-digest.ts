@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/public/cron/care-daily-digest")({
         } catch (err) {
           console.error("[cron] care-daily-digest failed", err);
           return Response.json(
-            { ok: false, error: err instanceof Error ? err.message : "Unknown error" },
+            { ok: false, error: "Internal server error" },
             { status: 500 },
           );
         }
