@@ -175,7 +175,7 @@ type TextParseResult = { provider: DnaProvider; variants: ParsedVariant[] };
  * (rsid\tchrom\tpos\tallele1\tallele2), MyHeritage (csv variant), and
  * minimal VCF (#CHROM POS ID ... + sample col with GT field).
  */
-export function parseDnaText(text: string): ParseResult {
+export function parseDnaText(text: string): TextParseResult {
   const headerSample = text.slice(0, 4000);
   const provider = detectProvider(headerSample);
   const out: ParsedVariant[] = [];
