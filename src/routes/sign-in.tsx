@@ -203,9 +203,9 @@ function SignInPage() {
   };
 
   return (
-    <div className="relative min-h-dvh bg-background text-foreground">
+    <div className="relative min-h-dvh text-foreground">
       {/* Full-bleed hero photo */}
-      <div className="fixed inset-0 -z-10">
+      <div className="fixed inset-0 -z-10 bg-background">
         <ResponsiveImage
           asset={signInImages.hero}
           priority
