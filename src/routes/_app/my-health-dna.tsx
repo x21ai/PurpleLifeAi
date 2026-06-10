@@ -78,7 +78,7 @@ function DnaPage() {
       if (result.kind === "bam" || result.kind === "cram" || result.kind === "index") {
         toast.message("Stored, but this file type isn't parsed.");
       } else {
-        toast.success(`Found ${result.variantCount} curated variants.`);
+        toast.success(formatParseToast(result.variantCount, result.stats));
       }
       regen({ data: { force: true } }).catch(() => undefined);
     },
@@ -122,7 +122,7 @@ function DnaPage() {
       } else if (result.kind === "index") {
         toast.message("Saved. Index file noted — we'll need the matching .vcf / .bam / .cram too.");
       } else {
-        toast.success(`Found ${result.variantCount} curated variants.`);
+        toast.success(formatParseToast(result.variantCount, result.stats));
       }
       qc.invalidateQueries({ queryKey: ["dna-files"] });
       // Regenerate care profile so prompts are gently informed.
@@ -142,6 +142,7 @@ function DnaPage() {
   const latestVariants = latest
     ? variants.filter((v) => v.file_id === latest.id)
     : [];
+  const latestStats = getParseStats(latest?.parse_stats);
   const variantByRsid = new Map(latestVariants.map((v) => [v.rsid, v.genotype]));
 
   // Group curated catalog by trait.
