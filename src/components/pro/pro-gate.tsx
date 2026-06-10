@@ -5,8 +5,10 @@ import { useIsPro, type ProFeature } from "@/lib/pro-gate";
 
 interface ProGateProps {
   feature: ProFeature;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   fallback?: React.ReactNode;
+  /** "card" (default) renders a full upgrade card. "inline" renders a compact pill that fits inside toolbars/composers. */
+  variant?: "card" | "inline";
 }
 
 const COPY: Record<ProFeature, { title: string; body: string }> = {
@@ -28,12 +30,23 @@ const COPY: Record<ProFeature, { title: string; body: string }> = {
   },
 };
 
-export function ProGate({ feature, children, fallback }: ProGateProps) {
+export function ProGate({ feature, children, fallback, variant = "card" }: ProGateProps) {
   const { isPro, loading } = useIsPro();
   if (loading) return null;
   if (isPro) return <>{children}</>;
   if (fallback) return <>{fallback}</>;
   const c = COPY[feature];
+  if (variant === "inline") {
+    return (
+      <Link
+        to="/account"
+        className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--purple-primary)]/40 bg-[color:var(--purple-primary)]/10 px-3 py-1.5 text-[12px] font-medium text-[color:var(--purple-primary)] hover:bg-[color:var(--purple-primary)]/15 transition"
+        title={c.body}
+      >
+        <Sparkles className="h-3 w-3" /> Pro · {c.title.replace(/ is a Pro feature$/, "")}
+      </Link>
+    );
+  }
   return (
     <div className="rounded-3xl border border-border bg-card p-6 sm:p-8">
       <div className="inline-flex items-center gap-2 rounded-full bg-[color:var(--purple-primary)]/15 px-3 py-1 text-[11px] uppercase tracking-wider text-[color:var(--purple-primary)]">

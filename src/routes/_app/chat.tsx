@@ -17,6 +17,35 @@ import { DisclaimerFooter } from "@/components/chat/disclaimer-footer";
 import { FollowUpChips } from "@/components/chat/follow-up-chips";
 import { useVoiceCapture } from "@/components/journal/use-voice-capture";
 import { executePurpleAction } from "@/lib/purple-actions.functions";
+import { useIsPro } from "@/lib/pro-gate";
+import { ProGate } from "@/components/pro/pro-gate";
+
+const FREE_DAILY_LIMIT = 10;
+const ASK_LIMIT_STORAGE_KEY = "purple-ask-message-stamps";
+
+function readStamps(): number[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(ASK_LIMIT_STORAGE_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    return arr.filter((n) => typeof n === "number" && n > cutoff);
+  } catch {
+    return [];
+  }
+}
+
+function pushStamp() {
+  if (typeof window === "undefined") return;
+  const next = [...readStamps(), Date.now()];
+  try {
+    window.localStorage.setItem(ASK_LIMIT_STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore quota errors */
+  }
+}
 
 type ProposalKind =
   | "add_medication"
@@ -44,6 +73,12 @@ function AskPage() {
   const { session } = useAuth();
   const userId = session?.user.id;
   const accessToken = session?.access_token;
+  const { isPro } = useIsPro();
+  const [usedToday, setUsedToday] = React.useState(0);
+  React.useEffect(() => {
+    setUsedToday(readStamps().length);
+  }, []);
+  const overLimit = !isPro && usedToday >= FREE_DAILY_LIMIT;
   const [conditions, setConditions] = React.useState<string[] | null>(null);
   React.useEffect(() => {
     if (!userId) return;
@@ -100,10 +135,19 @@ function AskPage() {
     (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || thinking) return;
+      if (!isPro && readStamps().length >= FREE_DAILY_LIMIT) {
+        setUsedToday(readStamps().length);
+        toast.error("You've used today's free Ask Purple messages. Upgrade for unlimited.");
+        return;
+      }
       setInput("");
       void sendMessage({ text: trimmed });
+      if (!isPro) {
+        pushStamp();
+        setUsedToday(readStamps().length);
+      }
     },
-    [sendMessage, thinking],
+    [sendMessage, thinking, isPro],
   );
 
   const toggleMic = async () => {
@@ -235,6 +279,11 @@ function AskPage() {
 
       <div className="fixed bottom-16 md:static md:bottom-auto left-0 right-0 border-t border-border/40 bg-background/95 backdrop-blur px-4 sm:px-10 lg:px-16 py-4">
         <DisclaimerFooter />
+        {overLimit ? (
+          <div className="mx-auto max-w-3xl">
+            <ProGate feature="ask_unlimited" />
+          </div>
+        ) : (
         <div className="mx-auto max-w-3xl flex items-end gap-3">
           <textarea
             ref={inputRef}
@@ -267,6 +316,12 @@ function AskPage() {
             {thinking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
+        )}
+        {!isPro && !overLimit && usedToday >= FREE_DAILY_LIMIT - 3 && (
+          <p className="mx-auto max-w-3xl mt-2 text-[11px] text-muted-foreground text-right">
+            {FREE_DAILY_LIMIT - usedToday} free message{FREE_DAILY_LIMIT - usedToday === 1 ? "" : "s"} left today.
+          </p>
+        )}
       </div>
     </div>
   );

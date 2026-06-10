@@ -10,6 +10,7 @@ import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceArea, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
 import { ReportShell, ReportCard, ReportPill } from "@/components/reports/report-shell";
+import { ProGate } from "@/components/pro/pro-gate";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -222,20 +223,22 @@ function ReportDetailPage() {
             )}
             Download
           </Button>
-          <Button
-            onClick={() => void openOrShare("share")}
-            disabled={openingFile !== null}
-            variant="ghost"
-            size="sm"
-            className="rounded-full text-white/85 hover:bg-white/5 hover:text-white"
-          >
-            {openingFile === "share" ? (
-              <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-            ) : (
-              <Share2 className="h-4 w-4 mr-1.5" />
-            )}
-            Share
-          </Button>
+          <ProGate feature="report_sharing" variant="inline">
+            <Button
+              onClick={() => void openOrShare("share")}
+              disabled={openingFile !== null}
+              variant="ghost"
+              size="sm"
+              className="rounded-full text-white/85 hover:bg-white/5 hover:text-white"
+            >
+              {openingFile === "share" ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <Share2 className="h-4 w-4 mr-1.5" />
+              )}
+              Share
+            </Button>
+          </ProGate>
           <Button
             onClick={handleDelete}
             variant="ghost"
