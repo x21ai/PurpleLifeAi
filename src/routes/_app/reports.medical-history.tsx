@@ -18,7 +18,11 @@ import {
   shareMedicalReportInThread,
 } from "@/lib/medical-report.functions";
 import { listCareThreads } from "@/lib/care-chat.functions";
-import { createMedicalReportShareLink } from "@/lib/medical-report-share.functions";
+import {
+  createMedicalReportShareLink,
+  listMedicalReportShareLinks,
+  revokeMedicalReportShareLink,
+} from "@/lib/medical-report-share.functions";
 import {
   listMedicalReportSchedules,
   upsertMedicalReportSchedule,
