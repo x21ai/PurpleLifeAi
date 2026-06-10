@@ -26,7 +26,7 @@ import { QuickLogVitalSheet, type VitalKind } from "@/components/insights/quick-
 import { SetGoalSheet } from "@/components/insights/set-goal-sheet";
 import { Target, Wand2, Loader2 } from "lucide-react";
 import { getDailyInsightCards } from "@/lib/report-trends.functions";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 type SeizureRow = {
   id: string;
@@ -124,6 +124,7 @@ type BioRow = {
 
 function ForYouRow() {
   const fetchCards = useServerFn(getDailyInsightCards);
+  const qc = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["daily-insight-cards"],
     queryFn: () => fetchCards({ data: {} }),
@@ -132,14 +133,9 @@ function ForYouRow() {
   const regen = useMutation({
     mutationFn: () => fetchCards({ data: { force: true } }),
     onSuccess: (res) => {
-      queryKeyset(res);
+      qc.setQueryData(["daily-insight-cards"], res);
     },
   });
-  // light helper to keep React Query cache aligned with mutation output
-  function queryKeyset(res: Awaited<ReturnType<typeof fetchCards>>) {
-    // no-op; useQuery will refetch via key change on next mount. We optimistically refetch:
-    void res;
-  }
 
   const cards = data?.cards ?? [];
   const headline = data?.headline ?? null;
