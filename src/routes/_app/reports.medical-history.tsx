@@ -24,6 +24,7 @@ import {
   upsertMedicalReportSchedule,
   deleteMedicalReportSchedule,
 } from "@/lib/medical-report-schedules.functions";
+import { ProGate } from "@/components/pro/pro-gate";
 
 export const Route = createFileRoute("/_app/reports/medical-history")({
   component: MedicalHistoryPage,
@@ -233,6 +234,7 @@ function MedicalHistoryPage() {
         </ul>
       </section>
 
+      <ProGate feature="report_sharing">
       <section className="rounded-2xl border border-white/10 bg-card/60 p-5 space-y-3">
         <div className="flex items-center justify-between">
           <div>
