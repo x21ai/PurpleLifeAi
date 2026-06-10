@@ -140,8 +140,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Open-source health intelligence for epilepsy and pattern-driven conditions. Free forever. No ads.",
       },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/31c0effc-cee5-466e-980a-6e840d1e73d2/id-preview-e618ecd3--f43135c6-2e21-4f4c-9c81-6a19bf99587f.lovable.app-1779606381200.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/31c0effc-cee5-466e-980a-6e840d1e73d2/id-preview-e618ecd3--f43135c6-2e21-4f4c-9c81-6a19bf99587f.lovable.app-1779606381200.png" },
+      { property: "og:image", content: "https://www.purplelife.org/og-cover.jpg" },
+      { property: "og:image:width", content: "1216" },
+      { property: "og:image:height", content: "640" },
+      { property: "og:image:alt", content: "Purple, a quiet companion for your health" },
+      { name: "twitter:image", content: "https://www.purplelife.org/og-cover.jpg" },
     ],
     links: [
       {
@@ -150,10 +153,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      // Non-blocking font load: request as print, swap to all once loaded.
+      // <noscript> fallback in RootShell ensures fonts still apply without JS.
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap",
-      },
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap",
+        media: "print",
+        onLoad: "this.media='all'",
+      } as unknown as { rel: string; href: string },
       { rel: "manifest", href: "/manifest.json" },
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/icon-192.png" },
       { rel: "apple-touch-icon", href: "/icon-192.png" },
