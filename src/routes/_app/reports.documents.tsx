@@ -436,6 +436,32 @@ function ReportsDocumentsPage() {
           </div>
           <div className="flex items-center gap-2">
             {filtered.length > 0 && (
+              <div className="inline-flex items-center gap-0.5 rounded-full border border-white/10 bg-white/5 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] transition",
+                    viewMode === "list" ? "bg-white/15 text-white" : "text-white/55 hover:text-white",
+                  )}
+                  title="List view"
+                >
+                  <List className="h-3 w-3" /> List
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("timeline")}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] transition",
+                    viewMode === "timeline" ? "bg-white/15 text-white" : "text-white/55 hover:text-white",
+                  )}
+                  title="Timeline view"
+                >
+                  <CalendarRange className="h-3 w-3" /> Timeline
+                </button>
+              </div>
+            )}
+            {filtered.length > 0 && (
               <button
                 type="button"
                 onClick={() => void downloadFilteredAsZip()}
