@@ -53,7 +53,7 @@ function CommunityFeed() {
     (async () => {
       let q = supabase
         .from("community_posts")
-        .select("id, user_id, title, body, topic, created_at, pinned")
+        .select("id, title, body, topic, created_at, pinned")
         .eq("hidden", false)
         .order("pinned", { ascending: false })
         .order("created_at", { ascending: false })
