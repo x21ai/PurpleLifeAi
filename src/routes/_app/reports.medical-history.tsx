@@ -333,6 +333,13 @@ function ReportRow({
   const [linkDays, setLinkDays] = useState(7);
   const [linkLabel, setLinkLabel] = useState("");
   const [createdUrl, setCreatedUrl] = useState<string | null>(null);
+  const listLinks = useServerFn(listMedicalReportShareLinks);
+  const revokeLink = useServerFn(revokeMedicalReportShareLink);
+  const linksQ = useQuery({
+    queryKey: ["medical-history", "share-links", report.id],
+    queryFn: () => listLinks({ data: { reportId: report.id } }),
+    enabled: mode === "link",
+  });
 
   return (
     <li className="rounded-xl border border-white/10 bg-card/40 p-4">
