@@ -1,0 +1,38 @@
+---
+description: Server function, auth, and secrets patterns for src/lib and src/routes/api. Apply when writing or editing server-side code.
+globs:
+  - "src/lib/**"
+  - "src/routes/api/**"
+  - "src/integrations/**"
+alwaysApply: false
+---
+
+# Server functions and auth
+
+## The two-file pattern
+
+- `src/lib/<feature>.functions.ts`: `createServerFn()` RPCs callable from the client. These validate input with zod, attach auth via middleware, and contain no secrets.
+- `src/lib/<feature>.server.ts`: server-only modules that hold secret-bearing clients (Stripe, AI providers, web-push, Whoop/Oura). Only imported dynamically from `*.functions.ts` or API routes, never from client components.
+
+Keep new server code in this shape. Do not put `process.env.<SECRET>` reads in `*.functions.ts` or any client-reachable module.
+
+## Auth requirements
+
+- Every protected server function uses the Supabase auth middleware (`src/integrations/supabase/auth-middleware.ts`), which validates the Bearer JWT and exposes `{ supabase, userId }`. The client side attaches tokens via `src/integrations/supabase/auth-attacher.ts`, wired globally in `src/start.ts`.
+- Every protected API route under `src/routes/api/` verifies auth explicitly. Public endpoints live under `src/routes/api/public/` and must validate their own secret (`CRON_SECRET` for cron, Stripe signature for webhooks, HMAC for email hooks).
+- Admin-only functions check the role through `src/lib/use-is-admin.ts` server equivalents, not client-side flags alone.
+
+## Multi-user data scoping
+
+- All queries scope by the authenticated `userId`. Caregiver reads/writes go through care scopes (`src/lib/care.scopes.ts`) and the `care_relationships` tables.
+- Write operations on shared or sensitive data log an audit entry after success (`care_audit_log`, `phi_access_log`, `platform_rule_audit` are the existing patterns).
+- Unauthorized cross-user access returns 404, never 403.
+
+## SQL
+
+- Migrations live in `supabase/migrations/`. Any dynamic SQL uses parameterized queries or tagged templates, never string concatenation.
+- New tables ship with RLS enabled and policies in the same migration file.
+
+## Email
+
+- Transactional email goes through the queue: `src/lib/email/send.ts` (HTTP, user-context) or `src/lib/email/render-and-enqueue.server.ts` (cron, service-role). Templates are React Email components in `src/lib/email-templates/`. Always check `suppressed_emails` before sending.

@@ -1,0 +1,21 @@
+---
+description: Cloudflare Workers runtime constraints for SSR, API routes, and build config.
+globs:
+  - "src/server.ts"
+  - "src/routes/api/**"
+  - "wrangler.jsonc"
+  - "vite.config.ts"
+alwaysApply: false
+---
+
+# Cloudflare Workers constraints
+
+The production runtime is a Cloudflare Worker (`wrangler.jsonc`, `main: src/server.ts`, `nodejs_compat` enabled). Everything that runs server-side must be Workers-compatible.
+
+- No Node APIs outside the `nodejs_compat` surface. No `fs`, no native addons, no long-lived in-memory state between requests (each isolate can be evicted at any time).
+- `src/server.ts` is the fetch entry; it wraps the TanStack Start server entry with a branded SSR error page. The redirect from the default entry is configured in `vite.config.ts` (`tanstackStart.server.entry: "server"`). Keep both in sync.
+- Streaming responses (AI chat in `src/routes/api/chat.ts`) must return the stream directly, never buffer the whole response.
+- CPU-heavy work (PDF generation via `pdf-lib`, DNA file parsing, image processing) should stay within Workers CPU limits; chunk large parses and prefer pushing heavy jobs to Supabase edge functions or queues.
+- Secrets come from the Workers environment (dashboard or `wrangler secret put`), not `.env` files and never committed defaults. `VITE_*` vars are build-time and public; anything sensitive must be a non-VITE server var.
+- Scheduled work is exposed as HTTP cron endpoints under `src/routes/api/public/cron/*`, each guarded by `CRON_SECRET`. When adding one, also register the trigger (Cloudflare Cron Trigger or external scheduler) and document it in `CURSOR_HANDOFF.md`.
+- `vite.config.ts` currently wraps `@lovable.dev/vite-tanstack-config`, which injects tanstackStart, react, tailwind, tsconfig paths, and the Cloudflare plugin. Do not add those plugins manually while the wrapper is in place or the build breaks with duplicate plugins. See `docs/LOVABLE-MIGRATION.md` before touching this.
