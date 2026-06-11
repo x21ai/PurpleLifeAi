@@ -11,7 +11,7 @@ Status (2026-06-11):
 | 3. Email to Resend | CODE DONE, needs `RESEND_API_KEY`, domain verification, hook/webhook configuration |
 | 4. AI to Anthropic | CODE DONE, needs `ANTHROPIC_API_KEY` in Worker + edge function secrets, migration `20260611010000` applied, edge functions redeployed |
 | 5. Branding sweep | DONE (dev tooling intentionally kept) |
-| 6. Performance | PENDING |
+| 6. Performance | DONE (caching pass; bundle/images/fonts were already in good shape) |
 | 7. Cloudflare cutover | PENDING (worker renamed `purplelife`; needs Cloudflare credentials, secrets, DNS) |
 
 Decisions locked: Resend for email, Anthropic for platform AI, `AstroAii/purpledrw` as the canonical repo, worker name `purplelife`, dual Cursor + Lovable development.
@@ -76,16 +76,16 @@ Verify: chat streams, daily insight cards generate, risk forecaster narrative re
 4. `package.json` and `wrangler.jsonc` renamed to `purplelife`.
 5. Kept on purpose (Lovable remains a dev environment): `@lovable.dev/vite-tanstack-config`, `.lovable/`, the preview-host service worker checks in `src/lib/med-notifications.ts`, and the AI fallback in `ai-gateway.server.ts`.
 
-## Phase 6: Performance
+## Phase 6: Performance (DONE)
 
-Targets: marketing pages (first impression, SEO) and the app shell.
+Audit findings (2026-06-11): the heavy work was already in place. Route-level code splitting keeps `recharts` (368 kB), `jszip` (96 kB), and chat (256 kB) out of marketing chunks; marketing heroes ship AVIF/WebP srcsets with explicit dimensions, `loading="lazy"` below the fold, and `fetchpriority="high"` on the LCP image only; Google Fonts load async (preconnect + print-media swap + noscript fallback).
 
-1. **Bundle**: build with `--mode production` and inspect chunks (rollup-plugin-visualizer or `vite-bundle-visualizer`). Known heavy deps to keep out of marketing-page chunks: `recharts`, `pdf-lib`, `jszip`/`fflate`, `react-email` renderer, `embla-carousel`. Confirm route-level code splitting is effective; lazy-load chart and PDF code behind user interaction.
-2. **Images**: `vite-imagetools` is installed; ensure every marketing hero emits AVIF/WebP `srcset` with explicit width/height (CLS) and `loading="lazy"` below the fold, `fetchpriority="high"` on the LCP image only.
-3. **Fonts**: self-host with `font-display: swap` and preload only the weights used above the fold.
-4. **SSR caching**: marketing routes are static per-locale; add `Cache-Control: public, s-maxage` headers (Cloudflare edge cache) for `/`, `/about`, `/features`, `/pricing`, `/charter`, `/privacy`, `/terms`, `/how-purple-thinks`. Keep app routes `private`.
-5. **Dev-only weight**: removing `lovable-tagger` (Phase 1) trims dev transforms; verify no tagger artifacts ship in prod.
-6. Measure before/after with Lighthouse against the deployed Worker (LCP, TBT, CLS) and record results in `CURSOR_HANDOFF.md`.
+Landed:
+
+1. **Immutable asset caching**: `public/_headers` (honored by Cloudflare Workers static assets) sets `max-age=31536000, immutable` for `/assets/*`, daily revalidation for icons/OG image, and `no-cache` for `sw.js` so PWA updates roll out promptly.
+2. **Edge caching for marketing SSR HTML**: `src/server.ts` serves `/`, `/about`, `/features`, `/pricing`, `/charter`, `/contact`, `/privacy`, `/terms`, `/how-purple-thinks` from `caches.default` with `public, max-age=60, s-maxage=300, stale-while-revalidate=600`. Safe because SSR output never varies by user (auth lives in localStorage) and SSR always renders the `en` locale. TTL kept short so new deploys (new hashed asset URLs) propagate within minutes. Community and all app/auth routes are never cached.
+
+Remaining (after cutover): run Lighthouse against the deployed Worker and record LCP/TBT/CLS in `CURSOR_HANDOFF.md`. The shared client entry chunk (~824 kB minified, framework + Supabase + i18n) is the next candidate if scores need more headroom.
 
 ## Phase 7: Cloudflare cutover
 
