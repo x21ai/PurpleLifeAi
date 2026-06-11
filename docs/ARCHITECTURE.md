@@ -1,6 +1,6 @@
 # Purple Architecture
 
-Purple is an AI-powered health journal for people managing epilepsy and other pattern-driven conditions. Brand domain: `https://www.purplelife.org`. This document describes how the system is put together. For the feature inventory see `docs/FEATURES.md`; for the Lovable exit plan see `docs/LOVABLE-MIGRATION.md`; for the current operational state see `CURSOR_HANDOFF.md`.
+PurpleLife is an AI health journal for any health management (epilepsy was the founding focus; the condition catalog is general). Brand domain: `https://www.purplelife.org`. This document describes how the system is put together. For the feature inventory see `docs/FEATURES.md`; for the Lovable exit plan see `docs/LOVABLE-MIGRATION.md`; for the current operational state see `CURSOR_HANDOFF.md`.
 
 ## Stack
 
@@ -11,8 +11,8 @@ Purple is an AI-powered health journal for people managing epilepsy and other pa
 | Styling | Tailwind CSS 4, shadcn/ui (`src/components/ui/`), Oura-styled variants (`src/components/ui-oura/`) |
 | Data | Supabase: Postgres (~100 migrations), Auth, Storage, Edge Functions, pgvector, PGMQ |
 | Payments | Stripe (subscriptions, promo codes, webhooks) |
-| AI | Vercel AI SDK (`ai`, `@ai-sdk/*`); providers: Lovable gateway (default, being replaced), Anthropic, OpenAI, Gemini, Grok |
-| Email | React Email templates, queue in Postgres (PGMQ), delivery via Lovable email (being replaced), suppression via Mailgun webhooks |
+| AI | Vercel AI SDK (`ai`, `@ai-sdk/*`); Anthropic Claude is the platform default, with OpenAI, Gemini, and Grok as user-selectable options |
+| Email | React Email templates, queue in Postgres (PGMQ), delivery via Resend, suppression via Resend bounce/complaint webhooks |
 | Hosting | Cloudflare Workers (`wrangler.jsonc`, `nodejs_compat`), SSR worker entry `src/server.ts` |
 | i18n | i18next + react-i18next, `en` and `es` |
 | Tests | Playwright e2e (`tests/e2e/`), 5 viewport projects |
@@ -41,7 +41,7 @@ File-based under `src/routes/`, generated into `src/routeTree.gen.ts` (never han
   - `/api/public/stripe-webhook`: Stripe signature-verified webhooks.
   - `/api/public/hooks/*`: Apple Health ingest, risk forecaster callbacks.
   - `/api/public/cron/*`: 8 endpoints (dose reminders, Oura/Whoop sync, care digests, weekly recap, email queue pump, etc.), each guarded by `CRON_SECRET`.
-- **Legacy Lovable email routes** (`src/routes/lovable/email/*`): auth email webhook, transactional send, queue processor, previews, suppression webhook. Slated for replacement, see `docs/LOVABLE-MIGRATION.md`.
+- **Email routes** (`src/routes/api/email/*`): Supabase send-email hook (`auth/webhook`), transactional send, queue processor (Resend delivery), suppression webhook (Resend events), template previews.
 
 ## Server code pattern
 
@@ -53,7 +53,7 @@ Two-file split in `src/lib/`, roughly 35 + 14 files:
 ## Auth
 
 - Email/password: direct Supabase Auth.
-- Apple/Google OAuth: currently routed through `@lovable.dev/cloud-auth-js` (`src/integrations/lovable/index.ts`), which returns tokens that are installed into the Supabase session via `supabase.auth.setSession()`. `src/lib/auth-oauth.ts` handles callback detection. Direct Supabase OAuth setup is documented in `docs/oauth-provider-setup.md` and is the migration target.
+- Apple/Google OAuth: native `supabase.auth.signInWithOAuth()` (`src/components/auth/social-sign-in-buttons.tsx`); `src/lib/auth-oauth.ts` handles callback detection. Provider setup is documented in `docs/oauth-provider-setup.md`.
 - Session state and locale seeding: `src/integrations/supabase/auth-context.tsx`.
 - Roles: `user_roles` table; admin routes check server-side.
 

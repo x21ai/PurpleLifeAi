@@ -1,8 +1,20 @@
 # Lovable Exit Plan: branding, performance, Cloudflare cutover
 
-Goal: remove all Lovable dependencies and branding, optimize page speed, and serve production from our own Cloudflare account (Workers + static assets) instead of Lovable-managed hosting.
+Goal: remove Lovable service dependencies and branding, optimize page speed, and serve production from our own Cloudflare account (Workers + static assets) instead of Lovable-managed hosting. Lovable remains a supported development environment (decision 2026-06-11), so dev tooling (`@lovable.dev/vite-tanstack-config`, `.lovable/`, preview-host checks) is intentionally kept.
 
-Status: PLANNED. Each phase lists concrete edits, blockers, and verification. Phases are ordered by dependency; 1 to 3 are independent of each other, 4 depends on 1, 5 depends on everything.
+Status (2026-06-11):
+
+| Phase | Status |
+|-------|--------|
+| 1. Vite unwrap | CANCELLED, wrapper kept for Lovable dev compatibility (only the import was fixed to the ESM build for Node 22) |
+| 2. OAuth to native Supabase | CODE DONE, needs new Google/Apple codes configured in the Supabase dashboard |
+| 3. Email to Resend | CODE DONE, needs `RESEND_API_KEY`, domain verification, hook/webhook configuration |
+| 4. AI to Anthropic | CODE DONE, needs `ANTHROPIC_API_KEY` in Worker + edge function secrets, migration `20260611010000` applied, edge functions redeployed |
+| 5. Branding sweep | DONE (dev tooling intentionally kept) |
+| 6. Performance | PENDING |
+| 7. Cloudflare cutover | PENDING (worker renamed `purplelife`; needs Cloudflare credentials, secrets, DNS) |
+
+Decisions locked: Resend for email, Anthropic for platform AI, `AstroAii/purpledrw` as the canonical repo, worker name `purplelife`, dual Cursor + Lovable development.
 
 ## Current Lovable coupling map
 
@@ -16,71 +28,53 @@ Status: PLANNED. Each phase lists concrete edits, blockers, and verification. Ph
 | Host checks | `src/lib/med-notifications.ts` skips SW on `lovableproject.com` etc. | Harmless; remove once off Lovable previews |
 | Metadata | `.lovable/` folder, `bunfig.toml` exclusion, `.env` comments | Delete after cutover |
 
-## Phase 1: Unwrap the Vite config
+## Phase 1: Vite config (CANCELLED, wrapper kept)
 
-Replace `defineConfig` from `@lovable.dev/vite-tanstack-config` with an explicit config. The wrapper currently injects (per its own comments): `tanstackStart` (entry redirect to `src/server.ts`), `@vitejs/plugin-react`, `@tailwindcss/vite`, `vite-tsconfig-paths`, `@cloudflare/vite-plugin` (build-only), `lovable-tagger` (dev-only, drop it), `VITE_*` env injection, `@` alias, React/TanStack dedupe, error logger plugins, and dev server port/host settings.
+Decision: Lovable remains a development environment, and its editor/preview tooling depends on `@lovable.dev/vite-tanstack-config` (dev-server bridge, HMR gate, component tagger). All of it is dev-only and does not ship to production, so the wrapper stays.
 
-Edits:
+One fix landed: the import in `vite.config.ts` points at `@lovable.dev/vite-tanstack-config/dist/index.js` (the ESM build). The package has no `exports` map, so the bare specifier resolves to the CJS build, which `require()`s Vite's ESM entry in a cycle and crashes config loading on Node 22+.
 
-1. Rewrite `vite.config.ts` with those plugins directly (all already in `package.json` except `vite-tsconfig-paths`, which arrives via `vite-tsconfig-paths` dep, present). Keep `imagetools()`, the `entities` aliases, `optimizeDeps`, and `tanstackStart.server.entry: "server"`.
-2. Set dev server `port: 8080` explicitly (Playwright config expects it).
-3. Remove `@lovable.dev/vite-tanstack-config` from devDependencies and `bunfig.toml`.
+## Phase 2: OAuth to native Supabase (CODE DONE)
 
-Verify: `bun run build` succeeds, `bun run dev` serves on 8080, `bun run test:e2e` smoke specs pass, `wrangler dev` boots the built worker.
+Landed: `src/components/auth/social-sign-in-buttons.tsx` now calls `supabase.auth.signInWithOAuth({ provider, options: { redirectTo } })`; `src/integrations/lovable/` and `@lovable.dev/cloud-auth-js` are removed. Callback handling in `src/lib/auth-oauth.ts` is unchanged.
 
-## Phase 2: OAuth to native Supabase
+Remaining (external): configure the new Google and Apple client codes in the Supabase dashboard per `docs/oauth-provider-setup.md` (callback `https://lzuodgpqseijhhyzgfky.supabase.co/auth/v1/callback`). New client IDs were the chosen path; existing OAuth users re-consent on first sign-in but keep the same accounts (Supabase matches provider subject + email).
 
-`docs/oauth-provider-setup.md` already documents Google + Apple provider setup on Supabase project `lzuodgpqseijhhyzgfky` (callback `https://lzuodgpqseijhhyzgfky.supabase.co/auth/v1/callback`).
+## Phase 3: Email to Resend (CODE DONE)
 
-Edits:
+Landed:
 
-1. Confirm the providers are configured in the Supabase dashboard with our own Google/Apple credentials (external step).
-2. Replace `lovable.auth.signInWithOAuth(provider)` in `src/components/auth/social-sign-in-buttons.tsx` with `supabase.auth.signInWithOAuth({ provider, options: { redirectTo } })`.
-3. Keep `src/lib/auth-oauth.ts` callback handling (it already works off Supabase session establishment); adjust param detection if needed.
-4. Delete `src/integrations/lovable/` and drop `@lovable.dev/cloud-auth-js`.
+1. Routes moved to `/api/email/*`: `auth/webhook`, `auth/preview`, `transactional/send`, `transactional/preview`, `queue/process`, `suppression`. Internal callers updated (`src/lib/email/send.ts`; the weekly-recap cron now enqueues directly via `enqueueRenderedEmail`, fixing a latent auth bug in its old HTTP call).
+2. `queue/process` delivers through the Resend API (`RESEND_API_KEY`), with Idempotency-Key, `List-Unsubscribe` one-click headers, 429 backoff via Retry-After, and 401/403 straight to DLQ. PGMQ queue, TTLs, retries, send log unchanged.
+3. `auth/webhook` verifies the Supabase send-email hook natively (Standard Webhooks HMAC, `SEND_EMAIL_HOOK_SECRET`, implemented on Web Crypto in `src/lib/email/webhook-verify.server.ts`) and builds verification URLs from `token_hash`.
+4. `suppression` consumes Resend's svix-signed `email.bounced` / `email.complained` events (`RESEND_WEBHOOK_SECRET`); transient bounces are ignored.
+5. Previews gated by `EMAIL_PREVIEW_SECRET`. `@lovable.dev/email-js` and `@lovable.dev/webhooks-js` removed.
 
-Risk: existing OAuth users keep working as long as the same Google/Apple client IDs are used; if new client IDs are issued, users re-consent but keep the same accounts (Supabase matches on provider subject + email).
-
-## Phase 3: Email off Lovable
-
-Decision needed: **Resend** (recommended; React Email is first-class) or **Mailgun direct** (suppression webhook already speaks Mailgun's payload format).
-
-Edits:
-
-1. Move `/lovable/email/*` routes to `/api/email/*` (auth webhook, transactional send, queue processor, suppression, previews). Update the two internal callers: `src/lib/email/send.ts` and `src/routes/api/public/cron/weekly-recap.ts`.
-2. In the queue processor, replace `sendLovableEmail()` with the chosen provider's API. Keep the PGMQ queue, DLQ, suppression check, and send log exactly as-is.
-3. Replace `@lovable.dev/webhooks-js` HMAC verification with the standard Supabase auth-hook signature verification (it is a Standard Webhooks signature; the `standardwebhooks` package or a small manual HMAC check covers it).
-4. Gate previews behind a new `EMAIL_PREVIEW_SECRET` instead of `LOVABLE_API_KEY`.
-5. External: take `notify.purplelife.org` DNS back from Lovable nameservers, add the provider's SPF/DKIM/DMARC records, update the Supabase auth email hook URL and the bounce webhook URL in the provider dashboard.
+Remaining (external): verify `notify.purplelife.org` in Resend and move its DNS off Lovable nameservers (SPF/DKIM records from the Resend dashboard), point the Supabase Auth send-email hook at `https://www.purplelife.org/api/email/auth/webhook` and store its secret as `SEND_EMAIL_HOOK_SECRET`, create a Resend webhook for bounced/complained pointed at `/api/email/suppression`.
 
 Verify: auth emails (sign-up confirm, reset) deliver end-to-end on a staging address before flipping the Supabase hook in production; suppression webhook writes `suppressed_emails`.
 
-## Phase 4: AI off the Lovable gateway
+## Phase 4: AI to Anthropic (CODE DONE)
 
-The code already supports direct providers. The work is making one the platform default and removing the `lovable` option.
+Landed:
 
-Decision needed: default provider for platform-paid usage. Gemini Flash is the closest like-for-like on cost; Anthropic is already wired for higher-quality paths.
+1. `src/lib/ai-gateway.server.ts` is now `resolvePlatformModel(provider)`: Anthropic Claude (`claude-sonnet-4-5` via `@ai-sdk/anthropic`) is the platform default; when the user picked OpenAI/Grok/Gemini in Settings and the matching platform key exists, that provider is called directly (OpenAI-compatible endpoints). The Lovable gateway survives only as a last-resort fallback when no `ANTHROPIC_API_KEY` exists but `LOVABLE_API_KEY` does, which keeps Lovable previews working.
+2. `/api/chat` no longer requires `LOVABLE_API_KEY`; it streams through the resolved platform model with tools intact.
+3. The `lovable` provider option is removed from `ai-provider.functions.ts`, `ai-provider.server.ts`, and the Settings UI. Migration `supabase/migrations/20260611010000_remove_lovable_ai_provider.sql` rewrites stored `'lovable'` prefs to `'claude'` and tightens the CHECK constraint.
+4. `care-profile.functions.ts` and `report-trends.functions.ts` use `resolvePlatformModel()`.
+5. Edge functions: `risk-forecaster` narrates via the Anthropic API; `ai-orchestrator`'s text-only lane calls Gemini/OpenAI directly when their keys exist and otherwise falls through to the Claude tool-use lane.
 
-Edits:
-
-1. `src/routes/api/chat.ts`: stop requiring `LOVABLE_API_KEY`; route platform-default traffic to the chosen provider via the existing `@ai-sdk/*` clients.
-2. `src/lib/ai-gateway.server.ts`: replace the Lovable provider factory with the chosen default (or delete and use `ai-provider.server.ts` paths).
-3. `src/lib/ai-provider.server.ts` / `ai-provider.functions.ts` / `src/components/settings/ai-provider-section.tsx`: remove the `lovable` provider; relabel the built-in option "Purple AI (built-in)". Migrate stored user prefs: one migration updating `profiles.ai_provider = 'lovable'` to the new default, and update the CHECK constraint added in `supabase/migrations/20260607224715_*`.
-4. `src/lib/care-profile.functions.ts`, `src/lib/report-trends.functions.ts`: swap gateway calls to the default provider.
-5. Edge functions `ai-orchestrator` and `risk-forecaster`: replace `callGeminiViaLovableAI()`/gateway fetches with direct Gemini calls using `GEMINI_API_KEY`; redeploy per `docs/manual-deploy-bundle.md` if the CLI still 403s.
-6. Set `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `OPENAI_API_KEY` in Worker secrets and Supabase edge function secrets.
+Remaining (external): set `ANTHROPIC_API_KEY` in Worker secrets and Supabase edge function secrets (optionally `GEMINI_API_KEY`/`OPENAI_API_KEY`/`GROK_API_KEY` for user-choice lanes), apply the migration, redeploy both edge functions per `docs/manual-deploy-bundle.md` if the CLI still 403s.
 
 Verify: chat streams, daily insight cards generate, risk forecaster narrative renders, free-tier limit still enforced.
 
-## Phase 5: Branding sweep and dependency removal
+## Phase 5: Branding sweep (DONE, dev tooling intentionally kept)
 
-1. `src/routes/index.tsx`: drop `https://purplelife.lovable.app` from JSON-LD `sameAs`.
-2. `src/components/settings/about-section.tsx`: point the GitHub link at the real repository (decision: which org/repo is canonical; docs currently mention `AstroAii/purpledrw` while the link says `lovable-dev/purple`).
-3. `src/integrations/supabase/client.ts`, `client.server.ts`, `auth-middleware.ts`: reword "Connect Supabase in Lovable Cloud" errors to plain missing-env messages.
-4. `src/lib/med-notifications.ts`: remove Lovable preview-host checks.
-5. Delete `.lovable/`, remove all `@lovable.dev/*` from `package.json`, regenerate lockfiles, scrub `bunfig.toml`.
-6. `package.json` name from `tanstack_start_ts` to `purple`.
-7. Grep gate: `rg -i lovable` should return only this document and historical docs.
+1. JSON-LD `sameAs` with `purplelife.lovable.app` removed from `src/routes/index.tsx`.
+2. About link points at `https://github.com/AstroAii/purpledrw`.
+3. "Connect Supabase in Lovable Cloud" error strings replaced with neutral missing-env messages.
+4. `package.json` and `wrangler.jsonc` renamed to `purplelife`.
+5. Kept on purpose (Lovable remains a dev environment): `@lovable.dev/vite-tanstack-config`, `.lovable/`, the preview-host service worker checks in `src/lib/med-notifications.ts`, and the AI fallback in `ai-gateway.server.ts`.
 
 ## Phase 6: Performance
 
@@ -104,15 +98,16 @@ The build already produces a Worker. Remaining work is account, config, and DNS:
 6. Staged rollout: deploy to a `*.workers.dev` URL, run the full Playwright suite with `E2E_BASE_URL` pointed at it, then flip DNS. Keep Lovable hosting live until the Worker has served production traffic cleanly, then archive the Lovable project.
 7. Add CI (GitHub Actions): lint + checks + e2e on PR, `wrangler deploy` on main.
 
-## Decisions needed before execution
+## Decisions (resolved 2026-06-11)
 
-| # | Decision | Options |
-|---|----------|---------|
-| 1 | Email provider | Resend (recommended) vs Mailgun direct |
-| 2 | Default AI provider for platform-paid usage | Gemini Flash (cost) vs Anthropic (quality) |
-| 3 | Canonical GitHub repo for the About link | `AstroAii/purpledrw` vs other |
-| 4 | Worker name + apex/www routing preference | n/a |
+| # | Decision | Resolution |
+|---|----------|------------|
+| 1 | Email provider | Resend |
+| 2 | Default AI provider for platform-paid usage | Anthropic Claude |
+| 3 | Canonical GitHub repo for the About link | `AstroAii/purpledrw` |
+| 4 | Worker name | `purplelife`, deployed directly to Cloudflare |
+| 5 | Development model | Cursor and Lovable both stay; Lovable dev tooling is not removed |
 
 ## Secrets that must exist in Cloudflare before cutover
 
-`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `CRON_SECRET`, `PUBLIC_SITE_URL`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `OURA_CLIENT_ID/SECRET`, `WHOOP_CLIENT_ID/SECRET`, chosen AI keys (`GEMINI_API_KEY` and/or `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` for embeddings/seeds), email provider key, `EMAIL_PREVIEW_SECRET`. Until Phase 3/4 land, `LOVABLE_API_KEY` is still required.
+`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `CRON_SECRET`, `PUBLIC_SITE_URL`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `OURA_CLIENT_ID/SECRET`, `WHOOP_CLIENT_ID/SECRET`, `ANTHROPIC_API_KEY` (plus optional `GEMINI_API_KEY`, `OPENAI_API_KEY`, `GROK_API_KEY` for user-choice lanes and embeddings seeds), `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `SEND_EMAIL_HOOK_SECRET`, `EMAIL_PREVIEW_SECRET`.
