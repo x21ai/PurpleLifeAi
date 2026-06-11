@@ -89,11 +89,11 @@ Manual deploy procedure (when the Supabase CLI 403s): `docs/manual-deploy-bundle
 
 ## Email pipeline
 
-1. Producers: Supabase auth hook (`/lovable/email/auth/webhook`, HMAC-verified) and app code (`src/lib/email/send.ts` over HTTP with user JWT, or `src/lib/email/render-and-enqueue.server.ts` directly from cron with service role).
+1. Producers: Supabase send-email hook (`/api/email/auth/webhook`, Standard Webhooks HMAC) and app code (`src/lib/email/send.ts` over HTTP with user JWT, or `src/lib/email/render-and-enqueue.server.ts` directly from cron with service role).
 2. Templates: React Email components in `src/lib/email-templates/`, rendered server-side.
 3. Queue: PGMQ via `enqueue_email` RPC; suppression list checked before enqueue.
-4. Delivery: `/lovable/email/queue/process` (cron) dequeues and sends via `@lovable.dev/email-js` from `noreply@notify.purplelife.org`; failures go to a DLQ.
-5. Feedback: Mailgun-format bounce/complaint/unsubscribe webhook at `/lovable/email/suppression` writes `suppressed_emails`.
+4. Delivery: `/api/email/queue/process` (pg_cron pump) dequeues and sends via the Resend API from `noreply@notify.purplelife.org`; failures go to a DLQ.
+5. Feedback: Resend bounce/complaint webhook at `/api/email/suppression` writes `suppressed_emails`; one-click unsubscribe via `List-Unsubscribe` headers and `/email/unsubscribe`.
 
 ## PWA
 
@@ -110,7 +110,7 @@ i18next with `en` and `es` locales (`src/i18n/locales/`). SSR always renders `en
 
 - `bun run lint`, `bun run check:em-dash` (also a prebuild gate), `bun run check:live-data`, `bun run check:unique-images`.
 - Playwright e2e in `tests/e2e/` across mobile-375, tablet-768, tablet-1023, desktop-1024, desktop-1440. `bun run test:e2e`; it boots `bun run dev` on port 8080 unless `E2E_BASE_URL` is set.
-- No GitHub Actions CI is currently committed.
+- CI: `.github/workflows/ci.yml` (gates, type-check, build, smoke e2e on PRs). CD: `.github/workflows/deploy.yml` (`wrangler deploy -c wrangler.deploy.jsonc` on main).
 
 ## Durable decisions
 

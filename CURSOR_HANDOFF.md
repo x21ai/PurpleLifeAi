@@ -39,7 +39,9 @@ Production currently runs on Lovable-managed infrastructure; the Worker is named
 - Email: queue delivery via Resend (`/api/email/queue/process`), Supabase send-email hook at `/api/email/auth/webhook` (Standard Webhooks verification), Resend bounce/complaint webhook at `/api/email/suppression`.
 - AI: Anthropic Claude is the platform default (`src/lib/ai-gateway.server.ts`); the Lovable gateway remains only as a last-resort fallback for Lovable previews without an Anthropic key.
 
-Remaining cutover steps (external, need credentials): verify `notify.purplelife.org` in Resend and update DNS, point the Supabase auth email hook at `/api/email/auth/webhook` with its secret, add a Resend webhook for bounces/complaints, configure new Google/Apple OAuth codes in Supabase, set Worker secrets, deploy with `wrangler deploy`, move DNS. Details: `docs/LOVABLE-MIGRATION.md`.
+Deployment is fully scripted: `bun run build && bunx wrangler deploy -c wrangler.deploy.jsonc` (validated with `--dry-run`), or automatically via `.github/workflows/deploy.yml` on pushes to main. Cron Triggers fan out from the `scheduled()` handler in `src/server.ts` through a `SELF` service binding.
+
+Remaining cutover steps (external, need credentials): verify `notify.purplelife.org` in Resend and update DNS, point the Supabase send-email hook at `/api/email/auth/webhook` with its secret, add a Resend webhook for bounces/complaints, configure new Google/Apple OAuth codes in Supabase, re-point the pg_cron email pump URL, set Worker secrets, deploy, move DNS. Details: `docs/LOVABLE-MIGRATION.md` Phase 7.
 
 ## Environment variables
 
@@ -69,9 +71,9 @@ Referenced in code but NOT present locally (production needs them; several block
 ## Known gaps and sharp edges
 
 1. **Supabase CLI 403s** on this project; migrations and edge functions are deployed manually via the dashboard (`docs/manual-deploy-bundle.md`). The pending migration to apply: `supabase/migrations/20260611010000_remove_lovable_ai_provider.sql`, plus redeploys of `ai-orchestrator` and `risk-forecaster`.
-2. **No CI committed.** Playwright config has CI settings (2 retries, GitHub reporter) but there is no `.github/workflows/`.
-3. **Repo-wide lint debt**: `bun run lint` fails with thousands of pre-existing prettier errors across the codebase. New code should be prettier-clean; a one-shot `bun run format` cleanup is a separate decision because of the diff size.
-4. **Pre-existing e2e failure**: `tests/e2e/auth.spec.ts` "reset-password renders" expects an email field, but `/reset-password` only renders password fields (it is the landing page from the email link). Test and page disagree; fix one of them.
+2. **CI/CD committed but dormant until GitHub secrets exist**: `.github/workflows/ci.yml` and `deploy.yml` need `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and the `VITE_SUPABASE_*` values as repository secrets.
+3. **Repo-wide lint debt**: `bun run lint` fails with thousands of pre-existing prettier errors across the codebase. New code should be prettier-clean; a one-shot `bun run format` cleanup is a separate decision because of the diff size. Lint is intentionally not in CI yet.
+4. **Email queue pump scheduling**: the pump is a Supabase pg_cron job (`process-email-queue`, 5s interval) that POSTs to the app with the vault-stored service-role key. Its URL must be re-pointed to `https://www.purplelife.org/api/email/queue/process` at cutover.
 5. **`src/routeTree.gen.ts` is generated.** Never hand-edit; it regenerates from `src/routes/` during dev/build.
 6. **`vite.config.ts` is a wrapper.** Do not add tanstackStart/react/tailwind/tsconfig-paths/cloudflare plugins manually while `@lovable.dev/vite-tanstack-config` is in place; duplicates break the build. The import must stay pointed at `dist/index.js` (the ESM build); the bare specifier resolves to the CJS build, which crashes config loading on Node 22+.
 7. **Email DNS**: `notify.purplelife.org` is delegated to Lovable nameservers. It must be re-verified with Resend and re-pointed, coordinated with the Supabase auth-hook URL change.

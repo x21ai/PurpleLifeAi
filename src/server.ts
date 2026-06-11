@@ -46,6 +46,54 @@ function getEdgeCache(): Cache | null {
   return (caches as unknown as { default?: Cache }).default ?? null;
 }
 
+// Cloudflare Cron Triggers (wrangler.deploy.jsonc) fan out to the app's cron
+// endpoints. Each endpoint validates CRON_SECRET itself. The email queue pump
+// stays on Supabase pg_cron (5s interval, sub-minute latency for auth emails).
+const CRON_ENDPOINTS: Record<string, string[]> = {
+  "* * * * *": ["/api/public/cron/dose-reminders"],
+  "0 * * * *": ["/api/public/cron/oura-sync-all", "/api/public/cron/whoop-sync-all"],
+  "0 6 * * *": [
+    "/api/public/cron/care-daily-digest",
+    "/api/public/cron/medical-reports",
+    "/api/public/cron/purge-deleted-accounts",
+  ],
+  "0 15 * * 0": ["/api/public/cron/weekly-recap"],
+};
+
+type CronEnv = {
+  CRON_SECRET?: string;
+  PUBLIC_SITE_URL?: string;
+  SELF?: { fetch: (request: Request) => Promise<Response> };
+};
+
+async function runScheduledEndpoints(cron: string, env: CronEnv): Promise<void> {
+  const secret = env.CRON_SECRET;
+  if (!secret) {
+    console.error("[cron] CRON_SECRET not configured; skipping scheduled run");
+    return;
+  }
+  const base = env.PUBLIC_SITE_URL || "https://www.purplelife.org";
+  const paths = CRON_ENDPOINTS[cron] ?? [];
+  await Promise.all(
+    paths.map(async (path) => {
+      const request = new Request(`${base}${path}`, {
+        method: "POST",
+        headers: { "x-cron-secret": secret },
+      });
+      try {
+        // Prefer the self service binding; a plain fetch to our own hostname
+        // would be a same-zone subrequest back into this worker.
+        const res = env.SELF ? await env.SELF.fetch(request) : await fetch(request);
+        if (!res.ok) {
+          console.error(`[cron] ${path} responded ${res.status}`);
+        }
+      } catch (error) {
+        console.error(`[cron] ${path} failed`, error);
+      }
+    }),
+  );
+}
+
 function brandedErrorResponse(): Response {
   return new Response(renderErrorPage(), {
     status: 500,
@@ -129,6 +177,16 @@ export default {
     } catch (error) {
       console.error(error);
       return brandedErrorResponse();
+    }
+  },
+
+  async scheduled(controller: { cron: string }, env: unknown, ctx: unknown) {
+    const run = runScheduledEndpoints(controller.cron, (env ?? {}) as CronEnv);
+    const waitUntil = (ctx as { waitUntil?: (p: Promise<unknown>) => void })?.waitUntil;
+    if (typeof waitUntil === "function") {
+      waitUntil.call(ctx, run);
+    } else {
+      await run;
     }
   },
 };

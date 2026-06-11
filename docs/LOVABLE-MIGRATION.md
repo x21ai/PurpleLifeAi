@@ -16,7 +16,7 @@ Status (2026-06-11):
 
 Decisions locked: Resend for email, Anthropic for platform AI, `AstroAii/purpledrw` as the canonical repo, worker name `purplelife`, dual Cursor + Lovable development.
 
-## Current Lovable coupling map
+## Original Lovable coupling map (resolved, kept for history)
 
 | Coupling | Where | Replacement |
 |----------|-------|-------------|
@@ -87,16 +87,21 @@ Landed:
 
 Remaining (after cutover): run Lighthouse against the deployed Worker and record LCP/TBT/CLS in `CURSOR_HANDOFF.md`. The shared client entry chunk (~824 kB minified, framework + Supabase + i18n) is the next candidate if scores need more headroom.
 
-## Phase 7: Cloudflare cutover
+## Phase 7: Cloudflare cutover (REPO PREPARED, awaiting credentials)
 
-The build already produces a Worker. Remaining work is account, config, and DNS:
+Prepared in the repo:
 
-1. `wrangler.jsonc`: rename worker to `purple` (or `purplelife`), add `assets` binding for the client build output, add `routes` for `www.purplelife.org` + apex redirect, define `triggers.crons` mapping to the 8 `/api/public/cron/*` endpoints (a small scheduled handler in `src/server.ts` can fan out fetches with `CRON_SECRET`).
-2. Secrets via `wrangler secret put`: `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `CRON_SECRET`, `VAPID_PRIVATE_KEY`, `WHOOP_CLIENT_*`, `OURA_CLIENT_*`, AI provider keys, email provider key. Non-secret vars (`PUBLIC_SITE_URL`, `VITE_SUPABASE_*`) in `vars`/build env.
-4. Update external pointers: Stripe webhook URL, Supabase auth hook URL, email provider webhooks, OAuth redirect URLs, wearable OAuth redirect URIs.
-5. DNS: move `purplelife.org` zone to Cloudflare (if not already), route to the Worker, re-point `notify.purplelife.org` (Phase 3).
-6. Staged rollout: deploy to a `*.workers.dev` URL, run the full Playwright suite with `E2E_BASE_URL` pointed at it, then flip DNS. Keep Lovable hosting live until the Worker has served production traffic cleanly, then archive the Lovable project.
-7. Add CI (GitHub Actions): lint + checks + e2e on PR, `wrangler deploy` on main.
+1. **Deploy config**: `wrangler.deploy.jsonc` points at the built output (`dist/server/server.js` + `dist/client` assets binding), enables observability, defines a `SELF` service binding, and registers 4 Cron Triggers. Validated with `wrangler deploy --dry-run`.
+2. **Scheduled handler**: `src/server.ts` exports `scheduled()`, fanning each Cron Trigger out to the matching `/api/public/cron/*` endpoints through the `SELF` binding with `CRON_SECRET`. Cadence: dose reminders every minute, wearable syncs hourly, daily jobs at 06:00 UTC, weekly recap Sunday 15:00 UTC (adjust in `wrangler.deploy.jsonc` + `CRON_ENDPOINTS`).
+3. **CI/CD**: `.github/workflows/ci.yml` (gates, tsc, build, smoke e2e) and `.github/workflows/deploy.yml` (`wrangler deploy -c wrangler.deploy.jsonc` on main). GitHub secrets needed: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`.
+
+Remaining (needs credentials):
+
+1. Worker secrets via `wrangler secret put` (full list below) and the same `VITE_*` build vars in CI.
+2. The email queue pump runs on Supabase pg_cron and POSTs to the app. At cutover, re-point its URL from the old host to `https://www.purplelife.org/api/email/queue/process` (the job was created dynamically; update it via the Supabase SQL editor by unscheduling `process-email-queue` and recreating it with the new URL, keeping the vault-stored service-role bearer token).
+3. Update external pointers: Stripe webhook URL, Supabase send-email hook (to `/api/email/auth/webhook`), Resend bounce/complaint webhook (to `/api/email/suppression`), Google/Apple OAuth credentials in Supabase, Oura/Whoop redirect URIs.
+4. DNS: move `purplelife.org` zone to Cloudflare (if not already), add a custom domain/route for the Worker (`www.purplelife.org` + apex redirect), verify `notify.purplelife.org` in Resend and publish its DKIM/SPF records.
+5. Staged rollout: deploy to the `*.workers.dev` URL first, run the full Playwright suite with `E2E_BASE_URL` pointed at it, then flip DNS. Keep Lovable hosting live until the Worker has served production traffic cleanly, then archive the Lovable project.
 
 ## Decisions (resolved 2026-06-11)
 
