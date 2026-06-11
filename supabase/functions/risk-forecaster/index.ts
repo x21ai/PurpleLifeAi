@@ -9,7 +9,7 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 
 const MODEL_VERSION = "v2-scorecard-2026.06";
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
@@ -47,21 +47,22 @@ async function narrate(score: number, band: Band, factors: Factor[]): Promise<st
     ? "Things look steady today. Nothing standing out — just keep doing what you're doing."
     : "Your body's a bit off baseline this week. Nothing dramatic, just worth slowing down today.";
 
+  if (!ANTHROPIC_API_KEY) return fallback;
+
   try {
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "claude-sonnet-4-5",
+        max_tokens: 300,
+        system:
+          "You are Purple. Reply in 1-2 warm, non-clinical sentences spoken to the person directly. Never give medical advice, never use clinical language, never alarm. Acknowledge what's actually shifting in their body in plain words. Example tone: 'Your sleep dropped a bit this week and your HRV is running below your usual. Nothing dramatic, just worth slowing down today.'",
         messages: [
-          {
-            role: "system",
-            content:
-              "You are Purple. Reply in 1-2 warm, non-clinical sentences spoken to the person directly. Never give medical advice, never use clinical language, never alarm. Acknowledge what's actually shifting in their body in plain words. Example tone: 'Your sleep dropped a bit this week and your HRV is running below your usual. Nothing dramatic, just worth slowing down today.'",
-          },
           {
             role: "user",
             content: `Today's risk score: ${score} (band: ${band}).\nFactors that fired:\n${
@@ -74,15 +75,17 @@ async function narrate(score: number, band: Band, factors: Factor[]): Promise<st
       }),
     });
     if (!res.ok) {
-      console.error("ai gateway", res.status, await res.text());
+      console.error("anthropic", res.status, await res.text());
       return fallback;
     }
     const data = await res.json();
-    const text = data?.choices?.[0]?.message?.content;
+    const text = (data?.content ?? [])
+      .map((b: { type: string; text?: string }) => (b.type === "text" ? b.text ?? "" : ""))
+      .join("");
     if (typeof text === "string" && text.trim().length > 0) return text.trim();
     return fallback;
   } catch (err) {
-    console.error("ai gateway error", err);
+    console.error("anthropic error", err);
     return fallback;
   }
 }

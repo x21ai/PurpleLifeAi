@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const PROVIDERS = ["claude", "openai", "gemini", "grok", "maya", "lovable"] as const;
+const PROVIDERS = ["claude", "openai", "gemini", "grok", "maya"] as const;
 
 export const getAiProvider = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

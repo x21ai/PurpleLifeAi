@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { generateText, Output } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { resolvePlatformModel } from "./ai-gateway.server";
 import {
   CONDITION_CATALOG,
   disclaimerTierFor,
@@ -99,8 +99,8 @@ async function callAi(
   slugs: string[],
   note: string | null,
 ): Promise<CareProfile> {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
+  const model = resolvePlatformModel(null);
+  if (!model) throw new Error("AI is not configured (set ANTHROPIC_API_KEY)");
 
   const tier = disclaimerTierFor(slugs);
   const system = `You are Purple, a quiet, respectful health journal companion.
@@ -116,9 +116,8 @@ ${tier === "sensitive" ? "- Sensitive topic mode: extra gentle. Avoid trigger ph
 
   const prompt = `User's conditions / context:\n${profileSummary(slugs, note)}\n\nGenerate the personalized care profile JSON now.`;
 
-  const gateway = createLovableAiGatewayProvider(apiKey);
   const { experimental_output } = await generateText({
-    model: gateway("google/gemini-3-flash-preview"),
+    model,
     system,
     prompt,
     experimental_output: Output.object({ schema: CareProfileSchema }),

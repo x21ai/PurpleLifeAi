@@ -4,7 +4,7 @@ import { Sparkles, Check } from "lucide-react";
 import { toast } from "sonner";
 import { getAiProvider, setAiProvider } from "@/lib/ai-provider.functions";
 
-type Provider = "claude" | "openai" | "gemini" | "grok" | "maya" | "lovable";
+type Provider = "claude" | "openai" | "gemini" | "grok" | "maya";
 
 type Option = {
   id: Provider;
@@ -20,7 +20,6 @@ const OPTIONS: Option[] = [
   { id: "gemini", name: "Google Gemini", blurb: "Big context window. Reads PDFs and images." },
   { id: "grok", name: "xAI Grok", blurb: "Strong reasoning. Reads images, not PDFs." },
   { id: "maya", name: "Maya (internal)", blurb: "Purple's own model. Not configured yet.", disabled: true, disabledReason: "Endpoint not set" },
-  { id: "lovable", name: "Lovable AI Gateway", blurb: "Original built-in model. Free for users, billed to Purple's workspace credits." },
 ];
 
 export function AiProviderSection() {

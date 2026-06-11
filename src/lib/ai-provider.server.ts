@@ -10,9 +10,9 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type AiProvider = "claude" | "openai" | "gemini" | "grok" | "maya" | "lovable";
+export type AiProvider = "claude" | "openai" | "gemini" | "grok" | "maya";
 
-const ALLOWED: AiProvider[] = ["claude", "openai", "gemini", "grok", "maya", "lovable"];
+const ALLOWED: AiProvider[] = ["claude", "openai", "gemini", "grok", "maya"];
 
 export type AiMedia = {
   /** raw base64 (no data: prefix) */
@@ -56,7 +56,6 @@ function defaultModel(provider: AiProvider): string {
     case "openai": return "gpt-5-mini";
     case "gemini": return "gemini-2.5-pro";
     case "grok": return "grok-4";
-    case "lovable": return "google/gemini-2.5-pro";
     case "maya": return "maya-default";
   }
 }
@@ -165,7 +164,7 @@ async function callGrok(opts: AiCallOpts) {
   return callOpenAICompat("Grok", "https://api.x.ai/v1", key, defaultModel("grok"), opts);
 }
 
-/* ---------- Gemini (direct, not via Lovable) ---------- */
+/* ---------- Gemini (direct) ---------- */
 async function callGeminiDirect(opts: AiCallOpts): Promise<string> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw mkErr("GEMINI_API_KEY not configured", "ai_key_invalid");
@@ -198,34 +197,6 @@ async function callGeminiDirect(opts: AiCallOpts): Promise<string> {
     .join("");
 }
 
-/* ---------- Lovable AI Gateway ---------- */
-async function callLovable(opts: AiCallOpts): Promise<string> {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw mkErr("LOVABLE_API_KEY not configured", "ai_key_invalid");
-  const userContent: unknown[] = [{ type: "text", text: opts.prompt }];
-  if (opts.media) {
-    userContent.push({
-      type: "image_url",
-      image_url: { url: `data:${opts.media.mime};base64,${opts.media.base64}` },
-    });
-  }
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      model: defaultModel("lovable"),
-      messages: [
-        { role: "system", content: opts.system },
-        { role: "user", content: userContent },
-      ],
-      ...(opts.jsonMode ? { response_format: { type: "json_object" } } : {}),
-    }),
-  });
-  if (!res.ok) handleStatus("Lovable AI", res.status, await res.text());
-  const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  return json.choices?.[0]?.message?.content ?? "";
-}
-
 /* ---------- Dispatch ---------- */
 export async function callAI(opts: AiCallOpts): Promise<string> {
   switch (opts.provider) {
@@ -233,7 +204,6 @@ export async function callAI(opts: AiCallOpts): Promise<string> {
     case "openai": return callOpenAI(opts);
     case "gemini": return callGeminiDirect(opts);
     case "grok": return callGrok(opts);
-    case "lovable": return callLovable(opts);
     case "maya":
       throw mkErr(
         "Maya isn't configured yet. Pick a different provider in Settings → AI.",

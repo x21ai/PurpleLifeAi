@@ -13,7 +13,7 @@ const PUBLISHABLE = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ||
   Deno.env.get("SUPABASE_ANON_KEY")!;
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
@@ -318,27 +318,29 @@ async function callClaudeOnce(messages: any[], system: string = SYSTEM_PROMPT) {
 }
 
 /**
- * Lightweight chat through the Lovable AI Gateway. No tool use — text
- * completion only, with the same Purple system prompt. Used when the user
- * picks Gemini in Settings → Preferences.
+ * Lightweight text-only chat lane (no tool use) for users who picked Gemini
+ * or OpenAI in Settings. Calls the provider directly with the platform key.
+ * Returns null when the matching key is missing so the caller can fall back
+ * to the Claude tool-use lane.
  */
-async function callGeminiViaLovableAI(
+async function callTextOnlyProvider(
   pref: string,
   message: string,
   history: { role: "user" | "assistant"; content: string }[],
   system: string = SYSTEM_PROMPT,
-): Promise<string> {
-  if (!LOVABLE_API_KEY) {
-    return "This AI model isn't configured for this workspace yet. Switch to Claude in Settings → Preferences and ask me again.";
-  }
+): Promise<string | null> {
+  const isOpenAi = pref.startsWith("gpt-");
+  const apiKey = isOpenAi ? OPENAI_API_KEY : GEMINI_API_KEY;
+  if (!apiKey) return null;
+
   const MODEL_MAP: Record<string, string> = {
-    "gemini-flash": "google/gemini-3-flash-preview",
-    "gemini-pro": "google/gemini-2.5-pro",
-    "gemini-2.5-pro": "google/gemini-2.5-pro",
-    "gpt-5": "openai/gpt-5",
-    "gpt-5-mini": "openai/gpt-5-mini",
+    "gemini-flash": "gemini-2.5-flash",
+    "gemini-pro": "gemini-2.5-pro",
+    "gemini-2.5-pro": "gemini-2.5-pro",
+    "gpt-5": "gpt-5",
+    "gpt-5-mini": "gpt-5-mini",
   };
-  const model = MODEL_MAP[pref] ?? "google/gemini-3-flash-preview";
+  const model = MODEL_MAP[pref] ?? "gemini-2.5-flash";
   const trimmed = history
     .slice(-12)
     .filter((m) => typeof m?.content === "string")
@@ -351,10 +353,15 @@ async function callGeminiViaLovableAI(
       { role: "user", content: message },
     ],
   };
-  const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  // Both OpenAI and Google's Gemini OpenAI-compatible endpoint speak the
+  // chat/completions protocol, so one request shape covers both lanes.
+  const baseUrl = isOpenAi
+    ? "https://api.openai.com/v1"
+    : "https://generativelanguage.googleapis.com/v1beta/openai";
+  const r = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
@@ -362,13 +369,10 @@ async function callGeminiViaLovableAI(
   if (r.status === 429) {
     return "Purple is getting a lot of questions right now. Try again in a moment.";
   }
-  if (r.status === 402) {
-    return "Your AI credits have run out for this workspace. Add credits in Settings → Workspace → Usage to keep using Gemini.";
-  }
   if (!r.ok) {
     const txt = await r.text();
-    console.error("lovable ai error", r.status, txt);
-    return "I couldn't reach Gemini just now. Try again in a moment, or switch to Claude in Settings.";
+    console.error("text-only provider error", r.status, txt);
+    return "I couldn't reach that model just now. Try again in a moment, or switch to Claude in Settings.";
   }
   const j = await r.json();
   const content = j?.choices?.[0]?.message?.content;
@@ -585,8 +589,8 @@ Deno.serve(async (req) => {
     }
 
     // Resolve the user's preferred AI engine. Claude keeps full tool-use
-    // (proposals, library search, etc.). Gemini variants use a lightweight
-    // text-only path via the Lovable AI Gateway — faster and cheaper but
+    // (proposals, library search, etc.). Gemini and OpenAI variants use a
+    // lightweight text-only path called directly — faster and cheaper but
     // without action proposals.
     const { data: profileRow } = await admin
       .from("profiles")
@@ -601,9 +605,9 @@ Deno.serve(async (req) => {
       claude: "claude-sonnet",
       openai: "gpt-5-mini",
       gemini: "gemini-flash",
-      grok: "claude-sonnet", // Grok not on Lovable Gateway; keep tool-use lane
-      maya: "claude-sonnet",  // not configured; fall back
-      lovable: "gemini-flash",
+      grok: "claude-sonnet", // No text-only Grok lane; keep tool-use lane
+      maya: "claude-sonnet", // not configured; fall back
+      lovable: "claude-sonnet", // legacy stored value; Claude is the default now
     };
     const modelPref = aiProvider && PROVIDER_TO_PREF[aiProvider]
       ? PROVIDER_TO_PREF[aiProvider]
@@ -639,10 +643,14 @@ Deno.serve(async (req) => {
     }
 
     if (modelPref !== "claude-sonnet") {
-      const reply = await callGeminiViaLovableAI(modelPref, message, history, userSystem);
-      return new Response(JSON.stringify({ reply, proposals: [] }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const reply = await callTextOnlyProvider(modelPref, message, history, userSystem);
+      // Null means the platform key for that provider is missing; fall
+      // through to the Claude tool-use lane instead of failing the chat.
+      if (reply !== null) {
+        return new Response(JSON.stringify({ reply, proposals: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Build messages for Claude

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { resolvePlatformModel } from "@/lib/ai-gateway.server";
 import { generateText, Output } from "ai";
 
 export type TrendMetricRow = {
@@ -278,11 +278,10 @@ export const getMetricInsight = createServerFn({ method: "POST" })
     const refHigh = (rows?.[rows.length - 1] as any)?.reference_high ?? null;
     const conditions = (profile?.conditions as string[] | null) ?? [];
 
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) return { summary: null, bullets: [], suggestedQuestions: [], error: "AI unavailable", cached: false, latestAt };
+    const model = resolvePlatformModel(null);
+    if (!model) return { summary: null, bullets: [], suggestedQuestions: [], error: "AI unavailable", cached: false, latestAt };
 
     try {
-      const gateway = createLovableAiGatewayProvider(key);
       const prompt = [
         `Metric: ${label}${unit ? ` (${unit})` : ""}`,
         refLow != null && refHigh != null ? `Reference range: ${refLow}–${refHigh}${unit ? ` ${unit}` : ""}` : "Reference range: unknown",
@@ -293,7 +292,7 @@ export const getMetricInsight = createServerFn({ method: "POST" })
       ].join("\n");
 
       const { experimental_output: output } = await generateText({
-        model: gateway("google/gemini-3-flash-preview"),
+        model,
         experimental_output: Output.object({
           schema: z.object({
             summary: z.string(),
@@ -406,11 +405,10 @@ export const getDailyInsightCards = createServerFn({ method: "POST" })
       return { cards: [], headline: null, cached: false, generatedFor: today };
     }
 
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) return { cards: [], headline: null, cached: false, generatedFor: today, error: "AI unavailable" };
+    const model = resolvePlatformModel(null);
+    if (!model) return { cards: [], headline: null, cached: false, generatedFor: today, error: "AI unavailable" };
 
     try {
-      const gateway = createLovableAiGatewayProvider(key);
       const conditions = (profile?.conditions as string[] | null) ?? [];
       const prompt = [
         conditions.length ? `User conditions: ${conditions.join(", ")}` : "User conditions: not specified",
@@ -421,7 +419,7 @@ export const getDailyInsightCards = createServerFn({ method: "POST" })
       ].join("\n");
 
       const { experimental_output: output } = await generateText({
-        model: gateway("google/gemini-3-flash-preview"),
+        model,
         experimental_output: Output.object({
           schema: z.object({
             headline: z.string(),
