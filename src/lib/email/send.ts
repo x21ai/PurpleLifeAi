@@ -9,7 +9,7 @@ export interface SendTransactionalEmailParams {
 
 /**
  * Server-side helper: enqueues a transactional email by POSTing to the
- * internal /lovable/email/transactional/send route, forwarding the caller's
+ * internal /api/email/transactional/send route, forwarding the caller's
  * Authorization header. Safe to call from inside a `createServerFn` handler
  * that is protected by `requireSupabaseAuth`.
  */
@@ -22,7 +22,7 @@ export async function sendTransactionalEmail(
     process.env.PUBLIC_SITE_URL ||
     (request ? new URL(request.url).origin : "https://purplelife.org");
 
-  const res = await fetch(`${origin}/lovable/email/transactional/send`, {
+  const res = await fetch(`${origin}/api/email/transactional/send`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -4,24 +4,24 @@ import { createFileRoute } from '@tanstack/react-router'
 import { TEMPLATES } from '@/lib/email-templates/registry'
 
 // Renders all registered templates with their previewData.
-// Gated by LOVABLE_API_KEY, only the Go API calls this.
+// Gated by EMAIL_PREVIEW_SECRET (internal tooling only).
 
-export const Route = createFileRoute("/lovable/email/transactional/preview")({
+export const Route = createFileRoute("/api/email/transactional/preview")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = process.env.LOVABLE_API_KEY
-        if (!apiKey) {
+        const previewSecret = process.env.EMAIL_PREVIEW_SECRET
+        if (!previewSecret) {
           return Response.json(
             { error: 'Server configuration error' },
             { status: 500 }
           )
         }
 
-        // Verify the caller is authorized with LOVABLE_API_KEY
+        // Verify the caller is authorized with EMAIL_PREVIEW_SECRET
         const authHeader = request.headers.get('Authorization')
         const token = authHeader?.replace(/^Bearer\s+/i, '')
-        if (token !== apiKey) {
+        if (token !== previewSecret) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
 

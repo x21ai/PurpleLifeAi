@@ -4,10 +4,10 @@ import { createClient } from '@supabase/supabase-js'
 import { createFileRoute } from '@tanstack/react-router'
 import { TEMPLATES } from '@/lib/email-templates/registry'
 
-// Configuration baked in at scaffold time
+// Configuration
 const SITE_NAME = "purplelife"
 // SENDER_DOMAIN is the verified sender subdomain FQDN (e.g., "notify.example.com").
-// It MUST match the subdomain delegated to Lovable's nameservers. NEVER use the root domain.
+// It MUST match the domain verified with Resend. NEVER use the root domain.
 const SENDER_DOMAIN = "notify.purplelife.org"
 // FROM_DOMAIN is the domain shown in the From: header (e.g., "example.com").
 // Can be the root domain when display_from_root is enabled, this is cosmetic only.
@@ -29,7 +29,7 @@ function generateToken(): string {
     .join('')
 }
 
-export const Route = createFileRoute("/lovable/email/transactional/send")({
+export const Route = createFileRoute("/api/email/transactional/send")({
   server: {
     handlers: {
       POST: async ({ request }) => {

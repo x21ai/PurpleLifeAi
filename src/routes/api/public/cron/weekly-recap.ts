@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { enqueueRenderedEmail } from "@/lib/email/render-and-enqueue.server";
 
 // Weekly recap email, called by pg_cron Sunday mornings.
 // Sends one email per user whose profiles.weekly_digest_enabled = true
@@ -70,26 +71,19 @@ export const Route = createFileRoute("/api/public/cron/weekly-recap")({
             .slice(0, 4);
           const missedDoses = (doses ?? []).filter((d: any) => d.status === "missed" || d.status === "skipped").length;
 
-          await fetch(`${origin}/lovable/email/transactional/send`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-cron-secret": cronSecret,
+          await enqueueRenderedEmail({
+            templateName: "weekly-recap",
+            recipientEmail: email,
+            idempotencyKey: `weekly-recap-${userId}-${sinceIso.slice(0, 10)}`,
+            templateData: {
+              firstName: (p as any).first_name ?? null,
+              entryCount,
+              voiceCount,
+              seizureCount: seizures?.length ?? 0,
+              missedDoses,
+              topTags,
+              todayUrl: `${origin}/today`,
             },
-            body: JSON.stringify({
-              templateName: "weekly-recap",
-              recipientEmail: email,
-              idempotencyKey: `weekly-recap-${userId}-${sinceIso.slice(0, 10)}`,
-              templateData: {
-                firstName: (p as any).first_name ?? null,
-                entryCount,
-                voiceCount,
-                seizureCount: seizures?.length ?? 0,
-                missedDoses,
-                topTags,
-                todayUrl: `${origin}/today`,
-              },
-            }),
           }).catch(() => null);
           sent++;
         }

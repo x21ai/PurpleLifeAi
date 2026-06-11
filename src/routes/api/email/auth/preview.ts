@@ -22,11 +22,8 @@ const SITE_NAME = "purplelife"
 const ROOT_DOMAIN = "purplelife.org"
 
 // Sample data for preview mode ONLY (not used in actual email sending).
-// URLs are baked in at scaffold time from the project's real data.
-// The sample email uses a fixed placeholder (RFC 6761 .test TLD) so the Go backend
-// can always find-and-replace it with the actual recipient when sending test emails,
-// even if the project's domain has changed since the template was scaffolded.
-const SAMPLE_PROJECT_URL = "https://purplelife.lovable.app" // live-data-guard:allow (email template preview only)
+// The sample email uses a fixed placeholder (RFC 6761 .test TLD).
+const SAMPLE_PROJECT_URL = "https://www.purplelife.org" // live-data-guard:allow (email template preview only)
 const SAMPLE_EMAIL = "user@example.test" // live-data-guard:allow (email template preview only)
 const SAMPLE_DATA: Record<string, object> = {
   signup: {
@@ -60,22 +57,22 @@ const SAMPLE_DATA: Record<string, object> = {
   },
 }
 
-export const Route = createFileRoute("/lovable/email/auth/preview")({
+export const Route = createFileRoute("/api/email/auth/preview")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = process.env.LOVABLE_API_KEY
+        const previewSecret = process.env.EMAIL_PREVIEW_SECRET
 
-        if (!apiKey) {
+        if (!previewSecret) {
           return Response.json(
             { error: 'Server configuration error' },
             { status: 500 }
           )
         }
 
-        // Verify the caller is authorized with LOVABLE_API_KEY
+        // Verify the caller is authorized with EMAIL_PREVIEW_SECRET
         const authHeader = request.headers.get('Authorization')
-        if (!authHeader || authHeader !== `Bearer ${apiKey}`) {
+        if (!authHeader || authHeader !== `Bearer ${previewSecret}`) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
 

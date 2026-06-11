@@ -9,7 +9,7 @@ const SENDER_DOMAIN = "notify.purplelife.org";
 
 /**
  * Render a registered template and enqueue it directly via the email queue,
- * skipping the HTTP `/lovable/email/transactional/send` route. Use this from
+ * skipping the HTTP `/api/email/transactional/send` route. Use this from
  * server contexts that have no Bearer token (cron jobs, internal jobs).
  * Returns { ok, messageId } and never throws, callers can ignore failures.
  */
