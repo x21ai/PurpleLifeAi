@@ -6,7 +6,10 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+// Import the ESM build explicitly: the package has no "exports" map, so the
+// bare specifier resolves to the CJS build, which require()s Vite's ESM entry
+// in a cycle and crashes config loading on Node >= 22.
+import { defineConfig } from "@lovable.dev/vite-tanstack-config/dist/index.js";
 import { imagetools } from "vite-imagetools";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

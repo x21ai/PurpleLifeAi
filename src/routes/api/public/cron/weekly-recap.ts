@@ -10,8 +10,7 @@ export const Route = createFileRoute("/api/public/cron/weekly-recap")({
     handlers: {
       POST: async ({ request }) => {
         const cronSecret = process.env.CRON_SECRET;
-        const provided =
-          request.headers.get("x-cron-secret") ?? request.headers.get("apikey");
+        const provided = request.headers.get("x-cron-secret") ?? request.headers.get("apikey");
         if (!cronSecret || provided !== cronSecret) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
@@ -34,7 +33,10 @@ export const Route = createFileRoute("/api/public/cron/weekly-recap")({
           const userId = p.id as string;
           const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
           const email = u?.user?.email;
-          if (!email) { skipped++; continue; }
+          if (!email) {
+            skipped++;
+            continue;
+          }
 
           const [{ data: entries }, { data: seizures }, { data: doses }] = await Promise.all([
             supabaseAdmin
@@ -56,8 +58,13 @@ export const Route = createFileRoute("/api/public/cron/weekly-recap")({
           ]);
 
           const entryCount = entries?.length ?? 0;
-          if (entryCount === 0) { skipped++; continue; }
-          const voiceCount = (entries ?? []).filter((e: any) => (e.voice_transcript ?? "").trim().length > 0).length;
+          if (entryCount === 0) {
+            skipped++;
+            continue;
+          }
+          const voiceCount = (entries ?? []).filter(
+            (e: any) => (e.voice_transcript ?? "").trim().length > 0,
+          ).length;
           const tagCounts = new Map<string, number>();
           for (const e of entries ?? []) {
             for (const t of ((e as any).ai_tags ?? []) as string[]) {
@@ -69,7 +76,9 @@ export const Route = createFileRoute("/api/public/cron/weekly-recap")({
             .map(([tag, count]) => ({ tag, count }))
             .sort((a, b) => b.count - a.count)
             .slice(0, 4);
-          const missedDoses = (doses ?? []).filter((d: any) => d.status === "missed" || d.status === "skipped").length;
+          const missedDoses = (doses ?? []).filter(
+            (d: any) => d.status === "missed" || d.status === "skipped",
+          ).length;
 
           await enqueueRenderedEmail({
             templateName: "weekly-recap",
