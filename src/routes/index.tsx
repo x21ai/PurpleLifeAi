@@ -43,7 +43,6 @@ export const Route = createFileRoute("/")({
               name: "Purple",
               url: "https://purplelife.org",
               logo: "https://purplelife.org/icon-512.png",
-              sameAs: ["https://purplelife.lovable.app"],
             },
             {
               "@type": "WebSite",
