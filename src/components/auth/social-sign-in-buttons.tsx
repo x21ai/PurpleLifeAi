@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { lovable } from "@/integrations/lovable";
+import { supabase } from "@/integrations/supabase/client";
 import { oauthRedirectUrl } from "@/lib/auth-oauth";
 import { toast } from "sonner";
 
@@ -46,10 +46,11 @@ export function SocialSignInButtons({ helper }: { helper?: string } = {}) {
 
   const handleOAuth = async (provider: Provider) => {
     setBusy(provider);
-    const result = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: oauthRedirectUrl(),
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: oauthRedirectUrl() },
     });
-    if (result.error) {
+    if (error) {
       setBusy(null);
       toast.error(
         provider === "apple"
@@ -58,9 +59,7 @@ export function SocialSignInButtons({ helper }: { helper?: string } = {}) {
       );
       return;
     }
-    if (result.redirected) return;
-    // Tokens already in session; full reload lands on the post-auth route.
-    window.location.assign("/");
+    // signInWithOAuth navigates the browser to the provider; nothing else to do.
   };
 
   return (

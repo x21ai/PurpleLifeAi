@@ -20,6 +20,7 @@
     "check:unique-images": "node scripts/check-unique-route-images.mjs"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.82",
     "@ai-sdk/openai-compatible": "^2.0.48",
     "@ai-sdk/react": "^3.0.199",
     "@cloudflare/vite-plugin": "^1.25.5",
@@ -27,9 +28,6 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^5.2.2",
-    "@lovable.dev/cloud-auth-js": "^1.1.2",
-    "@lovable.dev/email-js": "^0.0.4",
-    "@lovable.dev/webhooks-js": "^0.0.1",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.8",
