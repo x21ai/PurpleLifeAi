@@ -321,7 +321,26 @@ async function runForUser(userId: string): Promise<{ ok: boolean; reason?: strin
 
   const narrative = await narrate(score, band, factors);
 
-  const today = new Date().toISOString().slice(0, 10);
+  // for_date is the USER'S calendar day, not the server's UTC day; a UTC key
+  // serves yesterday's forecast all morning in UTC+10 and tomorrow's all
+  // evening in UTC-8.
+  const { data: profileTz } = await admin
+    .from("profiles")
+    .select("timezone")
+    .eq("id", userId)
+    .maybeSingle();
+  const tz = (profileTz?.timezone as string | null) || "UTC";
+  let today: string;
+  try {
+    today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  } catch {
+    today = new Date().toISOString().slice(0, 10);
+  }
 
   const { error: upsertErr } = await admin
     .from("risk_forecasts")

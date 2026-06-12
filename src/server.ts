@@ -51,7 +51,11 @@ function getEdgeCache(): Cache | null {
 // stays on Supabase pg_cron (5s interval, sub-minute latency for auth emails).
 const CRON_ENDPOINTS: Record<string, string[]> = {
   "* * * * *": ["/api/public/cron/dose-reminders"],
-  "0 * * * *": ["/api/public/cron/oura-sync-all", "/api/public/cron/whoop-sync-all"],
+  "0 * * * *": [
+    "/api/public/cron/oura-sync-all",
+    "/api/public/cron/whoop-sync-all",
+    "/api/public/cron/seed-doses",
+  ],
   "0 6 * * *": [
     "/api/public/cron/care-daily-digest",
     "/api/public/cron/medical-reports",

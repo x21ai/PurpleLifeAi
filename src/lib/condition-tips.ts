@@ -13,6 +13,7 @@ import {
   type ConditionTrait,
 } from "./condition-catalog";
 import type { ConditionTag } from "./condition-prompts";
+import { localDayIndex } from "./utils";
 
 export interface ConditionTip {
   /** Stable id used for "don't show again today" dedupe. */
@@ -113,7 +114,7 @@ export function pickDailyTip(
   conditions: string[] | null | undefined,
   dayMs: number,
 ): { tag: ConditionTag; tip: ConditionTip } {
-  const day = Math.floor(dayMs / 86_400_000);
+  const day = localDayIndex(dayMs);
   const traits = [...traitsForConditions(conditions)].filter((t) => TRAIT_TIPS[t]);
   if (traits.length === 0) {
     return { tag: "general", tip: GENERIC[day % GENERIC.length] };

@@ -34,6 +34,7 @@ import { WeeklyRecapCard } from "@/components/today/weekly-recap-card";
 import { SevenDayTrendStrip } from "@/components/today/seven-day-trend-strip";
 import { ReEngagementNudge } from "@/components/today/re-engagement-nudge";
 import { TopInsightCard } from "@/components/today/top-insight-card";
+import { localDayIndex } from "@/lib/utils";
 import { PreTripChecklist } from "@/components/today/pre-trip-checklist";
 import { TripWrapupCard } from "@/components/today/trip-wrapup-card";
 
@@ -173,12 +174,12 @@ function TodayPage() {
     const { journalPrompt } = getTodayGreeting(profile?.conditions ?? [], now.getHours());
     const list = promptsForConditions(profile?.conditions ?? []);
     if (carePrompts && carePrompts.length > 0) {
-      const day = Math.floor(now.getTime() / 86_400_000);
+      const day = localDayIndex(now);
       return carePrompts[day % carePrompts.length];
     }
     if (list.length === 0) return journalPrompt;
     // Deterministic per-day so the prompt doesn't flicker on re-render.
-    const day = Math.floor(now.getTime() / 86_400_000);
+    const day = localDayIndex(now);
     return list[day % list.length];
   }, [profile?.conditions, now, carePrompts]);
   const greetingSuffix = useMemo(() => {
