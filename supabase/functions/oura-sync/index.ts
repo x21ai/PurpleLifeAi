@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { pickSleepSessionPerDay, mapOuraDayToBiometricFields } from "../_shared/oura-sleep-mapping.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -130,28 +131,7 @@ async function syncRange(user_id: string, start: string, end: string) {
   const spo2Map = byDay(spo2.data);
   const cardioMap = byDay(cardio.data);
 
-  // For /sleep endpoint, pick the night per day: prefer long_sleep sessions,
-  // and among candidates keep the LONGEST. The previous "last long_sleep
-  // wins" let a short split-night segment (or array ordering) replace the
-  // main night, which is how a 9h11m night could show up wrong.
-  const sleepDetailMap = new Map<string, any>();
-  for (const s of (sleepDetail.data ?? []) as any[]) {
-    if (!s.day) continue;
-    const prev = sleepDetailMap.get(s.day);
-    if (!prev) {
-      sleepDetailMap.set(s.day, s);
-      continue;
-    }
-    const prevLong = prev.type === "long_sleep";
-    const curLong = s.type === "long_sleep";
-    if (curLong !== prevLong) {
-      if (curLong) sleepDetailMap.set(s.day, s);
-      continue;
-    }
-    if ((s.total_sleep_duration ?? 0) > (prev.total_sleep_duration ?? 0)) {
-      sleepDetailMap.set(s.day, s);
-    }
-  }
+  const sleepDetailMap = pickSleepSessionPerDay((sleepDetail.data ?? []) as Parameters<typeof pickSleepSessionPerDay>[0]);
 
   const days = new Set<string>([
     ...sleepDailyMap.keys(), ...readinessMap.keys(), ...stressMap.keys(),
@@ -172,26 +152,19 @@ async function syncRange(user_id: string, start: string, end: string) {
 
     const recordedAt = new Date(`${day}T12:00:00Z`).toISOString();
 
+    const mapped = mapOuraDayToBiometricFields({
+      day,
+      sleepSession: sl,
+      dailySleep: sd,
+      dailyReadiness: rd,
+    });
+
     const row: Record<string, unknown> = {
       user_id,
       source: "oura",
       recorded_at: recordedAt,
-      sleep_total_min: sl?.total_sleep_duration ? Math.round(sl.total_sleep_duration / 60) : null,
-      sleep_rem_min: sl?.rem_sleep_duration ? Math.round(sl.rem_sleep_duration / 60) : null,
-      sleep_deep_min: sl?.deep_sleep_duration ? Math.round(sl.deep_sleep_duration / 60) : null,
-      sleep_light_min: sl?.light_sleep_duration ? Math.round(sl.light_sleep_duration / 60) : null,
-      sleep_awake_min: sl?.awake_time ? Math.round(sl.awake_time / 60) : null,
-      sleep_latency_min: sl?.latency ? Math.round(sl.latency / 60) : null,
-      // Session efficiency is the real percentage; daily_sleep's
-      // contributors.efficiency is a 0-100 contributor SCORE, not a percent.
-      sleep_efficiency_pct: sl?.efficiency ?? null,
-      sleep_score: sd?.score ?? null,
-      hrv_rmssd_ms: sl?.average_hrv ?? null,
-      resting_hr_bpm: sl?.lowest_heart_rate ?? null,
-      // Temperature deviation lives on daily_readiness, not the sleep session.
-      body_temp_deviation_c: rd?.temperature_deviation ?? sl?.readiness?.temperature_deviation ?? null,
+      ...mapped,
       spo2_pct: sp?.spo2_percentage?.average ?? null,
-      oura_readiness_score: rd?.score ?? null,
       oura_stress_score: st?.stress_high ?? null,
       oura_resilience_level: rs?.level ?? null,
       oura_activity_score: ac?.score ?? null,
