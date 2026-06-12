@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { CareRole, CareScope } from "./care.scopes";
+import { dateKeyInTimeZone } from "./utils";
 import { ROLE_DEFAULT_SCOPES, ROLE_LABELS } from "./care.scopes";
 import { sendTransactionalEmail } from "./email/send";
 import { getRequest } from "@tanstack/react-start/server";
@@ -935,7 +936,14 @@ export const caregiverReadToday = createServerFn({ method: "POST" })
   .inputValidator(ownerInput)
   .handler(async ({ data, context }) => {
     await assertScope(data.owner_id, context.userId, "today:read");
-    const today = new Date().toISOString().slice(0, 10);
+    // "Today" is the OWNER'S calendar day (for_date is written in their
+    // profile timezone by the risk forecaster).
+    const { data: ownerProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("timezone")
+      .eq("id", data.owner_id)
+      .maybeSingle();
+    const today = dateKeyInTimeZone(new Date(), ownerProfile?.timezone || "UTC");
     const { data: forecast } = await supabaseAdmin
       .from("risk_forecasts")
       .select("for_date, risk_score, band, ai_narrative, top_factors")

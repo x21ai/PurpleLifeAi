@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 import { listHydrationForDay } from "@/lib/hydration.functions";
 import { listFoodForRange } from "@/lib/food.functions";
+import { localDateKey } from "@/lib/utils";
 import { Droplets, UtensilsCrossed } from "lucide-react";
 
 function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
@@ -35,7 +36,9 @@ export function IntakeRangeView({ range }: { range: "week" | "month" }) {
     const map = new Map<string, { day: Date; label: string; water_ml: number; other_ml: number; kcal: number }>();
     for (let i = 0; i < days; i++) {
       const d = new Date(from.getTime() + i * 86400000);
-      const key = d.toISOString().slice(0, 10);
+      // Local-day keys: ISO keys are UTC dates and shift entries near local
+      // midnight into the wrong bar for anyone away from UTC.
+      const key = localDateKey(d);
       map.set(key, {
         day: d,
         label: range === "week"
@@ -45,12 +48,12 @@ export function IntakeRangeView({ range }: { range: "week" | "month" }) {
       });
     }
     for (const r of hRows) {
-      const k = new Date(r.consumed_at).toISOString().slice(0, 10);
+      const k = localDateKey(r.consumed_at);
       const b = map.get(k); if (!b) continue;
       if (r.kind === "water") b.water_ml += r.volume_ml; else b.other_ml += r.volume_ml;
     }
     for (const r of fRows) {
-      const k = new Date(r.consumed_at).toISOString().slice(0, 10);
+      const k = localDateKey(r.consumed_at);
       const b = map.get(k); if (!b) continue;
       b.kcal += r.calories_kcal ?? 0;
     }

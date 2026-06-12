@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { dateKeyInTimeZone } from "@/lib/utils";
 
 /**
  * 7-day trend strip, descriptive snapshot of sleep, HRV, and adherence
@@ -24,10 +25,6 @@ export type SevenDayTrends = {
 
 const SLEEP_TARGET_MIN = 7.5 * 60;
 
-function dayKey(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
 export const getSevenDayTrends = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<SevenDayTrends> => {
@@ -35,6 +32,16 @@ export const getSevenDayTrends = createServerFn({ method: "GET" })
     const now = new Date();
     const since14 = new Date(now.getTime() - 14 * 24 * 3600 * 1000);
     const since7 = new Date(now.getTime() - 7 * 24 * 3600 * 1000);
+
+    // Day buckets follow the USER'S calendar (server runs in UTC; UTC keys
+    // shift missed doses and sleep onto the wrong bar for non-UTC users).
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("timezone")
+      .eq("id", userId)
+      .maybeSingle();
+    const tz = profileRow?.timezone || "UTC";
+    const dayKey = (d: Date): string => dateKeyInTimeZone(d, tz);
 
     const [{ data: bios14 }, { data: doses }] = await Promise.all([
       supabase
@@ -79,13 +86,14 @@ export const getSevenDayTrends = createServerFn({ method: "GET" })
       missedByDay.set(k, (missedByDay.get(k) ?? 0) + 1);
     }
 
-    // Build 7-day window (oldest -> today).
+    // Build 7-day window (oldest -> today), stepping in 24h increments and
+    // deduping on the user-local day key.
     const days: DayPoint[] = [];
-    const cursor = new Date(now);
-    cursor.setUTCHours(0, 0, 0, 0);
-    cursor.setUTCDate(cursor.getUTCDate() - 6);
-    for (let i = 0; i < 7; i++) {
-      const k = dayKey(cursor);
+    const seen = new Set<string>();
+    for (let i = 6; i >= 0; i--) {
+      const k = dayKey(new Date(now.getTime() - i * 24 * 3600 * 1000));
+      if (seen.has(k)) continue;
+      seen.add(k);
       const row = byDay.get(k);
       days.push({
         date: k,
@@ -93,18 +101,21 @@ export const getSevenDayTrends = createServerFn({ method: "GET" })
         hrvMs: row?.hrv ?? null,
         missedDoses: missedByDay.get(k) ?? 0,
       });
-      cursor.setUTCDate(cursor.getUTCDate() + 1);
     }
 
     const sleeps7 = days.map((d) => d.sleepMin).filter((v): v is number => v != null);
-    const sleepAvgMin = sleeps7.length ? Math.round(sleeps7.reduce((a, b) => a + b, 0) / sleeps7.length) : null;
+    const sleepAvgMin = sleeps7.length
+      ? Math.round(sleeps7.reduce((a, b) => a + b, 0) / sleeps7.length)
+      : null;
     const sleepDebtMin =
       sleeps7.length === 7
         ? Math.max(0, Math.round(SLEEP_TARGET_MIN * 7 - sleeps7.reduce((a, b) => a + b, 0)))
         : null;
 
     const hrvs7 = days.map((d) => d.hrvMs).filter((v): v is number => v != null);
-    const hrvAvgMs = hrvs7.length ? Math.round(hrvs7.reduce((a, b) => a + b, 0) / hrvs7.length) : null;
+    const hrvAvgMs = hrvs7.length
+      ? Math.round(hrvs7.reduce((a, b) => a + b, 0) / hrvs7.length)
+      : null;
 
     // Prior 7d window for delta
     const prior: number[] = [];
