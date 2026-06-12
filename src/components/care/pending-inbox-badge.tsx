@@ -29,10 +29,8 @@ export function PendingInboxBadge({ variant = "compact", onNavigate, className }
   useEffect(() => {
     const channel = supabase
       .channel(`care-pending-inbox-${channelId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "pending_changes" },
-        () => qc.invalidateQueries({ queryKey: ["care", "pending-count"] }),
+      .on("postgres_changes", { event: "*", schema: "public", table: "pending_changes" }, () =>
+        qc.invalidateQueries({ queryKey: ["care", "pending-count"] }),
       )
       .subscribe();
     return () => {

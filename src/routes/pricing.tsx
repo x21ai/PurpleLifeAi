@@ -115,10 +115,13 @@ function PricingPage() {
         <section className="mx-auto max-w-4xl px-6 sm:px-10 pt-24 sm:pt-32 pb-12 text-center">
           <p className="label-eyebrow text-muted-foreground">Pricing</p>
           <h1 className="mt-4 font-serif text-5xl sm:text-7xl leading-[1.02] tracking-[-0.02em]">
-            Simple plans.<br />Honest pricing.
+            Simple plans.
+            <br />
+            Honest pricing.
           </h1>
           <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
-            Purple is free for everyone right now. The plans below are how we&rsquo;ll keep the lights on later, with plenty of notice.
+            Purple is free for everyone right now. The plans below are how we&rsquo;ll keep the
+            lights on later, with plenty of notice.
           </p>
           {showFreeBanner && (
             <div className="mt-8 inline-flex items-center gap-2 rounded-full bg-[color:var(--purple-primary)]/15 px-4 py-2 text-sm font-medium text-[color:var(--purple-primary)]">
@@ -144,7 +147,10 @@ function PricingPage() {
                 onClick={() => setInterval("yearly")}
                 className={`px-4 py-1.5 rounded-full transition ${interval === "yearly" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
               >
-                Yearly <span className="ml-1 text-[10px] uppercase tracking-wider opacity-70">save 17%</span>
+                Yearly{" "}
+                <span className="ml-1 text-[10px] uppercase tracking-wider opacity-70">
+                  save 17%
+                </span>
               </button>
             </div>
           </div>

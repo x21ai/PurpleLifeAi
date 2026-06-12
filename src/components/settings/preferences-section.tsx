@@ -1,6 +1,19 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { Sparkles, MessageCircle, Loader2, BookOpen, ChevronRight, Moon, Bell, Plus, X, Droplets, MailCheck, BedDouble } from "lucide-react";
+import {
+  Sparkles,
+  MessageCircle,
+  Loader2,
+  BookOpen,
+  ChevronRight,
+  Moon,
+  Bell,
+  Plus,
+  X,
+  Droplets,
+  MailCheck,
+  BedDouble,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -23,12 +36,32 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 
 type ModelGroup = "Fast" | "Balanced" | "Deepest";
 const MODEL_OPTIONS: { value: string; label: string; hint: string; group: ModelGroup }[] = [
-  { value: "gemini-flash", label: "Gemini Flash", hint: "Quickest replies. Best default.", group: "Fast" },
+  {
+    value: "gemini-flash",
+    label: "Gemini Flash",
+    hint: "Quickest replies. Best default.",
+    group: "Fast",
+  },
   { value: "gpt-5-mini", label: "GPT-5 mini", hint: "OpenAI, fast and balanced.", group: "Fast" },
-  { value: "claude-sonnet", label: "Claude Sonnet", hint: "Warm tone, careful reasoning. Used for actions.", group: "Balanced" },
+  {
+    value: "claude-sonnet",
+    label: "Claude Sonnet",
+    hint: "Warm tone, careful reasoning. Used for actions.",
+    group: "Balanced",
+  },
   { value: "gemini-pro", label: "Gemini Pro", hint: "Slower, more thorough.", group: "Balanced" },
-  { value: "gpt-5", label: "GPT-5", hint: "OpenAI flagship. Deep reasoning, slower.", group: "Deepest" },
-  { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro", hint: "Google's deepest. Long context.", group: "Deepest" },
+  {
+    value: "gpt-5",
+    label: "GPT-5",
+    hint: "OpenAI flagship. Deep reasoning, slower.",
+    group: "Deepest",
+  },
+  {
+    value: "gemini-2.5-pro",
+    label: "Gemini 2.5 Pro",
+    hint: "Google's deepest. Long context.",
+    group: "Deepest",
+  },
 ];
 const KNOWN_CONDITION_IDS = new Set(CONDITION_OPTIONS.map((o) => o.id as string));
 
@@ -58,7 +91,9 @@ export function PreferencesSection() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("ai_model_preference, floating_ask_enabled, wake_time, sleep_time, snooze_minutes, conditions, conditions_note, daily_water_goal_ml, quiet_hours_start, quiet_hours_end, weekly_digest_enabled")
+        .select(
+          "ai_model_preference, floating_ask_enabled, wake_time, sleep_time, snooze_minutes, conditions, conditions_note, daily_water_goal_ml, quiet_hours_start, quiet_hours_end, weekly_digest_enabled",
+        )
         .eq("id", userId)
         .maybeSingle();
       if (cancelled) return;
@@ -206,19 +241,14 @@ export function PreferencesSection() {
     if (!userId) return;
     setConditions(next);
     setSavingConditions(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ conditions: next })
-      .eq("id", userId);
+    const { error } = await supabase.from("profiles").update({ conditions: next }).eq("id", userId);
     setSavingConditions(false);
     if (error) toast.error("Couldn't save");
   };
 
   const toggleCondition = async (id: string) => {
     if (!userId) return;
-    const next = conditions.includes(id)
-      ? conditions.filter((c) => c !== id)
-      : [...conditions, id];
+    const next = conditions.includes(id) ? conditions.filter((c) => c !== id) : [...conditions, id];
     await persistConditions(next);
   };
 
@@ -336,7 +366,9 @@ export function PreferencesSection() {
               <SelectContent>
                 {(["Fast", "Balanced", "Deepest"] as const).map((g) => (
                   <SelectGroup key={g}>
-                    <SelectLabel className="px-2 pt-2 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">{g}</SelectLabel>
+                    <SelectLabel className="px-2 pt-2 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {g}
+                    </SelectLabel>
                     {MODEL_OPTIONS.filter((o) => o.group === g).map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         <div className="flex flex-col items-start">
@@ -363,7 +395,8 @@ export function PreferencesSection() {
               {savingFab && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
             </Label>
             <p className="mt-1 text-xs text-muted-foreground">
-              Show a small Ask Purple bubble on every screen so you can chat without leaving what you're doing.
+              Show a small Ask Purple bubble on every screen so you can chat without leaving what
+              you're doing.
             </p>
           </div>
           <Switch
@@ -380,11 +413,14 @@ export function PreferencesSection() {
             Sleep window
           </Label>
           <p className="mt-1 text-xs text-muted-foreground">
-            Doses that fall during your sleep are flagged with a moon icon so you know to take them when you wake.
+            Doses that fall during your sleep are flagged with a moon icon so you know to take them
+            when you wake.
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <Label htmlFor="wake-time" className="text-sm text-muted-foreground">Wake</Label>
+              <Label htmlFor="wake-time" className="text-sm text-muted-foreground">
+                Wake
+              </Label>
               <input
                 id="wake-time"
                 type="time"
@@ -395,7 +431,9 @@ export function PreferencesSection() {
               />
             </div>
             <div className="flex items-center gap-2">
-              <Label htmlFor="sleep-time" className="text-sm text-muted-foreground">Sleep</Label>
+              <Label htmlFor="sleep-time" className="text-sm text-muted-foreground">
+                Sleep
+              </Label>
               <input
                 id="sleep-time"
                 type="time"
@@ -409,12 +447,16 @@ export function PreferencesSection() {
         </div>
 
         <div className="border-t border-border pt-5">
-          <Label htmlFor="snooze-min" className="flex items-center gap-2 font-serif text-base text-foreground">
+          <Label
+            htmlFor="snooze-min"
+            className="flex items-center gap-2 font-serif text-base text-foreground"
+          >
             <Bell className="h-4 w-4 text-primary" />
             Reminder snooze
           </Label>
           <p className="mt-1 text-xs text-muted-foreground">
-            How long "Snooze" pushes a dose reminder out, and how often a critical-style alarm repeats.
+            How long "Snooze" pushes a dose reminder out, and how often a critical-style alarm
+            repeats.
           </p>
           <div className="mt-3">
             <Select value={snoozeMinutes} onValueChange={saveSnooze} disabled={loading}>
@@ -431,7 +473,10 @@ export function PreferencesSection() {
         </div>
 
         <div className="border-t border-border pt-5">
-          <Label htmlFor="water-goal" className="flex items-center gap-2 font-serif text-base text-foreground">
+          <Label
+            htmlFor="water-goal"
+            className="flex items-center gap-2 font-serif text-base text-foreground"
+          >
             <Droplets className="h-4 w-4 text-primary" />
             Daily water goal
             {savingGoal && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
@@ -464,11 +509,14 @@ export function PreferencesSection() {
             Quiet hours
           </Label>
           <p className="mt-1 text-xs text-muted-foreground">
-            Dose reminders go silent during this window. The dose still shows on Today · Purple just doesn't push a notification.
+            Dose reminders go silent during this window. The dose still shows on Today · Purple just
+            doesn't push a notification.
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <Label htmlFor="quiet-start" className="text-sm text-muted-foreground">From</Label>
+              <Label htmlFor="quiet-start" className="text-sm text-muted-foreground">
+                From
+              </Label>
               <input
                 id="quiet-start"
                 type="time"
@@ -479,7 +527,9 @@ export function PreferencesSection() {
               />
             </div>
             <div className="flex items-center gap-2">
-              <Label htmlFor="quiet-end" className="text-sm text-muted-foreground">Until</Label>
+              <Label htmlFor="quiet-end" className="text-sm text-muted-foreground">
+                Until
+              </Label>
               <input
                 id="quiet-end"
                 type="time"
@@ -530,7 +580,9 @@ export function PreferencesSection() {
             <BookOpen className="h-4 w-4 text-primary" />
             <div>
               <p className="font-serif text-base text-foreground">How Purple thinks</p>
-              <p className="text-xs text-muted-foreground">What it reads, when it acts, what stays private.</p>
+              <p className="text-xs text-muted-foreground">
+                What it reads, when it acts, what stays private.
+              </p>
             </div>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />

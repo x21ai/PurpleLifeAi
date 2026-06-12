@@ -34,7 +34,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     try {
       const v = localStorage.getItem(STORAGE_KEY);
       if (v === "light" || v === "dark" || v === "system") stored = v;
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setModeState(stored);
     const r = resolve(stored);
     setResolved(r);
@@ -55,7 +57,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [mode]);
 
   const setMode = React.useCallback((m: ThemeMode) => {
-    try { localStorage.setItem(STORAGE_KEY, m); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(STORAGE_KEY, m);
+    } catch {
+      /* ignore */
+    }
     setModeState(m);
     const r = resolve(m);
     setResolved(r);

@@ -6,28 +6,30 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { getFriendBasics } from "@/lib/friendships.functions";
 import { labelForCondition } from "@/lib/condition-prompts";
 
+function FriendBasicsError({ reset }: { reset: () => void }) {
+  const router = useRouter();
+  return (
+    <div className="mx-auto max-w-xl px-5 sm:px-8 pt-10 pb-16 text-sm text-muted-foreground">
+      Couldn't load this friend.{" "}
+      <button
+        onClick={() => {
+          router.invalidate();
+          reset();
+        }}
+        className="underline"
+      >
+        Try again
+      </button>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/_app/friends/$friendshipId")({
   head: () => ({
     meta: [{ title: "About a friend · Purple" }],
   }),
   component: GatedFriendBasicsPage,
-  errorComponent: ({ reset }) => {
-    const router = useRouter();
-    return (
-      <div className="mx-auto max-w-xl px-5 sm:px-8 pt-10 pb-16 text-sm text-muted-foreground">
-        Couldn't load this friend.{" "}
-        <button
-          onClick={() => {
-            router.invalidate();
-            reset();
-          }}
-          className="underline"
-        >
-          Try again
-        </button>
-      </div>
-    );
-  },
+  errorComponent: FriendBasicsError,
   notFoundComponent: () => (
     <div className="mx-auto max-w-xl px-5 sm:px-8 pt-10 pb-16 text-sm text-muted-foreground">
       Friendship not found.

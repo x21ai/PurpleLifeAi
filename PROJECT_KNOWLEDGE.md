@@ -80,19 +80,19 @@ See `docs/LAUNCH-CHECKLIST.md` for the full ordered checklist. Summary:
 
 ## 3. Tech stack
 
-| Layer | Technology |
-|-------|------------|
-| Framework | TanStack Start 1.168, React 19, file-based routing, SSR plus server functions |
-| Build | Vite 7 via `@lovable.dev/vite-tanstack-config` wrapper, `vite-imagetools` for responsive images |
-| Styling | Tailwind CSS 4 (configured through `src/styles.css`, no `tailwind.config.js`), shadcn/ui (`src/components/ui/`), Oura-styled variants (`src/components/ui-oura/`) |
-| Data | Lovable Cloud (Supabase): Postgres (~100 migrations), Auth, Storage, Edge Functions, pgvector, PGMQ |
-| Payments | Stripe (subscriptions, promo codes, webhooks) |
-| AI | Vercel AI SDK (`ai`, `@ai-sdk/*`), Anthropic Claude default; user-selectable OpenAI, Gemini, Grok |
-| Email | React Email templates, Postgres PGMQ queue, Resend delivery, Resend bounce / complaint suppression |
-| Hosting | Cloudflare Workers (`wrangler.jsonc`, `nodejs_compat`), SSR worker entry `src/server.ts` |
-| i18n | i18next + react-i18next, `en` and `es` |
-| Tests | Playwright e2e (`tests/e2e/`), 5 viewport projects |
-| Package manager | bun |
+| Layer           | Technology                                                                                                                                                        |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework       | TanStack Start 1.168, React 19, file-based routing, SSR plus server functions                                                                                     |
+| Build           | Vite 7 via `@lovable.dev/vite-tanstack-config` wrapper, `vite-imagetools` for responsive images                                                                   |
+| Styling         | Tailwind CSS 4 (configured through `src/styles.css`, no `tailwind.config.js`), shadcn/ui (`src/components/ui/`), Oura-styled variants (`src/components/ui-oura/`) |
+| Data            | Lovable Cloud (Supabase): Postgres (~100 migrations), Auth, Storage, Edge Functions, pgvector, PGMQ                                                               |
+| Payments        | Stripe (subscriptions, promo codes, webhooks)                                                                                                                     |
+| AI              | Vercel AI SDK (`ai`, `@ai-sdk/*`), Anthropic Claude default; user-selectable OpenAI, Gemini, Grok                                                                 |
+| Email           | React Email templates, Postgres PGMQ queue, Resend delivery, Resend bounce / complaint suppression                                                                |
+| Hosting         | Cloudflare Workers (`wrangler.jsonc`, `nodejs_compat`), SSR worker entry `src/server.ts`                                                                          |
+| i18n            | i18next + react-i18next, `en` and `es`                                                                                                                            |
+| Tests           | Playwright e2e (`tests/e2e/`), 5 viewport projects                                                                                                                |
+| Package manager | bun                                                                                                                                                               |
 
 Dev server: `bun run dev` on port 8080.
 
@@ -149,42 +149,51 @@ Do not add new Supabase Edge Functions for app-internal logic. Use `createServer
 Each entry lists the routes and the key files an AI should open when working on that area.
 
 ### Marketing and public site
+
 - Routes: `/`, `/about`, `/features`, `/pricing`, `/trust`, `/charter`, `/contact`, `/privacy`, `/terms`, `/how-purple-thinks`, `/community`, `/community/$postId`, `/community/resources`. Community gated by `feature_community_enabled` (default OFF).
 - Components: `src/components/marketing/`.
 - Contact form lands in `contact_messages`, surfaced in admin.
 - Each route has a unique hero image (CI-enforced via `check:unique-images`).
 
 ### Auth and onboarding
+
 - Routes: `/sign-in`, `/sign-up`, `/reset-password`, `/welcome`.
 - Social: `src/components/auth/social-sign-in-buttons.tsx`.
 - `_app` layout redirects un-onboarded users to `/welcome` (two steps: profile + first journal entry with extraction, then `/today`). Captures timezone when unset.
 
 ### Today
+
 - Routes: `/today`, `/today/risk`.
 - Components: `src/components/today/`.
 - Surfaces readiness and risk scores, due med doses, hydration quick-add, travel/timezone banners, weekly recap card, condition tips, install nudges, missed-dose catch-up card.
 
 ### Patterns (Insights)
+
 - Route: `/insights` (vitals tiles, goals, pattern cards). `/vitals` redirects here.
 - Components: `src/routes/_app/insights.tsx`, `src/components/insights/`.
 
 ### Journal
+
 - Routes: `/journal`, `/journal/new`.
 - Text, voice (`src/components/journal/use-voice-capture.ts`), and photo capture.
 - Offline queue: `src/lib/offline-journal-queue.ts`, `src/hooks/use-offline-journal-sync.ts`.
 - AI extraction via the `journal-processor` edge function.
 
 ### Seizures and timeline
+
 - Routes: `/seizures/new`, `/timeline`.
 
 ### Hydration and intake
+
 - Routes: `/hydration`.
 - Water, electrolytes, aura events, food logging with voice (`voice-intake-sheet.tsx`) and photo recognition (`src/lib/food.server.ts`).
 
 ### Vitals
+
 - Route: `/vitals` redirects to `/insights` (launch decision). Real vitals UI lives under Patterns.
 
 ### Medications
+
 - Routes: `/meds`, `/meds/$medId`.
 - Meds, supplements, rescue meds. Dose schedules, side-effect tracking, refill awareness. Inline took/skip/snooze; log-dose-now.
 - Reminders: service worker alarms (`public/sw.js` plus `src/lib/med-notifications.ts`), web push (`src/lib/push.server.ts`), dose-reminders cron, and the `med-dose-action` edge function for taken / missed actions from notifications. Delivery log: `notification_delivery_log` (`docs/RELIABILITY.md`).
@@ -193,6 +202,7 @@ Each entry lists the routes and the key files an AI should open when working on 
 - Reminder cron: `/api/public/cron/dose-reminders`.
 
 ### Biometrics and integrations
+
 - Routes: `/biometrics`, `/biometrics/$metric`. `/my-health` redirects to `/biometrics`.
 - Oura, Whoop, Apple Health, manual data; metric detail charts. Sync UI uses `last_sync_at` only (never `updated_at`).
 - OAuth connects under `/tools` with callbacks at `/oauth/oura/callback` and `/oauth/whoop/callback`.
@@ -200,16 +210,19 @@ Each entry lists the routes and the key files an AI should open when working on 
 - Apple Health XML import: `/apple-health-import`, `src/lib/apple-health-xml.ts`.
 
 ### Reports and records
+
 - Routes: `/reports/metrics`, `/reports/documents`, `/reports/medical-history`, `/reports/new`, `/reports/$reportId`, `/reports/trends/$metricKey`.
 - Lab PDF upload, AI metric extraction into `report_metrics` with canonical naming (`src/lib/metric-naming.ts`).
 - Trend charts, clinician-ready PDF export (`pdf-lib`), shareable tokenized links (`/share/report/$token`), scheduled report sharing, duplicate detection (admin).
 
 ### DNA (Pro)
+
 - Route: `/my-health-dna`.
 - 23andMe-style raw file upload, curated RSID interpretation (`src/lib/dna-curated-rsids.ts`), feeds the care profile.
 - Pro-gated via `src/lib/pro-gate.ts`. Dark-launched behind `feature_dna_enabled` (default OFF).
 
 ### Ask Purple (AI chat)
+
 - Route: `/chat`. Streaming responses from `/api/chat` via Vercel AI SDK.
 - Tools: `src/lib/purple-chat-tools.server.ts`. System prompt: `src/lib/purple-chat-prompt.server.ts`.
 - Research citations from the pgvector `research_sources` library.
@@ -218,17 +231,20 @@ Each entry lists the routes and the key files an AI should open when working on 
 - `ai_memory` table provides long-term memory with embeddings.
 
 ### Care (caregivers)
+
 - Routes: `/care`, `/care/$ownerId`, `/care/inbox`, `/care/accept`, plus caregiver messaging at `/chat-care`.
 - Invite acceptance via SECURITY DEFINER RPCs (`accept_care_invite`, `accept_assigned_care_invite`); tokens not client-readable. Scoped read / write permissions (`src/lib/care.scopes.ts`), pending-change approval, audit logging (`care_audit_log`), care digests by email, caregiver visit tracking.
 - Read-only by default. Any write by a caregiver requires an explicit "confirm to write" step.
 
 ### Conditions
+
 - Route: `/condition/$slug`.
 - Per-condition pages built from `src/lib/condition-catalog.ts`, with care profiles, tips (`condition-tips.ts`), welcome copy (`condition-welcome-copy.ts`), and AI feature suggestions (`feature-suggestions.functions.ts`).
 - `/my-health`: body hub and condition overview.
 - Conditions live on `profiles.conditions` (text[]) plus `profiles.conditions_note`. Used by onboarding, Today greeting, journal prompt suggestions, and the Ask-Purple system prompt. See `src/lib/condition-prompts.ts`.
 
 ### Travel
+
 - Route: `/settings/travel`.
 - Itinerary-driven: `trips.legs` (jsonb) plus `shift_strategy` (`home` | `snap` | `gradual`).
 - Schedule generation is in `src/lib/travel-scheduler.ts` (pure functions).
@@ -237,26 +253,32 @@ Each entry lists the routes and the key files an AI should open when working on 
 - One active trip at a time. No multi-trip overlap. Itineraries are typed manually, no real flight API.
 
 ### Community and friends
+
 - Public feed plus in-app compose (`/community-new`), reactions, comments, reporting, admin moderation. Gated by `feature_community_enabled`.
 - Friend invites: `/friend/join`, `/friend/accept`, `/friends/$friendshipId`. Gated by `feature_friends_enabled`.
 
 ### Pro and billing
+
 - Stripe checkout and customer portal (`src/lib/billing.server.ts`), subscription state in `subscriptions`, promo codes, `pro_free_for_everyone` kill switch in `app_settings`, webhook at `/api/public/stripe-webhook`.
 
 ### Admin
+
 - Routes: `/admin` plus subpages for users, community moderation, billing, promo codes, resources CMS, platform rules (with audit), contact messages, feedback, broadcast messages, duplicate report detection, med reminder reliability.
 - Role-gated server-side via `user_roles` and `has_role`.
 
 ### Settings and account
+
 - `/settings` hub: sharing controls, AI provider, locale, travel, "how Purple thinks".
 - `/account`: profile, password, subscription, 2FA.
 - Data export (`src/lib/data-export.ts`: zip / tar via `fflate`, `jszip`, `nanotar`).
 
 ### Email
+
 - React Email templates in `src/lib/email-templates/`.
 - PGMQ queue, suppression list, one-click unsubscribe (`/email/unsubscribe`, `/unsubscribe`), weekly recap cron, send log.
 
 ### PWA
+
 - Manifest `public/manifest.json` (name "Purple", theme `#5B2C82`), icons 192 / 512.
 - Service worker `public/sw.js`: med dose reminders driven by IndexedDB schedules, shell cache `purple-shell-v4`.
 - Registration in `src/lib/med-notifications.ts` (skips Lovable preview hosts on purpose).
@@ -264,6 +286,7 @@ Each entry lists the routes and the key files an AI should open when working on 
 - Web push: VAPID keys, `push_subscriptions` table, `src/lib/push.server.ts`.
 
 ### Internationalization
+
 - English and Spanish today (`src/i18n/locales/en.json`, `es.json`).
 - Locale picker `src/components/locale/`. Per-profile persistence via `profiles.locale`.
 - SSR always renders `en` to avoid hydration mismatch. `hydrateLocale()` switches post-hydration. Spanish loads lazily (not in entry bundle). `check:i18n-es` enforces completeness.
@@ -293,20 +316,20 @@ Each entry lists the routes and the key files an AI should open when working on 
 
 ## 7. Data model summary
 
-| Domain | Key tables |
-|--------|-----------|
-| Core health | `profiles`, `seizure_events`, `medications`, `medication_doses`, `medication_side_effects`, `journal_entries`, `biometrics`, `risk_forecasts`, `alerts` |
-| Wearables | `oura_tokens`, `whoop_tokens`, `apple_health_tokens` |
-| AI | `ai_memory` (pgvector), `research_sources` (embedded research library) |
-| Care | `care_relationships`, `care_scopes`, `pending_changes`, `care_audit_log`, `care_threads`, `care_messages` |
-| Reports | `medical_reports`, `report_documents`, `report_metrics`, `metric_dictionary`, `medical_report_shares`, `medical_report_schedules` |
-| Intake | `hydration_intake`, `aura_events`, `food_entries`, `vitals_log`, `vital_goals` |
-| DNA | `dna_files`, `dna_variants` |
-| Community | `community_posts`, `community_comments`, `community_reactions`, `community_reports`, `community_resources` |
-| Billing | `subscriptions`, `promo_codes`, `promo_code_redemptions`, `app_settings` (`pro_free_for_everyone` flag) |
-| Email | `email_send_log`, `suppressed_emails`, `email_unsubscribe_tokens`, PGMQ queues (`auth_emails`, `transactional_emails`) |
-| Compliance | `phi_access_log`, `platform_rule_audit` |
-| Auth / roles | `user_roles` (with `app_role` enum) |
+| Domain       | Key tables                                                                                                                                              |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Core health  | `profiles`, `seizure_events`, `medications`, `medication_doses`, `medication_side_effects`, `journal_entries`, `biometrics`, `risk_forecasts`, `alerts` |
+| Wearables    | `oura_tokens`, `whoop_tokens`, `apple_health_tokens`                                                                                                    |
+| AI           | `ai_memory` (pgvector), `research_sources` (embedded research library)                                                                                  |
+| Care         | `care_relationships`, `care_scopes`, `pending_changes`, `care_audit_log`, `care_threads`, `care_messages`                                               |
+| Reports      | `medical_reports`, `report_documents`, `report_metrics`, `metric_dictionary`, `medical_report_shares`, `medical_report_schedules`                       |
+| Intake       | `hydration_intake`, `aura_events`, `food_entries`, `vitals_log`, `vital_goals`                                                                          |
+| DNA          | `dna_files`, `dna_variants`                                                                                                                             |
+| Community    | `community_posts`, `community_comments`, `community_reactions`, `community_reports`, `community_resources`                                              |
+| Billing      | `subscriptions`, `promo_codes`, `promo_code_redemptions`, `app_settings` (`pro_free_for_everyone` flag)                                                 |
+| Email        | `email_send_log`, `suppressed_emails`, `email_unsubscribe_tokens`, PGMQ queues (`auth_emails`, `transactional_emails`)                                  |
+| Compliance   | `phi_access_log`, `platform_rule_audit`                                                                                                                 |
+| Auth / roles | `user_roles` (with `app_role` enum)                                                                                                                     |
 
 ---
 
@@ -314,14 +337,14 @@ Each entry lists the routes and the key files an AI should open when working on 
 
 Only 6 functions exist. Do not add more for app-internal logic.
 
-| Function | Purpose |
-|----------|---------|
-| `ai-orchestrator` | Ask Purple backend with tools and research retrieval |
-| `journal-processor` | AI extraction from journal entries (full pipeline) |
-| `journal-extract` | Lighter extraction pass used in capture flows |
-| `med-dose-action` | Mark doses taken / missed from web push notifications |
-| `oura-sync` | Oura data sync |
-| `risk-forecaster` | Daily risk score plus narrative |
+| Function            | Purpose                                               |
+| ------------------- | ----------------------------------------------------- |
+| `ai-orchestrator`   | Ask Purple backend with tools and research retrieval  |
+| `journal-processor` | AI extraction from journal entries (full pipeline)    |
+| `journal-extract`   | Lighter extraction pass used in capture flows         |
+| `med-dose-action`   | Mark doses taken / missed from web push notifications |
+| `oura-sync`         | Oura data sync                                        |
+| `risk-forecaster`   | Daily risk score plus narrative                       |
 
 Manual deploy procedure (when the Supabase CLI 403s): `docs/manual-deploy-bundle.md`.
 
@@ -374,21 +397,21 @@ Present locally in `.env`:
 
 Referenced in code, not present locally (production needs them; several block local testing of those paths):
 
-| Variable | Used by |
-|----------|---------|
-| `ANTHROPIC_API_KEY` | Platform-default AI (chat, insights, care profiles, edge functions) |
-| `RESEND_API_KEY` | Email delivery (`/api/email/queue/process`) |
-| `RESEND_WEBHOOK_SECRET` | Resend bounce / complaint webhook (`/api/email/suppression`) |
-| `SEND_EMAIL_HOOK_SECRET` | Supabase send-email hook verification (`/api/email/auth/webhook`) |
-| `EMAIL_PREVIEW_SECRET` | Email template preview routes |
-| `SUPABASE_SERVICE_ROLE_KEY` | Cron, email enqueue, admin functions, seeds |
-| `CRON_SECRET` | All `/api/public/cron/*` endpoints |
-| `PUBLIC_SITE_URL` | Email links, share links, unsubscribe headers |
-| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Billing |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web push |
-| `OURA_CLIENT_ID` / `_SECRET`, `WHOOP_CLIENT_ID` / `_SECRET` | Wearable OAuth |
-| `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GROK_API_KEY` | Optional per-user AI provider choices, plus embeddings seeds for OpenAI |
-| `LOVABLE_API_KEY` | Legacy fallback only. Lets Lovable previews run AI without an Anthropic key |
+| Variable                                                    | Used by                                                                     |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`                                         | Platform-default AI (chat, insights, care profiles, edge functions)         |
+| `RESEND_API_KEY`                                            | Email delivery (`/api/email/queue/process`)                                 |
+| `RESEND_WEBHOOK_SECRET`                                     | Resend bounce / complaint webhook (`/api/email/suppression`)                |
+| `SEND_EMAIL_HOOK_SECRET`                                    | Supabase send-email hook verification (`/api/email/auth/webhook`)           |
+| `EMAIL_PREVIEW_SECRET`                                      | Email template preview routes                                               |
+| `SUPABASE_SERVICE_ROLE_KEY`                                 | Cron, email enqueue, admin functions, seeds                                 |
+| `CRON_SECRET`                                               | All `/api/public/cron/*` endpoints                                          |
+| `PUBLIC_SITE_URL`                                           | Email links, share links, unsubscribe headers                               |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`                | Billing                                                                     |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`    | Web push                                                                    |
+| `OURA_CLIENT_ID` / `_SECRET`, `WHOOP_CLIENT_ID` / `_SECRET` | Wearable OAuth                                                              |
+| `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GROK_API_KEY`          | Optional per-user AI provider choices, plus embeddings seeds for OpenAI     |
+| `LOVABLE_API_KEY`                                           | Legacy fallback only. Lets Lovable previews run AI without an Anthropic key |
 
 ---
 

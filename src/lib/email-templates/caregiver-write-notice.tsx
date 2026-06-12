@@ -1,12 +1,4 @@
-import {
-  Body,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Preview,
-  Text,
-} from "@react-email/components";
+import { Body, Container, Head, Heading, Html, Preview, Text } from "@react-email/components";
 import type { TemplateEntry } from "./registry";
 
 const SITE_NAME = "Purple Life";
@@ -20,12 +12,7 @@ interface Props {
   summary?: string;
 }
 
-const CaregiverWriteNoticeEmail = ({
-  ownerFirstName,
-  caregiverName,
-  action,
-  summary,
-}: Props) => {
+const CaregiverWriteNoticeEmail = ({ ownerFirstName, caregiverName, action, summary }: Props) => {
   const greeting = ownerFirstName?.trim() ? `Hi ${ownerFirstName},` : "Hi,";
   const who = caregiverName?.trim() || "A caregiver";
   const what = action?.trim() || "added something on your account";
@@ -35,7 +22,9 @@ const CaregiverWriteNoticeEmail = ({
       <Preview>{`${who} ${what} on ${SITE_NAME}`}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>{who} {what}</Heading>
+          <Heading style={h1}>
+            {who} {what}
+          </Heading>
           <Text style={text}>{greeting}</Text>
           <Text style={text}>
             {who} just {what} on your Purple account. Open Purple to review the new entry.

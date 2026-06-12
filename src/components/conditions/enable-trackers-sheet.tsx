@@ -57,8 +57,8 @@ export function EnableTrackersSheet({
             <Sparkles className="h-5 w-5 text-primary" /> Turn on trackers for {conditionLabel}?
           </SheetTitle>
           <SheetDescription>
-            We can turn these on so they show up on Today and in Reports. You can toggle any of
-            them later in Settings → What I track.
+            We can turn these on so they show up on Today and in Reports. You can toggle any of them
+            later in Settings → What I track.
           </SheetDescription>
         </SheetHeader>
 
@@ -92,9 +92,7 @@ export function EnableTrackersSheet({
             Skip
           </Button>
           <Button
-            onClick={() =>
-              onConfirm(Array.from(selected) as FeatureKey[])
-            }
+            onClick={() => onConfirm(Array.from(selected) as FeatureKey[])}
             disabled={busy}
             className="rounded-full"
           >

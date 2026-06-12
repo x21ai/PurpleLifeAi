@@ -1,12 +1,4 @@
-import {
-  Body,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Preview,
-  Text,
-} from "@react-email/components";
+import { Body, Container, Head, Heading, Html, Preview, Text } from "@react-email/components";
 import type { TemplateEntry } from "./registry";
 
 const SITE_NAME = "Purple Life";
@@ -38,13 +30,17 @@ const CaregiverProposalDecisionEmail = ({
       <Preview>{`${who} ${verb} ${label}`}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>{who} {verb} your proposal</Heading>
+          <Heading style={h1}>
+            {who} {verb} your proposal
+          </Heading>
           <Text style={text}>{greeting}</Text>
           <Text style={text}>
             {who} {verb} {label} on {SITE_NAME}.
           </Text>
           {decisionNote ? (
-            <Text style={small}>Note from {who}: {decisionNote}</Text>
+            <Text style={small}>
+              Note from {who}: {decisionNote}
+            </Text>
           ) : null}
           <Text style={footer}>, The {SITE_NAME} team</Text>
         </Container>

@@ -24,12 +24,7 @@ interface CareInviteProps {
   expiresAt?: string | null;
 }
 
-const CareInviteEmail = ({
-  inviterName,
-  roleLabel,
-  acceptUrl,
-  expiresAt,
-}: CareInviteProps) => {
+const CareInviteEmail = ({ inviterName, roleLabel, acceptUrl, expiresAt }: CareInviteProps) => {
   const inviter = inviterName?.trim() || "Someone on Purple Life";
   const role = roleLabel?.trim() || "care partner";
   const url = acceptUrl || "https://purplelife.org/";
@@ -41,8 +36,8 @@ const CareInviteEmail = ({
         <Container style={container}>
           <Heading style={h1}>You're invited as a {role}</Heading>
           <Text style={text}>
-            {inviter} added you to their care circle on {SITE_NAME}. Accept the
-            invitation to see what they've chosen to share with you.
+            {inviter} added you to their care circle on {SITE_NAME}. Accept the invitation to see
+            what they've chosen to share with you.
           </Text>
           <Section style={{ textAlign: "center", margin: "32px 0" }}>
             <Button href={url} style={button}>
@@ -56,9 +51,7 @@ const CareInviteEmail = ({
             </Link>
           </Text>
           {expiresAt ? (
-            <Text style={small}>
-              This invite expires {new Date(expiresAt).toLocaleString()}.
-            </Text>
+            <Text style={small}>This invite expires {new Date(expiresAt).toLocaleString()}.</Text>
           ) : null}
           <Text style={footer}>, The {SITE_NAME} team</Text>
         </Container>

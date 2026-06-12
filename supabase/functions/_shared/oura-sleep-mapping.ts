@@ -28,7 +28,9 @@ export type OuraDailySleep = {
  * Pick one sleep session per calendar day: prefer long_sleep, then longest
  * total_sleep_duration. Fixes split-night and array-order regressions.
  */
-export function pickSleepSessionPerDay(sessions: OuraSleepSession[]): Map<string, OuraSleepSession> {
+export function pickSleepSessionPerDay(
+  sessions: OuraSleepSession[],
+): Map<string, OuraSleepSession> {
   const sleepDetailMap = new Map<string, OuraSleepSession>();
   for (const s of sessions) {
     if (!s.day) continue;

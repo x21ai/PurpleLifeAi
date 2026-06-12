@@ -12,10 +12,14 @@ const WhoopConnection = lazy(() =>
   import("@/components/connections/whoop-connection").then((m) => ({ default: m.WhoopConnection })),
 );
 const AppleHealthConnection = lazy(() =>
-  import("@/components/connections/apple-health-connection").then((m) => ({ default: m.AppleHealthConnection })),
+  import("@/components/connections/apple-health-connection").then((m) => ({
+    default: m.AppleHealthConnection,
+  })),
 );
 const PhoneAlarmsSection = lazy(() =>
-  import("@/components/settings/phone-alarms-section").then((m) => ({ default: m.PhoneAlarmsSection })),
+  import("@/components/settings/phone-alarms-section").then((m) => ({
+    default: m.PhoneAlarmsSection,
+  })),
 );
 
 export const Route = createFileRoute("/_app/tools")({
@@ -63,9 +67,24 @@ function ToolsPage() {
       <SheetSectionLabel>Tools &amp; utilities</SheetSectionLabel>
       <SheetCard className="!p-0">
         <div className="divide-y divide-border/60">
-          <ToolRow to="/meds" icon={<Activity className="h-4 w-4" />} title="Medications" subtitle="Schedules, reminders, adherence" />
-          <ToolRow to="/reports" icon={<Smartphone className="h-4 w-4" />} title="Lab reports" subtitle="Upload PDFs or photos. See trends." />
-          <ToolRow to="/settings/travel" icon={<Bell className="h-4 w-4" />} title="Travel mode" subtitle="Plan trips, anchor doses to home time" />
+          <ToolRow
+            to="/meds"
+            icon={<Activity className="h-4 w-4" />}
+            title="Medications"
+            subtitle="Schedules, reminders, adherence"
+          />
+          <ToolRow
+            to="/reports"
+            icon={<Smartphone className="h-4 w-4" />}
+            title="Lab reports"
+            subtitle="Upload PDFs or photos. See trends."
+          />
+          <ToolRow
+            to="/settings/travel"
+            icon={<Bell className="h-4 w-4" />}
+            title="Travel mode"
+            subtitle="Plan trips, anchor doses to home time"
+          />
         </div>
       </SheetCard>
 

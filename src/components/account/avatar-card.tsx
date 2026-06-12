@@ -61,7 +61,12 @@ export function AvatarCard() {
       await qc.invalidateQueries({ queryKey: ["avatar", "me"] });
       toast.success("Profile picture updated");
     } catch (err: unknown) {
-      toast.error(userMessage(err, "The upload didn't finish. Check your connection and try again; the file is still on your device."));
+      toast.error(
+        userMessage(
+          err,
+          "The upload didn't finish. Check your connection and try again; the file is still on your device.",
+        ),
+      );
     } finally {
       setBusy(false);
     }
@@ -105,7 +110,11 @@ export function AvatarCard() {
             variant="outline"
             className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10"
           >
-            {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+            {busy ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="mr-2 h-4 w-4" />
+            )}
             Upload photo
           </Button>
           {q.data?.path && (
@@ -121,13 +130,7 @@ export function AvatarCard() {
             </Button>
           )}
         </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={onFile}
-        />
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
       </div>
     </div>
   );

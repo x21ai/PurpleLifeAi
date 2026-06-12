@@ -135,7 +135,8 @@ export function generateTripDoses(input: GenerateInput): GeneratedDose[] {
   );
   // Ensure there's always a starting leg = home.
   const effectiveLegs: TripLeg[] =
-    sortedLegs.length > 0 && new Date(sortedLegs[0].from_at).getTime() <= new Date(departAt).getTime()
+    sortedLegs.length > 0 &&
+    new Date(sortedLegs[0].from_at).getTime() <= new Date(departAt).getTime()
       ? sortedLegs
       : [{ tz: homeTz, from_at: departAt, label: "Home" }, ...sortedLegs];
 
@@ -167,8 +168,7 @@ export function generateTripDoses(input: GenerateInput): GeneratedDose[] {
         const diffMin = legOffset - homeOffset; // minutes to shift wall clock to align
         const stepMin = shiftHoursPerDay * 60;
         const totalShiftMin =
-          Math.sign(diffMin) *
-          Math.min(Math.abs(diffMin), daysSinceArrival * stepMin);
+          Math.sign(diffMin) * Math.min(Math.abs(diffMin), daysSinceArrival * stepMin);
         const [h, m] = hhmm.split(":").map(Number);
         const shifted = (h * 60 + m + totalShiftMin + 24 * 60) % (24 * 60);
         hhmm = `${pad(Math.floor(shifted / 60))}:${pad(shifted % 60)}`;

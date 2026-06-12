@@ -22,19 +22,19 @@ Development model: the project is edited from both Cursor and Lovable; productio
 
 ## Quick facts
 
-| Item | Value |
-|------|-------|
-| Brand / domain | Purple, `https://www.purplelife.org` |
-| Framework | TanStack Start 1.168, React 19, Vite 7, Tailwind 4 |
-| Runtime | Cloudflare Worker (`wrangler.jsonc`, entry `src/server.ts`, `nodejs_compat`) |
-| Package manager | bun (commands below) |
-| Database | Supabase project `lzuodgpqseijhhyzgfky`, ~100 migrations, 6 edge functions |
-| Dev server | `bun run dev` on port 8080 |
-| Unit tests | `bun run test:unit` (`tests/unit/`) |
-| E2E | `bun run test:e2e` (Playwright, boots dev server unless `E2E_BASE_URL` set) |
-| Lint/format | `bun run lint`, `bun run format` (lint not in CI yet; lint only changed files) |
-| Quality gates | `check:em-dash`, `check:live-data`, `check:unique-images`, `check:i18n-es`, `check:entry-budget` (after build) |
-| Seeds | `bun run seed:research` (needs `OPENAI_API_KEY` + `SUPABASE_SERVICE_ROLE_KEY`) |
+| Item            | Value                                                                                                          |
+| --------------- | -------------------------------------------------------------------------------------------------------------- |
+| Brand / domain  | Purple, `https://www.purplelife.org`                                                                           |
+| Framework       | TanStack Start 1.168, React 19, Vite 7, Tailwind 4                                                             |
+| Runtime         | Cloudflare Worker (`wrangler.jsonc`, entry `src/server.ts`, `nodejs_compat`)                                   |
+| Package manager | bun (commands below)                                                                                           |
+| Database        | Supabase project `lzuodgpqseijhhyzgfky`, ~100 migrations, 6 edge functions                                     |
+| Dev server      | `bun run dev` on port 8080                                                                                     |
+| Unit tests      | `bun run test:unit` (`tests/unit/`)                                                                            |
+| E2E             | `bun run test:e2e` (Playwright, boots dev server unless `E2E_BASE_URL` set)                                    |
+| Lint/format     | `bun run lint`, `bun run format` (lint not in CI yet; lint only changed files)                                 |
+| Quality gates   | `check:em-dash`, `check:live-data`, `check:unique-images`, `check:i18n-es`, `check:entry-budget` (after build) |
+| Seeds           | `bun run seed:research` (needs `OPENAI_API_KEY` + `SUPABASE_SERVICE_ROLE_KEY`)                                 |
 
 ## Launch stack landed (2026-06-12)
 
@@ -71,21 +71,21 @@ In the local `.env` (values not committed beyond this machine):
 
 Referenced in code but NOT present locally (production needs them; several block local testing of those paths):
 
-| Variable | Used by |
-|----------|---------|
-| `ANTHROPIC_API_KEY` | Platform-default AI (chat, insights, care profiles, edge functions) |
-| `RESEND_API_KEY` | Email delivery (`/api/email/queue/process`) |
-| `RESEND_WEBHOOK_SECRET` | Resend bounce/complaint webhook (`/api/email/suppression`) |
-| `SEND_EMAIL_HOOK_SECRET` | Supabase send-email hook verification (`/api/email/auth/webhook`) |
-| `EMAIL_PREVIEW_SECRET` | Email template preview routes |
-| `SUPABASE_SERVICE_ROLE_KEY` | Cron, email enqueue, admin functions, seeds |
-| `CRON_SECRET` | All `/api/public/cron/*` endpoints |
-| `PUBLIC_SITE_URL` | Email links, share links, unsubscribe headers, cron self-calls |
-| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Billing |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web push |
-| `OURA_CLIENT_ID/SECRET`, `WHOOP_CLIENT_ID/SECRET` | Wearable OAuth |
-| `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GROK_API_KEY` | Optional per-user AI provider choices (and embeddings seeds for OpenAI) |
-| `LOVABLE_API_KEY` | Legacy fallback only: lets Lovable previews run AI without an Anthropic key |
+| Variable                                                 | Used by                                                                     |
+| -------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`                                      | Platform-default AI (chat, insights, care profiles, edge functions)         |
+| `RESEND_API_KEY`                                         | Email delivery (`/api/email/queue/process`)                                 |
+| `RESEND_WEBHOOK_SECRET`                                  | Resend bounce/complaint webhook (`/api/email/suppression`)                  |
+| `SEND_EMAIL_HOOK_SECRET`                                 | Supabase send-email hook verification (`/api/email/auth/webhook`)           |
+| `EMAIL_PREVIEW_SECRET`                                   | Email template preview routes                                               |
+| `SUPABASE_SERVICE_ROLE_KEY`                              | Cron, email enqueue, admin functions, seeds                                 |
+| `CRON_SECRET`                                            | All `/api/public/cron/*` endpoints                                          |
+| `PUBLIC_SITE_URL`                                        | Email links, share links, unsubscribe headers, cron self-calls              |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`             | Billing                                                                     |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web push                                                                    |
+| `OURA_CLIENT_ID/SECRET`, `WHOOP_CLIENT_ID/SECRET`        | Wearable OAuth                                                              |
+| `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GROK_API_KEY`       | Optional per-user AI provider choices (and embeddings seeds for OpenAI)     |
+| `LOVABLE_API_KEY`                                        | Legacy fallback only: lets Lovable previews run AI without an Anthropic key |
 
 ## Known gaps and sharp edges
 
@@ -112,10 +112,10 @@ Referenced in code but NOT present locally (production needs them; several block
 1. `bun run check:em-dash`
 2. `bun run check:i18n-es`
 3. `bun run test:unit` (timezone, doses, adherence, travel, Oura mapping)
-3. `bun run build` + `bun run check:entry-budget` (catches Worker/SSR bundling and entry chunk regressions)
-4. `bunx tsc --noEmit`
-5. `bun run test:e2e` for routed/UI changes (smoke spec `tests/e2e/routes-smoke.spec.ts` is the fastest meaningful signal)
-6. For Worker behavior: `wrangler dev` against the built output
+4. `bun run build` + `bun run check:entry-budget` (catches Worker/SSR bundling and entry chunk regressions)
+5. `bunx tsc --noEmit`
+6. `bun run test:e2e` for routed/UI changes (smoke spec `tests/e2e/routes-smoke.spec.ts` is the fastest meaningful signal)
+7. For Worker behavior: `wrangler dev` against the built output
 
 ## Conventions snapshot
 

@@ -25,7 +25,10 @@ export const Route = createFileRoute("/_app/hydration")({
   head: () => ({
     meta: [
       { title: "Intake · Purple" },
-      { name: "description", content: "Log water, drinks, and food in one place, by tap, photo, or voice." },
+      {
+        name: "description",
+        content: "Log water, drinks, and food in one place, by tap, photo, or voice.",
+      },
     ],
   }),
   component: HydrationPage,
@@ -93,16 +96,22 @@ function HydrationPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-8 sm:pt-12 pb-32">
-      <Link to="/today" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to="/today"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="h-4 w-4" /> Back
       </Link>
 
       <p className="mt-8 label-eyebrow text-muted-foreground">Intake</p>
       <h1 className="mt-2 font-serif text-[40px] sm:text-5xl leading-[1.05] tracking-[-0.02em]">
-        What you took in<br/>today.
+        What you took in
+        <br />
+        today.
       </h1>
       <p className="mt-3 text-sm text-muted-foreground max-w-lg">
-        Water, drinks, and food in one place. Tap to add, or snap a photo and let AI suggest the details.
+        Water, drinks, and food in one place. Tap to add, or snap a photo and let AI suggest the
+        details.
       </p>
 
       {/* Range segmented control */}
@@ -114,7 +123,9 @@ function HydrationPage() {
             onClick={() => setRange(r)}
             className={cn(
               "px-3 py-1.5 rounded-full capitalize transition-colors",
-              range === r ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+              range === r
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             {r}
@@ -123,24 +134,28 @@ function HydrationPage() {
       </div>
 
       {range === "day" && (
-      <div className="mt-4 flex items-center justify-between rounded-full ring-1 ring-border bg-card px-2 py-1.5">
-        <Button
-          variant="ghost" size="sm"
-          onClick={() => setDay((d) => new Date(d.getTime() - 86400000))}
-          className="rounded-full"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <span className="text-sm font-medium tabular-nums">{fmtDay(day)}</span>
-        <Button
-          variant="ghost" size="sm"
-          onClick={() => setDay((d) => startOfDay(new Date(Math.min(Date.now(), d.getTime() + 86400000))))}
-          className="rounded-full"
-          disabled={isToday}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
+        <div className="mt-4 flex items-center justify-between rounded-full ring-1 ring-border bg-card px-2 py-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDay((d) => new Date(d.getTime() - 86400000))}
+            className="rounded-full"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-medium tabular-nums">{fmtDay(day)}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              setDay((d) => startOfDay(new Date(Math.min(Date.now(), d.getTime() + 86400000))))
+            }
+            className="rounded-full"
+            disabled={isToday}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       )}
 
       {/* Quick actions */}

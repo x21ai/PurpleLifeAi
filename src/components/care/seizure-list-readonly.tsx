@@ -20,19 +20,14 @@ export function SeizureListReadOnly({ events }: { events: Event[] }) {
     return (
       <div className="rounded-2xl border border-dashed border-border bg-card/40 p-8 text-center">
         <Zap className="h-6 w-6 mx-auto text-muted-foreground" />
-        <p className="mt-3 text-sm text-muted-foreground">
-          No seizures logged.
-        </p>
+        <p className="mt-3 text-sm text-muted-foreground">No seizures logged.</p>
       </div>
     );
   }
   return (
     <ul className="space-y-2">
       {events.map((e) => (
-        <li
-          key={e.id}
-          className="rounded-2xl border border-border bg-card p-4 sm:p-5"
-        >
+        <li key={e.id} className="rounded-2xl border border-border bg-card p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="min-w-0">
               <p className="font-serif text-lg text-foreground">
@@ -61,9 +56,7 @@ export function SeizureListReadOnly({ events }: { events: Event[] }) {
             </div>
           </div>
           {e.notes && (
-            <p className="mt-3 text-sm text-foreground/80 whitespace-pre-wrap">
-              {e.notes}
-            </p>
+            <p className="mt-3 text-sm text-foreground/80 whitespace-pre-wrap">{e.notes}</p>
           )}
         </li>
       ))}

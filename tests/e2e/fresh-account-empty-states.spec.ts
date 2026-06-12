@@ -27,8 +27,14 @@ test("fresh account sees designed empty states on core routes", async ({ page })
   try {
     await page.goto("/sign-in");
     await page.getByLabel(/email/i).fill(email);
-    await page.getByLabel(/password/i).first().fill(password);
-    await page.getByRole("button", { name: /sign in|log in|continue/i }).first().click();
+    await page
+      .getByLabel(/password/i)
+      .first()
+      .fill(password);
+    await page
+      .getByRole("button", { name: /sign in|log in|continue/i })
+      .first()
+      .click();
     await page.waitForURL(/\/welcome/, { timeout: 20_000 });
 
     await page.getByLabel(/first name/i).fill("River");

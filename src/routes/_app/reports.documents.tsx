@@ -164,9 +164,10 @@ function ReportsDocumentsPage() {
     for (const r of sorted) {
       const iso = r.report_date ?? r.created_at;
       const d = iso ? new Date(iso) : null;
-      const key = d && !Number.isNaN(d.getTime())
-        ? d.toLocaleDateString(undefined, { year: "numeric", month: "long" })
-        : "Date unknown";
+      const key =
+        d && !Number.isNaN(d.getTime())
+          ? d.toLocaleDateString(undefined, { year: "numeric", month: "long" })
+          : "Date unknown";
       (byMonth[key] ??= []).push(r);
     }
     return byMonth;
@@ -184,11 +185,15 @@ function ReportsDocumentsPage() {
       const iso = r.report_date ?? r.created_at;
       const d = iso ? new Date(iso) : null;
       const year = d && !Number.isNaN(d.getTime()) ? String(d.getFullYear()) : "Unknown";
-      const month = d && !Number.isNaN(d.getTime())
-        ? d.toLocaleDateString(undefined, { month: "long" })
-        : "Date unknown";
+      const month =
+        d && !Number.isNaN(d.getTime())
+          ? d.toLocaleDateString(undefined, { month: "long" })
+          : "Date unknown";
       let yearMap = byYear.get(year);
-      if (!yearMap) { yearMap = new Map(); byYear.set(year, yearMap); }
+      if (!yearMap) {
+        yearMap = new Map();
+        byYear.set(year, yearMap);
+      }
       const list = yearMap.get(month) ?? [];
       list.push(r);
       yearMap.set(month, list);
@@ -200,10 +205,7 @@ function ReportsDocumentsPage() {
   const processingCount = reports.filter((r) => r.status === "processing").length;
   const readyCount = reports.filter((r) => r.status === "ready").length;
   const failedReports = reports.filter(
-    (r) =>
-      r.status === "failed" ||
-      r.status === "needs_credits" ||
-      r.status === "rate_limited",
+    (r) => r.status === "failed" || r.status === "needs_credits" || r.status === "rate_limited",
   );
   const metricsTotal = reports.reduce((s, r) => s + (r.metric_count ?? 0), 0);
 
@@ -231,7 +233,9 @@ function ReportsDocumentsPage() {
   }
 
   async function downloadFilteredAsZip() {
-    const readyOnes = filtered.filter((r) => r.status === "ready" || r.status === "processing" || r.status === "failed");
+    const readyOnes = filtered.filter(
+      (r) => r.status === "ready" || r.status === "processing" || r.status === "failed",
+    );
     if (readyOnes.length === 0) {
       toast.info("No reports to download.");
       return;
@@ -443,7 +447,9 @@ function ReportsDocumentsPage() {
                   onClick={() => setViewMode("list")}
                   className={cn(
                     "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] transition",
-                    viewMode === "list" ? "bg-white/15 text-white" : "text-white/55 hover:text-white",
+                    viewMode === "list"
+                      ? "bg-white/15 text-white"
+                      : "text-white/55 hover:text-white",
                   )}
                   title="List view"
                 >
@@ -454,7 +460,9 @@ function ReportsDocumentsPage() {
                   onClick={() => setViewMode("timeline")}
                   className={cn(
                     "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] transition",
-                    viewMode === "timeline" ? "bg-white/15 text-white" : "text-white/55 hover:text-white",
+                    viewMode === "timeline"
+                      ? "bg-white/15 text-white"
+                      : "text-white/55 hover:text-white",
                   )}
                   title="Timeline view"
                 >
@@ -510,7 +518,12 @@ function ReportsDocumentsPage() {
             <p className="text-sm text-white/65">No reports match these filters.</p>
             <button
               type="button"
-              onClick={() => { setYearFilter("all"); setTypeFilter("all"); setStatusFilter("all"); setQuery(""); }}
+              onClick={() => {
+                setYearFilter("all");
+                setTypeFilter("all");
+                setStatusFilter("all");
+                setQuery("");
+              }}
               className="mt-3 text-xs text-white/70 underline hover:text-white"
             >
               Clear filters
@@ -524,16 +537,26 @@ function ReportsDocumentsPage() {
                 const yearCount = Array.from(monthMap.values()).reduce((s, a) => s + a.length, 0);
                 return (
                   <div key={year} className="relative">
-                    <div className="absolute -left-[18px] top-1 h-3 w-3 rounded-full bg-white/80 ring-4 ring-[#07090C]" aria-hidden />
+                    <div
+                      className="absolute -left-[18px] top-1 h-3 w-3 rounded-full bg-white/80 ring-4 ring-[#07090C]"
+                      aria-hidden
+                    />
                     <div className="flex items-baseline gap-2">
                       <h3 className="font-serif text-2xl text-white">{year}</h3>
-                      <span className="text-xs text-white/45">· {yearCount} report{yearCount === 1 ? "" : "s"}</span>
+                      <span className="text-xs text-white/45">
+                        · {yearCount} report{yearCount === 1 ? "" : "s"}
+                      </span>
                     </div>
                     <div className="mt-3 space-y-5">
                       {Array.from(monthMap.entries()).map(([month, rows]) => (
                         <div key={month} className="relative">
-                          <div className="absolute -left-[14px] top-1.5 h-1.5 w-1.5 rounded-full bg-white/40" aria-hidden />
-                          <p className="report-eyebrow text-white/55 mb-2">{month} · {rows.length}</p>
+                          <div
+                            className="absolute -left-[14px] top-1.5 h-1.5 w-1.5 rounded-full bg-white/40"
+                            aria-hidden
+                          />
+                          <p className="report-eyebrow text-white/55 mb-2">
+                            {month} · {rows.length}
+                          </p>
                           <ul className="space-y-2">
                             {rows.map((r) => {
                               const isFailed =
@@ -549,14 +572,25 @@ function ReportsDocumentsPage() {
                                     params={{ reportId: r.id }}
                                     className="flex items-center gap-3 px-3 py-3 sm:px-4 sm:py-3 hover:opacity-90"
                                   >
-                                    <span className={cn("inline-flex h-8 w-8 items-center justify-center rounded-full shrink-0", meta.tone)} title={meta.label}>
+                                    <span
+                                      className={cn(
+                                        "inline-flex h-8 w-8 items-center justify-center rounded-full shrink-0",
+                                        meta.tone,
+                                      )}
+                                      title={meta.label}
+                                    >
                                       <Icon className="h-3.5 w-3.5" />
                                     </span>
                                     <div className="min-w-0 flex-1">
-                                      <p className="text-[14px] text-white truncate">{displayTitle(r.title)}</p>
+                                      <p className="text-[14px] text-white truncate">
+                                        {displayTitle(r.title)}
+                                      </p>
                                       <p className="mt-0.5 text-[11px] text-white/55">
-                                        {r.report_date ?? new Date(r.created_at).toLocaleDateString()}
-                                        {r.status === "ready" && (r.metric_count ?? 0) > 0 && ` · ${r.metric_count} metric${r.metric_count === 1 ? "" : "s"}`}
+                                        {r.report_date ??
+                                          new Date(r.created_at).toLocaleDateString()}
+                                        {r.status === "ready" &&
+                                          (r.metric_count ?? 0) > 0 &&
+                                          ` · ${r.metric_count} metric${r.metric_count === 1 ? "" : "s"}`}
                                         {r.status === "processing" && " · Extracting…"}
                                         {isFailed && " · needs attention"}
                                       </p>
@@ -595,83 +629,85 @@ function ReportsDocumentsPage() {
                           ? "Rate limited, try again"
                           : "Extraction failed";
                     return (
-                    <li key={r.id} className="report-card overflow-hidden">
-                      <div className="flex items-center gap-2 px-3 py-3 sm:px-5 sm:py-4">
-                        <Link
-                          to="/reports/$reportId"
-                          params={{ reportId: r.id }}
-                          className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-90"
-                        >
-                          {(() => {
-                            const meta = getReportCategoryMeta(r.report_category ?? null);
-                            const Icon = meta.icon;
-                            return (
-                              <span
-                                className={cn(
-                                  "inline-flex h-9 w-9 items-center justify-center rounded-full shrink-0",
-                                  meta.tone,
+                      <li key={r.id} className="report-card overflow-hidden">
+                        <div className="flex items-center gap-2 px-3 py-3 sm:px-5 sm:py-4">
+                          <Link
+                            to="/reports/$reportId"
+                            params={{ reportId: r.id }}
+                            className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-90"
+                          >
+                            {(() => {
+                              const meta = getReportCategoryMeta(r.report_category ?? null);
+                              const Icon = meta.icon;
+                              return (
+                                <span
+                                  className={cn(
+                                    "inline-flex h-9 w-9 items-center justify-center rounded-full shrink-0",
+                                    meta.tone,
+                                  )}
+                                  title={meta.label}
+                                >
+                                  <Icon className="h-4 w-4" />
+                                </span>
+                              );
+                            })()}
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[15px] text-white truncate" title={r.title}>
+                                {displayTitle(r.title)}
+                              </p>
+                              <p className="mt-0.5 text-xs text-white/55">
+                                {r.report_date ?? new Date(r.created_at).toLocaleDateString()}
+                                {" · "}
+                                {r.status === "processing" && (
+                                  <span className="inline-flex items-center gap-1 text-[#F3D58B]">
+                                    <Loader2 className="h-3 w-3 animate-spin" /> Extracting…
+                                  </span>
                                 )}
-                                title={meta.label}
-                              >
-                                <Icon className="h-4 w-4" />
-                              </span>
-                            );
-                          })()}
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[15px] text-white truncate" title={r.title}>
-                              {displayTitle(r.title)}
-                            </p>
-                            <p className="mt-0.5 text-xs text-white/55">
-                              {r.report_date ?? new Date(r.created_at).toLocaleDateString()}
-                              {" · "}
-                              {r.status === "processing" && (
-                                <span className="inline-flex items-center gap-1 text-[#F3D58B]">
-                                  <Loader2 className="h-3 w-3 animate-spin" /> Extracting…
-                                </span>
+                                {isFailed && (
+                                  <span className="inline-flex items-center gap-1 text-[#FFA8BD]">
+                                    <AlertCircle className="h-3 w-3" /> {failedLabel}
+                                  </span>
+                                )}
+                                {r.status === "ready" &&
+                                  ((r.metric_count ?? 0) > 0
+                                    ? `${r.metric_count} metric${r.metric_count === 1 ? "" : "s"}`
+                                    : "Ready")}
+                              </p>
+                              {isFailed && r.error_message && (
+                                <p
+                                  className="mt-1 text-xs text-[#FFA8BD]/70 line-clamp-2"
+                                  title={r.error_message}
+                                >
+                                  {r.error_message.length > 160
+                                    ? `${r.error_message.slice(0, 160)}…`
+                                    : r.error_message}
+                                </p>
                               )}
-                              {isFailed && (
-                                <span className="inline-flex items-center gap-1 text-[#FFA8BD]">
-                                  <AlertCircle className="h-3 w-3" /> {failedLabel}
-                                </span>
-                              )}
-                              {r.status === "ready" &&
-                                ((r.metric_count ?? 0) > 0
-                                  ? `${r.metric_count} metric${r.metric_count === 1 ? "" : "s"}`
-                                  : "Ready")}
-                            </p>
-                            {isFailed && r.error_message && (
-                              <p
-                                className="mt-1 text-xs text-[#FFA8BD]/70 line-clamp-2"
-                                title={r.error_message}
-                              >
-                                {r.error_message.length > 160
-                                  ? `${r.error_message.slice(0, 160)}…`
-                                  : r.error_message}
+                            </div>
+                          </Link>
+                          <ReportRowActions
+                            reportId={r.id}
+                            status={r.status}
+                            onChanged={() => void refetch()}
+                          />
+                        </div>
+                        {(r.summary || (r.panel_keys && r.panel_keys.length > 0)) && (
+                          <div className="px-3 pb-4 sm:px-5">
+                            {r.summary && (
+                              <p className="text-xs text-white/70 leading-relaxed line-clamp-3">
+                                {r.summary}
                               </p>
                             )}
+                            {r.panel_keys && r.panel_keys.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {r.panel_keys.map((p) => (
+                                  <ReportPill key={p}>{p.replace(/_/g, " ")}</ReportPill>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        </Link>
-                        <ReportRowActions
-                          reportId={r.id}
-                          status={r.status}
-                          onChanged={() => void refetch()}
-                        />
-                      </div>
-                      {(r.summary || (r.panel_keys && r.panel_keys.length > 0)) && (
-                        <div className="px-3 pb-4 sm:px-5">
-                          {r.summary && (
-                            <p className="text-xs text-white/70 leading-relaxed line-clamp-3">{r.summary}</p>
-                          )}
-                          {r.panel_keys && r.panel_keys.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                              {r.panel_keys.map((p) => (
-                                <ReportPill key={p}>{p.replace(/_/g, " ")}</ReportPill>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </li>
+                        )}
+                      </li>
                     );
                   })}
                 </ul>
@@ -697,8 +733,9 @@ function ReportsDocumentsPage() {
             <div>
               <h3 className="text-white text-base font-medium">Your Privacy Is Our Priority</h3>
               <p className="mt-1.5 text-sm text-white/65 leading-relaxed">
-                Reports and the values Purple extracts are encrypted at rest and only readable by you and the
-                people you explicitly share with. You can export or delete any report at any time.
+                Reports and the values Purple extracts are encrypted at rest and only readable by
+                you and the people you explicitly share with. You can export or delete any report at
+                any time.
               </p>
             </div>
           </div>
@@ -711,9 +748,10 @@ function ReportsDocumentsPage() {
             <div>
               <h3 className="text-white text-base font-medium">Important Note</h3>
               <p className="mt-1.5 text-sm text-white/65 leading-relaxed">
-                Purple is not a laboratory or healthcare provider. The values you see here are extracted from
-                documents you upload and surfaced for context and pattern-tracking, not for diagnosis or
-                treatment. Always discuss results with your medical practitioner.
+                Purple is not a laboratory or healthcare provider. The values you see here are
+                extracted from documents you upload and surfaced for context and pattern-tracking,
+                not for diagnosis or treatment. Always discuss results with your medical
+                practitioner.
               </p>
             </div>
           </div>
@@ -734,9 +772,7 @@ function Stat({
   tone?: "success" | "warning";
 }) {
   const valueCls =
-    tone === "success" ? "text-[#5CE0AC]" :
-    tone === "warning" ? "text-[#F3D58B]" :
-    "text-white";
+    tone === "success" ? "text-[#5CE0AC]" : tone === "warning" ? "text-[#F3D58B]" : "text-white";
   return (
     <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] px-3 py-3 sm:px-4">
       <p className="text-[11px] uppercase tracking-[0.18em] text-white/55">{label}</p>
@@ -758,7 +794,9 @@ function FilterRow({
 }) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-[11px] uppercase tracking-[0.18em] text-white/45 shrink-0">{label}</span>
+      <span className="text-[11px] uppercase tracking-[0.18em] text-white/45 shrink-0">
+        {label}
+      </span>
       <div className="flex flex-wrap gap-1.5">
         {options.map((o) => {
           const active = o.v === value;

@@ -16,7 +16,7 @@ export const Route = createFileRoute("/api/public/hooks/risk-forecaster")({
           return new Response("Unauthorized", { status: 401 });
         }
 
-        const body = await request.json().catch(() => ({} as Record<string, unknown>));
+        const body = await request.json().catch(() => ({}) as Record<string, unknown>);
         const action = (body as { action?: string })?.action ?? "run-all";
         const userId = (body as { user_id?: string })?.user_id;
 

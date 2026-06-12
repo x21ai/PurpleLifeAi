@@ -24,8 +24,7 @@ jobs:
       - run: bun run check:i18n-es
       - run: bun run check:live-data
       - run: bun run check:unique-images
-      # Repo-wide `bun run lint` carries pre-existing prettier debt and stays
-      # out of CI until a one-shot format lands. Type safety is enforced here.
+      - run: bun run lint
       - run: bun run test:unit
       - run: bunx tsc --noEmit
       - run: bun run build

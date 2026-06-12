@@ -19,13 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { caregiverAddJournalEntry } from "@/lib/care.functions";
 import { userMessage } from "@/lib/user-message";
 
-export function AddJournalSheet({
-  ownerId,
-  ownerName,
-}: {
-  ownerId: string;
-  ownerName: string;
-}) {
+export function AddJournalSheet({ ownerId, ownerName }: { ownerId: string; ownerName: string }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
 

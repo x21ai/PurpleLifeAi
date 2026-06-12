@@ -18,7 +18,12 @@ export type TrendMetricRow = {
   pinned: boolean;
   hidden: boolean;
   sort_order: number;
-  series: Array<{ at: string; value: number | null; source_text: string | null; report_id: string }>;
+  series: Array<{
+    at: string;
+    value: number | null;
+    source_text: string | null;
+    report_id: string;
+  }>;
 };
 
 /** List every metric the user has in ≥2 reports plus its sparkline series + prefs. */
@@ -26,23 +31,29 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
-    const [{ data: metrics, error: mErr }, { data: prefs, error: pErr }, { data: docs }] = await Promise.all([
-      supabase
-        .from("report_metrics")
-        .select("metric_key, display_name, value, value_text, unit, flag, reference_low, reference_high, measured_at, created_at, report_id, source_text")
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("report_metric_preferences")
-        .select("metric_key, pinned, hidden, sort_order"),
-      supabase
-        .from("report_documents")
-        .select("id, identity_status, duplicate_of, excluded_from_trends"),
-    ]);
+    const [{ data: metrics, error: mErr }, { data: prefs, error: pErr }, { data: docs }] =
+      await Promise.all([
+        supabase
+          .from("report_metrics")
+          .select(
+            "metric_key, display_name, value, value_text, unit, flag, reference_low, reference_high, measured_at, created_at, report_id, source_text",
+          )
+          .order("created_at", { ascending: true }),
+        supabase.from("report_metric_preferences").select("metric_key, pinned, hidden, sort_order"),
+        supabase
+          .from("report_documents")
+          .select("id, identity_status, duplicate_of, excluded_from_trends"),
+      ]);
     if (mErr) throw new Error(mErr.message);
     if (pErr) throw new Error(pErr.message);
 
     const prefMap = new Map<string, { pinned: boolean; hidden: boolean; sort_order: number }>();
-    for (const p of prefs ?? []) prefMap.set(p.metric_key, { pinned: !!p.pinned, hidden: !!p.hidden, sort_order: p.sort_order ?? 0 });
+    for (const p of prefs ?? [])
+      prefMap.set(p.metric_key, {
+        pinned: !!p.pinned,
+        hidden: !!p.hidden,
+        sort_order: p.sort_order ?? 0,
+      });
 
     // Only include metrics from reports whose identity is verified/manual_approved
     // AND that aren't marked as duplicates of another report.
@@ -51,7 +62,8 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
       const status = (d.identity_status as string | null) ?? "unverified";
       if (d.duplicate_of) continue;
       if (d.excluded_from_trends) continue;
-      if (status === "verified" || status === "manual_approved") includedReports.add(d.id as string);
+      if (status === "verified" || status === "manual_approved")
+        includedReports.add(d.id as string);
     }
 
     const byKey = new Map<string, TrendMetricRow>();
@@ -76,7 +88,12 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
         series: [],
       };
       row.count += 1;
-      row.series.push({ at, value: m.value as number | null, source_text: (m.source_text as string | null), report_id: m.report_id as string });
+      row.series.push({
+        at,
+        value: m.value as number | null,
+        source_text: m.source_text as string | null,
+        report_id: m.report_id as string,
+      });
       if (!row.latest_at || at > row.latest_at) {
         row.latest_at = at;
         row.latest_value = m.value as number | null;
@@ -95,8 +112,16 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
     // Prevents future double-uploads from producing doubled dots even if duplicate_of
     // is not yet set on the report_document.
     for (const row of byKey.values()) {
-      const byDay = new Map<string, { sum: number; n: number; at: string; source_text: string | null; report_id: string }>();
-      const nonNumeric: Array<{ at: string; value: number | null; source_text: string | null; report_id: string }> = [];
+      const byDay = new Map<
+        string,
+        { sum: number; n: number; at: string; source_text: string | null; report_id: string }
+      >();
+      const nonNumeric: Array<{
+        at: string;
+        value: number | null;
+        source_text: string | null;
+        report_id: string;
+      }> = [];
       for (const p of row.series) {
         if (p.value == null) {
           nonNumeric.push(p);
@@ -113,7 +138,13 @@ export const listTrendMetrics = createServerFn({ method: "GET" })
             cur.report_id = p.report_id;
           }
         } else {
-          byDay.set(day, { sum: p.value, n: 1, at: p.at, source_text: p.source_text, report_id: p.report_id });
+          byDay.set(day, {
+            sum: p.value,
+            n: 1,
+            at: p.at,
+            source_text: p.source_text,
+            report_id: p.report_id,
+          });
         }
       }
       const collapsed = Array.from(byDay.values()).map((b) => ({
@@ -191,7 +222,9 @@ export const getMetricSeries = createServerFn({ method: "GET" })
     const { supabase } = context;
     let q = supabase
       .from("report_metrics")
-      .select("id, value, value_text, unit, flag, reference_low, reference_high, measured_at, created_at, display_name, source_text, report_id, report_documents(title, report_date, identity_status, duplicate_of, excluded_from_trends)")
+      .select(
+        "id, value, value_text, unit, flag, reference_low, reference_high, measured_at, created_at, display_name, source_text, report_id, report_documents(title, report_date, identity_status, duplicate_of, excluded_from_trends)",
+      )
       .eq("metric_key", data.metricKey)
       .order("measured_at", { ascending: true, nullsFirst: true });
     if (data.days) {
@@ -227,12 +260,26 @@ export const getMetricInsight = createServerFn({ method: "POST" })
     const [{ data: rows, error }, { data: profile }] = await Promise.all([
       supabase
         .from("report_metrics")
-        .select("value, value_text, unit, flag, reference_low, reference_high, measured_at, created_at, display_name, report_documents(title, report_date)")
+        .select(
+          "value, value_text, unit, flag, reference_low, reference_high, measured_at, created_at, display_name, report_documents(title, report_date)",
+        )
         .eq("metric_key", data.metricKey)
         .order("measured_at", { ascending: true, nullsFirst: true }),
-      supabase.from("profiles").select("conditions, conditions_note").eq("id", userId).maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("conditions, conditions_note")
+        .eq("id", userId)
+        .maybeSingle(),
     ]);
-    if (error) return { summary: null, bullets: [], suggestedQuestions: [], error: error.message, cached: false, latestAt: null };
+    if (error)
+      return {
+        summary: null,
+        bullets: [],
+        suggestedQuestions: [],
+        error: error.message,
+        cached: false,
+        latestAt: null,
+      };
 
     const points = (rows ?? [])
       .map((r: any) => ({
@@ -245,7 +292,14 @@ export const getMetricInsight = createServerFn({ method: "POST" })
       }))
       .filter((p) => p.value != null || p.text);
     if (points.length < 2) {
-      return { summary: null, bullets: [], suggestedQuestions: [], error: "not_enough_data", cached: false, latestAt: null };
+      return {
+        summary: null,
+        bullets: [],
+        suggestedQuestions: [],
+        error: "not_enough_data",
+        cached: false,
+        latestAt: null,
+      };
     }
     const latestAt = points[points.length - 1].at;
 
@@ -269,7 +323,14 @@ export const getMetricInsight = createServerFn({ method: "POST" })
     }
     if (!cached && !data.force) {
       // Don't run AI automatically; wait for the user to click "Run AI insights".
-      return { summary: null, bullets: [], suggestedQuestions: [], error: null, cached: false, latestAt };
+      return {
+        summary: null,
+        bullets: [],
+        suggestedQuestions: [],
+        error: null,
+        cached: false,
+        latestAt,
+      };
     }
 
     const label = (rows?.[0] as any)?.display_name ?? data.metricKey.replace(/_/g, " ");
@@ -279,16 +340,31 @@ export const getMetricInsight = createServerFn({ method: "POST" })
     const conditions = (profile?.conditions as string[] | null) ?? [];
 
     const model = resolvePlatformModel(null);
-    if (!model) return { summary: null, bullets: [], suggestedQuestions: [], error: "AI unavailable", cached: false, latestAt };
+    if (!model)
+      return {
+        summary: null,
+        bullets: [],
+        suggestedQuestions: [],
+        error: "AI unavailable",
+        cached: false,
+        latestAt,
+      };
 
     try {
       const prompt = [
         `Metric: ${label}${unit ? ` (${unit})` : ""}`,
-        refLow != null && refHigh != null ? `Reference range: ${refLow}–${refHigh}${unit ? ` ${unit}` : ""}` : "Reference range: unknown",
-        conditions.length ? `User conditions: ${conditions.join(", ")}` : "User conditions: not specified",
+        refLow != null && refHigh != null
+          ? `Reference range: ${refLow}–${refHigh}${unit ? ` ${unit}` : ""}`
+          : "Reference range: unknown",
+        conditions.length
+          ? `User conditions: ${conditions.join(", ")}`
+          : "User conditions: not specified",
         "",
         "Readings (chronological):",
-        ...points.map((p) => `- ${p.at}: ${p.value ?? p.text}${p.flag ? ` [${p.flag}]` : ""}${p.report ? `, ${p.report}` : ""}`),
+        ...points.map(
+          (p) =>
+            `- ${p.at}: ${p.value ?? p.text}${p.flag ? ` [${p.flag}]` : ""}${p.report ? `, ${p.report}` : ""}`,
+        ),
       ].join("\n");
 
       const { experimental_output: output } = await generateText({
@@ -328,8 +404,19 @@ export const getMetricInsight = createServerFn({ method: "POST" })
       };
     } catch (e: any) {
       const msg = e?.message ?? "AI request failed";
-      const kind = /429|rate/i.test(msg) ? "rate_limited" : /402|credit/i.test(msg) ? "credits_exhausted" : msg;
-      return { summary: null, bullets: [], suggestedQuestions: [], error: kind, cached: false, latestAt };
+      const kind = /429|rate/i.test(msg)
+        ? "rate_limited"
+        : /402|credit/i.test(msg)
+          ? "credits_exhausted"
+          : msg;
+      return {
+        summary: null,
+        bullets: [],
+        suggestedQuestions: [],
+        error: kind,
+        cached: false,
+        latestAt,
+      };
     }
   });
 
@@ -355,7 +442,13 @@ export const getDailyInsightCards = createServerFn({ method: "POST" })
         .maybeSingle();
       if (cached) {
         return {
-          cards: (cached.bullets as Array<{ title: string; body: string; tone?: string; metricKey?: string }>) ?? [],
+          cards:
+            (cached.bullets as Array<{
+              title: string;
+              body: string;
+              tone?: string;
+              metricKey?: string;
+            }>) ?? [],
           headline: cached.summary ?? null,
           cached: true,
           generatedFor: today,
@@ -384,12 +477,18 @@ export const getDailyInsightCards = createServerFn({ method: "POST" })
         .maybeSingle(),
     ]);
 
-    const metricLines = (metrics ?? []).slice(0, 80).map((m: any) =>
-      `- [report] ${m.display_name ?? m.metric_key}: ${m.value ?? m.value_text}${m.unit ? ` ${m.unit}` : ""}${m.flag ? ` [${m.flag}]` : ""} on ${(m.measured_at ?? m.created_at).slice(0, 10)}`,
-    );
-    const vitalLines = (vitals ?? []).slice(0, 40).map((v: any) =>
-      `- [vital] ${v.metric_key}: ${v.value}${v.unit ? ` ${v.unit}` : ""} on ${v.recorded_at.slice(0, 10)}`,
-    );
+    const metricLines = (metrics ?? [])
+      .slice(0, 80)
+      .map(
+        (m: any) =>
+          `- [report] ${m.display_name ?? m.metric_key}: ${m.value ?? m.value_text}${m.unit ? ` ${m.unit}` : ""}${m.flag ? ` [${m.flag}]` : ""} on ${(m.measured_at ?? m.created_at).slice(0, 10)}`,
+      );
+    const vitalLines = (vitals ?? [])
+      .slice(0, 40)
+      .map(
+        (v: any) =>
+          `- [vital] ${v.metric_key}: ${v.value}${v.unit ? ` ${v.unit}` : ""} on ${v.recorded_at.slice(0, 10)}`,
+      );
     if (metricLines.length + vitalLines.length < 3) {
       await supabase.from("metric_insights").upsert(
         {
@@ -406,12 +505,21 @@ export const getDailyInsightCards = createServerFn({ method: "POST" })
     }
 
     const model = resolvePlatformModel(null);
-    if (!model) return { cards: [], headline: null, cached: false, generatedFor: today, error: "AI unavailable" };
+    if (!model)
+      return {
+        cards: [],
+        headline: null,
+        cached: false,
+        generatedFor: today,
+        error: "AI unavailable",
+      };
 
     try {
       const conditions = (profile?.conditions as string[] | null) ?? [];
       const prompt = [
-        conditions.length ? `User conditions: ${conditions.join(", ")}` : "User conditions: not specified",
+        conditions.length
+          ? `User conditions: ${conditions.join(", ")}`
+          : "User conditions: not specified",
         "",
         "Recent readings (newest first):",
         ...metricLines,
@@ -423,14 +531,17 @@ export const getDailyInsightCards = createServerFn({ method: "POST" })
         experimental_output: Output.object({
           schema: z.object({
             headline: z.string(),
-            cards: z.array(
-              z.object({
-                title: z.string(),
-                body: z.string(),
-                tone: z.enum(["info", "watch", "attention"]),
-                metricKey: z.string().optional(),
-              }),
-            ).min(1).max(3),
+            cards: z
+              .array(
+                z.object({
+                  title: z.string(),
+                  body: z.string(),
+                  tone: z.enum(["info", "watch", "attention"]),
+                  metricKey: z.string().optional(),
+                }),
+              )
+              .min(1)
+              .max(3),
           }),
         }),
         system:
@@ -451,6 +562,12 @@ export const getDailyInsightCards = createServerFn({ method: "POST" })
       );
       return { cards: output.cards, headline: output.headline, cached: false, generatedFor: today };
     } catch (e: any) {
-      return { cards: [], headline: null, cached: false, generatedFor: today, error: e?.message ?? "AI failed" };
+      return {
+        cards: [],
+        headline: null,
+        cached: false,
+        generatedFor: today,
+        error: e?.message ?? "AI failed",
+      };
     }
   });

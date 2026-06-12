@@ -93,17 +93,12 @@ export function WhatITrackSection() {
             What I track
           </h2>
           <p className="mt-1 text-sm text-muted-foreground max-w-prose">
-            Each tracker turns on by default for the conditions it helps with.
-            Turn anything on or off, your call, not your diagnosis's.
+            Each tracker turns on by default for the conditions it helps with. Turn anything on or
+            off, your call, not your diagnosis's.
           </p>
         </div>
         {Object.keys(overrides).length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => void resetAll()}
-            className="text-xs"
-          >
+          <Button variant="ghost" size="sm" onClick={() => void resetAll()} className="text-xs">
             Reset to defaults
           </Button>
         )}

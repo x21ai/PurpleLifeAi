@@ -74,7 +74,7 @@ export function detectBrowserCountry(): string | null {
 
 export function listTimezones(): string[] {
   // Intl.supportedValuesOf is ES2022; guard for older targets.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const intl = Intl as unknown as { supportedValuesOf?: (k: string) => string[] };
   if (typeof intl.supportedValuesOf === "function") {
     try {

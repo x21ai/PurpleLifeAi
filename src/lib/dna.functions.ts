@@ -57,7 +57,10 @@ export const parseDnaFile = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error || !file) throw new Error("DNA file not found");
 
-    await supabase.from("dna_files").update({ status: "parsing", error_message: null }).eq("id", file.id);
+    await supabase
+      .from("dna_files")
+      .update({ status: "parsing", error_message: null })
+      .eq("id", file.id);
 
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -96,7 +99,14 @@ export const parseDnaFile = createServerFn({ method: "POST" })
           error_message: null,
         })
         .eq("id", file.id);
-      return { ok: true as const, provider, variantCount: variants.length, kind, compression, stats };
+      return {
+        ok: true as const,
+        provider,
+        variantCount: variants.length,
+        kind,
+        compression,
+        stats,
+      };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       await supabase

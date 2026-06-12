@@ -12,7 +12,9 @@ export const getMySubscription = createServerFn({ method: "GET" })
       supabase.from("app_settings").select("pro_free_for_everyone").eq("id", true).maybeSingle(),
       supabase
         .from("subscriptions")
-        .select("status, price_id, current_period_end, cancel_at_period_end, stripe_subscription_id")
+        .select(
+          "status, price_id, current_period_end, cancel_at_period_end, stripe_subscription_id",
+        )
         .eq("user_id", userId)
         .maybeSingle(),
     ]);
@@ -70,7 +72,10 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       customerId = customer.id;
       await supabaseAdmin
         .from("subscriptions")
-        .upsert({ user_id: context.userId, stripe_customer_id: customerId, status: "inactive" }, { onConflict: "user_id" });
+        .upsert(
+          { user_id: context.userId, stripe_customer_id: customerId, status: "inactive" },
+          { onConflict: "user_id" },
+        );
     }
 
     const origin =
@@ -120,7 +125,16 @@ export const createBillingPortalSession = createServerFn({ method: "POST" })
   });
 
 // --- Admin: toggle the global "Pro free for everyone" flag ---
-async function assertSuperAdmin(supabase: { from: (t: string) => { select: (c: string) => { eq: (k: string, v: string) => Promise<{ data: { role: string }[] | null }> } } }, userId: string) {
+async function assertSuperAdmin(
+  supabase: {
+    from: (t: string) => {
+      select: (c: string) => {
+        eq: (k: string, v: string) => Promise<{ data: { role: string }[] | null }>;
+      };
+    };
+  },
+  userId: string,
+) {
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   const roles = (data ?? []).map((r) => r.role);
   if (!roles.includes("super_admin")) throw new Error("Not authorized");
@@ -150,8 +164,10 @@ export const getBillingSettings = createServerFn({ method: "GET" })
       .select("pro_free_for_everyone, pro_features, updated_at")
       .eq("id", true)
       .maybeSingle();
-    const stripeConfigured = !!process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.startsWith("sk_");
-    const webhookConfigured = !!process.env.STRIPE_WEBHOOK_SECRET && process.env.STRIPE_WEBHOOK_SECRET.startsWith("whsec_");
+    const stripeConfigured =
+      !!process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.startsWith("sk_");
+    const webhookConfigured =
+      !!process.env.STRIPE_WEBHOOK_SECRET && process.env.STRIPE_WEBHOOK_SECRET.startsWith("whsec_");
     return {
       freeForEveryone: !!data?.pro_free_for_everyone,
       proFeatures: (data?.pro_features as Record<string, boolean>) ?? {},
@@ -165,28 +181,28 @@ export const getBillingSettings = createServerFn({ method: "GET" })
 export const grantProToUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({
-      userId: z.string().uuid(),
-      months: z.number().int().min(1).max(120).default(12),
-    }).parse(i),
+    z
+      .object({
+        userId: z.string().uuid(),
+        months: z.number().int().min(1).max(120).default(12),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     await assertSuperAdmin(context.supabase as never, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const expires = new Date();
     expires.setMonth(expires.getMonth() + data.months);
-    const { error } = await supabaseAdmin
-      .from("subscriptions")
-      .upsert(
-        {
-          user_id: data.userId,
-          status: "active",
-          current_period_end: expires.toISOString(),
-          price_id: "comp",
-          cancel_at_period_end: false,
-        },
-        { onConflict: "user_id" },
-      );
+    const { error } = await supabaseAdmin.from("subscriptions").upsert(
+      {
+        user_id: data.userId,
+        status: "active",
+        current_period_end: expires.toISOString(),
+        price_id: "comp",
+        cancel_at_period_end: false,
+      },
+      { onConflict: "user_id" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true, expires: expires.toISOString() };
   });
@@ -198,7 +214,9 @@ export const listPaidSubscribers = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("subscriptions")
-      .select("user_id, status, price_id, current_period_end, cancel_at_period_end, stripe_subscription_id, created_at")
+      .select(
+        "user_id, status, price_id, current_period_end, cancel_at_period_end, stripe_subscription_id, created_at",
+      )
       .neq("status", "inactive")
       .order("created_at", { ascending: false })
       .limit(200);

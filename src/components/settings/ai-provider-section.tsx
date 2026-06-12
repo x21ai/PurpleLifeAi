@@ -16,11 +16,21 @@ type Option = {
 };
 
 const OPTIONS: Option[] = [
-  { id: "claude", name: "Anthropic Claude", blurb: "Default. Strong at lab reports, imaging summaries, and chat. Reads PDFs and images." },
+  {
+    id: "claude",
+    name: "Anthropic Claude",
+    blurb: "Default. Strong at lab reports, imaging summaries, and chat. Reads PDFs and images.",
+  },
   { id: "openai", name: "OpenAI GPT", blurb: "Fast all-rounder. Reads images, not PDFs." },
   { id: "gemini", name: "Google Gemini", blurb: "Big context window. Reads PDFs and images." },
   { id: "grok", name: "xAI Grok", blurb: "Strong reasoning. Reads images, not PDFs." },
-  { id: "maya", name: "Maya (internal)", blurb: "Purple's own model. Not configured yet.", disabled: true, disabledReason: "Endpoint not set" },
+  {
+    id: "maya",
+    name: "Maya (internal)",
+    blurb: "Purple's own model. Not configured yet.",
+    disabled: true,
+    disabledReason: "Endpoint not set",
+  },
 ];
 
 export function AiProviderSection() {
@@ -57,7 +67,8 @@ export function AiProviderSection() {
         <h2 className="font-serif text-xl text-foreground">AI provider</h2>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
-        Your report extraction, Ask Purple chat, and insights all run on the provider you pick here. Keys live server-side; we never expose them to the browser.
+        Your report extraction, Ask Purple chat, and insights all run on the provider you pick here.
+        Keys live server-side; we never expose them to the browser.
       </p>
       <div className="mt-4 grid gap-2">
         {OPTIONS.map((o) => {
@@ -78,15 +89,15 @@ export function AiProviderSection() {
                 <p className="font-serif text-base text-foreground">
                   {o.name}
                   {o.disabled && o.disabledReason && (
-                    <span className="ml-2 text-xs uppercase tracking-wide text-muted-foreground">{o.disabledReason}</span>
+                    <span className="ml-2 text-xs uppercase tracking-wide text-muted-foreground">
+                      {o.disabledReason}
+                    </span>
                   )}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">{o.blurb}</p>
               </div>
               {selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
-              {saving === o.id && (
-                <span className="text-xs text-muted-foreground">Saving…</span>
-              )}
+              {saving === o.id && <span className="text-xs text-muted-foreground">Saving…</span>}
             </button>
           );
         })}

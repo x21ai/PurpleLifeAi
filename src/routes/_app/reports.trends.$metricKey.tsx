@@ -16,7 +16,12 @@ import { Download, Loader2, Share2, Sparkles, Wand2, ChevronRight } from "lucide
 import { getMetricSeries, getMetricInsight } from "@/lib/report-trends.functions";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { useRouteTheme } from "@/lib/use-route-theme";
-import { MetricShell, MetricTitle, MetricStatCards, AskPurpleRail } from "@/components/reports/metric-shell";
+import {
+  MetricShell,
+  MetricTitle,
+  MetricStatCards,
+  AskPurpleRail,
+} from "@/components/reports/metric-shell";
 import { downloadMetricCsv, shareMetric } from "@/lib/metric-export";
 import { resolveMetricLabel } from "@/lib/metric-naming";
 import { toast } from "sonner";
@@ -106,13 +111,21 @@ function TrendDetailPage() {
   const refHigh = rows[rows.length - 1]?.reference_high ?? null;
   const latest = [...rows].reverse().find((r) => r.value != null);
   const latestTone: "alert" | "warn" | "good" | "neutral" =
-    latest?.flag === "high" ? "alert" :
-    latest?.flag === "low"  ? "warn"  :
-    latest?.flag === "normal" ? "good" : "neutral";
+    latest?.flag === "high"
+      ? "alert"
+      : latest?.flag === "low"
+        ? "warn"
+        : latest?.flag === "normal"
+          ? "good"
+          : "neutral";
   const statusLabel =
-    latest?.flag === "high" ? "Out of range, high" :
-    latest?.flag === "low"  ? "Out of range, low"  :
-    latest?.flag === "normal" ? "In optimal range"  : "No status yet";
+    latest?.flag === "high"
+      ? "Out of range, high"
+      : latest?.flag === "low"
+        ? "Out of range, low"
+        : latest?.flag === "normal"
+          ? "In optimal range"
+          : "No status yet";
 
   const chartData = rows
     .filter((r) => r.value != null)
@@ -146,9 +159,7 @@ function TrendDetailPage() {
               <Sparkles className="h-3.5 w-3.5" />
             </span>
             <h2 className="font-serif text-xl text-foreground">AI insights</h2>
-            {insight?.cached && (
-              <span className="text-[11px] text-foreground/45">cached</span>
-            )}
+            {insight?.cached && <span className="text-[11px] text-foreground/45">cached</span>}
           </div>
           {!insightRunning && (
             <button
@@ -201,7 +212,8 @@ function TrendDetailPage() {
         ) : (
           <p className="mt-3 text-sm text-foreground/65">
             Get a personalized read on your latest {label.toLowerCase()} trend, direction, notable
-            readings, and questions to bring up with your clinician. Runs only when you click; uses your AI credits.
+            readings, and questions to bring up with your clinician. Runs only when you click; uses
+            your AI credits.
           </p>
         )}
       </section>
@@ -230,7 +242,9 @@ function TrendDetailPage() {
                 type="button"
                 onClick={() => setRangeIdx(i)}
                 className={`rounded-full px-3 py-1 transition-colors ${
-                  i === rangeIdx ? "bg-foreground text-background" : "text-foreground/60 hover:text-foreground"
+                  i === rangeIdx
+                    ? "bg-foreground text-background"
+                    : "text-foreground/60 hover:text-foreground"
                 }`}
               >
                 {r.label}
@@ -323,8 +337,14 @@ function TrendDetailPage() {
                     return [
                       <div key="v" className="space-y-0.5">
                         <div>{valueStr}</div>
-                        {source && <div className="text-muted-foreground text-[10px]">PDF wording: {source}</div>}
-                        {report && <div className="text-muted-foreground text-[10px]">{report}</div>}
+                        {source && (
+                          <div className="text-muted-foreground text-[10px]">
+                            PDF wording: {source}
+                          </div>
+                        )}
+                        {report && (
+                          <div className="text-muted-foreground text-[10px]">{report}</div>
+                        )}
                         {reportId && (
                           <a
                             href={`/reports/${reportId}`}
@@ -361,9 +381,7 @@ function TrendDetailPage() {
         <h2 className="font-serif text-2xl text-foreground mb-3">Readings</h2>
         <ul className="metric-sheet divide-y divide-border/60 overflow-hidden">
           {rows.length === 0 && (
-            <li className="px-4 py-6 text-center text-sm text-foreground/55">
-              No readings yet.
-            </li>
+            <li className="px-4 py-6 text-center text-sm text-foreground/55">No readings yet.</li>
           )}
           {[...rows]
             .sort((a, b) =>
@@ -384,7 +402,9 @@ function TrendDetailPage() {
                     {r.flag && r.flag !== "normal" && (
                       <span
                         className={`ml-2 text-[11px] uppercase tracking-wide ${
-                          r.flag === "high" ? "text-[color:var(--metric-alert,#E84A8A)]" : "text-amber-600"
+                          r.flag === "high"
+                            ? "text-[color:var(--metric-alert,#E84A8A)]"
+                            : "text-amber-600"
                         }`}
                       >
                         {r.flag}

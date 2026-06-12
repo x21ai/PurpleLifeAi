@@ -46,7 +46,8 @@ export function AppleHealthCard() {
       qc.invalidateQueries({ queryKey: ["apple-health", "config"] });
       toast.success("New webhook token generated. Update it in Health Auto Export.");
     },
-    onError: (e: any) => toast.error(userMessage(e, "Couldn't refresh the connection code. Try again in a moment.")),
+    onError: (e: any) =>
+      toast.error(userMessage(e, "Couldn't refresh the connection code. Try again in a moment.")),
   });
   const disconnectMut = useMutation({
     mutationFn: () => disconnect(),
@@ -84,7 +85,9 @@ export function AppleHealthCard() {
         toast.error(`Test failed (${r.status})`);
       }
     } catch (e) {
-      toast.error(userMessage(e, "The test didn't go through. Check the connection details and try again."));
+      toast.error(
+        userMessage(e, "The test didn't go through. Check the connection details and try again."),
+      );
     } finally {
       setPinging(false);
     }
@@ -98,8 +101,8 @@ export function AppleHealthCard() {
           <p className="mt-1 text-xs text-muted-foreground max-w-md">
             Apple HealthKit is iOS-only, there's no web API for it. Use{" "}
             <span className="text-foreground">Health Auto Export</span> or{" "}
-            <span className="text-foreground">iOS Shortcuts</span> on your iPhone to POST
-            new readings to your personal Purple webhook.
+            <span className="text-foreground">iOS Shortcuts</span> on your iPhone to POST new
+            readings to your personal Purple webhook.
           </p>
         </div>
         {lastWebhookAt && (
@@ -156,7 +159,9 @@ export function AppleHealthCard() {
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border border-border p-3">
-              <p className="text-xs font-medium text-foreground">Health Auto Export (recommended)</p>
+              <p className="text-xs font-medium text-foreground">
+                Health Auto Export (recommended)
+              </p>
               <ol className="mt-2 space-y-1 text-[11px] text-muted-foreground list-decimal pl-4">
                 <li>Install Health Auto Export from the App Store.</li>
                 <li>Add an Automation → REST API.</li>
@@ -205,8 +210,8 @@ export function AppleHealthCard() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Disconnect Apple Health auto-sync?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Your webhook URL will stop accepting new data. Past readings stay in Purple,
-                    and you can reconnect any time by generating a new URL.
+                    Your webhook URL will stop accepting new data. Past readings stay in Purple, and
+                    you can reconnect any time by generating a new URL.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

@@ -2,7 +2,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, Copy, Download, Loader2, Mail, MessageCircle, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Copy,
+  Download,
+  Loader2,
+  Mail,
+  MessageCircle,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -98,7 +107,10 @@ function SharingPage() {
   const fetchPending = useServerFn(listPendingChanges);
 
   const caregivers = useQuery({ queryKey: ["care", "mine"], queryFn: () => fetchMyCaregivers() });
-  const sharedWithMe = useQuery({ queryKey: ["care", "shared-with-me"], queryFn: () => fetchSharingWithMe() });
+  const sharedWithMe = useQuery({
+    queryKey: ["care", "shared-with-me"],
+    queryFn: () => fetchSharingWithMe(),
+  });
   const pending = useQuery({ queryKey: ["care", "pending"], queryFn: () => fetchPending() });
   const { isPro } = useIsPro();
   const activeCaregiverCount = (caregivers.data?.relationships ?? []).filter(
@@ -120,16 +132,19 @@ function SharingPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
-      <Link to="/settings" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to="/settings"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeft className="h-4 w-4" /> {t("nav.settings")}
       </Link>
       <p className="label-eyebrow text-muted-foreground mt-6">{t("sharing.eyebrow")}</p>
       <h1 className="mt-3 font-serif text-[40px] sm:text-6xl leading-[1.02] tracking-[-0.02em] text-foreground">
-        {t("sharing.title1")}<br />{t("sharing.title2")}
+        {t("sharing.title1")}
+        <br />
+        {t("sharing.title2")}
       </h1>
-      <p className="mt-6 body-serif text-foreground/75 max-w-[600px]">
-        {t("sharing.intro")}
-      </p>
+      <p className="mt-6 body-serif text-foreground/75 max-w-[600px]">{t("sharing.intro")}</p>
 
       {/* Pending approvals strip → inbox */}
       <Link
@@ -143,10 +158,12 @@ function SharingPage() {
               {pending.isLoading
                 ? t("common.loading")
                 : pendingCount === 0
-                ? "Nothing waiting for your review"
-                : `${pendingCount} ${pendingCount === 1 ? "change is" : "changes are"} waiting for you`}
+                  ? "Nothing waiting for your review"
+                  : `${pendingCount} ${pendingCount === 1 ? "change is" : "changes are"} waiting for you`}
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5">Open the caregiver inbox to review</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Open the caregiver inbox to review
+            </p>
           </div>
         </div>
         <ArrowRight className="h-4 w-4 text-muted-foreground" />
@@ -163,19 +180,29 @@ function SharingPage() {
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-serif text-xl text-foreground">People I share with</h2>
           {canInviteFree ? (
-            <InviteCaregiverSheet onInvited={() => qc.invalidateQueries({ queryKey: ["care", "mine"] })} />
+            <InviteCaregiverSheet
+              onInvited={() => qc.invalidateQueries({ queryKey: ["care", "mine"] })}
+            />
           ) : (
-            <ProGate feature="caregiver_seats" variant="inline">{null}</ProGate>
+            <ProGate feature="caregiver_seats" variant="inline">
+              {null}
+            </ProGate>
           )}
         </div>
         {caregivers.isLoading ? (
-          <p className="mt-3 text-sm text-muted-foreground"><Loader2 className="inline h-3 w-3 animate-spin" /> Loading…</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            <Loader2 className="inline h-3 w-3 animate-spin" /> Loading…
+          </p>
         ) : (caregivers.data?.relationships ?? []).length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">No one yet. Invite someone you trust above.</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            No one yet. Invite someone you trust above.
+          </p>
         ) : (
           <ul className="mt-4 divide-y divide-border">
             {caregivers.data!.relationships.map((r) => {
-              const myScopes = (caregivers.data!.scopes ?? []).filter((s) => s.relationship_id === r.id && s.granted).map((s) => s.scope);
+              const myScopes = (caregivers.data!.scopes ?? [])
+                .filter((s) => s.relationship_id === r.id && s.granted)
+                .map((s) => s.scope);
               return (
                 <li key={r.id} className="py-4 first:pt-0 last:pb-0">
                   <div className="flex items-start justify-between gap-3">
@@ -188,10 +215,11 @@ function SharingPage() {
                             <span> · </span>
                           </>
                         ) : null}
-                        {ROLE_LABELS[r.role as CareRole]} ·{" "}
-                        <StatusPill status={r.status} />
+                        {ROLE_LABELS[r.role as CareRole]} · <StatusPill status={r.status} />
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">{myScopes.length} scope{myScopes.length === 1 ? "" : "s"} granted</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {myScopes.length} scope{myScopes.length === 1 ? "" : "s"} granted
+                      </p>
                       {r.status !== "revoked" && (
                         <RelationshipLabelEditor
                           relationshipId={r.id}
@@ -224,9 +252,7 @@ function SharingPage() {
                       )}
                     </div>
                   </div>
-                  {r.status === "active" && (
-                    <PauseWritesRow relationshipId={r.id} />
-                  )}
+                  {r.status === "active" && <PauseWritesRow relationshipId={r.id} />}
                   {r.status === "active" && (
                     <DigestMuteRow
                       relationshipId={r.id}
@@ -270,19 +296,32 @@ function SharingPage() {
       <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
         <h2 className="font-serif text-xl text-foreground">People sharing with me</h2>
         {sharedWithMe.isLoading ? (
-          <p className="mt-3 text-sm text-muted-foreground"><Loader2 className="inline h-3 w-3 animate-spin" /> Loading…</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            <Loader2 className="inline h-3 w-3 animate-spin" /> Loading…
+          </p>
         ) : (sharedWithMe.data?.relationships ?? []).length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">No one has shared their account with you yet.</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            No one has shared their account with you yet.
+          </p>
         ) : (
           <ul className="mt-4 divide-y divide-border">
             {sharedWithMe.data!.relationships.map((r) => (
-              <li key={r.id} className="py-4 first:pt-0 last:pb-0 flex items-center justify-between">
+              <li
+                key={r.id}
+                className="py-4 first:pt-0 last:pb-0 flex items-center justify-between"
+              >
                 <div>
                   <p className="text-sm text-foreground">{ROLE_LABELS[r.role as CareRole]}</p>
-                  <p className="text-xs text-muted-foreground"><StatusPill status={r.status} /></p>
+                  <p className="text-xs text-muted-foreground">
+                    <StatusPill status={r.status} />
+                  </p>
                 </div>
                 {r.status === "active" && (
-                  <Link to="/care/$ownerId" params={{ ownerId: r.owner_id }} className="text-sm text-primary hover:underline">
+                  <Link
+                    to="/care/$ownerId"
+                    params={{ ownerId: r.owner_id }}
+                    className="text-sm text-primary hover:underline"
+                  >
                     Open dashboard →
                   </Link>
                 )}
@@ -304,7 +343,13 @@ function StatusPill({ status }: { status: string }) {
     active: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
     revoked: "bg-muted text-muted-foreground",
   };
-  return <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide ${map[status] ?? ""}`}>{status}</span>;
+  return (
+    <span
+      className={`inline-block rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide ${map[status] ?? ""}`}
+    >
+      {status}
+    </span>
+  );
 }
 
 /* ----------------- Revoke confirmation ----------------- */
@@ -324,18 +369,8 @@ function MessageCaregiverButton({ relationshipId }: { relationshipId: string }) 
     }
   };
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      aria-label="Message"
-      onClick={handleOpen}
-      disabled={busy}
-    >
-      {busy ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
-      ) : (
-        <MessageCircle className="h-4 w-4" />
-      )}
+    <Button variant="ghost" size="icon" aria-label="Message" onClick={handleOpen} disabled={busy}>
+      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
     </Button>
   );
 }
@@ -397,7 +432,8 @@ function PauseWritesRow({ relationshipId }: { relationshipId: string }) {
       qc.invalidateQueries({ queryKey: ["care", "mine"] });
       toast.success(paused ? "Writes paused, read-only access" : "Writes resumed");
     },
-    onError: (e: any) => toast.error(userMessage(e, "That change didn't save. Try again in a moment.")),
+    onError: (e: any) =>
+      toast.error(userMessage(e, "That change didn't save. Try again in a moment.")),
   });
 
   if (!state.data || state.data.total === 0) return null;
@@ -407,7 +443,9 @@ function PauseWritesRow({ relationshipId }: { relationshipId: string }) {
       <div>
         <p className="text-xs font-medium text-foreground">Pause all writes</p>
         <p className="text-[11px] text-muted-foreground">
-          {paused ? "Read-only, they can view but not change anything." : "They can write within their scopes."}
+          {paused
+            ? "Read-only, they can view but not change anything."
+            : "They can write within their scopes."}
         </p>
       </div>
       <Switch checked={paused} disabled={m.isPending} onCheckedChange={(v) => m.mutate(v)} />
@@ -428,7 +466,8 @@ function DigestPreferenceCard() {
       qc.invalidateQueries({ queryKey: ["care", "digest-pref"] });
       toast.success(enabled ? "Daily digest on" : "Daily digest off");
     },
-    onError: (e: any) => toast.error(userMessage(e, "That change didn't save. Try again in a moment.")),
+    onError: (e: any) =>
+      toast.error(userMessage(e, "That change didn't save. Try again in a moment.")),
   });
   return (
     <section className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 sm:p-6">
@@ -539,7 +578,9 @@ function ActivitySection({
   }
 
   const entries = feed.data?.entries ?? [];
-  const resourceTypes = Array.from(new Set(entries.map((e) => e.resource_type).filter(Boolean) as string[]));
+  const resourceTypes = Array.from(
+    new Set(entries.map((e) => e.resource_type).filter(Boolean) as string[]),
+  );
 
   return (
     <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
@@ -551,7 +592,11 @@ function ActivitySection({
           </p>
         </div>
         <Button size="sm" variant="outline" onClick={onExport} disabled={exporting}>
-          {exporting ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
+          {exporting ? (
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          ) : (
+            <Download className="h-3 w-3 mr-1" />
+          )}
           Export CSV
         </Button>
       </div>
@@ -598,7 +643,10 @@ function ActivitySection({
                   <span className="font-medium">{e.caregiver_email ?? "Someone"}</span>{" "}
                   {String(e.action).replace(/_/g, " ")}
                   {e.resource_type ? (
-                    <span className="text-muted-foreground"> · {String(e.resource_type).replace(/_/g, " ")}</span>
+                    <span className="text-muted-foreground">
+                      {" "}
+                      · {String(e.resource_type).replace(/_/g, " ")}
+                    </span>
                   ) : null}
                 </p>
               </div>
@@ -634,9 +682,7 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
       const url = res?.acceptUrl;
       if (res?.emailSent) {
         toast.success(`Invite sent to ${email}`, {
-          description: url
-            ? "You can also copy the link below to share manually."
-            : undefined,
+          description: url ? "You can also copy the link below to share manually." : undefined,
           action: url
             ? {
                 label: "Copy link",
@@ -704,7 +750,9 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
             >
               <option value="">Not specified</option>
               {RELATIONSHIP_LABELS.map((l) => (
-                <option key={l} value={l}>{l}</option>
+                <option key={l} value={l}>
+                  {l}
+                </option>
               ))}
             </select>
             <p className="mt-1 text-[11px] text-muted-foreground">
@@ -720,13 +768,17 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
                   type="button"
                   onClick={() => setRole(r)}
                   className={`text-left rounded-xl border p-3 transition-colors ${
-                    role === r ? "border-primary bg-primary/10" : "border-border hover:bg-secondary/40"
+                    role === r
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:bg-secondary/40"
                   }`}
                 >
                   <p className="font-serif text-base text-foreground">{ROLE_LABELS[r]}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{ROLE_DESCRIPTIONS[r]}</p>
                   <p className="text-[11px] text-muted-foreground mt-1">
-                    {ROLE_DEFAULT_SCOPES[r].length} scope{ROLE_DEFAULT_SCOPES[r].length === 1 ? "" : "s"} by default. You can tweak after.
+                    {ROLE_DEFAULT_SCOPES[r].length} scope
+                    {ROLE_DEFAULT_SCOPES[r].length === 1 ? "" : "s"} by default. You can tweak
+                    after.
                   </p>
                 </button>
               ))}
@@ -763,7 +815,8 @@ function RelationshipLabelEditor({
       toast.success("Relationship updated");
       onSaved();
     },
-    onError: (e: any) => toast.error(userMessage(e, "That didn't save. Your changes are still here, try again.")),
+    onError: (e: any) =>
+      toast.error(userMessage(e, "That didn't save. Your changes are still here, try again.")),
   });
   return (
     <div className="mt-2 inline-flex items-center gap-2">
@@ -779,7 +832,9 @@ function RelationshipLabelEditor({
       >
         <option value="">Not specified</option>
         {RELATIONSHIP_LABELS.map((l) => (
-          <option key={l} value={l}>{l}</option>
+          <option key={l} value={l}>
+            {l}
+          </option>
         ))}
       </select>
     </div>
@@ -819,13 +874,15 @@ function ManageRelationshipSheet({
       setOpen(false);
       onSaved();
     },
-    onError: (e: any) => toast.error(userMessage(e, "That didn't save. Your changes are still here, try again.")),
+    onError: (e: any) =>
+      toast.error(userMessage(e, "That didn't save. Your changes are still here, try again.")),
   });
 
   function toggle(scope: string) {
     setGranted((prev) => {
       const n = new Set(prev);
-      if (n.has(scope)) n.delete(scope); else n.add(scope);
+      if (n.has(scope)) n.delete(scope);
+      else n.add(scope);
       return n;
     });
   }
@@ -838,9 +895,17 @@ function ManageRelationshipSheet({
   });
 
   return (
-    <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (o) setGranted(new Set(currentScopes)); }}>
+    <Sheet
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) setGranted(new Set(currentScopes));
+      }}
+    >
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm">Manage</Button>
+        <Button variant="outline" size="sm">
+          Manage
+        </Button>
       </SheetTrigger>
       <SheetContent side="bottom" className="rounded-t-2xl max-h-[90vh] overflow-y-auto">
         <SheetHeader>
@@ -857,14 +922,19 @@ function ManageRelationshipSheet({
                 {CARE_VERBS.map((v) => {
                   const scope = `${res}:${v}` as CareScope;
                   return (
-                    <label key={scope} className="flex items-center justify-between gap-2 rounded-lg border border-border px-2 py-1.5">
+                    <label
+                      key={scope}
+                      className="flex items-center justify-between gap-2 rounded-lg border border-border px-2 py-1.5"
+                    >
                       <span className="text-xs text-foreground capitalize">{v}</span>
                       <Switch checked={granted.has(scope)} onCheckedChange={() => toggle(scope)} />
                     </label>
                   );
                 })}
               </div>
-              <p className="mt-1 text-[10px] text-muted-foreground">{SCOPE_LABELS[`${res}:read` as CareScope]}</p>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                {SCOPE_LABELS[`${res}:read` as CareScope]}
+              </p>
             </div>
           ))}
         </div>
@@ -884,7 +954,10 @@ function ManageRelationshipSheet({
                     <p className="text-foreground capitalize">
                       {String(e.action).replace(/_/g, " ")}
                       {e.resource_type ? (
-                        <span className="text-muted-foreground"> · {String(e.resource_type).replace(/_/g, " ")}</span>
+                        <span className="text-muted-foreground">
+                          {" "}
+                          · {String(e.resource_type).replace(/_/g, " ")}
+                        </span>
                       ) : null}
                     </p>
                   </div>
@@ -900,7 +973,9 @@ function ManageRelationshipSheet({
           <Button className="flex-1" onClick={() => m.mutate()} disabled={m.isPending}>
             {m.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
           </Button>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
         </div>
       </SheetContent>
     </Sheet>

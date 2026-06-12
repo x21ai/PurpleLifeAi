@@ -17,13 +17,7 @@ type Report = {
  * No upload button, no link to per-report page (Step 1 covered reports
  * read-only; per-report caregiver view is a future step).
  */
-export function ReportsListReadOnly({
-  reports,
-  ownerId,
-}: {
-  reports: Report[];
-  ownerId: string;
-}) {
+export function ReportsListReadOnly({ reports, ownerId }: { reports: Report[]; ownerId: string }) {
   const grouped = React.useMemo(() => {
     const byType: Record<string, Report[]> = {};
     for (const r of reports) {
@@ -37,9 +31,7 @@ export function ReportsListReadOnly({
     return (
       <div className="rounded-2xl border border-dashed border-border bg-card/40 p-8 text-center">
         <FileText className="h-6 w-6 mx-auto text-muted-foreground" />
-        <p className="mt-3 text-sm text-muted-foreground">
-          No reports uploaded yet.
-        </p>
+        <p className="mt-3 text-sm text-muted-foreground">No reports uploaded yet.</p>
       </div>
     );
   }

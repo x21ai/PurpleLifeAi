@@ -118,9 +118,7 @@ export function QuickLogVitalSheet({
       <SheetContent side="bottom" className="rounded-t-3xl">
         <SheetHeader>
           <SheetTitle className="font-serif text-2xl">{spec.title}</SheetTitle>
-          {spec.helper && (
-            <SheetDescription>{spec.helper}</SheetDescription>
-          )}
+          {spec.helper && <SheetDescription>{spec.helper}</SheetDescription>}
         </SheetHeader>
         <form onSubmit={submit} className="mt-6 space-y-4 max-w-md">
           <div>

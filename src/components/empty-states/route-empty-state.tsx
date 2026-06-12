@@ -39,9 +39,7 @@ export function RouteEmptyState({
         style={{ background: "var(--gradient-primary, var(--primary))" }}
         aria-hidden
       />
-      {eyebrow && (
-        <p className="label-eyebrow text-muted-foreground relative">{eyebrow}</p>
-      )}
+      {eyebrow && <p className="label-eyebrow text-muted-foreground relative">{eyebrow}</p>}
       {Icon && (
         <Icon
           className="relative mt-4 h-10 w-10 text-[color:var(--purple-primary)]/80"

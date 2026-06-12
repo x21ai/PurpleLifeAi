@@ -101,8 +101,8 @@ export function TodayInstallBanner() {
           <DialogHeader>
             <DialogTitle>Add Purple to your home screen</DialogTitle>
             <DialogDescription>
-              In Safari, tap the Share button (the square with an up arrow) at the
-              bottom of the screen, then choose <strong>Add to Home Screen</strong>.
+              In Safari, tap the Share button (the square with an up arrow) at the bottom of the
+              screen, then choose <strong>Add to Home Screen</strong>.
             </DialogDescription>
           </DialogHeader>
           <Button onClick={() => setShowIosHelp(false)} className="rounded-full">

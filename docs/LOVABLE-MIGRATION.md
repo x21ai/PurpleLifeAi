@@ -4,29 +4,29 @@ Goal: remove Lovable service dependencies and branding, optimize page speed, and
 
 Status (2026-06-11):
 
-| Phase | Status |
-|-------|--------|
-| 1. Vite unwrap | CANCELLED, wrapper kept for Lovable dev compatibility (only the import was fixed to the ESM build for Node 22) |
-| 2. OAuth to native Supabase | CODE DONE, needs new Google/Apple codes configured in the Supabase dashboard |
-| 3. Email to Resend | CODE DONE, needs `RESEND_API_KEY`, domain verification, hook/webhook configuration |
-| 4. AI to Anthropic | CODE DONE, needs `ANTHROPIC_API_KEY` in Worker + edge function secrets, migration `20260611010000` applied, edge functions redeployed |
-| 5. Branding sweep | DONE (dev tooling intentionally kept) |
-| 6. Performance | DONE (caching pass; bundle/images/fonts were already in good shape) |
-| 7. Cloudflare cutover | PENDING (worker renamed `purplelife`; needs Cloudflare credentials, secrets, DNS) |
+| Phase                       | Status                                                                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Vite unwrap              | CANCELLED, wrapper kept for Lovable dev compatibility (only the import was fixed to the ESM build for Node 22)                        |
+| 2. OAuth to native Supabase | CODE DONE, needs new Google/Apple codes configured in the Supabase dashboard                                                          |
+| 3. Email to Resend          | CODE DONE, needs `RESEND_API_KEY`, domain verification, hook/webhook configuration                                                    |
+| 4. AI to Anthropic          | CODE DONE, needs `ANTHROPIC_API_KEY` in Worker + edge function secrets, migration `20260611010000` applied, edge functions redeployed |
+| 5. Branding sweep           | DONE (dev tooling intentionally kept)                                                                                                 |
+| 6. Performance              | DONE (caching pass; bundle/images/fonts were already in good shape)                                                                   |
+| 7. Cloudflare cutover       | PENDING (worker renamed `purplelife`; needs Cloudflare credentials, secrets, DNS)                                                     |
 
 Decisions locked: Resend for email, Anthropic for platform AI, `AstroAii/purpledrw` as the canonical repo, worker name `purplelife`, dual Cursor + Lovable development.
 
 ## Original Lovable coupling map (resolved, kept for history)
 
-| Coupling | Where | Replacement |
-|----------|-------|-------------|
-| Vite config wrapper | `vite.config.ts` (`@lovable.dev/vite-tanstack-config`) | Explicit plugin list |
-| OAuth (Apple/Google) | `src/integrations/lovable/index.ts`, `src/components/auth/social-sign-in-buttons.tsx` (`@lovable.dev/cloud-auth-js`) | Native `supabase.auth.signInWithOAuth()` |
-| Email delivery | `src/routes/lovable/email/*` (6 routes), `@lovable.dev/email-js`, `@lovable.dev/webhooks-js`, DNS on `notify.purplelife.org` | Resend or Mailgun direct + own DNS |
-| AI gateway | `src/routes/api/chat.ts`, `src/lib/ai-gateway.server.ts`, `src/lib/ai-provider.server.ts`, `src/lib/care-profile.functions.ts`, `src/lib/report-trends.functions.ts`, `supabase/functions/ai-orchestrator`, `supabase/functions/risk-forecaster` (all use `ai.gateway.lovable.dev` + `LOVABLE_API_KEY`) | Direct provider keys (Gemini/Anthropic/OpenAI), already partially wired |
-| Branding strings | `src/routes/index.tsx` JSON-LD (`purplelife.lovable.app`), settings label "Lovable AI Gateway", About link `github.com/lovable-dev/purple`, "Connect Supabase in Lovable Cloud" error strings | Purple-branded equivalents |
-| Host checks | `src/lib/med-notifications.ts` skips SW on `lovableproject.com` etc. | Harmless; remove once off Lovable previews |
-| Metadata | `.lovable/` folder, `bunfig.toml` exclusion, `.env` comments | Delete after cutover |
+| Coupling             | Where                                                                                                                                                                                                                                                                                                   | Replacement                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Vite config wrapper  | `vite.config.ts` (`@lovable.dev/vite-tanstack-config`)                                                                                                                                                                                                                                                  | Explicit plugin list                                                    |
+| OAuth (Apple/Google) | `src/integrations/lovable/index.ts`, `src/components/auth/social-sign-in-buttons.tsx` (`@lovable.dev/cloud-auth-js`)                                                                                                                                                                                    | Native `supabase.auth.signInWithOAuth()`                                |
+| Email delivery       | `src/routes/lovable/email/*` (6 routes), `@lovable.dev/email-js`, `@lovable.dev/webhooks-js`, DNS on `notify.purplelife.org`                                                                                                                                                                            | Resend or Mailgun direct + own DNS                                      |
+| AI gateway           | `src/routes/api/chat.ts`, `src/lib/ai-gateway.server.ts`, `src/lib/ai-provider.server.ts`, `src/lib/care-profile.functions.ts`, `src/lib/report-trends.functions.ts`, `supabase/functions/ai-orchestrator`, `supabase/functions/risk-forecaster` (all use `ai.gateway.lovable.dev` + `LOVABLE_API_KEY`) | Direct provider keys (Gemini/Anthropic/OpenAI), already partially wired |
+| Branding strings     | `src/routes/index.tsx` JSON-LD (`purplelife.lovable.app`), settings label "Lovable AI Gateway", About link `github.com/lovable-dev/purple`, "Connect Supabase in Lovable Cloud" error strings                                                                                                           | Purple-branded equivalents                                              |
+| Host checks          | `src/lib/med-notifications.ts` skips SW on `lovableproject.com` etc.                                                                                                                                                                                                                                    | Harmless; remove once off Lovable previews                              |
+| Metadata             | `.lovable/` folder, `bunfig.toml` exclusion, `.env` comments                                                                                                                                                                                                                                            | Delete after cutover                                                    |
 
 ## Phase 1: Vite config (CANCELLED, wrapper kept)
 
@@ -105,13 +105,13 @@ Remaining (needs credentials):
 
 ## Decisions (resolved 2026-06-11)
 
-| # | Decision | Resolution |
-|---|----------|------------|
-| 1 | Email provider | Resend |
-| 2 | Default AI provider for platform-paid usage | Anthropic Claude |
-| 3 | Canonical GitHub repo for the About link | `AstroAii/purpledrw` |
-| 4 | Worker name | `purplelife`, deployed directly to Cloudflare |
-| 5 | Development model | Cursor and Lovable both stay; Lovable dev tooling is not removed |
+| #   | Decision                                    | Resolution                                                       |
+| --- | ------------------------------------------- | ---------------------------------------------------------------- |
+| 1   | Email provider                              | Resend                                                           |
+| 2   | Default AI provider for platform-paid usage | Anthropic Claude                                                 |
+| 3   | Canonical GitHub repo for the About link    | `AstroAii/purpledrw`                                             |
+| 4   | Worker name                                 | `purplelife`, deployed directly to Cloudflare                    |
+| 5   | Development model                           | Cursor and Lovable both stay; Lovable dev tooling is not removed |
 
 ## Secrets that must exist in Cloudflare before cutover
 

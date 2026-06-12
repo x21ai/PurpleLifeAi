@@ -4,18 +4,18 @@ PurpleLife is an AI health journal for any health management (epilepsy was the f
 
 ## Stack
 
-| Layer | Technology |
-|-------|------------|
-| Framework | TanStack Start 1.168 (React 19, file-based routing, SSR + server functions) |
-| Build | Vite 7 via `@lovable.dev/vite-tanstack-config` wrapper, `vite-imagetools` for responsive images |
-| Styling | Tailwind CSS 4, shadcn/ui (`src/components/ui/`), Oura-styled variants (`src/components/ui-oura/`) |
-| Data | Supabase: Postgres (~100 migrations), Auth, Storage, Edge Functions, pgvector, PGMQ |
-| Payments | Stripe (subscriptions, promo codes, webhooks) |
-| AI | Vercel AI SDK (`ai`, `@ai-sdk/*`); Anthropic Claude is the platform default, with OpenAI, Gemini, and Grok as user-selectable options |
-| Email | React Email templates, queue in Postgres (PGMQ), delivery via Resend, suppression via Resend bounce/complaint webhooks |
-| Hosting | Cloudflare Workers (`wrangler.jsonc`, `nodejs_compat`), SSR worker entry `src/server.ts` |
-| i18n | i18next + react-i18next, `en` and `es` |
-| Tests | Playwright e2e (`tests/e2e/`), 5 viewport projects |
+| Layer     | Technology                                                                                                                            |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework | TanStack Start 1.168 (React 19, file-based routing, SSR + server functions)                                                           |
+| Build     | Vite 7 via `@lovable.dev/vite-tanstack-config` wrapper, `vite-imagetools` for responsive images                                       |
+| Styling   | Tailwind CSS 4, shadcn/ui (`src/components/ui/`), Oura-styled variants (`src/components/ui-oura/`)                                    |
+| Data      | Supabase: Postgres (~100 migrations), Auth, Storage, Edge Functions, pgvector, PGMQ                                                   |
+| Payments  | Stripe (subscriptions, promo codes, webhooks)                                                                                         |
+| AI        | Vercel AI SDK (`ai`, `@ai-sdk/*`); Anthropic Claude is the platform default, with OpenAI, Gemini, and Grok as user-selectable options |
+| Email     | React Email templates, queue in Postgres (PGMQ), delivery via Resend, suppression via Resend bounce/complaint webhooks                |
+| Hosting   | Cloudflare Workers (`wrangler.jsonc`, `nodejs_compat`), SSR worker entry `src/server.ts`                                              |
+| i18n      | i18next + react-i18next, `en` and `es`                                                                                                |
+| Tests     | Playwright e2e (`tests/e2e/`), 5 viewport projects                                                                                    |
 
 ## Entry points and request flow
 
@@ -59,31 +59,31 @@ Two-file split in `src/lib/`, roughly 35 + 14 files:
 
 ## Data model (domain summary)
 
-| Domain | Key tables |
-|--------|-----------|
+| Domain      | Key tables                                                                                                                                              |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Core health | `profiles`, `seizure_events`, `medications`, `medication_doses`, `medication_side_effects`, `journal_entries`, `biometrics`, `risk_forecasts`, `alerts` |
-| Wearables | `oura_tokens`, `whoop_tokens`, `apple_health_tokens` |
-| AI | `ai_memory` (pgvector), `research_sources` (embedded research library) |
-| Care | `care_relationships`, `care_scopes`, `pending_changes`, `care_audit_log`, `care_threads`, `care_messages` |
-| Reports | `medical_reports`, `report_documents`, `report_metrics`, `metric_dictionary`, `medical_report_shares`, `medical_report_schedules` |
-| Intake | `hydration_intake`, `aura_events`, `food_entries`, `vitals_log`, `vital_goals` |
-| DNA | `dna_files`, `dna_variants` |
-| Community | `community_posts`, `community_comments`, `community_reactions`, `community_reports`, `community_resources` |
-| Billing | `subscriptions`, `promo_codes`, `promo_code_redemptions`, `app_settings` (`pro_free_for_everyone` flag) |
-| Email | `email_send_log`, `suppressed_emails`, `email_unsubscribe_tokens`, PGMQ queues (`auth_emails`, `transactional_emails`) |
-| Compliance | `phi_access_log`, `platform_rule_audit` |
+| Wearables   | `oura_tokens`, `whoop_tokens`, `apple_health_tokens`                                                                                                    |
+| AI          | `ai_memory` (pgvector), `research_sources` (embedded research library)                                                                                  |
+| Care        | `care_relationships`, `care_scopes`, `pending_changes`, `care_audit_log`, `care_threads`, `care_messages`                                               |
+| Reports     | `medical_reports`, `report_documents`, `report_metrics`, `metric_dictionary`, `medical_report_shares`, `medical_report_schedules`                       |
+| Intake      | `hydration_intake`, `aura_events`, `food_entries`, `vitals_log`, `vital_goals`                                                                          |
+| DNA         | `dna_files`, `dna_variants`                                                                                                                             |
+| Community   | `community_posts`, `community_comments`, `community_reactions`, `community_reports`, `community_resources`                                              |
+| Billing     | `subscriptions`, `promo_codes`, `promo_code_redemptions`, `app_settings` (`pro_free_for_everyone` flag)                                                 |
+| Email       | `email_send_log`, `suppressed_emails`, `email_unsubscribe_tokens`, PGMQ queues (`auth_emails`, `transactional_emails`)                                  |
+| Compliance  | `phi_access_log`, `platform_rule_audit`                                                                                                                 |
 
 All health tables carry RLS. Caregiver access is mediated by scopes (`src/lib/care.scopes.ts`), and denied cross-user access returns 404.
 
 ## Supabase edge functions
 
-| Function | Purpose |
-|----------|---------|
-| `ai-orchestrator` | Ask Purple backend with tools + research retrieval |
-| `journal-processor` / `journal-extract` | AI extraction from journal entries |
-| `med-dose-action` | Mark doses taken/missed from notifications |
-| `oura-sync` | Oura data sync |
-| `risk-forecaster` | Daily risk score + narrative |
+| Function                                | Purpose                                            |
+| --------------------------------------- | -------------------------------------------------- |
+| `ai-orchestrator`                       | Ask Purple backend with tools + research retrieval |
+| `journal-processor` / `journal-extract` | AI extraction from journal entries                 |
+| `med-dose-action`                       | Mark doses taken/missed from notifications         |
+| `oura-sync`                             | Oura data sync                                     |
+| `risk-forecaster`                       | Daily risk score + narrative                       |
 
 Manual deploy procedure (when the Supabase CLI 403s): `docs/manual-deploy-bundle.md`.
 

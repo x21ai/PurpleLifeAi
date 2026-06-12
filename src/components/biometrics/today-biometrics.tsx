@@ -24,7 +24,10 @@ export function TodayBiometrics() {
   useEffect(() => {
     (async () => {
       const { data: sess } = await supabase.auth.getSession();
-      if (!sess.session) { setLoaded(true); return; }
+      if (!sess.session) {
+        setLoaded(true);
+        return;
+      }
       const { data: tok } = await supabase
         .from("oura_tokens")
         .select("user_id")
@@ -34,7 +37,9 @@ export function TodayBiometrics() {
       const since = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
       const { data } = await supabase
         .from("biometrics")
-        .select("source, recorded_at, sleep_score, sleep_total_min, hrv_rmssd_ms, resting_hr_bpm, oura_readiness_score, steps")
+        .select(
+          "source, recorded_at, sleep_score, sleep_total_min, hrv_rmssd_ms, resting_hr_bpm, oura_readiness_score, steps",
+        )
         .eq("source", "oura")
         .gte("recorded_at", since)
         .order("recorded_at", { ascending: false })
@@ -101,11 +106,7 @@ export function TodayBiometrics() {
           label="HRV ms"
           sub={row.resting_hr_bpm ? `${Math.round(row.resting_hr_bpm)} bpm rest` : undefined}
         />
-        <MetricNumber
-          size="sm"
-          value={row.steps?.toLocaleString() ?? "–"}
-          label="Steps"
-        />
+        <MetricNumber size="sm" value={row.steps?.toLocaleString() ?? "–"} label="Steps" />
       </div>
     </section>
   );

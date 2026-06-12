@@ -17,8 +17,8 @@ export function DisclaimerFooter() {
   return (
     <div className="mx-auto max-w-3xl flex items-start gap-2 pb-2 text-[11px] leading-snug text-muted-foreground">
       <p className="flex-1">
-        Purple isn't a clinician. Ideas here support your own judgement, talk to
-        your care team for anything that needs a decision.
+        Purple isn't a clinician. Ideas here support your own judgement, talk to your care team for
+        anything that needs a decision.
       </p>
       <button
         type="button"

@@ -96,14 +96,17 @@ export const upsertPlatformRule = createServerFn({ method: "POST" })
         .select("id, scope, scope_value, key, value, enabled, description")
         .eq("scope", data.scope)
         .eq("key", data.key);
-      q = data.scope_value == null ? q.is("scope_value", null) : q.eq("scope_value", data.scope_value);
+      q =
+        data.scope_value == null
+          ? q.is("scope_value", null)
+          : q.eq("scope_value", data.scope_value);
       const { data: prev } = await q.maybeSingle();
       before = prev ?? null;
     }
 
     const row = {
       scope: data.scope,
-      scope_value: data.scope === "platform" ? null : data.scope_value ?? null,
+      scope_value: data.scope === "platform" ? null : (data.scope_value ?? null),
       key: data.key,
       value: data.value as never,
       enabled: data.enabled ?? true,

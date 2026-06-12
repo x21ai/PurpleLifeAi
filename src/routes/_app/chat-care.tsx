@@ -3,7 +3,22 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { Send, ChevronLeft, Users, MessageCircle, Loader2, Bell, BellOff, LogOut, MoreVertical, Plus, Paperclip, X, FileText, Download } from "lucide-react";
+import {
+  Send,
+  ChevronLeft,
+  Users,
+  MessageCircle,
+  Loader2,
+  Bell,
+  BellOff,
+  LogOut,
+  MoreVertical,
+  Plus,
+  Paperclip,
+  X,
+  FileText,
+  Download,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -139,8 +154,7 @@ function parseAttachments(value: unknown): Attachment[] {
 }
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
-const ATTACHMENT_ACCEPT =
-  "image/*,application/pdf,.doc,.docx,.txt,.csv,.xlsx,.pages,.numbers";
+const ATTACHMENT_ACCEPT = "image/*,application/pdf,.doc,.docx,.txt,.csv,.xlsx,.pages,.numbers";
 
 function AttachmentView({
   threadId,
@@ -241,9 +255,7 @@ function NewChatPicker({ onPicked }: { onPicked: (threadId: string) => void }) {
   const mineList = (mine.data?.relationships ?? []).filter(
     (r) => r.status === "active" && r.caregiver_id,
   );
-  const sharedList = (shared.data?.relationships ?? []).filter(
-    (r) => r.status === "active",
-  );
+  const sharedList = (shared.data?.relationships ?? []).filter((r) => r.status === "active");
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -292,9 +304,7 @@ function NewChatPicker({ onPicked }: { onPicked: (threadId: string) => void }) {
                   disabled={busy === r.id}
                   className="flex w-full items-center justify-between gap-3 py-3 text-left hover:bg-secondary/40 px-2 rounded-lg"
                 >
-                  <span className="text-sm text-foreground truncate">
-                    Person sharing with you
-                  </span>
+                  <span className="text-sm text-foreground truncate">Person sharing with you</span>
                   {busy === r.id ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                   ) : (
@@ -383,8 +393,8 @@ function CareChatPage() {
                 <MessageCircle className="mx-auto mb-3 h-8 w-8 opacity-40" />
                 No conversations yet.
                 <p className="mt-2 text-xs">
-                  Open a chat from a caregiver card in Settings → Sharing, or
-                  from a person on the Caregiver page.
+                  Open a chat from a caregiver card in Settings → Sharing, or from a person on the
+                  Caregiver page.
                 </p>
               </div>
             )}
@@ -410,9 +420,7 @@ function CareChatPage() {
                             {t.kind === "group" && (
                               <Users className="h-3.5 w-3.5 text-muted-foreground" />
                             )}
-                            <span className="truncate text-sm font-medium">
-                              {name}
-                            </span>
+                            <span className="truncate text-sm font-medium">{name}</span>
                           </div>
                           <p className="mt-0.5 truncate text-xs text-muted-foreground">
                             {t.last_message
@@ -441,12 +449,7 @@ function CareChatPage() {
         </aside>
 
         {/* Conversation panel */}
-        <section
-          className={cn(
-            "flex flex-1 flex-col bg-background",
-            showList && "hidden md:flex",
-          )}
-        >
+        <section className={cn("flex flex-1 flex-col bg-background", showList && "hidden md:flex")}>
           {activeThread ? (
             <ConversationPanel
               thread={activeThread}
@@ -547,9 +550,7 @@ function ConversationPanel({
         },
         (payload) => {
           const m = payload.new as Message;
-          setMessages((prev) =>
-            prev.some((x) => x.id === m.id) ? prev : [...prev, m],
-          );
+          setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
         },
       )
       .subscribe();
@@ -612,9 +613,7 @@ function ConversationPanel({
         },
       });
       setMessages((prev) =>
-        prev.some((x) => x.id === r.message.id)
-          ? prev
-          : [...prev, r.message as Message],
+        prev.some((x) => x.id === r.message.id) ? prev : [...prev, r.message as Message],
       );
       void qc.invalidateQueries({ queryKey: ["care-chat", "threads"] });
     } catch (e) {
@@ -648,9 +647,7 @@ function ConversationPanel({
             </p>
           )}
         </div>
-        {thread.muted && (
-          <BellOff className="h-4 w-4 text-muted-foreground" aria-label="Muted" />
-        )}
+        {thread.muted && <BellOff className="h-4 w-4 text-muted-foreground" aria-label="Muted" />}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="Chat options">
@@ -660,9 +657,13 @@ function ConversationPanel({
           <DropdownMenuContent align="end">
             <DropdownMenuItem onSelect={() => void handleMute()}>
               {thread.muted ? (
-                <><Bell className="h-4 w-4 mr-2" /> Unmute notifications</>
+                <>
+                  <Bell className="h-4 w-4 mr-2" /> Unmute notifications
+                </>
               ) : (
-                <><BellOff className="h-4 w-4 mr-2" /> Mute notifications</>
+                <>
+                  <BellOff className="h-4 w-4 mr-2" /> Mute notifications
+                </>
               )}
             </DropdownMenuItem>
             {!isOwner && (
@@ -694,8 +695,7 @@ function ConversationPanel({
             const prev = idx > 0 ? messages[idx - 1] : null;
             const showDaySep =
               !prev ||
-              new Date(prev.created_at).toDateString() !==
-                new Date(m.created_at).toDateString();
+              new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString();
             return (
               <React.Fragment key={m.id}>
                 {showDaySep && (
@@ -715,9 +715,7 @@ function ConversationPanel({
                     )}
                   >
                     {!mine && thread.kind === "group" && senderName && (
-                      <div className="text-[11px] font-medium opacity-70">
-                        {senderName}
-                      </div>
+                      <div className="text-[11px] font-medium opacity-70">{senderName}</div>
                     )}
                     {m.deleted_at ? (
                       <em className="opacity-60">Message deleted</em>
@@ -770,9 +768,7 @@ function ConversationPanel({
                 <span className="max-w-[160px] truncate">{f.name}</span>
                 <button
                   type="button"
-                  onClick={() =>
-                    setPending((prev) => prev.filter((_, j) => j !== i))
-                  }
+                  onClick={() => setPending((prev) => prev.filter((_, j) => j !== i))}
                   className="text-muted-foreground hover:text-foreground"
                   aria-label={`Remove ${f.name}`}
                 >
@@ -832,11 +828,7 @@ function ConversationPanel({
             className="h-10 w-10 rounded-full shrink-0"
             aria-label="Send"
           >
-            {sending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
+            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </form>
       </footer>

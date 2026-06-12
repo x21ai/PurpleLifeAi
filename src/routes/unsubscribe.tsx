@@ -60,32 +60,20 @@ function UnsubscribePage() {
         </CardHeader>
         <CardContent className="space-y-4 text-sm text-muted-foreground">
           {status === "loading" && <p>Checking your link…</p>}
-          {status === "invalid" && (
-            <p>This unsubscribe link is invalid or has expired.</p>
-          )}
+          {status === "invalid" && <p>This unsubscribe link is invalid or has expired.</p>}
           {status === "already" && (
             <p>You're already unsubscribed. No further emails will be sent.</p>
           )}
           {status === "valid" && (
             <>
-              <p className="text-foreground">
-                Unsubscribe this address from Purple Life emails?
-              </p>
-              <Button
-                className="w-full"
-                disabled={submitting}
-                onClick={confirm}
-              >
+              <p className="text-foreground">Unsubscribe this address from Purple Life emails?</p>
+              <Button className="w-full" disabled={submitting} onClick={confirm}>
                 {submitting ? "Working…" : "Confirm unsubscribe"}
               </Button>
             </>
           )}
-          {status === "done" && (
-            <p className="text-foreground">You've been unsubscribed.</p>
-          )}
-          {status === "error" && (
-            <p>Something went wrong. Please try again later.</p>
-          )}
+          {status === "done" && <p className="text-foreground">You've been unsubscribed.</p>}
+          {status === "error" && <p>Something went wrong. Please try again later.</p>}
         </CardContent>
       </Card>
     </main>

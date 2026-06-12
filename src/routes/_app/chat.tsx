@@ -122,7 +122,9 @@ function AskPage() {
       new DefaultChatTransport({
         api: "/api/chat",
         headers: () =>
-          accessToken ? ({ Authorization: `Bearer ${accessToken}` } as Record<string, string>) : ({} as Record<string, string>),
+          accessToken
+            ? ({ Authorization: `Bearer ${accessToken}` } as Record<string, string>)
+            : ({} as Record<string, string>),
       }),
     [accessToken],
   );
@@ -135,9 +137,7 @@ function AskPage() {
     },
   });
   const thinking = status === "submitted" || status === "streaming";
-  const [proposalStatus, setProposalStatus] = React.useState<
-    Record<string, ProposalStatus>
-  >({});
+  const [proposalStatus, setProposalStatus] = React.useState<Record<string, ProposalStatus>>({});
 
   const executeAction = useServerFn(executePurpleAction);
 
@@ -244,9 +244,7 @@ function AskPage() {
                 const proposals = extractProposals(m);
                 return (
                   <React.Fragment key={m.id ?? i}>
-                    {(text || m.role === "user") && (
-                      <Bubble role={m.role} text={text} />
-                    )}
+                    {(text || m.role === "user") && <Bubble role={m.role} text={text} />}
                     {proposals.map(({ proposal, key }) => (
                       <ActionConfirmCard
                         key={key}
@@ -264,9 +262,7 @@ function AskPage() {
                           suggestions={getFollowUps(
                             conditions,
                             [...messages].reverse().find((x) => x.role === "user")
-                              ? extractText(
-                                  [...messages].reverse().find((x) => x.role === "user")!,
-                                )
+                              ? extractText([...messages].reverse().find((x) => x.role === "user")!)
                               : "",
                           )}
                           onPick={(s) => send(s)}
@@ -299,42 +295,47 @@ function AskPage() {
             <ProGate feature="ask_unlimited" />
           </div>
         ) : (
-        <div className="mx-auto max-w-3xl flex items-end gap-3">
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder="Ask anything about your patterns…"
-            rows={1}
-            className="flex-1 resize-none rounded-2xl border border-border bg-secondary/40 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 max-h-40"
-          />
-          {voice.supported && (
+          <div className="mx-auto max-w-3xl flex items-end gap-3">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder="Ask anything about your patterns…"
+              rows={1}
+              className="flex-1 resize-none rounded-2xl border border-border bg-secondary/40 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 max-h-40"
+            />
+            {voice.supported && (
+              <Button
+                size="icon"
+                variant={voice.listening ? "default" : "outline"}
+                onClick={() => void toggleMic()}
+                disabled={thinking}
+                aria-label={voice.listening ? "Stop voice input" : "Start voice input"}
+                className="h-11 w-11 rounded-full shrink-0"
+              >
+                {voice.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </Button>
+            )}
             <Button
               size="icon"
-              variant={voice.listening ? "default" : "outline"}
-              onClick={() => void toggleMic()}
-              disabled={thinking}
-              aria-label={voice.listening ? "Stop voice input" : "Start voice input"}
+              onClick={() => void send(input)}
+              disabled={!input.trim() || thinking}
+              aria-label="Send"
               className="h-11 w-11 rounded-full shrink-0"
             >
-              {voice.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              {thinking ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
             </Button>
-          )}
-          <Button
-            size="icon"
-            onClick={() => void send(input)}
-            disabled={!input.trim() || thinking}
-            aria-label="Send"
-            className="h-11 w-11 rounded-full shrink-0"
-          >
-            {thinking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </Button>
-        </div>
+          </div>
         )}
         {!isPro && !overLimit && usedToday >= FREE_DAILY_LIMIT - 3 && (
           <p className="mx-auto max-w-3xl mt-2 text-[11px] text-muted-foreground text-right">
-            {FREE_DAILY_LIMIT - usedToday} free message{FREE_DAILY_LIMIT - usedToday === 1 ? "" : "s"} left today.
+            {FREE_DAILY_LIMIT - usedToday} free message
+            {FREE_DAILY_LIMIT - usedToday === 1 ? "" : "s"} left today.
           </p>
         )}
       </div>
@@ -356,9 +357,7 @@ function SaveToJournalButton({
   const save = async () => {
     if (!userId || saved || busy) return;
     setBusy(true);
-    const body = question
-      ? `**Q:** ${question}\n\n**Purple:** ${answer}`
-      : `**Purple:** ${answer}`;
+    const body = question ? `**Q:** ${question}\n\n**Purple:** ${answer}` : `**Purple:** ${answer}`;
     const { error } = await supabase.from("journal_entries").insert({
       user_id: userId,
       kind: "text",
@@ -465,7 +464,7 @@ function renderWithSourceCitations(text: string) {
 function extractText(message: UIMessage): string {
   if (!Array.isArray(message.parts)) return "";
   return message.parts
-    .map((p) => (p.type === "text" ? (p as { text?: string }).text ?? "" : ""))
+    .map((p) => (p.type === "text" ? ((p as { text?: string }).text ?? "") : ""))
     .join("")
     .trim();
 }
@@ -565,15 +564,11 @@ function ActionConfirmCard({
       <div className="max-w-[90%] rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
         <div className="flex items-center justify-between gap-3">
           <p className="label-eyebrow text-primary">{KIND_LABEL[proposal.kind]}</p>
-          {status === "confirmed" && (
-            <span className="text-xs text-primary/80">Done</span>
-          )}
+          {status === "confirmed" && <span className="text-xs text-primary/80">Done</span>}
           {status === "cancelled" && (
             <span className="text-xs text-muted-foreground">Cancelled</span>
           )}
-          {status === "failed" && (
-            <span className="text-xs text-destructive">Failed</span>
-          )}
+          {status === "failed" && <span className="text-xs text-destructive">Failed</span>}
         </div>
         <p className="mt-1 text-foreground/90">{proposal.summary}</p>
         {paramEntries.length > 0 && (
@@ -588,21 +583,10 @@ function ActionConfirmCard({
         )}
         {status === "pending" && (
           <div className="mt-3 flex gap-2">
-            <Button
-              size="sm"
-              onClick={() => void handleConfirm()}
-              disabled={busy}
-              className="h-8"
-            >
+            <Button size="sm" onClick={() => void handleConfirm()} disabled={busy} className="h-8">
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Confirm"}
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={onCancel}
-              disabled={busy}
-              className="h-8"
-            >
+            <Button size="sm" variant="ghost" onClick={onCancel} disabled={busy} className="h-8">
               Cancel
             </Button>
           </div>

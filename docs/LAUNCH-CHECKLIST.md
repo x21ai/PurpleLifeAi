@@ -10,15 +10,15 @@ Companion docs: `docs/LOVABLE-MIGRATION.md` (Phase 7), `docs/manual-deploy-bundl
 
 Supabase CLI 403s on this project. Apply each file in the Supabase SQL editor (or CLI when it works). Do not skip; later migrations depend on earlier ones.
 
-| Migration | Purpose |
-|-----------|---------|
-| `20260611010000_remove_lovable_ai_provider.sql` | Rewrites stored `lovable` AI prefs to `claude`; tightens CHECK |
-| `20260612001000_peripheral_feature_flags.sql` | Dark-launch flags: community, DNA, friends (default OFF) |
-| `20260612002000_notification_delivery_log.sql` | Med reminder delivery instrumentation |
-| `20260612010000_timezone_correct_dose_seeding.sql` | User-local dose day boundaries; hourly seed cron support |
-| `20260612011000_adherence_excludes_future_doses.sql` | Honest adherence windows |
-| `20260612012000_canonical_tag_namespaces.sql` | Journal tag namespaces (event/symptom/trigger/…) |
-| `20260613010000_security_hardening.sql` | Care invite SECURITY DEFINER RPCs, token expiry, community column REVOKEs, pinned `search_path` |
+| Migration                                            | Purpose                                                                                         |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `20260611010000_remove_lovable_ai_provider.sql`      | Rewrites stored `lovable` AI prefs to `claude`; tightens CHECK                                  |
+| `20260612001000_peripheral_feature_flags.sql`        | Dark-launch flags: community, DNA, friends (default OFF)                                        |
+| `20260612002000_notification_delivery_log.sql`       | Med reminder delivery instrumentation                                                           |
+| `20260612010000_timezone_correct_dose_seeding.sql`   | User-local dose day boundaries; hourly seed cron support                                        |
+| `20260612011000_adherence_excludes_future_doses.sql` | Honest adherence windows                                                                        |
+| `20260612012000_canonical_tag_namespaces.sql`        | Journal tag namespaces (event/symptom/trigger/…)                                                |
+| `20260613010000_security_hardening.sql`              | Care invite SECURITY DEFINER RPCs, token expiry, community column REVOKEs, pinned `search_path` |
 
 Verify after apply:
 
@@ -36,14 +36,14 @@ SELECT proname FROM pg_proc WHERE proname IN ('accept_care_invite', 'accept_assi
 
 Redeploy from the Supabase dashboard (Functions → Deploy) or CLI when available. Bundle procedure: `docs/manual-deploy-bundle.md`.
 
-| Function | Redeploy when | Why |
-|----------|---------------|-----|
-| `ai-orchestrator` | Always at cutover | Anthropic default; Lovable gateway removed from prefs |
-| `risk-forecaster` | Always at cutover | Anthropic narrative; profile timezone for day boundaries |
-| `oura-sync` | Always at cutover | Sleep mapping fixes, `last_sync_at` writes |
-| `journal-processor` | Recommended | Stuck-entry retry, photo URL self-healing, tag namespaces |
-| `med-dose-action` | If changed since last deploy | Notification ack path |
-| `journal-extract` | If changed since last deploy | Lighter capture extraction |
+| Function            | Redeploy when                | Why                                                       |
+| ------------------- | ---------------------------- | --------------------------------------------------------- |
+| `ai-orchestrator`   | Always at cutover            | Anthropic default; Lovable gateway removed from prefs     |
+| `risk-forecaster`   | Always at cutover            | Anthropic narrative; profile timezone for day boundaries  |
+| `oura-sync`         | Always at cutover            | Sleep mapping fixes, `last_sync_at` writes                |
+| `journal-processor` | Recommended                  | Stuck-entry retry, photo URL self-healing, tag namespaces |
+| `med-dose-action`   | If changed since last deploy | Notification ack path                                     |
+| `journal-extract`   | If changed since last deploy | Lighter capture extraction                                |
 
 Set edge function secrets (Dashboard → Project Settings → Edge Functions):
 
@@ -57,30 +57,30 @@ Set edge function secrets (Dashboard → Project Settings → Edge Functions):
 
 ### Cloudflare Worker (runtime, `wrangler secret put` or dashboard)
 
-| Secret | Required | Used by |
-|--------|----------|---------|
-| `ANTHROPIC_API_KEY` | Yes | Chat, insights, care profiles, platform AI |
-| `RESEND_API_KEY` | Yes | Email delivery |
-| `RESEND_WEBHOOK_SECRET` | Yes | `/api/email/suppression` |
-| `SEND_EMAIL_HOOK_SECRET` | Yes | `/api/email/auth/webhook` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Cron, email enqueue, admin, delivery log |
-| `CRON_SECRET` | Yes | All `/api/public/cron/*` |
-| `PUBLIC_SITE_URL` | Yes | Email links, cron self-calls, share URLs (`https://www.purplelife.org`) |
-| `STRIPE_SECRET_KEY` | Yes | Billing |
-| `STRIPE_WEBHOOK_SECRET` | Yes | `/api/public/stripe-webhook` |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Yes (push) | Web push + dose reminders |
-| `OURA_CLIENT_ID`, `OURA_CLIENT_SECRET` | If wearables | Oura OAuth + sync |
-| `WHOOP_CLIENT_ID`, `WHOOP_CLIENT_SECRET` | If wearables | Whoop OAuth + sync |
-| `EMAIL_PREVIEW_SECRET` | Optional | Template preview routes |
-| `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GROK_API_KEY` | Optional | Per-user AI provider choices |
-| `LOVABLE_API_KEY` | Optional | Lovable preview AI fallback only |
+| Secret                                                   | Required     | Used by                                                                 |
+| -------------------------------------------------------- | ------------ | ----------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`                                      | Yes          | Chat, insights, care profiles, platform AI                              |
+| `RESEND_API_KEY`                                         | Yes          | Email delivery                                                          |
+| `RESEND_WEBHOOK_SECRET`                                  | Yes          | `/api/email/suppression`                                                |
+| `SEND_EMAIL_HOOK_SECRET`                                 | Yes          | `/api/email/auth/webhook`                                               |
+| `SUPABASE_SERVICE_ROLE_KEY`                              | Yes          | Cron, email enqueue, admin, delivery log                                |
+| `CRON_SECRET`                                            | Yes          | All `/api/public/cron/*`                                                |
+| `PUBLIC_SITE_URL`                                        | Yes          | Email links, cron self-calls, share URLs (`https://www.purplelife.org`) |
+| `STRIPE_SECRET_KEY`                                      | Yes          | Billing                                                                 |
+| `STRIPE_WEBHOOK_SECRET`                                  | Yes          | `/api/public/stripe-webhook`                                            |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Yes (push)   | Web push + dose reminders                                               |
+| `OURA_CLIENT_ID`, `OURA_CLIENT_SECRET`                   | If wearables | Oura OAuth + sync                                                       |
+| `WHOOP_CLIENT_ID`, `WHOOP_CLIENT_SECRET`                 | If wearables | Whoop OAuth + sync                                                      |
+| `EMAIL_PREVIEW_SECRET`                                   | Optional     | Template preview routes                                                 |
+| `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GROK_API_KEY`       | Optional     | Per-user AI provider choices                                            |
+| `LOVABLE_API_KEY`                                        | Optional     | Lovable preview AI fallback only                                        |
 
 ### GitHub repository secrets (CI/CD)
 
-| Secret | Used by |
-|--------|---------|
+| Secret                                                                           | Used by           |
+| -------------------------------------------------------------------------------- | ----------------- |
 | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` | CI build + deploy |
-| `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | Deploy workflow |
+| `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`                                  | Deploy workflow   |
 
 ### Build-time (public, baked into client bundle)
 
@@ -96,13 +96,13 @@ Same `VITE_SUPABASE_*` trio. Never commit the service role key.
 
 Configure **before** DNS flip; test against staging URL or production once Worker is live.
 
-| Service | Endpoint | Notes |
-|---------|----------|-------|
-| Stripe | `https://www.purplelife.org/api/public/stripe-webhook` | Signing secret → `STRIPE_WEBHOOK_SECRET` |
-| Supabase Auth send-email hook | `https://www.purplelife.org/api/email/auth/webhook` | Standard Webhooks secret → `SEND_EMAIL_HOOK_SECRET` |
-| Resend | `https://www.purplelife.org/api/email/suppression` | Events: `email.bounced`, `email.complained`; signing secret → `RESEND_WEBHOOK_SECRET` |
-| Apple Health (per user) | `https://www.purplelife.org/api/public/hooks/apple-health` | User-specific secret in `apple_health_tokens` |
-| Risk forecaster callback | `https://www.purplelife.org/api/public/hooks/risk-forecaster` | Edge function callback |
+| Service                       | Endpoint                                                      | Notes                                                                                 |
+| ----------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Stripe                        | `https://www.purplelife.org/api/public/stripe-webhook`        | Signing secret → `STRIPE_WEBHOOK_SECRET`                                              |
+| Supabase Auth send-email hook | `https://www.purplelife.org/api/email/auth/webhook`           | Standard Webhooks secret → `SEND_EMAIL_HOOK_SECRET`                                   |
+| Resend                        | `https://www.purplelife.org/api/email/suppression`            | Events: `email.bounced`, `email.complained`; signing secret → `RESEND_WEBHOOK_SECRET` |
+| Apple Health (per user)       | `https://www.purplelife.org/api/public/hooks/apple-health`    | User-specific secret in `apple_health_tokens`                                         |
+| Risk forecaster callback      | `https://www.purplelife.org/api/public/hooks/risk-forecaster` | Edge function callback                                                                |
 
 OAuth redirect URIs (Supabase dashboard + provider consoles):
 

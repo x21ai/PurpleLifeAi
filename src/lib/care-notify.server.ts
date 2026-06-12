@@ -42,19 +42,20 @@ export async function notifyOwnerOfCaregiverWrite(params: {
       .limit(1);
     if (recent && recent.length > 0) return;
 
-    const [{ data: ownerProfile }, { data: caregiverProfile }, { data: ownerAuth }] = await Promise.all([
-      supabaseAdmin
-        .from("profiles")
-        .select("first_name, last_name, community_display_name")
-        .eq("id", ownerId)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("profiles")
-        .select("first_name, last_name, community_display_name")
-        .eq("id", caregiverId)
-        .maybeSingle(),
-      supabaseAdmin.auth.admin.getUserById(ownerId),
-    ]);
+    const [{ data: ownerProfile }, { data: caregiverProfile }, { data: ownerAuth }] =
+      await Promise.all([
+        supabaseAdmin
+          .from("profiles")
+          .select("first_name, last_name, community_display_name")
+          .eq("id", ownerId)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("profiles")
+          .select("first_name, last_name, community_display_name")
+          .eq("id", caregiverId)
+          .maybeSingle(),
+        supabaseAdmin.auth.admin.getUserById(ownerId),
+      ]);
 
     const caregiverName =
       caregiverProfile?.community_display_name?.trim() ||
@@ -64,9 +65,7 @@ export async function notifyOwnerOfCaregiverWrite(params: {
         .trim() ||
       "A caregiver";
     const ownerFirstName =
-      ownerProfile?.first_name?.trim() ||
-      ownerProfile?.community_display_name?.trim() ||
-      "";
+      ownerProfile?.first_name?.trim() || ownerProfile?.community_display_name?.trim() || "";
     const action = KIND_LABEL[kind];
     const title = `${caregiverName} ${action}`;
     const body = summary?.trim() || "Open Purple to review the new entry.";
@@ -167,10 +166,7 @@ export async function notifyCaregiverOfDecision(params: {
 
     const ownerName =
       ownerProfile?.community_display_name?.trim() ||
-      [ownerProfile?.first_name, ownerProfile?.last_name]
-        .filter(Boolean)
-        .join(" ")
-        .trim() ||
+      [ownerProfile?.first_name, ownerProfile?.last_name].filter(Boolean).join(" ").trim() ||
       "The account owner";
     const caregiverFirstName =
       caregiverProfile?.first_name?.trim() ||

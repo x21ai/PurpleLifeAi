@@ -111,11 +111,15 @@ export async function parseHealthExport(
 }
 
 function processAttrs(attrBlob: string, days: Map<string, Agg>) {
-  let type = "", startDate = "", endDate = "", value = "";
+  let type = "",
+    startDate = "",
+    endDate = "",
+    value = "";
   ATTR_RE.lastIndex = 0;
   let a: RegExpExecArray | null;
   while ((a = ATTR_RE.exec(attrBlob)) !== null) {
-    const k = a[1], v = a[2];
+    const k = a[1],
+      v = a[2];
     if (k === "type") type = v;
     else if (k === "startDate") startDate = v;
     else if (k === "endDate") endDate = v;

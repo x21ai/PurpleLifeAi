@@ -163,15 +163,18 @@ export function getMetricCategory(metricKey: string): MetricCategory {
   // Loose heuristics for unknown keys so user reports still group sensibly.
   if (/cholesterol|triglycer|lipid|hdl|ldl/.test(key)) return "Lipids";
   if (/glucose|insulin|hba1c|a1c/.test(key)) return "Metabolic";
-  if (/lymph|neutro|mono|baso|eosino|hemoglo|hematocrit|wbc|rbc|platelet|mcv|mch|rdw|mpv/.test(key)) return "CBC";
+  if (/lymph|neutro|mono|baso|eosino|hemoglo|hematocrit|wbc|rbc|platelet|mcv|mch|rdw|mpv/.test(key))
+    return "CBC";
   if (/iron|ferritin|transferrin|tibc|uibc/.test(key)) return "Iron";
   if (/alt|ast|alp|ggt|bilirubin|albumin|globulin|protein/.test(key)) return "Liver";
   if (/bun|creatinine|egfr|urea/.test(key)) return "Kidney";
   if (/tsh|t3|t4|thyroid/.test(key)) return "Thyroid";
-  if (/cortisol|testosterone|shbg|estradiol|progesterone|psa|prolactin|fsh|lh\b/.test(key)) return "Hormones";
+  if (/cortisol|testosterone|shbg|estradiol|progesterone|psa|prolactin|fsh|lh\b/.test(key))
+    return "Hormones";
   if (/crp|esr|sed_rate|ferritin/.test(key)) return "Inflammation";
   if (/vitamin|folate|b12|d_25/.test(key)) return "Vitamins";
-  if (/sodium|potassium|chloride|calcium|magnesium|phosph|co2|carbon/.test(key)) return "Electrolytes";
+  if (/sodium|potassium|chloride|calcium|magnesium|phosph|co2|carbon/.test(key))
+    return "Electrolytes";
   return "Other";
 }
 
@@ -185,7 +188,10 @@ function humanizeKey(key: string): string {
 
 /** Normalize for comparison: lowercase, collapse non-alphanumerics. */
 function normalize(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "")
+    .trim();
 }
 
 /**

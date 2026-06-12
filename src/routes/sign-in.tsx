@@ -23,7 +23,11 @@ const LOCALE_PREFILL_KEY = "purple-locale-prefill";
  * Auto-detect a sensible locale prefill for /welcome. The user doesn't see this
  * during sign-up, /welcome shows it pre-filled so they can confirm or change.
  */
-function detectAndStorePrefill(): { country: string | null; timezone: string | null; locale: SupportedLocale } {
+function detectAndStorePrefill(): {
+  country: string | null;
+  timezone: string | null;
+  locale: SupportedLocale;
+} {
   const locale = detectBrowserLocale();
   let timezone: string | null = null;
   let country: string | null = null;
@@ -38,10 +42,7 @@ function detectAndStorePrefill(): { country: string | null; timezone: string | n
   }
   if (typeof window !== "undefined") {
     try {
-      localStorage.setItem(
-        LOCALE_PREFILL_KEY,
-        JSON.stringify({ country, timezone, locale }),
-      );
+      localStorage.setItem(LOCALE_PREFILL_KEY, JSON.stringify({ country, timezone, locale }));
     } catch {
       // ignore
     }
@@ -272,7 +273,13 @@ function SignInPage() {
               </div>
             ) : (
               <div className="mt-10">
-                <Tabs value={mode} onValueChange={(v) => { setMode(v as "signin" | "register"); setErrorMsg(null); }}>
+                <Tabs
+                  value={mode}
+                  onValueChange={(v) => {
+                    setMode(v as "signin" | "register");
+                    setErrorMsg(null);
+                  }}
+                >
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="signin">{t("signIn.tabSignIn")}</TabsTrigger>
                     <TabsTrigger value="register">{t("signIn.tabRegister")}</TabsTrigger>
@@ -302,7 +309,11 @@ function SignInPage() {
                         required
                         minLength={8}
                         autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                        placeholder={mode === "register" ? t("signIn.passwordPlaceholderNew") : t("signIn.passwordPlaceholderSignIn")}
+                        placeholder={
+                          mode === "register"
+                            ? t("signIn.passwordPlaceholderNew")
+                            : t("signIn.passwordPlaceholderSignIn")
+                        }
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="h-14 text-lg font-serif rounded-xl"
@@ -310,7 +321,8 @@ function SignInPage() {
                       />
                       {mode === "register" && (
                         <p className="text-xs text-muted-foreground pt-1">
-                          We&rsquo;ll ask a few quick things after you confirm your email, region, conditions, and anything else that helps Purple help you.
+                          We&rsquo;ll ask a few quick things after you confirm your email, region,
+                          conditions, and anything else that helps Purple help you.
                         </p>
                       )}
                       <Button
@@ -319,8 +331,12 @@ function SignInPage() {
                         disabled={status === "submitting"}
                       >
                         {status === "submitting"
-                          ? mode === "signin" ? t("signIn.signingIn") : t("signIn.creating")
-                          : mode === "signin" ? t("signIn.signIn") : t("signIn.createAccount")}
+                          ? mode === "signin"
+                            ? t("signIn.signingIn")
+                            : t("signIn.creating")
+                          : mode === "signin"
+                            ? t("signIn.signIn")
+                            : t("signIn.createAccount")}
                       </Button>
                       {mode === "signin" && (
                         <div className="pt-1 text-right">
@@ -355,16 +371,12 @@ function SignInPage() {
                 <SocialSignInButtons helper="" />
                 <p className="mt-8 text-center text-xs text-muted-foreground">
                   {t("signIn.trustLine")}{" "}
-                  <Link
-                    to="/trust"
-                    className="underline underline-offset-4 hover:text-foreground"
-                  >
+                  <Link to="/trust" className="underline underline-offset-4 hover:text-foreground">
                     {t("signIn.trustLink")}
                   </Link>
                 </p>
               </div>
             )}
-
           </div>
         </main>
       </div>

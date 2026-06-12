@@ -49,8 +49,8 @@ function AdminDuplicates() {
       <div>
         <h1 className="font-serif text-2xl">Duplicate reports</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Reports grouped by user, date, and content hash. Keep one, mark the rest as duplicates, exclude a single
-          report from trends, or restore. Nothing is deleted.
+          Reports grouped by user, date, and content hash. Keep one, mark the rest as duplicates,
+          exclude a single report from trends, or restore. Nothing is deleted.
         </p>
       </div>
       {q.isLoading ? (
@@ -60,7 +60,15 @@ function AdminDuplicates() {
       ) : (
         <div className="space-y-4">
           {groups.map((g) => (
-            <Group key={g.key} g={g} onMark={(id, keeperId) => run("Marked as duplicate", () => mark({ data: { id, keeperId } }))} onExclude={(id) => run("Excluded from trends", () => exclude({ data: { id } }))} onRestore={(id) => run("Restored", () => restore({ data: { id } }))} />
+            <Group
+              key={g.key}
+              g={g}
+              onMark={(id, keeperId) =>
+                run("Marked as duplicate", () => mark({ data: { id, keeperId } }))
+              }
+              onExclude={(id) => run("Excluded from trends", () => exclude({ data: { id } }))}
+              onRestore={(id) => run("Restored", () => restore({ data: { id } }))}
+            />
           ))}
         </div>
       )}
@@ -104,18 +112,38 @@ function Group({
           {sorted.map((r) => {
             const isKeeper = r.id === oldest.id;
             return (
-              <div key={r.id} className="px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
+              <div
+                key={r.id}
+                className="px-4 py-3 flex flex-wrap items-center gap-3 justify-between"
+              >
                 <div className="min-w-0">
                   <p className="text-sm truncate">
-                    <Link to="/reports/$reportId" params={{ reportId: r.id }} className="hover:underline">
+                    <Link
+                      to="/reports/$reportId"
+                      params={{ reportId: r.id }}
+                      className="hover:underline"
+                    >
                       {r.title}
                     </Link>
-                    {isKeeper && <span className="ml-2 text-[10px] uppercase tracking-wider text-emerald-500">keeper</span>}
-                    {r.duplicate_of && <span className="ml-2 text-[10px] uppercase tracking-wider text-amber-500">marked dup</span>}
-                    {r.excluded_from_trends && <span className="ml-2 text-[10px] uppercase tracking-wider text-muted-foreground">excluded</span>}
+                    {isKeeper && (
+                      <span className="ml-2 text-[10px] uppercase tracking-wider text-emerald-500">
+                        keeper
+                      </span>
+                    )}
+                    {r.duplicate_of && (
+                      <span className="ml-2 text-[10px] uppercase tracking-wider text-amber-500">
+                        marked dup
+                      </span>
+                    )}
+                    {r.excluded_from_trends && (
+                      <span className="ml-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+                        excluded
+                      </span>
+                    )}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {r.report_type ?? "report"} . uploaded {new Date(r.created_at).toLocaleString()} . identity {r.identity_status}
+                    {r.report_type ?? "report"} . uploaded {new Date(r.created_at).toLocaleString()}{" "}
+                    . identity {r.identity_status}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">

@@ -24,9 +24,7 @@ export function TodayEmptyState({ onDismiss }: Props) {
         style={{ background: "var(--gradient-primary, var(--primary))" }}
         aria-hidden
       />
-      <p className="label-eyebrow text-muted-foreground relative">
-        {t("today.emptyEyebrow")}
-      </p>
+      <p className="label-eyebrow text-muted-foreground relative">{t("today.emptyEyebrow")}</p>
       <h2 className="relative mt-4 font-serif text-3xl sm:text-5xl leading-[1.05] tracking-tight text-foreground max-w-[18ch]">
         {t("today.emptyHeading")}
       </h2>

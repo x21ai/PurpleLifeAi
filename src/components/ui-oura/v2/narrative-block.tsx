@@ -13,12 +13,7 @@ export function NarrativeBlock({
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "surface-ai rounded-[24px] p-6 max-w-[600px]",
-        className,
-      )}
-    >
+    <div className={cn("surface-ai rounded-[24px] p-6 max-w-[600px]", className)}>
       <Sparkles className="h-4 w-4 text-[color:var(--purple-primary)] mb-3" />
       <p className="body-serif text-foreground/85 m-0">{children}</p>
     </div>

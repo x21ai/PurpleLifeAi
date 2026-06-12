@@ -1,9 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
-import {
-  flushOfflineJournalQueue,
-  getQueuedEntries,
-} from "@/lib/offline-journal-queue";
+import { flushOfflineJournalQueue, getQueuedEntries } from "@/lib/offline-journal-queue";
 
 /**
  * Watches connectivity and the queue, flushes pending entries when online,

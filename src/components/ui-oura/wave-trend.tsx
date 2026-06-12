@@ -61,7 +61,9 @@ export function WaveTrend({
 
   const a11y =
     ariaLabel ??
-    series.map((s) => `${s.label}: ${(s.format ?? String)(s.values[s.values.length - 1] ?? 0)}`).join(", ");
+    series
+      .map((s) => `${s.label}: ${(s.format ?? String)(s.values[s.values.length - 1] ?? 0)}`)
+      .join(", ");
 
   return (
     <svg

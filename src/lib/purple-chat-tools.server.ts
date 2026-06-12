@@ -59,11 +59,13 @@ export function buildPurpleTools(userId: string) {
         });
         if (error) return { error: error.message, matches: [] };
         return {
-          matches: (data || []).map((m: { recorded_at?: string; similarity?: number; content?: string }) => ({
-            when: fmtDate(m.recorded_at),
-            similarity: Number(m.similarity?.toFixed?.(3) ?? m.similarity),
-            content: m.content,
-          })),
+          matches: (data || []).map(
+            (m: { recorded_at?: string; similarity?: number; content?: string }) => ({
+              when: fmtDate(m.recorded_at),
+              similarity: Number(m.similarity?.toFixed?.(3) ?? m.similarity),
+              content: m.content,
+            }),
+          ),
         };
       },
     }),
@@ -132,10 +134,12 @@ export function buildPurpleTools(userId: string) {
           .select("id, name, dosage, is_rescue, active")
           .eq("user_id", userId);
         const medMap = new Map((meds || []).map((m: { id: string }) => [m.id, m]));
-        const enriched = (doses || []).map((d: { medication_id: string; status?: string | null }) => ({
-          ...d,
-          medication: medMap.get(d.medication_id) ?? null,
-        }));
+        const enriched = (doses || []).map(
+          (d: { medication_id: string; status?: string | null }) => ({
+            ...d,
+            medication: medMap.get(d.medication_id) ?? null,
+          }),
+        );
         const taken = enriched.filter((d) => d.status === "taken").length;
         const total = enriched.length;
         return {

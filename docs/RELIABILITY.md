@@ -8,9 +8,9 @@ A missed seizure med is not a UX bug, it is a safety event. This document descri
 
 ## The two delivery paths
 
-| Path | Mechanism | Logged by |
-|------|-----------|-----------|
-| `sw_local` | Service worker polls an IndexedDB dose schedule every 60s (`public/sw.js`) and shows the notification locally; works offline | The SW itself, into an IndexedDB queue, flushed by the app on open |
+| Path       | Mechanism                                                                                                                                                           | Logged by                                                                                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `sw_local` | Service worker polls an IndexedDB dose schedule every 60s (`public/sw.js`) and shows the notification locally; works offline                                        | The SW itself, into an IndexedDB queue, flushed by the app on open                                       |
 | `web_push` | The dose-reminders cron (`/api/public/cron/dose-reminders`, every minute) sends a web push per due dose; works when the page and SW are both dead, requires network | The server at send time; the SW refines `fired_at` with the on-device receipt time when the push arrives |
 
 The two paths are deliberately redundant. The same dose may notify through both; the notification `tag` collapses duplicates on the device.
@@ -19,12 +19,12 @@ The two paths are deliberately redundant. The same dose may notify through both;
 
 Table: `notification_delivery_log` (owner-only RLS plus service-role insert).
 
-| Column | Meaning |
-|--------|---------|
-| `dose_id`, `scheduled_at` | Which dose, and when it was supposed to fire |
-| `fired_at` | When a notification was actually shown (null = never fired, or ack arrived without a logged fire) |
-| `delivery_channel` | `sw_local` or `web_push` |
-| `acknowledged_at`, `acknowledged_action` | When and how the user responded: `taken`, `skip`, `snooze`, or `opened` (plain tap) |
+| Column                                   | Meaning                                                                                           |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `dose_id`, `scheduled_at`                | Which dose, and when it was supposed to fire                                                      |
+| `fired_at`                               | When a notification was actually shown (null = never fired, or ack arrived without a logged fire) |
+| `delivery_channel`                       | `sw_local` or `web_push`                                                                          |
+| `acknowledged_at`, `acknowledged_action` | When and how the user responded: `taken`, `skip`, `snooze`, or `opened` (plain tap)               |
 
 Event flow:
 

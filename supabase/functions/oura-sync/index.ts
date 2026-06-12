@@ -1,10 +1,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { pickSleepSessionPerDay, mapOuraDayToBiometricFields } from "../_shared/oura-sleep-mapping.ts";
+import {
+  pickSleepSessionPerDay,
+  mapOuraDayToBiometricFields,
+} from "../_shared/oura-sleep-mapping.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -75,14 +77,17 @@ async function getValidAccessToken(user_id: string): Promise<string | null> {
   if (!row.refresh_token) throw new Error("needs_reauth: Oura token expired");
   const refreshed = await refreshToken(row.refresh_token);
   const newExpires = new Date(Date.now() + (refreshed.expires_in ?? 3600) * 1000).toISOString();
-  await admin.from("oura_tokens").update({
-    access_token: refreshed.access_token,
-    refresh_token: refreshed.refresh_token ?? row.refresh_token,
-    token_type: refreshed.token_type,
-    scope: refreshed.scope,
-    expires_at: newExpires,
-    updated_at: new Date().toISOString(),
-  }).eq("user_id", user_id);
+  await admin
+    .from("oura_tokens")
+    .update({
+      access_token: refreshed.access_token,
+      refresh_token: refreshed.refresh_token ?? row.refresh_token,
+      token_type: refreshed.token_type,
+      scope: refreshed.scope,
+      expires_at: newExpires,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", user_id);
   return refreshed.access_token;
 }
 
@@ -131,11 +136,17 @@ async function syncRange(user_id: string, start: string, end: string) {
   const spo2Map = byDay(spo2.data);
   const cardioMap = byDay(cardio.data);
 
-  const sleepDetailMap = pickSleepSessionPerDay((sleepDetail.data ?? []) as Parameters<typeof pickSleepSessionPerDay>[0]);
+  const sleepDetailMap = pickSleepSessionPerDay(
+    (sleepDetail.data ?? []) as Parameters<typeof pickSleepSessionPerDay>[0],
+  );
 
   const days = new Set<string>([
-    ...sleepDailyMap.keys(), ...readinessMap.keys(), ...stressMap.keys(),
-    ...resilienceMap.keys(), ...activityMap.keys(), ...spo2Map.keys(),
+    ...sleepDailyMap.keys(),
+    ...readinessMap.keys(),
+    ...stressMap.keys(),
+    ...resilienceMap.keys(),
+    ...activityMap.keys(),
+    ...spo2Map.keys(),
     ...sleepDetailMap.keys(),
   ]);
 
@@ -171,16 +182,22 @@ async function syncRange(user_id: string, start: string, end: string) {
       steps: ac?.steps ?? null,
       active_calories: ac?.active_calories ?? null,
       raw_payload: {
-        daily_sleep: sd, daily_readiness: rd, daily_stress: st,
-        daily_resilience: rs, daily_activity: ac, daily_spo2: sp,
-        daily_cardiovascular_age: ca, sleep: sl,
+        daily_sleep: sd,
+        daily_readiness: rd,
+        daily_stress: st,
+        daily_resilience: rs,
+        daily_activity: ac,
+        daily_spo2: sp,
+        daily_cardiovascular_age: ca,
+        sleep: sl,
       },
     };
 
     // Delete existing oura row for that day before insert (no unique constraint exists)
     const dayStart = new Date(`${day}T00:00:00Z`).toISOString();
     const dayEnd = new Date(`${day}T23:59:59Z`).toISOString();
-    await admin.from("biometrics")
+    await admin
+      .from("biometrics")
       .delete()
       .eq("user_id", user_id)
       .eq("source", "oura")
@@ -201,7 +218,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const action = body.action as "exchange" | "backfill" | "incremental";
 
-    if (action === "config" as any) {
+    if (action === ("config" as any)) {
       return new Response(JSON.stringify({ client_id: OURA_CLIENT_ID }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -240,7 +257,8 @@ Deno.serve(async (req) => {
         }
         try {
           const r = await syncRange(t.user_id, start, end);
-          await admin.from("oura_tokens")
+          await admin
+            .from("oura_tokens")
             .update({ last_sync_at: new Date().toISOString() })
             .eq("user_id", t.user_id);
           results.push({ user_id: t.user_id, ...r });
@@ -256,7 +274,8 @@ Deno.serve(async (req) => {
     const user_id = await getUserIdFromRequest(req);
     if (!user_id) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -264,20 +283,24 @@ Deno.serve(async (req) => {
       const { code, redirect_uri } = body;
       const tok = await exchangeCode(code, redirect_uri);
       const expires_at = new Date(Date.now() + (tok.expires_in ?? 3600) * 1000).toISOString();
-      await admin.from("oura_tokens").upsert({
-        user_id,
-        access_token: tok.access_token,
-        refresh_token: tok.refresh_token,
-        token_type: tok.token_type,
-        scope: tok.scope,
-        expires_at,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "user_id" });
+      await admin.from("oura_tokens").upsert(
+        {
+          user_id,
+          access_token: tok.access_token,
+          refresh_token: tok.refresh_token,
+          token_type: tok.token_type,
+          scope: tok.scope,
+          expires_at,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" },
+      );
 
       const end = fmt(new Date());
       const start = fmt(new Date(Date.now() - 90 * 24 * 3600 * 1000));
       const result = await syncRange(user_id, start, end);
-      await admin.from("oura_tokens")
+      await admin
+        .from("oura_tokens")
         .update({ last_sync_at: new Date().toISOString() })
         .eq("user_id", user_id);
       return new Response(JSON.stringify({ ok: true, ...result }), {
@@ -290,7 +313,8 @@ Deno.serve(async (req) => {
       const end = fmt(new Date());
       const start = fmt(new Date(Date.now() - days * 24 * 3600 * 1000));
       const result = await syncRange(user_id, start, end);
-      await admin.from("oura_tokens")
+      await admin
+        .from("oura_tokens")
         .update({ last_sync_at: new Date().toISOString() })
         .eq("user_id", user_id);
       return new Response(JSON.stringify({ ok: true, ...result }), {
@@ -302,7 +326,8 @@ Deno.serve(async (req) => {
       const end = fmt(new Date());
       const start = fmt(new Date(Date.now() - 3 * 24 * 3600 * 1000));
       const result = await syncRange(user_id, start, end);
-      await admin.from("oura_tokens")
+      await admin
+        .from("oura_tokens")
         .update({ last_sync_at: new Date().toISOString() })
         .eq("user_id", user_id);
       return new Response(JSON.stringify({ ok: true, ...result }), {
@@ -311,7 +336,8 @@ Deno.serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), {
-      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

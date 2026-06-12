@@ -81,10 +81,10 @@ export const Route = createFileRoute("/api/chat")({
           });
         } catch (e) {
           console.error("[/api/chat] error", e);
-          return new Response(
-            JSON.stringify({ error: "Internal server error" }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ error: "Internal server error" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
         }
       },
     },

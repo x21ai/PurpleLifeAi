@@ -40,12 +40,19 @@ export function CaregiverAlertsCard({
     const filter = `user_id=eq.${ownerId}`;
     const channel = supabase
       .channel(`care-alerts-${ownerId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "seizure_events", filter }, () =>
-        qc.invalidateQueries({ queryKey: ["care", "alerts", ownerId] }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "medication_doses", filter }, () =>
-        qc.invalidateQueries({ queryKey: ["care", "alerts", ownerId] }))
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "seizure_events", filter },
+        () => qc.invalidateQueries({ queryKey: ["care", "alerts", ownerId] }),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "medication_doses", filter },
+        () => qc.invalidateQueries({ queryKey: ["care", "alerts", ownerId] }),
+      )
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "alerts", filter }, () =>
-        qc.invalidateQueries({ queryKey: ["care", "alerts", ownerId] }))
+        qc.invalidateQueries({ queryKey: ["care", "alerts", ownerId] }),
+      )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
@@ -53,16 +60,12 @@ export function CaregiverAlertsCard({
   }, [ownerId, qc]);
 
   const dismiss = useMutation({
-    mutationFn: (alert_id: string) =>
-      dismissFn({ data: { owner_id: ownerId, alert_id } }),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["care", "alerts", ownerId] }),
+    mutationFn: (alert_id: string) => dismissFn({ data: { owner_id: ownerId, alert_id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care", "alerts", ownerId] }),
   });
   const dismissAll = useMutation({
-    mutationFn: (ids: string[]) =>
-      dismissAllFn({ data: { owner_id: ownerId, alert_ids: ids } }),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["care", "alerts", ownerId] }),
+    mutationFn: (ids: string[]) => dismissAllFn({ data: { owner_id: ownerId, alert_ids: ids } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["care", "alerts", ownerId] }),
   });
 
   if (q.isLoading || q.isError) return null;
@@ -112,43 +115,41 @@ export function CaregiverAlertsCard({
             </p>
             <ul className="space-y-2">
               {items.map((a) => {
-          const Icon = ICON[a.kind] ?? AlertTriangle;
-          return (
-            <li
-              key={a.id}
-              className="flex items-start gap-3 rounded-xl border border-border bg-background p-3"
-            >
-              <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-foreground">{a.title}</p>
-                {a.body && (
-                  <p className="mt-0.5 text-xs text-muted-foreground">{a.body}</p>
-                )}
-              </div>
-              <div className="flex shrink-0 items-center gap-1">
-                {onJump && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-xs"
-                    onClick={() => onJump(a.tab as Tab)}
+                const Icon = ICON[a.kind] ?? AlertTriangle;
+                return (
+                  <li
+                    key={a.id}
+                    className="flex items-start gap-3 rounded-xl border border-border bg-background p-3"
                   >
-                    View
-                  </Button>
-                )}
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7"
-                  aria-label="Dismiss"
-                  onClick={() => dismiss.mutate(a.id)}
-                  disabled={dismiss.isPending}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </li>
-          );
+                    <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground">{a.title}</p>
+                      {a.body && <p className="mt-0.5 text-xs text-muted-foreground">{a.body}</p>}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      {onJump && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs"
+                          onClick={() => onJump(a.tab as Tab)}
+                        >
+                          View
+                        </Button>
+                      )}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        aria-label="Dismiss"
+                        onClick={() => dismiss.mutate(a.id)}
+                        disabled={dismiss.isPending}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </li>
+                );
               })}
             </ul>
           </div>

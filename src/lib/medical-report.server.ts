@@ -1,17 +1,20 @@
 import { PDFDocument, StandardFonts, rgb, PDFPage, PDFFont } from "pdf-lib";
 // QA #19: pdf-lib Helvetica is WinAnsi-only. Strip/replace non-encodable chars.
 function safe(input: string): string {
-  return (input ?? "")
-    .replace(/[\u2192\u279C\u27A4]/g, "->")
-    .replace(/[\u2190]/g, "<-")
-    .replace(/[\u2013\u2014]/g, "-")
-    .replace(/[\u2018\u2019]/g, "'")
-    .replace(/[\u201C\u201D]/g, '"')
-    .replace(/[\u2022]/g, "*")
-    .replace(/[\u00A0]/g, " ")
-    .replace(/[\u2026]/g, "...")
-    // Drop any remaining non-WinAnsi (outside basic latin + latin-1 supplement)
-    .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, "");
+  return (
+    (input ?? "")
+      .replace(/[\u2192\u279C\u27A4]/g, "->")
+      .replace(/[\u2190]/g, "<-")
+      .replace(/[\u2013\u2014]/g, "-")
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2022]/g, "*")
+      .replace(/[\u00A0]/g, " ")
+      .replace(/[\u2026]/g, "...")
+      // Drop any remaining non-WinAnsi (outside basic latin + latin-1 supplement)
+      // eslint-disable-next-line no-control-regex -- intentional WinAnsi strip
+      .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, "")
+  );
 }
 
 import type { PatternCard } from "./insights-patterns.functions";
@@ -109,7 +112,9 @@ function ensureSpace(c: Ctx, needed: number) {
 }
 
 function drawFooter(c: Ctx) {
-  c.page.drawText(safe(`Purple, generated medical history. Not a medical record. Page ${c.pageNo}`), { x: MARGIN, y: 24, size: 8, font: c.font, color: MUTED },
+  c.page.drawText(
+    safe(`Purple, generated medical history. Not a medical record. Page ${c.pageNo}`),
+    { x: MARGIN, y: 24, size: 8, font: c.font, color: MUTED },
   );
 }
 
@@ -123,7 +128,11 @@ function H2(c: Ctx, text: string) {
   c.page.drawText(safe(text), { x: MARGIN, y: c.y, size: 14, font: c.bold, color: TEXT });
   c.y -= 18;
 }
-function P(c: Ctx, text: string, opts: { size?: number; color?: ReturnType<typeof rgb>; bold?: boolean } = {}) {
+function P(
+  c: Ctx,
+  text: string,
+  opts: { size?: number; color?: ReturnType<typeof rgb>; bold?: boolean } = {},
+) {
   const size = opts.size ?? 10;
   const color = opts.color ?? TEXT;
   const font = opts.bold ? c.bold : c.font;
@@ -163,7 +172,10 @@ function table(
   // header
   ensureSpace(c, rowH + 4);
   c.page.drawRectangle({
-    x: x0, y: c.y - 2, width: PAGE_W - MARGIN * 2, height: rowH,
+    x: x0,
+    y: c.y - 2,
+    width: PAGE_W - MARGIN * 2,
+    height: rowH,
     color: rgb(0.95, 0.94, 0.97),
   });
   let x = x0 + 4;
@@ -179,16 +191,15 @@ function table(
     for (const col of cols) {
       const raw = safe(row[col.key] ?? "-");
       const txt = truncate(raw, col.w - 6, c.font, 9);
-      const tx = col.align === "right"
-        ? xc + col.w - 6 - c.font.widthOfTextAtSize(txt, 9)
-        : xc;
+      const tx = col.align === "right" ? xc + col.w - 6 - c.font.widthOfTextAtSize(txt, 9) : xc;
       c.page.drawText(safe(txt), { x: tx, y: c.y + 2, size: 9, font: c.font, color: TEXT });
       xc += col.w;
     }
     c.page.drawLine({
       start: { x: x0, y: c.y },
       end: { x: PAGE_W - MARGIN, y: c.y },
-      thickness: 0.4, color: FAINT,
+      thickness: 0.4,
+      color: FAINT,
     });
     c.y -= rowH;
   }
@@ -196,7 +207,8 @@ function table(
 }
 function truncate(s: string, maxW: number, font: PDFFont, size: number): string {
   if (font.widthOfTextAtSize(s, size) <= maxW) return s;
-  let lo = 0, hi = s.length;
+  let lo = 0,
+    hi = s.length;
   while (lo < hi) {
     const mid = Math.ceil((lo + hi) / 2);
     if (font.widthOfTextAtSize(s.slice(0, mid) + "…", size) <= maxW) lo = mid;
@@ -207,10 +219,10 @@ function truncate(s: string, maxW: number, font: PDFFont, size: number): string 
 
 const SERIES_COLORS = [
   rgb(0.357, 0.173, 0.51), // purple (brand)
-  rgb(0.13, 0.49, 0.78),   // blue
-  rgb(0.86, 0.45, 0.16),   // orange
-  rgb(0.20, 0.56, 0.30),   // green
-  rgb(0.55, 0.27, 0.55),   // magenta
+  rgb(0.13, 0.49, 0.78), // blue
+  rgb(0.86, 0.45, 0.16), // orange
+  rgb(0.2, 0.56, 0.3), // green
+  rgb(0.55, 0.27, 0.55), // magenta
 ];
 
 function dateRange(from: string, to: string): string[] {
@@ -244,7 +256,12 @@ function overlayChart(
   const y0 = c.y - h;
 
   c.page.drawRectangle({
-    x: x0, y: y0, width: w, height: h, borderColor: FAINT, borderWidth: 0.5,
+    x: x0,
+    y: y0,
+    width: w,
+    height: h,
+    borderColor: FAINT,
+    borderWidth: 0.5,
   });
 
   const dates = dateRange(opts.windowFrom, opts.windowTo);
@@ -256,7 +273,11 @@ function overlayChart(
 
   if (allVals.length === 0 || dates.length < 2) {
     c.page.drawText(safe("Not enough data"), {
-      x: x0 + 8, y: y0 + h / 2, size: 9, font: c.font, color: MUTED,
+      x: x0 + 8,
+      y: y0 + h / 2,
+      size: 9,
+      font: c.font,
+      color: MUTED,
     });
     c.y = y0 - 12;
     return;
@@ -277,8 +298,12 @@ function overlayChart(
     const ya = yFor(opts.refLow);
     const yb = yFor(opts.refHigh);
     c.page.drawRectangle({
-      x: x0, y: ya, width: w, height: yb - ya,
-      color: rgb(0.6, 0.85, 0.6), opacity: 0.12,
+      x: x0,
+      y: ya,
+      width: w,
+      height: yb - ya,
+      color: rgb(0.6, 0.85, 0.6),
+      opacity: 0.12,
     });
   }
 
@@ -288,8 +313,10 @@ function overlayChart(
       const x = xFor(d);
       if (x < 0) continue;
       c.page.drawLine({
-        start: { x, y: y0 }, end: { x, y: y0 + 8 },
-        thickness: 0.8, color: rgb(0.78, 0.17, 0.17),
+        start: { x, y: y0 },
+        end: { x, y: y0 + 8 },
+        thickness: 0.8,
+        color: rgb(0.78, 0.17, 0.17),
       });
     }
   }
@@ -312,13 +339,25 @@ function overlayChart(
 
   // Min/max labels
   c.page.drawText(safe(`${formatNum(max)}${opts.unit ?? ""}`), {
-    x: x0 + w - 54, y: y0 + h - 10, size: 8, font: c.font, color: MUTED,
+    x: x0 + w - 54,
+    y: y0 + h - 10,
+    size: 8,
+    font: c.font,
+    color: MUTED,
   });
   c.page.drawText(safe(`${formatNum(min)}${opts.unit ?? ""}`), {
-    x: x0 + w - 54, y: y0 + 2, size: 8, font: c.font, color: MUTED,
+    x: x0 + w - 54,
+    y: y0 + 2,
+    size: 8,
+    font: c.font,
+    color: MUTED,
   });
   c.page.drawText(safe(`${dates[0]} → ${dates[dates.length - 1]}`), {
-    x: x0 + 4, y: y0 - 10, size: 8, font: c.font, color: MUTED,
+    x: x0 + 4,
+    y: y0 - 10,
+    size: 8,
+    font: c.font,
+    color: MUTED,
   });
 
   // Legend
@@ -327,22 +366,34 @@ function overlayChart(
   sourceNames.forEach((src, idx) => {
     const color = SERIES_COLORS[idx % SERIES_COLORS.length];
     c.page.drawLine({
-      start: { x: lx, y: ly + 3 }, end: { x: lx + 14, y: ly + 3 },
-      thickness: 1.5, color,
+      start: { x: lx, y: ly + 3 },
+      end: { x: lx + 14, y: ly + 3 },
+      thickness: 1.5,
+      color,
     });
     const label = src.length > 0 ? src : "other";
     c.page.drawText(safe(label), {
-      x: lx + 18, y: ly, size: 8, font: c.font, color: TEXT,
+      x: lx + 18,
+      y: ly,
+      size: 8,
+      font: c.font,
+      color: TEXT,
     });
     lx += 24 + c.font.widthOfTextAtSize(label, 8);
   });
   if (opts.seizureDates && opts.seizureDates.size > 0) {
     c.page.drawLine({
-      start: { x: lx, y: ly + 3 }, end: { x: lx + 14, y: ly + 3 },
-      thickness: 0.8, color: rgb(0.78, 0.17, 0.17),
+      start: { x: lx, y: ly + 3 },
+      end: { x: lx + 14, y: ly + 3 },
+      thickness: 0.8,
+      color: rgb(0.78, 0.17, 0.17),
     });
     c.page.drawText(safe("seizure day"), {
-      x: lx + 18, y: ly, size: 8, font: c.font, color: TEXT,
+      x: lx + 18,
+      y: ly,
+      size: 8,
+      font: c.font,
+      color: TEXT,
     });
   }
 
@@ -377,15 +428,27 @@ export async function buildMedicalReportPdf(data: ReportSourceData): Promise<Uin
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const c: Ctx = {
-    doc, page: undefined as unknown as PDFPage, y: 0, font, bold, pageNo: 0,
+    doc,
+    page: undefined as unknown as PDFPage,
+    y: 0,
+    font,
+    bold,
+    pageNo: 0,
     total: () => doc.getPageCount(),
   };
   newPage(c);
 
   // Cover
-  c.page.drawText(safe("Medical history report"), { x: MARGIN, y: c.y, size: 26, font: bold, color: BRAND });
+  c.page.drawText(safe("Medical history report"), {
+    x: MARGIN,
+    y: c.y,
+    size: 26,
+    font: bold,
+    color: BRAND,
+  });
   c.y -= 36;
-  const name = [data.profile.first_name, data.profile.last_name].filter(Boolean).join(" ") || "Patient";
+  const name =
+    [data.profile.first_name, data.profile.last_name].filter(Boolean).join(" ") || "Patient";
   P(c, name, { size: 16, bold: true });
   P(c, `Date of birth: ${fmtDate(data.profile.date_of_birth)}`, { color: MUTED });
   if (data.profile.email) P(c, `Email: ${data.profile.email}`, { color: MUTED });
@@ -479,7 +542,8 @@ export async function buildMedicalReportPdf(data: ReportSourceData): Promise<Uin
   if (data.sections.seizures) {
     newPage(c);
     H1(c, "Seizures & events");
-    if (data.seizures.length === 0) P(c, "No seizure events recorded in this window.", { color: MUTED });
+    if (data.seizures.length === 0)
+      P(c, "No seizure events recorded in this window.", { color: MUTED });
     else
       table(
         c,
@@ -509,13 +573,13 @@ export async function buildMedicalReportPdf(data: ReportSourceData): Promise<Uin
       seizureDates.add(s.started_at.slice(0, 10));
     }
     const entries = Object.entries(data.biometrics).filter(([, v]) => v.points.length > 1);
-    if (entries.length === 0)
-      P(c, "No biometric data in this window.", { color: MUTED });
+    if (entries.length === 0) P(c, "No biometric data in this window.", { color: MUTED });
     for (const [label, series] of entries) {
       H2(c, label);
-      const seriesMap = series.series && Object.keys(series.series).length > 0
-        ? series.series
-        : { combined: series.points };
+      const seriesMap =
+        series.series && Object.keys(series.series).length > 0
+          ? series.series
+          : { combined: series.points };
       overlayChart(c, seriesMap, {
         label,
         unit: series.unit ? ` ${series.unit}` : "",

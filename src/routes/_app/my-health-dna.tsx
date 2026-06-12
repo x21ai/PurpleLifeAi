@@ -92,7 +92,8 @@ function DnaPage() {
       qc.invalidateQueries({ queryKey: ["dna-files"] });
       toast.success("Deleted.");
     },
-    onError: (e: unknown) => toast.error(userMessage(e, "That didn't delete. Try again in a moment.")),
+    onError: (e: unknown) =>
+      toast.error(userMessage(e, "That didn't delete. Try again in a moment.")),
   });
 
   const reparse = useMutation({
@@ -106,7 +107,8 @@ function DnaPage() {
       }
       regen({ data: { force: true } }).catch(() => undefined);
     },
-    onError: (e: unknown) => toast.error(userMessage(e, "Purple couldn't re-read this just now. Try again in a moment.")),
+    onError: (e: unknown) =>
+      toast.error(userMessage(e, "Purple couldn't re-read this just now. Try again in a moment.")),
   });
 
   const setShare = useMutation({
@@ -153,7 +155,12 @@ function DnaPage() {
       regen({ data: { force: true } }).catch(() => undefined);
       qc.invalidateQueries({ queryKey: ["care-profile"] });
     } catch (e) {
-      toast.error(userMessage(e, "The upload didn't finish. Check your connection and try again; the file is still on your device."));
+      toast.error(
+        userMessage(
+          e,
+          "The upload didn't finish. Check your connection and try again; the file is still on your device.",
+        ),
+      );
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";

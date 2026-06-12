@@ -66,7 +66,13 @@ export function FoodTodayList({ rows, readOnly }: { rows: FoodRow[]; readOnly?: 
               </div>
             </div>
             {!readOnly && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => m.mutate(r.id)} disabled={m.isPending}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => m.mutate(r.id)}
+                disabled={m.isPending}
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}

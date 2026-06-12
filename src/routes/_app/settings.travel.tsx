@@ -1,6 +1,16 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronLeft, Plane, Trash2, Loader2, CalendarDays, Plus, Wand2, Eye, Pencil } from "lucide-react";
+import {
+  ChevronLeft,
+  Plane,
+  Trash2,
+  Loader2,
+  CalendarDays,
+  Plus,
+  Wand2,
+  Eye,
+  Pencil,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,7 +40,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { generateTripSchedule, previewTripSchedule } from "@/lib/travel.functions";
 import { useTranslation } from "react-i18next";
 import { DualTime } from "@/components/travel/dual-time";
-import { ItineraryEditor, legsAreChronological, type LegDraft } from "@/components/travel/itinerary-editor";
+import {
+  ItineraryEditor,
+  legsAreChronological,
+  type LegDraft,
+} from "@/components/travel/itinerary-editor";
 import { TripEditDialog, type EditableTrip } from "@/components/travel/trip-edit-dialog";
 import { userMessage } from "@/lib/user-message";
 
@@ -113,25 +127,23 @@ function TravelPage() {
   const [legs, setLegs] = React.useState<LegDraft[]>([]);
   const [creating, setCreating] = React.useState(false);
   const [generatingId, setGeneratingId] = React.useState<string | null>(null);
-  const [previewState, setPreviewState] = React.useState<
-    | {
-        trip: Trip;
-        homeTz: string;
-        doses: Array<{
-          medication_id: string;
-          medication_name: string;
-          scheduled_at: string;
-          leg_tz: string;
-          amount: number | null;
-          unit: string | null;
-        }>;
-      }
-    | null
-  >(null);
+  const [previewState, setPreviewState] = React.useState<{
+    trip: Trip;
+    homeTz: string;
+    doses: Array<{
+      medication_id: string;
+      medication_name: string;
+      scheduled_at: string;
+      leg_tz: string;
+      amount: number | null;
+      unit: string | null;
+    }>;
+  } | null>(null);
   const [previewingId, setPreviewingId] = React.useState<string | null>(null);
-  const [regenConfirm, setRegenConfirm] = React.useState<
-    { trip: Trip; pendingCount: number } | null
-  >(null);
+  const [regenConfirm, setRegenConfirm] = React.useState<{
+    trip: Trip;
+    pendingCount: number;
+  } | null>(null);
   const [editingTrip, setEditingTrip] = React.useState<EditableTrip | null>(null);
 
   const load = React.useCallback(async () => {
@@ -335,9 +347,7 @@ function TravelPage() {
         <ChevronLeft className="h-3.5 w-3.5" /> {t("nav.settings")}
       </Link>
       <h1 className="mt-4 font-serif text-4xl sm:text-5xl text-foreground">{t("travel.title")}</h1>
-      <p className="mt-3 text-foreground/75 max-w-[600px]">
-        {t("travel.intro")}
-      </p>
+      <p className="mt-3 text-foreground/75 max-w-[600px]">{t("travel.intro")}</p>
 
       <div className="mt-6">
         <a
@@ -351,8 +361,7 @@ function TravelPage() {
       <section className="mt-8 rounded-2xl border border-border bg-card p-5 sm:p-6">
         <h2 className="font-serif text-xl text-foreground">{t("travel.homeTz")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          The anchor when you're not on a trip. Change this only if you've
-          actually moved.
+          The anchor when you're not on a trip. Change this only if you've actually moved.
         </p>
         <div className="mt-4 flex items-center gap-2 flex-wrap">
           <select
@@ -371,11 +380,13 @@ function TravelPage() {
         </div>
       </section>
 
-      <section id="plan-a-trip" className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6 scroll-mt-20">
+      <section
+        id="plan-a-trip"
+        className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6 scroll-mt-20"
+      >
         <h2 className="font-serif text-xl text-foreground">Plan a trip</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Add each flight or layover. Local times are interpreted in that
-          leg's timezone.
+          Add each flight or layover. Local times are interpreted in that leg's timezone.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2 space-y-1.5">
@@ -466,8 +477,7 @@ function TravelPage() {
                     {t.label ?? `Trip to ${t.destination_tz}`}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {t.destination_tz} ·{" "}
-                    {new Date(t.depart_at).toLocaleDateString()} →{" "}
+                    {t.destination_tz} · {new Date(t.depart_at).toLocaleDateString()} →{" "}
                     {new Date(t.return_at).toLocaleDateString()}
                     {" · "}
                     <span className="capitalize">{t.status}</span>
@@ -562,9 +572,7 @@ function TravelPage() {
       >
         <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl">
-              Schedule preview
-            </DialogTitle>
+            <DialogTitle className="font-serif text-2xl">Schedule preview</DialogTitle>
             <DialogDescription>
               {previewState
                 ? `${previewState.doses.length} doses, ${previewState.trip.shift_strategy ?? "snap"} strategy. Nothing has been saved yet.`
@@ -573,18 +581,11 @@ function TravelPage() {
           </DialogHeader>
           <div className="overflow-y-auto -mx-6 px-6 pb-2">
             {previewState && (
-              <PreviewBody
-                homeTz={previewState.homeTz}
-                doses={previewState.doses}
-              />
+              <PreviewBody homeTz={previewState.homeTz} doses={previewState.doses} />
             )}
           </div>
           <div className="flex justify-end gap-2 pt-2 border-t border-border">
-            <Button
-              variant="ghost"
-              onClick={() => setPreviewState(null)}
-              className="rounded-full"
-            >
+            <Button variant="ghost" onClick={() => setPreviewState(null)} className="rounded-full">
               Close
             </Button>
             <Button
@@ -706,9 +707,7 @@ function PreviewBody({
             {list
               .slice()
               .sort(
-                (a, b) =>
-                  new Date(a.scheduled_at).getTime() -
-                  new Date(b.scheduled_at).getTime(),
+                (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime(),
               )
               .map((d, i) => (
                 <li
@@ -719,7 +718,9 @@ function PreviewBody({
                     <p className="text-foreground truncate">{d.medication_name}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
                       {d.amount != null && (
-                        <span>{d.amount} {d.unit ?? ""}</span>
+                        <span>
+                          {d.amount} {d.unit ?? ""}
+                        </span>
                       )}
                       <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-1.5 py-0.5 text-[10px] font-medium">
                         {(d.leg_tz.split("/").pop() ?? d.leg_tz).replace(/_/g, " ")}

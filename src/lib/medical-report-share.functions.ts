@@ -8,24 +8,31 @@ function randomToken(len = 36): string {
   crypto.getRandomValues(bytes);
   // base64url, no padding
   return btoa(String.fromCharCode(...bytes))
-    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
 }
 
 /** Create a public, time-limited share link for a generated medical report. */
 export const createMedicalReportShareLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      reportId: z.string().uuid(),
-      expiresInDays: z.number().int().min(1).max(90).default(7),
-      viewerLabel: z.string().max(120).optional(),
-    }).parse(input),
+    z
+      .object({
+        reportId: z.string().uuid(),
+        expiresInDays: z.number().int().min(1).max(90).default(7),
+        viewerLabel: z.string().max(120).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { data: row } = await supabaseAdmin
-      .from("medical_reports").select("id")
-      .eq("id", data.reportId).eq("user_id", userId).maybeSingle();
+      .from("medical_reports")
+      .select("id")
+      .eq("id", data.reportId)
+      .eq("user_id", userId)
+      .maybeSingle();
     if (!row) throw new Error("Report not found");
 
     const token = randomToken(24);
@@ -52,7 +59,9 @@ export const listMedicalReportShareLinks = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await supabaseAdmin
       .from("medical_report_public_links")
-      .select("id, token, expires_at, revoked_at, viewer_label, opened_count, last_opened_at, created_at")
+      .select(
+        "id, token, expires_at, revoked_at, viewer_label, opened_count, last_opened_at, created_at",
+      )
       .eq("report_id", data.reportId)
       .eq("user_id", context.userId)
       .order("created_at", { ascending: false });
@@ -95,8 +104,10 @@ export const resolveMedicalReportShareLink = createServerFn({ method: "POST" })
     if (!report) throw new Error("Report not found");
 
     const { data: profile } = await supabaseAdmin
-      .from("profiles").select("first_name, last_name")
-      .eq("id", link.user_id).maybeSingle();
+      .from("profiles")
+      .select("first_name, last_name")
+      .eq("id", link.user_id)
+      .maybeSingle();
 
     const { data: signed, error: sErr } = await supabaseAdmin.storage
       .from("medical-reports")

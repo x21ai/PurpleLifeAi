@@ -4,7 +4,16 @@ import AxeBuilder from "@axe-core/playwright";
 /**
  * WCAG smoke on core routes. Warn-only: violations are logged but do not fail CI yet.
  */
-const CORE_ROUTES = ["/", "/sign-in", "/today", "/journal", "/meds", "/timeline", "/insights", "/biometrics"];
+const CORE_ROUTES = [
+  "/",
+  "/sign-in",
+  "/today",
+  "/journal",
+  "/meds",
+  "/timeline",
+  "/insights",
+  "/biometrics",
+];
 
 test.describe("axe accessibility smoke (warn only)", () => {
   for (const path of CORE_ROUTES) {
@@ -12,9 +21,7 @@ test.describe("axe accessibility smoke (warn only)", () => {
       await page.goto(path);
       await page.waitForLoadState("domcontentloaded");
 
-      const results = await new AxeBuilder({ page })
-        .withTags(["wcag2a", "wcag2aa"])
-        .analyze();
+      const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
 
       if (results.violations.length > 0) {
         const summary = results.violations.map(

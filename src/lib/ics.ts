@@ -154,7 +154,10 @@ function tzDateToUtc(dateStr: string, time: string, tz: string): Date | null {
       second: "2-digit",
     });
     const parts = Object.fromEntries(
-      fmt.formatToParts(naive).filter((p) => p.type !== "literal").map((p) => [p.type, p.value]),
+      fmt
+        .formatToParts(naive)
+        .filter((p) => p.type !== "literal")
+        .map((p) => [p.type, p.value]),
     ) as Record<string, string>;
     const asTz = Date.UTC(
       parseInt(parts.year, 10),

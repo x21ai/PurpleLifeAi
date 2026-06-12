@@ -265,21 +265,15 @@ function aggregateByTrait<T extends string>(
   return out;
 }
 
-export function promptsForConditions(
-  conditions: string[] | null | undefined,
-): string[] {
+export function promptsForConditions(conditions: string[] | null | undefined): string[] {
   return aggregateByTrait(TRAIT_PROMPTS, conditions, GENERAL_PROMPTS, 6);
 }
 
-export function getSuggestedQuestions(
-  conditions: string[] | null | undefined,
-): string[] {
+export function getSuggestedQuestions(conditions: string[] | null | undefined): string[] {
   return aggregateByTrait(TRAIT_QUESTIONS, conditions, GENERAL_QUESTIONS, 5);
 }
 
-export function showsSeizureFeatures(
-  conditions: string[] | null | undefined,
-): boolean {
+export function showsSeizureFeatures(conditions: string[] | null | undefined): boolean {
   return hasTrait(conditions, "seizure_prone");
 }
 
@@ -406,7 +400,8 @@ export function getTodayGreeting(
   const defs = getConditions(conditions);
   const prompts = promptsForConditions(conditions);
   const journalPrompt =
-    prompts[0] ?? (defs[0] ? `How is ${defs[0].shortLabel.toLowerCase()} today?` : "How are you, honestly?");
+    prompts[0] ??
+    (defs[0] ? `How is ${defs[0].shortLabel.toLowerCase()} today?` : "How are you, honestly?");
   return { greetingSuffix, journalPrompt };
 }
 

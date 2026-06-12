@@ -57,7 +57,8 @@ function SharedReportPage() {
         {data.patientFirstName ? `${data.patientFirstName}'s health summary` : "Health summary"}
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        {data.windowFrom} → {data.windowTo} · Generated {new Date(data.generatedAt).toLocaleString()}
+        {data.windowFrom} → {data.windowTo} · Generated{" "}
+        {new Date(data.generatedAt).toLocaleString()}
       </p>
       {data.viewerLabel && (
         <p className="mt-1 text-xs text-muted-foreground">Shared with: {data.viewerLabel}</p>

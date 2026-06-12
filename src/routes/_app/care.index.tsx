@@ -27,8 +27,7 @@ function CareIndexPage() {
     staleTime: 30_000,
   });
   const acceptMut = useMutation({
-    mutationFn: (relationshipId: string) =>
-      acceptFn({ data: { relationship_id: relationshipId } }),
+    mutationFn: (relationshipId: string) => acceptFn({ data: { relationship_id: relationshipId } }),
     onSuccess: () => {
       toast.success("Invite accepted");
       void qc.invalidateQueries({ queryKey: ["care", "owners-switcher"] });
@@ -43,7 +42,8 @@ function CareIndexPage() {
         People you care for
       </h1>
       <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-        Tap a card to see their day, meds, and updates. They control what you can see and can revoke access any time.
+        Tap a card to see their day, meds, and updates. They control what you can see and can revoke
+        access any time.
       </p>
 
       {q.isLoading && (
@@ -58,9 +58,7 @@ function CareIndexPage() {
         </p>
       )}
 
-      {q.data && q.data.owners.length === 0 && q.data.pending.length === 0 && (
-        <EmptyState />
-      )}
+      {q.data && q.data.owners.length === 0 && q.data.pending.length === 0 && <EmptyState />}
 
       {q.data && q.data.pending.length > 0 && (
         <section className="mt-10">
@@ -74,9 +72,7 @@ function CareIndexPage() {
                 <div className="flex items-center gap-3 min-w-0">
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <div className="min-w-0">
-                    <p className="truncate text-sm text-foreground">
-                      Invite to {p.invite_email}
-                    </p>
+                    <p className="truncate text-sm text-foreground">Invite to {p.invite_email}</p>
                     <p className="text-xs text-muted-foreground">
                       Sent {new Date(p.created_at).toLocaleDateString()}
                     </p>
@@ -118,7 +114,8 @@ function EmptyState() {
       </div>
       <h2 className="mt-4 font-serif text-2xl text-foreground">No one is sharing with you yet</h2>
       <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
-        When someone invites you as a caregiver, they'll appear here. Ask them to add you from their Sharing settings.
+        When someone invites you as a caregiver, they'll appear here. Ask them to add you from their
+        Sharing settings.
       </p>
       <p className="mt-6 text-sm text-muted-foreground">
         Want to share your own health with someone you trust?

@@ -22,7 +22,9 @@ function HowPage() {
 
       <p className="mt-6 label-eyebrow text-muted-foreground">{t("howPurple.eyebrow")}</p>
       <h1 className="mt-3 font-serif text-[40px] sm:text-5xl leading-[1.05] tracking-[-0.02em] text-foreground">
-        {t("howPurple.title1")}<br />{t("howPurple.title2")}
+        {t("howPurple.title1")}
+        <br />
+        {t("howPurple.title2")}
       </h1>
 
       <div className="mt-10 space-y-6">
@@ -31,13 +33,20 @@ function HowPage() {
         </Card>
         <Card icon={<Brain className="h-4 w-4" />} title={t("howPurple.patternsTitle")}>
           {t("howPurple.patternsBody")}
-          <Link to="/insights" className="underline ml-1">{t("howPurple.patternsLink")}</Link>.
+          <Link to="/insights" className="underline ml-1">
+            {t("howPurple.patternsLink")}
+          </Link>
+          .
         </Card>
         <Card icon={<Sparkles className="h-4 w-4" />} title={t("howPurple.actionTitle")}>
           {t("howPurple.actionBody")}
         </Card>
         <Card icon={<Lock className="h-4 w-4" />} title={t("howPurple.privateTitle")}>
-          {t("howPurple.privateBody")} <Link to="/settings" className="underline">{t("howPurple.privateLink")}</Link>.
+          {t("howPurple.privateBody")}{" "}
+          <Link to="/settings" className="underline">
+            {t("howPurple.privateLink")}
+          </Link>
+          .
         </Card>
       </div>
     </div>

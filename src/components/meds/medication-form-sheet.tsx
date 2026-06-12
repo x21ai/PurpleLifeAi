@@ -13,17 +13,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { requestPermission, scheduleMedications } from "@/lib/med-notifications";
 import { searchMedDictionary, type MedDictEntry } from "@/lib/med-dictionary";
-import { ALARM_SOUNDS, DEFAULT_ALARM_SOUND, playAlarmOnce, type AlarmSoundId } from "@/lib/alarm-sounds";
+import {
+  ALARM_SOUNDS,
+  DEFAULT_ALARM_SOUND,
+  playAlarmOnce,
+  type AlarmSoundId,
+} from "@/lib/alarm-sounds";
 import { Volume2 } from "lucide-react";
 
 export type MedKind = "medication" | "supplement" | "vitamin" | "herbal" | "rescue";
@@ -50,7 +51,17 @@ const KIND_OPTIONS: { value: MedKind; label: string }[] = [
 ];
 
 const DOSAGE_FORMS = [
-  "pill", "capsule", "tablet", "liquid", "injection", "drops", "patch", "inhaler", "powder", "gummy", "other",
+  "pill",
+  "capsule",
+  "tablet",
+  "liquid",
+  "injection",
+  "drops",
+  "patch",
+  "inhaler",
+  "powder",
+  "gummy",
+  "other",
 ] as const;
 
 const DOSAGE_UNITS = ["mg", "mcg", "mL", "g", "IU", "drops", "sprays", "units"];
@@ -200,7 +211,7 @@ export function MedicationFormSheet({
         alarm_sound: string | null;
       };
       setName(m.name ?? "");
-      const resolvedKind: MedKind = m.is_rescue ? "rescue" : (m.kind as MedKind) ?? "medication";
+      const resolvedKind: MedKind = m.is_rescue ? "rescue" : ((m.kind as MedKind) ?? "medication");
       setKind(resolvedKind);
       setDosageForm(m.dosage_form ?? "");
       setDosageAmount(m.dosage_amount != null ? String(m.dosage_amount) : "");
@@ -209,7 +220,7 @@ export function MedicationFormSheet({
       setUnitMode(DOSAGE_UNITS.includes(unit) ? "preset" : "custom");
       setWithFood(!!m.with_food);
       setCriticalAlarm(m.reminder_style === "critical");
-      setAlarmSound(((m.alarm_sound as AlarmSoundId) ?? DEFAULT_ALARM_SOUND));
+      setAlarmSound((m.alarm_sound as AlarmSoundId) ?? DEFAULT_ALARM_SOUND);
       const schedule = Array.isArray(m.schedule) ? m.schedule : [];
       if (schedule.length > 0) {
         setTimes(schedule.map((s) => s.time));
@@ -224,13 +235,13 @@ export function MedicationFormSheet({
       setPillsRemaining(m.pills_remaining != null ? String(m.pills_remaining) : "");
       const thr = m.refill_threshold != null ? String(m.refill_threshold) : "7";
       setRefillThreshold(thr);
-      setRefillMode(REFILL_PRESETS.includes(thr as typeof REFILL_PRESETS[number]) ? "preset" : "custom");
+      setRefillMode(
+        REFILL_PRESETS.includes(thr as (typeof REFILL_PRESETS)[number]) ? "preset" : "custom",
+      );
       setPrescriberName(m.prescriber_name ?? "");
       setPharmacyName(m.pharmacy_name ?? "");
       setPrescriptionNumber(m.prescription_number ?? "");
-      setPrescriberOpen(
-        !!(m.prescriber_name || m.pharmacy_name || m.prescription_number),
-      );
+      setPrescriberOpen(!!(m.prescriber_name || m.pharmacy_name || m.prescription_number));
     })();
     return () => {
       cancelled = true;
@@ -307,7 +318,14 @@ export function MedicationFormSheet({
         alarm_sound: alarmSound,
       };
 
-      let med: { id: string; name: string; dosage: string | null; times_of_day: string[]; is_rescue: boolean; kind: string };
+      let med: {
+        id: string;
+        name: string;
+        dosage: string | null;
+        times_of_day: string[];
+        is_rescue: boolean;
+        kind: string;
+      };
 
       if (isEditing && editingMedId) {
         const { data, error } = await supabase
@@ -369,14 +387,16 @@ export function MedicationFormSheet({
       if (!isRescue && isFirstMedication) {
         const perm = await requestPermission();
         if (perm === "granted") {
-          await scheduleMedications([{
-            id: med.id,
-            name: med.name,
-            dosage: med.dosage,
-            times_of_day: med.times_of_day,
-            kind: med.kind,
-            is_rescue: med.is_rescue,
-          }]);
+          await scheduleMedications([
+            {
+              id: med.id,
+              name: med.name,
+              dosage: med.dosage,
+              times_of_day: med.times_of_day,
+              kind: med.kind,
+              is_rescue: med.is_rescue,
+            },
+          ]);
         }
       } else if (
         !isRescue &&
@@ -384,14 +404,16 @@ export function MedicationFormSheet({
         "Notification" in window &&
         window.Notification.permission === "granted"
       ) {
-        await scheduleMedications([{
-          id: med.id,
-          name: med.name,
-          dosage: med.dosage,
-          times_of_day: med.times_of_day,
-          kind: med.kind,
-          is_rescue: med.is_rescue,
-        }]);
+        await scheduleMedications([
+          {
+            id: med.id,
+            name: med.name,
+            dosage: med.dosage,
+            times_of_day: med.times_of_day,
+            kind: med.kind,
+            is_rescue: med.is_rescue,
+          },
+        ]);
       }
 
       toast.success(isEditing ? `${med.name} updated` : `${med.name} added`);
@@ -425,9 +447,22 @@ export function MedicationFormSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-2xl">
         <SheetHeader className="px-5 pt-5 pb-3 pr-14 flex-row items-center justify-between space-y-0 border-b border-border">
-          <SheetTitle className="font-serif text-lg font-normal">{isEditing ? "Edit medication" : "Add medication"}</SheetTitle>
-          <Button onClick={handleSave} disabled={!canSave || saving} size="sm" className="rounded-full px-5">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : isEditing ? "Save changes" : "Save"}
+          <SheetTitle className="font-serif text-lg font-normal">
+            {isEditing ? "Edit medication" : "Add medication"}
+          </SheetTitle>
+          <Button
+            onClick={handleSave}
+            disabled={!canSave || saving}
+            size="sm"
+            className="rounded-full px-5"
+          >
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isEditing ? (
+              "Save changes"
+            ) : (
+              "Save"
+            )}
           </Button>
         </SheetHeader>
 
@@ -505,7 +540,9 @@ export function MedicationFormSheet({
                 </SelectTrigger>
                 <SelectContent>
                   {DOSAGE_FORMS.map((f) => (
-                    <SelectItem key={f} value={f} className="capitalize">{f}</SelectItem>
+                    <SelectItem key={f} value={f} className="capitalize">
+                      {f}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -543,7 +580,9 @@ export function MedicationFormSheet({
                 </SelectTrigger>
                 <SelectContent>
                   {DOSAGE_UNITS.map((u) => (
-                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                    <SelectItem key={u} value={u}>
+                      {u}
+                    </SelectItem>
                   ))}
                   <SelectItem value="__custom__">Custom…</SelectItem>
                 </SelectContent>
@@ -697,7 +736,7 @@ export function MedicationFormSheet({
                 {refillMode === "preset" ? (
                   <Select
                     value={
-                      REFILL_PRESETS.includes(refillThreshold as typeof REFILL_PRESETS[number])
+                      REFILL_PRESETS.includes(refillThreshold as (typeof REFILL_PRESETS)[number])
                         ? refillThreshold
                         : "7"
                     }
@@ -753,21 +792,38 @@ export function MedicationFormSheet({
             <CollapsibleTrigger asChild>
               <Button variant="ghost" className="w-full justify-between px-0 hover:bg-transparent">
                 <span className="text-sm font-medium">Prescriber (optional)</span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${prescriberOpen ? "rotate-180" : ""}`} />
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${prescriberOpen ? "rotate-180" : ""}`}
+                />
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-3 pt-2">
               <div className="space-y-2">
                 <Label htmlFor="med-prescriber">Prescriber name</Label>
-                <Input id="med-prescriber" value={prescriberName} onChange={(e) => setPrescriberName(e.target.value)} placeholder="Dr. ..." />
+                <Input
+                  id="med-prescriber"
+                  value={prescriberName}
+                  onChange={(e) => setPrescriberName(e.target.value)}
+                  placeholder="Dr. ..."
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="med-pharmacy">Pharmacy</Label>
-                <Input id="med-pharmacy" value={pharmacyName} onChange={(e) => setPharmacyName(e.target.value)} placeholder="Pharmacy name" />
+                <Input
+                  id="med-pharmacy"
+                  value={pharmacyName}
+                  onChange={(e) => setPharmacyName(e.target.value)}
+                  placeholder="Pharmacy name"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="med-rx">Prescription number</Label>
-                <Input id="med-rx" value={prescriptionNumber} onChange={(e) => setPrescriptionNumber(e.target.value)} placeholder="Rx #" />
+                <Input
+                  id="med-rx"
+                  value={prescriptionNumber}
+                  onChange={(e) => setPrescriptionNumber(e.target.value)}
+                  placeholder="Rx #"
+                />
               </div>
             </CollapsibleContent>
           </Collapsible>

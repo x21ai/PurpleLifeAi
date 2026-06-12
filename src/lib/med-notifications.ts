@@ -23,11 +23,7 @@ type ScheduledMed = {
 const DISMISSED_REMINDER_BANNER_KEY = "purple-med-reminder-banner-dismissed";
 
 export function notificationsSupported(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    "Notification" in window &&
-    "serviceWorker" in navigator
-  );
+  return typeof window !== "undefined" && "Notification" in window && "serviceWorker" in navigator;
 }
 
 function isPreviewHost(host: string): boolean {
@@ -219,8 +215,7 @@ async function postScheduleToSw(doses: ScheduledDose[], authToken: string | null
   const reg = await ensureServiceWorker();
   if (!reg) return;
 
-  const sw =
-    reg.active ?? reg.waiting ?? reg.installing;
+  const sw = reg.active ?? reg.waiting ?? reg.installing;
   if (!sw) return;
 
   const payload = {

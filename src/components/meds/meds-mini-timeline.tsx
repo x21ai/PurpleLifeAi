@@ -20,10 +20,14 @@ function startOfDay(d = new Date()) {
 
 function dotStyle(status: string): string {
   switch (status) {
-    case "taken": return "bg-[color:var(--success,theme(colors.green.500))] ring-[color:var(--success,theme(colors.green.500))]/30";
-    case "missed": return "bg-destructive ring-destructive/30";
-    case "skipped": return "bg-muted-foreground/60 ring-muted-foreground/20";
-    default: return "bg-primary ring-primary/30";
+    case "taken":
+      return "bg-[color:var(--success,theme(colors.green.500))] ring-[color:var(--success,theme(colors.green.500))]/30";
+    case "missed":
+      return "bg-destructive ring-destructive/30";
+    case "skipped":
+      return "bg-muted-foreground/60 ring-muted-foreground/20";
+    default:
+      return "bg-primary ring-primary/30";
   }
 }
 
@@ -68,7 +72,9 @@ export function MedsMiniTimeline({ className }: { className?: string }) {
   const doses = q.data ?? [];
   const nowPct = ((now.getTime() - dayStart.getTime()) / 86400000) * 100;
   const counts = React.useMemo(() => {
-    let taken = 0, pending = 0, missed = 0;
+    let taken = 0,
+      pending = 0,
+      missed = 0;
     for (const d of doses) {
       if (d.status === "taken") taken++;
       else if (d.status === "missed") missed++;

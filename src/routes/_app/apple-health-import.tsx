@@ -19,7 +19,9 @@ function AppleHealthImportPage() {
   useRouteTheme("dark");
   const backfill = useServerFn(applyAppleHealthBackfill);
   const [progress, setProgress] = useState<ParseProgress | null>(null);
-  const [phase, setPhase] = useState<"idle" | "unzipping" | "parsing" | "uploading" | "done">("idle");
+  const [phase, setPhase] = useState<"idle" | "unzipping" | "parsing" | "uploading" | "done">(
+    "idle",
+  );
   const [inserted, setInserted] = useState(0);
   const [upload, setUpload] = useState<{ done: number; total: number } | null>(null);
 
@@ -42,13 +44,20 @@ function AppleHealthImportPage() {
         const extracted = await extractExportXmlStreaming(file);
         if (!extracted) {
           setPhase("idle");
-          toast.error("That zip doesn't look like an Apple Health export, it should contain apple_health_export/export.xml");
+          toast.error(
+            "That zip doesn't look like an Apple Health export, it should contain apple_health_export/export.xml",
+          );
           return;
         }
         xmlFile = extracted;
       } catch (e) {
         setPhase("idle");
-        toast.error(userMessage(e, "Purple couldn't open that file. Export a fresh copy from Apple Health and try again."));
+        toast.error(
+          userMessage(
+            e,
+            "Purple couldn't open that file. Export a fresh copy from Apple Health and try again.",
+          ),
+        );
         return;
       }
     } else if (lower.endsWith(".xml")) {
@@ -64,7 +73,12 @@ function AppleHealthImportPage() {
       days = await parseHealthExport(xmlFile, setProgress);
     } catch (e) {
       setPhase("idle");
-      toast.error(userMessage(e, "Purple couldn't read that file. Export a fresh copy from Apple Health and try again."));
+      toast.error(
+        userMessage(
+          e,
+          "Purple couldn't read that file. Export a fresh copy from Apple Health and try again.",
+        ),
+      );
       return;
     }
 
@@ -92,7 +106,12 @@ function AppleHealthImportPage() {
     } catch (e) {
       setPhase("idle");
       setUpload(null);
-      toast.error(userMessage(e, "The upload didn't finish. Check your connection and try again; the file is still on your device."));
+      toast.error(
+        userMessage(
+          e,
+          "The upload didn't finish. Check your connection and try again; the file is still on your device.",
+        ),
+      );
     }
   };
 
@@ -105,9 +124,19 @@ function AppleHealthImportPage() {
         <h2 className="mt-4 text-[22px] font-light text-[#FAFAFC]">One-time historical backfill</h2>
         <ol className="mt-3 space-y-2 text-[13px] text-white/70 list-decimal pl-5">
           <li>Open the Health app on your iPhone.</li>
-          <li>Tap your profile photo (top right) and choose <span className="text-[#FAFAFC]">Export All Health Data</span>.</li>
-          <li>Save the <code className="font-mono text-[#FAFAFC]">export.zip</code> to Files (or AirDrop it to your computer).</li>
-          <li>Pick that <code className="font-mono">export.zip</code> below · Purple unzips and parses it locally in your browser, then uploads only daily summaries. The raw file never leaves your device.</li>
+          <li>
+            Tap your profile photo (top right) and choose{" "}
+            <span className="text-[#FAFAFC]">Export All Health Data</span>.
+          </li>
+          <li>
+            Save the <code className="font-mono text-[#FAFAFC]">export.zip</code> to Files (or
+            AirDrop it to your computer).
+          </li>
+          <li>
+            Pick that <code className="font-mono">export.zip</code> below · Purple unzips and parses
+            it locally in your browser, then uploads only daily summaries. The raw file never leaves
+            your device.
+          </li>
         </ol>
       </SheetCard>
 
@@ -116,7 +145,9 @@ function AppleHealthImportPage() {
           <label className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/15 p-10 cursor-pointer hover:bg-white/[0.03] transition">
             <FileUp className="h-8 w-8 text-white/70" />
             <p className="text-[15px] text-[#FAFAFC]">Choose export.zip (or export.xml)</p>
-            <p className="text-[12px] text-white/60">Drop the file straight from Apple Health. Up to several hundred MB is fine.</p>
+            <p className="text-[12px] text-white/60">
+              Drop the file straight from Apple Health. Up to several hundred MB is fine.
+            </p>
             <input
               type="file"
               accept=".zip,.xml,application/zip,text/xml,application/xml"
@@ -144,8 +175,8 @@ function AppleHealthImportPage() {
               {phase === "parsing"
                 ? `${formatBytes(progress.bytesRead)} / ${formatBytes(progress.totalBytes)} · ${progress.recordsParsed.toLocaleString()} records · ${progress.daysFound} days`
                 : upload
-                ? `Batch ${upload.done} of ${upload.total} · ${progress.daysFound} days total`
-                : `${progress.daysFound} days`}
+                  ? `Batch ${upload.done} of ${upload.total} · ${progress.daysFound} days total`
+                  : `${progress.daysFound} days`}
             </p>
             <div className="mx-auto h-1 w-full max-w-md overflow-hidden rounded-full bg-white/10">
               <div
@@ -155,8 +186,8 @@ function AppleHealthImportPage() {
                     phase === "parsing"
                       ? Math.min(100, (progress.bytesRead / Math.max(1, progress.totalBytes)) * 100)
                       : upload
-                      ? Math.min(100, (upload.done / Math.max(1, upload.total)) * 100)
-                      : 0
+                        ? Math.min(100, (upload.done / Math.max(1, upload.total)) * 100)
+                        : 0
                   }%`,
                 }}
               />
@@ -170,7 +201,9 @@ function AppleHealthImportPage() {
             <p className="text-[18px] font-light text-[#FAFAFC]">Imported {inserted} days</p>
             <div className="flex flex-wrap items-center justify-center gap-2">
               <Button asChild variant="outline">
-                <Link to="/biometrics" className="text-[#FAFAFC]">View biometrics</Link>
+                <Link to="/biometrics" className="text-[#FAFAFC]">
+                  View biometrics
+                </Link>
               </Button>
               <Button variant="ghost" onClick={reset} className="text-[#FAFAFC]">
                 Import another file
@@ -184,13 +217,18 @@ function AppleHealthImportPage() {
         <SheetCard>
           <h3 className="text-[18px] font-light text-[#FAFAFC]">Keep it synced from now on</h3>
           <p className="mt-2 text-[13px] text-white/70">
-            Apple does not let web apps talk to HealthKit directly, iOS only allows native apps.
-            The two practical bridges:
+            Apple does not let web apps talk to HealthKit directly, iOS only allows native apps. The
+            two practical bridges:
           </p>
           <ul className="mt-4 space-y-3 text-[13px] text-white/70">
             <li>
-              <span className="text-[#FAFAFC] font-medium">Health Auto Export</span> (App Store, paid), add an automation that POSTs JSON to your personal Purple webhook every 1–6 hours.
-              Find your webhook URL in <Link to="/settings/sharing" className="underline text-[#82B4FF]">Connections → Apple Health</Link>.
+              <span className="text-[#FAFAFC] font-medium">Health Auto Export</span> (App Store,
+              paid), add an automation that POSTs JSON to your personal Purple webhook every 1–6
+              hours. Find your webhook URL in{" "}
+              <Link to="/settings/sharing" className="underline text-[#82B4FF]">
+                Connections → Apple Health
+              </Link>
+              .
             </li>
             <li>
               <span className="text-[#FAFAFC] font-medium">iOS Shortcuts</span> (free), build a

@@ -133,7 +133,8 @@ function AdminPromo() {
             <div className="min-w-0">
               <p className="font-mono font-medium">{r.code}</p>
               <p className="text-xs text-muted-foreground">
-                {r.kind} · {r.used_count}{r.max_uses ? `/${r.max_uses}` : ""} used
+                {r.kind} · {r.used_count}
+                {r.max_uses ? `/${r.max_uses}` : ""} used
                 {r.label ? ` · ${r.label}` : ""}
                 {r.expires_at ? ` · expires ${new Date(r.expires_at).toLocaleDateString()}` : ""}
               </p>
@@ -157,12 +158,16 @@ function AdminPromo() {
         {rows.length === 0 && <p className="text-muted-foreground">No codes yet.</p>}
       </ul>
 
-      <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)}>
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete code {pendingDelete?.code}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This promo code will be permanently removed. Existing redemptions will not be affected.
+              This promo code will be permanently removed. Existing redemptions will not be
+              affected.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

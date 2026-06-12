@@ -2,15 +2,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const PUBLISHABLE = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ||
-  Deno.env.get("SUPABASE_ANON_KEY")!;
+const PUBLISHABLE = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY")!;
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
@@ -126,7 +124,7 @@ const TOOLS = [
         params: {
           type: "object",
           description:
-            "Action-specific fields. add_medication: { name, dosage?, times_of_day?:[\"HH:MM\"], notes?, is_rescue? }. log_seizure: { started_at?(ISO, default now), type?, duration_seconds?, severity?, notes? }. create_journal_entry: { text, captured_at?(ISO) }. mark_dose_taken: { medication_id, scheduled_at?(ISO) }. archive_medication: { medication_id }.",
+            'Action-specific fields. add_medication: { name, dosage?, times_of_day?:["HH:MM"], notes?, is_rescue? }. log_seizure: { started_at?(ISO, default now), type?, duration_seconds?, severity?, notes? }. create_journal_entry: { text, captured_at?(ISO) }. mark_dose_taken: { medication_id, scheduled_at?(ISO) }. archive_medication: { medication_id }.',
         },
       },
       required: ["kind", "summary", "params"],
@@ -273,9 +271,7 @@ async function runTool(
           source_type: r.source_type,
           evidence_grade: r.evidence_grade,
           abstract: r.abstract,
-          similarity: Number(
-            (r.similarity as number)?.toFixed?.(3) ?? r.similarity,
-          ),
+          similarity: Number((r.similarity as number)?.toFixed?.(3) ?? r.similarity),
           excerpt: String(r.content || "").slice(0, 1200),
         })),
       };
@@ -347,11 +343,7 @@ async function callTextOnlyProvider(
     .map((m) => ({ role: m.role, content: m.content }));
   const body = {
     model,
-    messages: [
-      { role: "system", content: system },
-      ...trimmed,
-      { role: "user", content: message },
-    ],
+    messages: [{ role: "system", content: system }, ...trimmed, { role: "user", content: message }],
   };
   // Both OpenAI and Google's Gemini OpenAI-compatible endpoint speak the
   // chat/completions protocol, so one request shape covers both lanes.
@@ -411,9 +403,7 @@ export async function extractBehaviorsFromText(
     example: t.prompt_example,
   }));
 
-  const dataTypeByKey = new Map<string, string>(
-    dict.map((d) => [d.key, d.data_type]),
-  );
+  const dataTypeByKey = new Map<string, string>(dict.map((d) => [d.key, d.data_type]));
 
   const system = `You extract structured behavior observations from a person's free-text health journal entry.
 
@@ -501,14 +491,14 @@ Call return_extractions with your result.`;
 
   // Normalize + enrich with data_type, drop unknown keys.
   const extractions = (raw.extractions || [])
-    .filter((e: any) => e && typeof e.behavior_key === "string" && dataTypeByKey.has(e.behavior_key))
+    .filter(
+      (e: any) => e && typeof e.behavior_key === "string" && dataTypeByKey.has(e.behavior_key),
+    )
     .map((e: any) => ({
       behavior_key: e.behavior_key,
       value: e.value,
       data_type: dataTypeByKey.get(e.behavior_key)!,
-      confidence: typeof e.confidence === "number"
-        ? Math.max(0, Math.min(1, e.confidence))
-        : 0.5,
+      confidence: typeof e.confidence === "number" ? Math.max(0, Math.min(1, e.confidence)) : 0.5,
     }));
   const unmatched_phrases = Array.isArray(raw.unmatched_phrases)
     ? raw.unmatched_phrases.filter((s: any) => typeof s === "string")
@@ -579,8 +569,9 @@ Deno.serve(async (req) => {
       });
     }
     const message: string = String(body?.message || "").trim();
-    const history: { role: "user" | "assistant"; content: string }[] =
-      Array.isArray(body?.history) ? body.history : [];
+    const history: { role: "user" | "assistant"; content: string }[] = Array.isArray(body?.history)
+      ? body.history
+      : [];
     if (!message) {
       return new Response(JSON.stringify({ error: "message required" }), {
         status: 400,
@@ -609,9 +600,10 @@ Deno.serve(async (req) => {
       maya: "claude-sonnet", // not configured; fall back
       lovable: "claude-sonnet", // legacy stored value; Claude is the default now
     };
-    const modelPref = aiProvider && PROVIDER_TO_PREF[aiProvider]
-      ? PROVIDER_TO_PREF[aiProvider]
-      : String((profileRow as any)?.ai_model_preference || "claude-sonnet");
+    const modelPref =
+      aiProvider && PROVIDER_TO_PREF[aiProvider]
+        ? PROVIDER_TO_PREF[aiProvider]
+        : String((profileRow as any)?.ai_model_preference || "claude-sonnet");
 
     // Build per-user system prompt with light condition context so replies feel
     // condition-aware without changing the underlying tone.
@@ -710,7 +702,8 @@ Deno.serve(async (req) => {
     }
 
     if (!reply) {
-      reply = "I'm sorry — I couldn't put together an answer just now. Try asking again in a moment.";
+      reply =
+        "I'm sorry — I couldn't put together an answer just now. Try asking again in a moment.";
     }
 
     return new Response(JSON.stringify({ reply, proposals }), {
@@ -718,10 +711,10 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("ai-orchestrator error", e);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
 

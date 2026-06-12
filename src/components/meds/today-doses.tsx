@@ -105,11 +105,15 @@ export function TodayDoses() {
 
   const load = React.useCallback(async () => {
     if (!userId) return;
-    const start = new Date(); start.setHours(0, 0, 0, 0);
-    const end = new Date(); end.setHours(23, 59, 59, 999);
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
     const { data, error } = await supabase
       .from("medication_doses")
-      .select("id, scheduled_at, status, amount, unit, medication:medications(id, name, dosage, kind, is_rescue)")
+      .select(
+        "id, scheduled_at, status, amount, unit, medication:medications(id, name, dosage, kind, is_rescue)",
+      )
       .gte("scheduled_at", start.toISOString())
       .lte("scheduled_at", end.toISOString())
       .order("scheduled_at", { ascending: true });
@@ -121,7 +125,9 @@ export function TodayDoses() {
     setDoses(rows);
   }, [userId]);
 
-  React.useEffect(() => { void load(); }, [load]);
+  React.useEffect(() => {
+    void load();
+  }, [load]);
 
   // Roll over at local midnight and refresh when the tab comes back: a Today
   // page left open overnight kept showing yesterday's doses.
@@ -168,22 +174,36 @@ export function TodayDoses() {
           .limit(1),
       ]);
       if (cancelled) return;
-      const prof = p as { timezone: string | null; wake_time: string | null; sleep_time: string | null } | null;
+      const prof = p as {
+        timezone: string | null;
+        wake_time: string | null;
+        sleep_time: string | null;
+      } | null;
       setHomeTz(prof?.timezone ?? null);
       if (prof?.wake_time) setWakeTime(prof.wake_time.slice(0, 5));
       if (prof?.sleep_time) setSleepTime(prof.sleep_time.slice(0, 5));
       let deviceTz: string | null = null;
-      try { deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { /* noop */ }
-      setTraveling(((trips ?? []).length > 0) || (!!prof?.timezone && !!deviceTz && prof.timezone !== deviceTz));
+      try {
+        deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      } catch {
+        /* noop */
+      }
+      setTraveling(
+        (trips ?? []).length > 0 || (!!prof?.timezone && !!deviceTz && prof.timezone !== deviceTz),
+      );
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [userId]);
 
   // Does this scheduled instant fall inside the user's local sleep window?
   const isAsleep = (iso: string): boolean => {
     try {
       const parts = new Intl.DateTimeFormat([], {
-        hour: "2-digit", minute: "2-digit", hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
       }).formatToParts(new Date(iso));
       const hh = parts.find((p) => p.type === "hour")?.value ?? "00";
       const mm = parts.find((p) => p.type === "minute")?.value ?? "00";
@@ -209,14 +229,15 @@ export function TodayDoses() {
     const dose = doses?.find((d) => d.id === id) ?? null;
     const now = new Date().toISOString();
     const snoozeUntilIso = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-    setDoses((d) =>
-      d?.map((x) => {
-        if (x.id !== id) return x;
-        if (action === "taken") return { ...x, status: "taken" };
-        if (action === "skip") return { ...x, status: "skipped" };
-        // snooze: move the time optimistically so the list reflects it now
-        return { ...x, scheduled_at: snoozeUntilIso };
-      }) ?? null,
+    setDoses(
+      (d) =>
+        d?.map((x) => {
+          if (x.id !== id) return x;
+          if (action === "taken") return { ...x, status: "taken" };
+          if (action === "skip") return { ...x, status: "skipped" };
+          // snooze: move the time optimistically so the list reflects it now
+          return { ...x, scheduled_at: snoozeUntilIso };
+        }) ?? null,
     );
     let error: unknown = null;
     if (action === "taken") {
@@ -226,7 +247,7 @@ export function TodayDoses() {
         .eq("id", id);
       error = res.error;
       // QA #22: decrement pill stock when a scheduled dose is marked taken.
-      if (!error && dose?.medication?.id && (prev?.find((d) => d.id === id)?.status !== "taken")) {
+      if (!error && dose?.medication?.id && prev?.find((d) => d.id === id)?.status !== "taken") {
         await decrementPillCount(dose.medication.id, 1);
       }
     } else if (action === "skip") {
@@ -277,10 +298,7 @@ export function TodayDoses() {
       status: next,
       taken_at: next === "taken" ? (takenAt ?? new Date().toISOString()) : null,
     };
-    const { error } = await supabase
-      .from("medication_doses")
-      .update(update)
-      .eq("id", id);
+    const { error } = await supabase.from("medication_doses").update(update).eq("id", id);
     if (error) {
       setDoses(prev);
       toast.error("Could not update dose");
@@ -292,7 +310,11 @@ export function TodayDoses() {
       else if (next !== "taken" && prevStatus === "taken") await decrementPillCount(medId, -1);
     }
     toast.success(
-      next === "taken" ? "Marked as taken" : next === "skipped" ? "Marked as skipped" : "Reset to pending",
+      next === "taken"
+        ? "Marked as taken"
+        : next === "skipped"
+          ? "Marked as skipped"
+          : "Reset to pending",
     );
   };
 
@@ -362,7 +384,10 @@ export function TodayDoses() {
           <Pill className="h-4 w-4 mt-0.5 text-secondary-foreground/70" />
           <p className="text-sm text-secondary-foreground">
             No medications scheduled for today.{" "}
-            <Link to="/meds" className="underline underline-offset-2">Add one</Link>.
+            <Link to="/meds" className="underline underline-offset-2">
+              Add one
+            </Link>
+            .
           </p>
         </div>
       ) : (
@@ -395,9 +420,7 @@ export function TodayDoses() {
                 </p>
                 {(() => {
                   const perDose =
-                    d.amount != null
-                      ? `${d.amount}${d.unit ? ` ${d.unit}` : ""}`
-                      : null;
+                    d.amount != null ? `${d.amount}${d.unit ? ` ${d.unit}` : ""}` : null;
                   const label = perDose ?? sanitizeDosageLabel(d.medication?.dosage) ?? null;
                   if (label) {
                     return <p className="text-xs text-muted-foreground truncate">{label}</p>;
@@ -477,9 +500,7 @@ export function TodayDoses() {
                         </DropdownMenuItem>
                       )}
                       {d.status !== "taken" && (
-                        <DropdownMenuItem
-                          onClick={() => reclassify(d.id, "taken", d.scheduled_at)}
-                        >
+                        <DropdownMenuItem onClick={() => reclassify(d.id, "taken", d.scheduled_at)}>
                           Took it at the scheduled time
                         </DropdownMenuItem>
                       )}

@@ -33,14 +33,7 @@ export function ScoreTile({
       >
         {typeof value === "number" ? <NumberCountUp value={value} /> : value}
       </span>
-      <span
-        className={cn(
-          "label-eyebrow mt-2",
-          active && "text-foreground/70",
-        )}
-      >
-        {label}
-      </span>
+      <span className={cn("label-eyebrow mt-2", active && "text-foreground/70")}>{label}</span>
     </button>
   );
 }

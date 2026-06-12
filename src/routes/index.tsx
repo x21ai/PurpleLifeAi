@@ -82,7 +82,13 @@ function MarketingHome() {
           image={homeImages.hero}
           priority
           eyebrow="A quiet companion for your health"
-          headline={<>Your health,<br />remembered.</>}
+          headline={
+            <>
+              Your health,
+              <br />
+              remembered.
+            </>
+          }
           body="Write it. Say it. Snap it. Purple keeps it, and helps you see what matters."
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
@@ -111,10 +117,12 @@ function MarketingHome() {
         <section className="mx-auto max-w-4xl px-6 sm:px-10 py-20 sm:py-28 text-center">
           <p className="label-eyebrow">For the days that need attention</p>
           <p className="mt-6 font-serif text-3xl sm:text-5xl leading-[1.1] tracking-tight">
-            Epilepsy. Migraine. Diabetes.<br className="hidden sm:block" /> Mental health. And more.
+            Epilepsy. Migraine. Diabetes.
+            <br className="hidden sm:block" /> Mental health. And more.
           </p>
           <p className="mt-8 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            The alternatives feel cold and clinical. Purple is warm, quiet, and patient, the way a journal should be.
+            The alternatives feel cold and clinical. Purple is warm, quiet, and patient, the way a
+            journal should be.
           </p>
         </section>
 
@@ -193,9 +201,7 @@ function Pillar({ eyebrow, title, body }: { eyebrow: string; title: string; body
   return (
     <div>
       <p className="label-eyebrow">{eyebrow}</p>
-      <h3 className="mt-4 font-serif text-2xl sm:text-3xl leading-[1.1] tracking-tight">
-        {title}
-      </h3>
+      <h3 className="mt-4 font-serif text-2xl sm:text-3xl leading-[1.1] tracking-tight">{title}</h3>
       <p className="mt-4 text-base text-muted-foreground leading-relaxed">{body}</p>
     </div>
   );

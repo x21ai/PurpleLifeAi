@@ -39,15 +39,12 @@ function UploadReportPage() {
     const tooBig = arr.filter((f) => f.size > MAX_SIZE);
     const ok = arr.filter((f) => f.size <= MAX_SIZE);
     if (tooBig.length > 0) {
-      toast.error(
-        `${tooBig.length} file${tooBig.length === 1 ? "" : "s"} skipped, over 15 MB`,
-      );
+      toast.error(`${tooBig.length} file${tooBig.length === 1 ? "" : "s"} skipped, over 15 MB`);
     }
     setFiles((prev) => [...prev, ...ok]);
   };
 
-  const removeAt = (idx: number) =>
-    setFiles((prev) => prev.filter((_, i) => i !== idx));
+  const removeAt = (idx: number) => setFiles((prev) => prev.filter((_, i) => i !== idx));
 
   const handleUpload = async () => {
     if (!userId) return;
@@ -61,12 +58,10 @@ function UploadReportPage() {
         files.map(async (file) => {
           const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
           const path = `${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-          const { error: upErr } = await supabase.storage
-            .from("reports")
-            .upload(path, file, {
-              contentType: file.type || "application/octet-stream",
-              upsert: false,
-            });
+          const { error: upErr } = await supabase.storage.from("reports").upload(path, file, {
+            contentType: file.type || "application/octet-stream",
+            upsert: false,
+          });
           if (upErr) throw upErr;
 
           // Placeholder title from filename; AI will overwrite once it reads the doc.
@@ -102,7 +97,9 @@ function UploadReportPage() {
       const fulfilled = results.filter((r) => r.status === "fulfilled") as Array<
         PromiseFulfilledResult<{ blocked?: "previously_rejected"; ok?: true; name?: string }>
       >;
-      const blockedCount = fulfilled.filter((r) => r.value?.blocked === "previously_rejected").length;
+      const blockedCount = fulfilled.filter(
+        (r) => r.value?.blocked === "previously_rejected",
+      ).length;
       const okCount = fulfilled.length - blockedCount;
       const failCount = results.length - fulfilled.length;
       if (okCount > 0) {
@@ -129,15 +126,18 @@ function UploadReportPage() {
   };
 
   return (
-    <ReportShell title="Upload report" back={{ to: "/reports/documents", label: t("reportsNew.back") }}>
+    <ReportShell
+      title="Upload report"
+      back={{ to: "/reports/documents", label: t("reportsNew.back") }}
+    >
       <section className="report-card-strong p-6 sm:p-8">
         <p className="report-eyebrow text-white/70">Add a report</p>
         <h2 className="mt-3 font-serif text-3xl sm:text-4xl text-white leading-tight">
           {t("reportsNew.title")}
         </h2>
         <p className="mt-3 text-[15px] text-white/65 max-w-[520px]">
-          Drop one or more PDF / JPG / PNG files. Purple reads each one and fills in
-          the title, date, and values automatically. Extraction typically takes under a minute.
+          Drop one or more PDF / JPG / PNG files. Purple reads each one and fills in the title,
+          date, and values automatically. Extraction typically takes under a minute.
         </p>
       </section>
 
@@ -222,9 +222,7 @@ function UploadReportPage() {
             ) : (
               <Upload className="h-4 w-4 mr-2" />
             )}
-            {files.length > 1
-              ? `Upload ${files.length} reports`
-              : "Upload and extract"}
+            {files.length > 1 ? `Upload ${files.length} reports` : "Upload and extract"}
           </Button>
         </div>
       </section>
@@ -238,8 +236,8 @@ function UploadReportPage() {
             <div>
               <h3 className="text-white text-base font-medium">Stored privately</h3>
               <p className="mt-1.5 text-sm text-white/65 leading-relaxed">
-                Your file is encrypted at rest and only readable through a short-lived link to you. You can
-                delete the file and its extracted values from the report's page at any time.
+                Your file is encrypted at rest and only readable through a short-lived link to you.
+                You can delete the file and its extracted values from the report's page at any time.
               </p>
             </div>
           </div>
@@ -252,8 +250,9 @@ function UploadReportPage() {
             <div>
               <h3 className="text-white text-base font-medium">How Purple reads it</h3>
               <p className="mt-1.5 text-sm text-white/65 leading-relaxed">
-                Once uploaded, Purple extracts title, date, panels, and structured values. You will see the
-                report appear as "Extracting…" and update to "Ready" automatically when it's done.
+                Once uploaded, Purple extracts title, date, panels, and structured values. You will
+                see the report appear as "Extracting…" and update to "Ready" automatically when it's
+                done.
               </p>
             </div>
           </div>

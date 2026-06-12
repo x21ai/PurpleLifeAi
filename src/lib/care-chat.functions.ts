@@ -79,8 +79,7 @@ export const listCareThreads = createServerFn({ method: "GET" })
         .map((p) => {
           const pr = profileById.get(p.user_id);
           const name = pr
-            ? [pr.first_name, pr.last_name].filter(Boolean).join(" ").trim() ||
-              "Unnamed"
+            ? [pr.first_name, pr.last_name].filter(Boolean).join(" ").trim() || "Unnamed"
             : "Unnamed";
           return { user_id: p.user_id, name, role: p.role };
         });
@@ -169,12 +168,10 @@ export const getOrCreateDirectThread = createServerFn({ method: "POST" })
       .single();
     if (cErr) throw new Error(cErr.message);
 
-    const { error: pErr } = await supabaseAdmin
-      .from("care_thread_participants")
-      .insert([
-        { thread_id: created.id, user_id: rel.owner_id, role: "owner" },
-        { thread_id: created.id, user_id: rel.caregiver_id, role: "caregiver" },
-      ]);
+    const { error: pErr } = await supabaseAdmin.from("care_thread_participants").insert([
+      { thread_id: created.id, user_id: rel.owner_id, role: "owner" },
+      { thread_id: created.id, user_id: rel.caregiver_id, role: "caregiver" },
+    ]);
     if (pErr) throw new Error(pErr.message);
 
     return { threadId: created.id };
@@ -276,29 +273,43 @@ export const getCareMessages = createServerFn({ method: "GET" })
 /** Send a message to a thread. */
 export const sendCareMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { threadId: string; body: string; attachments?: Array<{ path: string; name: string; mime: string; size: number; kind: "image" | "file" }> }) =>
-    z
-      .object({
-        threadId: z.string().uuid(),
-        body: z.string().trim().max(4000),
-        attachments: z
-          .array(
-            z.object({
-              path: z.string().min(1).max(500),
-              name: z.string().min(1).max(255),
-              mime: z.string().min(1).max(100),
-              size: z.number().int().min(0).max(15 * 1024 * 1024),
-              kind: z.enum(["image", "file"]),
-            }),
-          )
-          .max(10)
-          .optional(),
-      })
-      .refine(
-        (v) => v.body.length > 0 || (v.attachments && v.attachments.length > 0),
-        { message: "Message body or attachments required" },
-      )
-      .parse(input),
+  .inputValidator(
+    (input: {
+      threadId: string;
+      body: string;
+      attachments?: Array<{
+        path: string;
+        name: string;
+        mime: string;
+        size: number;
+        kind: "image" | "file";
+      }>;
+    }) =>
+      z
+        .object({
+          threadId: z.string().uuid(),
+          body: z.string().trim().max(4000),
+          attachments: z
+            .array(
+              z.object({
+                path: z.string().min(1).max(500),
+                name: z.string().min(1).max(255),
+                mime: z.string().min(1).max(100),
+                size: z
+                  .number()
+                  .int()
+                  .min(0)
+                  .max(15 * 1024 * 1024),
+                kind: z.enum(["image", "file"]),
+              }),
+            )
+            .max(10)
+            .optional(),
+        })
+        .refine((v) => v.body.length > 0 || (v.attachments && v.attachments.length > 0), {
+          message: "Message body or attachments required",
+        })
+        .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -349,11 +360,9 @@ export const sendCareMessage = createServerFn({ method: "POST" })
           .eq("id", userId)
           .maybeSingle();
         const senderName =
-          [sender?.first_name, sender?.last_name].filter(Boolean).join(" ").trim() ||
-          "Someone";
+          [sender?.first_name, sender?.last_name].filter(Boolean).join(" ").trim() || "Someone";
         const attachmentCount = data.attachments?.length ?? 0;
-        const previewBase =
-          data.body.length > 140 ? `${data.body.slice(0, 140)}…` : data.body;
+        const previewBase = data.body.length > 140 ? `${data.body.slice(0, 140)}…` : data.body;
         const preview = previewBase
           ? previewBase
           : attachmentCount > 0
@@ -362,7 +371,10 @@ export const sendCareMessage = createServerFn({ method: "POST" })
         const { data: subs } = await supabaseAdmin
           .from("push_subscriptions")
           .select("endpoint, p256dh, auth, user_id")
-          .in("user_id", recipients.map((r) => r.user_id));
+          .in(
+            "user_id",
+            recipients.map((r) => r.user_id),
+          );
         if (subs && subs.length > 0) {
           const { sendPushToSubscription } = await import("./push.server");
           await Promise.all(
@@ -377,10 +389,7 @@ export const sendCareMessage = createServerFn({ method: "POST" })
                 },
               );
               if (r.gone) {
-                await supabaseAdmin
-                  .from("push_subscriptions")
-                  .delete()
-                  .eq("endpoint", s.endpoint);
+                await supabaseAdmin.from("push_subscriptions").delete().eq("endpoint", s.endpoint);
               }
             }),
           );

@@ -18,9 +18,7 @@ export const getAiProvider = createServerFn({ method: "GET" })
 
 export const setAiProvider = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({ provider: z.enum(PROVIDERS) }).parse(input),
-  )
+  .inputValidator((input) => z.object({ provider: z.enum(PROVIDERS) }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { error } = await supabase

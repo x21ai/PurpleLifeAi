@@ -12,15 +12,7 @@ import {
   ReferenceArea,
   CartesianGrid,
 } from "recharts";
-import {
-  Pin,
-  PinOff,
-  EyeOff,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  GripVertical,
-} from "lucide-react";
+import { Pin, PinOff, EyeOff, TrendingUp, TrendingDown, Minus, GripVertical } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -29,12 +21,7 @@ import {
   closestCenter,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  rectSortingStrategy,
-  useSortable,
-  arrayMove,
-} from "@dnd-kit/sortable";
+import { SortableContext, rectSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
   listTrendMetrics,
@@ -128,8 +115,19 @@ function MetricCard({
     transition: sortable.transition,
   };
   const { primary: label, secondary: subLabel } = metricLabel(m);
-  const numeric = m.series.filter((p) => p.value != null) as Array<{ at: string; value: number; source_text: string | null; report_id: string }>;
-  const chartData = numeric.map((p) => ({ at: p.at, v: p.value, ts: new Date(p.at).getTime(), source_text: p.source_text, report_id: p.report_id }));
+  const numeric = m.series.filter((p) => p.value != null) as Array<{
+    at: string;
+    value: number;
+    source_text: string | null;
+    report_id: string;
+  }>;
+  const chartData = numeric.map((p) => ({
+    at: p.at,
+    v: p.value,
+    ts: new Date(p.at).getTime(),
+    source_text: p.source_text,
+    report_id: p.report_id,
+  }));
   const spansMultipleYears = (() => {
     if (numeric.length < 2) return false;
     const years = new Set(numeric.map((p) => new Date(p.at).getFullYear()));
@@ -141,7 +139,8 @@ function MetricCard({
   const prev = numeric.length >= 2 ? numeric[numeric.length - 2].value : null;
   const latestNum = numeric.length >= 1 ? numeric[numeric.length - 1].value : null;
   const delta = latestNum != null && prev != null ? latestNum - prev : null;
-  const deltaPct = delta != null && prev !== 0 && prev != null ? (delta / Math.abs(prev)) * 100 : null;
+  const deltaPct =
+    delta != null && prev !== 0 && prev != null ? (delta / Math.abs(prev)) * 100 : null;
   const refLow = m.reference_low;
   const refHigh = m.reference_high;
   const inRange =
@@ -150,12 +149,22 @@ function MetricCard({
       : null;
 
   const statusChip = (() => {
-    if (m.latest_flag === "high") return { label: "Out of range, high", cls: "bg-[#FFA8BD]/15 text-[#FFA8BD] border-[#FFA8BD]/30" };
-    if (m.latest_flag === "low") return { label: "Out of range, low", cls: "bg-[#F3D58B]/15 text-[#F3D58B] border-[#F3D58B]/30" };
+    if (m.latest_flag === "high")
+      return {
+        label: "Out of range, high",
+        cls: "bg-[#FFA8BD]/15 text-[#FFA8BD] border-[#FFA8BD]/30",
+      };
+    if (m.latest_flag === "low")
+      return {
+        label: "Out of range, low",
+        cls: "bg-[#F3D58B]/15 text-[#F3D58B] border-[#F3D58B]/30",
+      };
     if (inRange === true || m.latest_flag === "normal")
       return { label: "In range", cls: "bg-[#5CE0AC]/15 text-[#5CE0AC] border-[#5CE0AC]/30" };
-    if (delta != null && delta > 0) return { label: "Trending up", cls: "bg-white/8 text-white/70 border-white/15" };
-    if (delta != null && delta < 0) return { label: "Trending down", cls: "bg-white/8 text-white/70 border-white/15" };
+    if (delta != null && delta > 0)
+      return { label: "Trending up", cls: "bg-white/8 text-white/70 border-white/15" };
+    if (delta != null && delta < 0)
+      return { label: "Trending down", cls: "bg-white/8 text-white/70 border-white/15" };
     return { label: `${m.count} readings`, cls: "bg-white/8 text-white/70 border-white/15" };
   })();
 
@@ -217,7 +226,9 @@ function MetricCard({
         <div className="min-w-0 pr-16">
           <p className="text-sm text-white line-clamp-2 leading-snug">{label}</p>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] report-muted">
-            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${statusChip.cls}`}>
+            <span
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${statusChip.cls}`}
+            >
               {statusChip.label}
             </span>
             <span>{m.count} readings</span>
@@ -236,7 +247,11 @@ function MetricCard({
           {chartData.length >= 2 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 6, right: 8, bottom: 0, left: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="rgba(255,255,255,0.05)"
+                  vertical={false}
+                />
                 {refLow != null && refHigh != null && (
                   <ReferenceArea
                     y1={refLow}
@@ -280,7 +295,9 @@ function MetricCard({
                     return [
                       <div key="v" className="space-y-0.5">
                         <div>{valueStr}</div>
-                        {reportLabel && <div className="text-white/50 text-[10px]">{reportLabel}</div>}
+                        {reportLabel && (
+                          <div className="text-white/50 text-[10px]">{reportLabel}</div>
+                        )}
                         {reportId && (
                           <a
                             href={`/reports/${reportId}`}
@@ -339,7 +356,11 @@ function MetricCard({
               {delta > 0 ? "+" : ""}
               {Math.abs(delta) >= 100 ? delta.toFixed(0) : delta.toFixed(2)}
               {deltaPct != null && Number.isFinite(deltaPct) && (
-                <span className="text-white/40"> ({deltaPct > 0 ? "+" : ""}{deltaPct.toFixed(0)}%)</span>
+                <span className="text-white/40">
+                  {" "}
+                  ({deltaPct > 0 ? "+" : ""}
+                  {deltaPct.toFixed(0)}%)
+                </span>
               )}
             </span>
           )}
@@ -360,8 +381,7 @@ export function TrendsSection() {
     if (typeof window === "undefined") return "attention";
     // Prefer localStorage (survives logout); fall back to legacy sessionStorage.
     const stored =
-      window.localStorage.getItem(SORT_KEY) ||
-      window.sessionStorage.getItem("purple.trends.sort");
+      window.localStorage.getItem(SORT_KEY) || window.sessionStorage.getItem("purple.trends.sort");
     return (stored as SortMode) || "attention";
   });
   React.useEffect(() => {
@@ -488,10 +508,7 @@ export function TrendsSection() {
         </div>
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
           {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="report-card h-48 animate-pulse bg-white/[0.03]"
-            />
+            <div key={i} className="report-card h-48 animate-pulse bg-white/[0.03]" />
           ))}
         </div>
       </section>
@@ -507,8 +524,8 @@ export function TrendsSection() {
         <div className="mt-4 report-card p-8 text-center">
           <p className="text-base text-white">No lab values yet</p>
           <p className="mt-2 text-sm report-muted max-w-[420px] mx-auto">
-            Upload a blood panel, lab report, or imaging PDF. Purple reads each file
-            and trends every value over time, with reference ranges.
+            Upload a blood panel, lab report, or imaging PDF. Purple reads each file and trends
+            every value over time, with reference ranges.
           </p>
           <div className="mt-5 flex items-center justify-center gap-3">
             <Link
@@ -561,11 +578,30 @@ export function TrendsSection() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-[#0F1418] border-white/10 text-white">
-                <SelectItem value="attention" className="text-white focus:bg-white/10 focus:text-white">Needs attention</SelectItem>
-                <SelectItem value="alpha" className="text-white focus:bg-white/10 focus:text-white">Alphabetical</SelectItem>
-                <SelectItem value="recent" className="text-white focus:bg-white/10 focus:text-white">Most recent</SelectItem>
-                <SelectItem value="count" className="text-white focus:bg-white/10 focus:text-white">Most readings</SelectItem>
-                <SelectItem value="custom" className="text-white focus:bg-white/10 focus:text-white">Custom (drag)</SelectItem>
+                <SelectItem
+                  value="attention"
+                  className="text-white focus:bg-white/10 focus:text-white"
+                >
+                  Needs attention
+                </SelectItem>
+                <SelectItem value="alpha" className="text-white focus:bg-white/10 focus:text-white">
+                  Alphabetical
+                </SelectItem>
+                <SelectItem
+                  value="recent"
+                  className="text-white focus:bg-white/10 focus:text-white"
+                >
+                  Most recent
+                </SelectItem>
+                <SelectItem value="count" className="text-white focus:bg-white/10 focus:text-white">
+                  Most readings
+                </SelectItem>
+                <SelectItem
+                  value="custom"
+                  className="text-white focus:bg-white/10 focus:text-white"
+                >
+                  Custom (drag)
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

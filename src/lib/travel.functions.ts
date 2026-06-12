@@ -98,11 +98,7 @@ export const deleteTrip = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     // Remove any pending doses materialized for this trip first.
-    await supabase
-      .from("medication_doses")
-      .delete()
-      .eq("trip_id", data.id)
-      .eq("status", "pending");
+    await supabase.from("medication_doses").delete().eq("trip_id", data.id).eq("status", "pending");
     const { error } = await supabase.from("trips").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -209,7 +205,9 @@ export const generateTripSchedule = createServerFn({ method: "POST" })
 
     const { data: meds, error: medsErr } = await supabase
       .from("medications")
-      .select("id, schedule, times_of_day, dosage_amount, dosage_unit, is_rescue, active, start_date, end_date")
+      .select(
+        "id, schedule, times_of_day, dosage_amount, dosage_unit, is_rescue, active, start_date, end_date",
+      )
       .eq("user_id", userId)
       .eq("active", true)
       .eq("is_rescue", false);

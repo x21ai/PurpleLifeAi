@@ -116,7 +116,9 @@ function LogSeizurePage() {
         setLocating(false);
       },
       (err) => {
-        toast.error(userMessage(err, "Couldn't get your location. You can add it by hand, or leave it out."));
+        toast.error(
+          userMessage(err, "Couldn't get your location. You can add it by hand, or leave it out."),
+        );
         setLocating(false);
       },
       { enableHighAccuracy: true, timeout: 10000 },
@@ -140,9 +142,7 @@ function LogSeizurePage() {
         started_at: startedAtDate.toISOString(),
       });
       if (error) throw error;
-      toast.success(
-        `Logged for ${formatLocaleTime(startedAtDate)}. You can add details anytime.`,
-      );
+      toast.success(`Logged for ${formatLocaleTime(startedAtDate)}. You can add details anytime.`);
       goBack();
     } catch (err: any) {
       console.error(err);
@@ -212,10 +212,7 @@ function LogSeizurePage() {
 
       // 3. Parallel journal entry
       const typeLabel = SEIZURE_TYPES.find((t) => t.value === type)?.label;
-      const journalText = [
-        `Seizure logged${typeLabel ? `, ${typeLabel}` : ""}.`,
-        notes.trim(),
-      ]
+      const journalText = [`Seizure logged${typeLabel ? `, ${typeLabel}` : ""}.`, notes.trim()]
         .filter(Boolean)
         .join("\n\n");
       const { data: entry, error: jErr } = await supabase
@@ -261,7 +258,13 @@ function LogSeizurePage() {
             {t("seizuresNew.title")}
           </h1>
         </div>
-        <Button variant="ghost" size="icon" onClick={goBack} aria-label={t("seizuresNew.close")} className="mt-2 shrink-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={goBack}
+          aria-label={t("seizuresNew.close")}
+          className="mt-2 shrink-0"
+        >
           <X className="h-5 w-5" />
         </Button>
       </div>
@@ -292,9 +295,14 @@ function LogSeizurePage() {
         {/* When did it happen */}
         <div className="space-y-2">
           <Label>When did it happen?</Label>
-          <DateTimePicker value={startedAtDate} onChange={(d) => d && setStartedAtDate(d)} disableFuture />
+          <DateTimePicker
+            value={startedAtDate}
+            onChange={(d) => d && setStartedAtDate(d)}
+            disableFuture
+          />
           <p className="text-xs text-muted-foreground">
-            Defaults to now. Change it to log a past seizure; the quick log above uses this time too.
+            Defaults to now. Change it to log a past seizure; the quick log above uses this time
+            too.
           </p>
         </div>
 
@@ -307,7 +315,9 @@ function LogSeizurePage() {
             </SelectTrigger>
             <SelectContent>
               {SEIZURE_TYPES.map((t) => (
-                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                <SelectItem key={t.value} value={t.value}>
+                  {t.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -406,20 +416,38 @@ function LogSeizurePage() {
         <div className="space-y-3">
           <Label>Photos &amp; video</Label>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" type="button" onClick={() => photoInput.current?.click()}>
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={() => photoInput.current?.click()}
+            >
               <Camera className="h-4 w-4 mr-2" /> Camera
             </Button>
-            <Button variant="outline" size="sm" type="button" onClick={() => galleryInput.current?.click()}>
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={() => galleryInput.current?.click()}
+            >
               <ImageIcon className="h-4 w-4 mr-2" /> Photo
             </Button>
-            <Button variant="outline" size="sm" type="button" onClick={() => videoInput.current?.click()}>
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={() => videoInput.current?.click()}
+            >
               <Video className="h-4 w-4 mr-2" /> Video
             </Button>
           </div>
           {attachments.length > 0 && (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {attachments.map((a) => (
-                <div key={a.id} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                <div
+                  key={a.id}
+                  className="relative aspect-square rounded-lg overflow-hidden bg-muted"
+                >
                   {a.kind === "photo" ? (
                     <img src={a.previewUrl} alt="" className="h-full w-full object-cover" />
                   ) : (
@@ -443,7 +471,10 @@ function LogSeizurePage() {
             accept="image/*"
             capture="environment"
             className="hidden"
-            onChange={(e) => { addFiles(e.target.files, "photo"); e.target.value = ""; }}
+            onChange={(e) => {
+              addFiles(e.target.files, "photo");
+              e.target.value = "";
+            }}
           />
           <input
             ref={galleryInput}
@@ -451,7 +482,10 @@ function LogSeizurePage() {
             accept="image/*"
             multiple
             className="hidden"
-            onChange={(e) => { addFiles(e.target.files, "photo"); e.target.value = ""; }}
+            onChange={(e) => {
+              addFiles(e.target.files, "photo");
+              e.target.value = "";
+            }}
           />
           <input
             ref={videoInput}
@@ -459,7 +493,10 @@ function LogSeizurePage() {
             accept="video/*"
             capture="environment"
             className="hidden"
-            onChange={(e) => { addFiles(e.target.files, "video"); e.target.value = ""; }}
+            onChange={(e) => {
+              addFiles(e.target.files, "video");
+              e.target.value = "";
+            }}
           />
         </div>
 

@@ -29,13 +29,7 @@ function nowLocal(): string {
   return d.toISOString().slice(0, 16);
 }
 
-export function LogSeizureSheet({
-  ownerId,
-  ownerName,
-}: {
-  ownerId: string;
-  ownerName: string;
-}) {
+export function LogSeizureSheet({ ownerId, ownerName }: { ownerId: string; ownerName: string }) {
   const [open, setOpen] = useState(false);
   const [startedAt, setStartedAt] = useState<string>(nowLocal());
   const [endedAt, setEndedAt] = useState<string>("");
@@ -148,17 +142,11 @@ export function LogSeizureSheet({
           </div>
           <div className="flex items-center gap-6 pt-1">
             <label className="inline-flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={rescueMed}
-                onCheckedChange={(v) => setRescueMed(v === true)}
-              />
+              <Checkbox checked={rescueMed} onCheckedChange={(v) => setRescueMed(v === true)} />
               Rescue med given
             </label>
             <label className="inline-flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={injury}
-                onCheckedChange={(v) => setInjury(v === true)}
-              />
+              <Checkbox checked={injury} onCheckedChange={(v) => setInjury(v === true)} />
               Injury
             </label>
           </div>

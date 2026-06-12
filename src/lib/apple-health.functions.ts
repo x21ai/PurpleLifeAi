@@ -78,10 +78,7 @@ export const disconnectAppleHealth = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin
-      .from("apple_health_tokens")
-      .delete()
-      .eq("user_id", context.userId);
+    await supabaseAdmin.from("apple_health_tokens").delete().eq("user_id", context.userId);
     return { ok: true };
   });
 
@@ -100,9 +97,7 @@ export const applyAppleHealthBackfill = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { upsertAppleHealthDays, touchAppleHealthSync } = await import(
-      "./apple-health.server"
-    );
+    const { upsertAppleHealthDays, touchAppleHealthSync } = await import("./apple-health.server");
     const result = await upsertAppleHealthDays(context.userId, data.days);
     await touchAppleHealthSync(context.userId, "manual");
     return result;

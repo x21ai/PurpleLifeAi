@@ -1,22 +1,16 @@
 import { Link } from "@tanstack/react-router";
 import { ResponsiveContainer, LineChart, Line, YAxis, Tooltip } from "recharts";
 import { Pin, PinOff } from "lucide-react";
-import {
-  METRICS,
-  type MetricKey,
-  classifyValue,
-  statusTone,
-  stats,
-} from "@/lib/biometric-metrics";
+import { METRICS, type MetricKey, classifyValue, statusTone, stats } from "@/lib/biometric-metrics";
 
 type Series = Array<{ date: string; value: number | null }>;
 type SourceKey = "oura" | "whoop" | "apple_health" | "manual";
 
 const SOURCE_META: Record<SourceKey, { label: string; color: string; short: string }> = {
-  oura:         { label: "Oura",         color: "var(--purple-primary)", short: "O" },
-  whoop:        { label: "Whoop",        color: "#34D399",               short: "W" },
-  apple_health: { label: "Apple Health", color: "#F472B6",               short: "A" },
-  manual:       { label: "Manual",       color: "#A1A1AA",               short: "M" },
+  oura: { label: "Oura", color: "var(--purple-primary)", short: "O" },
+  whoop: { label: "Whoop", color: "#34D399", short: "W" },
+  apple_health: { label: "Apple Health", color: "#F472B6", short: "A" },
+  manual: { label: "Manual", color: "#A1A1AA", short: "M" },
 };
 
 export function MetricCard({
@@ -55,8 +49,8 @@ export function MetricCard({
   const bySource: Partial<Record<SourceKey, Series>> = seriesBySource ?? {
     oura: series ?? [],
   };
-  const sources = (Object.keys(bySource) as SourceKey[]).filter(
-    (s) => (bySource[s] ?? []).some((d) => d.value != null),
+  const sources = (Object.keys(bySource) as SourceKey[]).filter((s) =>
+    (bySource[s] ?? []).some((d) => d.value != null),
   );
 
   // Build a merged date axis (union of all source dates) for the sparkline.
@@ -68,10 +62,9 @@ export function MetricCard({
   // For headline value + baseline + status, prefer the source with the most recent reading.
   const headlineSource: SourceKey =
     sources
-      .map<[SourceKey, string | undefined]>((s) => [
-        s,
-        [...(bySource[s] ?? [])].reverse().find((d) => d.value != null)?.date,
-      ])
+      .map<
+        [SourceKey, string | undefined]
+      >((s) => [s, [...(bySource[s] ?? [])].reverse().find((d) => d.value != null)?.date])
       .sort((a, b) => (b[1] ?? "").localeCompare(a[1] ?? ""))[0]?.[0] ?? "oura";
   const headlineSeries = bySource[headlineSource] ?? [];
   const baselineWindow = headlineSeries.slice(-30, -3);
@@ -92,8 +85,7 @@ export function MetricCard({
   const hasSpark = sources.some((s) => (bySource[s] ?? []).some((r) => r.value != null));
   const multi = sources.length > 1;
 
-  const delta =
-    current != null && baseline.mean != null ? current - baseline.mean : null;
+  const delta = current != null && baseline.mean != null ? current - baseline.mean : null;
 
   // Source-agreement chip: when 2+ sources reported in the last window, compare
   // their most recent values and flag divergence > 10%.
@@ -227,9 +219,7 @@ export function MetricCard({
 
       <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
         <span>
-          {baseline.mean != null
-            ? `Baseline ${meta.format(baseline.mean)}`
-            : "Building baseline…"}
+          {baseline.mean != null ? `Baseline ${meta.format(baseline.mean)}` : "Building baseline…"}
         </span>
         {delta != null && baseline.mean != null && Math.abs(delta) > 0.01 && (
           <span>

@@ -188,7 +188,10 @@ async function callDoseAction(dose, action) {
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(SHELL).catch(() => {})).then(() => self.skipWaiting()),
+    caches
+      .open(CACHE)
+      .then((c) => c.addAll(SHELL).catch(() => {}))
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -222,13 +225,18 @@ self.addEventListener("fetch", (event) => {
       caches.match(req).then(
         (cached) =>
           cached ||
-          fetch(req).then((res) => {
-            if (res.ok) {
-              const copy = res.clone();
-              caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
-            }
-            return res;
-          }).catch(() => cached),
+          fetch(req)
+            .then((res) => {
+              if (res.ok) {
+                const copy = res.clone();
+                caches
+                  .open(CACHE)
+                  .then((c) => c.put(req, copy))
+                  .catch(() => {});
+              }
+              return res;
+            })
+            .catch(() => cached),
       ),
     );
   }

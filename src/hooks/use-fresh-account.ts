@@ -16,10 +16,7 @@ async function loadFreshAccount(userId: string): Promise<FreshAccountSnapshot> {
       .from("journal_entries")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId),
-    supabase
-      .from("biometrics")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId),
+    supabase.from("biometrics").select("id", { count: "exact", head: true }).eq("user_id", userId),
     supabase
       .from("seizure_events")
       .select("id", { count: "exact", head: true })
@@ -35,10 +32,7 @@ async function loadFreshAccount(userId: string): Promise<FreshAccountSnapshot> {
   const seizureCount = seizures.count ?? 0;
   const doseCount = doses.count ?? 0;
   const isFresh =
-    journalCount === 0 &&
-    biometricsCount === 0 &&
-    seizureCount === 0 &&
-    doseCount === 0;
+    journalCount === 0 && biometricsCount === 0 && seizureCount === 0 && doseCount === 0;
 
   return { isFresh, journalCount, biometricsCount, seizureCount, doseCount };
 }

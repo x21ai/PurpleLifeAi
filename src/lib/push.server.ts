@@ -26,11 +26,14 @@ export type PushPayload = {
   scheduledAt?: string;
 };
 
-export async function sendPushToSubscription(sub: {
-  endpoint: string;
-  p256dh: string;
-  auth: string;
-}, payload: PushPayload): Promise<{ ok: boolean; statusCode?: number; gone?: boolean }> {
+export async function sendPushToSubscription(
+  sub: {
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+  },
+  payload: PushPayload,
+): Promise<{ ok: boolean; statusCode?: number; gone?: boolean }> {
   const wp = getWebPush();
   try {
     await wp.sendNotification(

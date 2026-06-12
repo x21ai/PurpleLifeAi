@@ -21,10 +21,17 @@ export type VitalsSnapshot = {
 };
 
 const REPORT_METRIC_KEYS = [
-  "weight", "body_weight",
-  "blood_pressure_systolic", "systolic_bp", "sbp",
-  "blood_pressure_diastolic", "diastolic_bp", "dbp",
-  "glucose", "fasting_glucose", "blood_glucose",
+  "weight",
+  "body_weight",
+  "blood_pressure_systolic",
+  "systolic_bp",
+  "sbp",
+  "blood_pressure_diastolic",
+  "diastolic_bp",
+  "dbp",
+  "glucose",
+  "fasting_glucose",
+  "blood_glucose",
 ];
 
 export const getVitalsSnapshot = createServerFn({ method: "GET" })
@@ -80,8 +87,7 @@ export const getVitalsSnapshot = createServerFn({ method: "GET" })
       .eq("user_id", userId)
       .order("measured_at", { ascending: false })
       .limit(200);
-    const latestLog = (kind: string) =>
-      (logs ?? []).find((l) => l.kind === kind) ?? null;
+    const latestLog = (kind: string) => (logs ?? []).find((l) => l.kind === kind) ?? null;
 
     const pick = (
       a: { value: number | null; at: string | null },
@@ -100,7 +106,11 @@ export const getVitalsSnapshot = createServerFn({ method: "GET" })
       const fromReport = { sys: sbp.value, dia: dbp.value, at: sbp.at };
       if (!l || l.value == null) return fromReport;
       if (!fromReport.at || (l.measured_at && l.measured_at > fromReport.at)) {
-        return { sys: Number(l.value), dia: l.value2 != null ? Number(l.value2) : null, at: l.measured_at };
+        return {
+          sys: Number(l.value),
+          dia: l.value2 != null ? Number(l.value2) : null,
+          at: l.measured_at,
+        };
       }
       return fromReport;
     };
@@ -133,14 +143,16 @@ export const getVitalsSnapshot = createServerFn({ method: "GET" })
 export const logVital = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      kind: z.enum(["weight", "bp", "glucose", "spo2", "temp", "resp_rate"]),
-      value: z.number().finite(),
-      value2: z.number().finite().nullable().optional(),
-      unit: z.string().max(20).nullable().optional(),
-      notes: z.string().max(500).nullable().optional(),
-      measuredAt: z.string().datetime().optional(),
-    }).parse(input),
+    z
+      .object({
+        kind: z.enum(["weight", "bp", "glucose", "spo2", "temp", "resp_rate"]),
+        value: z.number().finite(),
+        value2: z.number().finite().nullable().optional(),
+        unit: z.string().max(20).nullable().optional(),
+        notes: z.string().max(500).nullable().optional(),
+        measuredAt: z.string().datetime().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -168,10 +180,7 @@ export const getHealthRecordsCounts = createServerFn({ method: "GET" })
         .select("report_category")
         .eq("user_id", userId)
         .neq("status", "rejected"),
-      supabase
-        .from("dna_files")
-        .select("id")
-        .eq("user_id", userId),
+      supabase.from("dna_files").select("id").eq("user_id", userId),
     ]);
     const counts: Record<string, number> = {};
     for (const r of reports ?? []) {
@@ -209,33 +218,33 @@ export const getVitalGoals = createServerFn({ method: "GET" })
 export const setVitalGoal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      kind: z.enum(["weight", "bp", "glucose", "spo2", "temp", "resp_rate"]),
-      target_min: z.number().finite().nullable().optional(),
-      target_max: z.number().finite().nullable().optional(),
-      target_min2: z.number().finite().nullable().optional(),
-      target_max2: z.number().finite().nullable().optional(),
-      unit: z.string().max(20).nullable().optional(),
-      note: z.string().max(280).nullable().optional(),
-    }).parse(input),
+    z
+      .object({
+        kind: z.enum(["weight", "bp", "glucose", "spo2", "temp", "resp_rate"]),
+        target_min: z.number().finite().nullable().optional(),
+        target_max: z.number().finite().nullable().optional(),
+        target_min2: z.number().finite().nullable().optional(),
+        target_max2: z.number().finite().nullable().optional(),
+        unit: z.string().max(20).nullable().optional(),
+        note: z.string().max(280).nullable().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("vital_goals")
-      .upsert(
-        {
-          user_id: userId,
-          kind: data.kind,
-          target_min: data.target_min ?? null,
-          target_max: data.target_max ?? null,
-          target_min2: data.target_min2 ?? null,
-          target_max2: data.target_max2 ?? null,
-          unit: data.unit ?? null,
-          note: data.note ?? null,
-        },
-        { onConflict: "user_id,kind" },
-      );
+    const { error } = await supabase.from("vital_goals").upsert(
+      {
+        user_id: userId,
+        kind: data.kind,
+        target_min: data.target_min ?? null,
+        target_max: data.target_max ?? null,
+        target_min2: data.target_min2 ?? null,
+        target_max2: data.target_max2 ?? null,
+        unit: data.unit ?? null,
+        note: data.note ?? null,
+      },
+      { onConflict: "user_id,kind" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -243,9 +252,11 @@ export const setVitalGoal = createServerFn({ method: "POST" })
 export const deleteVitalGoal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      kind: z.enum(["weight", "bp", "glucose", "spo2", "temp", "resp_rate"]),
-    }).parse(input),
+    z
+      .object({
+        kind: z.enum(["weight", "bp", "glucose", "spo2", "temp", "resp_rate"]),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;

@@ -39,7 +39,10 @@ function fmtTime(iso: string): string {
 
 export function HydrationTimeline({ day, hydration, auras, goalMl = 2000 }: Props) {
   const totals = useMemo(() => {
-    let water = 0, electrolyte = 0, sodium = 0, other = 0;
+    let water = 0,
+      electrolyte = 0,
+      sodium = 0,
+      other = 0;
     for (const h of hydration) {
       if (h.kind === "water") water += h.volume_ml;
       else if (h.kind === "electrolyte") electrolyte += h.volume_ml;
@@ -72,16 +75,32 @@ export function HydrationTimeline({ day, hydration, auras, goalMl = 2000 }: Prop
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Total today</p>
           <p className="font-serif text-4xl text-foreground leading-none mt-1">
-            {(totals.total / 1000).toFixed(2)} <span className="text-lg text-muted-foreground">L</span>
+            {(totals.total / 1000).toFixed(2)}{" "}
+            <span className="text-lg text-muted-foreground">L</span>
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             Goal {(goalMl / 1000).toFixed(1)} L · {pct}%
           </p>
         </div>
         <div className="grid grid-cols-3 gap-3 text-center">
-          <Stat icon={<Droplets className="h-3.5 w-3.5" />} label="Water" value={`${totals.water} ml`} tone="blue" />
-          <Stat icon={<FlaskConical className="h-3.5 w-3.5" />} label="Electrolytes" value={`${totals.electrolyte} ml`} tone="purple" />
-          <Stat icon={<Sparkles className="h-3.5 w-3.5" />} label="Sodium" value={`${totals.sodium} mg`} tone="amber" />
+          <Stat
+            icon={<Droplets className="h-3.5 w-3.5" />}
+            label="Water"
+            value={`${totals.water} ml`}
+            tone="blue"
+          />
+          <Stat
+            icon={<FlaskConical className="h-3.5 w-3.5" />}
+            label="Electrolytes"
+            value={`${totals.electrolyte} ml`}
+            tone="purple"
+          />
+          <Stat
+            icon={<Sparkles className="h-3.5 w-3.5" />}
+            label="Sodium"
+            value={`${totals.sodium} mg`}
+            tone="amber"
+          />
         </div>
       </div>
 
@@ -118,8 +137,14 @@ export function HydrationTimeline({ day, hydration, auras, goalMl = 2000 }: Prop
                   {total > 0 && (
                     <>
                       <div className="w-full bg-blue-500/70" style={{ height: `${waterPct}%` }} />
-                      <div className="w-full bg-[color:var(--purple-primary)]" style={{ height: `${elecPct}%` }} />
-                      <div className="w-full bg-muted-foreground/40" style={{ height: `${100 - waterPct - elecPct}%` }} />
+                      <div
+                        className="w-full bg-[color:var(--purple-primary)]"
+                        style={{ height: `${elecPct}%` }}
+                      />
+                      <div
+                        className="w-full bg-muted-foreground/40"
+                        style={{ height: `${100 - waterPct - elecPct}%` }}
+                      />
                     </>
                   )}
                 </div>
@@ -133,7 +158,11 @@ export function HydrationTimeline({ day, hydration, auras, goalMl = 2000 }: Prop
           })}
         </div>
         <div className="mt-1 flex justify-between text-[10px] text-muted-foreground tabular-nums">
-          <span>0</span><span>6</span><span>12</span><span>18</span><span>23</span>
+          <span>0</span>
+          <span>6</span>
+          <span>12</span>
+          <span>18</span>
+          <span>23</span>
         </div>
       </div>
 
@@ -154,9 +183,11 @@ export function HydrationTimeline({ day, hydration, auras, goalMl = 2000 }: Prop
             const x = (hourOf(h.consumed_at, day) / 24) * 100;
             if (x < 0) return null;
             const color =
-              h.kind === "water" ? "bg-blue-500"
-              : h.kind === "electrolyte" ? "bg-[color:var(--purple-primary)]"
-              : "bg-muted-foreground";
+              h.kind === "water"
+                ? "bg-blue-500"
+                : h.kind === "electrolyte"
+                  ? "bg-[color:var(--purple-primary)]"
+                  : "bg-muted-foreground";
             return (
               <div
                 key={h.id}
@@ -190,7 +221,11 @@ export function HydrationTimeline({ day, hydration, auras, goalMl = 2000 }: Prop
           })}
         </div>
         <div className="mt-1 flex justify-between text-[10px] text-muted-foreground tabular-nums">
-          <span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>12am</span>
+          <span>12am</span>
+          <span>6am</span>
+          <span>12pm</span>
+          <span>6pm</span>
+          <span>12am</span>
         </div>
         {auras.length > 0 && (
           <p className="mt-2 text-xs text-amber-500/90 flex items-center gap-1.5">
@@ -205,8 +240,10 @@ export function HydrationTimeline({ day, hydration, auras, goalMl = 2000 }: Prop
         <div className="mt-6">
           <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Today</p>
           <ul className="space-y-1.5">
-            {[...hydration.map((h) => ({ type: "h" as const, ts: h.consumed_at, row: h })),
-              ...auras.map((a) => ({ type: "a" as const, ts: a.occurred_at, row: a }))]
+            {[
+              ...hydration.map((h) => ({ type: "h" as const, ts: h.consumed_at, row: h })),
+              ...auras.map((a) => ({ type: "a" as const, ts: a.occurred_at, row: a })),
+            ]
               .sort((a, b) => b.ts.localeCompare(a.ts))
               .slice(0, 12)
               .map((it) =>
@@ -214,17 +251,27 @@ export function HydrationTimeline({ day, hydration, auras, goalMl = 2000 }: Prop
                   <li key={`h-${it.row.id}`} className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2 text-muted-foreground">
                       {iconFor(it.row.kind)}
-                      <span className="text-foreground">{it.row.volume_ml} ml {it.row.kind}{it.row.electrolyte_brand ? ` · ${it.row.electrolyte_brand}` : ""}</span>
+                      <span className="text-foreground">
+                        {it.row.volume_ml} ml {it.row.kind}
+                        {it.row.electrolyte_brand ? ` · ${it.row.electrolyte_brand}` : ""}
+                      </span>
                     </span>
-                    <span className="tabular-nums text-muted-foreground">{fmtTime(it.row.consumed_at)}</span>
+                    <span className="tabular-nums text-muted-foreground">
+                      {fmtTime(it.row.consumed_at)}
+                    </span>
                   </li>
                 ) : (
                   <li key={`a-${it.row.id}`} className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2 text-amber-500">
                       <Sparkles className="h-3.5 w-3.5" />
-                      <span className="text-foreground">{it.row.kind.replace("_", " ")}{it.row.notes ? `, ${it.row.notes}` : ""}</span>
+                      <span className="text-foreground">
+                        {it.row.kind.replace("_", " ")}
+                        {it.row.notes ? `, ${it.row.notes}` : ""}
+                      </span>
                     </span>
-                    <span className="tabular-nums text-muted-foreground">{fmtTime(it.row.occurred_at)}</span>
+                    <span className="tabular-nums text-muted-foreground">
+                      {fmtTime(it.row.occurred_at)}
+                    </span>
                   </li>
                 ),
               )}
@@ -237,22 +284,39 @@ export function HydrationTimeline({ day, hydration, auras, goalMl = 2000 }: Prop
 
 function iconFor(kind: HydrationRow["kind"]) {
   if (kind === "water") return <Droplets className="h-3.5 w-3.5 text-blue-400" />;
-  if (kind === "electrolyte") return <FlaskConical className="h-3.5 w-3.5 text-[color:var(--purple-primary)]" />;
+  if (kind === "electrolyte")
+    return <FlaskConical className="h-3.5 w-3.5 text-[color:var(--purple-primary)]" />;
   if (kind === "coffee" || kind === "tea") return <Coffee className="h-3.5 w-3.5" />;
   return <Droplets className="h-3.5 w-3.5" />;
 }
 
 function Stat({
-  icon, label, value, tone,
-}: { icon: React.ReactNode; label: string; value: string; tone: "blue" | "purple" | "amber" }) {
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  tone: "blue" | "purple" | "amber";
+}) {
   const color =
-    tone === "blue" ? "text-blue-400"
-    : tone === "purple" ? "text-[color:var(--purple-primary)]"
-    : "text-amber-400";
+    tone === "blue"
+      ? "text-blue-400"
+      : tone === "purple"
+        ? "text-[color:var(--purple-primary)]"
+        : "text-amber-400";
   return (
     <div>
-      <p className={cn("flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide", color)}>
-        {icon}{label}
+      <p
+        className={cn(
+          "flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide",
+          color,
+        )}
+      >
+        {icon}
+        {label}
       </p>
       <p className="text-sm font-semibold mt-0.5 tabular-nums">{value}</p>
     </div>

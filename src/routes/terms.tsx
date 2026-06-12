@@ -8,7 +8,10 @@ export const Route = createFileRoute("/terms")({
       { title: "Terms · Purple" },
       { name: "description", content: "The terms of using Purple, plain language, no surprises." },
       { property: "og:title", content: "Terms · Purple" },
-      { property: "og:description", content: "The terms of using Purple, plain language, no surprises." },
+      {
+        property: "og:description",
+        content: "The terms of using Purple, plain language, no surprises.",
+      },
     ],
   }),
   component: TermsPage,
@@ -24,11 +27,35 @@ function TermsPage() {
           The deal, in plain words.
         </h1>
         <div className="mt-8 space-y-5 text-base sm:text-[17px] leading-relaxed text-muted-foreground">
-          <p>Purple is a personal health journal. It is not a medical device and not a substitute for professional advice, diagnosis, or treatment. In an emergency, call your local emergency number.</p>
-          <p>You own your data. We don&rsquo;t sell it, we don&rsquo;t advertise against it, and you can export or delete it from Settings at any time.</p>
-          <p>Use Purple honestly. Don&rsquo;t abuse the service, attempt to break it, or upload content that isn&rsquo;t yours to share. We may suspend accounts that do.</p>
-          <p>The software is provided &ldquo;as is&rdquo; without warranty of any kind. To the extent allowed by law, the makers of Purple are not liable for damages arising from your use of it.</p>
-          <p>See also our <Link to="/privacy" className="underline underline-offset-4">privacy & safety</Link> page and our <Link to="/charter" className="underline underline-offset-4">founding charter</Link>.</p>
+          <p>
+            Purple is a personal health journal. It is not a medical device and not a substitute for
+            professional advice, diagnosis, or treatment. In an emergency, call your local emergency
+            number.
+          </p>
+          <p>
+            You own your data. We don&rsquo;t sell it, we don&rsquo;t advertise against it, and you
+            can export or delete it from Settings at any time.
+          </p>
+          <p>
+            Use Purple honestly. Don&rsquo;t abuse the service, attempt to break it, or upload
+            content that isn&rsquo;t yours to share. We may suspend accounts that do.
+          </p>
+          <p>
+            The software is provided &ldquo;as is&rdquo; without warranty of any kind. To the extent
+            allowed by law, the makers of Purple are not liable for damages arising from your use of
+            it.
+          </p>
+          <p>
+            See also our{" "}
+            <Link to="/privacy" className="underline underline-offset-4">
+              privacy & safety
+            </Link>{" "}
+            page and our{" "}
+            <Link to="/charter" className="underline underline-offset-4">
+              founding charter
+            </Link>
+            .
+          </p>
         </div>
       </article>
       <SiteFooter />

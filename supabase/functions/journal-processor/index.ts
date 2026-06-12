@@ -2,8 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -65,15 +64,7 @@ const TOOL_SCHEMA = {
               properties: {
                 type: {
                   type: "string",
-                  enum: [
-                    "seizure",
-                    "aura",
-                    "near_miss",
-                    "medication",
-                    "sleep",
-                    "meal",
-                    "stress",
-                  ],
+                  enum: ["seizure", "aura", "near_miss", "medication", "sleep", "meal", "stress"],
                 },
                 detail: { type: "string" },
               },
@@ -339,7 +330,9 @@ Deno.serve(async (req) => {
     }
 
     const media: string[] = Array.isArray(entry.media_urls) ? entry.media_urls : [];
-    const audioUrls = media.filter((u) => isAudioExt(extOf(u)) && !isVideoExt(extOf(u)) && u.includes("voice-"));
+    const audioUrls = media.filter(
+      (u) => isAudioExt(extOf(u)) && !isVideoExt(extOf(u)) && u.includes("voice-"),
+    );
     // Fallback: treat any non-photo non-video as audio if filename hints audio
     const remaining = media.filter((u) => !audioUrls.includes(u));
     const photoUrls = remaining.filter((u) => isPhotoExt(extOf(u)));
@@ -373,9 +366,7 @@ Deno.serve(async (req) => {
       photos,
     });
 
-    const needsFollowup = Boolean(
-      (result.extracted as any)?.needs_followup,
-    );
+    const needsFollowup = Boolean((result.extracted as any)?.needs_followup);
 
     // Guard: if the entry had no actual content (no text, no transcript, no photos)
     // the model often replies with a meta "I don't see a journal entry…" message.
@@ -430,19 +421,17 @@ Deno.serve(async (req) => {
     if (memoryContent) {
       const embedding = await embedText(memoryContent);
       if (embedding) {
-        await admin
-          .from("ai_memory")
-          .upsert(
-            {
-              user_id: entry.user_id,
-              source_table: "journal_entries",
-              source_id: entry_id,
-              recorded_at: entry.captured_at || new Date().toISOString(),
-              content: memoryContent,
-              embedding: embedding as unknown as string,
-            },
-            { onConflict: "source_table,source_id" },
-          );
+        await admin.from("ai_memory").upsert(
+          {
+            user_id: entry.user_id,
+            source_table: "journal_entries",
+            source_id: entry_id,
+            recorded_at: entry.captured_at || new Date().toISOString(),
+            content: memoryContent,
+            embedding: embedding as unknown as string,
+          },
+          { onConflict: "source_table,source_id" },
+        );
       }
     }
 
@@ -463,12 +452,12 @@ Deno.serve(async (req) => {
     // we don't double-count a journal entry written right after a manual log.
     try {
       const events = ((result.extracted as any)?.events ?? []) as Array<{
-        type?: string; detail?: string;
+        type?: string;
+        detail?: string;
       }>;
       const tags = result.tags ?? [];
       const mentionsSeizure =
-        events.some((e) => e?.type === "seizure") ||
-        tags.includes("event:seizure");
+        events.some((e) => e?.type === "seizure") || tags.includes("event:seizure");
       if (mentionsSeizure && !entry.linked_seizure_id) {
         const startedAt = entry.captured_at || new Date().toISOString();
         const winStart = new Date(new Date(startedAt).getTime() - 10 * 60 * 1000).toISOString();
@@ -515,17 +504,11 @@ Deno.serve(async (req) => {
   } catch (e) {
     console.error("journal-processor error", e);
     if (entry_id) {
-      await admin
-        .from("journal_entries")
-        .update({ status: "failed" })
-        .eq("id", entry_id);
+      await admin.from("journal_entries").update({ status: "failed" }).eq("id", entry_id);
     }
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

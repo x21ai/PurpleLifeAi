@@ -2,15 +2,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const PUBLISHABLE = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ||
-  Deno.env.get("SUPABASE_ANON_KEY")!;
+const PUBLISHABLE = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY")!;
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
@@ -63,7 +61,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    const entryDate = (entry.captured_at || entry.created_at || new Date().toISOString()).slice(0, 10);
+    const entryDate = (entry.captured_at || entry.created_at || new Date().toISOString()).slice(
+      0,
+      10,
+    );
 
     // Call orchestrator's extract action via internal HTTP (service role auth)
     const orchUrl = `${SUPABASE_URL}/functions/v1/ai-orchestrator`;
@@ -109,12 +110,10 @@ Deno.serve(async (req) => {
         .not("behavior_key", "in", `(${keepKeys.map((k) => `"${k}"`).join(",")})`);
       if (delErr) throw new Error(`sweep failed: ${delErr.message}`);
 
-      const { error: insErr, count } = await admin
-        .from("daily_behaviors")
-        .upsert(rows, {
-          onConflict: "user_id,journal_entry_id,behavior_key",
-          count: "exact",
-        });
+      const { error: insErr, count } = await admin.from("daily_behaviors").upsert(rows, {
+        onConflict: "user_id,journal_entry_id,behavior_key",
+        count: "exact",
+      });
       if (insErr) throw new Error(`upsert failed: ${insErr.message}`);
       written = count ?? rows.length;
     }
@@ -129,9 +128,9 @@ Deno.serve(async (req) => {
     );
   } catch (e) {
     console.error("journal-extract error", e);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

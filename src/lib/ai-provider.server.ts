@@ -52,17 +52,23 @@ export async function getUserProvider(
 
 function defaultModel(provider: AiProvider): string {
   switch (provider) {
-    case "claude": return "claude-sonnet-4-5";
-    case "openai": return "gpt-5-mini";
-    case "gemini": return "gemini-2.5-pro";
-    case "grok": return "grok-4";
-    case "maya": return "maya-default";
+    case "claude":
+      return "claude-sonnet-4-5";
+    case "openai":
+      return "gpt-5-mini";
+    case "gemini":
+      return "gemini-2.5-pro";
+    case "grok":
+      return "grok-4";
+    case "maya":
+      return "maya-default";
   }
 }
 
 function handleStatus(provider: string, status: number, body: string): never {
   if (status === 402) throw mkErr(`${provider} credits exhausted.`, "ai_credits_exhausted");
-  if (status === 429) throw mkErr(`${provider} is rate-limited. Try again shortly.`, "ai_rate_limited");
+  if (status === 429)
+    throw mkErr(`${provider} is rate-limited. Try again shortly.`, "ai_rate_limited");
   if (status === 401 || status === 403) {
     throw mkErr(`${provider} API key is missing or invalid.`, "ai_key_invalid");
   }
@@ -110,7 +116,7 @@ async function callClaude(opts: AiCallOpts): Promise<string> {
   const json = (await res.json()) as {
     content?: Array<{ type: string; text?: string }>;
   };
-  return (json.content ?? []).map((b) => (b.type === "text" ? b.text ?? "" : "")).join("");
+  return (json.content ?? []).map((b) => (b.type === "text" ? (b.text ?? "") : "")).join("");
 }
 
 /* ---------- OpenAI-compatible (OpenAI + Grok) ---------- */
@@ -192,18 +198,20 @@ async function callGeminiDirect(opts: AiCallOpts): Promise<string> {
   const json = (await res.json()) as {
     candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
   };
-  return (json.candidates?.[0]?.content?.parts ?? [])
-    .map((p) => p.text ?? "")
-    .join("");
+  return (json.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("");
 }
 
 /* ---------- Dispatch ---------- */
 export async function callAI(opts: AiCallOpts): Promise<string> {
   switch (opts.provider) {
-    case "claude": return callClaude(opts);
-    case "openai": return callOpenAI(opts);
-    case "gemini": return callGeminiDirect(opts);
-    case "grok": return callGrok(opts);
+    case "claude":
+      return callClaude(opts);
+    case "openai":
+      return callOpenAI(opts);
+    case "gemini":
+      return callGeminiDirect(opts);
+    case "grok":
+      return callGrok(opts);
     case "maya":
       throw mkErr(
         "Maya isn't configured yet. Pick a different provider in Settings → AI.",
@@ -228,7 +236,11 @@ export function tryParseJson<T = unknown>(text: string): T | null {
     // try to extract first {...} block (some models wrap in markdown)
     const m = text.match(/\{[\s\S]*\}/);
     if (m) {
-      try { return JSON.parse(m[0]) as T; } catch { /* fall through */ }
+      try {
+        return JSON.parse(m[0]) as T;
+      } catch {
+        /* fall through */
+      }
     }
     return null;
   }

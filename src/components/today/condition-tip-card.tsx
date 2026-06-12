@@ -12,11 +12,7 @@ function dayKey(now: Date): string {
   return localDateKey(now);
 }
 
-export function ConditionTipCard({
-  conditions,
-}: {
-  conditions: string[] | null | undefined;
-}) {
+export function ConditionTipCard({ conditions }: { conditions: string[] | null | undefined }) {
   const [now, setNow] = React.useState<Date | null>(null);
   const [dismissed, setDismissed] = React.useState(false);
   const careProfile = useCareProfile();
@@ -69,10 +65,7 @@ export function ConditionTipCard({
           className="text-muted-foreground hover:text-foreground"
           onClick={() => {
             try {
-              localStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify({ id: tip.id, day: dayKey(now) }),
-              );
+              localStorage.setItem(STORAGE_KEY, JSON.stringify({ id: tip.id, day: dayKey(now) }));
             } catch {
               // ignore
             }

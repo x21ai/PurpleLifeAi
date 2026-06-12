@@ -76,8 +76,7 @@ export function TripBanner() {
             legs: (t.legs as Leg[] | null) ?? null,
             home_tz_snapshot: t.home_tz_snapshot ?? null,
             return_at: t.return_at,
-            shift_strategy:
-              (t.shift_strategy as "home" | "snap" | "gradual" | null) ?? null,
+            shift_strategy: (t.shift_strategy as "home" | "snap" | "gradual" | null) ?? null,
             shift_hours_per_day:
               typeof t.shift_hours_per_day === "number" ? t.shift_hours_per_day : null,
           }
@@ -118,9 +117,9 @@ export function TripBanner() {
   // Active trip → show a richer card with active leg + next dose dual time.
   if (activeTrip) {
     const homeTz = activeTrip.home_tz_snapshot ?? profile?.timezone ?? null;
-    const legs = (activeTrip.legs ?? []).slice().sort(
-      (a, b) => new Date(a.from_at).getTime() - new Date(b.from_at).getTime(),
-    );
+    const legs = (activeTrip.legs ?? [])
+      .slice()
+      .sort((a, b) => new Date(a.from_at).getTime() - new Date(b.from_at).getTime());
     const nowMs = Date.now();
     const active = legs.filter((l) => new Date(l.from_at).getTime() <= nowMs).pop();
     const currentTz = active?.tz ?? activeTrip.destination_tz;
@@ -131,10 +130,7 @@ export function TripBanner() {
         ? nowMs - new Date(active.from_at).getTime() < 12 * 60 * 60 * 1000
         : false;
     const offsetVsHome = homeTz ? tzOffsetDiffHours(currentTz, homeTz) : null;
-    const strategyNudge = strategyText(
-      activeTrip.shift_strategy,
-      activeTrip.shift_hours_per_day,
-    );
+    const strategyNudge = strategyText(activeTrip.shift_strategy, activeTrip.shift_hours_per_day);
     return (
       <aside
         aria-label="Travel mode active"
@@ -154,14 +150,13 @@ export function TripBanner() {
               <span className="text-muted-foreground"> · {currentTz}</span>
               {offsetVsHome !== null && offsetVsHome !== 0 && (
                 <span className="text-muted-foreground">
-                  {" "}· {offsetVsHome > 0 ? "+" : ""}
+                  {" "}
+                  · {offsetVsHome > 0 ? "+" : ""}
                   {offsetVsHome}h from home
                 </span>
               )}
             </p>
-            {strategyNudge && (
-              <p className="mt-1 text-xs text-muted-foreground">{strategyNudge}</p>
-            )}
+            {strategyNudge && <p className="mt-1 text-xs text-muted-foreground">{strategyNudge}</p>}
             {nextDose ? (
               <p className="mt-1.5 text-sm text-foreground/80 flex flex-wrap items-baseline gap-x-2">
                 <span className="text-muted-foreground">Next dose</span>

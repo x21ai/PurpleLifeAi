@@ -53,10 +53,7 @@ export function DateTimePicker({
           <Button
             type="button"
             variant="outline"
-            className={cn(
-              "h-9 justify-start font-normal",
-              !value && "text-muted-foreground",
-            )}
+            className={cn("h-9 justify-start font-normal", !value && "text-muted-foreground")}
           >
             <CalendarIcon className="h-4 w-4 mr-2" />
             {value ? format(value, "EEE, MMM d, yyyy") : <span>{placeholder}</span>}
@@ -66,7 +63,9 @@ export function DateTimePicker({
           <Calendar
             mode="single"
             selected={value ?? undefined}
-            onSelect={(d) => { setDate(d); }}
+            onSelect={(d) => {
+              setDate(d);
+            }}
             disabled={(d) => (disableFuture ? d > new Date() : false)}
             initialFocus
             className={cn("p-3 pointer-events-auto")}

@@ -92,9 +92,7 @@ async function getValidAccessToken(user_id: string): Promise<string | null> {
   // token 401 into a silent zero-row "successful" sync.
   if (!row.refresh_token) throw new Error("needs_reauth: Whoop token expired");
   const refreshed = await refreshWhoopToken(row.refresh_token);
-  const newExpires = new Date(
-    Date.now() + (refreshed.expires_in ?? 3600) * 1000,
-  ).toISOString();
+  const newExpires = new Date(Date.now() + (refreshed.expires_in ?? 3600) * 1000).toISOString();
   await supabaseAdmin
     .from("whoop_tokens")
     .update({
@@ -235,7 +233,7 @@ export async function syncWhoopRange(
     const k = dayKey(s.end ?? s.start);
     if (!k) continue;
     const prev = sleepByDay.get(k);
-    const dur = (s.score?.stage_summary?.total_in_bed_time_milli ?? 0);
+    const dur = s.score?.stage_summary?.total_in_bed_time_milli ?? 0;
     const prevDur = prev?.score?.stage_summary?.total_in_bed_time_milli ?? 0;
     if (!prev || dur > prevDur) sleepByDay.set(k, s);
   }
@@ -254,9 +252,7 @@ export async function syncWhoopRange(
     if (!k || !w.start || !w.end) continue;
     const mins = Math.max(
       0,
-      Math.round(
-        (new Date(w.end).getTime() - new Date(w.start).getTime()) / 60000,
-      ),
+      Math.round((new Date(w.end).getTime() - new Date(w.start).getTime()) / 60000),
     );
     workoutMinByDay.set(k, (workoutMinByDay.get(k) ?? 0) + mins);
   }
@@ -287,13 +283,9 @@ export async function syncWhoopRange(
       spo2_pct: r?.score?.spo2_percentage ?? null,
       skin_temp_c: r?.score?.skin_temp_celsius ?? null,
       respiratory_rate_bpm: s?.score?.respiratory_rate ?? null,
-      sleep_total_min:
-        stage
-          ? msToMin(
-              (stage.total_in_bed_time_milli ?? 0) -
-                (stage.total_awake_time_milli ?? 0),
-            )
-          : null,
+      sleep_total_min: stage
+        ? msToMin((stage.total_in_bed_time_milli ?? 0) - (stage.total_awake_time_milli ?? 0))
+        : null,
       sleep_rem_min: msToMin(stage?.total_rem_sleep_time_milli),
       sleep_deep_min: msToMin(stage?.total_slow_wave_sleep_time_milli),
       sleep_light_min: msToMin(stage?.total_light_sleep_time_milli),
@@ -331,23 +323,19 @@ export async function persistTokensAndBackfill(
   tok: Awaited<ReturnType<typeof exchangeWhoopCode>>,
   backfillDays = 30,
 ): Promise<{ days: number }> {
-  const expires_at = new Date(
-    Date.now() + (tok.expires_in ?? 3600) * 1000,
-  ).toISOString();
-  await supabaseAdmin
-    .from("whoop_tokens")
-    .upsert(
-      {
-        user_id,
-        access_token: tok.access_token,
-        refresh_token: tok.refresh_token,
-        token_type: tok.token_type,
-        scope: tok.scope,
-        expires_at,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id" },
-    );
+  const expires_at = new Date(Date.now() + (tok.expires_in ?? 3600) * 1000).toISOString();
+  await supabaseAdmin.from("whoop_tokens").upsert(
+    {
+      user_id,
+      access_token: tok.access_token,
+      refresh_token: tok.refresh_token,
+      token_type: tok.token_type,
+      scope: tok.scope,
+      expires_at,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
+  );
 
   const end = isoDateOnly(new Date());
   const start = isoDateOnly(new Date(Date.now() - backfillDays * 24 * 3600 * 1000));

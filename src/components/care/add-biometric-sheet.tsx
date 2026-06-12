@@ -33,13 +33,7 @@ function numOrNull(s: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export function AddBiometricSheet({
-  ownerId,
-  ownerName,
-}: {
-  ownerId: string;
-  ownerName: string;
-}) {
+export function AddBiometricSheet({ ownerId, ownerName }: { ownerId: string; ownerName: string }) {
   const [open, setOpen] = useState(false);
   const [recordedAt, setRecordedAt] = useState(nowLocal());
   const [hr, setHr] = useState("");
@@ -81,8 +75,7 @@ export function AddBiometricSheet({
     onError: (err: any) => toast.error(userMessage(err, "Couldn't save biometric")),
   });
 
-  const empty =
-    !hr && !restingHr && !spo2 && !skinTemp && !steps && !notes.trim();
+  const empty = !hr && !restingHr && !spo2 && !skinTemp && !steps && !notes.trim();
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -95,7 +88,8 @@ export function AddBiometricSheet({
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl">Add a biometric reading</DialogTitle>
           <DialogDescription>
-            Saved on {ownerName}'s account, tagged as added by you. Leave fields blank if you don't have them.
+            Saved on {ownerName}'s account, tagged as added by you. Leave fields blank if you don't
+            have them.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -111,28 +105,70 @@ export function AddBiometricSheet({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="hr">Heart rate (bpm)</Label>
-              <Input id="hr" type="number" min={0} max={400} value={hr} onChange={(e) => setHr(e.target.value)} />
+              <Input
+                id="hr"
+                type="number"
+                min={0}
+                max={400}
+                value={hr}
+                onChange={(e) => setHr(e.target.value)}
+              />
             </div>
             <div>
               <Label htmlFor="rhr">Resting HR (bpm)</Label>
-              <Input id="rhr" type="number" min={0} max={400} value={restingHr} onChange={(e) => setRestingHr(e.target.value)} />
+              <Input
+                id="rhr"
+                type="number"
+                min={0}
+                max={400}
+                value={restingHr}
+                onChange={(e) => setRestingHr(e.target.value)}
+              />
             </div>
             <div>
               <Label htmlFor="spo2">SpO₂ (%)</Label>
-              <Input id="spo2" type="number" min={0} max={100} value={spo2} onChange={(e) => setSpo2(e.target.value)} />
+              <Input
+                id="spo2"
+                type="number"
+                min={0}
+                max={100}
+                value={spo2}
+                onChange={(e) => setSpo2(e.target.value)}
+              />
             </div>
             <div>
               <Label htmlFor="temp">Skin temp (°C)</Label>
-              <Input id="temp" type="number" step="0.1" min={20} max={45} value={skinTemp} onChange={(e) => setSkinTemp(e.target.value)} />
+              <Input
+                id="temp"
+                type="number"
+                step="0.1"
+                min={20}
+                max={45}
+                value={skinTemp}
+                onChange={(e) => setSkinTemp(e.target.value)}
+              />
             </div>
             <div className="col-span-2">
               <Label htmlFor="steps">Steps</Label>
-              <Input id="steps" type="number" min={0} max={200000} value={steps} onChange={(e) => setSteps(e.target.value)} />
+              <Input
+                id="steps"
+                type="number"
+                min={0}
+                max={200000}
+                value={steps}
+                onChange={(e) => setSteps(e.target.value)}
+              />
             </div>
           </div>
           <div>
             <Label htmlFor="bnotes">Notes</Label>
-            <Textarea id="bnotes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} maxLength={500} />
+            <Textarea
+              id="bnotes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              maxLength={500}
+            />
           </div>
         </div>
         <DialogFooter>

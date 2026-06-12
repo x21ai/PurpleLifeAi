@@ -67,7 +67,9 @@ const CareDailyDigestEmail = ({
             <Container style={attentionBox}>
               <Text style={attentionTitle}>Needs your attention</Text>
               {attention.map((line, i) => (
-                <Text key={i} style={attentionLine}>• {line}</Text>
+                <Text key={i} style={attentionLine}>
+                  • {line}
+                </Text>
               ))}
             </Container>
           ) : null}
@@ -94,7 +96,10 @@ const CareDailyDigestEmail = ({
 
           {pendingCount > 0 && inboxUrl ? (
             <Text style={text}>
-              <strong>{pendingCount} {pendingCount === 1 ? "change is" : "changes are"} waiting for your review.</strong>{" "}
+              <strong>
+                {pendingCount} {pendingCount === 1 ? "change is" : "changes are"} waiting for your
+                review.
+              </strong>{" "}
               <EmailLink href={inboxUrl} style={link}>
                 Open the inbox →
               </EmailLink>
@@ -102,8 +107,8 @@ const CareDailyDigestEmail = ({
           ) : null}
 
           <Text style={footer}>
-            You're getting this because at least one caregiver is sharing with you.
-            Turn it off in Settings → Sharing.
+            You're getting this because at least one caregiver is sharing with you. Turn it off in
+            Settings → Sharing.
           </Text>
         </Container>
       </Body>
@@ -166,7 +171,12 @@ const row = {
   backgroundColor: "#f6f5f9",
 };
 const rowTitle = { fontSize: "14px", color: TEXT, fontWeight: 600, margin: "0 0 2px" };
-const rowMeta = { fontSize: "11px", color: MUTED, margin: "0 0 4px", textTransform: "uppercase" as const };
+const rowMeta = {
+  fontSize: "11px",
+  color: MUTED,
+  margin: "0 0 4px",
+  textTransform: "uppercase" as const,
+};
 const attentionBox = {
   padding: "12px 14px",
   margin: "0 0 16px",

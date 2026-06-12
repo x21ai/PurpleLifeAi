@@ -8,8 +8,7 @@ export const Route = createFileRoute("/api/public/cron/purge-deleted-accounts")(
     handlers: {
       POST: async ({ request }) => {
         const cronSecret = process.env.CRON_SECRET;
-        const provided =
-          request.headers.get("x-cron-secret") ?? request.headers.get("apikey");
+        const provided = request.headers.get("x-cron-secret") ?? request.headers.get("apikey");
         if (!cronSecret || provided !== cronSecret) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }

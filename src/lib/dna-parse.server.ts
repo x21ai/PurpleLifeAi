@@ -43,7 +43,10 @@ function looksLikeVcf(text: string): boolean {
 }
 
 /** Detect file kind/compression from filename + magic bytes. */
-export function detectFileShape(filename: string, bytes: Uint8Array): {
+export function detectFileShape(
+  filename: string,
+  bytes: Uint8Array,
+): {
   compression: ParseResult["compression"];
   kind: ParseResult["kind"];
 } {
@@ -139,7 +142,11 @@ export function parseDnaFileBytes(filename: string, bytes: Uint8Array): ParseRes
 }
 
 /** Parse JSON exports: { rsid: genotype } maps, or arrays of {rsid, genotype}. */
-function parseDnaJson(text: string): { provider: DnaProvider; variants: ParsedVariant[]; stats: ParseResult["stats"] } {
+function parseDnaJson(text: string): {
+  provider: DnaProvider;
+  variants: ParsedVariant[];
+  stats: ParseResult["stats"];
+} {
   const out: ParsedVariant[] = [];
   const seen = new Set<string>();
   let rowsScanned = 0;
@@ -168,7 +175,7 @@ function parseDnaJson(text: string): { provider: DnaProvider; variants: ParsedVa
       for (const v of nested) {
         if (v && typeof v === "object") {
           rowsScanned += 1;
-          const r = (v as Record<string, unknown>);
+          const r = v as Record<string, unknown>;
           const rsid = String(r.rsid ?? r.id ?? r.snp ?? "");
           const gt = String(r.genotype ?? r.gt ?? r.alleles ?? "");
           if (rsid && gt) push(rsid, gt);
@@ -195,7 +202,11 @@ function parseDnaJson(text: string): { provider: DnaProvider; variants: ParsedVa
 }
 
 // Keep the original text parser available for the streamed path below.
-type TextParseResult = { provider: DnaProvider; variants: ParsedVariant[]; stats: ParseResult["stats"] };
+type TextParseResult = {
+  provider: DnaProvider;
+  variants: ParsedVariant[];
+  stats: ParseResult["stats"];
+};
 
 /**
  * Handles 23andMe (tsv: rsid\tchrom\tpos\tgenotype), AncestryDNA
@@ -246,7 +257,10 @@ export function parseDnaText(text: string): TextParseResult {
       const idField = cols[2];
       if (idField && idField !== ".") {
         for (const id of idField.split(";")) {
-          if (CURATED_RSID_SET.has(id)) { rsid = id; break; }
+          if (CURATED_RSID_SET.has(id)) {
+            rsid = id;
+            break;
+          }
         }
       }
       // Fall back to chrom:pos lookup for clinical VCFs (HaplotypeCaller etc.)
@@ -267,7 +281,7 @@ export function parseDnaText(text: string): TextParseResult {
       const genoCol = genoColIdx >= 0 ? cols[genoColIdx] : undefined;
       const gt = genoCol?.split(":")[0] ?? "";
       let genotype = "";
-      for (const a of gt.split(/[\/|]/)) {
+      for (const a of gt.split(/[/|]/)) {
         if (a === "0") genotype += ref;
         else if (a === "1") genotype += alt;
       }
@@ -301,8 +315,7 @@ export function parseDnaText(text: string): TextParseResult {
     if (cols.length >= 5) {
       // ancestry-style allele1, allele2
       genotype = normalizeGenotype(
-        (cols[3] ?? "").trim().replace(/^"|"$/g, "") +
-          (cols[4] ?? "").trim().replace(/^"|"$/g, ""),
+        (cols[3] ?? "").trim().replace(/^"|"$/g, "") + (cols[4] ?? "").trim().replace(/^"|"$/g, ""),
       );
     } else {
       // 23andMe-style single genotype col

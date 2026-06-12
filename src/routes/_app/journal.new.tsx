@@ -218,15 +218,13 @@ function JournalNewPage() {
       if (uploads.length > 0) {
         const { data: signed, error: signErr } = await supabase.storage
           .from("journal-media")
-          .createSignedUrls(uploads.map((u) => u.path), 60 * 60 * 24 * 365);
+          .createSignedUrls(
+            uploads.map((u) => u.path),
+            60 * 60 * 24 * 365,
+          );
         if (signErr) throw signErr;
-        const mediaUrls = (signed ?? [])
-          .map((s) => s.signedUrl)
-          .filter(Boolean) as string[];
-        await supabase
-          .from("journal_entries")
-          .update({ media_urls: mediaUrls })
-          .eq("id", entryId);
+        const mediaUrls = (signed ?? []).map((s) => s.signedUrl).filter(Boolean) as string[];
+        await supabase.from("journal_entries").update({ media_urls: mediaUrls }).eq("id", entryId);
       }
 
       void processJournalEntry(entryId);
@@ -266,11 +264,18 @@ function JournalNewPage() {
         } catch {
           /* ignore */
         }
-        toast.success("Purple couldn't reach the server. Your entry is saved on this device and will sync when you're back online.");
+        toast.success(
+          "Purple couldn't reach the server. Your entry is saved on this device and will sync when you're back online.",
+        );
         navigate({ to: "/journal" });
         return;
       }
-      toast.error(userMessage(err, "Your entry didn't save. It's still here on this screen, try again in a moment."));
+      toast.error(
+        userMessage(
+          err,
+          "Your entry didn't save. It's still here on this screen, try again in a moment.",
+        ),
+      );
       setSaving(false);
       return;
     }
@@ -323,7 +328,11 @@ function JournalNewPage() {
           <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-2">
             When did this happen?
           </p>
-          <DateTimePicker value={capturedAt} onChange={(d) => d && setCapturedAt(d)} disableFuture />
+          <DateTimePicker
+            value={capturedAt}
+            onChange={(d) => d && setCapturedAt(d)}
+            disableFuture
+          />
         </div>
 
         {/* Text, large serif input on a card so it reads like a page, not a sheet */}
@@ -426,7 +435,10 @@ function JournalNewPage() {
           accept="image/*"
           capture="environment"
           className="hidden"
-          onChange={(e) => { addFiles(e.target.files, "photo"); e.target.value = ""; }}
+          onChange={(e) => {
+            addFiles(e.target.files, "photo");
+            e.target.value = "";
+          }}
         />
         <input
           ref={galleryInput}
@@ -434,7 +446,10 @@ function JournalNewPage() {
           accept="image/*"
           multiple
           className="hidden"
-          onChange={(e) => { addFiles(e.target.files, "photo"); e.target.value = ""; }}
+          onChange={(e) => {
+            addFiles(e.target.files, "photo");
+            e.target.value = "";
+          }}
         />
         <input
           ref={videoInput}
@@ -442,7 +457,10 @@ function JournalNewPage() {
           accept="video/*"
           capture="environment"
           className="hidden"
-          onChange={(e) => { addFiles(e.target.files, "video"); e.target.value = ""; }}
+          onChange={(e) => {
+            addFiles(e.target.files, "video");
+            e.target.value = "";
+          }}
         />
       </main>
     </div>

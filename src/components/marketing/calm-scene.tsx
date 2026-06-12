@@ -63,9 +63,7 @@ export function CalmHero({
   const useLightType = overlay === "dim";
 
   const alignCls =
-    align === "center"
-      ? "items-center justify-center text-center"
-      : "items-end justify-start";
+    align === "center" ? "items-center justify-center text-center" : "items-end justify-start";
 
   const innerCls =
     align === "center"
@@ -80,9 +78,7 @@ export function CalmHero({
         asset={image}
         alt={alt}
         priority={priority}
-        sizes={
-          sizes ?? (variant === "split" ? "(min-width: 1024px) 55vw, 100vw" : "100vw")
-        }
+        sizes={sizes ?? (variant === "split" ? "(min-width: 1024px) 55vw, 100vw" : "100vw")}
         className="absolute inset-0 h-full w-full object-cover"
       />
       <div className={cn("absolute inset-0", overlayCls)} aria-hidden="true" />
@@ -104,18 +100,18 @@ export function CalmHero({
             const Tag = as as ElementType;
             return (
               <Tag
-            className={cn(
-              "font-serif tracking-tight",
-              eyebrow ? "mt-5" : "",
-              variant === "full"
-                ? "text-5xl sm:text-7xl lg:text-[6.5rem] leading-[0.98] max-w-4xl"
-                : variant === "band"
-                  ? "text-4xl sm:text-6xl leading-[1.05]"
-                  : "text-4xl sm:text-5xl lg:text-6xl leading-[1.02]",
-            )}
-            style={useLightType ? { color: "var(--background)" } : undefined}
-          >
-            {headline}
+                className={cn(
+                  "font-serif tracking-tight",
+                  eyebrow ? "mt-5" : "",
+                  variant === "full"
+                    ? "text-5xl sm:text-7xl lg:text-[6.5rem] leading-[0.98] max-w-4xl"
+                    : variant === "band"
+                      ? "text-4xl sm:text-6xl leading-[1.05]"
+                      : "text-4xl sm:text-5xl lg:text-6xl leading-[1.02]",
+                )}
+                style={useLightType ? { color: "var(--background)" } : undefined}
+              >
+                {headline}
               </Tag>
             );
           })()}
@@ -193,7 +189,7 @@ export function HumanMoment({
       <section
         data-reveal
         className={cn(
-        "relative mx-auto max-w-6xl my-12 sm:my-16 overflow-hidden rounded-3xl h-[clamp(360px,55vh,520px)] sm:h-[clamp(420px,58vh,600px)]",
+          "relative mx-auto max-w-6xl my-12 sm:my-16 overflow-hidden rounded-3xl h-[clamp(360px,55vh,520px)] sm:h-[clamp(420px,58vh,600px)]",
           className,
         )}
       >
@@ -226,7 +222,10 @@ export function HumanMoment({
     );
   }
   return (
-    <section data-reveal className={cn("mx-auto max-w-6xl px-6 sm:px-10 py-16 sm:py-24 lg:py-28", className)}>
+    <section
+      data-reveal
+      className={cn("mx-auto max-w-6xl px-6 sm:px-10 py-16 sm:py-24 lg:py-28", className)}
+    >
       <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
         <div
           className={cn(
@@ -268,7 +267,10 @@ interface QuietStatProps {
 
 export function QuietStat({ stat, caption, className }: QuietStatProps) {
   return (
-    <section data-reveal className={cn("mx-auto max-w-4xl px-6 sm:px-10 py-28 sm:py-40 text-center", className)}>
+    <section
+      data-reveal
+      className={cn("mx-auto max-w-4xl px-6 sm:px-10 py-28 sm:py-40 text-center", className)}
+    >
       <p className="font-serif text-5xl sm:text-7xl lg:text-8xl leading-[1.02] tracking-tight text-foreground">
         {stat}
       </p>

@@ -4,17 +4,17 @@ What has been built, by area, with the routes and code that implement it. Compan
 
 ## Marketing and public site
 
-| Route | Purpose |
-|-------|---------|
-| `/` | Home: "Purple. A quiet companion for your health." JSON-LD, OG tags |
-| `/about` | Why Purple exists |
-| `/features` | Feature overview |
-| `/pricing` | Free plan + future Pro ($9.99/mo, $99/yr) |
-| `/trust` | Why Purple is different (no ads/trackers, open source, private by architecture). Linked from footer, About, sign-up |
-| `/charter` | Founding charter |
-| `/contact` | Contact form (lands in `contact_messages`, surfaced in admin) |
-| `/privacy`, `/terms` | Legal |
-| `/how-purple-thinks` | Public explanation of the AI approach |
+| Route                                                      | Purpose                                                                                                                   |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `/`                                                        | Home: "Purple. A quiet companion for your health." JSON-LD, OG tags                                                       |
+| `/about`                                                   | Why Purple exists                                                                                                         |
+| `/features`                                                | Feature overview                                                                                                          |
+| `/pricing`                                                 | Free plan + future Pro ($9.99/mo, $99/yr)                                                                                 |
+| `/trust`                                                   | Why Purple is different (no ads/trackers, open source, private by architecture). Linked from footer, About, sign-up       |
+| `/charter`                                                 | Founding charter                                                                                                          |
+| `/contact`                                                 | Contact form (lands in `contact_messages`, surfaced in admin)                                                             |
+| `/privacy`, `/terms`                                       | Legal                                                                                                                     |
+| `/how-purple-thinks`                                       | Public explanation of the AI approach                                                                                     |
 | `/community`, `/community/$postId`, `/community/resources` | Public community feed, single post, curated resources. **Dark-launched** behind `feature_community_enabled` (default OFF) |
 
 Components in `src/components/marketing/`. SEO: per-route `marketingHead()` (`src/lib/seo.ts`), `/sitemap.xml`, `/robots.txt` served from `src/server.ts`. Each route has a unique hero image (CI-enforced).
@@ -111,9 +111,9 @@ Components in `src/components/marketing/`. SEO: per-route `marketingHead()` (`sr
 
 ## Redirect routes (compatibility)
 
-| Route | Redirects to |
-|-------|----------------|
-| `/risk` | `/today/risk` |
+| Route        | Redirects to           |
+| ------------ | ---------------------- |
+| `/risk`      | `/today/risk`          |
 | `/resources` | `/community/resources` |
-| `/vitals` | `/insights` |
-| `/my-health` | `/biometrics` |
+| `/vitals`    | `/insights`            |
+| `/my-health` | `/biometrics`          |

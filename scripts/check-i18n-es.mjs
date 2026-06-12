@@ -16,13 +16,8 @@ const ROOT = process.cwd();
 const EN_PATH = join(ROOT, "src/i18n/locales/en.json");
 const ES_PATH = join(ROOT, "src/i18n/locales/es.json");
 const SCAN_DIR = join(ROOT, "src");
-const IGNORE_DIRS = new Set([
-  "node_modules", ".git", "dist", "build", ".lovable", ".workspace",
-]);
-const IGNORE_FILES = new Set([
-  "src/integrations/supabase/types.ts",
-  "src/routeTree.gen.ts",
-]);
+const IGNORE_DIRS = new Set(["node_modules", ".git", "dist", "build", ".lovable", ".workspace"]);
+const IGNORE_FILES = new Set(["src/integrations/supabase/types.ts", "src/routeTree.gen.ts"]);
 const ALLOW_EXT = new Set([".ts", ".tsx"]);
 const PLURAL_SUFFIXES = ["_zero", "_one", "_two", "_few", "_many", "_other"];
 const STATIC_KEY = /\bt\(\s*["']([a-zA-Z][a-zA-Z0-9_.]*)["']/g;
@@ -181,7 +176,9 @@ if (missingInEsFromUse.length) {
 
 if (unresolvedDynamic.length) {
   failed = true;
-  console.error(`Dynamic t(\`…\${var}\`) keys could not be expanded (${unresolvedDynamic.length}):\n`);
+  console.error(
+    `Dynamic t(\`…\${var}\`) keys could not be expanded (${unresolvedDynamic.length}):\n`,
+  );
   for (const { key, locations } of unresolvedDynamic) {
     console.error(`  ${key}  (${locations.join(", ")})`);
   }
@@ -190,6 +187,4 @@ if (unresolvedDynamic.length) {
 
 if (failed) process.exit(1);
 
-console.log(
-  `i18n es complete: ${enKeys.length} en/es keys, ${used.size} used id(s) verified.`,
-);
+console.log(`i18n es complete: ${enKeys.length} en/es keys, ${used.size} used id(s) verified.`);

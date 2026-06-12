@@ -34,7 +34,11 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
 
         async function upsertFromSubscription(sub: import("stripe").Stripe.Subscription) {
           let userId = sub.metadata?.user_id as string | undefined;
-          if (!userId && typeof sub.customer === "object" && !("deleted" in sub.customer && sub.customer.deleted)) {
+          if (
+            !userId &&
+            typeof sub.customer === "object" &&
+            !("deleted" in sub.customer && sub.customer.deleted)
+          ) {
             userId = (sub.customer as import("stripe").Stripe.Customer).metadata?.user_id;
           }
           if (!userId) {
@@ -61,7 +65,10 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             case "checkout.session.completed": {
               const session = event.data.object as import("stripe").Stripe.Checkout.Session;
               if (session.subscription) {
-                const subId = typeof session.subscription === "string" ? session.subscription : session.subscription.id;
+                const subId =
+                  typeof session.subscription === "string"
+                    ? session.subscription
+                    : session.subscription.id;
                 const sub = await stripe.subscriptions.retrieve(subId);
                 await upsertFromSubscription(sub);
               }
@@ -70,7 +77,9 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
             case "customer.subscription.created":
             case "customer.subscription.updated":
             case "customer.subscription.deleted": {
-              await upsertFromSubscription(event.data.object as import("stripe").Stripe.Subscription);
+              await upsertFromSubscription(
+                event.data.object as import("stripe").Stripe.Subscription,
+              );
               break;
             }
             case "invoice.payment_failed": {

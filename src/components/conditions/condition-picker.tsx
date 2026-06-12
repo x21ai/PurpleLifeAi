@@ -177,9 +177,7 @@ export function ConditionPicker({
         <div className="mt-5 space-y-5">
           {grouped.map(({ cat, items }) => (
             <section key={cat}>
-              <p className="label-eyebrow text-muted-foreground">
-                {CATEGORY_LABELS[cat]}
-              </p>
+              <p className="label-eyebrow text-muted-foreground">{CATEGORY_LABELS[cat]}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {items.map((def) => {
                   const active = selectedSet.has(def.slug);
@@ -206,7 +204,8 @@ export function ConditionPicker({
       )}
 
       <p className="mt-4 text-[11px] text-muted-foreground">
-        {value.length}/{max} selected. Each one personalizes your prompts, tips, and Ask&nbsp;Purple.
+        {value.length}/{max} selected. Each one personalizes your prompts, tips, and
+        Ask&nbsp;Purple.
       </p>
     </div>
   );

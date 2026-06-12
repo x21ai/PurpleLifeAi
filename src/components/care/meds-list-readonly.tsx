@@ -40,8 +40,7 @@ export function MedsListReadOnly({
   return (
     <ul className="space-y-2">
       {meds.map((m) => {
-        const lowStock =
-          m.pills_remaining != null && m.pills_remaining <= 7;
+        const lowStock = m.pills_remaining != null && m.pills_remaining <= 7;
         return (
           <li
             key={m.id}
@@ -81,9 +80,7 @@ export function MedsListReadOnly({
                   </div>
                 )}
                 {m.notes && (
-                  <p className="mt-2 text-xs text-foreground/70 whitespace-pre-wrap">
-                    {m.notes}
-                  </p>
+                  <p className="mt-2 text-xs text-foreground/70 whitespace-pre-wrap">{m.notes}</p>
                 )}
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">

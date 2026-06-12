@@ -68,12 +68,7 @@ export interface ItineraryEditorProps {
   hideHeading?: boolean;
 }
 
-export function ItineraryEditor({
-  value,
-  onChange,
-  defaultTz,
-  hideHeading,
-}: ItineraryEditorProps) {
+export function ItineraryEditor({ value, onChange, defaultTz, hideHeading }: ItineraryEditorProps) {
   const flags = React.useMemo(() => findOutOfOrder(value), [value]);
 
   const update = (i: number, patch: Partial<LegDraft>) =>
@@ -86,8 +81,7 @@ export function ItineraryEditor({
     [next[i], next[j]] = [next[j], next[i]];
     onChange(next);
   };
-  const add = () =>
-    onChange([...value, { tz: defaultTz, localAt: "", label: "" }]);
+  const add = () => onChange([...value, { tz: defaultTz, localAt: "", label: "" }]);
 
   return (
     <div>
@@ -121,9 +115,8 @@ export function ItineraryEditor({
 
       {value.length === 0 ? (
         <p className="mt-2 text-xs text-muted-foreground">
-          Optional. Add a leg for each flight or layover, e.g. arrival in
-          Dubai at 22:10 local, then Hong Kong at 14:25 local. Without legs,
-          Purple uses your final destination from departure.
+          Optional. Add a leg for each flight or layover, e.g. arrival in Dubai at 22:10 local, then
+          Hong Kong at 14:25 local. Without legs, Purple uses your final destination from departure.
         </p>
       ) : (
         <ul className="mt-3 space-y-3">
@@ -143,13 +136,11 @@ export function ItineraryEditor({
                     onChange={(e) => update(i, { tz: e.target.value })}
                     className="w-full rounded-lg border border-border bg-background text-foreground px-2 py-1.5 text-sm [&>option]:bg-popover [&>option]:text-popover-foreground"
                   >
-                    {[leg.tz, ...COMMON_TZS.filter((tz) => tz !== leg.tz)].map(
-                      (tz) => (
-                        <option key={tz} value={tz}>
-                          {tz}
-                        </option>
-                      ),
-                    )}
+                    {[leg.tz, ...COMMON_TZS.filter((tz) => tz !== leg.tz)].map((tz) => (
+                      <option key={tz} value={tz}>
+                        {tz}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -199,8 +190,7 @@ export function ItineraryEditor({
                 {bad && (
                   <p className="sm:col-span-4 flex items-center gap-1.5 text-[11px] text-destructive">
                     <AlertTriangle className="h-3 w-3" />
-                    This leg is earlier than the one above. Reorder or fix the
-                    time before saving.
+                    This leg is earlier than the one above. Reorder or fix the time before saving.
                   </p>
                 )}
               </li>

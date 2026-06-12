@@ -1,8 +1,21 @@
 import * as React from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, ExternalLink, Link2, Loader2, MoreVertical, RefreshCw, Trash2 } from "lucide-react";
+import {
+  Download,
+  ExternalLink,
+  Link2,
+  Loader2,
+  MoreVertical,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
-import { getReportFileUrl, getReportShareUrl, processReport, deleteReport } from "@/lib/reports.functions";
+import {
+  getReportFileUrl,
+  getReportShareUrl,
+  processReport,
+  deleteReport,
+} from "@/lib/reports.functions";
 import { userMessage } from "@/lib/user-message";
 import {
   DropdownMenu,
@@ -48,7 +61,9 @@ export function ReportRowActions({
   const fetchShare = useServerFn(getReportShareUrl);
   const reprocess = useServerFn(processReport);
   const remove = useServerFn(deleteReport);
-  const [busy, setBusy] = React.useState<null | "view" | "download" | "share" | "retry" | "delete">(null);
+  const [busy, setBusy] = React.useState<null | "view" | "download" | "share" | "retry" | "delete">(
+    null,
+  );
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [shareDialogOpen, setShareDialogOpen] = React.useState(false);
   const [shareUrl, setShareUrl] = React.useState("");

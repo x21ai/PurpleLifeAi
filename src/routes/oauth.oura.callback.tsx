@@ -32,7 +32,9 @@ function OuraCallback() {
 
         setStatus("done");
         setMessage("Connected. Syncing your last 90 days…");
-        try { window.opener?.postMessage({ type: "oura-connected" }, window.location.origin); } catch {}
+        try {
+          window.opener?.postMessage({ type: "oura-connected" }, window.location.origin);
+        } catch {}
         setTimeout(() => window.close(), 1200);
       } catch (e: any) {
         setStatus("error");
@@ -49,10 +51,7 @@ function OuraCallback() {
         </p>
         <p className="mt-3 text-sm text-muted-foreground">{message}</p>
         {status === "error" && (
-          <button
-            className="mt-6 text-sm text-primary underline"
-            onClick={() => window.close()}
-          >
+          <button className="mt-6 text-sm text-primary underline" onClick={() => window.close()}>
             Close window
           </button>
         )}

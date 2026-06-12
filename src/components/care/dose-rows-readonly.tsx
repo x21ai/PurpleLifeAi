@@ -47,9 +47,7 @@ export function DoseRowsReadOnly({
   pendingId?: string | null;
 }) {
   if (doses.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">No doses logged today.</p>
-    );
+    return <p className="text-sm text-muted-foreground">No doses logged today.</p>;
   }
   const medById = new Map(meds.map((m) => [m.id, m]));
   return (
@@ -58,10 +56,7 @@ export function DoseRowsReadOnly({
         const med = medById.get(d.medication_id);
         const busy = pendingId === d.id;
         return (
-          <li
-            key={d.id}
-            className="flex flex-wrap items-center gap-2 py-3 first:pt-0 last:pb-0"
-          >
+          <li key={d.id} className="flex flex-wrap items-center gap-2 py-3 first:pt-0 last:pb-0">
             <span
               className={cn(
                 "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium tabular-nums",
@@ -71,11 +66,11 @@ export function DoseRowsReadOnly({
               {formatLocaleTime(d.scheduled_at)}
             </span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-foreground truncate">
-                {med?.name ?? "Medication"}
-              </p>
+              <p className="text-sm text-foreground truncate">{med?.name ?? "Medication"}</p>
               {sanitizeDosageLabel(med?.dosage) && (
-                <p className="text-xs text-muted-foreground truncate">{sanitizeDosageLabel(med?.dosage)}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {sanitizeDosageLabel(med?.dosage)}
+                </p>
               )}
               <CaregiverBadge createdByKind={d.created_by_kind} className="mt-1" />
             </div>
@@ -102,9 +97,7 @@ export function DoseRowsReadOnly({
             ) : (
               <span className="text-xs text-muted-foreground capitalize">
                 {d.status}
-                {d.taken_at && d.status === "taken"
-                  ? ` · ${formatLocaleTime(d.taken_at)}`
-                  : ""}
+                {d.taken_at && d.status === "taken" ? ` · ${formatLocaleTime(d.taken_at)}` : ""}
               </span>
             )}
           </li>

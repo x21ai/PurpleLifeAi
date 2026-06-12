@@ -22,10 +22,19 @@ function inQuietHours(
       minute: "2-digit",
       hour12: false,
     });
-    const [hh, mm] = fmt.format(nowUtc).split(":").map((n) => parseInt(n, 10));
+    const [hh, mm] = fmt
+      .format(nowUtc)
+      .split(":")
+      .map((n) => parseInt(n, 10));
     const cur = hh * 60 + mm;
-    const [sh, sm] = start.slice(0, 5).split(":").map((n) => parseInt(n, 10));
-    const [eh, em] = end.slice(0, 5).split(":").map((n) => parseInt(n, 10));
+    const [sh, sm] = start
+      .slice(0, 5)
+      .split(":")
+      .map((n) => parseInt(n, 10));
+    const [eh, em] = end
+      .slice(0, 5)
+      .split(":")
+      .map((n) => parseInt(n, 10));
     const s = sh * 60 + sm;
     const e = eh * 60 + em;
     if (s === e) return false;
@@ -40,8 +49,7 @@ export const Route = createFileRoute("/api/public/cron/dose-reminders")({
     handlers: {
       POST: async ({ request }) => {
         const cronSecret = process.env.CRON_SECRET;
-        const provided =
-          request.headers.get("x-cron-secret") ?? request.headers.get("apikey");
+        const provided = request.headers.get("x-cron-secret") ?? request.headers.get("apikey");
         if (!cronSecret || provided !== cronSecret) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
@@ -54,7 +62,9 @@ export const Route = createFileRoute("/api/public/cron/dose-reminders")({
 
         const { data: doses, error } = await supabaseAdmin
           .from("medication_doses")
-          .select("id, user_id, scheduled_at, amount, unit, medication_id, medications(name, dosage)")
+          .select(
+            "id, user_id, scheduled_at, amount, unit, medication_id, medications(name, dosage)",
+          )
           .eq("status", "pending")
           .gte("scheduled_at", windowStart)
           .lte("scheduled_at", windowEnd)
@@ -69,7 +79,9 @@ export const Route = createFileRoute("/api/public/cron/dose-reminders")({
         // Missed-dose escalation: pending and not yet escalated, scheduled 25–35 min ago.
         const { data: missed } = await supabaseAdmin
           .from("medication_doses")
-          .select("id, user_id, scheduled_at, amount, unit, medication_id, medications(name, dosage)")
+          .select(
+            "id, user_id, scheduled_at, amount, unit, medication_id, medications(name, dosage)",
+          )
           .eq("status", "pending")
           .gte("scheduled_at", escalateFrom)
           .lte("scheduled_at", escalateTo)
@@ -91,7 +103,10 @@ export const Route = createFileRoute("/api/public/cron/dose-reminders")({
           .from("profiles")
           .select("id, timezone, quiet_hours_start, quiet_hours_end")
           .in("id", userIds);
-        const profByUser = new Map<string, { tz: string | null; qs: string | null; qe: string | null }>();
+        const profByUser = new Map<
+          string,
+          { tz: string | null; qs: string | null; qe: string | null }
+        >();
         for (const p of profs ?? []) {
           profByUser.set(p.id as string, {
             tz: (p as any).timezone ?? null,
@@ -129,7 +144,9 @@ export const Route = createFileRoute("/api/public/cron/dose-reminders")({
             continue;
           }
 
-          const med = (dose as unknown as { medications: { name: string; dosage: string | null } | null }).medications;
+          const med = (
+            dose as unknown as { medications: { name: string; dosage: string | null } | null }
+          ).medications;
           const medName = med?.name ?? "your medication";
           // A unit without an amount must never render ("take mg"): only
           // include the unit when a number exists, and reject digit-less
@@ -145,7 +162,9 @@ export const Route = createFileRoute("/api/public/cron/dose-reminders")({
           const title = isFollowUp ? `Still pending: ${medName}` : `Time for ${medName}`;
           const body = isFollowUp
             ? `Scheduled 30 min ago. Tap to log it or mark missed.`
-            : (dosage ? `${dosage}. Tap when you have taken it.` : "Tap when you have taken it.");
+            : dosage
+              ? `${dosage}. Tap when you have taken it.`
+              : "Tap when you have taken it.";
 
           let anyDelivered = false;
           for (const sub of userSubs) {
@@ -192,10 +211,7 @@ export const Route = createFileRoute("/api/public/cron/dose-reminders")({
         }
 
         if (goneEndpoints.length > 0) {
-          await supabaseAdmin
-            .from("push_subscriptions")
-            .delete()
-            .in("endpoint", goneEndpoints);
+          await supabaseAdmin.from("push_subscriptions").delete().in("endpoint", goneEndpoints);
         }
 
         return Response.json({

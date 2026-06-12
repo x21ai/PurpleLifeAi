@@ -1,10 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/integrations/supabase/auth-context";
-import {
-  getCareProfile,
-  type CareProfile,
-} from "@/lib/care-profile.functions";
+import { getCareProfile, type CareProfile } from "@/lib/care-profile.functions";
 
 /**
  * Client-side reader for the user's AI Care Profile. Returns `null` while

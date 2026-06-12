@@ -91,13 +91,16 @@ export function TwoFactorSection() {
         Adds a 6-digit code from your authenticator app on every sign-in.
       </p>
 
-      {hasFactor === null && (
-        <p className="mt-4 text-[13px] sheet-muted">Checking status…</p>
-      )}
+      {hasFactor === null && <p className="mt-4 text-[13px] sheet-muted">Checking status…</p>}
 
       {hasFactor === true && (
         <div className="mt-4">
-          <Button onClick={disable} disabled={busy} variant="outline" className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10">
+          <Button
+            onClick={disable}
+            disabled={busy}
+            variant="outline"
+            className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10"
+          >
             {busy && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
             Disable 2FA
           </Button>
@@ -106,7 +109,12 @@ export function TwoFactorSection() {
 
       {hasFactor === false && !enrollment && (
         <div className="mt-4">
-          <Button onClick={startEnroll} disabled={busy} variant="outline" className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10">
+          <Button
+            onClick={startEnroll}
+            disabled={busy}
+            variant="outline"
+            className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10"
+          >
             {busy && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
             Enable 2FA
           </Button>
@@ -119,7 +127,6 @@ export function TwoFactorSection() {
             Scan this QR code with your authenticator app, then enter the 6-digit code.
           </p>
           <div className="flex flex-col items-start gap-3 sm:flex-row">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={enrollment.qr}
               alt="2FA QR code"
@@ -139,7 +146,11 @@ export function TwoFactorSection() {
                 className="bg-white/[0.04] border-white/10 text-[#FAFAFC] placeholder:text-white/30"
               />
               <div className="flex gap-2">
-                <Button onClick={verify} disabled={busy || code.length < 6} className="bg-[#B084D1] text-[#0A0710] hover:bg-[#C7A0E0]">
+                <Button
+                  onClick={verify}
+                  disabled={busy || code.length < 6}
+                  className="bg-[#B084D1] text-[#0A0710] hover:bg-[#C7A0E0]"
+                >
                   {busy && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
                   Verify
                 </Button>

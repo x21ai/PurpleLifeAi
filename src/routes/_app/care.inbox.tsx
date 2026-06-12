@@ -92,9 +92,7 @@ function InboxPage() {
       qc.invalidateQueries({ queryKey: ["care", "pending-detailed"] });
       qc.invalidateQueries({ queryKey: ["care", "pending"] });
       const verb = vars.decision === "approved" ? "approved" : "rejected";
-      toast.success(
-        `${res.ok} ${verb}${res.failed ? ` · ${res.failed} failed` : ""}`,
-      );
+      toast.success(`${res.ok} ${verb}${res.failed ? ` · ${res.failed} failed` : ""}`);
     },
     onError: (e: any) => toast.error(userMessage(e, "Couldn't save decisions")),
   });
@@ -107,9 +105,7 @@ function InboxPage() {
   }, [allChanges]);
   const changes = useMemo(
     () =>
-      filter === "all"
-        ? allChanges
-        : allChanges.filter((c) => bucketOf(String(c.type)) === filter),
+      filter === "all" ? allChanges : allChanges.filter((c) => bucketOf(String(c.type)) === filter),
     [allChanges, filter],
   );
   const visibleIds = changes.map((c) => c.id);
@@ -125,7 +121,9 @@ function InboxPage() {
       </Link>
       <p className="label-eyebrow text-muted-foreground mt-6">Caregiver inbox</p>
       <h1 className="mt-3 font-serif text-[40px] sm:text-6xl leading-[1.02] tracking-[-0.02em] text-foreground">
-        Changes waiting<br />for you
+        Changes waiting
+        <br />
+        for you
       </h1>
       <p className="mt-6 body-serif text-foreground/75 max-w-[600px]">
         Caregivers proposed these edits to your record. Nothing is applied until you approve it.
@@ -254,7 +252,11 @@ type Change = {
   type: string;
   type_label: string;
   created_at: string;
-  caregiver_profile: { first_name: string | null; last_name: string | null; community_display_name: string | null } | null;
+  caregiver_profile: {
+    first_name: string | null;
+    last_name: string | null;
+    community_display_name: string | null;
+  } | null;
   current_value: string | null;
   proposed_text: string;
 };
@@ -271,7 +273,9 @@ function PendingChangeCard({
   const [note, setNote] = useState("");
   const caregiverName =
     change.caregiver_profile?.community_display_name ||
-    [change.caregiver_profile?.first_name, change.caregiver_profile?.last_name].filter(Boolean).join(" ") ||
+    [change.caregiver_profile?.first_name, change.caregiver_profile?.last_name]
+      .filter(Boolean)
+      .join(" ") ||
     "A caregiver";
 
   return (
@@ -317,7 +321,11 @@ function PendingChangeCard({
         >
           <X className="h-3 w-3 mr-1" /> Reject
         </Button>
-        <Button size="sm" onClick={() => onDecide("approved", note || undefined)} disabled={disabled}>
+        <Button
+          size="sm"
+          onClick={() => onDecide("approved", note || undefined)}
+          disabled={disabled}
+        >
           <Check className="h-3 w-3 mr-1" /> Approve & apply
         </Button>
       </div>

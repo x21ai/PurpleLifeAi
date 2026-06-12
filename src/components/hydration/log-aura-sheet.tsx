@@ -4,8 +4,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
-  DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +44,7 @@ export function LogAuraSheet({
   trigger?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const [kind, setKind] = useState<typeof AURA_KINDS[number]["value"]>("deja_vu");
+  const [kind, setKind] = useState<(typeof AURA_KINDS)[number]["value"]>("deja_vu");
   const [when, setWhen] = useState(nowLocal());
   const [duration, setDuration] = useState("");
   const [notes, setNotes] = useState("");
@@ -67,7 +72,8 @@ export function LogAuraSheet({
       setDuration("");
       setNotes("");
     },
-    onError: (err: Error) => toast.error(userMessage(err, "That didn't work. Try again in a moment.")),
+    onError: (err: Error) =>
+      toast.error(userMessage(err, "That didn't work. Try again in a moment.")),
   });
 
   return (
@@ -83,9 +89,8 @@ export function LogAuraSheet({
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl">Log an aura</DialogTitle>
           <DialogDescription>
-            A warning sensation before a possible seizure, déjà vu, a rising
-            feeling in the stomach, a smell, sudden emotion. Capture it the
-            moment it happens.
+            A warning sensation before a possible seizure, déjà vu, a rising feeling in the stomach,
+            a smell, sudden emotion. Capture it the moment it happens.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -112,24 +117,42 @@ export function LogAuraSheet({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="aw">When</Label>
-              <Input id="aw" type="datetime-local" value={when}
-                onChange={(e) => setWhen(e.target.value)} />
+              <Input
+                id="aw"
+                type="datetime-local"
+                value={when}
+                onChange={(e) => setWhen(e.target.value)}
+              />
             </div>
             <div>
               <Label htmlFor="ad">Duration (sec)</Label>
-              <Input id="ad" type="number" min={0} max={3600} value={duration}
-                onChange={(e) => setDuration(e.target.value)} placeholder="optional" />
+              <Input
+                id="ad"
+                type="number"
+                min={0}
+                max={3600}
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
+                placeholder="optional"
+              />
             </div>
           </div>
           <div>
             <Label htmlFor="an">Notes</Label>
-            <Textarea id="an" value={notes} maxLength={500} rows={3}
+            <Textarea
+              id="an"
+              value={notes}
+              maxLength={500}
+              rows={3}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="What did it feel like? What were you doing?" />
+              placeholder="What did it feel like? What were you doing?"
+            />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)} disabled={m.isPending}>Cancel</Button>
+          <Button variant="ghost" onClick={() => setOpen(false)} disabled={m.isPending}>
+            Cancel
+          </Button>
           <Button onClick={() => m.mutate()} disabled={m.isPending || !when}>
             {m.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
           </Button>

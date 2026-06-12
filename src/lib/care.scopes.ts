@@ -32,12 +32,10 @@ export const ROLE_LABELS: Record<CareRole, string> = {
 };
 
 export const ROLE_DESCRIPTIONS: Record<CareRole, string> = {
-  emergency:
-    "Notified when a seizure is logged. Sees your profile, recent seizures, and location.",
+  emergency: "Notified when a seizure is logged. Sees your profile, recent seizures, and location.",
   caregiver:
     "Day-to-day partner or family. Sees most things and can suggest edits to meds and journal.",
-  provider:
-    "Clinician access. Sees biometrics, meds, seizures, journal, read-only.",
+  provider: "Clinician access. Sees biometrics, meds, seizures, journal, read-only.",
   viewer: "Only sees your Today screen. Nothing else.",
 };
 

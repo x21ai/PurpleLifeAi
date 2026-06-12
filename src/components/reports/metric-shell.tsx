@@ -40,10 +40,13 @@ export function MetricTitle({
   status?: { tone: "alert" | "warn" | "good" | "neutral"; label: string; value?: string };
 }) {
   const cls =
-    status?.tone === "alert" ? "metric-pill-alert" :
-    status?.tone === "warn"  ? "metric-pill-warn"  :
-    status?.tone === "good"  ? "metric-pill-good"  :
-    "bg-secondary text-foreground";
+    status?.tone === "alert"
+      ? "metric-pill-alert"
+      : status?.tone === "warn"
+        ? "metric-pill-warn"
+        : status?.tone === "good"
+          ? "metric-pill-good"
+          : "bg-secondary text-foreground";
   return (
     <div className="metric-sheet p-6 sm:p-8">
       <h1 className="font-serif text-[34px] sm:text-5xl leading-[1.05] tracking-tight text-foreground capitalize">
@@ -54,7 +57,9 @@ export function MetricTitle({
           <span className="h-1.5 w-1.5 rounded-full bg-current" />
           <span className="text-sm font-medium">
             {status.label}
-            {status.value ? <span className="ml-1.5 text-foreground/70 font-normal">{status.value}</span> : null}
+            {status.value ? (
+              <span className="ml-1.5 text-foreground/70 font-normal">{status.value}</span>
+            ) : null}
           </span>
         </div>
       )}
@@ -66,28 +71,39 @@ export function MetricStatCards({
   latest,
   optimal,
 }: {
-  latest: { value: React.ReactNode; unit?: string | null; tone?: "alert" | "warn" | "good" | "neutral" };
+  latest: {
+    value: React.ReactNode;
+    unit?: string | null;
+    tone?: "alert" | "warn" | "good" | "neutral";
+  };
   optimal: { value: React.ReactNode; unit?: string | null };
 }) {
   const valCls =
-    latest.tone === "alert" ? "metric-value-alert" :
-    latest.tone === "warn"  ? "metric-value-warn"  :
-    latest.tone === "good"  ? "metric-value-good"  :
-    "text-foreground";
+    latest.tone === "alert"
+      ? "metric-value-alert"
+      : latest.tone === "warn"
+        ? "metric-value-warn"
+        : latest.tone === "good"
+          ? "metric-value-good"
+          : "text-foreground";
   return (
     <div className="mt-4 grid grid-cols-2 gap-3">
       <div className="metric-card px-5 py-4">
         <p className="text-sm text-foreground/60">Latest result</p>
         <p className="mt-2 text-3xl font-medium">
           <span className={cn("numeric", valCls)}>{latest.value}</span>
-          {latest.unit && <span className="ml-1.5 text-base text-foreground/60 font-normal">{latest.unit}</span>}
+          {latest.unit && (
+            <span className="ml-1.5 text-base text-foreground/60 font-normal">{latest.unit}</span>
+          )}
         </p>
       </div>
       <div className="metric-card px-5 py-4">
         <p className="text-sm text-foreground/60">Optimal range</p>
         <p className="mt-2 text-3xl font-medium">
           <span className="numeric metric-value-good">{optimal.value}</span>
-          {optimal.unit && <span className="ml-1.5 text-base text-foreground/60 font-normal">{optimal.unit}</span>}
+          {optimal.unit && (
+            <span className="ml-1.5 text-base text-foreground/60 font-normal">{optimal.unit}</span>
+          )}
         </p>
       </div>
     </div>

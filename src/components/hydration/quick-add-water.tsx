@@ -4,8 +4,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { Droplets, FlaskConical, Loader2, Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
-  DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,7 +60,8 @@ export function QuickAddWater({ ownerId, onLogged, compact }: Props) {
       setOpen(null);
       onLogged?.();
     },
-    onError: (err: Error) => toast.error(userMessage(err, "That didn't work. Try again in a moment.")),
+    onError: (err: Error) =>
+      toast.error(userMessage(err, "That didn't work. Try again in a moment.")),
   });
 
   const onPresetChange = (b: string) => {
@@ -131,7 +137,9 @@ export function QuickAddWater({ ownerId, onLogged, compact }: Props) {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(null)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setOpen(null)}>
+              Cancel
+            </Button>
             <Button
               onClick={() => m.mutate({ kind: "water", volume_ml: volume })}
               disabled={m.isPending || volume <= 0}
@@ -152,7 +160,9 @@ export function QuickAddWater({ ownerId, onLogged, compact }: Props) {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl">Add electrolytes</DialogTitle>
-            <DialogDescription>Sodium is auto-filled from the brand. Override if needed.</DialogDescription>
+            <DialogDescription>
+              Sodium is auto-filled from the brand. Override if needed.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
@@ -178,18 +188,32 @@ export function QuickAddWater({ ownerId, onLogged, compact }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="ev">Volume (ml)</Label>
-                <Input id="ev" type="number" min={1} max={5000} value={volume}
-                  onChange={(e) => setVolume(Number(e.target.value) || 0)} />
+                <Input
+                  id="ev"
+                  type="number"
+                  min={1}
+                  max={5000}
+                  value={volume}
+                  onChange={(e) => setVolume(Number(e.target.value) || 0)}
+                />
               </div>
               <div>
                 <Label htmlFor="es">Sodium (mg)</Label>
-                <Input id="es" type="number" min={0} max={10000} value={sodium}
-                  onChange={(e) => setSodium(Number(e.target.value) || 0)} />
+                <Input
+                  id="es"
+                  type="number"
+                  min={0}
+                  max={10000}
+                  value={sodium}
+                  onChange={(e) => setSodium(Number(e.target.value) || 0)}
+                />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(null)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setOpen(null)}>
+              Cancel
+            </Button>
             <Button
               onClick={() =>
                 m.mutate({
@@ -201,8 +225,12 @@ export function QuickAddWater({ ownerId, onLogged, compact }: Props) {
               }
               disabled={m.isPending || volume <= 0}
             >
-              {m.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                <><Sparkles className="h-4 w-4 mr-1.5" /> Add</>
+              {m.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-1.5" /> Add
+                </>
               )}
             </Button>
           </DialogFooter>

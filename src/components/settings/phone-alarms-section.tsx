@@ -5,7 +5,12 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { subscribePush, unsubscribePush, sendTestPush } from "@/lib/push.functions";
 import { getOrCreatePushSubscription, removePushSubscription } from "@/lib/push-client";
-import { notificationsSupported, isStandalonePwa, requestPermission, ensureServiceWorker } from "@/lib/med-notifications";
+import {
+  notificationsSupported,
+  isStandalonePwa,
+  requestPermission,
+  ensureServiceWorker,
+} from "@/lib/med-notifications";
 
 export function PhoneAlarmsSection() {
   const [supported, setSupported] = useState(false);
@@ -19,7 +24,9 @@ export function PhoneAlarmsSection() {
   const sendTest = useServerFn(sendTestPush);
 
   useEffect(() => {
-    setSupported(notificationsSupported() && typeof window !== "undefined" && "PushManager" in window);
+    setSupported(
+      notificationsSupported() && typeof window !== "undefined" && "PushManager" in window,
+    );
     setStandalone(isStandalonePwa());
     if (typeof Notification !== "undefined") setPermission(Notification.permission);
     (async () => {
@@ -43,12 +50,16 @@ export function PhoneAlarmsSection() {
       }
       const sub = await getOrCreatePushSubscription();
       if (!sub) {
-        toast.error("Couldn't subscribe", { description: "Your browser blocked the subscription." });
+        toast.error("Couldn't subscribe", {
+          description: "Your browser blocked the subscription.",
+        });
         return;
       }
       await subscribe({ data: sub });
       setEnabled(true);
-      toast.success("Phone alarms on", { description: "We'll ring every dose, even with the app closed." });
+      toast.success("Phone alarms on", {
+        description: "We'll ring every dose, even with the app closed.",
+      });
     } catch (e) {
       console.error(e);
       toast.error("Couldn't enable alarms", { description: (e as Error).message });
@@ -96,7 +107,8 @@ export function PhoneAlarmsSection() {
 
       {!supported && (
         <p className="mt-4 text-sm text-muted-foreground">
-          This browser doesn't support push notifications. Try Chrome, Firefox, or install Purple to your home screen on iOS 16.4+.
+          This browser doesn't support push notifications. Try Chrome, Firefox, or install Purple to
+          your home screen on iOS 16.4+.
         </p>
       )}
 
@@ -104,7 +116,8 @@ export function PhoneAlarmsSection() {
         <div className="mt-4 flex items-start gap-2 rounded-xl bg-secondary/40 p-3 text-xs text-muted-foreground">
           <Smartphone className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
           <span>
-            For best results on phones, install Purple first: open the share menu and pick <strong>Add to Home Screen</strong>. iOS only fires alarms for installed PWAs.
+            For best results on phones, install Purple first: open the share menu and pick{" "}
+            <strong>Add to Home Screen</strong>. iOS only fires alarms for installed PWAs.
           </span>
         </div>
       )}
@@ -117,8 +130,12 @@ export function PhoneAlarmsSection() {
             </Button>
           ) : (
             <>
-              <Button variant="outline" onClick={test} disabled={busy}>Send test alarm</Button>
-              <Button variant="ghost" onClick={disable} disabled={busy}>Turn off</Button>
+              <Button variant="outline" onClick={test} disabled={busy}>
+                Send test alarm
+              </Button>
+              <Button variant="ghost" onClick={disable} disabled={busy}>
+                Turn off
+              </Button>
             </>
           )}
         </div>
@@ -126,7 +143,8 @@ export function PhoneAlarmsSection() {
 
       {permission === "denied" && (
         <p className="mt-3 text-xs text-destructive">
-          Notifications are blocked in this browser. Open site settings and allow notifications for Purple.
+          Notifications are blocked in this browser. Open site settings and allow notifications for
+          Purple.
         </p>
       )}
     </section>

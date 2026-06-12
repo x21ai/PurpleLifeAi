@@ -5,10 +5,7 @@ import { cn } from "@/lib/utils";
  */
 export function VoiceWave({ className }: { className?: string }) {
   return (
-    <span
-      className={cn("inline-flex items-center gap-1", className)}
-      aria-hidden="true"
-    >
+    <span className={cn("inline-flex items-center gap-1", className)} aria-hidden="true">
       {[0, 150, 300].map((delay) => (
         <span
           key={delay}

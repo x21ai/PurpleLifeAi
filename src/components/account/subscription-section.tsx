@@ -24,8 +24,7 @@ export function SubscriptionSection() {
     onSuccess: ({ url }) => {
       if (url) window.location.href = url;
     },
-    onError: (e: unknown) =>
-      toast.error(userMessage(e, "Couldn't start checkout")),
+    onError: (e: unknown) => toast.error(userMessage(e, "Couldn't start checkout")),
   });
 
   const openPortal = useMutation({
@@ -33,8 +32,7 @@ export function SubscriptionSection() {
     onSuccess: ({ url }) => {
       if (url) window.location.href = url;
     },
-    onError: (e: unknown) =>
-      toast.error(userMessage(e, "Couldn't open billing portal")),
+    onError: (e: unknown) => toast.error(userMessage(e, "Couldn't open billing portal")),
   });
 
   if (isLoading) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;

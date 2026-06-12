@@ -10,12 +10,15 @@ export function snoozeDoseUpdate(nowMs: number, snoozeMinutes = 10) {
   };
 }
 
-export function shouldFireOverdueReminder(dose: {
-  scheduled_at: string;
-  status: string;
-  notified_at: string | null;
-  missed_notified_at: string | null;
-}, nowMs: number): boolean {
+export function shouldFireOverdueReminder(
+  dose: {
+    scheduled_at: string;
+    status: string;
+    notified_at: string | null;
+    missed_notified_at: string | null;
+  },
+  nowMs: number,
+): boolean {
   if (dose.status !== "pending") return false;
   const scheduledMs = new Date(dose.scheduled_at).getTime();
   if (scheduledMs > nowMs) return false;

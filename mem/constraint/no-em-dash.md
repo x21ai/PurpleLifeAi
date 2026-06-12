@@ -3,11 +3,13 @@ name: No em dashes
 description: Em dash (—, U+2014) is banned project-wide in copy, code, comments, titles, emails, and i18n. Replace with comma, and, or, colon, period, or split the sentence.
 type: constraint
 ---
+
 Never use the em dash character `—` (U+2014) anywhere: UI copy, marketing
 pages, emails, code comments, commit messages, docs, JSON strings, page
 titles, alt text.
 
 Replace by context:
+
 - Parenthetical aside: wrap with `,` on both sides, or split into two sentences.
 - List or definition lead-in: use `:`.
 - Connector between clauses: use `and` or `or`.

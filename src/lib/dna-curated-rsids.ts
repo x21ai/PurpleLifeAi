@@ -32,7 +32,9 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
     rsid: "rs429358",
     gene: "APOE",
     trait: "Long-term brain & heart load",
-    chrom: "19", pos37: 45411941, pos38: 44908684,
+    chrom: "19",
+    pos37: 45411941,
+    pos38: 44908684,
     plainLanguage:
       "Two spots in the APOE gene together describe the ε2 / ε3 / ε4 pattern. Sleep, movement, and blood-pressure habits tend to matter more for people with an ε4 copy.",
     genotypeNotes: {
@@ -48,7 +50,9 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
     rsid: "rs7412",
     gene: "APOE",
     trait: "Long-term brain & heart load",
-    chrom: "19", pos37: 45412079, pos38: 44908822,
+    chrom: "19",
+    pos37: 45412079,
+    pos38: 44908822,
     plainLanguage:
       "Pairs with rs429358 to read the APOE ε pattern. We never show a risk score, just a calm note.",
     genotypeNotes: {
@@ -64,7 +68,9 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
     rsid: "rs1801133",
     gene: "MTHFR",
     trait: "B-vitamin processing",
-    chrom: "1", pos37: 11856378, pos38: 11796321,
+    chrom: "1",
+    pos37: 11856378,
+    pos38: 11796321,
     plainLanguage:
       "Affects how your body handles folate and B12. Mostly a nutrition note, a varied diet covers it.",
     genotypeNotes: {
@@ -78,7 +84,9 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
     rsid: "rs1801131",
     gene: "MTHFR",
     trait: "B-vitamin processing",
-    chrom: "1", pos37: 11854476, pos38: 11794419,
+    chrom: "1",
+    pos37: 11854476,
+    pos38: 11794419,
     plainLanguage: "A second MTHFR spot. Same theme: gentle nutrition note, not a diagnosis.",
     genotypeNotes: {
       TT: "Typical pattern.",
@@ -93,7 +101,9 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
     gene: "HLA-B",
     trait: "Autoimmune sensitivity",
     conditionSlugs: ["ankylosing-spondylitis", "psoriatic-arthritis"],
-    chrom: "6", pos37: 31237115, pos38: 31269338,
+    chrom: "6",
+    pos37: 31237115,
+    pos38: 31269338,
     plainLanguage:
       "A common proxy for HLA-B27. Worth mentioning to a rheumatologist if you have unexplained joint or back inflammation.",
     genotypeNotes: {
@@ -108,7 +118,9 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
     rsid: "rs6025",
     gene: "F5",
     trait: "Clotting tendency",
-    chrom: "1", pos37: 169519049, pos38: 169549811,
+    chrom: "1",
+    pos37: 169519049,
+    pos38: 169549811,
     plainLanguage:
       "Factor V Leiden. Worth knowing before long flights or hormonal medications, mention it to your doctor.",
     genotypeNotes: {
@@ -124,7 +136,9 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
     rsid: "rs1799963",
     gene: "F2",
     trait: "Clotting tendency",
-    chrom: "11", pos37: 46761055, pos38: 46739505,
+    chrom: "11",
+    pos37: 46761055,
+    pos38: 46739505,
     plainLanguage:
       "Prothrombin G20210A. Like F5, mostly a flag for your medical team around clotting risk.",
     genotypeNotes: {
@@ -140,7 +154,9 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
     rsid: "rs3892097",
     gene: "CYP2D6",
     trait: "Medication metabolism",
-    chrom: "22", pos37: 42524947, pos38: 42128945,
+    chrom: "22",
+    pos37: 42524947,
+    pos38: 42128945,
     plainLanguage:
       "Affects how some common medications (certain antidepressants, codeine, beta-blockers) are processed. A pharmacist can use this, we don't recommend doses.",
     genotypeNotes: {
@@ -154,7 +170,9 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
     rsid: "rs4244285",
     gene: "CYP2C19",
     trait: "Medication metabolism",
-    chrom: "10", pos37: 96541616, pos38: 94781859,
+    chrom: "10",
+    pos37: 96541616,
+    pos38: 94781859,
     plainLanguage:
       "Affects how acid-reducers (e.g. omeprazole) and clopidogrel are processed. A pharmacy or clinician can use this.",
     genotypeNotes: {
@@ -169,7 +187,9 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
     rsid: "rs762551",
     gene: "CYP1A2",
     trait: "Caffeine metabolism",
-    chrom: "15", pos37: 75041917, pos38: 74749576,
+    chrom: "15",
+    pos37: 75041917,
+    pos38: 74749576,
     plainLanguage:
       "Affects how quickly you clear caffeine. Slow metabolizers often sleep better with an earlier caffeine cut-off.",
     genotypeNotes: {
@@ -184,7 +204,9 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
     rsid: "rs4988235",
     gene: "MCM6 / LCT",
     trait: "Lactose tolerance",
-    chrom: "2", pos37: 136608646, pos38: 135851076,
+    chrom: "2",
+    pos37: 136608646,
+    pos38: 135851076,
     plainLanguage:
       "Affects whether your body keeps making lactase as an adult. A nutrition note, not a diagnosis.",
     genotypeNotes: {
@@ -199,7 +221,9 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
     rsid: "rs2282679",
     gene: "GC",
     trait: "Vitamin D handling",
-    chrom: "4", pos37: 72618334, pos38: 72608416,
+    chrom: "4",
+    pos37: 72618334,
+    pos38: 72608416,
     plainLanguage:
       "Affects circulating vitamin D levels. If you spend a lot of time indoors, a level check via your doctor can be useful.",
     genotypeNotes: {
@@ -215,7 +239,9 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
     gene: "MTDH",
     trait: "Migraine susceptibility",
     conditionSlugs: ["migraine"],
-    chrom: "8", pos37: 89564067, pos38: 88551839,
+    chrom: "8",
+    pos37: 89564067,
+    pos38: 88551839,
     plainLanguage:
       "Associated with migraine susceptibility. If you already track migraines, this is mostly context, not new information.",
     genotypeNotes: {
@@ -230,7 +256,9 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
     rsid: "rs1801260",
     gene: "CLOCK",
     trait: "Sleep chronotype",
-    chrom: "4", pos37: 56412613, pos38: 55546129,
+    chrom: "4",
+    pos37: 56412613,
+    pos38: 55546129,
     plainLanguage:
       "Linked to morning vs evening preference. Useful if your wake time feels chronically misaligned.",
     genotypeNotes: {
@@ -242,9 +270,7 @@ export const CURATED_RSIDS: readonly CuratedRsid[] = [
   },
 ] as const;
 
-export const CURATED_RSID_SET: ReadonlySet<string> = new Set(
-  CURATED_RSIDS.map((r) => r.rsid),
-);
+export const CURATED_RSID_SET: ReadonlySet<string> = new Set(CURATED_RSIDS.map((r) => r.rsid));
 
 export function getCuratedRsid(rsid: string): CuratedRsid | undefined {
   return CURATED_RSIDS.find((r) => r.rsid === rsid);

@@ -90,7 +90,7 @@ export function CaptureSheet({
       .eq("id", userId)
       .maybeSingle()
       .then(({ data }) => {
-        setConditions(((data?.conditions as string[] | null) ?? []));
+        setConditions((data?.conditions as string[] | null) ?? []);
       });
   }, [userId]);
 
@@ -254,29 +254,36 @@ export function CaptureSheet({
       if (uploads.length > 0) {
         const { data: signed, error: signErr } = await supabase.storage
           .from("journal-media")
-          .createSignedUrls(uploads.map((u) => u.path), 60 * 60 * 24 * 365);
+          .createSignedUrls(
+            uploads.map((u) => u.path),
+            60 * 60 * 24 * 365,
+          );
         if (signErr) throw signErr;
         mediaUrls = (signed ?? []).map((s) => s.signedUrl).filter(Boolean) as string[];
 
-        await supabase
-          .from("journal_entries")
-          .update({ media_urls: mediaUrls })
-          .eq("id", entryId);
+        await supabase.from("journal_entries").update({ media_urls: mediaUrls }).eq("id", entryId);
       }
 
       // 4. Fire-and-forget processor
-      supabase.functions
-        .invoke("journal-processor", { body: { entry_id: entryId } })
-        .catch(() => { /* will exist in next step */ });
+      supabase.functions.invoke("journal-processor", { body: { entry_id: entryId } }).catch(() => {
+        /* will exist in next step */
+      });
       void supabase.functions
         .invoke("journal-extract", { body: { journal_entry_id: entryId } })
-        .catch(() => { /* extraction is best-effort */ });
+        .catch(() => {
+          /* extraction is best-effort */
+        });
 
       onSaved?.();
       onOpenChange(false);
     } catch (err: any) {
       console.error(err);
-      toast.error(userMessage(err, "Your entry didn't save. It's still here on this screen, try again in a moment."));
+      toast.error(
+        userMessage(
+          err,
+          "Your entry didn't save. It's still here on this screen, try again in a moment.",
+        ),
+      );
     } finally {
       setSaving(false);
     }
@@ -284,10 +291,7 @@ export function CaptureSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="bottom"
-        className="h-[92vh] sm:h-[88vh] flex flex-col p-0 rounded-t-2xl"
-      >
+      <SheetContent side="bottom" className="h-[92vh] sm:h-[88vh] flex flex-col p-0 rounded-t-2xl">
         <SheetHeader className="px-5 pt-5 pb-3 pr-14 flex-row items-center justify-between space-y-0 border-b border-border">
           <SheetTitle className="font-serif text-lg font-normal">New entry</SheetTitle>
           <Button
@@ -332,7 +336,12 @@ export function CaptureSheet({
               )}
             >
               <div className="flex items-center gap-2 mb-1 text-xs text-primary/80">
-                <span className={cn("h-2 w-2 rounded-full bg-primary", voice.listening && "animate-pulse")} />
+                <span
+                  className={cn(
+                    "h-2 w-2 rounded-full bg-primary",
+                    voice.listening && "animate-pulse",
+                  )}
+                />
                 {voice.listening ? "Listening…" : "Captured"}
               </div>
               <p className="font-serif leading-relaxed min-h-[1.5rem]">
@@ -344,7 +353,10 @@ export function CaptureSheet({
           {attachments.length > 0 && (
             <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 gap-2">
               {attachments.map((a) => (
-                <div key={a.id} className="relative aspect-square rounded-lg overflow-hidden bg-muted group">
+                <div
+                  key={a.id}
+                  className="relative aspect-square rounded-lg overflow-hidden bg-muted group"
+                >
                   {a.kind === "photo" ? (
                     <img src={a.previewUrl} alt="" className="h-full w-full object-cover" />
                   ) : (
@@ -400,7 +412,10 @@ export function CaptureSheet({
           accept="image/*"
           capture="environment"
           className="hidden"
-          onChange={(e) => { addFiles(e.target.files, "photo"); e.target.value = ""; }}
+          onChange={(e) => {
+            addFiles(e.target.files, "photo");
+            e.target.value = "";
+          }}
         />
         <input
           ref={galleryInput}
@@ -408,7 +423,10 @@ export function CaptureSheet({
           accept="image/*"
           multiple
           className="hidden"
-          onChange={(e) => { addFiles(e.target.files, "photo"); e.target.value = ""; }}
+          onChange={(e) => {
+            addFiles(e.target.files, "photo");
+            e.target.value = "";
+          }}
         />
         <input
           ref={videoInput}
@@ -416,7 +434,10 @@ export function CaptureSheet({
           accept="video/*"
           capture="environment"
           className="hidden"
-          onChange={(e) => { addFiles(e.target.files, "video"); e.target.value = ""; }}
+          onChange={(e) => {
+            addFiles(e.target.files, "video");
+            e.target.value = "";
+          }}
         />
       </SheetContent>
     </Sheet>
