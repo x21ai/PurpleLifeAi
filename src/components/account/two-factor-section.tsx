@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { userMessage } from "@/lib/user-message";
 
 type Enrollment = {
   factorId: string;
@@ -41,7 +42,7 @@ export function TwoFactorSection() {
     }
     const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp" });
     setBusy(false);
-    if (error || !data) return toast.error(error?.message ?? "Couldn't start 2FA");
+    if (error || !data) return toast.error(userMessage(error, "Couldn't start 2FA"));
     setEnrollment({ factorId: data.id, qr: data.totp.qr_code, secret: data.totp.secret });
   };
 
@@ -59,7 +60,7 @@ export function TwoFactorSection() {
       code: code.trim(),
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(userMessage(error, "That didn't work. Try again in a moment."));
     setEnrollment(null);
     setCode("");
     toast.success("2FA enabled");
@@ -71,7 +72,7 @@ export function TwoFactorSection() {
     setBusy(true);
     const { error } = await supabase.auth.mfa.unenroll({ factorId });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(userMessage(error, "That didn't work. Try again in a moment."));
     toast.success("2FA disabled");
     void refresh();
   };

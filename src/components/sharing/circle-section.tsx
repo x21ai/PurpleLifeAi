@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Link } from "@tanstack/react-router";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { userMessage } from "@/lib/user-message";
 import {
   Sheet,
   SheetContent,
@@ -61,7 +62,7 @@ export function CircleSection() {
       qc.invalidateQueries({ queryKey: ["circle", "mine"] });
       toast.success("Removed from your circle");
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't remove"),
+    onError: (e: any) => toast.error(userMessage(e, "Couldn't remove")),
   });
 
   const setBasics = useServerFn(setFriendShareBasics);
@@ -72,7 +73,7 @@ export function CircleSection() {
       qc.invalidateQueries({ queryKey: ["circle", "mine"] });
       toast.success(res.enabled ? "Sharing your basics" : "Stopped sharing basics");
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't update"),
+    onError: (e: any) => toast.error(userMessage(e, "That change didn't save. Try again in a moment.")),
   });
 
   const rows = circle.data?.friendships ?? [];
@@ -243,7 +244,7 @@ function InviteFriendSheet({ onInvited }: { onInvited: () => void }) {
       onInvited();
       setCreated({ acceptUrl: res.acceptUrl, refer_code: res.refer_code });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't create invite"),
+    onError: (e: any) => toast.error(userMessage(e, "Couldn't create invite")),
   });
 
   function reset() {

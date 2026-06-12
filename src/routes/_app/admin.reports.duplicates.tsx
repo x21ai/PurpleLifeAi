@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { userMessage } from "@/lib/user-message";
 import {
   listSuspectedDuplicates,
   markDuplicate,
@@ -37,7 +38,7 @@ function AdminDuplicates() {
       toast.success(label);
       await refresh();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Action failed");
+      toast.error(userMessage(err, "Action failed"));
     }
   };
 

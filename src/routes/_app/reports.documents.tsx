@@ -43,6 +43,7 @@ import {
   type ReportCategorySlug,
 } from "@/lib/report-categories";
 import { cn } from "@/lib/utils";
+import { userMessage } from "@/lib/user-message";
 
 const searchSchema = z.object({
   category: fallback(z.string().optional(), undefined),
@@ -275,7 +276,7 @@ function ReportsDocumentsPage() {
       URL.revokeObjectURL(url);
       toast.success(`Downloaded ${added} report${added === 1 ? "" : "s"}.`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Bulk download failed.");
+      toast.error(userMessage(e, "Bulk download failed."));
     } finally {
       setBulkDownloading(false);
     }

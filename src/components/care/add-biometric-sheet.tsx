@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { caregiverAddBiometric } from "@/lib/care.functions";
+import { userMessage } from "@/lib/user-message";
 
 function nowLocal(): string {
   const d = new Date();
@@ -77,7 +78,7 @@ export function AddBiometricSheet({
       setNotes("");
       setRecordedAt(nowLocal());
     },
-    onError: (err: any) => toast.error(err?.message ?? "Couldn't save biometric"),
+    onError: (err: any) => toast.error(userMessage(err, "Couldn't save biometric")),
   });
 
   const empty =

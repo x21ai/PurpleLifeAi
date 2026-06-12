@@ -9,6 +9,7 @@ import {
   disconnectAppleHealth,
 } from "@/lib/apple-health.functions";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
 
 function relativeTime(iso: string | null): string {
   if (!iso) return "never";
@@ -53,7 +54,7 @@ export function AppleHealthConnection() {
       setConnected(true);
       toast.success("Apple Health ready. Copy your webhook URL below.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't set up Apple Health");
+      toast.error(userMessage(e, "Couldn't set up Apple Health"));
     } finally {
       setBusy(false);
     }

@@ -8,6 +8,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { applyAppleHealthBackfill } from "@/lib/apple-health.functions";
 import { parseHealthExport, type ParseProgress } from "@/lib/apple-health-xml";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
 
 export const Route = createFileRoute("/_app/apple-health-import")({
   head: () => ({ meta: [{ title: "Apple Health import · Purple" }] }),
@@ -47,7 +48,7 @@ function AppleHealthImportPage() {
         xmlFile = extracted;
       } catch (e) {
         setPhase("idle");
-        toast.error(e instanceof Error ? `Couldn't unzip: ${e.message}` : "Couldn't unzip the file");
+        toast.error(userMessage(e, "Purple couldn't open that file. Export a fresh copy from Apple Health and try again."));
         return;
       }
     } else if (lower.endsWith(".xml")) {
@@ -63,7 +64,7 @@ function AppleHealthImportPage() {
       days = await parseHealthExport(xmlFile, setProgress);
     } catch (e) {
       setPhase("idle");
-      toast.error(e instanceof Error ? e.message : "Couldn't parse the XML file");
+      toast.error(userMessage(e, "Purple couldn't read that file. Export a fresh copy from Apple Health and try again."));
       return;
     }
 
@@ -91,7 +92,7 @@ function AppleHealthImportPage() {
     } catch (e) {
       setPhase("idle");
       setUpload(null);
-      toast.error(e instanceof Error ? e.message : "Upload failed");
+      toast.error(userMessage(e, "The upload didn't finish. Check your connection and try again; the file is still on your device."));
     }
   };
 

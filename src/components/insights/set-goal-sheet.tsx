@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { setVitalGoal, deleteVitalGoal, type VitalGoal } from "@/lib/health-vitals.functions";
 import type { VitalKind } from "./quick-log-vital-sheet";
+import { userMessage } from "@/lib/user-message";
 
 type Spec = {
   title: string;
@@ -89,7 +90,7 @@ export function SetGoalSheet({
       toast.success("Target saved");
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't save");
+      toast.error(userMessage(err, "That didn't save. Your changes are still here, try again."));
     } finally {
       setSaving(false);
     }
@@ -103,7 +104,7 @@ export function SetGoalSheet({
       toast.success("Target removed");
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't remove");
+      toast.error(userMessage(err, "Couldn't remove"));
     } finally {
       setSaving(false);
     }

@@ -19,6 +19,7 @@ import { useVoiceCapture } from "@/components/journal/use-voice-capture";
 import { executePurpleAction } from "@/lib/purple-actions.functions";
 import { useIsPro } from "@/lib/pro-gate";
 import { ProGate } from "@/components/pro/pro-gate";
+import { userMessage } from "@/lib/user-message";
 
 const FREE_DAILY_LIMIT = 10;
 const ASK_LIMIT_STORAGE_KEY = "purple-ask-message-stamps";
@@ -97,6 +98,20 @@ function AskPage() {
     return getSuggestedQuestions(conditions);
   }, [conditions, careProfile]);
   const [input, setInput] = React.useState("");
+
+  // Starter questions elsewhere in the app (condition pages) hand a prefill
+  // through sessionStorage so the question is ready to send on arrival.
+  React.useEffect(() => {
+    try {
+      const prefill = sessionStorage.getItem("purple-chat-prefill");
+      if (prefill) {
+        setInput(prefill);
+        sessionStorage.removeItem("purple-chat-prefill");
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
   const voice = useVoiceCapture();
@@ -186,7 +201,7 @@ function AskPage() {
     } catch (e) {
       console.error(e);
       setProposalStatus((s) => ({ ...s, [key]: "failed" }));
-      toast.error(e instanceof Error ? e.message : "Couldn't complete that action.");
+      toast.error(userMessage(e, "Couldn't complete that action."));
     }
   };
 

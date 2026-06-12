@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
 
 export const Route = createFileRoute("/_app/admin/resources")({
   head: () => ({ meta: [{ title: "Resources admin · Purple" }] }),
@@ -23,7 +24,7 @@ function AdminResources() {
   const add = async () => {
     if (!form.title || !form.url) return;
     const { error } = await supabase.from("community_resources").insert(form);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(userMessage(error, "That didn't work. Try again in a moment."));
     setForm({ title: "", description: "", url: "", category: "general" });
     await load();
   };

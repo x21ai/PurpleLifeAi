@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { updateTrip } from "@/lib/travel.functions";
+import { userMessage } from "@/lib/user-message";
 import {
   ItineraryEditor,
   legsAreChronological,
@@ -193,7 +194,7 @@ export function TripEditDialog({ trip, homeTz, onOpenChange, onSaved }: TripEdit
       onOpenChange(false);
       onSaved(trip.id, recommend);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not save trip");
+      toast.error(userMessage(e, "Could not save trip"));
     } finally {
       setSaving(false);
     }

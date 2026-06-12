@@ -32,6 +32,7 @@ import { useTranslation } from "react-i18next";
 import { DualTime } from "@/components/travel/dual-time";
 import { ItineraryEditor, legsAreChronological, type LegDraft } from "@/components/travel/itinerary-editor";
 import { TripEditDialog, type EditableTrip } from "@/components/travel/trip-edit-dialog";
+import { userMessage } from "@/lib/user-message";
 
 export const Route = createFileRoute("/_app/settings/travel")({
   head: () => ({ meta: [{ title: "Travel mode · Purple" }] }),
@@ -240,7 +241,7 @@ function TravelPage() {
       toast.success(`Generated ${res.generated} dose reminders.`);
       void load();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not generate schedule");
+      toast.error(userMessage(e, "Could not generate schedule"));
     } finally {
       setGeneratingId(null);
     }
@@ -274,7 +275,7 @@ function TravelPage() {
       }
       setPreviewState({ trip, homeTz: res.homeTz, doses: res.doses });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not build preview");
+      toast.error(userMessage(e, "Could not build preview"));
     } finally {
       setPreviewingId(null);
     }

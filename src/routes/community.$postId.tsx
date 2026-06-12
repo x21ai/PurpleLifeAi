@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { Heart, Flag } from "lucide-react";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
 
 export const Route = createFileRoute("/community/$postId")({
   component: GatedPostDetail,
@@ -84,7 +85,7 @@ function PostDetail() {
     const { error } = await supabase
       .from("community_comments")
       .insert({ post_id: postId, user_id: session.user.id, body: body.trim() });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(userMessage(error, "That didn't work. Try again in a moment."));
     setBody("");
     await load();
   };

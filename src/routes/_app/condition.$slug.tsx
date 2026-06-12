@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
@@ -41,6 +41,7 @@ export const Route = createFileRoute("/_app/condition/$slug")({
 function ConditionPage() {
   useRouteTheme("dark");
   const { slug } = Route.useParams();
+  const navigate = useNavigate();
   const def = getCondition(slug)!;
 
   const readPage = useServerFn(readConditionPage);
@@ -162,11 +163,21 @@ function ConditionPage() {
         </div>
         <ul className="mt-3 space-y-2">
           {(profile?.askPurpleStarters ?? conditionScopedQuestions).map((q) => (
-            <li
-              key={q}
-              className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground"
-            >
-              {q}
+            <li key={q}>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    sessionStorage.setItem("purple-chat-prefill", q);
+                  } catch {
+                    /* ignore */
+                  }
+                  void navigate({ to: "/chat" });
+                }}
+                className="w-full rounded-xl border border-border bg-card px-4 py-3 text-left text-sm text-foreground hover:bg-secondary/40 transition-colors"
+              >
+                {q}
+              </button>
             </li>
           ))}
         </ul>

@@ -8,12 +8,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { useVoiceCapture } from "@/components/journal/use-voice-capture";
+import { queueEntry } from "@/lib/offline-journal-queue";
 import { VoiceWave } from "@/components/journal/voice-wave";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { autoRouteJournalToReports } from "@/lib/journal-classify.functions";
+import { userMessage } from "@/lib/user-message";
 
 export const Route = createFileRoute("/_app/journal/new")({
   head: () => ({ meta: [{ title: "New entry · Purple" }] }),
@@ -241,7 +243,35 @@ function JournalNewPage() {
       navigate({ to: "/journal" });
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.message ?? "Could not save entry");
+      // Text-only entries survive a dead connection: queue locally and move
+      // on. The journal list shows the pending banner until it syncs.
+      const liveTranscript = voice.transcript.trim();
+      const finalText = text.trim();
+      const textOnly = attachments.length === 0 && !voice.audioBlob;
+      const looksOffline =
+        typeof navigator !== "undefined" && navigator.onLine === false
+          ? true
+          : /fetch|network|load failed|timeout/i.test(
+              err instanceof Error ? err.message : String(err),
+            );
+      if (textOnly && looksOffline && (finalText || liveTranscript)) {
+        queueEntry({
+          userId,
+          kind: inferKind(finalText, liveTranscript, []),
+          text: finalText || null,
+          voiceTranscript: liveTranscript || null,
+          capturedAt: capturedAt.toISOString(),
+        });
+        try {
+          localStorage.removeItem(DRAFT_KEY);
+        } catch {
+          /* ignore */
+        }
+        toast.success("Purple couldn't reach the server. Your entry is saved on this device and will sync when you're back online.");
+        navigate({ to: "/journal" });
+        return;
+      }
+      toast.error(userMessage(err, "Your entry didn't save. It's still here on this screen, try again in a moment."));
       setSaving(false);
       return;
     }

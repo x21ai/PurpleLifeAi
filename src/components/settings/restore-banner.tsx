@@ -3,6 +3,7 @@ import { Loader2, ShieldAlert, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/integrations/supabase/auth-context";
+import { userMessage } from "@/lib/user-message";
 import {
   checkDeletionStatus,
   restoreUserData,
@@ -44,7 +45,7 @@ export function RestoreBanner() {
       setStatus(null);
       toast.success("Your account has been restored.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not restore");
+      toast.error(userMessage(e, "The restore didn't finish. Nothing was changed, try again in a moment."));
     } finally {
       setRestoring(false);
     }

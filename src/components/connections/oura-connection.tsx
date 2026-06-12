@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
 
 // Oura OAuth documented scopes. Keep the base set conservative until OAuth succeeds.
 const OURA_SCOPE = "email personal daily heartrate workout tag session spo2";
@@ -138,7 +139,7 @@ export function OuraConnection() {
       toast.success("Synced");
       refresh();
     } catch (e: any) {
-      toast.error(e?.message ?? "Sync failed");
+      toast.error(userMessage(e, "The sync didn't finish. Purple will try again next time, or you can retry now."));
     } finally {
       setBusy(false);
     }

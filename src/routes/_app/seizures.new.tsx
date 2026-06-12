@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { useTranslation } from "react-i18next";
+import { userMessage } from "@/lib/user-message";
 
 export const Route = createFileRoute("/_app/seizures/new")({
   head: () => ({ meta: [{ title: "Log seizure · Purple" }] }),
@@ -115,7 +116,7 @@ function LogSeizurePage() {
         setLocating(false);
       },
       (err) => {
-        toast.error(err.message || "Could not get location");
+        toast.error(userMessage(err, "Couldn't get your location. You can add it by hand, or leave it out."));
         setLocating(false);
       },
       { enableHighAccuracy: true, timeout: 10000 },
@@ -140,7 +141,7 @@ function LogSeizurePage() {
       goBack();
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.message ?? "Could not log");
+      toast.error(userMessage(err, "That didn't log. Your details are still here, try again."));
     } finally {
       setQuickSaving(false);
     }
@@ -235,7 +236,7 @@ function LogSeizurePage() {
       goBack();
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.message ?? "Could not save");
+      toast.error(userMessage(err, "That didn't save. Your changes are still here, try again."));
     } finally {
       setSaving(false);
     }

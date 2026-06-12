@@ -3,6 +3,7 @@ import { Sparkles, Check, X } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
 import {
   suggestFeatures,
   acceptFeatureSuggestion,
@@ -31,7 +32,7 @@ export function FeatureSuggestionCard() {
       void refresh();
     },
     onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Couldn't enable that"),
+      toast.error(userMessage(e, "Couldn't enable that")),
   });
 
   const dismissMut = useMutation({

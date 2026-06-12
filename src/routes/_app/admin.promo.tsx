@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
 
 export const Route = createFileRoute("/_app/admin/promo")({
   head: () => ({ meta: [{ title: "Promo codes · Purple" }] }),
@@ -52,7 +53,7 @@ function AdminPromo() {
       kind,
       max_uses: maxUses ? Number(maxUses) : null,
     });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(userMessage(error, "That didn't work. Try again in a moment."));
     toast.success("Code created");
     setCode(rand());
     setLabel("");

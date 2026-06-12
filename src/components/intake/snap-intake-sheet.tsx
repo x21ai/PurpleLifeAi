@@ -17,6 +17,7 @@ import {
 } from "@/lib/food.functions";
 import { logHydration } from "@/lib/hydration.functions";
 import { cn } from "@/lib/utils";
+import { userMessage } from "@/lib/user-message";
 
 type Item = {
   name: string;
@@ -99,7 +100,7 @@ export function SnapIntakeSheet() {
       );
       setStage("confirm");
     } catch (e: any) {
-      toast.error(e?.message || "Couldn't analyze the photo.");
+      toast.error(userMessage(e, "Couldn't analyze the photo."));
       reset();
     }
   }
@@ -183,7 +184,7 @@ export function SnapIntakeSheet() {
       setOpen(false);
       reset();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userMessage(e, "That didn't work. Try again in a moment.")),
   });
 
   return (

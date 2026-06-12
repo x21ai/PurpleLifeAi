@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, Check } from "lucide-react";
 import { toast } from "sonner";
 import { getAiProvider, setAiProvider } from "@/lib/ai-provider.functions";
+import { userMessage } from "@/lib/user-message";
 
 type Provider = "claude" | "openai" | "gemini" | "grok" | "maya";
 
@@ -43,7 +44,7 @@ export function AiProviderSection() {
       setCurrent(id);
       toast.success(`AI provider set to ${OPTIONS.find((o) => o.id === id)?.name}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't save provider");
+      toast.error(userMessage(e, "Couldn't save provider"));
     } finally {
       setSaving(null);
     }

@@ -74,6 +74,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTranslation } from "react-i18next";
+import { userMessage } from "@/lib/user-message";
 
 export const Route = createFileRoute("/_app/care/$ownerId")({
   head: () => ({ meta: [{ title: "Caregiver dashboard · Purple" }] }),
@@ -149,7 +150,7 @@ function CareDashboardPage() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["care", "overview", ownerId] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't update"),
+    onError: (e: any) => toast.error(userMessage(e, "That change didn't save. Try again in a moment.")),
   });
   const toggleHide = (key: TabKey, show: boolean) => {
     const next = show
@@ -604,7 +605,7 @@ function MedsPanel({
       void queryClient.invalidateQueries({ queryKey: ["care", "meds", ownerId] });
     },
     onError: (err: any) => {
-      toast.error(err?.message ?? "Couldn't update dose");
+      toast.error(userMessage(err, "Couldn't update dose"));
     },
   });
 

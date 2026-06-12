@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { buildIcs, downloadIcs, medicationToIcsEvents } from "@/lib/ics";
 import { useTranslation } from "react-i18next";
+import { userMessage } from "@/lib/user-message";
 
 type Med = {
   id: string;
@@ -142,7 +143,7 @@ function MedDetail() {
     if (!med) return;
     if (!window.confirm(`Archive ${med.name}? You can re-add it later.`)) return;
     const { error } = await supabase.from("medications").update({ active: false }).eq("id", med.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(userMessage(error, "That didn't work. Try again in a moment.")); return; }
     toast.success("Medication archived");
     navigate({ to: "/meds" });
   };
@@ -150,7 +151,7 @@ function MedDetail() {
   const restore = async () => {
     if (!med) return;
     const { error } = await supabase.from("medications").update({ active: true }).eq("id", med.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(userMessage(error, "That didn't work. Try again in a moment.")); return; }
     toast.success("Medication restored");
     void load();
   };
@@ -160,7 +161,7 @@ function MedDetail() {
     await supabase.from("medication_doses").delete().eq("medication_id", med.id);
     await supabase.from("medication_side_effects").delete().eq("medication_id", med.id);
     const { error } = await supabase.from("medications").delete().eq("id", med.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(userMessage(error, "That didn't work. Try again in a moment.")); return; }
     toast.success(`${med.name} deleted`);
     navigate({ to: "/meds" });
   };
@@ -247,7 +248,9 @@ function MedDetail() {
               </span>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-muted-foreground">No data yet.</p>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Adherence shows up here once a few scheduled doses have passed. Nothing to do yet.
+            </p>
           )}
         </section>
       )}

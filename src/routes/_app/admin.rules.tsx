@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
 import {
   listPlatformRules,
   upsertPlatformRule,
@@ -66,7 +67,7 @@ function PlatformRulesPage() {
       toast.success("Rule saved");
       void refetch();
     },
-    onError: (e: any) => toast.error(e?.message ?? "Save failed"),
+    onError: (e: any) => toast.error(userMessage(e, "That didn't save. Your changes are still here, try again.")),
   });
   const deleteMut = useMutation({
     mutationFn: (id: string) => remove({ data: { id } }),
@@ -74,7 +75,7 @@ function PlatformRulesPage() {
       toast.success("Rule deleted");
       void refetch();
     },
-    onError: (e: any) => toast.error(e?.message ?? "Delete failed"),
+    onError: (e: any) => toast.error(userMessage(e, "That didn't delete. Try again in a moment.")),
   });
 
   const rules = (data?.rules ?? []) as RuleRow[];

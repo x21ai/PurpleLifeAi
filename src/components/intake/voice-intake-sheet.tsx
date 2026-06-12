@@ -14,6 +14,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { useVoiceCapture } from "@/components/journal/use-voice-capture";
 import { recognizeIntakeFromText, createFoodEntry } from "@/lib/food.functions";
 import { logHydration } from "@/lib/hydration.functions";
+import { userMessage } from "@/lib/user-message";
 
 type Item = { name: string; portion: string; calories_kcal: string; volume_ml: string };
 type Recog = Awaited<ReturnType<typeof import("@/lib/food.server")["recognizeFromText"]>>;
@@ -61,7 +62,7 @@ export function VoiceIntakeSheet() {
       );
       setStage("confirm");
     } catch (e: any) {
-      toast.error(e?.message || "Couldn't understand the note.");
+      toast.error(userMessage(e, "Couldn't understand the note."));
       setStage("record");
     }
   }
@@ -104,7 +105,7 @@ export function VoiceIntakeSheet() {
       setOpen(false);
       reset();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userMessage(e, "That didn't work. Try again in a moment.")),
   });
 
   return (

@@ -11,6 +11,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceArea, ResponsiveContai
 import { toast } from "sonner";
 import { ReportShell, ReportCard, ReportPill } from "@/components/reports/report-shell";
 import { ProGate } from "@/components/pro/pro-gate";
+import { userMessage } from "@/lib/user-message";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -92,7 +93,7 @@ function ReportDetailPage() {
       toast.success("Report deleted");
       navigate({ to: "/reports/documents" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Delete failed");
+      toast.error(userMessage(err, "That didn't delete. Try again in a moment."));
     }
   };
 
@@ -103,7 +104,7 @@ function ReportDetailPage() {
       toast.success("Re-running extraction…");
       await refetch();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Retry failed");
+      toast.error(userMessage(err, "Still not working. Give it a moment and try again."));
     } finally {
       setRetrying(false);
     }
@@ -156,7 +157,7 @@ function ReportDetailPage() {
         }
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't open file");
+      toast.error(userMessage(err, "Couldn't open file"));
     } finally {
       setOpeningFile(null);
     }
@@ -344,7 +345,7 @@ function ReportDetailPage() {
                       toast.success("Approved. We'll remember this identity for future uploads.");
                       await refetch();
                     } catch (e) {
-                      toast.error(e instanceof Error ? e.message : "Failed");
+                      toast.error(userMessage(e, "That didn't work. Try again in a moment."));
                     } finally {
                       setDeciding(false);
                     }
@@ -364,7 +365,7 @@ function ReportDetailPage() {
                       toast.success("Report deleted");
                       navigate({ to: "/reports/documents" });
                     } catch (e) {
-                      toast.error(e instanceof Error ? e.message : "Failed");
+                      toast.error(userMessage(e, "That didn't work. Try again in a moment."));
                       setDeciding(false);
                     }
                   }}

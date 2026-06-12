@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getWhoopConfig, whoopIncrementalSync } from "@/lib/whoop.functions";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
 
 // Whoop OAuth scopes (v2 API). `offline` is required to receive a refresh token.
 const WHOOP_SCOPE = [
@@ -140,7 +141,7 @@ export function WhoopConnection() {
       toast.success("Synced");
       void refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Sync failed");
+      toast.error(userMessage(e, "The sync didn't finish. Purple will try again next time, or you can retry now."));
     } finally {
       setBusy(false);
     }

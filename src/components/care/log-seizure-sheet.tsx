@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { caregiverLogSeizure } from "@/lib/care.functions";
+import { userMessage } from "@/lib/user-message";
 
 function nowLocal(): string {
   // ISO local without seconds for <input type="datetime-local">
@@ -73,7 +74,7 @@ export function LogSeizureSheet({
       setInjury(false);
       setStartedAt(nowLocal());
     },
-    onError: (err: any) => toast.error(err?.message ?? "Couldn't log seizure"),
+    onError: (err: any) => toast.error(userMessage(err, "Couldn't log seizure")),
   });
 
   return (

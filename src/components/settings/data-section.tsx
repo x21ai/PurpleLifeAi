@@ -24,6 +24,7 @@ import {
   type DeletionStatus,
 } from "@/lib/data-export";
 import { useAuth } from "@/integrations/supabase/auth-context";
+import { userMessage } from "@/lib/user-message";
 
 export function DataSection() {
   const [exporting, setExporting] = useState(false);
@@ -85,7 +86,7 @@ export function DataSection() {
       setPendingDeletion(null);
       toast.success("Your account has been restored.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not restore");
+      toast.error(userMessage(e, "The restore didn't finish. Nothing was changed, try again in a moment."));
     } finally {
       setRestoring(false);
     }

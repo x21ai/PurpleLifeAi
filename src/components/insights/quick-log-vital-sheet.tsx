@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { logVital } from "@/lib/health-vitals.functions";
+import { userMessage } from "@/lib/user-message";
 
 export type VitalKind = "weight" | "bp" | "glucose" | "spo2" | "temp" | "resp_rate";
 
@@ -106,7 +107,7 @@ export function QuickLogVitalSheet({
       await qc.invalidateQueries({ queryKey: ["insights", "vitals"] });
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save");
+      toast.error(userMessage(err, "That didn't save. Your changes are still here, try again."));
     } finally {
       setBusy(false);
     }

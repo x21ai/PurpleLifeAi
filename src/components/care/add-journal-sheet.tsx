@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { caregiverAddJournalEntry } from "@/lib/care.functions";
+import { userMessage } from "@/lib/user-message";
 
 export function AddJournalSheet({
   ownerId,
@@ -45,7 +46,7 @@ export function AddJournalSheet({
       setOpen(false);
       setText("");
     },
-    onError: (err: any) => toast.error(err?.message ?? "Couldn't add entry"),
+    onError: (err: any) => toast.error(userMessage(err, "Couldn't add entry")),
   });
 
   return (

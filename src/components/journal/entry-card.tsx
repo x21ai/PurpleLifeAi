@@ -3,6 +3,7 @@ import { formatDistanceToNow, format } from "date-fns";
 import { Pencil, Mic, Camera, Video, Sparkles, Loader2, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2, X, Check, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { cleanAiText } from "@/lib/ai-text-guards";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -125,22 +126,10 @@ export function EntryCard({ entry }: { entry: Entry }) {
   const photos = entry.media_urls.filter(isImage);
   const videos = entry.media_urls.filter(isVideo);
   // Filter out the model's "no entry provided" meta replies if any landed in the DB.
-  const cleanSummary = React.useMemo(() => {
-    const s = (entry.ai_summary ?? "").trim();
-    if (!s) return "";
-    const lower = s.toLowerCase();
-    if (
-      lower.includes("i don't see a journal") ||
-      lower.includes("i do not see a journal") ||
-      lower.includes("no journal entry") ||
-      lower.startsWith("please provide") ||
-      lower.startsWith("i'm ready to help") ||
-      lower.startsWith("i am ready to help")
-    ) {
-      return "";
-    }
-    return s;
-  }, [entry.ai_summary]);
+  const cleanSummary = React.useMemo(
+    () => cleanAiText((entry.ai_summary ?? "").trim()) ?? "",
+    [entry.ai_summary],
+  );
   const processing = entry.status === "processing";
   const failed = entry.status === "failed";
   // After 5 minutes, a "processing" entry has almost certainly stalled, offer a retry.

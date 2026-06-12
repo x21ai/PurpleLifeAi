@@ -173,7 +173,9 @@
     "downloadText": "Download text",
     "print": "Print / Save as PDF",
     "copy": "Copy to clipboard",
-    "share": "Share…"
+    "share": "Share…",
+    "emptyRangeHint": "Entries, doses, and seizure logs from this range will line up here.",
+    "emptyRangeCta": "Write a journal entry"
   },
   "locale": {
     "title": "Region & language",

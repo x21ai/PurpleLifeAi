@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
+import { userMessage } from "@/lib/user-message";
 
 const GENDER_PRESETS = ["Female", "Male", "Non-binary", "Prefer not to say"] as const;
 
@@ -73,7 +74,7 @@ export function ProfileFields() {
     const { error } = await supabase
       .from("profiles").update({ phone: trimmed || null }).eq("id", userId!);
     if (!error && trimmed) void supabase.auth.updateUser({ phone: trimmed }).catch(() => {});
-    if (error) { setPhoneState("error"); toast.error(error.message); }
+    if (error) { setPhoneState("error"); toast.error(userMessage(error, "That didn't work. Try again in a moment.")); }
     else setPhoneState("saved");
   });
 

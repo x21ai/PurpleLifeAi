@@ -173,7 +173,9 @@
     "downloadText": "Descargar texto",
     "print": "Imprimir / Guardar como PDF",
     "copy": "Copiar al portapapeles",
-    "share": "Compartir…"
+    "share": "Compartir…",
+    "emptyRangeHint": "Las entradas, dosis y registros de crisis de este rango aparecerán aquí.",
+    "emptyRangeCta": "Escribir una entrada"
   },
   "locale": {
     "title": "Región e idioma",

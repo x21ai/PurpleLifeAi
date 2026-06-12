@@ -3,6 +3,7 @@ import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
 
 export const Route = createFileRoute("/_app/admin/messages")({
   head: () => ({ meta: [{ title: "Admin messages · Purple" }] }),
@@ -41,7 +42,7 @@ function AdminMessages() {
       recipient_id: recipient.trim() || null,
     });
     setSending(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(userMessage(error, "That didn't work. Try again in a moment."));
     toast.success(recipient ? "Message sent" : "Broadcast sent");
     setSubject(""); setBody(""); setRecipient("");
     void load();

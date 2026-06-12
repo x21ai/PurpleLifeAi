@@ -319,7 +319,16 @@ function TimelinePage() {
         {isLoading ? (
           <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
         ) : filtered.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("timeline.emptyRange")}</p>
+          <div className="rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center">
+            <p className="text-sm text-muted-foreground">{t("timeline.emptyRange")}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t("timeline.emptyRangeHint")}</p>
+            <Link
+              to="/journal/new"
+              className="mt-4 inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+            >
+              {t("timeline.emptyRangeCta")}
+            </Link>
+          </div>
         ) : (
           <ol className="relative border-l border-border pl-6 space-y-5">
             {filtered.map((r) => (

@@ -46,6 +46,7 @@ import {
 import { getOrCreateDirectThread } from "@/lib/care-chat.functions";
 import { ProGate } from "@/components/pro/pro-gate";
 import { useIsPro } from "@/lib/pro-gate";
+import { userMessage } from "@/lib/user-message";
 import {
   CARE_RESOURCES,
   CARE_VERBS,
@@ -112,7 +113,7 @@ function SharingPage() {
       qc.invalidateQueries({ queryKey: ["care", "mine"] });
       toast.success("Access revoked");
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't revoke"),
+    onError: (e: any) => toast.error(userMessage(e, "Couldn't revoke")),
   });
 
   const pendingCount = pending.data?.changes.length ?? 0;
@@ -320,7 +321,7 @@ function MessageCaregiverButton({ relationshipId }: { relationshipId: string }) 
       const r = await openFn({ data: { relationshipId } });
       window.location.assign(`/chat-care?thread=${r.threadId}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't open chat");
+      toast.error(userMessage(e, "Couldn't open chat"));
       setBusy(false);
     }
   };
@@ -398,7 +399,7 @@ function PauseWritesRow({ relationshipId }: { relationshipId: string }) {
       qc.invalidateQueries({ queryKey: ["care", "mine"] });
       toast.success(paused ? "Writes paused, read-only access" : "Writes resumed");
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't update"),
+    onError: (e: any) => toast.error(userMessage(e, "That change didn't save. Try again in a moment.")),
   });
 
   if (!state.data || state.data.total === 0) return null;
@@ -429,7 +430,7 @@ function DigestPreferenceCard() {
       qc.invalidateQueries({ queryKey: ["care", "digest-pref"] });
       toast.success(enabled ? "Daily digest on" : "Daily digest off");
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't update"),
+    onError: (e: any) => toast.error(userMessage(e, "That change didn't save. Try again in a moment.")),
   });
   return (
     <section className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 sm:p-6">
@@ -469,7 +470,7 @@ function DigestMuteRow({
     },
     onError: (e: any) => {
       setMuted(initialMuted);
-      toast.error(e?.message ?? "Couldn't update");
+      toast.error(userMessage(e, "That change didn't save. Try again in a moment."));
     },
   });
   return (
@@ -533,7 +534,7 @@ function ActivitySection({
       URL.revokeObjectURL(url);
       toast.success(`Exported ${res.rowCount} rows`);
     } catch (e: any) {
-      toast.error(e?.message ?? "Export failed");
+      toast.error(userMessage(e, "The export didn't finish. Try again, your data is safe."));
     } finally {
       setExporting(false);
     }
@@ -668,7 +669,7 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
       setOpen(false);
       onInvited();
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't send invite"),
+    onError: (e: any) => toast.error(userMessage(e, "Couldn't send invite")),
   });
 
   return (
@@ -764,7 +765,7 @@ function RelationshipLabelEditor({
       toast.success("Relationship updated");
       onSaved();
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't save"),
+    onError: (e: any) => toast.error(userMessage(e, "That didn't save. Your changes are still here, try again.")),
   });
   return (
     <div className="mt-2 inline-flex items-center gap-2">
@@ -820,7 +821,7 @@ function ManageRelationshipSheet({
       setOpen(false);
       onSaved();
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't save"),
+    onError: (e: any) => toast.error(userMessage(e, "That didn't save. Your changes are still here, try again.")),
   });
 
   function toggle(scope: string) {

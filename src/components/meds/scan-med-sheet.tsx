@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { scanMedicationFromPhoto } from "@/lib/med-recognition.functions";
 import type { MedPrefill } from "./medication-form-sheet";
+import { userMessage } from "@/lib/user-message";
 
 async function fileToDataUrl(file: File, maxSide = 1280): Promise<string> {
   const bitmap = await createImageBitmap(file);
@@ -73,7 +74,7 @@ export function ScanMedSheet({
       setRecog(r);
       setStage("review");
     } catch (e: any) {
-      toast.error(e?.message || "Couldn't read the label.");
+      toast.error(userMessage(e, "Couldn't read the label."));
       setStage("pick");
       setPreview(null);
     }

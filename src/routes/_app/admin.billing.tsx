@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
+import { userMessage } from "@/lib/user-message";
 import {
   getBillingSettings,
   setProFreeForEveryone,
@@ -39,7 +40,7 @@ function AdminBillingPage() {
       qc.invalidateQueries({ queryKey: ["my-subscription"] });
       toast.success("Updated.");
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onError: (e: unknown) => toast.error(userMessage(e, "That didn't work. Try again in a moment.")),
   });
 
   const [grantUserId, setGrantUserId] = React.useState("");
@@ -52,7 +53,7 @@ function AdminBillingPage() {
       toast.success("Pro granted.");
       setGrantUserId("");
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onError: (e: unknown) => toast.error(userMessage(e, "That didn't work. Try again in a moment.")),
   });
 
   if (isLoading) return <p className="text-muted-foreground">Loading…</p>;

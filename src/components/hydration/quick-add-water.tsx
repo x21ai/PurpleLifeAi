@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { logHydration } from "@/lib/hydration.functions";
 import { ELECTROLYTE_PRESETS } from "./electrolyte-presets";
 import { cn } from "@/lib/utils";
+import { userMessage } from "@/lib/user-message";
 
 type Props = { ownerId?: string; onLogged?: () => void; compact?: boolean };
 
@@ -54,7 +55,7 @@ export function QuickAddWater({ ownerId, onLogged, compact }: Props) {
       setOpen(null);
       onLogged?.();
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => toast.error(userMessage(err, "That didn't work. Try again in a moment.")),
   });
 
   const onPresetChange = (b: string) => {

@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { logAura } from "@/lib/auras.functions";
 import { cn } from "@/lib/utils";
+import { userMessage } from "@/lib/user-message";
 
 const AURA_KINDS = [
   { value: "deja_vu", label: "Déjà vu" },
@@ -66,7 +67,7 @@ export function LogAuraSheet({
       setDuration("");
       setNotes("");
     },
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => toast.error(userMessage(err, "That didn't work. Try again in a moment.")),
   });
 
   return (

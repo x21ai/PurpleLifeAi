@@ -30,6 +30,7 @@ import {
 import { generateCareProfile } from "@/lib/care-profile.functions";
 import { CURATED_RSIDS, getCuratedRsid, type CuratedRsid } from "@/lib/dna-curated-rsids";
 import { ProGate } from "@/components/pro/pro-gate";
+import { userMessage } from "@/lib/user-message";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -91,7 +92,7 @@ function DnaPage() {
       qc.invalidateQueries({ queryKey: ["dna-files"] });
       toast.success("Deleted.");
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed to delete"),
+    onError: (e: unknown) => toast.error(userMessage(e, "That didn't delete. Try again in a moment.")),
   });
 
   const reparse = useMutation({
@@ -105,7 +106,7 @@ function DnaPage() {
       }
       regen({ data: { force: true } }).catch(() => undefined);
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Re-analyze failed"),
+    onError: (e: unknown) => toast.error(userMessage(e, "Purple couldn't re-read this just now. Try again in a moment.")),
   });
 
   const setShare = useMutation({
@@ -152,7 +153,7 @@ function DnaPage() {
       regen({ data: { force: true } }).catch(() => undefined);
       qc.invalidateQueries({ queryKey: ["care-profile"] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Upload failed");
+      toast.error(userMessage(e, "The upload didn't finish. Check your connection and try again; the file is still on your device."));
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";

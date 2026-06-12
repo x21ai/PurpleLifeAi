@@ -5,6 +5,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { userMessage } from "@/lib/user-message";
 
 export function PasswordSection() {
   const [pwd, setPwd] = React.useState("");
@@ -17,7 +18,7 @@ export function PasswordSection() {
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password: pwd });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(userMessage(error, "That didn't work. Try again in a moment."));
     setPwd("");
     setConfirm("");
     toast.success("Password updated");

@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Download, ExternalLink, Link2, Loader2, MoreVertical, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { getReportFileUrl, getReportShareUrl, processReport, deleteReport } from "@/lib/reports.functions";
+import { userMessage } from "@/lib/user-message";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,7 +59,7 @@ export function ReportRowActions({
         a.remove();
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not open file");
+      toast.error(userMessage(err, "Could not open file"));
     } finally {
       setBusy(null);
     }
@@ -71,7 +72,7 @@ export function ReportRowActions({
       toast.success("Re-running extraction…");
       onChanged?.();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't re-run extraction");
+      toast.error(userMessage(err, "Couldn't re-run extraction"));
     } finally {
       setBusy(null);
     }
@@ -88,7 +89,7 @@ export function ReportRowActions({
         window.prompt("Share link (expires in 7 days)", url);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not create share link");
+      toast.error(userMessage(err, "Could not create share link"));
     } finally {
       setBusy(null);
     }
@@ -101,7 +102,7 @@ export function ReportRowActions({
       toast.success("Report deleted");
       onChanged?.();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't delete report");
+      toast.error(userMessage(err, "Couldn't delete report"));
     } finally {
       setBusy(null);
       setConfirmOpen(false);

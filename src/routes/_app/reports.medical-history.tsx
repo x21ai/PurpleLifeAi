@@ -29,6 +29,7 @@ import {
   deleteMedicalReportSchedule,
 } from "@/lib/medical-report-schedules.functions";
 import { ProGate } from "@/components/pro/pro-gate";
+import { userMessage } from "@/lib/user-message";
 
 export const Route = createFileRoute("/_app/reports/medical-history")({
   component: MedicalHistoryPage,
@@ -99,7 +100,7 @@ function MedicalHistoryPage() {
       toast.success("Schedule saved");
       queryClient.invalidateQueries({ queryKey: ["medical-history", "schedules"] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onError: (e) => toast.error(userMessage(e, "That didn't work. Try again in a moment.")),
   });
 
   // Hydrate the form once when the schedule loads
@@ -132,7 +133,7 @@ function MedicalHistoryPage() {
       window.open(r.url, "_blank");
       queryClient.invalidateQueries({ queryKey: ["medical-history", "list"] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onError: (e) => toast.error(userMessage(e, "That didn't work. Try again in a moment.")),
   });
 
   return (

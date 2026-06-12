@@ -37,6 +37,7 @@ import {
 import type { MedKind } from "@/components/meds/medication-form-sheet";
 import { RefillForecastCard, AdherenceExtrasCard } from "@/components/meds/med-intelligence-cards";
 import { buildIcs, downloadIcs, medicationToIcsEvents } from "@/lib/ics";
+import { userMessage } from "@/lib/user-message";
 
 type Medication = {
   id: string;
@@ -500,13 +501,13 @@ function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: stri
 
   const archive = async () => {
     const { error } = await supabase.from("medications").update({ active: false }).eq("id", med.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(userMessage(error, "That didn't work. Try again in a moment.")); return; }
     toast.success(`${med.name} archived`);
     void onChanged();
   };
   const restore = async () => {
     const { error } = await supabase.from("medications").update({ active: true }).eq("id", med.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(userMessage(error, "That didn't work. Try again in a moment.")); return; }
     toast.success(`${med.name} restored`);
     void onChanged();
   };
@@ -514,7 +515,7 @@ function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: stri
     await supabase.from("medication_doses").delete().eq("medication_id", med.id);
     await supabase.from("medication_side_effects").delete().eq("medication_id", med.id);
     const { error } = await supabase.from("medications").delete().eq("id", med.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(userMessage(error, "That didn't work. Try again in a moment.")); return; }
     toast.success(`${med.name} deleted`);
     void onChanged();
   };

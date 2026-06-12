@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
+import { userMessage } from "@/lib/user-message";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,7 +46,7 @@ export function AppleHealthCard() {
       qc.invalidateQueries({ queryKey: ["apple-health", "config"] });
       toast.success("New webhook token generated. Update it in Health Auto Export.");
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't rotate token"),
+    onError: (e: any) => toast.error(userMessage(e, "Couldn't refresh the connection code. Try again in a moment.")),
   });
   const disconnectMut = useMutation({
     mutationFn: () => disconnect(),
@@ -53,7 +54,7 @@ export function AppleHealthCard() {
       qc.invalidateQueries({ queryKey: ["apple-health", "config"] });
       toast.success("Apple Health disconnected");
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't disconnect"),
+    onError: (e: any) => toast.error(userMessage(e, "Couldn't disconnect")),
   });
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -83,7 +84,7 @@ export function AppleHealthCard() {
         toast.error(`Test failed (${r.status})`);
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Test failed");
+      toast.error(userMessage(e, "The test didn't go through. Check the connection details and try again."));
     } finally {
       setPinging(false);
     }

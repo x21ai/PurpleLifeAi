@@ -28,6 +28,7 @@ import {
   getCareAttachmentUrl,
 } from "@/lib/care-chat.functions";
 import { listMyCaregivers, listPeopleSharingWithMe } from "@/lib/care.functions";
+import { userMessage } from "@/lib/user-message";
 import {
   Dialog,
   DialogContent,
@@ -221,7 +222,7 @@ function NewChatPicker({ onPicked }: { onPicked: (threadId: string) => void }) {
       onPicked(r.threadId);
       setOpen(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't open chat");
+      toast.error(userMessage(e, "Couldn't open chat"));
     } finally {
       setBusy(null);
     }
@@ -329,7 +330,7 @@ function CareChatPage() {
       await qc.invalidateQueries({ queryKey: ["care-chat", "threads"] });
       setActive(r.threadId);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't open group chat");
+      toast.error(userMessage(e, "Couldn't open group chat"));
     }
   };
 
@@ -477,7 +478,7 @@ function ConversationPanel({
       toast.success(r.muted ? "Muted" : "Unmuted");
       void qc.invalidateQueries({ queryKey: ["care-chat", "threads"] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't update");
+      toast.error(userMessage(e, "That change didn't save. Try again in a moment."));
     }
   };
 
@@ -489,7 +490,7 @@ function ConversationPanel({
       void qc.invalidateQueries({ queryKey: ["care-chat", "threads"] });
       void navigate({ search: {} });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't leave");
+      toast.error(userMessage(e, "Couldn't leave"));
     }
   };
 
@@ -602,7 +603,7 @@ function ConversationPanel({
       );
       void qc.invalidateQueries({ queryKey: ["care-chat", "threads"] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't send");
+      toast.error(userMessage(e, "Couldn't send"));
       setInput(body);
       setPending(filesToSend);
     } finally {

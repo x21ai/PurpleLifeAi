@@ -372,10 +372,23 @@ Deno.serve(async (req) => {
     // That isn't a summary — drop it so the journal list doesn't show AI scaffolding.
     const hadContent = Boolean((entry.text ?? "").trim() || transcript.trim() || photos.length > 0);
     const summaryLower = (result.summary ?? "").toLowerCase();
+    // Refusals and meta-commentary must never be stored as if they were
+    // insight about the user. Mirrored client-side in src/lib/ai-text-guards.ts.
     const looksLikeMetaReply =
       summaryLower.includes("i don't see a journal") ||
       summaryLower.includes("i do not see a journal") ||
       summaryLower.includes("no journal entry") ||
+      summaryLower.includes("provided to analyze") ||
+      summaryLower.includes("as an ai") ||
+      summaryLower.includes("language model") ||
+      summaryLower.includes("i cannot assist") ||
+      summaryLower.includes("i can't assist") ||
+      summaryLower.includes("i need more context") ||
+      summaryLower.includes("i need more information") ||
+      summaryLower.startsWith("i'm unable") ||
+      summaryLower.startsWith("i am unable") ||
+      summaryLower.startsWith("i'm sorry") ||
+      summaryLower.startsWith("i am sorry") ||
       summaryLower.startsWith("please provide") ||
       summaryLower.startsWith("i'm ready to help") ||
       summaryLower.startsWith("i am ready to help");

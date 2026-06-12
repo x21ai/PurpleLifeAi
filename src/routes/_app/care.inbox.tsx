@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { userMessage } from "@/lib/user-message";
 import {
   decidePendingChange,
   decidePendingChangesBulk,
@@ -70,7 +71,7 @@ function InboxPage() {
       qc.invalidateQueries({ queryKey: ["care", "pending"] });
       toast.success(vars.decision === "approved" ? "Change applied" : "Change rejected");
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't save decision"),
+    onError: (e: any) => toast.error(userMessage(e, "Couldn't save decision")),
   });
   const bulkMut = useMutation({
     mutationFn: (vars: { ids: string[]; decision: "approved" | "rejected" }) =>
@@ -83,7 +84,7 @@ function InboxPage() {
         `${res.ok} ${verb}${res.failed ? ` · ${res.failed} failed` : ""}`,
       );
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't save decisions"),
+    onError: (e: any) => toast.error(userMessage(e, "Couldn't save decisions")),
   });
 
   const allChanges = pending.data?.changes ?? [];

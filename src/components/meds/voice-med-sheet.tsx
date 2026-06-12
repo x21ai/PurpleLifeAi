@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useVoiceCapture } from "@/components/journal/use-voice-capture";
 import { scanMedicationFromText } from "@/lib/med-recognition.functions";
 import type { MedPrefill } from "./medication-form-sheet";
+import { userMessage } from "@/lib/user-message";
 
 type Recog = {
   name?: string | null;
@@ -57,7 +58,7 @@ export function VoiceMedSheet({
       setRecog(r);
       setStage("review");
     } catch (e: any) {
-      toast.error(e?.message || "Couldn't understand the note.");
+      toast.error(userMessage(e, "Couldn't understand the note."));
       setStage("record");
     }
   }

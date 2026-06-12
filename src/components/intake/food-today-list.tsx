@@ -4,6 +4,7 @@ import { Trash2, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import { deleteFoodEntry } from "@/lib/food.functions";
 import { Button } from "@/components/ui/button";
+import { userMessage } from "@/lib/user-message";
 
 export type FoodRow = {
   id: string;
@@ -28,7 +29,7 @@ export function FoodTodayList({ rows, readOnly }: { rows: FoodRow[]; readOnly?: 
       toast.success("Removed");
       void qc.invalidateQueries({ queryKey: ["food"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userMessage(e, "That didn't work. Try again in a moment.")),
   });
 
   const totalKcal = rows.reduce((a, r) => a + (r.calories_kcal ?? 0), 0);

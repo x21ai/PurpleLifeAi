@@ -11,6 +11,7 @@ import { queueEntry } from "@/lib/offline-journal-queue";
 import { toast } from "sonner";
 import { useVoiceCapture } from "./use-voice-capture";
 import { promptsForConditions } from "@/lib/condition-prompts";
+import { userMessage } from "@/lib/user-message";
 
 type Attachment = {
   id: string;
@@ -272,7 +273,7 @@ export function CaptureSheet({
       onOpenChange(false);
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.message ?? "Could not save entry");
+      toast.error(userMessage(err, "Your entry didn't save. It's still here on this screen, try again in a moment."));
     } finally {
       setSaving(false);
     }
