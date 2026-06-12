@@ -21,6 +21,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 /**
  * Inline View / Download actions for a row in the documents list.
@@ -41,6 +50,9 @@ export function ReportRowActions({
   const remove = useServerFn(deleteReport);
   const [busy, setBusy] = React.useState<null | "view" | "download" | "share" | "retry" | "delete">(null);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = React.useState(false);
+  const [shareUrl, setShareUrl] = React.useState("");
+  const [shareExpiresDays, setShareExpiresDays] = React.useState(7);
 
   const failed = status === "failed" || status === "needs_credits" || status === "rate_limited";
 
@@ -86,7 +98,9 @@ export function ReportRowActions({
         await navigator.clipboard.writeText(url);
         toast.success(`Share link copied , expires in ${expiresInDays} days`);
       } catch {
-        window.prompt("Share link (expires in 7 days)", url);
+        setShareUrl(url);
+        setShareExpiresDays(expiresInDays);
+        setShareDialogOpen(true);
       }
     } catch (err) {
       toast.error(userMessage(err, "Could not create share link"));
@@ -187,6 +201,42 @@ export function ReportRowActions({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share link</DialogTitle>
+            <DialogDescription>
+              Copy this link manually. It expires in {shareExpiresDays} days.
+            </DialogDescription>
+          </DialogHeader>
+          <input
+            readOnly
+            value={shareUrl}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
+            onFocus={(e) => e.target.select()}
+          />
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setShareDialogOpen(false)}>
+              Close
+            </Button>
+            <Button
+              type="button"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(shareUrl);
+                  toast.success("Link copied");
+                  setShareDialogOpen(false);
+                } catch {
+                  toast.error("Could not copy link");
+                }
+              }}
+            >
+              Copy link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

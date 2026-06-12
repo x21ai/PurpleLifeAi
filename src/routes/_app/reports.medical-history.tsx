@@ -4,6 +4,16 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Download, Mail, Share2, Trash2, FileText, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -80,6 +90,7 @@ function MedicalHistoryPage() {
   const [schDay, setSchDay] = useState(1);
   const [schWindow, setSchWindow] = useState(30);
   const [schRecipients, setSchRecipients] = useState("");
+  const [confirmDeleteSchedule, setConfirmDeleteSchedule] = useState(false);
   const existing = schedules.data?.schedules?.[0];
   const saveSchedule = useMutation({
     mutationFn: () =>
@@ -214,7 +225,6 @@ function MedicalHistoryPage() {
                 window.open(url, "_blank");
               }}
               onDelete={async () => {
-                if (!confirm("Delete this report?")) return;
                 await del({ data: { reportId: r.id } });
                 queryClient.invalidateQueries({ queryKey: ["medical-history", "list"] });
                 toast("Deleted");
@@ -291,14 +301,7 @@ function MedicalHistoryPage() {
             <Button
               size="sm"
               variant="ghost"
-              onClick={async () => {
-                if (!confirm("Delete schedule?")) return;
-                await delSch({ data: { id: existing.id } });
-                setHydrated(false);
-                setSchActive(false);
-                setSchRecipients("");
-                queryClient.invalidateQueries({ queryKey: ["medical-history", "schedules"] });
-              }}
+              onClick={() => setConfirmDeleteSchedule(true)}
             >
               Delete
             </Button>
@@ -312,6 +315,35 @@ function MedicalHistoryPage() {
         )}
       </section>
       </ProGate>
+
+      <AlertDialog open={confirmDeleteSchedule} onOpenChange={setConfirmDeleteSchedule}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete monthly schedule?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Auto-generated reports will stop. You can set up a new schedule any time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!existing) return;
+                await delSch({ data: { id: existing.id } });
+                setHydrated(false);
+                setSchActive(false);
+                setSchRecipients("");
+                queryClient.invalidateQueries({ queryKey: ["medical-history", "schedules"] });
+                setConfirmDeleteSchedule(false);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete schedule
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -334,6 +366,7 @@ function ReportRow({
   const [linkDays, setLinkDays] = useState(7);
   const [linkLabel, setLinkLabel] = useState("");
   const [createdUrl, setCreatedUrl] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const listLinks = useServerFn(listMedicalReportShareLinks);
   const revokeLink = useServerFn(revokeMedicalReportShareLink);
   const linksQ = useQuery({
@@ -364,7 +397,9 @@ function ReportRow({
           <Button size="sm" variant="ghost" onClick={() => setMode(mode === "link" ? "none" : "link")}>
             <Link2 className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="ghost" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
+          <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(true)}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
@@ -515,6 +550,29 @@ function ReportRow({
           )}
         </div>
       )}
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this report?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The PDF will be permanently removed from your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void onDelete();
+                setConfirmDelete(false);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete report
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </li>
   );
 }

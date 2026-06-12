@@ -6,6 +6,16 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { Heart, Flag } from "lucide-react";
 import { toast } from "sonner";
 import { userMessage } from "@/lib/user-message";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/community/$postId")({
   component: GatedPostDetail,
@@ -31,6 +41,9 @@ function PostDetail() {
   const [likes, setLikes] = React.useState(0);
   const [liked, setLiked] = React.useState(false);
   const [body, setBody] = React.useState("");
+  const [reportOpen, setReportOpen] = React.useState(false);
+  const [reportReason, setReportReason] = React.useState("");
+  const [reporting, setReporting] = React.useState(false);
 
   const load = React.useCallback(async () => {
     const [{ data: p }, { data: c }, { data: r }] = await Promise.all([
@@ -90,14 +103,27 @@ function PostDetail() {
     await load();
   };
 
-  const report = async () => {
+  const submitReport = async () => {
     if (!session?.user.id) return navigate({ to: "/sign-in" });
-    const reason = window.prompt("Why are you reporting this post?");
+    const reason = reportReason.trim();
     if (!reason) return;
-    await supabase
-      .from("community_reports")
-      .insert({ reporter_id: session.user.id, post_id: postId, reason });
-    toast.success("Reported. Thanks for keeping the community safe.");
+    setReporting(true);
+    try {
+      await supabase
+        .from("community_reports")
+        .insert({ reporter_id: session.user.id, post_id: postId, reason });
+      toast.success("Reported. Thanks for keeping the community safe.");
+      setReportReason("");
+      setReportOpen(false);
+    } finally {
+      setReporting(false);
+    }
+  };
+
+  const openReport = () => {
+    if (!session?.user.id) return navigate({ to: "/sign-in" });
+    setReportReason("");
+    setReportOpen(true);
   };
 
   if (!post) return <div className="p-10 text-muted-foreground">Loading…</div>;
@@ -130,7 +156,7 @@ function PostDetail() {
             <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} /> {likes}
           </button>
           <button
-            onClick={report}
+            onClick={openReport}
             className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-secondary text-muted-foreground"
           >
             <Flag className="h-4 w-4" /> Report
@@ -176,6 +202,35 @@ function PostDetail() {
           decisions.
         </p>
       </article>
+
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Report this post</DialogTitle>
+            <DialogDescription>
+              Tell us what is wrong. Moderators review every report.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={reportReason}
+            onChange={(e) => setReportReason(e.target.value)}
+            placeholder="Why are you reporting this post?"
+            rows={3}
+          />
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setReportOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void submitReport()}
+              disabled={!reportReason.trim() || reporting}
+            >
+              {reporting ? "Submitting…" : "Submit report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

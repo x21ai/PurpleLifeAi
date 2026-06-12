@@ -6,6 +6,16 @@ import { ArrowLeft, Check, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { userMessage } from "@/lib/user-message";
@@ -57,6 +67,8 @@ function InboxPage() {
   const decide = useServerFn(decidePendingChange);
   const bulk = useServerFn(decidePendingChangesBulk);
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [confirmBulkApprove, setConfirmBulkApprove] = useState(false);
+  const [confirmBulkReject, setConfirmBulkReject] = useState(false);
 
   const pending = useQuery({
     queryKey: ["care", "pending-detailed"],
@@ -144,10 +156,7 @@ function InboxPage() {
                   size="sm"
                   variant="outline"
                   disabled={bulkBusy}
-                  onClick={() => {
-                    if (!confirm(`Approve ${visibleIds.length} changes?`)) return;
-                    bulkMut.mutate({ ids: visibleIds, decision: "approved" });
-                  }}
+                  onClick={() => setConfirmBulkApprove(true)}
                 >
                   <Check className="h-3 w-3 mr-1" /> Approve all
                 </Button>
@@ -155,10 +164,7 @@ function InboxPage() {
                   size="sm"
                   variant="ghost"
                   disabled={bulkBusy}
-                  onClick={() => {
-                    if (!confirm(`Reject ${visibleIds.length} changes?`)) return;
-                    bulkMut.mutate({ ids: visibleIds, decision: "rejected" });
-                  }}
+                  onClick={() => setConfirmBulkReject(true)}
                 >
                   <X className="h-3 w-3 mr-1" /> Reject all
                 </Button>
@@ -190,6 +196,55 @@ function InboxPage() {
           </ul>
         )}
       </section>
+
+      <AlertDialog open={confirmBulkApprove} onOpenChange={setConfirmBulkApprove}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Approve {visibleIds.length} changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              All selected caregiver edits will be applied to your record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                bulkMut.mutate({ ids: visibleIds, decision: "approved" });
+                setConfirmBulkApprove(false);
+              }}
+              disabled={bulkBusy}
+            >
+              Approve all
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmBulkReject} onOpenChange={setConfirmBulkReject}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject {visibleIds.length} changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              All selected caregiver edits will be discarded. Nothing will be added to your record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                bulkMut.mutate({ ids: visibleIds, decision: "rejected" });
+                setConfirmBulkReject(false);
+              }}
+              disabled={bulkBusy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Reject all
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
