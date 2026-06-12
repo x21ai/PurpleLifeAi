@@ -1,11 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  FEATURE_CATALOG,
-  isFeatureEnabled,
-  type FeatureKey,
-} from "./feature-catalog";
+import { FEATURE_CATALOG, isFeatureEnabled, type FeatureKey } from "./feature-catalog";
 
 /**
  * Usage-based feature suggestions.
@@ -96,19 +92,16 @@ export const suggestFeatures = createServerFn({ method: "GET" })
         .eq("user_id", userId)
         .gte("captured_at", since)
         .limit(500),
-      supabase
-        .from("report_metrics")
-        .select("metric_key")
-        .eq("user_id", userId)
-        .limit(500),
+      supabase.from("report_metrics").select("metric_key").eq("user_id", userId).limit(500),
     ]);
 
     const conditions = (profile?.conditions as string[] | null) ?? [];
-    const overrides =
-      (profile?.feature_overrides as Record<string, boolean> | null) ?? {};
+    const overrides = (profile?.feature_overrides as Record<string, boolean> | null) ?? {};
     const dismissed = new Set(
-      (((profile as unknown as { suggestions_dismissed?: string[] | null })
-        ?.suggestions_dismissed ?? []) as string[])
+      (
+        ((profile as unknown as { suggestions_dismissed?: string[] | null })
+          ?.suggestions_dismissed ?? []) as string[]
+      )
         .filter((s) => s.startsWith(`${DISMISS_KEY}:`))
         .map((s) => s.slice(DISMISS_KEY.length + 1)),
     );
@@ -121,11 +114,15 @@ export const suggestFeatures = createServerFn({ method: "GET" })
 
     const counts = new Map<FeatureKey, number>();
     for (const { feature, match } of TAG_TO_FEATURE) {
-      const found = corpus.match(new RegExp(match.source, match.flags + (match.flags.includes("g") ? "" : "g")));
+      const found = corpus.match(
+        new RegExp(match.source, match.flags + (match.flags.includes("g") ? "" : "g")),
+      );
       if (found && found.length >= 3) counts.set(feature, found.length);
     }
 
-    const metricKeys = new Set(((metrics ?? []) as Array<{ metric_key: string }>).map((m) => m.metric_key));
+    const metricKeys = new Set(
+      ((metrics ?? []) as Array<{ metric_key: string }>).map((m) => m.metric_key),
+    );
     for (const { feature, keys } of REPORT_METRIC_TO_FEATURE) {
       if (keys.some((k) => metricKeys.has(k))) {
         counts.set(feature, Math.max(counts.get(feature) ?? 0, 5));
@@ -159,8 +156,7 @@ export const acceptFeatureSuggestion = createServerFn({ method: "POST" })
       .select("feature_overrides")
       .eq("id", userId)
       .maybeSingle();
-    const overrides =
-      (row?.feature_overrides as Record<string, boolean> | null) ?? {};
+    const overrides = (row?.feature_overrides as Record<string, boolean> | null) ?? {};
     overrides[data.feature] = true;
     const { error } = await supabase
       .from("profiles")

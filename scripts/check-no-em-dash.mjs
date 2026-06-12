@@ -11,13 +11,8 @@ import { join, relative } from "node:path";
 
 const ROOT = process.cwd();
 const SCAN_DIRS = ["src", "public"];
-const IGNORE_DIRS = new Set([
-  "node_modules", ".git", "dist", "build", ".lovable", ".workspace",
-]);
-const IGNORE_FILES = new Set([
-  "src/integrations/supabase/types.ts",
-  "src/routeTree.gen.ts",
-]);
+const IGNORE_DIRS = new Set(["node_modules", ".git", "dist", "build", ".lovable", ".workspace"]);
+const IGNORE_FILES = new Set(["src/integrations/supabase/types.ts", "src/routeTree.gen.ts"]);
 const EM = "\u2014";
 
 const hits = [];
@@ -27,9 +22,16 @@ function walk(dir) {
     const rel = relative(ROOT, p);
     if (IGNORE_DIRS.has(name) || IGNORE_FILES.has(rel)) continue;
     const s = statSync(p);
-    if (s.isDirectory()) { walk(p); continue; }
+    if (s.isDirectory()) {
+      walk(p);
+      continue;
+    }
     let text;
-    try { text = readFileSync(p, "utf8"); } catch { continue; }
+    try {
+      text = readFileSync(p, "utf8");
+    } catch {
+      continue;
+    }
     if (!text.includes(EM)) continue;
     text.split("\n").forEach((line, i) => {
       if (line.includes(EM)) hits.push(`${rel}:${i + 1}: ${line.trim()}`);
@@ -37,7 +39,9 @@ function walk(dir) {
   }
 }
 for (const d of SCAN_DIRS) {
-  try { walk(join(ROOT, d)); } catch {}
+  try {
+    walk(join(ROOT, d));
+  } catch {}
 }
 if (hits.length) {
   console.error("Em dash (—) found. Use ',' / 'and' / 'or' / ':' instead:\n");

@@ -54,8 +54,14 @@ export function ConditionHistorySection() {
         .maybeSingle();
       if (cancelled || !data) return;
       setActive(Array.isArray(data.conditions) ? (data.conditions as string[]) : []);
-      setArchived(Array.isArray(data.conditions_archived) ? (data.conditions_archived as unknown as ArchivedItem[]) : []);
-      setFamily(Array.isArray(data.family_history) ? (data.family_history as unknown as FamilyItem[]) : []);
+      setArchived(
+        Array.isArray(data.conditions_archived)
+          ? (data.conditions_archived as unknown as ArchivedItem[])
+          : [],
+      );
+      setFamily(
+        Array.isArray(data.family_history) ? (data.family_history as unknown as FamilyItem[]) : [],
+      );
       setLoading(false);
     })();
     return () => {
@@ -113,7 +119,10 @@ export function ConditionHistorySection() {
   async function addFamily() {
     const condition = famDraft.trim().slice(0, 80);
     if (!condition) return;
-    const next = [...family, { id: uid(), condition, relation: famRelation.trim().slice(0, 40) || undefined }];
+    const next = [
+      ...family,
+      { id: uid(), condition, relation: famRelation.trim().slice(0, 40) || undefined },
+    ];
     setFamily(next);
     setFamDraft("");
     setFamRelation("");
@@ -134,7 +143,8 @@ export function ConditionHistorySection() {
         {saving && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
-        Conditions evolve. Mark something as resolved or in remission, or note what runs in the family.
+        Conditions evolve. Mark something as resolved or in remission, or note what runs in the
+        family.
       </p>
 
       {/* Active → resolve */}

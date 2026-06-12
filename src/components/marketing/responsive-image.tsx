@@ -43,12 +43,7 @@ export function ResponsiveImage({
   return (
     <picture>
       {Object.entries(picture.sources).map(([type, srcSet]) => (
-        <source
-          key={type}
-          type={type}
-          srcSet={rewriteJpeg(srcSet)}
-          sizes={sizes}
-        />
+        <source key={type} type={type} srcSet={rewriteJpeg(srcSet)} sizes={sizes} />
       ))}
       <img
         src={fallbackSrc}

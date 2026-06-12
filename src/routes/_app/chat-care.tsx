@@ -3,7 +3,22 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { Send, ChevronLeft, Users, MessageCircle, Loader2, Bell, BellOff, LogOut, MoreVertical, Plus, Paperclip, X, FileText, Download } from "lucide-react";
+import {
+  Send,
+  ChevronLeft,
+  Users,
+  MessageCircle,
+  Loader2,
+  Bell,
+  BellOff,
+  LogOut,
+  MoreVertical,
+  Plus,
+  Paperclip,
+  X,
+  FileText,
+  Download,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -28,6 +43,7 @@ import {
   getCareAttachmentUrl,
 } from "@/lib/care-chat.functions";
 import { listMyCaregivers, listPeopleSharingWithMe } from "@/lib/care.functions";
+import { userMessage } from "@/lib/user-message";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +51,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const searchSchema = z.object({ thread: z.string().uuid().optional() });
 
@@ -128,8 +154,7 @@ function parseAttachments(value: unknown): Attachment[] {
 }
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
-const ATTACHMENT_ACCEPT =
-  "image/*,application/pdf,.doc,.docx,.txt,.csv,.xlsx,.pages,.numbers";
+const ATTACHMENT_ACCEPT = "image/*,application/pdf,.doc,.docx,.txt,.csv,.xlsx,.pages,.numbers";
 
 function AttachmentView({
   threadId,
@@ -221,7 +246,7 @@ function NewChatPicker({ onPicked }: { onPicked: (threadId: string) => void }) {
       onPicked(r.threadId);
       setOpen(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't open chat");
+      toast.error(userMessage(e, "Couldn't open chat"));
     } finally {
       setBusy(null);
     }
@@ -230,9 +255,7 @@ function NewChatPicker({ onPicked }: { onPicked: (threadId: string) => void }) {
   const mineList = (mine.data?.relationships ?? []).filter(
     (r) => r.status === "active" && r.caregiver_id,
   );
-  const sharedList = (shared.data?.relationships ?? []).filter(
-    (r) => r.status === "active",
-  );
+  const sharedList = (shared.data?.relationships ?? []).filter((r) => r.status === "active");
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -281,9 +304,7 @@ function NewChatPicker({ onPicked }: { onPicked: (threadId: string) => void }) {
                   disabled={busy === r.id}
                   className="flex w-full items-center justify-between gap-3 py-3 text-left hover:bg-secondary/40 px-2 rounded-lg"
                 >
-                  <span className="text-sm text-foreground truncate">
-                    Person sharing with you
-                  </span>
+                  <span className="text-sm text-foreground truncate">Person sharing with you</span>
                   {busy === r.id ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                   ) : (
@@ -329,7 +350,7 @@ function CareChatPage() {
       await qc.invalidateQueries({ queryKey: ["care-chat", "threads"] });
       setActive(r.threadId);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't open group chat");
+      toast.error(userMessage(e, "Couldn't open group chat"));
     }
   };
 
@@ -372,8 +393,8 @@ function CareChatPage() {
                 <MessageCircle className="mx-auto mb-3 h-8 w-8 opacity-40" />
                 No conversations yet.
                 <p className="mt-2 text-xs">
-                  Open a chat from a caregiver card in Settings → Sharing, or
-                  from a person on the Caregiver page.
+                  Open a chat from a caregiver card in Settings → Sharing, or from a person on the
+                  Caregiver page.
                 </p>
               </div>
             )}
@@ -399,9 +420,7 @@ function CareChatPage() {
                             {t.kind === "group" && (
                               <Users className="h-3.5 w-3.5 text-muted-foreground" />
                             )}
-                            <span className="truncate text-sm font-medium">
-                              {name}
-                            </span>
+                            <span className="truncate text-sm font-medium">{name}</span>
                           </div>
                           <p className="mt-0.5 truncate text-xs text-muted-foreground">
                             {t.last_message
@@ -430,12 +449,7 @@ function CareChatPage() {
         </aside>
 
         {/* Conversation panel */}
-        <section
-          className={cn(
-            "flex flex-1 flex-col bg-background",
-            showList && "hidden md:flex",
-          )}
-        >
+        <section className={cn("flex flex-1 flex-col bg-background", showList && "hidden md:flex")}>
           {activeThread ? (
             <ConversationPanel
               thread={activeThread}
@@ -470,6 +484,8 @@ function ConversationPanel({
   const leaveFn = useServerFn(leaveCareThread);
   const navigate = useNavigate({ from: "/chat-care" });
   const isOwner = thread.owner_id === meId;
+  const [confirmLeave, setConfirmLeave] = React.useState(false);
+  const [leaving, setLeaving] = React.useState(false);
 
   const handleMute = async () => {
     try {
@@ -477,19 +493,22 @@ function ConversationPanel({
       toast.success(r.muted ? "Muted" : "Unmuted");
       void qc.invalidateQueries({ queryKey: ["care-chat", "threads"] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't update");
+      toast.error(userMessage(e, "That change didn't save. Try again in a moment."));
     }
   };
 
   const handleLeave = async () => {
-    if (!confirm("Leave this chat? You can be re-added later by the chat owner.")) return;
+    setLeaving(true);
     try {
       await leaveFn({ data: { threadId: thread.id } });
       toast.success("You left the chat");
       void qc.invalidateQueries({ queryKey: ["care-chat", "threads"] });
       void navigate({ search: {} });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't leave");
+      toast.error(userMessage(e, "Couldn't leave"));
+    } finally {
+      setLeaving(false);
+      setConfirmLeave(false);
     }
   };
 
@@ -531,9 +550,7 @@ function ConversationPanel({
         },
         (payload) => {
           const m = payload.new as Message;
-          setMessages((prev) =>
-            prev.some((x) => x.id === m.id) ? prev : [...prev, m],
-          );
+          setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
         },
       )
       .subscribe();
@@ -596,13 +613,11 @@ function ConversationPanel({
         },
       });
       setMessages((prev) =>
-        prev.some((x) => x.id === r.message.id)
-          ? prev
-          : [...prev, r.message as Message],
+        prev.some((x) => x.id === r.message.id) ? prev : [...prev, r.message as Message],
       );
       void qc.invalidateQueries({ queryKey: ["care-chat", "threads"] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't send");
+      toast.error(userMessage(e, "Couldn't send"));
       setInput(body);
       setPending(filesToSend);
     } finally {
@@ -632,9 +647,7 @@ function ConversationPanel({
             </p>
           )}
         </div>
-        {thread.muted && (
-          <BellOff className="h-4 w-4 text-muted-foreground" aria-label="Muted" />
-        )}
+        {thread.muted && <BellOff className="h-4 w-4 text-muted-foreground" aria-label="Muted" />}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="Chat options">
@@ -644,14 +657,21 @@ function ConversationPanel({
           <DropdownMenuContent align="end">
             <DropdownMenuItem onSelect={() => void handleMute()}>
               {thread.muted ? (
-                <><Bell className="h-4 w-4 mr-2" /> Unmute notifications</>
+                <>
+                  <Bell className="h-4 w-4 mr-2" /> Unmute notifications
+                </>
               ) : (
-                <><BellOff className="h-4 w-4 mr-2" /> Mute notifications</>
+                <>
+                  <BellOff className="h-4 w-4 mr-2" /> Mute notifications
+                </>
               )}
             </DropdownMenuItem>
             {!isOwner && (
               <DropdownMenuItem
-                onSelect={() => void handleLeave()}
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setConfirmLeave(true);
+                }}
                 className="text-destructive focus:text-destructive"
               >
                 <LogOut className="h-4 w-4 mr-2" /> Leave chat
@@ -675,8 +695,7 @@ function ConversationPanel({
             const prev = idx > 0 ? messages[idx - 1] : null;
             const showDaySep =
               !prev ||
-              new Date(prev.created_at).toDateString() !==
-                new Date(m.created_at).toDateString();
+              new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString();
             return (
               <React.Fragment key={m.id}>
                 {showDaySep && (
@@ -696,9 +715,7 @@ function ConversationPanel({
                     )}
                   >
                     {!mine && thread.kind === "group" && senderName && (
-                      <div className="text-[11px] font-medium opacity-70">
-                        {senderName}
-                      </div>
+                      <div className="text-[11px] font-medium opacity-70">{senderName}</div>
                     )}
                     {m.deleted_at ? (
                       <em className="opacity-60">Message deleted</em>
@@ -751,9 +768,7 @@ function ConversationPanel({
                 <span className="max-w-[160px] truncate">{f.name}</span>
                 <button
                   type="button"
-                  onClick={() =>
-                    setPending((prev) => prev.filter((_, j) => j !== i))
-                  }
+                  onClick={() => setPending((prev) => prev.filter((_, j) => j !== i))}
                   className="text-muted-foreground hover:text-foreground"
                   aria-label={`Remove ${f.name}`}
                 >
@@ -813,14 +828,34 @@ function ConversationPanel({
             className="h-10 w-10 rounded-full shrink-0"
             aria-label="Send"
           >
-            {sending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
+            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </form>
       </footer>
+
+      <AlertDialog open={confirmLeave} onOpenChange={setConfirmLeave}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave this chat?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will no longer see new messages here. The chat owner can add you back later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={leaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleLeave();
+              }}
+              disabled={leaving}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {leaving ? "Leaving…" : "Leave chat"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

@@ -63,12 +63,7 @@ export function ScoreHero({
       </svg>
 
       <div className="relative flex h-full flex-col items-center justify-center px-6 py-12 text-center">
-        <p
-          className={cn(
-            "numeric-display text-white",
-            numberSize,
-          )}
-        >
+        <p className={cn("numeric-display text-white", numberSize)}>
           <NumberCountUp value={Math.round(score)} />
         </p>
         <p className="label-eyebrow mt-3" style={{ color: "rgba(255,255,255,0.85)" }}>
@@ -79,11 +74,7 @@ export function ScoreHero({
             {phrase}
           </p>
         )}
-        {narrative && (
-          <p className="body-serif mt-5 max-w-md text-white/90">
-            {narrative}
-          </p>
-        )}
+        {narrative && <p className="body-serif mt-5 max-w-md text-white/90">{narrative}</p>}
       </div>
     </section>
   );

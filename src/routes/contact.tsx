@@ -76,29 +76,59 @@ function ContactPage() {
         variant="band"
       />
       <main className="mx-auto max-w-xl px-6 sm:px-10 py-16 sm:py-24">
-
         {sent ? (
           <div className="mt-10 rounded-2xl border border-border bg-card p-6">
             <p className="font-serif text-xl">Thank you.</p>
-            <p className="mt-2 text-sm text-muted-foreground">We&rsquo;ll get back to you at {email} as soon as we can.</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              We&rsquo;ll get back to you at {email} as soon as we can.
+            </p>
           </div>
         ) : (
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
               <Label htmlFor="name">Your name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} required className="mt-1.5 h-12 rounded-xl" />
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={200}
+                required
+                className="mt-1.5 h-12 rounded-xl"
+              />
             </div>
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={320} required className="mt-1.5 h-12 rounded-xl" />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                maxLength={320}
+                required
+                className="mt-1.5 h-12 rounded-xl"
+              />
             </div>
             <div>
               <Label htmlFor="subject">Subject (optional)</Label>
-              <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={200} className="mt-1.5 h-12 rounded-xl" />
+              <Input
+                id="subject"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                maxLength={200}
+                className="mt-1.5 h-12 rounded-xl"
+              />
             </div>
             <div>
               <Label htmlFor="message">Message</Label>
-              <Textarea id="message" value={message} onChange={(e) => setMessage(e.target.value)} maxLength={5000} required rows={6} className="mt-1.5 rounded-xl" />
+              <Textarea
+                id="message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                maxLength={5000}
+                required
+                rows={6}
+                className="mt-1.5 rounded-xl"
+              />
             </div>
             <Button type="submit" disabled={submitting} className="w-full h-12 rounded-xl">
               {submitting ? "Sending…" : "Send message"}

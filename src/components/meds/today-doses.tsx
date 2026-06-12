@@ -2,7 +2,7 @@ import * as React from "react";
 import { format } from "date-fns";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { cn, formatLocaleTime } from "@/lib/utils";
+import { cn, formatLocaleTime, localDateKey, sanitizeDosageLabel } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
@@ -53,7 +53,7 @@ type Dose = {
   } | null;
 };
 
-function statusPillClass(status: string) {
+function statusPillClass(status: string, overdue = false) {
   switch (status) {
     case "taken":
       return "bg-[color:var(--success)]/15 text-[color:var(--success)] ring-1 ring-[color:var(--success)]/30";
@@ -62,8 +62,16 @@ function statusPillClass(status: string) {
     case "skipped":
       return "bg-muted text-muted-foreground ring-1 ring-border";
     default:
-      return "bg-primary/15 text-primary ring-1 ring-primary/30";
+      // A 9am dose at 2pm should not look "on schedule".
+      return overdue
+        ? "bg-[color:var(--data-warn)]/15 text-[color:var(--data-warn)] ring-1 ring-[color:var(--data-warn)]/30"
+        : "bg-primary/15 text-primary ring-1 ring-primary/30";
   }
+}
+
+/** Pending and more than 30 minutes past its scheduled time. */
+function isOverdue(d: Dose): boolean {
+  return d.status === "pending" && Date.now() - new Date(d.scheduled_at).getTime() > 30 * 60 * 1000;
 }
 
 function isScheduledMed(d: Dose): boolean {
@@ -75,6 +83,7 @@ export function TodayDoses() {
   const { session } = useAuth();
   const userId = session?.user.id;
   const [doses, setDoses] = React.useState<Dose[] | null>(null);
+  const [actioningId, setActioningId] = React.useState<string | null>(null);
   const [homeTz, setHomeTz] = React.useState<string | null>(null);
   const [wakeTime, setWakeTime] = React.useState<string>("07:00");
   const [sleepTime, setSleepTime] = React.useState<string>("23:00");
@@ -96,11 +105,15 @@ export function TodayDoses() {
 
   const load = React.useCallback(async () => {
     if (!userId) return;
-    const start = new Date(); start.setHours(0, 0, 0, 0);
-    const end = new Date(); end.setHours(23, 59, 59, 999);
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
     const { data, error } = await supabase
       .from("medication_doses")
-      .select("id, scheduled_at, status, amount, unit, medication:medications(id, name, dosage, kind, is_rescue)")
+      .select(
+        "id, scheduled_at, status, amount, unit, medication:medications(id, name, dosage, kind, is_rescue)",
+      )
       .gte("scheduled_at", start.toISOString())
       .lte("scheduled_at", end.toISOString())
       .order("scheduled_at", { ascending: true });
@@ -112,7 +125,34 @@ export function TodayDoses() {
     setDoses(rows);
   }, [userId]);
 
-  React.useEffect(() => { void load(); }, [load]);
+  React.useEffect(() => {
+    void load();
+  }, [load]);
+
+  // Roll over at local midnight and refresh when the tab comes back: a Today
+  // page left open overnight kept showing yesterday's doses.
+  React.useEffect(() => {
+    let lastDay = localDateKey(new Date());
+    const maybeReload = () => {
+      const day = localDateKey(new Date());
+      if (day !== lastDay) {
+        lastDay = day;
+        void load();
+      }
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        maybeReload();
+        void load();
+      }
+    };
+    const tick = window.setInterval(maybeReload, 60_000);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(tick);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [load]);
 
   // Load profile (home tz + wake/sleep) and active trip flag.
   React.useEffect(() => {
@@ -134,22 +174,36 @@ export function TodayDoses() {
           .limit(1),
       ]);
       if (cancelled) return;
-      const prof = p as { timezone: string | null; wake_time: string | null; sleep_time: string | null } | null;
+      const prof = p as {
+        timezone: string | null;
+        wake_time: string | null;
+        sleep_time: string | null;
+      } | null;
       setHomeTz(prof?.timezone ?? null);
       if (prof?.wake_time) setWakeTime(prof.wake_time.slice(0, 5));
       if (prof?.sleep_time) setSleepTime(prof.sleep_time.slice(0, 5));
       let deviceTz: string | null = null;
-      try { deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { /* noop */ }
-      setTraveling(((trips ?? []).length > 0) || (!!prof?.timezone && !!deviceTz && prof.timezone !== deviceTz));
+      try {
+        deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      } catch {
+        /* noop */
+      }
+      setTraveling(
+        (trips ?? []).length > 0 || (!!prof?.timezone && !!deviceTz && prof.timezone !== deviceTz),
+      );
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [userId]);
 
   // Does this scheduled instant fall inside the user's local sleep window?
   const isAsleep = (iso: string): boolean => {
     try {
       const parts = new Intl.DateTimeFormat([], {
-        hour: "2-digit", minute: "2-digit", hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
       }).formatToParts(new Date(iso));
       const hh = parts.find((p) => p.type === "hour")?.value ?? "00";
       const mm = parts.find((p) => p.type === "minute")?.value ?? "00";
@@ -167,17 +221,23 @@ export function TodayDoses() {
   };
 
   const runAction = async (id: string, action: "taken" | "skip" | "snooze") => {
+    // In-flight guard: a rapid double-tap on "Taken" used to double-decrement
+    // pill stock and race the status updates.
+    if (actioningId) return;
+    setActioningId(id);
     const prev = doses;
     const dose = doses?.find((d) => d.id === id) ?? null;
     const now = new Date().toISOString();
-    setDoses((d) =>
-      d?.map((x) => {
-        if (x.id !== id) return x;
-        if (action === "taken") return { ...x, status: "taken" };
-        if (action === "skip") return { ...x, status: "skipped" };
-        // snooze: optimistic, keep visible
-        return x;
-      }) ?? null,
+    const snoozeUntilIso = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    setDoses(
+      (d) =>
+        d?.map((x) => {
+          if (x.id !== id) return x;
+          if (action === "taken") return { ...x, status: "taken" };
+          if (action === "skip") return { ...x, status: "skipped" };
+          // snooze: move the time optimistically so the list reflects it now
+          return { ...x, scheduled_at: snoozeUntilIso };
+        }) ?? null,
     );
     let error: unknown = null;
     if (action === "taken") {
@@ -187,7 +247,7 @@ export function TodayDoses() {
         .eq("id", id);
       error = res.error;
       // QA #22: decrement pill stock when a scheduled dose is marked taken.
-      if (!error && dose?.medication?.id && (prev?.find((d) => d.id === id)?.status !== "taken")) {
+      if (!error && dose?.medication?.id && prev?.find((d) => d.id === id)?.status !== "taken") {
         await decrementPillCount(dose.medication.id, 1);
       }
     } else if (action === "skip") {
@@ -197,16 +257,23 @@ export function TodayDoses() {
         .eq("id", id);
       error = res.error;
     } else {
-      const snoozeUntil = new Date(Date.now() + 10 * 60 * 1000).toISOString();
       const res = await supabase
         .from("medication_doses")
-        .update({ scheduled_at: snoozeUntil, status: "pending" })
+        // notified_at/missed_notified_at reset so the push cron fires again
+        // at the snoozed time; without it, snooze produced no second reminder.
+        .update({
+          scheduled_at: snoozeUntilIso,
+          status: "pending",
+          notified_at: null,
+          missed_notified_at: null,
+        })
         .eq("id", id);
       error = res.error;
     }
+    setActioningId(null);
     if (error) {
       setDoses(prev);
-      toast.error("Could not update dose");
+      toast.error("That didn't save. Try the dose again in a moment.");
       return;
     }
     if (action === "snooze") {
@@ -217,9 +284,11 @@ export function TodayDoses() {
   };
 
   // Retroactive edit: change a non-pending dose back to taken / skipped / pending.
+  // takenAt lets a missed dose be logged at its scheduled time instead of now.
   const reclassify = async (
     id: string,
     next: "taken" | "skipped" | "pending",
+    takenAt?: string,
   ) => {
     const prev = doses;
     const prevStatus = prev?.find((d) => d.id === id)?.status;
@@ -227,12 +296,9 @@ export function TodayDoses() {
     setDoses((d) => d?.map((x) => (x.id === id ? { ...x, status: next } : x)) ?? null);
     const update: { status: string; taken_at: string | null } = {
       status: next,
-      taken_at: next === "taken" ? new Date().toISOString() : null,
+      taken_at: next === "taken" ? (takenAt ?? new Date().toISOString()) : null,
     };
-    const { error } = await supabase
-      .from("medication_doses")
-      .update(update)
-      .eq("id", id);
+    const { error } = await supabase.from("medication_doses").update(update).eq("id", id);
     if (error) {
       setDoses(prev);
       toast.error("Could not update dose");
@@ -244,7 +310,11 @@ export function TodayDoses() {
       else if (next !== "taken" && prevStatus === "taken") await decrementPillCount(medId, -1);
     }
     toast.success(
-      next === "taken" ? "Marked as taken" : next === "skipped" ? "Marked as skipped" : "Reset to pending",
+      next === "taken"
+        ? "Marked as taken"
+        : next === "skipped"
+          ? "Marked as skipped"
+          : "Reset to pending",
     );
   };
 
@@ -314,7 +384,10 @@ export function TodayDoses() {
           <Pill className="h-4 w-4 mt-0.5 text-secondary-foreground/70" />
           <p className="text-sm text-secondary-foreground">
             No medications scheduled for today.{" "}
-            <Link to="/meds" className="underline underline-offset-2">Add one</Link>.
+            <Link to="/meds" className="underline underline-offset-2">
+              Add one
+            </Link>
+            .
           </p>
         </div>
       ) : (
@@ -324,7 +397,7 @@ export function TodayDoses() {
               <span
                 className={cn(
                   "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium tabular-nums",
-                  statusPillClass(d.status),
+                  statusPillClass(d.status, isOverdue(d)),
                 )}
               >
                 {isAsleep(d.scheduled_at) && (
@@ -339,13 +412,16 @@ export function TodayDoses() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-foreground truncate">
                   {d.medication?.name ?? "Medication"}
+                  {isOverdue(d) && (
+                    <span className="ml-2 text-[10px] uppercase tracking-wide text-[color:var(--data-warn)]">
+                      Overdue
+                    </span>
+                  )}
                 </p>
                 {(() => {
                   const perDose =
-                    d.amount != null
-                      ? `${d.amount}${d.unit ? ` ${d.unit}` : ""}`
-                      : null;
-                  const label = perDose ?? d.medication?.dosage ?? null;
+                    d.amount != null ? `${d.amount}${d.unit ? ` ${d.unit}` : ""}` : null;
+                  const label = perDose ?? sanitizeDosageLabel(d.medication?.dosage) ?? null;
                   if (label) {
                     return <p className="text-xs text-muted-foreground truncate">{label}</p>;
                   }
@@ -367,7 +443,9 @@ export function TodayDoses() {
                 <div className="flex items-center gap-1.5">
                   <Button
                     size="sm"
-                    className="rounded-full"
+                    className="rounded-full min-h-[44px] min-w-[44px] px-4"
+                    disabled={actioningId !== null}
+                    aria-label={`Mark ${d.medication?.name ?? "medication"} as taken`}
                     onClick={() => runAction(d.id, "taken")}
                   >
                     Taken
@@ -375,7 +453,9 @@ export function TodayDoses() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="rounded-full"
+                    className="rounded-full min-h-[44px] min-w-[44px] px-4"
+                    disabled={actioningId !== null}
+                    aria-label={`Snooze ${d.medication?.name ?? "medication"} reminder 10 minutes`}
                     onClick={() => runAction(d.id, "snooze")}
                   >
                     Snooze
@@ -383,7 +463,9 @@ export function TodayDoses() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="rounded-full text-muted-foreground"
+                    className="rounded-full text-muted-foreground min-h-[44px] min-w-[44px] px-4"
+                    disabled={actioningId !== null}
+                    aria-label={`Skip ${d.medication?.name ?? "medication"} dose`}
                     onClick={() => runAction(d.id, "skip")}
                   >
                     Skip
@@ -392,6 +474,18 @@ export function TodayDoses() {
               ) : (
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs text-muted-foreground capitalize">{d.status}</span>
+                  {d.status === "missed" && (
+                    // Calm recovery, never punishment: a missed dose can
+                    // always be logged after the fact.
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full h-7 text-xs"
+                      onClick={() => reclassify(d.id, "taken")}
+                    >
+                      Log it anyway
+                    </Button>
+                  )}
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       aria-label="Edit dose status"
@@ -399,10 +493,15 @@ export function TodayDoses() {
                     >
                       <MoreVertical className="h-4 w-4" />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuContent align="end" className="w-52">
                       {d.status !== "taken" && (
                         <DropdownMenuItem onClick={() => reclassify(d.id, "taken")}>
-                          Mark as taken
+                          Mark as taken (now)
+                        </DropdownMenuItem>
+                      )}
+                      {d.status !== "taken" && (
+                        <DropdownMenuItem onClick={() => reclassify(d.id, "taken", d.scheduled_at)}>
+                          Took it at the scheduled time
                         </DropdownMenuItem>
                       )}
                       {d.status !== "skipped" && (

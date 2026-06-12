@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
+import { userMessage } from "@/lib/user-message";
 import {
   getBillingSettings,
   setProFreeForEveryone,
@@ -39,7 +40,8 @@ function AdminBillingPage() {
       qc.invalidateQueries({ queryKey: ["my-subscription"] });
       toast.success("Updated.");
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onError: (e: unknown) =>
+      toast.error(userMessage(e, "That didn't work. Try again in a moment.")),
   });
 
   const [grantUserId, setGrantUserId] = React.useState("");
@@ -52,7 +54,8 @@ function AdminBillingPage() {
       toast.success("Pro granted.");
       setGrantUserId("");
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onError: (e: unknown) =>
+      toast.error(userMessage(e, "That didn't work. Try again in a moment.")),
   });
 
   if (isLoading) return <p className="text-muted-foreground">Loading…</p>;
@@ -146,7 +149,9 @@ function AdminBillingPage() {
           <ul className="mt-4 divide-y divide-border/60">
             {subsData.rows.map((r) => (
               <li key={r.user_id} className="py-3 text-sm flex items-center gap-3">
-                <span className="font-mono text-xs text-muted-foreground truncate">{r.user_id}</span>
+                <span className="font-mono text-xs text-muted-foreground truncate">
+                  {r.user_id}
+                </span>
                 <span className="ml-auto text-xs uppercase tracking-wider">{r.status}</span>
                 <span className="text-xs text-muted-foreground">
                   {r.current_period_end ? new Date(r.current_period_end).toLocaleDateString() : ","}
@@ -165,7 +170,9 @@ function StatusRow({ ok, label }: { ok: boolean; label: string }) {
     <div className="flex items-center gap-2 text-sm">
       <ShieldCheck className={`h-4 w-4 ${ok ? "text-emerald-500" : "text-muted-foreground"}`} />
       <span>{label}:</span>
-      <span className={ok ? "text-emerald-500" : "text-amber-500"}>{ok ? "Configured" : "Not set"}</span>
+      <span className={ok ? "text-emerald-500" : "text-amber-500"}>
+        {ok ? "Configured" : "Not set"}
+      </span>
     </div>
   );
 }

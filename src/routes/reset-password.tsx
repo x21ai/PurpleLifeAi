@@ -27,7 +27,9 @@ function ResetPasswordPage() {
 
   useEffect(() => {
     // Supabase parses the recovery token from the URL hash and fires PASSWORD_RECOVERY.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setReady(true);
     });
     supabase.auth.getSession().then(({ data }) => {
@@ -74,7 +76,9 @@ function ResetPasswordPage() {
           </p>
         ) : (
           <form onSubmit={handleSubmit} className="mt-10 space-y-4">
-            <label htmlFor="new-password" className="label-eyebrow block">{t("resetPassword.newPassword")}</label>
+            <label htmlFor="new-password" className="label-eyebrow block">
+              {t("resetPassword.newPassword")}
+            </label>
             <PasswordInput
               id="new-password"
               required
@@ -86,7 +90,9 @@ function ResetPasswordPage() {
               className="h-14 text-lg font-serif rounded-xl"
               disabled={!ready || status === "submitting"}
             />
-            <label htmlFor="confirm-password" className="label-eyebrow block pt-1">{t("resetPassword.confirmPassword")}</label>
+            <label htmlFor="confirm-password" className="label-eyebrow block pt-1">
+              {t("resetPassword.confirmPassword")}
+            </label>
             <PasswordInput
               id="confirm-password"
               required
@@ -98,16 +104,20 @@ function ResetPasswordPage() {
               className="h-14 text-lg font-serif rounded-xl"
               disabled={!ready || status === "submitting"}
             />
-            <Button type="submit" className="w-full h-14 text-base rounded-xl" disabled={!ready || status === "submitting"}>
+            <Button
+              type="submit"
+              className="w-full h-14 text-base rounded-xl"
+              disabled={!ready || status === "submitting"}
+            >
               {status === "submitting" ? t("resetPassword.updating") : t("resetPassword.updateBtn")}
             </Button>
             {!ready && (
-              <p className="text-sm text-muted-foreground">
-                {t("resetPassword.openFromEmail")}
-              </p>
+              <p className="text-sm text-muted-foreground">{t("resetPassword.openFromEmail")}</p>
             )}
             {errorMsg && (
-              <p className="text-sm text-destructive" role="alert">{errorMsg}</p>
+              <p className="text-sm text-destructive" role="alert">
+                {errorMsg}
+              </p>
             )}
           </form>
         )}

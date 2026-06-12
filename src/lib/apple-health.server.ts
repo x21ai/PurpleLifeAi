@@ -61,7 +61,18 @@ export function mapHealthAutoExportPayload(payload: unknown): DailyMetric[] {
   const avgBuckets: Record<string, Map<string, { sum: number; n: number }>> = {};
 
   for (const raw of metrics) {
-    const m = raw as { name?: string; data?: { qty?: number; date?: string; value?: string; sleepStart?: string; sleepEnd?: string; asleep?: number; inBed?: number }[] };
+    const m = raw as {
+      name?: string;
+      data?: {
+        qty?: number;
+        date?: string;
+        value?: string;
+        sleepStart?: string;
+        sleepEnd?: string;
+        asleep?: number;
+        inBed?: number;
+      }[];
+    };
     const name = String(m.name ?? "").toLowerCase();
     const col = HAE_METRIC_MAP[name];
     const samples = Array.isArray(m.data) ? m.data : [];
@@ -173,14 +184,23 @@ export async function findUserBySecret(secret: string): Promise<string | null> {
   return data?.user_id ?? null;
 }
 
-export async function touchAppleHealthSync(userId: string, kind: "webhook" | "manual") {
+/**
+ * Timestamp semantics, kept honest:
+ * - last_webhook_at: a webhook or test ping reached us (connection works)
+ * - last_sync_at: health DATA was actually imported
+ * Pings and empty payloads must not move last_sync_at, or the UI claims a
+ * sync that never delivered anything.
+ */
+export async function touchAppleHealthSync(userId: string, kind: "ping" | "data" | "manual") {
   const stamp = new Date().toISOString();
   await supabaseAdmin
     .from("apple_health_tokens")
     .update(
-      kind === "webhook"
+      kind === "data"
         ? { last_webhook_at: stamp, last_sync_at: stamp }
-        : { last_sync_at: stamp },
+        : kind === "ping"
+          ? { last_webhook_at: stamp }
+          : { last_sync_at: stamp },
     )
     .eq("user_id", userId);
 }

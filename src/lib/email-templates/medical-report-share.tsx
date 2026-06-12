@@ -26,14 +26,7 @@ interface Props {
   isSelf?: boolean;
 }
 
-const Email = ({
-  senderName,
-  message,
-  windowFrom,
-  windowTo,
-  downloadUrl,
-  isSelf,
-}: Props) => {
+const Email = ({ senderName, message, windowFrom, windowTo, downloadUrl, isSelf }: Props) => {
   const who = senderName?.trim() || "A Purple user";
   const url = downloadUrl || "https://purplelife.org/";
   const title = isSelf
@@ -57,9 +50,8 @@ const Email = ({
             </Section>
           ) : null}
           <Text style={text}>
-            The report is a PDF compiled from data tracked in {SITE_NAME}. It
-            includes medications, events, biometric trends and journal themes.
-            It is not a medical record.
+            The report is a PDF compiled from data tracked in {SITE_NAME}. It includes medications,
+            events, biometric trends and journal themes. It is not a medical record.
           </Text>
           <Section style={{ textAlign: "center", margin: "32px 0" }}>
             <Button href={url} style={button}>

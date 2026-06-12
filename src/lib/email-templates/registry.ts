@@ -1,18 +1,18 @@
-import type { ComponentType } from 'react'
-import { template as careInviteTemplate } from './care-invite'
-import { template as caregiverWriteNoticeTemplate } from './caregiver-write-notice'
-import { template as caregiverProposalDecisionTemplate } from './caregiver-proposal-decision'
-import { template as careDailyDigestTemplate } from './care-daily-digest'
-import { template as medicalReportShareTemplate } from './medical-report-share'
-import { template as weeklyRecapTemplate } from './weekly-recap'
+import type { ComponentType } from "react";
+import { template as careInviteTemplate } from "./care-invite";
+import { template as caregiverWriteNoticeTemplate } from "./caregiver-write-notice";
+import { template as caregiverProposalDecisionTemplate } from "./caregiver-proposal-decision";
+import { template as careDailyDigestTemplate } from "./care-daily-digest";
+import { template as medicalReportShareTemplate } from "./medical-report-share";
+import { template as weeklyRecapTemplate } from "./weekly-recap";
 
 export interface TemplateEntry {
-  component: ComponentType<any>
-  subject: string | ((data: Record<string, any>) => string)
-  displayName?: string
-  previewData?: Record<string, any>
+  component: ComponentType<any>;
+  subject: string | ((data: Record<string, any>) => string);
+  displayName?: string;
+  previewData?: Record<string, any>;
   /** Fixed recipient, overrides caller-provided recipientEmail when set. */
-  to?: string
+  to?: string;
 }
 
 /**
@@ -24,10 +24,10 @@ export interface TemplateEntry {
  *   // then add to TEMPLATES: 'welcome': welcomeTemplate
  */
 export const TEMPLATES: Record<string, TemplateEntry> = {
-  'care-invite': careInviteTemplate,
-  'caregiver-write-notice': caregiverWriteNoticeTemplate,
-  'caregiver-proposal-decision': caregiverProposalDecisionTemplate,
-  'care-daily-digest': careDailyDigestTemplate,
-  'medical-report-share': medicalReportShareTemplate,
-  'weekly-recap': weeklyRecapTemplate,
-}
+  "care-invite": careInviteTemplate,
+  "caregiver-write-notice": caregiverWriteNoticeTemplate,
+  "caregiver-proposal-decision": caregiverProposalDecisionTemplate,
+  "care-daily-digest": careDailyDigestTemplate,
+  "medical-report-share": medicalReportShareTemplate,
+  "weekly-recap": weeklyRecapTemplate,
+};

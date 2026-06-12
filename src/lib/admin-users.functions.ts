@@ -3,10 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function assertAdmin(supabase: any, userId: string) {
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
+  const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   if (error) throw new Error(error.message);
   const roles = (data ?? []).map((r: { role: string }) => r.role);
   if (!roles.includes("super_admin") && !roles.includes("admin")) {
@@ -48,7 +45,9 @@ export const adminRestoreUser = createServerFn({ method: "POST" })
 export const adminScheduleDelete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({ user_id: z.string().uuid(), days: z.number().int().min(1).max(90).default(30) }).parse(i),
+    z
+      .object({ user_id: z.string().uuid(), days: z.number().int().min(1).max(90).default(30) })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);

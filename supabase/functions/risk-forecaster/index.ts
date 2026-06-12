@@ -2,14 +2,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 
 const MODEL_VERSION = "v2-scorecard-2026.06";
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
@@ -43,25 +42,27 @@ function formatMin(min: number): string {
 }
 
 async function narrate(score: number, band: Band, factors: Factor[]): Promise<string> {
-  const fallback = factors.length === 0
-    ? "Things look steady today. Nothing standing out — just keep doing what you're doing."
-    : "Your body's a bit off baseline this week. Nothing dramatic, just worth slowing down today.";
+  const fallback =
+    factors.length === 0
+      ? "Things look steady today. Nothing standing out — just keep doing what you're doing."
+      : "Your body's a bit off baseline this week. Nothing dramatic, just worth slowing down today.";
+
+  if (!ANTHROPIC_API_KEY) return fallback;
 
   try {
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "claude-sonnet-4-5",
+        max_tokens: 300,
+        system:
+          "You are Purple. Reply in 1-2 warm, non-clinical sentences spoken to the person directly. Never give medical advice, never use clinical language, never alarm. Acknowledge what's actually shifting in their body in plain words. Example tone: 'Your sleep dropped a bit this week and your HRV is running below your usual. Nothing dramatic, just worth slowing down today.'",
         messages: [
-          {
-            role: "system",
-            content:
-              "You are Purple. Reply in 1-2 warm, non-clinical sentences spoken to the person directly. Never give medical advice, never use clinical language, never alarm. Acknowledge what's actually shifting in their body in plain words. Example tone: 'Your sleep dropped a bit this week and your HRV is running below your usual. Nothing dramatic, just worth slowing down today.'",
-          },
           {
             role: "user",
             content: `Today's risk score: ${score} (band: ${band}).\nFactors that fired:\n${
@@ -74,20 +75,24 @@ async function narrate(score: number, band: Band, factors: Factor[]): Promise<st
       }),
     });
     if (!res.ok) {
-      console.error("ai gateway", res.status, await res.text());
+      console.error("anthropic", res.status, await res.text());
       return fallback;
     }
     const data = await res.json();
-    const text = data?.choices?.[0]?.message?.content;
+    const text = (data?.content ?? [])
+      .map((b: { type: string; text?: string }) => (b.type === "text" ? (b.text ?? "") : ""))
+      .join("");
     if (typeof text === "string" && text.trim().length > 0) return text.trim();
     return fallback;
   } catch (err) {
-    console.error("ai gateway error", err);
+    console.error("anthropic error", err);
     return fallback;
   }
 }
 
-async function runForUser(userId: string): Promise<{ ok: boolean; reason?: string; score?: number; band?: Band }> {
+async function runForUser(
+  userId: string,
+): Promise<{ ok: boolean; reason?: string; score?: number; band?: Band }> {
   const since14 = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString();
   const cutoffRecent = new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString();
   const since48h = new Date(Date.now() - 48 * 3600 * 1000).toISOString();
@@ -96,7 +101,9 @@ async function runForUser(userId: string): Promise<{ ok: boolean; reason?: strin
 
   const { data: bios, error: biosErr } = await admin
     .from("biometrics")
-    .select("recorded_at, sleep_total_min, sleep_score, sleep_efficiency_pct, hrv_rmssd_ms, hr_bpm, resting_hr_bpm, oura_readiness_score, oura_stress_score, body_temp_deviation_c, menstrual_phase")
+    .select(
+      "recorded_at, sleep_total_min, sleep_score, sleep_efficiency_pct, hrv_rmssd_ms, hr_bpm, resting_hr_bpm, oura_readiness_score, oura_stress_score, body_temp_deviation_c, menstrual_phase",
+    )
     .eq("user_id", userId)
     .gte("recorded_at", since14)
     .order("recorded_at", { ascending: true });
@@ -235,9 +242,23 @@ async function runForUser(userId: string): Promise<{ ok: boolean; reason?: strin
 
   // v2: journal symptom signal — symptom-laden tags in last 3 days
   const SYMPTOM_TAGS = new Set([
-    "headache","migraine","aura","poor_sleep","insomnia","stress","anxiety",
-    "fatigue","exhaustion","missed_meds","nausea","dizzy","pain","mood_low",
-    "overstimulated","sensory_overload","seizure_warning",
+    "headache",
+    "migraine",
+    "aura",
+    "poor_sleep",
+    "insomnia",
+    "stress",
+    "anxiety",
+    "fatigue",
+    "exhaustion",
+    "missed_meds",
+    "nausea",
+    "dizzy",
+    "pain",
+    "mood_low",
+    "overstimulated",
+    "sensory_overload",
+    "seizure_warning",
   ]);
   const { data: journal } = await admin
     .from("journal_entries")
@@ -318,23 +339,40 @@ async function runForUser(userId: string): Promise<{ ok: boolean; reason?: strin
 
   const narrative = await narrate(score, band, factors);
 
-  const today = new Date().toISOString().slice(0, 10);
+  // for_date is the USER'S calendar day, not the server's UTC day; a UTC key
+  // serves yesterday's forecast all morning in UTC+10 and tomorrow's all
+  // evening in UTC-8.
+  const { data: profileTz } = await admin
+    .from("profiles")
+    .select("timezone")
+    .eq("id", userId)
+    .maybeSingle();
+  const tz = (profileTz?.timezone as string | null) || "UTC";
+  let today: string;
+  try {
+    today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  } catch {
+    today = new Date().toISOString().slice(0, 10);
+  }
 
-  const { error: upsertErr } = await admin
-    .from("risk_forecasts")
-    .upsert(
-      {
-        user_id: userId,
-        for_date: today,
-        risk_score: score,
-        band,
-        top_factors: factors,
-        ai_narrative: narrative,
-        model_version: MODEL_VERSION,
-        computed_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,for_date" },
-    );
+  const { error: upsertErr } = await admin.from("risk_forecasts").upsert(
+    {
+      user_id: userId,
+      for_date: today,
+      risk_score: score,
+      band,
+      top_factors: factors,
+      ai_narrative: narrative,
+      model_version: MODEL_VERSION,
+      computed_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,for_date" },
+  );
 
   if (upsertErr) {
     console.error("forecast upsert", userId, upsertErr);
@@ -386,8 +424,7 @@ async function runForUser(userId: string): Promise<{ ok: boolean; reason?: strin
         .slice(0, 3)
         .map((f) => `• ${f.label} — ${f.detail}`)
         .join("\n");
-      const body =
-        `${top}\n\nNothing to be alarmed about — just worth slowing down, hydrating, and being gentle with yourself today.`;
+      const body = `${top}\n\nNothing to be alarmed about — just worth slowing down, hydrating, and being gentle with yourself today.`;
       await admin.from("alerts").insert({
         user_id: userId,
         kind: "pre_seizure_stack",
@@ -440,7 +477,13 @@ Deno.serve(async (req) => {
     const { data: profiles, error } = await admin.from("profiles").select("id");
     if (error) throw error;
 
-    const results: Array<{ user_id: string; ok: boolean; reason?: string; score?: number; band?: Band }> = [];
+    const results: Array<{
+      user_id: string;
+      ok: boolean;
+      reason?: string;
+      score?: number;
+      band?: Band;
+    }> = [];
     for (const p of profiles ?? []) {
       const r = await runForUser(p.id);
       results.push({ user_id: p.id, ...r });

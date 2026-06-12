@@ -1,13 +1,33 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { PlatformFlagGate } from "@/lib/platform-flags";
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { Heart, Flag } from "lucide-react";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/community/$postId")({
-  component: PostDetail,
+  component: GatedPostDetail,
 });
+
+function GatedPostDetail() {
+  return (
+    <PlatformFlagGate flag="community" redirectTo="/">
+      <PostDetail />
+    </PlatformFlagGate>
+  );
+}
 
 type Post = { id: string; title: string; body: string; topic: string; created_at: string };
 type Comment = { id: string; body: string; created_at: string };
@@ -21,12 +41,29 @@ function PostDetail() {
   const [likes, setLikes] = React.useState(0);
   const [liked, setLiked] = React.useState(false);
   const [body, setBody] = React.useState("");
+  const [reportOpen, setReportOpen] = React.useState(false);
+  const [reportReason, setReportReason] = React.useState("");
+  const [reporting, setReporting] = React.useState(false);
 
   const load = React.useCallback(async () => {
     const [{ data: p }, { data: c }, { data: r }] = await Promise.all([
-      supabase.from("community_posts").select("id, title, body, topic, created_at").eq("id", postId).eq("hidden", false).maybeSingle(),
-      supabase.from("community_comments").select("id, body, created_at").eq("post_id", postId).eq("hidden", false).order("created_at"),
-      supabase.from("community_reactions").select("user_id").eq("post_id", postId).eq("kind", "like"),
+      supabase
+        .from("community_posts")
+        .select("id, title, body, topic, created_at")
+        .eq("id", postId)
+        .eq("hidden", false)
+        .maybeSingle(),
+      supabase
+        .from("community_comments")
+        .select("id, body, created_at")
+        .eq("post_id", postId)
+        .eq("hidden", false)
+        .order("created_at"),
+      supabase
+        .from("community_reactions")
+        .select("user_id")
+        .eq("post_id", postId)
+        .eq("kind", "like"),
     ]);
     setPost((p ?? null) as Post | null);
     setComments((c ?? []) as Comment[]);
@@ -34,14 +71,23 @@ function PostDetail() {
     setLiked(!!(session?.user.id && r?.some((x) => x.user_id === session.user.id)));
   }, [postId, session?.user.id]);
 
-  React.useEffect(() => { void load(); }, [load]);
+  React.useEffect(() => {
+    void load();
+  }, [load]);
 
   const toggleLike = async () => {
     if (!session?.user.id) return navigate({ to: "/sign-in" });
     if (liked) {
-      await supabase.from("community_reactions").delete().eq("post_id", postId).eq("user_id", session.user.id).eq("kind", "like");
+      await supabase
+        .from("community_reactions")
+        .delete()
+        .eq("post_id", postId)
+        .eq("user_id", session.user.id)
+        .eq("kind", "like");
     } else {
-      await supabase.from("community_reactions").insert({ post_id: postId, user_id: session.user.id, kind: "like" });
+      await supabase
+        .from("community_reactions")
+        .insert({ post_id: postId, user_id: session.user.id, kind: "like" });
     }
     await load();
   };
@@ -49,18 +95,35 @@ function PostDetail() {
   const comment = async () => {
     if (!session?.user.id) return navigate({ to: "/sign-in" });
     if (!body.trim()) return;
-    const { error } = await supabase.from("community_comments").insert({ post_id: postId, user_id: session.user.id, body: body.trim() });
-    if (error) return toast.error(error.message);
+    const { error } = await supabase
+      .from("community_comments")
+      .insert({ post_id: postId, user_id: session.user.id, body: body.trim() });
+    if (error) return toast.error(userMessage(error, "That didn't work. Try again in a moment."));
     setBody("");
     await load();
   };
 
-  const report = async () => {
+  const submitReport = async () => {
     if (!session?.user.id) return navigate({ to: "/sign-in" });
-    const reason = window.prompt("Why are you reporting this post?");
+    const reason = reportReason.trim();
     if (!reason) return;
-    await supabase.from("community_reports").insert({ reporter_id: session.user.id, post_id: postId, reason });
-    toast.success("Reported. Thanks for keeping the community safe.");
+    setReporting(true);
+    try {
+      await supabase
+        .from("community_reports")
+        .insert({ reporter_id: session.user.id, post_id: postId, reason });
+      toast.success("Reported. Thanks for keeping the community safe.");
+      setReportReason("");
+      setReportOpen(false);
+    } finally {
+      setReporting(false);
+    }
+  };
+
+  const openReport = () => {
+    if (!session?.user.id) return navigate({ to: "/sign-in" });
+    setReportReason("");
+    setReportOpen(true);
   };
 
   if (!post) return <div className="p-10 text-muted-foreground">Loading…</div>;
@@ -69,13 +132,19 @@ function PostDetail() {
     <div className="min-h-dvh bg-background text-foreground">
       <header className="border-b border-border">
         <div className="mx-auto max-w-3xl px-5 sm:px-8 py-4 flex items-center justify-between">
-          <Link to="/community" className="text-sm text-foreground/70 hover:text-foreground">← Community</Link>
-          <Link to="/" className="font-serif text-xl">Purple</Link>
+          <Link to="/community" className="text-sm text-foreground/70 hover:text-foreground">
+            ← Community
+          </Link>
+          <Link to="/" className="font-serif text-xl">
+            Purple
+          </Link>
         </div>
       </header>
 
       <article className="mx-auto max-w-3xl px-5 sm:px-8 pt-10 pb-24">
-        <div className="text-xs text-muted-foreground capitalize">{post.topic} · {new Date(post.created_at).toLocaleDateString()}</div>
+        <div className="text-xs text-muted-foreground capitalize">
+          {post.topic} · {new Date(post.created_at).toLocaleDateString()}
+        </div>
         <h1 className="mt-2 font-serif text-4xl sm:text-5xl leading-[1.05]">{post.title}</h1>
         <p className="mt-6 body-serif whitespace-pre-wrap text-foreground/85">{post.body}</p>
 
@@ -86,7 +155,10 @@ function PostDetail() {
           >
             <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} /> {likes}
           </button>
-          <button onClick={report} className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-secondary text-muted-foreground">
+          <button
+            onClick={openReport}
+            className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-secondary text-muted-foreground"
+          >
             <Flag className="h-4 w-4" /> Report
           </button>
         </div>
@@ -95,11 +167,15 @@ function PostDetail() {
         <ul className="mt-4 space-y-3">
           {comments.map((c) => (
             <li key={c.id} className="rounded-2xl border border-border bg-card p-4">
-              <div className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground">
+                {new Date(c.created_at).toLocaleString()}
+              </div>
               <p className="mt-1 text-sm whitespace-pre-wrap">{c.body}</p>
             </li>
           ))}
-          {comments.length === 0 && <p className="text-sm text-muted-foreground">No comments yet.</p>}
+          {comments.length === 0 && (
+            <p className="text-sm text-muted-foreground">No comments yet.</p>
+          )}
         </ul>
 
         <div className="mt-6 rounded-2xl border border-border bg-card p-4">
@@ -112,16 +188,49 @@ function PostDetail() {
             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
           <div className="mt-2 flex justify-end">
-            <button onClick={comment} className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm">
+            <button
+              onClick={comment}
+              className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm"
+            >
               Post
             </button>
           </div>
         </div>
 
         <p className="mt-10 text-xs text-muted-foreground">
-          Community posts are not medical advice. Always consult your care team for medical decisions.
+          Community posts are not medical advice. Always consult your care team for medical
+          decisions.
         </p>
       </article>
+
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Report this post</DialogTitle>
+            <DialogDescription>
+              Tell us what is wrong. Moderators review every report.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={reportReason}
+            onChange={(e) => setReportReason(e.target.value)}
+            placeholder="Why are you reporting this post?"
+            rows={3}
+          />
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setReportOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void submitReport()}
+              disabled={!reportReason.trim() || reporting}
+            >
+              {reporting ? "Submitting…" : "Submit report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

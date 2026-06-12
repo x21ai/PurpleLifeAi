@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Menu, ChevronDown } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
-import { navTree, type NavGroup } from "./nav-items";
+import { navTree, filterNavTree, type NavGroup } from "./nav-items";
+import { usePlatformFlags } from "@/lib/platform-flags";
 import { cn } from "@/lib/utils";
 import { PendingInboxBadge } from "@/components/care/pending-inbox-badge";
 import { CaregiverNavLink } from "./caregiver-nav-link";
@@ -12,6 +13,8 @@ export function MobileTopBar() {
   const [open, setOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { flags } = usePlatformFlags();
+  const tree = filterNavTree(navTree, flags);
 
   return (
     <header
@@ -25,45 +28,61 @@ export function MobileTopBar() {
         <PendingInboxBadge />
         <ProfileMenu />
         <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger
-          aria-label="Open menu"
-          className="rounded-md p-2 -mr-2 text-muted-foreground hover:text-foreground"
-        >
-          <Menu className="h-5 w-5" />
-        </SheetTrigger>
-        <SheetContent side="left" className="w-72 p-0">
-          <SheetHeader className="px-5 pt-6 pb-3 text-left">
-            <SheetTitle className="wordmark text-[13px] text-foreground">Purple</SheetTitle>
-          </SheetHeader>
-          <nav className="px-3 py-2 space-y-1" aria-label="Mobile primary">
-            {navTree.map((group) => (
-              <MobileGroup
-                key={group.id}
-                group={group}
-                pathname={pathname}
-                isOpen={!!openGroups[group.id]}
-                onToggle={() =>
-                  setOpenGroups((p) => ({ ...p, [group.id]: !p[group.id] }))
-                }
-                onNavigate={() => setOpen(false)}
-              />
-            ))}
-            <CaregiverNavLink variant="sheet" onClick={() => setOpen(false)} />
-          </nav>
-          <div className="mt-2 mx-3 pt-4 border-t border-border space-y-1 text-[14px]">
-            <Link to="/charter" onClick={() => setOpen(false)} className="block px-3 py-2 text-muted-foreground hover:text-foreground">Charter</Link>
-            <Link to="/privacy" onClick={() => setOpen(false)} className="block px-3 py-2 text-muted-foreground hover:text-foreground">Privacy & safety</Link>
-            <Link to="/terms" onClick={() => setOpen(false)} className="block px-3 py-2 text-muted-foreground hover:text-foreground">Terms</Link>
-            <a
-              href="https://github.com/purplelife/purple"
-              target="_blank"
-              rel="noreferrer noopener"
-              className="block px-3 py-2 text-muted-foreground hover:text-foreground"
-            >
-              Open source on GitHub
-            </a>
-          </div>
-        </SheetContent>
+          <SheetTrigger
+            aria-label="Open menu"
+            className="rounded-md p-2 -mr-2 text-muted-foreground hover:text-foreground"
+          >
+            <Menu className="h-5 w-5" />
+          </SheetTrigger>
+          <SheetContent side="left" className="w-72 p-0">
+            <SheetHeader className="px-5 pt-6 pb-3 text-left">
+              <SheetTitle className="wordmark text-[13px] text-foreground">Purple</SheetTitle>
+            </SheetHeader>
+            <nav className="px-3 py-2 space-y-1" aria-label="Mobile primary">
+              {tree.map((group) => (
+                <MobileGroup
+                  key={group.id}
+                  group={group}
+                  pathname={pathname}
+                  isOpen={!!openGroups[group.id]}
+                  onToggle={() => setOpenGroups((p) => ({ ...p, [group.id]: !p[group.id] }))}
+                  onNavigate={() => setOpen(false)}
+                />
+              ))}
+              <CaregiverNavLink variant="sheet" onClick={() => setOpen(false)} />
+            </nav>
+            <div className="mt-2 mx-3 pt-4 border-t border-border space-y-1 text-[14px]">
+              <Link
+                to="/charter"
+                onClick={() => setOpen(false)}
+                className="block px-3 py-2 text-muted-foreground hover:text-foreground"
+              >
+                Charter
+              </Link>
+              <Link
+                to="/privacy"
+                onClick={() => setOpen(false)}
+                className="block px-3 py-2 text-muted-foreground hover:text-foreground"
+              >
+                Privacy & safety
+              </Link>
+              <Link
+                to="/terms"
+                onClick={() => setOpen(false)}
+                className="block px-3 py-2 text-muted-foreground hover:text-foreground"
+              >
+                Terms
+              </Link>
+              <a
+                href="https://github.com/purplelife/purple"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="block px-3 py-2 text-muted-foreground hover:text-foreground"
+              >
+                Open source on GitHub
+              </a>
+            </div>
+          </SheetContent>
         </Sheet>
       </div>
     </header>
@@ -86,10 +105,7 @@ function MobileGroup({
   const Icon = group.icon;
   const active =
     (!!group.to && pathname === group.to) ||
-    (group.children?.some(
-      (c) => pathname === c.to || pathname.startsWith(c.to + "/"),
-    ) ??
-      false);
+    (group.children?.some((c) => pathname === c.to || pathname.startsWith(c.to + "/")) ?? false);
 
   const rowClass = cn(
     "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] transition-colors w-full",
@@ -150,19 +166,13 @@ function MobileGroup({
           aria-label={isOpen ? `Collapse ${group.label}` : `Expand ${group.label}`}
           className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
         >
-          <ChevronDown
-            className={cn(
-              "h-4 w-4 transition-transform",
-              isOpen && "rotate-180",
-            )}
-          />
+          <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
         </button>
       </div>
       {isOpen && (
         <div className="ml-4 pl-3 mt-0.5 mb-1 border-l border-border/60 space-y-0.5">
           {group.children.map((c) => {
-            const childActive =
-              pathname === c.to || pathname.startsWith(c.to + "/");
+            const childActive = pathname === c.to || pathname.startsWith(c.to + "/");
             const ChildIcon = c.icon;
             return (
               <Link

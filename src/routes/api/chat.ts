@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, stepCountIs, type UIMessage } from "ai";
 import { createClient } from "@supabase/supabase-js";
-import { createLovableAiGatewayProvider, modelForProvider } from "@/lib/ai-gateway.server";
+import { resolvePlatformModel } from "@/lib/ai-gateway.server";
 import { buildSystemPrompt } from "@/lib/purple-chat-prompt.server";
 import { buildPurpleTools } from "@/lib/purple-chat-tools.server";
 
@@ -10,11 +10,6 @@ export const Route = createFileRoute("/api/chat")({
     handlers: {
       POST: async ({ request }) => {
         try {
-          const lovableKey = process.env.LOVABLE_API_KEY;
-          if (!lovableKey) {
-            return new Response("LOVABLE_API_KEY not configured", { status: 500 });
-          }
-
           const SUPABASE_URL = process.env.SUPABASE_URL;
           const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
           if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
@@ -50,14 +45,16 @@ export const Route = createFileRoute("/api/chat")({
           const provider =
             (profile?.ai_provider as string | null) ??
             (profile?.ai_model_preference as string | null) ??
-            "gemini";
+            "claude";
           const system = buildSystemPrompt(
             profile?.conditions as string[] | null,
             profile?.conditions_note as string | null,
           );
 
-          const gateway = createLovableAiGatewayProvider(lovableKey);
-          const model = gateway(modelForProvider(provider));
+          const model = resolvePlatformModel(provider);
+          if (!model) {
+            return new Response("AI is not configured (set ANTHROPIC_API_KEY)", { status: 500 });
+          }
 
           const modelMessages = await convertToModelMessages(messages);
           const result = streamText({
@@ -76,7 +73,7 @@ export const Route = createFileRoute("/api/chat")({
                 return "Purple is getting a lot of questions right now. Try again in a moment.";
               }
               if (msg.includes("402")) {
-                return "Your AI credits have run out. Add credits in Settings → Workspace → Usage.";
+                return "Purple's AI is temporarily unavailable. Try again soon.";
               }
               console.error("[/api/chat] stream error", msg);
               return "I couldn't put together an answer just now. Try again in a moment.";
@@ -84,10 +81,10 @@ export const Route = createFileRoute("/api/chat")({
           });
         } catch (e) {
           console.error("[/api/chat] error", e);
-          return new Response(
-            JSON.stringify({ error: "Internal server error" }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ error: "Internal server error" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
         }
       },
     },

@@ -73,10 +73,7 @@ export function LocaleFields({ values, onChange, disabled, compact, showTitle }:
         </div>
       )}
       <div>
-        <Label
-          htmlFor="locale-country"
-          className="flex items-center gap-2 text-sm text-foreground"
-        >
+        <Label htmlFor="locale-country" className="flex items-center gap-2 text-sm text-foreground">
           <Globe className="h-3.5 w-3.5 text-primary" />
           {t("locale.country")}
         </Label>
@@ -99,10 +96,7 @@ export function LocaleFields({ values, onChange, disabled, compact, showTitle }:
       </div>
 
       <div>
-        <Label
-          htmlFor="locale-tz"
-          className="flex items-center gap-2 text-sm text-foreground"
-        >
+        <Label htmlFor="locale-tz" className="flex items-center gap-2 text-sm text-foreground">
           <Clock className="h-3.5 w-3.5 text-primary" />
           {t("locale.timezone")}
         </Label>
@@ -143,18 +137,13 @@ export function LocaleFields({ values, onChange, disabled, compact, showTitle }:
       </div>
 
       <div>
-        <Label
-          htmlFor="locale-lang"
-          className="flex items-center gap-2 text-sm text-foreground"
-        >
+        <Label htmlFor="locale-lang" className="flex items-center gap-2 text-sm text-foreground">
           <Languages className="h-3.5 w-3.5 text-primary" />
           {t("locale.language")}
         </Label>
         <Select
           value={values.locale}
-          onValueChange={(v) =>
-            onChange({ ...values, locale: v as SupportedLocale })
-          }
+          onValueChange={(v) => onChange({ ...values, locale: v as SupportedLocale })}
           disabled={disabled}
         >
           <SelectTrigger id="locale-lang" className="mt-1.5 w-full sm:w-[220px]">

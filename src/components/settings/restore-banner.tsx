@@ -3,11 +3,8 @@ import { Loader2, ShieldAlert, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/integrations/supabase/auth-context";
-import {
-  checkDeletionStatus,
-  restoreUserData,
-  type DeletionStatus,
-} from "@/lib/data-export";
+import { userMessage } from "@/lib/user-message";
+import { checkDeletionStatus, restoreUserData, type DeletionStatus } from "@/lib/data-export";
 
 /**
  * Shown at the top of Today (and any signed-in page that includes it) when
@@ -30,10 +27,7 @@ export function RestoreBanner() {
   const daysRemaining = status.purgeAfter
     ? Math.max(
         0,
-        Math.ceil(
-          (new Date(status.purgeAfter).getTime() - Date.now()) /
-            (1000 * 60 * 60 * 24),
-        ),
+        Math.ceil((new Date(status.purgeAfter).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
       )
     : null;
 
@@ -44,7 +38,9 @@ export function RestoreBanner() {
       setStatus(null);
       toast.success("Your account has been restored.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not restore");
+      toast.error(
+        userMessage(e, "The restore didn't finish. Nothing was changed, try again in a moment."),
+      );
     } finally {
       setRestoring(false);
     }
@@ -75,12 +71,7 @@ export function RestoreBanner() {
             )}
           </p>
           <div className="mt-3">
-            <Button
-              size="sm"
-              onClick={onRestore}
-              disabled={restoring}
-              className="rounded-full"
-            >
+            <Button size="sm" onClick={onRestore} disabled={restoring} className="rounded-full">
               {restoring ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (

@@ -44,11 +44,7 @@ import { QuickAddWater } from "@/components/hydration/quick-add-water";
 import { LogAuraSheet } from "@/components/hydration/log-aura-sheet";
 import { listHydrationForDay } from "@/lib/hydration.functions";
 import { listAurasForDay } from "@/lib/auras.functions";
-import {
-  METRIC_ORDER,
-  METRICS,
-  type MetricKey,
-} from "@/lib/biometric-metrics";
+import { METRIC_ORDER, METRICS, type MetricKey } from "@/lib/biometric-metrics";
 import {
   caregiverReadBiometrics,
   caregiverReadJournal,
@@ -74,13 +70,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTranslation } from "react-i18next";
+import { userMessage } from "@/lib/user-message";
 
 export const Route = createFileRoute("/_app/care/$ownerId")({
   head: () => ({ meta: [{ title: "Caregiver dashboard · Purple" }] }),
   component: CareDashboardPage,
 });
 
-type TabKey = "today" | "meds" | "biometrics" | "hydration" | "journal" | "seizures" | "reports" | "chat";
+type TabKey =
+  | "today"
+  | "meds"
+  | "biometrics"
+  | "hydration"
+  | "journal"
+  | "seizures"
+  | "reports"
+  | "chat";
 
 // Owner-driven feature gates per tab. Tabs not listed here are always shown
 // when the caregiver has the scope (they're not condition-specific).
@@ -106,8 +111,7 @@ function CareDashboardPage() {
 
   const ownerConditions = (overview.data as any)?.ownerConditions ?? [];
   const ownerOverrides = (overview.data as any)?.ownerFeatureOverrides ?? {};
-  const caregiverHidden: string[] =
-    (overview.data as any)?.caregiverHiddenFeatures ?? [];
+  const caregiverHidden: string[] = (overview.data as any)?.caregiverHiddenFeatures ?? [];
   const ownerEnables = (key: TabKey) => {
     const f = TAB_OWNER_FEATURE[key];
     if (!f) return true;
@@ -149,7 +153,8 @@ function CareDashboardPage() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["care", "overview", ownerId] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't update"),
+    onError: (e: any) =>
+      toast.error(userMessage(e, "That change didn't save. Try again in a moment.")),
   });
   const toggleHide = (key: TabKey, show: boolean) => {
     const next = show
@@ -174,8 +179,7 @@ function CareDashboardPage() {
   // Mark current tab seen
   const markSeenFn = useServerFn(markOwnerSeen);
   const markSeen = useMutation({
-    mutationFn: (tab: TabKey) =>
-      markSeenFn({ data: { owner_id: ownerId, tab } }),
+    mutationFn: (tab: TabKey) => markSeenFn({ data: { owner_id: ownerId, tab } }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["care", "counts", ownerId] });
       void queryClient.invalidateQueries({ queryKey: ["care", "owners-switcher"] });
@@ -199,7 +203,10 @@ function CareDashboardPage() {
   if (overview.isError || !overview.data) {
     return (
       <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
-        <Link to="/settings/sharing" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/settings/sharing"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-4 w-4" /> {t("care.back")}
         </Link>
         <h1 className="mt-6 font-serif text-3xl text-foreground">{t("care.noAccessTitle")}</h1>
@@ -225,7 +232,10 @@ function CareDashboardPage() {
   return (
     <div className="mx-auto max-w-4xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
       <div className="flex items-center justify-between gap-3">
-        <Link to="/care" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/care"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-4 w-4" /> All people
         </Link>
         <OwnerSwitcher currentOwnerId={ownerId} currentLabel={displayName} />
@@ -274,10 +284,7 @@ function CareDashboardPage() {
             Today. Tapping an alert still jumps to the relevant tab.
           */}
           <div className="mb-6">
-            <CaregiverAlertsCard
-              ownerId={ownerId}
-              onJump={(tab) => setActive(tab as TabKey)}
-            />
+            <CaregiverAlertsCard ownerId={ownerId} onJump={(tab) => setActive(tab as TabKey)} />
           </div>
           {/* Mobile: <Select>. Desktop: tabs. */}
           <div className="sm:hidden">
@@ -414,7 +421,9 @@ function CareDashboardPage() {
       <QuickLogBar
         ownerId={ownerId}
         ownerName={displayName}
-        canSeizure={has("seizures:write") && isFeatureEnabled("seizure_log", ownerConditions, ownerOverrides)}
+        canSeizure={
+          has("seizures:write") && isFeatureEnabled("seizure_log", ownerConditions, ownerOverrides)
+        }
         canJournal={has("journal:write")}
         canBiometric={has("biometrics:write")}
       />
@@ -456,13 +465,7 @@ function QuickLogBar({
   );
 }
 
-function ChatPanel({
-  relationshipId,
-  ownerName,
-}: {
-  relationshipId: string;
-  ownerName: string;
-}) {
+function ChatPanel({ relationshipId, ownerName }: { relationshipId: string; ownerName: string }) {
   const openFn = useServerFn(getOrCreateDirectThread);
   const navigate = useNavigate();
   const q = useQuery({
@@ -502,13 +505,7 @@ function Empty({ children }: { children: React.ReactNode }) {
 }
 
 /* ----- Today ----- */
-function TodayPanel({
-  ownerId,
-  onJump,
-}: {
-  ownerId: string;
-  onJump?: (tab: TabKey) => void;
-}) {
+function TodayPanel({ ownerId, onJump }: { ownerId: string; onJump?: (tab: TabKey) => void }) {
   const fn = useServerFn(caregiverReadToday);
   const q = useQuery({
     queryKey: ["care", "today", ownerId],
@@ -538,9 +535,7 @@ function TodayPanel({
             )}
           </>
         ) : (
-          <p className="mt-2 text-sm text-muted-foreground">
-            No risk forecast for today.
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">No risk forecast for today.</p>
         )}
       </Section>
 
@@ -553,9 +548,7 @@ function TodayPanel({
             {alerts.map((a: any) => (
               <li key={a.id} className="rounded-xl border border-border p-3">
                 <p className="text-sm font-medium text-foreground">{a.title}</p>
-                {a.body && (
-                  <p className="mt-0.5 text-xs text-muted-foreground">{a.body}</p>
-                )}
+                {a.body && <p className="mt-0.5 text-xs text-muted-foreground">{a.body}</p>}
               </li>
             ))}
           </ul>
@@ -582,29 +575,21 @@ function MedsPanel({
   const fn = useServerFn(caregiverReadMeds);
   const markDoseFn = useServerFn(caregiverMarkDose);
   const queryClient = useQueryClient();
-  const [confirm, setConfirm] = useState<
-    { doseId: string; action: "taken" | "skip" } | null
-  >(null);
+  const [confirm, setConfirm] = useState<{ doseId: string; action: "taken" | "skip" } | null>(null);
   const q = useQuery({
     queryKey: ["care", "meds", ownerId],
     queryFn: () => fn({ data: { owner_id: ownerId } }),
   });
 
   const markDose = useMutation({
-    mutationFn: ({
-      doseId,
-      action,
-    }: {
-      doseId: string;
-      action: "taken" | "skip";
-    }) =>
+    mutationFn: ({ doseId, action }: { doseId: string; action: "taken" | "skip" }) =>
       markDoseFn({ data: { owner_id: ownerId, dose_id: doseId, action } }),
     onSuccess: (_res, vars) => {
       toast.success(vars.action === "taken" ? "Marked as taken" : "Marked as skipped");
       void queryClient.invalidateQueries({ queryKey: ["care", "meds", ownerId] });
     },
     onError: (err: any) => {
-      toast.error(err?.message ?? "Couldn't update dose");
+      toast.error(userMessage(err, "Couldn't update dose"));
     },
   });
 
@@ -612,12 +597,16 @@ function MedsPanel({
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const { meds, doses } = q.data!;
   // Today's doses only (matches the patient's "Today" doses card on /meds).
-  const start = new Date(); start.setHours(0, 0, 0, 0);
-  const end = new Date(); end.setHours(23, 59, 59, 999);
-  const todayDoses = (doses ?? []).filter((d: any) => {
-    const t = new Date(d.scheduled_at).getTime();
-    return t >= start.getTime() && t <= end.getTime();
-  }).sort((a: any, b: any) => +new Date(a.scheduled_at) - +new Date(b.scheduled_at));
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  const todayDoses = (doses ?? [])
+    .filter((d: any) => {
+      const t = new Date(d.scheduled_at).getTime();
+      return t >= start.getTime() && t <= end.getTime();
+    })
+    .sort((a: any, b: any) => +new Date(a.scheduled_at) - +new Date(b.scheduled_at));
 
   return (
     <div className="space-y-6">
@@ -632,11 +621,7 @@ function MedsPanel({
           <DoseRowsReadOnly
             doses={todayDoses}
             meds={meds}
-            onAction={
-              canWrite
-                ? (doseId, action) => setConfirm({ doseId, action })
-                : undefined
-            }
+            onAction={canWrite ? (doseId, action) => setConfirm({ doseId, action }) : undefined}
             pendingId={markDose.isPending ? (markDose.variables?.doseId ?? null) : null}
           />
         </div>
@@ -658,10 +643,7 @@ function MedsPanel({
           }
         />
       </div>
-      <AlertDialog
-        open={confirm !== null}
-        onOpenChange={(o) => !o && setConfirm(null)}
-      >
+      <AlertDialog open={confirm !== null} onOpenChange={(o) => !o && setConfirm(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="font-serif text-2xl">
@@ -671,8 +653,7 @@ function MedsPanel({
               {confirm?.action === "taken"
                 ? `Mark this dose as taken on ${ownerName}'s record`
                 : `Mark this dose as skipped on ${ownerName}'s record`}
-              . They&rsquo;ll see this in their audit log, tagged as added by
-              you.
+              . They&rsquo;ll see this in their audit log, tagged as added by you.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -730,8 +711,10 @@ function BiometricsPanel({
   }
 
   // Build per-metric series matching the patient /biometrics page.
-  const seriesByMetric: Record<MetricKey, Array<{ date: string; value: number | null }>> =
-    {} as never;
+  const seriesByMetric: Record<
+    MetricKey,
+    Array<{ date: string; value: number | null }>
+  > = {} as never;
   for (const key of METRIC_ORDER) {
     const meta = METRICS[key];
     seriesByMetric[key] = rows.map((r: any) => {
@@ -898,7 +881,11 @@ function HydrationPanel({
           </p>
           <div className="mt-3 space-y-3">
             <QuickAddWater ownerId={ownerId} />
-            {auraEnabled && <div><LogAuraSheet ownerId={ownerId} /></div>}
+            {auraEnabled && (
+              <div>
+                <LogAuraSheet ownerId={ownerId} />
+              </div>
+            )}
           </div>
         </Section>
       )}

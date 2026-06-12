@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const PROVIDERS = ["claude", "openai", "gemini", "grok", "maya", "lovable"] as const;
+const PROVIDERS = ["claude", "openai", "gemini", "grok", "maya"] as const;
 
 export const getAiProvider = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -18,9 +18,7 @@ export const getAiProvider = createServerFn({ method: "GET" })
 
 export const setAiProvider = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({ provider: z.enum(PROVIDERS) }).parse(input),
-  )
+  .inputValidator((input) => z.object({ provider: z.enum(PROVIDERS) }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { error } = await supabase

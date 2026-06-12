@@ -8,6 +8,15 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { CalmHero, HumanMoment } from "@/components/marketing/calm-scene";
 import { communityImages } from "@/lib/calm-images";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
+import { PlatformFlagGate } from "@/lib/platform-flags";
+
+function GatedCommunityFeed() {
+  return (
+    <PlatformFlagGate flag="community" redirectTo="/">
+      <CommunityFeed />
+    </PlatformFlagGate>
+  );
+}
 
 export const Route = createFileRoute("/community")({
   head: () => ({
@@ -27,7 +36,7 @@ export const Route = createFileRoute("/community")({
     ],
     links: [{ rel: "canonical", href: "https://www.purplelife.org/community" }],
   }),
-  component: CommunityFeed,
+  component: GatedCommunityFeed,
 });
 
 type Post = {
@@ -60,17 +69,36 @@ function CommunityFeed() {
       if (topic !== "all") q = q.eq("topic", topic);
       const { data } = await q;
       const base = (data ?? []) as Post[];
-      if (base.length === 0) { setPosts(base); return; }
+      if (base.length === 0) {
+        setPosts(base);
+        return;
+      }
       const ids = base.map((p) => p.id);
       const [{ data: reacts }, { data: cmts }] = await Promise.all([
-        supabase.from("community_reactions").select("post_id").in("post_id", ids).eq("kind", "like"),
-        supabase.from("community_comments").select("post_id").in("post_id", ids).eq("hidden", false),
+        supabase
+          .from("community_reactions")
+          .select("post_id")
+          .in("post_id", ids)
+          .eq("kind", "like"),
+        supabase
+          .from("community_comments")
+          .select("post_id")
+          .in("post_id", ids)
+          .eq("hidden", false),
       ]);
       const likeCount = new Map<string, number>();
-      for (const r of reacts ?? []) likeCount.set(r.post_id as string, (likeCount.get(r.post_id as string) ?? 0) + 1);
+      for (const r of reacts ?? [])
+        likeCount.set(r.post_id as string, (likeCount.get(r.post_id as string) ?? 0) + 1);
       const cmtCount = new Map<string, number>();
-      for (const c of cmts ?? []) cmtCount.set(c.post_id as string, (cmtCount.get(c.post_id as string) ?? 0) + 1);
-      setPosts(base.map((p) => ({ ...p, likes: likeCount.get(p.id) ?? 0, comments: cmtCount.get(p.id) ?? 0 })));
+      for (const c of cmts ?? [])
+        cmtCount.set(c.post_id as string, (cmtCount.get(c.post_id as string) ?? 0) + 1);
+      setPosts(
+        base.map((p) => ({
+          ...p,
+          likes: likeCount.get(p.id) ?? 0,
+          comments: cmtCount.get(p.id) ?? 0,
+        })),
+      );
     })();
   }, [topic]);
 
@@ -83,7 +111,13 @@ function CommunityFeed() {
         image={communityImages.hero}
         priority
         eyebrow="Community"
-        headline={<>You&rsquo;re<br />not alone.</>}
+        headline={
+          <>
+            You&rsquo;re
+            <br />
+            not alone.
+          </>
+        }
         body="A quiet, moderated space to share what's working and ask what isn't. Not medical advice, always check with your care team."
         variant="full"
       />
@@ -97,7 +131,9 @@ function CommunityFeed() {
                 key={t}
                 onClick={() => setTopic(t)}
                 className={`rounded-full px-3 py-1 text-xs capitalize whitespace-nowrap ${
-                  topic === t ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                  topic === t
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground"
                 }`}
               >
                 {t}
@@ -127,8 +163,12 @@ function CommunityFeed() {
                 <h3 className="mt-2 font-serif text-xl">{p.title}</h3>
                 <p className="mt-2 text-sm text-foreground/75 line-clamp-2">{p.body}</p>
                 <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-                  <span className="inline-flex items-center gap-1"><Heart className="h-3.5 w-3.5" /> {p.likes ?? 0}</span>
-                  <span className="inline-flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" /> {p.comments ?? 0}</span>
+                  <span className="inline-flex items-center gap-1">
+                    <Heart className="h-3.5 w-3.5" /> {p.likes ?? 0}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <MessageCircle className="h-3.5 w-3.5" /> {p.comments ?? 0}
+                  </span>
                 </div>
               </Link>
             </li>

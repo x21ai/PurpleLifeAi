@@ -2,15 +2,53 @@ import * as React from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Trash2, ExternalLink, TrendingUp, ShieldCheck, AlertTriangle, Share2, Download, Sparkles, Wand2 } from "lucide-react";
+import {
+  Loader2,
+  Trash2,
+  ExternalLink,
+  TrendingUp,
+  ShieldCheck,
+  AlertTriangle,
+  Share2,
+  Download,
+  Sparkles,
+  Wand2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useRouteTheme } from "@/lib/use-route-theme";
-import { getReport, deleteReport, getMetricTrend, processReport, setReportIdentityDecision, getReportFileUrl, summarizeReport } from "@/lib/reports.functions";
+import {
+  getReport,
+  deleteReport,
+  getMetricTrend,
+  processReport,
+  setReportIdentityDecision,
+  getReportFileUrl,
+  summarizeReport,
+} from "@/lib/reports.functions";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceArea, ResponsiveContainer } from "recharts";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ReferenceArea,
+  ResponsiveContainer,
+} from "recharts";
 import { toast } from "sonner";
 import { ReportShell, ReportCard, ReportPill } from "@/components/reports/report-shell";
 import { ProGate } from "@/components/pro/pro-gate";
+import { userMessage } from "@/lib/user-message";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -74,6 +112,8 @@ function ReportDetailPage() {
   const [retrying, setRetrying] = React.useState(false);
   const [deciding, setDeciding] = React.useState(false);
   const [selectedMetric, setSelectedMetric] = React.useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const [confirmReject, setConfirmReject] = React.useState(false);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["report", reportId],
@@ -86,13 +126,28 @@ function ReportDetailPage() {
   });
 
   const handleDelete = async () => {
-    if (!confirm("Delete this report and its extracted values?")) return;
     try {
       await removeReport({ data: { id: reportId } });
       toast.success("Report deleted");
       navigate({ to: "/reports/documents" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Delete failed");
+      toast.error(userMessage(err, "That didn't delete. Try again in a moment."));
+    } finally {
+      setConfirmDelete(false);
+    }
+  };
+
+  const handleRejectIdentity = async () => {
+    setDeciding(true);
+    try {
+      await decideIdentity({ data: { reportId, decision: "reject" } });
+      toast.success("Report deleted");
+      navigate({ to: "/reports/documents" });
+    } catch (e) {
+      toast.error(userMessage(e, "That didn't work. Try again in a moment."));
+      setDeciding(false);
+    } finally {
+      setConfirmReject(false);
     }
   };
 
@@ -103,7 +158,7 @@ function ReportDetailPage() {
       toast.success("Re-running extraction…");
       await refetch();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Retry failed");
+      toast.error(userMessage(err, "Still not working. Give it a moment and try again."));
     } finally {
       setRetrying(false);
     }
@@ -156,14 +211,16 @@ function ReportDetailPage() {
         }
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't open file");
+      toast.error(userMessage(err, "Couldn't open file"));
     } finally {
       setOpeningFile(null);
     }
   }
   const identityStatus = (report as { identity_status?: string } | undefined)?.identity_status;
-  const duplicateOf = (report as { duplicate_of?: string | null } | undefined)?.duplicate_of ?? null;
-  const patientName = (report as { patient_name?: string | null } | undefined)?.patient_name ?? null;
+  const duplicateOf =
+    (report as { duplicate_of?: string | null } | undefined)?.duplicate_of ?? null;
+  const patientName =
+    (report as { patient_name?: string | null } | undefined)?.patient_name ?? null;
   const patientDob = (report as { patient_dob?: string | null } | undefined)?.patient_dob ?? null;
 
   if (!report) {
@@ -175,13 +232,9 @@ function ReportDetailPage() {
   }
 
   const statusTone: "success" | "alert" | "warning" =
-    report.status === "ready" ? "success" :
-    report.status === "failed" ? "alert" :
-    "warning";
+    report.status === "ready" ? "success" : report.status === "failed" ? "alert" : "warning";
   const statusLabel =
-    report.status === "ready" ? "Ready" :
-    report.status === "failed" ? "Failed" :
-    "Processing";
+    report.status === "ready" ? "Ready" : report.status === "failed" ? "Failed" : "Processing";
 
   return (
     <ReportShell title="Clinical report" back={{ to: "/reports/documents", label: "Reports" }}>
@@ -240,7 +293,7 @@ function ReportDetailPage() {
             </Button>
           </ProGate>
           <Button
-            onClick={handleDelete}
+            onClick={() => setConfirmDelete(true)}
             variant="ghost"
             size="sm"
             className="rounded-full text-[#FFA8BD] hover:bg-white/5 hover:text-[#FFA8BD]"
@@ -253,49 +306,64 @@ function ReportDetailPage() {
       {report.summary && (
         <section className="mt-6 report-card">
           <p className="report-eyebrow text-white/55">Summary</p>
-          <p className="mt-3 text-[15px] text-white/85 leading-relaxed whitespace-pre-wrap">{report.summary}</p>
+          <p className="mt-3 text-[15px] text-white/85 leading-relaxed whitespace-pre-wrap">
+            {report.summary}
+          </p>
         </section>
       )}
 
-      {report.status === "ready" && (
-        <AiExplainSection reportId={reportId} />
-      )}
+      {report.status === "ready" && <AiExplainSection reportId={reportId} />}
 
       {signedUrl && (
-        <InlineFilePreview url={signedUrl} mime={report.file_mime ?? ""} title={report.title ?? "Report"} />
+        <InlineFilePreview
+          url={signedUrl}
+          mime={report.file_mime ?? ""}
+          title={report.title ?? "Report"}
+        />
       )}
 
       {(report.findings || report.impressions) && (
         <section className="mt-4 grid sm:grid-cols-2 gap-4">
-          {report.findings && Array.isArray(report.findings) && (report.findings as string[]).length > 0 && (
-            <div className="report-card">
-              <p className="report-eyebrow text-white/55">Findings</p>
-              <ul className="mt-3 text-sm text-white/85 space-y-1.5 list-disc pl-4 marker:text-white/40">
-                {(report.findings as string[]).map((f, i) => <li key={i}>{f}</li>)}
-              </ul>
-            </div>
-          )}
-          {report.impressions && Array.isArray(report.impressions) && (report.impressions as string[]).length > 0 && (
-            <div className="report-card">
-              <p className="report-eyebrow text-white/55">Impressions</p>
-              <ul className="mt-3 text-sm text-white/85 space-y-1.5 list-disc pl-4 marker:text-white/40">
-                {(report.impressions as string[]).map((f, i) => <li key={i}>{f}</li>)}
-              </ul>
-            </div>
-          )}
+          {report.findings &&
+            Array.isArray(report.findings) &&
+            (report.findings as string[]).length > 0 && (
+              <div className="report-card">
+                <p className="report-eyebrow text-white/55">Findings</p>
+                <ul className="mt-3 text-sm text-white/85 space-y-1.5 list-disc pl-4 marker:text-white/40">
+                  {(report.findings as string[]).map((f, i) => (
+                    <li key={i}>{f}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          {report.impressions &&
+            Array.isArray(report.impressions) &&
+            (report.impressions as string[]).length > 0 && (
+              <div className="report-card">
+                <p className="report-eyebrow text-white/55">Impressions</p>
+                <ul className="mt-3 text-sm text-white/85 space-y-1.5 list-disc pl-4 marker:text-white/40">
+                  {(report.impressions as string[]).map((f, i) => (
+                    <li key={i}>{f}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
         </section>
       )}
 
       {report.status === "processing" && (
         <ReportCard className="mt-6">
           <div className="flex items-center gap-2 text-sm text-[#F3D58B]">
-            <Loader2 className="h-4 w-4 animate-spin" /> Extracting values… this can take up to a minute.
+            <Loader2 className="h-4 w-4 animate-spin" /> Extracting values… this can take up to a
+            minute.
           </div>
         </ReportCard>
       )}
       {report.status === "failed" && (
         <ReportCard className="mt-6">
-          <p className="text-sm text-[#FFA8BD]">Extraction failed: {report.error_message ?? "Unknown error"}</p>
+          <p className="text-sm text-[#FFA8BD]">
+            Extraction failed: {report.error_message ?? "Unknown error"}
+          </p>
           <Button
             onClick={() => void handleRetry()}
             disabled={retrying}
@@ -313,73 +381,65 @@ function ReportDetailPage() {
         </ReportCard>
       )}
 
-      {report.status === "ready" && (identityStatus === "mismatch" || identityStatus === "unverified" || duplicateOf) && (
-        <ReportCard className="mt-6 border-[#F3D58B]/30 bg-[#F3D58B]/5">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-[#F3D58B]" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-white font-medium">
-                {duplicateOf
-                  ? "Possible duplicate report"
-                  : identityStatus === "mismatch"
-                    ? "Patient details don't match your profile"
-                    : "We couldn't verify whose report this is"}
-              </p>
-              <p className="mt-1 text-xs text-white/65 leading-relaxed">
-                {duplicateOf
-                  ? "Another report on the same date already has overlapping values. Its metrics are excluded from trends to avoid double-counting."
-                  : `Found on the document: ${patientName ?? "no name"}${patientDob ? `, DOB ${patientDob}` : ""}. Its metrics are hidden from your trends until you confirm.`}
-              </p>
-              {!duplicateOf && (
-                <p className="mt-2 text-xs text-white/55 leading-relaxed">
-                  Approving remembers this name and date of birth so future uploads that match are auto-approved. Rejecting deletes this report and blocks re-uploads of the same readings.
+      {report.status === "ready" &&
+        (identityStatus === "mismatch" || identityStatus === "unverified" || duplicateOf) && (
+          <ReportCard className="mt-6 border-[#F3D58B]/30 bg-[#F3D58B]/5">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-[#F3D58B]" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-white font-medium">
+                  {duplicateOf
+                    ? "Possible duplicate report"
+                    : identityStatus === "mismatch"
+                      ? "Patient details don't match your profile"
+                      : "We couldn't verify whose report this is"}
                 </p>
-              )}
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button
-                  onClick={async () => {
-                    setDeciding(true);
-                    try {
-                      await decideIdentity({ data: { reportId, decision: "approve" } });
-                      toast.success("Approved. We'll remember this identity for future uploads.");
-                      await refetch();
-                    } catch (e) {
-                      toast.error(e instanceof Error ? e.message : "Failed");
-                    } finally {
-                      setDeciding(false);
-                    }
-                  }}
-                  disabled={deciding}
-                  size="sm"
-                  className="rounded-full bg-white text-[#07090C] hover:bg-white/90"
-                >
-                  Yes, this is me
-                </Button>
-                <Button
-                  onClick={async () => {
-                    if (!confirm("Delete this report?")) return;
-                    setDeciding(true);
-                    try {
-                      await decideIdentity({ data: { reportId, decision: "reject" } });
-                      toast.success("Report deleted");
-                      navigate({ to: "/reports/documents" });
-                    } catch (e) {
-                      toast.error(e instanceof Error ? e.message : "Failed");
-                      setDeciding(false);
-                    }
-                  }}
-                  disabled={deciding}
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-full text-[#FFA8BD] hover:bg-white/5 hover:text-[#FFA8BD]"
-                >
-                  Not me, delete it
-                </Button>
+                <p className="mt-1 text-xs text-white/65 leading-relaxed">
+                  {duplicateOf
+                    ? "Another report on the same date already has overlapping values. Its metrics are excluded from trends to avoid double-counting."
+                    : `Found on the document: ${patientName ?? "no name"}${patientDob ? `, DOB ${patientDob}` : ""}. Its metrics are hidden from your trends until you confirm.`}
+                </p>
+                {!duplicateOf && (
+                  <p className="mt-2 text-xs text-white/55 leading-relaxed">
+                    Approving remembers this name and date of birth so future uploads that match are
+                    auto-approved. Rejecting deletes this report and blocks re-uploads of the same
+                    readings.
+                  </p>
+                )}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    onClick={async () => {
+                      setDeciding(true);
+                      try {
+                        await decideIdentity({ data: { reportId, decision: "approve" } });
+                        toast.success("Approved. We'll remember this identity for future uploads.");
+                        await refetch();
+                      } catch (e) {
+                        toast.error(userMessage(e, "That didn't work. Try again in a moment."));
+                      } finally {
+                        setDeciding(false);
+                      }
+                    }}
+                    disabled={deciding}
+                    size="sm"
+                    className="rounded-full bg-white text-[#07090C] hover:bg-white/90"
+                  >
+                    Yes, this is me
+                  </Button>
+                  <Button
+                    onClick={() => setConfirmReject(true)}
+                    disabled={deciding}
+                    variant="ghost"
+                    size="sm"
+                    className="rounded-full text-[#FFA8BD] hover:bg-white/5 hover:text-[#FFA8BD]"
+                  >
+                    Not me, delete it
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        </ReportCard>
-      )}
+          </ReportCard>
+        )}
 
       {metrics.length > 0 && (
         <PanelGroups
@@ -403,14 +463,61 @@ function ReportDetailPage() {
           <div>
             <h3 className="text-white text-base font-medium">Medical disclaimer</h3>
             <p className="mt-1.5 text-sm text-white/65 leading-relaxed">
-              Values shown here are extracted from the document you uploaded and surfaced for personal
-              context and pattern-tracking. Purple is not a laboratory or healthcare provider. Always
-              discuss results with your medical practitioner.
+              Values shown here are extracted from the document you uploaded and surfaced for
+              personal context and pattern-tracking. Purple is not a laboratory or healthcare
+              provider. Always discuss results with your medical practitioner.
             </p>
           </div>
         </div>
       </ReportCard>
       <MedicalDisclaimer className="mt-4 text-white/70 [&_*]:text-white/70" />
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this report?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The file and any extracted values will be permanently removed. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleDelete();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete report
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmReject} onOpenChange={setConfirmReject}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this report?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This report will be removed and future uploads with the same readings will be blocked.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deciding}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleRejectIdentity();
+              }}
+              disabled={deciding}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deciding ? "Deleting…" : "Delete report"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ReportShell>
   );
 }
@@ -438,16 +545,16 @@ function MetricTrend({ metricKey, unit }: { metricKey: string; unit: string | nu
       value: p.value as number,
     }));
   const dict = data?.dictionary;
-  const refLow = points.length > 0 ? (data?.points[0]?.reference_low ?? dict?.default_ref_low ?? null) : null;
-  const refHigh = points.length > 0 ? (data?.points[0]?.reference_high ?? dict?.default_ref_high ?? null) : null;
+  const refLow =
+    points.length > 0 ? (data?.points[0]?.reference_low ?? dict?.default_ref_low ?? null) : null;
+  const refHigh =
+    points.length > 0 ? (data?.points[0]?.reference_high ?? dict?.default_ref_high ?? null) : null;
 
   if (points.length < 2) {
     return (
       <div className="px-4 py-4 bg-accent/10 text-xs text-muted-foreground">
         Upload another report with this metric to see a trend over time.
-        {dict?.hints && (
-          <p className="mt-2 text-foreground/80">{dict.hints}</p>
-        )}
+        {dict?.hints && <p className="mt-2 text-foreground/80">{dict.hints}</p>}
       </div>
     );
   }
@@ -462,7 +569,12 @@ function MetricTrend({ metricKey, unit }: { metricKey: string; unit: string | nu
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={points} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
             <XAxis dataKey="date" fontSize={10} stroke="currentColor" opacity={0.5} />
-            <YAxis domain={[yMin * 0.9, yMax * 1.1]} fontSize={10} stroke="currentColor" opacity={0.5} />
+            <YAxis
+              domain={[yMin * 0.9, yMax * 1.1]}
+              fontSize={10}
+              stroke="currentColor"
+              opacity={0.5}
+            />
             <Tooltip
               contentStyle={{
                 background: "hsl(var(--card))",
@@ -473,7 +585,12 @@ function MetricTrend({ metricKey, unit }: { metricKey: string; unit: string | nu
               formatter={(v: number) => [`${v} ${unit ?? ""}`, "Value"]}
             />
             {refLow != null && refHigh != null && (
-              <ReferenceArea y1={refLow} y2={refHigh} fill="hsl(var(--primary))" fillOpacity={0.08} />
+              <ReferenceArea
+                y1={refLow}
+                y2={refHigh}
+                fill="hsl(var(--primary))"
+                fillOpacity={0.08}
+              />
             )}
             <Line
               type="monotone"
@@ -489,7 +606,8 @@ function MetricTrend({ metricKey, unit }: { metricKey: string; unit: string | nu
         <p className="mt-3 text-xs text-foreground/80 leading-relaxed">{dict.hints}</p>
       )}
       <p className="mt-2 text-[11px] text-muted-foreground">
-        Shaded band = typical reference range. Always discuss results with your medical practitioner.
+        Shaded band = typical reference range. Always discuss results with your medical
+        practitioner.
       </p>
     </div>
   );
@@ -513,10 +631,20 @@ function PanelGroups({
     return out;
   }, [metrics]);
 
-  const order = ["lipids", "cardiometabolic", "thyroid", "liver", "kidney", "hematology", "vitamins", "hormones", "inflammation", "imaging", "other"];
-  const entries = Object.entries(grouped).sort(
-    ([a], [b]) => order.indexOf(a) - order.indexOf(b),
-  );
+  const order = [
+    "lipids",
+    "cardiometabolic",
+    "thyroid",
+    "liver",
+    "kidney",
+    "hematology",
+    "vitamins",
+    "hormones",
+    "inflammation",
+    "imaging",
+    "other",
+  ];
+  const entries = Object.entries(grouped).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b));
 
   return (
     <div className="mt-6 space-y-6">
@@ -530,7 +658,9 @@ function PanelGroups({
               <li key={m.id}>
                 <button
                   type="button"
-                  onClick={() => setSelectedMetric(m.metric_key === selectedMetric ? null : m.metric_key)}
+                  onClick={() =>
+                    setSelectedMetric(m.metric_key === selectedMetric ? null : m.metric_key)
+                  }
                   className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-accent/40 transition-colors text-left"
                 >
                   <div className="min-w-0">
@@ -552,7 +682,9 @@ function PanelGroups({
                       }`}
                     >
                       {m.value ?? m.value_text ?? "–"}
-                      {m.unit ? <span className="text-xs text-muted-foreground ml-1">{m.unit}</span> : null}
+                      {m.unit ? (
+                        <span className="text-xs text-muted-foreground ml-1">{m.unit}</span>
+                      ) : null}
                     </span>
                     <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
                   </div>
@@ -616,7 +748,12 @@ function InlineFilePreview({ url, mime, title }: { url: string; mime: string; ti
 type AiSummary = {
   headline?: string;
   explanation?: string;
-  flagged?: Array<{ metric: string; value: string; concern: string; severity: "info" | "watch" | "attention" }>;
+  flagged?: Array<{
+    metric: string;
+    value: string;
+    concern: string;
+    severity: "info" | "watch" | "attention";
+  }>;
   questions?: string[];
 };
 
@@ -632,12 +769,15 @@ function AiExplainSection({ reportId }: { reportId: string }) {
     void (async () => {
       try {
         const res = await run({ data: { id: reportId } });
-        if (!cancelled && res.summary) setData({ summary: res.summary as AiSummary, cached: !!res.cached });
+        if (!cancelled && res.summary)
+          setData({ summary: res.summary as AiSummary, cached: !!res.cached });
       } catch {
         /* silent, user can run on demand */
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [reportId, run]);
 
   async function explain(force: boolean) {
@@ -713,14 +853,18 @@ function AiExplainSection({ reportId }: { reportId: string }) {
                     <span className="font-medium">{f.metric}</span>
                     {f.value ? <span className="text-white/65"> · {f.value}</span> : null}
                   </p>
-                  {f.concern && <p className="mt-1 text-xs text-white/65 leading-relaxed">{f.concern}</p>}
+                  {f.concern && (
+                    <p className="mt-1 text-xs text-white/65 leading-relaxed">{f.concern}</p>
+                  )}
                 </li>
               ))}
             </ul>
           )}
           {summary.questions && summary.questions.length > 0 && (
             <div className="mt-4">
-              <p className="text-[11px] uppercase tracking-wider text-white/45">Bring up with your clinician</p>
+              <p className="text-[11px] uppercase tracking-wider text-white/45">
+                Bring up with your clinician
+              </p>
               <ul className="mt-2 space-y-1.5">
                 {summary.questions.map((q, i) => (
                   <li key={i} className="flex gap-2 text-sm text-white/75">

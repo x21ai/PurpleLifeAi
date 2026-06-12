@@ -1,0 +1,62 @@
+---
+description: Launch-stack invariants from PRs #8–#19 and overnight hardening. Apply when touching timezone, sync, doses, i18n, dialogs, care invites, or CI gates.
+alwaysApply: true
+---
+
+# Launch invariants
+
+These shipped in the 2026-06-12 launch stack. Breaking them reintroduces bugs Devyn dogfood already caught.
+
+## Timezone
+
+- `profiles.timezone` is the source of truth for dose day boundaries, adherence windows, journal recaps, risk forecaster day keys, and travel schedule anchoring.
+- Capture timezone at onboarding (`/welcome`) and first med save; never overwrite an existing value silently.
+- When the user changes timezone in Account, regenerate today's pending `medication_doses` via the existing server path.
+- Use `dateKeyInTimeZone`, `wallTimeInTzToUtc`, and travel helpers in `src/lib/utils.ts` / `src/lib/travel-scheduler.ts`. Do not use `toISOString().slice(0,10)` for user-local days.
+- Dose seed cron (`/api/public/cron/seed-doses`, hourly) seeds each user's local day shortly after their midnight.
+
+## `last_sync_at` (wearables and Apple Health)
+
+- Display "last synced" from `last_sync_at` only. Never fall back to `updated_at` (token refreshes lie about data freshness).
+- Write `last_sync_at` only when health data was actually imported. Pings and empty payloads update `last_webhook_at` (Apple Health) but must not move `last_sync_at`.
+- Oura, Whoop, and Apple Health UI: `src/components/connections/*`, `src/components/biometrics/sync-status.tsx`.
+
+## Dose reminder fallback chain
+
+Three layers, all must stay intact (`docs/RELIABILITY.md`):
+
+1. **SW local** (`public/sw.js`, 60s poll): fires while PWA installed; logs to IndexedDB → flushed on app open.
+2. **Web push** (`/api/public/cron/dose-reminders`, every minute): backstop when SW/page dead.
+3. **Catch-up card** (`src/components/today/missed-dose-catchup.tsx`): pending doses from past 24h with no delivery log row surface gently on open.
+
+Snooze must re-remind. Overdue doses notify late instead of vanishing. Use `t("doseCatchup.fallbackMed")` when med name missing.
+
+## No native dialogs
+
+Never use `window.confirm`, `window.alert`, or `window.prompt`. Use shadcn `AlertDialog` or `Dialog` from `src/components/ui/`.
+
+## i18n gate
+
+- All user-facing strings in app routes go through `react-i18next` (`src/i18n/locales/en.json`, `es.json`).
+- CI runs `bun run check:i18n-es` (`scripts/check-i18n-es.mjs`): en/es key parity plus every static `t("…")` key resolves in both locales.
+- SSR renders `en` only; `hydrateLocale()` switches post-hydration. Spanish loads lazily via `ensureLocaleResources` (not in the entry bundle).
+- Saved locale (localStorage / `profiles.locale`) always wins over navigator.
+
+## Security RPC (care invites)
+
+- Never SELECT `care_relationships.invite_token` from the client. Acceptance goes through `accept_care_invite(p_token)` or `accept_assigned_care_invite(p_relationship_id)` SECURITY DEFINER RPCs (`supabase/migrations/20260613010000_security_hardening.sql`).
+- Server returns `accept_url` to owners; token stays on service_role paths only.
+- Invites expire after 7 days. Pin `search_path = public` on new SECURITY DEFINER functions.
+
+## CI gates (not full lint)
+
+`.github/workflows/ci.yml` runs: em-dash, live-data, unique-images, **`check:i18n-es`**, unit tests, tsc, build, entry-chunk budget. Full `bun run lint` is intentionally out of CI until repo-wide prettier cleanup. New code should still be eslint/prettier-clean in touched files.
+
+## Dark launch flags
+
+Peripheral routes gated by `app_settings` booleans (default OFF): `feature_community_enabled`, `feature_dna_enabled`, `feature_friends_enabled`. Use `PlatformFlagGate` / `usePlatformFlag` (`src/lib/platform-flags.tsx`). Fail closed.
+
+## Launch redirects (do not restore mocks)
+
+- `/my-health` → `/biometrics`
+- `/vitals` → `/insights`

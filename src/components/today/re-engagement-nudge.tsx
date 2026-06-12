@@ -83,12 +83,8 @@ export function ReEngagementNudge({ conditions, hasAnyEntries }: Props) {
         <X className="h-4 w-4" />
       </button>
       <p className="label-eyebrow text-muted-foreground">Gentle check-in</p>
-      <p className="mt-2 font-serif text-lg text-foreground max-w-[34ch]">
-        {headline}
-      </p>
-      <p className="mt-2 text-sm text-muted-foreground max-w-[44ch]">
-        {prompt}
-      </p>
+      <p className="mt-2 font-serif text-lg text-foreground max-w-[34ch]">{headline}</p>
+      <p className="mt-2 text-sm text-muted-foreground max-w-[44ch]">{prompt}</p>
       <Link
         to="/journal/new"
         className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90"

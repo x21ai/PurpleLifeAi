@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { setVitalGoal, deleteVitalGoal, type VitalGoal } from "@/lib/health-vitals.functions";
 import type { VitalKind } from "./quick-log-vital-sheet";
+import { userMessage } from "@/lib/user-message";
 
 type Spec = {
   title: string;
@@ -24,12 +25,43 @@ type Spec = {
 };
 
 const SPECS: Record<VitalKind, Spec> = {
-  weight: { title: "Weight target", primaryLabel: "Target range", unit: "kg", helper: "A gentle range to aim for, not a hard goal." },
-  bp: { title: "Blood pressure target", primaryLabel: "Systolic range", secondaryLabel: "Diastolic range", unit: "mmHg", helper: "Many adults aim for under 130/80, but check with your clinician." },
-  glucose: { title: "Glucose target", primaryLabel: "Target range", unit: "mg/dL", helper: "Fasting glucose is commonly targeted at 70–100 mg/dL." },
-  spo2: { title: "Blood oxygen target", primaryLabel: "Target range", unit: "%", helper: "Most healthy adults sit at 95–100%." },
-  temp: { title: "Body temperature range", primaryLabel: "Target range", unit: "°C", helper: "Resting body temp is typically 36.1–37.2 °C." },
-  resp_rate: { title: "Respiratory rate range", primaryLabel: "Target range", unit: "br/min", helper: "Resting adults usually breathe 12–20 times per minute." },
+  weight: {
+    title: "Weight target",
+    primaryLabel: "Target range",
+    unit: "kg",
+    helper: "A gentle range to aim for, not a hard goal.",
+  },
+  bp: {
+    title: "Blood pressure target",
+    primaryLabel: "Systolic range",
+    secondaryLabel: "Diastolic range",
+    unit: "mmHg",
+    helper: "Many adults aim for under 130/80, but check with your clinician.",
+  },
+  glucose: {
+    title: "Glucose target",
+    primaryLabel: "Target range",
+    unit: "mg/dL",
+    helper: "Fasting glucose is commonly targeted at 70–100 mg/dL.",
+  },
+  spo2: {
+    title: "Blood oxygen target",
+    primaryLabel: "Target range",
+    unit: "%",
+    helper: "Most healthy adults sit at 95–100%.",
+  },
+  temp: {
+    title: "Body temperature range",
+    primaryLabel: "Target range",
+    unit: "°C",
+    helper: "Resting body temp is typically 36.1–37.2 °C.",
+  },
+  resp_rate: {
+    title: "Respiratory rate range",
+    primaryLabel: "Target range",
+    unit: "br/min",
+    helper: "Resting adults usually breathe 12–20 times per minute.",
+  },
 };
 
 export function SetGoalSheet({
@@ -89,7 +121,7 @@ export function SetGoalSheet({
       toast.success("Target saved");
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't save");
+      toast.error(userMessage(err, "That didn't save. Your changes are still here, try again."));
     } finally {
       setSaving(false);
     }
@@ -103,7 +135,7 @@ export function SetGoalSheet({
       toast.success("Target removed");
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't remove");
+      toast.error(userMessage(err, "Couldn't remove"));
     } finally {
       setSaving(false);
     }
@@ -122,8 +154,18 @@ export function SetGoalSheet({
               {spec.primaryLabel} ({spec.unit})
             </Label>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <Input inputMode="decimal" placeholder="Min" value={minV} onChange={(e) => setMinV(e.target.value)} />
-              <Input inputMode="decimal" placeholder="Max" value={maxV} onChange={(e) => setMaxV(e.target.value)} />
+              <Input
+                inputMode="decimal"
+                placeholder="Min"
+                value={minV}
+                onChange={(e) => setMinV(e.target.value)}
+              />
+              <Input
+                inputMode="decimal"
+                placeholder="Max"
+                value={maxV}
+                onChange={(e) => setMaxV(e.target.value)}
+              />
             </div>
           </div>
           {spec.secondaryLabel && (
@@ -132,21 +174,36 @@ export function SetGoalSheet({
                 {spec.secondaryLabel} ({spec.unit})
               </Label>
               <div className="mt-2 grid grid-cols-2 gap-2">
-                <Input inputMode="decimal" placeholder="Min" value={min2} onChange={(e) => setMin2(e.target.value)} />
-                <Input inputMode="decimal" placeholder="Max" value={max2} onChange={(e) => setMax2(e.target.value)} />
+                <Input
+                  inputMode="decimal"
+                  placeholder="Min"
+                  value={min2}
+                  onChange={(e) => setMin2(e.target.value)}
+                />
+                <Input
+                  inputMode="decimal"
+                  placeholder="Max"
+                  value={max2}
+                  onChange={(e) => setMax2(e.target.value)}
+                />
               </div>
             </div>
           )}
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Targets are personal reference points. Purple doesn't nudge or score you on them , they're
-            just here so your tiles can show ✓ or ⚠ at a glance.
+            Targets are personal reference points. Purple doesn't nudge or score you on them ,
+            they're just here so your tiles can show ✓ or ⚠ at a glance.
           </p>
           <div className="flex items-center gap-2 pt-2">
             <Button onClick={onSave} disabled={saving} className="rounded-full">
               Save target
             </Button>
             {current && (
-              <Button variant="ghost" onClick={onRemove} disabled={saving} className="rounded-full text-muted-foreground">
+              <Button
+                variant="ghost"
+                onClick={onRemove}
+                disabled={saving}
+                className="rounded-full text-muted-foreground"
+              >
                 Remove
               </Button>
             )}

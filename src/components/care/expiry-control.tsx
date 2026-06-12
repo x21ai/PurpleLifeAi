@@ -5,13 +5,10 @@ import { Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { setExpiry } from "@/lib/care.functions";
+import { userMessage } from "@/lib/user-message";
 
 function fmtCountdown(iso: string | null): string {
   if (!iso) return "Never expires";
@@ -41,7 +38,8 @@ export function ExpiryControl({
       toast.success("Access window updated");
       setOpen(false);
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't update"),
+    onError: (e: any) =>
+      toast.error(userMessage(e, "That change didn't save. Try again in a moment.")),
   });
 
   function quick(days: number) {
@@ -76,12 +74,7 @@ export function ExpiryControl({
           <Button size="sm" variant="outline" onClick={() => quick(30)} disabled={m.isPending}>
             30 days
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => m.mutate(null)}
-            disabled={m.isPending}
-          >
+          <Button size="sm" variant="ghost" onClick={() => m.mutate(null)} disabled={m.isPending}>
             Never
           </Button>
         </div>

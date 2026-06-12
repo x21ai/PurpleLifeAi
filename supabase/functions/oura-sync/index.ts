@@ -1,9 +1,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import {
+  pickSleepSessionPerDay,
+  mapOuraDayToBiometricFields,
+} from "../_shared/oura-sleep-mapping.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -69,17 +72,22 @@ async function getValidAccessToken(user_id: string): Promise<string | null> {
   if (!row) return null;
   const expiresAt = row.expires_at ? new Date(row.expires_at).getTime() : 0;
   if (expiresAt - Date.now() > 60_000) return row.access_token;
-  if (!row.refresh_token) return row.access_token;
+  // Expired with no way to refresh: surface it instead of letting the stale
+  // token 401 into a silent zero-row "successful" sync.
+  if (!row.refresh_token) throw new Error("needs_reauth: Oura token expired");
   const refreshed = await refreshToken(row.refresh_token);
   const newExpires = new Date(Date.now() + (refreshed.expires_in ?? 3600) * 1000).toISOString();
-  await admin.from("oura_tokens").update({
-    access_token: refreshed.access_token,
-    refresh_token: refreshed.refresh_token ?? row.refresh_token,
-    token_type: refreshed.token_type,
-    scope: refreshed.scope,
-    expires_at: newExpires,
-    updated_at: new Date().toISOString(),
-  }).eq("user_id", user_id);
+  await admin
+    .from("oura_tokens")
+    .update({
+      access_token: refreshed.access_token,
+      refresh_token: refreshed.refresh_token ?? row.refresh_token,
+      token_type: refreshed.token_type,
+      scope: refreshed.scope,
+      expires_at: newExpires,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", user_id);
   return refreshed.access_token;
 }
 
@@ -87,8 +95,13 @@ async function ouraGet(token: string, path: string, start: string, end: string) 
   const url = `https://api.ouraring.com/v2${path}?start_date=${start}&end_date=${end}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) {
+    // Propagate failures: swallowing them here made broken auth look like a
+    // successful sync with zero rows.
     console.error(`Oura ${path} failed: ${res.status}`);
-    return { data: [] };
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("needs_reauth: Oura rejected the token");
+    }
+    throw new Error(`oura_api_error: ${path} returned ${res.status}`);
   }
   return await res.json();
 }
@@ -123,17 +136,17 @@ async function syncRange(user_id: string, start: string, end: string) {
   const spo2Map = byDay(spo2.data);
   const cardioMap = byDay(cardio.data);
 
-  // For /sleep endpoint, prefer "long_sleep" type per day
-  const sleepDetailMap = new Map<string, any>();
-  for (const s of (sleepDetail.data ?? []) as any[]) {
-    if (!s.day) continue;
-    const prev = sleepDetailMap.get(s.day);
-    if (!prev || s.type === "long_sleep") sleepDetailMap.set(s.day, s);
-  }
+  const sleepDetailMap = pickSleepSessionPerDay(
+    (sleepDetail.data ?? []) as Parameters<typeof pickSleepSessionPerDay>[0],
+  );
 
   const days = new Set<string>([
-    ...sleepDailyMap.keys(), ...readinessMap.keys(), ...stressMap.keys(),
-    ...resilienceMap.keys(), ...activityMap.keys(), ...spo2Map.keys(),
+    ...sleepDailyMap.keys(),
+    ...readinessMap.keys(),
+    ...stressMap.keys(),
+    ...resilienceMap.keys(),
+    ...activityMap.keys(),
+    ...spo2Map.keys(),
     ...sleepDetailMap.keys(),
   ]);
 
@@ -150,39 +163,41 @@ async function syncRange(user_id: string, start: string, end: string) {
 
     const recordedAt = new Date(`${day}T12:00:00Z`).toISOString();
 
+    const mapped = mapOuraDayToBiometricFields({
+      day,
+      sleepSession: sl,
+      dailySleep: sd,
+      dailyReadiness: rd,
+    });
+
     const row: Record<string, unknown> = {
       user_id,
       source: "oura",
       recorded_at: recordedAt,
-      sleep_total_min: sl?.total_sleep_duration ? Math.round(sl.total_sleep_duration / 60) : null,
-      sleep_rem_min: sl?.rem_sleep_duration ? Math.round(sl.rem_sleep_duration / 60) : null,
-      sleep_deep_min: sl?.deep_sleep_duration ? Math.round(sl.deep_sleep_duration / 60) : null,
-      sleep_light_min: sl?.light_sleep_duration ? Math.round(sl.light_sleep_duration / 60) : null,
-      sleep_awake_min: sl?.awake_time ? Math.round(sl.awake_time / 60) : null,
-      sleep_latency_min: sl?.latency ? Math.round(sl.latency / 60) : null,
-      sleep_efficiency_pct: sd?.contributors?.efficiency ?? sl?.efficiency ?? null,
-      sleep_score: sd?.score ?? null,
-      hrv_rmssd_ms: sl?.average_hrv ?? null,
-      resting_hr_bpm: sl?.lowest_heart_rate ?? null,
-      body_temp_deviation_c: sl?.readiness?.temperature_deviation ?? null,
+      ...mapped,
       spo2_pct: sp?.spo2_percentage?.average ?? null,
-      oura_readiness_score: rd?.score ?? null,
       oura_stress_score: st?.stress_high ?? null,
       oura_resilience_level: rs?.level ?? null,
       oura_activity_score: ac?.score ?? null,
       steps: ac?.steps ?? null,
       active_calories: ac?.active_calories ?? null,
       raw_payload: {
-        daily_sleep: sd, daily_readiness: rd, daily_stress: st,
-        daily_resilience: rs, daily_activity: ac, daily_spo2: sp,
-        daily_cardiovascular_age: ca, sleep: sl,
+        daily_sleep: sd,
+        daily_readiness: rd,
+        daily_stress: st,
+        daily_resilience: rs,
+        daily_activity: ac,
+        daily_spo2: sp,
+        daily_cardiovascular_age: ca,
+        sleep: sl,
       },
     };
 
     // Delete existing oura row for that day before insert (no unique constraint exists)
     const dayStart = new Date(`${day}T00:00:00Z`).toISOString();
     const dayEnd = new Date(`${day}T23:59:59Z`).toISOString();
-    await admin.from("biometrics")
+    await admin
+      .from("biometrics")
       .delete()
       .eq("user_id", user_id)
       .eq("source", "oura")
@@ -203,7 +218,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const action = body.action as "exchange" | "backfill" | "incremental";
 
-    if (action === "config" as any) {
+    if (action === ("config" as any)) {
       return new Response(JSON.stringify({ client_id: OURA_CLIENT_ID }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -242,7 +257,8 @@ Deno.serve(async (req) => {
         }
         try {
           const r = await syncRange(t.user_id, start, end);
-          await admin.from("oura_tokens")
+          await admin
+            .from("oura_tokens")
             .update({ last_sync_at: new Date().toISOString() })
             .eq("user_id", t.user_id);
           results.push({ user_id: t.user_id, ...r });
@@ -258,7 +274,8 @@ Deno.serve(async (req) => {
     const user_id = await getUserIdFromRequest(req);
     if (!user_id) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -266,20 +283,24 @@ Deno.serve(async (req) => {
       const { code, redirect_uri } = body;
       const tok = await exchangeCode(code, redirect_uri);
       const expires_at = new Date(Date.now() + (tok.expires_in ?? 3600) * 1000).toISOString();
-      await admin.from("oura_tokens").upsert({
-        user_id,
-        access_token: tok.access_token,
-        refresh_token: tok.refresh_token,
-        token_type: tok.token_type,
-        scope: tok.scope,
-        expires_at,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "user_id" });
+      await admin.from("oura_tokens").upsert(
+        {
+          user_id,
+          access_token: tok.access_token,
+          refresh_token: tok.refresh_token,
+          token_type: tok.token_type,
+          scope: tok.scope,
+          expires_at,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" },
+      );
 
       const end = fmt(new Date());
       const start = fmt(new Date(Date.now() - 90 * 24 * 3600 * 1000));
       const result = await syncRange(user_id, start, end);
-      await admin.from("oura_tokens")
+      await admin
+        .from("oura_tokens")
         .update({ last_sync_at: new Date().toISOString() })
         .eq("user_id", user_id);
       return new Response(JSON.stringify({ ok: true, ...result }), {
@@ -292,7 +313,8 @@ Deno.serve(async (req) => {
       const end = fmt(new Date());
       const start = fmt(new Date(Date.now() - days * 24 * 3600 * 1000));
       const result = await syncRange(user_id, start, end);
-      await admin.from("oura_tokens")
+      await admin
+        .from("oura_tokens")
         .update({ last_sync_at: new Date().toISOString() })
         .eq("user_id", user_id);
       return new Response(JSON.stringify({ ok: true, ...result }), {
@@ -304,7 +326,8 @@ Deno.serve(async (req) => {
       const end = fmt(new Date());
       const start = fmt(new Date(Date.now() - 3 * 24 * 3600 * 1000));
       const result = await syncRange(user_id, start, end);
-      await admin.from("oura_tokens")
+      await admin
+        .from("oura_tokens")
         .update({ last_sync_at: new Date().toISOString() })
         .eq("user_id", user_id);
       return new Response(JSON.stringify({ ok: true, ...result }), {
@@ -313,12 +336,17 @@ Deno.serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), {
-      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("oura-sync error", e);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("oura-sync error", msg);
+    // 200 with ok:false so the client can read the reason without unwrapping
+    // a FunctionsHttpError; needs_reauth drives the "Reconnect" UI state.
+    const code = msg.startsWith("needs_reauth") ? "needs_reauth" : "sync_failed";
+    return new Response(JSON.stringify({ ok: false, error: code }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

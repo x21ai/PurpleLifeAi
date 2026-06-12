@@ -32,32 +32,36 @@ export async function exportAllUserData(): Promise<void> {
 
   const zip = new JSZip();
 
-  const [profile, journal, biometrics, meds, doses, seizures, forecasts, alerts] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-    supabase.from("journal_entries").select("*").eq("user_id", user.id).order("captured_at"),
-    supabase.from("biometrics").select("*").eq("user_id", user.id).order("recorded_at"),
-    supabase.from("medications").select("*").eq("user_id", user.id),
-    supabase.from("medication_doses").select("*").eq("user_id", user.id).order("scheduled_at"),
-    supabase.from("seizure_events").select("*").eq("user_id", user.id).order("started_at"),
-    supabase.from("risk_forecasts").select("*").eq("user_id", user.id).order("for_date"),
-    supabase.from("alerts").select("*").eq("user_id", user.id).order("created_at"),
-  ]);
+  const [profile, journal, biometrics, meds, doses, seizures, forecasts, alerts] =
+    await Promise.all([
+      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+      supabase.from("journal_entries").select("*").eq("user_id", user.id).order("captured_at"),
+      supabase.from("biometrics").select("*").eq("user_id", user.id).order("recorded_at"),
+      supabase.from("medications").select("*").eq("user_id", user.id),
+      supabase.from("medication_doses").select("*").eq("user_id", user.id).order("scheduled_at"),
+      supabase.from("seizure_events").select("*").eq("user_id", user.id).order("started_at"),
+      supabase.from("risk_forecasts").select("*").eq("user_id", user.id).order("for_date"),
+      supabase.from("alerts").select("*").eq("user_id", user.id).order("created_at"),
+    ]);
 
-  zip.file("README.md", [
-    "# Your Purple export",
-    "",
-    `Exported ${new Date().toISOString()} for ${user.email ?? user.id}.`,
-    "",
-    "Folders:",
-    "- journal/, one markdown file per entry",
-    "- biometrics.csv, every biometric reading we have on file",
-    "- medications.json, your medication list",
-    "- medication_doses.json, every scheduled, taken, missed, or skipped dose",
-    "- seizures.json, every event you have logged",
-    "- profile.json, risk_forecasts.json, alerts.json, supporting context",
-    "",
-    "Your data is yours. Take it with you anywhere.",
-  ].join("\n"));
+  zip.file(
+    "README.md",
+    [
+      "# Your Purple export",
+      "",
+      `Exported ${new Date().toISOString()} for ${user.email ?? user.id}.`,
+      "",
+      "Folders:",
+      "- journal/, one markdown file per entry",
+      "- biometrics.csv, every biometric reading we have on file",
+      "- medications.json, your medication list",
+      "- medication_doses.json, every scheduled, taken, missed, or skipped dose",
+      "- seizures.json, every event you have logged",
+      "- profile.json, risk_forecasts.json, alerts.json, supporting context",
+      "",
+      "Your data is yours. Take it with you anywhere.",
+    ].join("\n"),
+  );
 
   zip.file("profile.json", JSON.stringify(profile.data ?? null, null, 2));
   zip.file("biometrics.csv", toCsv((biometrics.data ?? []) as Record<string, unknown>[]));
@@ -159,9 +163,7 @@ export async function softDeleteUserData(password: string): Promise<void> {
   if (pwErr) throw new Error("Password is incorrect");
 
   const now = new Date();
-  const purgeAfter = new Date(
-    now.getTime() + RESTORE_WINDOW_DAYS * 24 * 60 * 60 * 1000,
-  );
+  const purgeAfter = new Date(now.getTime() + RESTORE_WINDOW_DAYS * 24 * 60 * 60 * 1000);
   const { error } = await supabase
     .from("profiles")
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -186,9 +188,7 @@ export async function restoreUserData(): Promise<void> {
 export type DeletionStatus = { deletedAt: string; purgeAfter: string | null };
 
 /** Returns deletion status if the user has a pending soft-delete, else null. */
-export async function checkDeletionStatus(
-  userId: string,
-): Promise<DeletionStatus | null> {
+export async function checkDeletionStatus(userId: string): Promise<DeletionStatus | null> {
   const { data } = await supabase
     .from("profiles")
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

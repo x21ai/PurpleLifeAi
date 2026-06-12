@@ -6,8 +6,19 @@ import { ArrowLeft, Check, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { userMessage } from "@/lib/user-message";
 import {
   decidePendingChange,
   decidePendingChangesBulk,
@@ -56,6 +67,8 @@ function InboxPage() {
   const decide = useServerFn(decidePendingChange);
   const bulk = useServerFn(decidePendingChangesBulk);
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [confirmBulkApprove, setConfirmBulkApprove] = useState(false);
+  const [confirmBulkReject, setConfirmBulkReject] = useState(false);
 
   const pending = useQuery({
     queryKey: ["care", "pending-detailed"],
@@ -70,7 +83,7 @@ function InboxPage() {
       qc.invalidateQueries({ queryKey: ["care", "pending"] });
       toast.success(vars.decision === "approved" ? "Change applied" : "Change rejected");
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't save decision"),
+    onError: (e: any) => toast.error(userMessage(e, "Couldn't save decision")),
   });
   const bulkMut = useMutation({
     mutationFn: (vars: { ids: string[]; decision: "approved" | "rejected" }) =>
@@ -79,11 +92,9 @@ function InboxPage() {
       qc.invalidateQueries({ queryKey: ["care", "pending-detailed"] });
       qc.invalidateQueries({ queryKey: ["care", "pending"] });
       const verb = vars.decision === "approved" ? "approved" : "rejected";
-      toast.success(
-        `${res.ok} ${verb}${res.failed ? ` · ${res.failed} failed` : ""}`,
-      );
+      toast.success(`${res.ok} ${verb}${res.failed ? ` · ${res.failed} failed` : ""}`);
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't save decisions"),
+    onError: (e: any) => toast.error(userMessage(e, "Couldn't save decisions")),
   });
 
   const allChanges = pending.data?.changes ?? [];
@@ -94,9 +105,7 @@ function InboxPage() {
   }, [allChanges]);
   const changes = useMemo(
     () =>
-      filter === "all"
-        ? allChanges
-        : allChanges.filter((c) => bucketOf(String(c.type)) === filter),
+      filter === "all" ? allChanges : allChanges.filter((c) => bucketOf(String(c.type)) === filter),
     [allChanges, filter],
   );
   const visibleIds = changes.map((c) => c.id);
@@ -112,7 +121,9 @@ function InboxPage() {
       </Link>
       <p className="label-eyebrow text-muted-foreground mt-6">Caregiver inbox</p>
       <h1 className="mt-3 font-serif text-[40px] sm:text-6xl leading-[1.02] tracking-[-0.02em] text-foreground">
-        Changes waiting<br />for you
+        Changes waiting
+        <br />
+        for you
       </h1>
       <p className="mt-6 body-serif text-foreground/75 max-w-[600px]">
         Caregivers proposed these edits to your record. Nothing is applied until you approve it.
@@ -143,10 +154,7 @@ function InboxPage() {
                   size="sm"
                   variant="outline"
                   disabled={bulkBusy}
-                  onClick={() => {
-                    if (!confirm(`Approve ${visibleIds.length} changes?`)) return;
-                    bulkMut.mutate({ ids: visibleIds, decision: "approved" });
-                  }}
+                  onClick={() => setConfirmBulkApprove(true)}
                 >
                   <Check className="h-3 w-3 mr-1" /> Approve all
                 </Button>
@@ -154,10 +162,7 @@ function InboxPage() {
                   size="sm"
                   variant="ghost"
                   disabled={bulkBusy}
-                  onClick={() => {
-                    if (!confirm(`Reject ${visibleIds.length} changes?`)) return;
-                    bulkMut.mutate({ ids: visibleIds, decision: "rejected" });
-                  }}
+                  onClick={() => setConfirmBulkReject(true)}
                 >
                   <X className="h-3 w-3 mr-1" /> Reject all
                 </Button>
@@ -189,6 +194,55 @@ function InboxPage() {
           </ul>
         )}
       </section>
+
+      <AlertDialog open={confirmBulkApprove} onOpenChange={setConfirmBulkApprove}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Approve {visibleIds.length} changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              All selected caregiver edits will be applied to your record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                bulkMut.mutate({ ids: visibleIds, decision: "approved" });
+                setConfirmBulkApprove(false);
+              }}
+              disabled={bulkBusy}
+            >
+              Approve all
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmBulkReject} onOpenChange={setConfirmBulkReject}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject {visibleIds.length} changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              All selected caregiver edits will be discarded. Nothing will be added to your record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                bulkMut.mutate({ ids: visibleIds, decision: "rejected" });
+                setConfirmBulkReject(false);
+              }}
+              disabled={bulkBusy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Reject all
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -198,7 +252,11 @@ type Change = {
   type: string;
   type_label: string;
   created_at: string;
-  caregiver_profile: { first_name: string | null; last_name: string | null; community_display_name: string | null } | null;
+  caregiver_profile: {
+    first_name: string | null;
+    last_name: string | null;
+    community_display_name: string | null;
+  } | null;
   current_value: string | null;
   proposed_text: string;
 };
@@ -215,7 +273,9 @@ function PendingChangeCard({
   const [note, setNote] = useState("");
   const caregiverName =
     change.caregiver_profile?.community_display_name ||
-    [change.caregiver_profile?.first_name, change.caregiver_profile?.last_name].filter(Boolean).join(" ") ||
+    [change.caregiver_profile?.first_name, change.caregiver_profile?.last_name]
+      .filter(Boolean)
+      .join(" ") ||
     "A caregiver";
 
   return (
@@ -261,7 +321,11 @@ function PendingChangeCard({
         >
           <X className="h-3 w-3 mr-1" /> Reject
         </Button>
-        <Button size="sm" onClick={() => onDecide("approved", note || undefined)} disabled={disabled}>
+        <Button
+          size="sm"
+          onClick={() => onDecide("approved", note || undefined)}
+          disabled={disabled}
+        >
           <Check className="h-3 w-3 mr-1" /> Approve & apply
         </Button>
       </div>

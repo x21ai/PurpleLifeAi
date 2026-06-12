@@ -3,13 +3,21 @@ import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
 
 export const Route = createFileRoute("/_app/admin/messages")({
   head: () => ({ meta: [{ title: "Admin messages · Purple" }] }),
   component: AdminMessages,
 });
 
-type Msg = { id: string; subject: string; body: string; is_broadcast: boolean; created_at: string; recipient_id: string | null };
+type Msg = {
+  id: string;
+  subject: string;
+  body: string;
+  is_broadcast: boolean;
+  created_at: string;
+  recipient_id: string | null;
+};
 
 function AdminMessages() {
   const { session } = useAuth();
@@ -28,7 +36,9 @@ function AdminMessages() {
     setList((data ?? []) as Msg[]);
   }, []);
 
-  React.useEffect(() => { void load(); }, [load]);
+  React.useEffect(() => {
+    void load();
+  }, [load]);
 
   const send = async () => {
     if (!subject.trim() || !body.trim() || !session?.user.id) return;
@@ -41,9 +51,11 @@ function AdminMessages() {
       recipient_id: recipient.trim() || null,
     });
     setSending(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(userMessage(error, "That didn't work. Try again in a moment."));
     toast.success(recipient ? "Message sent" : "Broadcast sent");
-    setSubject(""); setBody(""); setRecipient("");
+    setSubject("");
+    setBody("");
+    setRecipient("");
     void load();
   };
 

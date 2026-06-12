@@ -2,12 +2,17 @@ import { useEffect, useState, useCallback } from "react";
 import { Heart, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getWhoopConfig, whoopIncrementalSync } from "@/lib/whoop.functions";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
 
 // Whoop OAuth scopes (v2 API). `offline` is required to receive a refresh token.
 const WHOOP_SCOPE = [
@@ -43,6 +48,7 @@ export function WhoopConnection() {
   const [counts, setCounts] = useState<Counts>({ recovery: 0, sleep: 0, strain: 0 });
   const [busy, setBusy] = useState(false);
   const [backfilling, setBackfilling] = useState(false);
+  const [needsReauth, setNeedsReauth] = useState(false);
 
   const refresh = useCallback(async () => {
     const { data: sess } = await supabase.auth.getSession();
@@ -54,20 +60,34 @@ export function WhoopConnection() {
       .eq("user_id", uid)
       .maybeSingle();
     setConnected(!!data);
-    setLastSync(data?.last_sync_at ?? data?.updated_at ?? null);
+    // last_sync_at only: updated_at also moves on token refreshes, which made
+    // stale data read as freshly synced (Devyn item 10).
+    setLastSync(data?.last_sync_at ?? null);
     if (data?.sync_interval_hours != null) setIntervalHours(data.sync_interval_hours);
 
     if (data) {
       const since = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString();
       const [recovery, sleep, strain] = await Promise.all([
-        supabase.from("biometrics").select("id", { count: "exact", head: true })
-          .eq("user_id", uid).eq("source", "whoop").gte("recorded_at", since)
+        supabase
+          .from("biometrics")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", uid)
+          .eq("source", "whoop")
+          .gte("recorded_at", since)
           .not("whoop_recovery_pct", "is", null),
-        supabase.from("biometrics").select("id", { count: "exact", head: true })
-          .eq("user_id", uid).eq("source", "whoop").gte("recorded_at", since)
+        supabase
+          .from("biometrics")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", uid)
+          .eq("source", "whoop")
+          .gte("recorded_at", since)
           .not("sleep_total_min", "is", null),
-        supabase.from("biometrics").select("id", { count: "exact", head: true })
-          .eq("user_id", uid).eq("source", "whoop").gte("recorded_at", since)
+        supabase
+          .from("biometrics")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", uid)
+          .eq("source", "whoop")
+          .gte("recorded_at", since)
           .not("whoop_strain", "is", null),
       ]);
       setCounts({
@@ -78,7 +98,9 @@ export function WhoopConnection() {
     }
   }, []);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
@@ -103,7 +125,10 @@ export function WhoopConnection() {
 
   const connect = async () => {
     const { data: sess } = await supabase.auth.getSession();
-    if (!sess.session) { toast.error("Please sign in first"); return; }
+    if (!sess.session) {
+      toast.error("Please sign in first");
+      return;
+    }
     let cfg: { client_id: string | null };
     try {
       cfg = (await fetchConfig()) as { client_id: string | null };
@@ -126,21 +151,38 @@ export function WhoopConnection() {
     url.searchParams.set("redirect_uri", redirect);
     url.searchParams.set("scope", WHOOP_SCOPE);
     url.searchParams.set("state", sess.session.user.id);
-    const w = 520, h = 720;
+    const w = 520,
+      h = 720;
     const left = window.screenX + (window.outerWidth - w) / 2;
     const top = window.screenY + (window.outerHeight - h) / 2;
-    window.open(url.toString(), "whoop-oauth",
-      `width=${w},height=${h},left=${left},top=${top}`);
+    window.open(url.toString(), "whoop-oauth", `width=${w},height=${h},left=${left},top=${top}`);
   };
 
   const sync = async () => {
     setBusy(true);
     try {
-      await runIncrementalSync();
-      toast.success("Synced");
+      const result = (await runIncrementalSync()) as { days?: number } | undefined;
+      const days = result?.days ?? 0;
+      setNeedsReauth(false);
+      toast.success(
+        days > 0
+          ? `Synced. ${days} day${days === 1 ? "" : "s"} of data updated.`
+          : "Synced. Nothing new from Whoop yet.",
+      );
       void refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Sync failed");
+      const msg = e instanceof Error ? e.message : "";
+      if (/needs_reauth/i.test(msg)) {
+        setNeedsReauth(true);
+        toast.error("Whoop needs to be reconnected. Tap Reconnect to sign in again.");
+        return;
+      }
+      toast.error(
+        userMessage(
+          e,
+          "The sync didn't finish. Purple will try again next time, or you can retry now.",
+        ),
+      );
     } finally {
       setBusy(false);
     }
@@ -151,11 +193,15 @@ export function WhoopConnection() {
     setIntervalHours(hours);
     const { data: sess } = await supabase.auth.getSession();
     if (!sess.session) return;
-    const { error } = await supabase.from("whoop_tokens")
+    const { error } = await supabase
+      .from("whoop_tokens")
       .update({ sync_interval_hours: hours })
       .eq("user_id", sess.session.user.id);
     if (error) toast.error("Could not save preference");
-    else toast.success(hours === 0 ? "Auto-sync off" : `Sync every ${hours === 1 ? "hour" : `${hours} hours`}`);
+    else
+      toast.success(
+        hours === 0 ? "Auto-sync off" : `Sync every ${hours === 1 ? "hour" : `${hours} hours`}`,
+      );
   };
 
   const disconnect = async () => {
@@ -179,30 +225,48 @@ export function WhoopConnection() {
             <div className="min-w-0">
               <p className="font-serif text-base text-foreground">Whoop</p>
               <p className="text-xs text-muted-foreground">
-                {backfilling
-                  ? `Importing… ${counts.recovery} recovery · ${counts.sleep} sleep · ${counts.strain} strain`
-                  : (
-                    <>
-                      Connected
-                      <span className="block sm:inline sm:before:content-['_·_']">
-                        Last synced {relativeTime(lastSync)}
-                      </span>
-                    </>
-                  )}
+                {backfilling ? (
+                  `Importing… ${counts.recovery} recovery · ${counts.sleep} sleep · ${counts.strain} strain`
+                ) : needsReauth ? (
+                  <span className="text-[color:var(--data-warn)]">
+                    Reconnect needed. Whoop stopped accepting Purple's access.
+                  </span>
+                ) : (
+                  <>
+                    Connected
+                    <span className="block sm:inline sm:before:content-['_·_']">
+                      Last synced {relativeTime(lastSync)}
+                    </span>
+                  </>
+                )}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Button size="sm" variant="outline" onClick={() => void sync()} disabled={busy || backfilling}>
-              {busy || backfilling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Sync"}
+            {needsReauth ? (
+              <Button size="sm" variant="outline" onClick={() => void connect()}>
+                Reconnect
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void sync()}
+                disabled={busy || backfilling}
+              >
+                {busy || backfilling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Sync"}
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" onClick={() => void disconnect()}>
+              Disconnect
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => void disconnect()}>Disconnect</Button>
           </div>
         </div>
         {!backfilling && (
           <div className="pl-11 flex items-center justify-between gap-3 flex-wrap">
             <p className="text-xs text-muted-foreground">
-              Last 90 days · {counts.recovery} recovery · {counts.sleep} sleep · {counts.strain} strain
+              Last 90 days · {counts.recovery} recovery · {counts.sleep} sleep · {counts.strain}{" "}
+              strain
             </p>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Auto-sync</span>
@@ -239,7 +303,9 @@ export function WhoopConnection() {
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <Button size="sm" onClick={() => void connect()}>Connect</Button>
+        <Button size="sm" onClick={() => void connect()}>
+          Connect
+        </Button>
       </div>
     </div>
   );

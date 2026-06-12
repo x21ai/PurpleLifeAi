@@ -5,6 +5,7 @@ import { FileText, Loader2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { generateMedicalHistoryReport } from "@/lib/medical-report.functions";
+import { userMessage } from "@/lib/user-message";
 
 const ALL_SECTIONS = {
   snapshot: true,
@@ -38,7 +39,7 @@ export function QuickClinicianPdf() {
       toast.success("Report ready");
       window.open(r.url, "_blank");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onError: (e) => toast.error(userMessage(e, "That didn't work. Try again in a moment.")),
     onSettled: () => setPending(null),
   });
 

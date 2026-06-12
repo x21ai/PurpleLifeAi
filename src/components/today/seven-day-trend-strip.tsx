@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Activity, Moon, Pill } from "lucide-react";
-import { getSevenDayTrends, type SevenDayTrends, type DayPoint } from "@/lib/seven-day-trends.functions";
+import {
+  getSevenDayTrends,
+  type SevenDayTrends,
+  type DayPoint,
+} from "@/lib/seven-day-trends.functions";
 
 function fmtSleep(min: number | null) {
   if (min == null) return "–";
@@ -10,7 +14,11 @@ function fmtSleep(min: number | null) {
   return `${h}h ${m.toString().padStart(2, "0")}m`;
 }
 
-function Bars({ days, accessor, target }: {
+function Bars({
+  days,
+  accessor,
+  target,
+}: {
   days: DayPoint[];
   accessor: (d: DayPoint) => number | null;
   target: number;
@@ -26,11 +34,7 @@ function Bars({ days, accessor, target }: {
           <div
             key={i}
             className={`flex-1 rounded-sm ${
-              v == null
-                ? "bg-muted/30"
-                : low
-                  ? "bg-amber-500/70"
-                  : "bg-primary/70"
+              v == null ? "bg-muted/30" : low ? "bg-amber-500/70" : "bg-primary/70"
             }`}
             style={{ height: `${h}px` }}
             title={days[i].date}
@@ -50,8 +54,7 @@ export function SevenDayTrendStrip() {
   });
   if (!data) return null;
 
-  const hasAny =
-    data.sleepAvgMin != null || data.hrvAvgMs != null || data.missedDoses > 0;
+  const hasAny = data.sleepAvgMin != null || data.hrvAvgMs != null || data.missedDoses > 0;
   if (!hasAny) return null;
 
   return (
@@ -102,9 +105,7 @@ export function SevenDayTrendStrip() {
             <Pill className="h-3.5 w-3.5 text-muted-foreground" />
             <p className="text-xs text-muted-foreground">Missed doses</p>
           </div>
-          <p className="mt-1 font-serif text-lg text-foreground tabular-nums">
-            {data.missedDoses}
-          </p>
+          <p className="mt-1 font-serif text-lg text-foreground tabular-nums">{data.missedDoses}</p>
           <p className="text-xs text-muted-foreground">across the week</p>
           <div className="mt-2 flex items-end gap-1 h-10">
             {data.days.map((d, i) => {

@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { caregiverLogSeizure } from "@/lib/care.functions";
+import { userMessage } from "@/lib/user-message";
 
 function nowLocal(): string {
   // ISO local without seconds for <input type="datetime-local">
@@ -28,13 +29,7 @@ function nowLocal(): string {
   return d.toISOString().slice(0, 16);
 }
 
-export function LogSeizureSheet({
-  ownerId,
-  ownerName,
-}: {
-  ownerId: string;
-  ownerName: string;
-}) {
+export function LogSeizureSheet({ ownerId, ownerName }: { ownerId: string; ownerName: string }) {
   const [open, setOpen] = useState(false);
   const [startedAt, setStartedAt] = useState<string>(nowLocal());
   const [endedAt, setEndedAt] = useState<string>("");
@@ -73,7 +68,7 @@ export function LogSeizureSheet({
       setInjury(false);
       setStartedAt(nowLocal());
     },
-    onError: (err: any) => toast.error(err?.message ?? "Couldn't log seizure"),
+    onError: (err: any) => toast.error(userMessage(err, "Couldn't log seizure")),
   });
 
   return (
@@ -147,17 +142,11 @@ export function LogSeizureSheet({
           </div>
           <div className="flex items-center gap-6 pt-1">
             <label className="inline-flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={rescueMed}
-                onCheckedChange={(v) => setRescueMed(v === true)}
-              />
+              <Checkbox checked={rescueMed} onCheckedChange={(v) => setRescueMed(v === true)} />
               Rescue med given
             </label>
             <label className="inline-flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={injury}
-                onCheckedChange={(v) => setInjury(v === true)}
-              />
+              <Checkbox checked={injury} onCheckedChange={(v) => setInjury(v === true)} />
               Injury
             </label>
           </div>

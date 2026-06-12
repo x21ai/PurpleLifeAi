@@ -3,20 +3,35 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { CareRole, CareScope } from "./care.scopes";
+import { dateKeyInTimeZone } from "./utils";
 import { ROLE_DEFAULT_SCOPES, ROLE_LABELS } from "./care.scopes";
 import { sendTransactionalEmail } from "./email/send";
 import { getRequest } from "@tanstack/react-start/server";
-import {
-  notifyOwnerOfCaregiverWrite,
-  notifyCaregiverOfDecision,
-} from "./care-notify.server";
+import { notifyOwnerOfCaregiverWrite, notifyCaregiverOfDecision } from "./care-notify.server";
 import { sendCareDailyDigest } from "./care-digest.server";
 
 function newInviteToken(): string {
-  return (
-    crypto.randomUUID().replace(/-/g, "") +
-    crypto.randomUUID().replace(/-/g, "")
-  );
+  return crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+}
+
+function careAcceptUrl(inviteToken: string): string {
+  const req = getRequest();
+  const origin =
+    process.env.PUBLIC_SITE_URL || (req ? new URL(req.url).origin : "https://purplelife.org");
+  return `${origin}/care/accept?token=${inviteToken}`;
+}
+
+/** Strip invite_token from API payloads; owners get accept_url instead. */
+function sanitizeCareRelationshipForClient<
+  T extends { invite_token?: string | null; status?: string },
+>(rel: T): Omit<T, "invite_token"> & { accept_url: string | null } {
+  const token = rel.invite_token;
+  const { invite_token: _omit, ...rest } = rel;
+  const accept_url =
+    rel.status === "pending" && typeof token === "string" && token.length > 0
+      ? careAcceptUrl(token)
+      : null;
+  return { ...rest, accept_url };
 }
 
 const emailSchema = z.string().trim().toLowerCase().email().max(255);
@@ -26,20 +41,27 @@ const roleSchema = z.enum(["emergency", "caregiver", "provider", "viewer"]);
 
 export const inviteCaregiver = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { email: string; role: CareRole; scopes?: CareScope[]; relationship_label?: string | null }) =>
-    z
-      .object({
-        email: emailSchema,
-        role: roleSchema,
-        scopes: z.array(z.string().max(64)).max(60).optional(),
-        relationship_label: z.string().trim().min(1).max(40).optional().nullable(),
-      })
-      .parse(input),
+  .inputValidator(
+    (input: {
+      email: string;
+      role: CareRole;
+      scopes?: CareScope[];
+      relationship_label?: string | null;
+    }) =>
+      z
+        .object({
+          email: emailSchema,
+          role: roleSchema,
+          scopes: z.array(z.string().max(64)).max(60).optional(),
+          relationship_label: z.string().trim().min(1).max(40).optional().nullable(),
+        })
+        .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const invite_token = newInviteToken();
     const scopes = (data.scopes ?? ROLE_DEFAULT_SCOPES[data.role as CareRole]) as string[];
+    const inviteExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data: rel, error } = await supabaseAdmin
       .from("care_relationships")
@@ -50,6 +72,7 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
         role: data.role,
         status: "pending",
         relationship_label: data.relationship_label ?? null,
+        expires_at: inviteExpiresAt,
       })
       .select()
       .single();
@@ -77,11 +100,7 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
 
     // Best-effort transactional email. The invite link is also surfaced in
     // Settings → Sharing so a failure here is non-fatal.
-    const req = getRequest();
-    const origin =
-      process.env.PUBLIC_SITE_URL ||
-      (req ? new URL(req.url).origin : "https://purplelife.org");
-    const acceptUrl = `${origin}/care/accept?token=${invite_token}`;
+    const acceptUrl = careAcceptUrl(invite_token);
     let emailSent = false;
     try {
       const { data: inviter } = await supabaseAdmin
@@ -109,7 +128,7 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
       console.warn("care-invite email failed (link still available in UI)", err);
     }
 
-    return { relationship: rel, invite_token, acceptUrl, emailSent };
+    return { relationship: rel, acceptUrl, emailSent };
   });
 
 export const listMyCaregivers = createServerFn({ method: "GET" })
@@ -134,7 +153,10 @@ export const listMyCaregivers = createServerFn({ method: "GET" })
       scopes = s ?? [];
     }
 
-    return { relationships: rels ?? [], scopes };
+    return {
+      relationships: (rels ?? []).map((r) => sanitizeCareRelationshipForClient(r)),
+      scopes,
+    };
   });
 
 export const listPeopleSharingWithMe = createServerFn({ method: "GET" })
@@ -145,23 +167,26 @@ export const listPeopleSharingWithMe = createServerFn({ method: "GET" })
       .from("care_relationships")
       .select("*")
       .eq("caregiver_id", userId)
-      .in("status", ["active", "pending"]) 
+      .in("status", ["active", "pending"])
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return { relationships: data ?? [] };
+    return {
+      relationships: (data ?? []).map((r) => sanitizeCareRelationshipForClient(r)),
+    };
   });
 
 export const setScopes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { relationship_id: string; scopes: Array<{ scope: string; granted: boolean }> }) =>
-    z
-      .object({
-        relationship_id: z.string().uuid(),
-        scopes: z
-          .array(z.object({ scope: z.string().min(1).max(64), granted: z.boolean() }))
-          .max(60),
-      })
-      .parse(input),
+  .inputValidator(
+    (input: { relationship_id: string; scopes: Array<{ scope: string; granted: boolean }> }) =>
+      z
+        .object({
+          relationship_id: z.string().uuid(),
+          scopes: z
+            .array(z.object({ scope: z.string().min(1).max(64), granted: z.boolean() }))
+            .max(60),
+        })
+        .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -511,63 +536,49 @@ export const acceptInvite = createServerFn({ method: "POST" })
     z.object({ invite_token: z.string().min(20).max(128) }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { userId } = context;
-    const { data: rel, error } = await supabaseAdmin
-      .from("care_relationships")
-      .select("*")
-      .eq("invite_token", data.invite_token)
-      .single();
-    if (error || !rel) throw new Error("Invite not found");
-    if (rel.status !== "pending") throw new Error("Invite is no longer pending");
-    if (rel.owner_id === userId) throw new Error("You can't accept your own invite");
-
-    // Verify the accepting user's email matches the invite email, so a leaked
-    // or forwarded token can't be redeemed by an unintended account.
-    if (rel.invite_email) {
-      const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
-      const accepterEmail = (u?.user?.email ?? "").trim().toLowerCase();
-      const inviteEmail = String(rel.invite_email).trim().toLowerCase();
-      if (!accepterEmail || accepterEmail !== inviteEmail) {
-        throw new Error("This invite was sent to a different email address.");
-      }
-    }
-
-    const { error: uErr } = await supabaseAdmin
-      .from("care_relationships")
-      .update({
-        caregiver_id: userId,
-        status: "active",
-        accepted_at: new Date().toISOString(),
-      })
-      .eq("id", rel.id);
-    if (uErr) throw new Error(uErr.message);
-
-    await supabaseAdmin.from("care_audit_log").insert({
-      relationship_id: rel.id,
-      owner_id: rel.owner_id,
-      actor_id: userId,
-      action: "accepted",
+    const { supabase } = context;
+    const { data: result, error } = await supabase.rpc("accept_care_invite", {
+      p_token: data.invite_token,
     });
+    if (error) throw new Error(error.message);
+    const row = result as { relationship_id?: string; owner_id?: string } | null;
+    if (!row?.relationship_id || !row.owner_id) throw new Error("Invite not found");
+    return { relationship_id: row.relationship_id, owner_id: row.owner_id };
+  });
 
-    return { relationship_id: rel.id, owner_id: rel.owner_id };
+export const acceptAssignedInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { relationship_id: string }) =>
+    z.object({ relationship_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: result, error } = await supabase.rpc("accept_assigned_care_invite", {
+      p_relationship_id: data.relationship_id,
+    });
+    if (error) throw new Error(error.message);
+    const row = result as { relationship_id?: string; owner_id?: string } | null;
+    if (!row?.relationship_id || !row.owner_id) throw new Error("Invite not found");
+    return { relationship_id: row.relationship_id, owner_id: row.owner_id };
   });
 
 export const proposeChange = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    relationship_id: string;
-    type: "add_journal_comment" | "add_meds_note";
-    target_id: string;
-    payload: { text: string };
-  }) =>
-    z
-      .object({
-        relationship_id: z.string().uuid(),
-        type: z.enum(["add_journal_comment", "add_meds_note"]),
-        target_id: z.string().uuid(),
-        payload: z.object({ text: z.string().trim().min(1).max(2000) }),
-      })
-      .parse(input),
+  .inputValidator(
+    (input: {
+      relationship_id: string;
+      type: "add_journal_comment" | "add_meds_note";
+      target_id: string;
+      payload: { text: string };
+    }) =>
+      z
+        .object({
+          relationship_id: z.string().uuid(),
+          type: z.enum(["add_journal_comment", "add_meds_note"]),
+          target_id: z.string().uuid(),
+          payload: z.object({ text: z.string().trim().min(1).max(2000) }),
+        })
+        .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -641,8 +652,7 @@ export const proposeChange = createServerFn({ method: "POST" })
           .filter(Boolean)
           .join(" ")
           .trim() || "A caregiver";
-      const summary = String((data.payload as { text?: string })?.text ?? "")
-        .slice(0, 140);
+      const summary = String((data.payload as { text?: string })?.text ?? "").slice(0, 140);
       await supabaseAdmin.from("alerts").insert({
         user_id: rel.owner_id,
         kind: "caregiver_proposal",
@@ -751,8 +761,7 @@ export const caregiverReadOverview = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!rel) throw new Error("No active relationship");
-    if (rel.expires_at && new Date(rel.expires_at) < new Date())
-      throw new Error("Access expired");
+    if (rel.expires_at && new Date(rel.expires_at) < new Date()) throw new Error("Access expired");
 
     const { data: scopes } = await supabaseAdmin
       .from("care_scopes")
@@ -761,7 +770,9 @@ export const caregiverReadOverview = createServerFn({ method: "POST" })
 
     const { data: profile } = await supabaseAdmin
       .from("profiles")
-      .select("first_name, last_name, community_display_name, timezone, gender, conditions, feature_overrides")
+      .select(
+        "first_name, last_name, community_display_name, timezone, gender, conditions, feature_overrides",
+      )
       .eq("id", data.owner_id)
       .maybeSingle();
 
@@ -770,11 +781,11 @@ export const caregiverReadOverview = createServerFn({ method: "POST" })
       scopes: (scopes ?? []).filter((s) => s.granted).map((s) => s.scope),
       profile,
       ownerConditions: (profile?.conditions as string[] | null) ?? [],
-      ownerFeatureOverrides:
-        (profile?.feature_overrides as Record<string, boolean> | null) ?? {},
+      ownerFeatureOverrides: (profile?.feature_overrides as Record<string, boolean> | null) ?? {},
       caregiverHiddenFeatures:
-        ((rel as { caregiver_hidden_features?: string[] | null })
-          .caregiver_hidden_features as string[] | null) ?? [],
+        ((rel as { caregiver_hidden_features?: string[] | null }).caregiver_hidden_features as
+          | string[]
+          | null) ?? [],
     };
   });
 
@@ -814,7 +825,9 @@ export const caregiverReadMeds = createServerFn({ method: "POST" })
     await assertScope(data.owner_id, context.userId, "meds:read");
     const { data: meds } = await supabaseAdmin
       .from("medications")
-      .select("id, name, dosage, times_of_day, schedule, is_rescue, active, notes, refill_date, pills_remaining, created_by_kind")
+      .select(
+        "id, name, dosage, times_of_day, schedule, is_rescue, active, notes, refill_date, pills_remaining, created_by_kind",
+      )
       .eq("user_id", data.owner_id)
       .eq("active", true)
       .order("name");
@@ -870,7 +883,9 @@ export const caregiverReadSeizures = createServerFn({ method: "POST" })
     await assertScope(data.owner_id, context.userId, "seizures:read");
     const { data: rows } = await supabaseAdmin
       .from("seizure_events")
-      .select("id, started_at, ended_at, duration_seconds, type, severity, injury, rescue_med_given, notes, created_by_kind")
+      .select(
+        "id, started_at, ended_at, duration_seconds, type, severity, injury, rescue_med_given, notes, created_by_kind",
+      )
       .eq("user_id", data.owner_id)
       .order("started_at", { ascending: false })
       .limit(30);
@@ -892,10 +907,12 @@ export const caregiverReadReports = createServerFn({ method: "POST" })
   });
 
 const caregiverReportInput = (input: { owner_id: string; report_id: string }) =>
-  z.object({
-    owner_id: z.string().uuid(),
-    report_id: z.string().uuid(),
-  }).parse(input);
+  z
+    .object({
+      owner_id: z.string().uuid(),
+      report_id: z.string().uuid(),
+    })
+    .parse(input);
 
 export const caregiverReadReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -905,7 +922,7 @@ export const caregiverReadReport = createServerFn({ method: "POST" })
     const { data: report, error: rErr } = await supabaseAdmin
       .from("report_documents")
       .select(
-        "id, title, report_type, report_date, file_mime, status, created_at, summary, ai_summary, ai_summary_at"
+        "id, title, report_type, report_date, file_mime, status, created_at, summary, ai_summary, ai_summary_at",
       )
       .eq("id", data.report_id)
       .eq("user_id", data.owner_id)
@@ -915,7 +932,7 @@ export const caregiverReadReport = createServerFn({ method: "POST" })
     const { data: metrics } = await supabaseAdmin
       .from("report_metrics")
       .select(
-        "id, metric_key, display_name, value, value_text, unit, reference_low, reference_high, flag"
+        "id, metric_key, display_name, value, value_text, unit, reference_low, reference_high, flag",
       )
       .eq("report_id", data.report_id)
       .order("metric_key", { ascending: true });
@@ -935,7 +952,14 @@ export const caregiverReadToday = createServerFn({ method: "POST" })
   .inputValidator(ownerInput)
   .handler(async ({ data, context }) => {
     await assertScope(data.owner_id, context.userId, "today:read");
-    const today = new Date().toISOString().slice(0, 10);
+    // "Today" is the OWNER'S calendar day (for_date is written in their
+    // profile timezone by the risk forecaster).
+    const { data: ownerProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("timezone")
+      .eq("id", data.owner_id)
+      .maybeSingle();
+    const today = dateKeyInTimeZone(new Date(), ownerProfile?.timezone || "UTC");
     const { data: forecast } = await supabaseAdmin
       .from("risk_forecasts")
       .select("for_date, risk_score, band, ai_narrative, top_factors")
@@ -964,8 +988,7 @@ async function getActiveRelationship(ownerId: string, caregiverId: string) {
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!rel) throw new Error("No active relationship");
-  if (rel.expires_at && new Date(rel.expires_at) < new Date())
-    throw new Error("Access expired");
+  if (rel.expires_at && new Date(rel.expires_at) < new Date()) throw new Error("Access expired");
   return rel;
 }
 
@@ -990,18 +1013,15 @@ async function logCaregiverWrite(
 
 export const caregiverMarkDose = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    owner_id: string;
-    dose_id: string;
-    action: "taken" | "skip" | "reset_pending";
-  }) =>
-    z
-      .object({
-        owner_id: z.string().uuid(),
-        dose_id: z.string().uuid(),
-        action: z.enum(["taken", "skip", "reset_pending"]),
-      })
-      .parse(input),
+  .inputValidator(
+    (input: { owner_id: string; dose_id: string; action: "taken" | "skip" | "reset_pending" }) =>
+      z
+        .object({
+          owner_id: z.string().uuid(),
+          dose_id: z.string().uuid(),
+          action: z.enum(["taken", "skip", "reset_pending"]),
+        })
+        .parse(input),
   )
   .handler(async ({ data, context }) => {
     const caregiverId = context.userId;
@@ -1045,45 +1065,43 @@ export const caregiverMarkDose = createServerFn({ method: "POST" })
 
 export const caregiverLogSeizure = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    owner_id: string;
-    started_at: string;
-    ended_at?: string | null;
-    type?: string | null;
-    severity?: number | null;
-    notes?: string | null;
-    rescue_med_given?: boolean;
-    injury?: boolean;
-  }) =>
-    z
-      .object({
-        owner_id: z.string().uuid(),
-        started_at: z.string().datetime(),
-        ended_at: z.string().datetime().nullable().optional(),
-        type: z.string().max(64).nullable().optional(),
-        severity: z.number().int().min(0).max(10).nullable().optional(),
-        notes: z.string().max(2000).nullable().optional(),
-        rescue_med_given: z.boolean().optional(),
-        injury: z.boolean().optional(),
-      })
-      .parse(input),
+  .inputValidator(
+    (input: {
+      owner_id: string;
+      started_at: string;
+      ended_at?: string | null;
+      type?: string | null;
+      severity?: number | null;
+      notes?: string | null;
+      rescue_med_given?: boolean;
+      injury?: boolean;
+    }) =>
+      z
+        .object({
+          owner_id: z.string().uuid(),
+          started_at: z.string().datetime(),
+          ended_at: z.string().datetime().nullable().optional(),
+          type: z.string().max(64).nullable().optional(),
+          severity: z.number().int().min(0).max(10).nullable().optional(),
+          notes: z.string().max(2000).nullable().optional(),
+          rescue_med_given: z.boolean().optional(),
+          injury: z.boolean().optional(),
+        })
+        .parse(input),
   )
   .handler(async ({ data, context }) => {
     const caregiverId = context.userId;
     await assertScope(data.owner_id, caregiverId, "seizures:write");
     const rel = await getActiveRelationship(data.owner_id, caregiverId);
 
-    const duration =
-      data.ended_at
-        ? Math.max(
-            0,
-            Math.round(
-              (new Date(data.ended_at).getTime() -
-                new Date(data.started_at).getTime()) /
-                1000,
-            ),
-          )
-        : null;
+    const duration = data.ended_at
+      ? Math.max(
+          0,
+          Math.round(
+            (new Date(data.ended_at).getTime() - new Date(data.started_at).getTime()) / 1000,
+          ),
+        )
+      : null;
 
     const { data: row, error } = await supabaseAdmin
       .from("seizure_events")
@@ -1120,11 +1138,7 @@ export const caregiverLogSeizure = createServerFn({ method: "POST" })
 
 export const caregiverAddJournalEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    owner_id: string;
-    text: string;
-    captured_at?: string;
-  }) =>
+  .inputValidator((input: { owner_id: string; text: string; captured_at?: string }) =>
     z
       .object({
         owner_id: z.string().uuid(),
@@ -1167,30 +1181,31 @@ export const caregiverAddJournalEntry = createServerFn({ method: "POST" })
 
 export const caregiverAddBiometric = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    owner_id: string;
-    recorded_at: string;
-    hr_bpm?: number | null;
-    resting_hr_bpm?: number | null;
-    spo2_pct?: number | null;
-    skin_temp_c?: number | null;
-    steps?: number | null;
-    sleep_total_min?: number | null;
-    notes?: string | null;
-  }) =>
-    z
-      .object({
-        owner_id: z.string().uuid(),
-        recorded_at: z.string().datetime(),
-        hr_bpm: z.number().min(0).max(400).nullable().optional(),
-        resting_hr_bpm: z.number().min(0).max(400).nullable().optional(),
-        spo2_pct: z.number().min(0).max(100).nullable().optional(),
-        skin_temp_c: z.number().min(20).max(45).nullable().optional(),
-        steps: z.number().int().min(0).max(200000).nullable().optional(),
-        sleep_total_min: z.number().min(0).max(1440).nullable().optional(),
-        notes: z.string().max(500).nullable().optional(),
-      })
-      .parse(input),
+  .inputValidator(
+    (input: {
+      owner_id: string;
+      recorded_at: string;
+      hr_bpm?: number | null;
+      resting_hr_bpm?: number | null;
+      spo2_pct?: number | null;
+      skin_temp_c?: number | null;
+      steps?: number | null;
+      sleep_total_min?: number | null;
+      notes?: string | null;
+    }) =>
+      z
+        .object({
+          owner_id: z.string().uuid(),
+          recorded_at: z.string().datetime(),
+          hr_bpm: z.number().min(0).max(400).nullable().optional(),
+          resting_hr_bpm: z.number().min(0).max(400).nullable().optional(),
+          spo2_pct: z.number().min(0).max(100).nullable().optional(),
+          skin_temp_c: z.number().min(20).max(45).nullable().optional(),
+          steps: z.number().int().min(0).max(200000).nullable().optional(),
+          sleep_total_min: z.number().min(0).max(1440).nullable().optional(),
+          notes: z.string().max(500).nullable().optional(),
+        })
+        .parse(input),
   )
   .handler(async ({ data, context }) => {
     const caregiverId = context.userId;
@@ -1243,8 +1258,7 @@ async function getActiveRelationshipForCaregiver(ownerId: string, caregiverId: s
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!rel) throw new Error("No active relationship");
-  if (rel.expires_at && new Date(rel.expires_at) < new Date())
-    throw new Error("Access expired");
+  if (rel.expires_at && new Date(rel.expires_at) < new Date()) throw new Error("Access expired");
   return rel;
 }
 
@@ -1254,7 +1268,7 @@ export const listCaregiverOwners = createServerFn({ method: "GET" })
     const { userId } = context;
     const { data: rels, error } = await supabaseAdmin
       .from("care_relationships")
-      .select("id, owner_id, role, status, expires_at, invite_email, invite_token, created_at, accepted_at")
+      .select("id, owner_id, role, status, expires_at, invite_email, created_at, accepted_at")
       .eq("caregiver_id", userId)
       .in("status", ["active", "pending"])
       .order("accepted_at", { ascending: false, nullsFirst: false });
@@ -1264,7 +1278,17 @@ export const listCaregiverOwners = createServerFn({ method: "GET" })
       new Set(relationships.filter((r) => r.status === "active").map((r) => r.owner_id)),
     );
 
-    let profilesById: Record<string, { id: string; first_name: string | null; last_name: string | null; community_display_name: string | null; conditions: string[] | null; timezone: string | null }> = {};
+    let profilesById: Record<
+      string,
+      {
+        id: string;
+        first_name: string | null;
+        last_name: string | null;
+        community_display_name: string | null;
+        conditions: string[] | null;
+        timezone: string | null;
+      }
+    > = {};
     if (ownerIds.length > 0) {
       const { data: profiles } = await supabaseAdmin
         .from("profiles")
@@ -1275,7 +1299,10 @@ export const listCaregiverOwners = createServerFn({ method: "GET" })
 
     // Per-relationship last_seen + activity counts
     const relIds = relationships.filter((r) => r.status === "active").map((r) => r.id);
-    let visitsByRel: Record<string, { last_seen_at: string; last_seen_by_tab: Record<string, string> }> = {};
+    let visitsByRel: Record<
+      string,
+      { last_seen_at: string; last_seen_by_tab: Record<string, string> }
+    > = {};
     if (relIds.length > 0) {
       const { data: visits } = await supabaseAdmin
         .from("care_caregiver_visits")
@@ -1302,46 +1329,47 @@ export const listCaregiverOwners = createServerFn({ method: "GET" })
           const since = visit?.last_seen_at ?? fallback;
           const since24h = new Date(Date.now() - 24 * 3600_000).toISOString();
           const since72h = new Date(Date.now() - 72 * 3600_000).toISOString();
-          const [meds, journal, seizures, biometrics, missed24h, seizures24h, lastJournal] = await Promise.all([
-            supabaseAdmin
-              .from("medication_doses")
-              .select("id", { count: "exact", head: true })
-              .eq("user_id", r.owner_id)
-              .gt("created_at", since),
-            supabaseAdmin
-              .from("journal_entries")
-              .select("id", { count: "exact", head: true })
-              .eq("user_id", r.owner_id)
-              .gt("created_at", since),
-            supabaseAdmin
-              .from("seizure_events")
-              .select("id", { count: "exact", head: true })
-              .eq("user_id", r.owner_id)
-              .gt("created_at", since),
-            supabaseAdmin
-              .from("biometrics")
-              .select("id", { count: "exact", head: true })
-              .eq("user_id", r.owner_id)
-              .gt("created_at", since),
-            supabaseAdmin
-              .from("medication_doses")
-              .select("id", { count: "exact", head: true })
-              .eq("user_id", r.owner_id)
-              .eq("status", "missed")
-              .gte("scheduled_at", since24h),
-            supabaseAdmin
-              .from("seizure_events")
-              .select("id", { count: "exact", head: true })
-              .eq("user_id", r.owner_id)
-              .gte("started_at", since24h),
-            supabaseAdmin
-              .from("journal_entries")
-              .select("created_at")
-              .eq("user_id", r.owner_id)
-              .order("created_at", { ascending: false })
-              .limit(1)
-              .maybeSingle(),
-          ]);
+          const [meds, journal, seizures, biometrics, missed24h, seizures24h, lastJournal] =
+            await Promise.all([
+              supabaseAdmin
+                .from("medication_doses")
+                .select("id", { count: "exact", head: true })
+                .eq("user_id", r.owner_id)
+                .gt("created_at", since),
+              supabaseAdmin
+                .from("journal_entries")
+                .select("id", { count: "exact", head: true })
+                .eq("user_id", r.owner_id)
+                .gt("created_at", since),
+              supabaseAdmin
+                .from("seizure_events")
+                .select("id", { count: "exact", head: true })
+                .eq("user_id", r.owner_id)
+                .gt("created_at", since),
+              supabaseAdmin
+                .from("biometrics")
+                .select("id", { count: "exact", head: true })
+                .eq("user_id", r.owner_id)
+                .gt("created_at", since),
+              supabaseAdmin
+                .from("medication_doses")
+                .select("id", { count: "exact", head: true })
+                .eq("user_id", r.owner_id)
+                .eq("status", "missed")
+                .gte("scheduled_at", since24h),
+              supabaseAdmin
+                .from("seizure_events")
+                .select("id", { count: "exact", head: true })
+                .eq("user_id", r.owner_id)
+                .gte("started_at", since24h),
+              supabaseAdmin
+                .from("journal_entries")
+                .select("created_at")
+                .eq("user_id", r.owner_id)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle(),
+            ]);
           const counts = {
             meds: meds.count ?? 0,
             journal: journal.count ?? 0,
@@ -1353,9 +1381,9 @@ export const listCaregiverOwners = createServerFn({ method: "GET" })
           // ≥1 missed dose or journal silence > 72h; otherwise green.
           const missedCount = missed24h.count ?? 0;
           const seizureCount = seizures24h.count ?? 0;
-          const lastJournalAt = (lastJournal.data as { created_at?: string } | null)?.created_at ?? null;
-          const journalSilence =
-            !lastJournalAt || new Date(lastJournalAt).toISOString() < since72h;
+          const lastJournalAt =
+            (lastJournal.data as { created_at?: string } | null)?.created_at ?? null;
+          const journalSilence = !lastJournalAt || new Date(lastJournalAt).toISOString() < since72h;
           let health_signal: "green" | "amber" | "red" = "green";
           if (seizureCount > 0 || missedCount >= 3) health_signal = "red";
           else if (missedCount >= 1 || journalSilence) health_signal = "amber";
@@ -1385,7 +1413,6 @@ export const listCaregiverOwners = createServerFn({ method: "GET" })
         relationship_id: r.id,
         owner_id: r.owner_id,
         invite_email: r.invite_email,
-        invite_token: r.invite_token,
         role: r.role,
         created_at: r.created_at,
       }));
@@ -1414,22 +1441,19 @@ export const markOwnerSeen = createServerFn({ method: "POST" })
       .select("last_seen_by_tab")
       .eq("relationship_id", rel.id)
       .maybeSingle();
-    const prevTabs =
-      ((existing?.last_seen_by_tab as Record<string, string>) ?? {});
+    const prevTabs = (existing?.last_seen_by_tab as Record<string, string>) ?? {};
     const tabs = data.tab ? { ...prevTabs, [data.tab]: now } : prevTabs;
 
-    const { error } = await supabaseAdmin
-      .from("care_caregiver_visits")
-      .upsert(
-        {
-          relationship_id: rel.id,
-          caregiver_id: caregiverId,
-          last_seen_at: now,
-          last_seen_by_tab: tabs,
-          updated_at: now,
-        },
-        { onConflict: "relationship_id" },
-      );
+    const { error } = await supabaseAdmin.from("care_caregiver_visits").upsert(
+      {
+        relationship_id: rel.id,
+        caregiver_id: caregiverId,
+        last_seen_at: now,
+        last_seen_by_tab: tabs,
+        updated_at: now,
+      },
+      { onConflict: "relationship_id" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -1517,7 +1541,7 @@ export const caregiverReadAlerts = createServerFn({ method: "POST" })
       .select("last_seen_at, dismissed_alert_ids")
       .eq("relationship_id", rel.id)
       .maybeSingle();
-    const dismissed = new Set(((visit?.dismissed_alert_ids as string[]) ?? []));
+    const dismissed = new Set((visit?.dismissed_alert_ids as string[]) ?? []);
     const sinceVisit = visit?.last_seen_at ?? since24h;
 
     type AlertItem = {
@@ -1582,7 +1606,10 @@ export const caregiverReadAlerts = createServerFn({ method: "POST" })
       for (const b of bio ?? []) {
         const flags: string[] = [];
         if (typeof b.spo2_pct === "number" && b.spo2_pct < 92) flags.push(`SpO₂ ${b.spo2_pct}%`);
-        if (typeof b.resting_hr_bpm === "number" && (b.resting_hr_bpm > 100 || b.resting_hr_bpm < 40))
+        if (
+          typeof b.resting_hr_bpm === "number" &&
+          (b.resting_hr_bpm > 100 || b.resting_hr_bpm < 40)
+        )
           flags.push(`Resting HR ${b.resting_hr_bpm} bpm`);
         if (typeof b.skin_temp_c === "number" && (b.skin_temp_c > 38 || b.skin_temp_c < 35))
           flags.push(`Temp ${b.skin_temp_c}°C`);
@@ -1640,21 +1667,19 @@ export const dismissCaregiverAlert = createServerFn({ method: "POST" })
       .select("dismissed_alert_ids")
       .eq("relationship_id", rel.id)
       .maybeSingle();
-    const prev = ((existing?.dismissed_alert_ids as string[]) ?? []);
+    const prev = (existing?.dismissed_alert_ids as string[]) ?? [];
     if (prev.includes(data.alert_id)) return { ok: true };
     const next = [...prev, data.alert_id].slice(-200);
     const now = new Date().toISOString();
-    const { error } = await supabaseAdmin
-      .from("care_caregiver_visits")
-      .upsert(
-        {
-          relationship_id: rel.id,
-          caregiver_id: caregiverId,
-          dismissed_alert_ids: next,
-          updated_at: now,
-        },
-        { onConflict: "relationship_id" },
-      );
+    const { error } = await supabaseAdmin.from("care_caregiver_visits").upsert(
+      {
+        relationship_id: rel.id,
+        caregiver_id: caregiverId,
+        dismissed_alert_ids: next,
+        updated_at: now,
+      },
+      { onConflict: "relationship_id" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -1682,20 +1707,18 @@ export const dismissAllCaregiverAlerts = createServerFn({ method: "POST" })
       .select("dismissed_alert_ids")
       .eq("relationship_id", rel.id)
       .maybeSingle();
-    const prev = ((existing?.dismissed_alert_ids as string[]) ?? []);
+    const prev = (existing?.dismissed_alert_ids as string[]) ?? [];
     const merged = Array.from(new Set([...prev, ...data.alert_ids])).slice(-200);
     const now = new Date().toISOString();
-    const { error } = await supabaseAdmin
-      .from("care_caregiver_visits")
-      .upsert(
-        {
-          relationship_id: rel.id,
-          caregiver_id: caregiverId,
-          dismissed_alert_ids: merged,
-          updated_at: now,
-        },
-        { onConflict: "relationship_id" },
-      );
+    const { error } = await supabaseAdmin.from("care_caregiver_visits").upsert(
+      {
+        relationship_id: rel.id,
+        caregiver_id: caregiverId,
+        dismissed_alert_ids: merged,
+        updated_at: now,
+      },
+      { onConflict: "relationship_id" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true, dismissed: data.alert_ids.length };
   });
@@ -1729,7 +1752,9 @@ export const exportCareAuditCsv = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     // Resolve caregiver emails via relationships → invite_email + auth lookup as fallback
-    const relIds = Array.from(new Set((rows ?? []).map((r) => r.relationship_id).filter(Boolean) as string[]));
+    const relIds = Array.from(
+      new Set((rows ?? []).map((r) => r.relationship_id).filter(Boolean) as string[]),
+    );
     const relByActor: Record<string, string> = {};
     if (relIds.length > 0) {
       const { data: rels } = await supabaseAdmin
@@ -1744,7 +1769,7 @@ export const exportCareAuditCsv = createServerFn({ method: "POST" })
     const header = ["at", "action", "resource_type", "resource_id", "caregiver_email", "metadata"];
     const lines = [header.join(",")];
     for (const r of rows ?? []) {
-      const caregiverEmail = r.relationship_id ? relByActor[r.relationship_id] ?? "" : "";
+      const caregiverEmail = r.relationship_id ? (relByActor[r.relationship_id] ?? "") : "";
       lines.push(
         [
           csvEscape(r.at),
@@ -1761,14 +1786,15 @@ export const exportCareAuditCsv = createServerFn({ method: "POST" })
 
 export const listOwnerAuditFeed = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { limit?: number; caregiverRelId?: string | null; resourceType?: string | null }) =>
-    z
-      .object({
-        limit: z.number().int().min(1).max(500).optional(),
-        caregiverRelId: z.string().uuid().nullable().optional(),
-        resourceType: z.string().max(64).nullable().optional(),
-      })
-      .parse(input),
+  .inputValidator(
+    (input: { limit?: number; caregiverRelId?: string | null; resourceType?: string | null }) =>
+      z
+        .object({
+          limit: z.number().int().min(1).max(500).optional(),
+          caregiverRelId: z.string().uuid().nullable().optional(),
+          resourceType: z.string().max(64).nullable().optional(),
+        })
+        .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -1784,7 +1810,9 @@ export const listOwnerAuditFeed = createServerFn({ method: "POST" })
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
 
-    const relIds = Array.from(new Set((rows ?? []).map((r) => r.relationship_id).filter(Boolean) as string[]));
+    const relIds = Array.from(
+      new Set((rows ?? []).map((r) => r.relationship_id).filter(Boolean) as string[]),
+    );
     const relByActor: Record<string, { email: string; role: string }> = {};
     if (relIds.length > 0) {
       const { data: rels } = await supabaseAdmin
@@ -1798,8 +1826,8 @@ export const listOwnerAuditFeed = createServerFn({ method: "POST" })
     return {
       entries: (rows ?? []).map((r) => ({
         ...r,
-        caregiver_email: r.relationship_id ? relByActor[r.relationship_id]?.email ?? null : null,
-        caregiver_role: r.relationship_id ? relByActor[r.relationship_id]?.role ?? null : null,
+        caregiver_email: r.relationship_id ? (relByActor[r.relationship_id]?.email ?? null) : null,
+        caregiver_role: r.relationship_id ? (relByActor[r.relationship_id]?.role ?? null) : null,
       })),
     };
   });
@@ -1891,9 +1919,7 @@ export const getRelationshipWriteState = createServerFn({ method: "POST" })
 
 export const setCareDigestPreference = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { enabled: boolean }) =>
-    z.object({ enabled: z.boolean() }).parse(input),
-  )
+  .inputValidator((input: { enabled: boolean }) => z.object({ enabled: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { error } = await supabaseAdmin
@@ -1947,8 +1973,7 @@ export const sendCareDigestNow = createServerFn({ method: "POST" })
     const { userId } = context;
     const req = getRequest();
     const origin =
-      process.env.PUBLIC_SITE_URL ||
-      (req ? new URL(req.url).origin : "https://purplelife.org");
+      process.env.PUBLIC_SITE_URL || (req ? new URL(req.url).origin : "https://purplelife.org");
     return await sendCareDailyDigest({ ownerId: userId, origin, windowHours: 24 });
   });
 
@@ -1975,7 +2000,10 @@ export const listPendingChangesDetailed = createServerFn({ method: "GET" })
     const caregiverIds = Array.from(
       new Set((changes ?? []).map((c) => c.caregiver_id).filter(Boolean) as string[]),
     );
-    const profilesById: Record<string, { first_name: string | null; last_name: string | null; community_display_name: string | null }> = {};
+    const profilesById: Record<
+      string,
+      { first_name: string | null; last_name: string | null; community_display_name: string | null }
+    > = {};
     if (caregiverIds.length > 0) {
       const { data: profs } = await supabaseAdmin
         .from("profiles")
@@ -2013,7 +2041,7 @@ export const listPendingChangesDetailed = createServerFn({ method: "GET" })
           target_table: c.target_table,
           target_id: c.target_id,
           caregiver_id: c.caregiver_id,
-          caregiver_profile: c.caregiver_id ? profilesById[c.caregiver_id] ?? null : null,
+          caregiver_profile: c.caregiver_id ? (profilesById[c.caregiver_id] ?? null) : null,
           current_value: currentValue,
           proposed_text: proposedText,
         };

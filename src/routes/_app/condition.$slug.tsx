@@ -1,14 +1,11 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { AlertTriangle, ArrowLeft, Sparkles, Activity, BookOpen, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouteTheme } from "@/lib/use-route-theme";
-import {
-  getCondition,
-  labelForTrait,
-} from "@/lib/condition-catalog";
+import { getCondition, labelForTrait } from "@/lib/condition-catalog";
 import {
   generateCareProfile,
   readConditionPage,
@@ -41,6 +38,7 @@ export const Route = createFileRoute("/_app/condition/$slug")({
 function ConditionPage() {
   useRouteTheme("dark");
   const { slug } = Route.useParams();
+  const navigate = useNavigate();
   const def = getCondition(slug)!;
 
   const readPage = useServerFn(readConditionPage);
@@ -75,9 +73,7 @@ function ConditionPage() {
           {def.label}
         </h1>
         {def.aka.length > 0 && (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Also: {def.aka.join(", ")}
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">Also: {def.aka.join(", ")}</p>
         )}
         <div className="mt-4 flex flex-wrap gap-1.5">
           {def.traits.map((t) => (
@@ -149,7 +145,9 @@ function ConditionPage() {
         </ul>
         <div className="mt-3">
           <Link to="/journal/new">
-            <Button variant="outline" size="sm">Open journal</Button>
+            <Button variant="outline" size="sm">
+              Open journal
+            </Button>
           </Link>
         </div>
       </section>
@@ -162,17 +160,29 @@ function ConditionPage() {
         </div>
         <ul className="mt-3 space-y-2">
           {(profile?.askPurpleStarters ?? conditionScopedQuestions).map((q) => (
-            <li
-              key={q}
-              className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground"
-            >
-              {q}
+            <li key={q}>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    sessionStorage.setItem("purple-chat-prefill", q);
+                  } catch {
+                    /* ignore */
+                  }
+                  void navigate({ to: "/chat" });
+                }}
+                className="w-full rounded-xl border border-border bg-card px-4 py-3 text-left text-sm text-foreground hover:bg-secondary/40 transition-colors"
+              >
+                {q}
+              </button>
             </li>
           ))}
         </ul>
         <div className="mt-3">
           <Link to="/chat">
-            <Button variant="outline" size="sm">Open Ask Purple</Button>
+            <Button variant="outline" size="sm">
+              Open Ask Purple
+            </Button>
           </Link>
         </div>
       </section>
@@ -185,18 +195,16 @@ function ConditionPage() {
             <h2 className="font-serif text-lg text-foreground">Watch for</h2>
           </div>
           <ul className="mt-3 space-y-1.5 text-sm text-foreground">
-            {[...new Set([...(profile?.watchFor ?? []), ...def.redFlags])]
-              .slice(0, 8)
-              .map((f) => (
-                <li key={f} className="flex gap-2">
-                  <span className="text-[color:var(--data-alert)]">•</span>
-                  <span>{f}</span>
-                </li>
-              ))}
+            {[...new Set([...(profile?.watchFor ?? []), ...def.redFlags])].slice(0, 8).map((f) => (
+              <li key={f} className="flex gap-2">
+                <span className="text-[color:var(--data-alert)]">•</span>
+                <span>{f}</span>
+              </li>
+            ))}
           </ul>
           <p className="mt-3 text-[11px] text-muted-foreground">
-            These are signals to bring to a clinician, not a diagnosis. If something feels
-            urgent, contact your care team or local emergency services.
+            These are signals to bring to a clinician, not a diagnosis. If something feels urgent,
+            contact your care team or local emergency services.
           </p>
         </section>
       )}
@@ -206,24 +214,28 @@ function ConditionPage() {
         <div className="rounded-2xl border border-border bg-card p-5">
           <h3 className="font-serif text-base text-foreground">Common symptoms</h3>
           <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-            {def.commonSymptoms.length > 0
-              ? def.commonSymptoms.map((s) => <li key={s}>· {s}</li>)
-              : <li>-</li>}
+            {def.commonSymptoms.length > 0 ? (
+              def.commonSymptoms.map((s) => <li key={s}>· {s}</li>)
+            ) : (
+              <li>-</li>
+            )}
           </ul>
         </div>
         <div className="rounded-2xl border border-border bg-card p-5">
           <h3 className="font-serif text-base text-foreground">Common medications</h3>
           <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-            {def.commonMeds.length > 0
-              ? def.commonMeds.map((m) => <li key={m}>· {m}</li>)
-              : <li>-</li>}
+            {def.commonMeds.length > 0 ? (
+              def.commonMeds.map((m) => <li key={m}>· {m}</li>)
+            ) : (
+              <li>-</li>
+            )}
           </ul>
         </div>
       </section>
 
       <p className="mt-10 text-[11px] text-muted-foreground">
-        Purple is a private journal, not a medical device. Information here is educational
-        and shaped by what you've told us, never a substitute for your clinician.
+        Purple is a private journal, not a medical device. Information here is educational and
+        shaped by what you've told us, never a substitute for your clinician.
       </p>
     </div>
   );

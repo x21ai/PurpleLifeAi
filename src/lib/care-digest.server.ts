@@ -11,11 +11,13 @@ const ACTION_LABEL: Record<string, string> = {
   pending_change: "proposed a change",
 };
 
-function caregiverDisplayName(p: {
-  first_name: string | null;
-  last_name: string | null;
-  community_display_name: string | null;
-} | null): string {
+function caregiverDisplayName(
+  p: {
+    first_name: string | null;
+    last_name: string | null;
+    community_display_name: string | null;
+  } | null,
+): string {
   if (!p) return "A caregiver";
   return (
     p.community_display_name?.trim() ||
@@ -106,9 +108,7 @@ export async function sendCareDailyDigest(params: {
       .eq("owner_id", ownerId)
       .eq("digest_muted", true);
     const mutedIds = new Set(
-      (mutedRels ?? [])
-        .map((r) => r.caregiver_id)
-        .filter((id): id is string => Boolean(id)),
+      (mutedRels ?? []).map((r) => r.caregiver_id).filter((id): id is string => Boolean(id)),
     );
     if (mutedIds.size > 0) {
       entries = entries.filter((e) => !mutedIds.has(e.actor_id));
@@ -175,7 +175,7 @@ export async function sendCareDailyDigest(params: {
     const action =
       e.action === "proposed"
         ? "proposed a change"
-        : ACTION_LABEL[e.resource_type ?? ""] ?? "made an update";
+        : (ACTION_LABEL[e.resource_type ?? ""] ?? "made an update");
     const preview = await buildPreview(e.resource_type, e.resource_id);
     rows.push({
       caregiverName,
@@ -202,10 +202,7 @@ export async function sendCareDailyDigest(params: {
     recipientEmail: ownerEmail,
     idempotencyKey: `care-digest-${ownerId}-${new Date().toISOString().slice(0, 10)}`,
     templateData: {
-      ownerFirstName:
-        profile.first_name?.trim() ||
-        profile.community_display_name?.trim() ||
-        "",
+      ownerFirstName: profile.first_name?.trim() || profile.community_display_name?.trim() || "",
       rows,
       total: rows.length,
       pendingCount: pendingCount ?? 0,

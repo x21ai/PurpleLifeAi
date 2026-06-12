@@ -2,12 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { MarketingHeader } from "@/components/layout/marketing-header";
-import {
-  CalmHero,
-  CalmBand,
-  HumanMoment,
-  QuietStat,
-} from "@/components/marketing/calm-scene";
+import { CalmHero, CalmBand, HumanMoment, QuietStat } from "@/components/marketing/calm-scene";
 import { aboutImages } from "@/lib/calm-images";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
@@ -60,7 +55,13 @@ function AboutPage() {
           image={aboutImages.hero}
           priority
           eyebrow="About Purple"
-          headline={<>Calm, quiet,<br />on your side.</>}
+          headline={
+            <>
+              Calm, quiet,
+              <br />
+              on your side.
+            </>
+          }
         />
 
         {/* Why we built this */}
@@ -76,9 +77,9 @@ function AboutPage() {
               don&rsquo;t answer the question you actually have.
             </p>
             <p>
-              Purple listens before it speaks. It takes whatever you can give it &mdash; a sentence,
-              a voice memo, a photo &mdash; and quietly builds a picture of you over time. When you
-              have a question, Purple has read the chapters that matter.
+              Purple listens before it speaks. It takes whatever you can give it, a sentence, a
+              voice memo, a photo, and quietly builds a picture of you over time. When you have a
+              question, Purple has read the chapters that matter.
             </p>
           </div>
         </section>
@@ -108,12 +109,37 @@ function AboutPage() {
         <section className="mx-auto max-w-3xl px-6 sm:px-10 py-24 sm:py-32">
           <p className="label-eyebrow">The promises we keep</p>
           <ul className="mt-10 space-y-6 text-lg text-foreground/80 leading-relaxed">
-            <li><strong className="text-foreground">Free, forever.</strong> For individuals and the people who care for them.</li>
-            <li><strong className="text-foreground">Open source.</strong> Apache 2.0. Read the code, fork it, run your own copy.</li>
-            <li><strong className="text-foreground">No ads. Ever.</strong> Nothing in Purple is paid to be there.</li>
-            <li><strong className="text-foreground">Your story is yours.</strong> Export it, delete it &mdash; whenever you want.</li>
-            <li><strong className="text-foreground">Not a medical device.</strong> Purple supports you and your clinician. It doesn&rsquo;t replace either of you.</li>
+            <li>
+              <strong className="text-foreground">Free, forever.</strong> For individuals and the
+              people who care for them.
+            </li>
+            <li>
+              <strong className="text-foreground">Open source.</strong> Apache 2.0. Read the code,
+              fork it, run your own copy.
+            </li>
+            <li>
+              <strong className="text-foreground">No ads. Ever.</strong> Nothing in Purple is paid
+              to be there.
+            </li>
+            <li>
+              <strong className="text-foreground">Your story is yours.</strong> Export it or delete
+              it, whenever you want.
+            </li>
+            <li>
+              <strong className="text-foreground">Not a medical device.</strong> Purple supports you
+              and your clinician. It doesn&rsquo;t replace either of you.
+            </li>
           </ul>
+          <p className="mt-8 text-base text-muted-foreground">
+            Each promise, and why you can check it yourself:{" "}
+            <Link
+              to="/trust"
+              className="text-foreground underline underline-offset-4 hover:text-primary"
+            >
+              why Purple is different
+            </Link>
+            .
+          </p>
         </section>
 
         {/* Promise band */}

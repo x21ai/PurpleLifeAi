@@ -52,11 +52,7 @@ export function OwnerCard({ owner }: { owner: OwnerCardData }) {
   const initial = name.charAt(0).toUpperCase();
   const signal = owner.health_signal ?? "green";
   const dotClass =
-    signal === "red"
-      ? "bg-red-500"
-      : signal === "amber"
-        ? "bg-amber-500"
-        : "bg-emerald-500";
+    signal === "red" ? "bg-red-500" : signal === "amber" ? "bg-amber-500" : "bg-emerald-500";
   const reasons = owner.health_reasons;
   const tooltip =
     signal === "green"

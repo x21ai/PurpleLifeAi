@@ -24,9 +24,7 @@ export const exchangeWhoopAuthCode = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { exchangeWhoopCode, persistTokensAndBackfill } = await import(
-      "./whoop.server"
-    );
+    const { exchangeWhoopCode, persistTokensAndBackfill } = await import("./whoop.server");
     const tok = await exchangeWhoopCode(data.code, data.redirect_uri);
     const result = await persistTokensAndBackfill(context.userId, tok, 30);
     return { ok: true, ...result };
@@ -49,9 +47,7 @@ export const whoopBackfill = createServerFn({ method: "POST" })
     const { syncWhoopRange } = await import("./whoop.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const end = new Date().toISOString().slice(0, 10);
-    const start = new Date(Date.now() - data.days * 24 * 3600 * 1000)
-      .toISOString()
-      .slice(0, 10);
+    const start = new Date(Date.now() - data.days * 24 * 3600 * 1000).toISOString().slice(0, 10);
     const result = await syncWhoopRange(context.userId, start, end);
     await supabaseAdmin
       .from("whoop_tokens")

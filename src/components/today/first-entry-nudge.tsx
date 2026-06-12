@@ -68,29 +68,30 @@ export function FirstEntryNudge() {
 
   if (dismissed || !show || profile === null || hasMed === null || hasCare === null) return null;
 
-  const items: { key: string; label: string; to: string; icon: React.ReactNode; done: boolean }[] = [
-    {
-      key: "med",
-      label: "Add a medication & dose times",
-      to: "/meds",
-      icon: <Pill className="h-4 w-4" />,
-      done: hasMed,
-    },
-    {
-      key: "quiet",
-      label: "Set quiet hours for reminders",
-      to: "/settings",
-      icon: <Bell className="h-4 w-4" />,
-      done: !!profile.quiet_hours_start,
-    },
-    {
-      key: "care",
-      label: "Invite a family member or caregiver",
-      to: "/care",
-      icon: <Users className="h-4 w-4" />,
-      done: hasCare,
-    },
-  ].filter((i) => !i.done);
+  const items: { key: string; label: string; to: string; icon: React.ReactNode; done: boolean }[] =
+    [
+      {
+        key: "med",
+        label: "Add a medication & dose times",
+        to: "/meds",
+        icon: <Pill className="h-4 w-4" />,
+        done: hasMed,
+      },
+      {
+        key: "quiet",
+        label: "Set quiet hours for reminders",
+        to: "/settings",
+        icon: <Bell className="h-4 w-4" />,
+        done: !!profile.quiet_hours_start,
+      },
+      {
+        key: "care",
+        label: "Invite a family member or caregiver",
+        to: "/care",
+        icon: <Users className="h-4 w-4" />,
+        done: hasCare,
+      },
+    ].filter((i) => !i.done);
 
   if (items.length === 0) return null;
 

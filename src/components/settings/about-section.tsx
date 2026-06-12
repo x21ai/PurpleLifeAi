@@ -38,7 +38,7 @@ export function AboutSection() {
         </li>
         <li>
           <a
-            href="https://github.com/lovable-dev/purple"
+            href="https://github.com/AstroAii/purpledrw"
             target="_blank"
             rel="noreferrer noopener"
             className="flex items-center justify-between p-5 sm:p-6 hover:bg-secondary/40 transition-colors"

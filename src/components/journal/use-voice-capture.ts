@@ -41,8 +41,16 @@ export function useVoiceCapture(): VoiceCapture {
   const supported = !!getSpeechRecognition();
 
   const stop = React.useCallback(async () => {
-    try { recogRef.current?.stop(); } catch { /* noop */ }
-    try { mediaRef.current?.stop(); } catch { /* noop */ }
+    try {
+      recogRef.current?.stop();
+    } catch {
+      /* noop */
+    }
+    try {
+      mediaRef.current?.stop();
+    } catch {
+      /* noop */
+    }
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setListening(false);
@@ -88,10 +96,18 @@ export function useVoiceCapture(): VoiceCapture {
         }
         setTranscript((finalRef.current + " " + interim).trim());
       };
-      r.onerror = () => { /* swallow */ };
-      r.onend = () => { /* handled by stop() */ };
+      r.onerror = () => {
+        /* swallow */
+      };
+      r.onend = () => {
+        /* handled by stop() */
+      };
       recogRef.current = r;
-      try { r.start(); } catch { /* noop */ }
+      try {
+        r.start();
+      } catch {
+        /* noop */
+      }
     }
 
     setListening(true);
@@ -103,7 +119,12 @@ export function useVoiceCapture(): VoiceCapture {
     setAudioBlob(null);
   }, []);
 
-  React.useEffect(() => () => { void stop(); }, [stop]);
+  React.useEffect(
+    () => () => {
+      void stop();
+    },
+    [stop],
+  );
 
   return { supported, listening, transcript, audioBlob, start, stop, reset };
 }

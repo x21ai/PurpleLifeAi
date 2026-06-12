@@ -122,10 +122,7 @@ export function OnboardingChecklist() {
         </button>
       </div>
       <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-secondary">
-        <div
-          className="h-full bg-primary transition-all"
-          style={{ width: `${pct}%` }}
-        />
+        <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
       </div>
       <ul className="mt-4 space-y-1.5">
         {items.map((i) => (

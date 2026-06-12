@@ -48,11 +48,11 @@ export function RefillForecastCard() {
         <div className="min-w-0 flex-1">
           <p className="label-eyebrow opacity-80">Refill ahead</p>
           <p className="mt-1 font-serif text-lg">
-            {worst.name} runs out in{" "}
-            <span className="tabular-nums">{worst.daysLeft}</span>{" "}
-            day{worst.daysLeft === 1 ? "" : "s"}
+            {worst.name} runs out in <span className="tabular-nums">{worst.daysLeft}</span> day
+            {worst.daysLeft === 1 ? "" : "s"}
             <span className="text-sm font-sans opacity-75">
-              {" "}· around {format(parseISO(worst.runoutDate), "EEE, MMM d")}
+              {" "}
+              · around {format(parseISO(worst.runoutDate), "EEE, MMM d")}
             </span>
           </p>
           <p className="mt-1 text-xs opacity-75">
@@ -103,8 +103,8 @@ export function AdherenceExtrasCard() {
             <p className="label-eyebrow text-muted-foreground">Noticed pattern</p>
           </div>
           <p className="mt-2 text-sm text-foreground">
-            Your {BUCKET_LABEL[data.missedPattern.bucket]} doses are missed more often
-            ({data.missedPattern.pct}% in the last 30 days).
+            Your {BUCKET_LABEL[data.missedPattern.bucket]} doses are missed more often (
+            {data.missedPattern.pct}% in the last 30 days).
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
             Consider an extra reminder around that window.

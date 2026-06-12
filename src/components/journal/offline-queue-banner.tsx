@@ -13,9 +13,7 @@ export function OfflineQueueBanner() {
           {queued} entr{queued === 1 ? "y" : "ies"} waiting to sync
         </p>
         <p className="opacity-80">
-          {online
-            ? "Tap to sync now."
-            : "We'll send them as soon as you're back online."}
+          {online ? "Tap to sync now." : "We'll send them as soon as you're back online."}
         </p>
       </div>
       {online && (

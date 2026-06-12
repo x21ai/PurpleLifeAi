@@ -7,18 +7,20 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/integrations/supabase/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
-import { ensureServiceWorker, rearmMedicationNotifications } from "@/lib/med-notifications";
 import { ThemeProvider, themeBootstrapScript } from "@/lib/theme-provider";
-import { useOuraDailyAutoSync } from "@/hooks/use-oura-daily-autosync";
 import "@/i18n";
 import { hydrateLocale } from "@/i18n";
+
+// Loaded after the browser goes idle so service worker registration and the
+// Oura auto-sync never compete with first paint (and stay out of the entry chunk).
+const DeferredStartup = lazy(() => import("@/components/common/deferred-startup"));
 
 function NotFoundComponent() {
   // Compatibility: the internal `_app` segment is a TanStack route-group,
@@ -74,7 +76,9 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         await Promise.allSettled(regs.map((reg) => reg.unregister()));
       }
       if (typeof caches !== "undefined") {
-        await Promise.allSettled(["purple-shell-v2", "purple-shell-v3"].map((name) => caches.delete(name)));
+        await Promise.allSettled(
+          ["purple-shell-v2", "purple-shell-v3"].map((name) => caches.delete(name)),
+        );
       }
     } catch {
       // Best-effort recovery only.
@@ -193,18 +197,19 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
-
-  // Fire a background Oura sync once per session if the data is > 20h old.
-  useOuraDailyAutoSync();
+  const [idle, setIdle] = useState(false);
 
   // Resolve navigator → saved → default *after* hydration so the SSR markup
   // (always rendered in the default locale) matches the first client render.
+  // Non-default locale bundles load on demand inside hydrateLocale.
   useEffect(() => {
     hydrateLocale();
   }, []);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
       // Re-running route guards on TOKEN_REFRESHED caused brief null sessions and sign-in redirects.
       if (event === "TOKEN_REFRESHED") return;
       router.invalidate();
@@ -213,17 +218,16 @@ function RootComponent() {
     return () => subscription.unsubscribe();
   }, [router, queryClient]);
 
-  // Register the service worker for medication reminders only. The helper
-  // refuses registration in preview/iframe/dev and clears stale app-shell caches.
+  // Mount deferred startup work (service worker, Oura auto-sync) once the
+  // browser is idle so it never competes with first paint.
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!("serviceWorker" in navigator)) return;
-    void ensureServiceWorker();
-    // Repopulate the SW's IndexedDB schedule after every reload so dose
-    // reminders survive page refreshes / app restarts.
-    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-      void rearmMedicationNotifications();
+    const start = () => setIdle(true);
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(start, { timeout: 3000 });
+      return () => window.cancelIdleCallback(id);
     }
+    const id = window.setTimeout(start, 1500);
+    return () => window.clearTimeout(id);
   }, []);
 
   return (
@@ -233,6 +237,11 @@ function RootComponent() {
           <Outlet />
           <Toaster />
           <InstallPrompt />
+          {idle && (
+            <Suspense fallback={null}>
+              <DeferredStartup />
+            </Suspense>
+          )}
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

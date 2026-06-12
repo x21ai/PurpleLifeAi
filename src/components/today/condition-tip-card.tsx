@@ -1,19 +1,18 @@
 import * as React from "react";
 import { Sparkles, X } from "lucide-react";
 import { pickDailyTip } from "@/lib/condition-tips";
+import { localDateKey, localDayIndex } from "@/lib/utils";
 import { useCareProfile } from "@/hooks/use-care-profile";
 
 const STORAGE_KEY = "purple-tip-dismissed";
 
 function dayKey(now: Date): string {
-  return now.toISOString().slice(0, 10);
+  // Local date: an ISO (UTC) key would let a dismissed tip reappear (or stay
+  // dismissed) across the wrong local-midnight boundary.
+  return localDateKey(now);
 }
 
-export function ConditionTipCard({
-  conditions,
-}: {
-  conditions: string[] | null | undefined;
-}) {
+export function ConditionTipCard({ conditions }: { conditions: string[] | null | undefined }) {
   const [now, setNow] = React.useState<Date | null>(null);
   const [dismissed, setDismissed] = React.useState(false);
   const careProfile = useCareProfile();
@@ -23,7 +22,7 @@ export function ConditionTipCard({
   function resolveTip(d: Date): { id: string; body: string } {
     const pool = careProfile?.dailyTipPool;
     if (pool && pool.length > 0) {
-      const day = Math.floor(d.getTime() / 86_400_000);
+      const day = localDayIndex(d);
       const t = pool[day % pool.length];
       return { id: t.id, body: t.body };
     }
@@ -66,10 +65,7 @@ export function ConditionTipCard({
           className="text-muted-foreground hover:text-foreground"
           onClick={() => {
             try {
-              localStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify({ id: tip.id, day: dayKey(now) }),
-              );
+              localStorage.setItem(STORAGE_KEY, JSON.stringify({ id: tip.id, day: dayKey(now) }));
             } catch {
               // ignore
             }

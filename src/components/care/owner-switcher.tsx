@@ -12,11 +12,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-function name(p: {
-  first_name: string | null;
-  last_name: string | null;
-  community_display_name: string | null;
-} | null): string {
+function name(
+  p: {
+    first_name: string | null;
+    last_name: string | null;
+    community_display_name: string | null;
+  } | null,
+): string {
   if (!p) return "Their account";
   return (
     p.community_display_name?.trim() ||
@@ -65,9 +67,7 @@ export function OwnerSwitcher({
           return (
             <DropdownMenuItem
               key={o.owner_id}
-              onSelect={() =>
-                navigate({ to: "/care/$ownerId", params: { ownerId: o.owner_id } })
-              }
+              onSelect={() => navigate({ to: "/care/$ownerId", params: { ownerId: o.owner_id } })}
               className={isActive ? "bg-primary/5" : undefined}
             >
               <span className="flex-1 truncate">{name(o.profile)}</span>

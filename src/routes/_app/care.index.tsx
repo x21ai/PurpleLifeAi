@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Mail, Users } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { OwnerCard, type OwnerCardData } from "@/components/care/owner-card";
-import { listCaregiverOwners } from "@/lib/care.functions";
+import { listCaregiverOwners, acceptAssignedInvite } from "@/lib/care.functions";
 import { useRouteTheme } from "@/lib/use-route-theme";
 
 export const Route = createFileRoute("/_app/care/")({
@@ -17,11 +18,21 @@ export const Route = createFileRoute("/_app/care/")({
 
 function CareIndexPage() {
   useRouteTheme("light");
+  const qc = useQueryClient();
   const fn = useServerFn(listCaregiverOwners);
+  const acceptFn = useServerFn(acceptAssignedInvite);
   const q = useQuery({
     queryKey: ["care", "owners-switcher"],
     queryFn: () => fn(),
     staleTime: 30_000,
+  });
+  const acceptMut = useMutation({
+    mutationFn: (relationshipId: string) => acceptFn({ data: { relationship_id: relationshipId } }),
+    onSuccess: () => {
+      toast.success("Invite accepted");
+      void qc.invalidateQueries({ queryKey: ["care", "owners-switcher"] });
+    },
+    onError: (err: Error) => toast.error(err.message ?? "Couldn't accept invite"),
   });
 
   return (
@@ -31,7 +42,8 @@ function CareIndexPage() {
         People you care for
       </h1>
       <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-        Tap a card to see their day, meds, and updates. They control what you can see and can revoke access any time.
+        Tap a card to see their day, meds, and updates. They control what you can see and can revoke
+        access any time.
       </p>
 
       {q.isLoading && (
@@ -46,9 +58,7 @@ function CareIndexPage() {
         </p>
       )}
 
-      {q.data && q.data.owners.length === 0 && q.data.pending.length === 0 && (
-        <EmptyState />
-      )}
+      {q.data && q.data.owners.length === 0 && q.data.pending.length === 0 && <EmptyState />}
 
       {q.data && q.data.pending.length > 0 && (
         <section className="mt-10">
@@ -62,24 +72,20 @@ function CareIndexPage() {
                 <div className="flex items-center gap-3 min-w-0">
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <div className="min-w-0">
-                    <p className="truncate text-sm text-foreground">
-                      Invite to {p.invite_email}
-                    </p>
+                    <p className="truncate text-sm text-foreground">Invite to {p.invite_email}</p>
                     <p className="text-xs text-muted-foreground">
                       Sent {new Date(p.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
-                {p.invite_token && (
-                  <Button asChild size="sm" variant="secondary">
-                    <Link
-                      to="/care/accept"
-                      search={{ token: p.invite_token }}
-                    >
-                      Accept
-                    </Link>
-                  </Button>
-                )}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={acceptMut.isPending}
+                  onClick={() => acceptMut.mutate(p.relationship_id)}
+                >
+                  Accept
+                </Button>
               </li>
             ))}
           </ul>
@@ -108,8 +114,18 @@ function EmptyState() {
       </div>
       <h2 className="mt-4 font-serif text-2xl text-foreground">No one is sharing with you yet</h2>
       <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
-        When someone invites you as a caregiver, they'll appear here. Ask them to add you from their Sharing settings.
+        When someone invites you as a caregiver, they'll appear here. Ask them to add you from their
+        Sharing settings.
       </p>
+      <p className="mt-6 text-sm text-muted-foreground">
+        Want to share your own health with someone you trust?
+      </p>
+      <Link
+        to="/settings/sharing"
+        className="mt-2 inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+      >
+        Share with a caregiver
+      </Link>
     </div>
   );
 }

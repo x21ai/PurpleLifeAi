@@ -14,10 +14,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
  */
 
 function newInviteToken(): string {
-  return (
-    crypto.randomUUID().replace(/-/g, "") +
-    crypto.randomUUID().replace(/-/g, "")
-  );
+  return crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
 }
 
 const emailSchema = z.string().trim().toLowerCase().email().max(255);
@@ -85,8 +82,7 @@ export const inviteFriend = createServerFn({ method: "POST" })
 
     const req = getRequest();
     const origin =
-      process.env.PUBLIC_SITE_URL ||
-      (req ? new URL(req.url).origin : "https://purplelife.org");
+      process.env.PUBLIC_SITE_URL || (req ? new URL(req.url).origin : "https://purplelife.org");
     const acceptUrl = `${origin}/friend/accept?token=${invite_token}`;
 
     return {
@@ -140,50 +136,50 @@ async function acceptPendingRow(
   userId: string,
   checkEmail = false,
 ) {
-    if (row.status !== "pending") {
-      throw new Error("This invite has already been accepted or revoked.");
-    }
-    if (row.user_a === userId) {
-      throw new Error("You can't accept your own invite.");
-    }
+  if (row.status !== "pending") {
+    throw new Error("This invite has already been accepted or revoked.");
+  }
+  if (row.user_a === userId) {
+    throw new Error("You can't accept your own invite.");
+  }
 
-    if (checkEmail && row.invite_email) {
-      const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
-      const accepterEmail = (u?.user?.email ?? "").trim().toLowerCase();
-      const inviteEmail = String(row.invite_email).trim().toLowerCase();
-      if (!accepterEmail || accepterEmail !== inviteEmail) {
-        throw new Error("This invite was sent to a different email address.");
-      }
+  if (checkEmail && row.invite_email) {
+    const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
+    const accepterEmail = (u?.user?.email ?? "").trim().toLowerCase();
+    const inviteEmail = String(row.invite_email).trim().toLowerCase();
+    if (!accepterEmail || accepterEmail !== inviteEmail) {
+      throw new Error("This invite was sent to a different email address.");
     }
+  }
 
-    // Prevent duplicate friendships (already linked to inviter, in either direction)
-    const inviter = row.user_a;
-    const [lo, hi] = inviter < userId ? [inviter, userId] : [userId, inviter];
-    const { data: existing } = await supabaseAdmin
-      .from("friendships")
-      .select("id, status")
-      .eq("user_a", lo)
-      .eq("user_b", hi)
-      .maybeSingle();
-    if (existing && existing.id !== row.id) {
-      // Drop this duplicate pending row, keep the existing relationship as-is.
-      await supabaseAdmin.from("friendships").delete().eq("id", row.id);
-      return { ok: true, friendshipId: existing.id, alreadyLinked: true as const };
-    }
+  // Prevent duplicate friendships (already linked to inviter, in either direction)
+  const inviter = row.user_a;
+  const [lo, hi] = inviter < userId ? [inviter, userId] : [userId, inviter];
+  const { data: existing } = await supabaseAdmin
+    .from("friendships")
+    .select("id, status")
+    .eq("user_a", lo)
+    .eq("user_b", hi)
+    .maybeSingle();
+  if (existing && existing.id !== row.id) {
+    // Drop this duplicate pending row, keep the existing relationship as-is.
+    await supabaseAdmin.from("friendships").delete().eq("id", row.id);
+    return { ok: true, friendshipId: existing.id, alreadyLinked: true as const };
+  }
 
-    const { error: upErr } = await supabaseAdmin
-      .from("friendships")
-      .update({
-        user_b: userId, // trigger will normalize order
-        status: "active",
-        accepted_at: new Date().toISOString(),
-        invite_token: null,
-        refer_code: null,
-      })
-      .eq("id", row.id);
-    if (upErr) throw new Error(upErr.message);
+  const { error: upErr } = await supabaseAdmin
+    .from("friendships")
+    .update({
+      user_b: userId, // trigger will normalize order
+      status: "active",
+      accepted_at: new Date().toISOString(),
+      invite_token: null,
+      refer_code: null,
+    })
+    .eq("id", row.id);
+  if (upErr) throw new Error(upErr.message);
 
-    return { ok: true, friendshipId: row.id, alreadyLinked: false as const };
+  return { ok: true, friendshipId: row.id, alreadyLinked: false as const };
 }
 
 /* ---------------------------- List ---------------------------- */
@@ -254,10 +250,7 @@ export const removeFriend = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId, supabase } = context;
     // RLS scopes the delete to participants only.
-    const { error } = await supabase
-      .from("friendships")
-      .delete()
-      .eq("id", data.friendship_id);
+    const { error } = await supabase.from("friendships").delete().eq("id", data.friendship_id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

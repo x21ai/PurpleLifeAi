@@ -16,7 +16,7 @@ type Props = {
 /**
  * Two timestamps:
  *  - dataThrough: latest biometrics.recorded_at (the day the data is for)
- *  - lastPulled: oura_tokens.updated_at (when the sync ran)
+ *  - lastPulled: oura_tokens.last_sync_at (when a sync actually ran)
  * Plus a "Sync now" button that calls the oura-sync edge function.
  */
 export function OuraSyncStatus({ variant = "detailed", onSynced, className }: Props) {
@@ -36,7 +36,9 @@ export function OuraSyncStatus({ variant = "detailed", onSynced, className }: Pr
     const [{ data: tok }, { data: bio }] = await Promise.all([
       supabase
         .from("oura_tokens")
-        .select("updated_at")
+        // last_sync_at is the actual pull; updated_at also moves on token
+        // refreshes, which made stale data look freshly pulled.
+        .select("last_sync_at")
         .eq("user_id", uid)
         .maybeSingle(),
       supabase
@@ -49,7 +51,7 @@ export function OuraSyncStatus({ variant = "detailed", onSynced, className }: Pr
         .maybeSingle(),
     ]);
     setConnected(!!tok);
-    setLastPulled(tok?.updated_at ?? null);
+    setLastPulled((tok as { last_sync_at?: string | null } | null)?.last_sync_at ?? null);
     setDataThrough(bio?.recorded_at ?? null);
     setLoaded(true);
   }, []);
@@ -83,14 +85,28 @@ export function OuraSyncStatus({ variant = "detailed", onSynced, className }: Pr
   const dataDate = dataThrough && isValid(new Date(dataThrough)) ? new Date(dataThrough) : null;
   const pulledDate = lastPulled && isValid(new Date(lastPulled)) ? new Date(lastPulled) : null;
 
+  // One truth (Devyn item 10): when the DATA is stale (>24h), lead with that
+  // and never pair a fresh-sounding "Last sync just now" with old data.
+  const dataStale = dataDate != null && Date.now() - dataDate.getTime() > 24 * 60 * 60 * 1000;
+
   if (variant === "compact") {
     return (
-      <div className={"flex items-center gap-2 text-[11px] text-muted-foreground " + (className ?? "")}>
+      <div
+        className={"flex items-center gap-2 text-[11px] text-muted-foreground " + (className ?? "")}
+      >
         <span className="flex flex-col leading-tight">
-          <span>
-            {pulledDate ? `Last sync ${formatDistanceToNow(pulledDate, { addSuffix: true })}` : "Never synced"}
-          </span>
-          {dataDate && (
+          {dataStale ? (
+            <span className="text-[color:var(--data-warn)]">
+              No new Oura data since {formatDistanceToNow(dataDate, { addSuffix: true })}
+            </span>
+          ) : (
+            <span>
+              {pulledDate
+                ? `Last sync ${formatDistanceToNow(pulledDate, { addSuffix: true })}`
+                : "Never synced"}
+            </span>
+          )}
+          {dataDate && !dataStale && (
             <span className="text-muted-foreground/70">
               Latest data {formatDistanceToNow(dataDate, { addSuffix: true })}
             </span>
@@ -103,11 +119,7 @@ export function OuraSyncStatus({ variant = "detailed", onSynced, className }: Pr
           aria-label="Sync Oura now"
           className="inline-flex items-center justify-center h-6 w-6 rounded-full hover:bg-secondary disabled:opacity-50"
         >
-          {busy ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <RefreshCw className="h-3 w-3" />
-          )}
+          {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
         </button>
       </div>
     );

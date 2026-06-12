@@ -19,11 +19,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     let mounted = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, next) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, next) => {
       if (!mounted) return;
 
       if (event === "SIGNED_OUT") {
-        // eslint-disable-next-line no-console
         console.warn("[auth] SIGNED_OUT", "user=", next?.user?.id ?? null);
         initialSessionApplied.current = true;
         setSession(null);

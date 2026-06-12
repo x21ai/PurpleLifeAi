@@ -70,9 +70,7 @@ export function PreTripChecklist() {
       label: "Generate medication schedule for the trip",
       autoDone: !!trip.schedule_generated_at,
     },
-    ...(rescueCount > 0
-      ? [{ key: "rescue", label: "Pack rescue medication" }]
-      : []),
+    ...(rescueCount > 0 ? [{ key: "rescue", label: "Pack rescue medication" }] : []),
     { key: "refills", label: "Enough pills to cover the trip" },
     { key: "doctor_letter", label: "Doctor letter / prescription copy" },
     { key: "id_card", label: "Medical ID / emergency contacts handy" },
@@ -96,7 +94,11 @@ export function PreTripChecklist() {
     month: "short",
     day: "numeric",
   });
-  const destShort = (trip.label?.trim() || trip.destination_tz.split("/").pop() || trip.destination_tz).replace(/_/g, " ");
+  const destShort = (
+    trip.label?.trim() ||
+    trip.destination_tz.split("/").pop() ||
+    trip.destination_tz
+  ).replace(/_/g, " ");
 
   return (
     <aside
@@ -114,7 +116,10 @@ export function PreTripChecklist() {
             <p className="label-eyebrow text-primary">Trip in {departLocal}</p>
           </div>
           <p className="mt-1.5 text-sm text-foreground">
-            {destShort}, {remaining === 0 ? "you're all set" : `${remaining} thing${remaining === 1 ? "" : "s"} to check off`}
+            {destShort},{" "}
+            {remaining === 0
+              ? "you're all set"
+              : `${remaining} thing${remaining === 1 ? "" : "s"} to check off`}
           </p>
         </div>
         <ChevronRight
@@ -143,7 +148,9 @@ export function PreTripChecklist() {
                   >
                     {checked && <Check className="h-3 w-3" />}
                   </span>
-                  <span className={checked ? "text-muted-foreground line-through" : "text-foreground"}>
+                  <span
+                    className={checked ? "text-muted-foreground line-through" : "text-foreground"}
+                  >
                     {it.label}
                   </span>
                 </button>

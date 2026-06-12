@@ -38,7 +38,13 @@ function FeaturesPage() {
           image={featuresImages.hero}
           priority
           eyebrow="Features"
-          headline={<>A quiet tool,<br />deeply useful.</>}
+          headline={
+            <>
+              A quiet tool,
+              <br />
+              deeply useful.
+            </>
+          }
           body="Everything Purple does, without the spreadsheet feeling."
         />
 
@@ -61,12 +67,12 @@ function FeaturesPage() {
             A question, answered in your own context.
           </h2>
           <p className="mt-6 text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto">
-            A quiet bubble waits on every screen. Choose Gemini Flash, Gemini Pro, or Claude
-            Sonnet from settings. Purple already knows your history, and asks before changing
+            A quiet bubble waits on every screen. Claude answers by default, or pick OpenAI, Gemini,
+            or Grok in Settings. Purple already knows your history, and asks before changing
             anything.
           </p>
           <ul className="mt-7 space-y-2 text-sm text-muted-foreground">
-            <li>Three AI models. Switch any time.</li>
+            <li>Your choice of AI model. Switch any time.</li>
             <li>Confirm-to-write on every action.</li>
             <li>Your entries are the prompt, never the training data.</li>
           </ul>

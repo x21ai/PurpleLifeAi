@@ -10,11 +10,7 @@
  *     else key.defaultFor intersects user's conditions
  */
 
-import {
-  hasTrait,
-  labelForTrait,
-  type ConditionTrait,
-} from "./condition-catalog";
+import { hasTrait, labelForTrait, type ConditionTrait } from "./condition-catalog";
 
 export type FeatureKey =
   | "hydration"
@@ -26,7 +22,12 @@ export type FeatureKey =
   | "lipid_trend"
   | "oura_sync";
 
-export type FeatureCategory = "neuro" | "cardio_metabolic" | "hydration" | "sleep_recovery" | "reports";
+export type FeatureCategory =
+  | "neuro"
+  | "cardio_metabolic"
+  | "hydration"
+  | "sleep_recovery"
+  | "reports";
 
 export interface FeatureDef {
   key: FeatureKey;
@@ -128,7 +129,9 @@ export function isFeatureEnabled(
   return def.defaultFor.some((t) => hasTrait(conditions, t));
 }
 
-export function defaultEnabledFor(conditions: string[] | null | undefined): Record<FeatureKey, boolean> {
+export function defaultEnabledFor(
+  conditions: string[] | null | undefined,
+): Record<FeatureKey, boolean> {
   const out = {} as Record<FeatureKey, boolean>;
   for (const def of FEATURE_CATALOG) {
     out[def.key] = isFeatureEnabled(def.key, conditions, null);

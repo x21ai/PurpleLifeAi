@@ -41,7 +41,9 @@ function AdminUsers() {
   const load = React.useCallback(async () => {
     const { data } = await supabase
       .from("profiles")
-      .select("id, first_name, last_name, created_at, suspended_at, community_opted_in, deleted_at, purge_after")
+      .select(
+        "id, first_name, last_name, created_at, suspended_at, community_opted_in, deleted_at, purge_after",
+      )
       .order("created_at", { ascending: false })
       .limit(200);
     setRows((data ?? []) as Row[]);
@@ -88,7 +90,9 @@ function AdminUsers() {
             key={t}
             onClick={() => setTab(t)}
             className={`text-xs rounded-full px-3 py-1.5 capitalize ${
-              tab === t ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+              tab === t
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground"
             }`}
           >
             {t === "scheduled" ? "Scheduled for deletion" : t}
@@ -98,15 +102,25 @@ function AdminUsers() {
       {/* Mobile: card list. md+: table. */}
       <ul className="mt-6 space-y-3 md:hidden">
         {filtered.map((r) => (
-          <li key={r.id} className="rounded-2xl border border-border bg-card p-4" onClick={() => setSelected(r)}>
+          <li
+            key={r.id}
+            className="rounded-2xl border border-border bg-card p-4"
+            onClick={() => setSelected(r)}
+          >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-serif text-lg truncate">
-                  {(r.first_name || r.last_name) ? `${r.first_name ?? ""} ${r.last_name ?? ""}` : "–"}
+                  {r.first_name || r.last_name ? `${r.first_name ?? ""} ${r.last_name ?? ""}` : "–"}
                 </p>
-                <p className="font-mono text-[11px] text-muted-foreground mt-0.5">{r.id.slice(0, 8)}…</p>
+                <p className="font-mono text-[11px] text-muted-foreground mt-0.5">
+                  {r.id.slice(0, 8)}…
+                </p>
               </div>
-              <span className={r.suspended_at ? "text-destructive text-xs" : "text-foreground/70 text-xs"}>
+              <span
+                className={
+                  r.suspended_at ? "text-destructive text-xs" : "text-foreground/70 text-xs"
+                }
+              >
                 {r.suspended_at ? "Suspended" : "Active"}
               </span>
             </div>
@@ -132,20 +146,38 @@ function AdminUsers() {
           </thead>
           <tbody>
             {filtered.map((r) => (
-              <tr key={r.id} className="border-t border-border cursor-pointer hover:bg-secondary/40" onClick={() => setSelected(r)}>
-                <td className="px-4 py-3">{(r.first_name || r.last_name) ? `${r.first_name ?? ""} ${r.last_name ?? ""}` : "–"}</td>
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.id.slice(0, 8)}…</td>
-                <td className="px-4 py-3 text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
+              <tr
+                key={r.id}
+                className="border-t border-border cursor-pointer hover:bg-secondary/40"
+                onClick={() => setSelected(r)}
+              >
+                <td className="px-4 py-3">
+                  {r.first_name || r.last_name ? `${r.first_name ?? ""} ${r.last_name ?? ""}` : "–"}
+                </td>
+                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                  {r.id.slice(0, 8)}…
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {new Date(r.created_at).toLocaleDateString()}
+                </td>
                 <td className="px-4 py-3">{r.community_opted_in ? "Yes" : "–"}</td>
                 <td className="px-4 py-3">
-                  {r.deleted_at ? <span className="text-destructive">Archived</span> :
-                    r.purge_after ? <span className="text-destructive">Scheduled</span> :
-                    r.suspended_at ? <span className="text-destructive">Suspended</span> :
-                    <span className="text-foreground/70">Active</span>}
+                  {r.deleted_at ? (
+                    <span className="text-destructive">Archived</span>
+                  ) : r.purge_after ? (
+                    <span className="text-destructive">Scheduled</span>
+                  ) : r.suspended_at ? (
+                    <span className="text-destructive">Suspended</span>
+                  ) : (
+                    <span className="text-foreground/70">Active</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <button
-                    onClick={(e) => { e.stopPropagation(); void toggleSuspend(r); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void toggleSuspend(r);
+                    }}
                     className="text-xs rounded-full border border-border px-3 py-1 hover:bg-secondary"
                   >
                     {r.suspended_at ? "Unsuspend" : "Suspend"}
@@ -163,7 +195,15 @@ function AdminUsers() {
           </tbody>
         </table>
       </div>
-      {selected && <UserDrawer user={selected} onClose={() => { setSelected(null); void load(); }} />}
+      {selected && (
+        <UserDrawer
+          user={selected}
+          onClose={() => {
+            setSelected(null);
+            void load();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -178,7 +218,9 @@ function UserDrawer({ user, onClose }: { user: Row; onClose: () => void }) {
   const listCare = useServerFn(adminListUserCare);
   const getEmail = useServerFn(adminGetUserEmail);
   const [email, setEmail] = React.useState<string | null>(null);
-  const [care, setCare] = React.useState<Array<{ id: string; invite_email: string; role: string; status: string }>>([]);
+  const [care, setCare] = React.useState<
+    Array<{ id: string; invite_email: string; role: string; status: string }>
+  >([]);
   const [busy, setBusy] = React.useState(false);
 
   React.useEffect(() => {
@@ -217,12 +259,16 @@ function UserDrawer({ user, onClose }: { user: Row; onClose: () => void }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="font-serif text-2xl">
-              {(user.first_name || user.last_name) ? `${user.first_name ?? ""} ${user.last_name ?? ""}` : "User"}
+              {user.first_name || user.last_name
+                ? `${user.first_name ?? ""} ${user.last_name ?? ""}`
+                : "User"}
             </h2>
             <p className="font-mono text-xs text-muted-foreground mt-1">{user.id}</p>
             {email && <p className="text-xs text-muted-foreground mt-1">{email}</p>}
           </div>
-          <button onClick={onClose} className="text-muted-foreground">✕</button>
+          <button onClick={onClose} className="text-muted-foreground">
+            ✕
+          </button>
         </div>
 
         <div className="mt-6 space-y-2">
@@ -247,7 +293,11 @@ function UserDrawer({ user, onClose }: { user: Row; onClose: () => void }) {
           {!user.purge_after && (
             <button
               disabled={busy}
-              onClick={() => run("Deletion scheduled (30 days)", () => schedule({ data: { user_id: user.id, days: 30 } }))}
+              onClick={() =>
+                run("Deletion scheduled (30 days)", () =>
+                  schedule({ data: { user_id: user.id, days: 30 } }),
+                )
+              }
               className="w-full text-left rounded-xl border border-border px-4 py-3 text-sm hover:bg-secondary"
             >
               Schedule deletion (30 days)
@@ -256,22 +306,29 @@ function UserDrawer({ user, onClose }: { user: Row; onClose: () => void }) {
           {user.purge_after && (
             <button
               disabled={busy}
-              onClick={() => run("Deletion cancelled", () => cancel({ data: { user_id: user.id } }))}
+              onClick={() =>
+                run("Deletion cancelled", () => cancel({ data: { user_id: user.id } }))
+              }
               className="w-full text-left rounded-xl border border-border px-4 py-3 text-sm hover:bg-secondary"
             >
-              Cancel scheduled deletion ({user.purge_after ? new Date(user.purge_after).toLocaleDateString() : ""})
+              Cancel scheduled deletion (
+              {user.purge_after ? new Date(user.purge_after).toLocaleDateString() : ""})
             </button>
           )}
           <button
             disabled={busy || !email}
-            onClick={() => run("Password reset email sent", () => resetPw({ data: { email: email! } }))}
+            onClick={() =>
+              run("Password reset email sent", () => resetPw({ data: { email: email! } }))
+            }
             className="w-full text-left rounded-xl border border-border px-4 py-3 text-sm hover:bg-secondary disabled:opacity-50"
           >
             Send password reset
           </button>
           <button
             disabled={busy}
-            onClick={() => run("2FA factors removed", () => resetMfa({ data: { user_id: user.id } }))}
+            onClick={() =>
+              run("2FA factors removed", () => resetMfa({ data: { user_id: user.id } }))
+            }
             className="w-full text-left rounded-xl border border-border px-4 py-3 text-sm hover:bg-secondary"
           >
             Reset 2FA
@@ -279,15 +336,21 @@ function UserDrawer({ user, onClose }: { user: Row; onClose: () => void }) {
         </div>
 
         <div className="mt-8">
-          <h3 className="text-xs uppercase tracking-wider text-muted-foreground">Caregivers & invites</h3>
+          <h3 className="text-xs uppercase tracking-wider text-muted-foreground">
+            Caregivers & invites
+          </h3>
           <ul className="mt-3 space-y-2">
             {care.map((c) => (
               <li key={c.id} className="rounded-xl border border-border p-3 text-sm">
                 <p>{c.invite_email}</p>
-                <p className="text-xs text-muted-foreground">{c.role} · {c.status}</p>
+                <p className="text-xs text-muted-foreground">
+                  {c.role} · {c.status}
+                </p>
               </li>
             ))}
-            {care.length === 0 && <p className="text-sm text-muted-foreground">No care relationships.</p>}
+            {care.length === 0 && (
+              <p className="text-sm text-muted-foreground">No care relationships.</p>
+            )}
           </ul>
         </div>
       </aside>

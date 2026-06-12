@@ -58,14 +58,8 @@ const TRAIT_BULLETS: Partial<Record<ConditionTrait, string[]>> = {
     "Routine and transition logging",
     "Daily patterns without judgment",
   ],
-  sensory: [
-    "Sensory overload and shutdown logging",
-    "Environments that help or hurt",
-  ],
-  routine_sensitive: [
-    "Routine tracking and disruptions",
-    "What helps you reset",
-  ],
+  sensory: ["Sensory overload and shutdown logging", "Environments that help or hurt"],
+  routine_sensitive: ["Routine tracking and disruptions", "What helps you reset"],
   pacing_required: [
     "Energy envelope and PEM tracking",
     "Pacing patterns by activity",
@@ -76,14 +70,8 @@ const TRAIT_BULLETS: Partial<Record<ConditionTrait, string[]>> = {
     "Trigger patterns from your journal",
     "Med adherence with dose reminders",
   ],
-  sleep_critical: [
-    "Sleep quality and duration trends",
-    "What gets in the way of rest",
-  ],
-  gi: [
-    "Symptom and food logging",
-    "Patterns between meals and bad days",
-  ],
+  sleep_critical: ["Sleep quality and duration trends", "What gets in the way of rest"],
+  gi: ["Symptom and food logging", "Patterns between meals and bad days"],
   nutritional: [
     "Gentle meal logging, no calorie shaming",
     "Patterns between food and how you feel",
@@ -133,9 +121,7 @@ export function welcomeBulletsForConditions(
   return out;
 }
 
-export function welcomeTitleForConditions(
-  conditions: string[] | null | undefined,
-): string {
+export function welcomeTitleForConditions(conditions: string[] | null | undefined): string {
   const defs = getConditions(conditions);
   if (defs.length === 0) return "Purple is set up for you.";
   const first = defs[0].shortLabel;

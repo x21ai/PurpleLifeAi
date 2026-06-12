@@ -23,8 +23,7 @@ export function StageBar({
       className={cn("space-y-2", className)}
       role="img"
       aria-label={
-        ariaLabel ??
-        `Sleep stages: ${stages.map((s) => `${s.label} ${fmt(s.value)}`).join(", ")}`
+        ariaLabel ?? `Sleep stages: ${stages.map((s) => `${s.label} ${fmt(s.value)}`).join(", ")}`
       }
     >
       <div className="flex h-2 overflow-hidden rounded-full bg-[color:var(--ring-track)]">

@@ -26,12 +26,7 @@ export type MetricKey =
 
 export type MetricDirection = "higher_better" | "lower_better" | "neutral";
 
-export type MetricCategory =
-  | "recovery"
-  | "sleep"
-  | "cardio"
-  | "movement"
-  | "stress";
+export type MetricCategory = "recovery" | "sleep" | "cardio" | "movement" | "stress";
 
 export const CATEGORY_ORDER: MetricCategory[] = [
   "recovery",
@@ -342,9 +337,7 @@ export function stats(nums: Array<number | null | undefined>): {
   stddev: number | null;
   count: number;
 } {
-  const xs = nums.filter(
-    (n): n is number => typeof n === "number" && Number.isFinite(n),
-  );
+  const xs = nums.filter((n): n is number => typeof n === "number" && Number.isFinite(n));
   if (xs.length === 0) return { mean: null, stddev: null, count: 0 };
   const mean = xs.reduce((a, b) => a + b, 0) / xs.length;
   const variance = xs.reduce((a, b) => a + (b - mean) ** 2, 0) / xs.length;
@@ -374,9 +367,16 @@ export function statusTone(
   const bad =
     (meta.direction === "higher_better" && status === "low") ||
     (meta.direction === "lower_better" && status === "high");
-  if (bad) return { label: "Pay attention", cls: "bg-[color:var(--warning)]/15 text-[color:var(--warning)]" };
+  if (bad)
+    return {
+      label: "Pay attention",
+      cls: "bg-[color:var(--warning)]/15 text-[color:var(--warning)]",
+    };
   if (meta.direction === "neutral")
-    return { label: "Pay attention", cls: "bg-[color:var(--warning)]/15 text-[color:var(--warning)]" };
+    return {
+      label: "Pay attention",
+      cls: "bg-[color:var(--warning)]/15 text-[color:var(--warning)]",
+    };
   return { label: status === "low" ? "Low" : "High", cls: "bg-secondary text-foreground" };
 }
 

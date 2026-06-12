@@ -24,6 +24,7 @@ import {
   type DeletionStatus,
 } from "@/lib/data-export";
 import { useAuth } from "@/integrations/supabase/auth-context";
+import { userMessage } from "@/lib/user-message";
 
 export function DataSection() {
   const [exporting, setExporting] = useState(false);
@@ -85,7 +86,9 @@ export function DataSection() {
       setPendingDeletion(null);
       toast.success("Your account has been restored.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not restore");
+      toast.error(
+        userMessage(e, "The restore didn't finish. Nothing was changed, try again in a moment."),
+      );
     } finally {
       setRestoring(false);
     }
@@ -95,8 +98,7 @@ export function DataSection() {
     ? Math.max(
         0,
         Math.ceil(
-          (new Date(pendingDeletion.purgeAfter).getTime() - Date.now()) /
-            (1000 * 60 * 60 * 24),
+          (new Date(pendingDeletion.purgeAfter).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
         ),
       )
     : null;
@@ -105,8 +107,8 @@ export function DataSection() {
     <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
       <h2 className="font-serif text-xl text-foreground">Your data</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Take it with you anytime. Deletion is reversible for {RESTORE_WINDOW_DAYS} days
-       , after that, everything is permanently erased.
+        Take it with you anytime. Deletion is reversible for {RESTORE_WINDOW_DAYS} days , after
+        that, everything is permanently erased.
       </p>
 
       {pendingDeletion && (
@@ -120,7 +122,10 @@ export function DataSection() {
               <p className="mt-1 text-xs text-muted-foreground">
                 Requested {new Date(pendingDeletion.deletedAt).toLocaleDateString()}.
                 {daysRemaining != null && (
-                  <> Permanent purge in {daysRemaining} day{daysRemaining === 1 ? "" : "s"}.</>
+                  <>
+                    {" "}
+                    Permanent purge in {daysRemaining} day{daysRemaining === 1 ? "" : "s"}.
+                  </>
                 )}
               </p>
               <div className="mt-3">
@@ -150,7 +155,11 @@ export function DataSection() {
                 aria-label="Export all your data"
                 className="rounded-full"
               >
-                {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                {exporting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent>Export your data</TooltipContent>
@@ -179,17 +188,21 @@ export function DataSection() {
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl">Delete everything?</DialogTitle>
             <DialogDescription className="text-left">
-              This schedules every journal entry, biometric reading, medication,
-              seizure log, and uploaded file tied to your account for permanent deletion.
-              <br /><br />
-              You'll have <span className="text-foreground font-medium">{RESTORE_WINDOW_DAYS} days</span>{" "}
-              to restore by signing back in. After that, everything is permanently erased
-              and cannot be recovered.
+              This schedules every journal entry, biometric reading, medication, seizure log, and
+              uploaded file tied to your account for permanent deletion.
+              <br />
+              <br />
+              You'll have{" "}
+              <span className="text-foreground font-medium">{RESTORE_WINDOW_DAYS} days</span> to
+              restore by signing back in. After that, everything is permanently erased and cannot be
+              recovered.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="confirm-delete">Type <span className="font-mono text-foreground">DELETE</span> to confirm</Label>
+              <Label htmlFor="confirm-delete">
+                Type <span className="font-mono text-foreground">DELETE</span> to confirm
+              </Label>
               <Input
                 id="confirm-delete"
                 value={confirmText}
@@ -222,7 +235,11 @@ export function DataSection() {
               disabled={deleting || confirmText.trim() !== "DELETE" || !password}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              {deleting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-2" />
+              )}
               Schedule deletion
             </Button>
           </DialogFooter>

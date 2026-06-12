@@ -17,15 +17,14 @@ export function TodayEmptyState({ onDismiss }: Props) {
     <section
       className="relative overflow-hidden rounded-3xl border border-border bg-card px-6 py-10 sm:px-10 sm:py-12 mb-10"
       aria-label={t("today.emptyHeading")}
+      data-testid="fresh-empty-today"
     >
       <div
         className="pointer-events-none absolute -top-24 -right-16 h-64 w-64 rounded-full opacity-40 blur-3xl"
         style={{ background: "var(--gradient-primary, var(--primary))" }}
         aria-hidden
       />
-      <p className="label-eyebrow text-muted-foreground relative">
-        {t("today.emptyEyebrow")}
-      </p>
+      <p className="label-eyebrow text-muted-foreground relative">{t("today.emptyEyebrow")}</p>
       <h2 className="relative mt-4 font-serif text-3xl sm:text-5xl leading-[1.05] tracking-tight text-foreground max-w-[18ch]">
         {t("today.emptyHeading")}
       </h2>

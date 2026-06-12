@@ -4,9 +4,14 @@ import { Plane, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
+import { rearmMedicationNotifications } from "@/lib/med-notifications";
+import {
+  persistDismissedTravelZone,
+  readDismissedTravelZone,
+  shouldShowTravelTimezoneBanner,
+  shortTimezoneLabel,
+} from "@/lib/travel-timezone-banner";
 import { DualTime } from "./dual-time";
-
-const DISMISS_KEY = "purple-trip-banner-dismissed-tz";
 
 type Profile = { timezone: string | null };
 type Leg = { tz: string; from_at: string; label?: string };
@@ -44,7 +49,7 @@ export function TripBanner() {
     } catch {
       setDeviceTz(null);
     }
-    setDismissedFor(localStorage.getItem(DISMISS_KEY));
+    setDismissedFor(readDismissedTravelZone());
   }, []);
 
   const refresh = React.useCallback(async () => {
@@ -71,8 +76,7 @@ export function TripBanner() {
             legs: (t.legs as Leg[] | null) ?? null,
             home_tz_snapshot: t.home_tz_snapshot ?? null,
             return_at: t.return_at,
-            shift_strategy:
-              (t.shift_strategy as "home" | "snap" | "gradual" | null) ?? null,
+            shift_strategy: (t.shift_strategy as "home" | "snap" | "gradual" | null) ?? null,
             shift_hours_per_day:
               typeof t.shift_hours_per_day === "number" ? t.shift_hours_per_day : null,
           }
@@ -113,9 +117,9 @@ export function TripBanner() {
   // Active trip → show a richer card with active leg + next dose dual time.
   if (activeTrip) {
     const homeTz = activeTrip.home_tz_snapshot ?? profile?.timezone ?? null;
-    const legs = (activeTrip.legs ?? []).slice().sort(
-      (a, b) => new Date(a.from_at).getTime() - new Date(b.from_at).getTime(),
-    );
+    const legs = (activeTrip.legs ?? [])
+      .slice()
+      .sort((a, b) => new Date(a.from_at).getTime() - new Date(b.from_at).getTime());
     const nowMs = Date.now();
     const active = legs.filter((l) => new Date(l.from_at).getTime() <= nowMs).pop();
     const currentTz = active?.tz ?? activeTrip.destination_tz;
@@ -126,10 +130,7 @@ export function TripBanner() {
         ? nowMs - new Date(active.from_at).getTime() < 12 * 60 * 60 * 1000
         : false;
     const offsetVsHome = homeTz ? tzOffsetDiffHours(currentTz, homeTz) : null;
-    const strategyNudge = strategyText(
-      activeTrip.shift_strategy,
-      activeTrip.shift_hours_per_day,
-    );
+    const strategyNudge = strategyText(activeTrip.shift_strategy, activeTrip.shift_hours_per_day);
     return (
       <aside
         aria-label="Travel mode active"
@@ -149,14 +150,13 @@ export function TripBanner() {
               <span className="text-muted-foreground"> · {currentTz}</span>
               {offsetVsHome !== null && offsetVsHome !== 0 && (
                 <span className="text-muted-foreground">
-                  {" "}· {offsetVsHome > 0 ? "+" : ""}
+                  {" "}
+                  · {offsetVsHome > 0 ? "+" : ""}
                   {offsetVsHome}h from home
                 </span>
               )}
             </p>
-            {strategyNudge && (
-              <p className="mt-1 text-xs text-muted-foreground">{strategyNudge}</p>
-            )}
+            {strategyNudge && <p className="mt-1 text-xs text-muted-foreground">{strategyNudge}</p>}
             {nextDose ? (
               <p className="mt-1.5 text-sm text-foreground/80 flex flex-wrap items-baseline gap-x-2">
                 <span className="text-muted-foreground">Next dose</span>
@@ -188,33 +188,19 @@ export function TripBanner() {
     );
   }
 
-  if (!homeTz || homeTz === deviceTz) return null;
-  if (dismissedFor === deviceTz) return null;
+  const zoneLabel = shortTimezoneLabel(deviceTz);
+  if (
+    !shouldShowTravelTimezoneBanner({
+      profileTimezone: homeTz,
+      deviceTimezone: deviceTz,
+      hasActiveTrip: false,
+      dismissedZone: dismissedFor,
+    })
+  ) {
+    return null;
+  }
 
-  const startTrip = async () => {
-    if (!userId) return;
-    setBusy(true);
-    // Auto-create a one-week active trip ending in 7 days. User can edit in Settings.
-    const depart = new Date();
-    const ret = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    const { error } = await supabase.from("trips").insert({
-      user_id: userId,
-      destination_tz: deviceTz,
-      depart_at: depart.toISOString(),
-      return_at: ret.toISOString(),
-      label: `Travel to ${deviceTz}`,
-      status: "active",
-    });
-    setBusy(false);
-    if (error) {
-      toast.error("Could not start travel mode");
-      return;
-    }
-    toast.success("Travel mode on, doses stay on home time");
-    void refresh();
-  };
-
-  const updateHome = async () => {
+  const acceptLocalSchedule = async () => {
     if (!userId) return;
     setBusy(true);
     const { error } = await supabase
@@ -222,19 +208,24 @@ export function TripBanner() {
       .update({ timezone: deviceTz })
       .eq("id", userId);
     if (!error) {
-      await supabase.rpc("regenerate_today_pending_doses", { _user_id: userId });
+      try {
+        await supabase.rpc("regenerate_today_pending_doses", { _user_id: userId });
+        void rearmMedicationNotifications();
+      } catch {
+        /* hourly seeder reconciles */
+      }
     }
     setBusy(false);
     if (error) {
-      toast.error("Could not update home timezone");
+      toast.error("Purple couldn't update your schedule right now. Try again in a moment.");
       return;
     }
-    toast.success("Home timezone updated");
+    toast.success("Schedule updated to local time");
     void refresh();
   };
 
   const dismiss = () => {
-    localStorage.setItem(DISMISS_KEY, deviceTz);
+    persistDismissedTravelZone(deviceTz);
     setDismissedFor(deviceTz);
   };
 
@@ -242,42 +233,28 @@ export function TripBanner() {
     <aside
       role="note"
       aria-label="Timezone change detected"
-      className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 flex items-start gap-3"
+      className="mt-4 rounded-2xl border border-border/60 bg-muted/30 p-4 flex items-start gap-3"
     >
-      <Plane className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+      <Plane className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" aria-hidden />
       <div className="flex-1 min-w-0">
         <p className="text-sm text-foreground">
-          Looks like you're in <span className="font-medium">{deviceTz}</span>.
-          Your home is <span className="font-medium">{homeTz}</span>.
+          Looks like you&apos;re in <span className="font-medium">{zoneLabel}</span> now. Update
+          your schedule to local time?
         </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          Travel mode keeps each dose at its original home time (so the gap
-          between doses stays the same). Update home only if you've moved.
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={startTrip}
-            disabled={busy}
-            className="inline-flex items-center rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
-          >
-            Start travel mode
-          </button>
-          <button
-            type="button"
-            onClick={updateHome}
-            disabled={busy}
-            className="inline-flex items-center rounded-full border border-border bg-background px-3 py-1.5 text-xs text-foreground hover:bg-secondary/60 disabled:opacity-50"
-          >
-            I moved, update home
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={acceptLocalSchedule}
+          disabled={busy}
+          className="mt-2 inline-flex items-center rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
+        >
+          Update schedule
+        </button>
       </div>
       <button
         type="button"
         onClick={dismiss}
-        aria-label="Dismiss"
-        className="text-muted-foreground hover:text-foreground p-1 shrink-0"
+        aria-label="Dismiss timezone suggestion"
+        className="text-muted-foreground hover:text-foreground p-1 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
       >
         <X className="h-4 w-4" />
       </button>
@@ -285,10 +262,8 @@ export function TripBanner() {
   );
 }
 
-/** "America/New_York" → "New York"; falls back to last segment of the tz id. */
 function shortCity(tz: string): string {
-  const last = tz.split("/").pop() ?? tz;
-  return last.replace(/_/g, " ");
+  return shortTimezoneLabel(tz);
 }
 
 /** Difference in hours between `tz` and `homeTz` at the current instant. */

@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { dateKeyInTimeZone } from "@/lib/utils";
 
 /**
  * Weekly journal recap, last 7 days at a glance.
@@ -20,29 +21,60 @@ export type WeeklyRecap = {
 };
 
 const TRIGGER_PATTERNS: Array<{ key: string; label: string; rx: RegExp }> = [
-  { key: "sleep", label: "Sleep changes", rx: /\b(poor sleep|bad sleep|insomnia|woke up|couldn'?t sleep|tired|exhausted|nap)\b/i },
-  { key: "stress", label: "Stress", rx: /\b(stress|anxious|anxiety|overwhelmed|panicked|worried)\b/i },
+  {
+    key: "sleep",
+    label: "Sleep changes",
+    rx: /\b(poor sleep|bad sleep|insomnia|woke up|couldn'?t sleep|tired|exhausted|nap)\b/i,
+  },
+  {
+    key: "stress",
+    label: "Stress",
+    rx: /\b(stress|anxious|anxiety|overwhelmed|panicked|worried)\b/i,
+  },
   { key: "hydration", label: "Hydration", rx: /\b(dehydrat|thirsty|forgot to drink|low water)\b/i },
-  { key: "skipped_meal", label: "Skipped meal", rx: /\b(skipped (?:a )?meal|didn'?t eat|forgot to eat|low blood sugar)\b/i },
+  {
+    key: "skipped_meal",
+    label: "Skipped meal",
+    rx: /\b(skipped (?:a )?meal|didn'?t eat|forgot to eat|low blood sugar)\b/i,
+  },
   { key: "alcohol", label: "Alcohol", rx: /\b(beer|wine|cocktail|drank|hangover|alcohol)\b/i },
-  { key: "screens_light", label: "Screens/light", rx: /\b(screen time|too much screen|flashing|strobe|bright light|fluorescent)\b/i },
+  {
+    key: "screens_light",
+    label: "Screens/light",
+    rx: /\b(screen time|too much screen|flashing|strobe|bright light|fluorescent)\b/i,
+  },
   { key: "heat", label: "Heat", rx: /\b(too hot|heat|overheated|hot weather|humid)\b/i },
-  { key: "missed_dose", label: "Missed dose", rx: /\b(missed (?:a )?dose|forgot (?:my )?med|skipped (?:my )?med)\b/i },
+  {
+    key: "missed_dose",
+    label: "Missed dose",
+    rx: /\b(missed (?:a )?dose|forgot (?:my )?med|skipped (?:my )?med)\b/i,
+  },
   { key: "period", label: "Menstrual cycle", rx: /\b(period|menstru|cycle|pms|cramps)\b/i },
-  { key: "weather", label: "Weather change", rx: /\b(barometric|pressure change|storm|weather chang)\b/i },
+  {
+    key: "weather",
+    label: "Weather change",
+    rx: /\b(barometric|pressure change|storm|weather chang)\b/i,
+  },
   { key: "caffeine", label: "Caffeine", rx: /\b(coffee|caffeine|espresso|energy drink)\b/i },
   { key: "exercise", label: "Exercise", rx: /\b(workout|ran|run|gym|hike|exercise)\b/i },
 ];
-
-function dayKey(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
 
 export const getWeeklyJournalRecap = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<WeeklyRecap> => {
     const { supabase, userId } = context;
     const now = new Date();
+
+    // Streak days are the USER'S calendar days. This runs on the server (UTC),
+    // so UTC day keys would break streaks for evening entries in most of the
+    // world. Resolve days in the profile timezone instead.
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("timezone")
+      .eq("id", userId)
+      .maybeSingle();
+    const tz = profileRow?.timezone || "UTC";
+    const dayKey = (d: Date): string => dateKeyInTimeZone(d, tz);
     const since = new Date(now.getTime() - 7 * 24 * 3600 * 1000);
     const sinceIso = since.toISOString();
 
@@ -103,22 +135,23 @@ export const getWeeklyJournalRecap = createServerFn({ method: "GET" })
       .sort((a, b) => b.count - a.count)
       .slice(0, 4);
 
-    // Streak (consecutive days ending today with ≥1 entry)
+    // Streak (consecutive user-local days ending today with ≥1 entry)
     const daySet = new Set(entryList.map((e) => dayKey(new Date(e.captured_at))));
     let streak = 0;
     const cur = new Date(now);
-    cur.setUTCHours(0, 0, 0, 0);
     for (let i = 0; i < 7; i++) {
       if (daySet.has(dayKey(cur))) {
         streak += 1;
-        cur.setUTCDate(cur.getUTCDate() - 1);
+        cur.setTime(cur.getTime() - 24 * 3600 * 1000);
       } else {
         break;
       }
     }
 
     const dosesArr = (doses ?? []) as Array<{ status: string }>;
-    const missedDoses = dosesArr.filter((d) => d.status === "missed" || d.status === "skipped").length;
+    const missedDoses = dosesArr.filter(
+      (d) => d.status === "missed" || d.status === "skipped",
+    ).length;
     const voiceCount = entryList.filter((e) => (e.voice_transcript ?? "").trim().length > 0).length;
 
     return {

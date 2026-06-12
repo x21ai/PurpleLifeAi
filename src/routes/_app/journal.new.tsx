@@ -8,12 +8,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { useVoiceCapture } from "@/components/journal/use-voice-capture";
+import { queueEntry } from "@/lib/offline-journal-queue";
+import { processJournalEntry } from "@/lib/journal-pipeline";
 import { VoiceWave } from "@/components/journal/voice-wave";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { autoRouteJournalToReports } from "@/lib/journal-classify.functions";
+import { userMessage } from "@/lib/user-message";
 
 export const Route = createFileRoute("/_app/journal/new")({
   head: () => ({ meta: [{ title: "New entry · Purple" }] }),
@@ -215,20 +218,16 @@ function JournalNewPage() {
       if (uploads.length > 0) {
         const { data: signed, error: signErr } = await supabase.storage
           .from("journal-media")
-          .createSignedUrls(uploads.map((u) => u.path), 60 * 60 * 24 * 365);
+          .createSignedUrls(
+            uploads.map((u) => u.path),
+            60 * 60 * 24 * 365,
+          );
         if (signErr) throw signErr;
-        const mediaUrls = (signed ?? [])
-          .map((s) => s.signedUrl)
-          .filter(Boolean) as string[];
-        await supabase
-          .from("journal_entries")
-          .update({ media_urls: mediaUrls })
-          .eq("id", entryId);
+        const mediaUrls = (signed ?? []).map((s) => s.signedUrl).filter(Boolean) as string[];
+        await supabase.from("journal_entries").update({ media_urls: mediaUrls }).eq("id", entryId);
       }
 
-      supabase.functions
-        .invoke("journal-processor", { body: { entry_id: entryId } })
-        .catch(() => { /* edge fn may not be deployed yet */ });
+      void processJournalEntry(entryId);
 
       // Auto-route clinical attachments (PDF/photo of lab/imaging report)
       // into the Reports section. Fire-and-forget, runs in parallel.
@@ -241,7 +240,42 @@ function JournalNewPage() {
       navigate({ to: "/journal" });
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.message ?? "Could not save entry");
+      // Text-only entries survive a dead connection: queue locally and move
+      // on. The journal list shows the pending banner until it syncs.
+      const liveTranscript = voice.transcript.trim();
+      const finalText = text.trim();
+      const textOnly = attachments.length === 0 && !voice.audioBlob;
+      const looksOffline =
+        typeof navigator !== "undefined" && navigator.onLine === false
+          ? true
+          : /fetch|network|load failed|timeout/i.test(
+              err instanceof Error ? err.message : String(err),
+            );
+      if (textOnly && looksOffline && (finalText || liveTranscript)) {
+        queueEntry({
+          userId,
+          kind: inferKind(finalText, liveTranscript, []),
+          text: finalText || null,
+          voiceTranscript: liveTranscript || null,
+          capturedAt: capturedAt.toISOString(),
+        });
+        try {
+          localStorage.removeItem(DRAFT_KEY);
+        } catch {
+          /* ignore */
+        }
+        toast.success(
+          "Purple couldn't reach the server. Your entry is saved on this device and will sync when you're back online.",
+        );
+        navigate({ to: "/journal" });
+        return;
+      }
+      toast.error(
+        userMessage(
+          err,
+          "Your entry didn't save. It's still here on this screen, try again in a moment.",
+        ),
+      );
       setSaving(false);
       return;
     }
@@ -294,7 +328,11 @@ function JournalNewPage() {
           <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground mb-2">
             When did this happen?
           </p>
-          <DateTimePicker value={capturedAt} onChange={(d) => d && setCapturedAt(d)} disableFuture />
+          <DateTimePicker
+            value={capturedAt}
+            onChange={(d) => d && setCapturedAt(d)}
+            disableFuture
+          />
         </div>
 
         {/* Text, large serif input on a card so it reads like a page, not a sheet */}
@@ -397,7 +435,10 @@ function JournalNewPage() {
           accept="image/*"
           capture="environment"
           className="hidden"
-          onChange={(e) => { addFiles(e.target.files, "photo"); e.target.value = ""; }}
+          onChange={(e) => {
+            addFiles(e.target.files, "photo");
+            e.target.value = "";
+          }}
         />
         <input
           ref={galleryInput}
@@ -405,7 +446,10 @@ function JournalNewPage() {
           accept="image/*"
           multiple
           className="hidden"
-          onChange={(e) => { addFiles(e.target.files, "photo"); e.target.value = ""; }}
+          onChange={(e) => {
+            addFiles(e.target.files, "photo");
+            e.target.value = "";
+          }}
         />
         <input
           ref={videoInput}
@@ -413,7 +457,10 @@ function JournalNewPage() {
           accept="video/*"
           capture="environment"
           className="hidden"
-          onChange={(e) => { addFiles(e.target.files, "video"); e.target.value = ""; }}
+          onChange={(e) => {
+            addFiles(e.target.files, "video");
+            e.target.value = "";
+          }}
         />
       </main>
     </div>

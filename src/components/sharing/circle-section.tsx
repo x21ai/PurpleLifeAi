@@ -17,13 +17,8 @@ import { Switch } from "@/components/ui/switch";
 import { Link } from "@tanstack/react-router";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { userMessage } from "@/lib/user-message";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,18 +56,18 @@ export function CircleSection() {
       qc.invalidateQueries({ queryKey: ["circle", "mine"] });
       toast.success("Removed from your circle");
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't remove"),
+    onError: (e: any) => toast.error(userMessage(e, "Couldn't remove")),
   });
 
   const setBasics = useServerFn(setFriendShareBasics);
   const basicsMut = useMutation({
-    mutationFn: (args: { friendship_id: string; enabled: boolean }) =>
-      setBasics({ data: args }),
+    mutationFn: (args: { friendship_id: string; enabled: boolean }) => setBasics({ data: args }),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["circle", "mine"] });
       toast.success(res.enabled ? "Sharing your basics" : "Stopped sharing basics");
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't update"),
+    onError: (e: any) =>
+      toast.error(userMessage(e, "That change didn't save. Try again in a moment.")),
   });
 
   const rows = circle.data?.friendships ?? [];
@@ -83,9 +78,9 @@ export function CircleSection() {
         <div>
           <h2 className="font-serif text-xl text-foreground">Your circle</h2>
           <p className="mt-1 text-xs text-muted-foreground max-w-md">
-            Friends in your circle don't see any of your health data. They're
-            just people you're connected to on Purple. You'll know who invited
-            whom, and either side can leave at any time.
+            Friends in your circle don't see any of your health data. They're just people you're
+            connected to on Purple. You'll know who invited whom, and either side can leave at any
+            time.
           </p>
         </div>
         <InviteFriendSheet
@@ -109,19 +104,14 @@ export function CircleSection() {
               className="py-4 first:pt-0 last:pb-0 flex items-start justify-between gap-3"
             >
               <div className="min-w-0">
-                <p className="text-sm text-foreground truncate">
-                  {f.displayName}
-                </p>
+                <p className="text-sm text-foreground truncate">{f.displayName}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {f.iInvited ? "You invited" : "Invited you"}
                   {" · "}
                   <StatusPill status={f.status} />
                 </p>
                 {f.status === "pending" && f.iInvited && f.invite_token && (
-                  <PendingInviteShare
-                    inviteToken={f.invite_token}
-                    referCode={f.refer_code}
-                  />
+                  <PendingInviteShare inviteToken={f.invite_token} referCode={f.refer_code} />
                 )}
                 {f.status === "active" && (
                   <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
@@ -200,8 +190,8 @@ function RemoveFriendButton({
         <AlertDialogHeader>
           <AlertDialogTitle>Remove {name} from your circle?</AlertDialogTitle>
           <AlertDialogDescription>
-            They'll be removed from both your circles. Neither of you ever had
-            access to each other's data, so nothing else changes.
+            They'll be removed from both your circles. Neither of you ever had access to each
+            other's data, so nothing else changes.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -243,7 +233,7 @@ function InviteFriendSheet({ onInvited }: { onInvited: () => void }) {
       onInvited();
       setCreated({ acceptUrl: res.acceptUrl, refer_code: res.refer_code });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't create invite"),
+    onError: (e: any) => toast.error(userMessage(e, "Couldn't create invite")),
   });
 
   function reset() {
@@ -268,9 +258,7 @@ function InviteFriendSheet({ onInvited }: { onInvited: () => void }) {
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>
-            {created ? "Send it your way" : "Invite a friend to your circle"}
-          </SheetTitle>
+          <SheetTitle>{created ? "Send it your way" : "Invite a friend to your circle"}</SheetTitle>
         </SheetHeader>
 
         {!created ? (
@@ -293,8 +281,8 @@ function InviteFriendSheet({ onInvited }: { onInvited: () => void }) {
                 className="mt-1"
               />
               <p className="mt-1 text-[11px] text-muted-foreground">
-                Purple won't email them. You'll send the invite from your own
-                phone (iMessage, WhatsApp, etc.) on the next step.
+                Purple won't email them. You'll send the invite from your own phone (iMessage,
+                WhatsApp, etc.) on the next step.
               </p>
             </div>
             <div>
@@ -309,9 +297,8 @@ function InviteFriendSheet({ onInvited }: { onInvited: () => void }) {
               />
             </div>
             <div className="rounded-lg border border-border bg-muted/40 p-3 text-[12px] text-muted-foreground">
-              They won't see your journal, reports, medications, or any other
-              health data. Adding someone to your circle just connects you on
-              Purple.
+              They won't see your journal, reports, medications, or any other health data. Adding
+              someone to your circle just connects you on Purple.
             </div>
             <Button type="submit" className="w-full" disabled={m.isPending}>
               {m.isPending ? (
@@ -345,8 +332,7 @@ function ShareInvitePanel({
   onDone: () => void;
 }) {
   const [message, setMessage] = useState(inviteText(acceptUrl, referCode));
-  const canNativeShare =
-    typeof navigator !== "undefined" && typeof navigator.share === "function";
+  const canNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
   async function nativeShare() {
     try {
@@ -454,8 +440,7 @@ function PendingInviteShare({
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const acceptUrl = `${origin}/friend/accept?token=${inviteToken}`;
   const code = referCode ?? "";
-  const canNativeShare =
-    typeof navigator !== "undefined" && typeof navigator.share === "function";
+  const canNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
   function copy(text: string, label: string) {
     navigator.clipboard?.writeText(text).then(

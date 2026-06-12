@@ -1,6 +1,17 @@
 import { test, expect } from "@playwright/test";
 
-const PUBLIC_ROUTES = ["/", "/features", "/pricing", "/about", "/contact", "/how-purple-thinks", "/resources", "/sign-in", "/sign-up", "/reset-password"];
+const PUBLIC_ROUTES = [
+  "/",
+  "/features",
+  "/pricing",
+  "/about",
+  "/contact",
+  "/how-purple-thinks",
+  "/resources",
+  "/sign-in",
+  "/sign-up",
+  "/reset-password",
+];
 for (const path of PUBLIC_ROUTES) {
   test(`public route ${path} loads`, async ({ page }) => {
     const consoleErrors: string[] = [];
@@ -11,13 +22,18 @@ for (const path of PUBLIC_ROUTES) {
     expect(res?.status() ?? 0).toBeLessThan(500);
     await expect(page.locator("body")).not.toContainText(/Application error/i);
     // No uncaught console errors on first paint.
-    expect(
-      consoleErrors.filter((e) => !/Failed to load resource/i.test(e)),
-    ).toEqual([]);
+    expect(consoleErrors.filter((e) => !/Failed to load resource/i.test(e))).toEqual([]);
   });
 }
 
-const AUTH_ROUTES = ["/today", "/biometrics", "/journal", "/meds", "/settings", "/settings/sharing"];
+const AUTH_ROUTES = [
+  "/today",
+  "/biometrics",
+  "/journal",
+  "/meds",
+  "/settings",
+  "/settings/sharing",
+];
 for (const path of AUTH_ROUTES) {
   test(`auth route ${path} redirects when logged out`, async ({ page }) => {
     await page.goto(path);

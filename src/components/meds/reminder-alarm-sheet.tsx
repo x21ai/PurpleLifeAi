@@ -11,14 +11,20 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
+import { rearmMedicationNotifications } from "@/lib/med-notifications";
 import { toast } from "sonner";
 import { startAlarmLoop, type AlarmSoundId, DEFAULT_ALARM_SOUND } from "@/lib/alarm-sounds";
-import { formatLocaleTime } from "@/lib/utils";
+import { formatLocaleTime, sanitizeDosageLabel } from "@/lib/utils";
 
 type CriticalDose = {
   id: string;
   scheduled_at: string;
-  medication: { id: string; name: string; dosage: string | null; alarm_sound?: string | null } | null;
+  medication: {
+    id: string;
+    name: string;
+    dosage: string | null;
+    alarm_sound?: string | null;
+  } | null;
 };
 
 // Uses startAlarmLoop from @/lib/alarm-sounds to play the user's chosen preset.
@@ -48,7 +54,10 @@ export function ReminderAlarmSheet() {
         .select("snooze_minutes, default_alarm_sound")
         .eq("id", userId)
         .maybeSingle();
-      const row = data as { snooze_minutes: number | null; default_alarm_sound: string | null } | null;
+      const row = data as {
+        snooze_minutes: number | null;
+        default_alarm_sound: string | null;
+      } | null;
       if (row?.snooze_minutes && row.snooze_minutes > 0) setSnoozeMinutes(row.snooze_minutes);
       if (row?.default_alarm_sound) setDefaultSound(row.default_alarm_sound as AlarmSoundId);
     })();
@@ -67,9 +76,10 @@ export function ReminderAlarmSheet() {
       .lte("scheduled_at", nowIso)
       .order("scheduled_at", { ascending: true })
       .limit(5);
-    const rows = (data as unknown as Array<
-      CriticalDose & { medication: { reminder_style: string; alarm_sound: string | null } | null }
-    > | null) ?? [];
+    const rows =
+      (data as unknown as Array<
+        CriticalDose & { medication: { reminder_style: string; alarm_sound: string | null } | null }
+      > | null) ?? [];
     const critical = rows.find(
       (r) => r.medication?.reminder_style === "critical" && !dismissedRef.current.has(r.id),
     );
@@ -79,7 +89,9 @@ export function ReminderAlarmSheet() {
   React.useEffect(() => {
     if (!userId) return;
     void poll();
-    const t = setInterval(() => { void poll(); }, 30_000);
+    const t = setInterval(() => {
+      void poll();
+    }, 30_000);
     return () => clearInterval(t);
   }, [userId, poll]);
 
@@ -101,9 +113,13 @@ export function ReminderAlarmSheet() {
         const medId = dose?.medication?.id ?? null;
         if (medId) {
           const { data: m } = await supabase
-            .from("medications").select("pills_remaining").eq("id", medId).maybeSingle();
+            .from("medications")
+            .select("pills_remaining")
+            .eq("id", medId)
+            .maybeSingle();
           if (m && m.pills_remaining != null) {
-            await supabase.from("medications")
+            await supabase
+              .from("medications")
               .update({ pills_remaining: Math.max(0, (m.pills_remaining as number) - 1) })
               .eq("id", medId);
           }
@@ -113,9 +129,12 @@ export function ReminderAlarmSheet() {
         const next = new Date(Date.now() + snoozeMinutes * 60_000).toISOString();
         await supabase
           .from("medication_doses")
-          .update({ scheduled_at: next })
+          // Reset notified markers so the push cron fires again at the new time.
+          .update({ scheduled_at: next, notified_at: null, missed_notified_at: null })
           .eq("id", dose.id);
         toast.success(`Snoozed ${snoozeMinutes} min`);
+        // Re-arm the local service worker schedule for the snoozed time.
+        void rearmMedicationNotifications();
       }
       dismissedRef.current.add(dose.id);
       setDose(null);
@@ -124,8 +143,21 @@ export function ReminderAlarmSheet() {
     }
   };
 
+  // Closing without choosing (tap outside, Esc, back gesture) silences the
+  // alarm for this session but does NOT snooze: rescheduling a dose should
+  // only happen on an explicit choice.
+  const dismissQuietly = () => {
+    dismissedRef.current.add(dose.id);
+    setDose(null);
+  };
+
   return (
-    <Dialog open={true} onOpenChange={(o) => { if (!o) handle("snooze"); }}>
+    <Dialog
+      open={true}
+      onOpenChange={(o) => {
+        if (!o) dismissQuietly();
+      }}
+    >
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <div className="mx-auto h-12 w-12 rounded-full bg-destructive/15 text-destructive grid place-items-center mb-2">
@@ -135,7 +167,9 @@ export function ReminderAlarmSheet() {
             Time for {dose.medication?.name ?? "your dose"}
           </DialogTitle>
           <DialogDescription className="text-center">
-            {dose.medication?.dosage ? `${dose.medication.dosage} · ` : ""}
+            {sanitizeDosageLabel(dose.medication?.dosage)
+              ? `${sanitizeDosageLabel(dose.medication?.dosage)} · `
+              : ""}
             scheduled {formatLocaleTime(dose.scheduled_at)}
           </DialogDescription>
         </DialogHeader>

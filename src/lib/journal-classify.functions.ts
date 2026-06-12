@@ -32,18 +32,19 @@ async function classifyAttachment(
   try {
     const text = await callAIForUser(supabase, userId, {
       system:
-        "You decide whether an uploaded file is a clinical document (lab report, blood/urine panel, imaging report, discharge summary, prescription, doctor's note). Reply strictly with JSON: {\"is_clinical\": boolean, \"title\": string|null, \"report_type\": \"blood_panel\"|\"lipid_panel\"|\"imaging_ct\"|\"imaging_mri\"|\"imaging_ultrasound\"|\"imaging_xray\"|\"narrative\"|\"prescription\"|\"other\"|null, \"confidence\": 0-1}. A casual food/selfie/screenshot is NOT clinical. A printout, scan, or photo of a lab/imaging/clinical document IS clinical.",
+        'You decide whether an uploaded file is a clinical document (lab report, blood/urine panel, imaging report, discharge summary, prescription, doctor\'s note). Reply strictly with JSON: {"is_clinical": boolean, "title": string|null, "report_type": "blood_panel"|"lipid_panel"|"imaging_ct"|"imaging_mri"|"imaging_ultrasound"|"imaging_xray"|"narrative"|"prescription"|"other"|null, "confidence": 0-1}. A casual food/selfie/screenshot is NOT clinical. A printout, scan, or photo of a lab/imaging/clinical document IS clinical.',
       prompt: "Classify this attachment.",
       media: { base64: Buffer.from(bytes).toString("base64"), mime },
       jsonMode: true,
       maxTokens: 256,
     });
-    const parsed = tryParseJson<{
-      is_clinical?: boolean;
-      title?: string | null;
-      report_type?: string | null;
-      confidence?: number | null;
-    }>(text) ?? {};
+    const parsed =
+      tryParseJson<{
+        is_clinical?: boolean;
+        title?: string | null;
+        report_type?: string | null;
+        confidence?: number | null;
+      }>(text) ?? {};
     return {
       is_clinical: !!parsed.is_clinical,
       title: typeof parsed.title === "string" ? parsed.title.slice(0, 180) : null,
@@ -89,8 +90,10 @@ export const autoRouteJournalToReports = createServerFn({ method: "POST" })
       const name = f.name.toLowerCase();
       const isPdf = name.endsWith(".pdf");
       const isImage =
-        name.endsWith(".jpg") || name.endsWith(".jpeg") ||
-        name.endsWith(".png") || name.endsWith(".heic") ||
+        name.endsWith(".jpg") ||
+        name.endsWith(".jpeg") ||
+        name.endsWith(".png") ||
+        name.endsWith(".heic") ||
         name.endsWith(".webp");
       if (!isPdf && !isImage) continue;
 
@@ -112,7 +115,7 @@ export const autoRouteJournalToReports = createServerFn({ method: "POST" })
       if (!cls.is_clinical || (cls.confidence ?? 0) < 0.55) continue;
 
       // Copy into reports bucket
-      const ext = isPdf ? "pdf" : (name.split(".").pop() || "bin");
+      const ext = isPdf ? "pdf" : name.split(".").pop() || "bin";
       const newPath = `${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
       const up = await supabase.storage
         .from("reports")
@@ -120,8 +123,7 @@ export const autoRouteJournalToReports = createServerFn({ method: "POST" })
       if (up.error) continue;
 
       const title =
-        cls.title?.trim() ||
-        (entry.text ? entry.text.slice(0, 80) : "Journal attachment");
+        cls.title?.trim() || (entry.text ? entry.text.slice(0, 80) : "Journal attachment");
       const reportDate = (entry.captured_at ?? "").slice(0, 10) || null;
 
       const { data: doc, error: insErr } = await supabase

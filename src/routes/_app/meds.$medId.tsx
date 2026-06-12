@@ -1,17 +1,20 @@
 import * as React from "react";
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Plus, Edit3, Archive, ArchiveRestore, Trash2, CalendarDays } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Edit3,
+  Archive,
+  ArchiveRestore,
+  Trash2,
+  CalendarDays,
+} from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +32,8 @@ import { toast } from "sonner";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { buildIcs, downloadIcs, medicationToIcsEvents } from "@/lib/ics";
 import { useTranslation } from "react-i18next";
+import { userMessage } from "@/lib/user-message";
+import { sanitizeDosageLabel } from "@/lib/utils";
 
 type Med = {
   id: string;
@@ -56,26 +61,35 @@ type SideEffect = {
   noted_at: string;
 };
 
+function MedDetailError({ reset }: { reset: () => void }) {
+  const router = useRouter();
+  return (
+    <div className="mx-auto max-w-2xl px-5 pt-16">
+      <p className="text-sm text-muted-foreground">Could not load medication.</p>
+      <Button
+        variant="outline"
+        className="mt-4"
+        onClick={() => {
+          router.invalidate();
+          reset();
+        }}
+      >
+        Try again
+      </Button>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/_app/meds/$medId")({
   head: () => ({ meta: [{ title: "Medication · Purple" }] }),
   component: MedDetail,
-  errorComponent: ({ reset }) => {
-    const router = useRouter();
-    return (
-      <div className="mx-auto max-w-2xl px-5 pt-16">
-        <p className="text-sm text-muted-foreground">Could not load medication.</p>
-        <Button
-          variant="outline"
-          className="mt-4"
-          onClick={() => { router.invalidate(); reset(); }}
-        >Try again</Button>
-      </div>
-    );
-  },
+  errorComponent: MedDetailError,
   notFoundComponent: () => (
     <div className="mx-auto max-w-2xl px-5 pt-16">
       <p className="text-sm text-muted-foreground">Medication not found.</p>
-      <Link to="/meds" className="text-sm text-primary underline mt-2 inline-block">Back to medications</Link>
+      <Link to="/meds" className="text-sm text-primary underline mt-2 inline-block">
+        Back to medications
+      </Link>
     </div>
   ),
 });
@@ -99,7 +113,11 @@ function MedDetail() {
   const userId = session?.user.id;
   const navigate = useNavigate();
   const [med, setMed] = React.useState<Med | null>(null);
-  const [adherence, setAdherence] = React.useState<{ scheduled: number; taken: number; pct: number } | null>(null);
+  const [adherence, setAdherence] = React.useState<{
+    scheduled: number;
+    taken: number;
+    pct: number;
+  } | null>(null);
   const [recent, setRecent] = React.useState<Dose[]>([]);
   const [sideEffects, setSideEffects] = React.useState<SideEffect[]>([]);
   const [sideEffectOpen, setSideEffectOpen] = React.useState(false);
@@ -108,49 +126,85 @@ function MedDetail() {
   const [savingSideEffect, setSavingSideEffect] = React.useState(false);
   const [editOpen, setEditOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const [confirmArchive, setConfirmArchive] = React.useState(false);
   const [homeTz, setHomeTz] = React.useState<string>("UTC");
 
   const load = React.useCallback(async () => {
     if (!userId) return;
-    const [{ data: m }, { data: adh }, { data: doses }, { data: effects }, { data: prof }] = await Promise.all([
-      supabase.from("medications").select("*").eq("id", medId).maybeSingle(),
-      supabase.rpc("medication_adherence", { med_id: medId, days_back: 14 }),
-      supabase
-        .from("medication_doses")
-        .select("id, scheduled_at, status")
-        .eq("medication_id", medId)
-        .order("scheduled_at", { ascending: false })
-        .limit(14),
-      supabase
-        .from("medication_side_effects")
-        .select("id, side_effect, severity, noted_at")
-        .eq("medication_id", medId)
-        .order("noted_at", { ascending: false }),
-      supabase.from("profiles").select("timezone").eq("id", userId).maybeSingle(),
-    ]);
+    const [{ data: m }, { data: adh }, { data: doses }, { data: effects }, { data: prof }] =
+      await Promise.all([
+        supabase.from("medications").select("*").eq("id", medId).maybeSingle(),
+        supabase.rpc("medication_adherence", { med_id: medId, days_back: 14 }),
+        supabase
+          .from("medication_doses")
+          .select("id, scheduled_at, status")
+          .eq("medication_id", medId)
+          .order("scheduled_at", { ascending: false })
+          .limit(14),
+        supabase
+          .from("medication_side_effects")
+          .select("id, side_effect, severity, noted_at")
+          .eq("medication_id", medId)
+          .order("noted_at", { ascending: false }),
+        supabase.from("profiles").select("timezone").eq("id", userId).maybeSingle(),
+      ]);
     setMed((m as Med) ?? null);
-    const row = (adh as Array<{ scheduled_count: number; taken_count: number; adherence_pct: number }>)?.[0];
-    if (row) setAdherence({ scheduled: Number(row.scheduled_count), taken: Number(row.taken_count), pct: Number(row.adherence_pct) });
+    const row = (
+      adh as Array<{ scheduled_count: number; taken_count: number; adherence_pct: number }>
+    )?.[0];
+    if (row)
+      setAdherence({
+        scheduled: Number(row.scheduled_count),
+        taken: Number(row.taken_count),
+        pct: Number(row.adherence_pct),
+      });
     setRecent((doses as Dose[]) ?? []);
     setSideEffects((effects as SideEffect[]) ?? []);
-    setHomeTz((prof as { timezone: string | null } | null)?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC");
+    setHomeTz(
+      (prof as { timezone: string | null } | null)?.timezone ??
+        Intl.DateTimeFormat().resolvedOptions().timeZone ??
+        "UTC",
+    );
   }, [medId, userId]);
 
-  React.useEffect(() => { void load(); }, [load]);
+  React.useEffect(() => {
+    void load();
+  }, [load]);
 
+  // Confirmation handled by the AlertDialog below (no native window.confirm).
   const archive = async () => {
     if (!med) return;
-    if (!window.confirm(`Archive ${med.name}? You can re-add it later.`)) return;
     const { error } = await supabase.from("medications").update({ active: false }).eq("id", med.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(userMessage(error, "That didn't work. Try again in a moment."));
+      return;
+    }
     toast.success("Medication archived");
     navigate({ to: "/meds" });
+  };
+
+  // Calm recovery for a missed dose: log it as taken at its scheduled time.
+  // Adherence re-queries via load(), so the number recovers immediately.
+  const logMissedDose = async (doseId: string, scheduledAt: string) => {
+    const { error } = await supabase
+      .from("medication_doses")
+      .update({ status: "taken", taken_at: scheduledAt })
+      .eq("id", doseId);
+    if (error) {
+      toast.error(userMessage(error, "That didn't save. Try again in a moment."));
+      return;
+    }
+    toast.success("Logged. It counts.");
+    void load();
   };
 
   const restore = async () => {
     if (!med) return;
     const { error } = await supabase.from("medications").update({ active: true }).eq("id", med.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(userMessage(error, "That didn't work. Try again in a moment."));
+      return;
+    }
     toast.success("Medication restored");
     void load();
   };
@@ -160,7 +214,10 @@ function MedDetail() {
     await supabase.from("medication_doses").delete().eq("medication_id", med.id);
     await supabase.from("medication_side_effects").delete().eq("medication_id", med.id);
     const { error } = await supabase.from("medications").delete().eq("id", med.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(userMessage(error, "That didn't work. Try again in a moment."));
+      return;
+    }
     toast.success(`${med.name} deleted`);
     navigate({ to: "/meds" });
   };
@@ -210,7 +267,9 @@ function MedDetail() {
   };
 
   if (!med) {
-    return <div className="mx-auto max-w-2xl px-5 pt-16 text-sm text-muted-foreground">Loading…</div>;
+    return (
+      <div className="mx-auto max-w-2xl px-5 pt-16 text-sm text-muted-foreground">Loading…</div>
+    );
   }
 
   const prescriber = med.prescriber_name || med.prescriber;
@@ -219,7 +278,10 @@ function MedDetail() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-10 sm:pt-16 lg:pt-20 pb-24">
-      <Link to="/meds" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground gap-1">
+      <Link
+        to="/meds"
+        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground gap-1"
+      >
         <ArrowLeft className="h-4 w-4" /> {t("nav.medications")}
       </Link>
 
@@ -231,9 +293,17 @@ function MedDetail() {
           {t("meds.archived")}
         </span>
       )}
-      {med.dosage && <p className="mt-3 font-serif text-xl text-foreground/70">{med.dosage}</p>}
-      {prescriber && <p className="mt-1 text-sm text-muted-foreground">Prescribed by {prescriber}</p>}
-      {med.pharmacy_name && <p className="mt-1 text-sm text-muted-foreground">Pharmacy: {med.pharmacy_name}</p>}
+      {sanitizeDosageLabel(med.dosage) && (
+        <p className="mt-3 font-serif text-xl text-foreground/70">
+          {sanitizeDosageLabel(med.dosage)}
+        </p>
+      )}
+      {prescriber && (
+        <p className="mt-1 text-sm text-muted-foreground">Prescribed by {prescriber}</p>
+      )}
+      {med.pharmacy_name && (
+        <p className="mt-1 text-sm text-muted-foreground">Pharmacy: {med.pharmacy_name}</p>
+      )}
 
       {!isRescueMed(med) && (
         <section className="mt-8 rounded-2xl border border-border bg-card p-5 sm:p-6">
@@ -241,13 +311,20 @@ function MedDetail() {
           <p className="text-xs text-muted-foreground">Last 14 days</p>
           {adherence ? (
             <div className="mt-4 flex items-baseline gap-3">
-              <span className="text-5xl font-medium tabular-nums text-primary">{adherence.pct}%</span>
+              <span className="text-5xl font-medium tabular-nums text-primary">
+                {adherence.pct}%
+              </span>
               <span className="text-sm text-muted-foreground">
                 {adherence.taken} of {adherence.scheduled} doses taken
+                {adherence.pct < 50 && (
+                  <span className="block mt-1">Logging catches up as you use reminders.</span>
+                )}
               </span>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-muted-foreground">No data yet.</p>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Adherence shows up here once a few scheduled doses have passed. Nothing to do yet.
+            </p>
           )}
         </section>
       )}
@@ -261,7 +338,12 @@ function MedDetail() {
         ) : (
           <ul className="mt-2 flex flex-wrap gap-2">
             {med.times_of_day.map((t) => (
-              <li key={t} className="rounded-full bg-secondary px-3 py-1 text-sm text-secondary-foreground">{formatTime(t)}</li>
+              <li
+                key={t}
+                className="rounded-full bg-secondary px-3 py-1 text-sm text-secondary-foreground"
+              >
+                {formatTime(t)}
+              </li>
             ))}
           </ul>
         )}
@@ -276,7 +358,12 @@ function MedDetail() {
       <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-serif text-xl text-foreground">Side effects</h2>
-          <Button size="sm" variant="outline" className="rounded-full" onClick={() => setSideEffectOpen(true)}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-full"
+            onClick={() => setSideEffectOpen(true)}
+          >
             <Plus className="h-3.5 w-3.5 mr-1" /> Log side effect
           </Button>
         </div>
@@ -296,23 +383,28 @@ function MedDetail() {
         )}
       </section>
 
-      <section className="mt-6 rounded-2xl border border-dashed border-border bg-card/50 p-5 sm:p-6">
-        <h2 className="font-serif text-xl text-foreground">Interactions</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          We&apos;re working on interaction warnings. For now, please confirm with your pharmacist when adding a new medication.
-        </p>
-      </section>
-
       {recent.length > 0 && (
         <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
           <h2 className="font-serif text-xl text-foreground">Recent doses</h2>
           <ul className="mt-3 divide-y divide-border">
             {recent.map((d) => (
-              <li key={d.id} className="flex items-center justify-between py-2 text-sm">
+              <li key={d.id} className="flex items-center justify-between gap-2 py-2 text-sm">
                 <span className="text-muted-foreground">
                   {format(new Date(d.scheduled_at), "MMM d, h:mm a")}
                 </span>
-                <span className="capitalize text-foreground">{d.status}</span>
+                <span className="flex items-center gap-2">
+                  <span className="capitalize text-foreground">{d.status}</span>
+                  {d.status === "missed" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full h-7 text-xs"
+                      onClick={() => void logMissedDose(d.id, d.scheduled_at)}
+                    >
+                      Log it anyway
+                    </Button>
+                  )}
+                </span>
               </li>
             ))}
           </ul>
@@ -329,7 +421,7 @@ function MedDetail() {
           </Button>
         )}
         {med.active ? (
-          <Button variant="outline" onClick={archive}>
+          <Button variant="outline" onClick={() => setConfirmArchive(true)}>
             <Archive className="h-4 w-4 mr-1.5" /> Archive
           </Button>
         ) : (
@@ -356,17 +448,44 @@ function MedDetail() {
         editingMedId={editOpen ? med.id : null}
       />
 
+      <AlertDialog open={confirmArchive} onOpenChange={setConfirmArchive}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive {med.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Reminders stop and it moves to your archive. Your dose history stays, and you can
+              restore it any time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmArchive(false);
+                void archive();
+              }}
+            >
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {med.name} permanently?</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the medication along with its dose history and logged side effects. This cannot be undone.
+              This removes the medication along with its dose history and logged side effects. This
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={destroy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={destroy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -398,7 +517,11 @@ function MedDetail() {
                 onValueChange={(v) => setSideEffectSeverity(v[0] ?? 5)}
               />
             </div>
-            <Button className="w-full rounded-full" onClick={logSideEffect} disabled={!sideEffectText.trim() || savingSideEffect}>
+            <Button
+              className="w-full rounded-full"
+              onClick={logSideEffect}
+              disabled={!sideEffectText.trim() || savingSideEffect}
+            >
               Save
             </Button>
           </div>

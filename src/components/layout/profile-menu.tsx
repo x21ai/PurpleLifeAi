@@ -49,7 +49,11 @@ export function ProfileMenu() {
   });
 
   const inCaregiverMode = pathname === "/care" || pathname.startsWith("/care/");
-  const initials = initialsFrom(avatarQ.data?.first_name, avatarQ.data?.last_name, session?.user?.email);
+  const initials = initialsFrom(
+    avatarQ.data?.first_name,
+    avatarQ.data?.last_name,
+    session?.user?.email,
+  );
   const displayName =
     [avatarQ.data?.first_name, avatarQ.data?.last_name].filter(Boolean).join(" ").trim() ||
     session?.user?.email ||
@@ -102,10 +106,7 @@ export function ProfileMenu() {
             {owners.map((o) => {
               const name =
                 o.profile?.community_display_name?.trim() ||
-                [o.profile?.first_name, o.profile?.last_name]
-                  .filter(Boolean)
-                  .join(" ")
-                  .trim() ||
+                [o.profile?.first_name, o.profile?.last_name].filter(Boolean).join(" ").trim() ||
                 "Their account";
               const active = inCaregiverMode && pathname === `/care/${o.owner_id}`;
               return (
@@ -167,7 +168,6 @@ function Avatar({ url, initials, size }: { url: string | null; initials: string;
       aria-hidden
     >
       {url ? (
-        // eslint-disable-next-line @next/next/no-img-element
         <img src={url} alt="" className="h-full w-full object-cover" />
       ) : (
         <span>{initials}</span>

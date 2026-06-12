@@ -17,9 +17,7 @@ export function ConditionWelcomeNudge() {
   const { session } = useAuth();
   const userId = session?.user?.id;
   const [state, setState] = React.useState<
-    | { kind: "loading" }
-    | { kind: "hidden" }
-    | { kind: "visible"; conditions: string[] }
+    { kind: "loading" } | { kind: "hidden" } | { kind: "visible"; conditions: string[] }
   >({ kind: "loading" });
 
   React.useEffect(() => {
@@ -72,10 +70,7 @@ export function ConditionWelcomeNudge() {
           </p>
           <ul className="mt-3 space-y-1.5">
             {bullets.map((b) => (
-              <li
-                key={b}
-                className="flex items-start gap-2 text-sm text-foreground/90"
-              >
+              <li key={b} className="flex items-start gap-2 text-sm text-foreground/90">
                 <Check className="h-3.5 w-3.5 mt-1 text-[color:var(--purple-primary)] shrink-0" />
                 <span>{b}</span>
               </li>

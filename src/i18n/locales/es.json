@@ -82,7 +82,10 @@
     "emptyHeading": "Empieza donde estés.",
     "emptyBody": "Escribe una frase, dicta un pensamiento o haz una foto. Purple hace el resto.",
     "emptyCta": "Empezar a escribir",
-    "emptySkip": "Por ahora no"
+    "emptySkip": "Por ahora no",
+    "wearablesNudge": "Conecta Oura o Whoop para ver cómo tu cuerpo afecta tus patrones.",
+    "wearablesNudgeAction": "Conectar un dispositivo",
+    "dismiss": "Descartar"
   },
   "journal": {
     "eyebrow": "Diario",
@@ -125,8 +128,9 @@
     "title1": "Cada señal que Purple",
     "title2": "está leyendo.",
     "backToToday": "Volver a hoy",
-    "noDataTitle": "Aún no hay datos de Oura.",
-    "noDataBody": "Conecta tu anillo en ajustes o usa Sincronizar ahora cuando esté conectado."
+    "noDataTitle": "Tus señales vivirán aquí.",
+    "noDataBody": "Conecta Oura, Whoop o Apple Health y Purple graficará sueño, frecuencia cardíaca y recuperación sin llenar la pantalla de marcadores vacíos.",
+    "noDataCta": "Conectar un dispositivo"
   },
   "insights": {
     "eyebrow": "Patrones",
@@ -145,7 +149,11 @@
     "noEvents": "Sin eventos registrados.",
     "noEventsBody": "Cuando suceda algo, regístralo, solo un toque.",
     "logShort": "Registrar",
-    "connectWearable": "Conecta un dispositivo para empezar a ver tus tendencias."
+    "connectWearable": "Conecta un dispositivo para empezar a ver tus tendencias.",
+    "freshEyebrow": "Patrones",
+    "freshHeading": "Esta página se llena a medida que registras.",
+    "freshBody": "Observaciones diarias, tendencias de sueño y patrones entre señales aparecerán aquí después de unas entradas o un dispositivo conectado. Sin gráficos hasta que haya algo real que mostrar.",
+    "freshCta": "Empezar a escribir"
   },
   "timeline": {
     "eyebrow": "Cronología",
@@ -170,7 +178,27 @@
     "downloadText": "Descargar texto",
     "print": "Imprimir / Guardar como PDF",
     "copy": "Copiar al portapapeles",
-    "share": "Compartir…"
+    "share": "Compartir…",
+    "emptyRangeHint": "Las entradas, dosis y registros de crisis de este rango aparecerán aquí.",
+    "emptyRangeCta": "Escribir una entrada",
+    "freshEyebrow": "Tu cronología",
+    "freshHeading": "Tus días se alinearán aquí.",
+    "freshBody": "Las entradas del diario, dosis y registros de crisis aparecerán en orden a medida que los captures. Empieza con una nota y esta página cobrará vida.",
+    "freshCta": "Escribe tu primera entrada"
+  },
+  "emptyStates": {
+    "insightsEyebrow": "Para ti",
+    "insightsHeading": "Purple notará patrones aquí.",
+    "insightsBody": "Después de unas entradas de diario o lecturas del wearable, las observaciones diarias y los cambios suaves aparecerán en esta fila.",
+    "insightsCta": "Empezar a escribir",
+    "patternsEyebrow": "Patrones",
+    "patternsHeading": "Las conexiones aparecen con el tiempo.",
+    "patternsBody": "Sueño, estrés, medicamentos y síntomas empiezan a encajar después de una o dos semanas de registro tranquilo. Purple mostrará lo que vea.",
+    "patternsCta": "Registra cómo te sientes hoy",
+    "biometricsEyebrow": "Tu cuerpo",
+    "biometricsHeading": "Tus señales vivirán aquí.",
+    "biometricsBody": "Conecta Oura, Whoop o Apple Health y Purple graficará sueño, frecuencia cardíaca y recuperación sin llenar la pantalla de marcadores vacíos.",
+    "biometricsCta": "Conectar un dispositivo"
   },
   "locale": {
     "title": "Región e idioma",
@@ -220,7 +248,9 @@
     "fromTeam": "Del equipo de Purple",
     "morning": "Buenos días",
     "afternoon": "Buenas tardes",
-    "evening": "Buenas noches"
+    "evening": "Buenas noches",
+    "firstWordsNote": "Le contaste a Purple: “{{words}}”. Ya está en tu diario, y Purple está prestando atención.",
+    "scoresAsOf": "Las puntuaciones son del {{day}}, la noche más reciente que Purple tiene."
   },
   "riskDetail": {
     "eyebrow": "Lectura de hoy",
@@ -312,7 +342,32 @@
     "enabled": "Activadas",
     "enable": "Activar",
     "notifsOn": "Notificaciones activadas",
-    "couldNotSave": "No se pudo guardar"
+    "couldNotSave": "No se pudo guardar",
+    "inviteApplied": "Código de invitación aplicado",
+    "stepOneOfTwo": "Paso 1 de 2",
+    "stepTwoOfTwo": "Paso 2 de 2",
+    "whoBodyShort": "Solo tu nombre y lo que llevas contigo. Todo lo demás puede esperar.",
+    "tellTitle": "Cuéntale a Purple sobre hoy.",
+    "tellBody": "Con una frase basta. Escríbela o dila, como te salga.",
+    "tellPlaceholder": "Cómo fue hoy en realidad…",
+    "example1": "Dormí mal, no almorcé, dolor de cabeza a las 3pm.",
+    "example2": "Hoy me sentí estable. Caminata corta después de cenar.",
+    "example3": "Olvidé mi dosis de la mañana y estuve aturdida toda la tarde.",
+    "dictate": "Dictar",
+    "stopDictating": "Detener",
+    "listening": "Escuchando…",
+    "save": "Guardar",
+    "reading": "Purple está leyendo tus palabras…",
+    "readingSub": "Convirtiendo lo que escribiste en algo que puede seguir.",
+    "heardEyebrow": "Esto es lo que Purple escuchó",
+    "heardTitle": "Tus palabras, recordadas.",
+    "heardSub": "Esto ya vive en tu diario. Desde aquí Purple empieza a notar patrones.",
+    "behaviorsNoted_one": "1 detalle anotado para tus patrones",
+    "behaviorsNoted_other": "{{count}} detalles anotados para tus patrones",
+    "savedEyebrow": "Guardado",
+    "savedTitle": "Tu primera entrada está dentro.",
+    "savedBody": "Purple todavía la está leyendo. Lo que encuentre estará en tu diario.",
+    "entrySaveFailed": "No se guardó. Tus palabras siguen aquí, inténtalo una vez más."
   },
   "signIn": {
     "eyebrow": "Iniciar sesión",
@@ -337,7 +392,9 @@
     "orUseAnother": "o usa otra cuenta",
     "freeForever": "Gratis para siempre. Código abierto. Sin anuncios.",
     "oauthError": "El inicio de sesión no se completó. Inténtalo de nuevo o usa tu correo.",
-    "enterEmailFirst": "Escribe tu correo arriba y pulsa ¿Olvidaste tu contraseña?"
+    "enterEmailFirst": "Escribe tu correo arriba y pulsa ¿Olvidaste tu contraseña?",
+    "trustLine": "Sin anuncios. Sin rastreadores. Tus datos son tuyos.",
+    "trustLink": "Cómo cumplimos esa promesa"
   },
   "resetPassword": {
     "eyebrow": "Restablecer contraseña",
@@ -352,5 +409,16 @@
     "openFromEmail": "Abre esta página desde el enlace de tu correo de restablecimiento.",
     "tooShort": "La contraseña debe tener al menos 8 caracteres.",
     "mismatch": "Las contraseñas no coinciden."
+  },
+  "doseCatchup": {
+    "body": "Puede que ayer no vieras tu dosis de {{med}} de las {{time}}. ¿Quieres registrarla?",
+    "more_one": "Y 1 más del último día.",
+    "more_other": "Y {{count}} más del último día.",
+    "tookIt": "La tomé",
+    "missedIt": "La omití",
+    "review": "Revisar en Medicamentos",
+    "notNow": "Ahora no",
+    "fallbackMed": "medicamento",
+    "updateFailed": "No se guardó. Inténtalo desde Medicamentos."
   }
 }

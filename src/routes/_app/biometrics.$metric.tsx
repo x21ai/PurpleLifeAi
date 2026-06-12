@@ -1,4 +1,11 @@
-import { createFileRoute, Link, useParams, useRouter, useNavigate, notFound } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  useParams,
+  useRouter,
+  useNavigate,
+  notFound,
+} from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
@@ -24,19 +31,41 @@ import {
 } from "@/lib/biometric-metrics";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
 import { useTranslation } from "react-i18next";
-import { MetricShell, MetricTitle, MetricStatCards, AskPurpleRail } from "@/components/reports/metric-shell";
+import {
+  MetricShell,
+  MetricTitle,
+  MetricStatCards,
+  AskPurpleRail,
+} from "@/components/reports/metric-shell";
 
 const VALID = new Set<MetricKey>(METRIC_ORDER);
+
+function MetricDrillError({ error, reset }: { error: Error; reset: () => void }) {
+  const router = useRouter();
+  return (
+    <div className="mx-auto max-w-2xl px-5 py-20 text-center">
+      <h1 className="font-serif text-3xl">Something went sideways.</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+      <button
+        type="button"
+        className="mt-6 text-sm underline"
+        onClick={() => {
+          reset();
+          void router.invalidate();
+        }}
+      >
+        Try again
+      </button>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_app/biometrics/$metric")({
   head: ({ params }) => {
     const meta = METRICS[params.metric as MetricKey];
     const label = meta?.label ?? "Metric";
     return {
-      meta: [
-        { title: `${label} · Purple` },
-        { name: "description", content: meta?.meaning ?? "" },
-      ],
+      meta: [{ title: `${label} · Purple` }, { name: "description", content: meta?.meaning ?? "" }],
     };
   },
   loader: ({ params }) => {
@@ -53,25 +82,7 @@ export const Route = createFileRoute("/_app/biometrics/$metric")({
       </p>
     </div>
   ),
-  errorComponent: ({ error, reset }) => {
-    const router = useRouter();
-    return (
-      <div className="mx-auto max-w-2xl px-5 py-20 text-center">
-        <h1 className="font-serif text-3xl">Something went sideways.</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
-        <button
-          type="button"
-          className="mt-6 text-sm underline"
-          onClick={() => {
-            reset();
-            void router.invalidate();
-          }}
-        >
-          Try again
-        </button>
-      </div>
-    );
-  },
+  errorComponent: MetricDrillError,
   component: MetricDrillPage,
 });
 
@@ -80,10 +91,10 @@ type Range = 1 | 7 | 30 | 90 | 365;
 type CompareMode = "none" | "previous" | "year_ago";
 type SourceKey = "oura" | "whoop" | "apple_health" | "manual";
 const SOURCE_COLORS: Record<SourceKey, string> = {
-  oura:         "var(--purple-primary)",
-  whoop:        "#34D399",
+  oura: "var(--purple-primary)",
+  whoop: "#34D399",
   apple_health: "#F472B6",
-  manual:       "#A1A1AA",
+  manual: "#A1A1AA",
 };
 const SOURCE_LABELS: Record<SourceKey, string> = {
   oura: "Oura",
@@ -135,98 +146,86 @@ function MetricDrillPage() {
     })();
   }, [uid, meta, range, compare, refreshKey]);
 
-  const {
-    chartData,
-    sourcesPresent,
-    baseline,
-    current,
-    status,
-    currentAvg,
-    compareAvg,
-    delta,
-  } = useMemo(() => {
-    const allRows = rows ?? [];
-    const now = Date.now();
-    const dayMs = 24 * 3600 * 1000;
-    const curStart = now - range * dayMs;
-    const cmpOffset =
-      compare === "year_ago"
-        ? 365 * dayMs
-        : compare === "previous"
-          ? range * dayMs
-          : 0;
-    const curRows = allRows.filter((r) => new Date(r.recorded_at).getTime() >= curStart);
-    const cmpRows =
-      compare === "none"
-        ? []
-        : allRows.filter((r) => {
-            const t = new Date(r.recorded_at).getTime();
-            return t >= curStart - cmpOffset && t < now - cmpOffset;
-          });
+  const { chartData, sourcesPresent, baseline, current, status, currentAvg, compareAvg, delta } =
+    useMemo(() => {
+      const allRows = rows ?? [];
+      const now = Date.now();
+      const dayMs = 24 * 3600 * 1000;
+      const curStart = now - range * dayMs;
+      const cmpOffset =
+        compare === "year_ago" ? 365 * dayMs : compare === "previous" ? range * dayMs : 0;
+      const curRows = allRows.filter((r) => new Date(r.recorded_at).getTime() >= curStart);
+      const cmpRows =
+        compare === "none"
+          ? []
+          : allRows.filter((r) => {
+              const t = new Date(r.recorded_at).getTime();
+              return t >= curStart - cmpOffset && t < now - cmpOffset;
+            });
 
-    const dateSet = new Set<string>();
-    for (const r of curRows) dateSet.add(r.recorded_at);
-    const dates = Array.from(dateSet).sort();
-    const present = Array.from(new Set(curRows.map((r) => r.source))) as SourceKey[];
+      const dateSet = new Set<string>();
+      for (const r of curRows) dateSet.add(r.recorded_at);
+      const dates = Array.from(dateSet).sort();
+      const present = Array.from(new Set(curRows.map((r) => r.source))) as SourceKey[];
 
-    // Shift comparison rows forward so they overlay on the current axis.
-    const cmpByDate = new Map<string, number | null>();
-    if (compare !== "none") {
-      for (const r of cmpRows) {
-        const shifted = new Date(new Date(r.recorded_at).getTime() + cmpOffset)
-          .toISOString()
-          .slice(0, 10);
-        if (r.value != null) cmpByDate.set(shifted, r.value);
+      // Shift comparison rows forward so they overlay on the current axis.
+      const cmpByDate = new Map<string, number | null>();
+      if (compare !== "none") {
+        for (const r of cmpRows) {
+          const shifted = new Date(new Date(r.recorded_at).getTime() + cmpOffset)
+            .toISOString()
+            .slice(0, 10);
+          if (r.value != null) cmpByDate.set(shifted, r.value);
+        }
       }
-    }
 
-    const data = dates.map((d) => {
-      const row: Record<string, string | number | null> = {
-        x: d,
-        label: format(new Date(d), range >= 90 ? "MMM" : "MMM d"),
+      const data = dates.map((d) => {
+        const row: Record<string, string | number | null> = {
+          x: d,
+          label: format(new Date(d), range >= 90 ? "MMM" : "MMM d"),
+        };
+        for (const s of present) {
+          const found = curRows.find((r) => r.recorded_at === d && r.source === s);
+          row[s] = found?.value ?? null;
+        }
+        const key = d.slice(0, 10);
+        const cmp = cmpByDate.get(key);
+        if (cmp != null) row.__compare = cmp;
+        return row;
+      });
+
+      const avg = (rs: Row[]) => {
+        const vs = rs.map((r) => r.value).filter((v): v is number => v != null);
+        if (vs.length === 0) return null;
+        return vs.reduce((a, b) => a + b, 0) / vs.length;
       };
-      for (const s of present) {
-        const found = curRows.find((r) => r.recorded_at === d && r.source === s);
-        row[s] = found?.value ?? null;
-      }
-      const key = d.slice(0, 10);
-      const cmp = cmpByDate.get(key);
-      if (cmp != null) row.__compare = cmp;
-      return row;
-    });
+      const curAvg = avg(curRows);
+      const cmpAvg = avg(cmpRows);
+      const dlt =
+        curAvg != null && cmpAvg != null && cmpAvg !== 0
+          ? ((curAvg - cmpAvg) / Math.abs(cmpAvg)) * 100
+          : null;
 
-    const avg = (rs: Row[]) => {
-      const vs = rs.map((r) => r.value).filter((v): v is number => v != null);
-      if (vs.length === 0) return null;
-      return vs.reduce((a, b) => a + b, 0) / vs.length;
-    };
-    const curAvg = avg(curRows);
-    const cmpAvg = avg(cmpRows);
-    const dlt =
-      curAvg != null && cmpAvg != null && cmpAvg !== 0
-        ? ((curAvg - cmpAvg) / Math.abs(cmpAvg)) * 100
-        : null;
-
-    // Baseline + status from full history (preferred source).
-    const preferred: SourceKey = present.includes("oura" as SourceKey)
-      ? ("oura" as SourceKey)
-      : (present[0] ?? ("oura" as SourceKey));
-    const headlineRows = allRows.filter((r) => r.source === preferred);
-    const baseSet = headlineRows.slice(-30, -3).map((r) => r.value);
-    const baselineStats = stats(baseSet);
-    const last = [...curRows].reverse().find((r) => r.value != null)?.value ?? null;
-    const cls = classifyValue(meta, last, baselineStats);
-    return {
-      chartData: data,
-      sourcesPresent: present,
-      baseline: baselineStats,
-      current: last,
-      status: cls,
-      currentAvg: curAvg,
-      compareAvg: cmpAvg,
-      delta: dlt,
-    };
-  }, [rows, meta, range, compare]);
+      // Baseline + status from full history (preferred source).
+      const preferred: SourceKey = present.includes("oura" as SourceKey)
+        ? ("oura" as SourceKey)
+        : (present[0] ?? ("oura" as SourceKey));
+      const headlineRows = allRows.filter((r) => r.source === preferred);
+      const baseSet = headlineRows.slice(-30, -3).map((r) => r.value);
+      const baselineStats = stats(baseSet);
+      const last = [...curRows].reverse().find((r) => r.value != null)?.value ?? null;
+      const cls = classifyValue(meta, last, baselineStats);
+      return {
+        chartData: data,
+        sourcesPresent: present,
+        baseline: baselineStats,
+        current: last,
+        status: cls,
+        currentAvg: curAvg,
+        compareAvg: cmpAvg,
+        delta: dlt,
+      };
+    }, [rows, meta, range, compare]);
 
   if (!meta) return null;
   const tonePill = statusTone(meta, status);
@@ -235,9 +234,9 @@ function MetricDrillPage() {
       ? "good"
       : status === "unknown"
         ? "neutral"
-        : ((meta.direction === "higher_better" && status === "low") ||
+        : (meta.direction === "higher_better" && status === "low") ||
             (meta.direction === "lower_better" && status === "high") ||
-            meta.direction === "neutral")
+            meta.direction === "neutral"
           ? "warn"
           : "neutral";
 
@@ -270,10 +269,7 @@ function MetricDrillPage() {
             ? `Your 30-day baseline · ${meta.format(baseline.mean)}`
             : "Building your personal baseline…"}
         </p>
-        <OuraSyncStatus
-          variant="compact"
-          onSynced={() => setRefreshKey((k) => k + 1)}
-        />
+        <OuraSyncStatus variant="compact" onSynced={() => setRefreshKey((k) => k + 1)} />
       </div>
 
       <div className="mt-6 flex items-center gap-2 flex-wrap">
@@ -295,7 +291,19 @@ function MetricDrillPage() {
         <span className="mx-2 text-[11px] text-foreground/60">vs</span>
         {(
           [
-            { v: "previous", l: range === 1 ? "Yesterday" : range === 7 ? "Last week" : range === 30 ? "Last month" : range === 90 ? "Prev 90d" : "Prev year" },
+            {
+              v: "previous",
+              l:
+                range === 1
+                  ? "Yesterday"
+                  : range === 7
+                    ? "Last week"
+                    : range === 30
+                      ? "Last month"
+                      : range === 90
+                        ? "Prev 90d"
+                        : "Prev year",
+            },
             { v: "year_ago", l: "Year ago" },
             { v: "none", l: "None" },
           ] as Array<{ v: CompareMode; l: string }>
@@ -388,7 +396,7 @@ function MetricDrillPage() {
                   meta.format(typeof v === "number" ? v : Number(v)),
                   name === "__compare"
                     ? "Comparison"
-                    : SOURCE_LABELS[name as SourceKey] ?? meta.label,
+                    : (SOURCE_LABELS[name as SourceKey] ?? meta.label),
                 ]}
               />
               {sourcesPresent.map((s) => (

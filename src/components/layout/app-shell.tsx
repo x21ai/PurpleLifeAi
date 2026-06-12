@@ -7,8 +7,14 @@ import { TopBar } from "./top-bar";
 import { AskFab } from "@/components/chat/ask-fab";
 import { ensureServiceWorker, rearmMedicationNotifications } from "@/lib/med-notifications";
 import { ReminderAlarmSheet } from "@/components/meds/reminder-alarm-sheet";
+import { useOfflineJournalSync } from "@/hooks/use-offline-journal-sync";
 
 export function AppShell() {
+  // App-wide offline journal flush: previously this only ran while the
+  // journal list page was mounted, so entries queued offline stayed queued
+  // until the user happened to visit /journal.
+  useOfflineJournalSync();
+
   useEffect(() => {
     void (async () => {
       await ensureServiceWorker();

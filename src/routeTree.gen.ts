@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
+import { Route as TrustRouteImport } from './routes/trust'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
@@ -61,8 +62,8 @@ import { Route as AppAdminIndexRouteImport } from './routes/_app/admin.index'
 import { Route as ShareReportTokenRouteImport } from './routes/share.report.$token'
 import { Route as OauthWhoopCallbackRouteImport } from './routes/oauth.whoop.callback'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
-import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
+import { Route as ApiEmailSuppressionRouteImport } from './routes/api/email/suppression'
 import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
 import { Route as AppSettingsTravelRouteImport } from './routes/_app/settings.travel'
 import { Route as AppSettingsSharingRouteImport } from './routes/_app/settings.sharing'
@@ -89,20 +90,22 @@ import { Route as AppAdminFeedbackRouteImport } from './routes/_app/admin.feedba
 import { Route as AppAdminContactRouteImport } from './routes/_app/admin.contact'
 import { Route as AppAdminCommunityRouteImport } from './routes/_app/admin.community'
 import { Route as AppAdminBillingRouteImport } from './routes/_app/admin.billing'
-import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
-import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
-import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
-import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
-import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
 import { Route as ApiPublicHooksAppleHealthRouteImport } from './routes/api/public/hooks/apple-health'
 import { Route as ApiPublicCronWhoopSyncAllRouteImport } from './routes/api/public/cron/whoop-sync-all'
 import { Route as ApiPublicCronWeeklyRecapRouteImport } from './routes/api/public/cron/weekly-recap'
+import { Route as ApiPublicCronSeedDosesRouteImport } from './routes/api/public/cron/seed-doses'
 import { Route as ApiPublicCronPurgeDeletedAccountsRouteImport } from './routes/api/public/cron/purge-deleted-accounts'
 import { Route as ApiPublicCronOuraSyncAllRouteImport } from './routes/api/public/cron/oura-sync-all'
 import { Route as ApiPublicCronMedicalReportsRouteImport } from './routes/api/public/cron/medical-reports'
+import { Route as ApiPublicCronJournalCleanupRouteImport } from './routes/api/public/cron/journal-cleanup'
 import { Route as ApiPublicCronDoseRemindersRouteImport } from './routes/api/public/cron/dose-reminders'
 import { Route as ApiPublicCronCareDailyDigestRouteImport } from './routes/api/public/cron/care-daily-digest'
+import { Route as ApiEmailTransactionalSendRouteImport } from './routes/api/email/transactional/send'
+import { Route as ApiEmailTransactionalPreviewRouteImport } from './routes/api/email/transactional/preview'
+import { Route as ApiEmailQueueProcessRouteImport } from './routes/api/email/queue/process'
+import { Route as ApiEmailAuthWebhookRouteImport } from './routes/api/email/auth/webhook'
+import { Route as ApiEmailAuthPreviewRouteImport } from './routes/api/email/auth/preview'
 import { Route as AppReportsTrendsMetricKeyRouteImport } from './routes/_app/reports.trends.$metricKey'
 import { Route as AppAdminReportsDuplicatesRouteImport } from './routes/_app/admin.reports.duplicates'
 import { Route as AppCareOwnerIdReportsReportIdRouteImport } from './routes/_app/care.$ownerId.reports.$reportId'
@@ -115,6 +118,11 @@ const UsersRoute = UsersRouteImport.update({
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
   path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrustRoute = TrustRouteImport.update({
+  id: '/trust',
+  path: '/trust',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -366,14 +374,14 @@ const OauthOuraCallbackRoute = OauthOuraCallbackRouteImport.update({
   path: '/oauth/oura/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
-  id: '/lovable/email/suppression',
-  path: '/lovable/email/suppression',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
   id: '/api/public/stripe-webhook',
   path: '/api/public/stripe-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmailSuppressionRoute = ApiEmailSuppressionRouteImport.update({
+  id: '/api/email/suppression',
+  path: '/api/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppTodayRiskRoute = AppTodayRiskRouteImport.update({
@@ -508,34 +516,6 @@ const AppAdminBillingRoute = AppAdminBillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => AppAdminRoute,
 } as any)
-const LovableEmailTransactionalSendRoute =
-  LovableEmailTransactionalSendRouteImport.update({
-    id: '/lovable/email/transactional/send',
-    path: '/lovable/email/transactional/send',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableEmailTransactionalPreviewRoute =
-  LovableEmailTransactionalPreviewRouteImport.update({
-    id: '/lovable/email/transactional/preview',
-    path: '/lovable/email/transactional/preview',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableEmailQueueProcessRoute =
-  LovableEmailQueueProcessRouteImport.update({
-    id: '/lovable/email/queue/process',
-    path: '/lovable/email/queue/process',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
-  id: '/lovable/email/auth/webhook',
-  path: '/lovable/email/auth/webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
-  id: '/lovable/email/auth/preview',
-  path: '/lovable/email/auth/preview',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicHooksRiskForecasterRoute =
   ApiPublicHooksRiskForecasterRouteImport.update({
     id: '/api/public/hooks/risk-forecaster',
@@ -560,6 +540,11 @@ const ApiPublicCronWeeklyRecapRoute =
     path: '/api/public/cron/weekly-recap',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronSeedDosesRoute = ApiPublicCronSeedDosesRouteImport.update({
+  id: '/api/public/cron/seed-doses',
+  path: '/api/public/cron/seed-doses',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCronPurgeDeletedAccountsRoute =
   ApiPublicCronPurgeDeletedAccountsRouteImport.update({
     id: '/api/public/cron/purge-deleted-accounts',
@@ -578,6 +563,12 @@ const ApiPublicCronMedicalReportsRoute =
     path: '/api/public/cron/medical-reports',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronJournalCleanupRoute =
+  ApiPublicCronJournalCleanupRouteImport.update({
+    id: '/api/public/cron/journal-cleanup',
+    path: '/api/public/cron/journal-cleanup',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronDoseRemindersRoute =
   ApiPublicCronDoseRemindersRouteImport.update({
     id: '/api/public/cron/dose-reminders',
@@ -590,6 +581,33 @@ const ApiPublicCronCareDailyDigestRoute =
     path: '/api/public/cron/care-daily-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiEmailTransactionalSendRoute =
+  ApiEmailTransactionalSendRouteImport.update({
+    id: '/api/email/transactional/send',
+    path: '/api/email/transactional/send',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiEmailTransactionalPreviewRoute =
+  ApiEmailTransactionalPreviewRouteImport.update({
+    id: '/api/email/transactional/preview',
+    path: '/api/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiEmailQueueProcessRoute = ApiEmailQueueProcessRouteImport.update({
+  id: '/api/email/queue/process',
+  path: '/api/email/queue/process',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmailAuthWebhookRoute = ApiEmailAuthWebhookRouteImport.update({
+  id: '/api/email/auth/webhook',
+  path: '/api/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmailAuthPreviewRoute = ApiEmailAuthPreviewRouteImport.update({
+  id: '/api/email/auth/preview',
+  path: '/api/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppReportsTrendsMetricKeyRoute =
   AppReportsTrendsMetricKeyRouteImport.update({
     id: '/trends/$metricKey',
@@ -627,6 +645,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/terms': typeof TermsRoute
+  '/trust': typeof TrustRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
   '/account': typeof AppAccountRoute
@@ -680,8 +699,8 @@ export interface FileRoutesByFullPath {
   '/settings/sharing': typeof AppSettingsSharingRoute
   '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
+  '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
   '/share/report/$token': typeof ShareReportTokenRoute
@@ -691,20 +710,22 @@ export interface FileRoutesByFullPath {
   '/journal/': typeof AppJournalIndexRoute
   '/admin/reports/duplicates': typeof AppAdminReportsDuplicatesRoute
   '/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
+  '/api/email/auth/preview': typeof ApiEmailAuthPreviewRoute
+  '/api/email/auth/webhook': typeof ApiEmailAuthWebhookRoute
+  '/api/email/queue/process': typeof ApiEmailQueueProcessRoute
+  '/api/email/transactional/preview': typeof ApiEmailTransactionalPreviewRoute
+  '/api/email/transactional/send': typeof ApiEmailTransactionalSendRoute
   '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
+  '/api/public/cron/journal-cleanup': typeof ApiPublicCronJournalCleanupRoute
   '/api/public/cron/medical-reports': typeof ApiPublicCronMedicalReportsRoute
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
+  '/api/public/cron/seed-doses': typeof ApiPublicCronSeedDosesRoute
   '/api/public/cron/weekly-recap': typeof ApiPublicCronWeeklyRecapRoute
   '/api/public/cron/whoop-sync-all': typeof ApiPublicCronWhoopSyncAllRoute
   '/api/public/hooks/apple-health': typeof ApiPublicHooksAppleHealthRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
-  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
-  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
-  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/care/$ownerId/reports/$reportId': typeof AppCareOwnerIdReportsReportIdRoute
 }
 export interface FileRoutesByTo {
@@ -725,6 +746,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/terms': typeof TermsRoute
+  '/trust': typeof TrustRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
   '/account': typeof AppAccountRoute
@@ -777,8 +799,8 @@ export interface FileRoutesByTo {
   '/settings/sharing': typeof AppSettingsSharingRoute
   '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
+  '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
   '/share/report/$token': typeof ShareReportTokenRoute
@@ -788,20 +810,22 @@ export interface FileRoutesByTo {
   '/journal': typeof AppJournalIndexRoute
   '/admin/reports/duplicates': typeof AppAdminReportsDuplicatesRoute
   '/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
+  '/api/email/auth/preview': typeof ApiEmailAuthPreviewRoute
+  '/api/email/auth/webhook': typeof ApiEmailAuthWebhookRoute
+  '/api/email/queue/process': typeof ApiEmailQueueProcessRoute
+  '/api/email/transactional/preview': typeof ApiEmailTransactionalPreviewRoute
+  '/api/email/transactional/send': typeof ApiEmailTransactionalSendRoute
   '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
+  '/api/public/cron/journal-cleanup': typeof ApiPublicCronJournalCleanupRoute
   '/api/public/cron/medical-reports': typeof ApiPublicCronMedicalReportsRoute
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
+  '/api/public/cron/seed-doses': typeof ApiPublicCronSeedDosesRoute
   '/api/public/cron/weekly-recap': typeof ApiPublicCronWeeklyRecapRoute
   '/api/public/cron/whoop-sync-all': typeof ApiPublicCronWhoopSyncAllRoute
   '/api/public/hooks/apple-health': typeof ApiPublicHooksAppleHealthRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
-  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
-  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
-  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/care/$ownerId/reports/$reportId': typeof AppCareOwnerIdReportsReportIdRoute
 }
 export interface FileRoutesById {
@@ -824,6 +848,7 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/terms': typeof TermsRoute
+  '/trust': typeof TrustRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/users': typeof UsersRoute
   '/_app/account': typeof AppAccountRoute
@@ -877,8 +902,8 @@ export interface FileRoutesById {
   '/_app/settings/sharing': typeof AppSettingsSharingRoute
   '/_app/settings/travel': typeof AppSettingsTravelRoute
   '/_app/today/risk': typeof AppTodayRiskRoute
+  '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
-  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
   '/share/report/$token': typeof ShareReportTokenRoute
@@ -888,20 +913,22 @@ export interface FileRoutesById {
   '/_app/journal/': typeof AppJournalIndexRoute
   '/_app/admin/reports/duplicates': typeof AppAdminReportsDuplicatesRoute
   '/_app/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
+  '/api/email/auth/preview': typeof ApiEmailAuthPreviewRoute
+  '/api/email/auth/webhook': typeof ApiEmailAuthWebhookRoute
+  '/api/email/queue/process': typeof ApiEmailQueueProcessRoute
+  '/api/email/transactional/preview': typeof ApiEmailTransactionalPreviewRoute
+  '/api/email/transactional/send': typeof ApiEmailTransactionalSendRoute
   '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
+  '/api/public/cron/journal-cleanup': typeof ApiPublicCronJournalCleanupRoute
   '/api/public/cron/medical-reports': typeof ApiPublicCronMedicalReportsRoute
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
+  '/api/public/cron/seed-doses': typeof ApiPublicCronSeedDosesRoute
   '/api/public/cron/weekly-recap': typeof ApiPublicCronWeeklyRecapRoute
   '/api/public/cron/whoop-sync-all': typeof ApiPublicCronWhoopSyncAllRoute
   '/api/public/hooks/apple-health': typeof ApiPublicHooksAppleHealthRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
-  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
-  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
-  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
-  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/_app/care/$ownerId/reports/$reportId': typeof AppCareOwnerIdReportsReportIdRoute
 }
 export interface FileRouteTypes {
@@ -924,6 +951,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/terms'
+    | '/trust'
     | '/unsubscribe'
     | '/users'
     | '/account'
@@ -977,8 +1005,8 @@ export interface FileRouteTypes {
     | '/settings/sharing'
     | '/settings/travel'
     | '/today/risk'
+    | '/api/email/suppression'
     | '/api/public/stripe-webhook'
-    | '/lovable/email/suppression'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
     | '/share/report/$token'
@@ -988,20 +1016,22 @@ export interface FileRouteTypes {
     | '/journal/'
     | '/admin/reports/duplicates'
     | '/reports/trends/$metricKey'
+    | '/api/email/auth/preview'
+    | '/api/email/auth/webhook'
+    | '/api/email/queue/process'
+    | '/api/email/transactional/preview'
+    | '/api/email/transactional/send'
     | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
+    | '/api/public/cron/journal-cleanup'
     | '/api/public/cron/medical-reports'
     | '/api/public/cron/oura-sync-all'
     | '/api/public/cron/purge-deleted-accounts'
+    | '/api/public/cron/seed-doses'
     | '/api/public/cron/weekly-recap'
     | '/api/public/cron/whoop-sync-all'
     | '/api/public/hooks/apple-health'
     | '/api/public/hooks/risk-forecaster'
-    | '/lovable/email/auth/preview'
-    | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
-    | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/care/$ownerId/reports/$reportId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1022,6 +1052,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/terms'
+    | '/trust'
     | '/unsubscribe'
     | '/users'
     | '/account'
@@ -1074,8 +1105,8 @@ export interface FileRouteTypes {
     | '/settings/sharing'
     | '/settings/travel'
     | '/today/risk'
+    | '/api/email/suppression'
     | '/api/public/stripe-webhook'
-    | '/lovable/email/suppression'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
     | '/share/report/$token'
@@ -1085,20 +1116,22 @@ export interface FileRouteTypes {
     | '/journal'
     | '/admin/reports/duplicates'
     | '/reports/trends/$metricKey'
+    | '/api/email/auth/preview'
+    | '/api/email/auth/webhook'
+    | '/api/email/queue/process'
+    | '/api/email/transactional/preview'
+    | '/api/email/transactional/send'
     | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
+    | '/api/public/cron/journal-cleanup'
     | '/api/public/cron/medical-reports'
     | '/api/public/cron/oura-sync-all'
     | '/api/public/cron/purge-deleted-accounts'
+    | '/api/public/cron/seed-doses'
     | '/api/public/cron/weekly-recap'
     | '/api/public/cron/whoop-sync-all'
     | '/api/public/hooks/apple-health'
     | '/api/public/hooks/risk-forecaster'
-    | '/lovable/email/auth/preview'
-    | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
-    | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/care/$ownerId/reports/$reportId'
   id:
     | '__root__'
@@ -1120,6 +1153,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/terms'
+    | '/trust'
     | '/unsubscribe'
     | '/users'
     | '/_app/account'
@@ -1173,8 +1207,8 @@ export interface FileRouteTypes {
     | '/_app/settings/sharing'
     | '/_app/settings/travel'
     | '/_app/today/risk'
+    | '/api/email/suppression'
     | '/api/public/stripe-webhook'
-    | '/lovable/email/suppression'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
     | '/share/report/$token'
@@ -1184,20 +1218,22 @@ export interface FileRouteTypes {
     | '/_app/journal/'
     | '/_app/admin/reports/duplicates'
     | '/_app/reports/trends/$metricKey'
+    | '/api/email/auth/preview'
+    | '/api/email/auth/webhook'
+    | '/api/email/queue/process'
+    | '/api/email/transactional/preview'
+    | '/api/email/transactional/send'
     | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
+    | '/api/public/cron/journal-cleanup'
     | '/api/public/cron/medical-reports'
     | '/api/public/cron/oura-sync-all'
     | '/api/public/cron/purge-deleted-accounts'
+    | '/api/public/cron/seed-doses'
     | '/api/public/cron/weekly-recap'
     | '/api/public/cron/whoop-sync-all'
     | '/api/public/hooks/apple-health'
     | '/api/public/hooks/risk-forecaster'
-    | '/lovable/email/auth/preview'
-    | '/lovable/email/auth/webhook'
-    | '/lovable/email/queue/process'
-    | '/lovable/email/transactional/preview'
-    | '/lovable/email/transactional/send'
     | '/_app/care/$ownerId/reports/$reportId'
   fileRoutesById: FileRoutesById
 }
@@ -1220,6 +1256,7 @@ export interface RootRouteChildren {
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
   TermsRoute: typeof TermsRoute
+  TrustRoute: typeof TrustRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   UsersRoute: typeof UsersRoute
   ApiChatRoute: typeof ApiChatRoute
@@ -1227,25 +1264,27 @@ export interface RootRouteChildren {
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   FriendAcceptRoute: typeof FriendAcceptRoute
   FriendJoinRoute: typeof FriendJoinRoute
+  ApiEmailSuppressionRoute: typeof ApiEmailSuppressionRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
-  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   OauthWhoopCallbackRoute: typeof OauthWhoopCallbackRoute
   ShareReportTokenRoute: typeof ShareReportTokenRoute
+  ApiEmailAuthPreviewRoute: typeof ApiEmailAuthPreviewRoute
+  ApiEmailAuthWebhookRoute: typeof ApiEmailAuthWebhookRoute
+  ApiEmailQueueProcessRoute: typeof ApiEmailQueueProcessRoute
+  ApiEmailTransactionalPreviewRoute: typeof ApiEmailTransactionalPreviewRoute
+  ApiEmailTransactionalSendRoute: typeof ApiEmailTransactionalSendRoute
   ApiPublicCronCareDailyDigestRoute: typeof ApiPublicCronCareDailyDigestRoute
   ApiPublicCronDoseRemindersRoute: typeof ApiPublicCronDoseRemindersRoute
+  ApiPublicCronJournalCleanupRoute: typeof ApiPublicCronJournalCleanupRoute
   ApiPublicCronMedicalReportsRoute: typeof ApiPublicCronMedicalReportsRoute
   ApiPublicCronOuraSyncAllRoute: typeof ApiPublicCronOuraSyncAllRoute
   ApiPublicCronPurgeDeletedAccountsRoute: typeof ApiPublicCronPurgeDeletedAccountsRoute
+  ApiPublicCronSeedDosesRoute: typeof ApiPublicCronSeedDosesRoute
   ApiPublicCronWeeklyRecapRoute: typeof ApiPublicCronWeeklyRecapRoute
   ApiPublicCronWhoopSyncAllRoute: typeof ApiPublicCronWhoopSyncAllRoute
   ApiPublicHooksAppleHealthRoute: typeof ApiPublicHooksAppleHealthRoute
   ApiPublicHooksRiskForecasterRoute: typeof ApiPublicHooksRiskForecasterRoute
-  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
-  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
-  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
-  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
-  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1262,6 +1301,13 @@ declare module '@tanstack/react-router' {
       path: '/unsubscribe'
       fullPath: '/unsubscribe'
       preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trust': {
+      id: '/trust'
+      path: '/trust'
+      fullPath: '/trust'
+      preLoaderRoute: typeof TrustRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -1614,18 +1660,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OauthOuraCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/suppression': {
-      id: '/lovable/email/suppression'
-      path: '/lovable/email/suppression'
-      fullPath: '/lovable/email/suppression'
-      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/stripe-webhook': {
       id: '/api/public/stripe-webhook'
       path: '/api/public/stripe-webhook'
       fullPath: '/api/public/stripe-webhook'
       preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/email/suppression': {
+      id: '/api/email/suppression'
+      path: '/api/email/suppression'
+      fullPath: '/api/email/suppression'
+      preLoaderRoute: typeof ApiEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/today/risk': {
@@ -1810,41 +1856,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminBillingRouteImport
       parentRoute: typeof AppAdminRoute
     }
-    '/lovable/email/transactional/send': {
-      id: '/lovable/email/transactional/send'
-      path: '/lovable/email/transactional/send'
-      fullPath: '/lovable/email/transactional/send'
-      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/transactional/preview': {
-      id: '/lovable/email/transactional/preview'
-      path: '/lovable/email/transactional/preview'
-      fullPath: '/lovable/email/transactional/preview'
-      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/queue/process': {
-      id: '/lovable/email/queue/process'
-      path: '/lovable/email/queue/process'
-      fullPath: '/lovable/email/queue/process'
-      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/auth/webhook': {
-      id: '/lovable/email/auth/webhook'
-      path: '/lovable/email/auth/webhook'
-      fullPath: '/lovable/email/auth/webhook'
-      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/auth/preview': {
-      id: '/lovable/email/auth/preview'
-      path: '/lovable/email/auth/preview'
-      fullPath: '/lovable/email/auth/preview'
-      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/risk-forecaster': {
       id: '/api/public/hooks/risk-forecaster'
       path: '/api/public/hooks/risk-forecaster'
@@ -1873,6 +1884,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronWeeklyRecapRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/seed-doses': {
+      id: '/api/public/cron/seed-doses'
+      path: '/api/public/cron/seed-doses'
+      fullPath: '/api/public/cron/seed-doses'
+      preLoaderRoute: typeof ApiPublicCronSeedDosesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/purge-deleted-accounts': {
       id: '/api/public/cron/purge-deleted-accounts'
       path: '/api/public/cron/purge-deleted-accounts'
@@ -1894,6 +1912,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronMedicalReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/journal-cleanup': {
+      id: '/api/public/cron/journal-cleanup'
+      path: '/api/public/cron/journal-cleanup'
+      fullPath: '/api/public/cron/journal-cleanup'
+      preLoaderRoute: typeof ApiPublicCronJournalCleanupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/dose-reminders': {
       id: '/api/public/cron/dose-reminders'
       path: '/api/public/cron/dose-reminders'
@@ -1906,6 +1931,41 @@ declare module '@tanstack/react-router' {
       path: '/api/public/cron/care-daily-digest'
       fullPath: '/api/public/cron/care-daily-digest'
       preLoaderRoute: typeof ApiPublicCronCareDailyDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/email/transactional/send': {
+      id: '/api/email/transactional/send'
+      path: '/api/email/transactional/send'
+      fullPath: '/api/email/transactional/send'
+      preLoaderRoute: typeof ApiEmailTransactionalSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/email/transactional/preview': {
+      id: '/api/email/transactional/preview'
+      path: '/api/email/transactional/preview'
+      fullPath: '/api/email/transactional/preview'
+      preLoaderRoute: typeof ApiEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/email/queue/process': {
+      id: '/api/email/queue/process'
+      path: '/api/email/queue/process'
+      fullPath: '/api/email/queue/process'
+      preLoaderRoute: typeof ApiEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/email/auth/webhook': {
+      id: '/api/email/auth/webhook'
+      path: '/api/email/auth/webhook'
+      fullPath: '/api/email/auth/webhook'
+      preLoaderRoute: typeof ApiEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/email/auth/preview': {
+      id: '/api/email/auth/preview'
+      path: '/api/email/auth/preview'
+      fullPath: '/api/email/auth/preview'
+      preLoaderRoute: typeof ApiEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/reports/trends/$metricKey': {
@@ -2134,6 +2194,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
   TermsRoute: TermsRoute,
+  TrustRoute: TrustRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   UsersRoute: UsersRoute,
   ApiChatRoute: ApiChatRoute,
@@ -2141,27 +2202,39 @@ const rootRouteChildren: RootRouteChildren = {
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   FriendAcceptRoute: FriendAcceptRoute,
   FriendJoinRoute: FriendJoinRoute,
+  ApiEmailSuppressionRoute: ApiEmailSuppressionRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
-  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   OauthWhoopCallbackRoute: OauthWhoopCallbackRoute,
   ShareReportTokenRoute: ShareReportTokenRoute,
+  ApiEmailAuthPreviewRoute: ApiEmailAuthPreviewRoute,
+  ApiEmailAuthWebhookRoute: ApiEmailAuthWebhookRoute,
+  ApiEmailQueueProcessRoute: ApiEmailQueueProcessRoute,
+  ApiEmailTransactionalPreviewRoute: ApiEmailTransactionalPreviewRoute,
+  ApiEmailTransactionalSendRoute: ApiEmailTransactionalSendRoute,
   ApiPublicCronCareDailyDigestRoute: ApiPublicCronCareDailyDigestRoute,
   ApiPublicCronDoseRemindersRoute: ApiPublicCronDoseRemindersRoute,
+  ApiPublicCronJournalCleanupRoute: ApiPublicCronJournalCleanupRoute,
   ApiPublicCronMedicalReportsRoute: ApiPublicCronMedicalReportsRoute,
   ApiPublicCronOuraSyncAllRoute: ApiPublicCronOuraSyncAllRoute,
   ApiPublicCronPurgeDeletedAccountsRoute:
     ApiPublicCronPurgeDeletedAccountsRoute,
+  ApiPublicCronSeedDosesRoute: ApiPublicCronSeedDosesRoute,
   ApiPublicCronWeeklyRecapRoute: ApiPublicCronWeeklyRecapRoute,
   ApiPublicCronWhoopSyncAllRoute: ApiPublicCronWhoopSyncAllRoute,
   ApiPublicHooksAppleHealthRoute: ApiPublicHooksAppleHealthRoute,
   ApiPublicHooksRiskForecasterRoute: ApiPublicHooksRiskForecasterRoute,
-  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
-  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
-  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
-  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
-  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

@@ -2,7 +2,18 @@ import * as React from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { format, startOfDay, startOfWeek, startOfMonth, startOfYear } from "date-fns";
-import { Zap, BookOpen, Pill, Download, FileText, Copy, Share2, Plus } from "lucide-react";
+import {
+  Zap,
+  BookOpen,
+  Pill,
+  Download,
+  FileText,
+  Copy,
+  Share2,
+  Plus,
+  PenLine,
+  Clock,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -18,6 +29,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useFreshAccount } from "@/hooks/use-fresh-account";
+import { RouteEmptyState } from "@/components/empty-states/route-empty-state";
 
 export const Route = createFileRoute("/_app/timeline")({
   head: () => ({ meta: [{ title: "Timeline · Purple" }] }),
@@ -29,11 +42,16 @@ type Range = "day" | "week" | "month" | "year" | "custom";
 function rangeStart(r: Range): Date {
   const now = new Date();
   switch (r) {
-    case "day": return startOfDay(now);
-    case "week": return startOfWeek(now, { weekStartsOn: 1 });
-    case "month": return startOfMonth(now);
-    case "year": return startOfYear(now);
-    case "custom": return startOfDay(now);
+    case "day":
+      return startOfDay(now);
+    case "week":
+      return startOfWeek(now, { weekStartsOn: 1 });
+    case "month":
+      return startOfMonth(now);
+    case "year":
+      return startOfYear(now);
+    case "custom":
+      return startOfDay(now);
   }
 }
 
@@ -51,10 +69,14 @@ function TimelinePage() {
   const navigate = useNavigate();
   const { session } = useAuth();
   const userId = session?.user.id;
+  const freshQuery = useFreshAccount();
+  const isFresh = freshQuery.data?.isFresh === true;
   const [range, setRange] = React.useState<Range>("week");
   const [search, setSearch] = React.useState("");
   const [customFrom, setCustomFrom] = React.useState<Date>(() => {
-    const d = new Date(); d.setDate(d.getDate() - 30); return startOfDay(d);
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return startOfDay(d);
   });
   const [customTo, setCustomTo] = React.useState<Date>(() => new Date());
 
@@ -111,7 +133,11 @@ function TimelinePage() {
           id: `j-${e.id}`,
           at: e.captured_at,
           kind: "journal",
-          title: e.ai_summary ?? (e.text?.slice(0, 80) ?? e.voice_transcript?.slice(0, 80) ?? "Journal entry"),
+          title:
+            e.ai_summary ??
+            e.text?.slice(0, 80) ??
+            e.voice_transcript?.slice(0, 80) ??
+            "Journal entry",
           body: null,
         });
       }
@@ -131,9 +157,7 @@ function TimelinePage() {
 
   const q = search.trim().toLowerCase();
   const filtered = q
-    ? rows.filter((r) =>
-        (r.title + " " + (r.body ?? "")).toLowerCase().includes(q),
-      )
+    ? rows.filter((r) => (r.title + " " + (r.body ?? "")).toLowerCase().includes(q))
     : rows;
 
   // ---- Exports ----
@@ -164,8 +188,11 @@ function TimelinePage() {
     const blob = new Blob([content], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); a.remove();
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
@@ -191,7 +218,9 @@ function TimelinePage() {
     if (navigator.share) {
       try {
         await navigator.share({ title: "Purple timeline", text });
-      } catch { /* user cancelled */ }
+      } catch {
+        /* user cancelled */
+      }
     } else {
       onCopy();
     }
@@ -234,124 +263,176 @@ function TimelinePage() {
         <div>
           <p className="label-eyebrow text-muted-foreground">{t("timeline.eyebrow")}</p>
           <h1 className="mt-3 font-serif text-[40px] sm:text-6xl leading-[1.05] tracking-[-0.02em] text-foreground">
-            {t("timeline.title1")}<br />{t("timeline.title2")}
+            {t("timeline.title1")}
+            <br />
+            {t("timeline.title2")}
           </h1>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="mt-2">
-              <Download className="h-4 w-4 mr-2" /> {t("timeline.export")}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuItem onClick={onExportCSV}>
-              <FileText className="h-4 w-4 mr-2" /> {t("timeline.downloadCsv")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onExportTxt}>
-              <FileText className="h-4 w-4 mr-2" /> {t("timeline.downloadText")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onPrint}>
-              <FileText className="h-4 w-4 mr-2" /> {t("timeline.print")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onCopy}>
-              <Copy className="h-4 w-4 mr-2" /> {t("timeline.copy")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onShare}>
-              <Share2 className="h-4 w-4 mr-2" /> {t("timeline.share")}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      <p className="mt-5 body-serif text-foreground/75 max-w-[560px]">
-        {t("timeline.intro")}
-      </p>
-
-      {/* Quick add */}
-      <div className="mt-6 flex flex-wrap items-center gap-2">
-        <span className="text-xs text-muted-foreground mr-1">{t("timeline.add")}</span>
-        <Button variant="outline" size="sm" onClick={() => navigate({ to: "/journal/new" })}>
-          <BookOpen className="h-3.5 w-3.5 mr-1.5" /> {t("timeline.journalEntry")}
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => navigate({ to: "/seizures/new" })}>
-          <Zap className="h-3.5 w-3.5 mr-1.5" /> {t("timeline.seizure")}
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => navigate({ to: "/meds" })}>
-          <Pill className="h-3.5 w-3.5 mr-1.5" /> {t("timeline.dose")}
-        </Button>
-      </div>
-
-      <div className="mt-6 flex flex-wrap items-center gap-2">
-        {(["day", "week", "month", "year", "custom"] as const).map((r) => (
-          <button
-            key={r}
-            onClick={() => setRange(r)}
-            className={cn(
-              "rounded-full px-4 py-1.5 text-sm border transition-colors capitalize",
-              range === r
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-card text-foreground border-border hover:bg-secondary/60",
-            )}
-          >
-            {t(`timeline.${r}`)}
-          </button>
-        ))}
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={t("timeline.search")}
-          className="ml-auto h-9 max-w-[220px]"
-        />
-      </div>
-      {range === "custom" && (
-        <div className="mt-4 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-card/60 p-3">
-          <div>
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">{t("timeline.from")}</p>
-            <DateTimePicker value={customFrom} onChange={(d) => d && setCustomFrom(d)} disableFuture />
-          </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">{t("timeline.to")}</p>
-            <DateTimePicker value={customTo} onChange={(d) => d && setCustomTo(d)} disableFuture />
-          </div>
-        </div>
-      )}
-
-      <div className="mt-8">
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
-        ) : filtered.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("timeline.emptyRange")}</p>
-        ) : (
-          <ol className="relative border-l border-border pl-6 space-y-5">
-            {filtered.map((r) => (
-              <li key={r.id} className="relative">
-                <span className="absolute -left-[31px] top-1.5 grid h-6 w-6 place-items-center rounded-full bg-card border border-border text-primary">
-                  {r.kind === "seizure" && <Zap className="h-3.5 w-3.5" />}
-                  {r.kind === "journal" && <BookOpen className="h-3.5 w-3.5" />}
-                  {r.kind === "dose" && <Pill className="h-3.5 w-3.5" />}
-                </span>
-                <div className="rounded-2xl border border-border bg-card p-4">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    {format(new Date(r.at), "EEE, MMM d · h:mm a")}
-                  </p>
-                  <p className="mt-1 font-serif text-[15px] leading-relaxed text-foreground">
-                    {r.title}
-                  </p>
-                  {r.body && (
-                    <p className="mt-1 text-sm text-foreground/75 whitespace-pre-wrap">{r.body}</p>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ol>
+        {!isFresh && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="mt-2">
+                <Download className="h-4 w-4 mr-2" /> {t("timeline.export")}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem onClick={onExportCSV}>
+                <FileText className="h-4 w-4 mr-2" /> {t("timeline.downloadCsv")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onExportTxt}>
+                <FileText className="h-4 w-4 mr-2" /> {t("timeline.downloadText")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onPrint}>
+                <FileText className="h-4 w-4 mr-2" /> {t("timeline.print")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onCopy}>
+                <Copy className="h-4 w-4 mr-2" /> {t("timeline.copy")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onShare}>
+                <Share2 className="h-4 w-4 mr-2" /> {t("timeline.share")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
+      <p className="mt-5 body-serif text-foreground/75 max-w-[560px]">{t("timeline.intro")}</p>
 
-      <p className="mt-10 text-xs text-muted-foreground">
-        Want to add older history? Go to{" "}
-        <Link to="/meds" className="underline">Medications</Link> or{" "}
-        <Link to="/seizures/new" className="underline">Log past event</Link>{" "}
-       , both accept any date.
-      </p>
+      {isFresh ? (
+        <div className="mt-8">
+          <RouteEmptyState
+            testId="fresh-empty-timeline"
+            eyebrow={t("timeline.freshEyebrow")}
+            heading={t("timeline.freshHeading")}
+            body={t("timeline.freshBody")}
+            icon={Clock}
+            action={
+              <Button asChild size="lg" className="rounded-full h-12 px-6 text-base">
+                <Link to="/journal/new">
+                  <PenLine className="h-4 w-4 mr-2" />
+                  {t("timeline.freshCta")}
+                </Link>
+              </Button>
+            }
+          />
+        </div>
+      ) : (
+        <>
+          {/* Quick add */}
+          <div className="mt-6 flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground mr-1">{t("timeline.add")}</span>
+            <Button variant="outline" size="sm" onClick={() => navigate({ to: "/journal/new" })}>
+              <BookOpen className="h-3.5 w-3.5 mr-1.5" /> {t("timeline.journalEntry")}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate({ to: "/seizures/new" })}>
+              <Zap className="h-3.5 w-3.5 mr-1.5" /> {t("timeline.seizure")}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate({ to: "/meds" })}>
+              <Pill className="h-3.5 w-3.5 mr-1.5" /> {t("timeline.dose")}
+            </Button>
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center gap-2">
+            {(["day", "week", "month", "year", "custom"] as const).map((r) => (
+              <button
+                key={r}
+                onClick={() => setRange(r)}
+                className={cn(
+                  "rounded-full px-4 py-1.5 text-sm border transition-colors capitalize",
+                  range === r
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card text-foreground border-border hover:bg-secondary/60",
+                )}
+              >
+                {t(`timeline.${r}`)}
+              </button>
+            ))}
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t("timeline.search")}
+              className="ml-auto h-9 max-w-[220px]"
+            />
+          </div>
+          {range === "custom" && (
+            <div className="mt-4 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-card/60 p-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                  {t("timeline.from")}
+                </p>
+                <DateTimePicker
+                  value={customFrom}
+                  onChange={(d) => d && setCustomFrom(d)}
+                  disableFuture
+                />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                  {t("timeline.to")}
+                </p>
+                <DateTimePicker
+                  value={customTo}
+                  onChange={(d) => d && setCustomTo(d)}
+                  disableFuture
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="mt-8">
+            {isLoading ? (
+              <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+            ) : filtered.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center">
+                <p className="text-sm text-muted-foreground">{t("timeline.emptyRange")}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{t("timeline.emptyRangeHint")}</p>
+                <Link
+                  to="/journal/new"
+                  className="mt-4 inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+                >
+                  {t("timeline.emptyRangeCta")}
+                </Link>
+              </div>
+            ) : (
+              <ol className="relative border-l border-border pl-6 space-y-5">
+                {filtered.map((r) => (
+                  <li key={r.id} className="relative">
+                    <span className="absolute -left-[31px] top-1.5 grid h-6 w-6 place-items-center rounded-full bg-card border border-border text-primary">
+                      {r.kind === "seizure" && <Zap className="h-3.5 w-3.5" />}
+                      {r.kind === "journal" && <BookOpen className="h-3.5 w-3.5" />}
+                      {r.kind === "dose" && <Pill className="h-3.5 w-3.5" />}
+                    </span>
+                    <div className="rounded-2xl border border-border bg-card p-4">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                        {format(new Date(r.at), "EEE, MMM d · h:mm a")}
+                      </p>
+                      <p className="mt-1 font-serif text-[15px] leading-relaxed text-foreground">
+                        {r.title}
+                      </p>
+                      {r.body && (
+                        <p className="mt-1 text-sm text-foreground/75 whitespace-pre-wrap">
+                          {r.body}
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+
+          <p className="mt-10 text-xs text-muted-foreground">
+            Want to add older history? Go to{" "}
+            <Link to="/meds" className="underline">
+              Medications
+            </Link>{" "}
+            or{" "}
+            <Link to="/seizures/new" className="underline">
+              Log past event
+            </Link>{" "}
+            , both accept any date.
+          </p>
+        </>
+      )}
     </div>
   );
 }

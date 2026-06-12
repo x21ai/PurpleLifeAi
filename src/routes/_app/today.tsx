@@ -13,9 +13,15 @@ import { TodayDoses } from "@/components/meds/today-doses";
 import { MedsMiniTimeline } from "@/components/meds/meds-mini-timeline";
 import { TripBanner } from "@/components/travel/trip-banner";
 import { TodayInstallBanner } from "@/components/pwa/today-install-banner";
+import { ConnectWearablesCard } from "@/components/today/connect-wearables-card";
+import { MissedDoseCatchup } from "@/components/today/missed-dose-catchup";
 import { RestoreBanner } from "@/components/settings/restore-banner";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
-import { promptsForConditions, showsSeizureFeatures, getTodayGreeting } from "@/lib/condition-prompts";
+import {
+  promptsForConditions,
+  showsSeizureFeatures,
+  getTodayGreeting,
+} from "@/lib/condition-prompts";
 import { useCareProfile } from "@/hooks/use-care-profile";
 import { TodayEmptyState } from "@/components/today/empty-state";
 import { useTranslation } from "react-i18next";
@@ -32,8 +38,10 @@ import { WeeklyRecapCard } from "@/components/today/weekly-recap-card";
 import { SevenDayTrendStrip } from "@/components/today/seven-day-trend-strip";
 import { ReEngagementNudge } from "@/components/today/re-engagement-nudge";
 import { TopInsightCard } from "@/components/today/top-insight-card";
+import { localDateKey, localDayIndex } from "@/lib/utils";
 import { PreTripChecklist } from "@/components/today/pre-trip-checklist";
 import { TripWrapupCard } from "@/components/today/trip-wrapup-card";
+import { useFreshAccount } from "@/hooks/use-fresh-account";
 
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
@@ -85,13 +93,30 @@ function TodayPage() {
   const [focus, setFocus] = useState<"readiness" | "sleep" | "activity">("sleep");
   const [expanded, setExpanded] = useState(false);
   const [announcement, setAnnouncement] = useState<AdminMessage | null>(null);
+  const freshQuery = useFreshAccount();
+  const isFresh = freshQuery.data?.isFresh === true;
   const [journalCount, setJournalCount] = useState<number | null>(null);
   const [emptyDismissed, setEmptyDismissed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return sessionStorage.getItem("purple-today-empty-dismissed") === "1";
   });
+  // One-time warm greeting after onboarding, echoing the user's first entry.
+  // Key written by /welcome; cleared after the first Today render.
+  const [firstWords, setFirstWords] = useState<string | null>(null);
 
   useEffect(() => setNow(new Date()), []);
+
+  useEffect(() => {
+    try {
+      const words = sessionStorage.getItem("purple-first-words");
+      if (words) {
+        setFirstWords(words);
+        sessionStorage.removeItem("purple-first-words");
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   useEffect(() => {
     if (!userId) return;
@@ -115,11 +140,7 @@ function TodayPage() {
           .order("for_date", { ascending: false })
           .limit(1)
           .maybeSingle(),
-        supabase
-          .from("profiles")
-          .select("first_name, conditions")
-          .eq("id", userId)
-          .maybeSingle(),
+        supabase.from("profiles").select("first_name, conditions").eq("id", userId).maybeSingle(),
         supabase
           .from("admin_messages")
           .select("id, subject, body, created_at")
@@ -156,12 +177,12 @@ function TodayPage() {
     const { journalPrompt } = getTodayGreeting(profile?.conditions ?? [], now.getHours());
     const list = promptsForConditions(profile?.conditions ?? []);
     if (carePrompts && carePrompts.length > 0) {
-      const day = Math.floor(now.getTime() / 86_400_000);
+      const day = localDayIndex(now);
       return carePrompts[day % carePrompts.length];
     }
     if (list.length === 0) return journalPrompt;
     // Deterministic per-day so the prompt doesn't flicker on re-render.
-    const day = Math.floor(now.getTime() / 86_400_000);
+    const day = localDayIndex(now);
     return list[day % list.length];
   }, [profile?.conditions, now, carePrompts]);
   const greetingSuffix = useMemo(() => {
@@ -174,16 +195,20 @@ function TodayPage() {
   const sleep = bio?.sleep_score ?? null;
   const activity = bio?.oura_activity_score ?? null;
 
-  const focusScore =
-    focus === "readiness" ? readiness : focus === "sleep" ? sleep : activity;
-  const focusLabel =
-    focus === "readiness" ? "Readiness" : focus === "sleep" ? "Sleep" : "Activity";
+  const focusScore = focus === "readiness" ? readiness : focus === "sleep" ? sleep : activity;
+  const focusLabel = focus === "readiness" ? "Readiness" : focus === "sleep" ? "Sleep" : "Activity";
 
   return (
     <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-10 sm:pt-16 pb-16">
       <RestoreBanner />
       <div className="mb-6">
         <TodayInstallBanner />
+      </div>
+
+      <MissedDoseCatchup />
+
+      <div className="mb-6 empty:mb-0">
+        <ConnectWearablesCard />
       </div>
 
       <ConditionWelcomeNudge />
@@ -198,10 +223,7 @@ function TodayPage() {
       )}
 
       {journalCount != null && journalCount > 0 && (
-        <ReEngagementNudge
-          conditions={profile?.conditions ?? []}
-          hasAnyEntries
-        />
+        <ReEngagementNudge conditions={profile?.conditions ?? []} hasAnyEntries />
       )}
 
       {announcement && (
@@ -224,216 +246,238 @@ function TodayPage() {
         {firstName ? `, ${firstName}` : ""}.
       </h1>
 
-      {greetingSuffix && !forecast?.ai_narrative && (
-        <p className="mt-2 text-sm text-muted-foreground">{greetingSuffix}</p>
-      )}
-
-      {forecast?.ai_narrative ? (
-        <p className="body-serif mt-4 max-w-[600px] text-foreground/75">
-          {forecast.ai_narrative}
+      {firstWords ? (
+        <p className="mt-2 text-sm text-muted-foreground" suppressHydrationWarning>
+          {t("todayPage.firstWordsNote", { words: firstWords })}
         </p>
       ) : (
-        <p className="body-serif mt-4 max-w-[600px] text-foreground/60">
-          {conditionPrompt}
-        </p>
+        !isFresh &&
+        greetingSuffix &&
+        !forecast?.ai_narrative && (
+          <p className="mt-2 text-sm text-muted-foreground">{greetingSuffix}</p>
+        )
       )}
 
-      <section className="mt-12 sm:mt-16 grid grid-cols-3 items-center gap-2">
-        <ScoreTile
-          value={readiness ?? "–"}
-          label="Readiness"
-          active={focus === "readiness"}
-          onClick={() => {
-            if (focus === "readiness") setExpanded(true);
-            else setFocus("readiness");
-          }}
-        />
-        <ScoreTile
-          value={sleep ?? "–"}
-          label="Sleep"
-          active={focus === "sleep"}
-          onClick={() => {
-            if (focus === "sleep") setExpanded(true);
-            else setFocus("sleep");
-          }}
-        />
-        <ScoreTile
-          value={activity ?? "–"}
-          label="Activity"
-          active={focus === "activity"}
-          onClick={() => {
-            if (focus === "activity") setExpanded(true);
-            else setFocus("activity");
-          }}
-        />
-      </section>
+      {!isFresh &&
+        (forecast?.ai_narrative ? (
+          <p className="body-serif mt-4 max-w-[600px] text-foreground/75">
+            {forecast.ai_narrative}
+          </p>
+        ) : (
+          <p className="body-serif mt-4 max-w-[600px] text-foreground/60">{conditionPrompt}</p>
+        ))}
 
-      {expanded && typeof focusScore === "number" && (
-        <div
-          className="fixed inset-0 z-50 bg-background/95 backdrop-blur overflow-y-auto"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setExpanded(false)}
-        >
-          <div
-            className="mx-auto max-w-2xl px-5 sm:px-8 py-10"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
+      {!isFresh && (
+        <>
+          <section className="mt-12 sm:mt-16 grid grid-cols-3 items-center gap-2">
+            <ScoreTile
+              value={readiness ?? "–"}
+              label="Readiness"
+              active={focus === "readiness"}
+              onClick={() => {
+                if (focus === "readiness") setExpanded(true);
+                else setFocus("readiness");
+              }}
+            />
+            <ScoreTile
+              value={sleep ?? "–"}
+              label="Sleep"
+              active={focus === "sleep"}
+              onClick={() => {
+                if (focus === "sleep") setExpanded(true);
+                else setFocus("sleep");
+              }}
+            />
+            <ScoreTile
+              value={activity ?? "–"}
+              label="Activity"
+              active={focus === "activity"}
+              onClick={() => {
+                if (focus === "activity") setExpanded(true);
+                else setFocus("activity");
+              }}
+            />
+          </section>
+
+          {bio?.recorded_at && now && localDateKey(bio.recorded_at) !== localDateKey(now) && (
+            <p className="mt-2 text-xs text-muted-foreground" suppressHydrationWarning>
+              {t("todayPage.scoresAsOf", {
+                day: format(new Date(bio.recorded_at), "EEEE"),
+              })}
+            </p>
+          )}
+
+          {expanded && typeof focusScore === "number" && (
+            <div
+              className="fixed inset-0 z-50 bg-background/95 backdrop-blur overflow-y-auto"
+              role="dialog"
+              aria-modal="true"
               onClick={() => setExpanded(false)}
-              className="label-eyebrow hover:text-foreground"
-              aria-label="Close detail"
             >
-              ← Close
-            </button>
-            <div className="mt-6">
-              <ScoreHero
-                score={focusScore}
-                label={focusLabel}
-                band={bandForReadiness(focusScore)}
-                phrase={
-                  focusScore >= 85 ? "A steady day."
-                  : focusScore >= 70 ? "Doing alright."
-                  : focusScore >= 50 ? "Worth slowing down."
-                  : "Time to be careful."
-                }
-                narrative={forecast?.ai_narrative ?? undefined}
+              <div
+                className="mx-auto max-w-2xl px-5 sm:px-8 py-10"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={() => setExpanded(false)}
+                  className="label-eyebrow hover:text-foreground"
+                  aria-label="Close detail"
+                >
+                  ← Close
+                </button>
+                <div className="mt-6">
+                  <ScoreHero
+                    score={focusScore}
+                    label={focusLabel}
+                    band={bandForReadiness(focusScore)}
+                    phrase={
+                      focusScore >= 85
+                        ? "A steady day."
+                        : focusScore >= 70
+                          ? "Doing alright."
+                          : focusScore >= 50
+                            ? "Worth slowing down."
+                            : "Time to be careful."
+                    }
+                    narrative={forecast?.ai_narrative ?? undefined}
+                  />
+                </div>
+                <div className="mt-6">
+                  <Link
+                    to="/today/risk"
+                    className="inline-flex items-center gap-1 text-sm text-foreground/70 hover:text-foreground"
+                  >
+                    See the full reading <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {forecast?.ai_narrative && (
+            <div className="mt-12">
+              <NarrativeBlock>{forecast.ai_narrative}</NarrativeBlock>
+            </div>
+          )}
+
+          <section
+            className={`mt-10 grid gap-3 ${
+              showsSeizureFeatures(profile?.conditions) ? "grid-cols-3" : "grid-cols-2"
+            }`}
+          >
+            <QuickAction icon={BookOpen} label="Journal" to="/journal" />
+            <QuickAction icon={Pill} label="Meds" to="/meds" />
+            {showsSeizureFeatures(profile?.conditions) && (
+              <QuickAction icon={Zap} label="Seizure" to="/seizures/new" tone="accent" />
+            )}
+          </section>
+
+          {bio && (
+            <div className="mt-12">
+              <BodyMeasurementsRow
+                items={[
+                  {
+                    value:
+                      bio.body_temp_deviation_c != null
+                        ? `${bio.body_temp_deviation_c > 0 ? "+" : ""}${bio.body_temp_deviation_c.toFixed(1)}°`
+                        : "–",
+                    label: "Temp Δ",
+                  },
+                  {
+                    value: bio.respiratory_rate_bpm ? Math.round(bio.respiratory_rate_bpm) : "–",
+                    label: "Resp /min",
+                  },
+                  {
+                    value: bio.spo2_pct ? `${Math.round(bio.spo2_pct)}%` : "–",
+                    label: "SpO₂",
+                  },
+                ]}
               />
             </div>
-            <div className="mt-6">
+          )}
+
+          <TodayWidgetBoundary name="travel">
+            <TripBanner />
+            <PreTripChecklist />
+            <TripWrapupCard />
+          </TodayWidgetBoundary>
+          <TodayWidgetBoundary name="doses">
+            <MedsMiniTimeline className="mb-3" />
+            <TodayDoses />
+          </TodayWidgetBoundary>
+
+          <TodayWidgetBoundary name="setup">
+            <OnboardingChecklist />
+          </TodayWidgetBoundary>
+          <TodayWidgetBoundary name="first-entry-nudge">
+            <FirstEntryNudge />
+          </TodayWidgetBoundary>
+          <TodayWidgetBoundary name="tips">
+            <ConditionTipCard conditions={profile?.conditions} />
+          </TodayWidgetBoundary>
+          <TodayWidgetBoundary name="suggestions">
+            <FeatureSuggestionCard />
+          </TodayWidgetBoundary>
+          <TodayWidgetBoundary name="recap">
+            <WeeklyRecapCard />
+          </TodayWidgetBoundary>
+          <TodayWidgetBoundary name="trends">
+            <SevenDayTrendStrip />
+          </TodayWidgetBoundary>
+          <TodayWidgetBoundary name="insight">
+            <TopInsightCard />
+          </TodayWidgetBoundary>
+
+          {/* Hydration & auras quick-capture */}
+          {showHydration && (
+            <section className="mt-10 rounded-2xl ring-1 ring-border bg-card p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="label-eyebrow text-muted-foreground">
+                    {showAura ? "Hydration & auras" : "Hydration"}
+                  </p>
+                  <p className="mt-1 text-sm text-foreground">
+                    {showAura
+                      ? "Log every drink. Capture déjà vu the moment it lands."
+                      : "Log every drink, water and electrolytes."}
+                  </p>
+                </div>
+                <Link
+                  to="/hydration"
+                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <Droplets className="h-3.5 w-3.5" /> Day view <ChevronRight className="h-3 w-3" />
+                </Link>
+              </div>
+              <div className="mt-4">
+                <QuickAddWater />
+              </div>
+              {showAura && (
+                <>
+                  <div className="mt-3">
+                    <LogAuraSheet />
+                  </div>
+                  <PatternHintCard />
+                </>
+              )}
+            </section>
+          )}
+
+          {bio && (
+            <div className="mt-10 flex flex-col items-center gap-3">
+              <OuraSyncStatus variant="compact" />
               <Link
-                to="/today/risk"
-                className="inline-flex items-center gap-1 text-sm text-foreground/70 hover:text-foreground"
+                to="/biometrics"
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
               >
-                See the full reading <ChevronRight className="h-4 w-4" />
+                <Activity className="h-3 w-3" />
+                Dig deeper into your signals
+                <ChevronRight className="h-3 w-3" />
               </Link>
             </div>
-          </div>
-        </div>
-      )}
-
-      {forecast?.ai_narrative && (
-        <div className="mt-12">
-          <NarrativeBlock>{forecast.ai_narrative}</NarrativeBlock>
-        </div>
-      )}
-
-      <section
-        className={`mt-10 grid gap-3 ${
-          showsSeizureFeatures(profile?.conditions) ? "grid-cols-3" : "grid-cols-2"
-        }`}
-      >
-        <QuickAction icon={BookOpen} label="Journal" to="/journal" />
-        <QuickAction icon={Pill} label="Meds" to="/meds" />
-        {showsSeizureFeatures(profile?.conditions) && (
-          <QuickAction icon={Zap} label="Seizure" to="/seizures/new" tone="accent" />
-        )}
-      </section>
-
-      {bio && (
-        <div className="mt-12">
-          <BodyMeasurementsRow
-            items={[
-              {
-                value:
-                  bio.body_temp_deviation_c != null
-                    ? `${bio.body_temp_deviation_c > 0 ? "+" : ""}${bio.body_temp_deviation_c.toFixed(1)}°`
-                    : "–",
-                label: "Temp Δ",
-              },
-              {
-                value: bio.respiratory_rate_bpm ? Math.round(bio.respiratory_rate_bpm) : "–",
-                label: "Resp /min",
-              },
-              {
-                value: bio.spo2_pct ? `${Math.round(bio.spo2_pct)}%` : "–",
-                label: "SpO₂",
-              },
-            ]}
-          />
-        </div>
-      )}
-
-      <TodayWidgetBoundary name="travel">
-        <TripBanner />
-        <PreTripChecklist />
-        <TripWrapupCard />
-      </TodayWidgetBoundary>
-      <TodayWidgetBoundary name="doses">
-        <MedsMiniTimeline className="mb-3" />
-        <TodayDoses />
-      </TodayWidgetBoundary>
-
-      <TodayWidgetBoundary name="setup">
-        <OnboardingChecklist />
-      </TodayWidgetBoundary>
-      <TodayWidgetBoundary name="first-entry-nudge">
-        <FirstEntryNudge />
-      </TodayWidgetBoundary>
-      <TodayWidgetBoundary name="tips">
-        <ConditionTipCard conditions={profile?.conditions} />
-      </TodayWidgetBoundary>
-      <TodayWidgetBoundary name="suggestions">
-        <FeatureSuggestionCard />
-      </TodayWidgetBoundary>
-      <TodayWidgetBoundary name="recap">
-        <WeeklyRecapCard />
-      </TodayWidgetBoundary>
-      <TodayWidgetBoundary name="trends">
-        <SevenDayTrendStrip />
-      </TodayWidgetBoundary>
-      <TodayWidgetBoundary name="insight">
-        <TopInsightCard />
-      </TodayWidgetBoundary>
-
-      {/* Hydration & auras quick-capture */}
-      {showHydration && (
-        <section className="mt-10 rounded-2xl ring-1 ring-border bg-card p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="label-eyebrow text-muted-foreground">
-                {showAura ? "Hydration & auras" : "Hydration"}
-              </p>
-              <p className="mt-1 text-sm text-foreground">
-                {showAura
-                  ? "Log every drink. Capture déjà vu the moment it lands."
-                  : "Log every drink, water and electrolytes."}
-              </p>
-            </div>
-            <Link
-              to="/hydration"
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-            >
-              <Droplets className="h-3.5 w-3.5" /> Day view <ChevronRight className="h-3 w-3" />
-            </Link>
-          </div>
-          <div className="mt-4">
-            <QuickAddWater />
-          </div>
-          {showAura && (
-            <>
-              <div className="mt-3">
-                <LogAuraSheet />
-              </div>
-              <PatternHintCard />
-            </>
           )}
-        </section>
-      )}
-
-      {bio && (
-        <div className="mt-10 flex flex-col items-center gap-3">
-          <OuraSyncStatus variant="compact" />
-          <Link
-            to="/biometrics"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <Activity className="h-3 w-3" />
-            Dig deeper into your signals
-            <ChevronRight className="h-3 w-3" />
-          </Link>
-        </div>
+        </>
       )}
     </div>
   );

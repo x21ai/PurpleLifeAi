@@ -4,11 +4,9 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  getOrCreateAppleHealthConfig,
-  disconnectAppleHealth,
-} from "@/lib/apple-health.functions";
+import { getOrCreateAppleHealthConfig, disconnectAppleHealth } from "@/lib/apple-health.functions";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
 
 function relativeTime(iso: string | null): string {
   if (!iso) return "never";
@@ -40,10 +38,13 @@ export function AppleHealthConnection() {
       .maybeSingle();
     setConnected(!!data);
     setSecret(data?.webhook_secret ?? null);
-    setLastSync(data?.last_webhook_at ?? data?.last_sync_at ?? null);
+    // "Last synced" means data actually arrived; pings only prove the wire.
+    setLastSync(data?.last_sync_at ?? null);
   }, []);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   const connect = async () => {
     setBusy(true);
@@ -53,7 +54,7 @@ export function AppleHealthConnection() {
       setConnected(true);
       toast.success("Apple Health ready. Copy your webhook URL below.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Couldn't set up Apple Health");
+      toast.error(userMessage(e, "Couldn't set up Apple Health"));
     } finally {
       setBusy(false);
     }
@@ -85,9 +86,10 @@ export function AppleHealthConnection() {
   };
 
   if (connected && secret) {
-    const url = typeof window !== "undefined"
-      ? `${window.location.origin}/api/public/hooks/apple-health?token=${secret}`
-      : "";
+    const url =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/api/public/hooks/apple-health?token=${secret}`
+        : "";
     return (
       <div className="py-2 space-y-3">
         <div className="flex items-center justify-between gap-3">
@@ -109,8 +111,8 @@ export function AppleHealthConnection() {
 
         <div className="pl-11 space-y-2">
           <p className="text-xs text-muted-foreground">
-            In Health Auto Export (iOS) add an automation pointing to this URL,
-            JSON format, every 1–6 hours:
+            In Health Auto Export (iOS) add an automation pointing to this URL, JSON format, every
+            1–6 hours:
           </p>
           <div className="flex items-center gap-2">
             <code className="flex-1 truncate rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-mono">
@@ -141,7 +143,9 @@ export function AppleHealthConnection() {
         <div className="min-w-0">
           <p className="font-serif text-base text-foreground">Apple Health</p>
           <p className="text-xs text-muted-foreground truncate">
-            {connected === null ? "\u00a0" : "Sleep, HRV, steps, VO2max (via Health Auto Export or XML)"}
+            {connected === null
+              ? "\u00a0"
+              : "Sleep, HRV, steps, VO2max (via Health Auto Export or XML)"}
           </p>
         </div>
       </div>

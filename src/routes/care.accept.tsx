@@ -22,7 +22,9 @@ function AcceptInvitePage() {
   const { token } = useSearch({ from: "/care/accept" });
   const navigate = useNavigate();
   const accept = useServerFn(acceptInvite);
-  const [state, setState] = useState<"idle" | "checking" | "running" | "done" | "error">("checking");
+  const [state, setState] = useState<"idle" | "checking" | "running" | "done" | "error">(
+    "checking",
+  );
   const [message, setMessage] = useState<string>("");
 
   useEffect(() => {
@@ -61,23 +63,28 @@ function AcceptInvitePage() {
         <p className="label-eyebrow text-muted-foreground">Caregiver invite</p>
         <h1 className="mt-2 font-serif text-4xl text-foreground">Join their circle</h1>
         <p className="mt-4 text-sm text-muted-foreground">
-          Accepting gives you the access they granted. They'll always control what you can do and can revoke any time.
+          Accepting gives you the access they granted. They'll always control what you can do and
+          can revoke any time.
         </p>
         {state === "checking" && (
-          <p className="mt-6 text-sm text-muted-foreground"><Loader2 className="inline h-3 w-3 animate-spin" /> Checking your session…</p>
+          <p className="mt-6 text-sm text-muted-foreground">
+            <Loader2 className="inline h-3 w-3 animate-spin" /> Checking your session…
+          </p>
         )}
         {state === "idle" && (
-          <Button className="mt-6" onClick={handleAccept}>Accept invite</Button>
+          <Button className="mt-6" onClick={handleAccept}>
+            Accept invite
+          </Button>
         )}
         {state === "running" && (
-          <p className="mt-6 text-sm text-muted-foreground"><Loader2 className="inline h-3 w-3 animate-spin" /> Accepting…</p>
+          <p className="mt-6 text-sm text-muted-foreground">
+            <Loader2 className="inline h-3 w-3 animate-spin" /> Accepting…
+          </p>
         )}
         {state === "done" && (
           <p className="mt-6 text-sm text-emerald-600">All set. Taking you to their dashboard…</p>
         )}
-        {state === "error" && (
-          <p className="mt-6 text-sm text-destructive">{message}</p>
-        )}
+        {state === "error" && <p className="mt-6 text-sm text-destructive">{message}</p>}
       </div>
     </div>
   );

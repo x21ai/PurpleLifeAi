@@ -85,10 +85,5 @@ export function recognizeFromText(
   userId: string,
   text: string,
 ): Promise<IntakeRecognition> {
-  return recognize(
-    supabase,
-    userId,
-    `Identify what I had: """${text.slice(0, 800)}"""`,
-    null,
-  );
+  return recognize(supabase, userId, `Identify what I had: """${text.slice(0, 800)}"""`, null);
 }

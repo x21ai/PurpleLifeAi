@@ -83,10 +83,7 @@ export function CaregiverNavLink({
       )}
     >
       <HeartHandshake
-        className={cn(
-          "h-5 w-5 shrink-0",
-          active && "text-[color:var(--purple-primary)]",
-        )}
+        className={cn("h-5 w-5 shrink-0", active && "text-[color:var(--purple-primary)]")}
         strokeWidth={active ? 2 : 1.6}
       />
       <span className="hidden lg:inline flex-1">Caregiver</span>

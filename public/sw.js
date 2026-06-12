@@ -4,22 +4,43 @@ const CACHE = "purple-shell-v4";
 const SHELL = ["/manifest.json", "/icon-192.png", "/icon-512.png"];
 const DB_NAME = "purple-med-schedule";
 const STORE = "doses";
+// Delivery instrumentation: fires and acknowledgments queue here and the app
+// flushes them to the server on open (src/lib/notification-delivery.ts).
+const DELIVERY_STORE = "delivery_log";
 const CHECK_INTERVAL_MS = 60_000;
 
 let checkTimer = null;
 
 function openDb() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
+    const req = indexedDB.open(DB_NAME, 2);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE)) {
         db.createObjectStore(STORE, { keyPath: "doseId" });
       }
+      if (!db.objectStoreNames.contains(DELIVERY_STORE)) {
+        db.createObjectStore(DELIVERY_STORE, { autoIncrement: true });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
+}
+
+async function logDeliveryEvent(event) {
+  try {
+    const db = await openDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(DELIVERY_STORE, "readwrite");
+      tx.objectStore(DELIVERY_STORE).add(event);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (e) {
+    // Instrumentation must never break the reminder itself.
+    console.warn("[purple sw] delivery log failed", e);
+  }
 }
 
 async function clearDoses() {
@@ -96,22 +117,38 @@ async function checkDueDoses() {
   const now = Date.now();
   const windowMs = CHECK_INTERVAL_MS;
 
+  // Doses that became due while the device slept or the SW was suspended
+  // still fire once (up to 12h late) instead of being silently dropped,
+  // which was a silent-data-loss path on every platform.
+  const MAX_LATE_MS = 12 * 60 * 60 * 1000;
+
   for (const dose of doses) {
     if (dose.notified) continue;
     const dueAt = new Date(dose.scheduledAt).getTime();
-    if (dueAt <= now + windowMs && dueAt >= now - windowMs) {
-      await showDoseNotification(dose);
+    if (dueAt <= now + windowMs && dueAt >= now - MAX_LATE_MS) {
+      await showDoseNotification(dose, dueAt < now - windowMs);
       await markNotified(dose.doseId);
-    } else if (dueAt < now - windowMs) {
+      await logDeliveryEvent({
+        kind: "fired",
+        doseId: dose.doseId,
+        scheduledAt: dose.scheduledAt,
+        firedAt: new Date().toISOString(),
+        channel: "sw_local",
+      });
+    } else if (dueAt < now - MAX_LATE_MS) {
       await removeDose(dose.doseId);
     }
   }
 }
 
-async function showDoseNotification(dose) {
+async function showDoseNotification(dose, late = false) {
   const dosage = dose.dosage ? `${dose.dosage}. ` : "";
-  await self.registration.showNotification(`Time for ${dose.medName}`, {
-    body: `${dosage}Tap when you have taken it.`,
+  const title = late ? `Still pending: ${dose.medName}` : `Time for ${dose.medName}`;
+  const body = late
+    ? `${dosage}This was scheduled earlier. Tap to log it.`
+    : `${dosage}Tap when you have taken it.`;
+  await self.registration.showNotification(title, {
+    body,
     tag: `med-dose-${dose.doseId}`,
     icon: "/icon-192.png",
     badge: "/icon-192.png",
@@ -119,6 +156,8 @@ async function showDoseNotification(dose) {
     data: {
       doseId: dose.doseId,
       medicationId: dose.medicationId,
+      scheduledAt: dose.scheduledAt,
+      channel: "sw_local",
       authToken: dose.authToken,
       supabaseUrl: dose.supabaseUrl,
       url: "/meds",
@@ -149,7 +188,10 @@ async function callDoseAction(dose, action) {
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(SHELL).catch(() => {})).then(() => self.skipWaiting()),
+    caches
+      .open(CACHE)
+      .then((c) => c.addAll(SHELL).catch(() => {}))
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -183,13 +225,18 @@ self.addEventListener("fetch", (event) => {
       caches.match(req).then(
         (cached) =>
           cached ||
-          fetch(req).then((res) => {
-            if (res.ok) {
-              const copy = res.clone();
-              caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
-            }
-            return res;
-          }).catch(() => cached),
+          fetch(req)
+            .then((res) => {
+              if (res.ok) {
+                const copy = res.clone();
+                caches
+                  .open(CACHE)
+                  .then((c) => c.put(req, copy))
+                  .catch(() => {});
+              }
+              return res;
+            })
+            .catch(() => cached),
       ),
     );
   }
@@ -240,12 +287,29 @@ self.addEventListener("push", (event) => {
     payload = { title: "Purple", body: event.data.text() };
   }
   event.waitUntil(
-    self.registration.showNotification(payload.title ?? "Purple", {
-      body: payload.body ?? "",
-      icon: "/icon-192.png",
-      badge: "/icon-192.png",
-      data: { url: payload.url ?? "/meds" },
-    }),
+    (async () => {
+      await self.registration.showNotification(payload.title ?? "Purple", {
+        body: payload.body ?? "",
+        icon: "/icon-192.png",
+        badge: "/icon-192.png",
+        data: {
+          url: payload.url ?? "/meds",
+          doseId: payload.doseId ?? null,
+          scheduledAt: payload.scheduledAt ?? null,
+          channel: "web_push",
+        },
+      });
+      // Receipt logging for dose pushes; the send itself is logged server-side.
+      if (payload.doseId) {
+        await logDeliveryEvent({
+          kind: "received",
+          doseId: payload.doseId,
+          scheduledAt: payload.scheduledAt ?? null,
+          firedAt: new Date().toISOString(),
+          channel: "web_push",
+        });
+      }
+    })(),
   );
 });
 
@@ -262,14 +326,50 @@ self.addEventListener("notificationclick", (event) => {
         if (action) {
           await callDoseAction(data, action);
           if (action === "snooze") {
-            await removeDose(data.doseId);
+            // Re-queue locally at +10 min so the snoozed reminder fires even
+            // if the app never opens; previously snooze-from-notification
+            // dropped the dose and no second reminder ever came.
+            const snoozedAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+            await putDoses([
+              {
+                doseId: data.doseId,
+                medicationId: data.medicationId,
+                medName: event.notification.title.replace(/^(Time for|Still pending:)\s*/, ""),
+                dosage: null,
+                scheduledAt: snoozedAt,
+                authToken: data.authToken,
+                supabaseUrl: data.supabaseUrl,
+              },
+            ]);
           } else {
             await removeDose(data.doseId);
           }
+          await logDeliveryEvent({
+            kind: "acknowledged",
+            doseId: data.doseId,
+            scheduledAt: data.scheduledAt ?? null,
+            acknowledgedAt: new Date().toISOString(),
+            action,
+            channel: data.channel ?? "sw_local",
+          });
         }
       })(),
     );
     return;
+  }
+
+  if (data.doseId) {
+    // Plain tap (no action button) still counts as an acknowledgment.
+    event.waitUntil(
+      logDeliveryEvent({
+        kind: "acknowledged",
+        doseId: data.doseId,
+        scheduledAt: data.scheduledAt ?? null,
+        acknowledgedAt: new Date().toISOString(),
+        action: "opened",
+        channel: data.channel ?? "sw_local",
+      }),
+    );
   }
 
   event.waitUntil(

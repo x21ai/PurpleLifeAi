@@ -9,7 +9,7 @@ const SENDER_DOMAIN = "notify.purplelife.org";
 
 /**
  * Render a registered template and enqueue it directly via the email queue,
- * skipping the HTTP `/lovable/email/transactional/send` route. Use this from
+ * skipping the HTTP `/api/email/transactional/send` route. Use this from
  * server contexts that have no Bearer token (cron jobs, internal jobs).
  * Returns { ok, messageId } and never throws, callers can ignore failures.
  */
@@ -19,15 +19,16 @@ export async function enqueueRenderedEmail(params: {
   templateData?: Record<string, unknown>;
   idempotencyKey?: string;
 }): Promise<{ ok: boolean; messageId: string | null; reason?: string }> {
-  const { templateName, recipientEmail, templateData = {}, idempotencyKey } =
-    params;
+  const { templateName, recipientEmail, templateData = {}, idempotencyKey } = params;
 
   const template = TEMPLATES[templateName];
   if (!template) {
     return { ok: false, messageId: null, reason: "template_not_found" };
   }
 
-  const normalizedEmail = String(recipientEmail || "").trim().toLowerCase();
+  const normalizedEmail = String(recipientEmail || "")
+    .trim()
+    .toLowerCase();
   if (!normalizedEmail) {
     return { ok: false, messageId: null, reason: "missing_recipient" };
   }
@@ -64,9 +65,7 @@ export async function enqueueRenderedEmail(params: {
   }
 
   const subject =
-    typeof template.subject === "function"
-      ? template.subject(templateData)
-      : template.subject;
+    typeof template.subject === "function" ? template.subject(templateData) : template.subject;
 
   try {
     await supabaseAdmin.from("email_send_log").insert({

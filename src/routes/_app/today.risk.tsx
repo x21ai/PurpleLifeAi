@@ -38,9 +38,17 @@ export const Route = createFileRoute("/_app/today/risk")({
 function bandTone(band: string): { ring: "cream" | "alert"; chip: string; label: string } {
   switch (band) {
     case "high":
-      return { ring: "alert", chip: "bg-[color:var(--data-alert)]/15 text-[color:var(--data-alert)]", label: "High" };
+      return {
+        ring: "alert",
+        chip: "bg-[color:var(--data-alert)]/15 text-[color:var(--data-alert)]",
+        label: "High",
+      };
     case "elevated":
-      return { ring: "alert", chip: "bg-[color:var(--warning)]/15 text-[color:var(--warning)]", label: "Elevated" };
+      return {
+        ring: "alert",
+        chip: "bg-[color:var(--warning)]/15 text-[color:var(--warning)]",
+        label: "Elevated",
+      };
     case "moderate":
       return { ring: "cream", chip: "bg-secondary text-secondary-foreground", label: "Moderate" };
     default:
@@ -76,7 +84,10 @@ function RiskDetailPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-8 sm:pt-12 pb-24">
-      <Link to="/today" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to="/today"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ChevronLeft className="h-4 w-4" />
         {t("riskDetail.backToToday")}
       </Link>
@@ -91,9 +102,7 @@ function RiskDetailPage() {
       ) : !forecast ? (
         <div className="mt-10 rounded-3xl border border-border bg-card p-8 text-center">
           <p className="font-serif text-xl">{t("riskDetail.noReadingTitle")}</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {t("riskDetail.noReadingBody")}
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">{t("riskDetail.noReadingBody")}</p>
         </div>
       ) : (
         <ForecastDetail forecast={forecast} />
@@ -111,13 +120,21 @@ function ForecastDetail({ forecast }: { forecast: Forecast }) {
     <>
       <section className="mt-10 rounded-3xl border border-border bg-card px-6 sm:px-8 py-8 flex flex-col items-center text-center">
         <div className="relative">
-          <ScoreArc score={readiness} size={260} stroke={6} tone={tone.ring} ariaLabel={`Readiness ${readiness}`} />
+          <ScoreArc
+            score={readiness}
+            size={260}
+            stroke={6}
+            tone={tone.ring}
+            ariaLabel={`Readiness ${readiness}`}
+          />
           <div className="absolute inset-0 flex flex-col items-center justify-center pt-3">
             <p className="numeric-display font-serif text-[88px] text-foreground">{readiness}</p>
             <p className="label-eyebrow mt-1">Readiness</p>
           </div>
         </div>
-        <span className={`mt-6 inline-flex rounded-full px-3 py-1 text-[11px] tracking-[0.18em] uppercase font-medium ${tone.chip}`}>
+        <span
+          className={`mt-6 inline-flex rounded-full px-3 py-1 text-[11px] tracking-[0.18em] uppercase font-medium ${tone.chip}`}
+        >
           {tone.label} · score {forecast.risk_score}
         </span>
         {forecast.ai_narrative && (
@@ -150,8 +167,8 @@ function ForecastDetail({ forecast }: { forecast: Forecast }) {
       )}
 
       <p className="mt-12 text-[11px] text-muted-foreground/70 text-center">
-        Model {forecast.model_version ?? "unknown"} ·{" "}
-        computed {format(new Date(forecast.computed_at), "MMM d, h:mm a")}
+        Model {forecast.model_version ?? "unknown"} · computed{" "}
+        {format(new Date(forecast.computed_at), "MMM d, h:mm a")}
       </p>
     </>
   );

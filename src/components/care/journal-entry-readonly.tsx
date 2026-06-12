@@ -2,6 +2,7 @@ import * as React from "react";
 import { formatDistanceToNow, format } from "date-fns";
 import { Pencil, Mic, Camera, Video, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatTagChip } from "@/lib/journal-tags";
 import { CaregiverBadge } from "@/components/care/caregiver-badge";
 
 type Entry = {
@@ -90,7 +91,7 @@ export function JournalEntryReadOnly({ entry }: { entry: Entry }) {
               key={t}
               className="inline-flex items-center rounded-full border border-primary/30 bg-background text-primary px-2.5 py-0.5 text-[11px] tracking-wide"
             >
-              {t}
+              {formatTagChip(t)}
             </span>
           ))}
         </div>

@@ -67,7 +67,12 @@ function groupsUsedBy(file) {
   if (!importBlock) return [];
   return importBlock[1]
     .split(",")
-    .map((s) => s.trim().split(/\s+as\s+/)[0].trim())
+    .map((s) =>
+      s
+        .trim()
+        .split(/\s+as\s+/)[0]
+        .trim(),
+    )
     .filter(Boolean);
 }
 

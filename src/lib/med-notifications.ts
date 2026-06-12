@@ -23,11 +23,7 @@ type ScheduledMed = {
 const DISMISSED_REMINDER_BANNER_KEY = "purple-med-reminder-banner-dismissed";
 
 export function notificationsSupported(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    "Notification" in window &&
-    "serviceWorker" in navigator
-  );
+  return typeof window !== "undefined" && "Notification" in window && "serviceWorker" in navigator;
 }
 
 function isPreviewHost(host: string): boolean {
@@ -124,8 +120,10 @@ function isRescueMed(m: ScheduledMed): boolean {
 }
 
 function formatDosageLabel(dosage: string | null): string | null {
-  if (!dosage?.trim()) return null;
-  return dosage.trim();
+  const s = dosage?.trim();
+  if (!s) return null;
+  // A label without a number is a bare unit ("mg"); never surface it.
+  return /\d/.test(s) ? s : null;
 }
 
 function nextOccurrences(timeOfDay: string, daysAhead = 3): Date[] {
@@ -217,8 +215,7 @@ async function postScheduleToSw(doses: ScheduledDose[], authToken: string | null
   const reg = await ensureServiceWorker();
   if (!reg) return;
 
-  const sw =
-    reg.active ?? reg.waiting ?? reg.installing;
+  const sw = reg.active ?? reg.waiting ?? reg.installing;
   if (!sw) return;
 
   const payload = {

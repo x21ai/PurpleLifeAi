@@ -1,5 +1,5 @@
 import { AlertCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, sanitizeDosageLabel } from "@/lib/utils";
 
 type Med = {
   id: string;
@@ -40,8 +40,7 @@ export function MedsListReadOnly({
   return (
     <ul className="space-y-2">
       {meds.map((m) => {
-        const lowStock =
-          m.pills_remaining != null && m.pills_remaining <= 7;
+        const lowStock = m.pills_remaining != null && m.pills_remaining <= 7;
         return (
           <li
             key={m.id}
@@ -65,8 +64,8 @@ export function MedsListReadOnly({
                     </span>
                   )}
                 </div>
-                {m.dosage && (
-                  <p className="text-sm text-muted-foreground">{m.dosage}</p>
+                {sanitizeDosageLabel(m.dosage) && (
+                  <p className="text-sm text-muted-foreground">{sanitizeDosageLabel(m.dosage)}</p>
                 )}
                 {!m.is_rescue && m.times_of_day?.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1.5">
@@ -81,9 +80,7 @@ export function MedsListReadOnly({
                   </div>
                 )}
                 {m.notes && (
-                  <p className="mt-2 text-xs text-foreground/70 whitespace-pre-wrap">
-                    {m.notes}
-                  </p>
+                  <p className="mt-2 text-xs text-foreground/70 whitespace-pre-wrap">{m.notes}</p>
                 )}
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">

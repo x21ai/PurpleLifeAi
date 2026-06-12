@@ -1,8 +1,57 @@
 import * as React from "react";
 import { formatDistanceToNow, format } from "date-fns";
-import { Pencil, Mic, Camera, Video, Sparkles, Loader2, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2, X, Check, Calendar as CalendarIcon } from "lucide-react";
+import {
+  Pencil,
+  Mic,
+  Camera,
+  Video,
+  Sparkles,
+  Loader2,
+  MoreVertical,
+  Edit3,
+  Archive,
+  ArchiveRestore,
+  Trash2,
+  X,
+  Check,
+  Calendar as CalendarIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { cleanAiText } from "@/lib/ai-text-guards";
+import { processJournalEntry } from "@/lib/journal-pipeline";
+import { formatTagChip } from "@/lib/journal-tags";
+
+/**
+ * Journal photos store SIGNED storage URLs that expire (~1 year). An expired
+ * URL used to fail silently, leaving a photo entry rendering as "just words".
+ * On load error, re-sign the underlying storage path once and retry.
+ */
+function SelfHealingImage({ url }: { url: string }) {
+  const [src, setSrc] = React.useState(url);
+  const healedRef = React.useRef(false);
+
+  const heal = React.useCallback(async () => {
+    if (healedRef.current) return;
+    healedRef.current = true;
+    const match = url.match(/\/journal-media\/([^?]+)/);
+    if (!match) return;
+    const { data } = await supabase.storage
+      .from("journal-media")
+      .createSignedUrl(decodeURIComponent(match[1]), 60 * 60 * 24);
+    if (data?.signedUrl) setSrc(data.signedUrl);
+  }, [url]);
+
+  return (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      onError={() => void heal()}
+      className="rounded-lg w-full aspect-square object-cover"
+    />
+  );
+}
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -81,9 +130,10 @@ export function EntryCard({ entry }: { entry: Entry }) {
       toast.error("Couldn't save changes");
       return;
     }
-    void supabase.functions
-      .invoke("journal-extract", { body: { journal_entry_id: entry.id } })
-      .catch(() => { /* extraction errors don't block save */ });
+    // Both pipeline legs: the processor is what resolves the row back out of
+    // "processing" (extract alone never touches status, which used to leave
+    // edited entries spinning forever).
+    void processJournalEntry(entry.id);
     setSaving(false);
     setEditing(false);
     toast.success("Entry updated");
@@ -125,45 +175,28 @@ export function EntryCard({ entry }: { entry: Entry }) {
   const photos = entry.media_urls.filter(isImage);
   const videos = entry.media_urls.filter(isVideo);
   // Filter out the model's "no entry provided" meta replies if any landed in the DB.
-  const cleanSummary = React.useMemo(() => {
-    const s = (entry.ai_summary ?? "").trim();
-    if (!s) return "";
-    const lower = s.toLowerCase();
-    if (
-      lower.includes("i don't see a journal") ||
-      lower.includes("i do not see a journal") ||
-      lower.includes("no journal entry") ||
-      lower.startsWith("please provide") ||
-      lower.startsWith("i'm ready to help") ||
-      lower.startsWith("i am ready to help")
-    ) {
-      return "";
-    }
-    return s;
-  }, [entry.ai_summary]);
+  const cleanSummary = React.useMemo(
+    () => cleanAiText((entry.ai_summary ?? "").trim()) ?? "",
+    [entry.ai_summary],
+  );
   const processing = entry.status === "processing";
   const failed = entry.status === "failed";
   // After 5 minutes, a "processing" entry has almost certainly stalled, offer a retry.
-  const stale =
-    processing &&
-    Date.now() - new Date(entry.created_at).getTime() > 5 * 60 * 1000;
+  const stale = processing && Date.now() - new Date(entry.created_at).getTime() > 5 * 60 * 1000;
 
   const retryExtract = async () => {
     if (busy) return;
     setBusy(true);
     try {
-      // Re-trigger the extractor by re-saving the row's text/captured_at;
-      // the realtime listener on the journal page will pick up the update.
-      await supabase
-        .from("journal_entries")
-        .update({ status: "processing" })
-        .eq("id", entry.id);
-      await supabase.functions.invoke("journal-processor", {
-        body: { entryId: entry.id },
-      });
-      toast.success("Re-reading entry…");
-    } catch (e) {
-      toast.error("Couldn't restart. Try again later.");
+      await supabase.from("journal_entries").update({ status: "processing" }).eq("id", entry.id);
+      const ok = await processJournalEntry(entry.id);
+      if (ok) {
+        toast.success("Re-reading entry…");
+      } else {
+        toast.error("Purple couldn't start re-reading. Check your connection and try again.");
+      }
+    } catch {
+      toast.error("Purple couldn't start re-reading. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
@@ -227,7 +260,10 @@ export function EntryCard({ entry }: { entry: Entry }) {
                   <DropdownMenuItem onClick={restore}>
                     <ArchiveRestore className="h-4 w-4 mr-2" /> Restore
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setConfirmDelete(true)} className="text-destructive focus:text-destructive">
+                  <DropdownMenuItem
+                    onClick={() => setConfirmDelete(true)}
+                    className="text-destructive focus:text-destructive"
+                  >
                     <Trash2 className="h-4 w-4 mr-2" /> Delete permanently
                   </DropdownMenuItem>
                 </>
@@ -279,7 +315,12 @@ export function EntryCard({ entry }: { entry: Entry }) {
               type="button"
               size="sm"
               onClick={saveEdit}
-              disabled={saving || (!draftText.trim() && !draftVoice.trim())}
+              // Date-only edits must save too (photo/voice entries have no
+              // text); only block when the entry would end up fully empty.
+              disabled={
+                saving ||
+                (!draftText.trim() && !draftVoice.trim() && (entry.media_urls?.length ?? 0) === 0)
+              }
               className="h-8"
             >
               {saving ? (
@@ -295,47 +336,57 @@ export function EntryCard({ entry }: { entry: Entry }) {
       ) : (
         <>
           {entry.text && (
-        <p className="mt-3 font-serif text-[15px] leading-relaxed whitespace-pre-wrap text-foreground">
-          {entry.text}
-        </p>
-      )}
+            <p className="mt-3 font-serif text-[15px] leading-relaxed whitespace-pre-wrap text-foreground">
+              {entry.text}
+            </p>
+          )}
 
-      {entry.voice_transcript && (
-        <p className="mt-3 font-serif text-[15px] leading-relaxed whitespace-pre-wrap text-foreground/90 italic">
-          “{entry.voice_transcript}”
-        </p>
-      )}
+          {entry.voice_transcript && (
+            <p className="mt-3 font-serif text-[15px] leading-relaxed whitespace-pre-wrap text-foreground/90 italic">
+              “{entry.voice_transcript}”
+            </p>
+          )}
 
-      {(photos.length > 0 || videos.length > 0) && (
-        <div className={cn("mt-3 grid gap-2", photos.length + videos.length > 1 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-1")}>
-          {photos.map((url) => (
-            <img key={url} src={url} alt="" loading="lazy" className="rounded-lg w-full aspect-square object-cover" />
-          ))}
-          {videos.map((url) => (
-            <video key={url} src={url} controls className="rounded-lg w-full aspect-square object-cover bg-black" />
-          ))}
-        </div>
-      )}
-
-      {cleanSummary && (
-        <div className="mt-4 rounded-xl bg-secondary/70 px-3 py-2 text-sm text-secondary-foreground">
-          <span className="font-serif">{cleanSummary}</span>
-        </div>
-      )}
-
-      {entry.ai_tags.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {entry.ai_tags.map((t) => (
-            <span
-              key={t}
-              className="inline-flex items-center rounded-full border border-primary/30 bg-background text-primary px-2.5 py-0.5 text-[11px] tracking-wide"
-              aria-label={`Tag: ${t}`}
+          {(photos.length > 0 || videos.length > 0) && (
+            <div
+              className={cn(
+                "mt-3 grid gap-2",
+                photos.length + videos.length > 1 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-1",
+              )}
             >
-              {t}
-            </span>
-          ))}
-        </div>
-      )}
+              {photos.map((url) => (
+                <SelfHealingImage key={url} url={url} />
+              ))}
+              {videos.map((url) => (
+                <video
+                  key={url}
+                  src={url}
+                  controls
+                  className="rounded-lg w-full aspect-square object-cover bg-black"
+                />
+              ))}
+            </div>
+          )}
+
+          {cleanSummary && (
+            <div className="mt-4 rounded-xl bg-secondary/70 px-3 py-2 text-sm text-secondary-foreground">
+              <span className="font-serif">{cleanSummary}</span>
+            </div>
+          )}
+
+          {entry.ai_tags.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {entry.ai_tags.map((t) => (
+                <span
+                  key={t}
+                  className="inline-flex items-center rounded-full border border-primary/30 bg-background text-primary px-2.5 py-0.5 text-[11px] tracking-wide"
+                  aria-label={`Tag: ${formatTagChip(t)}`}
+                >
+                  {formatTagChip(t)}
+                </span>
+              ))}
+            </div>
+          )}
         </>
       )}
 
@@ -344,12 +395,17 @@ export function EntryCard({ entry }: { entry: Entry }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the journal entry and any behaviors extracted from it. This can't be undone.
+              This permanently removes the journal entry and any behaviors extracted from it. This
+              can't be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={destroy} disabled={busy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={destroy}
+              disabled={busy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -4,7 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { Camera, Loader2, Sparkles, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger,
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,11 +17,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
-import {
-  recognizeIntakeFromPhoto, createFoodEntry,
-} from "@/lib/food.functions";
+import { recognizeIntakeFromPhoto, createFoodEntry } from "@/lib/food.functions";
 import { logHydration } from "@/lib/hydration.functions";
 import { cn } from "@/lib/utils";
+import { userMessage } from "@/lib/user-message";
 
 type Item = {
   name: string;
@@ -99,7 +103,7 @@ export function SnapIntakeSheet() {
       );
       setStage("confirm");
     } catch (e: any) {
-      toast.error(e?.message || "Couldn't analyze the photo.");
+      toast.error(userMessage(e, "Couldn't analyze the photo."));
       reset();
     }
   }
@@ -183,11 +187,17 @@ export function SnapIntakeSheet() {
       setOpen(false);
       reset();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(userMessage(e, "That didn't work. Try again in a moment.")),
   });
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
+    <Sheet
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) reset();
+      }}
+    >
       <SheetTrigger asChild>
         <Button size="sm" variant="outline" className="rounded-full">
           <Camera className="h-4 w-4 mr-1.5" /> Snap food or drink
@@ -197,7 +207,8 @@ export function SnapIntakeSheet() {
         <SheetHeader>
           <SheetTitle className="font-serif text-2xl">Snap intake</SheetTitle>
           <SheetDescription>
-            Take a photo of your food, drink, or water. We'll suggest the details, you review before saving.
+            Take a photo of your food, drink, or water. We'll suggest the details, you review before
+            saving.
           </SheetDescription>
         </SheetHeader>
 
@@ -226,7 +237,9 @@ export function SnapIntakeSheet() {
 
           {stage === "analyzing" && (
             <div className="flex flex-col items-center gap-3 py-8">
-              {preview && <img src={preview} alt="" className="max-h-56 rounded-2xl ring-1 ring-border" />}
+              {preview && (
+                <img src={preview} alt="" className="max-h-56 rounded-2xl ring-1 ring-border" />
+              )}
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" /> Analyzing…
               </div>
@@ -236,7 +249,13 @@ export function SnapIntakeSheet() {
           {stage === "confirm" && recog && (
             <>
               <div className="flex gap-3">
-                {preview && <img src={preview} alt="" className="h-24 w-24 rounded-xl object-cover ring-1 ring-border" />}
+                {preview && (
+                  <img
+                    src={preview}
+                    alt=""
+                    className="h-24 w-24 rounded-xl object-cover ring-1 ring-border"
+                  />
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="text-xs label-eyebrow text-muted-foreground">Detected</div>
                   <div className="text-sm font-medium capitalize">{recog.kind}</div>
@@ -253,7 +272,9 @@ export function SnapIntakeSheet() {
                       <Label className="text-xs text-muted-foreground">Item {idx + 1}</Label>
                       {items.length > 1 && (
                         <Button
-                          variant="ghost" size="icon" className="h-7 w-7"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
                           onClick={() => setItems((arr) => arr.filter((_, i) => i !== idx))}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -263,40 +284,77 @@ export function SnapIntakeSheet() {
                     <Input
                       placeholder="Name"
                       value={it.name}
-                      onChange={(e) => setItems((arr) => arr.map((x, i) => i === idx ? { ...x, name: e.target.value } : x))}
+                      onChange={(e) =>
+                        setItems((arr) =>
+                          arr.map((x, i) => (i === idx ? { ...x, name: e.target.value } : x)),
+                        )
+                      }
                     />
                     <div className="grid grid-cols-3 gap-2">
                       <Input
                         placeholder="Portion"
                         value={it.portion}
-                        onChange={(e) => setItems((arr) => arr.map((x, i) => i === idx ? { ...x, portion: e.target.value } : x))}
+                        onChange={(e) =>
+                          setItems((arr) =>
+                            arr.map((x, i) => (i === idx ? { ...x, portion: e.target.value } : x)),
+                          )
+                        }
                       />
                       <Input
                         placeholder="kcal"
                         inputMode="numeric"
                         value={it.calories_kcal}
-                        onChange={(e) => setItems((arr) => arr.map((x, i) => i === idx ? { ...x, calories_kcal: e.target.value.replace(/[^0-9]/g, "") } : x))}
+                        onChange={(e) =>
+                          setItems((arr) =>
+                            arr.map((x, i) =>
+                              i === idx
+                                ? { ...x, calories_kcal: e.target.value.replace(/[^0-9]/g, "") }
+                                : x,
+                            ),
+                          )
+                        }
                       />
                       <Input
                         placeholder="ml"
                         inputMode="numeric"
                         value={it.volume_ml}
-                        onChange={(e) => setItems((arr) => arr.map((x, i) => i === idx ? { ...x, volume_ml: e.target.value.replace(/[^0-9]/g, "") } : x))}
+                        onChange={(e) =>
+                          setItems((arr) =>
+                            arr.map((x, i) =>
+                              i === idx
+                                ? { ...x, volume_ml: e.target.value.replace(/[^0-9]/g, "") }
+                                : x,
+                            ),
+                          )
+                        }
                       />
                     </div>
                   </div>
                 ))}
                 <Button
-                  variant="ghost" size="sm"
-                  onClick={() => setItems((arr) => [...arr, { name: "", portion: "", calories_kcal: "", volume_ml: "" }])}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    setItems((arr) => [
+                      ...arr,
+                      { name: "", portion: "", calories_kcal: "", volume_ml: "" },
+                    ])
+                  }
                 >
                   + Add item
                 </Button>
               </div>
 
               <div>
-                <Label htmlFor="note" className="text-xs">Note (optional)</Label>
-                <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
+                <Label htmlFor="note" className="text-xs">
+                  Note (optional)
+                </Label>
+                <Textarea
+                  id="note"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  rows={2}
+                />
               </div>
 
               <div className={cn("flex items-center justify-end gap-2 pt-2")}>
@@ -304,7 +362,13 @@ export function SnapIntakeSheet() {
                   <X className="h-4 w-4 mr-1" /> Discard
                 </Button>
                 <Button onClick={() => save.mutate()} disabled={save.isPending}>
-                  {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Sparkles className="h-4 w-4 mr-1.5" /> Save</>}
+                  {save.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-1.5" /> Save
+                    </>
+                  )}
                 </Button>
               </div>
               <p className="text-[11px] text-muted-foreground">

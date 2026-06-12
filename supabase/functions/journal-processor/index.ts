@@ -2,8 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -34,7 +33,7 @@ const TOOL_SCHEMA = {
         type: "array",
         items: { type: "string" },
         description:
-          "Snake_case tags. Use ONE of these prefixes: symptom: (headache, nausea), mood: (tired, anxious), trigger: (alcohol, poor_sleep), med: (keppra_taken), event: (seizure, aura, fall — DISCRETE events only), or context: (sleep, work, exercise — ongoing states or settings). NEVER tag 'sleep', 'awake', 'bedtime', or 'morning' as event:. Those are context:.",
+          "Snake_case tags. Use ONE of these prefixes: symptom: (headache, nausea), mood: (tired, anxious), trigger: (alcohol, poor_sleep), med: (keppra_taken), event: (seizure, aura, fall, er_visit, DISCRETE happenings only), place: (hospital, home, work, school, locations the entry happened in), or context: (sleep, exercise, dinner, ongoing states or settings). NEVER tag 'sleep', 'awake', 'bedtime', or 'morning' as event:. Those are context:. NEVER tag a location as context:. Locations are place:.",
       },
       extracted: {
         type: "object",
@@ -65,15 +64,7 @@ const TOOL_SCHEMA = {
               properties: {
                 type: {
                   type: "string",
-                  enum: [
-                    "seizure",
-                    "aura",
-                    "near_miss",
-                    "medication",
-                    "sleep",
-                    "meal",
-                    "stress",
-                  ],
+                  enum: ["seizure", "aura", "near_miss", "medication", "sleep", "meal", "stress"],
                 },
                 detail: { type: "string" },
               },
@@ -328,8 +319,20 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Idempotency: re-invokes on an already-processed entry (duplicate
+    // client calls, cron sweeps) are no-ops. Retry paths set the row back to
+    // "processing" first, so deliberate re-processing still works.
+    if (entry.status === "processed" && body?.force !== true) {
+      return new Response(JSON.stringify({ ok: true, skipped: "already_processed" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const media: string[] = Array.isArray(entry.media_urls) ? entry.media_urls : [];
-    const audioUrls = media.filter((u) => isAudioExt(extOf(u)) && !isVideoExt(extOf(u)) && u.includes("voice-"));
+    const audioUrls = media.filter(
+      (u) => isAudioExt(extOf(u)) && !isVideoExt(extOf(u)) && u.includes("voice-"),
+    );
     // Fallback: treat any non-photo non-video as audio if filename hints audio
     const remaining = media.filter((u) => !audioUrls.includes(u));
     const photoUrls = remaining.filter((u) => isPhotoExt(extOf(u)));
@@ -363,19 +366,30 @@ Deno.serve(async (req) => {
       photos,
     });
 
-    const needsFollowup = Boolean(
-      (result.extracted as any)?.needs_followup,
-    );
+    const needsFollowup = Boolean((result.extracted as any)?.needs_followup);
 
     // Guard: if the entry had no actual content (no text, no transcript, no photos)
     // the model often replies with a meta "I don't see a journal entry…" message.
     // That isn't a summary — drop it so the journal list doesn't show AI scaffolding.
     const hadContent = Boolean((entry.text ?? "").trim() || transcript.trim() || photos.length > 0);
     const summaryLower = (result.summary ?? "").toLowerCase();
+    // Refusals and meta-commentary must never be stored as if they were
+    // insight about the user. Mirrored client-side in src/lib/ai-text-guards.ts.
     const looksLikeMetaReply =
       summaryLower.includes("i don't see a journal") ||
       summaryLower.includes("i do not see a journal") ||
       summaryLower.includes("no journal entry") ||
+      summaryLower.includes("provided to analyze") ||
+      summaryLower.includes("as an ai") ||
+      summaryLower.includes("language model") ||
+      summaryLower.includes("i cannot assist") ||
+      summaryLower.includes("i can't assist") ||
+      summaryLower.includes("i need more context") ||
+      summaryLower.includes("i need more information") ||
+      summaryLower.startsWith("i'm unable") ||
+      summaryLower.startsWith("i am unable") ||
+      summaryLower.startsWith("i'm sorry") ||
+      summaryLower.startsWith("i am sorry") ||
       summaryLower.startsWith("please provide") ||
       summaryLower.startsWith("i'm ready to help") ||
       summaryLower.startsWith("i am ready to help");
@@ -407,19 +421,17 @@ Deno.serve(async (req) => {
     if (memoryContent) {
       const embedding = await embedText(memoryContent);
       if (embedding) {
-        await admin
-          .from("ai_memory")
-          .upsert(
-            {
-              user_id: entry.user_id,
-              source_table: "journal_entries",
-              source_id: entry_id,
-              recorded_at: entry.captured_at || new Date().toISOString(),
-              content: memoryContent,
-              embedding: embedding as unknown as string,
-            },
-            { onConflict: "source_table,source_id" },
-          );
+        await admin.from("ai_memory").upsert(
+          {
+            user_id: entry.user_id,
+            source_table: "journal_entries",
+            source_id: entry_id,
+            recorded_at: entry.captured_at || new Date().toISOString(),
+            content: memoryContent,
+            embedding: embedding as unknown as string,
+          },
+          { onConflict: "source_table,source_id" },
+        );
       }
     }
 
@@ -440,12 +452,12 @@ Deno.serve(async (req) => {
     // we don't double-count a journal entry written right after a manual log.
     try {
       const events = ((result.extracted as any)?.events ?? []) as Array<{
-        type?: string; detail?: string;
+        type?: string;
+        detail?: string;
       }>;
       const tags = result.tags ?? [];
       const mentionsSeizure =
-        events.some((e) => e?.type === "seizure") ||
-        tags.includes("event:seizure");
+        events.some((e) => e?.type === "seizure") || tags.includes("event:seizure");
       if (mentionsSeizure && !entry.linked_seizure_id) {
         const startedAt = entry.captured_at || new Date().toISOString();
         const winStart = new Date(new Date(startedAt).getTime() - 10 * 60 * 1000).toISOString();
@@ -492,17 +504,11 @@ Deno.serve(async (req) => {
   } catch (e) {
     console.error("journal-processor error", e);
     if (entry_id) {
-      await admin
-        .from("journal_entries")
-        .update({ status: "failed" })
-        .eq("id", entry_id);
+      await admin.from("journal_entries").update({ status: "failed" }).eq("id", entry_id);
     }
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

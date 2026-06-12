@@ -5,12 +5,15 @@
 @custom-variant dark (&:is(.dark *));
 
 /* Prevent stray horizontal scrollbars from oversized hero images or grids. */
-html, body {
+html,
+body {
   overflow-x: hidden;
 }
 
 /* Hide scrollbars but keep scroll behavior (QA #16). */
-html, body, .hide-scrollbar {
+html,
+body,
+.hide-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -93,24 +96,25 @@ body::-webkit-scrollbar,
   --radius: 1rem;
 
   /* ===== Purple v2 raw tokens (light) ===== */
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #FAF8FB;
-  --bg-tertiary: #F2EEF5;
-  --text-primary: #0A0A0F;
-  --text-secondary: #4A4A52;
-  --text-tertiary: #8B8B92;
-  --text-quaternary: #B8B8BD;
-  --divider: #ECECEF;
-  --purple-primary: #5B2C82;
-  --purple-soft: #EDE4F4;
-  --purple-deep: #3A1A55;
-  --accent-warm: #C58A3F;
+  --bg-primary: #ffffff;
+  --bg-secondary: #faf8fb;
+  --bg-tertiary: #f2eef5;
+  --text-primary: #0a0a0f;
+  --text-secondary: #4a4a52;
+  /* Darkened from #8b8b92: 3.5:1 on white failed WCAG AA for muted labels on auth routes. */
+  --text-tertiary: #65656d;
+  --text-quaternary: #94949c;
+  --divider: #ececef;
+  --purple-primary: #5b2c82;
+  --purple-soft: #ede4f4;
+  --purple-deep: #3a1a55;
+  --accent-warm: #c58a3f;
 
   /* Score band gradients (used edge-to-edge behind hero numbers) */
-  --grad-excellent: linear-gradient(135deg, #4A8B6F 0%, #2C6450 100%);
-  --grad-good:      linear-gradient(135deg, #4A6FA5 0%, #2C4E7A 100%);
-  --grad-fair:      linear-gradient(135deg, #C58A3F 0%, #8B5E26 100%);
-  --grad-attention: linear-gradient(135deg, #B8453A 0%, #7A2A22 100%);
+  --grad-excellent: linear-gradient(135deg, #4a8b6f 0%, #2c6450 100%);
+  --grad-good: linear-gradient(135deg, #4a6fa5 0%, #2c4e7a 100%);
+  --grad-fair: linear-gradient(135deg, #c58a3f 0%, #8b5e26 100%);
+  --grad-attention: linear-gradient(135deg, #b8453a 0%, #7a2a22 100%);
 
   /* Spacing scale (8px base) */
   --space-xs: 4px;
@@ -136,36 +140,36 @@ body::-webkit-scrollbar,
   --muted: var(--bg-secondary);
   --muted-foreground: var(--text-tertiary);
   --accent: var(--purple-primary);
-  --accent-foreground: #FFFFFF;
-  --destructive: #B8453A;
-  --destructive-foreground: #FFFFFF;
+  --accent-foreground: #ffffff;
+  --destructive: #b8453a;
+  --destructive-foreground: #ffffff;
   --border: var(--divider);
   --input: var(--divider);
   --ring: var(--purple-primary);
-  --success: #4A8B6F;
-  --warning: #C58A3F;
-  --danger: #B8453A;
-  --info: #4A6FA5;
+  --success: #4a8b6f;
+  --warning: #c58a3f;
+  --danger: #b8453a;
+  --info: #4a6fa5;
   --data-1: var(--text-primary);
-  --data-2: #4A6FA5;
-  --data-3: #C58A3F;
-  --data-4: #8B8B92;
-  --data-5: #4A8B6F;
-  --data-alert: #B8453A;
-  --data-good: #4A8B6F;
-  --data-info: #4A6FA5;
-  --data-warn: #C58A3F;
+  --data-2: #4a6fa5;
+  --data-3: #c58a3f;
+  --data-4: #8b8b92;
+  --data-5: #4a8b6f;
+  --data-alert: #b8453a;
+  --data-good: #4a8b6f;
+  --data-info: #4a6fa5;
+  --data-warn: #c58a3f;
   --ring-track: var(--divider);
   --ring-fill: var(--purple-primary);
   --chart-1: var(--purple-primary);
-  --chart-2: #4A6FA5;
-  --chart-3: #C58A3F;
-  --chart-4: #4A8B6F;
+  --chart-2: #4a6fa5;
+  --chart-3: #c58a3f;
+  --chart-4: #4a8b6f;
   --chart-5: var(--data-alert);
   --sidebar: var(--bg-primary);
   --sidebar-foreground: var(--text-primary);
   --sidebar-primary: var(--purple-primary);
-  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: var(--bg-tertiary);
   --sidebar-accent-foreground: var(--text-primary);
   --sidebar-border: var(--divider);
@@ -174,18 +178,18 @@ body::-webkit-scrollbar,
 
 .dark {
   /* Dark is the hero mode. Near-black with a subtle purple undertone. */
-  --bg-primary: #0A0710;
-  --bg-secondary: #14101C;
-  --bg-tertiary: #1F1A2B;
-  --text-primary: #FAFAFC;
-  --text-secondary: #D8D8DD;
-  --text-tertiary: #8B8B92;
-  --text-quaternary: #5C5C64;
-  --divider: #25202F;
-  --purple-primary: #B084D1;        /* lifted for dark contrast */
+  --bg-primary: #0a0710;
+  --bg-secondary: #14101c;
+  --bg-tertiary: #1f1a2b;
+  --text-primary: #fafafc;
+  --text-secondary: #d8d8dd;
+  --text-tertiary: #8b8b92;
+  --text-quaternary: #5c5c64;
+  --divider: #25202f;
+  --purple-primary: #b084d1; /* lifted for dark contrast */
   --purple-soft: rgba(176, 132, 209, 0.12);
-  --purple-deep: #6E3FA0;
-  --accent-warm: #E8C39E;
+  --purple-deep: #6e3fa0;
+  --accent-warm: #e8c39e;
 
   --background: var(--bg-primary);
   --foreground: var(--text-primary);
@@ -201,30 +205,30 @@ body::-webkit-scrollbar,
   --muted-foreground: var(--text-tertiary);
   --accent: var(--purple-primary);
   --accent-foreground: var(--bg-primary);
-  --destructive: #E8745C;
-  --destructive-foreground: #FFFFFF;
+  --destructive: #e8745c;
+  --destructive-foreground: #ffffff;
   --border: var(--divider);
   --input: var(--divider);
   --ring: var(--purple-primary);
-  --success: #6FB394;
-  --warning: #E8C39E;
-  --danger: #E8745C;
-  --info: #82A4D4;
+  --success: #6fb394;
+  --warning: #e8c39e;
+  --danger: #e8745c;
+  --info: #82a4d4;
   --data-1: var(--text-primary);
-  --data-2: #82A4D4;
-  --data-3: #E8C39E;
-  --data-4: #8B8B92;
-  --data-5: #6FB394;
-  --data-alert: #E8745C;
-  --data-good: #6FB394;
-  --data-info: #82A4D4;
-  --data-warn: #E8C39E;
+  --data-2: #82a4d4;
+  --data-3: #e8c39e;
+  --data-4: #8b8b92;
+  --data-5: #6fb394;
+  --data-alert: #e8745c;
+  --data-good: #6fb394;
+  --data-info: #82a4d4;
+  --data-warn: #e8c39e;
   --ring-track: var(--divider);
   --ring-fill: var(--purple-primary);
   --chart-1: var(--purple-primary);
-  --chart-2: #82A4D4;
-  --chart-3: #E8C39E;
-  --chart-4: #6FB394;
+  --chart-2: #82a4d4;
+  --chart-3: #e8c39e;
+  --chart-4: #6fb394;
   --chart-5: var(--data-alert);
   --sidebar: var(--bg-secondary);
   --sidebar-foreground: var(--text-primary);
@@ -310,10 +314,18 @@ body::-webkit-scrollbar,
   }
 
   /* Score band utilities */
-  .grad-excellent { background-image: var(--grad-excellent); }
-  .grad-good      { background-image: var(--grad-good); }
-  .grad-fair      { background-image: var(--grad-fair); }
-  .grad-attention { background-image: var(--grad-attention); }
+  .grad-excellent {
+    background-image: var(--grad-excellent);
+  }
+  .grad-good {
+    background-image: var(--grad-good);
+  }
+  .grad-fair {
+    background-image: var(--grad-fair);
+  }
+  .grad-attention {
+    background-image: var(--grad-attention);
+  }
 
   /* Soft AI-voice surface */
   .surface-ai {
@@ -326,32 +338,44 @@ body::-webkit-scrollbar,
    * dark treatment locally so the surface looks identical in light + dark.
    */
   .sheet-canvas {
-    background-color: #0A0710;
-    color: #FAFAFC;
+    background-color: #0a0710;
+    color: #fafafc;
     min-height: 100vh;
     min-height: 100dvh;
+    /* Scope the theme tokens so text-foreground etc. resolve against the
+       sheet's dark surface in BOTH app themes. Without this, light mode put
+       near-black ink on the dark purple cards (unreadable list titles on
+       Tools & utilities / Wear and care). */
+    --foreground: #fafafc;
+    --muted-foreground: #9a9aa3;
+    --muted: #221c2c;
+    --secondary: #221c2c;
+    --secondary-foreground: #e8e6ee;
+    --border: rgba(255, 255, 255, 0.06);
+    --card: #1a1521;
+    --card-foreground: #fafafc;
   }
   .sheet-card {
-    background-color: #1A1521;
+    background-color: #1a1521;
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 1.75rem;
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
   }
   .sheet-card-inset {
-    background-color: #221C2C;
+    background-color: #221c2c;
     border-radius: 1.25rem;
   }
   .sheet-divider {
     border-color: rgba(255, 255, 255, 0.06);
   }
   .sheet-muted {
-    color: #9A9AA3;
+    color: #9a9aa3;
   }
   .sheet-accent {
-    color: #82B4FF;
+    color: #82b4ff;
   }
   .sheet-link {
-    color: #FAFAFC;
+    color: #fafafc;
   }
   .sheet-link:hover {
     background-color: rgba(255, 255, 255, 0.04);
@@ -367,16 +391,18 @@ body::-webkit-scrollbar,
    * Tokens are forced locally so the surface looks identical in light + dark.
    */
   .report-canvas {
-    background-color: #07090C;
-    color: #F4F6F8;
+    background-color: #07090c;
+    color: #f4f6f8;
     min-height: 100vh;
     min-height: 100dvh;
     background-image:
-      radial-gradient(120% 60% at 50% -10%,
+      radial-gradient(
+        120% 60% at 50% -10%,
         rgba(46, 175, 138, 0.28) 0%,
-        rgba(46, 175, 138, 0.10) 28%,
-        rgba(7, 9, 12, 0) 60%),
-      linear-gradient(180deg, #0A1014 0%, #07090C 40%);
+        rgba(46, 175, 138, 0.1) 28%,
+        rgba(7, 9, 12, 0) 60%
+      ),
+      linear-gradient(180deg, #0a1014 0%, #07090c 40%);
   }
   .report-card {
     background-color: rgba(255, 255, 255, 0.04);
@@ -393,7 +419,7 @@ body::-webkit-scrollbar,
     border-color: rgba(255, 255, 255, 0.08);
   }
   .report-muted {
-    color: #9AA3AC;
+    color: #9aa3ac;
   }
   .report-eyebrow {
     font-family: var(--font-sans);
@@ -401,7 +427,7 @@ body::-webkit-scrollbar,
     font-weight: 600;
     letter-spacing: 0.32em;
     text-transform: uppercase;
-    color: #D8DEE3;
+    color: #d8dee3;
   }
   .report-pill {
     display: inline-flex;
@@ -413,22 +439,22 @@ body::-webkit-scrollbar,
     letter-spacing: 0.06em;
     text-transform: uppercase;
     background-color: rgba(255, 255, 255, 0.06);
-    color: #D8DEE3;
+    color: #d8dee3;
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
   .report-pill-success {
     background-color: rgba(52, 199, 145, 0.14);
-    color: #5CE0AC;
+    color: #5ce0ac;
     border-color: rgba(52, 199, 145, 0.28);
   }
   .report-pill-warning {
     background-color: rgba(235, 196, 110, 0.14);
-    color: #F3D58B;
+    color: #f3d58b;
     border-color: rgba(235, 196, 110, 0.28);
   }
   .report-pill-alert {
     background-color: rgba(255, 138, 168, 0.14);
-    color: #FFA8BD;
+    color: #ffa8bd;
     border-color: rgba(255, 138, 168, 0.28);
   }
 
@@ -453,45 +479,51 @@ body::-webkit-scrollbar,
     --input: 36 12% 88%;
     --primary: 270 45% 50%;
     --primary-foreground: 0 0% 100%;
-    background-color: #F4F2EE;
+    background-color: #f4f2ee;
     color: hsl(var(--foreground));
     min-height: 100vh;
     min-height: 100dvh;
   }
   .metric-sheet {
-    background-color: #FFFFFF;
+    background-color: #ffffff;
     border-radius: 1.75rem;
     box-shadow: 0 1px 0 rgba(10, 10, 15, 0.04);
   }
   .metric-card {
-    background-color: #FFFFFF;
-    border: 1px solid #ECEAE4;
+    background-color: #ffffff;
+    border: 1px solid #eceae4;
     border-radius: 1.25rem;
   }
   .metric-prompt {
-    background-color: #FFFFFF;
-    border: 1px solid #E7E5DF;
+    background-color: #ffffff;
+    border: 1px solid #e7e5df;
     border-radius: 999px;
     transition: background-color 150ms ease;
   }
   .metric-prompt:hover {
-    background-color: #FAF8F4;
+    background-color: #faf8f4;
   }
   .metric-pill-alert {
-    background-color: #FDE7EF;
-    color: #D6336C;
+    background-color: #fde7ef;
+    color: #d6336c;
   }
   .metric-pill-warn {
-    background-color: #FBF3D8;
-    color: #B58A1E;
+    background-color: #fbf3d8;
+    color: #b58a1e;
   }
   .metric-pill-good {
-    background-color: #DDF4E7;
-    color: #1F8E5A;
+    background-color: #ddf4e7;
+    color: #1f8e5a;
   }
-  .metric-value-alert { color: #E84A8A; }
-  .metric-value-warn  { color: #C29024; }
-  .metric-value-good  { color: #1F8E5A; }
+  .metric-value-alert {
+    color: #e84a8a;
+  }
+  .metric-value-warn {
+    color: #c29024;
+  }
+  .metric-value-good {
+    color: #1f8e5a;
+  }
 
   /* Keyboard focus ring per spec */
   :focus-visible {
@@ -505,7 +537,9 @@ body::-webkit-scrollbar,
   [data-reveal] {
     opacity: 0;
     transform: translateY(12px);
-    transition: opacity 700ms ease-out, transform 700ms ease-out;
+    transition:
+      opacity 700ms ease-out,
+      transform 700ms ease-out;
     will-change: opacity, transform;
   }
   [data-reveal][data-revealed="true"] {
@@ -514,7 +548,9 @@ body::-webkit-scrollbar,
   }
 
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
     }

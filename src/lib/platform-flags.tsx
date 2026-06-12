@@ -1,0 +1,79 @@
+import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+
+/**
+ * Platform-level dark-launch flags for peripheral surfaces (docs/LAUNCH-AUDIT.md).
+ * Stored as boolean columns on the app_settings singleton, anon-readable,
+ * super-admin writable, same pattern as pro_free_for_everyone.
+ *
+ * Not to be confused with the per-user feature catalog in
+ * src/hooks/use-feature-flags.ts (profiles.feature_overrides), which controls
+ * which tracking surfaces an individual user sees.
+ */
+export type PlatformFlag = "community" | "dna" | "friends";
+
+type FlagRow = {
+  feature_community_enabled?: boolean | null;
+  feature_dna_enabled?: boolean | null;
+  feature_friends_enabled?: boolean | null;
+};
+
+export type PlatformFlags = Record<PlatformFlag, boolean>;
+
+const FLAG_COLUMNS = "feature_community_enabled, feature_dna_enabled, feature_friends_enabled";
+
+async function fetchPlatformFlags(): Promise<PlatformFlags> {
+  // Fail closed: flagged surfaces stay dark unless the flag reads true.
+  const { data } = await supabase
+    .from("app_settings")
+    .select(FLAG_COLUMNS)
+    .eq("id", true)
+    .maybeSingle<FlagRow>();
+  return {
+    community: data?.feature_community_enabled === true,
+    dna: data?.feature_dna_enabled === true,
+    friends: data?.feature_friends_enabled === true,
+  };
+}
+
+export function usePlatformFlags() {
+  const q = useQuery({
+    queryKey: ["feature-flags"],
+    queryFn: fetchPlatformFlags,
+    staleTime: 5 * 60_000,
+  });
+  return { flags: q.data, loading: q.isLoading };
+}
+
+export function usePlatformFlag(flag: PlatformFlag) {
+  const { flags, loading } = usePlatformFlags();
+  return { enabled: flags?.[flag] ?? false, loading };
+}
+
+/**
+ * Renders children only when the flag is on; otherwise quietly redirects.
+ * Renders nothing while the flag loads so dark surfaces never flash.
+ */
+export function PlatformFlagGate({
+  flag,
+  redirectTo,
+  children,
+}: {
+  flag: PlatformFlag;
+  redirectTo: string;
+  children: React.ReactNode;
+}) {
+  const { enabled, loading } = usePlatformFlag(flag);
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (!loading && !enabled) {
+      void navigate({ to: redirectTo, replace: true });
+    }
+  }, [loading, enabled, navigate, redirectTo]);
+
+  if (loading || !enabled) return null;
+  return <>{children}</>;
+}

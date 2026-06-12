@@ -12,7 +12,11 @@ export type AlarmSoundId =
 export const ALARM_SOUNDS: Array<{ id: AlarmSoundId; label: string; description: string }> = [
   { id: "gentle-chime", label: "Gentle chime", description: "Soft two-note bell" },
   { id: "classic-beep", label: "Classic beep", description: "Familiar single tone" },
-  { id: "urgent-pulse", label: "Urgent pulse", description: "Fast triple beep, attention-grabbing" },
+  {
+    id: "urgent-pulse",
+    label: "Urgent pulse",
+    description: "Fast triple beep, attention-grabbing",
+  },
   { id: "rooster", label: "Rooster", description: "Rising crow, hard to sleep through" },
   { id: "vibrate-only", label: "Vibrate only", description: "Silent, vibrates the phone instead" },
   { id: "silent", label: "Silent", description: "Visual prompt only" },
@@ -56,18 +60,31 @@ function playPreset(ctx: AudioContext, spec: PresetSpec) {
 function vibrate(pattern: number[] = [200, 100, 200]) {
   if (typeof navigator === "undefined") return;
   if (typeof navigator.vibrate === "function") {
-    try { navigator.vibrate(pattern); } catch { /* noop */ }
+    try {
+      navigator.vibrate(pattern);
+    } catch {
+      /* noop */
+    }
   }
 }
 
 /** Fire a single iteration of the chosen sound. */
 export function playAlarmOnce(id: AlarmSoundId) {
   if (id === "silent") return;
-  if (id === "vibrate-only") { vibrate(); return; }
+  if (id === "vibrate-only") {
+    vibrate();
+    return;
+  }
   const ctx = getCtx();
   if (!ctx) return;
   playPreset(ctx, PRESETS[id]);
-  setTimeout(() => { try { ctx.close(); } catch { /* noop */ } }, 2000);
+  setTimeout(() => {
+    try {
+      ctx.close();
+    } catch {
+      /* noop */
+    }
+  }, 2000);
 }
 
 /**
@@ -79,7 +96,15 @@ export function startAlarmLoop(id: AlarmSoundId): () => void {
   if (id === "vibrate-only") {
     const iv = setInterval(() => vibrate([300, 200, 300]), 1500);
     vibrate([300, 200, 300]);
-    return () => { clearInterval(iv); if (typeof navigator !== "undefined" && navigator.vibrate) try { navigator.vibrate(0); } catch { /* noop */ } };
+    return () => {
+      clearInterval(iv);
+      if (typeof navigator !== "undefined" && navigator.vibrate)
+        try {
+          navigator.vibrate(0);
+        } catch {
+          /* noop */
+        }
+    };
   }
   const ctx = getCtx();
   if (!ctx) return () => {};
@@ -89,7 +114,11 @@ export function startAlarmLoop(id: AlarmSoundId): () => void {
   const iv = setInterval(() => playPreset(ctx, spec), intervalMs);
   return () => {
     clearInterval(iv);
-    try { ctx.close(); } catch { /* noop */ }
+    try {
+      ctx.close();
+    } catch {
+      /* noop */
+    }
   };
 }
 

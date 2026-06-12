@@ -21,9 +21,7 @@ export function ReportsTabs() {
             to={t.to}
             className={cn(
               "rounded-full px-4 py-1.5 transition-colors",
-              active
-                ? "bg-white text-[#07090C]"
-                : "text-white/70 hover:text-white",
+              active ? "bg-white text-[#07090C]" : "text-white/70 hover:text-white",
             )}
           >
             {t.label}

@@ -1,0 +1,38 @@
+# Deploys the purplelife Worker to Cloudflare on every push to main.
+#
+# Required repository secrets:
+#   CLOUDFLARE_API_TOKEN   (Workers Scripts: Edit; created in the Cloudflare dashboard)
+#   CLOUDFLARE_ACCOUNT_ID
+#   VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_PROJECT_ID
+#
+# Runtime secrets (ANTHROPIC_API_KEY, RESEND_API_KEY, STRIPE_*, etc.) are NOT
+# set here; manage them once via `wrangler secret put` or the Cloudflare
+# dashboard. They persist across deploys.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
+      - run: bunx wrangler deploy -c wrangler.deploy.jsonc
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

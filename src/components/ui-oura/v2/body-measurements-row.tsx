@@ -9,19 +9,10 @@ type Item = {
 /**
  * Three large statistics, no card chrome, generous vertical padding.
  */
-export function BodyMeasurementsRow({
-  items,
-  className,
-}: {
-  items: Item[];
-  className?: string;
-}) {
+export function BodyMeasurementsRow({ items, className }: { items: Item[]; className?: string }) {
   return (
     <section
-      className={cn(
-        "grid grid-cols-3 gap-4 py-12 sm:py-16 border-y border-border",
-        className,
-      )}
+      className={cn("grid grid-cols-3 gap-4 py-12 sm:py-16 border-y border-border", className)}
     >
       {items.map((it, i) => (
         <div key={i} className="flex min-w-0 flex-col items-start text-left">
@@ -29,9 +20,7 @@ export function BodyMeasurementsRow({
             {it.value}
           </p>
           <p className="label-eyebrow mt-3 whitespace-nowrap">{it.label}</p>
-          {it.sub && (
-            <p className="mt-1 text-xs text-muted-foreground">{it.sub}</p>
-          )}
+          {it.sub && <p className="mt-1 text-xs text-muted-foreground">{it.sub}</p>}
         </div>
       ))}
     </section>

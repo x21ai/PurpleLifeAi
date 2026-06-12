@@ -56,7 +56,8 @@ const WeeklyRecapEmail = ({
           <Container style={listBox}>
             <Text style={rowTitle}>Events</Text>
             <Text style={rowMeta}>
-              {seizureCount} seizure {seizureCount === 1 ? "event" : "events"} · {missedDoses} missed {missedDoses === 1 ? "dose" : "doses"}
+              {seizureCount} seizure {seizureCount === 1 ? "event" : "events"} · {missedDoses}{" "}
+              missed {missedDoses === 1 ? "dose" : "doses"}
             </Text>
           </Container>
 
@@ -64,7 +65,9 @@ const WeeklyRecapEmail = ({
             <Container style={listBox}>
               <Text style={rowTitle}>Possible triggers</Text>
               {topTriggers.map((t, i) => (
-                <Text key={i} style={rowMeta}>• {t.label} ({t.count})</Text>
+                <Text key={i} style={rowMeta}>
+                  • {t.label} ({t.count})
+                </Text>
               ))}
             </Container>
           )}
@@ -78,7 +81,9 @@ const WeeklyRecapEmail = ({
 
           {todayUrl ? (
             <Text style={text}>
-              <EmailLink href={todayUrl} style={link}>Open your Today →</EmailLink>
+              <EmailLink href={todayUrl} style={link}>
+                Open your Today →
+              </EmailLink>
             </Text>
           ) : null}
 
@@ -126,5 +131,12 @@ const listBox = {
   borderRadius: "8px",
   backgroundColor: "#f6f5f9",
 };
-const rowTitle = { fontSize: "13px", color: TEXT, fontWeight: 700, margin: "0 0 4px", textTransform: "uppercase" as const, letterSpacing: "0.04em" };
+const rowTitle = {
+  fontSize: "13px",
+  color: TEXT,
+  fontWeight: 700,
+  margin: "0 0 4px",
+  textTransform: "uppercase" as const,
+  letterSpacing: "0.04em",
+};
 const rowMeta = { fontSize: "14px", color: MUTED, margin: "2px 0", lineHeight: "1.5" };

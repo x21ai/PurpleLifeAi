@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
 import {
   listPlatformRules,
   upsertPlatformRule,
@@ -66,7 +67,8 @@ function PlatformRulesPage() {
       toast.success("Rule saved");
       void refetch();
     },
-    onError: (e: any) => toast.error(e?.message ?? "Save failed"),
+    onError: (e: any) =>
+      toast.error(userMessage(e, "That didn't save. Your changes are still here, try again.")),
   });
   const deleteMut = useMutation({
     mutationFn: (id: string) => remove({ data: { id } }),
@@ -74,33 +76,26 @@ function PlatformRulesPage() {
       toast.success("Rule deleted");
       void refetch();
     },
-    onError: (e: any) => toast.error(e?.message ?? "Delete failed"),
+    onError: (e: any) => toast.error(userMessage(e, "That didn't delete. Try again in a moment.")),
   });
 
   const rules = (data?.rules ?? []) as RuleRow[];
   const audit = (data?.audit ?? []) as AuditRow[];
 
   // Synthesize placeholder rows for any KNOWN_RULE_KEYS that don't yet exist.
-  const existingKeys = new Set(
-    rules.filter((r) => r.scope === "platform").map((r) => r.key),
-  );
-  const placeholders = KNOWN_RULE_KEYS.filter((k) => !existingKeys.has(k.key)).map(
-    (k) => ({
-      id: `placeholder:${k.key}`,
-      scope: "platform",
-      scope_value: null,
-      key: k.key,
-      value: k.defaultValue,
-      enabled: false,
-      description: k.description,
-      updated_at: "",
-      _placeholder: true,
-    }),
-  );
-  const platformRules = [
-    ...rules.filter((r) => r.scope === "platform"),
-    ...placeholders,
-  ];
+  const existingKeys = new Set(rules.filter((r) => r.scope === "platform").map((r) => r.key));
+  const placeholders = KNOWN_RULE_KEYS.filter((k) => !existingKeys.has(k.key)).map((k) => ({
+    id: `placeholder:${k.key}`,
+    scope: "platform",
+    scope_value: null,
+    key: k.key,
+    value: k.defaultValue,
+    enabled: false,
+    description: k.description,
+    updated_at: "",
+    _placeholder: true,
+  }));
+  const platformRules = [...rules.filter((r) => r.scope === "platform"), ...placeholders];
   const roleRules = rules.filter((r) => r.scope === "role");
   const userRules = rules.filter((r) => r.scope === "user");
 
@@ -161,7 +156,10 @@ function PlatformRulesPage() {
                     </span>
                     <span className="font-mono">{a.key}</span>
                     {a.scope_value ? (
-                      <span className="text-muted-foreground"> · {a.scope}:{a.scope_value}</span>
+                      <span className="text-muted-foreground">
+                        {" "}
+                        · {a.scope}:{a.scope_value}
+                      </span>
                     ) : (
                       <span className="text-muted-foreground"> · {a.scope}</span>
                     )}
@@ -299,7 +297,7 @@ function RuleEditor({
     try {
       parsed = JSON.parse(valueText);
     } catch {
-      setJsonError("Value must be valid JSON (e.g. true, 60, \"text\").");
+      setJsonError('Value must be valid JSON (e.g. true, 60, "text").');
       return;
     }
     setJsonError(null);

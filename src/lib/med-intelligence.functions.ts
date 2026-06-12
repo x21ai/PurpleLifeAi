@@ -56,7 +56,9 @@ export const getMedIntelligence = createServerFn({ method: "GET" })
     const [{ data: meds }, { data: doses30 }] = await Promise.all([
       supabase
         .from("medications")
-        .select("id, name, times_of_day, pills_remaining, refill_threshold, is_rescue, kind, active")
+        .select(
+          "id, name, times_of_day, pills_remaining, refill_threshold, is_rescue, kind, active",
+        )
         .eq("user_id", userId)
         .eq("active", true),
       supabase
@@ -152,15 +154,21 @@ export const getMedIntelligence = createServerFn({ method: "GET" })
       if (d.status === "missed" || d.status === "skipped") buckets[b].missed += 1;
     }
     let pattern: MissedPattern | null = null;
-    for (const [bucket, v] of Object.entries(buckets) as Array<[TimeBucket, { missed: number; scheduled: number }]>) {
+    for (const [bucket, v] of Object.entries(buckets) as Array<
+      [TimeBucket, { missed: number; scheduled: number }]
+    >) {
       if (v.scheduled < 6 || v.missed < 3) continue;
       const pct = v.missed / v.scheduled;
       if (pct < 0.4) continue;
       // Check other buckets are calmer.
-      const others = (Object.entries(buckets) as Array<[TimeBucket, { missed: number; scheduled: number }]>)
+      const others = (
+        Object.entries(buckets) as Array<[TimeBucket, { missed: number; scheduled: number }]>
+      )
         .filter(([k]) => k !== bucket)
         .filter(([, x]) => x.scheduled >= 3);
-      const allOthersLower = others.every(([, x]) => x.missed / Math.max(1, x.scheduled) < pct - 0.15);
+      const allOthersLower = others.every(
+        ([, x]) => x.missed / Math.max(1, x.scheduled) < pct - 0.15,
+      );
       if (!allOthersLower) continue;
       if (!pattern || pct > pattern.pct) {
         pattern = { bucket, missed: v.missed, scheduled: v.scheduled, pct: Math.round(pct * 100) };

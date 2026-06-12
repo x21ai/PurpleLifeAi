@@ -1,5 +1,5 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "purplelife",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -12,14 +12,18 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "seed:research": "bun run supabase/seeds/research_sources.ts",
+    "test:unit": "bun test tests/unit",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install --with-deps chromium",
     "check:live-data": "node scripts/check-no-test-data.mjs",
     "check:live-data:db": "node scripts/check-no-test-data.mjs --db",
     "check:em-dash": "node scripts/check-no-em-dash.mjs",
-    "check:unique-images": "node scripts/check-unique-route-images.mjs"
+    "check:unique-images": "node scripts/check-unique-route-images.mjs",
+    "check:entry-budget": "node scripts/check-entry-budget.mjs",
+    "check:i18n-es": "node scripts/check-i18n-es.mjs"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.82",
     "@ai-sdk/openai-compatible": "^2.0.48",
     "@ai-sdk/react": "^3.0.199",
     "@cloudflare/vite-plugin": "^1.25.5",
@@ -27,9 +31,6 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^5.2.2",
-    "@lovable.dev/cloud-auth-js": "^1.1.2",
-    "@lovable.dev/email-js": "^0.0.4",
-    "@lovable.dev/webhooks-js": "^0.0.1",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.8",
@@ -99,6 +100,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "2.3.2",
     "@playwright/test": "^1.60.0",

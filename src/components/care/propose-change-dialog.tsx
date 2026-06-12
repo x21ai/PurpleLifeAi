@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { proposeChange } from "@/lib/care.functions";
+import { userMessage } from "@/lib/user-message";
 
 type ProposeType = "add_journal_comment" | "add_meds_note";
 
@@ -50,7 +51,7 @@ export function ProposeChangeDialog({
       setText("");
       setOpen(false);
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't submit"),
+    onError: (e: any) => toast.error(userMessage(e, "Couldn't submit")),
   });
 
   return (

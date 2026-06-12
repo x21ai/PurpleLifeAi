@@ -4,6 +4,16 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Download, Mail, Share2, Trash2, FileText, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -29,6 +39,7 @@ import {
   deleteMedicalReportSchedule,
 } from "@/lib/medical-report-schedules.functions";
 import { ProGate } from "@/components/pro/pro-gate";
+import { userMessage } from "@/lib/user-message";
 
 export const Route = createFileRoute("/_app/reports/medical-history")({
   component: MedicalHistoryPage,
@@ -54,8 +65,14 @@ function MedicalHistoryPage() {
   const [from, setFrom] = useState(() => ymd(new Date(today.getTime() - 90 * 86400000)));
   const [to, setTo] = useState(() => ymd(today));
   const [sections, setSections] = useState({
-    snapshot: true, meds: true, seizures: true, biometrics: true,
-    labs: true, journal: true, extras: true, appendix: false,
+    snapshot: true,
+    meds: true,
+    seizures: true,
+    biometrics: true,
+    labs: true,
+    journal: true,
+    extras: true,
+    appendix: false,
   });
 
   const queryClient = useQueryClient();
@@ -79,6 +96,7 @@ function MedicalHistoryPage() {
   const [schDay, setSchDay] = useState(1);
   const [schWindow, setSchWindow] = useState(30);
   const [schRecipients, setSchRecipients] = useState("");
+  const [confirmDeleteSchedule, setConfirmDeleteSchedule] = useState(false);
   const existing = schedules.data?.schedules?.[0];
   const saveSchedule = useMutation({
     mutationFn: () =>
@@ -99,7 +117,7 @@ function MedicalHistoryPage() {
       toast.success("Schedule saved");
       queryClient.invalidateQueries({ queryKey: ["medical-history", "schedules"] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onError: (e) => toast.error(userMessage(e, "That didn't work. Try again in a moment.")),
   });
 
   // Hydrate the form once when the schedule loads
@@ -110,9 +128,7 @@ function MedicalHistoryPage() {
     setSchDay(existing.day_of_month);
     setSchWindow(existing.window_days);
     setSchRecipients(
-      ((existing.recipients ?? []) as Array<{ email: string }>)
-        .map((r) => r.email)
-        .join(", "),
+      ((existing.recipients ?? []) as Array<{ email: string }>).map((r) => r.email).join(", "),
     );
   }
 
@@ -132,7 +148,7 @@ function MedicalHistoryPage() {
       window.open(r.url, "_blank");
       queryClient.invalidateQueries({ queryKey: ["medical-history", "list"] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onError: (e) => toast.error(userMessage(e, "That didn't work. Try again in a moment.")),
   });
 
   return (
@@ -146,7 +162,9 @@ function MedicalHistoryPage() {
 
       <section className="rounded-2xl border border-white/10 bg-card/60 p-5 space-y-4">
         <div>
-          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Date range</Label>
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+            Date range
+          </Label>
           <div className="flex flex-wrap gap-2 mt-2">
             {PRESETS.map((p) => (
               <Button
@@ -165,11 +183,15 @@ function MedicalHistoryPage() {
           </div>
           <div className="grid grid-cols-2 gap-3 mt-3">
             <div>
-              <Label htmlFor="from" className="text-xs">From</Label>
+              <Label htmlFor="from" className="text-xs">
+                From
+              </Label>
               <Input id="from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="to" className="text-xs">To</Label>
+              <Label htmlFor="to" className="text-xs">
+                To
+              </Label>
               <Input id="to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
             </div>
           </div>
@@ -191,7 +213,11 @@ function MedicalHistoryPage() {
         </div>
 
         <Button onClick={() => gen.mutate()} disabled={gen.isPending} className="w-full">
-          {gen.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileText className="h-4 w-4 mr-2" />}
+          {gen.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <FileText className="h-4 w-4 mr-2" />
+          )}
           Generate PDF
         </Button>
       </section>
@@ -213,7 +239,6 @@ function MedicalHistoryPage() {
                 window.open(url, "_blank");
               }}
               onDelete={async () => {
-                if (!confirm("Delete this report?")) return;
                 await del({ data: { reportId: r.id } });
                 queryClient.invalidateQueries({ queryKey: ["medical-history", "list"] });
                 toast("Deleted");
@@ -227,9 +252,15 @@ function MedicalHistoryPage() {
                 toast.success("Shared in chat");
               }}
               onCreateLink={async (days, viewerLabel) => {
-                const res = await createLink({ data: { reportId: r.id, expiresInDays: days, viewerLabel } });
+                const res = await createLink({
+                  data: { reportId: r.id, expiresInDays: days, viewerLabel },
+                });
                 const url = `${window.location.origin}/share/report/${res.link.token}`;
-                try { await navigator.clipboard.writeText(url); } catch { /* ignore */ }
+                try {
+                  await navigator.clipboard.writeText(url);
+                } catch {
+                  /* ignore */
+                }
                 toast.success("Share link copied to clipboard");
                 return url;
               }}
@@ -239,84 +270,112 @@ function MedicalHistoryPage() {
       </section>
 
       <ProGate feature="report_sharing">
-      <section className="rounded-2xl border border-white/10 bg-card/60 p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-serif text-lg">Monthly auto-report</h2>
-            <p className="text-xs text-muted-foreground">
-              Generate and email a fresh PDF on the same day every month.
-            </p>
+        <section className="rounded-2xl border border-white/10 bg-card/60 p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-serif text-lg">Monthly auto-report</h2>
+              <p className="text-xs text-muted-foreground">
+                Generate and email a fresh PDF on the same day every month.
+              </p>
+            </div>
+            <Switch checked={schActive} onCheckedChange={setSchActive} />
           </div>
-          <Switch checked={schActive} onCheckedChange={setSchActive} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Day of month</Label>
+              <Input
+                type="number"
+                min={1}
+                max={28}
+                value={schDay}
+                onChange={(e) => setSchDay(Math.min(28, Math.max(1, Number(e.target.value) || 1)))}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Window</Label>
+              <select
+                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm [&>option]:bg-popover [&>option]:text-popover-foreground text-foreground"
+                value={schWindow}
+                onChange={(e) => setSchWindow(Number(e.target.value))}
+              >
+                <option value={30}>Last 30 days</option>
+                <option value={60}>Last 60 days</option>
+                <option value={90}>Last 90 days</option>
+              </select>
+            </div>
+          </div>
           <div>
-            <Label className="text-xs">Day of month</Label>
-            <Input
-              type="number"
-              min={1}
-              max={28}
-              value={schDay}
-              onChange={(e) => setSchDay(Math.min(28, Math.max(1, Number(e.target.value) || 1)))}
+            <Label className="text-xs">Recipients (comma-separated emails)</Label>
+            <Textarea
+              rows={2}
+              value={schRecipients}
+              placeholder={"dr.smith@clinic.org, you@example.com" /* live-data-guard:allow */}
+              onChange={(e) => setSchRecipients(e.target.value)}
             />
           </div>
-          <div>
-            <Label className="text-xs">Window</Label>
-            <select
-              className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm [&>option]:bg-popover [&>option]:text-popover-foreground text-foreground"
-              value={schWindow}
-              onChange={(e) => setSchWindow(Number(e.target.value))}
-            >
-              <option value={30}>Last 30 days</option>
-              <option value={60}>Last 60 days</option>
-              <option value={90}>Last 90 days</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <Label className="text-xs">Recipients (comma-separated emails)</Label>
-          <Textarea
-            rows={2}
-            value={schRecipients}
-            placeholder={"dr.smith@clinic.org, you@example.com" /* live-data-guard:allow */}
-            onChange={(e) => setSchRecipients(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" onClick={() => saveSchedule.mutate()} disabled={saveSchedule.isPending}>
-            {existing ? "Update schedule" : "Save schedule"}
-          </Button>
-          {existing && (
+          <div className="flex gap-2">
             <Button
               size="sm"
-              variant="ghost"
-              onClick={async () => {
-                if (!confirm("Delete schedule?")) return;
+              onClick={() => saveSchedule.mutate()}
+              disabled={saveSchedule.isPending}
+            >
+              {existing ? "Update schedule" : "Save schedule"}
+            </Button>
+            {existing && (
+              <Button size="sm" variant="ghost" onClick={() => setConfirmDeleteSchedule(true)}>
+                Delete
+              </Button>
+            )}
+          </div>
+          {existing?.last_run_at && (
+            <p className="text-xs text-muted-foreground">
+              Last sent {new Date(existing.last_run_at).toLocaleString()}
+              {existing.last_error ? `, error: ${existing.last_error}` : ""}
+            </p>
+          )}
+        </section>
+      </ProGate>
+
+      <AlertDialog open={confirmDeleteSchedule} onOpenChange={setConfirmDeleteSchedule}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete monthly schedule?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Auto-generated reports will stop. You can set up a new schedule any time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!existing) return;
                 await delSch({ data: { id: existing.id } });
                 setHydrated(false);
                 setSchActive(false);
                 setSchRecipients("");
                 queryClient.invalidateQueries({ queryKey: ["medical-history", "schedules"] });
+                setConfirmDeleteSchedule(false);
               }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
-            </Button>
-          )}
-        </div>
-        {existing?.last_run_at && (
-          <p className="text-xs text-muted-foreground">
-            Last sent {new Date(existing.last_run_at).toLocaleString()}
-            {existing.last_error ? `, error: ${existing.last_error}` : ""}
-          </p>
-        )}
-      </section>
-      </ProGate>
+              Delete schedule
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
 function ReportRow({
-  report, threads, onDownload, onDelete, onEmail, onShareThread, onCreateLink,
+  report,
+  threads,
+  onDownload,
+  onDelete,
+  onEmail,
+  onShareThread,
+  onCreateLink,
 }: {
   report: { id: string; window_from: string; window_to: string; created_at: string };
   threads: Array<{ id: string; title?: string | null }>;
@@ -333,6 +392,7 @@ function ReportRow({
   const [linkDays, setLinkDays] = useState(7);
   const [linkLabel, setLinkLabel] = useState("");
   const [createdUrl, setCreatedUrl] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const listLinks = useServerFn(listMedicalReportShareLinks);
   const revokeLink = useServerFn(revokeMedicalReportShareLink);
   const linksQ = useQuery({
@@ -353,17 +413,33 @@ function ReportRow({
           </p>
         </div>
         <div className="flex gap-1">
-          <Button size="sm" variant="ghost" onClick={onDownload}><Download className="h-4 w-4" /></Button>
-          <Button size="sm" variant="ghost" onClick={() => setMode(mode === "email" ? "none" : "email")}>
+          <Button size="sm" variant="ghost" onClick={onDownload}>
+            <Download className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setMode(mode === "email" ? "none" : "email")}
+          >
             <Mail className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setMode(mode === "thread" ? "none" : "thread")}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setMode(mode === "thread" ? "none" : "thread")}
+          >
             <Share2 className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => setMode(mode === "link" ? "none" : "link")}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setMode(mode === "link" ? "none" : "link")}
+          >
             <Link2 className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="ghost" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
+          <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(true)}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
@@ -381,7 +457,11 @@ function ReportRow({
             rows={2}
           />
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => onEmail(providerEmail || "self@me", "", true)}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onEmail(providerEmail || "self@me", "", true)}
+            >
               Email to me
             </Button>
             <Button
@@ -408,7 +488,9 @@ function ReportRow({
               >
                 <option value="">Choose a chat…</option>
                 {threads.map((t) => (
-                  <option key={t.id} value={t.id}>{t.title || "Care chat"}</option>
+                  <option key={t.id} value={t.id}>
+                    {t.title || "Care chat"}
+                  </option>
                 ))}
               </select>
               <Textarea
@@ -417,7 +499,11 @@ function ReportRow({
                 onChange={(e) => setMessage(e.target.value)}
                 rows={2}
               />
-              <Button size="sm" disabled={!threadId} onClick={() => onShareThread(threadId, message)}>
+              <Button
+                size="sm"
+                disabled={!threadId}
+                onClick={() => onShareThread(threadId, message)}
+              >
                 Share in chat
               </Button>
             </>
@@ -464,9 +550,7 @@ function ReportRow({
           )}
           {linksQ.data && linksQ.data.links.length > 0 && (
             <div className="mt-3 space-y-1.5">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                Active links
-              </p>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Active links</p>
               <ul className="space-y-1.5">
                 {linksQ.data.links.map((l) => {
                   const expired = new Date(l.expires_at) < new Date();
@@ -514,6 +598,29 @@ function ReportRow({
           )}
         </div>
       )}
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this report?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The PDF will be permanently removed from your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void onDelete();
+                setConfirmDelete(false);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete report
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </li>
   );
 }

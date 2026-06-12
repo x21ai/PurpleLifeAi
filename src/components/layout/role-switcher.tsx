@@ -71,13 +71,9 @@ export function RoleSwitcher({ compact = false }: { compact?: boolean }) {
         {owners.map((o) => {
           const name =
             o.profile?.community_display_name?.trim() ||
-            [o.profile?.first_name, o.profile?.last_name]
-              .filter(Boolean)
-              .join(" ")
-              .trim() ||
+            [o.profile?.first_name, o.profile?.last_name].filter(Boolean).join(" ").trim() ||
             "Their account";
-          const active =
-            inCaregiverMode && pathname === `/care/${o.owner_id}`;
+          const active = inCaregiverMode && pathname === `/care/${o.owner_id}`;
           return (
             <DropdownMenuItem
               key={o.owner_id}

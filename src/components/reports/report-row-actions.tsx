@@ -1,8 +1,22 @@
 import * as React from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, ExternalLink, Link2, Loader2, MoreVertical, RefreshCw, Trash2 } from "lucide-react";
+import {
+  Download,
+  ExternalLink,
+  Link2,
+  Loader2,
+  MoreVertical,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
-import { getReportFileUrl, getReportShareUrl, processReport, deleteReport } from "@/lib/reports.functions";
+import {
+  getReportFileUrl,
+  getReportShareUrl,
+  processReport,
+  deleteReport,
+} from "@/lib/reports.functions";
+import { userMessage } from "@/lib/user-message";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +34,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 /**
  * Inline View / Download actions for a row in the documents list.
@@ -38,8 +61,13 @@ export function ReportRowActions({
   const fetchShare = useServerFn(getReportShareUrl);
   const reprocess = useServerFn(processReport);
   const remove = useServerFn(deleteReport);
-  const [busy, setBusy] = React.useState<null | "view" | "download" | "share" | "retry" | "delete">(null);
+  const [busy, setBusy] = React.useState<null | "view" | "download" | "share" | "retry" | "delete">(
+    null,
+  );
   const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = React.useState(false);
+  const [shareUrl, setShareUrl] = React.useState("");
+  const [shareExpiresDays, setShareExpiresDays] = React.useState(7);
 
   const failed = status === "failed" || status === "needs_credits" || status === "rate_limited";
 
@@ -58,7 +86,7 @@ export function ReportRowActions({
         a.remove();
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not open file");
+      toast.error(userMessage(err, "Could not open file"));
     } finally {
       setBusy(null);
     }
@@ -71,7 +99,7 @@ export function ReportRowActions({
       toast.success("Re-running extraction…");
       onChanged?.();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't re-run extraction");
+      toast.error(userMessage(err, "Couldn't re-run extraction"));
     } finally {
       setBusy(null);
     }
@@ -85,10 +113,12 @@ export function ReportRowActions({
         await navigator.clipboard.writeText(url);
         toast.success(`Share link copied , expires in ${expiresInDays} days`);
       } catch {
-        window.prompt("Share link (expires in 7 days)", url);
+        setShareUrl(url);
+        setShareExpiresDays(expiresInDays);
+        setShareDialogOpen(true);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not create share link");
+      toast.error(userMessage(err, "Could not create share link"));
     } finally {
       setBusy(null);
     }
@@ -101,7 +131,7 @@ export function ReportRowActions({
       toast.success("Report deleted");
       onChanged?.();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't delete report");
+      toast.error(userMessage(err, "Couldn't delete report"));
     } finally {
       setBusy(null);
       setConfirmOpen(false);
@@ -186,6 +216,42 @@ export function ReportRowActions({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share link</DialogTitle>
+            <DialogDescription>
+              Copy this link manually. It expires in {shareExpiresDays} days.
+            </DialogDescription>
+          </DialogHeader>
+          <input
+            readOnly
+            value={shareUrl}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
+            onFocus={(e) => e.target.select()}
+          />
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setShareDialogOpen(false)}>
+              Close
+            </Button>
+            <Button
+              type="button"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(shareUrl);
+                  toast.success("Link copied");
+                  setShareDialogOpen(false);
+                } catch {
+                  toast.error("Could not copy link");
+                }
+              }}
+            >
+              Copy link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

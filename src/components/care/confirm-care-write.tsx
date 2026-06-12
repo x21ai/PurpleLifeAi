@@ -39,11 +39,7 @@ export function ConfirmCareWriteButton({
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button
-        onClick={() => setOpen(true)}
-        disabled={disabled || pending}
-        variant={variant}
-      >
+      <Button onClick={() => setOpen(true)} disabled={disabled || pending} variant={variant}>
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : children}
       </Button>
       <AlertDialog open={open} onOpenChange={setOpen}>
@@ -53,8 +49,7 @@ export function ConfirmCareWriteButton({
               Write to {ownerName}'s record?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {summary}. They&rsquo;ll see this in their audit log, tagged as
-              added by you.
+              {summary}. They&rsquo;ll see this in their audit log, tagged as added by you.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

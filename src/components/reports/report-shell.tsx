@@ -49,9 +49,7 @@ export function ReportShell({
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-5 sm:px-8 pt-6 pb-32">
-        {children}
-      </main>
+      <main className="mx-auto max-w-3xl px-5 sm:px-8 pt-6 pb-32">{children}</main>
     </div>
   );
 }
@@ -72,18 +70,31 @@ export function ReportCard({
   );
 }
 
-export function ReportSectionTitle({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <h2 className={cn("font-serif text-2xl text-white", className)}>{children}</h2>
-  );
+export function ReportSectionTitle({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <h2 className={cn("font-serif text-2xl text-white", className)}>{children}</h2>;
 }
 
 export type ReportPillTone = "neutral" | "success" | "warning" | "alert";
-export function ReportPill({ tone = "neutral", children }: { tone?: ReportPillTone; children: React.ReactNode }) {
+export function ReportPill({
+  tone = "neutral",
+  children,
+}: {
+  tone?: ReportPillTone;
+  children: React.ReactNode;
+}) {
   const cls =
-    tone === "success" ? "report-pill report-pill-success" :
-    tone === "warning" ? "report-pill report-pill-warning" :
-    tone === "alert"   ? "report-pill report-pill-alert" :
-    "report-pill";
+    tone === "success"
+      ? "report-pill report-pill-success"
+      : tone === "warning"
+        ? "report-pill report-pill-warning"
+        : tone === "alert"
+          ? "report-pill report-pill-alert"
+          : "report-pill";
   return <span className={cls}>{children}</span>;
 }

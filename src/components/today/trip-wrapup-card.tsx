@@ -69,7 +69,11 @@ export function TripWrapupCard() {
 
   if (!trip || dismissed) return null;
 
-  const destShort = (trip.label?.trim() || trip.destination_tz.split("/").pop() || trip.destination_tz).replace(/_/g, " ");
+  const destShort = (
+    trip.label?.trim() ||
+    trip.destination_tz.split("/").pop() ||
+    trip.destination_tz
+  ).replace(/_/g, " ");
   const dismiss = () => {
     try {
       localStorage.setItem(DISMISS_PREFIX + trip.id, "1");
@@ -91,8 +95,8 @@ export function TripWrapupCard() {
           Your trip to <span className="font-medium">{destShort}</span> ended.
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Take a minute to log how it went, any seizures, missed doses, or
-          sleep changes, so patterns over time stay accurate.
+          Take a minute to log how it went, any seizures, missed doses, or sleep changes, so
+          patterns over time stay accurate.
         </p>
         <div className="mt-2.5 flex flex-wrap gap-2">
           <Link

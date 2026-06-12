@@ -17,3 +17,50 @@ export function formatLocaleTime(input: Date | string | number): string {
     return d.toLocaleTimeString();
   }
 }
+
+/**
+ * Day index in the DEVICE'S local timezone (changes at local midnight).
+ * Use for anything that rotates or buckets "per day" in the UI; the naive
+ * Math.floor(now / 86_400_000) rotates at UTC midnight instead, which is
+ * hours off for most of the world.
+ */
+export function localDayIndex(input: Date | string | number = new Date()): number {
+  const d = input instanceof Date ? input : new Date(input);
+  return Math.floor((d.getTime() - d.getTimezoneOffset() * 60_000) / 86_400_000);
+}
+
+/** "YYYY-MM-DD" in the device's local timezone (NOT toISOString, which is UTC). */
+export function localDateKey(input: Date | string | number = new Date()): string {
+  const d = input instanceof Date ? input : new Date(input);
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+/**
+ * Dosage labels must carry a number. Historical data contains unit-only
+ * strings ("mg") from a form that allowed unit without amount; rendering
+ * those produced rows like "Levetiracetam mg". Returns null for any label
+ * without a digit so callers hide the dosage line instead.
+ */
+export function sanitizeDosageLabel(label: string | null | undefined): string | null {
+  const s = (label ?? "").trim();
+  if (!s) return null;
+  return /\d/.test(s) ? s : null;
+}
+
+/** "YYYY-MM-DD" for an instant, evaluated in an arbitrary IANA timezone. */
+export function dateKeyInTimeZone(input: Date | string | number, timeZone: string): string {
+  const d = input instanceof Date ? input : new Date(input);
+  try {
+    // en-CA formats as YYYY-MM-DD.
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(d);
+  } catch {
+    return d.toISOString().slice(0, 10);
+  }
+}

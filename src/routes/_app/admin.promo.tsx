@@ -2,6 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_app/admin/promo")({
   head: () => ({ meta: [{ title: "Promo codes · Purple" }] }),
@@ -31,6 +42,7 @@ function AdminPromo() {
   const [label, setLabel] = React.useState("");
   const [kind, setKind] = React.useState<Code["kind"]>("invite");
   const [maxUses, setMaxUses] = React.useState<string>("");
+  const [pendingDelete, setPendingDelete] = React.useState<Code | null>(null);
 
   const load = React.useCallback(async () => {
     const { data } = await supabase
@@ -52,7 +64,7 @@ function AdminPromo() {
       kind,
       max_uses: maxUses ? Number(maxUses) : null,
     });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(userMessage(error, "That didn't work. Try again in a moment."));
     toast.success("Code created");
     setCode(rand());
     setLabel("");
@@ -66,7 +78,6 @@ function AdminPromo() {
   };
 
   const remove = async (row: Code) => {
-    if (!confirm(`Delete code ${row.code}?`)) return;
     await supabase.from("promo_codes").delete().eq("id", row.id);
     void load();
   };
@@ -122,7 +133,8 @@ function AdminPromo() {
             <div className="min-w-0">
               <p className="font-mono font-medium">{r.code}</p>
               <p className="text-xs text-muted-foreground">
-                {r.kind} · {r.used_count}{r.max_uses ? `/${r.max_uses}` : ""} used
+                {r.kind} · {r.used_count}
+                {r.max_uses ? `/${r.max_uses}` : ""} used
                 {r.label ? ` · ${r.label}` : ""}
                 {r.expires_at ? ` · expires ${new Date(r.expires_at).toLocaleDateString()}` : ""}
               </p>
@@ -135,7 +147,7 @@ function AdminPromo() {
                 {r.active ? "Disable" : "Enable"}
               </button>
               <button
-                onClick={() => remove(r)}
+                onClick={() => setPendingDelete(r)}
                 className="text-xs rounded-full border border-border px-3 py-1 text-destructive hover:bg-destructive/10"
               >
                 Delete
@@ -145,6 +157,34 @@ function AdminPromo() {
         ))}
         {rows.length === 0 && <p className="text-muted-foreground">No codes yet.</p>}
       </ul>
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete code {pendingDelete?.code}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This promo code will be permanently removed. Existing redemptions will not be
+              affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (pendingDelete) void remove(pendingDelete);
+                setPendingDelete(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete code
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

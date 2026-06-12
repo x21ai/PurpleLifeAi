@@ -9,6 +9,7 @@ import { AvatarCard } from "@/components/account/avatar-card";
 import { PasswordSection } from "@/components/account/password-section";
 import { TwoFactorSection } from "@/components/account/two-factor-section";
 import { LocaleFields, type LocaleValues } from "@/components/locale/locale-fields";
+import { rearmMedicationNotifications } from "@/lib/med-notifications";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme, type ThemeMode } from "@/lib/theme-provider";
@@ -60,6 +61,7 @@ function AccountPage() {
   }, [userId]);
 
   const onLocaleChange = async (next: LocaleValues) => {
+    const timezoneChanged = next.timezone !== locale.timezone;
     setLocaleState(next);
     if (!userId) return;
     setSavingLocale(true);
@@ -70,6 +72,16 @@ function AccountPage() {
     setSavingLocale(false);
     if (error) return toast.error("Couldn't save region & language");
     setLocale(next.locale);
+    // Dose instants are wall-clock times in the profile timezone; changing it
+    // must rebuild today's pending doses or reminders fire at the old offset.
+    if (timezoneChanged && next.timezone) {
+      try {
+        await supabase.rpc("regenerate_today_pending_doses", { _user_id: userId });
+        void rearmMedicationNotifications();
+      } catch {
+        /* non-fatal; the hourly seeder reconciles */
+      }
+    }
     toast.success("Saved");
   };
 
@@ -128,7 +140,11 @@ function AccountPage() {
         <p className="text-[15px] text-foreground">Signed in as</p>
         <p className="mt-1 text-[13px] sheet-muted">{session?.user?.email ?? "–"}</p>
         <div className="mt-5">
-          <Button onClick={handleSignOut} variant="outline" className="bg-muted border-border text-foreground hover:bg-muted/80">
+          <Button
+            onClick={handleSignOut}
+            variant="outline"
+            className="bg-muted border-border text-foreground hover:bg-muted/80"
+          >
             {t("account.signOut")}
           </Button>
         </div>
@@ -191,7 +207,9 @@ function InviteCodeCard() {
     }
   };
 
-  const shareUrl = code ? `${typeof window !== "undefined" ? window.location.origin : "https://purplelife.org"}/?invite=${code}` : "";
+  const shareUrl = code
+    ? `${typeof window !== "undefined" ? window.location.origin : "https://purplelife.org"}/?invite=${code}`
+    : "";
 
   const copy = async () => {
     if (!shareUrl) return;
@@ -206,7 +224,10 @@ function InviteCodeCard() {
 
   const share = async () => {
     if (!shareUrl) return;
-    if (typeof navigator !== "undefined" && (navigator as Navigator & { share?: (d: ShareData) => Promise<void> }).share) {
+    if (
+      typeof navigator !== "undefined" &&
+      (navigator as Navigator & { share?: (d: ShareData) => Promise<void> }).share
+    ) {
       try {
         await (navigator as Navigator & { share: (d: ShareData) => Promise<void> }).share({
           title: "Purple",
@@ -250,7 +271,11 @@ function InviteCodeCard() {
               variant="outline"
               className="bg-muted border-border text-foreground hover:bg-muted/80"
             >
-              {copied ? <Check className="mr-2 h-4 w-4 text-emerald-400" /> : <Copy className="mr-2 h-4 w-4" />}
+              {copied ? (
+                <Check className="mr-2 h-4 w-4 text-emerald-400" />
+              ) : (
+                <Copy className="mr-2 h-4 w-4" />
+              )}
               {copied ? "Copied" : "Copy link"}
             </Button>
             <Button

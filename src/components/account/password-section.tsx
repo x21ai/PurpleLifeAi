@@ -5,6 +5,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { userMessage } from "@/lib/user-message";
 
 export function PasswordSection() {
   const [pwd, setPwd] = React.useState("");
@@ -17,7 +18,7 @@ export function PasswordSection() {
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password: pwd });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(userMessage(error, "That didn't work. Try again in a moment."));
     setPwd("");
     setConfirm("");
     toast.success("Password updated");
@@ -32,7 +33,9 @@ export function PasswordSection() {
       <p className="mt-1 text-[13px] sheet-muted">Minimum 8 characters.</p>
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
         <div>
-          <Label htmlFor="new-pwd" className="sr-only">New password</Label>
+          <Label htmlFor="new-pwd" className="sr-only">
+            New password
+          </Label>
           <PasswordInput
             id="new-pwd"
             value={pwd}
@@ -42,7 +45,9 @@ export function PasswordSection() {
           />
         </div>
         <div>
-          <Label htmlFor="confirm-pwd" className="sr-only">Confirm password</Label>
+          <Label htmlFor="confirm-pwd" className="sr-only">
+            Confirm password
+          </Label>
           <PasswordInput
             id="confirm-pwd"
             value={confirm}
@@ -53,7 +58,12 @@ export function PasswordSection() {
         </div>
       </div>
       <div className="mt-3">
-        <Button onClick={onSave} disabled={busy || !pwd || !confirm} variant="outline" className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10">
+        <Button
+          onClick={onSave}
+          disabled={busy || !pwd || !confirm}
+          variant="outline"
+          className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10"
+        >
           {busy && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
           Update password
         </Button>

@@ -82,7 +82,10 @@
     "emptyHeading": "Start where you are.",
     "emptyBody": "Write a sentence, speak a thought, or snap a photo. Purple does the rest.",
     "emptyCta": "Start journaling",
-    "emptySkip": "Skip for now"
+    "emptySkip": "Skip for now",
+    "wearablesNudge": "Connect Oura or Whoop to see how your body affects your patterns.",
+    "wearablesNudgeAction": "Connect a device",
+    "dismiss": "Dismiss"
   },
   "journal": {
     "eyebrow": "Journal",
@@ -125,8 +128,9 @@
     "title1": "Every signal Purple",
     "title2": "is reading.",
     "backToToday": "Back to today",
-    "noDataTitle": "No Oura data yet.",
-    "noDataBody": "Connect your ring in settings or pull data with Sync now once it's connected."
+    "noDataTitle": "Your signals will live here.",
+    "noDataBody": "Connect Oura, Whoop, or Apple Health and Purple will chart sleep, heart rate, and recovery without filling the screen with placeholders.",
+    "noDataCta": "Connect a device"
   },
   "insights": {
     "eyebrow": "Patterns",
@@ -145,7 +149,11 @@
     "noEvents": "No events logged.",
     "noEventsBody": "When something happens, log it, it only takes a tap.",
     "logShort": "Log",
-    "connectWearable": "Connect a wearable to start seeing your trends."
+    "connectWearable": "Connect a wearable to start seeing your trends.",
+    "freshEyebrow": "Patterns",
+    "freshHeading": "This page fills in as you log.",
+    "freshBody": "Daily observations, sleep trends, and cross-signal patterns will appear here after a few entries or a connected wearable. No charts until there is something real to show.",
+    "freshCta": "Start journaling"
   },
   "timeline": {
     "eyebrow": "Timeline",
@@ -170,7 +178,27 @@
     "downloadText": "Download text",
     "print": "Print / Save as PDF",
     "copy": "Copy to clipboard",
-    "share": "Share…"
+    "share": "Share…",
+    "emptyRangeHint": "Entries, doses, and seizure logs from this range will line up here.",
+    "emptyRangeCta": "Write a journal entry",
+    "freshEyebrow": "Your timeline",
+    "freshHeading": "Your days will line up here.",
+    "freshBody": "Journal entries, doses, and seizure logs will appear in order as you capture them. Start with one note and this page comes alive.",
+    "freshCta": "Write your first entry"
+  },
+  "emptyStates": {
+    "insightsEyebrow": "For you",
+    "insightsHeading": "Purple will notice patterns here.",
+    "insightsBody": "After a few journal entries or wearable readings, daily observations and gentle shifts will show up in this row.",
+    "insightsCta": "Start journaling",
+    "patternsEyebrow": "Patterns",
+    "patternsHeading": "Connections appear with time.",
+    "patternsBody": "Sleep, stress, meds, and symptoms start to rhyme after a week or two of quiet logging. Purple will surface what it sees.",
+    "patternsCta": "Log how today feels",
+    "biometricsEyebrow": "Your body",
+    "biometricsHeading": "Your signals will live here.",
+    "biometricsBody": "Connect Oura, Whoop, or Apple Health and Purple will chart sleep, heart rate, and recovery without filling the screen with placeholders.",
+    "biometricsCta": "Connect a device"
   },
   "locale": {
     "title": "Region & language",
@@ -220,7 +248,9 @@
     "fromTeam": "From the Purple team",
     "morning": "Good morning",
     "afternoon": "Good afternoon",
-    "evening": "Good evening"
+    "evening": "Good evening",
+    "firstWordsNote": "You told Purple: “{{words}}”. It is in your journal now, and Purple is paying attention.",
+    "scoresAsOf": "Scores are from {{day}}, the most recent night Purple has."
   },
   "riskDetail": {
     "eyebrow": "Today's reading",
@@ -312,7 +342,32 @@
     "enabled": "Enabled",
     "enable": "Enable",
     "notifsOn": "Notifications on",
-    "couldNotSave": "Could not save"
+    "couldNotSave": "Could not save",
+    "inviteApplied": "Invite code applied",
+    "stepOneOfTwo": "Step 1 of 2",
+    "stepTwoOfTwo": "Step 2 of 2",
+    "whoBodyShort": "Just your first name, and what you are carrying. Everything else can wait.",
+    "tellTitle": "Tell Purple about today.",
+    "tellBody": "One sentence is enough. Write it or say it, however it comes out.",
+    "tellPlaceholder": "However today actually went…",
+    "example1": "Slept badly, skipped lunch, headache by 3pm.",
+    "example2": "Felt steady today. Short walk after dinner.",
+    "example3": "Forgot my morning dose and felt foggy all afternoon.",
+    "dictate": "Dictate",
+    "stopDictating": "Stop",
+    "listening": "Listening…",
+    "save": "Save",
+    "reading": "Purple is reading your words…",
+    "readingSub": "Turning what you wrote into something it can track.",
+    "heardEyebrow": "Here is what Purple heard",
+    "heardTitle": "Your words, remembered.",
+    "heardSub": "This lives in your journal now. Purple starts noticing patterns from here.",
+    "behaviorsNoted_one": "1 detail noted for your patterns",
+    "behaviorsNoted_other": "{{count}} details noted for your patterns",
+    "savedEyebrow": "Saved",
+    "savedTitle": "Your first entry is in.",
+    "savedBody": "Purple is still reading it. What it finds will be waiting in your journal.",
+    "entrySaveFailed": "That did not save. Your words are still here, try once more."
   },
   "signIn": {
     "eyebrow": "Sign in",
@@ -337,7 +392,9 @@
     "orUseAnother": "or use another account",
     "freeForever": "Free forever. Open source. No ads.",
     "oauthError": "Sign-in didn't finish. Try again, or use your email instead.",
-    "enterEmailFirst": "Enter your email above, then tap Forgot password."
+    "enterEmailFirst": "Enter your email above, then tap Forgot password.",
+    "trustLine": "No ads. No trackers. Your data is yours.",
+    "trustLink": "How we keep that promise"
   },
   "resetPassword": {
     "eyebrow": "Reset password",
@@ -352,5 +409,16 @@
     "openFromEmail": "Open this page from the link in your reset email.",
     "tooShort": "Password must be at least 8 characters.",
     "mismatch": "Passwords don't match."
+  },
+  "doseCatchup": {
+    "body": "You may have missed your {{time}} {{med}} dose yesterday. Want to log it?",
+    "more_one": "And 1 more from the past day.",
+    "more_other": "And {{count}} more from the past day.",
+    "tookIt": "I took it",
+    "missedIt": "I missed it",
+    "review": "Review in Meds",
+    "notNow": "Not now",
+    "fallbackMed": "medication",
+    "updateFailed": "That did not save. Try again from Meds."
   }
 }

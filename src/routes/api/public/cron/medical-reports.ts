@@ -15,8 +15,7 @@ export const Route = createFileRoute("/api/public/cron/medical-reports")({
     handlers: {
       POST: async ({ request }) => {
         const cronSecret = process.env.CRON_SECRET;
-        const provided =
-          request.headers.get("x-cron-secret") ?? request.headers.get("apikey");
+        const provided = request.headers.get("x-cron-secret") ?? request.headers.get("apikey");
         if (!cronSecret || provided !== cronSecret) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
@@ -62,8 +61,10 @@ export const Route = createFileRoute("/api/public/cron/medical-reports")({
             });
 
             const { data: prof } = await supabaseAdmin
-              .from("profiles").select("first_name, last_name")
-              .eq("id", s.user_id).maybeSingle();
+              .from("profiles")
+              .select("first_name, last_name")
+              .eq("id", s.user_id)
+              .maybeSingle();
             const senderName =
               [prof?.first_name, prof?.last_name].filter(Boolean).join(" ").trim() ||
               "A Purple user";

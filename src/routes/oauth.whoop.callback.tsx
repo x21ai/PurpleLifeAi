@@ -49,10 +49,7 @@ function WhoopCallback() {
         </p>
         <p className="mt-3 text-sm text-muted-foreground">{message}</p>
         {status === "error" && (
-          <button
-            className="mt-6 text-sm text-primary underline"
-            onClick={() => window.close()}
-          >
+          <button className="mt-6 text-sm text-primary underline" onClick={() => window.close()}>
             Close window
           </button>
         )}

@@ -3,27 +3,36 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const auraKind = z.enum([
-  "deja_vu", "jamais_vu", "epigastric", "visual", "olfactory", "emotional", "other",
+  "deja_vu",
+  "jamais_vu",
+  "epigastric",
+  "visual",
+  "olfactory",
+  "emotional",
+  "other",
 ]);
 
 export const logAura = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: {
-    user_id?: string;
-    occurred_at: string;
-    kind: "deja_vu" | "jamais_vu" | "epigastric" | "visual" | "olfactory" | "emotional" | "other";
-    duration_seconds?: number | null;
-    notes?: string | null;
-    led_to_seizure?: boolean;
-  }) =>
-    z.object({
-      user_id: z.string().uuid().optional(),
-      occurred_at: z.string().datetime(),
-      kind: auraKind,
-      duration_seconds: z.number().int().min(0).max(3600).nullable().optional(),
-      notes: z.string().trim().max(500).nullable().optional(),
-      led_to_seizure: z.boolean().optional(),
-    }).parse(input),
+  .inputValidator(
+    (input: {
+      user_id?: string;
+      occurred_at: string;
+      kind: "deja_vu" | "jamais_vu" | "epigastric" | "visual" | "olfactory" | "emotional" | "other";
+      duration_seconds?: number | null;
+      notes?: string | null;
+      led_to_seizure?: boolean;
+    }) =>
+      z
+        .object({
+          user_id: z.string().uuid().optional(),
+          occurred_at: z.string().datetime(),
+          kind: auraKind,
+          duration_seconds: z.number().int().min(0).max(3600).nullable().optional(),
+          notes: z.string().trim().max(500).nullable().optional(),
+          led_to_seizure: z.boolean().optional(),
+        })
+        .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -50,11 +59,13 @@ export const logAura = createServerFn({ method: "POST" })
 export const listAurasForDay = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { user_id?: string; from: string; to: string }) =>
-    z.object({
-      user_id: z.string().uuid().optional(),
-      from: z.string().datetime(),
-      to: z.string().datetime(),
-    }).parse(input),
+    z
+      .object({
+        user_id: z.string().uuid().optional(),
+        from: z.string().datetime(),
+        to: z.string().datetime(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -72,9 +83,7 @@ export const listAurasForDay = createServerFn({ method: "GET" })
 
 export const deleteAura = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { id: string }) =>
-    z.object({ id: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: { id: string }) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { error } = await supabase.from("aura_events").delete().eq("id", data.id);

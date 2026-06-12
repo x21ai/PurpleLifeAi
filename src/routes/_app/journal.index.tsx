@@ -41,7 +41,9 @@ function JournalPage() {
     setRefreshing(false);
   }, [userId]);
 
-  React.useEffect(() => { void load(); }, [load]);
+  React.useEffect(() => {
+    void load();
+  }, [load]);
 
   // Realtime updates
   React.useEffect(() => {
@@ -71,7 +73,9 @@ function JournalPage() {
         },
       )
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [userId]);
 
   // Pull-to-refresh (touch)
@@ -94,7 +98,10 @@ function JournalPage() {
     setPull(0);
   };
 
-  const refresh = () => { setRefreshing(true); void load(); };
+  const refresh = () => {
+    setRefreshing(true);
+    void load();
+  };
 
   return (
     <div
@@ -107,7 +114,9 @@ function JournalPage() {
         <div>
           <p className="label-eyebrow text-muted-foreground">{t("journal.eyebrow")}</p>
           <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
-            {t("journal.title1")}<br/>{t("journal.title2")}
+            {t("journal.title1")}
+            <br />
+            {t("journal.title2")}
           </h1>
         </div>
         <Button
@@ -126,7 +135,9 @@ function JournalPage() {
           className="flex justify-center text-xs text-muted-foreground mb-2"
           style={{ height: pull }}
         >
-          <RefreshCw className={pull > 60 || refreshing ? "animate-spin h-4 w-4 mt-2" : "h-4 w-4 mt-2"} />
+          <RefreshCw
+            className={pull > 60 || refreshing ? "animate-spin h-4 w-4 mt-2" : "h-4 w-4 mt-2"}
+          />
         </div>
       )}
 

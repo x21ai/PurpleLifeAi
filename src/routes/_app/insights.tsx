@@ -1,7 +1,16 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { format, subDays, startOfDay, parseISO } from "date-fns";
-import { Zap, Plus, Sparkles, AlertTriangle, Info, ChevronRight } from "lucide-react";
+import {
+  Zap,
+  Plus,
+  Sparkles,
+  AlertTriangle,
+  Info,
+  ChevronRight,
+  PenLine,
+  TrendingUp,
+} from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +36,8 @@ import { SetGoalSheet } from "@/components/insights/set-goal-sheet";
 import { Target, Wand2, Loader2 } from "lucide-react";
 import { getDailyInsightCards } from "@/lib/report-trends.functions";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useFreshAccount } from "@/hooks/use-fresh-account";
+import { RouteEmptyState } from "@/components/empty-states/route-empty-state";
 
 type SeizureRow = {
   id: string;
@@ -48,6 +59,8 @@ function InsightsPage() {
   useRouteTheme("light");
   const { t } = useTranslation();
   const { session } = useAuth();
+  const freshQuery = useFreshAccount();
+  const isFresh = freshQuery.data?.isFresh === true;
   const [tracksSeizures, setTracksSeizures] = React.useState<boolean | null>(null);
   React.useEffect(() => {
     const uid = session?.user.id;
@@ -59,9 +72,7 @@ function InsightsPage() {
         .eq("id", uid)
         .maybeSingle();
       const conds = (data?.conditions ?? []) as string[];
-      setTracksSeizures(
-        conds.includes("epilepsy") || conds.includes("seizures"),
-      );
+      setTracksSeizures(conds.includes("epilepsy") || conds.includes("seizures"));
     })();
   }, [session?.user.id]);
 
@@ -69,44 +80,59 @@ function InsightsPage() {
     <div className="mx-auto max-w-4xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-32">
       <p className="label-eyebrow text-muted-foreground">{t("insights.eyebrow")}</p>
       <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
-        {t("insights.title1")}<br/>{t("insights.title2")}
+        {t("insights.title1")}
+        <br />
+        {t("insights.title2")}
       </h1>
       <div className="mt-8 max-w-[600px]">
-        <NarrativeBlock>
-          {t("insights.intro")}
-        </NarrativeBlock>
+        <NarrativeBlock>{t("insights.intro")}</NarrativeBlock>
       </div>
 
-      <ForYouRow />
+      <ForYouRow isFresh={isFresh} />
 
-      <TrendsHeader />
+      {!isFresh && <TrendsHeader />}
 
-      <VitalsRow />
+      {!isFresh && <VitalsRow />}
 
-      <HealthRecordsHub />
+      {!isFresh && <HealthRecordsHub />}
 
       {tracksSeizures !== null && (
         <Tabs
-          defaultValue={tracksSeizures ? "seizures" : "trends"}
+          defaultValue={isFresh ? "patterns" : tracksSeizures ? "seizures" : "trends"}
           className="mt-14"
         >
           <TabsList className="h-11 rounded-full bg-secondary/60 p-1">
-            {tracksSeizures && (
-              <TabsTrigger value="seizures" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">{t("insights.tabSeizures")}</TabsTrigger>
+            {tracksSeizures && !isFresh && (
+              <TabsTrigger
+                value="seizures"
+                className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                {t("insights.tabSeizures")}
+              </TabsTrigger>
             )}
-            <TabsTrigger value="trends" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">{t("insights.tabTrends")}</TabsTrigger>
-            <TabsTrigger value="patterns" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Patterns</TabsTrigger>
+            <TabsTrigger
+              value="trends"
+              className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              {t("insights.tabTrends")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="patterns"
+              className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              Patterns
+            </TabsTrigger>
           </TabsList>
-          {tracksSeizures && (
+          {tracksSeizures && !isFresh && (
             <TabsContent value="seizures" className="mt-6">
               <SeizuresTab />
             </TabsContent>
           )}
           <TabsContent value="trends" className="mt-6">
-            <TrendsTab />
+            <TrendsTab isFresh={isFresh} />
           </TabsContent>
           <TabsContent value="patterns" className="mt-6">
-            <PatternsTab />
+            <PatternsTab isFresh={isFresh} />
           </TabsContent>
         </Tabs>
       )}
@@ -122,7 +148,8 @@ type BioRow = {
   resting_hr_bpm: number | null;
 };
 
-function ForYouRow() {
+function ForYouRow({ isFresh }: { isFresh: boolean }) {
+  const { t } = useTranslation();
   const fetchCards = useServerFn(getDailyInsightCards);
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({
@@ -140,6 +167,31 @@ function ForYouRow() {
   const cards = data?.cards ?? [];
   const headline = data?.headline ?? null;
   const showEmpty = !isLoading && cards.length === 0;
+
+  if (isFresh) {
+    return (
+      <section className="mt-10">
+        <RouteEmptyState
+          testId="fresh-empty-insights"
+          eyebrow={t("emptyStates.insightsEyebrow")}
+          heading={t("emptyStates.insightsHeading")}
+          body={t("emptyStates.insightsBody")}
+          icon={Sparkles}
+          action={
+            <Button asChild size="lg" className="rounded-full h-12 px-6 text-base">
+              <Link to="/journal/new">
+                <PenLine className="h-4 w-4 mr-2" />
+                {t("emptyStates.insightsCta")}
+              </Link>
+            </Button>
+          }
+        />
+        <p className="mt-3 text-[11px] text-muted-foreground/70">
+          Observations only - never a diagnosis. Share with your clinician for context.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="mt-10">
@@ -183,7 +235,9 @@ function ForYouRow() {
                   ? "border-[#F3D58B]/40 bg-[#F3D58B]/[0.07]"
                   : "border-border/60 bg-secondary/40";
             const inner = (
-              <div className={cn("h-full rounded-2xl border p-4 transition hover:shadow-sm", accent)}>
+              <div
+                className={cn("h-full rounded-2xl border p-4 transition hover:shadow-sm", accent)}
+              >
                 <p className="text-sm font-medium text-foreground">{c.title}</p>
                 <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{c.body}</p>
                 {c.metricKey && (
@@ -260,16 +314,30 @@ function TrendsHeader() {
       <MetricNumber size="lg" value={fmtSleep(sleepMin)} label={t("insights.avgSleep")} />
       <MetricNumber size="lg" value={hrv ? Math.round(hrv) : "–"} label={t("insights.hrvMs")} />
       <MetricNumber size="lg" value={rhr ? Math.round(rhr) : "–"} label={t("insights.restBpm")} />
-      <p className="col-span-3 mt-3 label-eyebrow text-muted-foreground">
-        {t("insights.last14")}
-      </p>
+      <p className="col-span-3 mt-3 label-eyebrow text-muted-foreground">{t("insights.last14")}</p>
     </section>
   );
 }
 
-function TrendsTab() {
+function TrendsTab({ isFresh }: { isFresh: boolean }) {
   const { t } = useTranslation();
   const rows = useRecentBiometrics(14);
+  if (isFresh) {
+    return (
+      <RouteEmptyState
+        testId="fresh-empty-trends"
+        eyebrow={t("insights.tabTrends")}
+        heading={t("insights.freshHeading")}
+        body={t("insights.connectWearable")}
+        icon={TrendingUp}
+        action={
+          <Button asChild size="lg" className="rounded-full h-12 px-6 text-base">
+            <Link to="/tools">{t("today.wearablesNudgeAction")}</Link>
+          </Button>
+        }
+      />
+    );
+  }
   if (rows === null) {
     return <div className="h-48 rounded-2xl border border-border bg-card animate-pulse" />;
   }
@@ -332,7 +400,9 @@ function SeizuresTab() {
         setLoading(false);
       }
     })();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [userId]);
 
   return (
@@ -359,13 +429,13 @@ function SeizuresTab() {
         <div className="rounded-2xl border border-dashed border-border p-8 text-center">
           <Zap className="h-7 w-7 mx-auto text-muted-foreground mb-2" />
           <p className="font-serif text-foreground">{t("insights.noEvents")}</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {t("insights.noEventsBody")}
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">{t("insights.noEventsBody")}</p>
         </div>
       ) : (
         <ul className="space-y-2">
-          {events.map((e) => <SeizureRowItem key={e.id} event={e} />)}
+          {events.map((e) => (
+            <SeizureRowItem key={e.id} event={e} />
+          ))}
         </ul>
       )}
     </div>
@@ -382,9 +452,7 @@ function SeizureRowItem({ event }: { event: SeizureRow }) {
           <p className="font-serif text-foreground">
             {event.type ? event.type.replace(/_/g, " ") : "Seizure"}
           </p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {format(d, "EEE, MMM d · h:mm a")}
-          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">{format(d, "EEE, MMM d · h:mm a")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5 justify-end">
           {event.duration_seconds ? (
@@ -432,7 +500,7 @@ function Heatmap({ events, days }: { events: SeizureRow[]; days: number }) {
   // Pad so first column starts on Sunday
   const firstDow = cells[0]?.date.getDay() ?? 0;
   const pad = Array.from({ length: firstDow }, () => null);
-  const grid: (typeof cells[0] | null)[] = [...pad, ...cells];
+  const grid: ((typeof cells)[0] | null)[] = [...pad, ...cells];
 
   const intensity = (n: number) => {
     if (n === 0) return "bg-secondary/50";
@@ -472,9 +540,33 @@ function Heatmap({ events, days }: { events: SeizureRow[]; days: number }) {
     </div>
   );
 }
-function PatternsTab() {
+function PatternsTab({ isFresh }: { isFresh: boolean }) {
+  const { t } = useTranslation();
   const fn = useServerFn(computeUserPatterns);
-  const q = useQuery({ queryKey: ["insights", "patterns"], queryFn: () => fn() });
+  const q = useQuery({
+    queryKey: ["insights", "patterns"],
+    queryFn: () => fn(),
+    enabled: !isFresh,
+  });
+  if (isFresh) {
+    return (
+      <RouteEmptyState
+        testId="fresh-empty-patterns"
+        eyebrow={t("emptyStates.patternsEyebrow")}
+        heading={t("emptyStates.patternsHeading")}
+        body={t("emptyStates.patternsBody")}
+        icon={Sparkles}
+        action={
+          <Button asChild size="lg" className="rounded-full h-12 px-6 text-base">
+            <Link to="/journal/new">
+              <PenLine className="h-4 w-4 mr-2" />
+              {t("emptyStates.patternsCta")}
+            </Link>
+          </Button>
+        }
+      />
+    );
+  }
   if (q.isLoading) {
     return <div className="h-48 rounded-2xl border border-border bg-card animate-pulse" />;
   }
@@ -492,14 +584,17 @@ function PatternsTab() {
         <Sparkles className="mx-auto h-7 w-7 text-muted-foreground mb-2" />
         <p className="font-serif text-foreground">Not enough data yet</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Keep logging seizures, journal entries, and wearing your tracker. Patterns appear once there's enough signal.
+          Keep logging seizures, journal entries, and wearing your tracker. Patterns appear once
+          there's enough signal.
         </p>
       </div>
     );
   }
   return (
     <ul className="space-y-3">
-      {cards.map((c: PatternCard) => <PatternCardItem key={c.key} card={c} />)}
+      {cards.map((c: PatternCard) => (
+        <PatternCardItem key={c.key} card={c} />
+      ))}
     </ul>
   );
 }
@@ -569,9 +664,7 @@ function VitalsRow() {
   const tiles: Array<Tile> = [
     {
       label: "Weight",
-      value: v?.weightKg != null
-        ? `${Math.round(v.weightKg * 10) / 10}`
-        : "–",
+      value: v?.weightKg != null ? `${Math.round(v.weightKg * 10) / 10}` : "–",
       sub: v?.weightKg != null ? "kg" : "no reading yet",
       kind: "weight",
       numeric: v?.weightKg ?? null,
@@ -579,9 +672,10 @@ function VitalsRow() {
     },
     {
       label: "Blood pressure",
-      value: v?.bpSystolic != null && v?.bpDiastolic != null
-        ? `${Math.round(v.bpSystolic)}/${Math.round(v.bpDiastolic)}`
-        : "–",
+      value:
+        v?.bpSystolic != null && v?.bpDiastolic != null
+          ? `${Math.round(v.bpSystolic)}/${Math.round(v.bpDiastolic)}`
+          : "–",
       sub: v?.bpSystolic != null ? "mmHg" : "no reading yet",
       kind: "bp",
       numeric: v?.bpSystolic ?? null,
@@ -621,10 +715,14 @@ function VitalsRow() {
   function goalBadge(t: Tile): { tone: "good" | "watch"; label: string } | null {
     const g = goalsByKind.get(t.kind);
     if (!g || t.numeric == null) return null;
-    const inPrimary = (g.target_min == null || t.numeric >= g.target_min) && (g.target_max == null || t.numeric <= g.target_max);
+    const inPrimary =
+      (g.target_min == null || t.numeric >= g.target_min) &&
+      (g.target_max == null || t.numeric <= g.target_max);
     let ok = inPrimary;
     if (t.kind === "bp" && t.numeric2 != null && (g.target_min2 != null || g.target_max2 != null)) {
-      const inSecondary = (g.target_min2 == null || t.numeric2 >= g.target_min2) && (g.target_max2 == null || t.numeric2 <= g.target_max2);
+      const inSecondary =
+        (g.target_min2 == null || t.numeric2 >= g.target_min2) &&
+        (g.target_max2 == null || t.numeric2 <= g.target_max2);
       ok = ok && inSecondary;
     }
     return ok ? { tone: "good", label: "In target" } : { tone: "watch", label: "Outside target" };
@@ -675,14 +773,16 @@ function VitalsRow() {
         ))}
       </div>
       <p className="mt-3 text-[11px] text-muted-foreground">
-        Pulled from your uploaded reports and connected wearables. Tap a tile to see the trend,
-        the target icon to set a personal range, or + to quick-log.
+        Pulled from your uploaded reports and connected wearables. Tap a tile to see the trend, the
+        target icon to set a personal range, or + to quick-log.
       </p>
       {logKind && (
         <QuickLogVitalSheet
           kind={logKind}
           open={logKind !== null}
-          onOpenChange={(o) => { if (!o) setLogKind(null); }}
+          onOpenChange={(o) => {
+            if (!o) setLogKind(null);
+          }}
         />
       )}
       {goalKind && (
@@ -690,7 +790,9 @@ function VitalsRow() {
           kind={goalKind}
           current={goalsByKind.get(goalKind) ?? null}
           open={goalKind !== null}
-          onOpenChange={(o) => { if (!o) setGoalKind(null); }}
+          onOpenChange={(o) => {
+            if (!o) setGoalKind(null);
+          }}
         />
       )}
     </section>
@@ -758,7 +860,12 @@ function HealthRecordsHub() {
               to={href as "/reports/documents"}
               className="group rounded-2xl border border-border bg-card p-4 hover:bg-secondary/40 transition"
             >
-              <div className={cn("inline-flex h-9 w-9 items-center justify-center rounded-full", c.tone)}>
+              <div
+                className={cn(
+                  "inline-flex h-9 w-9 items-center justify-center rounded-full",
+                  c.tone,
+                )}
+              >
                 <Icon className="h-4 w-4" />
               </div>
               <p className="mt-3 text-sm font-medium text-foreground">{c.label}</p>

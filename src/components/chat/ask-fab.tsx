@@ -34,13 +34,7 @@ export function AskFab() {
   if (pathname.startsWith("/chat")) return null;
   // Hide on routes that already render their own primary floating action,
   // so the buttons don't stack on tablet/desktop.
-  const routesWithOwnFab = [
-    "/journal",
-    "/journal/new",
-    "/meds",
-    "/community-new",
-    "/seizures/new",
-  ];
+  const routesWithOwnFab = ["/journal", "/journal/new", "/meds", "/community-new", "/seizures/new"];
   if (routesWithOwnFab.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return null;
   }

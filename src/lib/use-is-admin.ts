@@ -4,7 +4,11 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 
 export function useIsAdmin() {
   const { session } = useAuth();
-  const [state, setState] = React.useState<{ loading: boolean; isAdmin: boolean; isSuper: boolean }>({
+  const [state, setState] = React.useState<{
+    loading: boolean;
+    isAdmin: boolean;
+    isSuper: boolean;
+  }>({
     loading: true,
     isAdmin: false,
     isSuper: false,

@@ -10,9 +10,9 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type AiProvider = "claude" | "openai" | "gemini" | "grok" | "maya" | "lovable";
+export type AiProvider = "claude" | "openai" | "gemini" | "grok" | "maya";
 
-const ALLOWED: AiProvider[] = ["claude", "openai", "gemini", "grok", "maya", "lovable"];
+const ALLOWED: AiProvider[] = ["claude", "openai", "gemini", "grok", "maya"];
 
 export type AiMedia = {
   /** raw base64 (no data: prefix) */
@@ -52,18 +52,23 @@ export async function getUserProvider(
 
 function defaultModel(provider: AiProvider): string {
   switch (provider) {
-    case "claude": return "claude-sonnet-4-5";
-    case "openai": return "gpt-5-mini";
-    case "gemini": return "gemini-2.5-pro";
-    case "grok": return "grok-4";
-    case "lovable": return "google/gemini-2.5-pro";
-    case "maya": return "maya-default";
+    case "claude":
+      return "claude-sonnet-4-5";
+    case "openai":
+      return "gpt-5-mini";
+    case "gemini":
+      return "gemini-2.5-pro";
+    case "grok":
+      return "grok-4";
+    case "maya":
+      return "maya-default";
   }
 }
 
 function handleStatus(provider: string, status: number, body: string): never {
   if (status === 402) throw mkErr(`${provider} credits exhausted.`, "ai_credits_exhausted");
-  if (status === 429) throw mkErr(`${provider} is rate-limited. Try again shortly.`, "ai_rate_limited");
+  if (status === 429)
+    throw mkErr(`${provider} is rate-limited. Try again shortly.`, "ai_rate_limited");
   if (status === 401 || status === 403) {
     throw mkErr(`${provider} API key is missing or invalid.`, "ai_key_invalid");
   }
@@ -111,7 +116,7 @@ async function callClaude(opts: AiCallOpts): Promise<string> {
   const json = (await res.json()) as {
     content?: Array<{ type: string; text?: string }>;
   };
-  return (json.content ?? []).map((b) => (b.type === "text" ? b.text ?? "" : "")).join("");
+  return (json.content ?? []).map((b) => (b.type === "text" ? (b.text ?? "") : "")).join("");
 }
 
 /* ---------- OpenAI-compatible (OpenAI + Grok) ---------- */
@@ -165,7 +170,7 @@ async function callGrok(opts: AiCallOpts) {
   return callOpenAICompat("Grok", "https://api.x.ai/v1", key, defaultModel("grok"), opts);
 }
 
-/* ---------- Gemini (direct, not via Lovable) ---------- */
+/* ---------- Gemini (direct) ---------- */
 async function callGeminiDirect(opts: AiCallOpts): Promise<string> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw mkErr("GEMINI_API_KEY not configured", "ai_key_invalid");
@@ -193,47 +198,20 @@ async function callGeminiDirect(opts: AiCallOpts): Promise<string> {
   const json = (await res.json()) as {
     candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
   };
-  return (json.candidates?.[0]?.content?.parts ?? [])
-    .map((p) => p.text ?? "")
-    .join("");
-}
-
-/* ---------- Lovable AI Gateway ---------- */
-async function callLovable(opts: AiCallOpts): Promise<string> {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw mkErr("LOVABLE_API_KEY not configured", "ai_key_invalid");
-  const userContent: unknown[] = [{ type: "text", text: opts.prompt }];
-  if (opts.media) {
-    userContent.push({
-      type: "image_url",
-      image_url: { url: `data:${opts.media.mime};base64,${opts.media.base64}` },
-    });
-  }
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      model: defaultModel("lovable"),
-      messages: [
-        { role: "system", content: opts.system },
-        { role: "user", content: userContent },
-      ],
-      ...(opts.jsonMode ? { response_format: { type: "json_object" } } : {}),
-    }),
-  });
-  if (!res.ok) handleStatus("Lovable AI", res.status, await res.text());
-  const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  return json.choices?.[0]?.message?.content ?? "";
+  return (json.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("");
 }
 
 /* ---------- Dispatch ---------- */
 export async function callAI(opts: AiCallOpts): Promise<string> {
   switch (opts.provider) {
-    case "claude": return callClaude(opts);
-    case "openai": return callOpenAI(opts);
-    case "gemini": return callGeminiDirect(opts);
-    case "grok": return callGrok(opts);
-    case "lovable": return callLovable(opts);
+    case "claude":
+      return callClaude(opts);
+    case "openai":
+      return callOpenAI(opts);
+    case "gemini":
+      return callGeminiDirect(opts);
+    case "grok":
+      return callGrok(opts);
     case "maya":
       throw mkErr(
         "Maya isn't configured yet. Pick a different provider in Settings → AI.",
@@ -258,7 +236,11 @@ export function tryParseJson<T = unknown>(text: string): T | null {
     // try to extract first {...} block (some models wrap in markdown)
     const m = text.match(/\{[\s\S]*\}/);
     if (m) {
-      try { return JSON.parse(m[0]) as T; } catch { /* fall through */ }
+      try {
+        return JSON.parse(m[0]) as T;
+      } catch {
+        /* fall through */
+      }
     }
     return null;
   }

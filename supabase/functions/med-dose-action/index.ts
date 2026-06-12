@@ -2,8 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -66,7 +65,7 @@ Deno.serve(async (req) => {
 
   const { data: dose, error: doseError } = await userClient
     .from("medication_doses")
-    .select("id, user_id, status, medication_id")
+    .select("id, user_id, status, medication_id, scheduled_at")
     .eq("id", doseId)
     .eq("user_id", userId)
     .maybeSingle();
@@ -108,7 +107,14 @@ Deno.serve(async (req) => {
     const snoozeUntil = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     const { error } = await userClient
       .from("medication_doses")
-      .update({ scheduled_at: snoozeUntil, status: "pending" })
+      // Reset the notified markers so the dose-reminders cron fires again at
+      // the snoozed time; otherwise "Snooze 10 min" never reminded again.
+      .update({
+        scheduled_at: snoozeUntil,
+        status: "pending",
+        notified_at: null,
+        missed_notified_at: null,
+      })
       .eq("id", doseId);
     if (error) {
       console.error("med-dose-action snooze error", error);
@@ -117,6 +123,36 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+  }
+
+  // Delivery instrumentation: stamp the acknowledgment on the latest open
+  // delivery row for this dose (best-effort; never fails the action).
+  try {
+    const { data: openRows } = await userClient
+      .from("notification_delivery_log")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("dose_id", doseId)
+      .is("acknowledged_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (openRows && openRows.length > 0) {
+      await userClient
+        .from("notification_delivery_log")
+        .update({ acknowledged_at: now, acknowledged_action: action })
+        .eq("id", openRows[0].id);
+    } else {
+      await userClient.from("notification_delivery_log").insert({
+        user_id: userId,
+        dose_id: doseId,
+        scheduled_at: dose.scheduled_at ?? now,
+        delivery_channel: "sw_local",
+        acknowledged_at: now,
+        acknowledged_action: action,
+      });
+    }
+  } catch (e) {
+    console.warn("med-dose-action delivery log failed", e);
   }
 
   return new Response(JSON.stringify({ ok: true, doseId, action }), {

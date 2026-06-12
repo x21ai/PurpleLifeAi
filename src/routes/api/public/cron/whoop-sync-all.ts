@@ -9,13 +9,12 @@ export const Route = createFileRoute("/api/public/cron/whoop-sync-all")({
     handlers: {
       POST: async ({ request }) => {
         const cronSecret = process.env.CRON_SECRET;
-        const provided =
-          request.headers.get("x-cron-secret") ?? request.headers.get("apikey");
+        const provided = request.headers.get("x-cron-secret") ?? request.headers.get("apikey");
         if (!cronSecret || provided !== cronSecret) {
-          return new Response(
-            JSON.stringify({ error: "Unauthorized" }),
-            { status: 401, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
         }
         try {
           const { syncAllConnectedUsers } = await import("@/lib/whoop.server");
@@ -26,10 +25,10 @@ export const Route = createFileRoute("/api/public/cron/whoop-sync-all")({
           });
         } catch (e) {
           console.error("whoop cron failed:", e);
-          return new Response(
-            JSON.stringify({ error: "Internal server error" }),
-            { status: 502, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ error: "Internal server error" }), {
+            status: 502,
+            headers: { "Content-Type": "application/json" },
+          });
         }
       },
     },

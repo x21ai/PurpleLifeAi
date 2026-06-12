@@ -2,7 +2,7 @@
 
 **Project ref:** `lzuodgpqseijhhyzgfky`  
 **Supabase callback URL:** `https://lzuodgpqseijhhyzgfky.supabase.co/auth/v1/callback`  
-**Paste credentials:** https://supabase.com/dashboard/project/lzuodgpqseijhhyzgfky/auth/providers  
+**Paste credentials:** https://supabase.com/dashboard/project/lzuodgpqseijhhyzgfky/auth/providers
 
 **Time:** ~15 min Google, ~25 min Apple (includes .p8 key download).
 

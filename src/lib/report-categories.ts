@@ -48,8 +48,19 @@ export const REPORT_CATEGORIES: ReportCategoryMeta[] = [
     icon: FlaskConical,
     tone: "bg-rose-500/15 text-rose-400",
     keywords: [
-      "blood", "cbc", "lipid", "panel", "glucose", "iron", "vitamin",
-      "thyroid", "tsh", "metabolic", "hormone", "ferritin", "a1c",
+      "blood",
+      "cbc",
+      "lipid",
+      "panel",
+      "glucose",
+      "iron",
+      "vitamin",
+      "thyroid",
+      "tsh",
+      "metabolic",
+      "hormone",
+      "ferritin",
+      "a1c",
     ],
   },
   {
@@ -132,9 +143,7 @@ export const REPORT_CATEGORY_BY_SLUG: Record<ReportCategorySlug, ReportCategoryM
     ReportCategoryMeta
   >;
 
-export function getReportCategoryMeta(
-  slug: string | null | undefined,
-): ReportCategoryMeta {
+export function getReportCategoryMeta(slug: string | null | undefined): ReportCategoryMeta {
   if (!slug) return REPORT_CATEGORY_BY_SLUG.other;
   return REPORT_CATEGORY_BY_SLUG[slug as ReportCategorySlug] ?? REPORT_CATEGORY_BY_SLUG.other;
 }
@@ -155,9 +164,14 @@ export function guessReportCategory(input: {
   if (t === "imaging_xray") return "xray";
   if (t === "imaging_ultrasound") return "ultrasound";
   if (
-    t === "blood_panel" || t === "lipid_panel" || t === "thyroid_panel" ||
-    t === "metabolic_panel" || t === "vitamin_panel" || t === "hormone_panel"
-  ) return "blood";
+    t === "blood_panel" ||
+    t === "lipid_panel" ||
+    t === "thyroid_panel" ||
+    t === "metabolic_panel" ||
+    t === "vitamin_panel" ||
+    t === "hormone_panel"
+  )
+    return "blood";
 
   const hay = `${input.title ?? ""} ${input.filename ?? ""}`.toLowerCase();
   for (const cat of REPORT_CATEGORIES) {

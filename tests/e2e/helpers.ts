@@ -10,14 +10,19 @@ export async function signIn(page: Page) {
   if (!email || !password) return false;
   await page.goto("/sign-in");
   await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/password/i).first().fill(password);
-  await page.getByRole("button", { name: /sign in|log in|continue/i }).first().click();
+  await page
+    .getByLabel(/password/i)
+    .first()
+    .fill(password);
+  await page
+    .getByRole("button", { name: /sign in|log in|continue/i })
+    .first()
+    .click();
   await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"), { timeout: 15_000 });
   return true;
 }
 
-export const hasTestCreds = () =>
-  !!(process.env.TEST_USER_EMAIL && process.env.TEST_USER_PASSWORD);
+export const hasTestCreds = () => !!(process.env.TEST_USER_EMAIL && process.env.TEST_USER_PASSWORD);
 
 export async function expectNoServerError(page: Page) {
   // If the app renders a global error boundary, assert it didn't trip.

@@ -6,21 +6,21 @@
 
 ## Main branch — PR status
 
-| PR | Title | Status |
-|----|--------|--------|
-| [#1](https://github.com/AstroAii/purpledrw/pull/1) | Auth: fix flicker, add Apple + Google sign-in | **Merged** |
-| [#2](https://github.com/AstroAii/purpledrw/pull/2) | Meds: supplements, refills, SW-based alarms | **Merged** |
-| [#3](https://github.com/AstroAii/purpledrw/pull/3) | AI: curated epilepsy research library (HNSW) | **Merged** (squash; HNSW accepted) |
+| PR                                                 | Title                                         | Status                             |
+| -------------------------------------------------- | --------------------------------------------- | ---------------------------------- |
+| [#1](https://github.com/AstroAii/purpledrw/pull/1) | Auth: fix flicker, add Apple + Google sign-in | **Merged**                         |
+| [#2](https://github.com/AstroAii/purpledrw/pull/2) | Meds: supplements, refills, SW-based alarms   | **Merged**                         |
+| [#3](https://github.com/AstroAii/purpledrw/pull/3) | AI: curated epilepsy research library (HNSW)  | **Merged** (squash; HNSW accepted) |
 
 ## Production Supabase state
 
-| Item | Status |
-|------|--------|
-| Migrations on live DB | **Not applied via CLI** — `supabase link` failed (logged-in CLI user lacks privileges on `lzuodgpqseijhhyzgfky`) |
-| Manual SQL bundle | **Ready** — `docs/manual-deploy-bundle.md` (13 migrations, Section 1) |
-| Edge functions deploy | **Not run** — same access block |
-| Research seed | **Not run** — missing local `.env` keys (see stop points) |
-| `ai-orchestrator` smoke (levetiracetam + citation) | **Not run** |
+| Item                                               | Status                                                                                                           |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Migrations on live DB                              | **Not applied via CLI** — `supabase link` failed (logged-in CLI user lacks privileges on `lzuodgpqseijhhyzgfky`) |
+| Manual SQL bundle                                  | **Ready** — `docs/manual-deploy-bundle.md` (13 migrations, Section 1)                                            |
+| Edge functions deploy                              | **Not run** — same access block                                                                                  |
+| Research seed                                      | **Not run** — missing local `.env` keys (see stop points)                                                        |
+| `ai-orchestrator` smoke (levetiracetam + citation) | **Not run**                                                                                                      |
 
 ## CLI auth status
 

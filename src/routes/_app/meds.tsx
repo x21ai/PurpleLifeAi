@@ -1,6 +1,21 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Pill, AlertCircle, CheckCheck, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2, CalendarDays, Camera, Image as ImageIcon, Mic, Sparkles } from "lucide-react";
+import {
+  Plus,
+  Pill,
+  AlertCircle,
+  CheckCheck,
+  MoreVertical,
+  Edit3,
+  Archive,
+  ArchiveRestore,
+  Trash2,
+  CalendarDays,
+  Camera,
+  Image as ImageIcon,
+  Mic,
+  Sparkles,
+} from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,13 +25,13 @@ import { ScanMedSheet } from "@/components/meds/scan-med-sheet";
 import { VoiceMedSheet } from "@/components/meds/voice-med-sheet";
 import { MedsMiniTimeline } from "@/components/meds/meds-mini-timeline";
 import { MedRemindersBanner } from "@/components/meds/med-reminders-banner";
-import { scheduleMedications } from "@/lib/med-notifications";
+import { rearmMedicationNotifications, scheduleMedications } from "@/lib/med-notifications";
 import { MetricNumber } from "@/components/ui-oura/metric-number";
 import { ProgressPill } from "@/components/ui-oura/progress-pill";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 import { toast } from "sonner";
-import { cn, formatLocaleTime } from "@/lib/utils";
+import { cn, formatLocaleTime, sanitizeDosageLabel } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
@@ -37,6 +52,7 @@ import {
 import type { MedKind } from "@/components/meds/medication-form-sheet";
 import { RefillForecastCard, AdherenceExtrasCard } from "@/components/meds/med-intelligence-cards";
 import { buildIcs, downloadIcs, medicationToIcsEvents } from "@/lib/ics";
+import { userMessage } from "@/lib/user-message";
 
 type Medication = {
   id: string;
@@ -54,7 +70,13 @@ type TodayDose = {
   id: string;
   scheduled_at: string;
   status: string;
-  medication: { id: string; name: string; dosage: string | null; kind: string; is_rescue: boolean } | null;
+  medication: {
+    id: string;
+    name: string;
+    dosage: string | null;
+    kind: string;
+    is_rescue: boolean;
+  } | null;
 };
 
 type FilterKind = "all" | "medication" | "supplement" | "vitamin" | "rescue";
@@ -113,24 +135,33 @@ function MedsPage() {
 
   const load = React.useCallback(async () => {
     if (!userId) return;
-    const start = new Date(); start.setHours(0, 0, 0, 0);
-    const end = new Date(); end.setHours(23, 59, 59, 999);
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
 
     const [{ data, error }, { data: doses }] = await Promise.all([
       supabase
         .from("medications")
-        .select("id, name, dosage, times_of_day, pills_remaining, refill_threshold, is_rescue, kind, active")
+        .select(
+          "id, name, dosage, times_of_day, pills_remaining, refill_threshold, is_rescue, kind, active",
+        )
         .order("kind", { ascending: true })
         .order("name", { ascending: true }),
       supabase
         .from("medication_doses")
-        .select("id, scheduled_at, status, medication:medications(id, name, dosage, kind, is_rescue)")
+        .select(
+          "id, scheduled_at, status, medication:medications(id, name, dosage, kind, is_rescue)",
+        )
         .gte("scheduled_at", start.toISOString())
         .lte("scheduled_at", end.toISOString())
         .order("scheduled_at", { ascending: true }),
     ]);
 
-    if (error) { console.error(error); return; }
+    if (error) {
+      console.error(error);
+      return;
+    }
     setMeds((data as Medication[]) ?? []);
     const scheduledDoses = ((doses as unknown as TodayDose[]) ?? []).filter(
       (d) => d.medication && d.medication.kind !== "rescue" && !d.medication.is_rescue,
@@ -138,7 +169,9 @@ function MedsPage() {
     setTodayDoses(scheduledDoses);
   }, [userId]);
 
-  React.useEffect(() => { void load(); }, [load]);
+  React.useEffect(() => {
+    void load();
+  }, [load]);
 
   React.useEffect(() => {
     if (!meds) return;
@@ -184,6 +217,59 @@ function MedsPage() {
 
   const pendingToday = todayDoses?.filter((d) => d.status === "pending") ?? [];
 
+  // Inline per-dose actions on the meds page (Devyn item 12: desktop parity
+  // with Today). Mirrors today-doses semantics: pill decrement on taken,
+  // notified-marker reset + SW rearm on snooze.
+  const doseAction = async (id: string, action: "taken" | "skip" | "snooze") => {
+    const dose = todayDoses?.find((d) => d.id === id);
+    let error: unknown = null;
+    if (action === "taken") {
+      const res = await supabase
+        .from("medication_doses")
+        .update({ status: "taken", taken_at: new Date().toISOString() })
+        .eq("id", id);
+      error = res.error;
+      const medId = dose?.medication?.id;
+      if (!res.error && medId && dose?.status !== "taken") {
+        const { data: m } = await supabase
+          .from("medications")
+          .select("pills_remaining")
+          .eq("id", medId)
+          .maybeSingle();
+        if (m && m.pills_remaining != null) {
+          await supabase
+            .from("medications")
+            .update({ pills_remaining: Math.max(0, (m.pills_remaining as number) - 1) })
+            .eq("id", medId);
+        }
+      }
+    } else if (action === "skip") {
+      const res = await supabase
+        .from("medication_doses")
+        .update({ status: "skipped" })
+        .eq("id", id);
+      error = res.error;
+    } else {
+      const res = await supabase
+        .from("medication_doses")
+        .update({
+          scheduled_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+          status: "pending",
+          notified_at: null,
+          missed_notified_at: null,
+        })
+        .eq("id", id);
+      error = res.error;
+      if (!res.error) void rearmMedicationNotifications();
+    }
+    if (error) {
+      toast.error("That didn't save. Try the dose again in a moment.");
+      return;
+    }
+    if (action === "snooze") toast.success("Snoozed 10 min");
+    void load();
+  };
+
   const markAllTaken = async () => {
     if (pendingToday.length === 0 || markingAll) return;
     setMarkingAll(true);
@@ -195,8 +281,28 @@ function MedsPage() {
       .in("id", ids);
     setMarkingAll(false);
     if (error) {
-      toast.error("Could not mark doses");
+      toast.error("That didn't save. Try again in a moment.");
       return;
+    }
+    // Keep pill stock in step with the bulk action; single-dose "Taken"
+    // already decrements, so refill forecasts drifted after "Mark all".
+    const perMed = new Map<string, number>();
+    for (const d of pendingToday) {
+      const medId = d.medication?.id;
+      if (medId) perMed.set(medId, (perMed.get(medId) ?? 0) + 1);
+    }
+    for (const [medId, count] of perMed) {
+      const { data: m } = await supabase
+        .from("medications")
+        .select("pills_remaining")
+        .eq("id", medId)
+        .maybeSingle();
+      if (m && m.pills_remaining != null) {
+        await supabase
+          .from("medications")
+          .update({ pills_remaining: Math.max(0, (m.pills_remaining as number) - count) })
+          .eq("id", medId);
+      }
     }
     toast.success("All pending doses marked taken");
     void load();
@@ -209,7 +315,9 @@ function MedsPage() {
 
   const exportAllToCalendar = async () => {
     if (!userId) return;
-    const scheduled = activeMeds.filter((m) => !isRescueMed(m) && (m.times_of_day?.length ?? 0) > 0);
+    const scheduled = activeMeds.filter(
+      (m) => !isRescueMed(m) && (m.times_of_day?.length ?? 0) > 0,
+    );
     if (scheduled.length === 0) {
       toast.error("No scheduled medications to export");
       return;
@@ -219,7 +327,10 @@ function MedsPage() {
       .select("timezone")
       .eq("id", userId)
       .maybeSingle();
-    const homeTz = (prof?.timezone as string | null) || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const homeTz =
+      (prof?.timezone as string | null) ||
+      Intl.DateTimeFormat().resolvedOptions().timeZone ||
+      "UTC";
     const events = scheduled.flatMap((m) =>
       medicationToIcsEvents({
         medId: m.id,
@@ -243,12 +354,12 @@ function MedsPage() {
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-32 relative">
       <p className="label-eyebrow text-muted-foreground">{t("meds.eyebrow")}</p>
       <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
-        {t("meds.title1")}<br/>{t("meds.title2")}
+        {t("meds.title1")}
+        <br />
+        {t("meds.title2")}
       </h1>
       <div className="mt-8">
-        <NarrativeBlock>
-          {t("meds.intro")}
-        </NarrativeBlock>
+        <NarrativeBlock>{t("meds.intro")}</NarrativeBlock>
       </div>
 
       <div className="mt-6">
@@ -270,6 +381,7 @@ function MedsPage() {
             pendingCount={pendingToday.length}
             onMarkAll={markAllTaken}
             markingAll={markingAll}
+            onAction={doseAction}
           />
           <AdherenceCard />
           <AdherenceExtrasCard />
@@ -290,7 +402,8 @@ function MedsPage() {
                   : "border-transparent text-muted-foreground hover:text-foreground",
               )}
             >
-              {tabKey === "active" ? t("meds.tabActive") : t("meds.tabArchive")} {tabKey === "archive" && archivedMeds.length > 0 && (
+              {tabKey === "active" ? t("meds.tabActive") : t("meds.tabArchive")}{" "}
+              {tabKey === "archive" && archivedMeds.length > 0 && (
                 <span className="ml-1 text-xs text-muted-foreground">({archivedMeds.length})</span>
               )}
             </button>
@@ -348,24 +461,30 @@ function MedsPage() {
         </div>
       ) : tab === "active" && filter === "all" && groupedMeds ? (
         <div className="mt-8 space-y-6">
-          {(["medication", "supplement", "vitamin", "herbal", "rescue"] as MedKind[]).map((kind) => {
-            const list = groupedMeds.get(kind);
-            if (!list?.length) return null;
-            return (
-              <section key={kind}>
-                <h2 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">
-                  {t(KIND_LABEL_KEYS[kind])}
-                </h2>
-                <ul className="space-y-2">
-                  {list.map((m) => <MedRow key={m.id} med={m} onEdit={handleEdit} onChanged={load} />)}
-                </ul>
-              </section>
-            );
-          })}
+          {(["medication", "supplement", "vitamin", "herbal", "rescue"] as MedKind[]).map(
+            (kind) => {
+              const list = groupedMeds.get(kind);
+              if (!list?.length) return null;
+              return (
+                <section key={kind}>
+                  <h2 className="text-xs uppercase tracking-wide text-muted-foreground mb-3">
+                    {t(KIND_LABEL_KEYS[kind])}
+                  </h2>
+                  <ul className="space-y-2">
+                    {list.map((m) => (
+                      <MedRow key={m.id} med={m} onEdit={handleEdit} onChanged={load} />
+                    ))}
+                  </ul>
+                </section>
+              );
+            },
+          )}
         </div>
       ) : (
         <ul className="mt-8 space-y-2">
-          {(filteredMeds ?? []).map((m) => <MedRow key={m.id} med={m} onEdit={handleEdit} onChanged={load} />)}
+          {(filteredMeds ?? []).map((m) => (
+            <MedRow key={m.id} med={m} onEdit={handleEdit} onChanged={load} />
+          ))}
         </ul>
       )}
 
@@ -384,10 +503,20 @@ function MedsPage() {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" side="top" className="w-56">
-            <DropdownMenuItem onClick={() => { setScanMode("camera"); setScanOpen(true); }}>
+            <DropdownMenuItem
+              onClick={() => {
+                setScanMode("camera");
+                setScanOpen(true);
+              }}
+            >
               <Camera className="h-4 w-4 mr-2" /> Scan bottle
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => { setScanMode("library"); setScanOpen(true); }}>
+            <DropdownMenuItem
+              onClick={() => {
+                setScanMode("library");
+                setScanOpen(true);
+              }}
+            >
               <ImageIcon className="h-4 w-4 mr-2" /> Upload prescription photo
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setVoiceOpen(true)}>
@@ -397,7 +526,10 @@ function MedsPage() {
         </DropdownMenu>
         <button
           type="button"
-          onClick={() => { setPrefill(null); setOpen(true); }}
+          onClick={() => {
+            setPrefill(null);
+            setOpen(true);
+          }}
           aria-label={t("meds.addMedication")}
           className="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
         >
@@ -409,7 +541,10 @@ function MedsPage() {
         open={open}
         onOpenChange={(v) => {
           setOpen(v);
-          if (!v) { setEditingMedId(null); setPrefill(null); }
+          if (!v) {
+            setEditingMedId(null);
+            setPrefill(null);
+          }
         }}
         onSaved={load}
         isFirstMedication={isFirst}
@@ -446,13 +581,25 @@ function TodayDosesSection({
   pendingCount,
   onMarkAll,
   markingAll,
+  onAction,
 }: {
   doses: TodayDose[] | null;
   pendingCount: number;
   onMarkAll: () => void;
   markingAll: boolean;
+  onAction: (id: string, action: "taken" | "skip" | "snooze") => Promise<void>;
 }) {
   const { t } = useTranslation();
+  const [actioningId, setActioningId] = React.useState<string | null>(null);
+  const act = async (id: string, action: "taken" | "skip" | "snooze") => {
+    if (actioningId) return;
+    setActioningId(id);
+    try {
+      await onAction(id, action);
+    } finally {
+      setActioningId(null);
+    }
+  };
   return (
     <section className="mt-8 rounded-2xl border border-border bg-card p-5 sm:p-6">
       <div className="flex items-center justify-between gap-3">
@@ -477,14 +624,61 @@ function TodayDosesSection({
       ) : (
         <ul className="mt-4 divide-y divide-border">
           {doses.map((d) => (
-            <li key={d.id} className="flex items-center justify-between py-2 text-sm">
+            <li
+              key={d.id}
+              className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
+            >
               <span className="text-muted-foreground tabular-nums">
                 {formatLocaleTime(d.scheduled_at)}
               </span>
               <span className="text-foreground truncate mx-3 flex-1">
                 {d.medication?.name ?? "Medication"}
               </span>
-              <span className="capitalize text-muted-foreground">{d.status}</span>
+              {d.status === "pending" ? (
+                <span className="flex items-center gap-1.5">
+                  <Button
+                    size="sm"
+                    className="rounded-full h-7 text-xs"
+                    disabled={actioningId !== null}
+                    onClick={() => void act(d.id, "taken")}
+                  >
+                    Taken
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full h-7 text-xs"
+                    disabled={actioningId !== null}
+                    onClick={() => void act(d.id, "snooze")}
+                  >
+                    Snooze
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-full h-7 text-xs text-muted-foreground"
+                    disabled={actioningId !== null}
+                    onClick={() => void act(d.id, "skip")}
+                  >
+                    Skip
+                  </Button>
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <span className="capitalize text-muted-foreground">{d.status}</span>
+                  {d.status === "missed" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full h-7 text-xs"
+                      disabled={actioningId !== null}
+                      onClick={() => void act(d.id, "taken")}
+                    >
+                      Log it anyway
+                    </Button>
+                  )}
+                </span>
+              )}
             </li>
           ))}
         </ul>
@@ -493,20 +687,67 @@ function TodayDosesSection({
   );
 }
 
-function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: string) => void; onChanged: () => void | Promise<void> }) {
+function MedRow({
+  med,
+  onEdit,
+  onChanged,
+}: {
+  med: Medication;
+  onEdit: (id: string) => void;
+  onChanged: () => void | Promise<void>;
+}) {
   const threshold = med.refill_threshold ?? 7;
   const lowStock = med.pills_remaining !== null && med.pills_remaining <= threshold;
   const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const [confirmArchive, setConfirmArchive] = React.useState(false);
 
   const archive = async () => {
     const { error } = await supabase.from("medications").update({ active: false }).eq("id", med.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(userMessage(error, "That didn't work. Try again in a moment."));
+      return;
+    }
     toast.success(`${med.name} archived`);
+    void onChanged();
+  };
+  // Devyn item 13: record a dose without hunting for a scheduled slot. Also
+  // the first real logging path for rescue meds, which have no schedule.
+  const [loggingNow, setLoggingNow] = React.useState(false);
+  const logDoseNow = async () => {
+    if (loggingNow) return;
+    const { data: sess } = await supabase.auth.getSession();
+    const uid = sess.session?.user.id;
+    if (!uid) return;
+    setLoggingNow(true);
+    const now = new Date().toISOString();
+    const { error } = await supabase.from("medication_doses").insert({
+      user_id: uid,
+      medication_id: med.id,
+      scheduled_at: now,
+      status: "taken",
+      taken_at: now,
+    });
+    if (error) {
+      setLoggingNow(false);
+      toast.error(userMessage(error, "That didn't save. Try again in a moment."));
+      return;
+    }
+    if (med.pills_remaining != null) {
+      await supabase
+        .from("medications")
+        .update({ pills_remaining: Math.max(0, med.pills_remaining - 1) })
+        .eq("id", med.id);
+    }
+    setLoggingNow(false);
+    toast.success(`${med.name} dose logged`);
     void onChanged();
   };
   const restore = async () => {
     const { error } = await supabase.from("medications").update({ active: true }).eq("id", med.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(userMessage(error, "That didn't work. Try again in a moment."));
+      return;
+    }
     toast.success(`${med.name} restored`);
     void onChanged();
   };
@@ -514,7 +755,10 @@ function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: stri
     await supabase.from("medication_doses").delete().eq("medication_id", med.id);
     await supabase.from("medication_side_effects").delete().eq("medication_id", med.id);
     const { error } = await supabase.from("medications").delete().eq("id", med.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(userMessage(error, "That didn't work. Try again in a moment."));
+      return;
+    }
     toast.success(`${med.name} deleted`);
     void onChanged();
   };
@@ -544,7 +788,9 @@ function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: stri
                 </span>
               )}
             </div>
-            {med.dosage && <p className="text-sm text-muted-foreground">{med.dosage}</p>}
+            {sanitizeDosageLabel(med.dosage) && (
+              <p className="text-sm text-muted-foreground">{sanitizeDosageLabel(med.dosage)}</p>
+            )}
             {!isRescueMed(med) && med.times_of_day?.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {med.times_of_day.map((t) => (
@@ -557,12 +803,12 @@ function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: stri
                 ))}
               </div>
             )}
-            {isRescueMed(med) && (
-              <p className="mt-3 label-eyebrow">As needed</p>
-            )}
+            {isRescueMed(med) && <p className="mt-3 label-eyebrow">As needed</p>}
           </div>
           {med.pills_remaining !== null && (
-            <div className={`text-right shrink-0 ${lowStock ? "text-destructive" : "text-muted-foreground"}`}>
+            <div
+              className={`text-right shrink-0 ${lowStock ? "text-destructive" : "text-muted-foreground"}`}
+            >
               <p className="label-eyebrow">Pills</p>
               <p className="font-serif text-2xl tabular-nums flex items-center gap-1 justify-end mt-1">
                 {lowStock && <AlertCircle className="h-3.5 w-3.5" />}
@@ -576,7 +822,10 @@ function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: stri
       <div className="absolute top-3 right-3">
         <DropdownMenu>
           <DropdownMenuTrigger
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
             className="h-8 w-8 inline-flex items-center justify-center rounded-full hover:bg-secondary text-muted-foreground"
             aria-label="Medication actions"
           >
@@ -585,10 +834,13 @@ function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: stri
           <DropdownMenuContent align="end" className="w-44">
             {med.active ? (
               <>
+                <DropdownMenuItem disabled={loggingNow} onClick={() => void logDoseNow()}>
+                  <CheckCheck className="h-4 w-4 mr-2" /> Log dose now
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onEdit(med.id)}>
                   <Edit3 className="h-4 w-4 mr-2" /> Edit
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={archive}>
+                <DropdownMenuItem onClick={() => setConfirmArchive(true)}>
                   <Archive className="h-4 w-4 mr-2" /> Archive
                 </DropdownMenuItem>
               </>
@@ -609,17 +861,44 @@ function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: stri
         </DropdownMenu>
       </div>
 
+      <AlertDialog open={confirmArchive} onOpenChange={setConfirmArchive}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive {med.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Reminders stop and it moves to your archive. Your dose history stays, and you can
+              restore it any time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmArchive(false);
+                void archive();
+              }}
+            >
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {med.name} permanently?</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the medication along with its dose history and logged side effects. This cannot be undone.
+              This removes the medication along with its dose history and logged side effects. This
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={destroy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={destroy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -656,11 +935,7 @@ function AdherenceCard() {
   return (
     <section className="mt-10 border-y border-border py-7">
       <div className="flex items-end justify-between gap-6">
-        <MetricNumber
-          size="lg"
-          value={pct == null ? "–" : `${pct}%`}
-          label="Adherence · 14d"
-        />
+        <MetricNumber size="lg" value={pct == null ? "–" : `${pct}%`} label="Adherence · 14d" />
         {counts && counts.total > 0 && (
           <p className="text-xs text-muted-foreground pb-2 tabular-nums">
             {counts.taken} of {counts.total} doses
@@ -672,9 +947,17 @@ function AdherenceCard() {
           label="On schedule"
           value={pct == null ? "–" : `${pct}%`}
           pct={pct ?? 0}
-          tone={pct != null && pct < 70 ? "alert" : "ink"}
+          // Never red: low adherence early on is mostly unlogged doses, and
+          // shaming a number is the opposite of getting it logged.
+          tone="ink"
         />
       </div>
+      {pct != null && pct < 50 && (
+        <p className="mt-3 text-xs text-muted-foreground">
+          Logging catches up as you use reminders. Doses only count from the day a medication was
+          added.
+        </p>
+      )}
     </section>
   );
 }

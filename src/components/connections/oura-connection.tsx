@@ -2,10 +2,15 @@ import { useEffect, useState, useCallback } from "react";
 import { Activity, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { userMessage } from "@/lib/user-message";
 
 // Oura OAuth documented scopes. Keep the base set conservative until OAuth succeeds.
 const OURA_SCOPE = "email personal daily heartrate workout tag session spo2";
@@ -31,6 +36,7 @@ export function OuraConnection() {
   const [counts, setCounts] = useState<Counts>({ sleep: 0, readiness: 0, activity: 0 });
   const [busy, setBusy] = useState(false);
   const [backfilling, setBackfilling] = useState(false);
+  const [needsReauth, setNeedsReauth] = useState(false);
 
   const refresh = useCallback(async () => {
     const { data: sess } = await supabase.auth.getSession();
@@ -42,20 +48,34 @@ export function OuraConnection() {
       .eq("user_id", uid)
       .maybeSingle();
     setConnected(!!data);
-    setLastSync((data as any)?.last_sync_at ?? data?.updated_at ?? null);
+    // last_sync_at only: updated_at also moves on token refreshes, which made
+    // stale data read as freshly synced (Devyn item 10).
+    setLastSync((data as { last_sync_at?: string | null } | null)?.last_sync_at ?? null);
     if (data?.sync_interval_hours != null) setIntervalHours(data.sync_interval_hours);
 
     if (data) {
       const since = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString();
-      const base = supabase.from("biometrics").select("id", { count: "exact", head: true })
-        .eq("user_id", uid).eq("source", "oura").gte("recorded_at", since);
+      const base = supabase
+        .from("biometrics")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", uid)
+        .eq("source", "oura")
+        .gte("recorded_at", since);
       const [sleep, readiness, activity] = await Promise.all([
         base.not("sleep_total_min", "is", null),
-        supabase.from("biometrics").select("id", { count: "exact", head: true })
-          .eq("user_id", uid).eq("source", "oura").gte("recorded_at", since)
+        supabase
+          .from("biometrics")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", uid)
+          .eq("source", "oura")
+          .gte("recorded_at", since)
           .not("oura_readiness_score", "is", null),
-        supabase.from("biometrics").select("id", { count: "exact", head: true })
-          .eq("user_id", uid).eq("source", "oura").gte("recorded_at", since)
+        supabase
+          .from("biometrics")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", uid)
+          .eq("source", "oura")
+          .gte("recorded_at", since)
           .not("oura_activity_score", "is", null),
       ]);
       setCounts({
@@ -66,7 +86,9 @@ export function OuraConnection() {
     }
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
@@ -92,7 +114,10 @@ export function OuraConnection() {
 
   const connect = async () => {
     const { data: sess } = await supabase.auth.getSession();
-    if (!sess.session) { toast.error("Please sign in first"); return; }
+    if (!sess.session) {
+      toast.error("Please sign in first");
+      return;
+    }
     const { data: cfg, error: cfgErr } = await supabase.functions.invoke("oura-sync", {
       body: { action: "config" },
     });
@@ -121,24 +146,47 @@ export function OuraConnection() {
       scope: OURA_SCOPE,
       authorizeUrl: url.toString(),
     });
-    const w = 520, h = 720;
+    const w = 520,
+      h = 720;
     const left = window.screenX + (window.outerWidth - w) / 2;
     const top = window.screenY + (window.outerHeight - h) / 2;
-    window.open(url.toString(), "oura-oauth",
-      `width=${w},height=${h},left=${left},top=${top}`);
+    window.open(url.toString(), "oura-oauth", `width=${w},height=${h},left=${left},top=${top}`);
   };
 
   const sync = async () => {
     setBusy(true);
     try {
-      const { error } = await supabase.functions.invoke("oura-sync", {
+      const { data, error } = await supabase.functions.invoke("oura-sync", {
         body: { action: "incremental" },
       });
       if (error) throw error;
-      toast.success("Synced");
+      const result = data as { ok?: boolean; error?: string; days?: number } | null;
+      if (result?.ok === false) {
+        if (result.error === "needs_reauth") {
+          setNeedsReauth(true);
+          toast.error("Oura needs to be reconnected. Tap Reconnect to sign in again.");
+        } else {
+          toast.error(
+            "Oura didn't answer this time. Your data is unchanged, try again in a moment.",
+          );
+        }
+        return;
+      }
+      const days = result?.days ?? 0;
+      setNeedsReauth(false);
+      toast.success(
+        days > 0
+          ? `Synced. ${days} day${days === 1 ? "" : "s"} of data updated.`
+          : "Synced. Nothing new from Oura yet.",
+      );
       refresh();
     } catch (e: any) {
-      toast.error(e?.message ?? "Sync failed");
+      toast.error(
+        userMessage(
+          e,
+          "The sync didn't finish. Purple will try again next time, or you can retry now.",
+        ),
+      );
     } finally {
       setBusy(false);
     }
@@ -149,11 +197,15 @@ export function OuraConnection() {
     setIntervalHours(hours);
     const { data: sess } = await supabase.auth.getSession();
     if (!sess.session) return;
-    const { error } = await supabase.from("oura_tokens")
+    const { error } = await supabase
+      .from("oura_tokens")
       .update({ sync_interval_hours: hours })
       .eq("user_id", sess.session.user.id);
     if (error) toast.error("Could not save preference");
-    else toast.success(hours === 0 ? "Auto-sync off" : `Sync every ${hours === 1 ? "hour" : `${hours} hours`}`);
+    else
+      toast.success(
+        hours === 0 ? "Auto-sync off" : `Sync every ${hours === 1 ? "hour" : `${hours} hours`}`,
+      );
   };
 
   const disconnect = async () => {
@@ -177,30 +229,43 @@ export function OuraConnection() {
             <div className="min-w-0">
               <p className="font-serif text-base text-foreground">Oura Ring</p>
               <p className="text-xs text-muted-foreground">
-                {backfilling
-                  ? `Importing… ${counts.sleep} sleep · ${counts.readiness} readiness · ${counts.activity} activity`
-                  : (
-                    <>
-                      Connected
-                      <span className="block sm:inline sm:before:content-['_·_']">
-                        Last synced {relativeTime(lastSync)}
-                      </span>
-                    </>
-                  )}
+                {backfilling ? (
+                  `Importing… ${counts.sleep} sleep · ${counts.readiness} readiness · ${counts.activity} activity`
+                ) : needsReauth ? (
+                  <span className="text-[color:var(--data-warn)]">
+                    Reconnect needed. Oura stopped accepting Purple's access.
+                  </span>
+                ) : (
+                  <>
+                    Connected
+                    <span className="block sm:inline sm:before:content-['_·_']">
+                      Last synced {relativeTime(lastSync)}
+                    </span>
+                  </>
+                )}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Button size="sm" variant="outline" onClick={sync} disabled={busy || backfilling}>
-              {busy || backfilling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Sync"}
+            {needsReauth ? (
+              <Button size="sm" variant="outline" onClick={connect}>
+                Reconnect
+              </Button>
+            ) : (
+              <Button size="sm" variant="outline" onClick={sync} disabled={busy || backfilling}>
+                {busy || backfilling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Sync"}
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" onClick={disconnect}>
+              Disconnect
             </Button>
-            <Button size="sm" variant="ghost" onClick={disconnect}>Disconnect</Button>
           </div>
         </div>
         {!backfilling && (
           <div className="pl-11 flex items-center justify-between gap-3 flex-wrap">
             <p className="text-xs text-muted-foreground">
-              Last 90 days · {counts.sleep} sleep · {counts.readiness} readiness · {counts.activity} activity
+              Last 90 days · {counts.sleep} sleep · {counts.readiness} readiness · {counts.activity}{" "}
+              activity
             </p>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Auto-sync</span>
@@ -237,7 +302,9 @@ export function OuraConnection() {
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <Button size="sm" onClick={connect}>Connect</Button>
+        <Button size="sm" onClick={connect}>
+          Connect
+        </Button>
       </div>
     </div>
   );

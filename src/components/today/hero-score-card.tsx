@@ -15,7 +15,11 @@ type Forecast = {
   for_date: string;
 };
 
-function bandFor(score: number): { band: "calm" | "watchful" | "alert"; image: string; caption: string } {
+function bandFor(score: number): {
+  band: "calm" | "watchful" | "alert";
+  image: string;
+  caption: string;
+} {
   // risk_score: 0 calm → 100 high risk; we flip semantics for the visual.
   if (score <= 33) return { band: "calm", image: dawn, caption: "Doing alright today" };
   if (score <= 66) return { band: "watchful", image: mist, caption: "Take it gentle today" };
@@ -30,7 +34,10 @@ export function HeroScoreCard({ onNarrative }: { onNarrative?: (n: string | null
   const [hasOura, setHasOura] = useState(false);
 
   useEffect(() => {
-    if (!userId) { setLoaded(true); return; }
+    if (!userId) {
+      setLoaded(true);
+      return;
+    }
     (async () => {
       const [{ data: f }, { data: tok }] = await Promise.all([
         supabase
@@ -40,11 +47,7 @@ export function HeroScoreCard({ onNarrative }: { onNarrative?: (n: string | null
           .order("for_date", { ascending: false })
           .limit(1)
           .maybeSingle(),
-        supabase
-          .from("oura_tokens")
-          .select("user_id")
-          .eq("user_id", userId)
-          .maybeSingle(),
+        supabase.from("oura_tokens").select("user_id").eq("user_id", userId).maybeSingle(),
       ]);
       setForecast((f as Forecast | null) ?? null);
       setHasOura(!!tok);
@@ -108,7 +111,13 @@ export function HeroScoreCard({ onNarrative }: { onNarrative?: (n: string | null
 
         <div className="relative h-full flex flex-col items-center justify-end pb-8 px-6">
           <div className="relative flex items-center justify-center">
-            <ScoreArc score={readiness} size={320} stroke={6} tone={tone} ariaLabel={`Readiness ${readiness}`} />
+            <ScoreArc
+              score={readiness}
+              size={320}
+              stroke={6}
+              tone={tone}
+              ariaLabel={`Readiness ${readiness}`}
+            />
             <div className="absolute inset-0 flex flex-col items-center justify-center pt-4">
               <p className="numeric-display font-serif text-[96px] sm:text-[120px] text-[color:var(--background)] drop-shadow-sm">
                 {readiness}

@@ -21,13 +21,19 @@ export type PushPayload = {
   body: string;
   url?: string;
   tag?: string;
+  /** Present on medication dose pushes so the SW can log delivery + acks. */
+  doseId?: string;
+  scheduledAt?: string;
 };
 
-export async function sendPushToSubscription(sub: {
-  endpoint: string;
-  p256dh: string;
-  auth: string;
-}, payload: PushPayload): Promise<{ ok: boolean; statusCode?: number; gone?: boolean }> {
+export async function sendPushToSubscription(
+  sub: {
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+  },
+  payload: PushPayload,
+): Promise<{ ok: boolean; statusCode?: number; gone?: boolean }> {
   const wp = getWebPush();
   try {
     await wp.sendNotification(
