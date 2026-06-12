@@ -381,5 +381,16 @@
     "openFromEmail": "Abre esta página desde el enlace de tu correo de restablecimiento.",
     "tooShort": "La contraseña debe tener al menos 8 caracteres.",
     "mismatch": "Las contraseñas no coinciden."
+  },
+  "doseCatchup": {
+    "body": "Puede que ayer no vieras tu dosis de {{med}} de las {{time}}. ¿Quieres registrarla?",
+    "more_one": "Y 1 más del último día.",
+    "more_other": "Y {{count}} más del último día.",
+    "tookIt": "La tomé",
+    "missedIt": "La omití",
+    "review": "Revisar en Medicamentos",
+    "notNow": "Ahora no",
+    "fallbackMed": "medicamento",
+    "updateFailed": "No se guardó. Inténtalo desde Medicamentos."
   }
 }

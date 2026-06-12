@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { ensureServiceWorker, rearmMedicationNotifications } from "@/lib/med-notifications";
+import { flushDeliveryLog } from "@/lib/notification-delivery";
 import { useOuraDailyAutoSync } from "@/hooks/use-oura-daily-autosync";
 
 /**
@@ -21,6 +22,8 @@ export default function DeferredStartup() {
     if (typeof Notification !== "undefined" && Notification.permission === "granted") {
       void rearmMedicationNotifications();
     }
+    // Carry the SW's queued delivery events (fires/acks) up to the server.
+    void flushDeliveryLog().catch(() => undefined);
   }, []);
 
   return null;

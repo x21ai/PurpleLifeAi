@@ -381,5 +381,16 @@
     "openFromEmail": "Open this page from the link in your reset email.",
     "tooShort": "Password must be at least 8 characters.",
     "mismatch": "Passwords don't match."
+  },
+  "doseCatchup": {
+    "body": "You may have missed your {{time}} {{med}} dose yesterday. Want to log it?",
+    "more_one": "And 1 more from the past day.",
+    "more_other": "And {{count}} more from the past day.",
+    "tookIt": "I took it",
+    "missedIt": "I missed it",
+    "review": "Review in Meds",
+    "notNow": "Not now",
+    "fallbackMed": "medication",
+    "updateFailed": "That did not save. Try again from Meds."
   }
 }

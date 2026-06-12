@@ -4,22 +4,43 @@ const CACHE = "purple-shell-v4";
 const SHELL = ["/manifest.json", "/icon-192.png", "/icon-512.png"];
 const DB_NAME = "purple-med-schedule";
 const STORE = "doses";
+// Delivery instrumentation: fires and acknowledgments queue here and the app
+// flushes them to the server on open (src/lib/notification-delivery.ts).
+const DELIVERY_STORE = "delivery_log";
 const CHECK_INTERVAL_MS = 60_000;
 
 let checkTimer = null;
 
 function openDb() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
+    const req = indexedDB.open(DB_NAME, 2);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE)) {
         db.createObjectStore(STORE, { keyPath: "doseId" });
       }
+      if (!db.objectStoreNames.contains(DELIVERY_STORE)) {
+        db.createObjectStore(DELIVERY_STORE, { autoIncrement: true });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
+}
+
+async function logDeliveryEvent(event) {
+  try {
+    const db = await openDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(DELIVERY_STORE, "readwrite");
+      tx.objectStore(DELIVERY_STORE).add(event);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (e) {
+    // Instrumentation must never break the reminder itself.
+    console.warn("[purple sw] delivery log failed", e);
+  }
 }
 
 async function clearDoses() {
@@ -102,6 +123,13 @@ async function checkDueDoses() {
     if (dueAt <= now + windowMs && dueAt >= now - windowMs) {
       await showDoseNotification(dose);
       await markNotified(dose.doseId);
+      await logDeliveryEvent({
+        kind: "fired",
+        doseId: dose.doseId,
+        scheduledAt: dose.scheduledAt,
+        firedAt: new Date().toISOString(),
+        channel: "sw_local",
+      });
     } else if (dueAt < now - windowMs) {
       await removeDose(dose.doseId);
     }
@@ -119,6 +147,8 @@ async function showDoseNotification(dose) {
     data: {
       doseId: dose.doseId,
       medicationId: dose.medicationId,
+      scheduledAt: dose.scheduledAt,
+      channel: "sw_local",
       authToken: dose.authToken,
       supabaseUrl: dose.supabaseUrl,
       url: "/meds",
@@ -240,12 +270,29 @@ self.addEventListener("push", (event) => {
     payload = { title: "Purple", body: event.data.text() };
   }
   event.waitUntil(
-    self.registration.showNotification(payload.title ?? "Purple", {
-      body: payload.body ?? "",
-      icon: "/icon-192.png",
-      badge: "/icon-192.png",
-      data: { url: payload.url ?? "/meds" },
-    }),
+    (async () => {
+      await self.registration.showNotification(payload.title ?? "Purple", {
+        body: payload.body ?? "",
+        icon: "/icon-192.png",
+        badge: "/icon-192.png",
+        data: {
+          url: payload.url ?? "/meds",
+          doseId: payload.doseId ?? null,
+          scheduledAt: payload.scheduledAt ?? null,
+          channel: "web_push",
+        },
+      });
+      // Receipt logging for dose pushes; the send itself is logged server-side.
+      if (payload.doseId) {
+        await logDeliveryEvent({
+          kind: "received",
+          doseId: payload.doseId,
+          scheduledAt: payload.scheduledAt ?? null,
+          firedAt: new Date().toISOString(),
+          channel: "web_push",
+        });
+      }
+    })(),
   );
 });
 
@@ -261,15 +308,33 @@ self.addEventListener("notificationclick", (event) => {
         const action = actionMap[event.action];
         if (action) {
           await callDoseAction(data, action);
-          if (action === "snooze") {
-            await removeDose(data.doseId);
-          } else {
-            await removeDose(data.doseId);
-          }
+          await removeDose(data.doseId);
+          await logDeliveryEvent({
+            kind: "acknowledged",
+            doseId: data.doseId,
+            scheduledAt: data.scheduledAt ?? null,
+            acknowledgedAt: new Date().toISOString(),
+            action,
+            channel: data.channel ?? "sw_local",
+          });
         }
       })(),
     );
     return;
+  }
+
+  if (data.doseId) {
+    // Plain tap (no action button) still counts as an acknowledgment.
+    event.waitUntil(
+      logDeliveryEvent({
+        kind: "acknowledged",
+        doseId: data.doseId,
+        scheduledAt: data.scheduledAt ?? null,
+        acknowledgedAt: new Date().toISOString(),
+        action: "opened",
+        channel: data.channel ?? "sw_local",
+      }),
+    );
   }
 
   event.waitUntil(

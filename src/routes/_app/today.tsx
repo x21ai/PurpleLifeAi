@@ -14,6 +14,7 @@ import { MedsMiniTimeline } from "@/components/meds/meds-mini-timeline";
 import { TripBanner } from "@/components/travel/trip-banner";
 import { TodayInstallBanner } from "@/components/pwa/today-install-banner";
 import { ConnectWearablesCard } from "@/components/today/connect-wearables-card";
+import { MissedDoseCatchup } from "@/components/today/missed-dose-catchup";
 import { RestoreBanner } from "@/components/settings/restore-banner";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
 import { promptsForConditions, showsSeizureFeatures, getTodayGreeting } from "@/lib/condition-prompts";
@@ -201,6 +202,8 @@ function TodayPage() {
       <div className="mb-6">
         <TodayInstallBanner />
       </div>
+
+      <MissedDoseCatchup />
 
       <div className="mb-6 empty:mb-0">
         <ConnectWearablesCard />

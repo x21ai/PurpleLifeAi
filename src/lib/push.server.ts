@@ -21,6 +21,9 @@ export type PushPayload = {
   body: string;
   url?: string;
   tag?: string;
+  /** Present on medication dose pushes so the SW can log delivery + acks. */
+  doseId?: string;
+  scheduledAt?: string;
 };
 
 export async function sendPushToSubscription(sub: {

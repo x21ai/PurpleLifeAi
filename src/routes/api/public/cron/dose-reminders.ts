@@ -142,15 +142,32 @@ export const Route = createFileRoute("/api/public/cron/dose-reminders")({
             ? `Scheduled 30 min ago. Tap to log it or mark missed.`
             : (dosage ? `${dosage}. Tap when you have taken it.` : "Tap when you have taken it.");
 
+          let anyDelivered = false;
           for (const sub of userSubs) {
             const res = await sendPushToSubscription(sub, {
               title,
               body,
               url: "/meds",
               tag: `med-dose-${dose.id}${isFollowUp ? "-late" : ""}`,
+              doseId: dose.id,
+              scheduledAt: dose.scheduled_at,
             });
-            if (res.ok) sent++;
+            if (res.ok) {
+              sent++;
+              anyDelivered = true;
+            }
             if (res.gone) goneEndpoints.push(sub.endpoint);
+          }
+          // Delivery instrumentation: one row per dose per cron fire. The SW
+          // refines fired_at with the on-device receipt time when it arrives.
+          if (anyDelivered && !isFollowUp) {
+            await supabaseAdmin.from("notification_delivery_log").insert({
+              user_id: dose.user_id,
+              dose_id: dose.id,
+              scheduled_at: dose.scheduled_at,
+              fired_at: new Date().toISOString(),
+              delivery_channel: "web_push",
+            });
           }
           if (isFollowUp) escalatedDoseIds.push(dose.id);
           else notifiedDoseIds.push(dose.id);
