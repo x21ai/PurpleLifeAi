@@ -268,6 +268,9 @@ export function CaptureSheet({
       supabase.functions
         .invoke("journal-processor", { body: { entry_id: entryId } })
         .catch(() => { /* will exist in next step */ });
+      void supabase.functions
+        .invoke("journal-extract", { body: { journal_entry_id: entryId } })
+        .catch(() => { /* extraction is best-effort */ });
 
       onSaved?.();
       onOpenChange(false);

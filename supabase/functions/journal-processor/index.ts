@@ -328,6 +328,16 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Idempotency: re-invokes on an already-processed entry (duplicate
+    // client calls, cron sweeps) are no-ops. Retry paths set the row back to
+    // "processing" first, so deliberate re-processing still works.
+    if (entry.status === "processed" && body?.force !== true) {
+      return new Response(JSON.stringify({ ok: true, skipped: "already_processed" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const media: string[] = Array.isArray(entry.media_urls) ? entry.media_urls : [];
     const audioUrls = media.filter((u) => isAudioExt(extOf(u)) && !isVideoExt(extOf(u)) && u.includes("voice-"));
     // Fallback: treat any non-photo non-video as audio if filename hints audio

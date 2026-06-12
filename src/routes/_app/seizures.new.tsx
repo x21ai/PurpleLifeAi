@@ -231,6 +231,11 @@ function LogSeizurePage() {
       supabase.functions
         .invoke("journal-processor", { body: { entry_id: entry.id } })
         .catch(() => {});
+      void supabase.functions
+        .invoke("journal-extract", { body: { journal_entry_id: entry.id } })
+        .catch(() => {
+          /* extraction is best-effort */
+        });
 
       toast.success("Seizure logged.");
       goBack();

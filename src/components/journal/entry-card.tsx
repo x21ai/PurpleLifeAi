@@ -4,6 +4,7 @@ import { Pencil, Mic, Camera, Video, Sparkles, Loader2, MoreVertical, Edit3, Arc
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cleanAiText } from "@/lib/ai-text-guards";
+import { processJournalEntry } from "@/lib/journal-pipeline";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -82,9 +83,10 @@ export function EntryCard({ entry }: { entry: Entry }) {
       toast.error("Couldn't save changes");
       return;
     }
-    void supabase.functions
-      .invoke("journal-extract", { body: { journal_entry_id: entry.id } })
-      .catch(() => { /* extraction errors don't block save */ });
+    // Both pipeline legs: the processor is what resolves the row back out of
+    // "processing" (extract alone never touches status, which used to leave
+    // edited entries spinning forever).
+    void processJournalEntry(entry.id);
     setSaving(false);
     setEditing(false);
     toast.success("Entry updated");
@@ -141,18 +143,18 @@ export function EntryCard({ entry }: { entry: Entry }) {
     if (busy) return;
     setBusy(true);
     try {
-      // Re-trigger the extractor by re-saving the row's text/captured_at;
-      // the realtime listener on the journal page will pick up the update.
       await supabase
         .from("journal_entries")
         .update({ status: "processing" })
         .eq("id", entry.id);
-      await supabase.functions.invoke("journal-processor", {
-        body: { entryId: entry.id },
-      });
-      toast.success("Re-reading entry…");
-    } catch (e) {
-      toast.error("Couldn't restart. Try again later.");
+      const ok = await processJournalEntry(entry.id);
+      if (ok) {
+        toast.success("Re-reading entry…");
+      } else {
+        toast.error("Purple couldn't start re-reading. Check your connection and try again.");
+      }
+    } catch {
+      toast.error("Purple couldn't start re-reading. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
