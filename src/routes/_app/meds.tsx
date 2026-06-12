@@ -196,8 +196,28 @@ function MedsPage() {
       .in("id", ids);
     setMarkingAll(false);
     if (error) {
-      toast.error("Could not mark doses");
+      toast.error("That didn't save. Try again in a moment.");
       return;
+    }
+    // Keep pill stock in step with the bulk action; single-dose "Taken"
+    // already decrements, so refill forecasts drifted after "Mark all".
+    const perMed = new Map<string, number>();
+    for (const d of pendingToday) {
+      const medId = d.medication?.id;
+      if (medId) perMed.set(medId, (perMed.get(medId) ?? 0) + 1);
+    }
+    for (const [medId, count] of perMed) {
+      const { data: m } = await supabase
+        .from("medications")
+        .select("pills_remaining")
+        .eq("id", medId)
+        .maybeSingle();
+      if (m && m.pills_remaining != null) {
+        await supabase
+          .from("medications")
+          .update({ pills_remaining: Math.max(0, (m.pills_remaining as number) - count) })
+          .eq("id", medId);
+      }
     }
     toast.success("All pending doses marked taken");
     void load();
@@ -498,6 +518,7 @@ function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: stri
   const threshold = med.refill_threshold ?? 7;
   const lowStock = med.pills_remaining !== null && med.pills_remaining <= threshold;
   const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const [confirmArchive, setConfirmArchive] = React.useState(false);
 
   const archive = async () => {
     const { error } = await supabase.from("medications").update({ active: false }).eq("id", med.id);
@@ -589,7 +610,7 @@ function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: stri
                 <DropdownMenuItem onClick={() => onEdit(med.id)}>
                   <Edit3 className="h-4 w-4 mr-2" /> Edit
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={archive}>
+                <DropdownMenuItem onClick={() => setConfirmArchive(true)}>
                   <Archive className="h-4 w-4 mr-2" /> Archive
                 </DropdownMenuItem>
               </>
@@ -609,6 +630,28 @@ function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: stri
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <AlertDialog open={confirmArchive} onOpenChange={setConfirmArchive}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive {med.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Reminders stop and it moves to your archive. Your dose history stays, and you can restore it any time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmArchive(false);
+                void archive();
+              }}
+            >
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>

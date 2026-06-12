@@ -109,6 +109,7 @@ function MedDetail() {
   const [savingSideEffect, setSavingSideEffect] = React.useState(false);
   const [editOpen, setEditOpen] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const [confirmArchive, setConfirmArchive] = React.useState(false);
   const [homeTz, setHomeTz] = React.useState<string>("UTC");
 
   const load = React.useCallback(async () => {
@@ -139,9 +140,9 @@ function MedDetail() {
 
   React.useEffect(() => { void load(); }, [load]);
 
+  // Confirmation handled by the AlertDialog below (no native window.confirm).
   const archive = async () => {
     if (!med) return;
-    if (!window.confirm(`Archive ${med.name}? You can re-add it later.`)) return;
     const { error } = await supabase.from("medications").update({ active: false }).eq("id", med.id);
     if (error) { toast.error(userMessage(error, "That didn't work. Try again in a moment.")); return; }
     toast.success("Medication archived");
@@ -325,7 +326,7 @@ function MedDetail() {
           </Button>
         )}
         {med.active ? (
-          <Button variant="outline" onClick={archive}>
+          <Button variant="outline" onClick={() => setConfirmArchive(true)}>
             <Archive className="h-4 w-4 mr-1.5" /> Archive
           </Button>
         ) : (
@@ -351,6 +352,28 @@ function MedDetail() {
         isFirstMedication={false}
         editingMedId={editOpen ? med.id : null}
       />
+
+      <AlertDialog open={confirmArchive} onOpenChange={setConfirmArchive}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive {med.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Reminders stop and it moves to your archive. Your dose history stays, and you can restore it any time.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmArchive(false);
+                void archive();
+              }}
+            >
+              Archive
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>

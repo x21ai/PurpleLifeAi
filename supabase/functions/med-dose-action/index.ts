@@ -108,7 +108,14 @@ Deno.serve(async (req) => {
     const snoozeUntil = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     const { error } = await userClient
       .from("medication_doses")
-      .update({ scheduled_at: snoozeUntil, status: "pending" })
+      // Reset the notified markers so the dose-reminders cron fires again at
+      // the snoozed time; otherwise "Snooze 10 min" never reminded again.
+      .update({
+        scheduled_at: snoozeUntil,
+        status: "pending",
+        notified_at: null,
+        missed_notified_at: null,
+      })
       .eq("id", doseId);
     if (error) {
       console.error("med-dose-action snooze error", error);
