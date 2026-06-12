@@ -1,7 +1,7 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { format, subDays, startOfDay, parseISO } from "date-fns";
-import { Zap, Plus, Sparkles, AlertTriangle, Info, ChevronRight } from "lucide-react";
+import { Zap, Plus, Sparkles, AlertTriangle, Info, ChevronRight, PenLine, TrendingUp } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,8 @@ import { SetGoalSheet } from "@/components/insights/set-goal-sheet";
 import { Target, Wand2, Loader2 } from "lucide-react";
 import { getDailyInsightCards } from "@/lib/report-trends.functions";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useFreshAccount } from "@/hooks/use-fresh-account";
+import { RouteEmptyState } from "@/components/empty-states/route-empty-state";
 
 type SeizureRow = {
   id: string;
@@ -48,6 +50,8 @@ function InsightsPage() {
   useRouteTheme("light");
   const { t } = useTranslation();
   const { session } = useAuth();
+  const freshQuery = useFreshAccount();
+  const isFresh = freshQuery.data?.isFresh === true;
   const [tracksSeizures, setTracksSeizures] = React.useState<boolean | null>(null);
   React.useEffect(() => {
     const uid = session?.user.id;
@@ -77,36 +81,36 @@ function InsightsPage() {
         </NarrativeBlock>
       </div>
 
-      <ForYouRow />
+      <ForYouRow isFresh={isFresh} />
 
-      <TrendsHeader />
+      {!isFresh && <TrendsHeader />}
 
-      <VitalsRow />
+      {!isFresh && <VitalsRow />}
 
-      <HealthRecordsHub />
+      {!isFresh && <HealthRecordsHub />}
 
       {tracksSeizures !== null && (
         <Tabs
-          defaultValue={tracksSeizures ? "seizures" : "trends"}
+          defaultValue={isFresh ? "patterns" : tracksSeizures ? "seizures" : "trends"}
           className="mt-14"
         >
           <TabsList className="h-11 rounded-full bg-secondary/60 p-1">
-            {tracksSeizures && (
+            {tracksSeizures && !isFresh && (
               <TabsTrigger value="seizures" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">{t("insights.tabSeizures")}</TabsTrigger>
             )}
             <TabsTrigger value="trends" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">{t("insights.tabTrends")}</TabsTrigger>
             <TabsTrigger value="patterns" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Patterns</TabsTrigger>
           </TabsList>
-          {tracksSeizures && (
+          {tracksSeizures && !isFresh && (
             <TabsContent value="seizures" className="mt-6">
               <SeizuresTab />
             </TabsContent>
           )}
           <TabsContent value="trends" className="mt-6">
-            <TrendsTab />
+            <TrendsTab isFresh={isFresh} />
           </TabsContent>
           <TabsContent value="patterns" className="mt-6">
-            <PatternsTab />
+            <PatternsTab isFresh={isFresh} />
           </TabsContent>
         </Tabs>
       )}
@@ -122,7 +126,8 @@ type BioRow = {
   resting_hr_bpm: number | null;
 };
 
-function ForYouRow() {
+function ForYouRow({ isFresh }: { isFresh: boolean }) {
+  const { t } = useTranslation();
   const fetchCards = useServerFn(getDailyInsightCards);
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({
@@ -140,6 +145,31 @@ function ForYouRow() {
   const cards = data?.cards ?? [];
   const headline = data?.headline ?? null;
   const showEmpty = !isLoading && cards.length === 0;
+
+  if (isFresh) {
+    return (
+      <section className="mt-10">
+        <RouteEmptyState
+          testId="fresh-empty-insights"
+          eyebrow={t("emptyStates.insightsEyebrow")}
+          heading={t("emptyStates.insightsHeading")}
+          body={t("emptyStates.insightsBody")}
+          icon={Sparkles}
+          action={
+            <Button asChild size="lg" className="rounded-full h-12 px-6 text-base">
+              <Link to="/journal/new">
+                <PenLine className="h-4 w-4 mr-2" />
+                {t("emptyStates.insightsCta")}
+              </Link>
+            </Button>
+          }
+        />
+        <p className="mt-3 text-[11px] text-muted-foreground/70">
+          Observations only - never a diagnosis. Share with your clinician for context.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="mt-10">
@@ -267,9 +297,25 @@ function TrendsHeader() {
   );
 }
 
-function TrendsTab() {
+function TrendsTab({ isFresh }: { isFresh: boolean }) {
   const { t } = useTranslation();
   const rows = useRecentBiometrics(14);
+  if (isFresh) {
+    return (
+      <RouteEmptyState
+        testId="fresh-empty-trends"
+        eyebrow={t("insights.tabTrends")}
+        heading={t("insights.freshHeading")}
+        body={t("insights.connectWearable")}
+        icon={TrendingUp}
+        action={
+          <Button asChild size="lg" className="rounded-full h-12 px-6 text-base">
+            <Link to="/tools">{t("today.wearablesNudgeAction")}</Link>
+          </Button>
+        }
+      />
+    );
+  }
   if (rows === null) {
     return <div className="h-48 rounded-2xl border border-border bg-card animate-pulse" />;
   }
@@ -472,9 +518,33 @@ function Heatmap({ events, days }: { events: SeizureRow[]; days: number }) {
     </div>
   );
 }
-function PatternsTab() {
+function PatternsTab({ isFresh }: { isFresh: boolean }) {
+  const { t } = useTranslation();
   const fn = useServerFn(computeUserPatterns);
-  const q = useQuery({ queryKey: ["insights", "patterns"], queryFn: () => fn() });
+  const q = useQuery({
+    queryKey: ["insights", "patterns"],
+    queryFn: () => fn(),
+    enabled: !isFresh,
+  });
+  if (isFresh) {
+    return (
+      <RouteEmptyState
+        testId="fresh-empty-patterns"
+        eyebrow={t("emptyStates.patternsEyebrow")}
+        heading={t("emptyStates.patternsHeading")}
+        body={t("emptyStates.patternsBody")}
+        icon={Sparkles}
+        action={
+          <Button asChild size="lg" className="rounded-full h-12 px-6 text-base">
+            <Link to="/journal/new">
+              <PenLine className="h-4 w-4 mr-2" />
+              {t("emptyStates.patternsCta")}
+            </Link>
+          </Button>
+        }
+      />
+    );
+  }
   if (q.isLoading) {
     return <div className="h-48 rounded-2xl border border-border bg-card animate-pulse" />;
   }

@@ -2,7 +2,7 @@ import * as React from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { format, startOfDay, startOfWeek, startOfMonth, startOfYear } from "date-fns";
-import { Zap, BookOpen, Pill, Download, FileText, Copy, Share2, Plus } from "lucide-react";
+import { Zap, BookOpen, Pill, Download, FileText, Copy, Share2, Plus, PenLine, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -18,6 +18,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useFreshAccount } from "@/hooks/use-fresh-account";
+import { RouteEmptyState } from "@/components/empty-states/route-empty-state";
 
 export const Route = createFileRoute("/_app/timeline")({
   head: () => ({ meta: [{ title: "Timeline · Purple" }] }),
@@ -51,6 +53,8 @@ function TimelinePage() {
   const navigate = useNavigate();
   const { session } = useAuth();
   const userId = session?.user.id;
+  const freshQuery = useFreshAccount();
+  const isFresh = freshQuery.data?.isFresh === true;
   const [range, setRange] = React.useState<Range>("week");
   const [search, setSearch] = React.useState("");
   const [customFrom, setCustomFrom] = React.useState<Date>(() => {
@@ -237,6 +241,7 @@ function TimelinePage() {
             {t("timeline.title1")}<br />{t("timeline.title2")}
           </h1>
         </div>
+        {!isFresh && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="mt-2">
@@ -261,11 +266,32 @@ function TimelinePage() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        )}
       </div>
       <p className="mt-5 body-serif text-foreground/75 max-w-[560px]">
         {t("timeline.intro")}
       </p>
 
+      {isFresh ? (
+        <div className="mt-8">
+          <RouteEmptyState
+            testId="fresh-empty-timeline"
+            eyebrow={t("timeline.freshEyebrow")}
+            heading={t("timeline.freshHeading")}
+            body={t("timeline.freshBody")}
+            icon={Clock}
+            action={
+              <Button asChild size="lg" className="rounded-full h-12 px-6 text-base">
+                <Link to="/journal/new">
+                  <PenLine className="h-4 w-4 mr-2" />
+                  {t("timeline.freshCta")}
+                </Link>
+              </Button>
+            }
+          />
+        </div>
+      ) : (
+        <>
       {/* Quick add */}
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted-foreground mr-1">{t("timeline.add")}</span>
@@ -361,6 +387,8 @@ function TimelinePage() {
         <Link to="/seizures/new" className="underline">Log past event</Link>{" "}
        , both accept any date.
       </p>
+        </>
+      )}
     </div>
   );
 }

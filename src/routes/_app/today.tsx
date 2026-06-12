@@ -37,6 +37,7 @@ import { TopInsightCard } from "@/components/today/top-insight-card";
 import { localDateKey, localDayIndex } from "@/lib/utils";
 import { PreTripChecklist } from "@/components/today/pre-trip-checklist";
 import { TripWrapupCard } from "@/components/today/trip-wrapup-card";
+import { useFreshAccount } from "@/hooks/use-fresh-account";
 
 export const Route = createFileRoute("/_app/today")({
   head: () => ({
@@ -88,6 +89,8 @@ function TodayPage() {
   const [focus, setFocus] = useState<"readiness" | "sleep" | "activity">("sleep");
   const [expanded, setExpanded] = useState(false);
   const [announcement, setAnnouncement] = useState<AdminMessage | null>(null);
+  const freshQuery = useFreshAccount();
+  const isFresh = freshQuery.data?.isFresh === true;
   const [journalCount, setJournalCount] = useState<number | null>(null);
   const [emptyDismissed, setEmptyDismissed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -253,22 +256,26 @@ function TodayPage() {
           {t("todayPage.firstWordsNote", { words: firstWords })}
         </p>
       ) : (
+        !isFresh &&
         greetingSuffix &&
         !forecast?.ai_narrative && (
           <p className="mt-2 text-sm text-muted-foreground">{greetingSuffix}</p>
         )
       )}
 
-      {forecast?.ai_narrative ? (
-        <p className="body-serif mt-4 max-w-[600px] text-foreground/75">
-          {forecast.ai_narrative}
-        </p>
-      ) : (
-        <p className="body-serif mt-4 max-w-[600px] text-foreground/60">
-          {conditionPrompt}
-        </p>
-      )}
+      {!isFresh &&
+        (forecast?.ai_narrative ? (
+          <p className="body-serif mt-4 max-w-[600px] text-foreground/75">
+            {forecast.ai_narrative}
+          </p>
+        ) : (
+          <p className="body-serif mt-4 max-w-[600px] text-foreground/60">
+            {conditionPrompt}
+          </p>
+        ))}
 
+      {!isFresh && (
+        <>
       <section className="mt-12 sm:mt-16 grid grid-cols-3 items-center gap-2">
         <ScoreTile
           value={readiness ?? "–"}
@@ -473,6 +480,8 @@ function TodayPage() {
             <ChevronRight className="h-3 w-3" />
           </Link>
         </div>
+      )}
+        </>
       )}
     </div>
   );
