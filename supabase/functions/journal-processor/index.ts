@@ -34,7 +34,7 @@ const TOOL_SCHEMA = {
         type: "array",
         items: { type: "string" },
         description:
-          "Snake_case tags. Use ONE of these prefixes: symptom: (headache, nausea), mood: (tired, anxious), trigger: (alcohol, poor_sleep), med: (keppra_taken), event: (seizure, aura, fall — DISCRETE events only), or context: (sleep, work, exercise — ongoing states or settings). NEVER tag 'sleep', 'awake', 'bedtime', or 'morning' as event:. Those are context:.",
+          "Snake_case tags. Use ONE of these prefixes: symptom: (headache, nausea), mood: (tired, anxious), trigger: (alcohol, poor_sleep), med: (keppra_taken), event: (seizure, aura, fall, er_visit, DISCRETE happenings only), place: (hospital, home, work, school, locations the entry happened in), or context: (sleep, exercise, dinner, ongoing states or settings). NEVER tag 'sleep', 'awake', 'bedtime', or 'morning' as event:. Those are context:. NEVER tag a location as context:. Locations are place:.",
       },
       extracted: {
         type: "object",

@@ -5,6 +5,38 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cleanAiText } from "@/lib/ai-text-guards";
 import { processJournalEntry } from "@/lib/journal-pipeline";
+import { formatTagChip } from "@/lib/journal-tags";
+
+/**
+ * Journal photos store SIGNED storage URLs that expire (~1 year). An expired
+ * URL used to fail silently, leaving a photo entry rendering as "just words".
+ * On load error, re-sign the underlying storage path once and retry.
+ */
+function SelfHealingImage({ url }: { url: string }) {
+  const [src, setSrc] = React.useState(url);
+  const healedRef = React.useRef(false);
+
+  const heal = React.useCallback(async () => {
+    if (healedRef.current) return;
+    healedRef.current = true;
+    const match = url.match(/\/journal-media\/([^?]+)/);
+    if (!match) return;
+    const { data } = await supabase.storage
+      .from("journal-media")
+      .createSignedUrl(decodeURIComponent(match[1]), 60 * 60 * 24);
+    if (data?.signedUrl) setSrc(data.signedUrl);
+  }, [url]);
+
+  return (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      onError={() => void heal()}
+      className="rounded-lg w-full aspect-square object-cover"
+    />
+  );
+}
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -307,7 +339,7 @@ export function EntryCard({ entry }: { entry: Entry }) {
       {(photos.length > 0 || videos.length > 0) && (
         <div className={cn("mt-3 grid gap-2", photos.length + videos.length > 1 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-1")}>
           {photos.map((url) => (
-            <img key={url} src={url} alt="" loading="lazy" className="rounded-lg w-full aspect-square object-cover" />
+            <SelfHealingImage key={url} url={url} />
           ))}
           {videos.map((url) => (
             <video key={url} src={url} controls className="rounded-lg w-full aspect-square object-cover bg-black" />
@@ -327,9 +359,9 @@ export function EntryCard({ entry }: { entry: Entry }) {
             <span
               key={t}
               className="inline-flex items-center rounded-full border border-primary/30 bg-background text-primary px-2.5 py-0.5 text-[11px] tracking-wide"
-              aria-label={`Tag: ${t}`}
+              aria-label={`Tag: ${formatTagChip(t)}`}
             >
-              {t}
+              {formatTagChip(t)}
             </span>
           ))}
         </div>
