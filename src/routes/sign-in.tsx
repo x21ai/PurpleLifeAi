@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { redeemInviteCode } from "@/lib/invite-codes.functions";
 import { captureInviteFromUrl, getStoredInvite, clearStoredInvite } from "@/lib/invite-storage";
+import { marketingHead } from "@/lib/seo";
 
 const LOCALE_PREFILL_KEY = "purple-locale-prefill";
 
@@ -61,15 +62,13 @@ export const Route = createFileRoute("/sign-in")({
       throw redirect({ to: "/today" });
     }
   },
-  head: () => ({
-    meta: [
-      { title: "Sign in · Purple" },
-      {
-        name: "description",
-        content: "Sign in or create your Purple account. A quiet intelligence for your health.",
-      },
-    ],
-  }),
+  head: () =>
+    marketingHead({
+      path: "/sign-in",
+      title: "Sign in · Purple",
+      description: "Sign in or create your Purple account. A quiet intelligence for your health.",
+      noindex: true,
+    }),
   component: SignInPage,
 });
 

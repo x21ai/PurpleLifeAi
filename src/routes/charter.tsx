@@ -3,18 +3,18 @@ import { ArrowLeft } from "lucide-react";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { marketingHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/charter")({
-  head: () => ({
-    meta: [
-      { title: "Why Purple exists" },
-      {
-        name: "description",
-        content:
-          "Purple is a calm, private health journal for people living with conditions that need daily attention. Free forever. Open source. Your story is yours.",
-      },
-    ],
-  }),
+  head: () =>
+    marketingHead({
+      path: "/charter",
+      title: "Founding charter · Purple",
+      description:
+        "Purple is a calm, private health journal for people living with conditions that need daily attention. Free forever. Open source. Your story is yours.",
+      ogTitle: "Founding charter · Purple",
+      ogDescription: "Why Purple exists, who it is for, and the promises we keep.",
+    }),
   component: CharterPage,
 });
 

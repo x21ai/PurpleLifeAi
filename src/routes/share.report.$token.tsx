@@ -5,14 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2, FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { resolveMedicalReportShareLink } from "@/lib/medical-report-share.functions";
+import { noindexHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/share/report/$token")({
-  head: () => ({
-    meta: [
-      { title: "Shared medical history · Purple" },
-      { name: "robots", content: "noindex,nofollow" },
-    ],
-  }),
+  head: () => noindexHead("Shared medical history · Purple"),
   component: SharedReportPage,
   errorComponent: ({ error }) => (
     <div className="mx-auto max-w-2xl px-5 py-16">

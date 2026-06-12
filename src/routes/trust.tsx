@@ -3,26 +3,21 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { CalmHero } from "@/components/marketing/calm-scene";
 import { trustImages } from "@/lib/calm-images";
+import { marketingHead, OG_HERO_IMAGES } from "@/lib/seo";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/trust")({
-  head: () => ({
-    meta: [
-      { title: "Why Purple is different" },
-      {
-        name: "description",
-        content:
-          "No ads, no trackers, open source, private by architecture. Purple's promises, each one true in the code today.",
-      },
-      { property: "og:title", content: "Why Purple is different" },
-      {
-        property: "og:description",
-        content: "No ads. No trackers. Your data is yours. The promises, in writing.",
-      },
-      { property: "og:url", content: "https://www.purplelife.org/trust" },
-    ],
-    links: [{ rel: "canonical", href: "https://www.purplelife.org/trust" }],
-  }),
+  head: () =>
+    marketingHead({
+      path: "/trust",
+      title: "Why Purple is different",
+      description:
+        "No ads, no trackers, open source, private by architecture. Purple's promises, each one true in the code today.",
+      ogTitle: "Why Purple is different",
+      ogDescription: "No ads. No trackers. Your data is yours. The promises, in writing.",
+      ogImage: OG_HERO_IMAGES.trust,
+      ogImageAlt: trustImages.hero.alt,
+    }),
   component: TrustPage,
 });
 

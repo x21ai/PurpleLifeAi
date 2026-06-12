@@ -7,13 +7,14 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { acceptInvite } from "@/lib/care.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { noindexHead } from "@/lib/seo";
 
 const searchSchema = z.object({
   token: z.string().min(20).max(128).optional(),
 });
 
 export const Route = createFileRoute("/care/accept")({
-  head: () => ({ meta: [{ title: "Accept invite · Purple" }] }),
+  head: () => noindexHead("Accept invite · Purple"),
   validateSearch: (s) => searchSchema.parse(s),
   component: AcceptInvitePage,
 });

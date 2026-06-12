@@ -7,6 +7,7 @@ import { MarketingHeader } from "@/components/layout/marketing-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { CalmHero, HumanMoment } from "@/components/marketing/calm-scene";
 import { communityImages } from "@/lib/calm-images";
+import { marketingHead, OG_HERO_IMAGES } from "@/lib/seo";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 import { PlatformFlagGate } from "@/lib/platform-flags";
 
@@ -19,23 +20,17 @@ function GatedCommunityFeed() {
 }
 
 export const Route = createFileRoute("/community")({
-  head: () => ({
-    meta: [
-      { title: "Community. Purple." },
-      {
-        name: "description",
-        content:
-          "A quiet, moderated space for people living with conditions that need daily attention, and the people who help them carry it.",
-      },
-      { property: "og:title", content: "Community. Purple." },
-      {
-        property: "og:description",
-        content: "Share what's working. Ask what isn't. You're not alone.",
-      },
-      { property: "og:url", content: "https://www.purplelife.org/community" },
-    ],
-    links: [{ rel: "canonical", href: "https://www.purplelife.org/community" }],
-  }),
+  head: () =>
+    marketingHead({
+      path: "/community",
+      title: "Community. Purple.",
+      description:
+        "A quiet, moderated space for people living with conditions that need daily attention, and the people who help them carry it.",
+      ogTitle: "Community. Purple.",
+      ogDescription: "Share what's working. Ask what isn't. You're not alone.",
+      ogImage: OG_HERO_IMAGES.community,
+      ogImageAlt: communityImages.hero.alt,
+    }),
   component: GatedCommunityFeed,
 });
 

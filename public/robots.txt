@@ -7,7 +7,9 @@ Disallow: /sign-up
 Disallow: /reset-password
 Disallow: /oauth/
 Disallow: /care/accept
+Disallow: /friend/accept
+Disallow: /friend/join
 Disallow: /share/
 Disallow: /unsubscribe
 
-Sitemap: https://purplelife.org/sitemap.xml
+Sitemap: https://www.purplelife.org/sitemap.xml

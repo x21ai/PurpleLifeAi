@@ -9,42 +9,28 @@ import {
   QuietStat,
 } from "@/components/marketing/calm-scene";
 import { aboutImages } from "@/lib/calm-images";
+import { marketingHead, OG_HERO_IMAGES, organizationJsonLd, SITE_ORIGIN } from "@/lib/seo";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/about")({
-  head: () => ({
-    meta: [
-      { title: "Why Purple exists" },
-      {
-        name: "description",
-        content:
-          "Purple is a quiet, open-source companion for people living with conditions that need daily attention. Built by people who get it. Free, forever.",
+  head: () =>
+    marketingHead({
+      path: "/about",
+      title: "Why Purple exists",
+      description:
+        "Purple is a quiet, open-source companion for people living with conditions that need daily attention. Built by people who get it. Free, forever.",
+      ogTitle: "Why Purple exists",
+      ogDescription: "Calm, open-source, free forever. Made for anyone carrying something heavy.",
+      ogImage: OG_HERO_IMAGES.about,
+      ogImageAlt: aboutImages.hero.alt,
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "AboutPage",
+        name: "Why Purple exists",
+        url: `${SITE_ORIGIN}/about`,
+        about: organizationJsonLd(),
       },
-      { property: "og:title", content: "Why Purple exists" },
-      {
-        property: "og:description",
-        content: "Calm, open-source, free forever. Made for anyone carrying something heavy.",
-      },
-      { property: "og:url", content: "https://www.purplelife.org/about" },
-    ],
-    links: [{ rel: "canonical", href: "https://www.purplelife.org/about" }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "AboutPage",
-          name: "Why Purple exists",
-          url: "https://www.purplelife.org/about",
-          about: {
-            "@type": "Organization",
-            name: "Purple",
-            url: "https://purplelife.org",
-          },
-        }),
-      },
-    ],
-  }),
+    }),
   component: AboutPage,
 });
 

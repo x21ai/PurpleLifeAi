@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { buildRobotsTxt, buildSitemapXml } from "./lib/seo";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -31,6 +32,7 @@ const CACHEABLE_MARKETING_PATHS = new Set([
   "/contact",
   "/privacy",
   "/terms",
+  "/trust",
   "/how-purple-thinks",
 ]);
 const MARKETING_CACHE_CONTROL = "public, max-age=60, s-maxage=300, stale-while-revalidate=600";
@@ -147,9 +149,34 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   return brandedErrorResponse();
 }
 
+function seoStaticResponse(request: Request): Response | null {
+  if (request.method !== "GET") return null;
+  const pathname = new URL(request.url).pathname;
+  if (pathname === "/sitemap.xml") {
+    return new Response(buildSitemapXml(), {
+      headers: {
+        "content-type": "application/xml; charset=utf-8",
+        "cache-control": "public, max-age=3600, s-maxage=86400",
+      },
+    });
+  }
+  if (pathname === "/robots.txt") {
+    return new Response(buildRobotsTxt(), {
+      headers: {
+        "content-type": "text/plain; charset=utf-8",
+        "cache-control": "public, max-age=3600, s-maxage=86400",
+      },
+    });
+  }
+  return null;
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const seoResponse = seoStaticResponse(request);
+      if (seoResponse) return seoResponse;
+
       const cacheable = isCacheableMarketingRequest(request);
       const edgeCache = cacheable ? getEdgeCache() : null;
 
