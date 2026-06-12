@@ -17,6 +17,7 @@ export function TodayEmptyState({ onDismiss }: Props) {
     <section
       className="relative overflow-hidden rounded-3xl border border-border bg-card px-6 py-10 sm:px-10 sm:py-12 mb-10"
       aria-label={t("today.emptyHeading")}
+      data-testid="fresh-empty-today"
     >
       <div
         className="pointer-events-none absolute -top-24 -right-16 h-64 w-64 rounded-full opacity-40 blur-3xl"

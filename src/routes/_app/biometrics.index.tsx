@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, AlertTriangle } from "lucide-react";
+import { ChevronLeft, AlertTriangle, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -20,6 +20,9 @@ import { MetricCard } from "@/components/biometrics/metric-card";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useFreshAccount } from "@/hooks/use-fresh-account";
+import { RouteEmptyState } from "@/components/empty-states/route-empty-state";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_app/biometrics/")({
   head: () => ({
@@ -52,6 +55,8 @@ function BiometricsIndex() {
   const { t } = useTranslation();
   const { session } = useAuth();
   const uid = session?.user.id;
+  const freshQuery = useFreshAccount();
+  const isFresh = freshQuery.data?.isFresh === true;
   const [rows, setRows] = useState<BioRow[] | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [rangeKey, setRangeKey] = useState<RangeKey>("30d");
@@ -256,6 +261,7 @@ function BiometricsIndex() {
       </div>
 
       {/* Range + comparison pickers */}
+      {!isFresh && (
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <div className="inline-flex rounded-full border border-border bg-card p-0.5">
           {(Object.keys(RANGE_LABELS) as RangeKey[]).map((k) => (
@@ -286,19 +292,30 @@ function BiometricsIndex() {
           ))}
         </div>
       </div>
+      )}
 
       {rows === null ? (
+        !isFresh ? (
         <div className="mt-8 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="h-40 rounded-2xl bg-card border border-border animate-pulse" />
           ))}
         </div>
+        ) : null
       ) : empty ? (
-        <div className="mt-10 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
-          <p className="font-serif text-xl">{t("biometrics.noDataTitle")}</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {t("biometrics.noDataBody")}
-          </p>
+        <div className="mt-10">
+          <RouteEmptyState
+            testId="fresh-empty-biometrics"
+            eyebrow={t("biometrics.eyebrow")}
+            heading={t("biometrics.noDataTitle")}
+            body={t("biometrics.noDataBody")}
+            icon={Activity}
+            action={
+              <Button asChild size="lg" className="rounded-full h-12 px-6 text-base">
+                <Link to="/tools">{t("biometrics.noDataCta")}</Link>
+              </Button>
+            }
+          />
         </div>
       ) : (
         <div className="mt-6 space-y-10">
@@ -389,8 +406,12 @@ function BiometricsIndex() {
         </div>
       )}
 
+      {!isFresh && (
+        <>
       <SourceLegend />
       <SourceFieldMatrix />
+        </>
+      )}
     </div>
   );
 }
