@@ -48,7 +48,9 @@ export function OuraConnection() {
       .eq("user_id", uid)
       .maybeSingle();
     setConnected(!!data);
-    setLastSync((data as any)?.last_sync_at ?? data?.updated_at ?? null);
+    // last_sync_at only: updated_at also moves on token refreshes, which made
+    // stale data read as freshly synced (Devyn item 10).
+    setLastSync((data as { last_sync_at?: string | null } | null)?.last_sync_at ?? null);
     if (data?.sync_interval_hours != null) setIntervalHours(data.sync_interval_hours);
 
     if (data) {

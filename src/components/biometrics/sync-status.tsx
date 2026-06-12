@@ -85,18 +85,28 @@ export function OuraSyncStatus({ variant = "detailed", onSynced, className }: Pr
   const dataDate = dataThrough && isValid(new Date(dataThrough)) ? new Date(dataThrough) : null;
   const pulledDate = lastPulled && isValid(new Date(lastPulled)) ? new Date(lastPulled) : null;
 
+  // One truth (Devyn item 10): when the DATA is stale (>24h), lead with that
+  // and never pair a fresh-sounding "Last sync just now" with old data.
+  const dataStale = dataDate != null && Date.now() - dataDate.getTime() > 24 * 60 * 60 * 1000;
+
   if (variant === "compact") {
     return (
       <div
         className={"flex items-center gap-2 text-[11px] text-muted-foreground " + (className ?? "")}
       >
         <span className="flex flex-col leading-tight">
-          <span>
-            {pulledDate
-              ? `Last sync ${formatDistanceToNow(pulledDate, { addSuffix: true })}`
-              : "Never synced"}
-          </span>
-          {dataDate && (
+          {dataStale ? (
+            <span className="text-[color:var(--data-warn)]">
+              No new Oura data since {formatDistanceToNow(dataDate, { addSuffix: true })}
+            </span>
+          ) : (
+            <span>
+              {pulledDate
+                ? `Last sync ${formatDistanceToNow(pulledDate, { addSuffix: true })}`
+                : "Never synced"}
+            </span>
+          )}
+          {dataDate && !dataStale && (
             <span className="text-muted-foreground/70">
               Latest data {formatDistanceToNow(dataDate, { addSuffix: true })}
             </span>
