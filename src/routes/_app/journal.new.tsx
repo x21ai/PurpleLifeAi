@@ -9,6 +9,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { useVoiceCapture } from "@/components/journal/use-voice-capture";
 import { queueEntry } from "@/lib/offline-journal-queue";
+import { processJournalEntry } from "@/lib/journal-pipeline";
 import { VoiceWave } from "@/components/journal/voice-wave";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
@@ -228,9 +229,7 @@ function JournalNewPage() {
           .eq("id", entryId);
       }
 
-      supabase.functions
-        .invoke("journal-processor", { body: { entry_id: entryId } })
-        .catch(() => { /* edge fn may not be deployed yet */ });
+      void processJournalEntry(entryId);
 
       // Auto-route clinical attachments (PDF/photo of lab/imaging report)
       // into the Reports section. Fire-and-forget, runs in parallel.

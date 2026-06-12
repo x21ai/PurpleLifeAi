@@ -17,6 +17,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { redeemInviteCode } from "@/lib/invite-codes.functions";
 import { generateCareProfile } from "@/lib/care-profile.functions";
 import { getStoredInvite, clearStoredInvite } from "@/lib/invite-storage";
+import { processJournalEntry } from "@/lib/journal-pipeline";
 
 const LOCALE_PREFILL_KEY = "purple-locale-prefill";
 // Read once by /today for the post-onboarding greeting.
@@ -180,14 +181,7 @@ function WelcomePage() {
       if (error || !inserted) throw error ?? new Error("insert failed");
       const entryId = inserted.id as string;
 
-      supabase.functions.invoke("journal-processor", { body: { entry_id: entryId } }).catch(() => {
-        /* extraction is best-effort; the fallback copy covers it */
-      });
-      supabase.functions
-        .invoke("journal-extract", { body: { journal_entry_id: entryId } })
-        .catch(() => {
-          /* same */
-        });
+      void processJournalEntry(entryId);
 
       rememberFirstWords(text);
       setPhase("reading");

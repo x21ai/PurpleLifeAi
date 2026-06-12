@@ -55,6 +55,7 @@ const CRON_ENDPOINTS: Record<string, string[]> = {
     "/api/public/cron/oura-sync-all",
     "/api/public/cron/whoop-sync-all",
     "/api/public/cron/seed-doses",
+    "/api/public/cron/journal-cleanup",
   ],
   "0 6 * * *": [
     "/api/public/cron/care-daily-digest",
