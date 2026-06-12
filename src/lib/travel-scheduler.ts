@@ -67,7 +67,7 @@ function dateKeyInTz(d: Date, tz: string): string {
  * Resolve "YYYY-MM-DD HH:MM" as a wall-clock time in `tz` and return the
  * corresponding UTC Date. Uses Intl to compute the offset.
  */
-function wallTimeInTzToUtc(dateKey: string, hhmm: string, tz: string): Date {
+export function wallTimeInTzToUtc(dateKey: string, hhmm: string, tz: string): Date {
   const [hStr, mStr] = hhmm.split(":");
   const h = Number(hStr);
   const m = Number(mStr);

@@ -270,7 +270,14 @@ export function EntryCard({ entry }: { entry: Entry }) {
               type="button"
               size="sm"
               onClick={saveEdit}
-              disabled={saving || (!draftText.trim() && !draftVoice.trim())}
+              // Date-only edits must save too (photo/voice entries have no
+              // text); only block when the entry would end up fully empty.
+              disabled={
+                saving ||
+                (!draftText.trim() &&
+                  !draftVoice.trim() &&
+                  (entry.media_urls?.length ?? 0) === 0)
+              }
               className="h-8"
             >
               {saving ? (

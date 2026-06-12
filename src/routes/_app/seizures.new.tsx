@@ -17,7 +17,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, formatLocaleTime } from "@/lib/utils";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { useTranslation } from "react-i18next";
@@ -132,12 +132,17 @@ function LogSeizurePage() {
     if (!userId || quickSaving) return;
     setQuickSaving(true);
     try {
+      // Occurred-at, not logged-at: quick log honors the "When did it happen"
+      // picker below (defaults to now), so logging yesterday's seizure today
+      // never lands on the wrong day. created_at still records the log time.
       const { error } = await supabase.from("seizure_events").insert({
         user_id: userId,
-        started_at: new Date().toISOString(),
+        started_at: startedAtDate.toISOString(),
       });
       if (error) throw error;
-      toast.success("Logged. You can add details anytime.");
+      toast.success(
+        `Logged for ${formatLocaleTime(startedAtDate)}. You can add details anytime.`,
+      );
       goBack();
     } catch (err: any) {
       console.error(err);
@@ -288,7 +293,9 @@ function LogSeizurePage() {
         <div className="space-y-2">
           <Label>When did it happen?</Label>
           <DateTimePicker value={startedAtDate} onChange={(d) => d && setStartedAtDate(d)} disableFuture />
-          <p className="text-xs text-muted-foreground">Defaults to now. Change it to log a past seizure.</p>
+          <p className="text-xs text-muted-foreground">
+            Defaults to now. Change it to log a past seizure; the quick log above uses this time too.
+          </p>
         </div>
 
         {/* Type */}
