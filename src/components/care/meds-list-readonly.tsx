@@ -1,5 +1,5 @@
 import { AlertCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, sanitizeDosageLabel } from "@/lib/utils";
 
 type Med = {
   id: string;
@@ -65,8 +65,8 @@ export function MedsListReadOnly({
                     </span>
                   )}
                 </div>
-                {m.dosage && (
-                  <p className="text-sm text-muted-foreground">{m.dosage}</p>
+                {sanitizeDosageLabel(m.dosage) && (
+                  <p className="text-sm text-muted-foreground">{sanitizeDosageLabel(m.dosage)}</p>
                 )}
                 {!m.is_rescue && m.times_of_day?.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1.5">

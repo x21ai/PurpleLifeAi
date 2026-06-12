@@ -131,10 +131,15 @@ export const Route = createFileRoute("/api/public/cron/dose-reminders")({
 
           const med = (dose as unknown as { medications: { name: string; dosage: string | null } | null }).medications;
           const medName = med?.name ?? "your medication";
-          const dosageBits: string[] = [];
-          if (dose.amount != null) dosageBits.push(String(dose.amount));
-          if (dose.unit) dosageBits.push(dose.unit);
-          const dosage = dosageBits.length > 0 ? dosageBits.join(" ") : (med?.dosage ?? "");
+          // A unit without an amount must never render ("take mg"): only
+          // include the unit when a number exists, and reject digit-less
+          // dosage fallbacks.
+          const dosage =
+            dose.amount != null
+              ? `${dose.amount}${dose.unit ? ` ${dose.unit}` : ""}`
+              : med?.dosage && /\d/.test(med.dosage)
+                ? med.dosage
+                : "";
 
           const isFollowUp = !firstFireIds.has(dose.id);
           const title = isFollowUp ? `Still pending: ${medName}` : `Time for ${medName}`;

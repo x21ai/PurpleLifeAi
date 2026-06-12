@@ -14,7 +14,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { rearmMedicationNotifications } from "@/lib/med-notifications";
 import { toast } from "sonner";
 import { startAlarmLoop, type AlarmSoundId, DEFAULT_ALARM_SOUND } from "@/lib/alarm-sounds";
-import { formatLocaleTime } from "@/lib/utils";
+import { formatLocaleTime, sanitizeDosageLabel } from "@/lib/utils";
 
 type CriticalDose = {
   id: string;
@@ -147,7 +147,7 @@ export function ReminderAlarmSheet() {
             Time for {dose.medication?.name ?? "your dose"}
           </DialogTitle>
           <DialogDescription className="text-center">
-            {dose.medication?.dosage ? `${dose.medication.dosage} · ` : ""}
+            {sanitizeDosageLabel(dose.medication?.dosage) ? `${sanitizeDosageLabel(dose.medication?.dosage)} · ` : ""}
             scheduled {formatLocaleTime(dose.scheduled_at)}
           </DialogDescription>
         </DialogHeader>

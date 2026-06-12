@@ -330,6 +330,18 @@ body::-webkit-scrollbar,
     color: #FAFAFC;
     min-height: 100vh;
     min-height: 100dvh;
+    /* Scope the theme tokens so text-foreground etc. resolve against the
+       sheet's dark surface in BOTH app themes. Without this, light mode put
+       near-black ink on the dark purple cards (unreadable list titles on
+       Tools & utilities / Wear and care). */
+    --foreground: #fafafc;
+    --muted-foreground: #9a9aa3;
+    --muted: #221c2c;
+    --secondary: #221c2c;
+    --secondary-foreground: #e8e6ee;
+    --border: rgba(255, 255, 255, 0.06);
+    --card: #1a1521;
+    --card-foreground: #fafafc;
   }
   .sheet-card {
     background-color: #1A1521;

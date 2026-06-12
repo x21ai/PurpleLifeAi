@@ -2,7 +2,7 @@ import * as React from "react";
 import { format } from "date-fns";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { cn, formatLocaleTime, localDateKey } from "@/lib/utils";
+import { cn, formatLocaleTime, localDateKey, sanitizeDosageLabel } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
@@ -263,9 +263,11 @@ export function TodayDoses() {
   };
 
   // Retroactive edit: change a non-pending dose back to taken / skipped / pending.
+  // takenAt lets a missed dose be logged at its scheduled time instead of now.
   const reclassify = async (
     id: string,
     next: "taken" | "skipped" | "pending",
+    takenAt?: string,
   ) => {
     const prev = doses;
     const prevStatus = prev?.find((d) => d.id === id)?.status;
@@ -273,7 +275,7 @@ export function TodayDoses() {
     setDoses((d) => d?.map((x) => (x.id === id ? { ...x, status: next } : x)) ?? null);
     const update: { status: string; taken_at: string | null } = {
       status: next,
-      taken_at: next === "taken" ? new Date().toISOString() : null,
+      taken_at: next === "taken" ? (takenAt ?? new Date().toISOString()) : null,
     };
     const { error } = await supabase
       .from("medication_doses")
@@ -396,7 +398,7 @@ export function TodayDoses() {
                     d.amount != null
                       ? `${d.amount}${d.unit ? ` ${d.unit}` : ""}`
                       : null;
-                  const label = perDose ?? d.medication?.dosage ?? null;
+                  const label = perDose ?? sanitizeDosageLabel(d.medication?.dosage) ?? null;
                   if (label) {
                     return <p className="text-xs text-muted-foreground truncate">{label}</p>;
                   }
@@ -446,6 +448,18 @@ export function TodayDoses() {
               ) : (
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs text-muted-foreground capitalize">{d.status}</span>
+                  {d.status === "missed" && (
+                    // Calm recovery, never punishment: a missed dose can
+                    // always be logged after the fact.
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full h-7 text-xs"
+                      onClick={() => reclassify(d.id, "taken")}
+                    >
+                      Log it anyway
+                    </Button>
+                  )}
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       aria-label="Edit dose status"
@@ -453,10 +467,17 @@ export function TodayDoses() {
                     >
                       <MoreVertical className="h-4 w-4" />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuContent align="end" className="w-52">
                       {d.status !== "taken" && (
                         <DropdownMenuItem onClick={() => reclassify(d.id, "taken")}>
-                          Mark as taken
+                          Mark as taken (now)
+                        </DropdownMenuItem>
+                      )}
+                      {d.status !== "taken" && (
+                        <DropdownMenuItem
+                          onClick={() => reclassify(d.id, "taken", d.scheduled_at)}
+                        >
+                          Took it at the scheduled time
                         </DropdownMenuItem>
                       )}
                       {d.status !== "skipped" && (

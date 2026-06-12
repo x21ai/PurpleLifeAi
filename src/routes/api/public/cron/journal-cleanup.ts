@@ -16,12 +16,36 @@ export const Route = createFileRoute("/api/public/cron/journal-cleanup")({
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        // Automatic retry before giving up: entries stuck "processing" for
+        // 5-15 minutes get the processor re-invoked (it is idempotent and
+        // resolves status to processed/failed). Entries stuck past 15 minutes
+        // are marked failed by the cleanup function, which surfaces the calm
+        // "Retry reading" affordance instead of an eternal spinner.
+        const nowMs = Date.now();
+        const fifteenAgo = new Date(nowMs - 15 * 60 * 1000).toISOString();
+        const fiveAgo = new Date(nowMs - 5 * 60 * 1000).toISOString();
+        const { data: stuck } = await supabaseAdmin
+          .from("journal_entries")
+          .select("id")
+          .eq("status", "processing")
+          .gte("created_at", fifteenAgo)
+          .lte("created_at", fiveAgo)
+          .limit(10);
+
+        let retried = 0;
+        for (const row of stuck ?? []) {
+          const { error: invokeError } = await supabaseAdmin.functions.invoke("journal-processor", {
+            body: { entry_id: row.id },
+          });
+          if (!invokeError) retried++;
+        }
+
         const { error } = await supabaseAdmin.rpc("cleanup_stuck_journal_entries");
         if (error) {
           console.error("[cron] journal-cleanup error", error);
           return Response.json({ ok: false, error: "Internal server error" }, { status: 500 });
         }
-        return Response.json({ ok: true });
+        return Response.json({ ok: true, retried });
       },
     },
   },

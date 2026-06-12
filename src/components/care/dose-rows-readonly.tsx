@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { cn, formatLocaleTime } from "@/lib/utils";
+import { cn, formatLocaleTime, sanitizeDosageLabel } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { CaregiverBadge } from "@/components/care/caregiver-badge";
 
@@ -74,8 +74,8 @@ export function DoseRowsReadOnly({
               <p className="text-sm text-foreground truncate">
                 {med?.name ?? "Medication"}
               </p>
-              {med?.dosage && (
-                <p className="text-xs text-muted-foreground truncate">{med.dosage}</p>
+              {sanitizeDosageLabel(med?.dosage) && (
+                <p className="text-xs text-muted-foreground truncate">{sanitizeDosageLabel(med?.dosage)}</p>
               )}
               <CaregiverBadge createdByKind={d.created_by_kind} className="mt-1" />
             </div>

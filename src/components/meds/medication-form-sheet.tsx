@@ -67,9 +67,8 @@ function todayIso(time: string): string {
 function formatDosageText(amount: string, unit: string): string | null {
   const n = amount.trim();
   const u = unit.trim();
-  if (!n && !u) return null;
-  if (n && u) return `${n} ${u}`;
-  return n || u;
+  if (!n) return null; // never persist a bare unit like "mg"
+  return u ? `${n} ${u}` : n;
 }
 
 export function MedicationFormSheet({

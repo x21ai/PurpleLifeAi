@@ -30,6 +30,7 @@ import { useRouteTheme } from "@/lib/use-route-theme";
 import { buildIcs, downloadIcs, medicationToIcsEvents } from "@/lib/ics";
 import { useTranslation } from "react-i18next";
 import { userMessage } from "@/lib/user-message";
+import { sanitizeDosageLabel } from "@/lib/utils";
 
 type Med = {
   id: string;
@@ -149,6 +150,21 @@ function MedDetail() {
     navigate({ to: "/meds" });
   };
 
+  // Calm recovery for a missed dose: log it as taken at its scheduled time.
+  // Adherence re-queries via load(), so the number recovers immediately.
+  const logMissedDose = async (doseId: string, scheduledAt: string) => {
+    const { error } = await supabase
+      .from("medication_doses")
+      .update({ status: "taken", taken_at: scheduledAt })
+      .eq("id", doseId);
+    if (error) {
+      toast.error(userMessage(error, "That didn't save. Try again in a moment."));
+      return;
+    }
+    toast.success("Logged. It counts.");
+    void load();
+  };
+
   const restore = async () => {
     if (!med) return;
     const { error } = await supabase.from("medications").update({ active: true }).eq("id", med.id);
@@ -233,7 +249,9 @@ function MedDetail() {
           {t("meds.archived")}
         </span>
       )}
-      {med.dosage && <p className="mt-3 font-serif text-xl text-foreground/70">{med.dosage}</p>}
+      {sanitizeDosageLabel(med.dosage) && (
+        <p className="mt-3 font-serif text-xl text-foreground/70">{sanitizeDosageLabel(med.dosage)}</p>
+      )}
       {prescriber && <p className="mt-1 text-sm text-muted-foreground">Prescribed by {prescriber}</p>}
       {med.pharmacy_name && <p className="mt-1 text-sm text-muted-foreground">Pharmacy: {med.pharmacy_name}</p>}
 
@@ -246,6 +264,11 @@ function MedDetail() {
               <span className="text-5xl font-medium tabular-nums text-primary">{adherence.pct}%</span>
               <span className="text-sm text-muted-foreground">
                 {adherence.taken} of {adherence.scheduled} doses taken
+                {adherence.pct < 50 && (
+                  <span className="block mt-1">
+                    Logging catches up as you use reminders.
+                  </span>
+                )}
               </span>
             </div>
           ) : (
@@ -305,11 +328,23 @@ function MedDetail() {
           <h2 className="font-serif text-xl text-foreground">Recent doses</h2>
           <ul className="mt-3 divide-y divide-border">
             {recent.map((d) => (
-              <li key={d.id} className="flex items-center justify-between py-2 text-sm">
+              <li key={d.id} className="flex items-center justify-between gap-2 py-2 text-sm">
                 <span className="text-muted-foreground">
                   {format(new Date(d.scheduled_at), "MMM d, h:mm a")}
                 </span>
-                <span className="capitalize text-foreground">{d.status}</span>
+                <span className="flex items-center gap-2">
+                  <span className="capitalize text-foreground">{d.status}</span>
+                  {d.status === "missed" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full h-7 text-xs"
+                      onClick={() => void logMissedDose(d.id, d.scheduled_at)}
+                    >
+                      Log it anyway
+                    </Button>
+                  )}
+                </span>
               </li>
             ))}
           </ul>

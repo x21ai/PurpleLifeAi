@@ -10,13 +10,13 @@ import { ScanMedSheet } from "@/components/meds/scan-med-sheet";
 import { VoiceMedSheet } from "@/components/meds/voice-med-sheet";
 import { MedsMiniTimeline } from "@/components/meds/meds-mini-timeline";
 import { MedRemindersBanner } from "@/components/meds/med-reminders-banner";
-import { scheduleMedications } from "@/lib/med-notifications";
+import { rearmMedicationNotifications, scheduleMedications } from "@/lib/med-notifications";
 import { MetricNumber } from "@/components/ui-oura/metric-number";
 import { ProgressPill } from "@/components/ui-oura/progress-pill";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 import { toast } from "sonner";
-import { cn, formatLocaleTime } from "@/lib/utils";
+import { cn, formatLocaleTime, sanitizeDosageLabel } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
@@ -185,6 +185,59 @@ function MedsPage() {
 
   const pendingToday = todayDoses?.filter((d) => d.status === "pending") ?? [];
 
+  // Inline per-dose actions on the meds page (Devyn item 12: desktop parity
+  // with Today). Mirrors today-doses semantics: pill decrement on taken,
+  // notified-marker reset + SW rearm on snooze.
+  const doseAction = async (id: string, action: "taken" | "skip" | "snooze") => {
+    const dose = todayDoses?.find((d) => d.id === id);
+    let error: unknown = null;
+    if (action === "taken") {
+      const res = await supabase
+        .from("medication_doses")
+        .update({ status: "taken", taken_at: new Date().toISOString() })
+        .eq("id", id);
+      error = res.error;
+      const medId = dose?.medication?.id;
+      if (!res.error && medId && dose?.status !== "taken") {
+        const { data: m } = await supabase
+          .from("medications")
+          .select("pills_remaining")
+          .eq("id", medId)
+          .maybeSingle();
+        if (m && m.pills_remaining != null) {
+          await supabase
+            .from("medications")
+            .update({ pills_remaining: Math.max(0, (m.pills_remaining as number) - 1) })
+            .eq("id", medId);
+        }
+      }
+    } else if (action === "skip") {
+      const res = await supabase
+        .from("medication_doses")
+        .update({ status: "skipped" })
+        .eq("id", id);
+      error = res.error;
+    } else {
+      const res = await supabase
+        .from("medication_doses")
+        .update({
+          scheduled_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+          status: "pending",
+          notified_at: null,
+          missed_notified_at: null,
+        })
+        .eq("id", id);
+      error = res.error;
+      if (!res.error) void rearmMedicationNotifications();
+    }
+    if (error) {
+      toast.error("That didn't save. Try the dose again in a moment.");
+      return;
+    }
+    if (action === "snooze") toast.success("Snoozed 10 min");
+    void load();
+  };
+
   const markAllTaken = async () => {
     if (pendingToday.length === 0 || markingAll) return;
     setMarkingAll(true);
@@ -291,6 +344,7 @@ function MedsPage() {
             pendingCount={pendingToday.length}
             onMarkAll={markAllTaken}
             markingAll={markingAll}
+            onAction={doseAction}
           />
           <AdherenceCard />
           <AdherenceExtrasCard />
@@ -467,13 +521,25 @@ function TodayDosesSection({
   pendingCount,
   onMarkAll,
   markingAll,
+  onAction,
 }: {
   doses: TodayDose[] | null;
   pendingCount: number;
   onMarkAll: () => void;
   markingAll: boolean;
+  onAction: (id: string, action: "taken" | "skip" | "snooze") => Promise<void>;
 }) {
   const { t } = useTranslation();
+  const [actioningId, setActioningId] = React.useState<string | null>(null);
+  const act = async (id: string, action: "taken" | "skip" | "snooze") => {
+    if (actioningId) return;
+    setActioningId(id);
+    try {
+      await onAction(id, action);
+    } finally {
+      setActioningId(null);
+    }
+  };
   return (
     <section className="mt-8 rounded-2xl border border-border bg-card p-5 sm:p-6">
       <div className="flex items-center justify-between gap-3">
@@ -498,14 +564,58 @@ function TodayDosesSection({
       ) : (
         <ul className="mt-4 divide-y divide-border">
           {doses.map((d) => (
-            <li key={d.id} className="flex items-center justify-between py-2 text-sm">
+            <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
               <span className="text-muted-foreground tabular-nums">
                 {formatLocaleTime(d.scheduled_at)}
               </span>
               <span className="text-foreground truncate mx-3 flex-1">
                 {d.medication?.name ?? "Medication"}
               </span>
-              <span className="capitalize text-muted-foreground">{d.status}</span>
+              {d.status === "pending" ? (
+                <span className="flex items-center gap-1.5">
+                  <Button
+                    size="sm"
+                    className="rounded-full h-7 text-xs"
+                    disabled={actioningId !== null}
+                    onClick={() => void act(d.id, "taken")}
+                  >
+                    Taken
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full h-7 text-xs"
+                    disabled={actioningId !== null}
+                    onClick={() => void act(d.id, "snooze")}
+                  >
+                    Snooze
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-full h-7 text-xs text-muted-foreground"
+                    disabled={actioningId !== null}
+                    onClick={() => void act(d.id, "skip")}
+                  >
+                    Skip
+                  </Button>
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <span className="capitalize text-muted-foreground">{d.status}</span>
+                  {d.status === "missed" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full h-7 text-xs"
+                      disabled={actioningId !== null}
+                      onClick={() => void act(d.id, "taken")}
+                    >
+                      Log it anyway
+                    </Button>
+                  )}
+                </span>
+              )}
             </li>
           ))}
         </ul>
@@ -524,6 +634,38 @@ function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: stri
     const { error } = await supabase.from("medications").update({ active: false }).eq("id", med.id);
     if (error) { toast.error(userMessage(error, "That didn't work. Try again in a moment.")); return; }
     toast.success(`${med.name} archived`);
+    void onChanged();
+  };
+  // Devyn item 13: record a dose without hunting for a scheduled slot. Also
+  // the first real logging path for rescue meds, which have no schedule.
+  const [loggingNow, setLoggingNow] = React.useState(false);
+  const logDoseNow = async () => {
+    if (loggingNow) return;
+    const { data: sess } = await supabase.auth.getSession();
+    const uid = sess.session?.user.id;
+    if (!uid) return;
+    setLoggingNow(true);
+    const now = new Date().toISOString();
+    const { error } = await supabase.from("medication_doses").insert({
+      user_id: uid,
+      medication_id: med.id,
+      scheduled_at: now,
+      status: "taken",
+      taken_at: now,
+    });
+    if (error) {
+      setLoggingNow(false);
+      toast.error(userMessage(error, "That didn't save. Try again in a moment."));
+      return;
+    }
+    if (med.pills_remaining != null) {
+      await supabase
+        .from("medications")
+        .update({ pills_remaining: Math.max(0, med.pills_remaining - 1) })
+        .eq("id", med.id);
+    }
+    setLoggingNow(false);
+    toast.success(`${med.name} dose logged`);
     void onChanged();
   };
   const restore = async () => {
@@ -566,7 +708,9 @@ function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: stri
                 </span>
               )}
             </div>
-            {med.dosage && <p className="text-sm text-muted-foreground">{med.dosage}</p>}
+            {sanitizeDosageLabel(med.dosage) && (
+              <p className="text-sm text-muted-foreground">{sanitizeDosageLabel(med.dosage)}</p>
+            )}
             {!isRescueMed(med) && med.times_of_day?.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {med.times_of_day.map((t) => (
@@ -607,6 +751,9 @@ function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: stri
           <DropdownMenuContent align="end" className="w-44">
             {med.active ? (
               <>
+                <DropdownMenuItem disabled={loggingNow} onClick={() => void logDoseNow()}>
+                  <CheckCheck className="h-4 w-4 mr-2" /> Log dose now
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onEdit(med.id)}>
                   <Edit3 className="h-4 w-4 mr-2" /> Edit
                 </DropdownMenuItem>
@@ -716,9 +863,16 @@ function AdherenceCard() {
           label="On schedule"
           value={pct == null ? "–" : `${pct}%`}
           pct={pct ?? 0}
-          tone={pct != null && pct < 70 ? "alert" : "ink"}
+          // Never red: low adherence early on is mostly unlogged doses, and
+          // shaming a number is the opposite of getting it logged.
+          tone="ink"
         />
       </div>
+      {pct != null && pct < 50 && (
+        <p className="mt-3 text-xs text-muted-foreground">
+          Logging catches up as you use reminders. Doses only count from the day a medication was added.
+        </p>
+      )}
     </section>
   );
 }

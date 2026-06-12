@@ -32,11 +32,10 @@ export function useOuraDailyAutoSync() {
           .maybeSingle();
         if (!tok) return; // not connected
 
-        // Staleness comes from the last real sync. updated_at also moves on
-        // token refreshes, which silently disabled the daily sync.
-        const row = tok as { last_sync_at?: string | null; updated_at?: string | null };
-        const lastSync = row.last_sync_at ?? row.updated_at;
-        const updated = lastSync ? new Date(lastSync).getTime() : 0;
+        // Staleness comes from the last real sync only. updated_at also moves
+        // on token refreshes, which silently disabled the daily sync.
+        const row = tok as { last_sync_at?: string | null };
+        const updated = row.last_sync_at ? new Date(row.last_sync_at).getTime() : 0;
         if (Date.now() - updated < STALE_AFTER_MS) return;
 
         sessionStorage.setItem(SESSION_FLAG, "1");

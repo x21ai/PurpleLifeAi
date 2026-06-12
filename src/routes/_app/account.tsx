@@ -9,6 +9,7 @@ import { AvatarCard } from "@/components/account/avatar-card";
 import { PasswordSection } from "@/components/account/password-section";
 import { TwoFactorSection } from "@/components/account/two-factor-section";
 import { LocaleFields, type LocaleValues } from "@/components/locale/locale-fields";
+import { rearmMedicationNotifications } from "@/lib/med-notifications";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme, type ThemeMode } from "@/lib/theme-provider";
@@ -60,6 +61,7 @@ function AccountPage() {
   }, [userId]);
 
   const onLocaleChange = async (next: LocaleValues) => {
+    const timezoneChanged = next.timezone !== locale.timezone;
     setLocaleState(next);
     if (!userId) return;
     setSavingLocale(true);
@@ -70,6 +72,16 @@ function AccountPage() {
     setSavingLocale(false);
     if (error) return toast.error("Couldn't save region & language");
     setLocale(next.locale);
+    // Dose instants are wall-clock times in the profile timezone; changing it
+    // must rebuild today's pending doses or reminders fire at the old offset.
+    if (timezoneChanged && next.timezone) {
+      try {
+        await supabase.rpc("regenerate_today_pending_doses", { _user_id: userId });
+        void rearmMedicationNotifications();
+      } catch {
+        /* non-fatal; the hourly seeder reconciles */
+      }
+    }
     toast.success("Saved");
   };
 

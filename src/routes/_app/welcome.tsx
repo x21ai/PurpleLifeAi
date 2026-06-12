@@ -55,6 +55,7 @@ function WelcomePage() {
   const [phase, setPhase] = useState<FinalePhase>("compose");
   const [extraction, setExtraction] = useState<ExtractionResult | null>(null);
   const profileSavedRef = useRef(false);
+  const existingTimezoneRef = useRef<string | null>(null);
   const voice = useVoiceCapture();
 
   // Auto-redeem any stored invite as soon as we have a session.
@@ -85,7 +86,7 @@ function WelcomePage() {
     if (!userId) return;
     supabase
       .from("profiles")
-      .select("first_name, conditions")
+      .select("first_name, conditions, timezone")
       .eq("id", userId)
       .maybeSingle()
       .then(({ data }) => {
@@ -94,6 +95,7 @@ function WelcomePage() {
         if (Array.isArray(data.conditions) && data.conditions.length > 0) {
           setConditions(data.conditions);
         }
+        existingTimezoneRef.current = data.timezone ?? null;
       });
   }, [userId]);
 
@@ -119,11 +121,24 @@ function WelcomePage() {
     } catch {
       /* ignore */
     }
+    // Timezone anchors medication wall-clock times (see docs/RELIABILITY.md
+    // and the dose seeder). Capture it here so a user's very first med
+    // schedules in their actual timezone, not UTC. Never clobber an existing
+    // value; Settings owns changes after onboarding.
+    let detectedTimezone: string | null = null;
+    if (!existingTimezoneRef.current) {
+      try {
+        detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+      } catch {
+        detectedTimezone = null;
+      }
+    }
     const { error } = await supabase.from("profiles").upsert({
       id: userId,
       first_name: firstName.trim() || null,
       conditions,
       locale,
+      ...(detectedTimezone ? { timezone: detectedTimezone } : {}),
       onboarded_at: new Date().toISOString(),
     });
     if (error) throw error;
