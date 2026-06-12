@@ -299,13 +299,6 @@ function MedDetail() {
         )}
       </section>
 
-      <section className="mt-6 rounded-2xl border border-dashed border-border bg-card/50 p-5 sm:p-6">
-        <h2 className="font-serif text-xl text-foreground">Interactions</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          We&apos;re working on interaction warnings. For now, please confirm with your pharmacist when adding a new medication.
-        </p>
-      </section>
-
       {recent.length > 0 && (
         <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
           <h2 className="font-serif text-xl text-foreground">Recent doses</h2>
