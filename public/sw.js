@@ -117,11 +117,16 @@ async function checkDueDoses() {
   const now = Date.now();
   const windowMs = CHECK_INTERVAL_MS;
 
+  // Doses that became due while the device slept or the SW was suspended
+  // still fire once (up to 12h late) instead of being silently dropped,
+  // which was a silent-data-loss path on every platform.
+  const MAX_LATE_MS = 12 * 60 * 60 * 1000;
+
   for (const dose of doses) {
     if (dose.notified) continue;
     const dueAt = new Date(dose.scheduledAt).getTime();
-    if (dueAt <= now + windowMs && dueAt >= now - windowMs) {
-      await showDoseNotification(dose);
+    if (dueAt <= now + windowMs && dueAt >= now - MAX_LATE_MS) {
+      await showDoseNotification(dose, dueAt < now - windowMs);
       await markNotified(dose.doseId);
       await logDeliveryEvent({
         kind: "fired",
@@ -130,16 +135,20 @@ async function checkDueDoses() {
         firedAt: new Date().toISOString(),
         channel: "sw_local",
       });
-    } else if (dueAt < now - windowMs) {
+    } else if (dueAt < now - MAX_LATE_MS) {
       await removeDose(dose.doseId);
     }
   }
 }
 
-async function showDoseNotification(dose) {
+async function showDoseNotification(dose, late = false) {
   const dosage = dose.dosage ? `${dose.dosage}. ` : "";
-  await self.registration.showNotification(`Time for ${dose.medName}`, {
-    body: `${dosage}Tap when you have taken it.`,
+  const title = late ? `Still pending: ${dose.medName}` : `Time for ${dose.medName}`;
+  const body = late
+    ? `${dosage}This was scheduled earlier. Tap to log it.`
+    : `${dosage}Tap when you have taken it.`;
+  await self.registration.showNotification(title, {
+    body,
     tag: `med-dose-${dose.doseId}`,
     icon: "/icon-192.png",
     badge: "/icon-192.png",
@@ -308,7 +317,25 @@ self.addEventListener("notificationclick", (event) => {
         const action = actionMap[event.action];
         if (action) {
           await callDoseAction(data, action);
-          await removeDose(data.doseId);
+          if (action === "snooze") {
+            // Re-queue locally at +10 min so the snoozed reminder fires even
+            // if the app never opens; previously snooze-from-notification
+            // dropped the dose and no second reminder ever came.
+            const snoozedAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+            await putDoses([
+              {
+                doseId: data.doseId,
+                medicationId: data.medicationId,
+                medName: event.notification.title.replace(/^(Time for|Still pending:)\s*/, ""),
+                dosage: null,
+                scheduledAt: snoozedAt,
+                authToken: data.authToken,
+                supabaseUrl: data.supabaseUrl,
+              },
+            ]);
+          } else {
+            await removeDose(data.doseId);
+          }
           await logDeliveryEvent({
             kind: "acknowledged",
             doseId: data.doseId,

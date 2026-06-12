@@ -2,7 +2,7 @@ import * as React from "react";
 import { format } from "date-fns";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { cn, formatLocaleTime } from "@/lib/utils";
+import { cn, formatLocaleTime, localDateKey } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
@@ -53,7 +53,7 @@ type Dose = {
   } | null;
 };
 
-function statusPillClass(status: string) {
+function statusPillClass(status: string, overdue = false) {
   switch (status) {
     case "taken":
       return "bg-[color:var(--success)]/15 text-[color:var(--success)] ring-1 ring-[color:var(--success)]/30";
@@ -62,8 +62,16 @@ function statusPillClass(status: string) {
     case "skipped":
       return "bg-muted text-muted-foreground ring-1 ring-border";
     default:
-      return "bg-primary/15 text-primary ring-1 ring-primary/30";
+      // A 9am dose at 2pm should not look "on schedule".
+      return overdue
+        ? "bg-[color:var(--data-warn)]/15 text-[color:var(--data-warn)] ring-1 ring-[color:var(--data-warn)]/30"
+        : "bg-primary/15 text-primary ring-1 ring-primary/30";
   }
+}
+
+/** Pending and more than 30 minutes past its scheduled time. */
+function isOverdue(d: Dose): boolean {
+  return d.status === "pending" && Date.now() - new Date(d.scheduled_at).getTime() > 30 * 60 * 1000;
 }
 
 function isScheduledMed(d: Dose): boolean {
@@ -75,6 +83,7 @@ export function TodayDoses() {
   const { session } = useAuth();
   const userId = session?.user.id;
   const [doses, setDoses] = React.useState<Dose[] | null>(null);
+  const [actioningId, setActioningId] = React.useState<string | null>(null);
   const [homeTz, setHomeTz] = React.useState<string | null>(null);
   const [wakeTime, setWakeTime] = React.useState<string>("07:00");
   const [sleepTime, setSleepTime] = React.useState<string>("23:00");
@@ -113,6 +122,31 @@ export function TodayDoses() {
   }, [userId]);
 
   React.useEffect(() => { void load(); }, [load]);
+
+  // Roll over at local midnight and refresh when the tab comes back: a Today
+  // page left open overnight kept showing yesterday's doses.
+  React.useEffect(() => {
+    let lastDay = localDateKey(new Date());
+    const maybeReload = () => {
+      const day = localDateKey(new Date());
+      if (day !== lastDay) {
+        lastDay = day;
+        void load();
+      }
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        maybeReload();
+        void load();
+      }
+    };
+    const tick = window.setInterval(maybeReload, 60_000);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(tick);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [load]);
 
   // Load profile (home tz + wake/sleep) and active trip flag.
   React.useEffect(() => {
@@ -167,16 +201,21 @@ export function TodayDoses() {
   };
 
   const runAction = async (id: string, action: "taken" | "skip" | "snooze") => {
+    // In-flight guard: a rapid double-tap on "Taken" used to double-decrement
+    // pill stock and race the status updates.
+    if (actioningId) return;
+    setActioningId(id);
     const prev = doses;
     const dose = doses?.find((d) => d.id === id) ?? null;
     const now = new Date().toISOString();
+    const snoozeUntilIso = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     setDoses((d) =>
       d?.map((x) => {
         if (x.id !== id) return x;
         if (action === "taken") return { ...x, status: "taken" };
         if (action === "skip") return { ...x, status: "skipped" };
-        // snooze: optimistic, keep visible
-        return x;
+        // snooze: move the time optimistically so the list reflects it now
+        return { ...x, scheduled_at: snoozeUntilIso };
       }) ?? null,
     );
     let error: unknown = null;
@@ -197,16 +236,23 @@ export function TodayDoses() {
         .eq("id", id);
       error = res.error;
     } else {
-      const snoozeUntil = new Date(Date.now() + 10 * 60 * 1000).toISOString();
       const res = await supabase
         .from("medication_doses")
-        .update({ scheduled_at: snoozeUntil, status: "pending" })
+        // notified_at/missed_notified_at reset so the push cron fires again
+        // at the snoozed time; without it, snooze produced no second reminder.
+        .update({
+          scheduled_at: snoozeUntilIso,
+          status: "pending",
+          notified_at: null,
+          missed_notified_at: null,
+        })
         .eq("id", id);
       error = res.error;
     }
+    setActioningId(null);
     if (error) {
       setDoses(prev);
-      toast.error("Could not update dose");
+      toast.error("That didn't save. Try the dose again in a moment.");
       return;
     }
     if (action === "snooze") {
@@ -324,7 +370,7 @@ export function TodayDoses() {
               <span
                 className={cn(
                   "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium tabular-nums",
-                  statusPillClass(d.status),
+                  statusPillClass(d.status, isOverdue(d)),
                 )}
               >
                 {isAsleep(d.scheduled_at) && (
@@ -339,6 +385,11 @@ export function TodayDoses() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-foreground truncate">
                   {d.medication?.name ?? "Medication"}
+                  {isOverdue(d) && (
+                    <span className="ml-2 text-[10px] uppercase tracking-wide text-[color:var(--data-warn)]">
+                      Overdue
+                    </span>
+                  )}
                 </p>
                 {(() => {
                   const perDose =
@@ -368,6 +419,7 @@ export function TodayDoses() {
                   <Button
                     size="sm"
                     className="rounded-full"
+                    disabled={actioningId !== null}
                     onClick={() => runAction(d.id, "taken")}
                   >
                     Taken
@@ -376,6 +428,7 @@ export function TodayDoses() {
                     size="sm"
                     variant="outline"
                     className="rounded-full"
+                    disabled={actioningId !== null}
                     onClick={() => runAction(d.id, "snooze")}
                   >
                     Snooze
@@ -384,6 +437,7 @@ export function TodayDoses() {
                     size="sm"
                     variant="ghost"
                     className="rounded-full text-muted-foreground"
+                    disabled={actioningId !== null}
                     onClick={() => runAction(d.id, "skip")}
                   >
                     Skip

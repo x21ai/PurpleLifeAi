@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
+import { rearmMedicationNotifications } from "@/lib/med-notifications";
 import { toast } from "sonner";
 import { startAlarmLoop, type AlarmSoundId, DEFAULT_ALARM_SOUND } from "@/lib/alarm-sounds";
 import { formatLocaleTime } from "@/lib/utils";
@@ -113,9 +114,12 @@ export function ReminderAlarmSheet() {
         const next = new Date(Date.now() + snoozeMinutes * 60_000).toISOString();
         await supabase
           .from("medication_doses")
-          .update({ scheduled_at: next })
+          // Reset notified markers so the push cron fires again at the new time.
+          .update({ scheduled_at: next, notified_at: null, missed_notified_at: null })
           .eq("id", dose.id);
         toast.success(`Snoozed ${snoozeMinutes} min`);
+        // Re-arm the local service worker schedule for the snoozed time.
+        void rearmMedicationNotifications();
       }
       dismissedRef.current.add(dose.id);
       setDose(null);
@@ -124,8 +128,16 @@ export function ReminderAlarmSheet() {
     }
   };
 
+  // Closing without choosing (tap outside, Esc, back gesture) silences the
+  // alarm for this session but does NOT snooze: rescheduling a dose should
+  // only happen on an explicit choice.
+  const dismissQuietly = () => {
+    dismissedRef.current.add(dose.id);
+    setDose(null);
+  };
+
   return (
-    <Dialog open={true} onOpenChange={(o) => { if (!o) handle("snooze"); }}>
+    <Dialog open={true} onOpenChange={(o) => { if (!o) dismissQuietly(); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <div className="mx-auto h-12 w-12 rounded-full bg-destructive/15 text-destructive grid place-items-center mb-2">
