@@ -112,6 +112,77 @@ OAuth redirect URIs (Supabase dashboard + provider consoles):
 
 Email DNS (`notify.purplelife.org`): verify domain in Resend, publish SPF/DKIM, move off Lovable nameservers.
 
+### 4.1 Ready-to-execute cutover steps (production only; do not run during staging)
+
+These steps stay **documented only** until staging on `*.workers.dev` passes Section 5. Production (Lovable) stays untouched until DNS flip (Section 7).
+
+**Staging URL placeholder:** `https://purplelife.<CLOUDFLARE_SUBDOMAIN>.workers.dev` (set after first deploy; use for webhook/OAuth tests before production re-point).
+
+#### A. DNS (Cloudflare dashboard → Workers Routes)
+
+1. Confirm `purplelife` Worker deployed with all secrets (Section 3).
+2. Add route: `www.purplelife.org/*` → `purplelife` Worker (and apex if used).
+3. Do **not** remove Lovable DNS until post-flip smoke passes; keep TTL low for rollback.
+
+#### B. Supabase Auth send-email hook
+
+1. Dashboard → Authentication → Hooks → Send Email hook.
+2. Set URL to `https://www.purplelife.org/api/email/auth/webhook` (test on staging URL first).
+3. Store hook signing secret as Worker secret `SEND_EMAIL_HOOK_SECRET`.
+4. Send test sign-up email; confirm delivery via Resend logs.
+
+#### C. pg_cron email queue pump
+
+1. Supabase SQL editor:
+
+```sql
+-- Inspect current job (adjust jobname if different)
+SELECT jobid, jobname, schedule, command FROM cron.job WHERE jobname = 'process-email-queue';
+
+-- Re-point pump to production Worker (run only at cutover)
+SELECT cron.alter_job(
+  job_id := (SELECT jobid FROM cron.job WHERE jobname = 'process-email-queue' LIMIT 1),
+  command := $$
+    SELECT net.http_post(
+      url := 'https://www.purplelife.org/api/email/queue/process',
+      headers := jsonb_build_object(
+        'Authorization', 'Bearer ' || (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key' LIMIT 1),
+        'Content-Type', 'application/json'
+      ),
+      body := '{}'::jsonb
+    );
+  $$
+);
+```
+
+2. Verify: enqueue a test row in `email_send_log`; confirm Worker processes within ~10s.
+
+#### D. Stripe webhook
+
+1. Stripe Dashboard → Developers → Webhooks → Add endpoint.
+2. URL: `https://www.purplelife.org/api/public/stripe-webhook`
+3. Events: checkout, subscription, invoice (match existing Lovable config).
+4. Copy signing secret → Worker `STRIPE_WEBHOOK_SECRET`.
+5. Send test event; confirm 200 in Stripe dashboard.
+
+#### E. Resend suppression webhook
+
+1. Resend Dashboard → Webhooks → Add endpoint (or API).
+2. URL: `https://www.purplelife.org/api/email/suppression`
+3. Events: `email.bounced`, `email.complained`.
+4. Copy signing secret → Worker `RESEND_WEBHOOK_SECRET`.
+
+#### F. OAuth redirect URIs
+
+| Provider | Console | URI |
+| -------- | ------- | --- |
+| Google | Google Cloud Console → OAuth client | `https://lzuodgpqseijhhyzgfky.supabase.co/auth/v1/callback` (unchanged) |
+| Apple | Apple Developer → Services ID | same Supabase callback |
+| Oura | Oura Cloud → Application | `https://www.purplelife.org/oauth/oura/callback` (staging: swap host to workers.dev for test) |
+| Whoop | Whoop Developer | `https://www.purplelife.org/oauth/whoop/callback` |
+
+Also set Worker `PUBLIC_SITE_URL=https://www.purplelife.org` at cutover so email links and OAuth state use production host.
+
 ---
 
 ## 5. Staging verification (automated + manual)
@@ -159,6 +230,65 @@ Deploy command:
 ```bash
 bun run build && bunx wrangler deploy -c wrangler.deploy.jsonc
 ```
+
+### 5.1 Staging deploy run (workers.dev)
+
+One-time manual deploy before CI owns production. Requires Cloud Agents Secrets (or local env) for `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and all Worker runtime secrets in Section 3.
+
+**Pre-merge:** include PR #30 contrast token fix (`cursor/staging-contrast-f977`, merged).
+
+**1. Supabase migrations + edge functions** (needs `SUPABASE_ACCESS_TOKEN`):
+
+```bash
+# List remote migration versions
+curl -s "https://api.supabase.com/v1/projects/lzuodgpqseijhhyzgfky/database/migrations" \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" | jq '.[].version'
+
+# Apply any missing from Section 1 via SQL editor or:
+# supabase db push (when CLI works)
+
+# Redeploy edge functions (dashboard or CLI):
+# journal-processor, oura-sync, med-dose-action, risk-forecaster
+```
+
+Verify RPCs after `20260613010000`:
+
+```sql
+SELECT proname FROM pg_proc WHERE proname IN ('accept_care_invite', 'accept_assigned_care_invite');
+```
+
+**2. Cloudflare Worker secrets** (once per account; persists across deploys):
+
+```bash
+for name in ANTHROPIC_API_KEY RESEND_API_KEY RESEND_WEBHOOK_SECRET SEND_EMAIL_HOOK_SECRET \
+  SUPABASE_SERVICE_ROLE_KEY CRON_SECRET PUBLIC_SITE_URL STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET \
+  VAPID_PUBLIC_KEY VAPID_PRIVATE_KEY VAPID_SUBJECT OURA_CLIENT_ID OURA_CLIENT_SECRET \
+  WHOOP_CLIENT_ID WHOOP_CLIENT_SECRET OPENAI_API_KEY; do
+  test -n "${!name}" && printf '%s' "${!name}" | bunx wrangler secret put "$name" -c wrangler.deploy.jsonc
+done
+```
+
+Set `PUBLIC_SITE_URL` to the workers.dev URL during staging (e.g. `https://purplelife.<subdomain>.workers.dev`).
+
+**3. Deploy Worker + confirm crons:**
+
+```bash
+export CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID
+bun run build && bunx wrangler deploy -c wrangler.deploy.jsonc
+bunx wrangler triggers list -c wrangler.deploy.jsonc
+# Expect 4 crons: * * * * *, 0 * * * *, 0 6 * * *, 0 15 * * 0
+```
+
+**4. Live verification** (set `E2E_BASE_URL` to staging URL):
+
+```bash
+E2E_BASE_URL=https://purplelife.<subdomain>.workers.dev bun run test:e2e
+# Lighthouse mobile: /, /sign-in, /trust, authenticated /today
+# Resend: enqueue test auth email via queue processor
+# oura-sync: invoke once via Supabase Functions dashboard or cron self-call
+```
+
+Report: `docs/STAGING-DEPLOY-REPORT.md`.
 
 ---
 
