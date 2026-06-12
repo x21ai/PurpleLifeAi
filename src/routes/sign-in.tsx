@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -353,6 +353,15 @@ function SignInPage() {
                   </p>
                 </div>
                 <SocialSignInButtons helper="" />
+                <p className="mt-8 text-center text-xs text-muted-foreground">
+                  {t("signIn.trustLine")}{" "}
+                  <Link
+                    to="/trust"
+                    className="underline underline-offset-4 hover:text-foreground"
+                  >
+                    {t("signIn.trustLink")}
+                  </Link>
+                </p>
               </div>
             )}
 

@@ -368,7 +368,9 @@
     "orUseAnother": "o usa otra cuenta",
     "freeForever": "Gratis para siempre. Código abierto. Sin anuncios.",
     "oauthError": "El inicio de sesión no se completó. Inténtalo de nuevo o usa tu correo.",
-    "enterEmailFirst": "Escribe tu correo arriba y pulsa ¿Olvidaste tu contraseña?"
+    "enterEmailFirst": "Escribe tu correo arriba y pulsa ¿Olvidaste tu contraseña?",
+    "trustLine": "Sin anuncios. Sin rastreadores. Tus datos son tuyos.",
+    "trustLink": "Cómo cumplimos esa promesa"
   },
   "resetPassword": {
     "eyebrow": "Restablecer contraseña",

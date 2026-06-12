@@ -35,13 +35,13 @@ function CharterPage() {
           Why Purple exists.
         </h1>
         <p className="mt-6 body-serif text-lg sm:text-xl text-foreground/75 max-w-[42ch]">
-          A quiet place to keep track of a body that doesn&rsquo;t always cooperate &mdash; for you, and for the people who love you.
+          A quiet place to keep track of a body that doesn&rsquo;t always cooperate. For you, and for the people who love you.
         </p>
         <div className="mt-14 sm:mt-20 space-y-14 sm:space-y-20 max-w-[60ch]">
           <section className="space-y-4">
             <h2 className="font-serif text-2xl sm:text-3xl text-foreground">Who Purple is for</h2>
             <p className="body-serif text-foreground/75">
-              Anyone living with a condition that asks for daily attention &mdash; epilepsy, migraine, diabetes, mental health, autoimmune, dysautonomia, long COVID, chronic pain &mdash; and the family members and caregivers who walk alongside them.
+              Anyone living with a condition that asks for daily attention (epilepsy, migraine, diabetes, mental health, autoimmune, dysautonomia, long COVID, chronic pain) and the family members and caregivers who walk alongside them.
             </p>
             <p className="body-serif text-foreground/75">
               We&rsquo;re named after the global color for epilepsy awareness, and that&rsquo;s where our depth runs deepest. But Purple is condition-aware, not condition-locked. Whatever you&rsquo;re carrying, you&rsquo;re welcome here.
@@ -71,7 +71,7 @@ function CharterPage() {
               <li>Dark patterns or guilt loops to keep you in the app.</li>
               <li>Behavioral advertising or third-party trackers.</li>
               <li>Selling, renting, or sharing your data with brokers.</li>
-              <li>Paywalling the heart of Purple &mdash; journaling, medications, or sharing with the people who help you.</li>
+              <li>Paywalling the heart of Purple: journaling, medications, or sharing with the people who help you.</li>
               <li>Lock-in. You can leave any time, with everything you brought.</li>
             </ul>
           </section>

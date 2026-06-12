@@ -76,7 +76,7 @@ function AcceptFriendPage() {
         <h1 className="mt-2 font-serif text-4xl text-foreground">Join their circle</h1>
         <p className="mt-4 text-sm text-muted-foreground">
           A circle on Purple is just a list of people you know. Joining shares no health data,
-          journal entries, or reports &mdash; you simply appear in each other's contacts. Either of
+          journal entries, or reports. You simply appear in each other's contacts. Either of
           you can leave at any time.
         </p>
         {state === "checking" && (

@@ -368,7 +368,9 @@
     "orUseAnother": "or use another account",
     "freeForever": "Free forever. Open source. No ads.",
     "oauthError": "Sign-in didn't finish. Try again, or use your email instead.",
-    "enterEmailFirst": "Enter your email above, then tap Forgot password."
+    "enterEmailFirst": "Enter your email above, then tap Forgot password.",
+    "trustLine": "No ads. No trackers. Your data is yours.",
+    "trustLink": "How we keep that promise"
   },
   "resetPassword": {
     "eyebrow": "Reset password",

@@ -118,7 +118,7 @@ function PricingPage() {
             Simple plans.<br />Honest pricing.
           </h1>
           <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
-            Purple is free for everyone right now. The plans below are how we&rsquo;ll keep the lights on later &mdash; with plenty of notice.
+            Purple is free for everyone right now. The plans below are how we&rsquo;ll keep the lights on later, with plenty of notice.
           </p>
           {showFreeBanner && (
             <div className="mt-8 inline-flex items-center gap-2 rounded-full bg-[color:var(--purple-primary)]/15 px-4 py-2 text-sm font-medium text-[color:var(--purple-primary)]">

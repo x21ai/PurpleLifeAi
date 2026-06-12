@@ -65,7 +65,7 @@ function JoinByCodePage() {
           Join a friend's circle
         </h1>
         <p className="mt-4 text-sm text-muted-foreground text-center">
-          Enter the short code your friend sent you. No health data is shared either way &mdash;
+          Enter the short code your friend sent you. No health data is shared either way.
           you're just connected on Purple.
         </p>
 

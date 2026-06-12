@@ -42,14 +42,14 @@ function PrivacyPage() {
               Only what you put in or explicitly connect: your journal entries (text, voice transcripts, photos), medications and doses, seizures and other events, biometrics from devices you choose to link (Oura, WHOOP, Apple Health), and basic account info (email, optional name, region, preferred language).
             </p>
             <p className="body-serif text-foreground/75">
-              We don&rsquo;t track you across the web. There are no third-party advertising or analytics trackers in Purple &mdash; no Google Analytics, no pixels, no fingerprinting.
+              We don&rsquo;t track you across the web. There are no third-party advertising or analytics trackers in Purple: no Google Analytics, no pixels, no fingerprinting.
             </p>
           </section>
 
           <section className="space-y-4">
             <h2 className="font-serif text-2xl sm:text-3xl text-foreground">How AI is used</h2>
             <p className="body-serif text-foreground/75">
-              Purple uses language models to help you write, transcribe voice notes, extract structured details from your entries, and answer questions about your own data. Requests are made on your behalf to model providers via a secured gateway. Your content is sent only to fulfill that request &mdash; it is not used to train third-party models, and we do not train models on your data.
+              Purple uses language models to help you write, transcribe voice notes, extract structured details from your entries, and answer questions about your own data. Requests are made on your behalf to model providers via a secured gateway. Your content is sent only to fulfill that request. It is not used to train third-party models, and we do not train models on your data.
             </p>
             <p className="body-serif text-foreground/75">
               AI suggestions are informational and never a substitute for a clinician. The medical disclaimer is shown wherever AI surfaces health-adjacent output.
@@ -69,7 +69,7 @@ function PrivacyPage() {
           <section className="space-y-4">
             <h2 className="font-serif text-2xl sm:text-3xl text-foreground">Where it&rsquo;s stored</h2>
             <p className="body-serif text-foreground/75">
-              On managed cloud infrastructure (Supabase / PostgreSQL), encrypted in transit and at rest. Uploaded files (voice clips, photos, reports) live in private storage buckets and are served through short-lived signed URLs &mdash; never public links.
+              On managed cloud infrastructure (Supabase / PostgreSQL), encrypted in transit and at rest. Uploaded files (voice clips, photos, reports) live in private storage buckets and are served through short-lived signed URLs, never public links.
             </p>
           </section>
 

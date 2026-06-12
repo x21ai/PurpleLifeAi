@@ -38,6 +38,8 @@ import contactHero from "@/assets/hero-contact-lake-stillness.jpg?w=640;960;1280
 import contactHandwrittenNote from "@/assets/moment-contact-handwritten-note.jpg?w=480;768;1024;1280&format=avif;webp;jpg&as=picture";
 
 import signInHero from "@/assets/hero-signin-night-coast.jpg?w=640;960;1280;1600;1920&format=avif;webp;jpg&as=picture";
+
+import trustHero from "@/assets/hero-trust-pine-light.jpg?w=640;960;1280;1536&format=avif;webp;jpg&as=picture";
 void HERO; void MOMENT;
 
 const asset = (picture: PictureAsset["picture"], alt: string): PictureAsset => ({ picture, alt });
@@ -70,6 +72,10 @@ export const aboutImages = {
 export const communityImages = {
   hero: asset(communityHero, "A slow river curving through autumn grasses at golden hour, mountains on the horizon."),
   walkingPath: asset(communityWalkingPath, "A person walking down a grass path at golden hour, tall meadow grass on either side."),
+} as const;
+
+export const trustImages = {
+  hero: asset(trustHero, "First light filtering through a quiet pine forest, low mist drifting between the trunks."),
 } as const;
 
 export const contactImages = {

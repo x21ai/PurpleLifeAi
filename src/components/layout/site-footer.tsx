@@ -13,6 +13,9 @@ export function SiteFooter() {
               Community
             </Link>
           )}
+          <Link to="/trust" className="hover:text-foreground transition-colors">
+            Trust
+          </Link>
           <Link to="/charter" className="hover:text-foreground transition-colors">
             Charter
           </Link>
