@@ -21,6 +21,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run check:em-dash
+      - run: bun run check:i18n-es
       - run: bun run check:live-data
       - run: bun run check:unique-images
       # Repo-wide `bun run lint` carries pre-existing prettier debt and stays
