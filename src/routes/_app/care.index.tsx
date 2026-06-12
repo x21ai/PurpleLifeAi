@@ -110,6 +110,15 @@ function EmptyState() {
       <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
         When someone invites you as a caregiver, they'll appear here. Ask them to add you from their Sharing settings.
       </p>
+      <p className="mt-6 text-sm text-muted-foreground">
+        Want to share your own health with someone you trust?
+      </p>
+      <Link
+        to="/settings/sharing"
+        className="mt-2 inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+      >
+        Share with a caregiver
+      </Link>
     </div>
   );
 }

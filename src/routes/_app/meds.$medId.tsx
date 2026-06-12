@@ -30,6 +30,7 @@ import { useRouteTheme } from "@/lib/use-route-theme";
 import { buildIcs, downloadIcs, medicationToIcsEvents } from "@/lib/ics";
 import { useTranslation } from "react-i18next";
 import { userMessage } from "@/lib/user-message";
+import { sanitizeDosageLabel } from "@/lib/utils";
 
 type Med = {
   id: string;
@@ -248,7 +249,9 @@ function MedDetail() {
           {t("meds.archived")}
         </span>
       )}
-      {med.dosage && <p className="mt-3 font-serif text-xl text-foreground/70">{med.dosage}</p>}
+      {sanitizeDosageLabel(med.dosage) && (
+        <p className="mt-3 font-serif text-xl text-foreground/70">{sanitizeDosageLabel(med.dosage)}</p>
+      )}
       {prescriber && <p className="mt-1 text-sm text-muted-foreground">Prescribed by {prescriber}</p>}
       {med.pharmacy_name && <p className="mt-1 text-sm text-muted-foreground">Pharmacy: {med.pharmacy_name}</p>}
 
@@ -261,6 +264,11 @@ function MedDetail() {
               <span className="text-5xl font-medium tabular-nums text-primary">{adherence.pct}%</span>
               <span className="text-sm text-muted-foreground">
                 {adherence.taken} of {adherence.scheduled} doses taken
+                {adherence.pct < 50 && (
+                  <span className="block mt-1">
+                    Logging catches up as you use reminders.
+                  </span>
+                )}
               </span>
             </div>
           ) : (

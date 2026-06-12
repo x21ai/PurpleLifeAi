@@ -124,8 +124,10 @@ function isRescueMed(m: ScheduledMed): boolean {
 }
 
 function formatDosageLabel(dosage: string | null): string | null {
-  if (!dosage?.trim()) return null;
-  return dosage.trim();
+  const s = dosage?.trim();
+  if (!s) return null;
+  // A label without a number is a bare unit ("mg"); never surface it.
+  return /\d/.test(s) ? s : null;
 }
 
 function nextOccurrences(timeOfDay: string, daysAhead = 3): Date[] {

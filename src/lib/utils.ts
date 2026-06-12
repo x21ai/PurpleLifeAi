@@ -37,6 +37,18 @@ export function localDateKey(input: Date | string | number = new Date()): string
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
+/**
+ * Dosage labels must carry a number. Historical data contains unit-only
+ * strings ("mg") from a form that allowed unit without amount; rendering
+ * those produced rows like "Levetiracetam mg". Returns null for any label
+ * without a digit so callers hide the dosage line instead.
+ */
+export function sanitizeDosageLabel(label: string | null | undefined): string | null {
+  const s = (label ?? "").trim();
+  if (!s) return null;
+  return /\d/.test(s) ? s : null;
+}
+
 /** "YYYY-MM-DD" for an instant, evaluated in an arbitrary IANA timezone. */
 export function dateKeyInTimeZone(input: Date | string | number, timeZone: string): string {
   const d = input instanceof Date ? input : new Date(input);

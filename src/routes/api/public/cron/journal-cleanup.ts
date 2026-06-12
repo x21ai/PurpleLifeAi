@@ -34,10 +34,9 @@ export const Route = createFileRoute("/api/public/cron/journal-cleanup")({
 
         let retried = 0;
         for (const row of stuck ?? []) {
-          const { error: invokeError } = await supabaseAdmin.functions.invoke(
-            "journal-processor",
-            { body: { entry_id: row.id } },
-          );
+          const { error: invokeError } = await supabaseAdmin.functions.invoke("journal-processor", {
+            body: { entry_id: row.id },
+          });
           if (!invokeError) retried++;
         }
 

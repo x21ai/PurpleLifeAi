@@ -2,7 +2,7 @@ import * as React from "react";
 import { format } from "date-fns";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { cn, formatLocaleTime, localDateKey } from "@/lib/utils";
+import { cn, formatLocaleTime, localDateKey, sanitizeDosageLabel } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
@@ -398,7 +398,7 @@ export function TodayDoses() {
                     d.amount != null
                       ? `${d.amount}${d.unit ? ` ${d.unit}` : ""}`
                       : null;
-                  const label = perDose ?? d.medication?.dosage ?? null;
+                  const label = perDose ?? sanitizeDosageLabel(d.medication?.dosage) ?? null;
                   if (label) {
                     return <p className="text-xs text-muted-foreground truncate">{label}</p>;
                   }
