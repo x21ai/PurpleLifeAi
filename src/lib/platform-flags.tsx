@@ -4,11 +4,15 @@ import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Dark-launch flags for peripheral surfaces (see docs/LAUNCH-AUDIT.md).
+ * Platform-level dark-launch flags for peripheral surfaces (docs/LAUNCH-AUDIT.md).
  * Stored as boolean columns on the app_settings singleton, anon-readable,
  * super-admin writable, same pattern as pro_free_for_everyone.
+ *
+ * Not to be confused with the per-user feature catalog in
+ * src/hooks/use-feature-flags.ts (profiles.feature_overrides), which controls
+ * which tracking surfaces an individual user sees.
  */
-export type FeatureFlag = "community" | "dna" | "friends";
+export type PlatformFlag = "community" | "dna" | "friends";
 
 type FlagRow = {
   feature_community_enabled?: boolean | null;
@@ -16,11 +20,11 @@ type FlagRow = {
   feature_friends_enabled?: boolean | null;
 };
 
-export type FeatureFlags = Record<FeatureFlag, boolean>;
+export type PlatformFlags = Record<PlatformFlag, boolean>;
 
 const FLAG_COLUMNS = "feature_community_enabled, feature_dna_enabled, feature_friends_enabled";
 
-async function fetchFeatureFlags(): Promise<FeatureFlags> {
+async function fetchPlatformFlags(): Promise<PlatformFlags> {
   // Fail closed: flagged surfaces stay dark unless the flag reads true.
   const { data } = await supabase
     .from("app_settings")
@@ -34,17 +38,17 @@ async function fetchFeatureFlags(): Promise<FeatureFlags> {
   };
 }
 
-export function useFeatureFlags() {
+export function usePlatformFlags() {
   const q = useQuery({
     queryKey: ["feature-flags"],
-    queryFn: fetchFeatureFlags,
+    queryFn: fetchPlatformFlags,
     staleTime: 5 * 60_000,
   });
   return { flags: q.data, loading: q.isLoading };
 }
 
-export function useFeatureFlag(flag: FeatureFlag) {
-  const { flags, loading } = useFeatureFlags();
+export function usePlatformFlag(flag: PlatformFlag) {
+  const { flags, loading } = usePlatformFlags();
   return { enabled: flags?.[flag] ?? false, loading };
 }
 
@@ -52,16 +56,16 @@ export function useFeatureFlag(flag: FeatureFlag) {
  * Renders children only when the flag is on; otherwise quietly redirects.
  * Renders nothing while the flag loads so dark surfaces never flash.
  */
-export function FeatureGate({
+export function PlatformFlagGate({
   flag,
   redirectTo,
   children,
 }: {
-  flag: FeatureFlag;
+  flag: PlatformFlag;
   redirectTo: string;
   children: React.ReactNode;
 }) {
-  const { enabled, loading } = useFeatureFlag(flag);
+  const { enabled, loading } = usePlatformFlag(flag);
   const navigate = useNavigate();
 
   React.useEffect(() => {

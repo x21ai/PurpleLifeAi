@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { FeatureGate } from "@/lib/feature-flags";
+import { PlatformFlagGate } from "@/lib/platform-flags";
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
@@ -19,9 +19,9 @@ export const Route = createFileRoute("/_app/community-new")({
 
 function GatedNewPost() {
   return (
-    <FeatureGate flag="community" redirectTo="/today">
+    <PlatformFlagGate flag="community" redirectTo="/today">
       <NewPost />
-    </FeatureGate>
+    </PlatformFlagGate>
   );
 }
 

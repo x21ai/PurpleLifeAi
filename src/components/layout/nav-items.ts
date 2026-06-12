@@ -20,7 +20,7 @@ import {
   Dna,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { FeatureFlags } from "@/lib/feature-flags";
+import type { PlatformFlags } from "@/lib/platform-flags";
 
 /**
  * Sidebar nav model.
@@ -102,7 +102,7 @@ export const navTree: NavGroup[] = [
  * Hides nav entries for dark-launched surfaces (docs/LAUNCH-AUDIT.md).
  * Fails closed: while flags load, flagged entries stay hidden.
  */
-export function filterNavTree(tree: NavGroup[], flags: FeatureFlags | undefined): NavGroup[] {
+export function filterNavTree(tree: NavGroup[], flags: PlatformFlags | undefined): NavGroup[] {
   const visible = (to: string | undefined): boolean => {
     if (to === "/community") return flags?.community === true;
     if (to === "/my-health-dna") return flags?.dna === true;

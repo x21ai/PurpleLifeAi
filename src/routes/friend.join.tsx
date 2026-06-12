@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { FeatureGate } from "@/lib/feature-flags";
+import { PlatformFlagGate } from "@/lib/platform-flags";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
@@ -17,9 +17,9 @@ export const Route = createFileRoute("/friend/join")({
 
 function GatedJoinByCodePage() {
   return (
-    <FeatureGate flag="friends" redirectTo="/">
+    <PlatformFlagGate flag="friends" redirectTo="/">
       <JoinByCodePage />
-    </FeatureGate>
+    </PlatformFlagGate>
   );
 }
 

@@ -82,7 +82,10 @@
     "emptyHeading": "Empieza donde estés.",
     "emptyBody": "Escribe una frase, dicta un pensamiento o haz una foto. Purple hace el resto.",
     "emptyCta": "Empezar a escribir",
-    "emptySkip": "Por ahora no"
+    "emptySkip": "Por ahora no",
+    "wearablesNudge": "Conecta Oura o Whoop para ver cómo tu cuerpo afecta tus patrones.",
+    "wearablesNudgeAction": "Conectar un dispositivo",
+    "dismiss": "Descartar"
   },
   "journal": {
     "eyebrow": "Diario",
@@ -220,7 +223,8 @@
     "fromTeam": "Del equipo de Purple",
     "morning": "Buenos días",
     "afternoon": "Buenas tardes",
-    "evening": "Buenas noches"
+    "evening": "Buenas noches",
+    "firstWordsNote": "Le contaste a Purple: “{{words}}”. Ya está en tu diario, y Purple está prestando atención."
   },
   "riskDetail": {
     "eyebrow": "Lectura de hoy",
@@ -312,7 +316,32 @@
     "enabled": "Activadas",
     "enable": "Activar",
     "notifsOn": "Notificaciones activadas",
-    "couldNotSave": "No se pudo guardar"
+    "couldNotSave": "No se pudo guardar",
+    "inviteApplied": "Código de invitación aplicado",
+    "stepOneOfTwo": "Paso 1 de 2",
+    "stepTwoOfTwo": "Paso 2 de 2",
+    "whoBodyShort": "Solo tu nombre y lo que llevas contigo. Todo lo demás puede esperar.",
+    "tellTitle": "Cuéntale a Purple sobre hoy.",
+    "tellBody": "Con una frase basta. Escríbela o dila, como te salga.",
+    "tellPlaceholder": "Cómo fue hoy en realidad…",
+    "example1": "Dormí mal, no almorcé, dolor de cabeza a las 3pm.",
+    "example2": "Hoy me sentí estable. Caminata corta después de cenar.",
+    "example3": "Olvidé mi dosis de la mañana y estuve aturdida toda la tarde.",
+    "dictate": "Dictar",
+    "stopDictating": "Detener",
+    "listening": "Escuchando…",
+    "save": "Guardar",
+    "reading": "Purple está leyendo tus palabras…",
+    "readingSub": "Convirtiendo lo que escribiste en algo que puede seguir.",
+    "heardEyebrow": "Esto es lo que Purple escuchó",
+    "heardTitle": "Tus palabras, recordadas.",
+    "heardSub": "Esto ya vive en tu diario. Desde aquí Purple empieza a notar patrones.",
+    "behaviorsNoted_one": "1 detalle anotado para tus patrones",
+    "behaviorsNoted_other": "{{count}} detalles anotados para tus patrones",
+    "savedEyebrow": "Guardado",
+    "savedTitle": "Tu primera entrada está dentro.",
+    "savedBody": "Purple todavía la está leyendo. Lo que encuentre estará en tu diario.",
+    "entrySaveFailed": "No se guardó. Tus palabras siguen aquí, inténtalo una vez más."
   },
   "signIn": {
     "eyebrow": "Iniciar sesión",

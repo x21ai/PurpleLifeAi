@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FeatureGate } from "@/lib/feature-flags";
+import { PlatformFlagGate } from "@/lib/platform-flags";
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,9 +18,9 @@ export const Route = createFileRoute("/community/resources")({
 
 function GatedResources() {
   return (
-    <FeatureGate flag="community" redirectTo="/">
+    <PlatformFlagGate flag="community" redirectTo="/">
       <Resources />
-    </FeatureGate>
+    </PlatformFlagGate>
   );
 }
 

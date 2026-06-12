@@ -3,7 +3,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
 import { navTree, filterNavTree, type NavGroup, type NavLeaf } from "./nav-items";
 import { cn } from "@/lib/utils";
-import { useFeatureFlags } from "@/lib/feature-flags";
+import { usePlatformFlags } from "@/lib/platform-flags";
 import { PendingInboxBadge } from "@/components/care/pending-inbox-badge";
 import { CaregiverNavLink } from "./caregiver-nav-link";
 import { ChatUnreadBadge } from "./chat-unread-badge";
@@ -45,7 +45,7 @@ function isPathInGroup(group: NavGroup, pathname: string): boolean {
 export function SidebarNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState<Record<string, boolean>>({});
-  const { flags } = useFeatureFlags();
+  const { flags } = usePlatformFlags();
   const tree = filterNavTree(navTree, flags);
 
   // Hydrate from localStorage on mount.

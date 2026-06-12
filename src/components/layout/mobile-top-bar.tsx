@@ -3,7 +3,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { Menu, ChevronDown } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
 import { navTree, filterNavTree, type NavGroup } from "./nav-items";
-import { useFeatureFlags } from "@/lib/feature-flags";
+import { usePlatformFlags } from "@/lib/platform-flags";
 import { cn } from "@/lib/utils";
 import { PendingInboxBadge } from "@/components/care/pending-inbox-badge";
 import { CaregiverNavLink } from "./caregiver-nav-link";
@@ -13,7 +13,7 @@ export function MobileTopBar() {
   const [open, setOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { flags } = useFeatureFlags();
+  const { flags } = usePlatformFlags();
   const tree = filterNavTree(navTree, flags);
 
   return (

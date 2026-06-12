@@ -8,7 +8,7 @@ import { useEffect, useState, lazy, Suspense, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { showsSeizureFeatures } from "@/lib/condition-prompts";
 import { useTranslation } from "react-i18next";
-import { useFeatureFlag } from "@/lib/feature-flags";
+import { usePlatformFlag } from "@/lib/platform-flags";
 
 // Code-split heavy below-the-fold sections so the link list renders fast.
 const PreferencesSection = lazy(() =>
@@ -60,7 +60,7 @@ function SettingsPage() {
   const { session, signOut } = useAuth();
   const navigate = useNavigate();
   const { isAdmin } = useIsAdmin();
-  const { enabled: communityEnabled } = useFeatureFlag("community");
+  const { enabled: communityEnabled } = usePlatformFlag("community");
   const [conditions, setConditions] = useState<string[] | null>(null);
   useEffect(() => {
     if (!session?.user?.id) return;

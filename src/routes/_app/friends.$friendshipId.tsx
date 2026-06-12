@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { FeatureGate } from "@/lib/feature-flags";
+import { PlatformFlagGate } from "@/lib/platform-flags";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -37,9 +37,9 @@ export const Route = createFileRoute("/_app/friends/$friendshipId")({
 
 function GatedFriendBasicsPage() {
   return (
-    <FeatureGate flag="friends" redirectTo="/today">
+    <PlatformFlagGate flag="friends" redirectTo="/today">
       <FriendBasicsPage />
-    </FeatureGate>
+    </PlatformFlagGate>
   );
 }
 

@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
-import { FeatureGate } from "@/lib/feature-flags";
+import { PlatformFlagGate } from "@/lib/platform-flags";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
@@ -22,9 +22,9 @@ export const Route = createFileRoute("/friend/accept")({
 
 function GatedAcceptFriendPage() {
   return (
-    <FeatureGate flag="friends" redirectTo="/">
+    <PlatformFlagGate flag="friends" redirectTo="/">
       <AcceptFriendPage />
-    </FeatureGate>
+    </PlatformFlagGate>
   );
 }
 

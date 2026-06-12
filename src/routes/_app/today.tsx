@@ -13,6 +13,7 @@ import { TodayDoses } from "@/components/meds/today-doses";
 import { MedsMiniTimeline } from "@/components/meds/meds-mini-timeline";
 import { TripBanner } from "@/components/travel/trip-banner";
 import { TodayInstallBanner } from "@/components/pwa/today-install-banner";
+import { ConnectWearablesCard } from "@/components/today/connect-wearables-card";
 import { RestoreBanner } from "@/components/settings/restore-banner";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
 import { promptsForConditions, showsSeizureFeatures, getTodayGreeting } from "@/lib/condition-prompts";
@@ -90,8 +91,23 @@ function TodayPage() {
     if (typeof window === "undefined") return false;
     return sessionStorage.getItem("purple-today-empty-dismissed") === "1";
   });
+  // One-time warm greeting after onboarding, echoing the user's first entry.
+  // Key written by /welcome; cleared after the first Today render.
+  const [firstWords, setFirstWords] = useState<string | null>(null);
 
   useEffect(() => setNow(new Date()), []);
+
+  useEffect(() => {
+    try {
+      const words = sessionStorage.getItem("purple-first-words");
+      if (words) {
+        setFirstWords(words);
+        sessionStorage.removeItem("purple-first-words");
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   useEffect(() => {
     if (!userId) return;
@@ -186,6 +202,10 @@ function TodayPage() {
         <TodayInstallBanner />
       </div>
 
+      <div className="mb-6 empty:mb-0">
+        <ConnectWearablesCard />
+      </div>
+
       <ConditionWelcomeNudge />
 
       {journalCount === 0 && !emptyDismissed && (
@@ -224,8 +244,15 @@ function TodayPage() {
         {firstName ? `, ${firstName}` : ""}.
       </h1>
 
-      {greetingSuffix && !forecast?.ai_narrative && (
-        <p className="mt-2 text-sm text-muted-foreground">{greetingSuffix}</p>
+      {firstWords ? (
+        <p className="mt-2 text-sm text-muted-foreground" suppressHydrationWarning>
+          {t("todayPage.firstWordsNote", { words: firstWords })}
+        </p>
+      ) : (
+        greetingSuffix &&
+        !forecast?.ai_narrative && (
+          <p className="mt-2 text-sm text-muted-foreground">{greetingSuffix}</p>
+        )
       )}
 
       {forecast?.ai_narrative ? (

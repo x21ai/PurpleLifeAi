@@ -8,13 +8,13 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { CalmHero, HumanMoment } from "@/components/marketing/calm-scene";
 import { communityImages } from "@/lib/calm-images";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
-import { FeatureGate } from "@/lib/feature-flags";
+import { PlatformFlagGate } from "@/lib/platform-flags";
 
 function GatedCommunityFeed() {
   return (
-    <FeatureGate flag="community" redirectTo="/">
+    <PlatformFlagGate flag="community" redirectTo="/">
       <CommunityFeed />
-    </FeatureGate>
+    </PlatformFlagGate>
   );
 }
 

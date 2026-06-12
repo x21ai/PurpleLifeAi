@@ -1,9 +1,9 @@
 import { Link } from "@tanstack/react-router";
-import { useFeatureFlag } from "@/lib/feature-flags";
+import { usePlatformFlag } from "@/lib/platform-flags";
 
 export function SiteFooter() {
   const year = new Date().getFullYear();
-  const { enabled: communityEnabled } = useFeatureFlag("community");
+  const { enabled: communityEnabled } = usePlatformFlag("community");
   return (
     <footer data-testid="site-footer" className="border-t border-border bg-background/60 mt-0">
       <div className="mx-auto max-w-6xl px-5 sm:px-8 py-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between text-sm text-muted-foreground">

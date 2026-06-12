@@ -2,11 +2,11 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { ProfileMenu } from "@/components/layout/profile-menu";
-import { useFeatureFlag } from "@/lib/feature-flags";
+import { usePlatformFlag } from "@/lib/platform-flags";
 
 export function MarketingHeader() {
   const { session } = useAuth();
-  const { enabled: communityEnabled } = useFeatureFlag("community");
+  const { enabled: communityEnabled } = usePlatformFlag("community");
   return (
     <header className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border">
       <div className="mx-auto max-w-6xl px-6 sm:px-10 h-16 flex items-center justify-between">
