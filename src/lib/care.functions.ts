@@ -20,6 +20,27 @@ function newInviteToken(): string {
   );
 }
 
+function careAcceptUrl(inviteToken: string): string {
+  const req = getRequest();
+  const origin =
+    process.env.PUBLIC_SITE_URL ||
+    (req ? new URL(req.url).origin : "https://purplelife.org");
+  return `${origin}/care/accept?token=${inviteToken}`;
+}
+
+/** Strip invite_token from API payloads; owners get accept_url instead. */
+function sanitizeCareRelationshipForClient<T extends { invite_token?: string | null; status?: string }>(
+  rel: T,
+): Omit<T, "invite_token"> & { accept_url: string | null } {
+  const token = rel.invite_token;
+  const { invite_token: _omit, ...rest } = rel;
+  const accept_url =
+    rel.status === "pending" && typeof token === "string" && token.length > 0
+      ? careAcceptUrl(token)
+      : null;
+  return { ...rest, accept_url };
+}
+
 const emailSchema = z.string().trim().toLowerCase().email().max(255);
 const roleSchema = z.enum(["emergency", "caregiver", "provider", "viewer"]);
 
@@ -41,6 +62,7 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
     const { userId } = context;
     const invite_token = newInviteToken();
     const scopes = (data.scopes ?? ROLE_DEFAULT_SCOPES[data.role as CareRole]) as string[];
+    const inviteExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data: rel, error } = await supabaseAdmin
       .from("care_relationships")
@@ -51,6 +73,7 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
         role: data.role,
         status: "pending",
         relationship_label: data.relationship_label ?? null,
+        expires_at: inviteExpiresAt,
       })
       .select()
       .single();
@@ -78,11 +101,7 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
 
     // Best-effort transactional email. The invite link is also surfaced in
     // Settings → Sharing so a failure here is non-fatal.
-    const req = getRequest();
-    const origin =
-      process.env.PUBLIC_SITE_URL ||
-      (req ? new URL(req.url).origin : "https://purplelife.org");
-    const acceptUrl = `${origin}/care/accept?token=${invite_token}`;
+    const acceptUrl = careAcceptUrl(invite_token);
     let emailSent = false;
     try {
       const { data: inviter } = await supabaseAdmin
@@ -110,7 +129,7 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
       console.warn("care-invite email failed (link still available in UI)", err);
     }
 
-    return { relationship: rel, invite_token, acceptUrl, emailSent };
+    return { relationship: rel, acceptUrl, emailSent };
   });
 
 export const listMyCaregivers = createServerFn({ method: "GET" })
@@ -135,7 +154,10 @@ export const listMyCaregivers = createServerFn({ method: "GET" })
       scopes = s ?? [];
     }
 
-    return { relationships: rels ?? [], scopes };
+    return {
+      relationships: (rels ?? []).map((r) => sanitizeCareRelationshipForClient(r)),
+      scopes,
+    };
   });
 
 export const listPeopleSharingWithMe = createServerFn({ method: "GET" })
@@ -149,7 +171,9 @@ export const listPeopleSharingWithMe = createServerFn({ method: "GET" })
       .in("status", ["active", "pending"]) 
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return { relationships: data ?? [] };
+    return {
+      relationships: (data ?? []).map((r) => sanitizeCareRelationshipForClient(r)),
+    };
   });
 
 export const setScopes = createServerFn({ method: "POST" })
@@ -512,45 +536,30 @@ export const acceptInvite = createServerFn({ method: "POST" })
     z.object({ invite_token: z.string().min(20).max(128) }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { userId } = context;
-    const { data: rel, error } = await supabaseAdmin
-      .from("care_relationships")
-      .select("*")
-      .eq("invite_token", data.invite_token)
-      .single();
-    if (error || !rel) throw new Error("Invite not found");
-    if (rel.status !== "pending") throw new Error("Invite is no longer pending");
-    if (rel.owner_id === userId) throw new Error("You can't accept your own invite");
-
-    // Verify the accepting user's email matches the invite email, so a leaked
-    // or forwarded token can't be redeemed by an unintended account.
-    if (rel.invite_email) {
-      const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
-      const accepterEmail = (u?.user?.email ?? "").trim().toLowerCase();
-      const inviteEmail = String(rel.invite_email).trim().toLowerCase();
-      if (!accepterEmail || accepterEmail !== inviteEmail) {
-        throw new Error("This invite was sent to a different email address.");
-      }
-    }
-
-    const { error: uErr } = await supabaseAdmin
-      .from("care_relationships")
-      .update({
-        caregiver_id: userId,
-        status: "active",
-        accepted_at: new Date().toISOString(),
-      })
-      .eq("id", rel.id);
-    if (uErr) throw new Error(uErr.message);
-
-    await supabaseAdmin.from("care_audit_log").insert({
-      relationship_id: rel.id,
-      owner_id: rel.owner_id,
-      actor_id: userId,
-      action: "accepted",
+    const { supabase } = context;
+    const { data: result, error } = await supabase.rpc("accept_care_invite", {
+      p_token: data.invite_token,
     });
+    if (error) throw new Error(error.message);
+    const row = result as { relationship_id?: string; owner_id?: string } | null;
+    if (!row?.relationship_id || !row.owner_id) throw new Error("Invite not found");
+    return { relationship_id: row.relationship_id, owner_id: row.owner_id };
+  });
 
-    return { relationship_id: rel.id, owner_id: rel.owner_id };
+export const acceptAssignedInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { relationship_id: string }) =>
+    z.object({ relationship_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: result, error } = await supabase.rpc("accept_assigned_care_invite", {
+      p_relationship_id: data.relationship_id,
+    });
+    if (error) throw new Error(error.message);
+    const row = result as { relationship_id?: string; owner_id?: string } | null;
+    if (!row?.relationship_id || !row.owner_id) throw new Error("Invite not found");
+    return { relationship_id: row.relationship_id, owner_id: row.owner_id };
   });
 
 export const proposeChange = createServerFn({ method: "POST" })
@@ -1262,7 +1271,7 @@ export const listCaregiverOwners = createServerFn({ method: "GET" })
     const { userId } = context;
     const { data: rels, error } = await supabaseAdmin
       .from("care_relationships")
-      .select("id, owner_id, role, status, expires_at, invite_email, invite_token, created_at, accepted_at")
+      .select("id, owner_id, role, status, expires_at, invite_email, created_at, accepted_at")
       .eq("caregiver_id", userId)
       .in("status", ["active", "pending"])
       .order("accepted_at", { ascending: false, nullsFirst: false });
@@ -1393,7 +1402,6 @@ export const listCaregiverOwners = createServerFn({ method: "GET" })
         relationship_id: r.id,
         owner_id: r.owner_id,
         invite_email: r.invite_email,
-        invite_token: r.invite_token,
         role: r.role,
         created_at: r.created_at,
       }));

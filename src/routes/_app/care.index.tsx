@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Mail, Users } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { OwnerCard, type OwnerCardData } from "@/components/care/owner-card";
-import { listCaregiverOwners } from "@/lib/care.functions";
+import { listCaregiverOwners, acceptAssignedInvite } from "@/lib/care.functions";
 import { useRouteTheme } from "@/lib/use-route-theme";
 
 export const Route = createFileRoute("/_app/care/")({
@@ -17,11 +18,22 @@ export const Route = createFileRoute("/_app/care/")({
 
 function CareIndexPage() {
   useRouteTheme("light");
+  const qc = useQueryClient();
   const fn = useServerFn(listCaregiverOwners);
+  const acceptFn = useServerFn(acceptAssignedInvite);
   const q = useQuery({
     queryKey: ["care", "owners-switcher"],
     queryFn: () => fn(),
     staleTime: 30_000,
+  });
+  const acceptMut = useMutation({
+    mutationFn: (relationshipId: string) =>
+      acceptFn({ data: { relationship_id: relationshipId } }),
+    onSuccess: () => {
+      toast.success("Invite accepted");
+      void qc.invalidateQueries({ queryKey: ["care", "owners-switcher"] });
+    },
+    onError: (err: Error) => toast.error(err.message ?? "Couldn't accept invite"),
   });
 
   return (
@@ -70,16 +82,14 @@ function CareIndexPage() {
                     </p>
                   </div>
                 </div>
-                {p.invite_token && (
-                  <Button asChild size="sm" variant="secondary">
-                    <Link
-                      to="/care/accept"
-                      search={{ token: p.invite_token }}
-                    >
-                      Accept
-                    </Link>
-                  </Button>
-                )}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={acceptMut.isPending}
+                  onClick={() => acceptMut.mutate(p.relationship_id)}
+                >
+                  Accept
+                </Button>
               </li>
             ))}
           </ul>
