@@ -2,17 +2,18 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { PlatformFlagGate } from "@/lib/platform-flags";
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { marketingHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/community/resources")({
-  head: () => ({
-    meta: [
-      { title: "Resources · Purple Community" },
-      {
-        name: "description",
-        content: "Curated resources for people living with epilepsy and their care partners.",
-      },
-    ],
-  }),
+  head: () =>
+    marketingHead({
+      path: "/community/resources",
+      title: "Resources · Purple Community",
+      description:
+        "Curated resources for people living with epilepsy and their care partners.",
+      ogTitle: "Resources · Purple Community",
+      ogDescription: "Curated links for people living with epilepsy and their care partners.",
+    }),
   component: GatedResources,
 });
 

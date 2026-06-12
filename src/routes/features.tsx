@@ -6,23 +6,21 @@ import { MarketingHeader } from "@/components/layout/marketing-header";
 import { CalmHero, CalmBand, HumanMoment, StillLife } from "@/components/marketing/calm-scene";
 import { ResponsiveImage } from "@/components/marketing/responsive-image";
 import { featuresImages } from "@/lib/calm-images";
+import { marketingHead, OG_HERO_IMAGES } from "@/lib/seo";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/features")({
-  head: () => ({
-    meta: [
-      { title: "Features. Purple." },
-      {
-        name: "description",
-        content:
-          "Everything Purple does: a multi-modal journal, a quiet AI that knows your history, a unified timeline, smart meds, biometrics, and a community that gets it.",
-      },
-      { property: "og:title", content: "Features. Purple." },
-      { property: "og:description", content: "Everything Purple does, in one quiet companion." },
-      { property: "og:url", content: "https://www.purplelife.org/features" },
-    ],
-    links: [{ rel: "canonical", href: "https://www.purplelife.org/features" }],
-  }),
+  head: () =>
+    marketingHead({
+      path: "/features",
+      title: "Features. Purple.",
+      description:
+        "Everything Purple does: a multi-modal journal, a quiet AI that knows your history, a unified timeline, smart meds, biometrics, and a community that gets it.",
+      ogTitle: "Features. Purple.",
+      ogDescription: "Everything Purple does, in one quiet companion.",
+      ogImage: OG_HERO_IMAGES.features,
+      ogImageAlt: featuresImages.hero.alt,
+    }),
   component: FeaturesPage,
 });
 

@@ -9,13 +9,14 @@ import { Button } from "@/components/ui/button";
 import { acceptFriendInvite } from "@/lib/friendships.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "@tanstack/react-router";
+import { noindexHead } from "@/lib/seo";
 
 const searchSchema = z.object({
   token: z.string().min(20).max(128).optional(),
 });
 
 export const Route = createFileRoute("/friend/accept")({
-  head: () => ({ meta: [{ title: "Join their circle · Purple" }] }),
+  head: () => noindexHead("Join their circle · Purple"),
   validateSearch: (s) => searchSchema.parse(s),
   component: GatedAcceptFriendPage,
 });

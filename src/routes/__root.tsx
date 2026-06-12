@@ -17,6 +17,7 @@ import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { ThemeProvider, themeBootstrapScript } from "@/lib/theme-provider";
 import "@/i18n";
 import { hydrateLocale } from "@/i18n";
+import { DEFAULT_OG_IMAGE } from "@/lib/seo";
 
 // Loaded after the browser goes idle so service worker registration and the
 // Oura auto-sync never compete with first paint (and stay out of the entry chunk).
@@ -144,11 +145,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Open-source health intelligence for epilepsy and pattern-driven conditions. Free forever. No ads.",
       },
-      { property: "og:image", content: "https://www.purplelife.org/og-cover.jpg" },
+      { property: "og:image", content: DEFAULT_OG_IMAGE },
       { property: "og:image:width", content: "1216" },
       { property: "og:image:height", content: "640" },
       { property: "og:image:alt", content: "Purple, a quiet companion for your health" },
-      { name: "twitter:image", content: "https://www.purplelife.org/og-cover.jpg" },
+      { name: "twitter:image", content: DEFAULT_OG_IMAGE },
     ],
     links: [
       {
