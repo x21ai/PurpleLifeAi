@@ -233,19 +233,17 @@ function SharingPage() {
                       initialMuted={Boolean((r as any).digest_muted)}
                     />
                   )}
-                  {r.status === "pending" && (
+                  {r.status === "pending" && r.accept_url && (
                     <div className="mt-2 flex items-center gap-2">
                       <code className="flex-1 truncate rounded-md bg-muted px-2 py-1 text-[11px] text-foreground">
-                        {typeof window !== "undefined" ? window.location.origin : ""}/care/accept?token={r.invite_token}
+                        {r.accept_url}
                       </code>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                          const url =
-                            (typeof window !== "undefined" ? window.location.origin : "") +
-                            "/care/accept?token=" +
-                            r.invite_token;
+                          const url = r.accept_url;
+                          if (!url) return;
                           navigator.clipboard?.writeText(url).then(
                             () => toast.success("Invite link copied"),
                             () => toast.error("Couldn't copy"),

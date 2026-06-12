@@ -3053,6 +3053,14 @@ export type Database = {
       }
     }
     Functions: {
+      accept_assigned_care_invite: {
+        Args: { p_relationship_id: string }
+        Returns: Json
+      }
+      accept_care_invite: {
+        Args: { p_token: string }
+        Returns: Json
+      }
       cleanup_stuck_journal_entries: { Args: never; Returns: number }
       delete_email: {
         Args: { message_id: number; queue_name: string }
