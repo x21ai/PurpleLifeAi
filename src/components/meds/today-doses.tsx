@@ -420,8 +420,9 @@ export function TodayDoses() {
                 <div className="flex items-center gap-1.5">
                   <Button
                     size="sm"
-                    className="rounded-full"
+                    className="rounded-full min-h-[44px] min-w-[44px] px-4"
                     disabled={actioningId !== null}
+                    aria-label={`Mark ${d.medication?.name ?? "medication"} as taken`}
                     onClick={() => runAction(d.id, "taken")}
                   >
                     Taken
@@ -429,8 +430,9 @@ export function TodayDoses() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="rounded-full"
+                    className="rounded-full min-h-[44px] min-w-[44px] px-4"
                     disabled={actioningId !== null}
+                    aria-label={`Snooze ${d.medication?.name ?? "medication"} reminder 10 minutes`}
                     onClick={() => runAction(d.id, "snooze")}
                   >
                     Snooze
@@ -438,8 +440,9 @@ export function TodayDoses() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="rounded-full text-muted-foreground"
+                    className="rounded-full text-muted-foreground min-h-[44px] min-w-[44px] px-4"
                     disabled={actioningId !== null}
+                    aria-label={`Skip ${d.medication?.name ?? "medication"} dose`}
                     onClick={() => runAction(d.id, "skip")}
                   >
                     Skip
