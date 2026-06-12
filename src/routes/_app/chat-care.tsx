@@ -36,6 +36,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const searchSchema = z.object({ thread: z.string().uuid().optional() });
 
@@ -471,6 +481,8 @@ function ConversationPanel({
   const leaveFn = useServerFn(leaveCareThread);
   const navigate = useNavigate({ from: "/chat-care" });
   const isOwner = thread.owner_id === meId;
+  const [confirmLeave, setConfirmLeave] = React.useState(false);
+  const [leaving, setLeaving] = React.useState(false);
 
   const handleMute = async () => {
     try {
@@ -483,7 +495,7 @@ function ConversationPanel({
   };
 
   const handleLeave = async () => {
-    if (!confirm("Leave this chat? You can be re-added later by the chat owner.")) return;
+    setLeaving(true);
     try {
       await leaveFn({ data: { threadId: thread.id } });
       toast.success("You left the chat");
@@ -491,6 +503,9 @@ function ConversationPanel({
       void navigate({ search: {} });
     } catch (e) {
       toast.error(userMessage(e, "Couldn't leave"));
+    } finally {
+      setLeaving(false);
+      setConfirmLeave(false);
     }
   };
 
@@ -652,7 +667,10 @@ function ConversationPanel({
             </DropdownMenuItem>
             {!isOwner && (
               <DropdownMenuItem
-                onSelect={() => void handleLeave()}
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setConfirmLeave(true);
+                }}
                 className="text-destructive focus:text-destructive"
               >
                 <LogOut className="h-4 w-4 mr-2" /> Leave chat
@@ -822,6 +840,30 @@ function ConversationPanel({
           </Button>
         </form>
       </footer>
+
+      <AlertDialog open={confirmLeave} onOpenChange={setConfirmLeave}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave this chat?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will no longer see new messages here. The chat owner can add you back later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={leaving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleLeave();
+              }}
+              disabled={leaving}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {leaving ? "Leaving…" : "Leave chat"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

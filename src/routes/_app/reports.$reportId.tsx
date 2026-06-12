@@ -4,6 +4,16 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Trash2, ExternalLink, TrendingUp, ShieldCheck, AlertTriangle, Share2, Download, Sparkles, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { getReport, deleteReport, getMetricTrend, processReport, setReportIdentityDecision, getReportFileUrl, summarizeReport } from "@/lib/reports.functions";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
@@ -75,6 +85,8 @@ function ReportDetailPage() {
   const [retrying, setRetrying] = React.useState(false);
   const [deciding, setDeciding] = React.useState(false);
   const [selectedMetric, setSelectedMetric] = React.useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const [confirmReject, setConfirmReject] = React.useState(false);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["report", reportId],
@@ -87,13 +99,28 @@ function ReportDetailPage() {
   });
 
   const handleDelete = async () => {
-    if (!confirm("Delete this report and its extracted values?")) return;
     try {
       await removeReport({ data: { id: reportId } });
       toast.success("Report deleted");
       navigate({ to: "/reports/documents" });
     } catch (err) {
       toast.error(userMessage(err, "That didn't delete. Try again in a moment."));
+    } finally {
+      setConfirmDelete(false);
+    }
+  };
+
+  const handleRejectIdentity = async () => {
+    setDeciding(true);
+    try {
+      await decideIdentity({ data: { reportId, decision: "reject" } });
+      toast.success("Report deleted");
+      navigate({ to: "/reports/documents" });
+    } catch (e) {
+      toast.error(userMessage(e, "That didn't work. Try again in a moment."));
+      setDeciding(false);
+    } finally {
+      setConfirmReject(false);
     }
   };
 
@@ -241,7 +268,7 @@ function ReportDetailPage() {
             </Button>
           </ProGate>
           <Button
-            onClick={handleDelete}
+            onClick={() => setConfirmDelete(true)}
             variant="ghost"
             size="sm"
             className="rounded-full text-[#FFA8BD] hover:bg-white/5 hover:text-[#FFA8BD]"
@@ -357,18 +384,7 @@ function ReportDetailPage() {
                   Yes, this is me
                 </Button>
                 <Button
-                  onClick={async () => {
-                    if (!confirm("Delete this report?")) return;
-                    setDeciding(true);
-                    try {
-                      await decideIdentity({ data: { reportId, decision: "reject" } });
-                      toast.success("Report deleted");
-                      navigate({ to: "/reports/documents" });
-                    } catch (e) {
-                      toast.error(userMessage(e, "That didn't work. Try again in a moment."));
-                      setDeciding(false);
-                    }
-                  }}
+                  onClick={() => setConfirmReject(true)}
                   disabled={deciding}
                   variant="ghost"
                   size="sm"
@@ -412,6 +428,53 @@ function ReportDetailPage() {
         </div>
       </ReportCard>
       <MedicalDisclaimer className="mt-4 text-white/70 [&_*]:text-white/70" />
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this report?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The file and any extracted values will be permanently removed. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleDelete();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete report
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmReject} onOpenChange={setConfirmReject}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this report?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This report will be removed and future uploads with the same readings will be blocked.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deciding}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleRejectIdentity();
+              }}
+              disabled={deciding}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deciding ? "Deleting…" : "Delete report"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ReportShell>
   );
 }
