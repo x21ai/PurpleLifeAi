@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { FeatureGate } from "@/lib/feature-flags";
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -6,11 +7,22 @@ export const Route = createFileRoute("/community/resources")({
   head: () => ({
     meta: [
       { title: "Resources · Purple Community" },
-      { name: "description", content: "Curated resources for people living with epilepsy and their care partners." },
+      {
+        name: "description",
+        content: "Curated resources for people living with epilepsy and their care partners.",
+      },
     ],
   }),
-  component: Resources,
+  component: GatedResources,
 });
+
+function GatedResources() {
+  return (
+    <FeatureGate flag="community" redirectTo="/">
+      <Resources />
+    </FeatureGate>
+  );
+}
 
 type R = { id: string; title: string; description: string; url: string; category: string };
 
@@ -18,7 +30,11 @@ function Resources() {
   const [rows, setRows] = React.useState<R[]>([]);
   React.useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("community_resources").select("id, title, description, url, category").order("category").order("sort_order");
+      const { data } = await supabase
+        .from("community_resources")
+        .select("id, title, description, url, category")
+        .order("category")
+        .order("sort_order");
       setRows((data ?? []) as R[]);
     })();
   }, []);
@@ -32,8 +48,12 @@ function Resources() {
     <div className="min-h-dvh bg-background text-foreground">
       <header className="border-b border-border">
         <div className="mx-auto max-w-3xl px-5 sm:px-8 py-4 flex items-center justify-between">
-          <Link to="/community" className="text-sm text-foreground/70 hover:text-foreground">← Community</Link>
-          <Link to="/" className="font-serif text-xl">Purple</Link>
+          <Link to="/community" className="text-sm text-foreground/70 hover:text-foreground">
+            ← Community
+          </Link>
+          <Link to="/" className="font-serif text-xl">
+            Purple
+          </Link>
         </div>
       </header>
       <div className="mx-auto max-w-3xl px-5 sm:px-8 pt-10 pb-24">
@@ -47,7 +67,12 @@ function Resources() {
               <ul className="mt-3 space-y-3">
                 {items.map((r) => (
                   <li key={r.id} className="rounded-2xl border border-border bg-card p-5">
-                    <a href={r.url} target="_blank" rel="noreferrer" className="font-serif text-lg hover:underline">
+                    <a
+                      href={r.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-serif text-lg hover:underline"
+                    >
                       {r.title}
                     </a>
                     <p className="text-sm text-foreground/70 mt-1">{r.description}</p>

@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { FeatureGate } from "@/lib/feature-flags";
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
@@ -13,8 +14,16 @@ import {
 
 export const Route = createFileRoute("/_app/community-new")({
   head: () => ({ meta: [{ title: "New post, Community" }] }),
-  component: NewPost,
+  component: GatedNewPost,
 });
+
+function GatedNewPost() {
+  return (
+    <FeatureGate flag="community" redirectTo="/today">
+      <NewPost />
+    </FeatureGate>
+  );
+}
 
 function NewPost() {
   const { session } = useAuth();
@@ -43,17 +52,23 @@ function NewPost() {
       className="mx-auto max-w-2xl px-5 sm:px-8 pt-8 sm:pt-12 pb-32"
       style={{ paddingBottom: "calc(8rem + env(safe-area-inset-bottom))" }}
     >
-      <Link to="/community" className="text-sm text-foreground/70 hover:text-foreground">← Community</Link>
+      <Link to="/community" className="text-sm text-foreground/70 hover:text-foreground">
+        ← Community
+      </Link>
       <h1 className="mt-3 font-serif text-4xl">New post</h1>
-      <p className="mt-2 text-muted-foreground">Be kind. No medical advice. Don't share other people's info.</p>
+      <p className="mt-2 text-muted-foreground">
+        Be kind. No medical advice. Don't share other people's info.
+      </p>
       <div className="mt-8 space-y-3">
         <Select value={topic} onValueChange={setTopic}>
           <SelectTrigger className="w-[200px] rounded-xl border-border bg-card text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {["general","wins","questions","vent","tips"].map((t) => (
-              <SelectItem key={t} value={t}>{t}</SelectItem>
+            {["general", "wins", "questions", "vent", "tips"].map((t) => (
+              <SelectItem key={t} value={t}>
+                {t}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>

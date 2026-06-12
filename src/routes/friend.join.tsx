@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { FeatureGate } from "@/lib/feature-flags";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
@@ -11,14 +12,24 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/friend/join")({
   head: () => ({ meta: [{ title: "Join a circle · Purple" }] }),
-  component: JoinByCodePage,
+  component: GatedJoinByCodePage,
 });
+
+function GatedJoinByCodePage() {
+  return (
+    <FeatureGate flag="friends" redirectTo="/">
+      <JoinByCodePage />
+    </FeatureGate>
+  );
+}
 
 function JoinByCodePage() {
   const navigate = useNavigate();
   const accept = useServerFn(acceptFriendByCode);
   const [code, setCode] = useState("");
-  const [state, setState] = useState<"checking" | "idle" | "running" | "done" | "error">("checking");
+  const [state, setState] = useState<"checking" | "idle" | "running" | "done" | "error">(
+    "checking",
+  );
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -54,8 +65,8 @@ function JoinByCodePage() {
           Join a friend's circle
         </h1>
         <p className="mt-4 text-sm text-muted-foreground text-center">
-          Enter the short code your friend sent you. No health data is shared
-          either way &mdash; you're just connected on Purple.
+          Enter the short code your friend sent you. No health data is shared either way &mdash;
+          you're just connected on Purple.
         </p>
 
         {state === "checking" ? (
@@ -76,11 +87,7 @@ function JoinByCodePage() {
                 className="mt-1 text-center text-lg tracking-widest"
               />
             </div>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={state === "running" || !code.trim()}
-            >
+            <Button type="submit" className="w-full" disabled={state === "running" || !code.trim()}>
               {state === "running" ? (
                 <>
                   <Loader2 className="h-3 w-3 mr-2 animate-spin" /> Joining&hellip;
@@ -94,9 +101,7 @@ function JoinByCodePage() {
                 All set. Taking you to your sharing settings&hellip;
               </p>
             )}
-            {state === "error" && (
-              <p className="text-center text-sm text-destructive">{message}</p>
-            )}
+            {state === "error" && <p className="text-center text-sm text-destructive">{message}</p>}
           </form>
         )}
       </div>

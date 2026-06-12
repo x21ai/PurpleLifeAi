@@ -1,30 +1,20 @@
 import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
-import { navTree, type NavGroup, type NavLeaf } from "./nav-items";
+import { navTree, filterNavTree, type NavGroup, type NavLeaf } from "./nav-items";
 import { cn } from "@/lib/utils";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { PendingInboxBadge } from "@/components/care/pending-inbox-badge";
 import { CaregiverNavLink } from "./caregiver-nav-link";
 import { ChatUnreadBadge } from "./chat-unread-badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 /**
  * Wraps a rail row in a tooltip that only shows when the sidebar is in
  * its collapsed (md, icon-only) state. On lg+ the label is already visible
  * inline, so the TooltipContent stays hidden via `lg:hidden`.
  */
-function RailTooltip({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function RailTooltip({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <Tooltip delayDuration={150}>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
@@ -49,14 +39,14 @@ function loadOpen(): Record<string, boolean> {
 function isPathInGroup(group: NavGroup, pathname: string): boolean {
   if (group.to && pathname === group.to) return true;
   if (!group.children) return false;
-  return group.children.some(
-    (c) => pathname === c.to || pathname.startsWith(c.to + "/"),
-  );
+  return group.children.some((c) => pathname === c.to || pathname.startsWith(c.to + "/"));
 }
 
 export function SidebarNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const { flags } = useFeatureFlags();
+  const tree = filterNavTree(navTree, flags);
 
   // Hydrate from localStorage on mount.
   useEffect(() => {
@@ -91,42 +81,46 @@ export function SidebarNav() {
 
   return (
     <TooltipProvider>
-    <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-16 lg:w-64 border-r border-border bg-sidebar text-sidebar-foreground">
-      <div className="flex items-center justify-center lg:justify-start h-20 px-0 lg:px-6 border-b border-border">
-        <Link to="/today" className="flex items-center justify-center lg:justify-start flex-1" aria-label="Purple, home">
-          <span className="hidden lg:inline wordmark text-[14px] text-foreground">Purple</span>
-          <span className="lg:hidden wordmark text-[16px] text-foreground" aria-hidden>
-            P
-          </span>
-        </Link>
-      </div>
-
-      <nav className="flex-1 overflow-y-auto py-4 px-2 lg:px-3 space-y-0.5" aria-label="Primary">
-        {navTree.map((group) =>
-          group.children ? (
-            <GroupItem
-              key={group.id}
-              group={group}
-              open={!!open[group.id]}
-              onToggle={() => toggle(group.id)}
-              pathname={pathname}
-            />
-          ) : (
-            <LeafLink
-              key={group.id}
-              to={group.to!}
-              label={group.label}
-              Icon={group.icon}
-              active={pathname === group.to}
-            />
-          ),
-        )}
-        <CaregiverNavLink />
-        <div className="hidden lg:block px-1 pt-2">
-          <PendingInboxBadge variant="full" />
+      <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-16 lg:w-64 border-r border-border bg-sidebar text-sidebar-foreground">
+        <div className="flex items-center justify-center lg:justify-start h-20 px-0 lg:px-6 border-b border-border">
+          <Link
+            to="/today"
+            className="flex items-center justify-center lg:justify-start flex-1"
+            aria-label="Purple, home"
+          >
+            <span className="hidden lg:inline wordmark text-[14px] text-foreground">Purple</span>
+            <span className="lg:hidden wordmark text-[16px] text-foreground" aria-hidden>
+              P
+            </span>
+          </Link>
         </div>
-      </nav>
-    </aside>
+
+        <nav className="flex-1 overflow-y-auto py-4 px-2 lg:px-3 space-y-0.5" aria-label="Primary">
+          {tree.map((group) =>
+            group.children ? (
+              <GroupItem
+                key={group.id}
+                group={group}
+                open={!!open[group.id]}
+                onToggle={() => toggle(group.id)}
+                pathname={pathname}
+              />
+            ) : (
+              <LeafLink
+                key={group.id}
+                to={group.to!}
+                label={group.label}
+                Icon={group.icon}
+                active={pathname === group.to}
+              />
+            ),
+          )}
+          <CaregiverNavLink />
+          <div className="hidden lg:block px-1 pt-2">
+            <PendingInboxBadge variant="full" />
+          </div>
+        </nav>
+      </aside>
     </TooltipProvider>
   );
 }
@@ -158,10 +152,7 @@ function GroupItem({
 
   const iconEl = (
     <Icon
-      className={cn(
-        "h-5 w-5 shrink-0",
-        containsActive && "text-[color:var(--purple-primary)]",
-      )}
+      className={cn("h-5 w-5 shrink-0", containsActive && "text-[color:var(--purple-primary)]")}
       strokeWidth={containsActive ? 2 : 1.6}
     />
   );
@@ -178,9 +169,7 @@ function GroupItem({
       aria-label={open ? `Collapse ${group.label}` : `Expand ${group.label}`}
       className="hidden lg:inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors"
     >
-      <ChevronDown
-        className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")}
-      />
+      <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
     </button>
   );
 

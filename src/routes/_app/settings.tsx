@@ -8,6 +8,7 @@ import { useEffect, useState, lazy, Suspense, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { showsSeizureFeatures } from "@/lib/condition-prompts";
 import { useTranslation } from "react-i18next";
+import { useFeatureFlag } from "@/lib/feature-flags";
 
 // Code-split heavy below-the-fold sections so the link list renders fast.
 const PreferencesSection = lazy(() =>
@@ -59,6 +60,7 @@ function SettingsPage() {
   const { session, signOut } = useAuth();
   const navigate = useNavigate();
   const { isAdmin } = useIsAdmin();
+  const { enabled: communityEnabled } = useFeatureFlag("community");
   const [conditions, setConditions] = useState<string[] | null>(null);
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -105,7 +107,9 @@ function SettingsPage() {
       <GroupLabel>{t("settings.groups.people")}</GroupLabel>
       <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
         <Row to="/settings/sharing" icon={HeartHandshake} title={t("settings.rows.sharing")} subtitle={t("settings.rows.sharingSub")} />
-        <Row to="/community" icon={Users} title={t("settings.rows.community")} subtitle={t("settings.rows.communitySub")} />
+        {communityEnabled && (
+          <Row to="/community" icon={Users} title={t("settings.rows.community")} subtitle={t("settings.rows.communitySub")} />
+        )}
       </section>
 
       <GroupLabel>{t("settings.groups.app")}</GroupLabel>

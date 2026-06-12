@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { FeatureGate } from "@/lib/feature-flags";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -9,7 +10,7 @@ export const Route = createFileRoute("/_app/friends/$friendshipId")({
   head: () => ({
     meta: [{ title: "About a friend · Purple" }],
   }),
-  component: FriendBasicsPage,
+  component: GatedFriendBasicsPage,
   errorComponent: ({ reset }) => {
     const router = useRouter();
     return (
@@ -33,6 +34,14 @@ export const Route = createFileRoute("/_app/friends/$friendshipId")({
     </div>
   ),
 });
+
+function GatedFriendBasicsPage() {
+  return (
+    <FeatureGate flag="friends" redirectTo="/today">
+      <FriendBasicsPage />
+    </FeatureGate>
+  );
+}
 
 function FriendBasicsPage() {
   const { friendshipId } = Route.useParams();
@@ -61,8 +70,8 @@ function FriendBasicsPage() {
         </p>
       ) : q.data && !q.data.shared ? (
         <p className="mt-6 text-sm text-muted-foreground">
-          No shared details , just a friend on Purple. They haven't opted to
-          share basics, or you haven't either.
+          No shared details , just a friend on Purple. They haven't opted to share basics, or you
+          haven't either.
         </p>
       ) : q.data && q.data.shared ? (
         <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
@@ -78,14 +87,11 @@ function FriendBasicsPage() {
             )}
             <div className="min-w-0">
               <p className="text-base text-foreground">
-                {[q.data.basics.first_name, q.data.basics.last_name]
-                  .filter(Boolean)
-                  .join(" ") || "A friend"}
+                {[q.data.basics.first_name, q.data.basics.last_name].filter(Boolean).join(" ") ||
+                  "A friend"}
               </p>
               {q.data.basics.country && (
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {q.data.basics.country}
-                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">{q.data.basics.country}</p>
               )}
             </div>
           </div>
@@ -107,8 +113,8 @@ function FriendBasicsPage() {
           )}
 
           <p className="mt-6 text-[11px] text-muted-foreground leading-relaxed">
-            That's all that's shared. No journal, no biometrics, no medications,
-            no reports , ever. Turn this off anytime from Settings → Sharing.
+            That's all that's shared. No journal, no biometrics, no medications, no reports , ever.
+            Turn this off anytime from Settings → Sharing.
           </p>
         </section>
       ) : null}

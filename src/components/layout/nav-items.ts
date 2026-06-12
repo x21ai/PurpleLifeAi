@@ -20,6 +20,7 @@ import {
   Dna,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { FeatureFlags } from "@/lib/feature-flags";
 
 /**
  * Sidebar nav model.
@@ -43,18 +44,18 @@ export type NavGroup = {
 };
 
 export const navTree: NavGroup[] = [
-  { id: "today",     label: "Today",     icon: Sun,        to: "/today" },
-  { id: "journal",   label: "Journal",   icon: BookOpen,   to: "/journal" },
+  { id: "today", label: "Today", icon: Sun, to: "/today" },
+  { id: "journal", label: "Journal", icon: BookOpen, to: "/journal" },
   {
     id: "body",
     label: "My Body",
     icon: HeartPulse,
     to: "/my-health",
     children: [
-      { to: "/biometrics", label: "Biometrics",  icon: Activity   },
-      { to: "/hydration",  label: "Intake",      icon: Droplets   },
-      { to: "/meds",       label: "Medications", icon: Pill       },
-      { to: "/timeline",   label: "Timeline",    icon: Clock      },
+      { to: "/biometrics", label: "Biometrics", icon: Activity },
+      { to: "/hydration", label: "Intake", icon: Droplets },
+      { to: "/meds", label: "Medications", icon: Pill },
+      { to: "/timeline", label: "Timeline", icon: Clock },
     ],
   },
   {
@@ -63,8 +64,8 @@ export const navTree: NavGroup[] = [
     icon: TrendingUp,
     to: "/insights",
     children: [
-      { to: "/reports",  label: "Reports",   icon: FileText   },
-      { to: "/my-health-dna", label: "DNA",  icon: Dna        },
+      { to: "/reports", label: "Reports", icon: FileText },
+      { to: "/my-health-dna", label: "DNA", icon: Dna },
     ],
   },
   {
@@ -72,9 +73,7 @@ export const navTree: NavGroup[] = [
     label: "Care",
     icon: Users,
     to: "/care",
-    children: [
-      { to: "/chat-care", label: "Messages",   icon: MessageCircle },
-    ],
+    children: [{ to: "/chat-care", label: "Messages", icon: MessageCircle }],
   },
   { id: "community", label: "Community", icon: Globe, to: "/community" },
   {
@@ -83,8 +82,8 @@ export const navTree: NavGroup[] = [
     icon: Wrench,
     to: "/tools",
     children: [
-      { to: "/apple-health-import",  label: "Apple Health import", icon: Bolt },
-      { to: "/settings/travel",      label: "Travel",           icon: Plane  },
+      { to: "/apple-health-import", label: "Apple Health import", icon: Bolt },
+      { to: "/settings/travel", label: "Travel", icon: Plane },
     ],
   },
   {
@@ -92,27 +91,50 @@ export const navTree: NavGroup[] = [
     label: "Account",
     icon: User,
     children: [
-      { to: "/account",          label: "Profile",  icon: User      },
-      { to: "/settings",         label: "Settings", icon: Settings2 },
-      { to: "/settings/sharing", label: "Sharing",  icon: Shield    },
+      { to: "/account", label: "Profile", icon: User },
+      { to: "/settings", label: "Settings", icon: Settings2 },
+      { to: "/settings/sharing", label: "Sharing", icon: Shield },
     ],
   },
 ];
 
+/**
+ * Hides nav entries for dark-launched surfaces (docs/LAUNCH-AUDIT.md).
+ * Fails closed: while flags load, flagged entries stay hidden.
+ */
+export function filterNavTree(tree: NavGroup[], flags: FeatureFlags | undefined): NavGroup[] {
+  const visible = (to: string | undefined): boolean => {
+    if (to === "/community") return flags?.community === true;
+    if (to === "/my-health-dna") return flags?.dna === true;
+    return true;
+  };
+  return tree
+    .filter((g) => visible(g.to))
+    .map((g) => (g.children ? { ...g, children: g.children.filter((c) => visible(c.to)) } : g));
+}
+
 /** Legacy flat list, kept for the mobile bottom nav. */
 export type NavItem = {
-  to: "/today" | "/journal" | "/timeline" | "/insights" | "/account" | "/tools" | "/settings" | "/hydration";
+  to:
+    | "/today"
+    | "/journal"
+    | "/timeline"
+    | "/insights"
+    | "/account"
+    | "/tools"
+    | "/settings"
+    | "/hydration";
   label: string;
   icon: LucideIcon;
 };
 
 export const navItems: NavItem[] = [
-  { to: "/today",     label: "Today",     icon: Sun       },
-  { to: "/journal",   label: "Journal",   icon: BookOpen  },
-  { to: "/hydration", label: "Intake",    icon: Droplets  },
-  { to: "/timeline",  label: "Timeline",  icon: Clock     },
-  { to: "/insights",  label: "Patterns",  icon: TrendingUp },
-  { to: "/tools",     label: "Tools",     icon: Wrench    },
-  { to: "/account",   label: "Account",   icon: User      },
-  { to: "/settings",  label: "Settings",  icon: Settings2 },
+  { to: "/today", label: "Today", icon: Sun },
+  { to: "/journal", label: "Journal", icon: BookOpen },
+  { to: "/hydration", label: "Intake", icon: Droplets },
+  { to: "/timeline", label: "Timeline", icon: Clock },
+  { to: "/insights", label: "Patterns", icon: TrendingUp },
+  { to: "/tools", label: "Tools", icon: Wrench },
+  { to: "/account", label: "Account", icon: User },
+  { to: "/settings", label: "Settings", icon: Settings2 },
 ];

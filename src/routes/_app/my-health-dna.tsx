@@ -1,23 +1,34 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { FeatureGate } from "@/lib/feature-flags";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 import {
-  ChevronLeft, Upload, Loader2, Trash2, AlertTriangle, FileText, RefreshCw,
-  Sparkles, ShieldCheck, EyeOff, Eye,
+  ChevronLeft,
+  Upload,
+  Loader2,
+  Trash2,
+  AlertTriangle,
+  FileText,
+  RefreshCw,
+  Sparkles,
+  ShieldCheck,
+  EyeOff,
+  Eye,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MedicalDisclaimer } from "@/components/common/medical-disclaimer";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { toast } from "sonner";
 import {
-  createDnaUpload, parseDnaFile, listDnaFiles, deleteDnaFile,
+  createDnaUpload,
+  parseDnaFile,
+  listDnaFiles,
+  deleteDnaFile,
   setDnaShareWithCaregivers,
 } from "@/lib/dna.functions";
 import { generateCareProfile } from "@/lib/care-profile.functions";
-import {
-  CURATED_RSIDS, getCuratedRsid, type CuratedRsid,
-} from "@/lib/dna-curated-rsids";
+import { CURATED_RSIDS, getCuratedRsid, type CuratedRsid } from "@/lib/dna-curated-rsids";
 import { ProGate } from "@/components/pro/pro-gate";
 import {
   AlertDialog,
@@ -34,12 +45,24 @@ export const Route = createFileRoute("/_app/my-health-dna")({
   head: () => ({
     meta: [
       { title: "DNA insights · Purple" },
-      { name: "description", content: "Upload a raw DNA file. Purple looks at a small, curated set of variants, never a clinical report." },
+      {
+        name: "description",
+        content:
+          "Upload a raw DNA file. Purple looks at a small, curated set of variants, never a clinical report.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: DnaPage,
+  component: GatedDnaPage,
 });
+
+function GatedDnaPage() {
+  return (
+    <FeatureGate flag="dna" redirectTo="/today">
+      <DnaPage />
+    </FeatureGate>
+  );
+}
 
 function DnaPage() {
   useRouteTheme("dark");
@@ -139,9 +162,7 @@ function DnaPage() {
   const files = data?.files ?? [];
   const variants = data?.variants ?? [];
   const latest = files[0];
-  const latestVariants = latest
-    ? variants.filter((v) => v.file_id === latest.id)
-    : [];
+  const latestVariants = latest ? variants.filter((v) => v.file_id === latest.id) : [];
   const latestStats = getParseStats(latest?.parse_stats);
   const variantByRsid = new Map(latestVariants.map((v) => [v.rsid, v.genotype]));
 
@@ -155,7 +176,10 @@ function DnaPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 pt-6 pb-32">
       <div className="flex items-center justify-between">
-        <Link to="/my-health" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/my-health"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ChevronLeft className="h-4 w-4" /> My Health
         </Link>
         <h1 className="text-[17px] font-semibold">DNA insights</h1>
@@ -165,12 +189,14 @@ function DnaPage() {
       <section className="mt-10">
         <p className="label-eyebrow text-muted-foreground">Optional</p>
         <h2 className="mt-2 font-serif text-4xl sm:text-5xl tracking-[-0.02em] leading-[1.05]">
-          A quiet read of a few<br/>relevant variants.
+          A quiet read of a few
+          <br />
+          relevant variants.
         </h2>
         <p className="mt-5 body-serif text-foreground/70 max-w-[560px]">
-          Upload a raw file from 23andMe, AncestryDNA, MyHeritage, or any standard VCF.
-          Purple only looks at a small, curated set of variants tied to traits we already
-          track, never your whole genome.
+          Upload a raw file from 23andMe, AncestryDNA, MyHeritage, or any standard VCF. Purple only
+          looks at a small, curated set of variants tied to traits we already track, never your
+          whole genome.
         </p>
       </section>
 
@@ -178,63 +204,68 @@ function DnaPage() {
 
       {/* Upload */}
       <div className="mt-8">
-      <ProGate feature="dna">
-      <section
-        onDragOver={(e) => {
-          e.preventDefault();
-          if (!dragging) setDragging(true);
-        }}
-        onDragLeave={(e) => {
-          e.preventDefault();
-          setDragging(false);
-        }}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragging(false);
-          const f = e.dataTransfer.files?.[0];
-          if (f && !uploading) handleFile(f);
-        }}
-        className={`rounded-3xl border-2 border-dashed bg-card p-6 sm:p-8 transition ${
-          dragging
-            ? "border-[color:var(--purple-primary)] bg-[color:var(--purple-primary)]/5"
-            : "border-border"
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 grid place-items-center rounded-full bg-[color:var(--purple-primary)]/15 text-[color:var(--purple-primary)]">
-            <Upload className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="font-medium">Drag &amp; drop or choose a DNA file</p>
-            <p className="text-xs text-muted-foreground">
-              .txt, .tsv, .csv, .vcf, .json, .gz, .zip, .tar, .tar.gz , up to 500 MB
+        <ProGate feature="dna">
+          <section
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (!dragging) setDragging(true);
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              setDragging(false);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              const f = e.dataTransfer.files?.[0];
+              if (f && !uploading) handleFile(f);
+            }}
+            className={`rounded-3xl border-2 border-dashed bg-card p-6 sm:p-8 transition ${
+              dragging
+                ? "border-[color:var(--purple-primary)] bg-[color:var(--purple-primary)]/5"
+                : "border-border"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 grid place-items-center rounded-full bg-[color:var(--purple-primary)]/15 text-[color:var(--purple-primary)]">
+                <Upload className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-medium">Drag &amp; drop or choose a DNA file</p>
+                <p className="text-xs text-muted-foreground">
+                  .txt, .tsv, .csv, .vcf, .json, .gz, .zip, .tar, .tar.gz , up to 500 MB
+                </p>
+              </div>
+            </div>
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".txt,.tsv,.csv,.vcf,.json,.gz,.zip,.tar,.tgz,.bam,.cram"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFile(f);
+              }}
+            />
+            <button
+              type="button"
+              disabled={uploading}
+              onClick={() => inputRef.current?.click()}
+              className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-[color:var(--purple-primary)] text-white py-3.5 font-semibold hover:opacity-90 transition disabled:opacity-60"
+            >
+              {uploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4" />
+              )}
+              {uploading ? "Reading…" : dragging ? "Drop to upload" : "Choose file"}
+            </button>
+            <p className="mt-3 text-[11px] text-muted-foreground flex items-center gap-1.5">
+              <ShieldCheck className="h-3 w-3" /> Private storage. Only you can read it. Alignment
+              files (.bam / .cram) are stored but not yet parsed.
             </p>
-          </div>
-        </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".txt,.tsv,.csv,.vcf,.json,.gz,.zip,.tar,.tgz,.bam,.cram"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) handleFile(f);
-          }}
-        />
-        <button
-          type="button"
-          disabled={uploading}
-          onClick={() => inputRef.current?.click()}
-          className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-[color:var(--purple-primary)] text-white py-3.5 font-semibold hover:opacity-90 transition disabled:opacity-60"
-        >
-          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-          {uploading ? "Reading…" : dragging ? "Drop to upload" : "Choose file"}
-        </button>
-        <p className="mt-3 text-[11px] text-muted-foreground flex items-center gap-1.5">
-          <ShieldCheck className="h-3 w-3" /> Private storage. Only you can read it. Alignment files (.bam / .cram) are stored but not yet parsed.
-        </p>
-      </section>
-      </ProGate>
+          </section>
+        </ProGate>
       </div>
 
       {/* What we look at */}
@@ -246,7 +277,9 @@ function DnaPage() {
               <p className="font-medium text-foreground">
                 {r.gene} <span className="text-muted-foreground">· {r.trait}</span>
                 {r.sensitive && (
-                  <span className="ml-2 text-[10px] uppercase tracking-wider text-amber-400">sensitive</span>
+                  <span className="ml-2 text-[10px] uppercase tracking-wider text-amber-400">
+                    sensitive
+                  </span>
                 )}
               </p>
               <p className="text-muted-foreground mt-0.5">{r.plainLanguage}</p>
@@ -258,10 +291,15 @@ function DnaPage() {
       {/* Files list */}
       {files.length > 0 && (
         <section className="mt-10">
-          <p className="label-eyebrow text-muted-foreground">Your file{files.length > 1 ? "s" : ""}</p>
+          <p className="label-eyebrow text-muted-foreground">
+            Your file{files.length > 1 ? "s" : ""}
+          </p>
           <ul className="mt-3 space-y-2">
             {files.map((f) => (
-              <li key={f.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3">
+              <li
+                key={f.id}
+                className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3"
+              >
                 <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate">{f.original_filename}</p>
@@ -271,7 +309,8 @@ function DnaPage() {
                   </p>
                   {isUnparseableKind(f.kind) && (
                     <p className="mt-1 text-[11px] text-amber-400/90">
-                      Alignment or index file , upload the matching .vcf.gz or your raw genotype export to extract markers.
+                      Alignment or index file , upload the matching .vcf.gz or your raw genotype
+                      export to extract markers.
                     </p>
                   )}
                 </div>
@@ -292,9 +331,11 @@ function DnaPage() {
                     aria-label="Re-analyze"
                     title="Re-analyze"
                   >
-                    {reparse.isPending && reparse.variables === f.id
-                      ? <Loader2 className="h-4 w-4 animate-spin" />
-                      : <RefreshCw className="h-4 w-4" />}
+                    {reparse.isPending && reparse.variables === f.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
                   </button>
                 )}
                 <button
@@ -330,12 +371,20 @@ function DnaPage() {
 
           <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl border border-border bg-card p-4">
             <div>
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Rows scanned</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums">{formatNumber(latestStats.rowsScanned)}</p>
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                Rows scanned
+              </p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">
+                {formatNumber(latestStats.rowsScanned)}
+              </p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Curated matches</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums">{formatNumber(latestStats.curatedMatches)}</p>
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                Curated matches
+              </p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">
+                {formatNumber(latestStats.curatedMatches)}
+              </p>
             </div>
           </div>
 
@@ -352,7 +401,8 @@ function DnaPage() {
                   <ul className="mt-2 divide-y divide-border/60">
                     {rows.map((r) => {
                       const gt = variantByRsid.get(r.rsid)!;
-                      const note = r.genotypeNotes[gt] ?? "Pattern noted; ask your clinician for context.";
+                      const note =
+                        r.genotypeNotes[gt] ?? "Pattern noted; ask your clinician for context.";
                       return (
                         <li key={r.rsid} className="py-3">
                           <p className="text-sm">
@@ -374,16 +424,20 @@ function DnaPage() {
             <div className="mt-4 rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground inline-flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
               <p>
-                The file was read, but none of Purple's small curated variant set was found. This can happen with clinical VCFs that omit or shift the exact marker positions we currently look for.
+                The file was read, but none of Purple's small curated variant set was found. This
+                can happen with clinical VCFs that omit or shift the exact marker positions we
+                currently look for.
               </p>
             </div>
           )}
 
-          {!showSensitive && CURATED_RSIDS.some((r) => r.sensitive && variantByRsid.has(r.rsid)) && (
-            <p className="mt-6 text-xs text-muted-foreground">
-              Some sensitive findings are hidden. Use “Show sensitive” above when you're ready to look.
-            </p>
-          )}
+          {!showSensitive &&
+            CURATED_RSIDS.some((r) => r.sensitive && variantByRsid.has(r.rsid)) && (
+              <p className="mt-6 text-xs text-muted-foreground">
+                Some sensitive findings are hidden. Use “Show sensitive” above when you're ready to
+                look.
+              </p>
+            )}
 
           {/* Defensive: never recommend treatment from this surface. */}
           <MedicalDisclaimer className="mt-8" />
@@ -392,7 +446,9 @@ function DnaPage() {
 
       <AlertDialog
         open={pendingDeleteId !== null}
-        onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteId(null);
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -422,11 +478,16 @@ function DnaPage() {
 function statusLabel(s: string, kind?: string | null): string {
   if (s === "parsed" && isUnparseableKind(kind)) return "Stored · not parsed";
   switch (s) {
-    case "uploaded": return "Uploaded";
-    case "parsing": return "Reading…";
-    case "parsed": return "Parsed";
-    case "error": return "Error";
-    default: return s;
+    case "uploaded":
+      return "Uploaded";
+    case "parsing":
+      return "Reading…";
+    case "parsed":
+      return "Parsed";
+    case "error":
+      return "Error";
+    default:
+      return s;
   }
 }
 
@@ -451,7 +512,8 @@ function formatNumber(value: number): string {
 
 function formatParseToast(variantCount: number, stats?: { rowsScanned?: number }): string {
   const rows = stats?.rowsScanned ?? 0;
-  if (rows > 0) return `Scanned ${formatNumber(rows)} rows · found ${variantCount} curated variants.`;
+  if (rows > 0)
+    return `Scanned ${formatNumber(rows)} rows · found ${variantCount} curated variants.`;
   return `Found ${variantCount} curated variants.`;
 }
 

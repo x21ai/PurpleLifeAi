@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { FeatureGate } from "@/lib/feature-flags";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
@@ -16,14 +17,24 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/friend/accept")({
   head: () => ({ meta: [{ title: "Join their circle · Purple" }] }),
   validateSearch: (s) => searchSchema.parse(s),
-  component: AcceptFriendPage,
+  component: GatedAcceptFriendPage,
 });
+
+function GatedAcceptFriendPage() {
+  return (
+    <FeatureGate flag="friends" redirectTo="/">
+      <AcceptFriendPage />
+    </FeatureGate>
+  );
+}
 
 function AcceptFriendPage() {
   const { token } = useSearch({ from: "/friend/accept" });
   const navigate = useNavigate();
   const accept = useServerFn(acceptFriendInvite);
-  const [state, setState] = useState<"idle" | "checking" | "running" | "done" | "error">("checking");
+  const [state, setState] = useState<"idle" | "checking" | "running" | "done" | "error">(
+    "checking",
+  );
   const [message, setMessage] = useState<string>("");
 
   useEffect(() => {
@@ -35,7 +46,10 @@ function AcceptFriendPage() {
       }
       const { data } = await supabase.auth.getUser();
       if (!data.user) {
-        navigate({ to: "/sign-in", search: { redirect: `/friend/accept?token=${token}` } as never });
+        navigate({
+          to: "/sign-in",
+          search: { redirect: `/friend/accept?token=${token}` } as never,
+        });
         return;
       }
       setState("idle");
@@ -61,25 +75,31 @@ function AcceptFriendPage() {
         <p className="label-eyebrow text-muted-foreground">Circle invite</p>
         <h1 className="mt-2 font-serif text-4xl text-foreground">Join their circle</h1>
         <p className="mt-4 text-sm text-muted-foreground">
-          A circle on Purple is just a list of people you know. Joining shares
-          no health data, journal entries, or reports &mdash; you simply appear in
-          each other's contacts. Either of you can leave at any time.
+          A circle on Purple is just a list of people you know. Joining shares no health data,
+          journal entries, or reports &mdash; you simply appear in each other's contacts. Either of
+          you can leave at any time.
         </p>
         {state === "checking" && (
-          <p className="mt-6 text-sm text-muted-foreground"><Loader2 className="inline h-3 w-3 animate-spin" /> Checking your session&hellip;</p>
+          <p className="mt-6 text-sm text-muted-foreground">
+            <Loader2 className="inline h-3 w-3 animate-spin" /> Checking your session&hellip;
+          </p>
         )}
         {state === "idle" && (
-          <Button className="mt-6" onClick={handleAccept}>Join their circle</Button>
+          <Button className="mt-6" onClick={handleAccept}>
+            Join their circle
+          </Button>
         )}
         {state === "running" && (
-          <p className="mt-6 text-sm text-muted-foreground"><Loader2 className="inline h-3 w-3 animate-spin" /> Joining&hellip;</p>
+          <p className="mt-6 text-sm text-muted-foreground">
+            <Loader2 className="inline h-3 w-3 animate-spin" /> Joining&hellip;
+          </p>
         )}
         {state === "done" && (
-          <p className="mt-6 text-sm text-emerald-600">All set. Taking you to your sharing settings&hellip;</p>
+          <p className="mt-6 text-sm text-emerald-600">
+            All set. Taking you to your sharing settings&hellip;
+          </p>
         )}
-        {state === "error" && (
-          <p className="mt-6 text-sm text-destructive">{message}</p>
-        )}
+        {state === "error" && <p className="mt-6 text-sm text-destructive">{message}</p>}
         <p className="mt-8 text-xs text-muted-foreground">
           Got a code instead of a link?{" "}
           <Link to="/friend/join" className="underline">
