@@ -226,7 +226,8 @@
     "morning": "Good morning",
     "afternoon": "Good afternoon",
     "evening": "Good evening",
-    "firstWordsNote": "You told Purple: “{{words}}”. It is in your journal now, and Purple is paying attention."
+    "firstWordsNote": "You told Purple: “{{words}}”. It is in your journal now, and Purple is paying attention.",
+    "scoresAsOf": "Scores are from {{day}}, the most recent night Purple has."
   },
   "riskDetail": {
     "eyebrow": "Today's reading",

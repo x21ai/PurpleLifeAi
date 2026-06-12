@@ -226,7 +226,8 @@
     "morning": "Buenos días",
     "afternoon": "Buenas tardes",
     "evening": "Buenas noches",
-    "firstWordsNote": "Le contaste a Purple: “{{words}}”. Ya está en tu diario, y Purple está prestando atención."
+    "firstWordsNote": "Le contaste a Purple: “{{words}}”. Ya está en tu diario, y Purple está prestando atención.",
+    "scoresAsOf": "Las puntuaciones son del {{day}}, la noche más reciente que Purple tiene."
   },
   "riskDetail": {
     "eyebrow": "Lectura de hoy",

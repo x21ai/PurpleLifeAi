@@ -88,7 +88,9 @@ async function getValidAccessToken(user_id: string): Promise<string | null> {
   if (!row) return null;
   const expiresAt = row.expires_at ? new Date(row.expires_at).getTime() : 0;
   if (expiresAt - Date.now() > 60_000) return row.access_token;
-  if (!row.refresh_token) return row.access_token;
+  // Expired with no way to refresh: surface it instead of letting the stale
+  // token 401 into a silent zero-row "successful" sync.
+  if (!row.refresh_token) throw new Error("needs_reauth: Whoop token expired");
   const refreshed = await refreshWhoopToken(row.refresh_token);
   const newExpires = new Date(
     Date.now() + (refreshed.expires_in ?? 3600) * 1000,
@@ -126,8 +128,13 @@ async function fetchAllPaginated(
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) {
+      // Propagate failures: swallowing them made broken auth look like a
+      // successful sync with zero rows.
       console.error(`Whoop ${path} failed: ${res.status}`);
-      break;
+      if (res.status === 401 || res.status === 403) {
+        throw new Error("needs_reauth: Whoop rejected the token");
+      }
+      throw new Error(`whoop_api_error: ${path} returned ${res.status}`);
     }
     const json = (await res.json()) as { records?: unknown[]; next_token?: string };
     if (Array.isArray(json.records)) out.push(...json.records);
