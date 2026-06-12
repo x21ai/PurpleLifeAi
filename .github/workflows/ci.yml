@@ -27,6 +27,7 @@ jobs:
       # out of CI until a one-shot format lands. Type safety is enforced here.
       - run: bunx tsc --noEmit
       - run: bun run build
+      - run: bun run check:entry-budget
 
   e2e-smoke:
     runs-on: ubuntu-latest

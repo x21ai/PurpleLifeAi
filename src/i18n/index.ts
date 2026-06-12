@@ -1,7 +1,6 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import en from "./locales/en.json";
-import es from "./locales/es.json";
 
 export const SUPPORTED_LOCALES = [
   { value: "en", label: "English" },
@@ -35,11 +34,12 @@ function readStoredLocale(): SupportedLocale | null {
 
 function readNavigatorLocale(): SupportedLocale | null {
   if (typeof navigator === "undefined") return null;
-  const langs: string[] = Array.isArray(navigator.languages) && navigator.languages.length
-    ? [...navigator.languages]
-    : navigator.language
-      ? [navigator.language]
-      : [];
+  const langs: string[] =
+    Array.isArray(navigator.languages) && navigator.languages.length
+      ? [...navigator.languages]
+      : navigator.language
+        ? [navigator.language]
+        : [];
   for (const lang of langs) {
     const match = normalize(lang);
     if (match) return match;
@@ -64,28 +64,61 @@ export function resolveClientLocale(): SupportedLocale {
 }
 
 if (!i18n.isInitialized) {
-  void i18n
-    .use(initReactI18next)
-    .init({
-      resources: {
-        en: { translation: en },
-        es: { translation: es },
-      },
-      // Always start with the default so server and first client render
-      // produce identical markup. `hydrateLocale()` switches post-hydration.
-      lng: DEFAULT_LOCALE,
-      fallbackLng: DEFAULT_LOCALE,
-      supportedLngs: SUPPORTED_VALUES as unknown as string[],
-      interpolation: { escapeValue: false },
-      react: { useSuspense: false },
-    });
+  void i18n.use(initReactI18next).init({
+    // Only the default locale ships in the entry bundle; other locales are
+    // fetched on demand by `ensureLocaleResources` when the user needs them.
+    resources: {
+      en: { translation: en },
+    },
+    // Always start with the default so server and first client render
+    // produce identical markup. `hydrateLocale()` switches post-hydration.
+    lng: DEFAULT_LOCALE,
+    fallbackLng: DEFAULT_LOCALE,
+    supportedLngs: SUPPORTED_VALUES as unknown as string[],
+    interpolation: { escapeValue: false },
+    react: { useSuspense: false },
+  });
 }
 
 export default i18n;
 
+const loadedLocales = new Set<SupportedLocale>([DEFAULT_LOCALE]);
+
+/** Lazily loads a locale's translation bundle into i18next. */
+async function ensureLocaleResources(locale: SupportedLocale): Promise<void> {
+  if (loadedLocales.has(locale)) return;
+  switch (locale) {
+    case "es": {
+      const mod = await import("./locales/es.json");
+      i18n.addResourceBundle("es", "translation", mod.default, true, true);
+      break;
+    }
+    case "en":
+      break;
+    default: {
+      const _exhaustive: never = locale;
+      void _exhaustive;
+    }
+  }
+  loadedLocales.add(locale);
+}
+
+function applyLocale(locale: SupportedLocale): void {
+  void ensureLocaleResources(locale)
+    .catch(() => {
+      // Offline or fetch failure: stay on the current language rather than
+      // showing missing-translation keys.
+    })
+    .then(() => {
+      if (loadedLocales.has(locale) && i18n.language !== locale) {
+        void i18n.changeLanguage(locale);
+      }
+    });
+}
+
 export function setLocale(locale: SupportedLocale) {
   if (!isSupported(locale)) return;
-  void i18n.changeLanguage(locale);
+  applyLocale(locale);
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(STORAGE_KEY, locale);
@@ -104,7 +137,7 @@ export function detectBrowserLocale(): SupportedLocale {
  */
 export function hydrateLocale(): SupportedLocale {
   const next = resolveClientLocale();
-  if (i18n.language !== next) void i18n.changeLanguage(next);
+  if (i18n.language !== next) applyLocale(next);
   return next;
 }
 
@@ -122,5 +155,5 @@ export function seedLocaleFromProfile(raw: string | null | undefined) {
   } catch {
     // ignore, private mode
   }
-  if (i18n.language !== next) void i18n.changeLanguage(next);
+  if (i18n.language !== next) applyLocale(next);
 }
