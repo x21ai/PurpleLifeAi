@@ -45,6 +45,21 @@ describe("wallTimeInTzToUtc", () => {
     const pst = wallTimeInTzToUtc("2026-01-15", "10:30", "America/Los_Angeles");
     expect(pst.getTime() - est.getTime()).toBe(3 * 60 * 60 * 1000);
   });
+
+  test("half-hour offset zone Asia/Kolkata", () => {
+    const d = wallTimeInTzToUtc("2026-01-15", "10:30", "Asia/Kolkata");
+    expect(d.toISOString()).toBe("2026-01-15T05:00:00.000Z");
+  });
+
+  test("southern hemisphere DST: Sydney summer offset (AEDT, UTC+11)", () => {
+    const d = wallTimeInTzToUtc("2026-01-15", "10:30", "Australia/Sydney");
+    expect(d.toISOString()).toBe("2026-01-14T23:30:00.000Z");
+  });
+
+  test("southern hemisphere DST: Sydney winter offset (AEST, UTC+10)", () => {
+    const d = wallTimeInTzToUtc("2026-07-15", "10:30", "Australia/Sydney");
+    expect(d.toISOString()).toBe("2026-07-15T00:30:00.000Z");
+  });
 });
 
 describe("dateKeyInTimeZone", () => {
