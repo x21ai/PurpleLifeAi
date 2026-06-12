@@ -69,7 +69,9 @@ async function getValidAccessToken(user_id: string): Promise<string | null> {
   if (!row) return null;
   const expiresAt = row.expires_at ? new Date(row.expires_at).getTime() : 0;
   if (expiresAt - Date.now() > 60_000) return row.access_token;
-  if (!row.refresh_token) return row.access_token;
+  // Expired with no way to refresh: surface it instead of letting the stale
+  // token 401 into a silent zero-row "successful" sync.
+  if (!row.refresh_token) throw new Error("needs_reauth: Oura token expired");
   const refreshed = await refreshToken(row.refresh_token);
   const newExpires = new Date(Date.now() + (refreshed.expires_in ?? 3600) * 1000).toISOString();
   await admin.from("oura_tokens").update({
@@ -87,8 +89,13 @@ async function ouraGet(token: string, path: string, start: string, end: string) 
   const url = `https://api.ouraring.com/v2${path}?start_date=${start}&end_date=${end}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) {
+    // Propagate failures: swallowing them here made broken auth look like a
+    // successful sync with zero rows.
     console.error(`Oura ${path} failed: ${res.status}`);
-    return { data: [] };
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("needs_reauth: Oura rejected the token");
+    }
+    throw new Error(`oura_api_error: ${path} returned ${res.status}`);
   }
   return await res.json();
 }
@@ -316,9 +323,13 @@ Deno.serve(async (req) => {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("oura-sync error", e);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("oura-sync error", msg);
+    // 200 with ok:false so the client can read the reason without unwrapping
+    // a FunctionsHttpError; needs_reauth drives the "Reconnect" UI state.
+    const code = msg.startsWith("needs_reauth") ? "needs_reauth" : "sync_failed";
+    return new Response(JSON.stringify({ ok: false, error: code }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

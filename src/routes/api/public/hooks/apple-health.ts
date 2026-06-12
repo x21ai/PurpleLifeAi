@@ -20,27 +20,21 @@ export const Route = createFileRoute("/api/public/hooks/apple-health")({
         // if the token resolves to a real user; touches last_webhook_at so
         // the settings card shows the test went through.
         const url = new URL(request.url);
-        const token =
-          url.searchParams.get("token") ??
-          request.headers.get("x-purple-token") ??
-          "";
+        const token = url.searchParams.get("token") ?? request.headers.get("x-purple-token") ?? "";
         if (!token || token.length < 16) {
           return json({ error: "Missing token" }, 401);
         }
-        const { findUserBySecret, touchAppleHealthSync } = await import(
-          "@/lib/apple-health.server"
-        );
+        const { findUserBySecret, touchAppleHealthSync } =
+          await import("@/lib/apple-health.server");
         const userId = await findUserBySecret(token);
         if (!userId) return json({ error: "Invalid token" }, 401);
-        await touchAppleHealthSync(userId, "webhook");
+        // A ping proves the connection, not a data import.
+        await touchAppleHealthSync(userId, "ping");
         return json({ ok: true, message: "Token valid. Purple is listening." });
       },
       POST: async ({ request }) => {
         const url = new URL(request.url);
-        const token =
-          url.searchParams.get("token") ??
-          request.headers.get("x-purple-token") ??
-          "";
+        const token = url.searchParams.get("token") ?? request.headers.get("x-purple-token") ?? "";
         if (!token || token.length < 16) {
           return json({ error: "Missing token" }, 401);
         }
@@ -65,7 +59,8 @@ export const Route = createFileRoute("/api/public/hooks/apple-health")({
         try {
           const days = mapHealthAutoExportPayload(payload);
           const { inserted } = await upsertAppleHealthDays(userId, days);
-          await touchAppleHealthSync(userId, "webhook");
+          // Only count it as a sync when rows actually landed.
+          await touchAppleHealthSync(userId, inserted > 0 ? "data" : "ping");
           return json({ ok: true, days: days.length, inserted });
         } catch (e) {
           console.error("apple-health webhook failed:", e);

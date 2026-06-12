@@ -34,7 +34,7 @@ import { WeeklyRecapCard } from "@/components/today/weekly-recap-card";
 import { SevenDayTrendStrip } from "@/components/today/seven-day-trend-strip";
 import { ReEngagementNudge } from "@/components/today/re-engagement-nudge";
 import { TopInsightCard } from "@/components/today/top-insight-card";
-import { localDayIndex } from "@/lib/utils";
+import { localDateKey, localDayIndex } from "@/lib/utils";
 import { PreTripChecklist } from "@/components/today/pre-trip-checklist";
 import { TripWrapupCard } from "@/components/today/trip-wrapup-card";
 
@@ -298,6 +298,14 @@ function TodayPage() {
           }}
         />
       </section>
+
+      {bio?.recorded_at && now && localDateKey(bio.recorded_at) !== localDateKey(now) && (
+        <p className="mt-2 text-xs text-muted-foreground" suppressHydrationWarning>
+          {t("todayPage.scoresAsOf", {
+            day: format(new Date(bio.recorded_at), "EEEE"),
+          })}
+        </p>
+      )}
 
       {expanded && typeof focusScore === "number" && (
         <div
