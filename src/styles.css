@@ -101,8 +101,9 @@ body::-webkit-scrollbar,
   --bg-tertiary: #f2eef5;
   --text-primary: #0a0a0f;
   --text-secondary: #4a4a52;
-  --text-tertiary: #8b8b92;
-  --text-quaternary: #b8b8bd;
+  /* Darkened from #8b8b92: 3.5:1 on white failed WCAG AA for muted labels on auth routes. */
+  --text-tertiary: #65656d;
+  --text-quaternary: #94949c;
   --divider: #ececef;
   --purple-primary: #5b2c82;
   --purple-soft: #ede4f4;
