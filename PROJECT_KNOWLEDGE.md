@@ -1,8 +1,8 @@
 # Purple: Project Knowledge
 
-A single-file handoff for any AI or engineer picking up Purple. Paste this into a new Lovable, Cursor, ChatGPT, or Claude session to bring it fully up to speed. Companion to (not a replacement for) `CURSOR_HANDOFF.md`, `docs/ARCHITECTURE.md`, `docs/FEATURES.md`, `docs/LOVABLE-MIGRATION.md`, and the `mem/` decision log.
+A single-file handoff for any AI or engineer picking up Purple. Paste this into a new Lovable, Cursor, ChatGPT, or Claude session to bring it fully up to speed. Companion to (not a replacement for) `CURSOR_HANDOFF.md`, `docs/ARCHITECTURE.md`, `docs/FEATURES.md`, `docs/LAUNCH-CHECKLIST.md`, `docs/LOVABLE-MIGRATION.md`, and the `mem/` decision log.
 
-Last updated: 2026-06-11.
+Last updated: 2026-06-12.
 
 No em dashes anywhere in this document (CI gate). Use commas, "and", "or", colons, or split sentences.
 
@@ -37,11 +37,13 @@ Purple is not a medical device and is not a substitute for clinical care. Every 
 
 ---
 
-## 2. Current status (2026-06-11)
+## 2. Current status (2026-06-12)
 
 Production currently runs on Lovable-managed infrastructure. The Cloudflare Worker (named `purplelife` in `wrangler.jsonc`) is ready to deploy to our own Cloudflare account once secrets and DNS are in place.
 
-Recent change shipped: `/sign-in` hero image visibility fix. All marketing pages verified rendering correct unique heroes (`/`, `/about`, `/community`, `/contact`, `/features`, `/sign-in`).
+Launch stack landed (PRs #8–#19 + overnight PRs 1–8): timezone-correct doses, dose reminder reliability chain, journal pipeline hardening, sync truthfulness via `last_sync_at`, care invite security RPCs, dark-launch feature flags, SEO (sitemap/robots), `/trust` page, 2-step onboarding to `/today`, mock route redirects, no native dialogs, lazy Spanish locale, CI unit tests + entry budget.
+
+Cutover runbook: `docs/LAUNCH-CHECKLIST.md`. Route grades: `docs/LAUNCH-AUDIT.md`. Med reliability: `docs/RELIABILITY.md`.
 
 Code-level Lovable couplings are all resolved:
 
@@ -61,8 +63,10 @@ Deployment is fully scripted: `bun run build && bunx wrangler deploy -c wrangler
 
 ### Pending external cutover steps
 
-1. Apply migration `supabase/migrations/20260611010000_remove_lovable_ai_provider.sql`.
-2. Redeploy edge functions `ai-orchestrator` and `risk-forecaster` per `docs/manual-deploy-bundle.md`.
+See `docs/LAUNCH-CHECKLIST.md` for the full ordered checklist. Summary:
+
+1. Apply migrations from `20260611010000` through `20260613010000` (feature flags, delivery log, timezone seeding, tag namespaces, security hardening).
+2. Redeploy edge functions `ai-orchestrator`, `risk-forecaster`, `oura-sync` (and `journal-processor` if not current).
 3. Verify `notify.purplelife.org` in Resend and re-point DNS off Lovable nameservers.
 4. Point the Supabase send-email hook at `https://www.purplelife.org/api/email/auth/webhook` and store `SEND_EMAIL_HOOK_SECRET`.
 5. Create a Resend webhook for `email.bounced` and `email.complained` pointed at `/api/email/suppression`.
@@ -70,6 +74,7 @@ Deployment is fully scripted: `bun run build && bunx wrangler deploy -c wrangler
 7. Re-point the pg_cron email pump URL to the new domain.
 8. Set Worker secrets (see Section 11), deploy, move DNS.
 9. Add `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and the `VITE_SUPABASE_*` values as GitHub repo secrets so CI / CD wakes up.
+10. Run Devyn 3-day real-use test before DNS flip (Section 6 of launch checklist).
 
 ---
 
@@ -107,16 +112,16 @@ Dev server: `bun run dev` on port 8080.
 
 ### Routing layout (file-based, under `src/routes/`)
 
-- **Public marketing** (top-level files): `index.tsx`, `about.tsx`, `features.tsx`, `pricing.tsx`, `charter.tsx`, `contact.tsx`, `privacy.tsx`, `terms.tsx`, `how-purple-thinks.tsx`, `community.*`. Render `MarketingHeader` and `SiteFooter`.
+- **Public marketing** (top-level files): `index.tsx`, `about.tsx`, `features.tsx`, `pricing.tsx`, `charter.tsx`, `contact.tsx`, `privacy.tsx`, `terms.tsx`, `how-purple-thinks.tsx`, `trust.tsx`, `community.*`. Render `MarketingHeader` and `SiteFooter`. SEO via `src/lib/seo.ts`; `/sitemap.xml` and `/robots.txt` from `src/server.ts`.
 - **Auth**: `sign-in.tsx`, `sign-up.tsx`, `reset-password.tsx`, `unsubscribe.tsx`.
-- **Authenticated app**: everything under `src/routes/_app/`. The pathless `_app.tsx` layout guards the session in `beforeLoad` (redirects to `/sign-in`), redirects un-onboarded users to `/welcome`, and wraps pages in `AppShell` (no marketing footer).
+- **Authenticated app**: everything under `src/routes/_app/`. The pathless `_app.tsx` layout guards the session in `beforeLoad` (redirects to `/sign-in`), redirects un-onboarded users to `/welcome`, and wraps pages in `AppShell` (no marketing footer). Launch redirects: `/my-health` → `/biometrics`, `/vitals` → `/insights`.
 - **Token-based semi-public**: `care.accept.tsx`, `friend.join.tsx`, `friend.accept.tsx`, `share.report.$token.tsx` (noindex), `email.unsubscribe.tsx`.
 - **OAuth callbacks**: `oauth.oura.callback.tsx`, `oauth.whoop.callback.tsx`.
 - **API routes** (`src/routes/api/`):
   - `/api/chat`: streaming AI chat (Vercel AI SDK `streamText`).
   - `/api/public/stripe-webhook`: Stripe signature-verified webhooks.
   - `/api/public/hooks/*`: Apple Health ingest, risk forecaster callbacks.
-  - `/api/public/cron/*`: 8 cron endpoints, each guarded by `CRON_SECRET`.
+  - `/api/public/cron/*`: dose reminders (every minute), hourly wearable sync + dose seed + journal cleanup, daily jobs, weekly recap. Each guarded by `CRON_SECRET`. Cloudflare Cron Triggers fan out via `SELF` in `src/server.ts`. Email queue pump stays on Supabase pg_cron (5s).
   - `/api/email/*`: Supabase send-email hook, transactional send, queue processor, suppression, template previews.
 
 The route tree (`src/routeTree.gen.ts`) is auto-generated during dev / build. Never hand-edit.
@@ -144,7 +149,7 @@ Do not add new Supabase Edge Functions for app-internal logic. Use `createServer
 Each entry lists the routes and the key files an AI should open when working on that area.
 
 ### Marketing and public site
-- Routes: `/`, `/about`, `/features`, `/pricing`, `/charter`, `/contact`, `/privacy`, `/terms`, `/how-purple-thinks`, `/community`, `/community/$postId`, `/community/resources`.
+- Routes: `/`, `/about`, `/features`, `/pricing`, `/trust`, `/charter`, `/contact`, `/privacy`, `/terms`, `/how-purple-thinks`, `/community`, `/community/$postId`, `/community/resources`. Community gated by `feature_community_enabled` (default OFF).
 - Components: `src/components/marketing/`.
 - Contact form lands in `contact_messages`, surfaced in admin.
 - Each route has a unique hero image (CI-enforced via `check:unique-images`).
@@ -152,12 +157,16 @@ Each entry lists the routes and the key files an AI should open when working on 
 ### Auth and onboarding
 - Routes: `/sign-in`, `/sign-up`, `/reset-password`, `/welcome`.
 - Social: `src/components/auth/social-sign-in-buttons.tsx`.
-- `_app` layout redirects un-onboarded users to `/welcome` (name, conditions, wearables, notifications).
+- `_app` layout redirects un-onboarded users to `/welcome` (two steps: profile + first journal entry with extraction, then `/today`). Captures timezone when unset.
 
 ### Today
 - Routes: `/today`, `/today/risk`.
 - Components: `src/components/today/`.
-- Surfaces readiness and risk scores, due med doses, hydration quick-add, travel banners, weekly recap card, condition tips, install nudges.
+- Surfaces readiness and risk scores, due med doses, hydration quick-add, travel/timezone banners, weekly recap card, condition tips, install nudges, missed-dose catch-up card.
+
+### Patterns (Insights)
+- Route: `/insights` (vitals tiles, goals, pattern cards). `/vitals` redirects here.
+- Components: `src/routes/_app/insights.tsx`, `src/components/insights/`.
 
 ### Journal
 - Routes: `/journal`, `/journal/new`.
@@ -173,19 +182,19 @@ Each entry lists the routes and the key files an AI should open when working on 
 - Water, electrolytes, aura events, food logging with voice (`voice-intake-sheet.tsx`) and photo recognition (`src/lib/food.server.ts`).
 
 ### Vitals
-- Route: `/vitals`. Goals and metric insights via `src/components/insights/`.
+- Route: `/vitals` redirects to `/insights` (launch decision). Real vitals UI lives under Patterns.
 
 ### Medications
 - Routes: `/meds`, `/meds/$medId`.
-- Meds, supplements, rescue meds. Dose schedules, side-effect tracking, refill awareness.
-- Reminders: service worker alarms (`public/sw.js` plus `src/lib/med-notifications.ts`), web push (`src/lib/push.server.ts`), and the `med-dose-action` edge function for taken / missed actions from notifications.
+- Meds, supplements, rescue meds. Dose schedules, side-effect tracking, refill awareness. Inline took/skip/snooze; log-dose-now.
+- Reminders: service worker alarms (`public/sw.js` plus `src/lib/med-notifications.ts`), web push (`src/lib/push.server.ts`), dose-reminders cron, and the `med-dose-action` edge function for taken / missed actions from notifications. Delivery log: `notification_delivery_log` (`docs/RELIABILITY.md`).
 - Add by scan or voice (`src/lib/med-recognition.server.ts`).
 - Drug knowledge via `src/lib/med-dictionary.ts` and `med-intelligence.functions.ts`.
 - Reminder cron: `/api/public/cron/dose-reminders`.
 
 ### Biometrics and integrations
-- Routes: `/biometrics`, `/biometrics/$metric`.
-- Oura, Whoop, Apple Health, manual data; metric detail charts.
+- Routes: `/biometrics`, `/biometrics/$metric`. `/my-health` redirects to `/biometrics`.
+- Oura, Whoop, Apple Health, manual data; metric detail charts. Sync UI uses `last_sync_at` only (never `updated_at`).
 - OAuth connects under `/tools` with callbacks at `/oauth/oura/callback` and `/oauth/whoop/callback`.
 - Cron sync via `/api/public/cron/oura-sync-all` and `/api/public/cron/whoop-sync-all`. Daily auto-sync hook `src/hooks/use-oura-daily-autosync.ts`. Edge function `oura-sync`.
 - Apple Health XML import: `/apple-health-import`, `src/lib/apple-health-xml.ts`.
@@ -198,7 +207,7 @@ Each entry lists the routes and the key files an AI should open when working on 
 ### DNA (Pro)
 - Route: `/my-health-dna`.
 - 23andMe-style raw file upload, curated RSID interpretation (`src/lib/dna-curated-rsids.ts`), feeds the care profile.
-- Pro-gated via `src/lib/pro-gate.ts`.
+- Pro-gated via `src/lib/pro-gate.ts`. Dark-launched behind `feature_dna_enabled` (default OFF).
 
 ### Ask Purple (AI chat)
 - Route: `/chat`. Streaming responses from `/api/chat` via Vercel AI SDK.
@@ -210,7 +219,7 @@ Each entry lists the routes and the key files an AI should open when working on 
 
 ### Care (caregivers)
 - Routes: `/care`, `/care/$ownerId`, `/care/inbox`, `/care/accept`, plus caregiver messaging at `/chat-care`.
-- Invite flow, scoped read / write permissions (`src/lib/care.scopes.ts`), pending-change approval, audit logging (`care_audit_log`), care digests by email, caregiver visit tracking.
+- Invite acceptance via SECURITY DEFINER RPCs (`accept_care_invite`, `accept_assigned_care_invite`); tokens not client-readable. Scoped read / write permissions (`src/lib/care.scopes.ts`), pending-change approval, audit logging (`care_audit_log`), care digests by email, caregiver visit tracking.
 - Read-only by default. Any write by a caregiver requires an explicit "confirm to write" step.
 
 ### Conditions
@@ -228,14 +237,14 @@ Each entry lists the routes and the key files an AI should open when working on 
 - One active trip at a time. No multi-trip overlap. Itineraries are typed manually, no real flight API.
 
 ### Community and friends
-- Public feed plus in-app compose (`/community-new`), reactions, comments, reporting, admin moderation.
-- Friend invites: `/friend/join`, `/friend/accept`, `/friends/$friendshipId`.
+- Public feed plus in-app compose (`/community-new`), reactions, comments, reporting, admin moderation. Gated by `feature_community_enabled`.
+- Friend invites: `/friend/join`, `/friend/accept`, `/friends/$friendshipId`. Gated by `feature_friends_enabled`.
 
 ### Pro and billing
 - Stripe checkout and customer portal (`src/lib/billing.server.ts`), subscription state in `subscriptions`, promo codes, `pro_free_for_everyone` kill switch in `app_settings`, webhook at `/api/public/stripe-webhook`.
 
 ### Admin
-- Routes: `/admin` plus subpages for users, community moderation, billing, promo codes, resources CMS, platform rules (with audit), contact messages, feedback, broadcast messages, duplicate report detection.
+- Routes: `/admin` plus subpages for users, community moderation, billing, promo codes, resources CMS, platform rules (with audit), contact messages, feedback, broadcast messages, duplicate report detection, med reminder reliability.
 - Role-gated server-side via `user_roles` and `has_role`.
 
 ### Settings and account
@@ -257,7 +266,7 @@ Each entry lists the routes and the key files an AI should open when working on 
 ### Internationalization
 - English and Spanish today (`src/i18n/locales/en.json`, `es.json`).
 - Locale picker `src/components/locale/`. Per-profile persistence via `profiles.locale`.
-- SSR always renders `en` to avoid hydration mismatch. `hydrateLocale()` switches post-hydration from localStorage, then navigator, then `profiles.locale`.
+- SSR always renders `en` to avoid hydration mismatch. `hydrateLocale()` switches post-hydration. Spanish loads lazily (not in entry bundle). `check:i18n-es` enforces completeness.
 
 ---
 
@@ -266,13 +275,19 @@ Each entry lists the routes and the key files an AI should open when working on 
 - RLS is enabled on every public-schema table. Every `CREATE TABLE` migration also issues explicit `GRANT`s.
 - Cross-user access returns 404, never 403.
 - Caregiver access is mediated by `care_scopes`. Writes require explicit confirm-to-write.
+- Care invite tokens are not client-readable. Acceptance uses `accept_care_invite()` / `accept_assigned_care_invite()` SECURITY DEFINER RPCs with pinned `search_path` (`docs/SECURITY-FINDINGS.md`).
 - Roles live in `user_roles` only. Check them server-side through `has_role(auth.uid(), 'admin')`.
 - Sensitive writes append to `phi_access_log` or `platform_rule_audit` as appropriate.
 - Storage buckets `journal-media` and `reports` are private; read via `createSignedUrl` only.
 - No third-party analytics or trackers, ever.
 - No em dashes anywhere (`bun run check:em-dash`, prebuild gate).
+- No native dialogs: use shadcn AlertDialog/Dialog, never `window.confirm`, `window.alert`, or `window.prompt`.
 - Footer visibility: marketing and auth routes on all viewports, never inside `AppShell`.
 - Metric naming: canonical labels from `src/lib/metric-naming.ts`, preserve PDF wording as "as printed: ..." subtitle.
+- Timezone: dose days and charts use `profiles.timezone`; regenerate doses when it changes.
+- Sync freshness: display and logic use `last_sync_at`, not `updated_at`.
+- Dose reminders: SW local → web push → catch-up card fallback chain must stay intact (`docs/RELIABILITY.md`).
+- Dark-launch flags on `app_settings` default OFF for community, DNA, friends.
 
 ---
 
@@ -329,18 +344,24 @@ Manual deploy procedure (when the Supabase CLI 403s): `docs/manual-deploy-bundle
 - `bun run check:em-dash` (also prebuild gate)
 - `bun run check:live-data`
 - `bun run check:unique-images`
-- `bun run lint`: currently red repo-wide with pre-existing prettier errors. Lint only your changed files. A one-shot `bun run format` cleanup is deferred because of the diff size. Lint is intentionally not in CI yet.
+- `bun run check:i18n-es` (en/es parity + static `t()` key coverage; also in CI)
+- `bun run check:entry-budget` (after build; client entry gzip budget)
+- `bun run test:unit` (`tests/unit/`: timezone, dose snooze, adherence, travel, Oura sleep mapping)
+- `bun run lint`: repo-wide prettier debt remains. Lint only changed files. Full lint intentionally not in CI yet.
 - `bun run build` (catches Worker / SSR bundling issues)
-- `bun run test:e2e`: Playwright across mobile-375, tablet-768, tablet-1023, desktop-1024, desktop-1440. Boots `bun run dev` on port 8080 unless `E2E_BASE_URL` is set. Smoke spec: `tests/e2e/routes-smoke.spec.ts`.
-- CI: `.github/workflows/ci.yml` (gates, type-check, build, smoke e2e on PRs). Needs GitHub secrets to wake up.
+- `bunx tsc --noEmit` (in CI)
+- `bun run test:e2e`: Playwright across mobile-375, tablet-768, tablet-1023, desktop-1024, desktop-1440. Boots `bun run dev` on port 8080 unless `E2E_BASE_URL` is set. Smoke spec: `tests/e2e/routes-smoke.spec.ts`. Optional: `tests/e2e/rls-isolation.spec.ts` with test-user env vars.
+- CI: `.github/workflows/ci.yml` (gates, i18n-es, unit tests, tsc, build, entry budget, smoke e2e on PRs). Needs GitHub secrets to wake up.
 - CD: `.github/workflows/deploy.yml` (`wrangler deploy -c wrangler.deploy.jsonc` on main). Needs Cloudflare secrets.
 
 ### Cheapest-first verification ladder
 
 1. `bun run check:em-dash`
-2. `bun run build`
-3. `bun run test:e2e` (smoke for routed / UI changes)
-4. `wrangler dev` against the built output for Worker behavior
+2. `bun run check:i18n-es`
+3. `bun run test:unit`
+4. `bun run build` + `bun run check:entry-budget`
+5. `bun run test:e2e` (smoke for routed / UI changes)
+6. `wrangler dev` against the built output for Worker behavior
 
 ---
 
@@ -389,15 +410,16 @@ Schemas you must never touch: `auth`, `storage`, `realtime`, `supabase_functions
 
 ## 13. Known gaps and sharp edges
 
-1. **Supabase CLI 403s on this project.** Migrations and edge functions are deployed manually via the dashboard following `docs/manual-deploy-bundle.md`.
+1. **Supabase CLI 403s on this project.** Migrations and edge functions are deployed manually via the dashboard following `docs/manual-deploy-bundle.md`. Full pending list: `docs/LAUNCH-CHECKLIST.md` Section 1.
 2. **CI / CD committed but dormant** until GitHub secrets exist (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, the `VITE_SUPABASE_*` values).
-3. **Repo-wide lint debt.** `bun run lint` fails with thousands of pre-existing prettier errors. New code should be prettier-clean. Bulk format is a separate decision.
+3. **Repo-wide lint debt.** `bun run lint` fails with thousands of pre-existing prettier errors. CI runs `test:unit` and `tsc` instead. New code should be prettier-clean in touched files.
 4. **Email queue pump scheduling.** Supabase pg_cron job (`process-email-queue`, 5s interval) POSTs to the app with the vault-stored service-role key. Its URL must be re-pointed to `https://www.purplelife.org/api/email/queue/process` at cutover.
 5. **`src/routeTree.gen.ts` is generated.** It regenerates from `src/routes/` during dev / build.
 6. **`vite.config.ts` is a wrapper.** Do not add `tanstackStart` / `react` / `tailwind` / `tsconfig-paths` / `cloudflare` plugins manually while `@lovable.dev/vite-tanstack-config` is in place. Duplicates break the build. The import must stay pointed at `dist/index.js` (the ESM build); the bare specifier resolves to the CJS build and crashes config loading on Node 22+.
 7. **Email DNS.** `notify.purplelife.org` is delegated to Lovable nameservers. It must be re-verified with Resend and re-pointed, coordinated with the Supabase auth-hook URL change.
 8. **External webhook pointers** to move at cutover: Stripe webhook, Supabase send-email hook (to `/api/email/auth/webhook`), Resend webhook (to `/api/email/suppression`), Google / Apple OAuth redirect URLs, Oura / Whoop redirect URIs, pg_cron email pump URL.
-9. **`SUPABASE_SERVICE_ROLE_KEY` and the database password are inaccessible** on Lovable Cloud. If a user asks, say plainly they are not available here. Never fabricate a placeholder.
+9. **Dark-launch flags** (`feature_community_enabled`, `feature_dna_enabled`, `feature_friends_enabled`) default OFF. Enable deliberately when ready.
+10. **`SUPABASE_SERVICE_ROLE_KEY` and the database password are inaccessible** on Lovable Cloud. If a user asks, say plainly they are not available here. Never fabricate a placeholder.
 
 ---
 
@@ -429,19 +451,15 @@ Bundling: every npm package must be fully bundled at build time. Never set `ssr.
 
 ## 16. Suggested next-steps backlog
 
-Pulled from the pending external cutover plus open work in `CURSOR_HANDOFF.md` and `docs/LOVABLE-MIGRATION.md` Phase 7. Pick from here when prompting the next session.
+Primary source: **`docs/LAUNCH-CHECKLIST.md`**. Pick from here when prompting the next session.
 
-1. Apply migration `20260611010000_remove_lovable_ai_provider.sql` and redeploy `ai-orchestrator` and `risk-forecaster`.
-2. Set Worker secrets in Cloudflare (`ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `SEND_EMAIL_HOOK_SECRET`, `EMAIL_PREVIEW_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `PUBLIC_SITE_URL`, Stripe pair, VAPID trio, Oura / Whoop pairs, optional AI keys).
-3. Verify `notify.purplelife.org` in Resend, publish SPF / DKIM, move DNS off Lovable nameservers.
-4. Point the Supabase send-email hook at `/api/email/auth/webhook` and configure `SEND_EMAIL_HOOK_SECRET`.
-5. Create the Resend bounce / complaint webhook pointed at `/api/email/suppression`.
-6. Configure new Google and Apple OAuth client codes in the Supabase dashboard per `docs/oauth-provider-setup.md`.
-7. Re-point the pg_cron email pump URL.
-8. Add GitHub repo secrets so CI and CD wake up, then push to main to trigger the first Cloudflare deploy.
-9. Move DNS for `www.purplelife.org` to the new Cloudflare Worker.
-10. Optional: one-shot `bun run format` cleanup to clear lint debt, then re-enable lint in CI.
-11. Optional: address known security findings on public community tables and `care_relationships.invite_token` exposure (will require a product decision on author display in public community feeds).
+1. Apply all pending migrations (Section 1 of launch checklist) and redeploy edge functions.
+2. Set Worker secrets in Cloudflare (Section 3).
+3. Configure webhooks and OAuth (Section 4).
+4. Run staging verification + Devyn 3-day test (Sections 5–6).
+5. Add GitHub repo secrets, deploy Worker, flip DNS (Section 7).
+6. Optional: one-shot `bun run format` cleanup to clear lint debt, then re-enable lint in CI.
+7. Optional: community author identity decision (`docs/SECURITY-FINDINGS.md`).
 
 ---
 
@@ -453,4 +471,4 @@ Pulled from the pending external cutover plus open work in `CURSOR_HANDOFF.md` a
 4. Remind the AI of the relevant invariant from Section 6 if the change is sensitive (auth, RLS, footer, em dashes, metric naming, branding).
 5. Verify with the ladder in Section 10 before declaring done.
 
-For deeper detail, the AI should read `docs/ARCHITECTURE.md`, `docs/FEATURES.md`, `docs/LOVABLE-MIGRATION.md`, and `CURSOR_HANDOFF.md` directly from the repo. This document is the index, not the encyclopedia.
+For deeper detail, the AI should read `docs/ARCHITECTURE.md`, `docs/FEATURES.md`, `docs/LAUNCH-CHECKLIST.md`, `docs/LOVABLE-MIGRATION.md`, and `CURSOR_HANDOFF.md` directly from the repo. This document is the index, not the encyclopedia.

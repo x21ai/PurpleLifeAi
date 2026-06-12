@@ -32,6 +32,12 @@ Keep new server code in this shape. Do not put `process.env.<SECRET>` reads in `
 
 - Migrations live in `supabase/migrations/`. Any dynamic SQL uses parameterized queries or tagged templates, never string concatenation.
 - New tables ship with RLS enabled and policies in the same migration file.
+- Sensitive token columns (care invite tokens, etc.) must not be client-readable. Use SECURITY DEFINER RPCs with `SET search_path = public`, `auth.uid()` checks, and REVOKE on the column. Pattern: `accept_care_invite()` in `20260613010000_security_hardening.sql`.
+
+## Wearable sync timestamps
+
+- Read and display `last_sync_at` for sync freshness. Do not use `updated_at` as a fallback (token refresh updates it without importing data).
+- Server writes must set `last_sync_at` only when data was imported; empty webhooks/pings must not advance it.
 
 ## Email
 

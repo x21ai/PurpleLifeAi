@@ -31,16 +31,16 @@ PurpleLife is an AI health journal for any health management (epilepsy was the f
 
 File-based under `src/routes/`, generated into `src/routeTree.gen.ts` (never hand-edit).
 
-- **Public marketing**: top-level files (`index.tsx`, `about.tsx`, `features.tsx`, `pricing.tsx`, `charter.tsx`, `contact.tsx`, `privacy.tsx`, `terms.tsx`, `how-purple-thinks.tsx`, `community.*`). These render `MarketingHeader` and `SiteFooter`. Footer rules: see `mem/design/footer-visibility.md`.
+- **Public marketing**: top-level files (`index.tsx`, `about.tsx`, `features.tsx`, `pricing.tsx`, `charter.tsx`, `contact.tsx`, `privacy.tsx`, `terms.tsx`, `how-purple-thinks.tsx`, `trust.tsx`, `community.*`). These render `MarketingHeader` and `SiteFooter`. Footer rules: see `mem/design/footer-visibility.md`. SEO metadata via `src/lib/seo.ts`; `/sitemap.xml` and `/robots.txt` served directly from `src/server.ts`.
 - **Auth**: `sign-in.tsx`, `sign-up.tsx`, `reset-password.tsx`, `unsubscribe.tsx`.
-- **Authenticated app**: everything under `src/routes/_app/`. The pathless `_app.tsx` layout guards the session in `beforeLoad` (redirects to `/sign-in`), redirects un-onboarded users to `/welcome`, and wraps pages in `AppShell` (no marketing footer).
+- **Authenticated app**: everything under `src/routes/_app/`. The pathless `_app.tsx` layout guards the session in `beforeLoad` (redirects to `/sign-in`), redirects un-onboarded users to `/welcome`, and wraps pages in `AppShell` (no marketing footer). Launch redirects: `/my-health` → `/biometrics`, `/vitals` → `/insights`.
 - **Token-based semi-public**: `care.accept.tsx`, `friend.join.tsx`, `friend.accept.tsx`, `share.report.$token.tsx` (noindex), `email.unsubscribe.tsx`.
 - **OAuth callbacks**: `oauth.oura.callback.tsx`, `oauth.whoop.callback.tsx`.
 - **API routes** (`src/routes/api/`): `server.handlers` exports.
   - `/api/chat`: streaming AI chat (Vercel AI SDK `streamText`).
   - `/api/public/stripe-webhook`: Stripe signature-verified webhooks.
   - `/api/public/hooks/*`: Apple Health ingest, risk forecaster callbacks.
-  - `/api/public/cron/*`: 8 endpoints (dose reminders, Oura/Whoop sync, care digests, weekly recap, email queue pump, etc.), each guarded by `CRON_SECRET`.
+  - `/api/public/cron/*`: dose reminders (every minute), hourly wearable sync + dose seed + journal cleanup, daily care digest / medical reports / account purge, weekly recap. Each guarded by `CRON_SECRET`. Cloudflare Cron Triggers in `wrangler.deploy.jsonc` fan out via `SELF` binding in `src/server.ts`. Email queue pump stays on Supabase pg_cron (5s).
 - **Email routes** (`src/routes/api/email/*`): Supabase send-email hook (`auth/webhook`), transactional send, queue processor (Resend delivery), suppression webhook (Resend events), template previews.
 
 ## Server code pattern
@@ -104,13 +104,15 @@ Manual deploy procedure (when the Supabase CLI 403s): `docs/manual-deploy-bundle
 
 ## i18n
 
-i18next with `en` and `es` locales (`src/i18n/locales/`). SSR always renders `en` to avoid hydration mismatch; `hydrateLocale()` switches post-hydration from localStorage, then navigator, and syncs with `profiles.locale`.
+i18next with `en` and `es` locales (`src/i18n/locales/`). SSR always renders `en` to avoid hydration mismatch; `hydrateLocale()` switches post-hydration from localStorage, then navigator, and syncs with `profiles.locale`. Spanish loads lazily via dynamic import (kept out of the entry bundle). `bun run check:i18n-es` verifies en/es parity and static key usage (CI gate).
 
 ## Quality gates and tests
 
-- `bun run lint`, `bun run check:em-dash` (also a prebuild gate), `bun run check:live-data`, `bun run check:unique-images`.
-- Playwright e2e in `tests/e2e/` across mobile-375, tablet-768, tablet-1023, desktop-1024, desktop-1440. `bun run test:e2e`; it boots `bun run dev` on port 8080 unless `E2E_BASE_URL` is set.
-- CI: `.github/workflows/ci.yml` (gates, type-check, build, smoke e2e on PRs). CD: `.github/workflows/deploy.yml` (`wrangler deploy -c wrangler.deploy.jsonc` on main).
+- `bun run check:em-dash` (also a prebuild gate), `bun run check:live-data`, `bun run check:unique-images`, `bun run check:i18n-es`, `bun run check:entry-budget` (post-build client entry gzip budget).
+- `bun run test:unit` (`tests/unit/`): timezone, dose snooze, adherence, travel, Oura sleep mapping.
+- `bun run lint`: repo-wide prettier debt remains; lint only changed files locally. Full lint intentionally not in CI yet.
+- Playwright e2e in `tests/e2e/` across mobile-375, tablet-768, tablet-1023, desktop-1024, desktop-1440. `bun run test:e2e`; it boots `bun run dev` on port 8080 unless `E2E_BASE_URL` is set. Optional RLS isolation spec when test-user env vars are set.
+- CI: `.github/workflows/ci.yml` (gates, i18n-es, unit tests, `tsc --noEmit`, build, entry budget, smoke e2e on PRs). CD: `.github/workflows/deploy.yml` (`wrangler deploy -c wrangler.deploy.jsonc` on main).
 
 ## Durable decisions
 

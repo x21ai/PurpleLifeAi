@@ -12,8 +12,10 @@ Purple is an AI-powered health journal (epilepsy and pattern-driven conditions) 
 - Package manager and runtime is **bun**. Never assume `npm test`. The real commands live in `package.json`:
   - `bun run dev` (port 8080), `bun run build`, `bun run lint`, `bun run format`
   - `bun run test:e2e` (Playwright, `tests/e2e/`), `bun run test:e2e:install` first on fresh machines
-  - Quality gates: `bun run check:em-dash`, `bun run check:live-data`, `bun run check:unique-images`
+  - Quality gates: `bun run check:em-dash`, `bun run check:live-data`, `bun run check:unique-images`, `bun run check:i18n-es`, `bun run check:entry-budget` (after build)
+  - Unit tests: `bun run test:unit` (`tests/unit/`)
 - `bun run build` runs `scripts/check-no-em-dash.mjs` as a prebuild gate.
+- CI (`.github/workflows/ci.yml`) runs gates + `check:i18n-es` + `test:unit` + `tsc --noEmit` + build + entry budget. Full `bun run lint` stays out of CI until repo-wide format; lint only changed files locally.
 
 ## Hard constraints (CI-enforced)
 
@@ -26,7 +28,8 @@ Purple is an AI-powered health journal (epilepsy and pattern-driven conditions) 
 - Imports at the top of the module only. No inline imports in function bodies, except the established pattern where `*.functions.ts` dynamically imports its sibling `*.server.ts` to keep secrets out of the client bundle.
 - Path alias `@/` maps to `src/`.
 - shadcn/ui components live in `src/components/ui/` and `src/components/ui-oura/`. Do not hand-roll primitives that already exist there.
-- i18n: user-facing strings in app routes go through `react-i18next` (`src/i18n/locales/en.json`, `es.json`). SSR always renders `en`; `hydrateLocale()` runs post-hydration in `__root.tsx`.
+- i18n: user-facing strings in app routes go through `react-i18next` (`src/i18n/locales/en.json`, `es.json`). SSR always renders `en`; `hydrateLocale()` runs post-hydration in `__root.tsx`. Run `bun run check:i18n-es` before merge (also in CI). Spanish bundle loads lazily, not in the entry chunk.
+- No native dialogs: use shadcn `AlertDialog` / `Dialog`, never `window.confirm`, `window.alert`, or `window.prompt`.
 - Currency display goes through a shared formatter, never hardcode currency symbols.
 
 ## Data safety
