@@ -1,98 +1,85 @@
-# Migrating Purple to your own Supabase — Cursor playbook
+# Cursor migration playbook v2
 
-You don't need to write code. You'll paste 5 prompts into Cursor, in order, and answer when it asks for the new project's URL/keys. After each prompt I tell you what "done" looks like so you know when to move on.
+Folds in Cursor's six findings. No code changes in this repo — the deliverable is the updated set of prompts and the pre-cutover checklist.
 
-## Before you start (one-time, 2 minutes)
+## What changed vs v1
 
-1. From `/admin/migration-export` in the Lovable preview, click both download buttons. Put the two files (`auth-users.json`, `storage-manifest.json`) into `purple-migration/exports/` inside the repo Cursor has open.
-2. Open the repo in Cursor. You should see the `purple-migration/` folder containing `01-schema.sql`, `02-data/` (75 CSVs), `03-auth/`, `04-storage/`, `05-cutover/`.
-3. Have these three values from your new Supabase project ready to paste when Cursor asks:
-   - Project URL (`https://xxxx.supabase.co`)
-   - `anon` public key
-   - `service_role` secret key
+1. **`purple-migration/` package** — v1 assumed Cursor would find it in the repo. It isn't there. **Prompt 0 (new)** scaffolds the folder, schema dump source, and CSV layout before Prompt 1 runs.
+2. **Pooler choice** — switch every `psql` connection string in Prompts 1–3 from the Transaction pooler (port 6543, no prepared statements, breaks `\copy` and large DDL) to the **Session pooler (port 5432)**. Direct DB connection is fine too if the user has it.
+3. **Passwords** — clarify path priority: **CSV `auth.users` import preserves `encrypted_password` and is primary**; `auth-users.json` is the fallback for users created via OAuth or whose CSV row is malformed. Prompt 2 reflects this ordering explicitly.
+4. **Storage manifest 7-day TTL** — Prompt 4 gets a precondition: if `storage-manifest.json` is older than 6 days, re-run `/admin/migration-export` first. Otherwise signed URLs expire mid-copy.
+5. **Prompt 5 deploy command** — drop the "preview env" assumption. Use `wrangler deploy -c wrangler.deploy.jsonc` to the `*.workers.dev` URL with new-project secrets set via `wrangler secret put`, run smoke tests against that URL, then flip DNS. The repo has no Wrangler `env.preview` block.
+6. **Pre-cutover external wiring (Prompt 6, new)** — edge functions, pg_cron email pump, Stripe webhook, Resend webhook, Supabase send-email hook, Google/Apple OAuth, Oura/Whoop redirect URIs. None of these are in the 5-prompt sequence but all must be done before DNS flips.
 
----
+## Revised prompt sequence
 
-## Prompt 1 — Restore the schema (tables, functions, policies)
+```text
+0. Scaffold purple-migration/ package        (NEW)
+1. Restore schema                            (Session pooler)
+2. Restore auth users — CSV primary, JSON fallback   (Session pooler)
+3. Restore public table data                 (Session pooler)
+4. Copy storage  (re-export manifest if >6 days old)
+5. Deploy to *.workers.dev + smoke test      (wrangler deploy, not preview env)
+6. Wire external services                    (NEW — edge fns, pg_cron, webhooks, OAuth)
+7. DNS cutover in Cloudflare
+```
 
-What it does: creates all 67 tables, RLS policies, functions, and storage buckets in the new project. No user data yet.
+## Prompt 0: scaffold the migration package
 
-> Paste into Cursor:
->
-> "Using `purple-migration/01-schema.sql`, apply the full schema to my new Supabase project. I'll paste the project URL and service_role key when you ask. Use `psql` with the project's pooler connection string (ask me for the database password). After it runs, query the new project and tell me: (a) total table count in the `public` schema, (b) whether RLS is enabled on every public table, (c) whether the 5 storage buckets exist: journal-media, reports, medical-reports, care-chat-attachments, dna-uploads. Do not proceed if any check fails — show me the failure."
+One-paragraph framing for the user: this prompt creates the local folder structure Cursor will fill in Prompts 1–4. Nothing touches the new Supabase project yet.
 
-Done when: Cursor reports 67 tables, RLS enabled on all, 5 buckets present.
+Asks Cursor to create:
+- `purple-migration/01-schema.sql` (empty, will be filled by `supabase db dump --schema public,auth,storage` against the old project)
+- `purple-migration/02-data/` (empty dir for CSVs)
+- `purple-migration/03-auth/auth-users.json` (user drops the file from `/admin/migration-export` here)
+- `purple-migration/04-storage/storage-manifest.json` (same — user drops file here)
+- `purple-migration/04-storage/migrate-storage.mjs` + `verify-storage.mjs` (Cursor writes these)
+- `purple-migration/import.sh` (Cursor writes this — FK-safe table import order)
+- `purple-migration/.env.example` documenting `OLD_DB_URL`, `NEW_DB_URL`, `NEW_SUPABASE_URL`, `NEW_SERVICE_ROLE_KEY`
 
----
+Done when: folder exists, the two exported JSON files are in place, `.env` (gitignored) has both connection strings.
 
-## Prompt 2 — Restore auth users (preserves UUIDs + passwords)
+## Prompts 1–3 deltas
 
-What it does: loads the 7 `auth.*` CSVs so every existing user keeps their original UUID *and* their password hash. This is why no FK breaks and no reset emails go out.
+- Connection string: `postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres` (Session pooler, port 5432). Not 6543.
+- Prompt 2: load `02_auth_users.csv` first via `\copy auth.users(...) FROM ...`. Then run a Node script that reads `03-auth/auth-users.json` and calls `supabase.auth.admin.createUser({ id, email, ... })` **only for users not present after the CSV load** (OAuth-only users). This preserves password hashes for email/password users and recreates OAuth users with their original UUIDs.
 
-> Paste into Cursor:
->
-> "Restore the auth schema from `purple-migration/02-data/`. Load these CSVs in order into the new Supabase project's `auth` schema using `psql \copy`: `01_auth_users.csv`, `02_auth_identities.csv`, then the other 5 auth tables in FK-safe order from `import.sh`. Use the service_role connection. After loading, run `SELECT count(*) FROM auth.users` and compare to `purple-migration/05-cutover/row-counts-source.txt`. Stop and show me the diff if counts don't match."
+## Prompt 4 delta
 
-Done when: `auth.users` count matches the source snapshot exactly.
+First step in the prompt: `node -e "const m=require('./04-storage/storage-manifest.json'); /* check first signed URL age via JWT exp claim */"`. If any URL expires within 24h, stop and tell the user to re-download the manifest from `/admin/migration-export` before continuing.
 
----
+## Prompt 5 rewrite (deploy + smoke test)
 
-## Prompt 3 — Restore public table data
+Done in three steps:
 
-What it does: loads all 68 public-schema CSVs (journals, meds, reports, profiles, etc.) in FK-safe order and resets sequences.
+1. `cd` to repo, set every secret from `docs/LOVABLE-MIGRATION.md` "Secrets that must exist in Cloudflare" via `wrangler secret put <NAME>` (Cursor pastes the value the user provides). Also update the `VITE_SUPABASE_*` build vars in GitHub Actions secrets so CI builds against the new project.
+2. `bun run build && wrangler deploy -c wrangler.deploy.jsonc`. This deploys to `purplelife.<account>.workers.dev`.
+3. Smoke test against that URL: password sign-in, Google sign-in (after Prompt 6 OAuth config), open a journal entry with media, open a medical report PDF.
 
-> Paste into Cursor:
->
-> "Run `purple-migration/02-data/import.sh` against my new Supabase project to load all public table CSVs in FK-safe order and `setval` all sequences. When it finishes, run `purple-migration/05-cutover/verify-counts.sql` against the new project and diff against `row-counts-source.txt`. Show me any table where counts don't match. Don't continue if there are diffs."
+Done when: workers.dev URL serves the app, both logins work, journal media loads, report PDF renders.
 
-Done when: every table's row count matches the source snapshot.
+## Prompt 6: wire external services (NEW)
 
----
+This is the gap Cursor flagged. Six sub-tasks, each its own short prompt, all done against the new Supabase project and Cloudflare Worker:
 
-## Prompt 4 — Copy storage files
+1. **Edge functions** — `supabase functions deploy ai-orchestrator risk-forecaster journal-extract journal-processor med-dose-action oura-sync` against the new project, with `ANTHROPIC_API_KEY` + provider keys set as function secrets.
+2. **pg_cron email pump** — unschedule the old `process-email-queue` job, recreate it pointing at `https://<workers.dev>/api/email/queue/process` with the service-role bearer from vault. SQL is in `docs/LOVABLE-MIGRATION.md` Phase 7.
+3. **Stripe webhook** — update endpoint URL in Stripe dashboard to `https://<workers.dev>/api/public/stripe-webhook`, copy new `STRIPE_WEBHOOK_SECRET` into Worker.
+4. **Resend webhook** — point bounced/complained webhook at `https://<workers.dev>/api/email/suppression`, store `RESEND_WEBHOOK_SECRET`.
+5. **Supabase send-email hook** — in new project's Auth settings, set send-email hook URL to `https://<workers.dev>/api/email/auth/webhook` and copy hook secret into `SEND_EMAIL_HOOK_SECRET`.
+6. **OAuth providers** — Google + Apple client IDs configured in new project's Auth dashboard with callback `https://<new-project-ref>.supabase.co/auth/v1/callback`. Oura + Whoop developer consoles updated with new redirect URI `https://<workers.dev>/oauth/{oura,whoop}/callback`.
 
-What it does: streams every file from Lovable's 5 buckets (using the signed-URL manifest we exported) into the matching buckets in the new project.
+Done when: a fresh password reset email arrives via Resend, a Stripe test event hits the webhook and returns 200, Google sign-in completes end-to-end on the workers.dev URL.
 
-> Paste into Cursor:
->
-> "Run `purple-migration/04-storage/migrate-storage.mjs` using `exports/storage-manifest.json` as input and my new project's service_role key as the destination. After it finishes, run `verify-storage.mjs` to diff object counts and total bytes per bucket. Show me any mismatch."
+## Prompt 7: DNS cutover
 
-Done when: object counts + bytes match per bucket.
+Unchanged from v1. Add the custom domain/route `www.purplelife.org` to the Worker in Cloudflare, verify, then update the apex redirect. Rollback = remove the route.
 
----
+## What I need from you before writing the actual prompts
 
-## Prompt 5 — Point the app at the new backend + smoke test
+Two quick confirmations so the prompts are exact:
 
-What it does: swaps the env vars and runs a manual login test before any DNS change.
+1. Do you have the **new project's database password** (needed to build the Session pooler connection string), or do you only have the URL + anon/service-role keys? If only the keys, I'll add a Prompt 0.5 to retrieve it from the new project's dashboard.
+2. Are `OURA_CLIENT_ID/SECRET` and `WHOOP_CLIENT_ID/SECRET` the same credentials in both old and new environments, or are you registering new OAuth apps on those providers? (Affects whether Prompt 6 sub-task 6 is "update redirect URI" or "create new app + update Worker secrets".)
 
-> Paste into Cursor:
->
-> "Update `.env.local` to use my new Supabase project's URL and anon key (I'll paste them). Also update the Cloudflare Workers env vars for the preview environment via `wrangler` — same two values plus `SUPABASE_SERVICE_ROLE_KEY` as a secret. Deploy a preview build to a Cloudflare preview URL (not production). Then walk me through: (1) sign in as a password user, (2) sign in with Google (I'll need to set up Google OAuth credentials in the new Supabase project first — give me the redirect URL to register), (3) open the journal, confirm entries load, (4) open a report PDF from storage. Report back on each step. Do not flip production DNS."
-
-Done when: both logins work on the preview URL and journal + storage both load.
-
----
-
-## Final step — DNS cutover (you do this manually, ~5 minutes)
-
-Once Prompt 5 is fully green:
-
-1. In Cloudflare Workers, promote the preview env vars to production.
-2. Redeploy production.
-3. Visit `purplelife.org`, sign in, confirm one entry loads.
-4. Watch for 30 minutes. If anything breaks, roll back env vars to the Lovable values.
-
----
-
-## What I'll do after you confirm this plan
-
-Nothing on the code side — the migration package is already complete. I'll just be on standby to:
-- Fix any prompt if Cursor gets stuck and you paste the error back to me
-- Help debug if a verification step fails
-- Delete the `/admin/migration-export` tooling from the codebase once you confirm cutover is stable (it shouldn't live in production long-term)
-
-## Notes
-
-- **Passwords survive.** Because we're loading `01_auth_users.csv` directly (Prompt 2), `encrypted_password` is preserved. No reset emails. The earlier "send recovery links" plan is the fallback only if Prompt 2 fails.
-- **Google users:** They'll re-link automatically on first sign-in via your new Google OAuth client, matched on email. Cursor will give you the redirect URL to register in Google Cloud Console during Prompt 5.
-- **No data loss window:** Until you do the DNS cutover, all live writes still go to Lovable Cloud. The moment you flip, new writes go to your Supabase. There's no "two backends drifting" if you do Prompts 2–3 and the cutover close together.
+Once you answer those two, I'll write Prompts 0 through 7 as copy-paste blocks for Cursor.
