@@ -1,90 +1,117 @@
-# Execute migration to `xxnzmfzsjplrutrgbzxy` — Path A, flip config now
 
-## What I do when you switch to build mode
+# Migrate Purple off Lovable Cloud → your own Supabase
 
-### Step 1 — Store the two new-project keys as Lovable secrets
-I'll trigger the secure secret-entry form for:
-- `NEW_SUPABASE_PUBLISHABLE_KEY` (your new project's anon key)
-- `NEW_SUPABASE_SERVICE_ROLE_KEY` (your new project's service role key)
-
-These go into Lovable's secret store. We use temporary names so they don't collide with the live `SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_SERVICE_ROLE_KEY` that the running app still needs. We'll rename them at cutover (Step 7).
-
-### Step 2 — Flip `supabase/config.toml` to the new project ref
-Change `project_id = "lzuodgpqseijhhyzgfky"` → `project_id = "xxnzmfzsjplrutrgbzxy"`. From this point, every new migration the Lovable agent writes lands in your new project.
-
-### Step 3 — Update `.env` defaults to the new project
-Replace `lzuodgpqseijhhyzgfky` references with `xxnzmfzsjplrutrgbzxy` and the new anon key. The running preview keeps working because Lovable's secret store still serves the live `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` at runtime; `.env` is only used as a fallback / for local dev. (We do the final runtime flip in Step 7.)
-
-### Step 4 — Schema + GRANTs + RLS + triggers on the new DB
-You run locally (one time):
-```
-supabase login
-supabase link --project-ref xxnzmfzsjplrutrgbzxy
-supabase db push
-```
-This replays all 104 migration files — including today's security-hardening one — against `xxnzmfzsjplrutrgbzxy`. Enable `pgvector`, `pgmq`, `pg_cron`, `pg_net`, `vault` in the new project's Extensions page first (most are on by default; verify).
-
-### Step 5 — Storage buckets
-You create the five buckets in your new project's Storage page, all **private**:
-- `journal-media`
-- `reports`
-- `medical-reports`
-- `care-chat-attachments`
-- `dna-uploads`
-
-The bucket-level RLS policies are already in the migrations from Step 4.
-
-### Step 6 — Data clone via `pg_dump` (Path A)
-You ask Lovable support for a read-only connection string for `lzuodgpqseijhhyzgfky`. Once you have it:
-```bash
-export SRC="postgres://...@db.lzuodgpqseijhhyzgfky.supabase.co:5432/postgres?sslmode=require"
-export DST="postgres://postgres:<new-db-password>@db.xxnzmfzsjplrutrgbzxy.supabase.co:5432/postgres?sslmode=require"
-
-# Public data (skip storage rows; we'll handle storage objects separately)
-pg_dump "$SRC" --data-only --schema=public --no-owner --no-privileges \
-  --disable-triggers \
-  | psql "$DST"
-```
-
-Then `auth.users` via the Auth Admin API (I'll provide a small Node script during build mode that lists users from the old project and recreates them in the new one, preserving `id`, `email`, provider links, and email_confirmed_at). Preserving the UUID is non-negotiable — every `public.*.user_id` foreign-keys to it.
-
-Storage objects: I'll provide an `rclone` config snippet that copies each of the 5 buckets between the two projects' S3-compatible endpoints.
-
-### Step 7 — Cutover (the live flip)
-I update the live Lovable runtime secrets so the running preview and the published Cloudflare Worker both start hitting the new project:
-- `SUPABASE_URL` → `https://xxnzmfzsjplrutrgbzxy.supabase.co`
-- `SUPABASE_PUBLISHABLE_KEY` → value of `NEW_SUPABASE_PUBLISHABLE_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` → value of `NEW_SUPABASE_SERVICE_ROLE_KEY`
-- (mirror as `VITE_*` for client build)
-- Then delete the temporary `NEW_*` secrets.
-
-For the Cloudflare Worker (production), you run the equivalent `wrangler secret put` commands — I'll print the exact list when we get there.
-
-### Step 8 — Edge functions + their secrets
-You set in the new project's Edge Functions → Secrets page:
-`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GROK_API_KEY`, `OURA_CLIENT_ID/SECRET`, `WHOOP_CLIENT_ID/SECRET`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `CRON_SECRET`. Then:
-```
-supabase functions deploy ai-orchestrator journal-extract journal-processor med-dose-action oura-sync risk-forecaster
-```
-
-### Step 9 — Auth providers + pg_cron + send-email hook
-- Enable Email / Google / Apple in the new project's Auth → Providers (reuse existing client IDs; add new callback `https://xxnzmfzsjplrutrgbzxy.supabase.co/auth/v1/callback` in Google Console and Apple Services ID).
-- Re-create the two `pg_cron` jobs via the new project's SQL editor (`seed-daily-doses`, `process-email-queue`).
-- In Auth → Hooks, point the send-email hook at `https://www.purplelife.org/api/email/auth/webhook`.
-
-### Step 10 — Smoke test, then retire Lovable Cloud
-Run the 7-step smoke checklist from the previous plan against the preview. When clean, you disable Lovable Cloud for this project from Connectors.
+Goal: move database (schema + data), auth users (with password hashes so nobody has to reset), storage files, secrets, and the codebase to infrastructure you fully own — with zero data loss for live users.
 
 ---
 
-## Rollback at every step
-Until Step 7, the live app still points at `lzuodgpqseijhhyzgfky` and is unaffected. After Step 7, rollback is `wrangler secret put` + Lovable secret revert back to the old values — the schema in the old project is untouched.
+## What I can do from inside Lovable
+
+I have `psql` SELECT access to the Cloud database. That's enough to dump every table — **including `auth.users`** with `encrypted_password` (bcrypt hashes), `auth.identities`, `auth.mfa_factors`, and `auth.sessions` — as CSV/SQL into `/mnt/documents/` for you to download.
+
+What I **cannot** pull out automatically:
+- **Storage object bytes** (the actual files in `journal-media`, `reports`, `medical-reports`, `care-chat-attachments`, `dna-uploads`). The service-role key for the Cloud project isn't exposed. We'll handle this with a short script you run locally using your Lovable account's session token — details in step 4.
+- Edge Function source for any non-`supabase/functions/` runtime — but Purple uses `createServerFn`, so all server logic already lives in the repo and ships with the code.
+- Cron schedules configured in Cloud UI (we have the SQL for pg_cron jobs in migrations, so this is fine).
 
 ---
 
-## What I need from you to start
-1. Switch to **build mode** so I can prompt for the two keys via the secrets form.
-2. Have your new project's DB password handy for Step 6.
-3. (Async) Request the read-only source DB URL from Lovable support so Step 6 isn't blocked when we reach it.
+## Migration steps
 
-Steps 1–3 land right away in build mode. Steps 4–10 each have a clear "your turn / my turn" split and we'll go one at a time.
+### 1. Stand up your target Supabase project
+You said it's ready. I'll need from you (paste when we start step 2):
+- New project ref
+- New project URL
+- New `anon` / publishable key
+- New `service_role` key
+- DB connection string (host, port, password) for `psql`/`pg_dump`-style imports
+
+These go to **you** locally — I won't store them. The DB password and service_role key should never be pasted into Lovable chat; you'll use them on your own machine.
+
+### 2. Schema migration (105 files → one consolidated SQL)
+I generate `/mnt/documents/01-schema.sql` from `supabase/migrations/`:
+- All `CREATE TYPE`, `CREATE TABLE`, `CREATE FUNCTION`, `CREATE TRIGGER`, RLS policies, GRANTs, indexes
+- Storage bucket definitions (5 private buckets) + their RLS policies on `storage.objects`
+- pg_cron job definitions (e.g. dose-reminders, daily medication seeding, stuck-entry cleanup)
+
+You run: `psql "$NEW_DB_URL" -f 01-schema.sql`
+
+### 3. Data migration (public schema + auth schema)
+I generate `/mnt/documents/02-data/` containing one `.csv` per table, ordered by FK dependencies, plus an `import.sh`:
+- **public.\*** — all 65 app tables (profiles, journal_entries, medications, medication_doses, seizure_events, care_*, trips, subscriptions, user_roles, etc.)
+- **auth.users** — id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, last_sign_in_at, phone, etc.
+- **auth.identities** — for Google OAuth users (provider, provider_id, identity_data)
+- **auth.mfa_factors** — if any users have MFA
+
+You run: `bash import.sh` — it `\copy`s into the new project in correct order, then runs `SELECT setval(...)` on sequences.
+
+**Result:** every user can sign in with their existing email + password, Google OAuth keeps working, all app data is there.
+
+Caveat: `auth.sessions` are not migrated → all users get logged out once and sign in again (this is normal and expected).
+
+### 4. Storage files
+I write `/mnt/documents/migrate-storage.mjs`. You run it locally with both projects' service-role keys:
+- Lists every object in each of the 5 buckets from the source via REST API using a session token you generate from the Lovable Cloud UI (Cloud → Storage gives you temporary signed access)
+- Streams each object into the matching bucket on your new project, preserving path and metadata
+- Resumable — keeps a `progress.json` so you can re-run if interrupted
+- Estimated runtime depends on total size; the script reports counts before starting
+
+If the Lovable UI doesn't expose a usable token for bulk export, fallback: I generate per-object signed URLs from inside Lovable (I have insert access, can create them via a one-off SQL approach), write them to a manifest, and the script downloads + re-uploads from that.
+
+### 5. Code migration off Lovable
+- Export the repo from Lovable to GitHub (you click GitHub → Connect → Create repository in the Lovable UI)
+- Clone locally
+- I prepare a single PR-ready commit (as a patch in `/mnt/documents/03-code-changes.patch`) that:
+  - Replaces `src/integrations/supabase/client.ts`, `client.server.ts`, `auth-middleware.ts`, `auth-attacher.ts` with hand-written equivalents that read from `import.meta.env.VITE_SUPABASE_*` and `process.env.SUPABASE_*` directly (no Lovable auto-gen)
+  - Removes the Lovable AI Gateway dependency from the Ask-Purple flow and swaps it for direct Google Gemini API calls using your own `GEMINI_API_KEY` (which you already have set)
+  - Updates `.env.example` with the new variable names
+  - Adds a `README-MIGRATION.md` with the deploy checklist
+- Deploy target: you pick (Cloudflare Workers via `wrangler`, Vercel, Netlify, or self-host). I'll include the config for whichever you choose — tell me at start of step 5.
+
+### 6. Secrets re-creation in your new project
+You re-add these in the new Supabase Edge Function Secrets (or your hosting platform's env vars):
+- AI: `LOVABLE_API_KEY` → swap for direct provider keys (`GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GROK_API_KEY` — all already set in Cloud)
+- Wearables: `OURA_CLIENT_ID/SECRET`, `WHOOP_CLIENT_ID/SECRET`
+- Push: `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
+- Cron: `CRON_SECRET`
+- Misc: `MAYA_API_KEY`
+- Skip: `SUPABASE_*` (auto-provided by your new project)
+
+I'll generate a checklist; you fetch the values from Lovable Cloud → Project Settings → Secrets and paste into your new env.
+
+### 7. DNS cutover for purplelife.org
+Last step, after you've smoke-tested the new deploy on a temporary URL:
+- Point `purplelife.org` and `www.purplelife.org` DNS to your new host
+- Update Google OAuth redirect URIs in Google Cloud Console to include the new Supabase auth callback URL
+- Update Whoop and Oura OAuth redirect URIs the same way
+- Update any Apple Health / push notification origin allowlists
+
+---
+
+## What you do vs what I do
+
+| Step | I do (in Lovable) | You do (on your machine) |
+|---|---|---|
+| 1 | — | Share new project credentials with yourself |
+| 2 | Generate `01-schema.sql` | Run `psql -f 01-schema.sql` |
+| 3 | Generate CSVs + `import.sh` | Run `import.sh` |
+| 4 | Generate `migrate-storage.mjs` | Run the script with both keys |
+| 5 | Generate code patch | Apply patch, deploy |
+| 6 | Generate secrets checklist | Re-add secrets in new project |
+| 7 | — | Update DNS + OAuth redirects |
+
+---
+
+## Risks & how we handle them
+
+- **Password hashes** — Supabase uses bcrypt; importing `encrypted_password` directly into the new `auth.users` table works on the same Postgres major version. Both are managed Supabase = same setup. ✅
+- **Google OAuth users** — keep working as long as `auth.identities` is imported and the new project has Google provider configured with the same client ID/secret. You'll need to add the new project's callback URL in Google Cloud Console before users next sign in.
+- **Realtime subscriptions** — paused during the cutover window; resume automatically after DNS flip.
+- **In-flight medication_doses cron** — schedule a 15-min maintenance window; pause cron in old, import, resume in new.
+- **Rollback** — old Cloud project stays untouched until you explicitly disable it. If anything goes wrong, flip DNS back.
+
+---
+
+## When you approve this plan, the first thing I'll do
+
+Build step 2 in full: the consolidated `01-schema.sql` written to `/mnt/documents/01-schema.sql`, and a dry-run report showing row counts per table so we know what step 3 will move. Nothing in your live database gets touched.
