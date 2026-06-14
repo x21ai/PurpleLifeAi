@@ -1,114 +1,98 @@
+# Migrating Purple to your own Supabase — Cursor playbook
 
-# Purple → your own Supabase: migration plan
+You don't need to write code. You'll paste 5 prompts into Cursor, in order, and answer when it asks for the new project's URL/keys. After each prompt I tell you what "done" looks like so you know when to move on.
 
-Scope locked from your last message. No Lovable support ticket. Google re-links on first sign-in via your own OAuth client. DNS does not flip until three verifications pass.
+## Before you start (one-time, 2 minutes)
 
----
-
-## Step A — Auth shells (preserve UUIDs, reset passwords)
-
-Build `/mnt/documents/03-auth/`:
-
-- `auth-users.csv` — one row per existing user from Lovable Cloud's `auth.users`, columns: `id, email, email_confirmed_at, phone, raw_user_meta_data, raw_app_meta_data, created_at`. **No `encrypted_password`** (Cloud doesn't expose it; we're not waiting on support).
-- `import-auth.mjs` — Node script you run locally with `NEW_SUPABASE_URL` + `NEW_SERVICE_ROLE_KEY`. For each row:
-  1. `auth.admin.createUser({ id, email, email_confirm: true, user_metadata, app_metadata })` — Supabase Admin API accepts a provided `id`, so the UUID is preserved and every FK in the public schema stays intact.
-  2. Generate a recovery link via `auth.admin.generateLink({ type: 'recovery', email })` and either (a) let Supabase send it through your configured SMTP/Resend, or (b) write the link to `reset-links.csv` so you can mail-merge yourself.
-- `verify-uuids.sql` — `SELECT count(*) FROM auth.users` on new project must equal source; spot-check 3 UUIDs against `public.profiles.id`.
-
-**Google users**: their `auth.users` row is created the same way (UUID preserved, no password). On first sign-in via your new Google OAuth client, Supabase sees an existing user with the same email and **links the new identity** to the existing UUID. All their journals/meds stay attached. No `auth.identities` transfer needed.
-
-Caveat I'll document in the README: a Google-only user who tries password reset before signing in once will get a usable password too — that's actually fine (defense in depth), but worth noting.
-
-## Step B — Public schema + data (already generated, re-verify)
-
-`01-schema.sql` and `02-data/` exist. I'll:
-
-- Re-run row-count snapshot now and save `row-counts-source.txt`.
-- Add `verify-counts.sql` that runs the same counts on the new DB and diffs.
-- Confirm `01-schema.sql` ends with `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` + `CREATE POLICY` for **every** public table (your gate #2). Add `verify-rls.sql`: fails loudly if any public table has `rowsecurity = false` or zero policies.
-
-## Step C — Storage via signed-URL manifest (from inside the app)
-
-Five private buckets: `journal-media`, `reports`, `medical-reports`, `care-chat-attachments`, `dna-uploads`.
-
-- Add a one-shot admin-only server fn `exportStorageManifest` (guarded by `has_role(_, 'super_admin')`) that, for each bucket, lists every object and creates a 7-day signed URL. Output: `/mnt/documents/04-storage/manifest.json` (bucket, path, signedUrl, size, contentType, metadata).
-- `migrate-storage.mjs` — local script: streams each signed URL → uploads to the matching bucket in your new project using your new service-role key. Writes `progress.json`, resumable.
-- After re-upload: `verify-storage.mjs` lists new buckets and diffs object counts + total bytes against the manifest.
-
-Server fn gets deleted from the codebase after the export run — it's a migration tool, not a feature.
-
-## Step D — Hand-written Supabase clients (parallel work, no behavior change yet)
-
-Goal: detach the codebase from Lovable's auto-generated client files so it points at *your* env vars when you deploy off Lovable, without breaking the live Lovable preview today.
-
-- New files (hand-written, edit-safe):
-  - `src/integrations/supabase/client.custom.ts` — browser client reading `import.meta.env.VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY`.
-  - `src/integrations/supabase/client.server.custom.ts` — admin client reading `process.env.SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`.
-  - `src/integrations/supabase/auth-middleware.custom.ts` and `auth-attacher.custom.ts` — equivalents of the auto-generated ones.
-- A single switch module `src/integrations/supabase/index.ts` re-exports from either the Lovable auto-gen or the `.custom.ts` set based on `import.meta.env.VITE_USE_CUSTOM_SUPABASE === 'true'`. Default off → zero behavior change in Lovable today.
-- Refactor app imports from `@/integrations/supabase/client` etc. to `@/integrations/supabase` (the switch). Auto-gen files stay untouched (per your constraints).
-- `03-code-changes.patch` for the off-Lovable repo: flips the switch on, removes the auto-gen files, removes the switch indirection.
-
-This keeps the Lovable Cloud integration UI working until you cut over.
-
-## Step E — Secrets + Google OAuth setup checklist
-
-`/mnt/documents/05-cutover/checklist.md`:
-
-- New project secrets to set (you fill values): `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `GROK_API_KEY`, `OURA_CLIENT_ID/SECRET`, `WHOOP_CLIENT_ID/SECRET`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `CRON_SECRET`, `MAYA_API_KEY`, `RESEND_API_KEY` (if using), `SEND_EMAIL_HOOK_SECRET`, `RESEND_WEBHOOK_SECRET`, `EMAIL_PREVIEW_SECRET`.
-- Google Cloud Console: create new OAuth 2.0 Client ID (Web), authorized redirect URI = `https://<new-project-ref>.supabase.co/auth/v1/callback`. Paste client id/secret into new Supabase → Auth → Providers → Google.
-- Apple/Oura/Whoop redirect URI updates listed the same way.
-
-## Step F — Three-gate verification before DNS
-
-I'll write `verify-cutover.sh` (you run locally against new DB) that exits non-zero unless **all three** pass:
-
-1. **Row counts match**: every public table count on new == source snapshot from Step B.
-2. **RLS coverage**: zero public tables with `rowsecurity = false`, zero public tables with zero policies.
-3. **Sign-in smoke**: two manual checks documented — (a) one password user signs in after using the reset link, (b) one Google user signs in via your new OAuth client and lands with their data attached (verify by `select count(*) from public.journal_entries where user_id = '<their uuid>'`).
-
-Only after all three: DNS, Google OAuth redirect propagation, Whoop/Oura redirect updates per the existing plan.
+1. From `/admin/migration-export` in the Lovable preview, click both download buttons. Put the two files (`auth-users.json`, `storage-manifest.json`) into `purple-migration/exports/` inside the repo Cursor has open.
+2. Open the repo in Cursor. You should see the `purple-migration/` folder containing `01-schema.sql`, `02-data/` (75 CSVs), `03-auth/`, `04-storage/`, `05-cutover/`.
+3. Have these three values from your new Supabase project ready to paste when Cursor asks:
+   - Project URL (`https://xxxx.supabase.co`)
+   - `anon` public key
+   - `service_role` secret key
 
 ---
 
-## Deliverables I'll produce in build mode
+## Prompt 1 — Restore the schema (tables, functions, policies)
 
-```text
-/mnt/documents/
-  01-schema.sql                          (exists; re-verify)
-  02-data/*.csv + import.sh              (exists; re-verify)
-  03-auth/
-    auth-users.csv
-    import-auth.mjs
-    verify-uuids.sql
-  04-storage/
-    manifest.json                        (after running export fn once)
-    migrate-storage.mjs
-    verify-storage.mjs
-  05-cutover/
-    checklist.md
-    verify-counts.sql
-    verify-rls.sql
-    verify-cutover.sh
-  03-code-changes.patch                  (for off-Lovable repo)
-  README-MIGRATION.md
-```
+What it does: creates all 67 tables, RLS policies, functions, and storage buckets in the new project. No user data yet.
 
-In repo:
-- New `src/integrations/supabase/*.custom.ts` files + `index.ts` switch (default off).
-- One-shot `exportStorageManifest` server fn under `src/lib/migration-export.functions.ts`, super-admin gated, deleted after use.
-- App-wide import rewrite to `@/integrations/supabase`.
+> Paste into Cursor:
+>
+> "Using `purple-migration/01-schema.sql`, apply the full schema to my new Supabase project. I'll paste the project URL and service_role key when you ask. Use `psql` with the project's pooler connection string (ask me for the database password). After it runs, query the new project and tell me: (a) total table count in the `public` schema, (b) whether RLS is enabled on every public table, (c) whether the 5 storage buckets exist: journal-media, reports, medical-reports, care-chat-attachments, dna-uploads. Do not proceed if any check fails — show me the failure."
 
-## What I will NOT touch
-
-- `src/integrations/supabase/{client,client.server,auth-middleware,auth-attacher,types}.ts` (auto-gen, per project rules).
-- `.env`, `supabase/config.toml`.
-- Lovable Cloud's live data — every export is read-only `SELECT` + storage signed URLs.
-
-## Rollback
-
-Old Lovable Cloud project untouched throughout. If verification fails, you don't flip DNS; nothing in production changes. The switch in `src/integrations/supabase/index.ts` stays at its default, so the Lovable preview keeps working.
+Done when: Cursor reports 67 tables, RLS enabled on all, 5 buckets present.
 
 ---
 
-Approve and I'll start with Step A (`03-auth/`) and the verification SQL for Step B in the first build pass, then move to the storage server fn and the client switch.
+## Prompt 2 — Restore auth users (preserves UUIDs + passwords)
+
+What it does: loads the 7 `auth.*` CSVs so every existing user keeps their original UUID *and* their password hash. This is why no FK breaks and no reset emails go out.
+
+> Paste into Cursor:
+>
+> "Restore the auth schema from `purple-migration/02-data/`. Load these CSVs in order into the new Supabase project's `auth` schema using `psql \copy`: `01_auth_users.csv`, `02_auth_identities.csv`, then the other 5 auth tables in FK-safe order from `import.sh`. Use the service_role connection. After loading, run `SELECT count(*) FROM auth.users` and compare to `purple-migration/05-cutover/row-counts-source.txt`. Stop and show me the diff if counts don't match."
+
+Done when: `auth.users` count matches the source snapshot exactly.
+
+---
+
+## Prompt 3 — Restore public table data
+
+What it does: loads all 68 public-schema CSVs (journals, meds, reports, profiles, etc.) in FK-safe order and resets sequences.
+
+> Paste into Cursor:
+>
+> "Run `purple-migration/02-data/import.sh` against my new Supabase project to load all public table CSVs in FK-safe order and `setval` all sequences. When it finishes, run `purple-migration/05-cutover/verify-counts.sql` against the new project and diff against `row-counts-source.txt`. Show me any table where counts don't match. Don't continue if there are diffs."
+
+Done when: every table's row count matches the source snapshot.
+
+---
+
+## Prompt 4 — Copy storage files
+
+What it does: streams every file from Lovable's 5 buckets (using the signed-URL manifest we exported) into the matching buckets in the new project.
+
+> Paste into Cursor:
+>
+> "Run `purple-migration/04-storage/migrate-storage.mjs` using `exports/storage-manifest.json` as input and my new project's service_role key as the destination. After it finishes, run `verify-storage.mjs` to diff object counts and total bytes per bucket. Show me any mismatch."
+
+Done when: object counts + bytes match per bucket.
+
+---
+
+## Prompt 5 — Point the app at the new backend + smoke test
+
+What it does: swaps the env vars and runs a manual login test before any DNS change.
+
+> Paste into Cursor:
+>
+> "Update `.env.local` to use my new Supabase project's URL and anon key (I'll paste them). Also update the Cloudflare Workers env vars for the preview environment via `wrangler` — same two values plus `SUPABASE_SERVICE_ROLE_KEY` as a secret. Deploy a preview build to a Cloudflare preview URL (not production). Then walk me through: (1) sign in as a password user, (2) sign in with Google (I'll need to set up Google OAuth credentials in the new Supabase project first — give me the redirect URL to register), (3) open the journal, confirm entries load, (4) open a report PDF from storage. Report back on each step. Do not flip production DNS."
+
+Done when: both logins work on the preview URL and journal + storage both load.
+
+---
+
+## Final step — DNS cutover (you do this manually, ~5 minutes)
+
+Once Prompt 5 is fully green:
+
+1. In Cloudflare Workers, promote the preview env vars to production.
+2. Redeploy production.
+3. Visit `purplelife.org`, sign in, confirm one entry loads.
+4. Watch for 30 minutes. If anything breaks, roll back env vars to the Lovable values.
+
+---
+
+## What I'll do after you confirm this plan
+
+Nothing on the code side — the migration package is already complete. I'll just be on standby to:
+- Fix any prompt if Cursor gets stuck and you paste the error back to me
+- Help debug if a verification step fails
+- Delete the `/admin/migration-export` tooling from the codebase once you confirm cutover is stable (it shouldn't live in production long-term)
+
+## Notes
+
+- **Passwords survive.** Because we're loading `01_auth_users.csv` directly (Prompt 2), `encrypted_password` is preserved. No reset emails. The earlier "send recovery links" plan is the fallback only if Prompt 2 fails.
+- **Google users:** They'll re-link automatically on first sign-in via your new Google OAuth client, matched on email. Cursor will give you the redirect URL to register in Google Cloud Console during Prompt 5.
+- **No data loss window:** Until you do the DNS cutover, all live writes still go to Lovable Cloud. The moment you flip, new writes go to your Supabase. There's no "two backends drifting" if you do Prompts 2–3 and the cutover close together.
