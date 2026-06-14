@@ -1,56 +1,128 @@
-# Plan: PROJECT_KNOWLEDGE.md — full handoff document
+# Migrate to your own Supabase project (`xxnzmfzsjplrutrgbzxy`)
 
-Create one self-contained markdown file at the project root (`PROJECT_KNOWLEDGE.md`) that another AI (Lovable, Cursor, ChatGPT, Claude) can be handed in a single paste to fully understand Purple and continue building. It consolidates what is currently spread across `CURSOR_HANDOFF.md`, `docs/ARCHITECTURE.md`, `docs/FEATURES.md`, `docs/LOVABLE-MIGRATION.md`, `mem/`, and the project-knowledge brand rules — without replacing any of them.
+Since Lovable doesn't expose a "Transfer to my org" button for this workspace, we go the **clone + cutover** route. End state: app talks only to your Supabase project, Lovable Cloud is no longer in the data path. Lovable still works as a dev environment because all it needs is `VITE_SUPABASE_*` env values, which we'll override.
 
-## What goes in the document
+Source project (Lovable-managed): `lzuodgpqseijhhyzgfky`
+Target project (yours): `xxnzmfzsjplrutrgbzxy`
 
-1. **What Purple is** — one paragraph: private, AI-powered health journal for chronic/complex conditions (epilepsy is depth, app is condition-aware not condition-locked), caregivers included, free + open source + ad-free, user owns their data. Brand rules (always capitalized, calm Apple-like tone, purplelife.org).
+There are 104 migrations, 6 edge functions, 5 storage buckets, ~65 tables, pg_cron jobs (email queue + dose seeding), and ~20 secrets to move.
 
-2. **Current status (as of 2026-06-11)** — production live on Lovable infra, Cloudflare Worker `purplelife` ready, dual-edit from Cursor + Lovable, recent fix: `/sign-in` hero image. Pending: migration `20260611010000_remove_lovable_ai_provider.sql`, redeploy `ai-orchestrator` + `risk-forecaster`, external cutover steps in Phase 7.
+---
 
-3. **Tech stack** — TanStack Start 1.168, React 19, Vite 7 (via `@lovable.dev/vite-tanstack-config` wrapper), Tailwind 4, shadcn/ui + ui-oura, Lovable Cloud (Supabase ~100 migrations, 6 edge functions, pgvector, PGMQ), Stripe, Vercel AI SDK with Anthropic default, Resend email, Cloudflare Workers, i18next (en/es), Playwright e2e, bun.
+## Phase 0 — Prerequisites (you, ~10 min)
 
-4. **Architecture** — request flow (`wrangler.jsonc` → `src/server.ts` → `src/start.ts` middleware → `src/router.tsx` → `__root.tsx`), file-based routing layout (`_app/` authenticated, marketing top-level, `api/public/*` cron + webhooks, `api/email/*`), two-file server pattern (`*.functions.ts` + `*.server.ts`), auth model, role gating via `user_roles` + `has_role`.
+From your Supabase dashboard for `xxnzmfzsjplrutrgbzxy`, collect:
 
-5. **Complete feature inventory by area** — Marketing, Auth/Onboarding, Today, Journal, Seizures, Hydration/Intake, Vitals, Medications (incl. reminders + voice/scan), Biometrics (Oura/Whoop/Apple Health), Reports (labs, metrics, trends, sharing), DNA (Pro), Ask Purple chat, Care/caregivers, Conditions, Travel, Community + Friends, Pro/billing, Admin suite, Settings/Account, Email pipeline, PWA, i18n. Each item lists the routes and key file paths so an AI knows where to look.
+1. **Project URL**: `https://xxnzmfzsjplrutrgbzxy.supabase.co`
+2. **Publishable (anon) key** — Settings → API
+3. **Service role key** — Settings → API (keep secret)
+4. **DB password** — Settings → Database (used by CLI)
+5. **JWT secret** — Settings → API → JWT (needed only if you want to preserve existing user sessions; otherwise everyone re-signs in once)
 
-6. **Domain rules** — conditions on `profiles.conditions`, travel itinerary model + `trip_id` regeneration, dose reminder flow, care write-confirmation, RLS-everywhere, 404-not-403 on cross-user, no em dashes, footer visibility, metric naming canon.
+Install Supabase CLI locally (`brew install supabase/tap/supabase`) and `supabase login`.
 
-7. **Data model summary** — domain → key tables table (already in ARCHITECTURE).
+---
 
-8. **Edge functions inventory** — the 6 functions and their purpose.
+## Phase 1 — Clone schema (~15 min)
 
-9. **Email pipeline** — producers → templates → PGMQ → Resend → feedback loop.
+1. In a local clone of the repo:
+   ```bash
+   supabase link --project-ref xxnzmfzsjplrutrgbzxy
+   supabase db push
+   ```
+   This applies all 104 files in `supabase/migrations/` to your new project. RLS, policies, GRANTs, functions, triggers, and pgvector indexes all come with it.
+2. Enable extensions the migrations assume are already on: `pgvector`, `pgmq`, `pg_cron`, `pg_net`, `vault`. Dashboard → Database → Extensions.
+3. Re-create the 5 storage buckets (all private): `journal-media`, `reports`, `medical-reports`, `care-chat-attachments`, `dna-uploads`. Either via dashboard or `supabase storage` CLI. Storage RLS policies are already in the migrations.
 
-10. **Quality gates** — `check:em-dash`, `check:live-data`, `check:unique-images`, lint debt note, Playwright matrix, CI/CD workflows status.
+## Phase 2 — Move data (~30–60 min, depends on size)
 
-11. **Environment variables** — present locally vs. referenced-only, what each unlocks (full table from CURSOR_HANDOFF).
+Lovable Cloud blocks `pg_dump` from this side, but **your own** Supabase project accepts inbound `pg_dump` if Lovable exposes the DB URL. Two paths:
 
-12. **Files that are auto-generated / never edit** — full list.
+- **Path A (preferred):** Ask Lovable support (or use the Cloud → Database connection string if visible to project owners) for a read-only DB URL for `lzuodgpqseijhhyzgfky`. Then:
+  ```bash
+  pg_dump "$SOURCE_URL" --data-only --schema=public --schema=storage \
+    --exclude-table-data='auth.*' --no-owner --no-privileges \
+    | psql "$TARGET_URL"
+  ```
+  Followed by an `auth.users` export via the Supabase Auth Admin API (`GET /admin/users`) → import into target with `POST /admin/users` (set `email_confirm=true`, copy `id`, `email`, metadata, provider links). Preserving `auth.users.id` is critical — every `public.*.user_id` references it.
+- **Path B (no dump access):** Use the CSV exporter (Lovable Cloud → Database → Tables → download each as CSV), then `\copy` into target. Slower, but works without Lovable support. Do users last and remember to insert into `auth.users` via the Admin API, not raw SQL.
 
-13. **Known gaps and sharp edges** — Supabase CLI 403s, lint debt, vite wrapper rules, route tree regeneration, DNS cutover, webhook re-pointing list.
+Storage objects: use `rclone` with two S3 remotes (Supabase Storage exposes S3-compatible endpoints) to copy each of the 5 buckets.
 
-14. **Recent decisions log** — Resend, Anthropic default, repo `AstroAii/purpledrw`, worker name `purplelife`, dual dev.
+## Phase 3 — Edge functions + secrets (~20 min)
 
-15. **How to verify a change** — cheapest-first ladder (em-dash → build → e2e smoke → `wrangler dev`).
+1. In your new project's dashboard → Edge Functions → Secrets, set: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GROK_API_KEY`, `OURA_CLIENT_ID/SECRET`, `WHOOP_CLIENT_ID/SECRET`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `CRON_SECRET`, `SUPABASE_SERVICE_ROLE_KEY` (the new one). Skip `LOVABLE_API_KEY` — we're off it.
+2. Deploy the 6 functions:
+   ```bash
+   supabase functions deploy ai-orchestrator journal-extract journal-processor med-dose-action oura-sync risk-forecaster
+   ```
 
-16. **Out of scope** — native apps, condition-specific SDKs, real flight APIs, multi-trip overlap.
+## Phase 4 — Auth providers (~15 min)
 
-17. **Suggested next-steps backlog** — short list distilled from CURSOR_HANDOFF "remaining cutover" + Lovable migration Phase 7, so the next prompt has obvious starting points.
+In your new project: Authentication → Providers → enable Email, Google, Apple. Reuse the existing Google/Apple client IDs from `docs/oauth-provider-setup.md`, but **add the new callback URL** `https://xxnzmfzsjplrutrgbzxy.supabase.co/auth/v1/callback` to each provider's allowed redirects (Google Cloud Console + Apple Services ID). Existing OAuth users keep their accounts because Supabase matches on `provider + subject + email`.
 
-## Source material to read before writing
+## Phase 5 — pg_cron jobs (~5 min)
 
-`CURSOR_HANDOFF.md`, `docs/ARCHITECTURE.md`, `docs/FEATURES.md`, `docs/LOVABLE-MIGRATION.md`, `docs/wave-1-final.md`, `mem/index.md` and the three mem rule files, `package.json` scripts, `wrangler.jsonc`, `src/start.ts`, `src/router.tsx`, `src/routes/__root.tsx`. Most are already in context; I will read the few that are not before writing.
+Re-create the two scheduled jobs on the new DB via SQL editor:
+- `seed-daily-doses` → calls `public.seed_daily_medication_doses()` nightly.
+- `process-email-queue` → POSTs to `https://www.purplelife.org/api/email/queue/process` with the vault-stored service-role bearer.
 
-## Output
+(Both definitions live in the original migrations; just re-run their `cron.schedule(...)` lines against the new DB.)
 
-- New file: `PROJECT_KNOWLEDGE.md` at repo root.
-- No code changes, no edits to existing docs.
-- Target ~600–900 lines so it is paste-friendly into another AI's context window.
-- Plain markdown, no em dashes (CI gate), no emojis.
+## Phase 6 — Point the app at the new project (~5 min)
 
-## Out of scope for this task
+This is the actual cutover. In Lovable's Connectors panel **disable Lovable Cloud** for this project (or just override env), then set these env vars in **both** Lovable (Project Settings → Environment) and Cloudflare Workers (`wrangler secret put` for the published site):
 
-- Editing or restructuring existing docs in `docs/`.
-- Writing per-feature deep-dives (this document points at routes + files; deep-dives stay where they are).
-- Any code or migration changes.
+```
+VITE_SUPABASE_URL=https://xxnzmfzsjplrutrgbzxy.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<new anon key>
+VITE_SUPABASE_PROJECT_ID=xxnzmfzsjplrutrgbzxy
+SUPABASE_URL=https://xxnzmfzsjplrutrgbzxy.supabase.co
+SUPABASE_PUBLISHABLE_KEY=<new anon key>
+SUPABASE_SERVICE_ROLE_KEY=<new service role key>
+```
+
+No code change needed — `src/integrations/supabase/client.ts` and `client.server.ts` already read these. `supabase/config.toml` still says `project_id = "lzuodgpqseijhhyzgfky"` but that file only affects local `supabase` CLI, not the running app; update it after cutover so future migrations target the new project.
+
+Regenerate types against the new project (optional, schema is identical):
+```bash
+supabase gen types typescript --project-id xxnzmfzsjplrutrgbzxy > src/integrations/supabase/types.ts
+```
+
+## Phase 7 — External webhook re-pointing (~10 min)
+
+- **Stripe** webhook → still your app URL, no change. But rotate `STRIPE_WEBHOOK_SECRET` if you want.
+- **Resend** bounce/complaint webhook → still your app URL, no change.
+- **Supabase Auth send-email hook** → in the *new* project's Auth → Hooks, point at `https://www.purplelife.org/api/email/auth/webhook` and store its secret as `SEND_EMAIL_HOOK_SECRET` (Workers + Lovable env).
+
+## Phase 8 — Verify, then retire (~30 min)
+
+Smoke checklist on a staging deploy first:
+1. Sign in (email + Google + Apple).
+2. Create a journal entry → confirm media uploads to new bucket.
+3. Add a medication → confirm dose seeded and reminder fires.
+4. Ask Purple → confirm AI streams and a citation chip appears.
+5. Connect Oura/Whoop → confirm OAuth round-trip with new callback URL.
+6. Caregiver invite + accept.
+7. Stripe checkout in test mode → subscription row appears.
+
+When clean: flip production env to new project, monitor for 24h, then in Lovable → Cloud → Disable for this project. Lovable continues to work as an editor; it just no longer provisions a backend.
+
+## What breaks once (unavoidable)
+
+- All users are signed out at cutover (different JWT signing key). They re-sign in with the same credentials/social accounts.
+- OAuth users see the consent screen once on first sign-in.
+- Any in-flight push subscriptions need to re-register (the SW handles this automatically on next visit).
+
+## Rollback
+
+If anything goes wrong in Phase 6–8, revert the env vars to the old Lovable values and the app instantly talks to `lzuodgpqseijhhyzgfky` again. Keep Lovable Cloud enabled until Phase 8 passes.
+
+---
+
+## What I need from you to start executing (when you switch to build mode)
+
+1. The new project's **anon key** and **service role key** (via the secrets tool — I'll prompt).
+2. Confirmation you've installed Supabase CLI and run `supabase link --project-ref xxnzmfzsjplrutrgbzxy` locally.
+3. Path A or Path B for data migration.
+4. Whether you want me to update `supabase/config.toml` and `.env` defaults to the new ref *now* (changes future migrations' target) or *after* cutover (safer).
