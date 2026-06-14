@@ -1878,6 +1878,50 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_delivery_log: {
+        Row: {
+          acknowledged_action: string | null
+          acknowledged_at: string | null
+          created_at: string
+          delivery_channel: string
+          dose_id: string | null
+          fired_at: string | null
+          id: string
+          scheduled_at: string
+          user_id: string
+        }
+        Insert: {
+          acknowledged_action?: string | null
+          acknowledged_at?: string | null
+          created_at?: string
+          delivery_channel: string
+          dose_id?: string | null
+          fired_at?: string | null
+          id?: string
+          scheduled_at: string
+          user_id: string
+        }
+        Update: {
+          acknowledged_action?: string | null
+          acknowledged_at?: string | null
+          created_at?: string
+          delivery_channel?: string
+          dose_id?: string | null
+          fired_at?: string | null
+          id?: string
+          scheduled_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_delivery_log_dose_id_fkey"
+            columns: ["dose_id"]
+            isOneToOne: false
+            referencedRelation: "medication_doses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       oura_tokens: {
         Row: {
           access_token: string
