@@ -35,16 +35,14 @@ function PostDetail() {
   const load = React.useCallback(async () => {
     const [{ data: p }, { data: c }, { data: r }] = await Promise.all([
       supabase
-        .from("community_posts")
+        .from("community_posts_public")
         .select("id, title, body, topic, created_at")
         .eq("id", postId)
-        .eq("hidden", false)
         .maybeSingle(),
       supabase
-        .from("community_comments")
+        .from("community_comments_public")
         .select("id, body, created_at")
         .eq("post_id", postId)
-        .eq("hidden", false)
         .order("created_at"),
       supabase
         .from("community_reactions")
