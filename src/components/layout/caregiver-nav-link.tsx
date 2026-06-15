@@ -5,6 +5,7 @@ import { HeartHandshake } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { listCaregiverOwners } from "@/lib/care.functions";
 import { getCareChatUnreadTotal } from "@/lib/care-chat.functions";
+import { useAuth } from "@/integrations/supabase/auth-context";
 
 /**
  * Sidebar/menu entry that only appears when the current user has at least one
@@ -19,12 +20,14 @@ export function CaregiverNavLink({
   onClick?: () => void;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { session } = useAuth();
   const fn = useServerFn(listCaregiverOwners);
   const q = useQuery({
     queryKey: ["care", "owners-switcher"],
     queryFn: () => fn(),
     staleTime: 60_000,
     retry: false,
+    enabled: !!session,
   });
   const unreadFn = useServerFn(getCareChatUnreadTotal);
   const chatQ = useQuery({
@@ -32,6 +35,7 @@ export function CaregiverNavLink({
     queryFn: () => unreadFn(),
     refetchInterval: 30_000,
     retry: false,
+    enabled: !!session,
   });
 
   const ownersCount = q.data?.owners.length ?? 0;
