@@ -147,19 +147,8 @@ export const exportAllTablesZip = createServerFn({ method: "GET" })
       "@/integrations/supabase/client.server"
     );
 
-    // Discover public tables
-    const { data: tablesData, error: tablesErr } = await supabaseAdmin
-      .rpc("exec_sql" as any, {})
-      .then(() => ({ data: null, error: new Error("no rpc") }))
-      .catch(() => ({ data: null, error: null as any }));
-    // Fall back: hardcoded discovery via a query against a known view.
-    // information_schema is not exposed by PostgREST; use a small RPC-less
-    // approach: try a SELECT against pg_tables through PostgREST's
-    // pg_catalog access is also unavailable. So we keep an explicit list
-    // that matches the live schema and let unknown tables 404 cleanly.
-    void tablesData;
-    void tablesErr;
-
+    // PostgREST cannot read information_schema/pg_catalog, so we use a
+    // pinned table list that matches the live schema.
     const TABLES = [
       "admin_message_reads","admin_messages","ai_memory","alerts","app_settings",
       "apple_health_tokens","aura_events","behavior_taxonomy","biometrics",
