@@ -1,11 +1,14 @@
--- Emit "table<TAB>rowcount" for every public table on the connected DB.
--- Run with: psql "$NEW_DB_URL" -At -F $'\t' -f verify-counts.sql > counts-new.txt
-select string_agg(
-  format('select %L::text as t, count(*)::text as c from public.%I', c.relname, c.relname),
-  E'\nunion all\n'
-) || E'\norder by t'
-from pg_class c
-join pg_namespace n on n.oid = c.relnamespace
-where n.nspname='public' and c.relkind='r'
-\gset sql_
-:sql_string_agg ;
+-- Print one line per public table: "<name>\t<row count>" via RAISE NOTICE.
+DO $$
+DECLARE r record; n bigint;
+BEGIN
+  FOR r IN
+    SELECT c.relname FROM pg_class c
+    JOIN pg_namespace ns ON ns.oid = c.relnamespace
+    WHERE ns.nspname='public' AND c.relkind='r'
+    ORDER BY c.relname
+  LOOP
+    EXECUTE format('SELECT count(*) FROM public.%I', r.relname) INTO n;
+    RAISE NOTICE '%	%', r.relname, n;
+  END LOOP;
+END $$;
