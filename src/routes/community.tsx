@@ -60,9 +60,8 @@ function CommunityFeed() {
   React.useEffect(() => {
     (async () => {
       let q = supabase
-        .from("community_posts")
+        .from("community_posts_public")
         .select("id, title, body, topic, created_at, pinned")
-        .eq("hidden", false)
         .order("pinned", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(50);
@@ -81,10 +80,9 @@ function CommunityFeed() {
           .in("post_id", ids)
           .eq("kind", "like"),
         supabase
-          .from("community_comments")
+          .from("community_comments_public")
           .select("post_id")
-          .in("post_id", ids)
-          .eq("hidden", false),
+          .in("post_id", ids),
       ]);
       const likeCount = new Map<string, number>();
       for (const r of reacts ?? [])
