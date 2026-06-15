@@ -6,6 +6,7 @@ import { useEffect, useId } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getPendingChangesCount } from "@/lib/care.functions";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/integrations/supabase/auth-context";
 
 type Props = {
   variant?: "compact" | "full";
@@ -15,6 +16,7 @@ type Props = {
 
 export function PendingInboxBadge({ variant = "compact", onNavigate, className }: Props) {
   const channelId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const { session } = useAuth();
   const fetchCount = useServerFn(getPendingChangesCount);
   const qc = useQueryClient();
   const { data } = useQuery({
@@ -23,10 +25,12 @@ export function PendingInboxBadge({ variant = "compact", onNavigate, className }
     refetchInterval: 30_000,
     staleTime: 25_000,
     retry: false,
+    enabled: !!session,
   });
 
   // Live: caregivers' new proposals show up immediately for the owner.
   useEffect(() => {
+    if (!session) return;
     const channel = supabase
       .channel(`care-pending-inbox-${channelId}`)
       .on(
@@ -38,7 +42,7 @@ export function PendingInboxBadge({ variant = "compact", onNavigate, className }
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [channelId, qc]);
+  }, [channelId, qc, session]);
 
   const count = data?.count ?? 0;
   if (count <= 0) return null;
