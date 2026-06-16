@@ -287,13 +287,38 @@ export const Route = createFileRoute("/api/email/queue/process")({
             try {
               await sendViaResend(payload as QueuedEmail, apiKey);
 
-              // Log success
-              await supabase.from("email_send_log").insert({
-                message_id: payload.message_id,
-                template_name: payload.label || queue,
-                recipient_email: payload.to,
-                status: "sent",
-              });
+              if (payload.message_id) {
+                const { error: updateError } = await supabase
+                  .from("email_send_log")
+                  .update({ status: "sent", error_message: null })
+                  .eq("message_id", payload.message_id)
+                  .eq("status", "pending");
+                if (updateError) {
+                  console.error("Failed to update pending send log", {
+                    message_id: payload.message_id,
+                    error: updateError,
+                  });
+                }
+              }
+
+              // Log success (skip insert when pending row was updated)
+              const { data: alreadyLogged } = payload.message_id
+                ? await supabase
+                    .from("email_send_log")
+                    .select("id")
+                    .eq("message_id", payload.message_id)
+                    .eq("status", "sent")
+                    .maybeSingle()
+                : { data: null };
+
+              if (!alreadyLogged) {
+                await supabase.from("email_send_log").insert({
+                  message_id: payload.message_id,
+                  template_name: payload.label || queue,
+                  recipient_email: payload.to,
+                  status: "sent",
+                });
+              }
 
               // Delete from queue
               const { error: delError } = await supabase.rpc("delete_email", {
