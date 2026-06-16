@@ -205,7 +205,7 @@ export const exportAllTablesZip = createServerFn({ method: "GET" })
         .join("\n") + "\n";
     files["05-cutover/row-counts-source.txt"] = strToU8(rowCountsTxt);
 
-    // rls-source.txt — best-effort via a SQL function if present, else stub
+    // rls-source.txt: best-effort via a SQL function if present, else stub
     // We can't query pg_catalog through PostgREST. Emit a placeholder with
     // the table list and a note; verify-rls.sql on NEW prints comparable output.
     const rlsTxt =
