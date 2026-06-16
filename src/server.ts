@@ -47,10 +47,9 @@ function getEdgeCache(): Cache | null {
 }
 
 // Cloudflare Cron Triggers (wrangler.deploy.jsonc) fan out to the app's cron
-// endpoints. Each endpoint validates CRON_SECRET itself. Supabase pg_cron also
-// pumps auth mail; Worker cron runs the same processor as a backup every minute.
+// endpoints. Each endpoint validates CRON_SECRET itself.
 const CRON_ENDPOINTS: Record<string, string[]> = {
-  "* * * * *": ["/api/public/cron/dose-reminders", "/api/public/cron/email-queue-pump"],
+  "* * * * *": ["/api/public/cron/dose-reminders"],
   "0 * * * *": ["/api/public/cron/oura-sync-all", "/api/public/cron/whoop-sync-all"],
   "0 6 * * *": [
     "/api/public/cron/care-daily-digest",
@@ -60,38 +59,102 @@ const CRON_ENDPOINTS: Record<string, string[]> = {
   "0 15 * * 7": ["/api/public/cron/weekly-recap"],
 };
 
+// The email queue processor authenticates with the service role (not CRON_SECRET)
+// and is invoked directly each minute. It used to be reached through
+// /api/public/cron/email-queue-pump, which performed a same-zone plain fetch
+// back into this worker; that nested self-subrequest never ran, so auth mail
+// (signup, password reset) sat pending until its token expired.
+const EMAIL_QUEUE_PROCESSOR = "/api/email/queue/process";
+const EMAIL_PUMP_CRON = "* * * * *";
+const EMAIL_PUMP_MAX_ITERATIONS = 3;
+
 type CronEnv = {
   CRON_SECRET?: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;
   PUBLIC_SITE_URL?: string;
   SELF?: { fetch: (request: Request) => Promise<Response> };
 };
 
-async function runScheduledEndpoints(cron: string, env: CronEnv): Promise<void> {
-  const secret = env.CRON_SECRET;
-  if (!secret) {
-    console.error("[cron] CRON_SECRET not configured; skipping scheduled run");
+// Prefer the self service binding; a plain fetch to our own hostname is a
+// same-zone subrequest back into this worker and is not reliable.
+function dispatch(env: CronEnv, request: Request): Promise<Response> {
+  return env.SELF ? env.SELF.fetch(request) : fetch(request);
+}
+
+async function pumpEmailQueue(base: string, env: CronEnv): Promise<void> {
+  const serviceRole = env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceRole) {
+    console.error("[cron] SUPABASE_SERVICE_ROLE_KEY not configured; skipping email pump");
     return;
   }
-  const base = env.PUBLIC_SITE_URL || "https://www.purplelife.org";
-  const paths = CRON_ENDPOINTS[cron] ?? [];
-  await Promise.all(
-    paths.map(async (path) => {
-      const request = new Request(`${base}${path}`, {
-        method: "POST",
-        headers: { "x-cron-secret": secret },
-      });
-      try {
-        // Prefer the self service binding; a plain fetch to our own hostname
-        // would be a same-zone subrequest back into this worker.
-        const res = env.SELF ? await env.SELF.fetch(request) : await fetch(request);
-        if (!res.ok) {
-          console.error(`[cron] ${path} responded ${res.status}`);
-        }
-      } catch (error) {
-        console.error(`[cron] ${path} failed`, error);
+  // Drain in a few passes so a short backlog clears within the minute. The
+  // processor reports how many it sent; stop as soon as a pass sends nothing.
+  for (let i = 0; i < EMAIL_PUMP_MAX_ITERATIONS; i++) {
+    try {
+      const res = await dispatch(
+        env,
+        new Request(`${base}${EMAIL_QUEUE_PROCESSOR}`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${serviceRole}`,
+            "Content-Type": "application/json",
+          },
+          body: "{}",
+        }),
+      );
+      if (!res.ok) {
+        console.error(`[cron] ${EMAIL_QUEUE_PROCESSOR} responded ${res.status}`);
+        return;
       }
-    }),
-  );
+      const body = (await res.json().catch(() => ({}))) as { processed?: number };
+      if (!body.processed || body.processed <= 0) return;
+    } catch (error) {
+      console.error(`[cron] ${EMAIL_QUEUE_PROCESSOR} failed`, error);
+      return;
+    }
+  }
+}
+
+async function runScheduledEndpoints(cron: string, env: CronEnv): Promise<void> {
+  const base = env.PUBLIC_SITE_URL || "https://www.purplelife.org";
+  const tasks: Promise<void>[] = [];
+
+  const secret = env.CRON_SECRET;
+  const paths = CRON_ENDPOINTS[cron] ?? [];
+  if (paths.length > 0) {
+    if (secret) {
+      for (const path of paths) {
+        tasks.push(
+          (async () => {
+            try {
+              const res = await dispatch(
+                env,
+                new Request(`${base}${path}`, {
+                  method: "POST",
+                  headers: { "x-cron-secret": secret },
+                }),
+              );
+              if (!res.ok) {
+                console.error(`[cron] ${path} responded ${res.status}`);
+              }
+            } catch (error) {
+              console.error(`[cron] ${path} failed`, error);
+            }
+          })(),
+        );
+      }
+    } else {
+      console.error("[cron] CRON_SECRET not configured; skipping secret-guarded endpoints");
+    }
+  }
+
+  // Email delivery is independent of CRON_SECRET so auth mail keeps flowing
+  // even if the secret is missing.
+  if (cron === EMAIL_PUMP_CRON) {
+    tasks.push(pumpEmailQueue(base, env));
+  }
+
+  await Promise.all(tasks);
 }
 
 function brandedErrorResponse(): Response {
