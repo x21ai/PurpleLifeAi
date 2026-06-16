@@ -10,6 +10,17 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getCareProfile } from "@/lib/care-profile.functions";
 import { getConditions } from "@/lib/condition-catalog";
+import {
+  getScoreSnapshot,
+  getHealthNarrative,
+  type ScoreSnapshot,
+  type HealthNarrative,
+} from "@/lib/health-scores.functions";
+import { DemoBadge, DemoNotice } from "@/components/common/demo-badge";
+
+function steps(n: number | null | undefined): string {
+  return n == null ? "–" : n.toLocaleString();
+}
 
 export const Route = createFileRoute("/_app/my-health")({
   head: () => ({
@@ -45,11 +56,26 @@ function MyHealthPage() {
   useRouteTheme("dark");
   const { t } = useTranslation();
   const fetchProfile = useServerFn(getCareProfile);
+  const fetchSnapshot = useServerFn(getScoreSnapshot);
+  const fetchNarrative = useServerFn(getHealthNarrative);
   const { data } = useQuery({
     queryKey: ["care-profile-summary"],
     queryFn: () => fetchProfile(),
   });
+  const { data: snap } = useQuery<ScoreSnapshot>({
+    queryKey: ["score-snapshot"],
+    queryFn: () => fetchSnapshot(),
+  });
+  const { data: narrative } = useQuery<HealthNarrative>({
+    queryKey: ["health-narrative"],
+    queryFn: () => fetchNarrative(),
+    staleTime: 6 * 60 * 60 * 1000,
+  });
   const userConditions = getConditions(data?.conditions ?? []);
+
+  const real = snap?.hasData ?? false;
+  const hasSteps = real && snap?.stepsAvg30 != null;
+
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-6 sm:pt-10 pb-32">
       {/* Header */}
@@ -65,14 +91,11 @@ function MyHealthPage() {
 
       {/* Hero */}
       <section className="mt-16 sm:mt-24">
-        <div className="flex items-center justify-between">
-          <span className="rounded-full bg-[color:var(--data-alert)]/15 text-[color:var(--data-alert)] px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] font-medium">
-            Needs care
-          </span>
-          <span className="rounded-full bg-[color:var(--data-good)]/15 text-[color:var(--data-good)] px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] font-medium">
-            Thriving
-          </span>
-        </div>
+        {!real && (
+          <div className="flex items-center">
+            <DemoBadge />
+          </div>
+        )}
 
         {/* Decorative arc */}
         <svg viewBox="0 0 600 80" className="mt-6 w-full opacity-60" aria-hidden="true">
@@ -87,11 +110,13 @@ function MyHealthPage() {
         </svg>
 
         <h2 className="mt-10 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground max-w-[600px]">
-          Strong overall balance,<br/>with recent shifts<br/>to note.
+          The long view of<br/>your health.
         </h2>
         <p className="mt-6 body-serif text-foreground/70 max-w-[600px]">
-          Your long-term balance looks strong, with stress management improving to a thriving level over the past 90 days. Sleep health and heart health are looking good but have dipped slightly recently, consider small, consistent habits like a regular bedtime routine and gentle daily movement to support both.
+          {narrative?.narrative ??
+            "Purple is gathering your recent days to summarize your patterns here."}
         </p>
+        {(!real || narrative?.demo) && <DemoNotice className="mt-4" />}
 
         <button
           type="button"
@@ -102,30 +127,58 @@ function MyHealthPage() {
       </section>
 
       {/* Sections */}
-      <section className="mt-16 divide-y divide-border/60">
-        <SectionRow icon={Moon} name="Sleep Health" status="good" sub="Typical sleep score: 70" />
-        <SectionRow icon={Waves} name="Stress Management" status="thriving" sub="Cumulative Stress: Low" />
-        <SectionRow icon={Heart} name="Heart Health" status="good" sub="Cardiovascular Age: 2.5 years older" />
-        <SectionRow icon={Activity} name="Activity" status="thriving" sub="Step average: 5,511 / day" />
-        <SectionRow icon={Clock} name="Sleep Regularity" status="attention" sub="Bedtime varies ±1h 20m" />
-      </section>
+      {real ? (
+        <section className="mt-16 divide-y divide-border/60">
+          <SectionRow icon={Moon} name="Sleep Health" status="good"
+            sub={snap?.sleepScore != null ? `Latest sleep score: ${Math.round(snap.sleepScore)}` : "No sleep data yet"} />
+          <SectionRow icon={Waves} name="Stress Management" status="good"
+            sub={snap?.stress != null ? `Latest stress score: ${Math.round(snap.stress)}` : "No stress data yet"} />
+          <SectionRow icon={Heart} name="Heart Health" status="good"
+            sub={snap?.restingHr != null ? `Resting heart rate: ${Math.round(snap.restingHr)} bpm` : "No heart data yet"} />
+          <SectionRow icon={Activity} name="Activity" status="good"
+            sub={snap?.stepsAvg30 != null ? `Step average: ${steps(snap.stepsAvg30)} / day` : "No activity data yet"} />
+          <SectionRow icon={Clock} name="Readiness" status="good"
+            sub={snap?.readiness != null ? `Latest readiness: ${Math.round(snap.readiness)}` : "No readiness data yet"} />
+        </section>
+      ) : (
+        <section className="mt-16 divide-y divide-border/60">
+          <SectionRow icon={Moon} name="Sleep Health" status="good" sub="Typical sleep score: 70" />
+          <SectionRow icon={Waves} name="Stress Management" status="thriving" sub="Cumulative Stress: Low" />
+          <SectionRow icon={Heart} name="Heart Health" status="good" sub="Cardiovascular Age: 2.5 years older" />
+          <SectionRow icon={Activity} name="Activity" status="thriving" sub="Step average: 5,511 / day" />
+          <SectionRow icon={Clock} name="Sleep Regularity" status="attention" sub="Bedtime varies ±1h 20m" />
+        </section>
+      )}
 
       {/* Step Average detail card */}
       <section className="mt-12 rounded-[24px] bg-card p-6 sm:p-8">
         <div className="h-10 w-10 grid place-items-center rounded-full bg-[color:var(--purple-primary)]/15 text-[color:var(--purple-primary)]">
           <Activity className="h-5 w-5" />
         </div>
-        <p className="label-eyebrow text-muted-foreground mt-4">Step Average</p>
+        <div className="mt-4 flex items-center gap-3">
+          <p className="label-eyebrow text-muted-foreground">Step Average</p>
+          {!hasSteps && <DemoBadge />}
+        </div>
         <p className="mt-2 numeric-display font-serif text-[48px] sm:text-[56px] text-foreground leading-none">
-          5,511<span className="text-lg text-muted-foreground ml-2 font-sans">steps / day</span>
+          {hasSteps ? steps(snap?.stepsAvg30) : "5,511"}<span className="text-lg text-muted-foreground ml-2 font-sans">steps / day</span>
         </p>
         <p className="mt-4 body-serif text-foreground/70 max-w-[600px]">
           It&rsquo;s natural for daily steps to dip every now and then. Focus on the long haul, and embrace movement whenever it fits your schedule.
         </p>
         <div className="mt-8 space-y-5">
-          <ProgressLine label="30-day average" value={5511} max={10000} tone="warn" right="5,511" />
-          <ProgressLine label="60-day average" value={5840} max={10000} tone="warn" right="5,840" />
-          <ProgressLine label="Baseline goal" value={9000} max={10000} tone="muted" dashed right="9,000" />
+          {hasSteps ? (
+            <>
+              <ProgressLine label="30-day average" value={snap?.stepsAvg30 ?? 0} max={10000} tone="warn" right={steps(snap?.stepsAvg30)} />
+              <ProgressLine label="60-day average" value={snap?.stepsAvg60 ?? 0} max={10000} tone="warn" right={steps(snap?.stepsAvg60)} />
+              <ProgressLine label="Baseline goal" value={9000} max={10000} tone="muted" dashed right="9,000" />
+            </>
+          ) : (
+            <>
+              <ProgressLine label="30-day average" value={5511} max={10000} tone="warn" right="5,511" />
+              <ProgressLine label="60-day average" value={5840} max={10000} tone="warn" right="5,840" />
+              <ProgressLine label="Baseline goal" value={9000} max={10000} tone="muted" dashed right="9,000" />
+            </>
+          )}
         </div>
       </section>
 

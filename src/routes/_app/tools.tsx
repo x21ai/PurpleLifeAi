@@ -27,27 +27,6 @@ function ToolsPage() {
   const { t } = useTranslation();
   return (
     <SheetPage title={t("tools.title")}>
-      {/* Hero device card, mirrors Oura's ring/battery treatment */}
-      <SheetCard className="overflow-hidden">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[22px] font-light leading-tight text-foreground">Purple Companion</p>
-            <p className="mt-1 text-[13px] sheet-muted">Phone &amp; web · This device</p>
-          </div>
-          <ChevronRight className="h-5 w-5 sheet-muted shrink-0" />
-        </div>
-        <div className="mt-6 flex flex-col items-center pb-2">
-          <BatteryRing percent={87} />
-          <p className="mt-5 text-[18px] font-light text-foreground">
-            <span className="sheet-muted text-[13px] uppercase tracking-[0.18em] mr-2">Sync</span>
-            Active
-          </p>
-          <p className="mt-2 text-[13px] sheet-muted">
-            Active <span className="px-2 text-muted-foreground/60">|</span> Listening
-          </p>
-        </div>
-      </SheetCard>
-
       <SheetCard className="!p-0">
         <Suspense fallback={<div className="h-24 animate-pulse" aria-hidden />}>
           <div className="p-5 sm:p-7 [&_button]:bg-muted [&_button]:border-border [&_button]:text-foreground [&_button]:hover:bg-muted/80 [&_h2]:text-foreground [&_p]:text-muted-foreground [&_a]:text-accent">
@@ -151,43 +130,5 @@ function ExternalRow({ href, title }: { href: string; title: string }) {
       <p className="text-[15px] text-foreground" dangerouslySetInnerHTML={{ __html: title }} />
       <ExternalLink className="h-4 w-4 sheet-muted" />
     </a>
-  );
-}
-
-function BatteryRing({ percent }: { percent: number }) {
-  const size = 240;
-  const stroke = 14;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const offset = c * (1 - Math.min(Math.max(percent, 0), 100) / 100);
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90 text-foreground">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke="currentColor"
-          strokeOpacity={0.12}
-          strokeWidth={stroke}
-          fill="none"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke="currentColor"
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={offset}
-          fill="none"
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <p className="text-[44px] font-extralight leading-none text-foreground numeric">{percent}%</p>
-        <p className="mt-2 text-[12px] uppercase tracking-[0.18em] sheet-muted">Battery</p>
-      </div>
-    </div>
   );
 }
