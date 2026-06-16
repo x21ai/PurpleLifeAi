@@ -697,6 +697,13 @@ export type Database = {
             referencedRelation: "community_posts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "community_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       community_posts: {
@@ -765,6 +772,13 @@ export type Database = {
             referencedRelation: "community_posts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "community_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       community_reports: {
@@ -804,10 +818,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "community_reports_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "community_comments_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "community_reports_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_reports_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts_public"
             referencedColumns: ["id"]
           },
         ]
@@ -3030,6 +3058,75 @@ export type Database = {
       }
     }
     Views: {
+      community_comments_public: {
+        Row: {
+          body: string | null
+          created_at: string | null
+          id: string | null
+          post_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string | null
+          id?: string | null
+          post_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string | null
+          id?: string | null
+          post_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_posts_public: {
+        Row: {
+          body: string | null
+          created_at: string | null
+          id: string | null
+          image_url: string | null
+          pinned: boolean | null
+          title: string | null
+          topic: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string | null
+          id?: string | null
+          image_url?: string | null
+          pinned?: boolean | null
+          title?: string | null
+          topic?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string | null
+          id?: string | null
+          image_url?: string | null
+          pinned?: boolean | null
+          title?: string | null
+          topic?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       community_profiles: {
         Row: {
           community_bio: string | null
