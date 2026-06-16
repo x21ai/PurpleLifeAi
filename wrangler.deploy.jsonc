@@ -4,6 +4,11 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "purplelife",
+  "workers_dev": true,
+  "routes": [
+    { "pattern": "www.purplelife.org/*", "zone_name": "purplelife.org" },
+    { "pattern": "purplelife.org/*", "zone_name": "purplelife.org" },
+  ],
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "dist/server/server.js",
@@ -23,7 +28,7 @@
       "* * * * *", // dose reminders
       "0 * * * *", // wearable syncs (Oura, Whoop)
       "0 6 * * *", // daily jobs (care digest, medical reports, account purge)
-      "0 15 * * 0", // weekly recap (Sunday)
+      "0 15 * * 7", // weekly recap (Sunday)
     ],
   },
 }

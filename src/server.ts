@@ -57,7 +57,7 @@ const CRON_ENDPOINTS: Record<string, string[]> = {
     "/api/public/cron/medical-reports",
     "/api/public/cron/purge-deleted-accounts",
   ],
-  "0 15 * * 0": ["/api/public/cron/weekly-recap"],
+  "0 15 * * 7": ["/api/public/cron/weekly-recap"],
 };
 
 type CronEnv = {

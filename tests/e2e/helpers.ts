@@ -1,23 +1,51 @@
 import { expect, type Page } from "@playwright/test";
 
+const REMOTE_E2E =
+  !!process.env.E2E_BASE_URL && !process.env.E2E_BASE_URL.includes("localhost");
+
+/** Avoid waiting for full "load" on remote Workers; domcontentloaded is enough for UI tests. */
+export async function gotoApp(page: Page, path: string) {
+  await page.goto(path, {
+    waitUntil: "domcontentloaded",
+    timeout: REMOTE_E2E ? 60_000 : 30_000,
+  });
+}
+
+function testEmail() {
+  return process.env.TEST_USER_EMAIL ?? process.env.E2E_TEST_USER_EMAIL;
+}
+
+function testPassword() {
+  return process.env.TEST_USER_PASSWORD ?? process.env.E2E_TEST_USER_PASSWORD;
+}
+
 /**
- * Sign in via the UI. Requires TEST_USER_EMAIL and TEST_USER_PASSWORD in env.
+ * Sign in via the UI. Requires TEST_USER_EMAIL/PASSWORD or E2E_TEST_USER_* in env.
  * Specs that mutate data should call this in beforeEach and skip if env is missing.
  */
 export async function signIn(page: Page) {
-  const email = process.env.TEST_USER_EMAIL;
-  const password = process.env.TEST_USER_PASSWORD;
+  const email = testEmail();
+  const password = testPassword();
   if (!email || !password) return false;
-  await page.goto("/sign-in");
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/password/i).first().fill(password);
-  await page.getByRole("button", { name: /sign in|log in|continue/i }).first().click();
-  await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"), { timeout: 15_000 });
+  await gotoApp(page, "/sign-in");
+  const emailField = page.getByLabel(/email/i);
+  const passwordField = page.getByLabel(/password/i).first();
+  await expect(emailField).toBeEditable();
+  await emailField.fill(email);
+  await passwordField.fill(password);
+  await expect(emailField).toHaveValue(email);
+  await expect(passwordField).toHaveValue(password);
+  await page
+    .getByRole("tabpanel", { name: /sign in/i })
+    .getByRole("button", { name: /^sign in$/i })
+    .click();
+  await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"), {
+    timeout: REMOTE_E2E ? 30_000 : 15_000,
+  });
   return true;
 }
 
-export const hasTestCreds = () =>
-  !!(process.env.TEST_USER_EMAIL && process.env.TEST_USER_PASSWORD);
+export const hasTestCreds = () => !!(testEmail() && testPassword());
 
 export async function expectNoServerError(page: Page) {
   // If the app renders a global error boundary, assert it didn't trip.

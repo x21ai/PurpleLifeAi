@@ -34,24 +34,18 @@ export function ResponsiveImage({
   alt,
 }: ResponsiveImageProps) {
   const { picture } = asset;
-  // vite-imagetools emits `.jpeg` in the manifest for jpg outputs, but the
-  // deployed Cloudflare static-assets host writes JPG files with `.jpg`.
-  // The resulting URLs 404 in production. Normalize every srcset URL,
-  // safe for avif/webp/jpg because only `.jpeg` is rewritten.
-  const rewriteJpeg = (s: string) => s.replace(/\.jpeg(\?[^\s,]*)?/gi, ".jpg$1");
-  const fallbackSrc = rewriteJpeg(picture.img.src);
   return (
     <picture>
       {Object.entries(picture.sources).map(([type, srcSet]) => (
         <source
           key={type}
           type={type}
-          srcSet={rewriteJpeg(srcSet)}
+          srcSet={srcSet}
           sizes={sizes}
         />
       ))}
       <img
-        src={fallbackSrc}
+        src={picture.img.src}
         width={picture.img.w}
         height={picture.img.h}
         alt={alt ?? asset.alt}

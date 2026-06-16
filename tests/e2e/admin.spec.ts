@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { signIn, hasTestCreds } from "./helpers";
+import { signIn, hasTestCreds, gotoApp } from "./helpers";
 test.skip(!hasTestCreds(), "TEST_USER_EMAIL/PASSWORD not set");
 test("non-admin denied /admin", async ({ page }) => {
   await signIn(page);
-  await page.goto("/admin");
-  const url = page.url();
-  const text = await page.locator("body").innerText();
-  expect(!/\/admin$/.test(url) || /forbidden|not allowed|access denied/i.test(text)).toBeTruthy();
+  await gotoApp(page, "/admin");
+  await expect(page.getByRole("heading", { name: /^Restricted$/i })).toBeVisible({
+    timeout: 15_000,
+  });
 });

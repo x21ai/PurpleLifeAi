@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
+import { gotoApp } from "./helpers";
 
 /**
  * Full new-user flow: sign-up (admin-created, confirmed) through the 2-step
@@ -12,6 +13,26 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL = process.env.E2E_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SERVICE_ROLE = process.env.E2E_SUPABASE_SERVICE_ROLE_KEY;
 
+async function createConfirmedUser(
+  admin: ReturnType<typeof createClient>,
+  email: string,
+  password: string,
+) {
+  let lastError: { message?: string } | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data, error } = await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+    if (!error && data.user) return data.user.id;
+    lastError = error;
+    if (attempt < 2) await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+  }
+  expect(lastError).toBeNull();
+  throw new Error("createUser failed");
+}
+
 test("new user reaches confirmed extraction in 6 navigations or fewer", async ({ page }) => {
   test.skip(!SUPABASE_URL || !SERVICE_ROLE, "needs E2E_SUPABASE_SERVICE_ROLE_KEY");
   test.setTimeout(120_000);
@@ -19,13 +40,7 @@ test("new user reaches confirmed extraction in 6 navigations or fewer", async ({
   const admin = createClient(SUPABASE_URL!, SERVICE_ROLE!);
   const email = `e2e-onboarding-${Date.now()}@purplelife.org`;
   const password = `pw-${crypto.randomUUID()}`;
-  const { data: created, error } = await admin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-  });
-  expect(error).toBeNull();
-  const userId = created!.user!.id;
+  const userId = await createConfirmedUser(admin, email, password);
 
   // Count document-level navigations (URL pathname changes).
   const visited: string[] = [];
@@ -37,15 +52,15 @@ test("new user reaches confirmed extraction in 6 navigations or fewer", async ({
 
   try {
     // Nav 1: sign-in
-    await page.goto("/sign-in");
+    await gotoApp(page, "/sign-in");
     await page.getByLabel(/email/i).fill(email);
     await page
       .getByLabel(/password/i)
       .first()
       .fill(password);
     await page
-      .getByRole("button", { name: /sign in|log in|continue/i })
-      .first()
+      .getByRole("tabpanel", { name: /sign in/i })
+      .getByRole("button", { name: /^sign in$/i })
       .click();
 
     // Nav 2: un-onboarded users land on /welcome
