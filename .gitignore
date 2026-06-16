@@ -15,6 +15,15 @@ dist-ssr
 .tanstack/**
 .nitro
 *.local
+purple-migration/.env
+purple-migration/02-data/
+purple-migration/03-auth/auth-users.json
+purple-migration/03-auth/import-auth.errors.json
+purple-migration/04-storage/storage-manifest.json
+purple-migration/04-storage/migrate-storage.errors.json
+purple-migration/05-cutover/counts-new.txt
+purple-migration/05-cutover/rls-new.txt
+supabase/.temp/
 
 # Wrangler / Cloudflare
 .wrangler/
