@@ -11,6 +11,11 @@ import {
 import { toast } from "sonner";
 import { userMessage } from "@/lib/user-message";
 
+const DAY_MS = 24 * 3600 * 1000;
+// Health Auto Export runs every 1-6h; if no Apple Health data has landed in
+// this window we treat the sync as stalled rather than active.
+const FRESH_WINDOW_MS = 3 * DAY_MS;
+
 function relativeTime(iso: string | null): string {
   if (!iso) return "never";
   const diff = Date.now() - new Date(iso).getTime();
@@ -22,29 +27,79 @@ function relativeTime(iso: string | null): string {
   return `${Math.round(h / 24)}d ago`;
 }
 
+type SyncState = "receiving" | "stale" | "reachable" | "waiting";
+
 export function AppleHealthConnection() {
   const ensureConfig = useServerFn(getOrCreateAppleHealthConfig);
   const disconnect = useServerFn(disconnectAppleHealth);
   const [connected, setConnected] = useState<boolean | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
-  const [lastSync, setLastSync] = useState<string | null>(null);
+  const [lastContact, setLastContact] = useState<string | null>(null);
+  const [lastData, setLastData] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const refresh = useCallback(async () => {
     const { data: sess } = await supabase.auth.getSession();
     if (!sess.session) return;
+    const uid = sess.session.user.id;
     const { data } = await supabase
       .from("apple_health_tokens")
       .select("webhook_secret, last_sync_at, last_webhook_at")
-      .eq("user_id", sess.session.user.id)
+      .eq("user_id", uid)
       .maybeSingle();
     setConnected(!!data);
     setSecret(data?.webhook_secret ?? null);
-    setLastSync(data?.last_webhook_at ?? data?.last_sync_at ?? null);
+    setLastContact(data?.last_webhook_at ?? data?.last_sync_at ?? null);
+
+    // The real "is it working" signal: has any Apple Health datapoint landed?
+    const { data: bio } = await supabase
+      .from("biometrics")
+      .select("recorded_at")
+      .eq("user_id", uid)
+      .eq("source", "apple_health")
+      .order("recorded_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setLastData(bio?.recorded_at ?? null);
   }, []);
 
   useEffect(() => { void refresh(); }, [refresh]);
+
+  const syncState: SyncState = (() => {
+    const dataAge = lastData ? Date.now() - new Date(lastData).getTime() : Infinity;
+    if (dataAge < FRESH_WINDOW_MS) return "receiving";
+    if (lastData) return "stale";
+    if (lastContact) return "reachable";
+    return "waiting";
+  })();
+
+  const STATUS_TEXT: Record<SyncState, string> = {
+    receiving: `Syncing · latest data ${relativeTime(lastData)}`,
+    stale: `Last data ${relativeTime(lastData)} · check your Health Auto Export automation`,
+    reachable: "URL reached · waiting for the first data export from Health Auto Export",
+    waiting: "Not receiving yet · finish the Health Auto Export setup below",
+  };
+
+  const testConnection = async () => {
+    if (!secret) return;
+    setTesting(true);
+    try {
+      const url = `${window.location.origin}/api/public/hooks/apple-health?token=${secret}`;
+      const res = await fetch(url, { method: "GET" });
+      if (res.ok) {
+        toast.success("Webhook reachable. Purple is listening for your exports.");
+      } else {
+        toast.error("Webhook test failed. Recopy the URL into Health Auto Export.");
+      }
+    } catch {
+      toast.error("Could not reach the webhook. Check your connection and the URL.");
+    } finally {
+      setTesting(false);
+      void refresh();
+    }
+  };
 
   const connect = async () => {
     setBusy(true);
@@ -78,7 +133,8 @@ export function AppleHealthConnection() {
       await disconnect();
       setConnected(false);
       setSecret(null);
-      setLastSync(null);
+      setLastContact(null);
+      setLastData(null);
       toast("Apple Health disconnected");
     } finally {
       setBusy(false);
@@ -89,6 +145,12 @@ export function AppleHealthConnection() {
     const url = typeof window !== "undefined"
       ? `${window.location.origin}/api/public/hooks/apple-health?token=${secret}`
       : "";
+    const dotClass =
+      syncState === "receiving"
+        ? "bg-[color:var(--data-good)]"
+        : syncState === "stale"
+          ? "bg-[color:var(--data-warn)]"
+          : "bg-muted-foreground/50";
     return (
       <div className="py-2 space-y-3">
         <div className="flex items-center justify-between gap-3">
@@ -98,14 +160,20 @@ export function AppleHealthConnection() {
             </span>
             <div className="min-w-0">
               <p className="font-serif text-base text-foreground">Apple Health</p>
-              <p className="text-xs text-muted-foreground">
-                Connected · Last synced {relativeTime(lastSync)}
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${dotClass}`} aria-hidden="true" />
+                {STATUS_TEXT[syncState]}
               </p>
             </div>
           </div>
-          <Button size="sm" variant="ghost" onClick={() => void onDisconnect()} disabled={busy}>
-            Disconnect
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button size="sm" variant="outline" onClick={() => void testConnection()} disabled={testing || busy}>
+              {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Test"}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => void onDisconnect()} disabled={busy}>
+              Disconnect
+            </Button>
+          </div>
         </div>
 
         <div className="pl-11 space-y-2">
