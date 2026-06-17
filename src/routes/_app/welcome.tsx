@@ -49,6 +49,7 @@ function WelcomePage() {
 
   const [step, setStep] = useState<0 | 1>(0);
   const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [conditions, setConditions] = useState<string[]>([]);
   const [entryText, setEntryText] = useState("");
   const [phase, setPhase] = useState<FinalePhase>("compose");
@@ -84,12 +85,13 @@ function WelcomePage() {
     if (!userId) return;
     supabase
       .from("profiles")
-      .select("first_name, conditions")
+      .select("first_name, last_name, conditions")
       .eq("id", userId)
       .maybeSingle()
       .then(({ data }) => {
         if (!data) return;
         if (data.first_name) setFirstName(data.first_name);
+        if (data.last_name) setLastName(data.last_name);
         if (Array.isArray(data.conditions) && data.conditions.length > 0) {
           setConditions(data.conditions);
         }
@@ -121,6 +123,7 @@ function WelcomePage() {
     const { error } = await supabase.from("profiles").upsert({
       id: userId,
       first_name: firstName.trim() || null,
+      last_name: lastName.trim() || null,
       conditions,
       locale,
       onboarded_at: new Date().toISOString(),
@@ -266,15 +269,27 @@ function WelcomePage() {
           </h1>
           <p className="mt-5 text-lg text-muted-foreground max-w-lg">{t("welcome.whoBodyShort")}</p>
           <div className="mt-8 space-y-7">
-            <div className="max-w-sm">
-              <Label htmlFor="first">{t("welcome.firstName")}</Label>
-              <Input
-                id="first"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                autoComplete="given-name"
-                className="mt-1.5"
-              />
+            <div className="grid max-w-sm gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="first">{t("welcome.firstName")}</Label>
+                <Input
+                  id="first"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  autoComplete="given-name"
+                  className="mt-1.5"
+                />
+              </div>
+              <div>
+                <Label htmlFor="last">{t("welcome.lastName")}</Label>
+                <Input
+                  id="last"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  autoComplete="family-name"
+                  className="mt-1.5"
+                />
+              </div>
             </div>
             <div>
               <p className="label-eyebrow mb-3">{t("welcome.bringsTitle")}</p>

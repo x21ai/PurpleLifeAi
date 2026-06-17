@@ -1,8 +1,15 @@
 # OAuth provider setup (Apple + Google)
 
-**Project ref:** `lzuodgpqseijhhyzgfky`  
-**Supabase callback URL:** `https://lzuodgpqseijhhyzgfky.supabase.co/auth/v1/callback`  
-**Paste credentials:** https://supabase.com/dashboard/project/lzuodgpqseijhhyzgfky/auth/providers  
+**Project ref:** `xxnzmfzsjplrutrgbzxy`  
+**Branded callback URL (use this):** `https://auth.purplelife.org/auth/v1/callback`  
+**Fallback callback URL:** `https://xxnzmfzsjplrutrgbzxy.supabase.co/auth/v1/callback`  
+**Paste credentials:** https://supabase.com/dashboard/project/xxnzmfzsjplrutrgbzxy/auth/providers  
+
+The supabase-js client uses `VITE_SUPABASE_URL = https://auth.purplelife.org` (the
+Supabase custom domain), so `signInWithOAuth` sends users to that host and the Google
+consent screen shows `auth.purplelife.org` instead of the `*.supabase.co` project URL.
+Keep both redirect URIs registered: the branded one is what the client uses, the
+`*.supabase.co` one is the rollback path if the client URL is reverted.
 
 **Time:** ~15 min Google, ~25 min Apple (includes .p8 key download).
 
@@ -17,8 +24,9 @@
 5. **Authorized JavaScript origins** (add your app URLs):
    - `http://localhost:5173` (local dev)
    - Your production origin when deployed (e.g. Cloudflare Workers URL)
-6. **Authorized redirect URIs** — add exactly:
-   - `https://lzuodgpqseijhhyzgfky.supabase.co/auth/v1/callback`
+6. **Authorized redirect URIs** - add both (branded first, supabase.co as fallback):
+   - `https://auth.purplelife.org/auth/v1/callback`
+   - `https://xxnzmfzsjplrutrgbzxy.supabase.co/auth/v1/callback`
 7. Copy **Client ID** and **Client secret**.
 8. In Supabase: **Authentication** → **Providers** → **Google** → enable, paste Client ID and secret → Save.
 
@@ -31,7 +39,7 @@
 3. **Services ID** (for Sign in with Apple on web):
    - Register a Services ID, enable **Sign in with Apple**, configure **Web**.
    - **Domains and Subdomains:** your app host (e.g. `localhost` for dev is limited; use production domain for web).
-   - **Return URLs:** `https://lzuodgpqseijhhyzgfky.supabase.co/auth/v1/callback`
+   - **Return URLs:** `https://auth.purplelife.org/auth/v1/callback` (and `https://xxnzmfzsjplrutrgbzxy.supabase.co/auth/v1/callback` as fallback)
 4. **Key** (.p8): Keys → create key with **Sign in with Apple** → download `.p8` once (cannot re-download).
 5. Note **Team ID**, **Services ID** (client id), **Key ID**, and the `.p8` private key contents.
 6. In Supabase: **Authentication** → **Providers** → **Apple** → enable:

@@ -118,6 +118,33 @@ function SignInPage() {
     window.history.replaceState({}, "", window.location.pathname);
   }, [t]);
 
+  // While waiting on email confirmation, advance the tab the moment a session
+  // appears (cross-tab Supabase sync fires SIGNED_IN; the poll covers the rest).
+  // True cross-device confirmation never creates a session here, so the UI also
+  // offers a "sign in" fallback below.
+  useEffect(() => {
+    if (status !== "verify-sent") return;
+    let cancelled = false;
+    const goIfSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!cancelled && data.session) {
+        await navigate({ to: "/today" });
+      }
+    };
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") void goIfSession();
+    });
+    const poll = window.setInterval(() => void goIfSession(), 3000);
+    void goIfSession();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+      window.clearInterval(poll);
+    };
+  }, [status, navigate]);
+
   const handleForgotPassword = async () => {
     setErrorMsg(null);
     if (!email.trim()) {
@@ -255,6 +282,18 @@ function SignInPage() {
                 <p className="mt-3 font-serif text-2xl text-secondary-foreground leading-snug">
                   {t("signIn.confirmEmail")}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("signin");
+                    setStatus("idle");
+                  }}
+                  className="mt-4 text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                >
+                  {t("signIn.confirmedElsewhere", {
+                    defaultValue: "Confirmed on another device? Sign in",
+                  })}
+                </button>
               </div>
             ) : status === "reset-sent" ? (
               <div className="mt-10 rounded-2xl border border-border bg-secondary/60 p-6">

@@ -107,7 +107,7 @@ export function MedicationFormSheet({
   const [prescriberName, setPrescriberName] = React.useState("");
   const [pharmacyName, setPharmacyName] = React.useState("");
   const [prescriptionNumber, setPrescriptionNumber] = React.useState("");
-  const [prescriberOpen, setPrescriberOpen] = React.useState(false);
+  const [prescriberOpen, setPrescriberOpen] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [nameFocused, setNameFocused] = React.useState(false);
   const nameSuggestions = React.useMemo<MedDictEntry[]>(
@@ -137,7 +137,7 @@ export function MedicationFormSheet({
       setPrescriberName("");
       setPharmacyName("");
       setPrescriptionNumber("");
-      setPrescriberOpen(false);
+      setPrescriberOpen(true);
       setNameFocused(false);
     }
   }, [open]);
@@ -229,9 +229,7 @@ export function MedicationFormSheet({
       setPrescriberName(m.prescriber_name ?? "");
       setPharmacyName(m.pharmacy_name ?? "");
       setPrescriptionNumber(m.prescription_number ?? "");
-      setPrescriberOpen(
-        !!(m.prescriber_name || m.pharmacy_name || m.prescription_number),
-      );
+      setPrescriberOpen(true);
     })();
     return () => {
       cancelled = true;
@@ -424,7 +422,7 @@ export function MedicationFormSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-2xl">
+      <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-2xl overflow-hidden">
         <SheetHeader className="px-5 pt-5 pb-3 pr-14 flex-row items-center justify-between space-y-0 border-b border-border">
           <SheetTitle className="font-serif text-lg font-normal">{isEditing ? "Edit medication" : "Add medication"}</SheetTitle>
           <Button onClick={handleSave} disabled={!canSave || saving} size="sm" className="rounded-full px-5">
@@ -432,7 +430,7 @@ export function MedicationFormSheet({
           </Button>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-5">
           <div className="space-y-2">
             <Label>Type</Label>
             <ToggleGroup

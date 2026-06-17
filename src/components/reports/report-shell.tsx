@@ -1,12 +1,13 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft, Settings } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
  * Dark "clinical report" shell used by /reports, /reports/new, /reports/:id.
  * Mirrors the reference: teal-green atmospheric glow at top, large tracked
- * title, back arrow + settings affordance. Content area renders below.
+ * title, and a back arrow. An optional `right` slot renders page actions.
+ * Content area renders below.
  */
 export function ReportShell({
   title,
@@ -36,15 +37,7 @@ export function ReportShell({
           )}
           <h1 className="report-eyebrow text-center text-white">{title}</h1>
           <div className="flex items-center justify-end">
-            {right ?? (
-              <button
-                type="button"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-white/80 hover:bg-white/5 hover:text-white"
-                aria-label="Settings"
-              >
-                <Settings className="h-5 w-5" />
-              </button>
-            )}
+            {right ?? <span className="h-10 w-10" aria-hidden />}
           </div>
         </div>
       </header>
