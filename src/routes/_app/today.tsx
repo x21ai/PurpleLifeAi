@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { format } from "date-fns";
-import { BookOpen, Pill, Zap, ChevronRight, Activity, Droplets, RefreshCw } from "lucide-react";
+import { BookOpen, Pill, Zap, ChevronRight, ChevronDown, Activity, Droplets, RefreshCw } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
@@ -98,6 +98,8 @@ function TodayPage() {
   // One-time warm greeting after onboarding, echoing the user's first entry.
   // Key written by /welcome; cleared after the first Today render.
   const [firstWords, setFirstWords] = useState<string | null>(null);
+  // Secondary cards are tucked behind a disclosure so the top stays calm.
+  const [showMore, setShowMore] = useState(false);
 
   useEffect(() => setNow(new Date()), []);
 
@@ -284,12 +286,6 @@ function TodayPage() {
 
       <MissedDoseCatchup />
 
-      <div className="mb-6 empty:mb-0">
-        <ConnectWearablesCard />
-      </div>
-
-      <ConditionWelcomeNudge />
-
       {journalCount === 0 && !emptyDismissed && (
         <TodayEmptyState
           onDismiss={() => {
@@ -297,21 +293,6 @@ function TodayPage() {
             setEmptyDismissed(true);
           }}
         />
-      )}
-
-      {journalCount != null && journalCount > 0 && (
-        <ReEngagementNudge
-          conditions={profile?.conditions ?? []}
-          hasAnyEntries
-        />
-      )}
-
-      {announcement && (
-        <div className="mb-6 rounded-2xl border border-border bg-card p-4">
-          <p className="label-eyebrow">{t("todayPage.fromTeam")}</p>
-          <p className="mt-2 font-serif text-lg text-foreground">{announcement.subject}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{announcement.body}</p>
-        </div>
       )}
 
       <p className="label-eyebrow" suppressHydrationWarning>
@@ -440,108 +421,134 @@ function TodayPage() {
         )}
       </section>
 
-      {bio && (
-        <div className="mt-12">
-          <BodyMeasurementsRow
-            items={[
-              {
-                value:
-                  bio.body_temp_deviation_c != null
-                    ? `${bio.body_temp_deviation_c > 0 ? "+" : ""}${bio.body_temp_deviation_c.toFixed(1)}°`
-                    : "–",
-                label: "Temp Δ",
-              },
-              {
-                value: bio.respiratory_rate_bpm ? Math.round(bio.respiratory_rate_bpm) : "–",
-                label: "Resp /min",
-              },
-              {
-                value: bio.spo2_pct ? `${Math.round(bio.spo2_pct)}%` : "–",
-                label: "SpO₂",
-              },
-            ]}
-          />
-        </div>
-      )}
-
-      <TodayWidgetBoundary name="travel">
-        <TripBanner />
-        <PreTripChecklist />
-        <TripWrapupCard />
-      </TodayWidgetBoundary>
       <TodayWidgetBoundary name="doses">
         <MedsMiniTimeline className="mb-3" />
         <TodayDoses />
       </TodayWidgetBoundary>
 
-      <TodayWidgetBoundary name="setup">
-        <OnboardingChecklist />
-      </TodayWidgetBoundary>
-      <TodayWidgetBoundary name="first-entry-nudge">
-        <FirstEntryNudge />
-      </TodayWidgetBoundary>
-      <TodayWidgetBoundary name="tips">
-        <ConditionTipCard conditions={profile?.conditions} />
-      </TodayWidgetBoundary>
-      <TodayWidgetBoundary name="suggestions">
-        <FeatureSuggestionCard />
-      </TodayWidgetBoundary>
-      <TodayWidgetBoundary name="recap">
-        <WeeklyRecapCard />
-      </TodayWidgetBoundary>
-      <TodayWidgetBoundary name="trends">
-        <SevenDayTrendStrip />
-      </TodayWidgetBoundary>
-      <TodayWidgetBoundary name="insight">
-        <TopInsightCard />
-      </TodayWidgetBoundary>
+      <div className="mt-10">
+        <button
+          type="button"
+          onClick={() => setShowMore((v) => !v)}
+          aria-expanded={showMore}
+          className="flex w-full items-center justify-between rounded-2xl bg-card ring-1 ring-border px-5 py-3 hover:bg-secondary/40 transition"
+        >
+          <span className="label-eyebrow text-muted-foreground">More for today</span>
+          <ChevronDown
+            className={`h-4 w-4 text-muted-foreground transition-transform ${showMore ? "rotate-180" : ""}`}
+          />
+        </button>
+      </div>
 
-      {/* Hydration & auras quick-capture */}
-      {showHydration && (
-        <section className="mt-10 rounded-2xl ring-1 ring-border bg-card p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="label-eyebrow text-muted-foreground">
-                {showAura ? "Hydration & auras" : "Hydration"}
-              </p>
-              <p className="mt-1 text-sm text-foreground">
-                {showAura
-                  ? "Log every drink. Capture déjà vu the moment it lands."
-                  : "Log every drink, water and electrolytes."}
-              </p>
-            </div>
-            <Link
-              to="/hydration"
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-            >
-              <Droplets className="h-3.5 w-3.5" /> Day view <ChevronRight className="h-3 w-3" />
-            </Link>
-          </div>
-          <div className="mt-4">
-            <QuickAddWater />
-          </div>
-          {showAura && (
-            <>
-              <div className="mt-3">
-                <LogAuraSheet />
-              </div>
-              <PatternHintCard />
-            </>
+      {showMore && (
+        <div className="mt-4 space-y-4">
+          <ConnectWearablesCard />
+          <ConditionWelcomeNudge />
+          {journalCount != null && journalCount > 0 && (
+            <ReEngagementNudge conditions={profile?.conditions ?? []} hasAnyEntries />
           )}
-        </section>
-      )}
+          {announcement && (
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <p className="label-eyebrow">{t("todayPage.fromTeam")}</p>
+              <p className="mt-2 font-serif text-lg text-foreground">{announcement.subject}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{announcement.body}</p>
+            </div>
+          )}
+          {bio && (
+            <BodyMeasurementsRow
+              items={[
+                {
+                  value:
+                    bio.body_temp_deviation_c != null
+                      ? `${bio.body_temp_deviation_c > 0 ? "+" : ""}${bio.body_temp_deviation_c.toFixed(1)}°`
+                      : "–",
+                  label: "Temp Δ",
+                },
+                {
+                  value: bio.respiratory_rate_bpm ? Math.round(bio.respiratory_rate_bpm) : "–",
+                  label: "Resp /min",
+                },
+                {
+                  value: bio.spo2_pct ? `${Math.round(bio.spo2_pct)}%` : "–",
+                  label: "SpO₂",
+                },
+              ]}
+            />
+          )}
+          <TodayWidgetBoundary name="travel">
+            <TripBanner />
+            <PreTripChecklist />
+            <TripWrapupCard />
+          </TodayWidgetBoundary>
+          <TodayWidgetBoundary name="setup">
+            <OnboardingChecklist />
+          </TodayWidgetBoundary>
+          <TodayWidgetBoundary name="first-entry-nudge">
+            <FirstEntryNudge />
+          </TodayWidgetBoundary>
+          <TodayWidgetBoundary name="tips">
+            <ConditionTipCard conditions={profile?.conditions} />
+          </TodayWidgetBoundary>
+          <TodayWidgetBoundary name="suggestions">
+            <FeatureSuggestionCard />
+          </TodayWidgetBoundary>
+          <TodayWidgetBoundary name="recap">
+            <WeeklyRecapCard />
+          </TodayWidgetBoundary>
+          <TodayWidgetBoundary name="trends">
+            <SevenDayTrendStrip />
+          </TodayWidgetBoundary>
+          <TodayWidgetBoundary name="insight">
+            <TopInsightCard />
+          </TodayWidgetBoundary>
 
-      {bio && (
-        <div className="mt-10 flex flex-col items-center gap-3">
-          <OuraSyncStatus variant="compact" />
-          <Link
-            to="/biometrics"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <Activity className="h-3 w-3" />
-            Dig deeper into your signals
-            <ChevronRight className="h-3 w-3" />
-          </Link>
+          {showHydration && (
+            <section className="rounded-2xl ring-1 ring-border bg-card p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="label-eyebrow text-muted-foreground">
+                    {showAura ? "Hydration & auras" : "Hydration"}
+                  </p>
+                  <p className="mt-1 text-sm text-foreground">
+                    {showAura
+                      ? "Log every drink. Capture déjà vu the moment it lands."
+                      : "Log every drink, water and electrolytes."}
+                  </p>
+                </div>
+                <Link
+                  to="/hydration"
+                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <Droplets className="h-3.5 w-3.5" /> Day view <ChevronRight className="h-3 w-3" />
+                </Link>
+              </div>
+              <div className="mt-4">
+                <QuickAddWater />
+              </div>
+              {showAura && (
+                <>
+                  <div className="mt-3">
+                    <LogAuraSheet />
+                  </div>
+                  <PatternHintCard />
+                </>
+              )}
+            </section>
+          )}
+
+          {bio && (
+            <div className="flex flex-col items-center gap-3 pt-2">
+              <OuraSyncStatus variant="compact" />
+              <Link
+                to="/biometrics"
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <Activity className="h-3 w-3" />
+                Dig deeper into your signals
+                <ChevronRight className="h-3 w-3" />
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>

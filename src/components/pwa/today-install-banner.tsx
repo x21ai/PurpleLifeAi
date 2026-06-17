@@ -26,31 +26,60 @@ function isStandalone(): boolean {
 
 function isIOS(): boolean {
   if (typeof navigator === "undefined") return false;
-  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const ua = navigator.userAgent;
+  // iPadOS 13+ reports as a Mac; detect a touch-capable Apple device too.
+  return (
+    /iPad|iPhone|iPod/.test(ua) ||
+    (/Macintosh/.test(ua) && typeof document !== "undefined" && "ontouchend" in document)
+  );
 }
 
+/** iOS Safari is the only iOS browser that can add to the home screen. */
+function isIOSSafari(): boolean {
+  if (!isIOS()) return false;
+  return !/CriOS|FxiOS|EdgiOS|OPiOS/.test(navigator.userAgent);
+}
+
+/**
+ * Install prompt shown on Today. Only appears when an install is actually
+ * possible: a captured `beforeinstallprompt` (Android, desktop Chrome/Edge) or
+ * iOS Safari (manual add). It never shows where install is unsupported, and it
+ * removes itself once the app is installed.
+ */
 export function TodayInstallBanner() {
-  const [visible, setVisible] = React.useState(false);
   const [deferred, setDeferred] = React.useState<BIPEvent | null>(null);
+  const [iosEligible, setIosEligible] = React.useState(false);
   const [showIosHelp, setShowIosHelp] = React.useState(false);
+  // Hidden by default until we know an install path exists.
+  const [dismissed, setDismissed] = React.useState(true);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     if (isStandalone()) return;
     if (localStorage.getItem(DISMISSED_KEY)) return;
-    setVisible(true);
+    setDismissed(false);
 
-    const handler = (e: Event) => {
+    if (isIOSSafari()) setIosEligible(true);
+
+    const onBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferred(e as BIPEvent);
     };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    const onInstalled = () => {
+      localStorage.setItem(DISMISSED_KEY, "1");
+      setDismissed(true);
+    };
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
   }, []);
 
   const dismiss = () => {
     localStorage.setItem(DISMISSED_KEY, "1");
-    setVisible(false);
+    setDismissed(true);
   };
 
   const install = async () => {
@@ -61,11 +90,11 @@ export function TodayInstallBanner() {
       else setDeferred(null);
       return;
     }
-    // Fallback: iOS Safari has no programmatic install.
-    setShowIosHelp(true);
+    if (iosEligible) setShowIosHelp(true);
   };
 
-  if (!visible) return null;
+  // Render nothing unless there is a real way to install on this device.
+  if (dismissed || (!deferred && !iosEligible)) return null;
 
   return (
     <>
@@ -76,13 +105,14 @@ export function TodayInstallBanner() {
       >
         <Smartphone className="h-5 w-5 mt-0.5 shrink-0 text-primary" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-foreground">
-            For reliable medication reminders, add Purple to your home screen.
+          <p className="text-sm font-medium text-foreground">Add Purple to your home screen</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Opens like an app, works offline, and keeps your medication reminders reliable.
           </p>
           <div className="mt-3 flex gap-2">
             <Button size="sm" onClick={install} className="rounded-full">
               <Download className="h-3.5 w-3.5 mr-1" />
-              {isIOS() ? "How to add" : "Add to home screen"}
+              {deferred ? "Add to home screen" : "How to add"}
             </Button>
           </div>
         </div>
@@ -101,8 +131,8 @@ export function TodayInstallBanner() {
           <DialogHeader>
             <DialogTitle>Add Purple to your home screen</DialogTitle>
             <DialogDescription>
-              In Safari, tap the Share button (the square with an up arrow) at the
-              bottom of the screen, then choose <strong>Add to Home Screen</strong>.
+              In Safari, tap the Share button (the square with an up arrow), then choose{" "}
+              <strong>Add to Home Screen</strong>. Purple will open like an app from then on.
             </DialogDescription>
           </DialogHeader>
           <Button onClick={() => setShowIosHelp(false)} className="rounded-full">

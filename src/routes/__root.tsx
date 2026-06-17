@@ -13,7 +13,6 @@ import appCss from "../styles.css?url";
 import { AuthProvider } from "@/integrations/supabase/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
-import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { ThemeProvider, themeBootstrapScript } from "@/lib/theme-provider";
 import "@/i18n";
 import { hydrateLocale } from "@/i18n";
@@ -188,8 +187,25 @@ function RootShell({ children }: { children: React.ReactNode }) {
               '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap" />',
           }}
         />
+        {/* Clean branded launch: a centered wordmark on the brand dark, removed
+            on first paint so there is no flash of half-built UI. */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html:
+              "#purple-splash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0A0710;transition:opacity .4s ease}#purple-splash .w{color:#FAFAFC;font-family:'Source Serif 4',Georgia,serif;font-weight:600;font-size:26px;letter-spacing:.42em;padding-left:.42em}@media (prefers-reduced-motion:reduce){#purple-splash{transition:none}}",
+          }}
+        />
       </head>
       <body suppressHydrationWarning>
+        <div id="purple-splash" aria-hidden="true">
+          <span className="w">PURPLE</span>
+        </div>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){function h(){var s=document.getElementById('purple-splash');if(!s)return;s.style.opacity='0';setTimeout(function(){s.parentNode&&s.parentNode.removeChild(s)},420)}if(document.readyState==='complete'){setTimeout(h,120)}else{window.addEventListener('load',function(){setTimeout(h,120)});setTimeout(h,1600)}})();",
+          }}
+        />
         {children}
         <Scripts />
       </body>
@@ -239,7 +255,6 @@ function RootComponent() {
         <AuthProvider>
           <Outlet />
           <Toaster />
-          <InstallPrompt />
           {idle && (
             <Suspense fallback={null}>
               <DeferredStartup />
