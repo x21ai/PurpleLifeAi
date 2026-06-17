@@ -49,7 +49,7 @@ function getEdgeCache(): Cache | null {
 // Cloudflare Cron Triggers (wrangler.deploy.jsonc) fan out to the app's cron
 // endpoints. Each endpoint validates CRON_SECRET itself.
 const CRON_ENDPOINTS: Record<string, string[]> = {
-  "* * * * *": ["/api/public/cron/dose-reminders"],
+  "* * * * *": ["/api/public/cron/dose-reminders", "/api/public/cron/journal-reprocess"],
   "0 * * * *": ["/api/public/cron/oura-sync-all", "/api/public/cron/whoop-sync-all"],
   "0 6 * * *": [
     "/api/public/cron/care-daily-digest",

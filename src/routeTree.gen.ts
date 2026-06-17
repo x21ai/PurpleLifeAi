@@ -98,6 +98,7 @@ import { Route as ApiPublicCronWeeklyRecapRouteImport } from './routes/api/publi
 import { Route as ApiPublicCronPurgeDeletedAccountsRouteImport } from './routes/api/public/cron/purge-deleted-accounts'
 import { Route as ApiPublicCronOuraSyncAllRouteImport } from './routes/api/public/cron/oura-sync-all'
 import { Route as ApiPublicCronMedicalReportsRouteImport } from './routes/api/public/cron/medical-reports'
+import { Route as ApiPublicCronJournalReprocessRouteImport } from './routes/api/public/cron/journal-reprocess'
 import { Route as ApiPublicCronEmailQueuePumpRouteImport } from './routes/api/public/cron/email-queue-pump'
 import { Route as ApiPublicCronDoseRemindersRouteImport } from './routes/api/public/cron/dose-reminders'
 import { Route as ApiPublicCronCareDailyDigestRouteImport } from './routes/api/public/cron/care-daily-digest'
@@ -563,6 +564,12 @@ const ApiPublicCronMedicalReportsRoute =
     path: '/api/public/cron/medical-reports',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronJournalReprocessRoute =
+  ApiPublicCronJournalReprocessRouteImport.update({
+    id: '/api/public/cron/journal-reprocess',
+    path: '/api/public/cron/journal-reprocess',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronEmailQueuePumpRoute =
   ApiPublicCronEmailQueuePumpRouteImport.update({
     id: '/api/public/cron/email-queue-pump',
@@ -719,6 +726,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
   '/api/public/cron/email-queue-pump': typeof ApiPublicCronEmailQueuePumpRoute
+  '/api/public/cron/journal-reprocess': typeof ApiPublicCronJournalReprocessRoute
   '/api/public/cron/medical-reports': typeof ApiPublicCronMedicalReportsRoute
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
@@ -819,6 +827,7 @@ export interface FileRoutesByTo {
   '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
   '/api/public/cron/email-queue-pump': typeof ApiPublicCronEmailQueuePumpRoute
+  '/api/public/cron/journal-reprocess': typeof ApiPublicCronJournalReprocessRoute
   '/api/public/cron/medical-reports': typeof ApiPublicCronMedicalReportsRoute
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
@@ -922,6 +931,7 @@ export interface FileRoutesById {
   '/api/public/cron/care-daily-digest': typeof ApiPublicCronCareDailyDigestRoute
   '/api/public/cron/dose-reminders': typeof ApiPublicCronDoseRemindersRoute
   '/api/public/cron/email-queue-pump': typeof ApiPublicCronEmailQueuePumpRoute
+  '/api/public/cron/journal-reprocess': typeof ApiPublicCronJournalReprocessRoute
   '/api/public/cron/medical-reports': typeof ApiPublicCronMedicalReportsRoute
   '/api/public/cron/oura-sync-all': typeof ApiPublicCronOuraSyncAllRoute
   '/api/public/cron/purge-deleted-accounts': typeof ApiPublicCronPurgeDeletedAccountsRoute
@@ -1025,6 +1035,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
     | '/api/public/cron/email-queue-pump'
+    | '/api/public/cron/journal-reprocess'
     | '/api/public/cron/medical-reports'
     | '/api/public/cron/oura-sync-all'
     | '/api/public/cron/purge-deleted-accounts'
@@ -1125,6 +1136,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
     | '/api/public/cron/email-queue-pump'
+    | '/api/public/cron/journal-reprocess'
     | '/api/public/cron/medical-reports'
     | '/api/public/cron/oura-sync-all'
     | '/api/public/cron/purge-deleted-accounts'
@@ -1227,6 +1239,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/care-daily-digest'
     | '/api/public/cron/dose-reminders'
     | '/api/public/cron/email-queue-pump'
+    | '/api/public/cron/journal-reprocess'
     | '/api/public/cron/medical-reports'
     | '/api/public/cron/oura-sync-all'
     | '/api/public/cron/purge-deleted-accounts'
@@ -1277,6 +1290,7 @@ export interface RootRouteChildren {
   ApiPublicCronCareDailyDigestRoute: typeof ApiPublicCronCareDailyDigestRoute
   ApiPublicCronDoseRemindersRoute: typeof ApiPublicCronDoseRemindersRoute
   ApiPublicCronEmailQueuePumpRoute: typeof ApiPublicCronEmailQueuePumpRoute
+  ApiPublicCronJournalReprocessRoute: typeof ApiPublicCronJournalReprocessRoute
   ApiPublicCronMedicalReportsRoute: typeof ApiPublicCronMedicalReportsRoute
   ApiPublicCronOuraSyncAllRoute: typeof ApiPublicCronOuraSyncAllRoute
   ApiPublicCronPurgeDeletedAccountsRoute: typeof ApiPublicCronPurgeDeletedAccountsRoute
@@ -1911,6 +1925,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronMedicalReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/journal-reprocess': {
+      id: '/api/public/cron/journal-reprocess'
+      path: '/api/public/cron/journal-reprocess'
+      fullPath: '/api/public/cron/journal-reprocess'
+      preLoaderRoute: typeof ApiPublicCronJournalReprocessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/email-queue-pump': {
       id: '/api/public/cron/email-queue-pump'
       path: '/api/public/cron/email-queue-pump'
@@ -2216,6 +2237,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronCareDailyDigestRoute: ApiPublicCronCareDailyDigestRoute,
   ApiPublicCronDoseRemindersRoute: ApiPublicCronDoseRemindersRoute,
   ApiPublicCronEmailQueuePumpRoute: ApiPublicCronEmailQueuePumpRoute,
+  ApiPublicCronJournalReprocessRoute: ApiPublicCronJournalReprocessRoute,
   ApiPublicCronMedicalReportsRoute: ApiPublicCronMedicalReportsRoute,
   ApiPublicCronOuraSyncAllRoute: ApiPublicCronOuraSyncAllRoute,
   ApiPublicCronPurgeDeletedAccountsRoute:

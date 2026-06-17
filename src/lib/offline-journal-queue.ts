@@ -76,17 +76,27 @@ export async function flushOfflineJournalQueue(): Promise<{
   let failed = 0;
   for (const entry of pending) {
     try {
-      const { error } = await supabase.from("journal_entries").insert({
-        user_id: entry.userId,
-        kind: entry.kind,
-        status: "processing",
-        text: entry.text,
-        voice_transcript: entry.voiceTranscript,
-        captured_at: entry.capturedAt,
-      });
+      const { data: inserted, error } = await supabase
+        .from("journal_entries")
+        .insert({
+          user_id: entry.userId,
+          kind: entry.kind,
+          status: "processing",
+          text: entry.text,
+          voice_transcript: entry.voiceTranscript,
+          captured_at: entry.capturedAt,
+        })
+        .select("id")
+        .single();
       if (error) {
         failed += 1;
         continue;
+      }
+      // Kick off AI processing so flushed entries don't sit "processing" forever.
+      if (inserted?.id) {
+        void supabase.functions
+          .invoke("journal-processor", { body: { entry_id: inserted.id } })
+          .catch(() => { /* a stuck-entry cron will retry */ });
       }
       removeQueuedEntry(entry.id);
       sent += 1;

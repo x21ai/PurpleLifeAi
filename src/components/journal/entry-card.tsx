@@ -82,6 +82,11 @@ export function EntryCard({ entry }: { entry: Entry }) {
       toast.error("Couldn't save changes");
       return;
     }
+    // Re-read the edited text (summary + tags) and re-extract behaviors. Both
+    // are fire-and-forget; the realtime listener refreshes the card on update.
+    void supabase.functions
+      .invoke("journal-processor", { body: { entry_id: entry.id } })
+      .catch(() => { /* processing errors don't block save */ });
     void supabase.functions
       .invoke("journal-extract", { body: { journal_entry_id: entry.id } })
       .catch(() => { /* extraction errors don't block save */ });
@@ -147,8 +152,9 @@ export function EntryCard({ entry }: { entry: Entry }) {
         .from("journal_entries")
         .update({ status: "processing" })
         .eq("id", entry.id);
+      // journal-processor expects snake_case entry_id.
       await supabase.functions.invoke("journal-processor", {
-        body: { entryId: entry.id },
+        body: { entry_id: entry.id },
       });
       toast.success("Re-reading entry…");
     } catch (e) {

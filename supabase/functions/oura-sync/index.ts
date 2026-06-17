@@ -179,9 +179,33 @@ async function syncRange(user_id: string, start: string, end: string) {
       },
     };
 
-    // Delete existing oura row for that day before insert (no unique constraint exists)
     const dayStart = new Date(`${day}T00:00:00Z`).toISOString();
     const dayEnd = new Date(`${day}T23:59:59Z`).toISOString();
+
+    // Merge with any existing row for the day so a partial sync (e.g. the Oura
+    // sleep endpoints failed while activity succeeded) never nulls out
+    // previously-synced fields. Keep an existing non-null value when the new
+    // payload has nothing for that column.
+    const { data: existing } = await admin
+      .from("biometrics")
+      .select("*")
+      .eq("user_id", user_id)
+      .eq("source", "oura")
+      .gte("recorded_at", dayStart)
+      .lte("recorded_at", dayEnd)
+      .order("recorded_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existing) {
+      for (const [key, value] of Object.entries(row)) {
+        if (key === "raw_payload") continue;
+        if (value == null && (existing as Record<string, unknown>)[key] != null) {
+          row[key] = (existing as Record<string, unknown>)[key];
+        }
+      }
+    }
+
+    // Delete existing oura row(s) for that day before insert (no unique constraint exists)
     await admin.from("biometrics")
       .delete()
       .eq("user_id", user_id)

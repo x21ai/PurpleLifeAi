@@ -24,6 +24,7 @@ import {
 import { ExpiryControl } from "@/components/care/expiry-control";
 import { AppleHealthCard } from "@/components/settings/apple-health-card";
 import { CircleSection } from "@/components/sharing/circle-section";
+import { usePlatformFlag } from "@/lib/platform-flags";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useTranslation } from "react-i18next";
 import {
@@ -92,6 +93,9 @@ function SharingPage() {
   useRouteTheme("light");
   const { t } = useTranslation();
   const qc = useQueryClient();
+  // The friend "circle" accept/join routes are dark-launched; only show the
+  // invite UI when the flag is on so invites never lead to a dead end.
+  const { enabled: friendsEnabled } = usePlatformFlag("friends");
 
   const fetchMyCaregivers = useServerFn(listMyCaregivers);
   const fetchSharingWithMe = useServerFn(listPeopleSharingWithMe);
@@ -294,8 +298,8 @@ function SharingPage() {
         )}
       </section>
 
-      {/* Your circle (friends, zero data access) */}
-      <CircleSection />
+      {/* Your circle (friends, zero data access). Gated until friend accept/join ship. */}
+      {friendsEnabled && <CircleSection />}
     </div>
   );
 }

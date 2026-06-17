@@ -43,6 +43,8 @@ type Medication = {
   id: string;
   name: string;
   dosage: string | null;
+  dosage_amount: number | null;
+  dosage_unit: string | null;
   times_of_day: string[];
   pills_remaining: number | null;
   refill_threshold: number | null;
@@ -50,6 +52,15 @@ type Medication = {
   kind: MedKind;
   active: boolean;
 };
+
+/** Free-text dosage if set, else compose from amount + unit so it never renders blank. */
+function medStrength(med: { dosage: string | null; dosage_amount: number | null; dosage_unit: string | null }): string | null {
+  if (med.dosage && med.dosage.trim()) return med.dosage;
+  if (med.dosage_amount != null) {
+    return `${med.dosage_amount}${med.dosage_unit ? ` ${med.dosage_unit}` : ""}`;
+  }
+  return null;
+}
 
 type TodayDose = {
   id: string;
@@ -120,7 +131,7 @@ function MedsPage() {
     const [{ data, error }, { data: doses }] = await Promise.all([
       supabase
         .from("medications")
-        .select("id, name, dosage, times_of_day, pills_remaining, refill_threshold, is_rescue, kind, active")
+        .select("id, name, dosage, dosage_amount, dosage_unit, times_of_day, pills_remaining, refill_threshold, is_rescue, kind, active")
         .order("kind", { ascending: true })
         .order("name", { ascending: true }),
       supabase
@@ -203,6 +214,71 @@ function MedsPage() {
     void load();
   };
 
+  // Best-effort pill stock adjustment, mirrors TodayDoses (QA #22).
+  const adjustPills = async (medicationId: string, by: number) => {
+    const { data } = await supabase
+      .from("medications")
+      .select("pills_remaining")
+      .eq("id", medicationId)
+      .maybeSingle();
+    if (data?.pills_remaining == null) return;
+    const next = Math.max(0, (data.pills_remaining as number) - by);
+    await supabase.from("medications").update({ pills_remaining: next }).eq("id", medicationId);
+  };
+
+  // Per-dose action for a pending dose: Taken / Snooze / Skip.
+  const doseAction = async (id: string, action: "taken" | "skip" | "snooze") => {
+    const dose = todayDoses?.find((d) => d.id === id) ?? null;
+    let error: unknown = null;
+    if (action === "taken") {
+      const res = await supabase
+        .from("medication_doses")
+        .update({ status: "taken", taken_at: new Date().toISOString() })
+        .eq("id", id);
+      error = res.error;
+      if (!error && dose?.medication?.id && dose.status !== "taken") {
+        await adjustPills(dose.medication.id, 1);
+      }
+    } else if (action === "skip") {
+      error = (await supabase.from("medication_doses").update({ status: "skipped" }).eq("id", id)).error;
+    } else {
+      const snoozeUntil = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+      error = (
+        await supabase
+          .from("medication_doses")
+          .update({ scheduled_at: snoozeUntil, status: "pending" })
+          .eq("id", id)
+      ).error;
+    }
+    if (error) {
+      toast.error("Could not update dose");
+      return;
+    }
+    if (action === "snooze") toast.success("Snoozed 10 min");
+    void load();
+  };
+
+  // Retroactive edit: e.g. a missed dose the user actually took.
+  const doseReclassify = async (id: string, next: "taken" | "skipped" | "pending") => {
+    const dose = todayDoses?.find((d) => d.id === id) ?? null;
+    const { error } = await supabase
+      .from("medication_doses")
+      .update({ status: next, taken_at: next === "taken" ? new Date().toISOString() : null })
+      .eq("id", id);
+    if (error) {
+      toast.error("Could not update dose");
+      return;
+    }
+    if (dose?.medication?.id) {
+      if (next === "taken" && dose.status !== "taken") await adjustPills(dose.medication.id, 1);
+      else if (next !== "taken" && dose.status === "taken") await adjustPills(dose.medication.id, -1);
+    }
+    toast.success(
+      next === "taken" ? "Marked as taken" : next === "skipped" ? "Marked as skipped" : "Reset to pending",
+    );
+    void load();
+  };
+
   const handleEdit = (id: string) => {
     setEditingMedId(id);
     setOpen(true);
@@ -271,6 +347,8 @@ function MedsPage() {
             pendingCount={pendingToday.length}
             onMarkAll={markAllTaken}
             markingAll={markingAll}
+            onAction={doseAction}
+            onReclassify={doseReclassify}
           />
           <AdherenceCard />
           <AdherenceExtrasCard />
@@ -447,11 +525,15 @@ function TodayDosesSection({
   pendingCount,
   onMarkAll,
   markingAll,
+  onAction,
+  onReclassify,
 }: {
   doses: TodayDose[] | null;
   pendingCount: number;
   onMarkAll: () => void;
   markingAll: boolean;
+  onAction: (id: string, action: "taken" | "skip" | "snooze") => void;
+  onReclassify: (id: string, next: "taken" | "skipped" | "pending") => void;
 }) {
   const { t } = useTranslation();
   return (
@@ -478,14 +560,40 @@ function TodayDosesSection({
       ) : (
         <ul className="mt-4 divide-y divide-border">
           {doses.map((d) => (
-            <li key={d.id} className="flex items-center justify-between py-2 text-sm">
-              <span className="text-muted-foreground tabular-nums">
+            <li key={d.id} className="flex flex-wrap items-center gap-2 py-3 text-sm">
+              <span className="text-muted-foreground tabular-nums shrink-0">
                 {formatLocaleTime(d.scheduled_at)}
               </span>
-              <span className="text-foreground truncate mx-3 flex-1">
+              <span className="text-foreground truncate flex-1 min-w-0">
                 {d.medication?.name ?? "Medication"}
               </span>
-              <span className="capitalize text-muted-foreground">{d.status}</span>
+              {d.status === "pending" ? (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Button size="sm" className="rounded-full h-8 px-3" onClick={() => onAction(d.id, "taken")}>
+                    Taken
+                  </Button>
+                  <Button size="sm" variant="outline" className="rounded-full h-8 px-3" onClick={() => onAction(d.id, "snooze")}>
+                    Snooze
+                  </Button>
+                  <Button size="sm" variant="ghost" className="rounded-full h-8 px-3" onClick={() => onAction(d.id, "skip")}>
+                    Skip
+                  </Button>
+                </div>
+              ) : d.status === "taken" ? (
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs font-medium text-[color:var(--data-good)]">Taken</span>
+                  <Button size="sm" variant="ghost" className="rounded-full h-8 px-3" onClick={() => onReclassify(d.id, "pending")}>
+                    Undo
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="capitalize text-muted-foreground">{d.status}</span>
+                  <Button size="sm" variant="outline" className="rounded-full h-8 px-3" onClick={() => onReclassify(d.id, "taken")}>
+                    I took it
+                  </Button>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -545,7 +653,9 @@ function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: stri
                 </span>
               )}
             </div>
-            {med.dosage && <p className="text-sm text-muted-foreground">{med.dosage}</p>}
+            {medStrength(med) && (
+              <p className="text-sm text-muted-foreground">{medStrength(med)}</p>
+            )}
             {!isRescueMed(med) && med.times_of_day?.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {med.times_of_day.map((t) => (

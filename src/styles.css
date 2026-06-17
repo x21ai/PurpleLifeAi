@@ -98,8 +98,9 @@ body::-webkit-scrollbar,
   --bg-tertiary: #F2EEF5;
   --text-primary: #0A0A0F;
   --text-secondary: #4A4A52;
-  --text-tertiary: #8B8B92;
-  --text-quaternary: #B8B8BD;
+  /* Darkened from #8B8B92 so muted labels/eyebrows meet contrast in light theme. */
+  --text-tertiary: #6B6B73;
+  --text-quaternary: #9A9AA1;
   --divider: #ECECEF;
   --purple-primary: #5B2C82;
   --purple-soft: #EDE4F4;
@@ -328,6 +329,23 @@ body::-webkit-scrollbar,
   .sheet-canvas {
     background-color: #0A0710;
     color: #FAFAFC;
+    /* Re-declare the shadcn tokens to DARK values so descendant utilities
+       (text-foreground, text-muted-foreground, bg-card, bg-muted, border-border)
+       stay light-on-dark even when the global theme is light. Without this,
+       light-theme text-foreground (#0A0A0F) was unreadable on this dark canvas
+       until hover swapped the row to a light bg-muted. */
+    --foreground: #FAFAFC;
+    --muted-foreground: #9A9AA3;
+    --card: #1A1521;
+    --card-foreground: #FAFAFC;
+    --popover: #1A1521;
+    --popover-foreground: #FAFAFC;
+    --secondary: #221C2C;
+    --secondary-foreground: #FAFAFC;
+    --muted: #221C2C;
+    --accent: #221C2C;
+    --accent-foreground: #FAFAFC;
+    --border: rgba(255, 255, 255, 0.08);
     min-height: 100vh;
     min-height: 100dvh;
   }

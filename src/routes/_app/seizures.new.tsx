@@ -132,9 +132,11 @@ function LogSeizurePage() {
     if (!userId || quickSaving) return;
     setQuickSaving(true);
     try {
+      // Respect the "When did it happen?" picker (defaults to now) so a quick
+      // log can still carry the real event time, not just the log time.
       const { error } = await supabase.from("seizure_events").insert({
         user_id: userId,
-        started_at: new Date().toISOString(),
+        started_at: startedAtDate.toISOString(),
       });
       if (error) throw error;
       toast.success("Logged. You can add details anytime.");

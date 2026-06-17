@@ -232,7 +232,16 @@ function MedDetail() {
           {t("meds.archived")}
         </span>
       )}
-      {med.dosage && <p className="mt-3 font-serif text-xl text-foreground/70">{med.dosage}</p>}
+      {(() => {
+        const strength =
+          (med.dosage && med.dosage.trim()) ||
+          (med.dosage_amount != null
+            ? `${med.dosage_amount}${med.dosage_unit ? ` ${med.dosage_unit}` : ""}`
+            : null);
+        return strength ? (
+          <p className="mt-3 font-serif text-xl text-foreground/70">{strength}</p>
+        ) : null;
+      })()}
       {prescriber && <p className="mt-1 text-sm text-muted-foreground">Prescribed by {prescriber}</p>}
       {med.pharmacy_name && <p className="mt-1 text-sm text-muted-foreground">Pharmacy: {med.pharmacy_name}</p>}
 

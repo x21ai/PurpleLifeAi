@@ -10,16 +10,19 @@ type Props = {
   variant?: "compact" | "detailed";
   /** Called after a successful manual sync so parents can refresh data. */
   onSynced?: () => void;
+  /** Bump to force a re-read (e.g. after the page pull-to-refresh syncs). */
+  refreshSignal?: number;
   className?: string;
 };
 
 /**
  * Two timestamps:
  *  - dataThrough: latest biometrics.recorded_at (the day the data is for)
- *  - lastPulled: oura_tokens.updated_at (when the sync ran)
+ *  - lastSync: oura_tokens.last_sync_at (when an incremental sync last ran;
+ *    falls back to updated_at for rows synced before last_sync_at existed)
  * Plus a "Sync now" button that calls the oura-sync edge function.
  */
-export function OuraSyncStatus({ variant = "detailed", onSynced, className }: Props) {
+export function OuraSyncStatus({ variant = "detailed", onSynced, refreshSignal, className }: Props) {
   const [connected, setConnected] = useState<boolean>(false);
   const [dataThrough, setDataThrough] = useState<string | null>(null);
   const [lastPulled, setLastPulled] = useState<string | null>(null);
@@ -36,7 +39,7 @@ export function OuraSyncStatus({ variant = "detailed", onSynced, className }: Pr
     const [{ data: tok }, { data: bio }] = await Promise.all([
       supabase
         .from("oura_tokens")
-        .select("updated_at")
+        .select("updated_at, last_sync_at")
         .eq("user_id", uid)
         .maybeSingle(),
       supabase
@@ -49,14 +52,18 @@ export function OuraSyncStatus({ variant = "detailed", onSynced, className }: Pr
         .maybeSingle(),
     ]);
     setConnected(!!tok);
-    setLastPulled(tok?.updated_at ?? null);
+    setLastPulled(
+      (tok as { last_sync_at?: string | null; updated_at?: string | null } | null)?.last_sync_at ??
+        tok?.updated_at ??
+        null,
+    );
     setDataThrough(bio?.recorded_at ?? null);
     setLoaded(true);
   }, []);
 
   useEffect(() => {
     void refresh();
-  }, [refresh]);
+  }, [refresh, refreshSignal]);
 
   const sync = async () => {
     if (busy) return;

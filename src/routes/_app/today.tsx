@@ -187,6 +187,7 @@ function TodayPage() {
   // immediately (bypasses the 3h on-open throttle), then reloads the page data.
   const [refreshing, setRefreshing] = useState(false);
   const [pull, setPull] = useState(0);
+  const [syncTick, setSyncTick] = useState(0);
   const startY = useRef<number | null>(null);
 
   const onRefresh = useCallback(async () => {
@@ -206,6 +207,8 @@ function TodayPage() {
         }),
       );
       await load();
+      // Tell the sync badge to re-read last_sync_at after the sync completes.
+      setSyncTick((n) => n + 1);
     } finally {
       setRefreshing(false);
     }
@@ -538,7 +541,7 @@ function TodayPage() {
 
           {bio && (
             <div className="flex flex-col items-center gap-3 pt-2">
-              <OuraSyncStatus variant="compact" />
+              <OuraSyncStatus variant="compact" refreshSignal={syncTick} />
               <Link
                 to="/biometrics"
                 className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"

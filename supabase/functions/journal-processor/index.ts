@@ -14,6 +14,42 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
+// Physical locations get their own `place:` namespace instead of `context:`.
+const LOCATION_TERMS = new Set([
+  "dinner", "lunch", "breakfast", "restaurant", "hospital", "clinic", "er",
+  "emergency_room", "transport", "car", "uber", "taxi", "plane", "airport",
+  "train", "bus", "home", "bed", "bedroom",
+]);
+// Ongoing states the model sometimes mislabels as discrete events.
+const STATE_NOT_EVENT = new Set(["sleep", "asleep", "awake", "waking", "bedtime", "morning", "nap"]);
+
+/**
+ * Normalize AI tags so the displayed namespaces are consistent:
+ *  - event:sleep|awake|bedtime|... -> context:* (those are states, not events)
+ *  - context:<location> -> place:<location> (hospital, restaurant, car, ...)
+ */
+function normalizeTags(tags: unknown): string[] {
+  if (!Array.isArray(tags)) return [];
+  const out: string[] = [];
+  for (const raw of tags) {
+    if (typeof raw !== "string") continue;
+    let tag = raw.trim();
+    if (!tag) continue;
+    const idx = tag.indexOf(":");
+    if (idx > 0) {
+      const prefix = tag.slice(0, idx);
+      const value = tag.slice(idx + 1);
+      if (prefix === "event" && STATE_NOT_EVENT.has(value)) {
+        tag = `context:${value}`;
+      } else if (prefix === "context" && LOCATION_TERMS.has(value)) {
+        tag = `place:${value}`;
+      }
+    }
+    if (!out.includes(tag)) out.push(tag);
+  }
+  return out;
+}
+
 const SYSTEM_PROMPT = `You read a single journal entry from a person managing a long-term health condition (epilepsy and related pattern-driven conditions). Your job is to read the entry carefully and extract structure that will help them understand their own patterns over time.
 
 Be warm and human, never clinical or alarming. Paraphrase in their own voice. Do not diagnose. Do not give medical advice. Surface only what is genuinely present in the entry — never invent symptoms, events, or triggers.
@@ -34,7 +70,7 @@ const TOOL_SCHEMA = {
         type: "array",
         items: { type: "string" },
         description:
-          "Snake_case tags. Use ONE of these prefixes: symptom: (headache, nausea), mood: (tired, anxious), trigger: (alcohol, poor_sleep), med: (keppra_taken), event: (seizure, aura, fall — DISCRETE events only), or context: (sleep, work, exercise — ongoing states or settings). NEVER tag 'sleep', 'awake', 'bedtime', or 'morning' as event:. Those are context:.",
+          "Snake_case tags. Use ONE of these prefixes: symptom: (headache, nausea), mood: (tired, anxious), trigger: (alcohol, poor_sleep), med: (keppra_taken), event: (seizure, aura, fall, DISCRETE events only), place: (hospital, restaurant, home, car, plane, physical locations), or context: (work, exercise, stress, ongoing states). NEVER tag 'sleep', 'awake', 'bedtime', or 'morning' as event:. Those are context:.",
       },
       extracted: {
         type: "object",
@@ -399,7 +435,7 @@ Deno.serve(async (req) => {
       .from("journal_entries")
       .update({
         ai_summary: cleanSummary,
-        ai_tags: result.tags ?? [],
+        ai_tags: normalizeTags(result.tags),
         ai_extracted: result.extracted ?? {},
         voice_transcript: transcript || null,
         status: "processed",
