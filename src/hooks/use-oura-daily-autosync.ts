@@ -1,14 +1,16 @@
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const SESSION_FLAG = "purple.oura.autosync.attempted";
-const STALE_AFTER_MS = 20 * 60 * 60 * 1000; // 20h
+const THROTTLE_MS = 3 * 60 * 60 * 1000; // 3h
 
 /**
- * Once per browser session, if the user has Oura connected and the last sync
- * is older than 20 hours, kick a background incremental sync. Silent on
- * success; only surfaces failures via console (no toast, this is invisible
- * housekeeping).
+ * On app open, if the user has Oura connected and their sync mode is "visit"
+ * (the default), kick a background incremental sync, but only when the last
+ * sync is older than 3 hours. Silent on success; failures go to the console.
+ *
+ * Other modes are not handled here: "interval" syncs run on the server cron,
+ * "pull" syncs on the pull-to-refresh gesture, and "manual" only on the Sync
+ * button. Manual and pull are user-initiated and bypass this throttle.
  *
  * Mounted at the root so it fires shortly after the user authenticates,
  * without re-firing on every route change.
@@ -20,33 +22,35 @@ export function useOuraDailyAutoSync() {
 
     async function maybeSync() {
       try {
-        if (sessionStorage.getItem(SESSION_FLAG)) return;
         const { data: sess } = await supabase.auth.getSession();
         const uid = sess.session?.user.id;
         if (!uid) return;
 
         const { data: tok } = await supabase
           .from("oura_tokens")
-          .select("updated_at")
+          .select("sync_mode, last_sync_at, updated_at")
           .eq("user_id", uid)
           .maybeSingle();
         if (!tok) return; // not connected
 
-        const updated = tok.updated_at ? new Date(tok.updated_at).getTime() : 0;
-        if (Date.now() - updated < STALE_AFTER_MS) return;
+        // Only the on-open ("visit") mode syncs here. Treat a missing value as
+        // the default so freshly connected accounts sync on open.
+        const mode = (tok as { sync_mode?: string }).sync_mode ?? "visit";
+        if (mode !== "visit") return;
 
-        sessionStorage.setItem(SESSION_FLAG, "1");
+        const lastIso = tok.last_sync_at ?? tok.updated_at;
+        const last = lastIso ? new Date(lastIso).getTime() : 0;
+        if (Date.now() - last < THROTTLE_MS) return; // synced within the last 3h
+
         if (cancelled) return;
         const { error } = await supabase.functions.invoke("oura-sync", {
           body: { action: "incremental" },
         });
         if (error) {
-          // Clear the flag so the next session can retry.
-          sessionStorage.removeItem(SESSION_FLAG);
-          console.warn("Oura auto-sync failed:", error.message ?? error);
+          console.warn("Oura on-open sync failed:", error.message ?? error);
         }
       } catch (e) {
-        console.warn("Oura auto-sync error:", e);
+        console.warn("Oura on-open sync error:", e);
       }
     }
 

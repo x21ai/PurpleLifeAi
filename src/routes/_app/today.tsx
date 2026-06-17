@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { format } from "date-fns";
-import { BookOpen, Pill, Zap, ChevronRight, Activity, Droplets } from "lucide-react";
+import { BookOpen, Pill, Zap, ChevronRight, Activity, Droplets, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -110,52 +110,98 @@ function TodayPage() {
     }
   }, []);
 
+  const load = useCallback(async () => {
+    if (!userId) return;
+    const since = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
+    const [b, f, p, msg, jc] = await Promise.all([
+      supabase
+        .from("biometrics")
+        .select(
+          "recorded_at, oura_readiness_score, sleep_score, oura_activity_score, body_temp_deviation_c, respiratory_rate_bpm, spo2_pct",
+        )
+        .eq("source", "oura")
+        .gte("recorded_at", since)
+        .order("recorded_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("risk_forecasts")
+        .select("ai_narrative, risk_score, band")
+        .eq("user_id", userId)
+        .order("for_date", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("first_name, conditions")
+        .eq("id", userId)
+        .maybeSingle(),
+      supabase
+        .from("admin_messages")
+        .select("id, subject, body, created_at")
+        .or(`is_broadcast.eq.true,recipient_id.eq.${userId}`)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("journal_entries")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId),
+    ]);
+    setBio((b.data as Bio | null) ?? null);
+    setForecast((f.data as Forecast | null) ?? null);
+    setProfile((p.data as Profile | null) ?? null);
+    setAnnouncement((msg.data as AdminMessage | null) ?? null);
+    setJournalCount(jc.count ?? 0);
+  }, [userId]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  // Track Oura connection so pull-to-refresh only triggers a sync when relevant.
+  const [ouraConnected, setOuraConnected] = useState(false);
   useEffect(() => {
     if (!userId) return;
-    void (async () => {
-      const since = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
-      const [b, f, p, msg, jc] = await Promise.all([
-        supabase
-          .from("biometrics")
-          .select(
-            "recorded_at, oura_readiness_score, sleep_score, oura_activity_score, body_temp_deviation_c, respiratory_rate_bpm, spo2_pct",
-          )
-          .eq("source", "oura")
-          .gte("recorded_at", since)
-          .order("recorded_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from("risk_forecasts")
-          .select("ai_narrative, risk_score, band")
-          .eq("user_id", userId)
-          .order("for_date", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from("profiles")
-          .select("first_name, conditions")
-          .eq("id", userId)
-          .maybeSingle(),
-        supabase
-          .from("admin_messages")
-          .select("id, subject, body, created_at")
-          .or(`is_broadcast.eq.true,recipient_id.eq.${userId}`)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from("journal_entries")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", userId),
-      ]);
-      setBio((b.data as Bio | null) ?? null);
-      setForecast((f.data as Forecast | null) ?? null);
-      setProfile((p.data as Profile | null) ?? null);
-      setAnnouncement((msg.data as AdminMessage | null) ?? null);
-      setJournalCount(jc.count ?? 0);
-    })();
+    void supabase
+      .from("oura_tokens")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle()
+      .then(({ data }) => setOuraConnected(!!data));
   }, [userId]);
+
+  // Pull-to-refresh: a user-initiated gesture. Syncs Oura immediately (bypasses
+  // the 3h on-open throttle) when connected, then reloads the page data.
+  const [refreshing, setRefreshing] = useState(false);
+  const [pull, setPull] = useState(0);
+  const startY = useRef<number | null>(null);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      if (ouraConnected) {
+        await supabase.functions
+          .invoke("oura-sync", { body: { action: "incremental" } })
+          .catch(() => undefined);
+      }
+      await load();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [ouraConnected, load]);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (window.scrollY <= 0) startY.current = e.touches[0].clientY;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (startY.current === null) return;
+    const d = e.touches[0].clientY - startY.current;
+    if (d > 0) setPull(Math.min(d, 80));
+  };
+  const onTouchEnd = () => {
+    if (pull > 60 && !refreshing) void onRefresh();
+    startY.current = null;
+    setPull(0);
+  };
 
   const hour = now?.getHours() ?? -1;
   const greeting = !now
@@ -197,7 +243,20 @@ function TodayPage() {
     focus === "readiness" ? "Readiness" : focus === "sleep" ? "Sleep" : "Activity";
 
   return (
-    <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-10 sm:pt-16 pb-16">
+    <div
+      className="mx-auto max-w-2xl px-5 sm:px-8 pt-10 sm:pt-16 pb-16"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
+      {(pull > 0 || refreshing) && (
+        <div
+          className="flex justify-center text-muted-foreground"
+          style={{ height: refreshing ? 32 : pull }}
+        >
+          <RefreshCw className={(pull > 60 || refreshing) ? "animate-spin h-4 w-4 mt-2" : "h-4 w-4 mt-2"} />
+        </div>
+      )}
       <RestoreBanner />
       <div className="mb-6">
         <TodayInstallBanner />
