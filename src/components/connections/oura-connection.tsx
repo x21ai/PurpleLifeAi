@@ -1,9 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Activity, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import { SyncModeSelect } from "@/components/connections/sync-mode-select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { userMessage } from "@/lib/user-message";
@@ -28,7 +26,6 @@ function relativeTime(iso: string | null): string {
 export function OuraConnection() {
   const [connected, setConnected] = useState<boolean | null>(null);
   const [lastSync, setLastSync] = useState<string | null>(null);
-  const [syncValue, setSyncValue] = useState<string>("visit");
   const [counts, setCounts] = useState<Counts>({ sleep: 0, readiness: 0, activity: 0 });
   const [busy, setBusy] = useState(false);
   const [backfilling, setBackfilling] = useState(false);
@@ -39,15 +36,11 @@ export function OuraConnection() {
     const uid = sess.session.user.id;
     const { data } = await supabase
       .from("oura_tokens")
-      .select("updated_at, last_sync_at, sync_interval_hours, sync_mode")
+      .select("updated_at, last_sync_at")
       .eq("user_id", uid)
       .maybeSingle();
     setConnected(!!data);
     setLastSync((data as any)?.last_sync_at ?? data?.updated_at ?? null);
-    if (data) {
-      const mode = (data as any).sync_mode ?? "visit";
-      setSyncValue(mode === "interval" ? String(data.sync_interval_hours ?? 12) : mode);
-    }
 
     if (data) {
       const since = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString();
@@ -148,29 +141,6 @@ export function OuraConnection() {
     }
   };
 
-  const SYNC_LABEL: Record<string, string> = {
-    visit: "Sync when you open Purple",
-    pull: "Sync on pull to refresh",
-    manual: "Manual sync only",
-    "1": "Sync every hour",
-    "6": "Sync every 6 hours",
-    "12": "Sync every 12 hours",
-  };
-
-  const updateSyncMode = async (v: string) => {
-    setSyncValue(v);
-    const isInterval = v === "1" || v === "6" || v === "12";
-    const mode = isInterval ? "interval" : v; // visit | pull | manual
-    const hours = isInterval ? Number(v) : 0;
-    const { data: sess } = await supabase.auth.getSession();
-    if (!sess.session) return;
-    const { error } = await supabase.from("oura_tokens")
-      .update({ sync_mode: mode, sync_interval_hours: hours })
-      .eq("user_id", sess.session.user.id);
-    if (error) toast.error("Could not save preference");
-    else toast.success(SYNC_LABEL[v] ?? "Sync preference saved");
-  };
-
   const disconnect = async () => {
     const { data: sess } = await supabase.auth.getSession();
     if (!sess.session) return;
@@ -219,19 +189,7 @@ export function OuraConnection() {
             </p>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Auto-sync</span>
-              <Select value={syncValue} onValueChange={updateSyncMode}>
-                <SelectTrigger className="h-8 w-[190px] text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="visit">When I open Purple (every 3h)</SelectItem>
-                  <SelectItem value="pull">Pull to refresh</SelectItem>
-                  <SelectItem value="1">Every hour</SelectItem>
-                  <SelectItem value="6">Every 6 hours</SelectItem>
-                  <SelectItem value="12">Every 12 hours</SelectItem>
-                  <SelectItem value="manual">Manual only</SelectItem>
-                </SelectContent>
-              </Select>
+              <SyncModeSelect table="oura_tokens" />
             </div>
           </div>
         )}

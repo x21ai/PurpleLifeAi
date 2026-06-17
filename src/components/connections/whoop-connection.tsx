@@ -1,9 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Heart, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import { SyncModeSelect } from "@/components/connections/sync-mode-select";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getWhoopConfig, whoopIncrementalSync } from "@/lib/whoop.functions";
@@ -40,7 +38,6 @@ export function WhoopConnection() {
   const runIncrementalSync = useServerFn(whoopIncrementalSync);
   const [connected, setConnected] = useState<boolean | null>(null);
   const [lastSync, setLastSync] = useState<string | null>(null);
-  const [interval, setIntervalHours] = useState<number>(12);
   const [counts, setCounts] = useState<Counts>({ recovery: 0, sleep: 0, strain: 0 });
   const [busy, setBusy] = useState(false);
   const [backfilling, setBackfilling] = useState(false);
@@ -51,12 +48,11 @@ export function WhoopConnection() {
     const uid = sess.session.user.id;
     const { data } = await supabase
       .from("whoop_tokens")
-      .select("updated_at, last_sync_at, sync_interval_hours")
+      .select("updated_at, last_sync_at")
       .eq("user_id", uid)
       .maybeSingle();
     setConnected(!!data);
     setLastSync(data?.last_sync_at ?? data?.updated_at ?? null);
-    if (data?.sync_interval_hours != null) setIntervalHours(data.sync_interval_hours);
 
     if (data) {
       const since = new Date(Date.now() - 90 * 24 * 3600 * 1000).toISOString();
@@ -147,18 +143,6 @@ export function WhoopConnection() {
     }
   };
 
-  const updateInterval = async (v: string) => {
-    const hours = Number(v);
-    setIntervalHours(hours);
-    const { data: sess } = await supabase.auth.getSession();
-    if (!sess.session) return;
-    const { error } = await supabase.from("whoop_tokens")
-      .update({ sync_interval_hours: hours })
-      .eq("user_id", sess.session.user.id);
-    if (error) toast.error("Could not save preference");
-    else toast.success(hours === 0 ? "Auto-sync off" : `Sync every ${hours === 1 ? "hour" : `${hours} hours`}`);
-  };
-
   const disconnect = async () => {
     const { data: sess } = await supabase.auth.getSession();
     if (!sess.session) return;
@@ -207,18 +191,7 @@ export function WhoopConnection() {
             </p>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Auto-sync</span>
-              <Select value={String(interval)} onValueChange={(v) => void updateInterval(v)}>
-                <SelectTrigger className="h-8 w-[150px] text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Every hour</SelectItem>
-                  <SelectItem value="6">Every 6 hours</SelectItem>
-                  <SelectItem value="12">Every 12 hours</SelectItem>
-                  <SelectItem value="24">Every 24 hours</SelectItem>
-                  <SelectItem value="0">Manual only</SelectItem>
-                </SelectContent>
-              </Select>
+              <SyncModeSelect table="whoop_tokens" />
             </div>
           </div>
         )}

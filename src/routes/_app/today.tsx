@@ -2,9 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { format } from "date-fns";
 import { BookOpen, Pill, Zap, ChevronRight, Activity, Droplets, RefreshCw } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { whoopIncrementalSync } from "@/lib/whoop.functions";
+import { WEARABLE_PROVIDERS } from "@/lib/wearable-sync";
 import { ScoreTile } from "@/components/ui-oura/v2/score-tile";
 import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 import { BodyMeasurementsRow } from "@/components/ui-oura/v2/body-measurements-row";
@@ -157,20 +160,29 @@ function TodayPage() {
 
   useEffect(() => { void load(); }, [load]);
 
-  // Track Oura connection so pull-to-refresh only triggers a sync when relevant.
-  const [ouraConnected, setOuraConnected] = useState(false);
+  // Track which pull-based wearables are connected so pull-to-refresh only
+  // triggers syncs that are relevant.
+  const whoopSync = useServerFn(whoopIncrementalSync);
+  const [connected, setConnected] = useState<Record<string, boolean>>({});
   useEffect(() => {
     if (!userId) return;
-    void supabase
-      .from("oura_tokens")
-      .select("user_id")
-      .eq("user_id", userId)
-      .maybeSingle()
-      .then(({ data }) => setOuraConnected(!!data));
+    void (async () => {
+      const entries = await Promise.all(
+        WEARABLE_PROVIDERS.map(async (p) => {
+          const { data } = await supabase
+            .from(p.tokensTable)
+            .select("user_id")
+            .eq("user_id", userId)
+            .maybeSingle();
+          return [p.id, !!data] as const;
+        }),
+      );
+      setConnected(Object.fromEntries(entries));
+    })();
   }, [userId]);
 
-  // Pull-to-refresh: a user-initiated gesture. Syncs Oura immediately (bypasses
-  // the 3h on-open throttle) when connected, then reloads the page data.
+  // Pull-to-refresh: a user-initiated gesture. Syncs every connected wearable
+  // immediately (bypasses the 3h on-open throttle), then reloads the page data.
   const [refreshing, setRefreshing] = useState(false);
   const [pull, setPull] = useState(0);
   const startY = useRef<number | null>(null);
@@ -178,16 +190,24 @@ function TodayPage() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      if (ouraConnected) {
-        await supabase.functions
-          .invoke("oura-sync", { body: { action: "incremental" } })
-          .catch(() => undefined);
-      }
+      await Promise.all(
+        WEARABLE_PROVIDERS.filter((p) => connected[p.id]).map((p) => {
+          if (p.id === "oura") {
+            return supabase.functions
+              .invoke("oura-sync", { body: { action: "incremental" } })
+              .catch(() => undefined);
+          }
+          if (p.id === "whoop") {
+            return Promise.resolve(whoopSync()).catch(() => undefined);
+          }
+          return Promise.resolve();
+        }),
+      );
       await load();
     } finally {
       setRefreshing(false);
     }
-  }, [ouraConnected, load]);
+  }, [connected, whoopSync, load]);
 
   const onTouchStart = (e: React.TouchEvent) => {
     if (window.scrollY <= 0) startY.current = e.touches[0].clientY;

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { ensureServiceWorker, rearmMedicationNotifications } from "@/lib/med-notifications";
 import { flushDeliveryLog } from "@/lib/notification-delivery";
-import { useOuraDailyAutoSync } from "@/hooks/use-oura-daily-autosync";
+import { useWearableAutoSync } from "@/hooks/use-wearable-autosync";
 
 /**
  * Startup work that must not compete with first paint. Mounted lazily from
@@ -9,8 +9,8 @@ import { useOuraDailyAutoSync } from "@/hooks/use-oura-daily-autosync";
  * also keeps these modules out of the entry chunk.
  */
 export default function DeferredStartup() {
-  // Fire a background Oura sync once per session if the data is > 20h old.
-  useOuraDailyAutoSync();
+  // On app open, sync connected wearables on "visit" mode (3h throttle).
+  useWearableAutoSync();
 
   // Register the service worker for medication reminders only. The helper
   // refuses registration in preview/iframe/dev and clears stale shell caches.
