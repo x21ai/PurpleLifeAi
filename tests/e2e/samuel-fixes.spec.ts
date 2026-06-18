@@ -93,7 +93,7 @@ test("medication form shows Prescriber section and scrolls to the bottom", async
   await gotoApp(page, "/meds");
   await expect(page).toHaveURL(/\/meds/);
 
-  const addButton = page.getByRole("button", { name: /add a medication/i });
+  const addButton = page.getByRole("button", { name: /add a medication/i }).first();
   await addButton.waitFor({ state: "visible" });
   await addButton.click();
   const prescriber = page.getByLabel(/prescriber name/i);

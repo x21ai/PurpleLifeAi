@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { cn, formatLocaleTime } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureTodayDoses } from "@/lib/meds-today";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { Bell, ChevronRight, Moon, MoreVertical, Pill } from "lucide-react";
@@ -96,20 +97,12 @@ export function TodayDoses() {
 
   const load = React.useCallback(async () => {
     if (!userId) return;
-    const start = new Date(); start.setHours(0, 0, 0, 0);
-    const end = new Date(); end.setHours(23, 59, 59, 999);
-    const { data, error } = await supabase
-      .from("medication_doses")
-      .select("id, scheduled_at, status, amount, unit, medication:medications(id, name, dosage, kind, is_rescue)")
-      .gte("scheduled_at", start.toISOString())
-      .lte("scheduled_at", end.toISOString())
-      .order("scheduled_at", { ascending: true });
-    if (error) {
+    try {
+      const { doses } = await ensureTodayDoses(userId);
+      setDoses(doses);
+    } catch (error) {
       console.error(error);
-      return;
     }
-    const rows = ((data as unknown as Dose[]) ?? []).filter(isScheduledMed);
-    setDoses(rows);
   }, [userId]);
 
   React.useEffect(() => { void load(); }, [load]);

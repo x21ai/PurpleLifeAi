@@ -1,15 +1,14 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Pill, AlertCircle, CheckCheck, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2, CalendarDays, Camera, Image as ImageIcon, Mic, Sparkles } from "lucide-react";
-import { format } from "date-fns";
+import { Plus, Pill, AlertCircle, MoreVertical, Edit3, Archive, ArchiveRestore, Trash2, CalendarDays, Camera, Mic, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { MedicationFormSheet, type MedPrefill } from "@/components/meds/medication-form-sheet";
 import { ScanMedSheet } from "@/components/meds/scan-med-sheet";
 import { VoiceMedSheet } from "@/components/meds/voice-med-sheet";
-import { MedsMiniTimeline } from "@/components/meds/meds-mini-timeline";
-import { MedRemindersBanner } from "@/components/meds/med-reminders-banner";
+import { TodayPanel } from "@/components/meds/today-panel";
+import { ensureTodayDoses, type TodayDoseRow } from "@/lib/meds-today";
 import { scheduleMedications } from "@/lib/med-notifications";
 import { MetricNumber } from "@/components/ui-oura/metric-number";
 import { ProgressPill } from "@/components/ui-oura/progress-pill";
@@ -62,12 +61,7 @@ function medStrength(med: { dosage: string | null; dosage_amount: number | null;
   return null;
 }
 
-type TodayDose = {
-  id: string;
-  scheduled_at: string;
-  status: string;
-  medication: { id: string; name: string; dosage: string | null; kind: string; is_rescue: boolean } | null;
-};
+type TodayDose = TodayDoseRow;
 
 type FilterKind = "all" | "medication" | "supplement" | "vitamin" | "rescue";
 
@@ -118,36 +112,24 @@ function MedsPage() {
   const [editingMedId, setEditingMedId] = React.useState<string | null>(null);
   const [markingAll, setMarkingAll] = React.useState(false);
   const [scanOpen, setScanOpen] = React.useState(false);
-  const [scanMode, setScanMode] = React.useState<"camera" | "library">("camera");
   const [voiceOpen, setVoiceOpen] = React.useState(false);
-  const [aiMenuOpen, setAiMenuOpen] = React.useState(false);
   const [prefill, setPrefill] = React.useState<MedPrefill | null>(null);
 
   const load = React.useCallback(async () => {
     if (!userId) return;
-    const start = new Date(); start.setHours(0, 0, 0, 0);
-    const end = new Date(); end.setHours(23, 59, 59, 999);
 
-    const [{ data, error }, { data: doses }] = await Promise.all([
+    const [{ data, error }, doseResult] = await Promise.all([
       supabase
         .from("medications")
         .select("id, name, dosage, dosage_amount, dosage_unit, times_of_day, pills_remaining, refill_threshold, is_rescue, kind, active")
         .order("kind", { ascending: true })
         .order("name", { ascending: true }),
-      supabase
-        .from("medication_doses")
-        .select("id, scheduled_at, status, medication:medications(id, name, dosage, kind, is_rescue)")
-        .gte("scheduled_at", start.toISOString())
-        .lte("scheduled_at", end.toISOString())
-        .order("scheduled_at", { ascending: true }),
+      ensureTodayDoses(userId),
     ]);
 
     if (error) { console.error(error); return; }
     setMeds((data as Medication[]) ?? []);
-    const scheduledDoses = ((doses as unknown as TodayDose[]) ?? []).filter(
-      (d) => d.medication && d.medication.kind !== "rescue" && !d.medication.is_rescue,
-    );
-    setTodayDoses(scheduledDoses);
+    setTodayDoses(doseResult.doses);
   }, [userId]);
 
   React.useEffect(() => { void load(); }, [load]);
@@ -195,6 +177,17 @@ function MedsPage() {
   }, [filteredMeds, tab, filter]);
 
   const pendingToday = todayDoses?.filter((d) => d.status === "pending") ?? [];
+
+  const nextDoseByMedId = React.useMemo(() => {
+    const map = new Map<string, TodayDose>();
+    for (const d of todayDoses ?? []) {
+      const medId = d.medication?.id;
+      if (!medId || d.status !== "pending") continue;
+      const existing = map.get(medId);
+      if (!existing || d.scheduled_at < existing.scheduled_at) map.set(medId, d);
+    }
+    return map;
+  }, [todayDoses]);
 
   const markAllTaken = async () => {
     if (pendingToday.length === 0 || markingAll) return;
@@ -328,31 +321,58 @@ function MedsPage() {
         </NarrativeBlock>
       </div>
 
-      <div className="mt-6">
-        <MedRemindersBanner />
+      <div className="mt-6 flex flex-wrap gap-2">
+        <Button
+          className="rounded-full"
+          onClick={() => {
+            setEditingMedId(null);
+            setPrefill(null);
+            setOpen(true);
+          }}
+        >
+          <Plus className="h-4 w-4 mr-1.5" />
+          {t("meds.addMedication")}
+        </Button>
+        <Button
+          variant="outline"
+          className="rounded-full"
+          onClick={() => setScanOpen(true)}
+        >
+          <Camera className="h-4 w-4 mr-1.5" />
+          {t("meds.scanLabel")}
+        </Button>
+        <Button variant="outline" className="rounded-full" onClick={() => setVoiceOpen(true)}>
+          <Mic className="h-4 w-4 mr-1.5" />
+          {t("meds.voiceLabel")}
+        </Button>
       </div>
 
-      {activeMeds.length > 0 && (
-        <div className="mt-6">
-          <MedsMiniTimeline />
-        </div>
-      )}
+      <TodayPanel
+        doses={todayDoses}
+        pendingCount={pendingToday.length}
+        markingAll={markingAll}
+        onMarkAll={markAllTaken}
+        onAction={doseAction}
+        onReclassify={doseReclassify}
+        onAddMed={() => {
+          setEditingMedId(null);
+          setPrefill(null);
+          setOpen(true);
+        }}
+      />
 
-      {activeMeds.length > 0 && <RefillForecastCard />}
-
       {activeMeds.length > 0 && (
-        <>
-          <TodayDosesSection
-            doses={todayDoses}
-            pendingCount={pendingToday.length}
-            onMarkAll={markAllTaken}
-            markingAll={markingAll}
-            onAction={doseAction}
-            onReclassify={doseReclassify}
-          />
-          <AdherenceCard />
-          <AdherenceExtrasCard />
-        </>
+        <details className="mt-8 group rounded-2xl border border-border bg-card open:pb-2">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-5 py-4 text-sm font-medium text-foreground [&::-webkit-details-marker]:hidden">
+            <span>{t("meds.moreInsights")}</span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="px-5 pb-4 space-y-6">
+            <RefillForecastCard />
+            <AdherenceCard />
+            <AdherenceExtrasCard />
+          </div>
+        </details>
       )}
 
       {meds && meds.length > 0 && (
@@ -436,7 +456,15 @@ function MedsPage() {
                   {t(KIND_LABEL_KEYS[kind])}
                 </h2>
                 <ul className="space-y-2">
-                  {list.map((m) => <MedRow key={m.id} med={m} onEdit={handleEdit} onChanged={load} />)}
+                  {list.map((m) => (
+                    <MedRow
+                      key={m.id}
+                      med={m}
+                      nextDose={nextDoseByMedId.get(m.id) ?? null}
+                      onEdit={handleEdit}
+                      onChanged={load}
+                    />
+                  ))}
                 </ul>
               </section>
             );
@@ -444,45 +472,31 @@ function MedsPage() {
         </div>
       ) : (
         <ul className="mt-8 space-y-2">
-          {(filteredMeds ?? []).map((m) => <MedRow key={m.id} med={m} onEdit={handleEdit} onChanged={load} />)}
+          {(filteredMeds ?? []).map((m) => (
+            <MedRow
+              key={m.id}
+              med={m}
+              nextDose={nextDoseByMedId.get(m.id) ?? null}
+              onEdit={handleEdit}
+              onChanged={load}
+            />
+          ))}
         </ul>
       )}
 
-      <div
-        className="fixed bottom-24 md:bottom-8 right-5 md:right-8 z-40 flex flex-col gap-2"
+      <button
+        type="button"
+        onClick={() => {
+          setPrefill(null);
+          setEditingMedId(null);
+          setOpen(true);
+        }}
+        aria-label={t("meds.addMedication")}
+        className="fixed bottom-24 md:bottom-8 right-5 md:right-8 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center md:hidden"
         style={{ marginBottom: "env(safe-area-inset-bottom)" }}
       >
-        <DropdownMenu open={aiMenuOpen} onOpenChange={setAiMenuOpen}>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              aria-label="Add with AI"
-              className="h-12 w-12 rounded-full bg-card text-foreground ring-1 ring-border shadow-md hover:shadow-lg transition-shadow flex items-center justify-center"
-            >
-              <Sparkles className="h-5 w-5" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="top" className="w-56">
-            <DropdownMenuItem onClick={() => { setScanMode("camera"); setScanOpen(true); }}>
-              <Camera className="h-4 w-4 mr-2" /> Scan bottle
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => { setScanMode("library"); setScanOpen(true); }}>
-              <ImageIcon className="h-4 w-4 mr-2" /> Upload prescription photo
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setVoiceOpen(true)}>
-              <Mic className="h-4 w-4 mr-2" /> Voice
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <button
-          type="button"
-          onClick={() => { setPrefill(null); setOpen(true); }}
-          aria-label={t("meds.addMedication")}
-          className="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
-        >
-          <Plus className="h-6 w-6" />
-        </button>
-      </div>
+        <Plus className="h-6 w-6" />
+      </button>
 
       <MedicationFormSheet
         open={open}
@@ -499,7 +513,7 @@ function MedsPage() {
       <ScanMedSheet
         open={scanOpen}
         onOpenChange={setScanOpen}
-        mode={scanMode}
+        mode="camera"
         onRecognized={(p) => {
           setEditingMedId(null);
           setPrefill(p);
@@ -520,89 +534,17 @@ function MedsPage() {
   );
 }
 
-function TodayDosesSection({
-  doses,
-  pendingCount,
-  onMarkAll,
-  markingAll,
-  onAction,
-  onReclassify,
+function MedRow({
+  med,
+  nextDose,
+  onEdit,
+  onChanged,
 }: {
-  doses: TodayDose[] | null;
-  pendingCount: number;
-  onMarkAll: () => void;
-  markingAll: boolean;
-  onAction: (id: string, action: "taken" | "skip" | "snooze") => void;
-  onReclassify: (id: string, next: "taken" | "skipped" | "pending") => void;
+  med: Medication;
+  nextDose: TodayDose | null;
+  onEdit: (id: string) => void;
+  onChanged: () => void | Promise<void>;
 }) {
-  const { t } = useTranslation();
-  return (
-    <section className="mt-8 rounded-2xl border border-border bg-card p-5 sm:p-6">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="font-serif text-xl text-foreground">{t("meds.todayDoses")}</h2>
-        {pendingCount > 0 && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-full"
-            onClick={onMarkAll}
-            disabled={markingAll}
-          >
-            <CheckCheck className="h-3.5 w-3.5 mr-1" />
-            {t("meds.markAllTaken")}
-          </Button>
-        )}
-      </div>
-      {doses === null ? (
-        <p className="mt-4 text-sm text-muted-foreground">{t("common.loading")}</p>
-      ) : doses.length === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">{t("meds.noDosesToday")}</p>
-      ) : (
-        <ul className="mt-4 divide-y divide-border">
-          {doses.map((d) => (
-            <li key={d.id} className="flex flex-wrap items-center gap-2 py-3 text-sm">
-              <span className="text-muted-foreground tabular-nums shrink-0">
-                {formatLocaleTime(d.scheduled_at)}
-              </span>
-              <span className="text-foreground truncate flex-1 min-w-0">
-                {d.medication?.name ?? "Medication"}
-              </span>
-              {d.status === "pending" ? (
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <Button size="sm" className="rounded-full h-8 px-3" onClick={() => onAction(d.id, "taken")}>
-                    Taken
-                  </Button>
-                  <Button size="sm" variant="outline" className="rounded-full h-8 px-3" onClick={() => onAction(d.id, "snooze")}>
-                    Snooze
-                  </Button>
-                  <Button size="sm" variant="ghost" className="rounded-full h-8 px-3" onClick={() => onAction(d.id, "skip")}>
-                    Skip
-                  </Button>
-                </div>
-              ) : d.status === "taken" ? (
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs font-medium text-[color:var(--data-good)]">Taken</span>
-                  <Button size="sm" variant="ghost" className="rounded-full h-8 px-3" onClick={() => onReclassify(d.id, "pending")}>
-                    Undo
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="capitalize text-muted-foreground">{d.status}</span>
-                  <Button size="sm" variant="outline" className="rounded-full h-8 px-3" onClick={() => onReclassify(d.id, "taken")}>
-                    I took it
-                  </Button>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}
-
-function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: string) => void; onChanged: () => void | Promise<void> }) {
   const threshold = med.refill_threshold ?? 7;
   const lowStock = med.pills_remaining !== null && med.pills_remaining <= threshold;
   const [confirmDelete, setConfirmDelete] = React.useState(false);
@@ -656,7 +598,12 @@ function MedRow({ med, onEdit, onChanged }: { med: Medication; onEdit: (id: stri
             {medStrength(med) && (
               <p className="text-sm text-muted-foreground">{medStrength(med)}</p>
             )}
-            {!isRescueMed(med) && med.times_of_day?.length > 0 && (
+            {!isRescueMed(med) && nextDose && (
+              <p className="mt-3 text-xs text-muted-foreground tabular-nums">
+                Next today · {formatLocaleTime(nextDose.scheduled_at)}
+              </p>
+            )}
+            {!isRescueMed(med) && !nextDose && med.times_of_day?.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {med.times_of_day.map((t) => (
                   <span

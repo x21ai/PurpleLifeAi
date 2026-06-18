@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
 import { navTree, filterNavTree, type NavGroup, type NavLeaf } from "./nav-items";
@@ -9,18 +9,33 @@ import { CaregiverNavLink } from "./caregiver-nav-link";
 import { ChatUnreadBadge } from "./chat-unread-badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+/** True when the sidebar is icon-only (md–lg), not the expanded lg+ rail. */
+function useCollapsedRail(): boolean {
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return !window.matchMedia("(min-width: 1024px)").matches;
+  });
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const update = () => setCollapsed(!mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return collapsed;
+}
+
 /**
- * Wraps a rail row in a tooltip that only shows when the sidebar is in
- * its collapsed (md, icon-only) state. On lg+ the label is already visible
- * inline, so the TooltipContent stays hidden via `lg:hidden`.
+ * Tooltip only on the collapsed icon rail. At lg+ labels are inline, so skip
+ * Tooltip entirely to avoid Radix asChild duplication on multi-child rows.
  */
-function RailTooltip({ label, children }: { label: string; children: React.ReactNode }) {
+function RailTooltip({ label, children }: { label: string; children: ReactNode }) {
+  const collapsed = useCollapsedRail();
+  if (!collapsed) return <>{children}</>;
   return (
     <Tooltip delayDuration={150}>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent side="right" className="lg:hidden">
-        {label}
-      </TooltipContent>
+      <TooltipContent side="right">{label}</TooltipContent>
     </Tooltip>
   );
 }
@@ -173,24 +188,34 @@ function GroupItem({
     </button>
   );
 
+  const linkClass = cn(
+    "flex items-center gap-3 flex-1 min-w-0 rounded-xl px-0 lg:pl-3 lg:pr-3 py-2.5 text-[14px] transition-colors",
+    "justify-center lg:justify-start",
+    isExactActive
+      ? "bg-secondary text-foreground font-medium"
+      : containsActive
+        ? "text-foreground font-medium"
+        : "text-[color:var(--text-tertiary)] hover:bg-secondary/60 hover:text-foreground",
+  );
+
   return (
     <div>
       {group.to ? (
-        <RailTooltip label={group.label}>
-          <div className={rowClass}>
+        <div className="flex items-center w-full">
+          <RailTooltip label={group.label}>
             <Link
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               to={group.to as any}
               aria-current={isExactActive ? "page" : undefined}
               aria-label={group.label}
-              className="flex items-center gap-3 flex-1 min-w-0 -ml-3 pl-3 -my-2.5 py-2.5 rounded-xl"
+              className={linkClass}
             >
               {iconEl}
               <span className="hidden lg:inline flex-1 text-left">{group.label}</span>
             </Link>
-            {chevron}
-          </div>
-        </RailTooltip>
+          </RailTooltip>
+          {chevron}
+        </div>
       ) : (
         <RailTooltip label={group.label}>
           <button
