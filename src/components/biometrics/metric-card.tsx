@@ -1,5 +1,5 @@
+import { lazy, Suspense } from "react";
 import { Link } from "@tanstack/react-router";
-import { ResponsiveContainer, LineChart, Line, YAxis, Tooltip } from "recharts";
 import { Pin, PinOff } from "lucide-react";
 import {
   METRICS,
@@ -8,6 +8,10 @@ import {
   statusTone,
   stats,
 } from "@/lib/biometric-metrics";
+
+// recharts is heavy and /biometrics renders many cards; load the sparkline
+// lazily so it stays off the first-paint critical path.
+const MetricSparkline = lazy(() => import("./metric-sparkline"));
 
 type Series = Array<{ date: string; value: number | null }>;
 type SourceKey = "oura" | "whoop" | "apple_health" | "manual";
@@ -186,42 +190,18 @@ export function MetricCard({
 
       {hasSpark && (
         <div className="mt-3 h-12 -mx-1">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={sparkData} margin={{ top: 2, right: 2, bottom: 0, left: 2 }}>
-              <YAxis hide domain={["auto", "auto"]} />
-              {multi && (
-                <Tooltip
-                  cursor={{ stroke: "var(--border)" }}
-                  contentStyle={{
-                    background: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "10px",
-                    fontSize: "11px",
-                  }}
-                  formatter={(v, name) => {
-                    const s = name as SourceKey;
-                    return [
-                      meta.format(typeof v === "number" ? v : Number(v)),
-                      SOURCE_META[s]?.label ?? String(name),
-                    ];
-                  }}
-                  labelFormatter={() => ""}
-                />
-              )}
-              {sources.map((s) => (
-                <Line
-                  key={s}
-                  type="monotone"
-                  dataKey={s}
-                  stroke={SOURCE_META[s].color}
-                  strokeWidth={1.5}
-                  isAnimationActive={false}
-                  connectNulls
-                  dot={false}
-                />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
+          <Suspense fallback={<div className="h-full w-full" />}>
+            <MetricSparkline
+              data={sparkData}
+              multi={multi}
+              format={meta.format}
+              sources={sources.map((s) => ({
+                key: s,
+                color: SOURCE_META[s].color,
+                label: SOURCE_META[s].label,
+              }))}
+            />
+          </Suspense>
         </div>
       )}
 

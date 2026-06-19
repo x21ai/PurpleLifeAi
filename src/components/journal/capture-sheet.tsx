@@ -286,7 +286,7 @@ export function CaptureSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[92vh] sm:h-[88vh] flex flex-col p-0 rounded-t-2xl">
+      <SheetContent side="bottom" className="h-[92dvh] sm:h-[88dvh] flex flex-col p-0 rounded-t-2xl">
         <SheetHeader className="border-b border-border">
           <SheetColumn className="flex flex-row items-center justify-between space-y-0 px-5 pt-5 pb-3 pr-14">
             <SheetTitle className="font-serif text-lg font-normal">New entry</SheetTitle>

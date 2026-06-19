@@ -265,3 +265,21 @@ export async function rearmMedicationNotifications(): Promise<void> {
 
   await scheduleMedications((data ?? []) as ScheduledMed[]);
 }
+
+/**
+ * Load the upcoming scheduled doses for the active user, independent of the
+ * web service-worker path. The native shell uses this to feed Capacitor
+ * Local Notifications (the SW alarm loop does not run inside a native WebView).
+ * Additive helper: it does not change the existing web reminder flow.
+ */
+export async function loadUpcomingScheduledDoses(): Promise<ScheduledDose[]> {
+  const { data, error } = await supabase
+    .from("medications")
+    .select("id, name, dosage, times_of_day, kind, is_rescue")
+    .eq("active", true);
+  if (error) {
+    console.warn("[purple] could not load meds for native reminders", error);
+    return [];
+  }
+  return buildUpcomingDoses((data ?? []) as ScheduledMed[]);
+}

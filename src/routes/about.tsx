@@ -8,7 +8,7 @@ import {
   HumanMoment,
   QuietStat,
 } from "@/components/marketing/calm-scene";
-import { aboutImages } from "@/lib/calm-images";
+import { aboutImages } from "@/lib/calm-images/about";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/about")({

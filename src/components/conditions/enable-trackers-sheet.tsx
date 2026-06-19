@@ -52,7 +52,7 @@ export function EnableTrackersSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="rounded-t-2xl">
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[90dvh] overflow-y-auto">
         <SheetColumn>
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2 font-serif text-2xl">

@@ -560,7 +560,7 @@ function TravelPage() {
           if (!o) setPreviewState(null);
         }}
       >
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-2xl max-h-[85dvh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl">
               Schedule preview

@@ -23,7 +23,16 @@
     "check:live-data:db": "node scripts/check-no-test-data.mjs --db",
     "check:em-dash": "node scripts/check-no-em-dash.mjs",
     "check:unique-images": "node scripts/check-unique-route-images.mjs",
-    "check:entry-budget": "node scripts/check-entry-budget.mjs"
+    "check:entry-budget": "node scripts/check-entry-budget.mjs",
+    "test:responsive": "playwright test tests/e2e/responsive-sweep.spec.ts",
+    "test:vitals": "playwright test tests/e2e/web-vitals.spec.ts --project=desktop-1024 --workers=1",
+    "test:responsive:prod": "doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c 'E2E_BASE_URL=https://www.purplelife.org TEST_USER_EMAIL=${E2E_TEST_USER_EMAIL:-$TEST_USER_EMAIL} TEST_USER_PASSWORD=${E2E_TEST_USER_PASSWORD:-$TEST_USER_PASSWORD} playwright test tests/e2e/responsive-sweep.spec.ts --workers=1'",
+    "test:vitals:prod": "doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c 'E2E_BASE_URL=https://www.purplelife.org TEST_USER_EMAIL=${E2E_TEST_USER_EMAIL:-$TEST_USER_EMAIL} TEST_USER_PASSWORD=${E2E_TEST_USER_PASSWORD:-$TEST_USER_PASSWORD} playwright test tests/e2e/web-vitals.spec.ts --project=desktop-1024 --workers=1'",
+    "native:install": "bun add -d @capacitor/cli && bun add @capacitor/core @capacitor/ios @capacitor/android @capacitor/status-bar @capacitor/splash-screen @capacitor/app @capacitor/browser @capacitor/push-notifications @capacitor/local-notifications",
+    "native:add": "bunx cap add ios && bunx cap add android",
+    "native:sync": "bunx cap sync",
+    "native:open:ios": "bunx cap open ios",
+    "native:open:android": "bunx cap open android"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.82",

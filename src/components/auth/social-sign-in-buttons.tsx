@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { oauthRedirectUrl } from "@/lib/auth-oauth";
+import { isNativeApp } from "@/lib/native";
+import { nativeSignInWithOAuth } from "@/lib/native/oauth";
 import { toast } from "sonner";
 
 function AppleLogo() {
@@ -46,6 +48,20 @@ export function SocialSignInButtons({ helper }: { helper?: string } = {}) {
 
   const handleOAuth = async (provider: Provider) => {
     setBusy(provider);
+    // Native shells must complete OAuth in the system browser (Google blocks
+    // embedded WebViews). The helper opens it and finishes via deep link.
+    if (isNativeApp()) {
+      const ok = await nativeSignInWithOAuth(provider);
+      if (!ok) {
+        setBusy(null);
+        toast.error(
+          provider === "apple"
+            ? "Apple sign-in didn't work. Try email, or try again in a moment."
+            : "Google sign-in didn't work. Try email, or try again in a moment.",
+        );
+      }
+      return;
+    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: oauthRedirectUrl() },

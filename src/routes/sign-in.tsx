@@ -7,7 +7,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { ResponsiveImage } from "@/components/marketing/responsive-image";
-import { signInImages } from "@/lib/calm-images";
+import { signInImages } from "@/lib/calm-images/sign-in";
 import { SocialSignInButtons } from "@/components/auth/social-sign-in-buttons";
 import { isOAuthCallbackUrl, waitForOAuthSession } from "@/lib/auth-oauth";
 import { toast } from "sonner";

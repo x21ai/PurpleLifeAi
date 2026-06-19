@@ -161,7 +161,7 @@ export function VoiceIntakeSheet() {
           <Mic className="h-4 w-4 mr-1.5" /> Voice
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="max-h-[92vh] overflow-y-auto">
+      <SheetContent side="bottom" className="max-h-[92dvh] overflow-y-auto">
         <SheetColumn>
           <SheetHeader>
             <SheetTitle className="font-serif text-2xl">Voice intake</SheetTitle>

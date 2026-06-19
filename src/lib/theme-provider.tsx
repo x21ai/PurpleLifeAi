@@ -17,11 +17,22 @@ function resolve(mode: ThemeMode): "light" | "dark" {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
+// Surface colors used for the mobile status bar / address bar tint. Must match
+// --bg-primary in styles.css (light #ffffff, dark #0a0710).
+const THEME_COLORS = { light: "#ffffff", dark: "#0a0710" } as const;
+
+function applyThemeColor(resolved: "light" | "dark") {
+  if (typeof document === "undefined") return;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", THEME_COLORS[resolved]);
+}
+
 function apply(resolved: "light" | "dark") {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   if (resolved === "dark") root.classList.add("dark");
   else root.classList.remove("dark");
+  applyThemeColor(resolved);
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -85,5 +96,7 @@ export const themeBootstrapScript = `
   var dark=v==='dark'||(v==='system'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
   var c=document.documentElement.classList;
   if(dark)c.add('dark');else c.remove('dark');
+  var m=document.querySelector('meta[name="theme-color"]');
+  if(m)m.setAttribute('content',dark?'#0a0710':'#ffffff');
 }catch(e){}})();
 `;

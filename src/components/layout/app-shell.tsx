@@ -1,20 +1,16 @@
 import { Outlet } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { SidebarNav } from "./sidebar-nav";
 import { BottomNav } from "./bottom-nav";
 import { MobileTopBar } from "./mobile-top-bar";
 import { TopBar } from "./top-bar";
 import { AskFab } from "@/components/chat/ask-fab";
-import { ensureServiceWorker, rearmMedicationNotifications } from "@/lib/med-notifications";
 import { ReminderAlarmSheet } from "@/components/meds/reminder-alarm-sheet";
 
 export function AppShell() {
-  useEffect(() => {
-    void (async () => {
-      await ensureServiceWorker();
-      await rearmMedicationNotifications();
-    })();
-  }, []);
+  // Service worker registration and medication-notification re-arming run once,
+  // after the browser goes idle, from DeferredStartup (mounted in __root). They
+  // were also fired eagerly here, double-registering the SW and competing with
+  // first paint; the idle path is the single source of truth now.
 
   // Render an identical tree on SSR and the first client render.
   // The `/_app` route's `beforeLoad` handles redirects to /sign-in when

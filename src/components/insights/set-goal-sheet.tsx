@@ -144,7 +144,7 @@ export function SetGoalSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="rounded-t-3xl">
+      <SheetContent side="bottom" className="rounded-t-3xl max-h-[90dvh] overflow-y-auto">
         <SheetColumn>
           <SheetHeader className="text-left">
             <SheetTitle className="font-serif text-2xl">{spec.title}</SheetTitle>

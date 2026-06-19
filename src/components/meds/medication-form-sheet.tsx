@@ -538,7 +538,7 @@ export function MedicationFormSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="h-[90vh] sm:h-auto sm:max-h-[88vh] flex flex-col p-0 rounded-t-2xl overflow-hidden"
+        className="h-[90dvh] sm:h-auto sm:max-h-[88dvh] flex flex-col p-0 rounded-t-2xl overflow-hidden"
       >
         <SheetHeader className="border-b border-border">
           <div className="mx-auto w-full max-w-xl flex flex-row items-center justify-between space-y-0 px-5 pt-5 pb-3 pr-14">

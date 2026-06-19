@@ -9,7 +9,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { supabase } from "@/integrations/supabase/client";
 import { CalmHero } from "@/components/marketing/calm-scene";
-import { contactImages } from "@/lib/calm-images";
+import { contactImages } from "@/lib/calm-images/contact";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/contact")({

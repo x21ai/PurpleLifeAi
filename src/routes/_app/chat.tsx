@@ -292,7 +292,7 @@ function AskPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-16 md:static md:bottom-auto left-0 right-0 border-t border-border/40 bg-background/95 backdrop-blur px-4 sm:px-10 lg:px-16 py-4">
+      <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-auto md:static left-0 right-0 border-t border-border/40 bg-background/95 backdrop-blur px-4 sm:px-10 lg:px-16 py-4">
         <DisclaimerFooter />
         {overLimit ? (
           <div className="mx-auto max-w-3xl">

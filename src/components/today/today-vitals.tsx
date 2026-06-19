@@ -85,7 +85,26 @@ export function TodayVitals() {
     staleTime: 60_000,
   });
 
-  if (!data) return null;
+  // While the snapshot loads, render a same-shape skeleton so the section
+  // reserves its height instead of popping in and shifting the page (CLS).
+  if (!data) {
+    return (
+      <section className="mt-12 sm:mt-16" aria-hidden>
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <p className="label-eyebrow text-muted-foreground">Your signals</p>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-[74px] rounded-2xl border border-border bg-card/60 animate-pulse"
+            />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   const isDemo = !data.hasData;
   const snap = isDemo ? DEMO : data;
   const items = buildItems(snap);

@@ -204,7 +204,7 @@ export function SnapIntakeSheet() {
           <Camera className="h-4 w-4 mr-1.5" /> Snap food or drink
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="max-h-[92vh] overflow-y-auto">
+      <SheetContent side="bottom" className="max-h-[92dvh] overflow-y-auto">
         <SheetColumn>
           <SheetHeader>
             <SheetTitle className="font-serif text-2xl">Snap intake</SheetTitle>

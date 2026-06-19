@@ -8,6 +8,7 @@ import { PendingInboxBadge } from "@/components/care/pending-inbox-badge";
 import { CaregiverNavLink } from "./caregiver-nav-link";
 import { ChatUnreadBadge } from "./chat-unread-badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 /** True when the sidebar is icon-only (md–lg), not the expanded lg+ rail. */
 function useCollapsedRail(): boolean {
@@ -154,6 +155,56 @@ function GroupItem({
   const Icon = group.icon;
   const containsActive = isPathInGroup(group, pathname);
   const isExactActive = !!group.to && pathname === group.to;
+  const collapsed = useCollapsedRail();
+
+  // On the collapsed icon rail (md to lg, e.g. iPad portrait) the inline child
+  // list is hidden, which would strand nested routes. Surface them in a click
+  // flyout anchored to the rail icon so every route stays reachable.
+  if (collapsed && group.children && group.children.length > 0) {
+    return (
+      <Popover>
+        <PopoverTrigger
+          aria-label={group.label}
+          className={cn(
+            "group w-full flex items-center justify-center rounded-xl py-2.5 transition-colors",
+            containsActive
+              ? "bg-secondary text-foreground"
+              : "text-[color:var(--text-tertiary)] hover:bg-secondary/60 hover:text-foreground",
+          )}
+        >
+          <Icon
+            className={cn(
+              "h-5 w-5 shrink-0",
+              containsActive && "text-[color:var(--purple-primary)]",
+            )}
+            strokeWidth={containsActive ? 2 : 1.6}
+          />
+        </PopoverTrigger>
+        <PopoverContent side="right" align="start" className="w-56 p-2">
+          <p className="px-2 pb-1.5 pt-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            {group.label}
+          </p>
+          {group.to && (
+            <SubLink
+              to={group.to}
+              label={group.label}
+              Icon={group.icon}
+              active={isExactActive}
+            />
+          )}
+          {group.children.map((c) => (
+            <SubLink
+              key={c.to}
+              to={c.to}
+              label={c.label}
+              Icon={c.icon}
+              active={pathname === c.to || pathname.startsWith(c.to + "/")}
+            />
+          ))}
+        </PopoverContent>
+      </Popover>
+    );
+  }
 
   const rowClass = cn(
     "group w-full flex items-center gap-3 rounded-xl px-0 lg:pl-3 lg:pr-1 py-2.5 text-[14px] transition-colors",

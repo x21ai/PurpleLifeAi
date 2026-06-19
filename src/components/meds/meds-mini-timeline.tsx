@@ -62,7 +62,10 @@ export function MedsMiniTimeline({ className }: { className?: string }) {
         (r: any) => r.medication && !r.medication.is_rescue && r.medication.kind !== "rescue",
       ) as DoseRow[];
     },
-    refetchInterval: 60_000,
+    // No polling: the dose set for the day is stable, and the "now" marker is
+    // advanced client-side by the setNow interval below. The global 60s
+    // staleTime keeps it fresh on revisit without a per-minute network call.
+    staleTime: 60_000,
   });
 
   const doses = q.data ?? [];

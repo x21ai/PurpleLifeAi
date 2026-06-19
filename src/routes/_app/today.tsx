@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Component,
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -51,14 +53,30 @@ import { PatternHintCard } from "@/components/hydration/pattern-hint-card";
 import { useFeatureFlags } from "@/hooks/use-feature-flags";
 import { ConditionTipCard } from "@/components/today/condition-tip-card";
 import { ConditionWelcomeNudge } from "@/components/today/condition-welcome-nudge";
-import { FeatureSuggestionCard } from "@/components/today/feature-suggestion-card";
 import { OnboardingChecklist } from "@/components/today/onboarding-checklist";
 import { FirstEntryNudge } from "@/components/today/first-entry-nudge";
-import { WeeklyRecapCard } from "@/components/today/weekly-recap-card";
-import { SevenDayTrendStrip } from "@/components/today/seven-day-trend-strip";
 import { ReEngagementNudge } from "@/components/today/re-engagement-nudge";
-import { TopInsightCard } from "@/components/today/top-insight-card";
 import { TodayVitals } from "@/components/today/today-vitals";
+
+// Below-the-fold cards live behind the "More for today" disclosure. Loading
+// them lazily keeps them (and their dependencies) out of the initial /today
+// payload until the user expands the section.
+const FeatureSuggestionCard = lazy(() =>
+  import("@/components/today/feature-suggestion-card").then((m) => ({
+    default: m.FeatureSuggestionCard,
+  })),
+);
+const WeeklyRecapCard = lazy(() =>
+  import("@/components/today/weekly-recap-card").then((m) => ({ default: m.WeeklyRecapCard })),
+);
+const SevenDayTrendStrip = lazy(() =>
+  import("@/components/today/seven-day-trend-strip").then((m) => ({
+    default: m.SevenDayTrendStrip,
+  })),
+);
+const TopInsightCard = lazy(() =>
+  import("@/components/today/top-insight-card").then((m) => ({ default: m.TopInsightCard })),
+);
 import { PreTripChecklist } from "@/components/today/pre-trip-checklist";
 import { TripWrapupCard } from "@/components/today/trip-wrapup-card";
 
@@ -513,18 +531,20 @@ function TodayPage() {
           <TodayWidgetBoundary name="tips">
             <ConditionTipCard conditions={profile?.conditions} />
           </TodayWidgetBoundary>
-          <TodayWidgetBoundary name="suggestions">
-            <FeatureSuggestionCard />
-          </TodayWidgetBoundary>
-          <TodayWidgetBoundary name="recap">
-            <WeeklyRecapCard />
-          </TodayWidgetBoundary>
-          <TodayWidgetBoundary name="trends">
-            <SevenDayTrendStrip />
-          </TodayWidgetBoundary>
-          <TodayWidgetBoundary name="insight">
-            <TopInsightCard />
-          </TodayWidgetBoundary>
+          <Suspense fallback={null}>
+            <TodayWidgetBoundary name="suggestions">
+              <FeatureSuggestionCard />
+            </TodayWidgetBoundary>
+            <TodayWidgetBoundary name="recap">
+              <WeeklyRecapCard />
+            </TodayWidgetBoundary>
+            <TodayWidgetBoundary name="trends">
+              <SevenDayTrendStrip />
+            </TodayWidgetBoundary>
+            <TodayWidgetBoundary name="insight">
+              <TopInsightCard />
+            </TodayWidgetBoundary>
+          </Suspense>
 
           {showHydration && (
             <section className="rounded-2xl ring-1 ring-border bg-card p-5">

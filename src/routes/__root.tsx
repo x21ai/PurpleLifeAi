@@ -88,6 +88,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             "purple-shell-v12",
             "purple-shell-v13",
             "purple-shell-v14",
+            "purple-shell-v15",
           ].map((name) => caches.delete(name)),
         );
       }
@@ -131,14 +132,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      {
+        name: "viewport",
+        content: "width=device-width, initial-scale=1, viewport-fit=cover",
+      },
       { title: "Purple - Lets be calm" },
       {
         name: "description",
         content:
           "Purple is an open-source, AI-powered health journal for people managing epilepsy and other pattern-driven conditions. Write, speak, snap · Purple remembers.",
       },
-      { name: "theme-color", content: "#5B2C82" },
+      // theme-color is updated at runtime to match the resolved light/dark
+      // surface (see themeBootstrapScript + ThemeProvider.apply). This default
+      // is the dark brand surface for the pre-hydration splash.
+      { name: "theme-color", content: "#0a0710" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "Purple" },
       { name: "author", content: "Devyn Walker" },
       { property: "og:title", content: "Purple - Lets be calm" },
       {

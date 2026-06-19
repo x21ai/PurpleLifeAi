@@ -6,7 +6,7 @@ import { PenSquare, Heart, MessageCircle } from "lucide-react";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { CalmHero, HumanMoment } from "@/components/marketing/calm-scene";
-import { communityImages } from "@/lib/calm-images";
+import { communityImages } from "@/lib/calm-images/community";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 import { PlatformFlagGate } from "@/lib/platform-flags";
 

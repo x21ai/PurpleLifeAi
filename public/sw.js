@@ -1,6 +1,6 @@
 // Purple service worker, medication reminders and static assets.
 
-const CACHE = "purple-shell-v15";
+const CACHE = "purple-shell-v16";
 const SHELL = ["/manifest.json", "/icon-192.png", "/icon-512.png"];
 const DB_NAME = "purple-med-schedule";
 const STORE = "doses";

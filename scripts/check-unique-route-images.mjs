@@ -3,9 +3,9 @@
  * Build-time check: no two marketing routes may reference the same hero/moment image.
  *
  * Marketing routes import named groups (homeImages, featuresImages, …) from
- * src/lib/calm-images.ts. Each group resolves to a set of physical files under
- * src/assets/. If two groups point at the same file, this script fails so the
- * regression is caught before it ships.
+ * per-page modules under src/lib/calm-images/. Each group resolves to a set of
+ * physical files under src/assets/. If two groups point at the same file, this
+ * script fails so the regression is caught before it ships.
  *
  * Skips in-app routes under src/routes/_app/* — those have their own visual
  * vocabulary and may legitimately share assets.
@@ -13,30 +13,34 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, basename } from "node:path";
 
-const CALM_IMAGES = "src/lib/calm-images.ts";
+const CALM_IMAGES_DIR = "src/lib/calm-images";
 const ROUTES_DIR = "src/routes";
 
 function parseCalmImages() {
-  const src = readFileSync(CALM_IMAGES, "utf8");
-  // Map of local import name -> asset filename (basename, no query string)
-  const importMap = new Map();
-  const importRe = /import\s+(\w+)\s+from\s+["']@\/assets\/([^"'?]+)(?:\?[^"']*)?["']/g;
-  for (const m of src.matchAll(importRe)) {
-    importMap.set(m[1], m[2]);
-  }
-  // Map of exported group name -> Set<asset filename>
+  // Map of exported group name -> Set<asset filename>, aggregated across every
+  // per-page module in the calm-images directory.
   const groups = new Map();
-  const groupRe = /export const (\w+)\s*=\s*\{([\s\S]*?)\}\s*as const;/g;
-  for (const m of src.matchAll(groupRe)) {
-    const [, name, body] = m;
-    const assets = new Set();
-    // Match identifiers used as args (asset(localName, ...)) or bare `: localName`
-    const refRe = /\b([A-Za-z_][\w]*)\b/g;
-    for (const r of body.matchAll(refRe)) {
-      const ident = r[1];
-      if (importMap.has(ident)) assets.add(importMap.get(ident));
+  for (const file of readdirSync(CALM_IMAGES_DIR)) {
+    if (!file.endsWith(".ts") || file.startsWith("_")) continue;
+    const src = readFileSync(join(CALM_IMAGES_DIR, file), "utf8");
+    // Map of local import name -> asset filename (basename, no query string)
+    const importMap = new Map();
+    const importRe = /import\s+(\w+)\s+from\s+["']@\/assets\/([^"'?]+)(?:\?[^"']*)?["']/g;
+    for (const m of src.matchAll(importRe)) {
+      importMap.set(m[1], m[2]);
     }
-    groups.set(name, assets);
+    const groupRe = /export const (\w+)\s*=\s*\{([\s\S]*?)\}\s*as const;/g;
+    for (const m of src.matchAll(groupRe)) {
+      const [, name, body] = m;
+      const assets = new Set();
+      // Match identifiers used as args (asset(localName, ...)) or bare `: localName`
+      const refRe = /\b([A-Za-z_][\w]*)\b/g;
+      for (const r of body.matchAll(refRe)) {
+        const ident = r[1];
+        if (importMap.has(ident)) assets.add(importMap.get(ident));
+      }
+      groups.set(name, assets);
+    }
   }
   return groups;
 }
@@ -61,14 +65,16 @@ function listRouteFiles() {
 
 function groupsUsedBy(file) {
   const src = readFileSync(file, "utf8");
-  const m = src.match(/from\s+["']@\/lib\/calm-images["']/);
-  if (!m) return [];
-  const importBlock = src.match(/import\s*\{([^}]+)\}\s*from\s*["']@\/lib\/calm-images["']/);
-  if (!importBlock) return [];
-  return importBlock[1]
-    .split(",")
-    .map((s) => s.trim().split(/\s+as\s+/)[0].trim())
-    .filter(Boolean);
+  // Match imports from any per-page module, e.g. "@/lib/calm-images/home".
+  const importRe = /import\s*\{([^}]+)\}\s*from\s*["']@\/lib\/calm-images\/[\w-]+["']/g;
+  const names = [];
+  for (const m of src.matchAll(importRe)) {
+    for (const part of m[1].split(",")) {
+      const name = part.trim().split(/\s+as\s+/)[0].trim();
+      if (name) names.push(name);
+    }
+  }
+  return names;
 }
 
 const groups = parseCalmImages();

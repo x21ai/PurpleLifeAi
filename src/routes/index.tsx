@@ -13,7 +13,7 @@ import {
   QuietStat,
   StillLife,
 } from "@/components/marketing/calm-scene";
-import { homeImages } from "@/lib/calm-images";
+import { homeImages } from "@/lib/calm-images/home";
 
 export const Route = createFileRoute("/")({
   head: () => ({

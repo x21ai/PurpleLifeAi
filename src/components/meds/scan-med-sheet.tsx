@@ -105,7 +105,7 @@ export function ScanMedSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[92vh] overflow-y-auto">
+      <SheetContent side="bottom" className="max-h-[92dvh] overflow-y-auto">
         <SheetColumn>
           <SheetHeader>
             <SheetTitle className="font-serif text-2xl">Scan medication</SheetTitle>

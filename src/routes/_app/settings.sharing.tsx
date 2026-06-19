@@ -683,7 +683,7 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
           <Mail className="h-3 w-3 mr-1" /> Invite
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[90vh] overflow-y-auto">
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[90dvh] overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="font-serif text-2xl">Invite someone</SheetTitle>
         </SheetHeader>
@@ -848,7 +848,7 @@ function ManageRelationshipSheet({
       <SheetTrigger asChild>
         <Button variant="outline" size="sm">Manage</Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[90vh] overflow-y-auto">
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[90dvh] overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="font-serif text-2xl">Manage permissions</SheetTitle>
         </SheetHeader>

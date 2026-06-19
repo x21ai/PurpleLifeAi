@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { CalmHero } from "@/components/marketing/calm-scene";
-import { trustImages } from "@/lib/calm-images";
+import { trustImages } from "@/lib/calm-images/trust";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 
 export const Route = createFileRoute("/trust")({

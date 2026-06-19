@@ -18,7 +18,7 @@ export function MobileTopBar() {
 
   return (
     <header
-      className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-12 bg-background/90 backdrop-blur border-b border-border"
+      className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 min-h-12 bg-background/90 backdrop-blur border-b border-border"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <Link to="/today" className="wordmark text-[12px] text-foreground" aria-label="Purple, home">
@@ -30,7 +30,7 @@ export function MobileTopBar() {
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger
             aria-label="Open menu"
-            className="rounded-md p-2 -mr-2 text-muted-foreground hover:text-foreground"
+            className="inline-flex h-11 w-11 -mr-2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
           >
             <Menu className="h-5 w-5" />
           </SheetTrigger>
