@@ -11,6 +11,8 @@
 - Verify both functionality and visuals before claiming done: real end-to-end checks (webhook POST, query the live DB) plus screenshots across viewports (`tests/e2e/visual-layout.spec.ts`, output under `test-results/visual/`), not assertions from code alone.
 - Hold UI to an Apple-grade bar: the user repeatedly asks "how would Apple do it" and rejects over-wide, empty, or edge-drifting/full-bleed layouts; keep content in a centered, width-capped column with aligned controls, never `inset-x-0` full width.
 - Only operate on Purple's own project and accounts; never write to any other Supabase project or account, even when credentials grant access.
+- Whole-app redesign happens in Lovable; GitHub `main` is the sync bus between Lovable and Cursor.
+- Cursor is the production gatekeeper during redesign: review every Lovable landing on `main`, run all quality gates and tests, catch backend/DB mismatches, then ask the user before deploying to live. Never auto-deploy on push during redesign.
 
 ## Learned Workspace Facts
 

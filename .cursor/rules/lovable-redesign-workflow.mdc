@@ -1,0 +1,41 @@
+---
+description: Lovable redesign gatekeeper - Cursor reviews Lovable changes before production deploy.
+alwaysApply: true
+---
+
+# Lovable redesign gatekeeper
+
+A whole-app redesign is in progress in Lovable. GitHub `main` on `AstroAii/purpledrw`
+is the sync bus. Production does not auto-deploy on push during redesign.
+
+## Baseline
+
+Redesign starts from commit `7086ffa` on `main`. Full workflow:
+`docs/LOVABLE-REDESIGN-WORKFLOW.md`. Preview env: `docs/LOVABLE-ENV-PARITY.md`.
+
+## Agent duties
+
+When Lovable may have pushed, or the user says "check Lovable":
+
+1. `git fetch origin` and review `git log` / `git diff` against `origin/main`.
+2. Run all quality gates: `check:em-dash`, `check:live-data`, `check:unique-images`,
+   `tsc --noEmit`, `build`, `check:entry-budget`.
+3. Run Playwright smoke/responsive tests; prod e2e when creds available.
+4. If migrations changed, verify schema against live DB before trusting UI.
+5. Report Go/No-Go. On Go, ask the user before deploying live.
+
+## Hard rules
+
+- Never deploy to `www.purplelife.org` without full gate pass and explicit user approval.
+- Never assume Lovable UI is wired to real backend/schema without checking the diff.
+- Fix backend/DB/routing issues in Cursor; give paste-ready Lovable prompts for pure UI fixes.
+- CI still runs on push; deploy workflow is manual only (`workflow_dispatch`).
+
+## Lovable pitfalls to catch
+
+- Missing `<Outlet/>` on parent routes with children
+- Queries to non-existent tables/columns
+- New tables without RLS
+- Hardcoded colors instead of theme tokens
+- Em dashes, placeholder marketing data, duplicate hero images
+- Wrong Supabase ref (must be `xxnzmfzsjplrutrgbzxy` via env, not hardcoded)

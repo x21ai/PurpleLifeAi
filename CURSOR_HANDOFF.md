@@ -1,20 +1,22 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-06-11.
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-06-19.
 
 Positioning: PurpleLife is an AI health journal for any health management (epilepsy was the founding focus; the condition catalog is general).
 
-Development model: the project is edited from both Cursor and Lovable; production hosting targets our own Cloudflare account. Lovable dev tooling (`@lovable.dev/vite-tanstack-config`, `.lovable/`, preview-host checks in `src/lib/med-notifications.ts`) is kept intact on purpose. Do not remove it.
+Development model: the project is edited from both Cursor and Lovable. A whole-app redesign is in progress in Lovable; GitHub `main` syncs both sides. Cursor is the production gatekeeper: review and test every Lovable landing on `main`, then ask the owner before deploying live. Lovable dev tooling (`@lovable.dev/vite-tanstack-config`, `.lovable/`, preview-host checks in `src/lib/med-notifications.ts`) is kept intact on purpose. Do not remove it.
 
 ## Orientation
 
 - Product and architecture: `docs/ARCHITECTURE.md`
 - Feature inventory and route map: `docs/FEATURES.md`
+- Lovable redesign gatekeeper: `docs/LOVABLE-REDESIGN-WORKFLOW.md` (baseline `7086ffa`)
+- Lovable preview env parity: `docs/LOVABLE-ENV-PARITY.md`
 - Lovable exit + Cloudflare cutover plan: `docs/LOVABLE-MIGRATION.md`
 - Supabase manual deploy procedure: `docs/manual-deploy-bundle.md`
 - OAuth provider setup: `docs/oauth-provider-setup.md`
 - Durable decisions: `mem/index.md` (no em dashes, footer visibility, metric naming)
-- Editor rules: `.cursor/rules/` (conventions, server functions, Cloudflare constraints)
+- Editor rules: `.cursor/rules/` (conventions, server functions, Cloudflare constraints, lovable-redesign-workflow)
 
 ## Quick facts
 
@@ -24,24 +26,31 @@ Development model: the project is edited from both Cursor and Lovable; productio
 | Framework | TanStack Start 1.168, React 19, Vite 7, Tailwind 4 |
 | Runtime | Cloudflare Worker (`wrangler.jsonc`, entry `src/server.ts`, `nodejs_compat`) |
 | Package manager | bun (commands below) |
-| Database | Supabase project `lzuodgpqseijhhyzgfky`, ~100 migrations, 6 edge functions |
+| Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
 | Dev server | `bun run dev` on port 8080 |
-| E2E | `bun run test:e2e` (Playwright, boots dev server unless `E2E_BASE_URL` set) |
+| E2E | `bun run test:e2e` (Playwright, boots dev server unless `E2E_BASE_URL` set); prod: `bun run test:e2e:prod` |
 | Lint/format | `bun run lint`, `bun run format` |
-| Quality gates | `bun run check:em-dash` (also prebuild), `check:live-data`, `check:unique-images` |
+| Quality gates | `bun run check:em-dash` (also prebuild), `check:live-data`, `check:unique-images`, `check:entry-budget` |
 | Seeds | `bun run seed:research` (needs `OPENAI_API_KEY` + `SUPABASE_SERVICE_ROLE_KEY`) |
 
 ## Current hosting state
 
-Production currently runs on Lovable-managed infrastructure; the Worker is named `purplelife` in `wrangler.jsonc` and is ready to deploy to our own Cloudflare account once secrets and DNS are in place. The code-level Lovable service couplings are resolved:
+Production runs on the Cloudflare Worker `purplelife` at `https://www.purplelife.org`
+(DNS cutover complete). Supabase live data is on ref `xxnzmfzsjplrutrgbzxy` with
+branded auth at `https://auth.purplelife.org`.
 
-- OAuth: native `supabase.auth.signInWithOAuth()` (Apple/Google). New client codes must be configured in the Supabase dashboard per `docs/oauth-provider-setup.md`.
-- Email: queue delivery via Resend (`/api/email/queue/process`), Supabase send-email hook at `/api/email/auth/webhook` (Standard Webhooks verification), Resend bounce/complaint webhook at `/api/email/suppression`.
-- AI: Anthropic Claude is the platform default (`src/lib/ai-gateway.server.ts`); the Lovable gateway remains only as a last-resort fallback for Lovable previews without an Anthropic key.
+- OAuth: native `supabase.auth.signInWithOAuth()` (Apple/Google).
+- Email: queue delivery via Resend (`/api/email/queue/process`), Supabase send-email hook at `/api/email/auth/webhook`, Resend bounce/complaint webhook at `/api/email/suppression`.
+- AI: Anthropic Claude is the platform default (`src/lib/ai-gateway.server.ts`); Lovable gateway remains only as a last-resort fallback for Lovable previews without an Anthropic key.
 
-Deployment is fully scripted: `bun run build && bunx wrangler deploy -c wrangler.deploy.jsonc` (validated with `--dry-run`), or automatically via `.github/workflows/deploy.yml` on pushes to main. Cron Triggers fan out from the `scheduled()` handler in `src/server.ts` through a `SELF` service binding.
+**Deploy model (during Lovable redesign):** manual only. `.github/workflows/deploy.yml`
+triggers on `workflow_dispatch`, not on push to `main`. Cursor runs the gatekeeper
+checklist in `docs/LOVABLE-REDESIGN-WORKFLOW.md`, then asks the owner before deploy.
+Local path: `bun run build:prod` then `bunx wrangler deploy -c wrangler.deploy.jsonc`
+(account ID `08e766e92db74bc7ef14c6b5c86bddf0` if Doppler still has POS). Cron Triggers
+fan out from `scheduled()` in `src/server.ts` through a `SELF` service binding.
 
-Remaining cutover steps (external, need credentials): verify `notify.purplelife.org` in Resend and update DNS, point the Supabase send-email hook at `/api/email/auth/webhook` with its secret, add a Resend webhook for bounces/complaints, configure new Google/Apple OAuth codes in Supabase, re-point the pg_cron email pump URL, set Worker secrets, deploy, move DNS. Details: `docs/LOVABLE-MIGRATION.md` Phase 7.
+Redesign baseline on `main`: commit `7086ffa` (perf/responsive/native foundation).
 
 ## Environment variables
 
@@ -89,10 +98,16 @@ Referenced in code but NOT present locally (production needs them; several block
 
 ## How to verify a change (cheapest first)
 
+When reviewing Lovable changes, follow the full checklist in
+`docs/LOVABLE-REDESIGN-WORKFLOW.md`. Minimum gates:
+
 1. `bun run check:em-dash` (lint is currently red repo-wide; lint only your changed files)
-2. `bun run build` (catches Worker/SSR bundling issues)
-3. `bun run test:e2e` for routed/UI changes (smoke spec `tests/e2e/routes-smoke.spec.ts` is the fastest meaningful signal)
-4. For Worker behavior: `wrangler dev` against the built output
+2. `bun run check:live-data` and `bun run check:unique-images`
+3. `bunx tsc --noEmit` and `bun run build` + `bun run check:entry-budget`
+4. `bunx playwright test tests/e2e/responsive-sweep.spec.ts -g "public routes"` for UI changes
+5. `bun run test:e2e:prod` before asking the owner to deploy live
+
+For Worker behavior: `wrangler dev` against the built output.
 
 ## Conventions snapshot
 

@@ -52,3 +52,10 @@ keys in the client bundle or in Lovable's public env.
   `prd_cloudlfare`.
 - New Supabase ref: `xxnzmfzsjplrutrgbzxy` (old Lovable Cloud ref
   `lzuodgpqseijhhyzgfky` is the rollback, read-only).
+
+## Redesign workflow
+
+During the whole-app Lovable redesign, see
+[`docs/LOVABLE-REDESIGN-WORKFLOW.md`](LOVABLE-REDESIGN-WORKFLOW.md). Cursor
+reviews and tests every Lovable push to `main` before production deploy.
+Baseline commit: `7086ffa`.

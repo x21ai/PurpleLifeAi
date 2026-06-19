@@ -1,4 +1,7 @@
-# Deploys the purplelife Worker to Cloudflare on every push to main.
+# Deploys the purplelife Worker to Cloudflare. Manual only during the Lovable
+# redesign: Lovable pushes land on main for preview/sync, but production deploy
+# is gated by Cursor review + explicit user approval. Trigger via workflow_dispatch
+# in GitHub Actions, or locally: bun run build:prod && wrangler deploy.
 #
 # Required repository secrets:
 #   CLOUDFLARE_API_TOKEN   (Workers Scripts: Edit; created in the Cloudflare dashboard)
@@ -11,8 +14,6 @@
 name: Deploy
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
