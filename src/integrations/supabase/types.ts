@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       admin_message_reads: {
@@ -166,27 +141,18 @@ export type Database = {
       }
       app_settings: {
         Row: {
-          feature_community_enabled: boolean
-          feature_dna_enabled: boolean
-          feature_friends_enabled: boolean
           id: boolean
           pro_features: Json
           pro_free_for_everyone: boolean
           updated_at: string
         }
         Insert: {
-          feature_community_enabled?: boolean
-          feature_dna_enabled?: boolean
-          feature_friends_enabled?: boolean
           id?: boolean
           pro_features?: Json
           pro_free_for_everyone?: boolean
           updated_at?: string
         }
         Update: {
-          feature_community_enabled?: boolean
-          feature_dna_enabled?: boolean
-          feature_friends_enabled?: boolean
           id?: boolean
           pro_features?: Json
           pro_free_for_everyone?: boolean
@@ -731,6 +697,13 @@ export type Database = {
             referencedRelation: "community_posts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "community_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       community_posts: {
@@ -799,6 +772,13 @@ export type Database = {
             referencedRelation: "community_posts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "community_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       community_reports: {
@@ -838,10 +818,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "community_reports_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "community_comments_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "community_reports_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_reports_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1337,27 +1331,6 @@ export type Database = {
           updated_at?: string
           user_a?: string
           user_b?: string | null
-        }
-        Relationships: []
-      }
-      health_narratives: {
-        Row: {
-          created_at: string
-          day: string
-          narrative: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          day: string
-          narrative: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          day?: string
-          narrative?: string
-          user_id?: string
         }
         Relationships: []
       }
@@ -3085,6 +3058,75 @@ export type Database = {
       }
     }
     Views: {
+      community_comments_public: {
+        Row: {
+          body: string | null
+          created_at: string | null
+          id: string | null
+          post_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string | null
+          id?: string | null
+          post_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string | null
+          id?: string | null
+          post_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_posts_public: {
+        Row: {
+          body: string | null
+          created_at: string | null
+          id: string | null
+          image_url: string | null
+          pinned: boolean | null
+          title: string | null
+          topic: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string | null
+          id?: string | null
+          image_url?: string | null
+          pinned?: boolean | null
+          title?: string | null
+          topic?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string | null
+          id?: string | null
+          image_url?: string | null
+          pinned?: boolean | null
+          title?: string | null
+          topic?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       community_profiles: {
         Row: {
           community_bio: string | null
@@ -3196,8 +3238,6 @@ export type Database = {
         Returns: undefined
       }
       seed_daily_medication_doses: { Args: never; Returns: undefined }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "user" | "admin" | "super_admin"
@@ -3330,9 +3370,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       app_role: ["user", "admin", "super_admin"],
