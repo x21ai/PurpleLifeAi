@@ -1,23 +1,18 @@
-## Plan: Wait for Cursor’s corrected `types.ts`, then resync
+## Status
 
-### Guardrails
-- Do not click **Try to fix**.
-- Do not edit `src/integrations/supabase/types.ts` by hand.
-- Do not run SQL or migrations.
-- Do not regenerate backend types locally.
-- Do not touch `.env`.
+Repo is already on Cursor's fix. Local `src/integrations/supabase/types.ts` contains:
+- `health_narratives` (1 match)
+- `sync_mode` (6 matches)
+- `community_posts_public` (5 matches)
 
-### Steps after Cursor confirms the new commit is on `main`
-1. Pull/sync latest `main` from GitHub.
-2. Confirm the generated file contains `health_narratives`:
-   ```text
-   grep health_narratives src/integrations/supabase/types.ts
-   ```
-3. Rebuild/restart the preview so stale cache errors clear.
-4. Hard refresh the preview.
-5. Sign in again against the NEW auth project.
+No file edits, no `Try to fix`, no SQL needed from me.
 
-### Expected outcome
-- `health-scores.functions.ts` type errors clear because `health_narratives` exists in `types.ts`.
-- Any stale `sync_mode` errors disappear after rebuild.
-- The black PURPLE splash clears once the client bundle boots successfully.
+## Steps
+
+1. Confirm preview is rebuilt on the synced commit (Lovable rebuilds automatically on sync).
+2. Open the preview and verify:
+   - Marketing images render (no alt-text fallback)
+   - Splash dismisses and homepage hydrates
+3. If anything is still red, capture the console/network error and report back rather than patching `types.ts`.
+
+No code changes in this plan — approve to run the preview verification.
