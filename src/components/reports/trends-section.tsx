@@ -12,15 +12,7 @@ import {
   ReferenceArea,
   CartesianGrid,
 } from "recharts";
-import {
-  Pin,
-  PinOff,
-  EyeOff,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  GripVertical,
-} from "lucide-react";
+import { Pin, PinOff, EyeOff, TrendingUp, TrendingDown, Minus, GripVertical } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -29,12 +21,7 @@ import {
   closestCenter,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  rectSortingStrategy,
-  useSortable,
-  arrayMove,
-} from "@dnd-kit/sortable";
+import { SortableContext, rectSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
   listTrendMetrics,
@@ -57,8 +44,8 @@ import {
 } from "@/components/ui/select";
 
 function flagTone(flag: string | null) {
-  if (flag === "high") return "text-[#FFA8BD]";
-  if (flag === "low") return "text-[#F3D58B]";
+  if (flag === "high") return "text-destructive";
+  if (flag === "low") return "text-[color:var(--warning)]";
   if (flag === "normal") return "text-[#5CE0AC]";
   return "report-muted";
 }
@@ -128,8 +115,19 @@ function MetricCard({
     transition: sortable.transition,
   };
   const { primary: label, secondary: subLabel } = metricLabel(m);
-  const numeric = m.series.filter((p) => p.value != null) as Array<{ at: string; value: number; source_text: string | null; report_id: string }>;
-  const chartData = numeric.map((p) => ({ at: p.at, v: p.value, ts: new Date(p.at).getTime(), source_text: p.source_text, report_id: p.report_id }));
+  const numeric = m.series.filter((p) => p.value != null) as Array<{
+    at: string;
+    value: number;
+    source_text: string | null;
+    report_id: string;
+  }>;
+  const chartData = numeric.map((p) => ({
+    at: p.at,
+    v: p.value,
+    ts: new Date(p.at).getTime(),
+    source_text: p.source_text,
+    report_id: p.report_id,
+  }));
   const spansMultipleYears = (() => {
     if (numeric.length < 2) return false;
     const years = new Set(numeric.map((p) => new Date(p.at).getFullYear()));
@@ -141,7 +139,8 @@ function MetricCard({
   const prev = numeric.length >= 2 ? numeric[numeric.length - 2].value : null;
   const latestNum = numeric.length >= 1 ? numeric[numeric.length - 1].value : null;
   const delta = latestNum != null && prev != null ? latestNum - prev : null;
-  const deltaPct = delta != null && prev !== 0 && prev != null ? (delta / Math.abs(prev)) * 100 : null;
+  const deltaPct =
+    delta != null && prev !== 0 && prev != null ? (delta / Math.abs(prev)) * 100 : null;
   const refLow = m.reference_low;
   const refHigh = m.reference_high;
   const inRange =
@@ -150,13 +149,32 @@ function MetricCard({
       : null;
 
   const statusChip = (() => {
-    if (m.latest_flag === "high") return { label: "Out of range, high", cls: "bg-[#FFA8BD]/15 text-[#FFA8BD] border-[#FFA8BD]/30" };
-    if (m.latest_flag === "low") return { label: "Out of range, low", cls: "bg-[#F3D58B]/15 text-[#F3D58B] border-[#F3D58B]/30" };
+    if (m.latest_flag === "high")
+      return {
+        label: "Out of range, high",
+        cls: "bg-[#FFA8BD]/15 text-destructive border-[#FFA8BD]/30",
+      };
+    if (m.latest_flag === "low")
+      return {
+        label: "Out of range, low",
+        cls: "bg-[#F3D58B]/15 text-[color:var(--warning)] border-[#F3D58B]/30",
+      };
     if (inRange === true || m.latest_flag === "normal")
       return { label: "In range", cls: "bg-[#5CE0AC]/15 text-[#5CE0AC] border-[#5CE0AC]/30" };
-    if (delta != null && delta > 0) return { label: "Trending up", cls: "bg-white/8 text-white/70 border-white/15" };
-    if (delta != null && delta < 0) return { label: "Trending down", cls: "bg-white/8 text-white/70 border-white/15" };
-    return { label: `${m.count} readings`, cls: "bg-white/8 text-white/70 border-white/15" };
+    if (delta != null && delta > 0)
+      return {
+        label: "Trending up",
+        cls: "bg-foreground/8 text-foreground/70 border-foreground/15",
+      };
+    if (delta != null && delta < 0)
+      return {
+        label: "Trending down",
+        cls: "bg-foreground/8 text-foreground/70 border-foreground/15",
+      };
+    return {
+      label: `${m.count} readings`,
+      cls: "bg-foreground/8 text-foreground/70 border-foreground/15",
+    };
   })();
 
   return (
@@ -176,7 +194,7 @@ function MetricCard({
             {...sortable.listeners}
             aria-label="Drag to reorder"
             title="Drag to reorder"
-            className="rounded-full p-1.5 text-white/60 hover:bg-white/10 hover:text-white cursor-grab active:cursor-grabbing"
+            className="rounded-full p-1.5 text-foreground/60 hover:bg-foreground/10 hover:text-foreground cursor-grab active:cursor-grabbing"
           >
             <GripVertical className="h-3.5 w-3.5" />
           </button>
@@ -190,7 +208,7 @@ function MetricCard({
           }}
           aria-label={m.pinned ? "Unpin" : "Pin to top"}
           title={m.pinned ? "Unpin" : "Pin to top"}
-          className="rounded-full p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
+          className="rounded-full p-1.5 text-foreground/60 hover:bg-foreground/10 hover:text-foreground"
         >
           {m.pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
         </button>
@@ -203,7 +221,7 @@ function MetricCard({
           }}
           aria-label="Hide"
           title="Hide from trends"
-          className="rounded-full p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
+          className="rounded-full p-1.5 text-foreground/60 hover:bg-foreground/10 hover:text-foreground"
         >
           <EyeOff className="h-3.5 w-3.5" />
         </button>
@@ -215,9 +233,11 @@ function MetricCard({
         className="flex flex-col gap-2 min-w-0"
       >
         <div className="min-w-0 pr-16">
-          <p className="text-sm text-white line-clamp-2 leading-snug">{label}</p>
+          <p className="text-sm text-foreground line-clamp-2 leading-snug">{label}</p>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] report-muted">
-            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${statusChip.cls}`}>
+            <span
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${statusChip.cls}`}
+            >
               {statusChip.label}
             </span>
             <span>{m.count} readings</span>
@@ -229,14 +249,20 @@ function MetricCard({
             )}
           </div>
           {subLabel && subLabel.length >= 4 && (
-            <p className="mt-1 text-[10px] text-white/35 leading-tight">as printed: {subLabel}</p>
+            <p className="mt-1 text-[10px] text-foreground/35 leading-tight">
+              as printed: {subLabel}
+            </p>
           )}
         </div>
         <div className="h-32 w-full">
           {chartData.length >= 2 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 6, right: 8, bottom: 0, left: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="rgba(255,255,255,0.05)"
+                  vertical={false}
+                />
                 {refLow != null && refHigh != null && (
                   <ReferenceArea
                     y1={refLow}
@@ -280,7 +306,9 @@ function MetricCard({
                     return [
                       <div key="v" className="space-y-0.5">
                         <div>{valueStr}</div>
-                        {reportLabel && <div className="text-white/50 text-[10px]">{reportLabel}</div>}
+                        {reportLabel && (
+                          <div className="text-foreground/50 text-[10px]">{reportLabel}</div>
+                        )}
                         {reportId && (
                           <a
                             href={`/reports/${reportId}`}
@@ -307,7 +335,7 @@ function MetricCard({
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex h-full w-full items-center justify-center rounded bg-white/5 text-[11px] report-muted">
+            <div className="flex h-full w-full items-center justify-center rounded bg-foreground/5 text-[11px] report-muted">
               Need ≥2 numeric readings
             </div>
           )}
@@ -321,14 +349,14 @@ function MetricCard({
                   {m.latest_value}
                   {m.unit ? ` ${m.unit}` : ""}
                 </span>
-                {latestDate && <span className="text-white/45"> · {latestDate}</span>}
+                {latestDate && <span className="text-foreground/45"> · {latestDate}</span>}
               </>
             ) : (
               latestDate
             )}
           </span>
           {delta != null && (
-            <span className="inline-flex items-center gap-0.5 text-white/65 tabular-nums">
+            <span className="inline-flex items-center gap-0.5 text-foreground/65 tabular-nums">
               {delta > 0 ? (
                 <TrendingUp className="h-3 w-3" />
               ) : delta < 0 ? (
@@ -339,7 +367,11 @@ function MetricCard({
               {delta > 0 ? "+" : ""}
               {Math.abs(delta) >= 100 ? delta.toFixed(0) : delta.toFixed(2)}
               {deltaPct != null && Number.isFinite(deltaPct) && (
-                <span className="text-white/40"> ({deltaPct > 0 ? "+" : ""}{deltaPct.toFixed(0)}%)</span>
+                <span className="text-foreground/40">
+                  {" "}
+                  ({deltaPct > 0 ? "+" : ""}
+                  {deltaPct.toFixed(0)}%)
+                </span>
               )}
             </span>
           )}
@@ -360,8 +392,7 @@ export function TrendsSection() {
     if (typeof window === "undefined") return "attention";
     // Prefer localStorage (survives logout); fall back to legacy sessionStorage.
     const stored =
-      window.localStorage.getItem(SORT_KEY) ||
-      window.sessionStorage.getItem("purple.trends.sort");
+      window.localStorage.getItem(SORT_KEY) || window.sessionStorage.getItem("purple.trends.sort");
     return (stored as SortMode) || "attention";
   });
   React.useEffect(() => {
@@ -480,7 +511,7 @@ export function TrendsSection() {
       <section className="mt-10">
         <div className="flex items-end justify-between gap-3 flex-wrap">
           <div>
-            <h2 className="flex items-center gap-2 font-serif text-2xl text-white">
+            <h2 className="flex items-center gap-2 font-serif text-2xl text-foreground">
               <TrendingUp className="h-4 w-4 text-[#5CE0AC]" /> Trends
             </h2>
             <p className="mt-1 text-sm report-muted">Loading your lab values…</p>
@@ -488,10 +519,7 @@ export function TrendsSection() {
         </div>
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
           {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="report-card h-48 animate-pulse bg-white/[0.03]"
-            />
+            <div key={i} className="report-card h-48 animate-pulse bg-foreground/[0.03]" />
           ))}
         </div>
       </section>
@@ -501,25 +529,25 @@ export function TrendsSection() {
   if (metrics.length === 0) {
     return (
       <section className="mt-10">
-        <h2 className="flex items-center gap-2 font-serif text-2xl text-white">
+        <h2 className="flex items-center gap-2 font-serif text-2xl text-foreground">
           <TrendingUp className="h-4 w-4 text-[#5CE0AC]" /> Trends
         </h2>
         <div className="mt-4 report-card p-8 text-center">
-          <p className="text-base text-white">No lab values yet</p>
+          <p className="text-base text-foreground">No lab values yet</p>
           <p className="mt-2 text-sm report-muted max-w-[420px] mx-auto">
-            Upload a blood panel, lab report, or imaging PDF. Purple reads each file
-            and trends every value over time, with reference ranges.
+            Upload a blood panel, lab report, or imaging PDF. Purple reads each file and trends
+            every value over time, with reference ranges.
           </p>
           <div className="mt-5 flex items-center justify-center gap-3">
             <Link
               to="/reports/new"
-              className="inline-flex items-center rounded-full bg-white text-[#07090C] px-4 py-2 text-sm hover:bg-white/90"
+              className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-foreground/90"
             >
               Upload a report
             </Link>
             <Link
               to="/reports/documents"
-              className="inline-flex items-center rounded-full border border-white/15 px-4 py-2 text-sm text-white/80 hover:bg-white/5"
+              className="inline-flex items-center rounded-full border border-foreground/15 px-4 py-2 text-sm text-foreground/80 hover:bg-foreground/5"
             >
               View reports
             </Link>
@@ -533,7 +561,7 @@ export function TrendsSection() {
     <section className="mt-10">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="flex items-center gap-2 font-serif text-2xl text-white">
+          <h2 className="flex items-center gap-2 font-serif text-2xl text-foreground">
             <TrendingUp className="h-4 w-4 text-[#5CE0AC]" /> Trends
           </h2>
           <p className="mt-1 text-sm report-muted">
@@ -547,25 +575,50 @@ export function TrendsSection() {
             className={
               "inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-xs transition " +
               (onlyOutOfRange
-                ? "border-[#FFA8BD]/40 bg-[#FFA8BD]/15 text-[#FFA8BD]"
-                : "border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white")
+                ? "border-[#FFA8BD]/40 bg-[#FFA8BD]/15 text-destructive"
+                : "border-foreground/10 bg-foreground/5 text-foreground/70 hover:bg-foreground/10 hover:text-foreground")
             }
             aria-pressed={onlyOutOfRange}
           >
             Only out of range
           </button>
-          <div className="text-xs text-white/55 inline-flex items-center gap-2">
+          <div className="text-xs text-foreground/55 inline-flex items-center gap-2">
             Sort
             <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
-              <SelectTrigger className="h-8 w-[170px] rounded-full bg-white/5 border-white/10 text-white text-xs px-3 hover:bg-white/10 focus:ring-white/20">
+              <SelectTrigger className="h-8 w-[170px] rounded-full bg-foreground/5 border-foreground/10 text-foreground text-xs px-3 hover:bg-foreground/10 focus:ring-white/20">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#0F1418] border-white/10 text-white">
-                <SelectItem value="attention" className="text-white focus:bg-white/10 focus:text-white">Needs attention</SelectItem>
-                <SelectItem value="alpha" className="text-white focus:bg-white/10 focus:text-white">Alphabetical</SelectItem>
-                <SelectItem value="recent" className="text-white focus:bg-white/10 focus:text-white">Most recent</SelectItem>
-                <SelectItem value="count" className="text-white focus:bg-white/10 focus:text-white">Most readings</SelectItem>
-                <SelectItem value="custom" className="text-white focus:bg-white/10 focus:text-white">Custom (drag)</SelectItem>
+              <SelectContent className="bg-popover border-foreground/10 text-foreground">
+                <SelectItem
+                  value="attention"
+                  className="text-foreground focus:bg-foreground/10 focus:text-foreground"
+                >
+                  Needs attention
+                </SelectItem>
+                <SelectItem
+                  value="alpha"
+                  className="text-foreground focus:bg-foreground/10 focus:text-foreground"
+                >
+                  Alphabetical
+                </SelectItem>
+                <SelectItem
+                  value="recent"
+                  className="text-foreground focus:bg-foreground/10 focus:text-foreground"
+                >
+                  Most recent
+                </SelectItem>
+                <SelectItem
+                  value="count"
+                  className="text-foreground focus:bg-foreground/10 focus:text-foreground"
+                >
+                  Most readings
+                </SelectItem>
+                <SelectItem
+                  value="custom"
+                  className="text-foreground focus:bg-foreground/10 focus:text-foreground"
+                >
+                  Custom (drag)
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -573,7 +626,7 @@ export function TrendsSection() {
             <button
               type="button"
               onClick={() => setShowHidden((v) => !v)}
-              className="text-xs text-white/60 hover:text-white"
+              className="text-xs text-foreground/60 hover:text-foreground"
             >
               {showHidden ? "Hide hidden" : "Show hidden"}
             </button>
@@ -587,15 +640,15 @@ export function TrendsSection() {
             <div className="mt-6 space-y-8">
               {grouped.map((g) => (
                 <div key={g.key}>
-                  <div className="flex items-baseline justify-between gap-3 border-b border-white/8 pb-2 mb-3">
-                    <h3 className="font-serif text-lg text-white">
+                  <div className="flex items-baseline justify-between gap-3 border-b border-foreground/8 pb-2 mb-3">
+                    <h3 className="font-serif text-lg text-foreground">
                       {g.label}
-                      <span className="ml-2 text-xs text-white/45 tabular-nums">
+                      <span className="ml-2 text-xs text-foreground/45 tabular-nums">
                         {g.rows.length}
                       </span>
                     </h3>
                     {g.outCount > 0 && (
-                      <span className="inline-flex items-center rounded-full border border-[#FFA8BD]/30 bg-[#FFA8BD]/10 text-[#FFA8BD] text-[11px] px-2 py-0.5 tabular-nums">
+                      <span className="inline-flex items-center rounded-full border border-[#FFA8BD]/30 bg-[#FFA8BD]/10 text-destructive text-[11px] px-2 py-0.5 tabular-nums">
                         {g.outCount} out of range
                       </span>
                     )}

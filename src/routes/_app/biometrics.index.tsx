@@ -38,7 +38,13 @@ const SOURCES: SourceKey[] = ["oura", "whoop", "apple_health", "manual"];
 type RangeKey = "1d" | "7d" | "30d" | "90d" | "365d";
 type CompareMode = "none" | "previous" | "year_ago";
 
-const RANGE_DAYS: Record<RangeKey, number> = { "1d": 1, "7d": 7, "30d": 30, "90d": 90, "365d": 365 };
+const RANGE_DAYS: Record<RangeKey, number> = {
+  "1d": 1,
+  "7d": 7,
+  "30d": 30,
+  "90d": 90,
+  "365d": 365,
+};
 const RANGE_LABELS: Record<RangeKey, string> = {
   "1d": "Today",
   "7d": "7d",
@@ -77,9 +83,7 @@ function BiometricsIndex() {
 
   const togglePin = async (key: MetricKey) => {
     if (!uid) return;
-    const next = pinned.includes(key)
-      ? pinned.filter((k) => k !== key)
-      : [...pinned, key];
+    const next = pinned.includes(key) ? pinned.filter((k) => k !== key) : [...pinned, key];
     setPinned(next); // optimistic
     const { error } = await supabase
       .from("profiles")
@@ -120,13 +124,16 @@ function BiometricsIndex() {
   }, [uid, refreshKey, windowDays, compareMode]);
 
   const seriesByMetric = useMemo(() => {
-    const out: Record<MetricKey, Partial<Record<SourceKey, Array<{ date: string; value: number | null }>>>> = {} as never;
+    const out: Record<
+      MetricKey,
+      Partial<Record<SourceKey, Array<{ date: string; value: number | null }>>>
+    > = {} as never;
     for (const key of METRIC_ORDER) {
       const meta = METRICS[key];
       const bySrc: Partial<Record<SourceKey, Array<{ date: string; value: number | null }>>> = {};
       for (const src of SOURCES) bySrc[src] = [];
       for (const r of rows ?? []) {
-        const src = (String(r.source ?? "") as SourceKey);
+        const src = String(r.source ?? "") as SourceKey;
         if (!SOURCES.includes(src)) continue;
         const raw = r[meta.column];
         const num = typeof raw === "number" ? raw : raw == null ? null : Number(raw);
@@ -188,8 +195,7 @@ function BiometricsIndex() {
 
   // Status per metric, used for "needs a look" summary and attention pills.
   const statusByMetric = useMemo(() => {
-    const out: Record<MetricKey, "in_range" | "low" | "high" | "unknown"> =
-      {} as never;
+    const out: Record<MetricKey, "in_range" | "low" | "high" | "unknown"> = {} as never;
     for (const m of METRIC_ORDER) {
       const bySource = seriesByMetric[m];
       // Pick the source with most-recent reading for the headline.
@@ -219,11 +225,14 @@ function BiometricsIndex() {
     [statusByMetric],
   );
 
+  const attentionSet = useMemo(() => new Set(attentionKeys), [attentionKeys]);
+
   // Group available metrics by category, hide categories with no data.
   const byCategory = useMemo(() => {
     const out: Partial<Record<MetricCategory, MetricKey[]>> = {};
     for (const m of METRIC_ORDER) {
-      if (pinned.includes(m)) continue; // pinned shown in hero strip
+      if (pinned.includes(m)) continue;
+      if (attentionSet.has(m)) continue;
       const hasData = Object.values(seriesByMetric[m] ?? {}).some(
         (arr) => arr && arr.some((d) => d.value != null),
       );
@@ -232,7 +241,7 @@ function BiometricsIndex() {
       (out[cat] ||= []).push(m);
     }
     return out;
-  }, [seriesByMetric, pinned]);
+  }, [seriesByMetric, pinned, attentionSet]);
 
   return (
     <div className="mx-auto max-w-5xl px-5 sm:px-10 lg:px-16 pt-8 sm:pt-12 pb-24">
@@ -264,7 +273,9 @@ function BiometricsIndex() {
               type="button"
               onClick={() => setRangeKey(k)}
               className={`rounded-full px-3 py-1 text-[12px] transition ${
-                rangeKey === k ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                rangeKey === k
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {RANGE_LABELS[k]}
@@ -278,7 +289,9 @@ function BiometricsIndex() {
               type="button"
               onClick={() => setCompareMode(c)}
               className={`rounded-full px-3 py-1 text-[12px] transition ${
-                compareMode === c ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                compareMode === c
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {c === "none" ? "No compare" : c === "previous" ? "vs previous" : "vs year ago"}
@@ -296,9 +309,7 @@ function BiometricsIndex() {
       ) : empty ? (
         <div className="mt-10 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
           <p className="font-serif text-xl">{t("biometrics.noDataTitle")}</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {t("biometrics.noDataBody")}
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">{t("biometrics.noDataBody")}</p>
         </div>
       ) : (
         <div className="mt-6 space-y-10">
@@ -321,6 +332,33 @@ function BiometricsIndex() {
                 </p>
               </div>
             </div>
+          )}
+
+          {attentionKeys.length > 0 && (
+            <section>
+              <p className="label-eyebrow text-muted-foreground mb-3">Needs a look</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {attentionKeys.map((m) => (
+                  <div key={m} id={`metric-${m}`}>
+                    <MetricCard
+                      metric={m}
+                      seriesBySource={seriesByMetric[m]}
+                      pinned={false}
+                      onTogglePin={() => togglePin(m)}
+                      compare={
+                        compareMode === "none"
+                          ? undefined
+                          : {
+                              label: compareMode === "previous" ? "vs previous" : "vs year ago",
+                              deltaPct: comparison[m].deltaPct,
+                              compareValue: comparison[m].compare,
+                            }
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
           )}
 
           {/* Pinned hero strip */}
@@ -359,9 +397,7 @@ function BiometricsIndex() {
             if (!metrics || metrics.length === 0) return null;
             return (
               <section key={cat}>
-                <p className="label-eyebrow text-muted-foreground mb-3">
-                  {CATEGORY_LABEL[cat]}
-                </p>
+                <p className="label-eyebrow text-muted-foreground mb-3">{CATEGORY_LABEL[cat]}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {metrics.map((m) => (
                     <MetricCard
@@ -374,8 +410,7 @@ function BiometricsIndex() {
                         compareMode === "none"
                           ? undefined
                           : {
-                              label:
-                                compareMode === "previous" ? "vs previous" : "vs year ago",
+                              label: compareMode === "previous" ? "vs previous" : "vs year ago",
                               deltaPct: comparison[m].deltaPct,
                               compareValue: comparison[m].compare,
                             }
@@ -397,10 +432,10 @@ function BiometricsIndex() {
 
 function SourceLegend() {
   const items = [
-    { label: "Oura",         color: "var(--purple-primary)" },
-    { label: "Whoop",        color: "#34D399" },
+    { label: "Oura", color: "var(--purple-primary)" },
+    { label: "Whoop", color: "#34D399" },
     { label: "Apple Health", color: "#F472B6" },
-    { label: "Manual",       color: "#A1A1AA" },
+    { label: "Manual", color: "#A1A1AA" },
   ];
   return (
     <div className="mt-10 flex flex-wrap items-center gap-4 text-[12px] text-muted-foreground">
@@ -418,20 +453,20 @@ function SourceLegend() {
 function SourceFieldMatrix() {
   // Rough capability matrix. Daily-summary granularity, varies by ring/watch.
   const rows: Array<{ label: string; oura: boolean; whoop: boolean; apple: boolean }> = [
-    { label: "Total sleep",        oura: true,  whoop: true,  apple: true  },
-    { label: "Sleep score",        oura: true,  whoop: true,  apple: false },
-    { label: "REM / Deep sleep",   oura: true,  whoop: true,  apple: true  },
-    { label: "HRV (RMSSD)",        oura: true,  whoop: true,  apple: true  },
-    { label: "Resting HR",         oura: true,  whoop: true,  apple: true  },
-    { label: "Respiratory rate",   oura: true,  whoop: true,  apple: true  },
-    { label: "SpO₂",               oura: true,  whoop: false, apple: true  },
-    { label: "Skin temperature",   oura: true,  whoop: false, apple: true  },
+    { label: "Total sleep", oura: true, whoop: true, apple: true },
+    { label: "Sleep score", oura: true, whoop: true, apple: false },
+    { label: "REM / Deep sleep", oura: true, whoop: true, apple: true },
+    { label: "HRV (RMSSD)", oura: true, whoop: true, apple: true },
+    { label: "Resting HR", oura: true, whoop: true, apple: true },
+    { label: "Respiratory rate", oura: true, whoop: true, apple: true },
+    { label: "SpO₂", oura: true, whoop: false, apple: true },
+    { label: "Skin temperature", oura: true, whoop: false, apple: true },
     { label: "Readiness / Recovery", oura: true, whoop: true, apple: false },
-    { label: "Stress / Strain",    oura: true,  whoop: true,  apple: false },
-    { label: "Steps",              oura: true,  whoop: false, apple: true  },
-    { label: "Active calories",    oura: true,  whoop: true,  apple: true  },
-    { label: "VO₂max",             oura: false, whoop: false, apple: true  },
-    { label: "Workout minutes",    oura: true,  whoop: true,  apple: true  },
+    { label: "Stress / Strain", oura: true, whoop: true, apple: false },
+    { label: "Steps", oura: true, whoop: false, apple: true },
+    { label: "Active calories", oura: true, whoop: true, apple: true },
+    { label: "VO₂max", oura: false, whoop: false, apple: true },
+    { label: "Workout minutes", oura: true, whoop: true, apple: true },
   ];
   const cell = (yes: boolean) => (
     <td className="px-3 py-1.5 text-center text-foreground/70">{yes ? "✓" : "–"}</td>
@@ -463,7 +498,8 @@ function SourceFieldMatrix() {
           </tbody>
         </table>
         <p className="mt-3 text-[11px] text-muted-foreground">
-          When multiple sources report the same signal, the card shows one colored line per source so you can compare them side by side.
+          When multiple sources report the same signal, the card shows one colored line per source
+          so you can compare them side by side.
         </p>
       </div>
     </details>

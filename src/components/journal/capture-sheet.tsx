@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Camera, Image as ImageIcon, Video, Mic, X, Loader2, Zap } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetColumn, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -90,7 +90,7 @@ export function CaptureSheet({
       .eq("id", userId)
       .maybeSingle()
       .then(({ data }) => {
-        setConditions(((data?.conditions as string[] | null) ?? []));
+        setConditions((data?.conditions as string[] | null) ?? []);
       });
   }, [userId]);
 
@@ -254,26 +254,31 @@ export function CaptureSheet({
       if (uploads.length > 0) {
         const { data: signed, error: signErr } = await supabase.storage
           .from("journal-media")
-          .createSignedUrls(uploads.map((u) => u.path), 60 * 60 * 24 * 365);
+          .createSignedUrls(
+            uploads.map((u) => u.path),
+            60 * 60 * 24 * 365,
+          );
         if (signErr) throw signErr;
         mediaUrls = (signed ?? []).map((s) => s.signedUrl).filter(Boolean) as string[];
 
-        await supabase
-          .from("journal_entries")
-          .update({ media_urls: mediaUrls })
-          .eq("id", entryId);
+        await supabase.from("journal_entries").update({ media_urls: mediaUrls }).eq("id", entryId);
       }
 
       // 4. Fire-and-forget processor
-      supabase.functions
-        .invoke("journal-processor", { body: { entry_id: entryId } })
-        .catch(() => { /* will exist in next step */ });
+      supabase.functions.invoke("journal-processor", { body: { entry_id: entryId } }).catch(() => {
+        /* will exist in next step */
+      });
 
       onSaved?.();
       onOpenChange(false);
     } catch (err: any) {
       console.error(err);
-      toast.error(userMessage(err, "Your entry didn't save. It's still here on this screen, try again in a moment."));
+      toast.error(
+        userMessage(
+          err,
+          "Your entry didn't save. It's still here on this screen, try again in a moment.",
+        ),
+      );
     } finally {
       setSaving(false);
     }
@@ -281,114 +286,127 @@ export function CaptureSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="bottom"
-        className="h-[92vh] sm:h-[88vh] flex flex-col p-0 rounded-t-2xl"
-      >
-        <SheetHeader className="px-5 pt-5 pb-3 pr-14 flex-row items-center justify-between space-y-0 border-b border-border">
-          <SheetTitle className="font-serif text-lg font-normal">New entry</SheetTitle>
-          <Button
-            onClick={handleSave}
-            disabled={!hasContent || saving}
-            size="sm"
-            className="rounded-full px-5"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
-          </Button>
+      <SheetContent side="bottom" className="h-[92vh] sm:h-[88vh] flex flex-col p-0 rounded-t-2xl">
+        <SheetHeader className="border-b border-border">
+          <SheetColumn className="flex flex-row items-center justify-between space-y-0 px-5 pt-5 pb-3 pr-14">
+            <SheetTitle className="font-serif text-lg font-normal">New entry</SheetTitle>
+            <Button
+              onClick={handleSave}
+              disabled={!hasContent || saving}
+              size="sm"
+              className="rounded-full px-5"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+            </Button>
+          </SheetColumn>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-5 pt-4 pb-2">
-          <Textarea
-            ref={textareaRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder={placeholder}
-            className="min-h-[180px] border-0 shadow-none focus-visible:ring-0 px-0 text-base resize-none font-serif placeholder:text-muted-foreground/60 placeholder:font-sans"
-          />
+        <div className="flex-1 overflow-y-auto">
+          <SheetColumn className="px-5 pt-4 pb-2">
+            <Textarea
+              ref={textareaRef}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={placeholder}
+              className="min-h-[180px] border-0 shadow-none focus-visible:ring-0 px-0 text-base resize-none font-serif placeholder:text-muted-foreground/60 placeholder:font-sans"
+            />
 
-          {!text.trim() && promptChips.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {promptChips.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => insertPrompt(p)}
-                  className="rounded-full border border-border bg-card/60 px-3 py-1 text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {voice.listening || voice.transcript ? (
-            <div
-              className={cn(
-                "mt-3 rounded-xl bg-secondary/70 p-3 text-sm text-secondary-foreground",
-                voice.listening && "ring-1 ring-primary/30",
-              )}
-            >
-              <div className="flex items-center gap-2 mb-1 text-xs text-primary/80">
-                <span className={cn("h-2 w-2 rounded-full bg-primary", voice.listening && "animate-pulse")} />
-                {voice.listening ? "Listening…" : "Captured"}
-              </div>
-              <p className="font-serif leading-relaxed min-h-[1.5rem]">
-                {voice.transcript || (voice.listening ? "Go ahead…" : "")}
-              </p>
-            </div>
-          ) : null}
-
-          {attachments.length > 0 && (
-            <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {attachments.map((a) => (
-                <div key={a.id} className="relative aspect-square rounded-lg overflow-hidden bg-muted group">
-                  {a.kind === "photo" ? (
-                    <img src={a.previewUrl} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <video src={a.previewUrl} className="h-full w-full object-cover" muted />
-                  )}
+            {!text.trim() && promptChips.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {promptChips.map((p) => (
                   <button
+                    key={p}
                     type="button"
-                    onClick={() => removeAttachment(a.id)}
-                    className="absolute top-1 right-1 rounded-full bg-foreground/70 text-background p-1 opacity-80 hover:opacity-100"
-                    aria-label="Remove"
+                    onClick={() => insertPrompt(p)}
+                    className="rounded-full border border-border bg-card/60 px-3 py-1 text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    {p}
                   </button>
+                ))}
+              </div>
+            )}
+
+            {voice.listening || voice.transcript ? (
+              <div
+                className={cn(
+                  "mt-3 rounded-xl bg-secondary/70 p-3 text-sm text-secondary-foreground",
+                  voice.listening && "ring-1 ring-primary/30",
+                )}
+              >
+                <div className="flex items-center gap-2 mb-1 text-xs text-primary/80">
+                  <span
+                    className={cn(
+                      "h-2 w-2 rounded-full bg-primary",
+                      voice.listening && "animate-pulse",
+                    )}
+                  />
+                  {voice.listening ? "Listening…" : "Captured"}
                 </div>
-              ))}
-            </div>
-          )}
+                <p className="font-serif leading-relaxed min-h-[1.5rem]">
+                  {voice.transcript || (voice.listening ? "Go ahead…" : "")}
+                </p>
+              </div>
+            ) : null}
+
+            {attachments.length > 0 && (
+              <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {attachments.map((a) => (
+                  <div
+                    key={a.id}
+                    className="relative aspect-square rounded-lg overflow-hidden bg-muted group"
+                  >
+                    {a.kind === "photo" ? (
+                      <img src={a.previewUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <video src={a.previewUrl} className="h-full w-full object-cover" muted />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(a.id)}
+                      className="absolute top-1 right-1 rounded-full bg-foreground/70 text-background p-1 opacity-80 hover:opacity-100"
+                      aria-label="Remove"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </SheetColumn>
         </div>
 
-        <div className="border-t border-border px-3 py-3 flex items-center justify-around bg-card/50">
-          <ToolbarButton label="Photo" onClick={() => photoInput.current?.click()}>
-            <Camera className="h-5 w-5" />
-          </ToolbarButton>
-          <ToolbarButton label="Gallery" onClick={() => galleryInput.current?.click()}>
-            <ImageIcon className="h-5 w-5" />
-          </ToolbarButton>
-          <ToolbarButton label="Video" onClick={() => videoInput.current?.click()}>
-            <Video className="h-5 w-5" />
-          </ToolbarButton>
-          <ToolbarButton
-            label={voice.listening ? "Stop" : "Voice"}
-            active={voice.listening}
-            onClick={toggleVoice}
-          >
-            <Mic className={cn("h-5 w-5", voice.listening && "animate-pulse")} />
-          </ToolbarButton>
+        <div className="border-t border-border bg-card/50">
+          <SheetColumn className="px-3 py-3 flex items-center justify-around">
+            <ToolbarButton label="Photo" onClick={() => photoInput.current?.click()}>
+              <Camera className="h-5 w-5" />
+            </ToolbarButton>
+            <ToolbarButton label="Gallery" onClick={() => galleryInput.current?.click()}>
+              <ImageIcon className="h-5 w-5" />
+            </ToolbarButton>
+            <ToolbarButton label="Video" onClick={() => videoInput.current?.click()}>
+              <Video className="h-5 w-5" />
+            </ToolbarButton>
+            <ToolbarButton
+              label={voice.listening ? "Stop" : "Voice"}
+              active={voice.listening}
+              onClick={toggleVoice}
+            >
+              <Mic className={cn("h-5 w-5", voice.listening && "animate-pulse")} />
+            </ToolbarButton>
+          </SheetColumn>
         </div>
 
-        <div className="border-t border-border px-5 py-2 bg-card/50">
-          <Link
-            to="/seizures/new"
-            onClick={() => onOpenChange(false)}
-            className="flex items-center justify-center gap-2 text-sm text-destructive font-medium py-1.5"
-          >
-            <Zap className="h-4 w-4" fill="currentColor" />
-            Log an event
-          </Link>
+        <div className="border-t border-border bg-card/50">
+          <SheetColumn className="px-5 py-2">
+            <Link
+              to="/seizures/new"
+              onClick={() => onOpenChange(false)}
+              className="flex items-center justify-center gap-2 text-sm text-destructive font-medium py-1.5"
+            >
+              <Zap className="h-4 w-4" fill="currentColor" />
+              Log an event
+            </Link>
+          </SheetColumn>
         </div>
 
         <input
@@ -397,7 +415,10 @@ export function CaptureSheet({
           accept="image/*"
           capture="environment"
           className="hidden"
-          onChange={(e) => { addFiles(e.target.files, "photo"); e.target.value = ""; }}
+          onChange={(e) => {
+            addFiles(e.target.files, "photo");
+            e.target.value = "";
+          }}
         />
         <input
           ref={galleryInput}
@@ -405,7 +426,10 @@ export function CaptureSheet({
           accept="image/*"
           multiple
           className="hidden"
-          onChange={(e) => { addFiles(e.target.files, "photo"); e.target.value = ""; }}
+          onChange={(e) => {
+            addFiles(e.target.files, "photo");
+            e.target.value = "";
+          }}
         />
         <input
           ref={videoInput}
@@ -413,7 +437,10 @@ export function CaptureSheet({
           accept="video/*"
           capture="environment"
           className="hidden"
-          onChange={(e) => { addFiles(e.target.files, "video"); e.target.value = ""; }}
+          onChange={(e) => {
+            addFiles(e.target.files, "video");
+            e.target.value = "";
+          }}
         />
       </SheetContent>
     </Sheet>

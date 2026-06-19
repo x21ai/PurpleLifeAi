@@ -76,6 +76,17 @@ const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 );
 SheetHeader.displayName = "SheetHeader";
 
+/**
+ * Centered, width-capped column for bottom-sheet content. Bottom sheets are
+ * full-bleed (inset-x-0) so on wide desktops content would otherwise stretch
+ * edge to edge. Wrap header and body content in this to keep an Apple-style
+ * narrow column while the sheet background still spans the screen.
+ */
+const SheetColumn = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn("mx-auto w-full max-w-xl", className)} {...props} />
+);
+SheetColumn.displayName = "SheetColumn";
+
 const SheetFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className)}
@@ -116,6 +127,7 @@ export {
   SheetClose,
   SheetContent,
   SheetHeader,
+  SheetColumn,
   SheetFooter,
   SheetTitle,
   SheetDescription,

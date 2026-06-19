@@ -1,15 +1,16 @@
 import * as React from "react";
-import { Pill, CheckCheck, Smartphone, X } from "lucide-react";
+import { Pill, CheckCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn, formatLocaleTime } from "@/lib/utils";
 import type { TodayDoseRow } from "@/lib/meds-today";
-import {
-  dismissReminderBanner,
-  notificationsSupported,
-  requestPermission,
-  shouldShowReminderBanner,
-} from "@/lib/med-notifications";
+
+/** Shift a YYYY-MM-DD date string by whole days (calendar-safe via UTC noon). */
+function shiftDate(dateStr: string, days: number): string {
+  const d = new Date(`${dateStr}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 
 function dotStyle(status: string): string {
   switch (status) {
@@ -24,76 +25,38 @@ function dotStyle(status: string): string {
   }
 }
 
-function ReminderNudge() {
-  const [visible, setVisible] = React.useState(false);
-  const [perm, setPerm] = React.useState<NotificationPermission | "unsupported">("default");
-
-  React.useEffect(() => {
-    setVisible(shouldShowReminderBanner());
-    if (!notificationsSupported()) {
-      setPerm("unsupported");
-      return;
-    }
-    setPerm(Notification.permission);
-  }, []);
-
-  if (!visible && perm === "granted") return null;
-
-  const dismiss = () => {
-    dismissReminderBanner();
-    setVisible(false);
-  };
-
-  return (
-    <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3 flex items-start gap-2">
-      <Smartphone className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
-      <div className="flex-1 min-w-0 text-sm">
-        {perm !== "granted" && perm !== "unsupported" ? (
-          <>
-            <p className="text-foreground">Turn on reminders so you never miss a dose.</p>
-            <Button
-              size="sm"
-              variant="outline"
-              className="mt-2 rounded-full h-8"
-              onClick={() => void requestPermission().then((p) => setPerm(p))}
-            >
-              Enable notifications
-            </Button>
-          </>
-        ) : (
-          <p className="text-muted-foreground">
-            Reminders work best when Purple is on your home screen.
-          </p>
-        )}
-      </div>
-      <button
-        type="button"
-        onClick={dismiss}
-        aria-label="Dismiss"
-        className="text-muted-foreground hover:text-foreground p-1 shrink-0"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </div>
-  );
-}
-
 export function TodayPanel({
   doses,
+  timezone,
+  todayLabel,
   pendingCount,
   markingAll,
   onMarkAll,
   onAction,
   onReclassify,
   onAddMed,
+  adherencePct = null,
+  adherenceTaken = 0,
+  adherenceTotal = 0,
+  viewDate,
+  todayStr,
+  onChangeDate,
 }: {
   doses: TodayDoseRow[] | null;
+  timezone: string;
+  todayLabel: string;
   pendingCount: number;
   markingAll: boolean;
   onMarkAll: () => void;
   onAction: (id: string, action: "taken" | "skip" | "snooze") => void;
   onReclassify: (id: string, next: "taken" | "skipped" | "pending") => void;
   onAddMed: () => void;
+  adherencePct?: number | null;
+  adherenceTaken?: number;
+  adherenceTotal?: number;
+  viewDate?: string;
+  todayStr?: string;
+  onChangeDate?: (dateStr: string) => void;
 }) {
   const { t } = useTranslation();
   const [now, setNow] = React.useState(() => new Date());
@@ -122,19 +85,79 @@ export function TodayPanel({
   }, [doses]);
 
   const nowPct = ((now.getTime() - dayStart.getTime()) / 86_400_000) * 100;
+  const isToday = !viewDate || !todayStr || viewDate === todayStr;
+  const canGoNext = !isToday;
 
   return (
-    <section className="mt-8 rounded-2xl border border-border bg-card p-5 sm:p-6">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Pill className="h-4 w-4 text-muted-foreground" />
-          <h2 className="font-serif text-xl text-foreground">{t("meds.todayDoses")}</h2>
+    <section id="today-doses" className="mt-4 rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <Pill className="h-4 w-4 text-muted-foreground" />
+            <h2 className="font-serif text-xl text-foreground">
+              {isToday ? t("meds.todayDoses") : t("meds.dosesForDay")}
+            </h2>
+          </div>
+          {onChangeDate && viewDate && todayStr ? (
+            <div className="mt-1 flex items-center gap-1">
+              <button
+                type="button"
+                aria-label={t("meds.prevDay")}
+                onClick={() => onChangeDate(shiftDate(viewDate, -1))}
+                className="h-7 w-7 inline-flex items-center justify-center rounded-full hover:bg-secondary text-muted-foreground"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {todayLabel}
+                {timezone ? ` · ${timezone.replace(/_/g, " ")}` : ""}
+              </span>
+              <button
+                type="button"
+                aria-label={t("meds.nextDay")}
+                disabled={!canGoNext}
+                onClick={() => onChangeDate(shiftDate(viewDate, 1))}
+                className="h-7 w-7 inline-flex items-center justify-center rounded-full hover:bg-secondary text-muted-foreground disabled:opacity-30 disabled:pointer-events-none"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <input
+                type="date"
+                value={viewDate}
+                max={todayStr}
+                onChange={(e) => e.target.value && onChangeDate(e.target.value)}
+                aria-label={t("meds.pickDate")}
+                className="ml-1 rounded-md border border-border bg-card px-2 py-1 text-xs text-muted-foreground"
+              />
+            </div>
+          ) : (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {todayLabel}
+              {timezone ? ` · ${timezone.replace(/_/g, " ")}` : ""}
+            </p>
+          )}
+          {adherencePct != null && isToday && (
+            <div className="mt-3">
+              <p className="text-2xl font-medium tabular-nums text-foreground">
+                {adherencePct}%
+                <span className="ml-2 text-xs font-normal text-muted-foreground align-middle">
+                  {t("meds.onScheduleLabel")}
+                </span>
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground tabular-nums">
+                {adherenceTotal > 0
+                  ? t("meds.dosesLogged", { taken: adherenceTaken, total: adherenceTotal })
+                  : t("meds.last14Days")}
+                {adherencePct < 100 && ` · ${t("meds.fixWithArrows")}`}
+              </p>
+            </div>
+          )}
         </div>
         {pendingCount > 0 && (
           <Button
             size="sm"
             variant="outline"
-            className="rounded-full"
+            className="rounded-full shrink-0"
             onClick={onMarkAll}
             disabled={markingAll}
           >
@@ -171,14 +194,19 @@ export function TodayPanel({
                 style={{ left: `${(h / 24) * 100}%` }}
               />
             ))}
-            <div
-              className="absolute top-0 bottom-0 w-px bg-foreground/40"
-              style={{ left: `${nowPct}%` }}
-              aria-hidden
-            />
+            {isToday && (
+              <div
+                className="absolute top-0 bottom-0 w-px bg-foreground/40"
+                style={{ left: `${nowPct}%` }}
+                aria-hidden
+              />
+            )}
             {doses.map((d) => {
               const tMs = new Date(d.scheduled_at).getTime();
-              const pct = Math.min(100, Math.max(0, ((tMs - dayStart.getTime()) / 86_400_000) * 100));
+              const pct = Math.min(
+                100,
+                Math.max(0, ((tMs - dayStart.getTime()) / 86_400_000) * 100),
+              );
               const tooltip = `${d.medication?.name ?? "Dose"} · ${formatLocaleTime(d.scheduled_at)} · ${d.status}`;
               return (
                 <div
@@ -267,8 +295,6 @@ export function TodayPanel({
           </ul>
         </>
       )}
-
-      <ReminderNudge />
     </section>
   );
 }

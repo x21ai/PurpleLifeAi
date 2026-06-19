@@ -27,7 +27,7 @@ export function ReportShell({
           {back ? (
             <Link
               to={back.to}
-              className="-ml-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-white/80 hover:bg-white/5 hover:text-white"
+              className="-ml-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground/80 hover:bg-accent hover:text-foreground"
               aria-label={back.label ?? "Back"}
             >
               <ChevronLeft className="h-5 w-5" />
@@ -35,16 +35,14 @@ export function ReportShell({
           ) : (
             <span className="h-10 w-10" aria-hidden />
           )}
-          <h1 className="report-eyebrow text-center text-white">{title}</h1>
+          <h1 className="report-eyebrow text-center text-foreground">{title}</h1>
           <div className="flex items-center justify-end">
             {right ?? <span className="h-10 w-10" aria-hidden />}
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-5 sm:px-8 pt-6 pb-32">
-        {children}
-      </main>
+      <main className="mx-auto max-w-3xl px-5 sm:px-8 pt-6 pb-32">{children}</main>
     </div>
   );
 }
@@ -65,18 +63,31 @@ export function ReportCard({
   );
 }
 
-export function ReportSectionTitle({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <h2 className={cn("font-serif text-2xl text-white", className)}>{children}</h2>
-  );
+export function ReportSectionTitle({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <h2 className={cn("font-serif text-2xl text-foreground", className)}>{children}</h2>;
 }
 
 export type ReportPillTone = "neutral" | "success" | "warning" | "alert";
-export function ReportPill({ tone = "neutral", children }: { tone?: ReportPillTone; children: React.ReactNode }) {
+export function ReportPill({
+  tone = "neutral",
+  children,
+}: {
+  tone?: ReportPillTone;
+  children: React.ReactNode;
+}) {
   const cls =
-    tone === "success" ? "report-pill report-pill-success" :
-    tone === "warning" ? "report-pill report-pill-warning" :
-    tone === "alert"   ? "report-pill report-pill-alert" :
-    "report-pill";
+    tone === "success"
+      ? "report-pill report-pill-success"
+      : tone === "warning"
+        ? "report-pill report-pill-warning"
+        : tone === "alert"
+          ? "report-pill report-pill-alert"
+          : "report-pill";
   return <span className={cls}>{children}</span>;
 }

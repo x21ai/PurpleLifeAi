@@ -1,7 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  Component,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { format } from "date-fns";
-import { BookOpen, Pill, Zap, ChevronRight, ChevronDown, Activity, Droplets, RefreshCw } from "lucide-react";
+import {
+  BookOpen,
+  Pill,
+  Zap,
+  ChevronRight,
+  ChevronDown,
+  Activity,
+  Droplets,
+  RefreshCw,
+} from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
@@ -20,7 +37,11 @@ import { ConnectWearablesCard } from "@/components/today/connect-wearables-card"
 import { MissedDoseCatchup } from "@/components/today/missed-dose-catchup";
 import { RestoreBanner } from "@/components/settings/restore-banner";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
-import { promptsForConditions, showsSeizureFeatures, getTodayGreeting } from "@/lib/condition-prompts";
+import {
+  promptsForConditions,
+  showsSeizureFeatures,
+  getTodayGreeting,
+} from "@/lib/condition-prompts";
 import { useCareProfile } from "@/hooks/use-care-profile";
 import { TodayEmptyState } from "@/components/today/empty-state";
 import { useTranslation } from "react-i18next";
@@ -37,6 +58,7 @@ import { WeeklyRecapCard } from "@/components/today/weekly-recap-card";
 import { SevenDayTrendStrip } from "@/components/today/seven-day-trend-strip";
 import { ReEngagementNudge } from "@/components/today/re-engagement-nudge";
 import { TopInsightCard } from "@/components/today/top-insight-card";
+import { TodayVitals } from "@/components/today/today-vitals";
 import { PreTripChecklist } from "@/components/today/pre-trip-checklist";
 import { TripWrapupCard } from "@/components/today/trip-wrapup-card";
 
@@ -136,11 +158,7 @@ function TodayPage() {
         .order("for_date", { ascending: false })
         .limit(1)
         .maybeSingle(),
-      supabase
-        .from("profiles")
-        .select("first_name, conditions")
-        .eq("id", userId)
-        .maybeSingle(),
+      supabase.from("profiles").select("first_name, conditions").eq("id", userId).maybeSingle(),
       supabase
         .from("admin_messages")
         .select("id, subject, body, created_at")
@@ -160,7 +178,9 @@ function TodayPage() {
     setJournalCount(jc.count ?? 0);
   }, [userId]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   // Track which pull-based wearables are connected so pull-to-refresh only
   // triggers syncs that are relevant.
@@ -262,10 +282,8 @@ function TodayPage() {
   const sleep = bio?.sleep_score ?? null;
   const activity = bio?.oura_activity_score ?? null;
 
-  const focusScore =
-    focus === "readiness" ? readiness : focus === "sleep" ? sleep : activity;
-  const focusLabel =
-    focus === "readiness" ? "Readiness" : focus === "sleep" ? "Sleep" : "Activity";
+  const focusScore = focus === "readiness" ? readiness : focus === "sleep" ? sleep : activity;
+  const focusLabel = focus === "readiness" ? "Readiness" : focus === "sleep" ? "Sleep" : "Activity";
 
   return (
     <div
@@ -279,7 +297,9 @@ function TodayPage() {
           className="flex justify-center text-muted-foreground"
           style={{ height: refreshing ? 32 : pull }}
         >
-          <RefreshCw className={(pull > 60 || refreshing) ? "animate-spin h-4 w-4 mt-2" : "h-4 w-4 mt-2"} />
+          <RefreshCw
+            className={pull > 60 || refreshing ? "animate-spin h-4 w-4 mt-2" : "h-4 w-4 mt-2"}
+          />
         </div>
       )}
       <RestoreBanner />
@@ -322,13 +342,9 @@ function TodayPage() {
       )}
 
       {forecast?.ai_narrative ? (
-        <p className="body-serif mt-4 max-w-[600px] text-foreground/75">
-          {forecast.ai_narrative}
-        </p>
+        <p className="body-serif mt-4 max-w-[600px] text-foreground/75">{forecast.ai_narrative}</p>
       ) : (
-        <p className="body-serif mt-4 max-w-[600px] text-foreground/60">
-          {conditionPrompt}
-        </p>
+        <p className="body-serif mt-4 max-w-[600px] text-foreground/60">{conditionPrompt}</p>
       )}
 
       <section className="mt-12 sm:mt-16 grid grid-cols-3 items-center gap-2">
@@ -361,6 +377,8 @@ function TodayPage() {
         />
       </section>
 
+      <TodayVitals />
+
       {expanded && typeof focusScore === "number" && (
         <div
           className="fixed inset-0 z-50 bg-background/95 backdrop-blur overflow-y-auto"
@@ -386,10 +404,13 @@ function TodayPage() {
                 label={focusLabel}
                 band={bandForReadiness(focusScore)}
                 phrase={
-                  focusScore >= 85 ? "A steady day."
-                  : focusScore >= 70 ? "Doing alright."
-                  : focusScore >= 50 ? "Worth slowing down."
-                  : "Time to be careful."
+                  focusScore >= 85
+                    ? "A steady day."
+                    : focusScore >= 70
+                      ? "Doing alright."
+                      : focusScore >= 50
+                        ? "Worth slowing down."
+                        : "Time to be careful."
                 }
                 narrative={forecast?.ai_narrative ?? undefined}
               />

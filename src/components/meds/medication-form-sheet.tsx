@@ -1,9 +1,9 @@
 import * as React from "react";
-import { Plus, X, Loader2, ChevronDown } from "lucide-react";
+import { Plus, X, Loader2, ChevronDown, Volume2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -13,18 +13,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { requestPermission, scheduleMedications } from "@/lib/med-notifications";
-import { searchMedDictionary, type MedDictEntry } from "@/lib/med-dictionary";
-import { ALARM_SOUNDS, DEFAULT_ALARM_SOUND, playAlarmOnce, type AlarmSoundId } from "@/lib/alarm-sounds";
-import { Volume2 } from "lucide-react";
+import type { MedDictEntry } from "@/lib/med-dictionary";
+import {
+  ALARM_SOUNDS,
+  DEFAULT_ALARM_SOUND,
+  playAlarmOnce,
+  type AlarmSoundId,
+} from "@/lib/alarm-sounds";
+import { useServerFn } from "@tanstack/react-start";
+import { MedNameSearch } from "@/components/meds/med-name-search";
+import { getDrugDefaults } from "@/lib/drug-db.functions";
+import {
+  GroupedFormCard,
+  GroupedFormField,
+  GroupedFormInsetButton,
+  GroupedFormLabel,
+  GroupedFormRow,
+  GroupedFormSwitchRow,
+  FormSectionSkeleton,
+} from "@/components/meds/grouped-form-section";
 
 export type MedKind = "medication" | "supplement" | "vitamin" | "herbal" | "rescue";
 
@@ -41,16 +53,20 @@ export type MedPrefill = {
   pills_remaining?: number | null;
 };
 
-const KIND_OPTIONS: { value: MedKind; label: string }[] = [
-  { value: "medication", label: "Medication" },
-  { value: "supplement", label: "Supplement" },
-  { value: "vitamin", label: "Vitamin" },
-  { value: "herbal", label: "Herbal" },
-  { value: "rescue", label: "Rescue" },
-];
+const KIND_OPTIONS: MedKind[] = ["medication", "supplement", "vitamin", "herbal", "rescue"];
 
 const DOSAGE_FORMS = [
-  "pill", "capsule", "tablet", "liquid", "injection", "drops", "patch", "inhaler", "powder", "gummy", "other",
+  "pill",
+  "capsule",
+  "tablet",
+  "liquid",
+  "injection",
+  "drops",
+  "patch",
+  "inhaler",
+  "powder",
+  "gummy",
+  "other",
 ] as const;
 
 const DOSAGE_UNITS = ["mg", "mcg", "mL", "g", "IU", "drops", "sprays", "units"];
@@ -72,6 +88,27 @@ function formatDosageText(amount: string, unit: string): string | null {
   return n || u;
 }
 
+function applyDictEntry(
+  entry: MedDictEntry,
+  setters: {
+    setName: (v: string) => void;
+    setKind: (v: MedKind) => void;
+    setDosageForm: (v: string) => void;
+    setDosageAmount: (v: string) => void;
+    setDosageUnit: (v: string) => void;
+    setUnitMode: (v: "preset" | "custom") => void;
+  },
+) {
+  setters.setName(entry.label);
+  setters.setKind(entry.kind);
+  if (entry.defaultForm) setters.setDosageForm(entry.defaultForm);
+  if (entry.defaultUnit) {
+    setters.setDosageUnit(entry.defaultUnit);
+    setters.setUnitMode(DOSAGE_UNITS.includes(entry.defaultUnit) ? "preset" : "custom");
+  }
+  if (entry.commonStrengths?.[0]) setters.setDosageAmount(entry.commonStrengths[0]);
+}
+
 export function MedicationFormSheet({
   open,
   onOpenChange,
@@ -79,6 +116,7 @@ export function MedicationFormSheet({
   isFirstMedication,
   editingMedId,
   prefill,
+  userMedNames = [],
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -86,7 +124,9 @@ export function MedicationFormSheet({
   isFirstMedication: boolean;
   editingMedId?: string | null;
   prefill?: MedPrefill | null;
+  userMedNames?: string[];
 }) {
+  const { t } = useTranslation();
   const { session } = useAuth();
   const userId = session?.user.id;
   const [name, setName] = React.useState("");
@@ -99,7 +139,6 @@ export function MedicationFormSheet({
   const [criticalAlarm, setCriticalAlarm] = React.useState(false);
   const [alarmSound, setAlarmSound] = React.useState<AlarmSoundId>(DEFAULT_ALARM_SOUND);
   const [times, setTimes] = React.useState<string[]>(["08:00"]);
-  // Per-time amount overrides. Index-aligned with `times`. Empty string = use the base amount.
   const [timeAmounts, setTimeAmounts] = React.useState<string[]>([""]);
   const [pillsRemaining, setPillsRemaining] = React.useState("");
   const [refillThreshold, setRefillThreshold] = React.useState("7");
@@ -107,16 +146,48 @@ export function MedicationFormSheet({
   const [prescriberName, setPrescriberName] = React.useState("");
   const [pharmacyName, setPharmacyName] = React.useState("");
   const [prescriptionNumber, setPrescriptionNumber] = React.useState("");
-  const [prescriberOpen, setPrescriberOpen] = React.useState(true);
+  const [startDate, setStartDate] = React.useState("");
+  const [endDate, setEndDate] = React.useState("");
+  const [prescriberOpen, setPrescriberOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
-  const [nameFocused, setNameFocused] = React.useState(false);
-  const nameSuggestions = React.useMemo<MedDictEntry[]>(
-    () => (nameFocused ? searchMedDictionary(name, 8) : []),
-    [name, nameFocused],
-  );
+  const [formLoading, setFormLoading] = React.useState(false);
 
   const isRescue = kind === "rescue";
   const isEditing = !!editingMedId;
+
+  const dictSetters = React.useMemo(
+    () => ({ setName, setKind, setDosageForm, setDosageAmount, setDosageUnit, setUnitMode }),
+    [],
+  );
+
+  // Mirror the editable dose fields so the async drug-DB enrich can read the
+  // latest values and fill only what the user has not already set.
+  const fieldsRef = React.useRef({ dosageForm, dosageUnit, dosageAmount });
+  React.useEffect(() => {
+    fieldsRef.current = { dosageForm, dosageUnit, dosageAmount };
+  });
+
+  const lookupDrug = useServerFn(getDrugDefaults);
+  const enrichFromDrugDb = React.useCallback(
+    async (medName: string) => {
+      try {
+        const db = await lookupDrug({ data: { name: medName } });
+        if (!db) return;
+        const cur = fieldsRef.current;
+        if (db.dosageForm && !cur.dosageForm) setDosageForm(db.dosageForm);
+        if (db.defaultUnit && (!cur.dosageUnit || cur.dosageUnit === "mg")) {
+          setDosageUnit(db.defaultUnit);
+          setUnitMode(DOSAGE_UNITS.includes(db.defaultUnit) ? "preset" : "custom");
+        }
+        if (db.commonStrengths.length > 0 && !cur.dosageAmount) {
+          setDosageAmount(db.commonStrengths[0]);
+        }
+      } catch {
+        /* offline or lookup failed; local defaults stand */
+      }
+    },
+    [lookupDrug],
+  );
 
   React.useEffect(() => {
     if (!open) {
@@ -137,12 +208,13 @@ export function MedicationFormSheet({
       setPrescriberName("");
       setPharmacyName("");
       setPrescriptionNumber("");
-      setPrescriberOpen(true);
-      setNameFocused(false);
+      setStartDate("");
+      setEndDate("");
+      setPrescriberOpen(false);
+      setFormLoading(false);
     }
   }, [open]);
 
-  // Apply scan/voice prefill when sheet opens without an existing med id.
   React.useEffect(() => {
     if (!open || editingMedId || !prefill) return;
     if (prefill.name) setName(prefill.name);
@@ -169,19 +241,21 @@ export function MedicationFormSheet({
     }
   }, [open, editingMedId, prefill]);
 
-  // Load existing medication when opening in edit mode.
   React.useEffect(() => {
     if (!open || !editingMedId) return;
     let cancelled = false;
+    setFormLoading(true);
     void (async () => {
       const { data, error } = await supabase
         .from("medications")
         .select(
-          "name, kind, dosage_form, dosage_amount, dosage_unit, with_food, schedule, times_of_day, pills_remaining, refill_threshold, prescriber_name, pharmacy_name, prescription_number, is_rescue, reminder_style, alarm_sound",
+          "name, kind, dosage_form, dosage_amount, dosage_unit, with_food, schedule, times_of_day, pills_remaining, refill_threshold, prescriber_name, pharmacy_name, prescription_number, is_rescue, reminder_style, alarm_sound, start_date, end_date",
         )
         .eq("id", editingMedId)
         .maybeSingle();
-      if (cancelled || error || !data) return;
+      if (cancelled) return;
+      setFormLoading(false);
+      if (error || !data) return;
       const m = data as {
         name: string;
         kind: MedKind;
@@ -199,9 +273,11 @@ export function MedicationFormSheet({
         is_rescue: boolean;
         reminder_style: string | null;
         alarm_sound: string | null;
+        start_date: string | null;
+        end_date: string | null;
       };
       setName(m.name ?? "");
-      const resolvedKind: MedKind = m.is_rescue ? "rescue" : (m.kind as MedKind) ?? "medication";
+      const resolvedKind: MedKind = m.is_rescue ? "rescue" : ((m.kind as MedKind) ?? "medication");
       setKind(resolvedKind);
       setDosageForm(m.dosage_form ?? "");
       setDosageAmount(m.dosage_amount != null ? String(m.dosage_amount) : "");
@@ -210,7 +286,7 @@ export function MedicationFormSheet({
       setUnitMode(DOSAGE_UNITS.includes(unit) ? "preset" : "custom");
       setWithFood(!!m.with_food);
       setCriticalAlarm(m.reminder_style === "critical");
-      setAlarmSound(((m.alarm_sound as AlarmSoundId) ?? DEFAULT_ALARM_SOUND));
+      setAlarmSound((m.alarm_sound as AlarmSoundId) ?? DEFAULT_ALARM_SOUND);
       const schedule = Array.isArray(m.schedule) ? m.schedule : [];
       if (schedule.length > 0) {
         setTimes(schedule.map((s) => s.time));
@@ -225,11 +301,15 @@ export function MedicationFormSheet({
       setPillsRemaining(m.pills_remaining != null ? String(m.pills_remaining) : "");
       const thr = m.refill_threshold != null ? String(m.refill_threshold) : "7";
       setRefillThreshold(thr);
-      setRefillMode(REFILL_PRESETS.includes(thr as typeof REFILL_PRESETS[number]) ? "preset" : "custom");
+      setRefillMode(
+        REFILL_PRESETS.includes(thr as (typeof REFILL_PRESETS)[number]) ? "preset" : "custom",
+      );
       setPrescriberName(m.prescriber_name ?? "");
       setPharmacyName(m.pharmacy_name ?? "");
       setPrescriptionNumber(m.prescription_number ?? "");
-      setPrescriberOpen(true);
+      setStartDate(m.start_date ?? "");
+      setEndDate(m.end_date ?? "");
+      setPrescriberOpen(!!(m.prescriber_name || m.pharmacy_name || m.prescription_number));
     })();
     return () => {
       cancelled = true;
@@ -238,10 +318,10 @@ export function MedicationFormSheet({
 
   const updateTime = (idx: number, v: string) =>
     setTimes((arr) => arr.map((t, i) => (i === idx ? v : t)));
-  const removeTime = (idx: number) =>
+  const removeTime = (idx: number) => {
     setTimes((arr) => (arr.length === 1 ? arr : arr.filter((_, i) => i !== idx)));
-  const removeTimeAmount = (idx: number) =>
     setTimeAmounts((arr) => (arr.length === 1 ? arr : arr.filter((_, i) => i !== idx)));
+  };
   const addTime = () => {
     setTimes((arr) => [...arr, "20:00"]);
     setTimeAmounts((arr) => [...arr, ""]);
@@ -253,27 +333,25 @@ export function MedicationFormSheet({
 
   const handleSave = async () => {
     if (!canSave || saving || !userId) return;
-    // Require dosage amount for non-rescue meds so today's list never shows a blank row.
     if (!isRescue && !dosageAmount.trim()) {
-      toast.error("Please enter a dose amount (e.g. 750 mg).");
+      toast.error(t("meds.form.amountRequired"));
       return;
     }
     setSaving(true);
     try {
-      // Build [{time, amount, unit}] preserving per-time amounts, dedup'd by time.
       const baseAmount = dosageAmount ? parseFloat(dosageAmount) : null;
       const unit = (dosageUnit || "mg").trim() || "mg";
       const seen = new Set<string>();
       const scheduleSlots = isRescue
         ? []
         : times
-            .map((t, i) => {
-              if (!/^\d{1,2}:\d{2}$/.test(t) || seen.has(t)) return null;
-              seen.add(t);
+            .map((time, i) => {
+              if (!/^\d{1,2}:\d{2}$/.test(time) || seen.has(time)) return null;
+              seen.add(time);
               const per = timeAmounts[i]?.trim();
               const amt = per ? parseFloat(per) : baseAmount;
               return {
-                time: t,
+                time,
                 amount: Number.isFinite(amt as number) ? amt : null,
                 unit,
               };
@@ -284,6 +362,15 @@ export function MedicationFormSheet({
       const pills = pillsRemaining ? parseInt(pillsRemaining, 10) : null;
       const threshold = refillThreshold ? parseInt(refillThreshold, 10) : 7;
       const dosageText = formatDosageText(dosageAmount, dosageUnit);
+
+      // Only create today's dose rows when the med is active today (a future
+      // start date or a past stop date means no doses for today). The
+      // regenerate RPC enforces the same window server-side.
+      const ymd = (d: Date) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const todayYmd = ymd(new Date());
+      const activeToday =
+        (!startDate || startDate <= todayYmd) && (!endDate || endDate >= todayYmd);
 
       const payload = {
         name: name.trim(),
@@ -304,9 +391,18 @@ export function MedicationFormSheet({
         refill_threshold: Number.isFinite(threshold) ? threshold : 7,
         reminder_style: criticalAlarm ? "critical" : "standard",
         alarm_sound: alarmSound,
+        start_date: startDate || null,
+        end_date: endDate || null,
       };
 
-      let med: { id: string; name: string; dosage: string | null; times_of_day: string[]; is_rescue: boolean; kind: string };
+      let med: {
+        id: string;
+        name: string;
+        dosage: string | null;
+        times_of_day: string[];
+        is_rescue: boolean;
+        kind: string;
+      };
 
       if (isEditing && editingMedId) {
         const { data, error } = await supabase
@@ -318,8 +414,6 @@ export function MedicationFormSheet({
         if (error || !data) throw error ?? new Error("Failed to update");
         med = data;
 
-        // Re-sync future pending doses for today to match the new schedule.
-        // Already-taken/missed doses are preserved.
         const nowIso = new Date().toISOString();
         await supabase
           .from("medication_doses")
@@ -328,7 +422,7 @@ export function MedicationFormSheet({
           .eq("status", "pending")
           .gte("scheduled_at", nowIso);
 
-        if (!isRescue && cleanTimes.length > 0) {
+        if (!isRescue && activeToday && cleanTimes.length > 0) {
           const rows = scheduleSlots
             .map((s) => ({
               user_id: userId,
@@ -352,7 +446,7 @@ export function MedicationFormSheet({
         if (error || !data) throw error ?? new Error("Failed to save");
         med = data;
 
-        if (!isRescue && cleanTimes.length > 0) {
+        if (!isRescue && activeToday && cleanTimes.length > 0) {
           const rows = scheduleSlots.map((s) => ({
             user_id: userId,
             medication_id: med.id,
@@ -368,14 +462,16 @@ export function MedicationFormSheet({
       if (!isRescue && isFirstMedication) {
         const perm = await requestPermission();
         if (perm === "granted") {
-          await scheduleMedications([{
-            id: med.id,
-            name: med.name,
-            dosage: med.dosage,
-            times_of_day: med.times_of_day,
-            kind: med.kind,
-            is_rescue: med.is_rescue,
-          }]);
+          await scheduleMedications([
+            {
+              id: med.id,
+              name: med.name,
+              dosage: med.dosage,
+              times_of_day: med.times_of_day,
+              kind: med.kind,
+              is_rescue: med.is_rescue,
+            },
+          ]);
         }
       } else if (
         !isRescue &&
@@ -383,19 +479,23 @@ export function MedicationFormSheet({
         "Notification" in window &&
         window.Notification.permission === "granted"
       ) {
-        await scheduleMedications([{
-          id: med.id,
-          name: med.name,
-          dosage: med.dosage,
-          times_of_day: med.times_of_day,
-          kind: med.kind,
-          is_rescue: med.is_rescue,
-        }]);
+        await scheduleMedications([
+          {
+            id: med.id,
+            name: med.name,
+            dosage: med.dosage,
+            times_of_day: med.times_of_day,
+            kind: med.kind,
+            is_rescue: med.is_rescue,
+          },
+        ]);
       }
 
-      toast.success(isEditing ? `${med.name} updated` : `${med.name} added`);
-      // Capture the user's local timezone (one-time) and sync today's pending
-      // doses on the server so they show at the times the user actually set.
+      toast.success(
+        isEditing
+          ? t("meds.form.updated", { name: med.name })
+          : t("meds.form.saved", { name: med.name }),
+      );
       try {
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
         if (tz) {
@@ -413,363 +513,423 @@ export function MedicationFormSheet({
       onOpenChange(false);
     } catch (err: unknown) {
       console.error(err);
-      const message = err instanceof Error ? err.message : "Could not save medication";
+      const message = err instanceof Error ? err.message : t("meds.form.saveFailed");
       toast.error(message);
     } finally {
       setSaving(false);
     }
   };
 
+  const kindLabel = (k: MedKind) => {
+    const key =
+      k === "medication"
+        ? "filterMedications"
+        : k === "supplement"
+          ? "filterSupplements"
+          : k === "vitamin"
+            ? "filterVitamins"
+            : k === "herbal"
+              ? "filterHerbal"
+              : "filterRescue";
+    return t(`meds.${key}`);
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 rounded-t-2xl overflow-hidden">
-        <SheetHeader className="px-5 pt-5 pb-3 pr-14 flex-row items-center justify-between space-y-0 border-b border-border">
-          <SheetTitle className="font-serif text-lg font-normal">{isEditing ? "Edit medication" : "Add medication"}</SheetTitle>
-          <Button onClick={handleSave} disabled={!canSave || saving} size="sm" className="rounded-full px-5">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : isEditing ? "Save changes" : "Save"}
-          </Button>
+      <SheetContent
+        side="bottom"
+        className="h-[90vh] sm:h-auto sm:max-h-[88vh] flex flex-col p-0 rounded-t-2xl overflow-hidden"
+      >
+        <SheetHeader className="border-b border-border">
+          <div className="mx-auto w-full max-w-xl flex flex-row items-center justify-between space-y-0 px-5 pt-5 pb-3 pr-14">
+            <SheetTitle className="font-serif text-lg font-normal">
+              {isEditing ? t("meds.form.editTitle") : t("meds.form.addTitle")}
+            </SheetTitle>
+            <Button
+              onClick={handleSave}
+              disabled={!canSave || saving || formLoading}
+              size="sm"
+              className="rounded-full px-5"
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isEditing ? (
+                t("meds.form.saveChanges")
+              ) : (
+                t("meds.form.save")
+              )}
+            </Button>
+          </div>
         </SheetHeader>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-5">
-          <div className="space-y-2">
-            <Label>Type</Label>
-            <ToggleGroup
-              type="single"
-              value={kind}
-              onValueChange={(v) => v && setKind(v as MedKind)}
-              className="flex flex-wrap justify-start gap-1"
-            >
-              {KIND_OPTIONS.map((opt) => (
-                <ToggleGroupItem
-                  key={opt.value}
-                  value={opt.value}
-                  className="rounded-full px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                >
-                  {opt.label}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
+        <div
+          data-testid="med-form-column"
+          className="flex-1 min-h-0 overflow-y-auto mx-auto w-full max-w-xl px-5 py-5"
+        >
+          <MedNameSearch
+            value={name}
+            onChange={setName}
+            onSelectEntry={(entry) => applyDictEntry(entry, dictSetters)}
+            onCommit={(n) => void enrichFromDrugDb(n)}
+            userMedNames={userMedNames}
+            disabled={formLoading}
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="med-name">Name</Label>
-            <div className="relative">
-              <Input
-                id="med-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onFocus={() => setNameFocused(true)}
-                onBlur={() => {
-                  // Delay so click on suggestion registers.
-                  setTimeout(() => setNameFocused(false), 150);
-                }}
-                placeholder="e.g. Keppra"
-                autoComplete="off"
-              />
-              {nameSuggestions.length > 0 && (
-                <ul
-                  className="absolute z-50 mt-1 left-0 right-0 max-h-64 overflow-y-auto rounded-xl border border-border bg-popover shadow-lg"
-                  role="listbox"
-                >
-                  {nameSuggestions.map((entry) => (
-                    <li key={entry.label}>
-                      <button
-                        type="button"
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => {
-                          setName(entry.label);
-                          setKind(entry.kind);
-                          setNameFocused(false);
-                        }}
-                      >
-                        <span className="text-foreground">{entry.label}</span>
-                        <span className="ml-2 text-xs text-muted-foreground capitalize">
-                          {entry.kind}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Form</Label>
-              <Select value={dosageForm} onValueChange={setDosageForm}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select form" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DOSAGE_FORMS.map((f) => (
-                    <SelectItem key={f} value={f} className="capitalize">{f}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="med-amount">Default amount</Label>
-              <Input
-                id="med-amount"
-                type="number"
-                inputMode="decimal"
-                min={0}
-                value={dosageAmount}
-                onChange={(e) => setDosageAmount(e.target.value)}
-                placeholder="500"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Unit</Label>
-            {unitMode === "preset" ? (
-              <Select
-                value={DOSAGE_UNITS.includes(dosageUnit) ? dosageUnit : "mg"}
-                onValueChange={(v) => {
-                  if (v === "__custom__") {
-                    setUnitMode("custom");
-                    setDosageUnit("");
-                  } else {
-                    setDosageUnit(v);
-                  }
-                }}
-              >
-                <SelectTrigger className="max-w-[200px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DOSAGE_UNITS.map((u) => (
-                    <SelectItem key={u} value={u}>{u}</SelectItem>
-                  ))}
-                  <SelectItem value="__custom__">Custom…</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : (
-              <div className="flex gap-2 items-center max-w-[260px]">
-                <Input
-                  autoFocus
-                  value={dosageUnit}
-                  onChange={(e) => setDosageUnit(e.target.value)}
-                  placeholder="Custom unit"
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setUnitMode("preset");
-                    setDosageUnit("mg");
-                  }}
-                >
-                  Reset
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
-            <div>
-              <p className="text-sm font-medium text-foreground">Take with food</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Reminders will mention this.</p>
-            </div>
-            <Switch checked={withFood} onCheckedChange={setWithFood} />
-          </div>
-
-          <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
-            <div className="pr-3">
-              <p className="text-sm font-medium text-foreground">Critical alarm</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Sound an alarm and keep prompting until you confirm. Use for must-take doses.
-              </p>
-            </div>
-            <Switch checked={criticalAlarm} onCheckedChange={setCriticalAlarm} />
-          </div>
-
-          <div className="space-y-2 rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-medium text-foreground">Reminder sound</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {criticalAlarm
-                    ? "Plays on a loop until you confirm the dose."
-                    : "Plays once when the reminder fires."}
-                </p>
-              </div>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                onClick={() => playAlarmOnce(alarmSound)}
-                aria-label="Preview sound"
-              >
-                <Volume2 className="h-4 w-4" />
-              </Button>
-            </div>
-            <Select value={alarmSound} onValueChange={(v) => setAlarmSound(v as AlarmSoundId)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ALARM_SOUNDS.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    <span className="font-medium">{s.label}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">{s.description}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {isRescue ? (
-            <p className="text-sm text-muted-foreground rounded-xl bg-secondary/60 p-4">
-              Rescue meds are logged when taken, not on a schedule.
-            </p>
+          {formLoading ? (
+            <FormSectionSkeleton />
           ) : (
-            <div className="space-y-2">
-              <Label>Times and per-dose amount</Label>
-              <p className="text-xs text-muted-foreground -mt-1">
-                Leave amount blank to use the default. E.g. 500 at 10:00, 750 at 19:00.
-              </p>
-              <div className="space-y-2">
-                {times.map((t, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <Input
-                      type="time"
-                      value={t}
-                      onChange={(e) => updateTime(idx, e.target.value)}
-                      className="max-w-[130px]"
-                    />
+            <>
+              <GroupedFormLabel>{t("meds.form.details")}</GroupedFormLabel>
+              <GroupedFormCard>
+                <GroupedFormField label={t("meds.form.type")}>
+                  <ToggleGroup
+                    type="single"
+                    value={kind}
+                    onValueChange={(v) => v && setKind(v as MedKind)}
+                    className="flex flex-wrap justify-start gap-1.5"
+                  >
+                    {KIND_OPTIONS.map((opt) => (
+                      <ToggleGroupItem
+                        key={opt}
+                        value={opt}
+                        className="rounded-full px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        {kindLabel(opt)}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                </GroupedFormField>
+                <GroupedFormRow label={t("meds.form.formField")}>
+                  <Select value={dosageForm} onValueChange={setDosageForm}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder={t("meds.form.selectForm")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DOSAGE_FORMS.map((f) => (
+                        <SelectItem key={f} value={f} className="capitalize">
+                          {f}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </GroupedFormRow>
+                <GroupedFormField
+                  label={t("meds.form.strength")}
+                  subtitle={`${t("meds.form.amount")} + ${t("meds.form.unit")}`}
+                >
+                  <div className="flex gap-2">
                     <Input
                       type="number"
                       inputMode="decimal"
                       min={0}
-                      value={timeAmounts[idx] ?? ""}
-                      onChange={(e) => updateTimeAmount(idx, e.target.value)}
-                      placeholder={dosageAmount || "amount"}
-                      className="max-w-[110px]"
+                      value={dosageAmount}
+                      onChange={(e) => setDosageAmount(e.target.value)}
+                      placeholder="500"
+                      className="max-w-[120px]"
                     />
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {dosageUnit || "mg"}
-                    </span>
-                    {times.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          removeTime(idx);
-                          removeTimeAmount(idx);
+                    {unitMode === "preset" ? (
+                      <Select
+                        value={DOSAGE_UNITS.includes(dosageUnit) ? dosageUnit : "mg"}
+                        onValueChange={(v) => {
+                          if (v === "__custom__") {
+                            setUnitMode("custom");
+                            setDosageUnit("");
+                          } else {
+                            setDosageUnit(v);
+                          }
                         }}
                       >
-                        <X className="h-4 w-4" />
-                      </Button>
+                        <SelectTrigger className="w-[100px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DOSAGE_UNITS.map((u) => (
+                            <SelectItem key={u} value={u}>
+                              {u}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="__custom__">{t("meds.form.custom")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="flex gap-1 items-center">
+                        <Input
+                          value={dosageUnit}
+                          onChange={(e) => setDosageUnit(e.target.value)}
+                          placeholder={t("meds.form.customUnit")}
+                          className="w-[100px]"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setUnitMode("preset");
+                            setDosageUnit("mg");
+                          }}
+                        >
+                          {t("meds.form.reset")}
+                        </Button>
+                      </div>
                     )}
                   </div>
-                ))}
-                <Button type="button" variant="outline" size="sm" onClick={addTime}>
-                  <Plus className="h-4 w-4 mr-1" /> Add time
-                </Button>
-              </div>
-            </div>
-          )}
+                  {isEditing && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {t("meds.form.doseChangeNote")}
+                    </p>
+                  )}
+                </GroupedFormField>
+              </GroupedFormCard>
 
-          <div className="space-y-3 rounded-xl border border-border bg-card p-4">
-            <p className="text-sm font-medium text-foreground">Refill</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="med-pills">Pills remaining</Label>
-                <Input
-                  id="med-pills"
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  value={pillsRemaining}
-                  onChange={(e) => setPillsRemaining(e.target.value)}
-                  placeholder="30"
+              {!isRescue && (
+                <>
+                  <GroupedFormLabel>{t("meds.form.duration")}</GroupedFormLabel>
+                  <GroupedFormCard>
+                    <GroupedFormRow
+                      label={t("meds.form.startDate")}
+                      subtitle={t("meds.form.startDateHint")}
+                    >
+                      <Input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-[160px]"
+                      />
+                    </GroupedFormRow>
+                    <GroupedFormRow label={t("meds.form.stopDate")}>
+                      <Input
+                        type="date"
+                        value={endDate}
+                        min={startDate || undefined}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-[160px]"
+                      />
+                    </GroupedFormRow>
+                  </GroupedFormCard>
+                </>
+              )}
+
+              {isRescue ? (
+                <p className="mt-4 text-sm text-muted-foreground rounded-2xl border border-border bg-secondary/40 px-5 py-4">
+                  {t("meds.form.rescueNote")}
+                </p>
+              ) : (
+                <>
+                  <GroupedFormLabel>{t("meds.form.schedule")}</GroupedFormLabel>
+                  <GroupedFormCard>
+                    <GroupedFormField
+                      label={t("meds.form.times")}
+                      subtitle={t("meds.form.timesSub")}
+                    >
+                      <div className="space-y-2">
+                        {times.map((time, idx) => (
+                          <div key={`${time}-${idx}`} className="flex items-center gap-2">
+                            <Input
+                              type="time"
+                              value={time}
+                              onChange={(e) => updateTime(idx, e.target.value)}
+                              className="max-w-[130px]"
+                            />
+                            <Input
+                              type="number"
+                              inputMode="decimal"
+                              min={0}
+                              value={timeAmounts[idx] ?? ""}
+                              onChange={(e) => updateTimeAmount(idx, e.target.value)}
+                              placeholder={dosageAmount || t("meds.form.amount")}
+                              className="max-w-[100px]"
+                            />
+                            <span className="text-xs text-muted-foreground shrink-0">
+                              {dosageUnit || "mg"}
+                            </span>
+                            {times.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeTime(idx)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </GroupedFormField>
+                    <GroupedFormInsetButton onClick={addTime}>
+                      <Plus className="h-4 w-4 inline mr-1.5" />
+                      {t("meds.form.addTime")}
+                    </GroupedFormInsetButton>
+                  </GroupedFormCard>
+                </>
+              )}
+
+              <GroupedFormLabel>{t("meds.form.reminders")}</GroupedFormLabel>
+              <GroupedFormCard>
+                <GroupedFormSwitchRow
+                  label={t("meds.form.withFood")}
+                  subtitle={t("meds.form.withFoodSub")}
+                  checked={withFood}
+                  onCheckedChange={setWithFood}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="med-threshold">Alert when ≤</Label>
-                {refillMode === "preset" ? (
-                  <Select
-                    value={
-                      REFILL_PRESETS.includes(refillThreshold as typeof REFILL_PRESETS[number])
-                        ? refillThreshold
-                        : "7"
-                    }
-                    onValueChange={(v) => {
-                      if (v === "__custom__") {
-                        setRefillMode("custom");
-                      } else {
-                        setRefillThreshold(v);
-                      }
-                    }}
-                  >
-                    <SelectTrigger id="med-threshold">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="3">3 days</SelectItem>
-                      <SelectItem value="7">7 days</SelectItem>
-                      <SelectItem value="14">14 days</SelectItem>
-                      <SelectItem value="30">30 days</SelectItem>
-                      <SelectItem value="__custom__">Custom…</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
+                <GroupedFormSwitchRow
+                  label={t("meds.form.criticalAlarm")}
+                  subtitle={t("meds.form.criticalAlarmSub")}
+                  checked={criticalAlarm}
+                  onCheckedChange={setCriticalAlarm}
+                />
+                <GroupedFormField
+                  label={t("meds.form.reminderSound")}
+                  subtitle={
+                    criticalAlarm
+                      ? t("meds.form.reminderSoundCritical")
+                      : t("meds.form.reminderSoundStandard")
+                  }
+                >
                   <div className="flex gap-2 items-center">
-                    <Input
-                      id="med-threshold"
-                      autoFocus
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      value={refillThreshold}
-                      onChange={(e) => setRefillThreshold(e.target.value)}
-                      placeholder="days"
-                    />
+                    <Select
+                      value={alarmSound}
+                      onValueChange={(v) => setAlarmSound(v as AlarmSoundId)}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ALARM_SOUNDS.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            <span className="font-medium">{s.label}</span>
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              {s.description}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Button
                       type="button"
-                      size="sm"
+                      size="icon"
                       variant="ghost"
-                      onClick={() => {
-                        setRefillMode("preset");
-                        setRefillThreshold("7");
-                      }}
+                      onClick={() => playAlarmOnce(alarmSound)}
+                      aria-label={t("meds.form.previewSound")}
                     >
-                      Reset
+                      <Volume2 className="h-4 w-4" />
                     </Button>
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
+                </GroupedFormField>
+              </GroupedFormCard>
 
-          <Collapsible open={prescriberOpen} onOpenChange={setPrescriberOpen}>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" className="w-full justify-between px-0 hover:bg-transparent">
-                <span className="text-sm font-medium">Prescriber (optional)</span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${prescriberOpen ? "rotate-180" : ""}`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-3 pt-2">
-              <div className="space-y-2">
-                <Label htmlFor="med-prescriber">Prescriber name</Label>
-                <Input id="med-prescriber" value={prescriberName} onChange={(e) => setPrescriberName(e.target.value)} placeholder="Dr. ..." />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="med-pharmacy">Pharmacy</Label>
-                <Input id="med-pharmacy" value={pharmacyName} onChange={(e) => setPharmacyName(e.target.value)} placeholder="Pharmacy name" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="med-rx">Prescription number</Label>
-                <Input id="med-rx" value={prescriptionNumber} onChange={(e) => setPrescriptionNumber(e.target.value)} placeholder="Rx #" />
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+              {!isRescue && (
+                <>
+                  <GroupedFormLabel>{t("meds.form.refill")}</GroupedFormLabel>
+                  <GroupedFormCard>
+                    <GroupedFormRow label={t("meds.form.pillsRemaining")}>
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        value={pillsRemaining}
+                        onChange={(e) => setPillsRemaining(e.target.value)}
+                        placeholder="30"
+                        className="w-[100px]"
+                      />
+                    </GroupedFormRow>
+                    <GroupedFormRow label={t("meds.form.alertWhen")}>
+                      {refillMode === "preset" ? (
+                        <Select
+                          value={
+                            REFILL_PRESETS.includes(
+                              refillThreshold as (typeof REFILL_PRESETS)[number],
+                            )
+                              ? refillThreshold
+                              : "7"
+                          }
+                          onValueChange={(v) => {
+                            if (v === "__custom__") {
+                              setRefillMode("custom");
+                            } else {
+                              setRefillThreshold(v);
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-[120px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="3">3 {t("meds.form.days")}</SelectItem>
+                            <SelectItem value="7">7 {t("meds.form.days")}</SelectItem>
+                            <SelectItem value="14">14 {t("meds.form.days")}</SelectItem>
+                            <SelectItem value="30">30 {t("meds.form.days")}</SelectItem>
+                            <SelectItem value="__custom__">{t("meds.form.custom")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="flex gap-1 items-center">
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            value={refillThreshold}
+                            onChange={(e) => setRefillThreshold(e.target.value)}
+                            className="w-[80px]"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setRefillMode("preset");
+                              setRefillThreshold("7");
+                            }}
+                          >
+                            {t("meds.form.reset")}
+                          </Button>
+                        </div>
+                      )}
+                    </GroupedFormRow>
+                  </GroupedFormCard>
+                </>
+              )}
+
+              <Collapsible open={prescriberOpen} onOpenChange={setPrescriberOpen}>
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    className="mt-6 flex w-full items-center justify-between px-1 text-[11px] uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <span>{t("meds.form.prescriberOptional")}</span>
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${prescriberOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <GroupedFormCard className="mt-2">
+                    <GroupedFormField label={t("meds.form.prescriberName")}>
+                      <Input
+                        value={prescriberName}
+                        onChange={(e) => setPrescriberName(e.target.value)}
+                        placeholder="Dr. ..."
+                      />
+                    </GroupedFormField>
+                    <GroupedFormField label={t("meds.form.pharmacy")}>
+                      <Input
+                        value={pharmacyName}
+                        onChange={(e) => setPharmacyName(e.target.value)}
+                        placeholder={t("meds.form.pharmacy")}
+                      />
+                    </GroupedFormField>
+                    <GroupedFormField label={t("meds.form.rxNumber")}>
+                      <Input
+                        value={prescriptionNumber}
+                        onChange={(e) => setPrescriptionNumber(e.target.value)}
+                        placeholder="Rx #"
+                      />
+                    </GroupedFormField>
+                  </GroupedFormCard>
+                </CollapsibleContent>
+              </Collapsible>
+            </>
+          )}
         </div>
       </SheetContent>
     </Sheet>

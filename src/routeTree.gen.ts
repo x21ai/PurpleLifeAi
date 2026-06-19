@@ -74,6 +74,7 @@ import { Route as AppReportsMetricsRouteImport } from './routes/_app/reports.met
 import { Route as AppReportsMedicalHistoryRouteImport } from './routes/_app/reports.medical-history'
 import { Route as AppReportsDocumentsRouteImport } from './routes/_app/reports.documents'
 import { Route as AppReportsReportIdRouteImport } from './routes/_app/reports.$reportId'
+import { Route as AppMedsHistoryRouteImport } from './routes/_app/meds.history'
 import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
 import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
 import { Route as AppFriendsFriendshipIdRouteImport } from './routes/_app/friends.$friendshipId'
@@ -437,6 +438,11 @@ const AppReportsReportIdRoute = AppReportsReportIdRouteImport.update({
   path: '/$reportId',
   getParentRoute: () => AppReportsRoute,
 } as any)
+const AppMedsHistoryRoute = AppMedsHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AppMedsRoute,
+} as any)
 const AppMedsMedIdRoute = AppMedsMedIdRouteImport.update({
   id: '/$medId',
   path: '/$medId',
@@ -697,6 +703,7 @@ export interface FileRoutesByFullPath {
   '/friends/$friendshipId': typeof AppFriendsFriendshipIdRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
+  '/meds/history': typeof AppMedsHistoryRoute
   '/reports/$reportId': typeof AppReportsReportIdRoute
   '/reports/documents': typeof AppReportsDocumentsRoute
   '/reports/medical-history': typeof AppReportsMedicalHistoryRoute
@@ -798,6 +805,7 @@ export interface FileRoutesByTo {
   '/friends/$friendshipId': typeof AppFriendsFriendshipIdRoute
   '/journal/new': typeof AppJournalNewRoute
   '/meds/$medId': typeof AppMedsMedIdRoute
+  '/meds/history': typeof AppMedsHistoryRoute
   '/reports/$reportId': typeof AppReportsReportIdRoute
   '/reports/documents': typeof AppReportsDocumentsRoute
   '/reports/medical-history': typeof AppReportsMedicalHistoryRoute
@@ -902,6 +910,7 @@ export interface FileRoutesById {
   '/_app/friends/$friendshipId': typeof AppFriendsFriendshipIdRoute
   '/_app/journal/new': typeof AppJournalNewRoute
   '/_app/meds/$medId': typeof AppMedsMedIdRoute
+  '/_app/meds/history': typeof AppMedsHistoryRoute
   '/_app/reports/$reportId': typeof AppReportsReportIdRoute
   '/_app/reports/documents': typeof AppReportsDocumentsRoute
   '/_app/reports/medical-history': typeof AppReportsMedicalHistoryRoute
@@ -1006,6 +1015,7 @@ export interface FileRouteTypes {
     | '/friends/$friendshipId'
     | '/journal/new'
     | '/meds/$medId'
+    | '/meds/history'
     | '/reports/$reportId'
     | '/reports/documents'
     | '/reports/medical-history'
@@ -1107,6 +1117,7 @@ export interface FileRouteTypes {
     | '/friends/$friendshipId'
     | '/journal/new'
     | '/meds/$medId'
+    | '/meds/history'
     | '/reports/$reportId'
     | '/reports/documents'
     | '/reports/medical-history'
@@ -1210,6 +1221,7 @@ export interface FileRouteTypes {
     | '/_app/friends/$friendshipId'
     | '/_app/journal/new'
     | '/_app/meds/$medId'
+    | '/_app/meds/history'
     | '/_app/reports/$reportId'
     | '/_app/reports/documents'
     | '/_app/reports/medical-history'
@@ -1757,6 +1769,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReportsReportIdRouteImport
       parentRoute: typeof AppReportsRoute
     }
+    '/_app/meds/history': {
+      id: '/_app/meds/history'
+      path: '/history'
+      fullPath: '/meds/history'
+      preLoaderRoute: typeof AppMedsHistoryRouteImport
+      parentRoute: typeof AppMedsRoute
+    }
     '/_app/meds/$medId': {
       id: '/_app/meds/$medId'
       path: '/$medId'
@@ -2048,10 +2067,12 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
 
 interface AppMedsRouteChildren {
   AppMedsMedIdRoute: typeof AppMedsMedIdRoute
+  AppMedsHistoryRoute: typeof AppMedsHistoryRoute
 }
 
 const AppMedsRouteChildren: AppMedsRouteChildren = {
   AppMedsMedIdRoute: AppMedsMedIdRoute,
+  AppMedsHistoryRoute: AppMedsHistoryRoute,
 }
 
 const AppMedsRouteWithChildren =

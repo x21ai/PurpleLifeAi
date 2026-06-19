@@ -76,7 +76,19 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
       }
       if (typeof caches !== "undefined") {
         await Promise.allSettled(
-          ["purple-shell-v2", "purple-shell-v3"].map((name) => caches.delete(name)),
+          [
+            "purple-shell-v2",
+            "purple-shell-v3",
+            "purple-shell-v6",
+            "purple-shell-v7",
+            "purple-shell-v8",
+            "purple-shell-v9",
+            "purple-shell-v10",
+            "purple-shell-v11",
+            "purple-shell-v12",
+            "purple-shell-v13",
+            "purple-shell-v14",
+          ].map((name) => caches.delete(name)),
         );
       }
     } catch {

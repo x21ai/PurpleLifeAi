@@ -85,19 +85,22 @@ export function TwoFactorSection() {
         ) : (
           <ShieldOff className="h-4 w-4 text-[#B084D1]" />
         )}
-        <p className="text-[15px] text-[#FAFAFC]">Two-factor authentication</p>
+        <p className="text-[15px] text-foreground">Two-factor authentication</p>
       </div>
       <p className="mt-1 text-[13px] sheet-muted">
         Adds a 6-digit code from your authenticator app on every sign-in.
       </p>
 
-      {hasFactor === null && (
-        <p className="mt-4 text-[13px] sheet-muted">Checking status…</p>
-      )}
+      {hasFactor === null && <p className="mt-4 text-[13px] sheet-muted">Checking status…</p>}
 
       {hasFactor === true && (
         <div className="mt-4">
-          <Button onClick={disable} disabled={busy} variant="outline" className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10">
+          <Button
+            onClick={disable}
+            disabled={busy}
+            variant="outline"
+            className="bg-foreground/[0.04] border-foreground/10 text-foreground hover:bg-foreground/10"
+          >
             {busy && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
             Disable 2FA
           </Button>
@@ -106,7 +109,12 @@ export function TwoFactorSection() {
 
       {hasFactor === false && !enrollment && (
         <div className="mt-4">
-          <Button onClick={startEnroll} disabled={busy} variant="outline" className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10">
+          <Button
+            onClick={startEnroll}
+            disabled={busy}
+            variant="outline"
+            className="bg-foreground/[0.04] border-foreground/10 text-foreground hover:bg-foreground/10"
+          >
             {busy && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
             Enable 2FA
           </Button>
@@ -114,7 +122,7 @@ export function TwoFactorSection() {
       )}
 
       {enrollment && (
-        <div className="mt-4 space-y-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <div className="mt-4 space-y-3 rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4">
           <p className="text-[13px] sheet-muted">
             Scan this QR code with your authenticator app, then enter the 6-digit code.
           </p>
@@ -127,7 +135,7 @@ export function TwoFactorSection() {
             />
             <div className="flex-1 space-y-2">
               <p className="text-[11px] uppercase tracking-wider sheet-muted">Or type secret</p>
-              <code className="block break-all rounded bg-white/[0.06] px-2 py-1 text-[12px] text-[#FAFAFC]">
+              <code className="block break-all rounded bg-foreground/[0.06] px-2 py-1 text-[12px] text-foreground">
                 {enrollment.secret}
               </code>
               <Input
@@ -136,10 +144,14 @@ export function TwoFactorSection() {
                 placeholder="6-digit code"
                 inputMode="numeric"
                 maxLength={6}
-                className="bg-white/[0.04] border-white/10 text-[#FAFAFC] placeholder:text-white/30"
+                className="bg-foreground/[0.04] border-foreground/10 text-foreground placeholder:text-foreground/30"
               />
               <div className="flex gap-2">
-                <Button onClick={verify} disabled={busy || code.length < 6} className="bg-[#B084D1] text-[#0A0710] hover:bg-[#C7A0E0]">
+                <Button
+                  onClick={verify}
+                  disabled={busy || code.length < 6}
+                  className="bg-[#B084D1] text-[#0A0710] hover:bg-[#C7A0E0]"
+                >
                   {busy && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
                   Verify
                 </Button>
@@ -152,7 +164,7 @@ export function TwoFactorSection() {
                     setCode("");
                   }}
                   variant="outline"
-                  className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10"
+                  className="bg-foreground/[0.04] border-foreground/10 text-foreground hover:bg-foreground/10"
                 >
                   Cancel
                 </Button>

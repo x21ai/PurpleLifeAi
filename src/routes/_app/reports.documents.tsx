@@ -164,9 +164,10 @@ function ReportsDocumentsPage() {
     for (const r of sorted) {
       const iso = r.report_date ?? r.created_at;
       const d = iso ? new Date(iso) : null;
-      const key = d && !Number.isNaN(d.getTime())
-        ? d.toLocaleDateString(undefined, { year: "numeric", month: "long" })
-        : "Date unknown";
+      const key =
+        d && !Number.isNaN(d.getTime())
+          ? d.toLocaleDateString(undefined, { year: "numeric", month: "long" })
+          : "Date unknown";
       (byMonth[key] ??= []).push(r);
     }
     return byMonth;
@@ -184,11 +185,15 @@ function ReportsDocumentsPage() {
       const iso = r.report_date ?? r.created_at;
       const d = iso ? new Date(iso) : null;
       const year = d && !Number.isNaN(d.getTime()) ? String(d.getFullYear()) : "Unknown";
-      const month = d && !Number.isNaN(d.getTime())
-        ? d.toLocaleDateString(undefined, { month: "long" })
-        : "Date unknown";
+      const month =
+        d && !Number.isNaN(d.getTime())
+          ? d.toLocaleDateString(undefined, { month: "long" })
+          : "Date unknown";
       let yearMap = byYear.get(year);
-      if (!yearMap) { yearMap = new Map(); byYear.set(year, yearMap); }
+      if (!yearMap) {
+        yearMap = new Map();
+        byYear.set(year, yearMap);
+      }
       const list = yearMap.get(month) ?? [];
       list.push(r);
       yearMap.set(month, list);
@@ -200,10 +205,7 @@ function ReportsDocumentsPage() {
   const processingCount = reports.filter((r) => r.status === "processing").length;
   const readyCount = reports.filter((r) => r.status === "ready").length;
   const failedReports = reports.filter(
-    (r) =>
-      r.status === "failed" ||
-      r.status === "needs_credits" ||
-      r.status === "rate_limited",
+    (r) => r.status === "failed" || r.status === "needs_credits" || r.status === "rate_limited",
   );
   const metricsTotal = reports.reduce((s, r) => s + (r.metric_count ?? 0), 0);
 
@@ -231,7 +233,9 @@ function ReportsDocumentsPage() {
   }
 
   async function downloadFilteredAsZip() {
-    const readyOnes = filtered.filter((r) => r.status === "ready" || r.status === "processing" || r.status === "failed");
+    const readyOnes = filtered.filter(
+      (r) => r.status === "ready" || r.status === "processing" || r.status === "failed",
+    );
     if (readyOnes.length === 0) {
       toast.info("No reports to download.");
       return;
@@ -294,8 +298,8 @@ function ReportsDocumentsPage() {
           className={cn(
             "rounded-full border px-3 py-1.5 text-xs transition",
             !activeCategory
-              ? "border-white/30 bg-white/10 text-white"
-              : "border-white/10 text-white/60 hover:text-white",
+              ? "border-foreground/30 bg-foreground/10 text-foreground"
+              : "border-foreground/10 text-foreground/60 hover:text-foreground",
           )}
         >
           All
@@ -311,8 +315,8 @@ function ReportsDocumentsPage() {
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition",
                 active
-                  ? "border-white/30 bg-white/10 text-white"
-                  : "border-white/10 text-white/60 hover:text-white",
+                  ? "border-foreground/30 bg-foreground/10 text-foreground"
+                  : "border-foreground/10 text-foreground/60 hover:text-foreground",
               )}
             >
               <Icon className="h-3 w-3" />
@@ -324,13 +328,13 @@ function ReportsDocumentsPage() {
 
       {/* Hero summary */}
       <section className="report-card-strong p-6 sm:p-8">
-        <p className="report-eyebrow text-white/70">Your labs</p>
-        <h2 className="mt-3 font-serif text-3xl sm:text-4xl text-white leading-tight">
+        <p className="report-eyebrow text-foreground/70">Your labs</p>
+        <h2 className="mt-3 font-serif text-3xl sm:text-4xl text-foreground leading-tight">
           {latest
             ? "A quiet ledger of what your body has been telling you."
             : "Start your private ledger of lab results."}
         </h2>
-        <p className="mt-3 text-[15px] text-white/65 max-w-[520px]">{t("reports.intro")}</p>
+        <p className="mt-3 text-[15px] text-foreground/65 max-w-[520px]">{t("reports.intro")}</p>
 
         <div className="mt-6 grid grid-cols-3 gap-3">
           <Stat label="Reports" value={reports.length} />
@@ -345,7 +349,7 @@ function ReportsDocumentsPage() {
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Button
             onClick={() => navigate({ to: "/reports/new" })}
-            className="rounded-full bg-white text-[#07090C] hover:bg-white/90"
+            className="rounded-full bg-primary text-primary-foreground hover:bg-foreground/90"
           >
             <Upload className="h-4 w-4 mr-2" /> {t("reports.upload")}
           </Button>
@@ -353,7 +357,7 @@ function ReportsDocumentsPage() {
             <Link
               to="/reports/$reportId"
               params={{ reportId: latest.id }}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-4 py-2 text-sm text-white/85 hover:bg-white/5"
+              className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 px-4 py-2 text-sm text-foreground/85 hover:bg-foreground/5"
             >
               Open latest <ChevronRight className="h-4 w-4" />
             </Link>
@@ -368,7 +372,7 @@ function ReportsDocumentsPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search reports by title or type…"
-            className="rounded-full bg-white/5 border-white/10 text-white placeholder:text-white/40"
+            className="rounded-full bg-foreground/5 border-foreground/10 text-foreground placeholder:text-foreground/40"
           />
           <div className="flex flex-wrap items-center gap-2">
             <FilterSelect
@@ -405,7 +409,7 @@ function ReportsDocumentsPage() {
       {failedReports.length > 1 && (
         <div className="mt-4 rounded-2xl border border-[#FFA8BD]/25 bg-[#FFA8BD]/[0.06] p-3 sm:p-4 flex items-center gap-3 flex-wrap">
           <AlertCircle className="h-4 w-4 text-[#FFA8BD] shrink-0" />
-          <p className="text-sm text-white/80 flex-1 min-w-[200px]">
+          <p className="text-sm text-foreground/80 flex-1 min-w-[200px]">
             <span className="text-[#FFA8BD]">{failedReports.length}</span> reports failed
             extraction. Re-run them in one go.
           </p>
@@ -413,7 +417,7 @@ function ReportsDocumentsPage() {
             onClick={() => void bulkRerunFailed()}
             disabled={bulkRetrying}
             size="sm"
-            className="rounded-full bg-white text-[#07090C] hover:bg-white/90"
+            className="rounded-full bg-primary text-primary-foreground hover:bg-foreground/90"
           >
             {bulkRetrying ? (
               <>
@@ -431,19 +435,21 @@ function ReportsDocumentsPage() {
       {/* Reports list */}
       <section className="mt-8">
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2 text-white">
-            <FileText className="h-4 w-4 text-white/70" />
+          <div className="flex items-center gap-2 text-foreground">
+            <FileText className="h-4 w-4 text-foreground/70" />
             <h2 className="font-serif text-2xl">Contributing reports</h2>
           </div>
           <div className="flex items-center gap-2">
             {filtered.length > 0 && (
-              <div className="inline-flex items-center gap-0.5 rounded-full border border-white/10 bg-white/5 p-0.5">
+              <div className="inline-flex items-center gap-0.5 rounded-full border border-foreground/10 bg-foreground/5 p-0.5">
                 <button
                   type="button"
                   onClick={() => setViewMode("list")}
                   className={cn(
                     "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] transition",
-                    viewMode === "list" ? "bg-white/15 text-white" : "text-white/55 hover:text-white",
+                    viewMode === "list"
+                      ? "bg-foreground/15 text-foreground"
+                      : "text-foreground/55 hover:text-foreground",
                   )}
                   title="List view"
                 >
@@ -454,7 +460,9 @@ function ReportsDocumentsPage() {
                   onClick={() => setViewMode("timeline")}
                   className={cn(
                     "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] transition",
-                    viewMode === "timeline" ? "bg-white/15 text-white" : "text-white/55 hover:text-white",
+                    viewMode === "timeline"
+                      ? "bg-foreground/15 text-foreground"
+                      : "text-foreground/55 hover:text-foreground",
                   )}
                   title="Timeline view"
                 >
@@ -467,7 +475,7 @@ function ReportsDocumentsPage() {
                 type="button"
                 onClick={() => void downloadFilteredAsZip()}
                 disabled={bulkDownloading}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/75 hover:bg-white/5 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-full border border-foreground/15 px-3 py-1.5 text-xs text-foreground/75 hover:bg-foreground/5 disabled:opacity-50"
                 title={`Download ${filtered.length} report${filtered.length === 1 ? "" : "s"} as a zip`}
               >
                 {bulkDownloading ? (
@@ -482,7 +490,7 @@ function ReportsDocumentsPage() {
               <button
                 type="button"
                 onClick={() => void refetch()}
-                className="text-xs text-white/55 hover:text-white"
+                className="text-xs text-foreground/55 hover:text-foreground"
               >
                 Refresh
               </button>
@@ -491,49 +499,64 @@ function ReportsDocumentsPage() {
         </div>
 
         {isLoading ? (
-          <div className="mt-4 flex items-center gap-2 text-sm text-white/55">
+          <div className="mt-4 flex items-center gap-2 text-sm text-foreground/55">
             <Loader2 className="h-4 w-4 animate-spin" /> {t("reports.loading")}
           </div>
         ) : reports.length === 0 ? (
           <ReportCard className="mt-4 text-center">
-            <FlaskConical className="h-10 w-10 mx-auto text-white/40" />
-            <p className="mt-3 text-sm text-white/65">{t("reports.emptyBody")}</p>
+            <FlaskConical className="h-10 w-10 mx-auto text-foreground/40" />
+            <p className="mt-3 text-sm text-foreground/65">{t("reports.emptyBody")}</p>
             <Button
               onClick={() => navigate({ to: "/reports/new" })}
-              className="mt-5 rounded-full bg-white text-[#07090C] hover:bg-white/90"
+              className="mt-5 rounded-full bg-primary text-primary-foreground hover:bg-foreground/90"
             >
               <Upload className="h-4 w-4 mr-2" /> Upload report
             </Button>
           </ReportCard>
         ) : filtered.length === 0 ? (
           <ReportCard className="mt-4 text-center">
-            <p className="text-sm text-white/65">No reports match these filters.</p>
+            <p className="text-sm text-foreground/65">No reports match these filters.</p>
             <button
               type="button"
-              onClick={() => { setYearFilter("all"); setTypeFilter("all"); setStatusFilter("all"); setQuery(""); }}
-              className="mt-3 text-xs text-white/70 underline hover:text-white"
+              onClick={() => {
+                setYearFilter("all");
+                setTypeFilter("all");
+                setStatusFilter("all");
+                setQuery("");
+              }}
+              className="mt-3 text-xs text-foreground/70 underline hover:text-foreground"
             >
               Clear filters
             </button>
           </ReportCard>
         ) : viewMode === "timeline" ? (
           <div className="mt-6 relative pl-6">
-            <div className="absolute left-2 top-1 bottom-1 w-px bg-white/10" aria-hidden />
+            <div className="absolute left-2 top-1 bottom-1 w-px bg-foreground/10" aria-hidden />
             <div className="space-y-8">
               {Array.from(groupedByYear.entries()).map(([year, monthMap]) => {
                 const yearCount = Array.from(monthMap.values()).reduce((s, a) => s + a.length, 0);
                 return (
                   <div key={year} className="relative">
-                    <div className="absolute -left-[18px] top-1 h-3 w-3 rounded-full bg-white/80 ring-4 ring-[#07090C]" aria-hidden />
+                    <div
+                      className="absolute -left-[18px] top-1 h-3 w-3 rounded-full bg-foreground/80 ring-4 ring-background"
+                      aria-hidden
+                    />
                     <div className="flex items-baseline gap-2">
-                      <h3 className="font-serif text-2xl text-white">{year}</h3>
-                      <span className="text-xs text-white/45">· {yearCount} report{yearCount === 1 ? "" : "s"}</span>
+                      <h3 className="font-serif text-2xl text-foreground">{year}</h3>
+                      <span className="text-xs text-foreground/45">
+                        · {yearCount} report{yearCount === 1 ? "" : "s"}
+                      </span>
                     </div>
                     <div className="mt-3 space-y-5">
                       {Array.from(monthMap.entries()).map(([month, rows]) => (
                         <div key={month} className="relative">
-                          <div className="absolute -left-[14px] top-1.5 h-1.5 w-1.5 rounded-full bg-white/40" aria-hidden />
-                          <p className="report-eyebrow text-white/55 mb-2">{month} · {rows.length}</p>
+                          <div
+                            className="absolute -left-[14px] top-1.5 h-1.5 w-1.5 rounded-full bg-foreground/40"
+                            aria-hidden
+                          />
+                          <p className="report-eyebrow text-foreground/55 mb-2">
+                            {month} · {rows.length}
+                          </p>
                           <ul className="space-y-2">
                             {rows.map((r) => {
                               const isFailed =
@@ -549,19 +572,30 @@ function ReportsDocumentsPage() {
                                     params={{ reportId: r.id }}
                                     className="flex items-center gap-3 px-3 py-3 sm:px-4 sm:py-3 hover:opacity-90"
                                   >
-                                    <span className={cn("inline-flex h-8 w-8 items-center justify-center rounded-full shrink-0", meta.tone)} title={meta.label}>
+                                    <span
+                                      className={cn(
+                                        "inline-flex h-8 w-8 items-center justify-center rounded-full shrink-0",
+                                        meta.tone,
+                                      )}
+                                      title={meta.label}
+                                    >
                                       <Icon className="h-3.5 w-3.5" />
                                     </span>
                                     <div className="min-w-0 flex-1">
-                                      <p className="text-[14px] text-white truncate">{displayTitle(r.title)}</p>
-                                      <p className="mt-0.5 text-[11px] text-white/55">
-                                        {r.report_date ?? new Date(r.created_at).toLocaleDateString()}
-                                        {r.status === "ready" && (r.metric_count ?? 0) > 0 && ` · ${r.metric_count} metric${r.metric_count === 1 ? "" : "s"}`}
+                                      <p className="text-[14px] text-foreground truncate">
+                                        {displayTitle(r.title)}
+                                      </p>
+                                      <p className="mt-0.5 text-[11px] text-foreground/55">
+                                        {r.report_date ??
+                                          new Date(r.created_at).toLocaleDateString()}
+                                        {r.status === "ready" &&
+                                          (r.metric_count ?? 0) > 0 &&
+                                          ` · ${r.metric_count} metric${r.metric_count === 1 ? "" : "s"}`}
                                         {r.status === "processing" && " · Extracting…"}
                                         {isFailed && " · needs attention"}
                                       </p>
                                     </div>
-                                    <ChevronRight className="h-4 w-4 text-white/40 shrink-0" />
+                                    <ChevronRight className="h-4 w-4 text-foreground/40 shrink-0" />
                                   </Link>
                                 </li>
                               );
@@ -579,7 +613,7 @@ function ReportsDocumentsPage() {
           <div className="mt-4 space-y-6">
             {Object.entries(grouped).map(([monthLabel, rows]) => (
               <div key={monthLabel}>
-                <p className="report-eyebrow text-white/55 mb-2">
+                <p className="report-eyebrow text-foreground/55 mb-2">
                   {monthLabel} · {rows.length}
                 </p>
                 <ul className="space-y-2">
@@ -595,83 +629,85 @@ function ReportsDocumentsPage() {
                           ? "Rate limited, try again"
                           : "Extraction failed";
                     return (
-                    <li key={r.id} className="report-card overflow-hidden">
-                      <div className="flex items-center gap-2 px-3 py-3 sm:px-5 sm:py-4">
-                        <Link
-                          to="/reports/$reportId"
-                          params={{ reportId: r.id }}
-                          className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-90"
-                        >
-                          {(() => {
-                            const meta = getReportCategoryMeta(r.report_category ?? null);
-                            const Icon = meta.icon;
-                            return (
-                              <span
-                                className={cn(
-                                  "inline-flex h-9 w-9 items-center justify-center rounded-full shrink-0",
-                                  meta.tone,
+                      <li key={r.id} className="report-card overflow-hidden">
+                        <div className="flex items-center gap-2 px-3 py-3 sm:px-5 sm:py-4">
+                          <Link
+                            to="/reports/$reportId"
+                            params={{ reportId: r.id }}
+                            className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-90"
+                          >
+                            {(() => {
+                              const meta = getReportCategoryMeta(r.report_category ?? null);
+                              const Icon = meta.icon;
+                              return (
+                                <span
+                                  className={cn(
+                                    "inline-flex h-9 w-9 items-center justify-center rounded-full shrink-0",
+                                    meta.tone,
+                                  )}
+                                  title={meta.label}
+                                >
+                                  <Icon className="h-4 w-4" />
+                                </span>
+                              );
+                            })()}
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[15px] text-foreground truncate" title={r.title}>
+                                {displayTitle(r.title)}
+                              </p>
+                              <p className="mt-0.5 text-xs text-foreground/55">
+                                {r.report_date ?? new Date(r.created_at).toLocaleDateString()}
+                                {" · "}
+                                {r.status === "processing" && (
+                                  <span className="inline-flex items-center gap-1 text-[#F3D58B]">
+                                    <Loader2 className="h-3 w-3 animate-spin" /> Extracting…
+                                  </span>
                                 )}
-                                title={meta.label}
-                              >
-                                <Icon className="h-4 w-4" />
-                              </span>
-                            );
-                          })()}
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[15px] text-white truncate" title={r.title}>
-                              {displayTitle(r.title)}
-                            </p>
-                            <p className="mt-0.5 text-xs text-white/55">
-                              {r.report_date ?? new Date(r.created_at).toLocaleDateString()}
-                              {" · "}
-                              {r.status === "processing" && (
-                                <span className="inline-flex items-center gap-1 text-[#F3D58B]">
-                                  <Loader2 className="h-3 w-3 animate-spin" /> Extracting…
-                                </span>
+                                {isFailed && (
+                                  <span className="inline-flex items-center gap-1 text-[#FFA8BD]">
+                                    <AlertCircle className="h-3 w-3" /> {failedLabel}
+                                  </span>
+                                )}
+                                {r.status === "ready" &&
+                                  ((r.metric_count ?? 0) > 0
+                                    ? `${r.metric_count} metric${r.metric_count === 1 ? "" : "s"}`
+                                    : "Ready")}
+                              </p>
+                              {isFailed && r.error_message && (
+                                <p
+                                  className="mt-1 text-xs text-[#FFA8BD]/70 line-clamp-2"
+                                  title={r.error_message}
+                                >
+                                  {r.error_message.length > 160
+                                    ? `${r.error_message.slice(0, 160)}…`
+                                    : r.error_message}
+                                </p>
                               )}
-                              {isFailed && (
-                                <span className="inline-flex items-center gap-1 text-[#FFA8BD]">
-                                  <AlertCircle className="h-3 w-3" /> {failedLabel}
-                                </span>
-                              )}
-                              {r.status === "ready" &&
-                                ((r.metric_count ?? 0) > 0
-                                  ? `${r.metric_count} metric${r.metric_count === 1 ? "" : "s"}`
-                                  : "Ready")}
-                            </p>
-                            {isFailed && r.error_message && (
-                              <p
-                                className="mt-1 text-xs text-[#FFA8BD]/70 line-clamp-2"
-                                title={r.error_message}
-                              >
-                                {r.error_message.length > 160
-                                  ? `${r.error_message.slice(0, 160)}…`
-                                  : r.error_message}
+                            </div>
+                          </Link>
+                          <ReportRowActions
+                            reportId={r.id}
+                            status={r.status}
+                            onChanged={() => void refetch()}
+                          />
+                        </div>
+                        {(r.summary || (r.panel_keys && r.panel_keys.length > 0)) && (
+                          <div className="px-3 pb-4 sm:px-5">
+                            {r.summary && (
+                              <p className="text-xs text-foreground/70 leading-relaxed line-clamp-3">
+                                {r.summary}
                               </p>
                             )}
+                            {r.panel_keys && r.panel_keys.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {r.panel_keys.map((p) => (
+                                  <ReportPill key={p}>{p.replace(/_/g, " ")}</ReportPill>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        </Link>
-                        <ReportRowActions
-                          reportId={r.id}
-                          status={r.status}
-                          onChanged={() => void refetch()}
-                        />
-                      </div>
-                      {(r.summary || (r.panel_keys && r.panel_keys.length > 0)) && (
-                        <div className="px-3 pb-4 sm:px-5">
-                          {r.summary && (
-                            <p className="text-xs text-white/70 leading-relaxed line-clamp-3">{r.summary}</p>
-                          )}
-                          {r.panel_keys && r.panel_keys.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                              {r.panel_keys.map((p) => (
-                                <ReportPill key={p}>{p.replace(/_/g, " ")}</ReportPill>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </li>
+                        )}
+                      </li>
                     );
                   })}
                 </ul>
@@ -691,34 +727,38 @@ function ReportsDocumentsPage() {
       <section className="mt-12 space-y-4">
         <ReportCard>
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/75 shrink-0">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-foreground/5 text-foreground/75 shrink-0">
               <ShieldCheck className="h-4 w-4" />
             </span>
             <div>
-              <h3 className="text-white text-base font-medium">Your Privacy Is Our Priority</h3>
-              <p className="mt-1.5 text-sm text-white/65 leading-relaxed">
-                Reports and the values Purple extracts are encrypted at rest and only readable by you and the
-                people you explicitly share with. You can export or delete any report at any time.
+              <h3 className="text-foreground text-base font-medium">
+                Your Privacy Is Our Priority
+              </h3>
+              <p className="mt-1.5 text-sm text-foreground/65 leading-relaxed">
+                Reports and the values Purple extracts are encrypted at rest and only readable by
+                you and the people you explicitly share with. You can export or delete any report at
+                any time.
               </p>
             </div>
           </div>
         </ReportCard>
         <ReportCard>
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/75 shrink-0">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-foreground/5 text-foreground/75 shrink-0">
               <Sparkles className="h-4 w-4" />
             </span>
             <div>
-              <h3 className="text-white text-base font-medium">Important Note</h3>
-              <p className="mt-1.5 text-sm text-white/65 leading-relaxed">
-                Purple is not a laboratory or healthcare provider. The values you see here are extracted from
-                documents you upload and surfaced for context and pattern-tracking, not for diagnosis or
-                treatment. Always discuss results with your medical practitioner.
+              <h3 className="text-foreground text-base font-medium">Important Note</h3>
+              <p className="mt-1.5 text-sm text-foreground/65 leading-relaxed">
+                Purple is not a laboratory or healthcare provider. The values you see here are
+                extracted from documents you upload and surfaced for context and pattern-tracking,
+                not for diagnosis or treatment. Always discuss results with your medical
+                practitioner.
               </p>
             </div>
           </div>
         </ReportCard>
-        <MedicalDisclaimer className="text-white/70 [&_*]:text-white/70" />
+        <MedicalDisclaimer className="text-foreground/70 [&_*]:text-foreground/70" />
       </section>
     </ReportShell>
   );
@@ -734,12 +774,14 @@ function Stat({
   tone?: "success" | "warning";
 }) {
   const valueCls =
-    tone === "success" ? "text-[#5CE0AC]" :
-    tone === "warning" ? "text-[#F3D58B]" :
-    "text-white";
+    tone === "success"
+      ? "text-[#5CE0AC]"
+      : tone === "warning"
+        ? "text-[#F3D58B]"
+        : "text-foreground";
   return (
-    <div className="rounded-2xl bg-white/[0.04] border border-white/[0.06] px-3 py-3 sm:px-4">
-      <p className="text-[11px] uppercase tracking-[0.18em] text-white/55">{label}</p>
+    <div className="rounded-2xl bg-foreground/[0.04] border border-foreground/[0.06] px-3 py-3 sm:px-4">
+      <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/55">{label}</p>
       <p className={`mt-2 numeric text-2xl font-light ${valueCls}`}>{value}</p>
     </div>
   );
@@ -758,7 +800,9 @@ function FilterRow({
 }) {
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-[11px] uppercase tracking-[0.18em] text-white/45 shrink-0">{label}</span>
+      <span className="text-[11px] uppercase tracking-[0.18em] text-foreground/45 shrink-0">
+        {label}
+      </span>
       <div className="flex flex-wrap gap-1.5">
         {options.map((o) => {
           const active = o.v === value;
@@ -770,8 +814,8 @@ function FilterRow({
               className={
                 "rounded-full px-3 py-1 text-xs transition capitalize " +
                 (active
-                  ? "bg-white text-[#07090C]"
-                  : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10")
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-foreground/5 text-foreground/70 hover:bg-foreground/10 hover:text-foreground border border-foreground/10")
               }
             >
               {o.l}
@@ -796,19 +840,19 @@ function FilterSelect({
 }) {
   return (
     <div className="inline-flex items-center gap-2">
-      <span className="text-[11px] uppercase tracking-[0.18em] text-white/45 shrink-0">
+      <span className="text-[11px] uppercase tracking-[0.18em] text-foreground/45 shrink-0">
         {label}
       </span>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="h-8 min-w-[140px] rounded-full bg-white/5 border-white/10 text-white text-xs px-3 hover:bg-white/10 focus:ring-white/20 capitalize">
+        <SelectTrigger className="h-8 min-w-[140px] rounded-full bg-foreground/5 border-foreground/10 text-foreground text-xs px-3 hover:bg-foreground/10 focus:ring-white/20 capitalize">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent className="bg-[#0F1418] border-white/10 text-white">
+        <SelectContent className="bg-popover border-foreground/10 text-foreground">
           {options.map((o) => (
             <SelectItem
               key={o.v}
               value={o.v}
-              className="text-white focus:bg-white/10 focus:text-white capitalize"
+              className="text-foreground focus:bg-foreground/10 focus:text-foreground capitalize"
             >
               {o.l}
             </SelectItem>

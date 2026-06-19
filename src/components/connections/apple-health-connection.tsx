@@ -4,10 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  getOrCreateAppleHealthConfig,
-  disconnectAppleHealth,
-} from "@/lib/apple-health.functions";
+import { getOrCreateAppleHealthConfig, disconnectAppleHealth } from "@/lib/apple-health.functions";
 import { toast } from "sonner";
 import { userMessage } from "@/lib/user-message";
 
@@ -65,7 +62,9 @@ export function AppleHealthConnection() {
     setLastData(bio?.recorded_at ?? null);
   }, []);
 
-  useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   const syncState: SyncState = (() => {
     const dataAge = lastData ? Date.now() - new Date(lastData).getTime() : Infinity;
@@ -142,9 +141,10 @@ export function AppleHealthConnection() {
   };
 
   if (connected && secret) {
-    const url = typeof window !== "undefined"
-      ? `${window.location.origin}/api/public/hooks/apple-health?token=${secret}`
-      : "";
+    const url =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/api/public/hooks/apple-health?token=${secret}`
+        : "";
     const dotClass =
       syncState === "receiving"
         ? "bg-[color:var(--data-good)]"
@@ -161,13 +161,21 @@ export function AppleHealthConnection() {
             <div className="min-w-0">
               <p className="font-serif text-base text-foreground">Apple Health</p>
               <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${dotClass}`} aria-hidden="true" />
+                <span
+                  className={`h-1.5 w-1.5 rounded-full shrink-0 ${dotClass}`}
+                  aria-hidden="true"
+                />
                 {STATUS_TEXT[syncState]}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Button size="sm" variant="outline" onClick={() => void testConnection()} disabled={testing || busy}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void testConnection()}
+              disabled={testing || busy}
+            >
               {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Test"}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => void onDisconnect()} disabled={busy}>
@@ -178,11 +186,11 @@ export function AppleHealthConnection() {
 
         <div className="pl-11 space-y-2">
           <p className="text-xs text-muted-foreground">
-            In Health Auto Export (iOS) add an automation pointing to this URL,
-            JSON format, every 1–6 hours:
+            In Health Auto Export (iOS) add an automation pointing to this URL, JSON format, every
+            1–6 hours:
           </p>
           <div className="flex items-center gap-2">
-            <code className="flex-1 truncate rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-mono">
+            <code className="flex-1 truncate rounded-md border border-foreground/10 bg-foreground/[0.04] px-3 py-2 text-[11px] font-mono">
               {url}
             </code>
             <Button size="sm" variant="outline" onClick={() => void copyUrl()}>
@@ -210,7 +218,9 @@ export function AppleHealthConnection() {
         <div className="min-w-0">
           <p className="font-serif text-base text-foreground">Apple Health</p>
           <p className="text-xs text-muted-foreground truncate">
-            {connected === null ? "\u00a0" : "Sleep, HRV, steps, VO2max (via Health Auto Export or XML)"}
+            {connected === null
+              ? "\u00a0"
+              : "Sleep, HRV, steps, VO2max (via Health Auto Export or XML)"}
           </p>
         </div>
       </div>

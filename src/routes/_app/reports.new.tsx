@@ -39,15 +39,12 @@ function UploadReportPage() {
     const tooBig = arr.filter((f) => f.size > MAX_SIZE);
     const ok = arr.filter((f) => f.size <= MAX_SIZE);
     if (tooBig.length > 0) {
-      toast.error(
-        `${tooBig.length} file${tooBig.length === 1 ? "" : "s"} skipped, over 15 MB`,
-      );
+      toast.error(`${tooBig.length} file${tooBig.length === 1 ? "" : "s"} skipped, over 15 MB`);
     }
     setFiles((prev) => [...prev, ...ok]);
   };
 
-  const removeAt = (idx: number) =>
-    setFiles((prev) => prev.filter((_, i) => i !== idx));
+  const removeAt = (idx: number) => setFiles((prev) => prev.filter((_, i) => i !== idx));
 
   const handleUpload = async () => {
     if (!userId) return;
@@ -61,12 +58,10 @@ function UploadReportPage() {
         files.map(async (file) => {
           const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
           const path = `${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-          const { error: upErr } = await supabase.storage
-            .from("reports")
-            .upload(path, file, {
-              contentType: file.type || "application/octet-stream",
-              upsert: false,
-            });
+          const { error: upErr } = await supabase.storage.from("reports").upload(path, file, {
+            contentType: file.type || "application/octet-stream",
+            upsert: false,
+          });
           if (upErr) throw upErr;
 
           // Placeholder title from filename; AI will overwrite once it reads the doc.
@@ -102,7 +97,9 @@ function UploadReportPage() {
       const fulfilled = results.filter((r) => r.status === "fulfilled") as Array<
         PromiseFulfilledResult<{ blocked?: "previously_rejected"; ok?: true; name?: string }>
       >;
-      const blockedCount = fulfilled.filter((r) => r.value?.blocked === "previously_rejected").length;
+      const blockedCount = fulfilled.filter(
+        (r) => r.value?.blocked === "previously_rejected",
+      ).length;
       const okCount = fulfilled.length - blockedCount;
       const failCount = results.length - fulfilled.length;
       if (okCount > 0) {
@@ -129,15 +126,18 @@ function UploadReportPage() {
   };
 
   return (
-    <ReportShell title="Upload report" back={{ to: "/reports/documents", label: t("reportsNew.back") }}>
+    <ReportShell
+      title="Upload report"
+      back={{ to: "/reports/documents", label: t("reportsNew.back") }}
+    >
       <section className="report-card-strong p-6 sm:p-8">
-        <p className="report-eyebrow text-white/70">Add a report</p>
-        <h2 className="mt-3 font-serif text-3xl sm:text-4xl text-white leading-tight">
+        <p className="report-eyebrow text-foreground/70">Add a report</p>
+        <h2 className="mt-3 font-serif text-3xl sm:text-4xl text-foreground leading-tight">
           {t("reportsNew.title")}
         </h2>
-        <p className="mt-3 text-[15px] text-white/65 max-w-[520px]">
-          Drop one or more PDF / JPG / PNG files. Purple reads each one and fills in
-          the title, date, and values automatically. Extraction typically takes under a minute.
+        <p className="mt-3 text-[15px] text-foreground/65 max-w-[520px]">
+          Drop one or more PDF / JPG / PNG files. Purple reads each one and fills in the title,
+          date, and values automatically. Extraction typically takes under a minute.
         </p>
       </section>
 
@@ -158,16 +158,16 @@ function UploadReportPage() {
             "flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-6 py-14 text-center cursor-pointer transition-colors",
             dragOver
               ? "border-[#5CE0AC] bg-[#5CE0AC]/5"
-              : "border-white/15 bg-white/[0.02] hover:bg-white/[0.04]",
+              : "border-foreground/15 bg-foreground/[0.02] hover:bg-foreground/[0.04]",
           )}
         >
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-white/80">
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-foreground/5 text-foreground/80">
             <Upload className="h-5 w-5" />
           </span>
-          <p className="text-[15px] text-white mt-2">
+          <p className="text-[15px] text-foreground mt-2">
             Drop files here, or <span className="text-[#5CE0AC] underline">browse</span>
           </p>
-          <p className="text-xs text-white/55">
+          <p className="text-xs text-foreground/55">
             PDF, JPG, PNG, HEIC, WEBP · 15 MB each · multiple files OK
           </p>
           <input
@@ -188,12 +188,12 @@ function UploadReportPage() {
             {files.map((f, i) => (
               <li
                 key={`${f.name}-${i}`}
-                className="flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/[0.06] px-3 py-2.5"
+                className="flex items-center gap-3 rounded-xl bg-foreground/[0.04] border border-foreground/[0.06] px-3 py-2.5"
               >
-                <FileText className="h-4 w-4 text-white/70 shrink-0" />
+                <FileText className="h-4 w-4 text-foreground/70 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-white">{f.name}</p>
-                  <p className="text-[11px] text-white/55">
+                  <p className="truncate text-sm text-foreground">{f.name}</p>
+                  <p className="text-[11px] text-foreground/55">
                     {(f.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
@@ -201,7 +201,7 @@ function UploadReportPage() {
                   type="button"
                   onClick={() => removeAt(i)}
                   disabled={uploading}
-                  className="rounded-full p-1 text-white/55 hover:bg-white/5 hover:text-white"
+                  className="rounded-full p-1 text-foreground/55 hover:bg-foreground/5 hover:text-foreground"
                   aria-label={`Remove ${f.name}`}
                 >
                   <X className="h-3.5 w-3.5" />
@@ -215,16 +215,14 @@ function UploadReportPage() {
           <Button
             onClick={handleUpload}
             disabled={uploading || files.length === 0}
-            className="rounded-full bg-white text-[#07090C] hover:bg-white/90 disabled:opacity-40"
+            className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
           >
             {uploading ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <Upload className="h-4 w-4 mr-2" />
             )}
-            {files.length > 1
-              ? `Upload ${files.length} reports`
-              : "Upload and extract"}
+            {files.length > 1 ? `Upload ${files.length} reports` : "Upload and extract"}
           </Button>
         </div>
       </section>
@@ -232,33 +230,34 @@ function UploadReportPage() {
       <div className="mt-8 space-y-4">
         <ReportCard>
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/75 shrink-0">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-foreground/5 text-foreground/75 shrink-0">
               <ShieldCheck className="h-4 w-4" />
             </span>
             <div>
-              <h3 className="text-white text-base font-medium">Stored privately</h3>
-              <p className="mt-1.5 text-sm text-white/65 leading-relaxed">
-                Your file is encrypted at rest and only readable through a short-lived link to you. You can
-                delete the file and its extracted values from the report's page at any time.
+              <h3 className="text-foreground text-base font-medium">Stored privately</h3>
+              <p className="mt-1.5 text-sm text-foreground/65 leading-relaxed">
+                Your file is encrypted at rest and only readable through a short-lived link to you.
+                You can delete the file and its extracted values from the report's page at any time.
               </p>
             </div>
           </div>
         </ReportCard>
         <ReportCard>
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/75 shrink-0">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-foreground/5 text-foreground/75 shrink-0">
               <Sparkles className="h-4 w-4" />
             </span>
             <div>
-              <h3 className="text-white text-base font-medium">How Purple reads it</h3>
-              <p className="mt-1.5 text-sm text-white/65 leading-relaxed">
-                Once uploaded, Purple extracts title, date, panels, and structured values. You will see the
-                report appear as "Extracting…" and update to "Ready" automatically when it's done.
+              <h3 className="text-foreground text-base font-medium">How Purple reads it</h3>
+              <p className="mt-1.5 text-sm text-foreground/65 leading-relaxed">
+                Once uploaded, Purple extracts title, date, panels, and structured values. You will
+                see the report appear as "Extracting…" and update to "Ready" automatically when it's
+                done.
               </p>
             </div>
           </div>
         </ReportCard>
-        <MedicalDisclaimer className="text-white/70 [&_*]:text-white/70" />
+        <MedicalDisclaimer className="text-foreground/70 [&_*]:text-foreground/70" />
       </div>
     </ReportShell>
   );

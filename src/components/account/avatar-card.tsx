@@ -61,7 +61,12 @@ export function AvatarCard() {
       await qc.invalidateQueries({ queryKey: ["avatar", "me"] });
       toast.success("Profile picture updated");
     } catch (err: unknown) {
-      toast.error(userMessage(err, "The upload didn't finish. Check your connection and try again; the file is still on your device."));
+      toast.error(
+        userMessage(
+          err,
+          "The upload didn't finish. Check your connection and try again; the file is still on your device.",
+        ),
+      );
     } finally {
       setBusy(false);
     }
@@ -84,7 +89,7 @@ export function AvatarCard() {
 
   return (
     <div>
-      <p className="text-[15px] text-[#FAFAFC]">Profile picture</p>
+      <p className="text-[15px] text-foreground">Profile picture</p>
       <p className="mt-1 text-[13px] sheet-muted">Used in your menu and shared with caregivers.</p>
       <div className="mt-5 flex items-center gap-4">
         <span
@@ -103,9 +108,13 @@ export function AvatarCard() {
             onClick={onPick}
             disabled={busy}
             variant="outline"
-            className="bg-white/[0.04] border-white/10 text-[#FAFAFC] hover:bg-white/10"
+            className="bg-foreground/[0.04] border-foreground/10 text-foreground hover:bg-foreground/10"
           >
-            {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+            {busy ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="mr-2 h-4 w-4" />
+            )}
             Upload photo
           </Button>
           {q.data?.path && (
@@ -114,20 +123,14 @@ export function AvatarCard() {
               onClick={onRemove}
               disabled={busy}
               variant="ghost"
-              className="text-white/70 hover:text-white"
+              className="text-foreground/70 hover:text-foreground"
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Remove
             </Button>
           )}
         </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={onFile}
-        />
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
       </div>
     </div>
   );

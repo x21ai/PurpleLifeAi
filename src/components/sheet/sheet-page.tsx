@@ -42,12 +42,12 @@ export function SheetPage({ title, closeTo, aside, children }: Props) {
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full p-2 text-[#FAFAFC] hover:bg-white/5"
+              className="absolute left-0 top-1/2 -translate-y-1/2 rounded-full p-2 text-foreground hover:bg-accent"
             >
               <X className="h-5 w-5" />
             </button>
           )}
-          <h1 className="text-center text-xl font-normal tracking-tight text-[#FAFAFC] sm:text-2xl">
+          <h1 className="text-center text-xl font-normal tracking-tight text-foreground sm:text-2xl">
             {title}
           </h1>
         </header>
@@ -71,16 +71,12 @@ export function SheetCard({
   children: React.ReactNode;
   className?: string;
 }) {
-  return (
-    <section className={`sheet-card p-5 sm:p-7 ${className}`}>{children}</section>
-  );
+  return <section className={`sheet-card p-5 sm:p-7 ${className}`}>{children}</section>;
 }
 
 export function SheetSectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-2 pt-6 pb-3 text-[11px] uppercase tracking-[0.18em] sheet-muted">
-      {children}
-    </p>
+    <p className="px-2 pt-6 pb-3 text-[11px] uppercase tracking-[0.18em] sheet-muted">{children}</p>
   );
 }
 
@@ -101,15 +97,13 @@ export function SheetRow({
     <div className="flex items-center justify-between gap-4 px-5 py-4 sm:px-7 sheet-link transition-colors">
       <div className="flex min-w-0 items-center gap-4">
         {icon && (
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[#FAFAFC]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-foreground">
             {icon}
           </span>
         )}
         <div className="min-w-0">
-          <p className="truncate text-[15px] text-[#FAFAFC]">{title}</p>
-          {subtitle && (
-            <p className="mt-0.5 truncate text-[13px] sheet-muted">{subtitle}</p>
-          )}
+          <p className="truncate text-[15px] text-foreground">{title}</p>
+          {subtitle && <p className="mt-0.5 truncate text-[13px] sheet-muted">{subtitle}</p>}
         </div>
       </div>
       {trailing && <div className="shrink-0 sheet-muted">{trailing}</div>}

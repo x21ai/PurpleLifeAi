@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Sheet,
   SheetContent,
+  SheetColumn,
   SheetHeader,
   SheetTitle,
   SheetDescription,
@@ -116,72 +117,72 @@ export function QuickLogVitalSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="rounded-t-3xl">
-        <SheetHeader>
-          <SheetTitle className="font-serif text-2xl">{spec.title}</SheetTitle>
-          {spec.helper && (
-            <SheetDescription>{spec.helper}</SheetDescription>
-          )}
-        </SheetHeader>
-        <form onSubmit={submit} className="mt-6 space-y-4 max-w-md">
-          <div>
-            <Label htmlFor="qlv-1">
-              {spec.primary.label}{" "}
-              <span className="text-muted-foreground">({spec.primary.unit})</span>
-            </Label>
-            <Input
-              id="qlv-1"
-              type="number"
-              inputMode="decimal"
-              step="any"
-              autoFocus
-              placeholder={spec.primary.placeholder}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              className="mt-1"
-            />
-          </div>
-          {spec.secondary && (
+        <SheetColumn className="max-w-md">
+          <SheetHeader>
+            <SheetTitle className="font-serif text-2xl">{spec.title}</SheetTitle>
+            {spec.helper && <SheetDescription>{spec.helper}</SheetDescription>}
+          </SheetHeader>
+          <form onSubmit={submit} className="mt-6 space-y-4">
             <div>
-              <Label htmlFor="qlv-2">
-                {spec.secondary.label}{" "}
-                <span className="text-muted-foreground">({spec.secondary.unit})</span>
+              <Label htmlFor="qlv-1">
+                {spec.primary.label}{" "}
+                <span className="text-muted-foreground">({spec.primary.unit})</span>
               </Label>
               <Input
-                id="qlv-2"
+                id="qlv-1"
                 type="number"
                 inputMode="decimal"
                 step="any"
-                placeholder={spec.secondary.placeholder}
-                value={value2}
-                onChange={(e) => setValue2(e.target.value)}
+                autoFocus
+                placeholder={spec.primary.placeholder}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
                 className="mt-1"
               />
             </div>
-          )}
-          <div>
-            <Label htmlFor="qlv-notes">Notes (optional)</Label>
-            <Input
-              id="qlv-notes"
-              placeholder="e.g. fasting, after walk"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="mt-1"
-            />
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => onOpenChange(false)}
-              disabled={busy}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={busy}>
-              {busy ? "Saving…" : "Save"}
-            </Button>
-          </div>
-        </form>
+            {spec.secondary && (
+              <div>
+                <Label htmlFor="qlv-2">
+                  {spec.secondary.label}{" "}
+                  <span className="text-muted-foreground">({spec.secondary.unit})</span>
+                </Label>
+                <Input
+                  id="qlv-2"
+                  type="number"
+                  inputMode="decimal"
+                  step="any"
+                  placeholder={spec.secondary.placeholder}
+                  value={value2}
+                  onChange={(e) => setValue2(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+            )}
+            <div>
+              <Label htmlFor="qlv-notes">Notes (optional)</Label>
+              <Input
+                id="qlv-notes"
+                placeholder="e.g. fasting, after walk"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                disabled={busy}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={busy}>
+                {busy ? "Saving…" : "Save"}
+              </Button>
+            </div>
+          </form>
+        </SheetColumn>
       </SheetContent>
     </Sheet>
   );

@@ -1,8 +1,21 @@
 import * as React from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Download, ExternalLink, Link2, Loader2, MoreVertical, RefreshCw, Trash2 } from "lucide-react";
+import {
+  Download,
+  ExternalLink,
+  Link2,
+  Loader2,
+  MoreVertical,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
-import { getReportFileUrl, getReportShareUrl, processReport, deleteReport } from "@/lib/reports.functions";
+import {
+  getReportFileUrl,
+  getReportShareUrl,
+  processReport,
+  deleteReport,
+} from "@/lib/reports.functions";
 import { userMessage } from "@/lib/user-message";
 import {
   DropdownMenu,
@@ -39,7 +52,9 @@ export function ReportRowActions({
   const fetchShare = useServerFn(getReportShareUrl);
   const reprocess = useServerFn(processReport);
   const remove = useServerFn(deleteReport);
-  const [busy, setBusy] = React.useState<null | "view" | "download" | "share" | "retry" | "delete">(null);
+  const [busy, setBusy] = React.useState<null | "view" | "download" | "share" | "retry" | "delete">(
+    null,
+  );
   const [confirmOpen, setConfirmOpen] = React.useState(false);
 
   const failed = status === "failed" || status === "needs_credits" || status === "rate_limited";
@@ -110,7 +125,7 @@ export function ReportRowActions({
   }
 
   const triggerCls =
-    "inline-flex h-8 w-8 items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-50";
+    "inline-flex h-8 w-8 items-center justify-center rounded-full text-foreground/60 hover:bg-foreground/10 hover:text-foreground disabled:opacity-50";
 
   return (
     <div
