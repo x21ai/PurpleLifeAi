@@ -1959,7 +1959,6 @@ export type Database = {
           refresh_token: string | null
           scope: string | null
           sync_interval_hours: number
-          sync_mode: string
           token_type: string | null
           updated_at: string
           user_id: string
@@ -1972,7 +1971,6 @@ export type Database = {
           refresh_token?: string | null
           scope?: string | null
           sync_interval_hours?: number
-          sync_mode?: string
           token_type?: string | null
           updated_at?: string
           user_id: string
@@ -1985,7 +1983,6 @@ export type Database = {
           refresh_token?: string | null
           scope?: string | null
           sync_interval_hours?: number
-          sync_mode?: string
           token_type?: string | null
           updated_at?: string
           user_id?: string
@@ -3029,7 +3026,6 @@ export type Database = {
           refresh_token: string | null
           scope: string | null
           sync_interval_hours: number
-          sync_mode: string
           token_type: string | null
           updated_at: string
           user_id: string
@@ -3042,7 +3038,6 @@ export type Database = {
           refresh_token?: string | null
           scope?: string | null
           sync_interval_hours?: number
-          sync_mode?: string
           token_type?: string | null
           updated_at?: string
           user_id: string
@@ -3055,7 +3050,6 @@ export type Database = {
           refresh_token?: string | null
           scope?: string | null
           sync_interval_hours?: number
-          sync_mode?: string
           token_type?: string | null
           updated_at?: string
           user_id?: string
