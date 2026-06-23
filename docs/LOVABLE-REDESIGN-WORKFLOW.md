@@ -10,20 +10,23 @@ Lovable landing on `main`, then asks the owner before going live.
 | Item | Value |
 |------|-------|
 | Baseline commit | `7086ffa` (`perf+responsive: speed, mobile/tablet fixes, and native shell foundation`) |
-| Branch | `main` on `AstroAii/purpledrw` |
+| Branch | `main` on `AstroAii/purpledrw` (production gatekeeper); Lovable design on `lovable/redesign` |
 | Production Worker | `purplelife` on Cloudflare (`www.purplelife.org`) |
 | Supabase (live data) | ref `xxnzmfzsjplrutrgbzxy`, auth `https://auth.purplelife.org` |
 | Service worker (baseline) | `purple-shell-v16` |
 
-Designers start from this commit. Cursor and Lovable both pull/push `main`.
+Designers work on branch **`lovable/redesign`**. Cursor reviews and merges to `main`.
+See [`LOVABLE-DESIGNER-RULES.md`](LOVABLE-DESIGNER-RULES.md) for what Lovable must never edit.
 
 ## Flow
 
 ```
-Lovable redesign  -->  push to GitHub main  -->  Cursor review + test gates
+Lovable redesign  -->  push to lovable/redesign  -->  Cursor review + test gates
+                                                      |
+                                              merge to main when clean
                                                       |
                                               Go: ask owner to deploy
-                                              No-Go: fix in Cursor or Lovable prompt
+                                              No-Go: fix in Cursor
 ```
 
 CI (`.github/workflows/ci.yml`) still runs on every push/PR so broken commits are
@@ -34,14 +37,14 @@ caught without going live. Deploy (`.github/workflows/deploy.yml`) is
 
 ### Before you start
 
-1. Confirm Lovable is connected to `AstroAii/purpledrw`, branch `main`, and has
-   pulled at least through baseline `7086ffa`.
+1. Confirm Lovable is connected to `AstroAii/purpledrw`, branch **`lovable/redesign`** (not `main`),
+   and has pulled at least through baseline `7086ffa` plus Cursor's types fix.
+2. Read [`LOVABLE-DESIGNER-RULES.md`](LOVABLE-DESIGNER-RULES.md). Never edit `types.ts` or migrations.
 2. Set preview env vars per [`LOVABLE-ENV-PARITY.md`](LOVABLE-ENV-PARITY.md):
    - `VITE_SUPABASE_URL` (use `https://auth.purplelife.org`)
    - `VITE_SUPABASE_PUBLISHABLE_KEY` (from Doppler or Supabase dashboard, never in repo)
    - `VITE_SUPABASE_PROJECT_ID` = `xxnzmfzsjplrutrgbzxy`
-3. Push chunks to `main` when ready for Cursor review. Do not assume production
-   updates automatically.
+3. Push UI chunks to **`lovable/redesign`** when ready for Cursor review. Do not push design work to `main`.
 
 ### Design constraints (CI-enforced)
 

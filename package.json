@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "prebuild": "node scripts/check-no-em-dash.mjs",
+    "prebuild": "node scripts/check-no-em-dash.mjs && node scripts/check-supabase-types.mjs",
+    "check:supabase-types": "node scripts/check-supabase-types.mjs",
     "build": "vite build",
     "build:prod": "doppler run --project cursor-cloudflare --config prd_cloudlfare -- bun run build",
     "build:dev": "vite build --mode development",
