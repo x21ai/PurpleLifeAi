@@ -21,6 +21,13 @@ import { hydrateLocale } from "@/i18n";
 // Oura auto-sync never compete with first paint (and stay out of the entry chunk).
 const DeferredStartup = lazy(() => import("@/components/common/deferred-startup"));
 
+function dismissPurpleSplash() {
+  const splash = document.getElementById("purple-splash");
+  if (!splash) return;
+  splash.style.opacity = "0";
+  window.setTimeout(() => splash.remove(), 420);
+}
+
 function NotFoundComponent() {
   // Compatibility: the internal `_app` segment is a TanStack route-group,
   // not a public URL. Old links to `/_app/admin/...` 404, strip the prefix
@@ -215,7 +222,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <style
           dangerouslySetInnerHTML={{
             __html:
-              "#purple-splash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0A0710;transition:opacity .4s ease}#purple-splash .w{color:#FAFAFC;font-family:'Source Serif 4',Georgia,serif;font-weight:600;font-size:26px;letter-spacing:.42em;padding-left:.42em}@media (prefers-reduced-motion:reduce){#purple-splash{transition:none}}",
+              "@keyframes purpleSplashHide{0%,70%{opacity:1;visibility:visible}100%{opacity:0;visibility:hidden;pointer-events:none}}#purple-splash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0A0710;transition:opacity .4s ease;animation:purpleSplashHide 1.8s ease forwards}#purple-splash .w{color:#FAFAFC;font-family:'Source Serif 4',Georgia,serif;font-weight:600;font-size:26px;letter-spacing:.42em;padding-left:.42em}@media (prefers-reduced-motion:reduce){#purple-splash{transition:none;animation:none}}",
           }}
         />
       </head>
@@ -223,12 +230,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <div id="purple-splash" aria-hidden="true">
           <span className="w">PURPLE</span>
         </div>
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "(function(){function h(){var s=document.getElementById('purple-splash');if(!s)return;s.style.opacity='0';setTimeout(function(){s.parentNode&&s.parentNode.removeChild(s)},420)}if(document.readyState==='complete'){setTimeout(h,120)}else{window.addEventListener('load',function(){setTimeout(h,120)});setTimeout(h,1600)}})();",
-          }}
-        />
         {children}
         <Scripts />
       </body>
@@ -244,6 +245,10 @@ function RootComponent() {
   // Resolve navigator → saved → default *after* hydration so the SSR markup
   // (always rendered in the default locale) matches the first client render.
   // Non-default locale bundles load on demand inside hydrateLocale.
+  useEffect(() => {
+    dismissPurpleSplash();
+  }, []);
+
   useEffect(() => {
     hydrateLocale();
   }, []);

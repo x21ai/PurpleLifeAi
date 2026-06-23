@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       admin_message_reads: {
@@ -141,18 +166,27 @@ export type Database = {
       }
       app_settings: {
         Row: {
+          feature_community_enabled: boolean
+          feature_dna_enabled: boolean
+          feature_friends_enabled: boolean
           id: boolean
           pro_features: Json
           pro_free_for_everyone: boolean
           updated_at: string
         }
         Insert: {
+          feature_community_enabled?: boolean
+          feature_dna_enabled?: boolean
+          feature_friends_enabled?: boolean
           id?: boolean
           pro_features?: Json
           pro_free_for_everyone?: boolean
           updated_at?: string
         }
         Update: {
+          feature_community_enabled?: boolean
+          feature_dna_enabled?: boolean
+          feature_friends_enabled?: boolean
           id?: boolean
           pro_features?: Json
           pro_free_for_everyone?: boolean
@@ -1334,6 +1368,27 @@ export type Database = {
         }
         Relationships: []
       }
+      health_narratives: {
+        Row: {
+          created_at: string
+          day: string
+          narrative: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          narrative: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          narrative?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       hydration_intake: {
         Row: {
           consumed_at: string
@@ -1959,6 +2014,7 @@ export type Database = {
           refresh_token: string | null
           scope: string | null
           sync_interval_hours: number
+          sync_mode: string
           token_type: string | null
           updated_at: string
           user_id: string
@@ -1971,6 +2027,7 @@ export type Database = {
           refresh_token?: string | null
           scope?: string | null
           sync_interval_hours?: number
+          sync_mode?: string
           token_type?: string | null
           updated_at?: string
           user_id: string
@@ -1983,6 +2040,7 @@ export type Database = {
           refresh_token?: string | null
           scope?: string | null
           sync_interval_hours?: number
+          sync_mode?: string
           token_type?: string | null
           updated_at?: string
           user_id?: string
@@ -3026,6 +3084,7 @@ export type Database = {
           refresh_token: string | null
           scope: string | null
           sync_interval_hours: number
+          sync_mode: string
           token_type: string | null
           updated_at: string
           user_id: string
@@ -3038,6 +3097,7 @@ export type Database = {
           refresh_token?: string | null
           scope?: string | null
           sync_interval_hours?: number
+          sync_mode?: string
           token_type?: string | null
           updated_at?: string
           user_id: string
@@ -3050,6 +3110,7 @@ export type Database = {
           refresh_token?: string | null
           scope?: string | null
           sync_interval_hours?: number
+          sync_mode?: string
           token_type?: string | null
           updated_at?: string
           user_id?: string
@@ -3238,6 +3299,8 @@ export type Database = {
         Returns: undefined
       }
       seed_daily_medication_doses: { Args: never; Returns: undefined }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "user" | "admin" | "super_admin"
@@ -3370,6 +3433,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["user", "admin", "super_admin"],
