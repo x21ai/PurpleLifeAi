@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import { formatDistanceToNow, format, isValid } from "date-fns";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { WEARABLE_PROVIDERS } from "@/lib/wearable-sync";
+import { whoopIncrementalSync } from "@/lib/whoop.functions";
 
 type Props = {
   /** Compact = single line, suitable for the Today tile. Default detailed. */
@@ -16,14 +19,17 @@ type Props = {
 };
 
 /**
- * Two timestamps:
- *  - dataThrough: latest biometrics.recorded_at (the day the data is for)
- *  - lastSync: oura_tokens.last_sync_at (when an incremental sync last ran;
- *    falls back to updated_at for rows synced before last_sync_at existed)
- * Plus a "Sync now" button that calls the oura-sync edge function.
+ * Multi-provider wearable sync status + Sync now button.
+ *  - dataThrough: latest biometrics.recorded_at across Oura + Whoop
+ *  - lastPulled: most recent last_sync_at across connected pull providers,
+ *    and apple_health_tokens.last_webhook_at if Apple Health is connected
+ *  - Sync now triggers every connected pull provider (Oura + Whoop) in
+ *    parallel via Promise.allSettled. Apple Health is push-only and skipped.
  */
-export function OuraSyncStatus({ variant = "detailed", onSynced, refreshSignal, className }: Props) {
-  const [connected, setConnected] = useState<boolean>(false);
+export function WearableSyncStatus({ variant = "detailed", onSynced, refreshSignal, className }: Props) {
+  const whoopSync = useServerFn(whoopIncrementalSync);
+  const [connected, setConnected] = useState<Record<string, boolean>>({});
+  const [appleConnected, setAppleConnected] = useState(false);
   const [dataThrough, setDataThrough] = useState<string | null>(null);
   const [lastPulled, setLastPulled] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -36,27 +42,46 @@ export function OuraSyncStatus({ variant = "detailed", onSynced, refreshSignal, 
       return;
     }
     const uid = sess.session.user.id;
-    const [{ data: tok }, { data: bio }] = await Promise.all([
-      supabase
-        .from("oura_tokens")
-        .select("updated_at, last_sync_at")
-        .eq("user_id", uid)
-        .maybeSingle(),
+    const tokenRows = await Promise.all(
+      WEARABLE_PROVIDERS.map(async (p) => {
+        const { data } = await supabase
+          .from(p.tokensTable)
+          .select("updated_at, last_sync_at")
+          .eq("user_id", uid)
+          .maybeSingle();
+        return { id: p.id, row: data as { last_sync_at?: string | null; updated_at?: string | null } | null };
+      }),
+    );
+    const sources = WEARABLE_PROVIDERS.map((p) => p.id);
+    const [{ data: bio }, { data: apple }] = await Promise.all([
       supabase
         .from("biometrics")
         .select("recorded_at")
         .eq("user_id", uid)
-        .eq("source", "oura")
+        .in("source", sources)
         .order("recorded_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
+      supabase
+        .from("apple_health_tokens")
+        .select("last_webhook_at, updated_at")
+        .eq("user_id", uid)
+        .maybeSingle(),
     ]);
-    setConnected(!!tok);
-    setLastPulled(
-      (tok as { last_sync_at?: string | null; updated_at?: string | null } | null)?.last_sync_at ??
-        tok?.updated_at ??
-        null,
-    );
+
+    const connMap: Record<string, boolean> = {};
+    const stamps: number[] = [];
+    for (const { id, row } of tokenRows) {
+      connMap[id] = !!row;
+      const ts = row?.last_sync_at ?? row?.updated_at ?? null;
+      if (ts) stamps.push(new Date(ts).getTime());
+    }
+    setConnected(connMap);
+    setAppleConnected(!!apple);
+    const appleTs = apple?.last_webhook_at ?? null;
+    if (appleTs) stamps.push(new Date(appleTs).getTime());
+    const latest = stamps.length ? Math.max(...stamps) : null;
+    setLastPulled(latest ? new Date(latest).toISOString() : null);
     setDataThrough(bio?.recorded_at ?? null);
     setLoaded(true);
   }, []);
@@ -67,13 +92,38 @@ export function OuraSyncStatus({ variant = "detailed", onSynced, refreshSignal, 
 
   const sync = async () => {
     if (busy) return;
+    const active = WEARABLE_PROVIDERS.filter((p) => connected[p.id]);
+    if (active.length === 0) {
+      if (appleConnected) toast.info("Apple Health pushes automatically");
+      return;
+    }
     setBusy(true);
     try {
-      const { error } = await supabase.functions.invoke("oura-sync", {
-        body: { action: "incremental" },
+      const results = await Promise.allSettled(
+        active.map((p) => {
+          if (p.id === "oura") {
+            return supabase.functions
+              .invoke("oura-sync", { body: { action: "incremental" } })
+              .then(({ error }) => {
+                if (error) throw error;
+              });
+          }
+          if (p.id === "whoop") {
+            return Promise.resolve(whoopSync()).then(() => undefined);
+          }
+          return Promise.resolve();
+        }),
+      );
+      const ok: string[] = [];
+      const failed: string[] = [];
+      results.forEach((r, i) => {
+        (r.status === "fulfilled" ? ok : failed).push(active[i].label);
       });
-      if (error) throw error;
-      toast.success("Synced from Oura");
+      if (ok.length && !failed.length) toast.success(`Synced ${ok.join(", ")}`);
+      else if (ok.length && failed.length)
+        toast.warning(`Synced ${ok.join(", ")}; ${failed.join(", ")} failed`);
+      else toast.error(`Sync failed: ${failed.join(", ")}`);
+      if (appleConnected) toast.info("Apple Health pushes automatically");
       await refresh();
       onSynced?.();
     } catch (e) {
@@ -85,10 +135,12 @@ export function OuraSyncStatus({ variant = "detailed", onSynced, refreshSignal, 
   };
 
   if (!loaded) return null;
-  if (!connected) return null;
+  const anyPullConnected = WEARABLE_PROVIDERS.some((p) => connected[p.id]);
+  if (!anyPullConnected && !appleConnected) return null;
 
   const dataDate = dataThrough && isValid(new Date(dataThrough)) ? new Date(dataThrough) : null;
   const pulledDate = lastPulled && isValid(new Date(lastPulled)) ? new Date(lastPulled) : null;
+  const showButton = anyPullConnected;
 
   if (variant === "compact") {
     return (
@@ -103,19 +155,21 @@ export function OuraSyncStatus({ variant = "detailed", onSynced, refreshSignal, 
             </span>
           )}
         </span>
-        <button
-          type="button"
-          onClick={() => void sync()}
-          disabled={busy}
-          aria-label="Sync Oura now"
-          className="inline-flex items-center justify-center h-6 w-6 rounded-full hover:bg-secondary disabled:opacity-50"
-        >
-          {busy ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <RefreshCw className="h-3 w-3" />
-          )}
-        </button>
+        {showButton && (
+          <button
+            type="button"
+            onClick={() => void sync()}
+            disabled={busy}
+            aria-label="Sync wearables now"
+            className="inline-flex items-center justify-center h-6 w-6 rounded-full hover:bg-secondary disabled:opacity-50"
+          >
+            {busy ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3 w-3" />
+            )}
+          </button>
+        )}
       </div>
     );
   }
@@ -136,25 +190,31 @@ export function OuraSyncStatus({ variant = "detailed", onSynced, refreshSignal, 
           </span>
         </p>
       </div>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => void sync()}
-        disabled={busy}
-        className="shrink-0 h-8"
-      >
-        {busy ? (
-          <>
-            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-            Syncing
-          </>
-        ) : (
-          <>
-            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-            Sync now
-          </>
-        )}
-      </Button>
+      {showButton && (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => void sync()}
+          disabled={busy}
+          aria-label="Sync wearables now"
+          className="shrink-0 h-8"
+        >
+          {busy ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+              Syncing
+            </>
+          ) : (
+            <>
+              <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+              Sync now
+            </>
+          )}
+        </Button>
+      )}
     </div>
   );
 }
+
+/** Back-compat alias; prefer WearableSyncStatus going forward. */
+export const OuraSyncStatus = WearableSyncStatus;
