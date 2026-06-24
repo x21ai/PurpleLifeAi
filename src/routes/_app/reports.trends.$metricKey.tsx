@@ -314,6 +314,17 @@ function TrendDetailPage() {
                     borderRadius: 8,
                     fontSize: 12,
                   }}
+                  labelFormatter={(v: string) => {
+                    const d = new Date(v);
+                    return Number.isNaN(d.getTime())
+                      ? String(v)
+                      : d.toLocaleDateString(undefined, {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        });
+                  }}
                   formatter={(v: number, _name: string, props: any) => {
                     const pt = props?.payload;
                     const source = pt?.source_text;
