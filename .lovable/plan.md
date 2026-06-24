@@ -1,39 +1,43 @@
-## What "Sync now" does today
+## 1. Collapsible sidebar with right-edge toggle
 
-Right now the **Sync now** button on the biometrics page only calls the Oura edge function. The component is literally `OuraSyncStatus` (`src/components/biometrics/sync-status.tsx`) — it reads `oura_tokens` + Oura biometrics and invokes `oura-sync` on click. Whoop is not touched, and Apple Health is push-only (the Health Auto Export webhook delivers data; Purple can't pull it).
+Honors the memory rule: PURPLE wordmark stays untouched. The toggle lives on the sidebar's right edge, far from the wordmark.
 
-The only place that already syncs every connected wearable is the **Today page pull-to-refresh** gesture, which loops `WEARABLE_PROVIDERS` and fires Oura + Whoop in parallel.
+**State**
+- Add `purple-sidebar-collapsed` boolean in `localStorage` (default `false` on lg+).
+- New hook `useSidebarCollapsed()` in `src/components/layout/sidebar-nav.tsx` returns `[collapsed, toggle]` and syncs to `localStorage` + dispatches a `storage`-style custom event so `AppShell` can react.
 
-So your expectation is correct — the button should sync all — but the code doesn't yet.
+**Visual behavior**
+- Expanded (lg+, not collapsed): current `lg:w-64` rail with labels.
+- Collapsed (user toggled, any viewport ≥ md): force the existing `md:w-16` icon-only rail (reuses current collapsed styling, popovers, and `RailTooltip` hover labels — that already exists today on iPad widths).
+- Below md: bottom nav as today, toggle hidden.
 
-## Fix
+**Toggle button**
+- Small 28×28 ghost button pinned to the sidebar's right edge, vertically centered on the header strip (top: ~40px). Uses `PanelLeftClose` / `PanelLeftOpen` from lucide (industry-standard collapse glyph, clearer than a burger and what shadcn uses).
+- `aria-label="Collapse sidebar"` / `"Expand sidebar"`, wrapped in `Tooltip` so hover shows the label.
+- Positioned `absolute -right-3 top-9` with `rounded-full border bg-background shadow-sm` so it overlaps the border like a tab pull, never crowding the wordmark.
+- Hidden on `< md` (mobile uses bottom nav).
 
-Turn `OuraSyncStatus` into a generic `WearableSyncStatus` that:
+**Layout sync**
+- `AppShell` reads the same collapsed state and switches main padding: collapsed → `md:pl-16` always; expanded → existing `md:pl-16 lg:pl-60`.
 
-1. **Reads status for every connected pull provider** (Oura + Whoop via `WEARABLE_PROVIDERS`):
-   - `last_sync_at` (fallback `updated_at`) from each `*_tokens` row → pick the most recent across providers for the "Last pulled" line.
-   - Latest `biometrics.recorded_at` filtered by `source in ('oura','whoop')` → "Data through".
-   - If Apple Health token exists, also include `apple_health_tokens.last_webhook_at` in the "Last pulled" calculation so the label reflects passive receipt too (no button action for it).
+## 2. Consistent hover tooltip on every metric detail chart
 
-2. **On click, sync every connected pull provider in parallel** (same pattern as Today pull-to-refresh):
-   - Oura → `supabase.functions.invoke("oura-sync", { body: { action: "incremental" } })`
-   - Whoop → `useServerFn(whoopIncrementalSync)()`
-   - Apple Health → skipped (push-only); if connected, toast note "Apple Health pushes automatically".
-   - Use `Promise.allSettled` so a single provider failure doesn't block the others; toast a per-provider summary (e.g. "Synced Oura, Whoop" or "Oura synced; Whoop failed").
+Goal: on `/biometrics/$metric` and `/reports/trends/$metricKey`, hovering the line shows a clean card with the full date and the value(s) per source.
 
-3. **Render nothing only when no pull provider is connected** (today it hides when Oura isn't connected, which wrongly hides the button for Whoop-only users).
+**Changes**
+- `src/routes/_app/biometrics.$metric.tsx`:
+  - Add `labelFormatter={(_, payload) => format(new Date(payload?.[0]?.payload?.x), "EEE, MMM d, yyyy")}` to the existing `<Tooltip>`.
+  - Add `activeDot={{ r: 4 }}` to each `<Line>` so the hover point is visible.
+  - Filter null series out of the tooltip via a small custom `content` renderer so empty sources don't render blank rows.
+- `src/routes/_app/reports.trends.$metricKey.tsx`: apply the same Tooltip props (full-date label, styled card, source-aware formatter, activeDot) so both detail surfaces match.
+- No styling changes to the metric-canvas; tooltip uses existing `--card` / `--border` tokens.
 
-4. Keep both `variant="compact"` (Today tile) and `variant="detailed"` (biometrics pages) layouts. Update `aria-label` from "Sync Oura now" to "Sync wearables now".
+## 3. Out of scope
+- No changes to PURPLE wordmark, mobile bottom nav, or the chart colors/lines themselves.
+- No new memory edits (the wordmark rule stays as-is).
 
-5. Update the three call sites to the new name: `src/routes/_app/today.tsx`, `src/routes/_app/biometrics.index.tsx`, `src/routes/_app/biometrics.$metric.tsx`. Keep a thin `OuraSyncStatus` re-export alias for one release to avoid breakage, or rename directly — your call.
-
-## Files touched
-
-- `src/components/biometrics/sync-status.tsx` — rewrite to multi-provider.
-- `src/routes/_app/today.tsx`, `src/routes/_app/biometrics.index.tsx`, `src/routes/_app/biometrics.$metric.tsx` — update import/usage name.
-
-## Out of scope
-
-- No backend or schema changes.
-- No change to autosync hook or pull-to-refresh (they already sync all).
-- Apple Health remains push-only; not adding a fake pull.
+## Files
+- `src/components/layout/sidebar-nav.tsx` — add collapse state, toggle button, force-collapsed mode.
+- `src/components/layout/app-shell.tsx` — react to collapsed state for main padding.
+- `src/routes/_app/biometrics.$metric.tsx` — tooltip polish.
+- `src/routes/_app/reports.trends.$metricKey.tsx` — tooltip polish (same pattern).
