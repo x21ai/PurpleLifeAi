@@ -1,5 +1,5 @@
 import { Outlet } from "@tanstack/react-router";
-import { SidebarNav } from "./sidebar-nav";
+import { SidebarNav, useSidebarCollapsedPref } from "./sidebar-nav";
 import { BottomNav } from "./bottom-nav";
 import { MobileTopBar } from "./mobile-top-bar";
 import { TopBar } from "./top-bar";
@@ -7,20 +7,17 @@ import { AskFab } from "@/components/chat/ask-fab";
 import { ReminderAlarmSheet } from "@/components/meds/reminder-alarm-sheet";
 
 export function AppShell() {
-  // Service worker registration and medication-notification re-arming run once,
-  // after the browser goes idle, from DeferredStartup (mounted in __root). They
-  // were also fired eagerly here, double-registering the SW and competing with
-  // first paint; the idle path is the single source of truth now.
-
-  // Render an identical tree on SSR and the first client render.
-  // The `/_app` route's `beforeLoad` handles redirects to /sign-in when
-  // there's no session, so we never gate the shell on auth state here
-  // (that branch was the source of hydration mismatches).
+  const [collapsed] = useSidebarCollapsedPref();
   return (
     <div className="min-h-dvh bg-background text-foreground">
       <SidebarNav />
       <MobileTopBar />
-      <main className="md:pl-16 lg:pl-60 pb-24 md:pb-0 min-h-dvh flex flex-col">
+      <main
+        className={
+          "pb-24 md:pb-0 min-h-dvh flex flex-col md:pl-16 " +
+          (collapsed ? "lg:pl-16" : "lg:pl-60")
+        }
+      >
         <TopBar />
         <div className="flex-1">
           <Outlet />
