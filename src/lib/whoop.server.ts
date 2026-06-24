@@ -89,7 +89,28 @@ async function getValidAccessToken(user_id: string): Promise<string | null> {
   const expiresAt = row.expires_at ? new Date(row.expires_at).getTime() : 0;
   if (expiresAt - Date.now() > 60_000) return row.access_token;
   if (!row.refresh_token) return row.access_token;
-  const refreshed = await refreshWhoopToken(row.refresh_token);
+  let refreshed;
+  try {
+    refreshed = await refreshWhoopToken(row.refresh_token);
+  } catch (e) {
+    const msg = String(e);
+    // Whoop refresh tokens are single-use. A 400/401 here means the stored
+    // token is dead (rotated, revoked, or never persisted). Clear it so the
+    // user is prompted to reconnect instead of erroring on every sync.
+    if (msg.includes(" 400 ") || msg.includes(" 401 ")) {
+      await supabaseAdmin
+        .from("whoop_tokens")
+        .update({
+          refresh_token: null,
+          access_token: "",
+          expires_at: new Date(0).toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", user_id);
+      throw new Error("Whoop session expired. Please reconnect Whoop in Settings.");
+    }
+    throw e;
+  }
   const newExpires = new Date(
     Date.now() + (refreshed.expires_in ?? 3600) * 1000,
   ).toISOString();
