@@ -384,6 +384,14 @@ function MetricDrillPage() {
                   borderRadius: "12px",
                   fontSize: "12px",
                 }}
+                labelFormatter={(_, payload) => {
+                  const x = (payload?.[0]?.payload as { x?: string } | undefined)?.x;
+                  if (!x) return "";
+                  const d = new Date(x);
+                  return Number.isNaN(d.getTime())
+                    ? String(x)
+                    : format(d, "EEE, MMM d, yyyy");
+                }}
                 formatter={(v, name) => [
                   meta.format(typeof v === "number" ? v : Number(v)),
                   name === "__compare"
@@ -402,6 +410,7 @@ function MetricDrillPage() {
                   connectNulls
                   isAnimationActive={false}
                   dot={false}
+                  activeDot={{ r: 4 }}
                 />
               ))}
               {compare !== "none" && (
@@ -415,6 +424,7 @@ function MetricDrillPage() {
                   connectNulls
                   isAnimationActive={false}
                   dot={false}
+                  activeDot={{ r: 4 }}
                 />
               )}
             </LineChart>
