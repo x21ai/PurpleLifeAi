@@ -217,7 +217,7 @@ export function SidebarNav() {
             ),
           )}
           <CaregiverNavLink />
-          <div className="hidden lg:block px-1 pt-2">
+          <div className={cn("hidden px-1 pt-2", collapsed ? "" : "lg:block")}>
             <PendingInboxBadge variant="full" />
           </div>
         </nav>
@@ -400,6 +400,7 @@ function LeafLink({
   Icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   active: boolean;
 }) {
+  const collapsed = useCollapsedRail();
   return (
     <RailTooltip label={label}>
       <Link
@@ -409,7 +410,7 @@ function LeafLink({
         aria-label={label}
         className={cn(
           "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] transition-colors",
-          "justify-center lg:justify-start",
+          collapsed ? "justify-center" : "justify-center lg:justify-start",
           active
             ? "bg-secondary text-foreground font-medium"
             : "text-[color:var(--text-tertiary)] hover:bg-secondary/60 hover:text-foreground",
@@ -419,7 +420,7 @@ function LeafLink({
           className={cn("h-5 w-5 shrink-0", active && "text-[color:var(--purple-primary)]")}
           strokeWidth={active ? 2 : 1.6}
         />
-        <span className="hidden lg:inline">{label}</span>
+        {!collapsed && <span className="hidden lg:inline">{label}</span>}
       </Link>
     </RailTooltip>
   );
