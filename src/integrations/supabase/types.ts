@@ -1334,6 +1334,33 @@ export type Database = {
         }
         Relationships: []
       }
+      health_narratives: {
+        Row: {
+          created_at: string
+          day: string
+          id: string
+          narrative: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          id?: string
+          narrative: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          id?: string
+          narrative?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       hydration_intake: {
         Row: {
           consumed_at: string
@@ -1959,6 +1986,7 @@ export type Database = {
           refresh_token: string | null
           scope: string | null
           sync_interval_hours: number
+          sync_mode: string
           token_type: string | null
           updated_at: string
           user_id: string
@@ -1971,6 +1999,7 @@ export type Database = {
           refresh_token?: string | null
           scope?: string | null
           sync_interval_hours?: number
+          sync_mode?: string
           token_type?: string | null
           updated_at?: string
           user_id: string
@@ -1983,6 +2012,7 @@ export type Database = {
           refresh_token?: string | null
           scope?: string | null
           sync_interval_hours?: number
+          sync_mode?: string
           token_type?: string | null
           updated_at?: string
           user_id?: string
@@ -3026,6 +3056,7 @@ export type Database = {
           refresh_token: string | null
           scope: string | null
           sync_interval_hours: number
+          sync_mode: string
           token_type: string | null
           updated_at: string
           user_id: string
@@ -3038,6 +3069,7 @@ export type Database = {
           refresh_token?: string | null
           scope?: string | null
           sync_interval_hours?: number
+          sync_mode?: string
           token_type?: string | null
           updated_at?: string
           user_id: string
@@ -3050,6 +3082,7 @@ export type Database = {
           refresh_token?: string | null
           scope?: string | null
           sync_interval_hours?: number
+          sync_mode?: string
           token_type?: string | null
           updated_at?: string
           user_id?: string
