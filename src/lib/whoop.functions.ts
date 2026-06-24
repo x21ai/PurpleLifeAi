@@ -41,7 +41,7 @@ export const whoopIncrementalSync = createServerFn({ method: "POST" })
       return { ok: true as const, ...result };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      if (msg.includes("Whoop session expired")) {
+      if (msg.includes("Whoop session expired") || msg.includes("No Whoop token")) {
         return { ok: false as const, reason: "reconnect_required" as const, message: msg };
       }
       throw e;
