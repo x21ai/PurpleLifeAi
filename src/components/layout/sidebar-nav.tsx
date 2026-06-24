@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { navTree, filterNavTree, type NavGroup, type NavLeaf } from "./nav-items";
 import { cn } from "@/lib/utils";
 import { usePlatformFlags } from "@/lib/platform-flags";
@@ -10,20 +10,64 @@ import { ChatUnreadBadge } from "./chat-unread-badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-/** True when the sidebar is icon-only (md–lg), not the expanded lg+ rail. */
+const COLLAPSE_KEY = "purple-sidebar-collapsed";
+const COLLAPSE_EVENT = "purple-sidebar-collapsed-change";
+
+function readCollapsedPref(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(COLLAPSE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Shared collapse state. Returns `[collapsed, toggle]` and persists to
+ * localStorage. Other components (AppShell) subscribe via the custom event
+ * dispatched on every change.
+ */
+export function useSidebarCollapsedPref(): [boolean, () => void] {
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    setCollapsed(readCollapsedPref());
+    const onChange = (e: Event) => {
+      const detail = (e as CustomEvent<boolean>).detail;
+      setCollapsed(typeof detail === "boolean" ? detail : readCollapsedPref());
+    };
+    window.addEventListener(COLLAPSE_EVENT, onChange);
+    return () => window.removeEventListener(COLLAPSE_EVENT, onChange);
+  }, []);
+  const toggle = () => {
+    const next = !readCollapsedPref();
+    try {
+      window.localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+    } catch {
+      /* noop */
+    }
+    window.dispatchEvent(new CustomEvent(COLLAPSE_EVENT, { detail: next }));
+  };
+  return [collapsed, toggle];
+}
+
+/**
+ * True when the sidebar should render in its icon-only form, either because
+ * the viewport is below `lg` or because the user has collapsed it.
+ */
 function useCollapsedRail(): boolean {
-  const [collapsed, setCollapsed] = useState(() => {
+  const [viewportNarrow, setViewportNarrow] = useState(() => {
     if (typeof window === "undefined") return true;
     return !window.matchMedia("(min-width: 1024px)").matches;
   });
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
-    const update = () => setCollapsed(!mq.matches);
+    const update = () => setViewportNarrow(!mq.matches);
     update();
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
   }, []);
-  return collapsed;
+  const [userCollapsed] = useSidebarCollapsedPref();
+  return viewportNarrow || userCollapsed;
 }
 
 /**
@@ -63,6 +107,7 @@ export function SidebarNav() {
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const { flags } = usePlatformFlags();
   const tree = filterNavTree(navTree, flags);
+  const [collapsed, toggleCollapsed] = useSidebarCollapsedPref();
 
   // Hydrate from localStorage on mount.
   useEffect(() => {
@@ -97,15 +142,55 @@ export function SidebarNav() {
 
   return (
     <TooltipProvider>
-      <aside className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-16 lg:w-64 border-r border-border bg-sidebar text-sidebar-foreground">
+      <aside
+        className={cn(
+          "hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-16 border-r border-border bg-sidebar text-sidebar-foreground",
+          collapsed ? "lg:w-16" : "lg:w-64",
+        )}
+      >
+        <Tooltip delayDuration={150}>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              className="hidden lg:inline-flex absolute -right-3 top-9 z-40 h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm hover:text-foreground hover:bg-secondary/60 transition-colors"
+            >
+              {collapsed ? (
+                <PanelLeftOpen className="h-3.5 w-3.5" />
+              ) : (
+                <PanelLeftClose className="h-3.5 w-3.5" />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            {collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          </TooltipContent>
+        </Tooltip>
         <div className="flex items-center justify-center lg:justify-start h-20 px-0 lg:px-6 border-b border-border">
           <Link
             to="/today"
-            className="flex items-center justify-center lg:justify-start flex-1"
+            className={cn(
+              "flex items-center flex-1",
+              collapsed ? "justify-center" : "justify-center lg:justify-start",
+            )}
             aria-label="Purple, home"
           >
-            <span className="hidden lg:inline wordmark text-[14px] text-foreground">Purple</span>
-            <span className="lg:hidden wordmark text-[16px] text-foreground" aria-hidden>
+            <span
+              className={cn(
+                "wordmark text-[14px] text-foreground",
+                collapsed ? "hidden" : "hidden lg:inline",
+              )}
+            >
+              Purple
+            </span>
+            <span
+              className={cn(
+                "wordmark text-[16px] text-foreground",
+                collapsed ? "inline" : "lg:hidden",
+              )}
+              aria-hidden
+            >
               P
             </span>
           </Link>
