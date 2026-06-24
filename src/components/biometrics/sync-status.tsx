@@ -109,7 +109,14 @@ export function WearableSyncStatus({ variant = "detailed", onSynced, refreshSign
               });
           }
           if (p.id === "whoop") {
-            return Promise.resolve(whoopSync()).then(() => undefined);
+            return Promise.resolve(whoopSync()).then((r) => {
+              if (r && (r as { ok?: boolean }).ok === false) {
+                throw new Error(
+                  (r as { message?: string }).message ??
+                    "Whoop session expired. Reconnect in Settings.",
+                );
+              }
+            });
           }
           return Promise.resolve();
         }),

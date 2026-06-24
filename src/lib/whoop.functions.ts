@@ -36,8 +36,16 @@ export const whoopIncrementalSync = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { incrementalSyncForUser } = await import("./whoop.server");
-    const result = await incrementalSyncForUser(context.userId, 3);
-    return { ok: true, ...result };
+    try {
+      const result = await incrementalSyncForUser(context.userId, 3);
+      return { ok: true as const, ...result };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("Whoop session expired")) {
+        return { ok: false as const, reason: "reconnect_required" as const, message: msg };
+      }
+      throw e;
+    }
   });
 
 export const whoopBackfill = createServerFn({ method: "POST" })
