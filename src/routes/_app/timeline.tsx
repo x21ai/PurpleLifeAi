@@ -55,8 +55,8 @@ function TimelinePage() {
   const userId = session?.user.id;
   const [range, setRange] = React.useState<Range>("week");
   const [search, setSearch] = React.useState("");
-  const [visibleCount, setVisibleCount] = React.useState(50);
-  const PAGE_SIZE = 50;
+  const [page, setPage] = React.useState(1);
+  const PAGE_SIZE = 25;
   const [customFrom, setCustomFrom] = React.useState<Date>(() => {
     const d = new Date(); d.setDate(d.getDate() - 30); return startOfDay(d);
   });
@@ -142,10 +142,26 @@ function TimelinePage() {
     : rows;
 
   // Reset pagination when range / search changes.
-  React.useEffect(() => { setVisibleCount(PAGE_SIZE); }, [range, sinceISO, untilISO, q]);
+  React.useEffect(() => { setPage(1); }, [range, sinceISO, untilISO, q]);
 
-  const visible = filtered.slice(0, visibleCount);
-  const hasMore = filtered.length > visible.length;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const startIdx = (currentPage - 1) * PAGE_SIZE;
+  const endIdx = startIdx + PAGE_SIZE;
+  const visible = filtered.slice(startIdx, endIdx);
+
+  // Build a compact page-number list with ellipses.
+  const pageNumbers = React.useMemo<(number | "ellipsis")[]>(() => {
+    const pages: (number | "ellipsis")[] = [];
+    const add = (n: number) => { if (!pages.includes(n)) pages.push(n); };
+    const window = 1;
+    add(1);
+    if (currentPage - window > 2) pages.push("ellipsis");
+    for (let i = Math.max(2, currentPage - window); i <= Math.min(totalPages - 1, currentPage + window); i++) add(i);
+    if (currentPage + window < totalPages - 1) pages.push("ellipsis");
+    if (totalPages > 1) add(totalPages);
+    return pages;
+  }, [currentPage, totalPages]);
 
   const updateDose = async (
     doseId: string,
@@ -419,21 +435,50 @@ function TimelinePage() {
             ))}
           </ol>
         )}
-        {hasMore && (
-          <div className="mt-6 flex justify-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-            >
-              Load more ({filtered.length - visible.length} remaining)
-            </Button>
+        {!isLoading && filtered.length > PAGE_SIZE && (
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 text-xs"
+                disabled={currentPage === 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                Previous
+              </Button>
+              {pageNumbers.map((p, i) =>
+                p === "ellipsis" ? (
+                  <span key={`e-${i}`} className="px-2 text-sm text-muted-foreground">…</span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={cn(
+                      "h-8 min-w-8 rounded-md border px-2.5 text-xs transition-colors",
+                      p === currentPage
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-card text-foreground border-border hover:bg-secondary/60",
+                    )}
+                  >
+                    {p}
+                  </button>
+                ),
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 text-xs"
+                disabled={currentPage === totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Next
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Showing {startIdx + 1}–{Math.min(endIdx, filtered.length)} of {filtered.length}
+            </p>
           </div>
-        )}
-        {!isLoading && filtered.length > 0 && !hasMore && filtered.length > PAGE_SIZE && (
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            Showing all {filtered.length} entries
-          </p>
         )}
       </div>
 
