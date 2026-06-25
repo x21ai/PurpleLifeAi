@@ -1,34 +1,34 @@
 ## Problem
 
-The medication "add/edit" form uses native `<input type="time">`, which on most desktop browsers renders in 24-hour format (depends on OS locale). Everywhere else the app displays times in 12-hour format with AM/PM (e.g. `9:00 AM`). Result: users enter `21:00` but see `9:00 PM` later — inconsistent.
+Generating the Medical history PDF throws `WinAnsi cannot encode (0x2192)` (the `→` character). pdf-lib's Helvetica only encodes WinAnsi, and `src/lib/medical-report.server.ts` already has a `safe()` sanitizer that maps `→` to `->` and strips any other non-WinAnsi codepoint. Most call sites pipe text through `safe()`, but a few don't, so a stray `→` (or any other non-WinAnsi codepoint that lives in user data — emoji in a med name, a journal note, a biometric source label, etc.) reaches pdf-lib raw and crashes the whole report.
 
-The same native `<input type="time">` is also used in the shared `DateTimePicker` (used by "add past dose" on the med detail page, journal entries, etc.), so the inconsistency surfaces in multiple flows.
+Audit of `src/lib/medical-report.server.ts` shows three categories of unsafe calls:
+
+1. `widthOfTextAtSize` calls that measure text before it is sanitized:
+   - `wrap()` (line 141) — receives safed text from `P()` but is also reachable in future call sites; harden it to safe internally.
+   - `truncate()` (line 197) — same; harden it.
+   - `overlayChart()` legend, line 337 — `lx += c.font.widthOfTextAtSize(label, 8)` measures the raw chart-series source name. If a series key contains any non-WinAnsi codepoint this throws.
+2. Any other ad-hoc string built from user data inside `overlayChart()` (axis labels, source names) that reaches `drawText`/`widthOfTextAtSize` without `safe()`.
+3. `fmtDate` returns the raw input on parse failure (line 361). If a date column ever holds a weird string, it bypasses sanitization until `P()`/`table()` calls `safe()` — already covered, but worth keeping `safe()` as the single chokepoint.
 
 ## Fix
 
-Introduce one small 12-hour time picker and use it in place of every native `<input type="time">` so input and display always match.
+Make `safe()` the single, mandatory chokepoint for every string handed to pdf-lib in `src/lib/medical-report.server.ts`. Edits are local to that one file; no schema, no API, no other call sites change.
 
-### 1. New component `src/components/ui/time-picker-12h.tsx`
+1. Add two tiny wrappers used everywhere in that file:
+   - `drawSafeText(page, text, opts)` -> calls `page.drawText(safe(text), opts)`.
+   - `widthSafe(font, text, size)` -> calls `font.widthOfTextAtSize(safe(text), size)`.
+2. Replace every existing `c.page.drawText(safe(...), ...)` with `drawSafeText(c.page, ..., ...)` and every `font.widthOfTextAtSize(...)` with `widthSafe(font, ..., ...)`. This guarantees no future regression where someone forgets to wrap.
+3. Harden `wrap()` and `truncate()` to call `safe()` on their input once at entry (idempotent, since `safe()` is already a no-op for already-safe text).
+4. Fix the specific known leak at the chart legend (line 337) — `lx += widthSafe(c.font, label, 8)`.
+5. Extend `safe()`'s explicit replacements with a few more common unicode glyphs likely to show up in user-entered text or AI-generated narrative so the PDF stays readable rather than just stripped: `↑ ↓ ⇒ ⇐ ≥ ≤ ± ° × ÷ ✓ ✗` -> ASCII equivalents (`^ v => <= >= <= +/- deg x / yes no`). Anything still outside WinAnsi after this gets stripped, as today.
 
-- Props: `value: string` (canonical `HH:mm` 24h, what we store), `onChange(value: string)`, optional `className`, `aria-label`.
-- UI: three compact controls in a row — Hour (1-12), Minute (00-59, step 5 default but any minute accepted via select with all 60 values), AM/PM toggle. Styled to match existing `Input`/`Select` (shadcn) so it sits naturally next to the dose-amount input.
-- Internally converts to/from 24h `HH:mm` so storage and the rest of the codebase are unchanged.
-- Fully keyboard accessible, mobile-friendly (large tap targets, works inside bottom sheets).
+## Verify
 
-### 2. Replace usages
-
-- `src/components/meds/medication-form-sheet.tsx` (line ~728) — swap the scheduled-times `<Input type="time">` for `<TimePicker12h>`.
-- `src/components/ui/date-time-picker.tsx` — swap the inline `<input type="time">` for `<TimePicker12h>`. This keeps the "add past dose" sheet on `/meds/:id` and any other date-time pickers consistent.
-
-No changes to:
-- Display helpers (`formatTime` in `meds.tsx`, `meds.$medId.tsx`) — they already render 12h AM/PM.
-- Database shape — we still store `HH:mm` 24h strings and ISO timestamps.
-- The 24h `hour12: false` usage inside `today-doses.tsx` (that's sleep-window math, not display).
-
-### 3. Verify across viewports
-
-Use Playwright to screenshot the medication form and "add past dose" sheet at mobile (375), tablet (768) and desktop (1280) widths, then read back a created med on the meds list to confirm the entered time displays identically (e.g. enter `9:00 PM` → list shows `9:00 PM`, not `21:00`).
+- Manually trigger PDF generation from `/reports/medical-history` with a profile whose data includes the previously failing input (any med/journal/note containing `→` or emoji). Confirm the PDF downloads.
+- `bun run build` to confirm typecheck stays green.
+- Skim the generated PDF for any visible mojibake or empty cells where text used to be.
 
 ## Out of scope
 
-- Localized 24h preference (e.g. a user toggle). Project copy/format is already 12h AM/PM, so we standardize on that. We can add a preference later if requested.
+Embedding a Unicode font (e.g. via `fontkit` + a TTF) so the PDF could keep glyphs like `→` as-is. That would balloon the bundle and is unnecessary — the report is clinical text, ASCII substitutes are fine.
