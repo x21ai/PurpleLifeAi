@@ -111,7 +111,7 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
 
     // If the invitee already has a Purple account, drop an in-app alert and
     // a push notification so they see the invite the next time they open the
-    // app (in addition to the email above). Best-effort — never throws.
+    // app (in addition to the email above). Best-effort - never throws.
     try {
       const { data: inviterProfile } = await supabaseAdmin
         .from("profiles")
