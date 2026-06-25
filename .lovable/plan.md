@@ -1,45 +1,35 @@
-## Goal
-1. Show correct Steps and Stress values on Today / Vitals (and Score Snapshot consumers).
-2. Stop showing fabricated demo numbers to brand-new accounts — fresh users should see zeros/empty state, not "8,200 steps / 82 readiness" labelled "Demo".
+## Problem
+The "You had <med> at <time>" catch-up card on Today re-appears after you tap **I took it** / **I missed it** and navigate away and back.
 
-## Findings
+## Root cause
+`src/components/today/missed-dose-catchup.tsx` finds doses by querying `medication_doses` where `status = 'pending'` AND there is no row in `notification_delivery_log` with a `fired_at` for that dose. When you act on the card, it does either:
+- `update({ status: 'taken', taken_at: now })`, or
+- `update({ status: 'skipped' })` — **no `skipped_at`/`updated_at` written**.
 
-**Stress is wrong because of the Oura mapping.** In `supabase/functions/oura-sync/index.ts` we store
-`oura_stress_score = daily_stress.stress_high`. Oura's `stress_high` is **seconds spent in high-stress** (e.g. `7200` = 2 h), not a 0-100 score. The Vitals tile then renders it raw, so the user sees a 4-5 digit number where they expect a score/level.
+On return to Today the component remounts and re-runs the query. It should exclude the dose because `status != 'pending'`. The most likely reasons it still re-appears in your case:
 
-**Steps** itself looks correctly mapped (`activity.steps`, daily total). The "wrong value" symptom is most likely either (a) the snapshot picks the latest non-null row across all biometric sources (Oura/Whoop/Apple Health) so a partial-day or duplicate-source row wins, or (b) it's the same demo fallback issue (issue 2) — `5,511` / `8,200` from the demo block. We will confirm with a quick read against `biometrics` for the affected user before changing the steps logic; the plan only commits to a safe normalization if a real bug is confirmed.
+1. There are several past pending doses in the 24h–1h window; acting on one only removes that one from local state, the next-oldest immediately takes its place and looks like "the same reminder" (same med name, same wording).
+2. The `dismiss` ("Not now") flag is `sessionStorage`-scoped, so closing the tab or a hard refresh wipes it and the card returns.
+3. The card doesn't optimistically suppress the dose before the DB write resolves, so a slow round-trip + quick navigation can let the next render re-query and re-include it.
 
-**Demo data on new accounts.** `src/components/today/today-vitals.tsx` and `src/routes/_app/vitals.tsx` substitute a `DEMO` snapshot whenever `snap.hasData === false`. Per project rule "when real data is absent, show demo data clearly labeled as demo", demo is allowed on marketing/preview surfaces but the user wants a true empty state for their own signed-in account when they have not connected anything yet.
+## Fix (UI/presentation only)
 
-## Changes
+Edit `src/components/today/missed-dose-catchup.tsx`:
 
-### 1. Fix Oura stress mapping
-In `supabase/functions/oura-sync/index.ts`:
-- Stop writing seconds into `oura_stress_score`.
-- Store a 0-100 daytime-stress score derived from Oura's `daily_stress` summary:
-  - `day_summary === "restored"` → 90
-  - `"normal"` → 70
-  - `"stressful"` → 40
-  - else: scale from `stress_high` seconds (cap at 4 h) into a 0-100 inverted score.
-- Also expose the underlying seconds in `extra.daily_stress.stress_high_seconds` (already there via `extra`).
-- Backfill: one-shot UPDATE to recompute `oura_stress_score` for existing rows where the value is `> 100` (clearly seconds, not score).
+1. **Persist per-dose dismissals** in `localStorage` (not just `sessionStorage`), keyed by dose id with a 48h TTL:
+   - Key: `purple-dose-catchup-acted` → `{ [doseId]: expiresAtMs }`.
+   - On mount, prune expired entries.
+   - Filter the fetched `silent` list to exclude any dose id present in this map.
+2. **Record the dose id immediately** when the user taps **I took it** or **I missed it** (before the Supabase update resolves), so a fast navigation can't bring it back.
+3. **Move "Not now" dismissal to the same `localStorage` map** as a single sentinel (`__all__` with 12h TTL) instead of `sessionStorage`, so a refresh respects it.
+4. **Mirror Today's-doses behavior** by also calling `cancelDoseReminder(doseId)` after a successful `taken`/`skipped` update (already exported from `@/lib/med-notifications`) so any service-worker notification for that dose is closed too.
+5. Keep all copy, layout, icon, spacing, and tokens exactly as today (no visual changes). Works the same on mobile, tablet, and desktop since the card is fluid.
 
-### 2. Steps display sanity-check
-- Add a quick verify step (read latest 10 `biometrics` rows for the test account) to confirm whether steps mismatch is real.
-- If real: change `getScoreSnapshot.steps` in `src/lib/health-scores.functions.ts` to prefer the **max** `steps` value within the most recent day (UTC) instead of just "latest non-null row", so a partial intraday Apple Health row never overrides Oura's full-day total.
-- If not real, skip this sub-change.
-
-### 3. Empty state for fresh accounts (no demo numbers)
-- `src/components/today/today-vitals.tsx`: when `!data.hasData`, render a quiet "Connect a device to see your signals" card with a `Connect` link to `/settings` / integrations — instead of the `DEMO` substitution and `DemoNotice`. Remove the `DEMO` constant usage.
-- `src/routes/_app/vitals.tsx`: when `!snap.hasData`, render every `MetricCard` value as `–` (already the `EMPTY` constant) and replace the "Sample day" tab + sample status labels with "No data yet" + a single "Connect a device" CTA at the top. Drop the hard-coded `"58"`, `"70"`, `"87"`, `"5,511"`, `"27"`, `"58"`, `"42"`, `"5,840"` fallbacks.
-- `DemoBadge` / `DemoNotice` stay in the codebase for public/marketing surfaces; only the signed-in Today and Vitals screens stop using them.
-
-### 4. Verify
-- Build passes.
-- Sign in with a brand-new account → Today "Your signals" shows the empty-state card, Vitals shows `–` across the board with a Connect CTA, no `Demo` chip.
-- For an account with Oura connected, Stress reads as a 0-100 value (e.g. 70), not 7200.
+## Verify
+- Sign in, open Today with at least one past-pending dose, tap **I took it** → card hides; refresh page → card stays hidden; navigate to Meds and back → card stays hidden.
+- Tap **I missed it** → same behavior.
+- Tap **Not now** → card hides; refresh → still hidden (until TTL expires or a new past-pending dose appears).
+- New past-pending dose tomorrow → card shows again.
 
 ## Out of scope
-- Redesigning the empty/connect state visually beyond a single quiet card + CTA.
-- Touching demo behavior on public marketing routes or `DemoBadge` itself.
-- Whoop/Apple Health stress mapping (Oura is the only source writing `oura_stress_score`).
+The center popup dialog and the inline Today's-doses rows (those already filter by `status='pending'` and update the DB correctly; no reports of them re-popping on this request).
