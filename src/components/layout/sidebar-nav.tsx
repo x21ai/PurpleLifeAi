@@ -148,26 +148,7 @@ export function SidebarNav() {
           collapsed ? "lg:w-16" : "lg:w-64",
         )}
       >
-        <Tooltip delayDuration={150}>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-              className="hidden lg:inline-flex absolute -right-3 top-9 z-40 h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm hover:text-foreground hover:bg-secondary/60 transition-colors"
-            >
-              {collapsed ? (
-                <PanelLeftOpen className="h-3.5 w-3.5" />
-              ) : (
-                <PanelLeftClose className="h-3.5 w-3.5" />
-              )}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            {collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          </TooltipContent>
-        </Tooltip>
-        <div className="flex items-center justify-center lg:justify-start h-20 px-0 lg:px-6 border-b border-border">
+        <div className="flex items-center justify-center lg:justify-start h-14 px-0 lg:px-6 border-b border-border">
           <Link
             to="/today"
             className={cn(
@@ -221,6 +202,27 @@ export function SidebarNav() {
             <PendingInboxBadge variant="full" />
           </div>
         </nav>
+
+        <div className="hidden lg:block border-t border-border">
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-3 text-[13px] text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground",
+              collapsed ? "justify-center" : "justify-start",
+            )}
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="h-4 w-4 shrink-0" />
+            ) : (
+              <>
+                <PanelLeftClose className="h-4 w-4 shrink-0" />
+                <span className="hidden lg:inline">Collapse sidebar</span>
+              </>
+            )}
+          </button>
+        </div>
       </aside>
     </TooltipProvider>
   );
