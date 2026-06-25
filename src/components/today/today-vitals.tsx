@@ -102,7 +102,7 @@ export function TodayVitals() {
         >
           <p className="text-sm text-foreground">Connect a device to see your signals</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Oura, Whoop, or Apple Health — your readings appear here once synced.
+            Oura, Whoop, or Apple Health: your readings appear here once synced.
           </p>
           <span className="mt-3 inline-flex items-center text-xs text-muted-foreground">
             Connect <ChevronRight className="h-3.5 w-3.5" />
