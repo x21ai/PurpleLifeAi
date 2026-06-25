@@ -557,15 +557,40 @@ body::-webkit-scrollbar,
     min-height: 100vh;
     min-height: 100dvh;
   }
+  .dark .metric-canvas {
+    --background: 240 10% 4%;
+    --foreground: 0 0% 96%;
+    --card: 240 6% 10%;
+    --card-foreground: 0 0% 96%;
+    --popover: 240 6% 10%;
+    --popover-foreground: 0 0% 96%;
+    --muted: 240 5% 14%;
+    --muted-foreground: 240 5% 65%;
+    --secondary: 240 5% 14%;
+    --secondary-foreground: 0 0% 96%;
+    --accent: 240 5% 14%;
+    --accent-foreground: 0 0% 96%;
+    --border: 240 5% 18%;
+    --input: 240 5% 18%;
+    background-color: #0a0a0d;
+  }
   .metric-sheet {
     background-color: #ffffff;
     border-radius: 1.75rem;
     box-shadow: 0 1px 0 rgba(10, 10, 15, 0.04);
   }
+  .dark .metric-sheet {
+    background-color: rgba(255, 255, 255, 0.04);
+    box-shadow: none;
+  }
   .metric-card {
     background-color: #ffffff;
     border: 1px solid #eceae4;
     border-radius: 1.25rem;
+  }
+  .dark .metric-card {
+    background-color: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.06);
   }
   .metric-prompt {
     background-color: #ffffff;
@@ -575,6 +600,13 @@ body::-webkit-scrollbar,
   }
   .metric-prompt:hover {
     background-color: #faf8f4;
+  }
+  .dark .metric-prompt {
+    background-color: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .dark .metric-prompt:hover {
+    background-color: rgba(255, 255, 255, 0.06);
   }
   .metric-pill-alert {
     background-color: #fde7ef;
@@ -588,6 +620,9 @@ body::-webkit-scrollbar,
     background-color: #ddf4e7;
     color: #1f8e5a;
   }
+  .dark .metric-pill-alert { background-color: rgba(255, 138, 168, 0.18); color: #ffa8bd; }
+  .dark .metric-pill-warn  { background-color: rgba(235, 196, 110, 0.20); color: #f3d58b; }
+  .dark .metric-pill-good  { background-color: rgba(52, 199, 145, 0.20); color: #5ce0ac; }
   .metric-value-alert {
     color: #e84a8a;
   }
@@ -597,6 +632,9 @@ body::-webkit-scrollbar,
   .metric-value-good {
     color: #1f8e5a;
   }
+  .dark .metric-value-alert { color: #ffa8bd; }
+  .dark .metric-value-warn  { color: #f3d58b; }
+  .dark .metric-value-good  { color: #5ce0ac; }
 
   /* Keyboard focus ring per spec */
   :focus-visible {
