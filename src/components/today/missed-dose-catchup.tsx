@@ -7,6 +7,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { cancelDoseReminder } from "@/lib/med-notifications";
 
 type MissedDose = {
   id: string;
@@ -14,7 +15,44 @@ type MissedDose = {
   medication: { name: string } | null;
 };
 
-const DISMISS_KEY = "purple-dose-catchup-dismissed";
+const ACTED_KEY = "purple-dose-catchup-acted";
+const ALL_SENTINEL = "__all__";
+const DOSE_TTL_MS = 48 * 60 * 60 * 1000; // 48h
+const ALL_TTL_MS = 12 * 60 * 60 * 1000; // 12h
+
+type ActedMap = Record<string, number>;
+
+function readActed(): ActedMap {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(ACTED_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as ActedMap;
+    const now = Date.now();
+    const pruned: ActedMap = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (typeof v === "number" && v > now) pruned[k] = v;
+    }
+    return pruned;
+  } catch {
+    return {};
+  }
+}
+
+function writeActed(map: ActedMap) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(ACTED_KEY, JSON.stringify(map));
+  } catch {
+    /* ignore */
+  }
+}
+
+function rememberDose(doseId: string, ttlMs: number) {
+  const map = readActed();
+  map[doseId] = Date.now() + ttlMs;
+  writeActed(map);
+}
 
 /**
  * Self-healing for silent notification failures: on app open, doses from the
@@ -29,8 +67,9 @@ export function MissedDoseCatchup() {
   const [missed, setMissed] = useState<MissedDose[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return sessionStorage.getItem(DISMISS_KEY) === "1";
+    const map = readActed();
+    const exp = map[ALL_SENTINEL];
+    return typeof exp === "number" && exp > Date.now();
   });
 
   useEffect(() => {
@@ -59,8 +98,9 @@ export function MissedDoseCatchup() {
       ]);
       if (cancelled) return;
       const firedDoseIds = new Set((logRows ?? []).map((r) => r.dose_id));
+      const acted = readActed();
       const silent = ((doses ?? []) as unknown as MissedDose[]).filter(
-        (d) => !firedDoseIds.has(d.id),
+        (d) => !firedDoseIds.has(d.id) && !(d.id in acted),
       );
       setMissed(silent);
     })();
@@ -77,6 +117,9 @@ export function MissedDoseCatchup() {
 
   const act = async (doseId: string, status: "taken" | "skipped") => {
     setBusy(doseId);
+    // Optimistically suppress so navigation/refresh can't bring it back.
+    rememberDose(doseId, DOSE_TTL_MS);
+    setMissed((prev) => prev.filter((d) => d.id !== doseId));
     const { error } = await supabase
       .from("medication_doses")
       .update(status === "taken" ? { status, taken_at: new Date().toISOString() } : { status })
@@ -87,16 +130,12 @@ export function MissedDoseCatchup() {
       toast.error(t("doseCatchup.updateFailed"));
       return;
     }
-    setMissed((prev) => prev.filter((d) => d.id !== doseId));
+    void cancelDoseReminder(doseId);
   };
 
   const dismiss = () => {
     setDismissed(true);
-    try {
-      sessionStorage.setItem(DISMISS_KEY, "1");
-    } catch {
-      /* ignore */
-    }
+    rememberDose(ALL_SENTINEL, ALL_TTL_MS);
   };
 
   return (
