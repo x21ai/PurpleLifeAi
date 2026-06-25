@@ -343,8 +343,12 @@ function SignInPage() {
                         inputMode="email"
                         placeholder="you@example.com" // live-data-guard:allow (input placeholder, not stored data)
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="h-14 text-lg font-serif rounded-xl"
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          if (status === "error") { setStatus("idle"); setErrorMsg(null); }
+                        }}
+                        aria-invalid={status === "error"}
+                        className={`h-14 text-lg font-serif rounded-xl ${status === "error" ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         disabled={status === "submitting"}
                       />
                       <label htmlFor="password" className="label-eyebrow block pt-1">
@@ -357,8 +361,12 @@ function SignInPage() {
                         autoComplete={mode === "signin" ? "current-password" : "new-password"}
                         placeholder={mode === "register" ? t("signIn.passwordPlaceholderNew") : t("signIn.passwordPlaceholderSignIn")}
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="h-14 text-lg font-serif rounded-xl"
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (status === "error") { setStatus("idle"); setErrorMsg(null); }
+                        }}
+                        aria-invalid={status === "error"}
+                        className={`h-14 text-lg font-serif rounded-xl ${status === "error" ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         disabled={status === "submitting"}
                       />
                       {mode === "register" && (
