@@ -4,6 +4,7 @@ import {
   Sparkles, Info, UserCircle, Dna,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { MetricKey } from "@/lib/biometric-metrics";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -129,24 +130,24 @@ function MyHealthPage() {
       {/* Sections */}
       {real ? (
         <section className="mt-16 divide-y divide-border/60">
-          <SectionRow icon={Moon} name="Sleep Health" status="good"
+          <SectionRow icon={Moon} name="Sleep Health" status="good" metric="sleep_score"
             sub={snap?.sleepScore != null ? `Latest sleep score: ${Math.round(snap.sleepScore)}` : "No sleep data yet"} />
-          <SectionRow icon={Waves} name="Stress Management" status="good"
+          <SectionRow icon={Waves} name="Stress Management" status="good" metric="stress"
             sub={snap?.stress != null ? `Latest stress score: ${Math.round(snap.stress)}` : "No stress data yet"} />
-          <SectionRow icon={Heart} name="Heart Health" status="good"
+          <SectionRow icon={Heart} name="Heart Health" status="good" metric="resting_hr"
             sub={snap?.restingHr != null ? `Resting heart rate: ${Math.round(snap.restingHr)} bpm` : "No heart data yet"} />
-          <SectionRow icon={Activity} name="Activity" status="good"
+          <SectionRow icon={Activity} name="Activity" status="good" metric="steps"
             sub={snap?.stepsAvg30 != null ? `Step average: ${steps(snap.stepsAvg30)} / day` : "No activity data yet"} />
-          <SectionRow icon={Clock} name="Readiness" status="good"
+          <SectionRow icon={Clock} name="Readiness" status="good" metric="readiness"
             sub={snap?.readiness != null ? `Latest readiness: ${Math.round(snap.readiness)}` : "No readiness data yet"} />
         </section>
       ) : (
         <section className="mt-16 divide-y divide-border/60">
-          <SectionRow icon={Moon} name="Sleep Health" status="good" sub="Typical sleep score: 70" />
-          <SectionRow icon={Waves} name="Stress Management" status="thriving" sub="Cumulative Stress: Low" />
-          <SectionRow icon={Heart} name="Heart Health" status="good" sub="Cardiovascular Age: 2.5 years older" />
-          <SectionRow icon={Activity} name="Activity" status="thriving" sub="Step average: 5,511 / day" />
-          <SectionRow icon={Clock} name="Sleep Regularity" status="attention" sub="Bedtime varies ±1h 20m" />
+          <SectionRow icon={Moon} name="Sleep Health" status="good" metric="sleep_score" sub="Typical sleep score: 70" />
+          <SectionRow icon={Waves} name="Stress Management" status="thriving" metric="stress" sub="Cumulative Stress: Low" />
+          <SectionRow icon={Heart} name="Heart Health" status="good" metric="resting_hr" sub="Cardiovascular Age: 2.5 years older" />
+          <SectionRow icon={Activity} name="Activity" status="thriving" metric="steps" sub="Step average: 5,511 / day" />
+          <SectionRow icon={Clock} name="Sleep Regularity" status="attention" metric="sleep_efficiency" sub="Bedtime varies ±1h 20m" />
         </section>
       )}
 
@@ -239,14 +240,16 @@ function SectionRow({
   name,
   status,
   sub,
+  metric,
 }: {
   icon: LucideIcon;
   name: string;
   status: Status;
   sub: string;
+  metric?: MetricKey;
 }) {
-  return (
-    <button type="button" className="w-full flex items-center gap-4 py-5 text-left hover:bg-secondary/30 transition rounded-md px-2 -mx-2">
+  const content = (
+    <>
       <div className={`h-12 w-12 grid place-items-center rounded-full bg-gradient-to-br ${STATUS_GRAD[status]}`}>
         <Icon className="h-5 w-5 text-foreground" />
       </div>
@@ -258,6 +261,20 @@ function SectionRow({
         <p className="mt-1 text-[13px] text-muted-foreground">{sub}</p>
       </div>
       <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+    </>
+  );
+  const className =
+    "w-full flex items-center gap-4 py-5 text-left hover:bg-secondary/30 transition rounded-md px-2 -mx-2";
+  if (metric) {
+    return (
+      <Link to="/biometrics/$metric" params={{ metric }} className={className}>
+        {content}
+      </Link>
+    );
+  }
+  return (
+    <button type="button" className={className}>
+      {content}
     </button>
   );
 }
