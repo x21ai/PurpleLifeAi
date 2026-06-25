@@ -14,6 +14,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { startAlarmLoop, type AlarmSoundId, DEFAULT_ALARM_SOUND } from "@/lib/alarm-sounds";
 import { formatLocaleTime } from "@/lib/utils";
+import { cancelDoseReminder } from "@/lib/med-notifications";
 
 type CriticalDose = {
   id: string;
@@ -97,6 +98,7 @@ export function ReminderAlarmSheet() {
           .from("medication_doses")
           .update({ status: "taken", taken_at: new Date().toISOString() })
           .eq("id", dose.id);
+        void cancelDoseReminder(dose.id);
         // Pill stock is decremented automatically by the
         // trg_medication_doses_pill_stock DB trigger.
         toast.success("Marked taken");
