@@ -347,6 +347,11 @@ export function EntryCard({ entry }: { entry: Entry }) {
           ))}
         </div>
       )}
+      {loggedChips.length > 0 && (
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Logged to your tools: {loggedChips.join(" · ")}
+        </p>
+      )}
         </>
       )}
 
