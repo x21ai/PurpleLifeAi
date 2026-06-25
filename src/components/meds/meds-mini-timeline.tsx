@@ -18,13 +18,34 @@ function startOfDay(d = new Date()) {
   return x;
 }
 
-function dotStyle(status: string): string {
-  switch (status) {
-    case "taken": return "bg-[color:var(--success,theme(colors.green.500))] ring-[color:var(--success,theme(colors.green.500))]/30";
-    case "missed": return "bg-destructive ring-destructive/30";
-    case "skipped": return "bg-muted-foreground/60 ring-muted-foreground/20";
-    default: return "bg-primary ring-primary/30";
-  }
+// Palette of distinguishable medication colors (used for the dot fill).
+const MED_PALETTE = [
+  "#10b981", // emerald
+  "#38bdf8", // sky
+  "#a78bfa", // violet
+  "#f59e0b", // amber
+  "#fb7185", // rose
+  "#2dd4bf", // teal
+  "#f472b6", // pink
+  "#facc15", // yellow
+];
+
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function colorForMed(name: string): string {
+  return MED_PALETTE[hashString(name) % MED_PALETTE.length];
+}
+
+function formatTime(d: Date): string {
+  const h = d.getHours();
+  const m = d.getMinutes();
+  const am = h < 12;
+  const hh = ((h + 11) % 12) + 1;
+  return m === 0 ? `${hh}${am ? "a" : "p"}` : `${hh}:${String(m).padStart(2, "0")}${am ? "a" : "p"}`;
 }
 
 /**
@@ -70,6 +91,36 @@ export function MedsMiniTimeline({ className }: { className?: string }) {
 
   const doses = q.data ?? [];
   const nowPct = ((now.getTime() - dayStart.getTime()) / 86400000) * 100;
+
+  // Cluster doses within ~15 min into a single group at the same x position.
+  type Group = { key: string; time: number; items: DoseRow[] };
+  const groups = React.useMemo<Group[]>(() => {
+    const WINDOW_MS = 15 * 60 * 1000;
+    const sorted = [...doses].sort(
+      (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime(),
+    );
+    const out: Group[] = [];
+    for (const d of sorted) {
+      const t = new Date(d.scheduled_at).getTime();
+      const last = out[out.length - 1];
+      if (last && Math.abs(t - last.time) <= WINDOW_MS) {
+        last.items.push(d);
+      } else {
+        out.push({ key: d.id, time: t, items: [d] });
+      }
+    }
+    return out;
+  }, [doses]);
+
+  const uniqueMeds = React.useMemo(() => {
+    const seen = new Set<string>();
+    for (const d of doses) {
+      const n = d.medication?.name;
+      if (n) seen.add(n);
+    }
+    return Array.from(seen);
+  }, [doses]);
+
   const counts = React.useMemo(() => {
     let taken = 0, pending = 0, missed = 0;
     for (const d of doses) {
@@ -96,7 +147,7 @@ export function MedsMiniTimeline({ className }: { className?: string }) {
         </div>
       </div>
 
-      <div className="relative h-10">
+      <div className="relative h-14">
         {/* axis */}
         <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-border" />
         {/* hour ticks */}
@@ -113,22 +164,56 @@ export function MedsMiniTimeline({ className }: { className?: string }) {
           style={{ left: `${nowPct}%` }}
           aria-hidden
         />
-        {/* dots */}
-        {doses.map((d) => {
-          const t = new Date(d.scheduled_at).getTime();
-          const pct = Math.min(100, Math.max(0, ((t - dayStart.getTime()) / 86400000) * 100));
-          const tooltip = `${d.medication?.name ?? "Dose"} · ${new Date(d.scheduled_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · ${d.status}`;
+        {/* dose groups */}
+        {groups.map((g) => {
+          const pct = Math.min(100, Math.max(0, ((g.time - dayStart.getTime()) / 86400000) * 100));
+          const label = formatTime(new Date(g.time));
+          const collides = [0, 25, 50, 75, 100].some((p) => Math.abs(p - pct) < 4);
+          const dotSize = 12; // px (h-3 w-3)
+          const gap = 2; // px
+          const totalW = g.items.length * dotSize + Math.max(0, g.items.length - 1) * gap;
           return (
             <div
-              key={d.id}
-              title={tooltip}
-              aria-label={tooltip}
-              className={cn(
-                "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3 w-3 rounded-full ring-4",
-                dotStyle(d.status),
-              )}
+              key={g.key}
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
               style={{ left: `${pct}%` }}
-            />
+              aria-label={`${g.items.map((d) => d.medication?.name ?? "Dose").join(", ")} at ${label}`}
+            >
+              <div className="flex items-center" style={{ gap: `${gap}px`, width: `${totalW}px` }}>
+                {g.items.map((d) => {
+                  const color = colorForMed(d.medication?.name ?? "dose");
+                  const tooltip = `${d.medication?.name ?? "Dose"} · ${label} · ${d.status}`;
+                  const isMissed = d.status === "missed";
+                  const isSkipped = d.status === "skipped";
+                  const isPending = d.status === "pending";
+                  const bg = isMissed
+                    ? "var(--destructive, #ef4444)"
+                    : isSkipped
+                      ? "rgba(148,163,184,0.6)"
+                      : color;
+                  return (
+                    <span
+                      key={d.id}
+                      title={tooltip}
+                      aria-label={tooltip}
+                      className={cn(
+                        "block h-3 w-3 rounded-full ring-4 ring-offset-0",
+                        isPending && "opacity-70",
+                      )}
+                      style={{
+                        backgroundColor: bg,
+                        boxShadow: `0 0 0 4px ${bg}33`,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+              {!collides && (
+                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">
+                  {label}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
@@ -140,6 +225,21 @@ export function MedsMiniTimeline({ className }: { className?: string }) {
         <span>6p</span>
         <span>12a</span>
       </div>
+
+      {uniqueMeds.length > 1 && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-muted-foreground">
+          {uniqueMeds.map((m) => (
+            <span key={m} className="inline-flex items-center gap-1.5">
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: colorForMed(m) }}
+                aria-hidden
+              />
+              <span className="truncate max-w-[10rem]">{m}</span>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
