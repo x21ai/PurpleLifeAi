@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { oauthRedirectUrl } from "@/lib/auth-oauth";
+import { lovable } from "@/integrations/lovable";
 import { isNativeApp } from "@/lib/native";
 import { nativeSignInWithOAuth } from "@/lib/native/oauth";
 import { toast } from "sonner";
@@ -62,11 +61,11 @@ export function SocialSignInButtons({ helper }: { helper?: string } = {}) {
       }
       return;
     }
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: oauthRedirectUrl() },
+    const result = await lovable.auth.signInWithOAuth(provider, {
+      redirect_uri: window.location.origin,
     });
-    if (error) {
+    if (result.redirected) return;
+    if (result.error) {
       setBusy(null);
       toast.error(
         provider === "apple"
@@ -75,7 +74,7 @@ export function SocialSignInButtons({ helper }: { helper?: string } = {}) {
       );
       return;
     }
-    // signInWithOAuth navigates the browser to the provider; nothing else to do.
+    // Session set by lovable wrapper; root onAuthStateChange handles routing.
   };
 
   return (
