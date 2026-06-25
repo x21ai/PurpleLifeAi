@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Pill, CheckCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { cn, formatLocaleTime } from "@/lib/utils";
 import type { TodayDoseRow } from "@/lib/meds-today";
@@ -231,15 +232,31 @@ export function TodayPanel({
           </div>
 
           <ul className="mt-5 divide-y divide-border">
-            {doses.map((d) => (
+            {doses.map((d) => {
+              const outOfStock =
+                d.medication?.pills_remaining != null && d.medication.pills_remaining <= 0;
+              return (
               <li key={d.id} className="flex flex-wrap items-center gap-2 py-3 text-sm">
                 <span className="text-muted-foreground tabular-nums shrink-0">
                   {formatLocaleTime(d.scheduled_at)}
                 </span>
                 <span className="text-foreground truncate flex-1 min-w-0">
                   {d.medication?.name ?? "Medication"}
+                  {outOfStock && (
+                    <span className="ml-2 text-xs text-destructive">{t("meds.outOfStock")}</span>
+                  )}
                 </span>
-                {d.status === "pending" ? (
+                {d.status === "pending" && outOfStock ? (
+                  d.medication?.id ? (
+                    <Link
+                      to="/meds/$medId"
+                      params={{ medId: d.medication.id }}
+                      className="text-xs font-medium text-destructive underline-offset-2 hover:underline shrink-0"
+                    >
+                      Refill to update
+                    </Link>
+                  ) : null
+                ) : d.status === "pending" ? (
                   <div className="flex items-center gap-1.5 shrink-0">
                     <Button
                       size="sm"
@@ -291,7 +308,8 @@ export function TodayPanel({
                   </div>
                 )}
               </li>
-            ))}
+              );
+            })}
           </ul>
         </>
       )}
