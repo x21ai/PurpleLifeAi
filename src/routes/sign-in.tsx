@@ -395,11 +395,6 @@ function SignInPage() {
                           </button>
                         </div>
                       )}
-                      {errorMsg && (
-                        <p className="text-sm text-destructive" role="alert">
-                          {errorMsg}
-                        </p>
-                      )}
                     </form>
                   </TabsContent>
                 </Tabs>
