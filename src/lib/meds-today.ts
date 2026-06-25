@@ -133,9 +133,13 @@ export function formatDoseLocalTime(iso: string, tz: string): string {
 }
 
 function doseSlotKey(d: TodayDoseRow, tz: string): string {
-  const medId = d.medication?.id ?? d.id;
+  // Collapse by visible identity (med name + local time) so duplicate
+  // medication rows with the same name and/or duplicate dose rows from
+  // regenerate races don't show up as multiple lines on the Today list.
+  const name = (d.medication?.name ?? "").trim().toLowerCase();
+  const fallback = d.medication?.id ?? d.id;
   const time = formatDoseLocalTime(d.scheduled_at, tz);
-  return `${medId}|${time}`;
+  return `${name || fallback}|${time}`;
 }
 
 /** Collapse duplicate rows for the same med + local time; prefer taken over pending. */
