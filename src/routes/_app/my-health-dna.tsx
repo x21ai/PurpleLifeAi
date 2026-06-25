@@ -54,7 +54,7 @@ export const Route = createFileRoute("/_app/my-health-dna")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: GatedDnaPage,
+  component: DnaPage,
 });
 
 function DnaPage() {
