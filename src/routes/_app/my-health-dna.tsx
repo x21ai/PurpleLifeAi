@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PlatformFlagGate } from "@/lib/platform-flags";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
@@ -54,16 +54,8 @@ export const Route = createFileRoute("/_app/my-health-dna")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: GatedDnaPage,
+  component: DnaPage,
 });
-
-function GatedDnaPage() {
-  return (
-    <PlatformFlagGate flag="dna" redirectTo="/today">
-      <DnaPage />
-    </PlatformFlagGate>
-  );
-}
 
 function DnaPage() {
   useRouteTheme("dark");
