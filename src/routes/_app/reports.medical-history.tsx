@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "sonner";
 import {
   generateMedicalHistoryReport,
@@ -47,6 +48,13 @@ const PRESETS: Array<{ label: string; days: number }> = [
 
 function ymd(d: Date) {
   return d.toISOString().slice(0, 10);
+}
+
+function parseYmd(s: string): Date | null {
+  if (!s) return null;
+  const [y, m, d] = s.split("-").map((n) => parseInt(n, 10));
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
 }
 
 function MedicalHistoryPage() {
@@ -175,13 +183,23 @@ function MedicalHistoryPage() {
               <Label htmlFor="from" className="text-xs">
                 From
               </Label>
-              <Input id="from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+              <DatePicker
+                id="from"
+                value={parseYmd(from)}
+                onChange={(d) => d && setFrom(ymd(d))}
+                disableFuture
+              />
             </div>
             <div>
               <Label htmlFor="to" className="text-xs">
                 To
               </Label>
-              <Input id="to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+              <DatePicker
+                id="to"
+                value={parseYmd(to)}
+                onChange={(d) => d && setTo(ymd(d))}
+                disableFuture
+              />
             </div>
           </div>
         </div>
