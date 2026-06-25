@@ -291,21 +291,11 @@ function MedsPage() {
     void load();
   };
 
-  // Best-effort pill stock adjustment, mirrors TodayDoses (QA #22).
-  const adjustPills = async (medicationId: string, by: number) => {
-    const { data } = await supabase
-      .from("medications")
-      .select("pills_remaining")
-      .eq("id", medicationId)
-      .maybeSingle();
-    if (data?.pills_remaining == null) return;
-    const next = Math.max(0, (data.pills_remaining as number) - by);
-    await supabase.from("medications").update({ pills_remaining: next }).eq("id", medicationId);
-  };
+  // Pill stock adjustments are handled by the DB trigger
+  // trg_medication_doses_pill_stock on medication_doses.
 
   // Per-dose action for a pending dose: Taken / Snooze / Skip.
   const doseAction = async (id: string, action: "taken" | "skip" | "snooze") => {
-    const dose = todayDoses?.find((d) => d.id === id) ?? null;
     let error: unknown = null;
     if (action === "taken") {
       const res = await supabase
@@ -313,9 +303,6 @@ function MedsPage() {
         .update({ status: "taken", taken_at: new Date().toISOString() })
         .eq("id", id);
       error = res.error;
-      if (!error && dose?.medication?.id && dose.status !== "taken") {
-        await adjustPills(dose.medication.id, 1);
-      }
     } else if (action === "skip") {
       error = (await supabase.from("medication_doses").update({ status: "skipped" }).eq("id", id))
         .error;
@@ -338,7 +325,6 @@ function MedsPage() {
 
   // Retroactive edit: e.g. a missed dose the user actually took.
   const doseReclassify = async (id: string, next: "taken" | "skipped" | "pending") => {
-    const dose = todayDoses?.find((d) => d.id === id) ?? null;
     const { error } = await supabase
       .from("medication_doses")
       .update({ status: next, taken_at: next === "taken" ? new Date().toISOString() : null })
@@ -346,11 +332,6 @@ function MedsPage() {
     if (error) {
       toast.error("Could not update dose");
       return;
-    }
-    if (dose?.medication?.id) {
-      if (next === "taken" && dose.status !== "taken") await adjustPills(dose.medication.id, 1);
-      else if (next !== "taken" && dose.status === "taken")
-        await adjustPills(dose.medication.id, -1);
     }
     toast.success(
       next === "taken"
