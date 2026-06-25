@@ -1,60 +1,45 @@
-## Problem
+## Goal
+1. Show correct Steps and Stress values on Today / Vitals (and Score Snapshot consumers).
+2. Stop showing fabricated demo numbers to brand-new accounts — fresh users should see zeros/empty state, not "8,200 steps / 82 readiness" labelled "Demo".
 
-Two issues are conflated in the report:
+## Findings
 
-1. **Stuck "Stuck, retry"** — A few `journal_entries` rows sit in `status='processing'` forever. Edge logs show the processor hitting an invalid `OPENAI_API_KEY` (used only for embeddings + voice transcription), and any other transient failure leaves rows stuck because nothing sweeps them.
-2. **Entries don't flow into Hydration / Biometrics / Food etc.** — `journal-processor` only writes `ai_summary`, `ai_tags`, `ai_extracted` (jsonb) and auto-creates `seizure_events`. It does **not** insert into `hydration_intake`, `biometrics`, `food_entries`, or `vitals_log`. So a journal note like "drank 500ml water, BP 120/80, ate eggs" never appears in those tools.
+**Stress is wrong because of the Oura mapping.** In `supabase/functions/oura-sync/index.ts` we store
+`oura_stress_score = daily_stress.stress_high`. Oura's `stress_high` is **seconds spent in high-stress** (e.g. `7200` = 2 h), not a 0-100 score. The Vitals tile then renders it raw, so the user sees a 4-5 digit number where they expect a score/level.
 
-## Fix
+**Steps** itself looks correctly mapped (`activity.steps`, daily total). The "wrong value" symptom is most likely either (a) the snapshot picks the latest non-null row across all biometric sources (Oura/Whoop/Apple Health) so a partial-day or duplicate-source row wins, or (b) it's the same demo fallback issue (issue 2) — `5,511` / `8,200` from the demo block. We will confirm with a quick read against `biometrics` for the affected user before changing the steps logic; the plan only commits to a safe normalization if a real bug is confirmed.
 
-### A. Unstick the processor (reliability)
+**Demo data on new accounts.** `src/components/today/today-vitals.tsx` and `src/routes/_app/vitals.tsx` substitute a `DEMO` snapshot whenever `snap.hasData === false`. Per project rule "when real data is absent, show demo data clearly labeled as demo", demo is allowed on marketing/preview surfaces but the user wants a true empty state for their own signed-in account when they have not connected anything yet.
 
-- Make embedding + audio transcription strictly non-fatal: wrap `embedText` and `transcribeAudio` calls so any OpenAI 401/timeout is logged and skipped (no `throw`). Entry still finishes as `processed`.
-- Add a real cleanup: extend the existing `cleanup_stuck_journal_entries()` to run from the existing cron (`/api/public/cron/journal-reprocess`) every minute — anything `processing` for >5 min gets re-invoked once, then flipped to `failed` after a second stale check so the UI's "Retry reading" button surfaces.
-- One-shot reset: mark currently stuck rows (`d3fb50f9…`, `d0138b45…`) as `failed` so the UI offers Retry instead of a permanent spinner.
-- Note for the user: the project's `OPENAI_API_KEY` secret is invalid. Embeddings/voice will stay disabled until it's rotated, but text extraction (Claude/Anthropic) and tool-routing will work fine without it.
+## Changes
 
-### B. Route journal content into the right tools (the real ask)
+### 1. Fix Oura stress mapping
+In `supabase/functions/oura-sync/index.ts`:
+- Stop writing seconds into `oura_stress_score`.
+- Store a 0-100 daytime-stress score derived from Oura's `daily_stress` summary:
+  - `day_summary === "restored"` → 90
+  - `"normal"` → 70
+  - `"stressful"` → 40
+  - else: scale from `stress_high` seconds (cap at 4 h) into a 0-100 inverted score.
+- Also expose the underlying seconds in `extra.daily_stress.stress_high_seconds` (already there via `extra`).
+- Backfill: one-shot UPDATE to recompute `oura_stress_score` for existing rows where the value is `> 100` (clearly seconds, not score).
 
-Extend the Claude tool schema in `journal-processor/index.ts` with a new `extracted.measurements` block, then write to the matching tables with service-role + idempotency keyed on `journal_entry_id`:
+### 2. Steps display sanity-check
+- Add a quick verify step (read latest 10 `biometrics` rows for the test account) to confirm whether steps mismatch is real.
+- If real: change `getScoreSnapshot.steps` in `src/lib/health-scores.functions.ts` to prefer the **max** `steps` value within the most recent day (UTC) instead of just "latest non-null row", so a partial intraday Apple Health row never overrides Oura's full-day total.
+- If not real, skip this sub-change.
 
-| Journal phrase                       | Extracted field                          | Written to        |
-| ------------------------------------ | ---------------------------------------- | ----------------- |
-| "drank 500 ml water", "16 oz coffee" | `hydration[]` `{ volume_ml, kind }`      | `hydration_intake`|
-| "BP 120/80", "HR 72", "weight 70kg", "temp 37.2" | `vitals[]` `{ kind, value, value2?, unit }` | `vitals_log` |
-| "ate eggs and toast", "lunch: salad" | `food[]` `{ name, portion?, consumed_at? }` | `food_entries` |
-| "took 500 mg Keppra"                 | already handled via `event:medication` (no change) | `medication_doses` (existing path) |
-| "felt aura at 3pm"                   | already handled (no change)              | `aura_events`     |
+### 3. Empty state for fresh accounts (no demo numbers)
+- `src/components/today/today-vitals.tsx`: when `!data.hasData`, render a quiet "Connect a device to see your signals" card with a `Connect` link to `/settings` / integrations — instead of the `DEMO` substitution and `DemoNotice`. Remove the `DEMO` constant usage.
+- `src/routes/_app/vitals.tsx`: when `!snap.hasData`, render every `MetricCard` value as `–` (already the `EMPTY` constant) and replace the "Sample day" tab + sample status labels with "No data yet" + a single "Connect a device" CTA at the top. Drop the hard-coded `"58"`, `"70"`, `"87"`, `"5,511"`, `"27"`, `"58"`, `"42"`, `"5,840"` fallbacks.
+- `DemoBadge` / `DemoNotice` stay in the codebase for public/marketing surfaces; only the signed-in Today and Vitals screens stop using them.
 
-Implementation:
-- Add an idempotency strategy: each insert carries `source='journal'` plus `journal_entry_id` (add nullable `journal_entry_id uuid` column where missing — `hydration_intake`, `vitals_log`, `food_entries`). Before writing on a re-run/retry, delete prior rows for that `journal_entry_id` then re-insert (mirrors the seizure/daily_behaviors sweep already in the codebase).
-- All inserts run through the existing service-role `admin` client inside the processor; no RLS or client changes needed.
-- Each tool screen already reads from its own table, so no UI work is needed there — entries will appear automatically. The journal entry card will keep showing the summary; we add a tiny "Logged: 1 hydration · 1 vital · 1 meal" footer line so the user sees the link visually.
-
-### C. Migration (single file)
-
-```
-alter table public.hydration_intake add column if not exists journal_entry_id uuid references public.journal_entries(id) on delete cascade;
-alter table public.vitals_log       add column if not exists journal_entry_id uuid references public.journal_entries(id) on delete cascade;
-alter table public.food_entries     add column if not exists journal_entry_id uuid references public.journal_entries(id) on delete cascade;
-create index if not exists hydration_intake_journal_idx on public.hydration_intake(journal_entry_id);
-create index if not exists vitals_log_journal_idx       on public.vitals_log(journal_entry_id);
-create index if not exists food_entries_journal_idx     on public.food_entries(journal_entry_id);
-```
-
-No new tables, no GRANT changes (columns inherit existing grants).
-
-## Files touched
-
-- `supabase/functions/journal-processor/index.ts` — schema additions, new writers, non-fatal embed/transcribe, idempotent re-runs.
-- `supabase/migrations/<new>.sql` — three `journal_entry_id` columns + indexes.
-- `src/routes/api/public/cron/journal-reprocess.ts` — sweep stuck >5min, retry once, then mark failed.
-- `src/components/journal/entry-card.tsx` — small footer chip showing what got logged (counts only).
+### 4. Verify
+- Build passes.
+- Sign in with a brand-new account → Today "Your signals" shows the empty-state card, Vitals shows `–` across the board with a Connect CTA, no `Demo` chip.
+- For an account with Oura connected, Stress reads as a 0-100 value (e.g. 70), not 7200.
 
 ## Out of scope
-
-- Rotating the OpenAI key (user action, surfaced as a note).
-- Changing how Hydration / Biometrics / Food pages render — they already query their tables.
-- Voice transcription quality (depends on OpenAI key being valid).
-
-Reply "go" to implement, or tell me which parts to drop or expand.
+- Redesigning the empty/connect state visually beyond a single quiet card + CTA.
+- Touching demo behavior on public marketing routes or `DemoBadge` itself.
+- Whoop/Apple Health stress mapping (Oura is the only source writing `oura_stress_score`).

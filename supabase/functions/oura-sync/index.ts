@@ -99,6 +99,24 @@ function byDay<T extends { day?: string }>(items: T[]) {
   return m;
 }
 
+/**
+ * Oura's daily_stress returns `stress_high` as SECONDS spent in high stress,
+ * not a 0-100 score. Convert to a 0-100 daytime stress score so the UI can
+ * render a value comparable to other scores. Prefer the qualitative
+ * `day_summary` when present.
+ */
+function ouraStressScore(st: any): number | null {
+  if (!st) return null;
+  const summary = typeof st.day_summary === "string" ? st.day_summary : null;
+  if (summary === "restored") return 90;
+  if (summary === "normal") return 70;
+  if (summary === "stressful") return 40;
+  const seconds = typeof st.stress_high === "number" ? st.stress_high : null;
+  if (seconds == null) return null;
+  const capped = Math.min(Math.max(seconds, 0), 4 * 3600);
+  return Math.round(100 - (capped / (4 * 3600)) * 100);
+}
+
 async function syncRange(user_id: string, start: string, end: string) {
   const token = await getValidAccessToken(user_id);
   if (!token) throw new Error("No Oura token for user");
@@ -167,7 +185,7 @@ async function syncRange(user_id: string, start: string, end: string) {
       body_temp_deviation_c: sl?.readiness?.temperature_deviation ?? null,
       spo2_pct: sp?.spo2_percentage?.average ?? null,
       oura_readiness_score: rd?.score ?? null,
-      oura_stress_score: st?.stress_high ?? null,
+      oura_stress_score: ouraStressScore(st),
       oura_resilience_level: rs?.level ?? null,
       oura_activity_score: ac?.score ?? null,
       steps: ac?.steps ?? null,
