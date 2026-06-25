@@ -303,8 +303,8 @@ function MedDetail() {
     const amount = doseAmount.trim() ? parseFloat(doseAmount) : null;
     const unit = doseUnit.trim() || null;
     const takenAt = doseStatus === "taken" ? scheduledAt : null;
-    // Note: pill counts are not adjusted for historical edits to avoid
-    // incorrect retroactive decrements; pills_remaining stays user-managed.
+    // Pill counts are adjusted automatically by the DB trigger
+    // trg_medication_doses_pill_stock when a dose enters/leaves 'taken'.
     let error: unknown = null;
     if (editingDose) {
       error = (

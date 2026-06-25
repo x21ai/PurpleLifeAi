@@ -24,20 +24,9 @@ import { DualTime } from "@/components/travel/dual-time";
 
 const PERM_DISMISSED_KEY = "purple-perm-nudge-dismissed";
 
-/**
- * QA #22: decrement (or restore) the pill stock when a dose flips to/from
- * "taken". Best-effort: clamps at 0 and no-ops when stock isn't tracked.
- */
-async function decrementPillCount(medicationId: string, by: number) {
-  const { data, error } = await supabase
-    .from("medications")
-    .select("pills_remaining")
-    .eq("id", medicationId)
-    .maybeSingle();
-  if (error || !data || data.pills_remaining == null) return;
-  const next = Math.max(0, (data.pills_remaining as number) - by);
-  await supabase.from("medications").update({ pills_remaining: next }).eq("id", medicationId);
-}
+// Pill stock decrements/restores are handled in the database via the
+// trg_medication_doses_pill_stock trigger on medication_doses. No client
+// adjustment needed here.
 
 type Dose = {
   id: string;
@@ -161,7 +150,6 @@ export function TodayDoses() {
 
   const runAction = async (id: string, action: "taken" | "skip" | "snooze") => {
     const prev = doses;
-    const dose = doses?.find((d) => d.id === id) ?? null;
     const now = new Date().toISOString();
     setDoses((d) =>
       d?.map((x) => {
@@ -179,10 +167,6 @@ export function TodayDoses() {
         .update({ status: "taken", taken_at: now })
         .eq("id", id);
       error = res.error;
-      // QA #22: decrement pill stock when a scheduled dose is marked taken.
-      if (!error && dose?.medication?.id && (prev?.find((d) => d.id === id)?.status !== "taken")) {
-        await decrementPillCount(dose.medication.id, 1);
-      }
     } else if (action === "skip") {
       const res = await supabase
         .from("medication_doses")
@@ -215,8 +199,6 @@ export function TodayDoses() {
     next: "taken" | "skipped" | "pending",
   ) => {
     const prev = doses;
-    const prevStatus = prev?.find((d) => d.id === id)?.status;
-    const medId = prev?.find((d) => d.id === id)?.medication?.id ?? null;
     setDoses((d) => d?.map((x) => (x.id === id ? { ...x, status: next } : x)) ?? null);
     const update: { status: string; taken_at: string | null } = {
       status: next,
@@ -230,11 +212,6 @@ export function TodayDoses() {
       setDoses(prev);
       toast.error("Could not update dose");
       return;
-    }
-    // QA #22: keep pills_remaining in sync with retroactive edits.
-    if (medId) {
-      if (next === "taken" && prevStatus !== "taken") await decrementPillCount(medId, 1);
-      else if (next !== "taken" && prevStatus === "taken") await decrementPillCount(medId, -1);
     }
     toast.success(
       next === "taken" ? "Marked as taken" : next === "skipped" ? "Marked as skipped" : "Reset to pending",
