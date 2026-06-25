@@ -9,7 +9,6 @@ import { useRouteTheme } from "@/lib/use-route-theme";
 import type { LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getScoreSnapshot, type ScoreSnapshot } from "@/lib/health-scores.functions";
-import { DemoBadge, DemoNotice } from "@/components/common/demo-badge";
 
 export const Route = createFileRoute("/_app/vitals")({
   head: () => ({ meta: [{ title: "Vitals · Purple" }] }),
@@ -56,7 +55,6 @@ function VitalsPage() {
       <div className="mt-8 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <p className="label-eyebrow text-muted-foreground">{t("vitals.eyebrow")}</p>
-          {!real && <DemoBadge />}
         </div>
         <button type="button" aria-label="Edit" className="h-9 w-9 grid place-items-center rounded-full hover:bg-secondary">
           <Pencil className="h-4 w-4 text-muted-foreground" />
@@ -65,33 +63,40 @@ function VitalsPage() {
       <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
         {t("vitals.title1")}<br/>{t("vitals.title2")}
       </h1>
-      {!real && <DemoNotice className="mt-4" />}
+      {!real && (
+        <Link
+          to="/settings"
+          className="mt-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
+          Connect a device to see your readings <ChevronRight className="h-4 w-4" />
+        </Link>
+      )}
 
       {/* Latest reading marker */}
       <div className="mt-10 flex items-center gap-6 border-b border-border/60">
         <span className="pb-3 text-sm text-foreground font-semibold border-b-2 border-[color:var(--purple-primary)] -mb-px">
-          {real ? latestLabel : "Sample day"}
+          {real ? latestLabel : "No data yet"}
         </span>
       </div>
 
       <Section icon={Sparkles} name="Readiness">
-        <MetricCard title="Readiness Score" status={real ? "Latest" : "Pay attention"} band="fair" value={real ? fmt(snap?.readiness) : "58"} />
+        <MetricCard title="Readiness Score" status={real ? "Latest" : "No data"} band="fair" value={real ? fmt(snap?.readiness) : EMPTY} />
         <MetricCard title="Symptom Radar" status="No signs" band="good" value={EMPTY} />
       </Section>
 
       <Section icon={Moon} name="Sleep">
-        <MetricCard title="Sleep Score" status={real ? "Latest" : "Pay attention"} band="fair" value={real ? fmt(snap?.sleepScore) : "70"} />
+        <MetricCard title="Sleep Score" status={real ? "Latest" : "No data"} band="fair" value={real ? fmt(snap?.sleepScore) : EMPTY} />
         <MetricCard title="Body Clock" status="Aligned" band="good" value={EMPTY} />
       </Section>
 
       <Section icon={Activity} name="Activity">
-        <MetricCard title="Activity Score" status={real ? "Latest" : "Optimal"} band="excellent" value={real ? fmt(snap?.activity) : "87"} />
-        <MetricCard title="Steps" status={real ? "Latest" : "Sample"} band="fair" value={real ? fmt(snap?.steps) : "5,511"} />
+        <MetricCard title="Activity Score" status={real ? "Latest" : "No data"} band="excellent" value={real ? fmt(snap?.activity) : EMPTY} />
+        <MetricCard title="Steps" status={real ? "Latest" : "No data"} band="fair" value={real ? fmt(snap?.steps) : EMPTY} />
       </Section>
 
       <Section icon={Waves} name="Stress">
-        <MetricCard title="Daytime Stress" status={real ? "Latest" : "Restored"} band="good" value={real ? fmt(snap?.stress) : EMPTY} />
-        <MetricCard title="SpO₂" status={real ? "Latest" : "Adequate"} band="good" value={real ? fmt(snap?.spo2) : EMPTY} sub={real && snap?.spo2 != null ? "%" : undefined} />
+        <MetricCard title="Daytime Stress" status={real ? "Latest" : "No data"} band="good" value={real ? fmt(snap?.stress) : EMPTY} />
+        <MetricCard title="SpO₂" status={real ? "Latest" : "No data"} band="good" value={real ? fmt(snap?.spo2) : EMPTY} sub={real && snap?.spo2 != null ? "%" : undefined} />
       </Section>
 
       <Section icon={Utensils} name="Metabolic Health">
@@ -124,13 +129,13 @@ function VitalsPage() {
       </section>
 
       <Section icon={Heart} name="Heart Health">
-        <MetricCard title="Cardio Capacity" status={real ? "Latest" : "Sample"} band="fair" value={real ? fmt(snap?.vo2max) : "27"} sub="VO₂max" />
-        <MetricCard title="Resting Heart Rate" status={real ? "Latest" : "Sample"} band="good" value={real ? fmt(snap?.restingHr) : "58"} sub="bpm" />
+        <MetricCard title="Cardio Capacity" status={real ? "Latest" : "No data"} band="fair" value={real ? fmt(snap?.vo2max) : EMPTY} sub="VO₂max" />
+        <MetricCard title="Resting Heart Rate" status={real ? "Latest" : "No data"} band="good" value={real ? fmt(snap?.restingHr) : EMPTY} sub="bpm" />
       </Section>
 
       <Section icon={BarChart3} name="Core Metrics">
-        <MetricCard title="HRV" status={real ? "Latest" : "Sample"} band="good" value={real ? fmt(snap?.hrvMs) : "42"} sub="ms" />
-        <MetricCard title="30-day steps" status={real ? "Average" : "Sample"} band="good" value={real ? fmt(snap?.stepsAvg30) : "5,840"} />
+        <MetricCard title="HRV" status={real ? "Latest" : "No data"} band="good" value={real ? fmt(snap?.hrvMs) : EMPTY} sub="ms" />
+        <MetricCard title="30-day steps" status={real ? "Average" : "No data"} band="good" value={real ? fmt(snap?.stepsAvg30) : EMPTY} />
       </Section>
     </div>
   );
