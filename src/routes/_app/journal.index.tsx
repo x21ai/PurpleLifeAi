@@ -9,6 +9,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { useTranslation } from "react-i18next";
 import { OfflineQueueBanner } from "@/components/journal/offline-queue-banner";
+import { Input } from "@/components/ui/input";
 
 type Entry = Database["public"]["Tables"]["journal_entries"]["Row"];
 
@@ -27,6 +28,10 @@ function JournalPage() {
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
   const [tab, setTab] = React.useState<"active" | "archive">("active");
+  const [fromDate, setFromDate] = React.useState<string>(""); // YYYY-MM-DD
+  const [toDate, setToDate] = React.useState<string>("");
+  const [page, setPage] = React.useState(1);
+  const PAGE_SIZE = 15;
 
   const load = React.useCallback(async () => {
     if (!userId) return;
@@ -96,6 +101,27 @@ function JournalPage() {
 
   const refresh = () => { setRefreshing(true); void load(); };
 
+  // Reset page when filters or tab change
+  React.useEffect(() => { setPage(1); }, [tab, fromDate, toDate]);
+
+  function setPreset(preset: "all" | "7d" | "30d" | "month") {
+    if (preset === "all") { setFromDate(""); setToDate(""); return; }
+    const now = new Date();
+    const toStr = ymd(now);
+    if (preset === "7d") {
+      const f = new Date(now); f.setDate(f.getDate() - 6);
+      setFromDate(ymd(f)); setToDate(toStr);
+    } else if (preset === "30d") {
+      const f = new Date(now); f.setDate(f.getDate() - 29);
+      setFromDate(ymd(f)); setToDate(toStr);
+    } else if (preset === "month") {
+      const f = new Date(now.getFullYear(), now.getMonth(), 1);
+      setFromDate(ymd(f)); setToDate(toStr);
+    }
+  }
+  const hasFilter = !!(fromDate || toDate);
+  const clearFilter = () => { setFromDate(""); setToDate(""); };
+
   return (
     <div
       className="mx-auto max-w-3xl px-4 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-32"
@@ -140,7 +166,7 @@ function JournalPage() {
         </div>
       ) : (
         <>
-          <div className="mb-6 inline-flex rounded-full border border-border bg-secondary/40 p-1 text-sm">
+          <div className="mb-4 inline-flex rounded-full border border-border bg-secondary/40 p-1 text-sm">
             <button
               type="button"
               onClick={() => setTab("active")}
@@ -156,17 +182,150 @@ function JournalPage() {
               {t("journal.tabArchive")}
             </button>
           </div>
+
+          {/* Date filter bar */}
+          <div className="mb-6 rounded-2xl border border-border bg-secondary/30 p-3 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { key: "all" as const, label: "All" },
+                { key: "7d" as const, label: "7 days" },
+                { key: "30d" as const, label: "30 days" },
+                { key: "month" as const, label: "This month" },
+              ].map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => setPreset(p.key)}
+                  className="text-xs px-3 py-1.5 rounded-full bg-background border border-border text-foreground hover:bg-secondary transition"
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <label className="inline-flex items-center gap-1.5">
+                <span>From</span>
+                <Input
+                  type="date"
+                  value={fromDate}
+                  max={toDate || undefined}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="h-8 w-[150px] text-xs"
+                />
+              </label>
+              <label className="inline-flex items-center gap-1.5">
+                <span>To</span>
+                <Input
+                  type="date"
+                  value={toDate}
+                  min={fromDate || undefined}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="h-8 w-[150px] text-xs"
+                />
+              </label>
+              {hasFilter && (
+                <button
+                  type="button"
+                  onClick={clearFilter}
+                  className="text-xs underline-offset-2 hover:underline text-foreground"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+
           {(() => {
-            const visible = entries.filter((e) =>
+            const tabFiltered = entries.filter((e) =>
               tab === "active" ? !e.archived_at : !!e.archived_at,
             );
-            if (visible.length === 0) return <EmptyState archive={tab === "archive"} t={t} />;
+            const fromTs = fromDate ? new Date(fromDate + "T00:00:00").getTime() : null;
+            const toTs = toDate ? new Date(toDate + "T23:59:59.999").getTime() : null;
+            const filtered = tabFiltered.filter((e) => {
+              if (!fromTs && !toTs) return true;
+              const t = new Date(e.captured_at).getTime();
+              if (fromTs && t < fromTs) return false;
+              if (toTs && t > toTs) return false;
+              return true;
+            });
+
+            if (filtered.length === 0) {
+              if (hasFilter) {
+                return (
+                  <div className="text-center py-12 px-6">
+                    <p className="text-sm text-muted-foreground">No entries in this date range.</p>
+                    <button
+                      type="button"
+                      onClick={clearFilter}
+                      className="mt-3 text-sm text-primary hover:underline"
+                    >
+                      Clear filter
+                    </button>
+                  </div>
+                );
+              }
+              return <EmptyState archive={tab === "archive"} t={t} />;
+            }
+
+            const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+            const safePage = Math.min(page, totalPages);
+            const startIdx = (safePage - 1) * PAGE_SIZE;
+            const endIdx = Math.min(startIdx + PAGE_SIZE, filtered.length);
+            const slice = filtered.slice(startIdx, endIdx);
+            const showPagination = filtered.length > PAGE_SIZE;
+            const pageNumbers = compactPages(safePage, totalPages);
+
             return (
-              <div className="space-y-3">
-                {visible.map((e) => (
-                  <EntryCard key={e.id} entry={e} />
-                ))}
-              </div>
+              <>
+                <div className="space-y-3">
+                  {slice.map((e) => (
+                    <EntryCard key={e.id} entry={e} />
+                  ))}
+                </div>
+                {showPagination && (
+                  <div className="mt-6 flex flex-col items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        disabled={safePage === 1}
+                        className="px-3 py-1.5 text-xs rounded-md border border-border bg-secondary/40 hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Prev
+                      </button>
+                      {pageNumbers.map((n, i) =>
+                        n === "…" ? (
+                          <span key={`e-${i}`} className="px-2 text-xs text-muted-foreground">…</span>
+                        ) : (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => setPage(n as number)}
+                            className={`min-w-[2rem] px-2.5 py-1.5 text-xs rounded-md border border-border ${
+                              n === safePage
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-secondary/40 hover:bg-secondary"
+                            }`}
+                          >
+                            {n}
+                          </button>
+                        ),
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={safePage === totalPages}
+                        className="px-3 py-1.5 text-xs rounded-md border border-border bg-secondary/40 hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground tabular-nums">
+                      Showing {startIdx + 1}–{endIdx} of {filtered.length}
+                    </p>
+                  </div>
+                )}
+              </>
             );
           })()}
         </>
