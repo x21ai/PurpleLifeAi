@@ -330,10 +330,10 @@ function overlayChart(
   });
 
   // Min/max labels
-  drawSafeText(c.page, `${formatNum(max}${opts.unit ?? ""}`), {
+  drawSafeText(c.page, `${formatNum(max)}${opts.unit ?? ""}`, {
     x: x0 + w - 54, y: y0 + h - 10, size: 8, font: c.font, color: MUTED,
   });
-  drawSafeText(c.page, `${formatNum(min}${opts.unit ?? ""}`), {
+  drawSafeText(c.page, `${formatNum(min)}${opts.unit ?? ""}`, {
     x: x0 + w - 54, y: y0 + 2, size: 8, font: c.font, color: MUTED,
   });
   drawSafeText(c.page, `${dates[0]} → ${dates[dates.length - 1]}`, {
@@ -353,7 +353,7 @@ function overlayChart(
     drawSafeText(c.page, label, {
       x: lx + 18, y: ly, size: 8, font: c.font, color: TEXT,
     });
-    lx += 24 + c.widthSafe(font, label, 8);
+    lx += 24 + widthSafe(c.font, label, 8);
   });
   if (opts.seizureDates && opts.seizureDates.size > 0) {
     c.page.drawLine({
