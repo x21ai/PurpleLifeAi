@@ -41,6 +41,7 @@ type Dose = {
     dosage: string | null;
     kind: string;
     is_rescue: boolean;
+    pills_remaining: number | null;
   } | null;
 };
 
