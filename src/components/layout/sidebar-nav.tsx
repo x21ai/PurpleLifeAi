@@ -196,7 +196,7 @@ export function SidebarNav() {
           </Link>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-4 px-2 lg:px-3 space-y-0.5" aria-label="Primary">
+        <nav className="flex-1 overflow-y-auto hide-scrollbar py-4 px-2 lg:px-3 space-y-0.5" aria-label="Primary">
           {tree.map((group) =>
             group.children ? (
               <GroupItem
