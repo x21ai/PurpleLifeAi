@@ -167,7 +167,7 @@ async function syncRange(user_id: string, start: string, end: string) {
       body_temp_deviation_c: sl?.readiness?.temperature_deviation ?? null,
       spo2_pct: sp?.spo2_percentage?.average ?? null,
       oura_readiness_score: rd?.score ?? null,
-      oura_stress_score: st?.stress_high ?? null,
+      oura_stress_score: ouraStressScore(st),
       oura_resilience_level: rs?.level ?? null,
       oura_activity_score: ac?.score ?? null,
       steps: ac?.steps ?? null,
