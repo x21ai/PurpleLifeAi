@@ -30,7 +30,7 @@ function drawSafeText(page: PDFPage, text: string, opts: PDFPageDrawTextOptions)
 
 /** Always-safe width measurement. Use this instead of font.widthOfTextAtSize. */
 function widthSafe(font: PDFFont, text: string, size: number): number {
-  return widthSafe(font, safe(text), size);
+  return font.widthOfTextAtSize(safe(text), size);
 }
 
 import type { PatternCard } from "./insights-patterns.functions";
