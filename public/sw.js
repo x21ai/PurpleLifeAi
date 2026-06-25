@@ -66,6 +66,44 @@ async function putDoses(doses) {
   });
 }
 
+// Same as putDoses but preserves the prior `notified` flag for any dose
+// that is already in the store. Prevents re-firing a notification when the
+// app reschedules (e.g. after navigation) while the dose is still pending.
+async function mergeDoses(doses) {
+  const db = await openDb();
+  const existing = await new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, "readonly");
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = () => resolve(req.result ?? []);
+    req.onerror = () => reject(req.error);
+  });
+  const notifiedIds = new Set(existing.filter((d) => d.notified).map((d) => d.doseId));
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, "readwrite");
+    const store = tx.objectStore(STORE);
+    for (const dose of doses) {
+      store.put({ ...dose, notified: notifiedIds.has(dose.doseId) });
+    }
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function closeNotificationsForDose(doseId) {
+  try {
+    const notes = await self.registration.getNotifications();
+    for (const n of notes) {
+      const id = n.data && n.data.doseId;
+      const tag = n.tag || "";
+      if (id === doseId || tag === `med-dose-${doseId}` || tag === `med-dose-${doseId}-late`) {
+        n.close();
+      }
+    }
+  } catch (e) {
+    console.warn("[purple sw] close notifications failed", e);
+  }
+}
+
 async function getAllDoses() {
   const db = await openDb();
   return new Promise((resolve, reject) => {
@@ -242,8 +280,18 @@ self.addEventListener("message", (event) => {
           supabaseUrl: data.supabaseUrl ?? "",
           notified: false,
         }));
-        await putDoses(doses);
+        await mergeDoses(doses);
         startCheckLoop();
+      })(),
+    );
+    return;
+  }
+
+  if (data.type === "CANCEL_DOSE" && data.doseId) {
+    event.waitUntil(
+      (async () => {
+        await removeDose(data.doseId);
+        await closeNotificationsForDose(data.doseId);
       })(),
     );
     return;
