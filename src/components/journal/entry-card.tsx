@@ -135,6 +135,22 @@ export function EntryCard({ entry }: { entry: Entry }) {
     () => cleanAiText((entry.ai_summary ?? "").trim()) ?? "",
     [entry.ai_summary],
   );
+  const extracted = (entry.ai_extracted ?? {}) as {
+    hydration?: unknown[];
+    vitals?: unknown[];
+    food?: unknown[];
+  };
+  const loggedChips = [
+    Array.isArray(extracted.hydration) && extracted.hydration.length
+      ? `${extracted.hydration.length} hydration`
+      : null,
+    Array.isArray(extracted.vitals) && extracted.vitals.length
+      ? `${extracted.vitals.length} vital${extracted.vitals.length === 1 ? "" : "s"}`
+      : null,
+    Array.isArray(extracted.food) && extracted.food.length
+      ? `${extracted.food.length} meal${extracted.food.length === 1 ? "" : "s"}`
+      : null,
+  ].filter(Boolean) as string[];
   const processing = entry.status === "processing";
   const failed = entry.status === "failed";
   // After 5 minutes, a "processing" entry has almost certainly stalled, offer a retry.
@@ -330,6 +346,11 @@ export function EntryCard({ entry }: { entry: Entry }) {
             </span>
           ))}
         </div>
+      )}
+      {loggedChips.length > 0 && (
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Logged to your tools: {loggedChips.join(" · ")}
+        </p>
       )}
         </>
       )}

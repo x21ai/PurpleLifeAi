@@ -1234,6 +1234,7 @@ export type Database = {
           created_by_kind: string
           fat_g: number | null
           id: string
+          journal_entry_id: string | null
           name: string
           note: string | null
           photo_path: string | null
@@ -1253,6 +1254,7 @@ export type Database = {
           created_by_kind?: string
           fat_g?: number | null
           id?: string
+          journal_entry_id?: string | null
           name: string
           note?: string | null
           photo_path?: string | null
@@ -1272,6 +1274,7 @@ export type Database = {
           created_by_kind?: string
           fat_g?: number | null
           id?: string
+          journal_entry_id?: string | null
           name?: string
           note?: string | null
           photo_path?: string | null
@@ -1281,7 +1284,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "food_entries_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       friendships: {
         Row: {
@@ -1369,6 +1380,7 @@ export type Database = {
           created_by_kind: string
           electrolyte_brand: string | null
           id: string
+          journal_entry_id: string | null
           kind: string
           notes: string | null
           sodium_mg: number | null
@@ -1382,6 +1394,7 @@ export type Database = {
           created_by_kind?: string
           electrolyte_brand?: string | null
           id?: string
+          journal_entry_id?: string | null
           kind?: string
           notes?: string | null
           sodium_mg?: number | null
@@ -1395,13 +1408,22 @@ export type Database = {
           created_by_kind?: string
           electrolyte_brand?: string | null
           id?: string
+          journal_entry_id?: string | null
           kind?: string
           notes?: string | null
           sodium_mg?: number | null
           user_id?: string
           volume_ml?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "hydration_intake_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       journal_entries: {
         Row: {
@@ -3015,6 +3037,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          journal_entry_id: string | null
           kind: string
           measured_at: string
           notes: string | null
@@ -3026,6 +3049,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          journal_entry_id?: string | null
           kind: string
           measured_at?: string
           notes?: string | null
@@ -3037,6 +3061,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          journal_entry_id?: string | null
           kind?: string
           measured_at?: string
           notes?: string | null
@@ -3045,7 +3070,15 @@ export type Database = {
           value?: number | null
           value2?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vitals_log_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       whoop_tokens: {
         Row: {
