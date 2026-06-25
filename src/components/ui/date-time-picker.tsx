@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { TimePicker12h } from "@/components/ui/time-picker-12h";
 
 export interface DateTimePickerProps {
   value: Date | null;
@@ -73,15 +74,9 @@ export function DateTimePicker({
           />
         </PopoverContent>
       </Popover>
-      <div className="inline-flex items-center gap-1.5 h-9 rounded-md border border-input bg-background px-2 text-sm">
+      <div className="inline-flex items-center gap-1.5">
         <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-        <input
-          type="time"
-          value={timeStr}
-          onChange={(e) => setTime(e.target.value)}
-          className="bg-transparent outline-none w-[88px] text-foreground"
-          aria-label="Time"
-        />
+        <TimePicker12h value={timeStr} onChange={setTime} aria-label="Time" />
       </div>
       {allowNow && (
         <Button
