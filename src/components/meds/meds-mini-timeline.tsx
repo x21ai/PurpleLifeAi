@@ -91,6 +91,36 @@ export function MedsMiniTimeline({ className }: { className?: string }) {
 
   const doses = q.data ?? [];
   const nowPct = ((now.getTime() - dayStart.getTime()) / 86400000) * 100;
+
+  // Cluster doses within ~15 min into a single group at the same x position.
+  type Group = { key: string; time: number; items: DoseRow[] };
+  const groups = React.useMemo<Group[]>(() => {
+    const WINDOW_MS = 15 * 60 * 1000;
+    const sorted = [...doses].sort(
+      (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime(),
+    );
+    const out: Group[] = [];
+    for (const d of sorted) {
+      const t = new Date(d.scheduled_at).getTime();
+      const last = out[out.length - 1];
+      if (last && Math.abs(t - last.time) <= WINDOW_MS) {
+        last.items.push(d);
+      } else {
+        out.push({ key: d.id, time: t, items: [d] });
+      }
+    }
+    return out;
+  }, [doses]);
+
+  const uniqueMeds = React.useMemo(() => {
+    const seen = new Set<string>();
+    for (const d of doses) {
+      const n = d.medication?.name;
+      if (n) seen.add(n);
+    }
+    return Array.from(seen);
+  }, [doses]);
+
   const counts = React.useMemo(() => {
     let taken = 0, pending = 0, missed = 0;
     for (const d of doses) {
