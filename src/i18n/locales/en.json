@@ -126,6 +126,8 @@
     "noArchived": "No archived medications.",
     "refillSoon": "Refill soon",
     "archived": "Archived",
+    "outOfStock": "Count zero, refill to update",
+    "zeroStock": "Out of stock",
     "asNeeded": "As needed",
     "pills": "Pills",
     "nextToday": "Next today",
