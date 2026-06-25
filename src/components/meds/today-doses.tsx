@@ -19,6 +19,7 @@ import {
   notificationsSupported,
   rearmMedicationNotifications,
   requestPermission,
+  cancelDoseReminder,
 } from "@/lib/med-notifications";
 import { DualTime } from "@/components/travel/dual-time";
 
@@ -185,6 +186,9 @@ export function TodayDoses() {
       setDoses(prev);
       toast.error("Could not update dose");
       return;
+    }
+    if (action === "taken" || action === "skip") {
+      void cancelDoseReminder(id);
     }
     if (action === "snooze") {
       toast.success("Snoozed 10 min");

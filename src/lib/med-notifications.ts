@@ -267,6 +267,32 @@ export async function rearmMedicationNotifications(): Promise<void> {
 }
 
 /**
+ * Tell the SW to drop a dose from its IndexedDB schedule and close any
+ * already-displayed notification for it. Call right after marking a dose
+ * taken/skipped so the local reminder does not pop again.
+ */
+export async function cancelDoseReminder(doseId: string): Promise<void> {
+  if (!notificationsSupported()) return;
+  try {
+    const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+    if (!reg) return;
+    const sw = reg.active ?? reg.waiting ?? reg.installing;
+    sw?.postMessage({ type: "CANCEL_DOSE", doseId });
+    // Also close any visible notification from the page side as a backup.
+    const notes = await reg.getNotifications();
+    for (const n of notes) {
+      const id = (n.data as { doseId?: string } | null)?.doseId;
+      const tag = n.tag || "";
+      if (id === doseId || tag === `med-dose-${doseId}` || tag === `med-dose-${doseId}-late`) {
+        n.close();
+      }
+    }
+  } catch (e) {
+    console.warn("[purple] cancelDoseReminder failed", e);
+  }
+}
+
+/**
  * Load the upcoming scheduled doses for the active user, independent of the
  * web service-worker path. The native shell uses this to feed Capacitor
  * Local Notifications (the SW alarm loop does not run inside a native WebView).
