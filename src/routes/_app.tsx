@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { isOAuthCallbackUrl, waitForOAuthSession } from "@/lib/auth-oauth";
 
 export const Route = createFileRoute("/_app")({
+  ssr: false,
   beforeLoad: async ({ location }) => {
     // Only enforce on the client, SSR/prerender has no session.
     if (typeof window === "undefined") return;
