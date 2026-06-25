@@ -81,6 +81,7 @@ async function mergeDoses(doses) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, "readwrite");
     const store = tx.objectStore(STORE);
+    store.clear();
     for (const dose of doses) {
       store.put({ ...dose, notified: notifiedIds.has(dose.doseId) });
     }
@@ -269,7 +270,6 @@ self.addEventListener("message", (event) => {
   if (data.type === "SCHEDULE_DOSES") {
     event.waitUntil(
       (async () => {
-        await clearDoses();
         const doses = (data.doses ?? []).map((d) => ({
           doseId: d.doseId,
           medicationId: d.medicationId,
