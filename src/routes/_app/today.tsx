@@ -127,7 +127,17 @@ function TodayPage() {
   const [bio, setBio] = useState<Bio | null>(null);
   const [forecast, setForecast] = useState<Forecast | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [focus, setFocus] = useState<"readiness" | "sleep" | "activity">("sleep");
+  const [focus, setFocusState] = useState<"readiness" | "sleep" | "activity">(() => {
+    if (typeof window === "undefined") return "sleep";
+    const saved = window.localStorage.getItem("purple-today-focus");
+    return saved === "readiness" || saved === "sleep" || saved === "activity" ? saved : "sleep";
+  });
+  const setFocus = (next: "readiness" | "sleep" | "activity") => {
+    setFocusState(next);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("purple-today-focus", next);
+    }
+  };
   const [expanded, setExpanded] = useState(false);
   const [announcement, setAnnouncement] = useState<AdminMessage | null>(null);
   const [journalCount, setJournalCount] = useState<number | null>(null);
