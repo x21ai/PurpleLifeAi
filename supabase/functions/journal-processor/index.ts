@@ -118,6 +118,53 @@ const TOOL_SCHEMA = {
           },
           possible_triggers: { type: "array", items: { type: "string" } },
           needs_followup: { type: "boolean" },
+          hydration: {
+            type: "array",
+            description:
+              "Each fluid intake mentioned in the entry. Convert all volumes to milliliters (1 cup ≈ 240ml, 1 oz ≈ 30ml, 1 glass ≈ 250ml). Skip if no fluid intake is mentioned.",
+            items: {
+              type: "object",
+              properties: {
+                volume_ml: { type: "integer", minimum: 1, maximum: 5000 },
+                kind: {
+                  type: "string",
+                  enum: ["water", "electrolyte", "coffee", "tea", "juice", "soda", "alcohol", "other"],
+                },
+              },
+              required: ["volume_ml", "kind"],
+            },
+          },
+          vitals: {
+            type: "array",
+            description:
+              "Each vital sign reading the user explicitly reports (BP, HR, temperature, weight, SpO2, blood glucose). Skip if none are mentioned. Do not infer.",
+            items: {
+              type: "object",
+              properties: {
+                kind: {
+                  type: "string",
+                  enum: ["blood_pressure", "heart_rate", "temperature", "weight", "spo2", "blood_glucose", "respiratory_rate"],
+                },
+                value: { type: "number" },
+                value2: { type: "number", description: "Diastolic value for blood_pressure only." },
+                unit: { type: "string", description: "mmHg, bpm, C, F, kg, lb, %, mg/dL, etc." },
+              },
+              required: ["kind", "value", "unit"],
+            },
+          },
+          food: {
+            type: "array",
+            description:
+              "Each food or meal mentioned. Skip if no food is mentioned.",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                portion: { type: "string" },
+              },
+              required: ["name"],
+            },
+          },
         },
         required: ["needs_followup"],
       },
@@ -207,7 +254,7 @@ function toBase64(bytes: Uint8Array): string {
 }
 
 async function transcribeAudio(url: string): Promise<string> {
-  if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY missing");
+  if (!OPENAI_API_KEY) return "";
   const bytes = await fetchBytes(url);
   const e = extOf(url) || "webm";
   const blob = new Blob([bytes], { type: `audio/${e === "m4a" ? "mp4" : e}` });
@@ -220,8 +267,8 @@ async function transcribeAudio(url: string): Promise<string> {
     body: form,
   });
   if (!r.ok) {
-    const t = await r.text();
-    throw new Error(`whisper ${r.status}: ${t}`);
+    console.error("whisper error", r.status, await r.text());
+    return "";
   }
   const j = await r.json();
   return (j.text || "").trim();
