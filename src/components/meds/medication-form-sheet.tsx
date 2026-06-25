@@ -724,12 +724,11 @@ export function MedicationFormSheet({
                     >
                       <div className="space-y-2">
                         {times.map((time, idx) => (
-                          <div key={`${time}-${idx}`} className="flex items-center gap-2">
-                            <Input
-                              type="time"
+                          <div key={`${time}-${idx}`} className="flex items-center gap-2 flex-wrap">
+                            <TimePicker12h
                               value={time}
-                              onChange={(e) => updateTime(idx, e.target.value)}
-                              className="max-w-[130px]"
+                              onChange={(v) => updateTime(idx, v)}
+                              aria-label={t("meds.form.times")}
                             />
                             <Input
                               type="number"
