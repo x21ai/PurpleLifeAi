@@ -57,14 +57,6 @@ export const Route = createFileRoute("/_app/my-health-dna")({
   component: GatedDnaPage,
 });
 
-function GatedDnaPage() {
-  return (
-    <PlatformFlagGate flag="dna" redirectTo="/today">
-      <DnaPage />
-    </PlatformFlagGate>
-  );
-}
-
 function DnaPage() {
   useRouteTheme("dark");
   const qc = useQueryClient();
