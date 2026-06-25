@@ -41,6 +41,7 @@ type Dose = {
     dosage: string | null;
     kind: string;
     is_rescue: boolean;
+    pills_remaining: number | null;
   } | null;
 };
 
@@ -293,7 +294,10 @@ export function TodayDoses() {
         </div>
       ) : (
         <ul className="mt-4 divide-y divide-border">
-          {doses.map((d) => (
+          {doses.map((d) => {
+            const outOfStock =
+              d.medication?.pills_remaining != null && d.medication.pills_remaining <= 0;
+            return (
             <li key={d.id} className="flex flex-wrap items-center gap-2 py-3 first:pt-0 last:pb-0">
               <span
                 className={cn(
@@ -314,7 +318,15 @@ export function TodayDoses() {
                 <p className="text-sm text-foreground truncate">
                   {d.medication?.name ?? "Medication"}
                 </p>
-                {(() => {
+                {outOfStock ? (
+                  <Link
+                    to="/meds/$medId"
+                    params={{ medId: d.medication!.id }}
+                    className="text-xs text-destructive underline-offset-2 hover:underline"
+                  >
+                    Count zero, refill to update
+                  </Link>
+                ) : (() => {
                   const perDose =
                     d.amount != null
                       ? `${d.amount}${d.unit ? ` ${d.unit}` : ""}`
@@ -337,7 +349,15 @@ export function TodayDoses() {
                   return null;
                 })()}
               </div>
-              {d.status === "pending" ? (
+              {d.status === "pending" && outOfStock ? (
+                <Link
+                  to="/meds/$medId"
+                  params={{ medId: d.medication!.id }}
+                  className="text-xs font-medium text-destructive underline-offset-2 hover:underline shrink-0"
+                >
+                  Refill to update
+                </Link>
+              ) : d.status === "pending" ? (
                 <div className="flex items-center gap-1.5">
                   <Button
                     size="sm"
@@ -394,7 +414,8 @@ export function TodayDoses() {
                 </div>
               )}
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </section>

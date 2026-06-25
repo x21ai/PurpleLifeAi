@@ -746,6 +746,7 @@ function MedRow({
   const { t } = useTranslation();
   const threshold = med.refill_threshold ?? 7;
   const lowStock = med.pills_remaining !== null && med.pills_remaining <= threshold;
+  const outOfStock = med.pills_remaining !== null && med.pills_remaining <= 0;
   const [confirmDelete, setConfirmDelete] = React.useState(false);
 
   const archive = async () => {
@@ -792,7 +793,11 @@ function MedRow({
       >
         <div className="min-w-0 flex-1 flex items-center gap-2">
           <p className="font-serif text-[17px] text-foreground truncate">{med.name}</p>
-          {lowStock && (
+          {outOfStock ? (
+            <span className="rounded-full bg-destructive/15 text-destructive px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide shrink-0">
+              {t("meds.zeroStock")}
+            </span>
+          ) : lowStock && (
             <span className="rounded-full bg-destructive/15 text-destructive px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide shrink-0">
               {t("meds.refillSoon")}
             </span>
@@ -805,7 +810,9 @@ function MedRow({
         </div>
         <p className="text-xs text-muted-foreground shrink-0 tabular-nums text-right max-w-[45%] truncate">
           {medStrength(med) ?? ""}
-          {isFutureDateStr(med.start_date) ? (
+          {outOfStock ? (
+            <> · {t("meds.outOfStock")}</>
+          ) : isFutureDateStr(med.start_date) ? (
             <> · {t("meds.startsShort", { date: formatDateShort(med.start_date!) })}</>
           ) : (
             <>
@@ -825,7 +832,7 @@ function MedRow({
         <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
       </Link>
 
-      {nextDose?.status === "pending" && (
+      {!outOfStock && nextDose?.status === "pending" && (
         <div className="px-5 pb-3 -mt-1">
           <Button
             size="sm"

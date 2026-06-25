@@ -12,6 +12,7 @@ export type TodayDoseRow = {
     dosage: string | null;
     kind: string;
     is_rescue: boolean;
+    pills_remaining: number | null;
   } | null;
 };
 
@@ -182,7 +183,7 @@ export async function ensureTodayDoses(userId: string): Promise<{
   const { data, error } = await supabase
     .from("medication_doses")
     .select(
-      "id, scheduled_at, status, amount, unit, medication:medications(id, name, dosage, kind, is_rescue)",
+      "id, scheduled_at, status, amount, unit, medication:medications(id, name, dosage, kind, is_rescue, pills_remaining)",
     )
     .eq("user_id", userId)
     .gte("scheduled_at", startIso)
@@ -219,7 +220,7 @@ export async function getDoseHistoryByDay(
   const { data, error } = await supabase
     .from("medication_doses")
     .select(
-      "id, scheduled_at, status, amount, unit, medication:medications(id, name, dosage, kind, is_rescue)",
+      "id, scheduled_at, status, amount, unit, medication:medications(id, name, dosage, kind, is_rescue, pills_remaining)",
     )
     .eq("user_id", userId)
     .gte("scheduled_at", start.toISOString())
@@ -281,7 +282,7 @@ export async function getDosesForDate(
   const { data, error } = await supabase
     .from("medication_doses")
     .select(
-      "id, scheduled_at, status, amount, unit, medication:medications(id, name, dosage, kind, is_rescue)",
+      "id, scheduled_at, status, amount, unit, medication:medications(id, name, dosage, kind, is_rescue, pills_remaining)",
     )
     .eq("user_id", userId)
     .gte("scheduled_at", startIso)
