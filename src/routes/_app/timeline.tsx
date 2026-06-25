@@ -379,10 +379,14 @@ function TimelinePage() {
             </Link>
           </div>
         ) : (
-          <ol className="relative border-l border-border pl-6 space-y-5">
+          <ol className="relative space-y-5 pl-12">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-4 top-2 bottom-2 w-px bg-border"
+            />
             {visible.map((r) => (
               <li key={r.id} className="relative">
-                <span className="absolute -left-[31px] top-1.5 grid h-6 w-6 place-items-center rounded-full bg-card border border-border text-primary">
+                <span className="absolute left-4 top-4 -translate-x-1/2 grid h-7 w-7 place-items-center rounded-full bg-card border border-border text-primary shadow-sm ring-4 ring-background">
                   {r.kind === "seizure" && <Zap className="h-3.5 w-3.5" />}
                   {r.kind === "journal" && <BookOpen className="h-3.5 w-3.5" />}
                   {r.kind === "dose" && <Pill className="h-3.5 w-3.5" />}
