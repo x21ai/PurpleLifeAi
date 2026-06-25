@@ -490,6 +490,73 @@ Deno.serve(async (req) => {
       .eq("id", entry_id);
     if (updErr) throw new Error(updErr.message);
 
+    // Route extracted measurements into their tool tables. Idempotent:
+    // re-runs delete rows previously written for this entry, then re-insert.
+    try {
+      const ex = (result.extracted ?? {}) as any;
+      const capturedAt = entry.captured_at || new Date().toISOString();
+
+      // Hydration
+      await admin.from("hydration_intake").delete().eq("journal_entry_id", entry_id);
+      const hydration = Array.isArray(ex.hydration) ? ex.hydration : [];
+      if (hydration.length) {
+        await admin.from("hydration_intake").insert(
+          hydration
+            .filter((h: any) => h && Number(h.volume_ml) > 0)
+            .map((h: any) => ({
+              user_id: entry.user_id,
+              journal_entry_id: entry_id,
+              consumed_at: capturedAt,
+              volume_ml: Math.round(Number(h.volume_ml)),
+              kind: String(h.kind || "water"),
+              created_by_kind: "self",
+              notes: "Logged from journal",
+            })),
+        );
+      }
+
+      // Vitals
+      await admin.from("vitals_log").delete().eq("journal_entry_id", entry_id);
+      const vitals = Array.isArray(ex.vitals) ? ex.vitals : [];
+      if (vitals.length) {
+        await admin.from("vitals_log").insert(
+          vitals
+            .filter((v: any) => v && v.kind && Number.isFinite(Number(v.value)))
+            .map((v: any) => ({
+              user_id: entry.user_id,
+              journal_entry_id: entry_id,
+              measured_at: capturedAt,
+              kind: String(v.kind),
+              value: Number(v.value),
+              value2: Number.isFinite(Number(v.value2)) ? Number(v.value2) : null,
+              unit: v.unit ? String(v.unit) : null,
+              notes: "Logged from journal",
+            })),
+        );
+      }
+
+      // Food
+      await admin.from("food_entries").delete().eq("journal_entry_id", entry_id);
+      const food = Array.isArray(ex.food) ? ex.food : [];
+      if (food.length) {
+        await admin.from("food_entries").insert(
+          food
+            .filter((f: any) => f && f.name)
+            .map((f: any) => ({
+              user_id: entry.user_id,
+              journal_entry_id: entry_id,
+              consumed_at: capturedAt,
+              name: String(f.name),
+              portion: f.portion ? String(f.portion) : null,
+              source: "journal",
+              created_by_kind: "self",
+            })),
+        );
+      }
+    } catch (e) {
+      console.error("tool routing failed", e);
+    }
+
     // Embed into ai_memory for semantic search
     const memoryContent = [
       entry.text || "",
