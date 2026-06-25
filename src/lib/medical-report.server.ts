@@ -1,17 +1,36 @@
-import { PDFDocument, StandardFonts, rgb, PDFPage, PDFFont } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, PDFPage, PDFFont, type PDFPageDrawTextOptions } from "pdf-lib";
 // QA #19: pdf-lib Helvetica is WinAnsi-only. Strip/replace non-encodable chars.
 function safe(input: string): string {
   return (input ?? "")
-    .replace(/[\u2192\u279C\u27A4]/g, "->")
-    .replace(/[\u2190]/g, "<-")
+    .replace(/[\u2192\u279C\u27A4\u2794\u27F6\u21D2]/g, "->")
+    .replace(/[\u2190\u27F5\u21D0]/g, "<-")
+    .replace(/[\u2191]/g, "^")
+    .replace(/[\u2193]/g, "v")
     .replace(/[\u2013\u2014]/g, "-")
     .replace(/[\u2018\u2019]/g, "'")
     .replace(/[\u201C\u201D]/g, '"')
     .replace(/[\u2022]/g, "*")
     .replace(/[\u00A0]/g, " ")
     .replace(/[\u2026]/g, "...")
+    .replace(/[\u2265]/g, ">=")
+    .replace(/[\u2264]/g, "<=")
+    .replace(/[\u2260]/g, "!=")
+    .replace(/[\u2248]/g, "~")
+    .replace(/[\u00D7]/g, "x")
+    .replace(/[\u2713\u2714]/g, "yes")
+    .replace(/[\u2717\u2718]/g, "no")
     // Drop any remaining non-WinAnsi (outside basic latin + latin-1 supplement)
     .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, "");
+}
+
+/** Always-safe drawText. Use this instead of page.drawText. */
+function drawSafeText(page: PDFPage, text: string, opts: PDFPageDrawTextOptions) {
+  page.drawText(safe(text), opts);
+}
+
+/** Always-safe width measurement. Use this instead of font.widthOfTextAtSize. */
+function widthSafe(font: PDFFont, text: string, size: number): number {
+  return font.widthOfTextAtSize(safe(text), size);
 }
 
 import type { PatternCard } from "./insights-patterns.functions";
