@@ -462,7 +462,7 @@ function TodayPage() {
       )}
 
       <section
-        className={`mt-10 grid gap-3 ${
+        className={`mt-10 mb-6 grid gap-3 ${
           showsSeizureFeatures(profile?.conditions) ? "grid-cols-3" : "grid-cols-2"
         }`}
       >
