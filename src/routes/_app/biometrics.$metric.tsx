@@ -13,7 +13,6 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
-import { useRouteTheme } from "@/lib/use-route-theme";
 import {
   METRICS,
   METRIC_ORDER,
@@ -94,7 +93,6 @@ const SOURCE_LABELS: Record<SourceKey, string> = {
 
 function MetricDrillPage() {
   const { t } = useTranslation();
-  useRouteTheme("light");
   const { metric } = useParams({ from: "/_app/biometrics/$metric" });
   const meta = METRICS[metric as MetricKey];
   const { session } = useAuth();
