@@ -18,13 +18,34 @@ function startOfDay(d = new Date()) {
   return x;
 }
 
-function dotStyle(status: string): string {
-  switch (status) {
-    case "taken": return "bg-[color:var(--success,theme(colors.green.500))] ring-[color:var(--success,theme(colors.green.500))]/30";
-    case "missed": return "bg-destructive ring-destructive/30";
-    case "skipped": return "bg-muted-foreground/60 ring-muted-foreground/20";
-    default: return "bg-primary ring-primary/30";
-  }
+// Palette of distinguishable medication colors (used for the dot fill).
+const MED_PALETTE = [
+  "#10b981", // emerald
+  "#38bdf8", // sky
+  "#a78bfa", // violet
+  "#f59e0b", // amber
+  "#fb7185", // rose
+  "#2dd4bf", // teal
+  "#f472b6", // pink
+  "#facc15", // yellow
+];
+
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function colorForMed(name: string): string {
+  return MED_PALETTE[hashString(name) % MED_PALETTE.length];
+}
+
+function formatTime(d: Date): string {
+  const h = d.getHours();
+  const m = d.getMinutes();
+  const am = h < 12;
+  const hh = ((h + 11) % 12) + 1;
+  return m === 0 ? `${hh}${am ? "a" : "p"}` : `${hh}:${String(m).padStart(2, "0")}${am ? "a" : "p"}`;
 }
 
 /**

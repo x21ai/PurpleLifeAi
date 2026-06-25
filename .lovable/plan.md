@@ -1,35 +1,37 @@
-## Problem
-The "You had <med> at <time>" catch-up card on Today re-appears after you tap **I took it** / **I missed it** and navigate away and back.
+## Goal
+Improve `Today's doses` mini timeline so users can:
+1. See each dose's scheduled time directly on the bar (not only via hover tooltip).
+2. See all individual doses when 2+ are scheduled at the same (or very close) time, with distinct colors per medication instead of a single overlapping dot.
 
-## Root cause
-`src/components/today/missed-dose-catchup.tsx` finds doses by querying `medication_doses` where `status = 'pending'` AND there is no row in `notification_delivery_log` with a `fired_at` for that dose. When you act on the card, it does either:
-- `update({ status: 'taken', taken_at: now })`, or
-- `update({ status: 'skipped' })` — **no `skipped_at`/`updated_at` written**.
+## File
+`src/components/meds/meds-mini-timeline.tsx` (presentation only — no backend/data changes)
 
-On return to Today the component remounts and re-runs the query. It should exclude the dose because `status != 'pending'`. The most likely reasons it still re-appears in your case:
+## Changes
 
-1. There are several past pending doses in the 24h–1h window; acting on one only removes that one from local state, the next-oldest immediately takes its place and looks like "the same reminder" (same med name, same wording).
-2. The `dismiss` ("Not now") flag is `sessionStorage`-scoped, so closing the tab or a hard refresh wipes it and the card returns.
-3. The card doesn't optimistically suppress the dose before the DB write resolves, so a slow round-trip + quick navigation can let the next render re-query and re-include it.
+### 1. Per-medication color
+- Build a stable color map from medication name → one of ~6 palette tokens (e.g. emerald, sky, violet, amber, rose, teal) using a small hash so the same med always gets the same color across renders.
+- Keep status semantics: `taken` uses the med color at full opacity, `pending` uses med color with reduced opacity + dashed ring, `missed` overrides to destructive, `skipped` overrides to muted. (Color still encodes the medication; status encodes the visual treatment.)
 
-## Fix (UI/presentation only)
+### 2. Group near-simultaneous doses
+- Cluster doses whose `scheduled_at` falls within a small window (~15 min / ~1% of axis) into one group at the same x position.
+- Render the group as a horizontal row of small dots side-by-side (slightly offset above the axis), one dot per dose, each in its medication color. Single-dose groups render exactly as today.
+- Hover/title on each dot stays as `name · time · status`. Group also gets an `aria-label` listing all meds + the shared time.
 
-Edit `src/components/today/missed-dose-catchup.tsx`:
+### 3. Show the scheduled time on the bar
+- Under (or just above) each dose group, render a tiny time label like `8:00a` in `text-[10px] text-muted-foreground tabular-nums`, centered on the group's x position.
+- Skip the label if it would visually collide with the 6a/12p/6p axis labels (simple distance check against those fixed positions) to avoid clutter.
+- Increase the timeline row height from `h-10` to roughly `h-14` to fit the time labels without overlapping the existing 12a/6a/12p/6p/12a axis row.
 
-1. **Persist per-dose dismissals** in `localStorage` (not just `sessionStorage`), keyed by dose id with a 48h TTL:
-   - Key: `purple-dose-catchup-acted` → `{ [doseId]: expiresAtMs }`.
-   - On mount, prune expired entries.
-   - Filter the fetched `silent` list to exclude any dose id present in this map.
-2. **Record the dose id immediately** when the user taps **I took it** or **I missed it** (before the Supabase update resolves), so a fast navigation can't bring it back.
-3. **Move "Not now" dismissal to the same `localStorage` map** as a single sentinel (`__all__` with 12h TTL) instead of `sessionStorage`, so a refresh respects it.
-4. **Mirror Today's-doses behavior** by also calling `cancelDoseReminder(doseId)` after a successful `taken`/`skipped` update (already exported from `@/lib/med-notifications`) so any service-worker notification for that dose is closed too.
-5. Keep all copy, layout, icon, spacing, and tokens exactly as today (no visual changes). Works the same on mobile, tablet, and desktop since the card is fluid.
-
-## Verify
-- Sign in, open Today with at least one past-pending dose, tap **I took it** → card hides; refresh page → card stays hidden; navigate to Meds and back → card stays hidden.
-- Tap **I missed it** → same behavior.
-- Tap **Not now** → card hides; refresh → still hidden (until TTL expires or a new past-pending dose appears).
-- New past-pending dose tomorrow → card shows again.
+### 4. Legend (small)
+- Below the axis labels, add a compact wrap-row legend: a tiny colored dot + medication name for each med that has a dose today. Hidden when there are 0 or 1 distinct meds.
 
 ## Out of scope
-The center popup dialog and the inline Today's-doses rows (those already filter by `status='pending'` and update the DB correctly; no reports of them re-popping on this request).
+- No changes to data fetching, dose generation, or the Today route layout.
+- No changes to the full Timeline tab.
+- Mobile/tablet/desktop all use the same component; the new labels use clamped font sizes and the cluster offset stays inside the existing card padding.
+
+## Verification
+- Visual check at mobile (375), tablet (768), desktop (1280) that:
+  - Time labels render under each dose without overlapping the hour labels.
+  - Two doses scheduled at the same time appear as two adjacent colored dots, not one.
+  - Each medication keeps a consistent color across reloads.
