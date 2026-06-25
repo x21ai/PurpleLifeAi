@@ -4,7 +4,6 @@ import { ChevronRight } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getScoreSnapshot, type ScoreSnapshot } from "@/lib/health-scores.functions";
-import { DemoNotice } from "@/components/common/demo-badge";
 
 type VitalItem = {
   key: string;
@@ -13,22 +12,6 @@ type VitalItem = {
   unit?: string;
   /** Matching biometrics metric route slug, when one exists. */
   metric?: string;
-};
-
-const DEMO: ScoreSnapshot = {
-  readiness: 82,
-  sleepScore: 79,
-  activity: 74,
-  stress: 1,
-  hrvMs: 58,
-  restingHr: 56,
-  vo2max: 44,
-  spo2: 97,
-  steps: 8200,
-  stepsAvg30: null,
-  stepsAvg60: null,
-  latestAt: null,
-  hasData: false,
 };
 
 function buildItems(s: ScoreSnapshot): VitalItem[] {
@@ -105,10 +88,29 @@ export function TodayVitals() {
     );
   }
 
-  const isDemo = !data.hasData;
-  const snap = isDemo ? DEMO : data;
-  const items = buildItems(snap);
-  if (items.length === 0) return null;
+  const items = buildItems(data);
+
+  if (!data.hasData || items.length === 0) {
+    return (
+      <section className="mt-12 sm:mt-16">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <p className="label-eyebrow text-muted-foreground">Your signals</p>
+        </div>
+        <Link
+          to="/settings"
+          className="block rounded-2xl border border-border bg-card px-4 py-5 hover:bg-secondary/60 transition"
+        >
+          <p className="text-sm text-foreground">Connect a device to see your signals</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Oura, Whoop, or Apple Health — your readings appear here once synced.
+          </p>
+          <span className="mt-3 inline-flex items-center text-xs text-muted-foreground">
+            Connect <ChevronRight className="h-3.5 w-3.5" />
+          </span>
+        </Link>
+      </section>
+    );
+  }
 
   return (
     <section className="mt-12 sm:mt-16">
@@ -121,7 +123,6 @@ export function TodayVitals() {
           View all <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </div>
-      {isDemo && <DemoNotice className="mb-3" />}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {items.map((item) => (
           <VitalTile key={item.key} item={item} />
