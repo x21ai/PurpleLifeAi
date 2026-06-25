@@ -148,7 +148,9 @@ function SignInPage() {
   const handleForgotPassword = async () => {
     setErrorMsg(null);
     if (!email.trim()) {
-      setErrorMsg(t("signIn.enterEmailFirst"));
+      const msg = t("signIn.enterEmailFirst");
+      setErrorMsg(msg);
+      toast.error(msg);
       setStatus("error");
       return;
     }
@@ -158,10 +160,18 @@ function SignInPage() {
     });
     if (error) {
       setErrorMsg(error.message);
+      toast.error(error.message);
       setStatus("error");
       return;
     }
     setStatus("reset-sent");
+  };
+
+  const friendlyAuthError = (msg: string): string => {
+    const m = msg.toLowerCase();
+    if (m.includes("invalid login credentials")) return "Email or password is incorrect.";
+    if (m.includes("email not confirmed")) return "Please confirm your email first.";
+    return msg;
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -175,7 +185,9 @@ function SignInPage() {
         password,
       });
       if (error) {
-        setErrorMsg(error.message);
+        const msg = friendlyAuthError(error.message);
+        setErrorMsg(msg);
+        toast.error(msg);
         setStatus("error");
         return;
       }
@@ -195,7 +207,9 @@ function SignInPage() {
       options: { emailRedirectTo: window.location.origin + "/today" },
     });
     if (error) {
-      setErrorMsg(error.message);
+      const msg = friendlyAuthError(error.message);
+      setErrorMsg(msg);
+      toast.error(msg);
       setStatus("error");
       return;
     }
@@ -329,8 +343,12 @@ function SignInPage() {
                         inputMode="email"
                         placeholder="you@example.com" // live-data-guard:allow (input placeholder, not stored data)
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="h-14 text-lg font-serif rounded-xl"
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          if (status === "error") { setStatus("idle"); setErrorMsg(null); }
+                        }}
+                        aria-invalid={status === "error"}
+                        className={`h-14 text-lg font-serif rounded-xl ${status === "error" ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         disabled={status === "submitting"}
                       />
                       <label htmlFor="password" className="label-eyebrow block pt-1">
@@ -343,8 +361,12 @@ function SignInPage() {
                         autoComplete={mode === "signin" ? "current-password" : "new-password"}
                         placeholder={mode === "register" ? t("signIn.passwordPlaceholderNew") : t("signIn.passwordPlaceholderSignIn")}
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="h-14 text-lg font-serif rounded-xl"
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (status === "error") { setStatus("idle"); setErrorMsg(null); }
+                        }}
+                        aria-invalid={status === "error"}
+                        className={`h-14 text-lg font-serif rounded-xl ${status === "error" ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         disabled={status === "submitting"}
                       />
                       {mode === "register" && (
