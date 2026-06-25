@@ -1,65 +1,47 @@
 ## Problem
-Opening any "My Health" section (Sleep, Stress, Heart, Activity, Readiness) navigates to `/biometrics/$metric`, which uses `MetricShell` → `.metric-canvas`. That surface is hardcoded light (warm white #f4f2ee, white cards, light shadcn token overrides) and the route also forces `useRouteTheme("light")`. Result: app is dark, the drilldown opens light.
+When a medication's `pills_remaining` reaches `0`, the app still:
+1. Generates pending dose rows for the next day via `regenerate_today_pending_doses`
+2. Shows "Next today" or scheduled times in the medication list row
+3. Shows "Taken / Snooze / Skip" action buttons for those doses on Today and Meds pages
 
-## Fix
-Make the metric drilldown theme-aware so it matches the rest of the app.
+The user wants a clear "Count zero — refill to update" indicator instead.
 
-### 1. `src/routes/_app/biometrics.$metric.tsx`
-- Remove `useRouteTheme("light")` so the page no longer forces the document into light mode.
+## Solution
 
-### 2. `src/styles.css` — add `.dark .metric-canvas` overrides
-Keep current light values as the default. Under `.dark`, redeclare the shadcn tokens to dark values matching the rest of the app, and swap the page background:
+### 1. Stop generating doses when stock is depleted
+Update the `regenerate_today_pending_doses` database function to skip medications where `pills_remaining <= 0` (stock is tracked and depleted). This prevents new impossible pending rows from being created.
 
-```css
-.dark .metric-canvas {
-  --background: 240 10% 4%;
-  --foreground: 0 0% 96%;
-  --card: 240 6% 10%;
-  --card-foreground: 0 0% 96%;
-  --popover: 240 6% 10%;
-  --popover-foreground: 0 0% 96%;
-  --muted: 240 5% 14%;
-  --muted-foreground: 240 5% 65%;
-  --secondary: 240 5% 14%;
-  --secondary-foreground: 0 0% 96%;
-  --accent: 240 5% 14%;
-  --accent-foreground: 0 0% 96%;
-  --border: 240 5% 18%;
-  --input: 240 5% 18%;
-  background-color: #0a0a0d;
-}
-.dark .metric-sheet {
-  background-color: rgba(255, 255, 255, 0.04);
-  box-shadow: none;
-}
-.dark .metric-card {
-  background-color: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.06);
-}
-.dark .metric-prompt {
-  background-color: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-.dark .metric-prompt:hover {
-  background-color: rgba(255, 255, 255, 0.06);
-}
-.dark .metric-pill-alert { background-color: rgba(255, 138, 168, 0.18); color: #ffa8bd; }
-.dark .metric-pill-warn  { background-color: rgba(235, 196, 110, 0.20); color: #f3d58b; }
-.dark .metric-pill-good  { background-color: rgba(52, 199, 145, 0.20); color: #5ce0ac; }
-.dark .metric-value-alert { color: #ffa8bd; }
-.dark .metric-value-warn  { color: #f3d58b; }
-.dark .metric-value-good  { color: #5ce0ac; }
-```
+**File:** `supabase/migrations/...` (new migration)
 
-Update the comment above `.metric-canvas` to note it's now theme-aware.
+### 2. Med list row — replace schedule with out-of-stock message
+In `src/routes/_app/meds.tsx` (`MedRow`), when `med.pills_remaining === 0`:
+- Replace the "Next today …" or schedule-times line with a muted "Count zero — refill to update" message
+- Hide the inline "Mark taken" quick-action button for that medication
+- Keep the row tappable so the user can still open the detail page to update the count
 
-## Out of scope
-- No layout or component changes; only theming.
-- `.report-canvas` already handles dark — untouched.
-- DNA / conditions detail pages — untouched unless a similar issue is reported.
+### 3. Today doses — add out-of-stock indicator
+In `src/components/meds/today-doses.tsx`:
+- Include `pills_remaining` in the medication data fetched with doses
+- For doses belonging to a med with `pills_remaining === 0`:
+  - Show an "Out of stock" label next to the medication name
+  - Disable or hide the "Taken" and "Snooze" buttons (only "Skip" remains relevant)
 
-## Verification
-Across mobile (375), tablet (768), desktop (1280):
-- In dark mode, open My Health → tap each row (Sleep, Stress, Heart, Activity, Readiness/Sleep Regularity). Drilldown renders dark: dark background, dark sheet/cards, readable text, dark Ask Purple prompts.
-- In light mode, drilldown still looks like the current warm-white design.
-- Toggle theme on the drilldown page: surface flips without a reload.
+### 4. Today panel — add out-of-stock indicator
+In `src/components/meds/today-panel.tsx`:
+- Pass medication stock data into the panel
+- For pending doses with zero stock, show a muted dot and an "Out of stock" tooltip
+
+### 5. i18n
+Add translation keys to `src/i18n/locales/en.json`:
+- `meds.outOfStock`: "Count zero — refill to update"
+- `meds.zeroStock`: "Out of stock"
+
+### 6. Verify
+- TypeScript check passes
+- Existing tests pass
+- Visual check: a med with `pills_remaining = 0` shows the new message on `/meds` and `/today` instead of dose times
+
+## Technical details
+- The `Medication` type in `src/routes/_app/meds.tsx` already includes `pills_remaining: number | null`
+- The `regenerate_today_pending_doses` function iterates `public.medications`; adding `and (pills_remaining is null or pills_remaining > 0)` to the `for med in` query is the minimal DB change
+- For `today-doses.tsx`, the `ensureTodayDoses` helper in `src/lib/meds-today.ts` will need to select `pills_remaining` from the joined `medications` relation
