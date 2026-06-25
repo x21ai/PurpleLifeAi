@@ -109,6 +109,74 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
       console.warn("care-invite email failed (link still available in UI)", err);
     }
 
+    // If the invitee already has a Purple account, drop an in-app alert and
+    // a push notification so they see the invite the next time they open the
+    // app (in addition to the email above). Best-effort — never throws.
+    try {
+      const { data: inviterProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("first_name, last_name, community_display_name")
+        .eq("id", userId)
+        .maybeSingle();
+      const inviterDisplay =
+        inviterProfile?.community_display_name?.trim() ||
+        [inviterProfile?.first_name, inviterProfile?.last_name]
+          .filter(Boolean)
+          .join(" ")
+          .trim() ||
+        "Someone";
+      const roleLabel = ROLE_LABELS[data.role as CareRole] ?? "caregiver";
+
+      // Resolve invitee user_id by email via Auth Admin API.
+      let inviteeId: string | null = null;
+      try {
+        const { data: list } = await supabaseAdmin.auth.admin.listUsers({
+          page: 1,
+          perPage: 200,
+        });
+        const match = list?.users?.find(
+          (u) => (u.email ?? "").toLowerCase() === data.email.toLowerCase(),
+        );
+        inviteeId = match?.id ?? null;
+      } catch (err) {
+        console.warn("[care-invite] auth lookup failed", err);
+      }
+
+      if (inviteeId) {
+        await supabaseAdmin.from("alerts").insert({
+          user_id: inviteeId,
+          kind: "care_invite",
+          severity: "info",
+          title: `${inviterDisplay} invited you as their ${roleLabel}`,
+          body: "Open Purple to review and accept the invitation.",
+        });
+
+        try {
+          const { data: subs } = await supabaseAdmin
+            .from("push_subscriptions")
+            .select("endpoint, p256dh, auth")
+            .eq("user_id", inviteeId);
+          if (subs && subs.length > 0) {
+            const { sendPushToSubscription } = await import("./push.server");
+            await Promise.all(
+              subs.map((sub) =>
+                sendPushToSubscription(sub, {
+                  title: `${inviterDisplay} invited you on Purple`,
+                  body: `You've been invited as their ${roleLabel}. Tap to accept.`,
+                  url: `/care/accept?token=${invite_token}`,
+                  tag: `care-invite-${rel.id}`,
+                }).catch(() => undefined),
+              ),
+            );
+          }
+        } catch (err) {
+          console.warn("[care-invite] push failed", err);
+        }
+      }
+    } catch (err) {
+      console.warn("[care-invite] in-app notify failed", err);
+    }
+
     return { relationship: rel, invite_token, acceptUrl, emailSent };
   });
 
