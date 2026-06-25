@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, startOfDay, startOfWeek, startOfMonth, startOfYear } from "date-fns";
 import { Zap, BookOpen, Pill, Download, FileText, Copy, Share2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,16 +43,20 @@ type Row = {
   kind: "seizure" | "journal" | "dose";
   title: string;
   body?: string | null;
+  dose?: { id: string; status: string; medName: string } | null;
 };
 
 function TimelinePage() {
   useRouteTheme("light");
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { session } = useAuth();
   const userId = session?.user.id;
   const [range, setRange] = React.useState<Range>("week");
   const [search, setSearch] = React.useState("");
+  const [visibleCount, setVisibleCount] = React.useState(50);
+  const PAGE_SIZE = 50;
   const [customFrom, setCustomFrom] = React.useState<Date>(() => {
     const d = new Date(); d.setDate(d.getDate() - 30); return startOfDay(d);
   });
@@ -94,7 +98,7 @@ function TimelinePage() {
           .gte("scheduled_at", sinceISO)
           .lte("scheduled_at", untilISO)
           .order("scheduled_at", { ascending: false })
-          .limit(200),
+          .limit(1000),
       ]);
       const out: Row[] = [];
       for (const s of seizures ?? []) {
@@ -122,6 +126,7 @@ function TimelinePage() {
           at: d.taken_at ?? d.scheduled_at,
           kind: "dose",
           title: `${name} · ${d.status}`,
+          dose: { id: d.id as string, status: d.status as string, medName: name },
         });
       }
       out.sort((a, b) => +new Date(b.at) - +new Date(a.at));
@@ -135,6 +140,34 @@ function TimelinePage() {
         (r.title + " " + (r.body ?? "")).toLowerCase().includes(q),
       )
     : rows;
+
+  // Reset pagination when range / search changes.
+  React.useEffect(() => { setVisibleCount(PAGE_SIZE); }, [range, sinceISO, untilISO, q]);
+
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = filtered.length > visible.length;
+
+  const updateDose = async (
+    doseId: string,
+    next: "taken" | "skipped" | "pending",
+  ) => {
+    const update: { status: string; taken_at: string | null } = {
+      status: next,
+      taken_at: next === "taken" ? new Date().toISOString() : null,
+    };
+    const { error } = await supabase
+      .from("medication_doses")
+      .update(update)
+      .eq("id", doseId);
+    if (error) {
+      toast.error("Could not update dose");
+      return;
+    }
+    toast.success(
+      next === "taken" ? "Marked as taken" : next === "skipped" ? "Marked as skipped" : "Reset to pending",
+    );
+    queryClient.invalidateQueries({ queryKey: ["timeline", userId] });
+  };
 
   // ---- Exports ----
   const toCSV = (data: Row[]) => {
@@ -331,7 +364,7 @@ function TimelinePage() {
           </div>
         ) : (
           <ol className="relative border-l border-border pl-6 space-y-5">
-            {filtered.map((r) => (
+            {visible.map((r) => (
               <li key={r.id} className="relative">
                 <span className="absolute -left-[31px] top-1.5 grid h-6 w-6 place-items-center rounded-full bg-card border border-border text-primary">
                   {r.kind === "seizure" && <Zap className="h-3.5 w-3.5" />}
@@ -348,10 +381,59 @@ function TimelinePage() {
                   {r.body && (
                     <p className="mt-1 text-sm text-foreground/75 whitespace-pre-wrap">{r.body}</p>
                   )}
+                  {r.dose && r.dose.status !== "taken" && (
+                    <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                      <Button
+                        size="sm"
+                        className="rounded-full h-7 px-3 text-xs"
+                        onClick={() => updateDose(r.dose!.id, "taken")}
+                      >
+                        I took it
+                      </Button>
+                      {r.dose.status !== "skipped" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full h-7 px-3 text-xs"
+                          onClick={() => updateDose(r.dose!.id, "skipped")}
+                        >
+                          Skip
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  {r.dose && r.dose.status === "taken" && (
+                    <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="rounded-full h-7 px-3 text-xs text-muted-foreground"
+                        onClick={() => updateDose(r.dose!.id, "pending")}
+                      >
+                        Undo
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </li>
             ))}
           </ol>
+        )}
+        {hasMore && (
+          <div className="mt-6 flex justify-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+            >
+              Load more ({filtered.length - visible.length} remaining)
+            </Button>
+          </div>
+        )}
+        {!isLoading && filtered.length > 0 && !hasMore && filtered.length > PAGE_SIZE && (
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Showing all {filtered.length} entries
+          </p>
         )}
       </div>
 
