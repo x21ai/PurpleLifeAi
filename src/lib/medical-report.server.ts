@@ -199,7 +199,7 @@ function table(
       const raw = safe(row[col.key] ?? "-");
       const txt = truncate(raw, col.w - 6, c.font, 9);
       const tx = col.align === "right"
-        ? xc + col.w - 6 - c.widthSafe(font, txt, 9)
+        ? xc + col.w - 6 - widthSafe(c.font, txt, 9)
         : xc;
       drawSafeText(c.page, txt, { x: tx, y: c.y + 2, size: 9, font: c.font, color: TEXT });
       xc += col.w;
