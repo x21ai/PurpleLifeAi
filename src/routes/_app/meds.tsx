@@ -29,7 +29,7 @@ import {
   todayStringForTimezone,
   type TodayDoseRow,
 } from "@/lib/meds-today";
-import { scheduleMedications } from "@/lib/med-notifications";
+import { scheduleMedications, cancelDoseReminder } from "@/lib/med-notifications";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 import { toast } from "sonner";
@@ -288,6 +288,7 @@ function MedsPage() {
       return;
     }
     toast.success("All pending doses marked taken");
+    for (const id of ids) void cancelDoseReminder(id);
     void load();
   };
 
@@ -318,6 +319,9 @@ function MedsPage() {
     if (error) {
       toast.error("Could not update dose");
       return;
+    }
+    if (action === "taken" || action === "skip") {
+      void cancelDoseReminder(id);
     }
     if (action === "snooze") toast.success("Snoozed 10 min");
     void load();
