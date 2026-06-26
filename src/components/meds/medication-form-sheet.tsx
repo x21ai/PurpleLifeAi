@@ -118,6 +118,7 @@ export function MedicationFormSheet({
   editingMedId,
   prefill,
   userMedNames = [],
+  intent = "new",
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -126,6 +127,7 @@ export function MedicationFormSheet({
   editingMedId?: string | null;
   prefill?: MedPrefill | null;
   userMedNames?: string[];
+  intent?: "new" | "past";
 }) {
   const { t } = useTranslation();
   const { session } = useAuth();
@@ -155,6 +157,18 @@ export function MedicationFormSheet({
 
   const isRescue = kind === "rescue";
   const isEditing = !!editingMedId;
+  const isPastIntent = intent === "past" && !isEditing;
+  const durationRef = React.useRef<HTMLDivElement | null>(null);
+
+  // When opened in "past" intent, scroll the Duration card into view so the
+  // date fields are the obvious next step.
+  React.useEffect(() => {
+    if (!open || !isPastIntent) return;
+    const id = window.setTimeout(() => {
+      durationRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 250);
+    return () => window.clearTimeout(id);
+  }, [open, isPastIntent]);
 
   const dictSetters = React.useMemo(
     () => ({ setName, setKind, setDosageForm, setDosageAmount, setDosageUnit, setUnitMode }),
@@ -576,6 +590,16 @@ export function MedicationFormSheet({
             disabled={formLoading}
           />
 
+          {isPastIntent && (
+            <div className="mt-4 rounded-xl border border-border bg-secondary/40 px-4 py-3 text-sm text-foreground">
+              <p className="font-medium">Adding a past medication</p>
+              <p className="mt-1 text-muted-foreground text-xs">
+                Set the start and (optional) stop date below to backfill an old prescription.
+                Purple won&apos;t create reminders for dates in the past.
+              </p>
+            </div>
+          )}
+
           {formLoading ? (
             <FormSectionSkeleton />
           ) : (
@@ -685,6 +709,7 @@ export function MedicationFormSheet({
               {!isRescue && (
                 <>
                   <GroupedFormLabel>{t("meds.form.duration")}</GroupedFormLabel>
+                  <div ref={durationRef}>
                   <GroupedFormCard>
                     <GroupedFormRow
                       label={t("meds.form.startDate")}
@@ -707,6 +732,7 @@ export function MedicationFormSheet({
                       />
                     </GroupedFormRow>
                   </GroupedFormCard>
+                  </div>
                 </>
               )}
 

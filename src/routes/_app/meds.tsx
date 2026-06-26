@@ -1,5 +1,6 @@
 import * as React from "react";
-import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { z } from "zod";
 import {
   Plus,
   Pill,
@@ -108,6 +109,7 @@ const KIND_LABEL_KEYS: Record<MedKind, string> = {
 
 export const Route = createFileRoute("/_app/meds")({
   head: () => ({ meta: [{ title: "Meds · Purple" }] }),
+  validateSearch: z.object({ add: z.enum(["new", "past"]).optional() }),
   component: MedsLayout,
 });
 
@@ -171,6 +173,9 @@ function MedsPage() {
   const [scanOpen, setScanOpen] = React.useState(false);
   const [voiceOpen, setVoiceOpen] = React.useState(false);
   const [prefill, setPrefill] = React.useState<MedPrefill | null>(null);
+  const [addIntent, setAddIntent] = React.useState<"new" | "past">("new");
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/meds" });
 
   // Load the doses for the currently viewed day. Today regenerates pending
   // rows; past days are fetched as-is so we never fabricate history.
@@ -398,8 +403,21 @@ function MedsPage() {
   const openAdd = React.useCallback(() => {
     setEditingMedId(null);
     setPrefill(null);
+    setAddIntent("new");
     setOpen(true);
   }, []);
+
+  // Deep-link from Settings → "Add past history" → Old medications.
+  React.useEffect(() => {
+    if (search.add === "past") {
+      setEditingMedId(null);
+      setPrefill(null);
+      setAddIntent("past");
+      setOpen(true);
+      navigate({ search: {}, replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.add]);
 
   // 14-day adherence, surfaced inline in Today's doses (no extra click).
   const [adherence, setAdherence] = React.useState<{
@@ -697,6 +715,7 @@ function MedsPage() {
           if (!v) {
             setEditingMedId(null);
             setPrefill(null);
+            setAddIntent("new");
           }
         }}
         onSaved={load}
@@ -704,6 +723,7 @@ function MedsPage() {
         editingMedId={editingMedId}
         prefill={prefill}
         userMedNames={userMedNames}
+        intent={addIntent}
       />
 
       <ScanMedSheet
