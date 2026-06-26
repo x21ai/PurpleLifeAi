@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
 import { lazy, Suspense } from "react";
-import { Bell, ChevronRight, ExternalLink, Plus, Smartphone, Activity, Watch, Heart, Apple } from "lucide-react";
+import { Bell, ChevronRight, Plus, Smartphone, Activity, Watch, Heart, Apple } from "lucide-react";
 import { SheetPage, SheetCard, SheetSectionLabel } from "@/components/sheet/sheet-page";
 import {
   Dialog,
