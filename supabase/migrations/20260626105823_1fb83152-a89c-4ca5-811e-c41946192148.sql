@@ -1,0 +1,2 @@
+ALTER TABLE public.care_relationships ADD COLUMN IF NOT EXISTS archived_at timestamptz NULL;
+CREATE INDEX IF NOT EXISTS idx_care_rel_archived ON public.care_relationships(owner_id) WHERE archived_at IS NULL;

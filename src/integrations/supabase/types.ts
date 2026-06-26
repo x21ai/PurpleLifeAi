@@ -508,6 +508,7 @@ export type Database = {
       care_relationships: {
         Row: {
           accepted_at: string | null
+          archived_at: string | null
           caregiver_hidden_features: Json
           caregiver_id: string | null
           created_at: string
@@ -524,6 +525,7 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          archived_at?: string | null
           caregiver_hidden_features?: Json
           caregiver_id?: string | null
           created_at?: string
@@ -540,6 +542,7 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          archived_at?: string | null
           caregiver_hidden_features?: Json
           caregiver_id?: string | null
           created_at?: string
