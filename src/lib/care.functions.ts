@@ -182,14 +182,18 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
 
 export const listMyCaregivers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: { archived?: boolean } | undefined) =>
+    z.object({ archived: z.boolean().optional() }).optional().parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     const { userId } = context;
-    const { data: rels, error } = await supabaseAdmin
+    const archived = data?.archived === true;
+    let query = supabaseAdmin
       .from("care_relationships")
       .select("*")
-      .eq("owner_id", userId)
-      .is("archived_at", null)
-      .order("created_at", { ascending: false });
+      .eq("owner_id", userId);
+    query = archived ? query.not("archived_at", "is", null) : query.is("archived_at", null);
+    const { data: rels, error } = await query.order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
     const ids = (rels ?? []).map((r) => r.id);
@@ -204,6 +208,36 @@ export const listMyCaregivers = createServerFn({ method: "GET" })
     }
 
     return { relationships: rels ?? [], scopes };
+  });
+
+export const unarchiveRelationship = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { relationship_id: string }) =>
+    z.object({ relationship_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: rel, error } = await supabaseAdmin
+      .from("care_relationships")
+      .select("id, owner_id")
+      .eq("id", data.relationship_id)
+      .single();
+    if (error || !rel) throw new Error("Relationship not found");
+    if (rel.owner_id !== userId) throw new Error("Forbidden");
+
+    const { error: uErr } = await supabaseAdmin
+      .from("care_relationships")
+      .update({ archived_at: null })
+      .eq("id", data.relationship_id);
+    if (uErr) throw new Error(uErr.message);
+
+    await supabaseAdmin.from("care_audit_log").insert({
+      relationship_id: data.relationship_id,
+      owner_id: userId,
+      actor_id: userId,
+      action: "unarchived",
+    });
+    return { ok: true };
   });
 
 export const listPeopleSharingWithMe = createServerFn({ method: "GET" })
