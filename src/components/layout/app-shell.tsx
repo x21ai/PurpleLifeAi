@@ -15,7 +15,7 @@ export function AppShell() {
       <main
         className={
           "pb-24 md:pb-0 min-h-dvh flex flex-col md:pl-16 " +
-          (collapsed ? "lg:pl-16" : "lg:pl-60")
+          (collapsed ? "lg:pl-16" : "lg:pl-64")
         }
       >
         <TopBar />
