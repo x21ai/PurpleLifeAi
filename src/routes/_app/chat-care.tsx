@@ -305,6 +305,7 @@ function NewChatPicker({ onPicked }: { onPicked: (threadId: string) => void }) {
 }
 
 function CareChatPage() {
+  // placeholder anchor
   useRouteTheme("light");
   const { session } = useAuth();
   const meId = session?.user.id;
