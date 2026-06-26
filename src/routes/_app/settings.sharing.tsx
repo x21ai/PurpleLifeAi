@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { Archive, ArrowLeft, ArrowRight, Copy, Download, Loader2, Mail, MessageCircle, Trash2 } from "lucide-react";
+import { Archive, ArrowLeft, ArrowRight, Copy, Download, Loader2, Mail, MessageCircle, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ import {
   revokeRelationship,
   archiveRelationship,
   deleteRelationship,
+  unarchiveRelationship,
   setScopes,
   setRelationshipLabel,
   exportCareAuditCsv,
@@ -104,6 +105,11 @@ function SharingPage() {
   const fetchPending = useServerFn(listPendingChanges);
 
   const caregivers = useQuery({ queryKey: ["care", "mine"], queryFn: () => fetchMyCaregivers() });
+  const archivedCaregivers = useQuery({
+    queryKey: ["care", "mine", "archived"],
+    queryFn: () => fetchMyCaregivers({ data: { archived: true } }),
+  });
+  const [showArchived, setShowArchived] = useState(false);
   const sharedWithMe = useQuery({ queryKey: ["care", "shared-with-me"], queryFn: () => fetchSharingWithMe() });
   const pending = useQuery({ queryKey: ["care", "pending"], queryFn: () => fetchPending() });
   const { isPro } = useIsPro();
@@ -127,6 +133,7 @@ function SharingPage() {
     mutationFn: (relationship_id: string) => archiveFn({ data: { relationship_id } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["care", "mine"] });
+      qc.invalidateQueries({ queryKey: ["care", "mine", "archived"] });
       toast.success("Removed from your list");
     },
     onError: (e: any) => toast.error(userMessage(e, "Couldn't archive")),
@@ -137,10 +144,24 @@ function SharingPage() {
     mutationFn: (relationship_id: string) => deleteFn({ data: { relationship_id } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["care", "mine"] });
+      qc.invalidateQueries({ queryKey: ["care", "mine", "archived"] });
       toast.success("Caregiver deleted");
     },
     onError: (e: any) => toast.error(userMessage(e, "Couldn't delete")),
   });
+
+  const unarchiveFn = useServerFn(unarchiveRelationship);
+  const unarchiveMut = useMutation({
+    mutationFn: (relationship_id: string) => unarchiveFn({ data: { relationship_id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["care", "mine"] });
+      qc.invalidateQueries({ queryKey: ["care", "mine", "archived"] });
+      toast.success("Restored to your list");
+    },
+    onError: (e: any) => toast.error(userMessage(e, "Couldn't restore")),
+  });
+
+  const archivedRows = archivedCaregivers.data?.relationships ?? [];
 
   const pendingCount = pending.data?.changes.length ?? 0;
 
@@ -304,6 +325,50 @@ function SharingPage() {
               );
             })}
           </ul>
+        )}
+        {archivedRows.length > 0 && (
+          <div className="mt-5 border-t border-border pt-4">
+            <button
+              type="button"
+              onClick={() => setShowArchived((v) => !v)}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              {showArchived ? "Hide" : "Show"} archived ({archivedRows.length})
+            </button>
+            {showArchived && (
+              <ul className="mt-3 divide-y divide-border opacity-90">
+                {archivedRows.map((r) => (
+                  <li key={r.id} className="py-3 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm text-foreground truncate">{r.invite_email}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {ROLE_LABELS[r.role as CareRole]} · Archived
+                        {(r as any).archived_at
+                          ? ` ${new Date((r as any).archived_at).toLocaleDateString()}`
+                          : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Restore"
+                        disabled={unarchiveMut.isPending}
+                        onClick={() => unarchiveMut.mutate(r.id)}
+                      >
+                        <Undo2 className="h-4 w-4" />
+                      </Button>
+                      <DeleteRelationshipButton
+                        email={r.invite_email ?? ""}
+                        onConfirm={() => deleteMut.mutate(r.id)}
+                        disabled={deleteMut.isPending}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
       </section>
 
