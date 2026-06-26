@@ -139,7 +139,7 @@ function ToolsPage() {
       <SheetSectionLabel>Wear and care</SheetSectionLabel>
       <SheetCard className="!p-0">
         <div className="divide-y divide-border/60">
-          <InternalRow to="/how-purple-thinks" title="How Purple thinks" />
+          <InternalRow to="/settings/how-purple-thinks" title="How Purple thinks" />
           <InternalRow to="/privacy" title="Privacy &amp; data" />
           <InternalRow to="/about" title="About Purple" />
         </div>
