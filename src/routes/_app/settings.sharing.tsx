@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, Copy, Download, Loader2, Mail, MessageCircle, Trash2 } from "lucide-react";
+import { Archive, ArrowLeft, ArrowRight, Copy, Download, Loader2, Mail, MessageCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,8 @@ import {
   listPendingChanges,
   listPeopleSharingWithMe,
   revokeRelationship,
+  archiveRelationship,
+  deleteRelationship,
   setScopes,
   setRelationshipLabel,
   exportCareAuditCsv,
@@ -118,6 +120,26 @@ function SharingPage() {
       toast.success("Access revoked");
     },
     onError: (e: any) => toast.error(userMessage(e, "Couldn't revoke")),
+  });
+
+  const archiveFn = useServerFn(archiveRelationship);
+  const archiveMut = useMutation({
+    mutationFn: (relationship_id: string) => archiveFn({ data: { relationship_id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["care", "mine"] });
+      toast.success("Removed from your list");
+    },
+    onError: (e: any) => toast.error(userMessage(e, "Couldn't archive")),
+  });
+
+  const deleteFn = useServerFn(deleteRelationship);
+  const deleteMut = useMutation({
+    mutationFn: (relationship_id: string) => deleteFn({ data: { relationship_id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["care", "mine"] });
+      toast.success("Caregiver deleted");
+    },
+    onError: (e: any) => toast.error(userMessage(e, "Couldn't delete")),
   });
 
   const pendingCount = pending.data?.changes.length ?? 0;
@@ -225,6 +247,24 @@ function SharingPage() {
                           onConfirm={() => revokeMut.mutate(r.id)}
                           disabled={revokeMut.isPending}
                         />
+                      )}
+                      {r.status === "revoked" && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Archive"
+                            disabled={archiveMut.isPending}
+                            onClick={() => archiveMut.mutate(r.id)}
+                          >
+                            <Archive className="h-4 w-4" />
+                          </Button>
+                          <DeleteRelationshipButton
+                            email={r.invite_email ?? ""}
+                            onConfirm={() => deleteMut.mutate(r.id)}
+                            disabled={deleteMut.isPending}
+                          />
+                        </>
                       )}
                     </div>
                   </div>
@@ -379,6 +419,46 @@ function RevokeRelationshipButton({
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             Revoke access
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function DeleteRelationshipButton({
+  email,
+  onConfirm,
+  disabled,
+}: {
+  email: string;
+  onConfirm: () => void;
+  disabled: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => setOpen(true)}>
+        <Trash2 className="h-4 w-4 text-destructive" />
+      </Button>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Permanently delete {email || "this caregiver"}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This removes them from your list for good. Their past activity stays in your audit log.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={disabled}
+            onClick={() => {
+              onConfirm();
+              setOpen(false);
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Delete
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
