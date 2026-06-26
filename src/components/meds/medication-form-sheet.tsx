@@ -118,6 +118,7 @@ export function MedicationFormSheet({
   editingMedId,
   prefill,
   userMedNames = [],
+  intent = "new",
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -126,6 +127,7 @@ export function MedicationFormSheet({
   editingMedId?: string | null;
   prefill?: MedPrefill | null;
   userMedNames?: string[];
+  intent?: "new" | "past";
 }) {
   const { t } = useTranslation();
   const { session } = useAuth();
