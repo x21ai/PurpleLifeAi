@@ -426,6 +426,46 @@ function RevokeRelationshipButton({
   );
 }
 
+function DeleteRelationshipButton({
+  email,
+  onConfirm,
+  disabled,
+}: {
+  email: string;
+  onConfirm: () => void;
+  disabled: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <Button variant="ghost" size="icon" aria-label="Delete" onClick={() => setOpen(true)}>
+        <Trash2 className="h-4 w-4 text-destructive" />
+      </Button>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Permanently delete {email || "this caregiver"}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This removes them from your list for good. Their past activity stays in your audit log.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={disabled}
+            onClick={() => {
+              onConfirm();
+              setOpen(false);
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 /* ----------------- Pause writes switch ----------------- */
 
 function PauseWritesRow({ relationshipId }: { relationshipId: string }) {
