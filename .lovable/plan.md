@@ -1,18 +1,32 @@
-## Fix: Center the Quick Log bar under the caregiver page content
+## Goal
+Let users trigger a wearable sync (Oura + Whoop) from anywhere in the app instead of navigating to Settings/Tools. Apple Health is push-only and stays excluded from the action.
 
-### Problem
-The `QuickLogBar` at the bottom of the caregiver dashboard uses `fixed inset-x-0 bottom-0`, which positions it relative to the full viewport. Because the sidebar pushes the main content area to the right, the bar is visually offset from the page content above it. The bar also uses `max-w-3xl` and `px-4`, while the page content uses `max-w-4xl` and `px-5 sm:px-10 lg:px-16`, so it is both narrower and misaligned.
+## Approach
+Add a compact sync icon-button to the shared `TopBar` (desktop/tablet) and the `MobileTopBar` (mobile) so it shows on every authenticated screen, including Today. Reuses the existing sync logic from `src/components/biometrics/sync-status.tsx` so behavior matches the Settings card exactly.
 
-### Fix
-In `src/routes/_app/care.$ownerId.tsx`, update the `QuickLogBar` component:
+## Changes
 
-1. **Import `useSidebarCollapsedPref`** from `@/components/layout/sidebar-nav`.
-2. **Read the collapse state** inside `QuickLogBar` so the offset matches the sidebar.
-3. **Adjust the fixed positioning**:
-   - Replace `fixed inset-x-0 bottom-0` with `fixed bottom-0 right-0 left-0 md:left-16 lg:left-64` when expanded, and `lg:left-16` when collapsed.
-   - This makes the bar span only the main content area, not the sidebar.
-4. **Match the content width and padding**:
-   - Change the inner container from `mx-auto max-w-3xl px-4` to `mx-auto max-w-4xl px-5 sm:px-10 lg:px-16`.
+1. **New component `src/components/biometrics/header-sync-button.tsx`**
+   - Icon-only button (`RefreshCw`, spins while syncing) sized to fit the 14h header (`h-8 w-8 rounded-full`), with `aria-label="Sync wearable data"` and a tooltip "Sync wearable data".
+   - On mount, checks `oura_tokens` + `whoop_tokens` for the current user. Renders nothing if neither is connected (keeps header clean for users without wearables, matches Apple-restraint preference).
+   - On click: runs the same `Promise.allSettled` over connected providers as `WearableSyncStatus.sync()` (oura-sync edge function + `whoopIncrementalSync` server fn), with the same toast feedback (success / partial / fail, plus the "Apple Health pushes automatically" note when Apple is also connected).
+   - After a successful sync, dispatches a `window` custom event `purple:wearable-synced` so the Today page can refresh its biometrics.
 
-### Verification
-Open a caregiver dashboard on desktop (sidebar expanded). The Quick Log bar should sit perfectly centered under the page content, aligned with the "No biometrics yet" card and the tab row above it.
+2. **`src/components/layout/top-bar.tsx`** (desktop/tablet, ≥ md)
+   - Insert `<HeaderSyncButton />` before `<PendingInboxBadge />` so the action sits left of the inbox/profile cluster.
+
+3. **`src/components/layout/mobile-top-bar.tsx`** (mobile)
+   - Add the same `<HeaderSyncButton />` in the right-side action cluster, sized identically so the header stays balanced on 375px, 768px, and 1024px viewports.
+
+4. **`src/routes/_app/today.tsx`** (light touch)
+   - Listen for `purple:wearable-synced` and call the existing `load()` + bump `syncTick` so the Today scores and sync-status badge refresh immediately when the header button is used. No layout changes.
+
+## Out of scope
+- No changes to the Settings / Tools sync cards (header button is additive).
+- Apple Health push-only behavior unchanged.
+- Pull-to-refresh on Today unchanged.
+
+## Verification
+- Desktop 1440 / tablet 1024 / 768 / mobile 375 (workspace rule: cover all viewports): header shows the sync icon when a wearable is connected, hidden otherwise; clicking spins the icon, fires toast, and Today scores refresh without reload.
+- Confirm header alignment stays right-aligned and doesn't overflow on 375px.
+- Confirm icon disappears on routes still inside `_app` for a user with no wearable tokens.

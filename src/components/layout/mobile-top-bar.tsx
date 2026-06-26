@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { PendingInboxBadge } from "@/components/care/pending-inbox-badge";
 import { CaregiverNavLink } from "./caregiver-nav-link";
 import { ProfileMenu } from "./profile-menu";
+import { HeaderSyncButton } from "@/components/biometrics/header-sync-button";
 
 export function MobileTopBar() {
   const [open, setOpen] = useState(false);
@@ -25,6 +26,7 @@ export function MobileTopBar() {
         Purple
       </Link>
       <div className="flex items-center gap-1">
+        <HeaderSyncButton />
         <PendingInboxBadge />
         <ProfileMenu />
         <Sheet open={open} onOpenChange={setOpen}>

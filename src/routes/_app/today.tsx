@@ -210,6 +210,16 @@ function TodayPage() {
     void load();
   }, [load]);
 
+  // Refresh when the header sync button triggers a sync from anywhere in the app.
+  useEffect(() => {
+    const onSynced = () => {
+      void load();
+      setSyncTick((n) => n + 1);
+    };
+    window.addEventListener("purple:wearable-synced", onSynced);
+    return () => window.removeEventListener("purple:wearable-synced", onSynced);
+  }, [load]);
+
   // Track which pull-based wearables are connected so pull-to-refresh only
   // triggers syncs that are relevant.
   const whoopSync = useServerFn(whoopIncrementalSync);
