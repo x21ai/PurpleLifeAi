@@ -407,6 +407,18 @@ function MedsPage() {
     setOpen(true);
   }, []);
 
+  // Deep-link from Settings → "Add past history" → Old medications.
+  React.useEffect(() => {
+    if (search.add === "past") {
+      setEditingMedId(null);
+      setPrefill(null);
+      setAddIntent("past");
+      setOpen(true);
+      navigate({ search: {}, replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.add]);
+
   // 14-day adherence, surfaced inline in Today's doses (no extra click).
   const [adherence, setAdherence] = React.useState<{
     pct: number;
