@@ -99,7 +99,9 @@ function loadOpen(): Record<string, boolean> {
 function isPathInGroup(group: NavGroup, pathname: string): boolean {
   if (group.to && pathname === group.to) return true;
   if (!group.children) return false;
-  return group.children.some((c) => pathname === c.to || pathname.startsWith(c.to + "/"));
+  return group.children.some((c) =>
+    c.exact ? pathname === c.to : pathname === c.to || pathname.startsWith(c.to + "/"),
+  );
 }
 
 export function SidebarNav() {
@@ -285,7 +287,7 @@ function GroupItem({
               to={c.to}
               label={c.label}
               Icon={c.icon}
-              active={pathname === c.to || pathname.startsWith(c.to + "/")}
+              active={c.exact ? pathname === c.to : pathname === c.to || pathname.startsWith(c.to + "/")}
             />
           ))}
         </PopoverContent>
@@ -382,7 +384,7 @@ function GroupItem({
               to={c.to}
               label={c.label}
               Icon={c.icon}
-              active={pathname === c.to || pathname.startsWith(c.to + "/")}
+              active={c.exact ? pathname === c.to : pathname === c.to || pathname.startsWith(c.to + "/")}
             />
           ))}
         </div>
