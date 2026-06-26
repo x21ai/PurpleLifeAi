@@ -188,6 +188,7 @@ export const listMyCaregivers = createServerFn({ method: "GET" })
       .from("care_relationships")
       .select("*")
       .eq("owner_id", userId)
+      .is("archived_at", null)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
@@ -345,6 +346,69 @@ export const revokeRelationship = createServerFn({ method: "POST" })
       actor_id: userId,
       action: "revoked",
     });
+    return { ok: true };
+  });
+
+export const archiveRelationship = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { relationship_id: string }) =>
+    z.object({ relationship_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: rel, error } = await supabaseAdmin
+      .from("care_relationships")
+      .select("id, owner_id, status")
+      .eq("id", data.relationship_id)
+      .single();
+    if (error || !rel) throw new Error("Relationship not found");
+    if (rel.owner_id !== userId) throw new Error("Forbidden");
+    if (rel.status !== "revoked") throw new Error("Revoke access before archiving");
+
+    const { error: uErr } = await supabaseAdmin
+      .from("care_relationships")
+      .update({ archived_at: new Date().toISOString() })
+      .eq("id", data.relationship_id);
+    if (uErr) throw new Error(uErr.message);
+
+    await supabaseAdmin.from("care_audit_log").insert({
+      relationship_id: data.relationship_id,
+      owner_id: userId,
+      actor_id: userId,
+      action: "archived",
+    });
+    return { ok: true };
+  });
+
+export const deleteRelationship = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { relationship_id: string }) =>
+    z.object({ relationship_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: rel, error } = await supabaseAdmin
+      .from("care_relationships")
+      .select("id, owner_id, status, invite_email")
+      .eq("id", data.relationship_id)
+      .single();
+    if (error || !rel) throw new Error("Relationship not found");
+    if (rel.owner_id !== userId) throw new Error("Forbidden");
+    if (rel.status !== "revoked") throw new Error("Revoke access before deleting");
+
+    await supabaseAdmin.from("care_audit_log").insert({
+      relationship_id: data.relationship_id,
+      owner_id: userId,
+      actor_id: userId,
+      action: "deleted",
+      metadata: { invite_email: rel.invite_email },
+    });
+
+    const { error: dErr } = await supabaseAdmin
+      .from("care_relationships")
+      .delete()
+      .eq("id", data.relationship_id);
+    if (dErr) throw new Error(dErr.message);
     return { ok: true };
   });
 
