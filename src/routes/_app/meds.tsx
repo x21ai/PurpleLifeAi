@@ -173,6 +173,9 @@ function MedsPage() {
   const [scanOpen, setScanOpen] = React.useState(false);
   const [voiceOpen, setVoiceOpen] = React.useState(false);
   const [prefill, setPrefill] = React.useState<MedPrefill | null>(null);
+  const [addIntent, setAddIntent] = React.useState<"new" | "past">("new");
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/meds" });
 
   // Load the doses for the currently viewed day. Today regenerates pending
   // rows; past days are fetched as-is so we never fabricate history.
@@ -400,6 +403,7 @@ function MedsPage() {
   const openAdd = React.useCallback(() => {
     setEditingMedId(null);
     setPrefill(null);
+    setAddIntent("new");
     setOpen(true);
   }, []);
 
