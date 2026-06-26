@@ -443,6 +443,94 @@ export const markCareThreadRead = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** List the current owner's group threads (kind='group') with member count. */
+export const listGroupThreads = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const { data: threads, error } = await supabaseAdmin
+      .from("care_threads")
+      .select("id, title, last_message_at, created_at")
+      .eq("owner_id", userId)
+      .eq("kind", "group")
+      .order("last_message_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    const ids = (threads ?? []).map((t) => t.id);
+    let countByThread = new Map<string, number>();
+    if (ids.length > 0) {
+      const { data: parts } = await supabaseAdmin
+        .from("care_thread_participants")
+        .select("thread_id")
+        .in("thread_id", ids);
+      for (const p of parts ?? []) {
+        countByThread.set(p.thread_id, (countByThread.get(p.thread_id) ?? 0) + 1);
+      }
+    }
+    return {
+      groups: (threads ?? []).map((t) => ({
+        id: t.id,
+        title: t.title ?? "Care team",
+        last_message_at: t.last_message_at,
+        member_count: countByThread.get(t.id) ?? 0,
+      })),
+    };
+  });
+
+/** Create a new named group thread with the chosen caregivers. */
+export const createGroupThread = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { title: string; caregiverIds: string[] }) =>
+    z
+      .object({
+        title: z.string().trim().min(1).max(80),
+        caregiverIds: z.array(z.string().uuid()).min(1).max(50),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+
+    // Validate every caregiverId is an active caregiver of the caller.
+    const { data: rels, error: rErr } = await supabaseAdmin
+      .from("care_relationships")
+      .select("caregiver_id")
+      .eq("owner_id", userId)
+      .eq("status", "active");
+    if (rErr) throw new Error(rErr.message);
+    const allowed = new Set(
+      (rels ?? [])
+        .map((r) => r.caregiver_id)
+        .filter((id): id is string => !!id),
+    );
+    const members = Array.from(new Set(data.caregiverIds)).filter((id) => allowed.has(id));
+    if (members.length === 0) {
+      throw new Error("Pick at least one caregiver who's actively sharing with you.");
+    }
+
+    const { data: created, error } = await supabaseAdmin
+      .from("care_threads")
+      .insert({ owner_id: userId, kind: "group", title: data.title })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    const threadId = created.id;
+
+    const rows = [
+      { thread_id: threadId, user_id: userId, role: "owner" as const },
+      ...members.map((id) => ({
+        thread_id: threadId,
+        user_id: id,
+        role: "caregiver" as const,
+      })),
+    ];
+    const { error: pErr } = await supabaseAdmin
+      .from("care_thread_participants")
+      .insert(rows);
+    if (pErr) throw new Error(pErr.message);
+
+    return { threadId };
+  });
+
 /** Toggle mute on a thread for the current user. */
 export const setCareThreadMute = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
