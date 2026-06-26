@@ -58,7 +58,14 @@ export function HeaderSyncButton() {
   const sync = async () => {
     if (busy) return;
     const active = WEARABLE_PROVIDERS.filter((p) => connected[p.id]);
-    if (active.length === 0) return;
+    if (active.length === 0) {
+      if (appleConnected) {
+        toast.info("Apple Health pushes automatically — no manual sync needed");
+      } else {
+        toast.info("Connect a wearable in Tools to sync data");
+      }
+      return;
+    }
     setBusy(true);
     try {
       const results = await Promise.allSettled(
@@ -105,8 +112,6 @@ export function HeaderSyncButton() {
   };
 
   if (!loaded) return null;
-  const anyConnected = WEARABLE_PROVIDERS.some((p) => connected[p.id]);
-  if (!anyConnected) return null;
 
   return (
     <TooltipProvider delayDuration={200}>
