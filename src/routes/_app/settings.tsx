@@ -128,6 +128,7 @@ function SettingsPage() {
         <div className="mt-4 grid sm:grid-cols-2 gap-3">
           <Link
             to="/meds"
+            search={{ add: "past" }}
             className="flex items-center justify-between rounded-xl border border-border p-4 hover:bg-secondary/40 transition-colors"
           >
             <div className="flex items-center gap-3">
