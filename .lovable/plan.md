@@ -1,44 +1,32 @@
 ## Problem
 
-On `/chat-care`, the **Group** button calls `getOrCreateGroupThread`, which only ever returns the single hard-coded "Care team" thread. After the first click it silently re-opens the same thread, so the user perceives "nothing happens". There's also no way to see a list of groups or to create additional named groups.
+In `src/routes/_app/tools.tsx` (Wear and care section), three rows link out to `https://purplelife.org/...`:
 
-## Goal
+- How Purple thinks → `https://purplelife.org/how-purple-thinks`
+- Privacy & data → `https://purplelife.org/privacy`
+- About Purple → `https://purplelife.org/about`
 
-Clicking the Group icon opens a small picker:
-- If groups exist → list them; clicking one opens that thread.
-- Always show a **"Create new group"** action at the bottom.
-- Creating a group asks for a name and which caregivers to include, then opens the new thread.
+Opening an external URL drops the in-app Supabase session (different host / new tab cold load), so the marketing site's gated page bounces the user to sign in even though they're already authenticated in the app.
 
-Mirrors the existing `NewChatPicker` UX (Popover with list + action), works on mobile, tablet, and desktop.
+The app already ships the same content as internal routes (`/how-purple-thinks`, `/privacy`, `/about`, plus an auth-aware `/settings/how-purple-thinks`), so there's no reason to leave the app.
 
-## Changes
+## Fix
 
-### 1. Server (`src/lib/care-chat.functions.ts`)
-- Add `listGroupThreads()` — returns owner's `care_threads` where `kind='group'` with `id`, `title`, participant count, `last_message_at`.
-- Add `createGroupThread({ title, caregiverIds })` — validates the caregivers are active care relationships of the caller, inserts a new `care_threads` row (`kind='group'`, `title`), inserts owner + selected caregivers into `care_thread_participants`, returns `{ threadId }`.
-- Keep `getOrCreateGroupThread` for back-compat (used elsewhere), but stop calling it from the Group button.
+Replace the three `ExternalRow` entries with internal `ToolRow` (TanStack `Link`) navigation:
 
-No schema change — `care_threads` already supports many group rows per owner; the single-group behavior was only enforced by the old function's `.maybeSingle()`.
+- "How Purple thinks" → `/how-purple-thinks` (public route, works signed-in or not)
+- "Privacy & data" → `/privacy`
+- "About Purple" → `/about`
 
-### 2. UI (`src/routes/_app/chat-care.tsx`)
-- Replace the plain Group `<Button>` with a new `GroupPicker` component (sibling of `NewChatPicker`) using `Popover`:
-  - Header: "Groups"
-  - Body: list of existing groups (name + member count). Clicking sets the active thread.
-  - Footer: "Create new group" button → swaps the popover body to a small form:
-    - Text input: group name (default "Care team")
-    - Checkbox list of active caregivers (reuses the same source `NewChatPicker` already queries)
-    - "Create" button → calls `createGroupThread`, invalidates `["care-chat","threads"]`, opens the new thread.
-- Empty state inside the popover: "No groups yet" + the same Create action.
-- Keep the existing `Users` icon trigger and tooltip.
+Keep the row styling identical; only swap the component and drop the external-link icon so it visually reads as in-app navigation.
 
-### 3. Responsiveness
-- Popover width `w-72` on mobile, `w-80` on md+, matching `NewChatPicker`.
-- Form inputs use existing shadcn `Input` / `Checkbox` so they inherit dark-mode tokens.
+No backend, auth, or i18n changes. No edits to `routeTree.gen.ts` (auto-generated).
 
-### 4. Tests / verification
-- Manual: click Group with 0 groups → see "Create new group"; create one → thread opens and appears in sidebar; click Group again → group is listed and selectable.
-- Typecheck + em-dash check.
+## Files
 
-## Out of scope
-- Editing group name or membership after creation (can be a follow-up on the group thread header).
-- Removing groups.
+- `src/routes/_app/tools.tsx` — swap the three `ExternalRow` calls in the "Wear and care" `SheetCard` for `ToolRow` with `to=` props.
+
+## Verification
+
+- Click each of the three rows on `/tools` while signed in — they should navigate in-app without a sign-in prompt.
+- Check the same on mobile and tablet viewports (rows are full-width, layout unchanged).
