@@ -1,5 +1,6 @@
 import * as React from "react";
-import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { z } from "zod";
 import {
   Plus,
   Pill,
@@ -108,6 +109,7 @@ const KIND_LABEL_KEYS: Record<MedKind, string> = {
 
 export const Route = createFileRoute("/_app/meds")({
   head: () => ({ meta: [{ title: "Meds · Purple" }] }),
+  validateSearch: z.object({ add: z.enum(["new", "past"]).optional() }),
   component: MedsLayout,
 });
 
