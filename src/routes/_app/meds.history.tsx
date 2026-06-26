@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
@@ -43,12 +43,21 @@ function MedsHistory() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-10 sm:pt-16 lg:pt-20 pb-24">
-      <Link
-        to="/meds"
-        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground gap-1"
-      >
-        <ArrowLeft className="h-4 w-4" /> {t("nav.medications")}
-      </Link>
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          to="/meds"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground gap-1"
+        >
+          <ArrowLeft className="h-4 w-4" /> {t("nav.medications")}
+        </Link>
+        <Link
+          to="/meds"
+          search={{ add: "past" }}
+          className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-foreground hover:bg-secondary/40 transition-colors"
+        >
+          <Plus className="h-3.5 w-3.5" /> Add a past medication
+        </Link>
+      </div>
 
       <p className="mt-6 label-eyebrow text-muted-foreground">{t("meds.history.eyebrow")}</p>
       <h1 className="mt-2 font-serif text-[44px] sm:text-6xl leading-[1.02] tracking-[-0.02em] text-foreground">
