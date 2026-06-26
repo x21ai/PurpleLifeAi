@@ -21,7 +21,6 @@ import {
   getCareMessages,
   sendCareMessage,
   markCareThreadRead,
-  getOrCreateGroupThread,
   setCareThreadMute,
   leaveCareThread,
   getOrCreateDirectThread,
@@ -512,7 +511,6 @@ function GroupPicker({ onPicked }: { onPicked: (threadId: string) => void }) {
 }
 
 function CareChatPage() {
-  // placeholder anchor
   useRouteTheme("light");
   const { session } = useAuth();
   const meId = session?.user.id;
