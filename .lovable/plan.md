@@ -1,47 +1,44 @@
 ## Problem
-When a medication's `pills_remaining` reaches `0`, the app still:
-1. Generates pending dose rows for the next day via `regenerate_today_pending_doses`
-2. Shows "Next today" or scheduled times in the medication list row
-3. Shows "Taken / Snooze / Skip" action buttons for those doses on Today and Meds pages
 
-The user wants a clear "Count zero — refill to update" indicator instead.
+On `/chat-care`, the **Group** button calls `getOrCreateGroupThread`, which only ever returns the single hard-coded "Care team" thread. After the first click it silently re-opens the same thread, so the user perceives "nothing happens". There's also no way to see a list of groups or to create additional named groups.
 
-## Solution
+## Goal
 
-### 1. Stop generating doses when stock is depleted
-Update the `regenerate_today_pending_doses` database function to skip medications where `pills_remaining <= 0` (stock is tracked and depleted). This prevents new impossible pending rows from being created.
+Clicking the Group icon opens a small picker:
+- If groups exist → list them; clicking one opens that thread.
+- Always show a **"Create new group"** action at the bottom.
+- Creating a group asks for a name and which caregivers to include, then opens the new thread.
 
-**File:** `supabase/migrations/...` (new migration)
+Mirrors the existing `NewChatPicker` UX (Popover with list + action), works on mobile, tablet, and desktop.
 
-### 2. Med list row — replace schedule with out-of-stock message
-In `src/routes/_app/meds.tsx` (`MedRow`), when `med.pills_remaining === 0`:
-- Replace the "Next today …" or schedule-times line with a muted "Count zero — refill to update" message
-- Hide the inline "Mark taken" quick-action button for that medication
-- Keep the row tappable so the user can still open the detail page to update the count
+## Changes
 
-### 3. Today doses — add out-of-stock indicator
-In `src/components/meds/today-doses.tsx`:
-- Include `pills_remaining` in the medication data fetched with doses
-- For doses belonging to a med with `pills_remaining === 0`:
-  - Show an "Out of stock" label next to the medication name
-  - Disable or hide the "Taken" and "Snooze" buttons (only "Skip" remains relevant)
+### 1. Server (`src/lib/care-chat.functions.ts`)
+- Add `listGroupThreads()` — returns owner's `care_threads` where `kind='group'` with `id`, `title`, participant count, `last_message_at`.
+- Add `createGroupThread({ title, caregiverIds })` — validates the caregivers are active care relationships of the caller, inserts a new `care_threads` row (`kind='group'`, `title`), inserts owner + selected caregivers into `care_thread_participants`, returns `{ threadId }`.
+- Keep `getOrCreateGroupThread` for back-compat (used elsewhere), but stop calling it from the Group button.
 
-### 4. Today panel — add out-of-stock indicator
-In `src/components/meds/today-panel.tsx`:
-- Pass medication stock data into the panel
-- For pending doses with zero stock, show a muted dot and an "Out of stock" tooltip
+No schema change — `care_threads` already supports many group rows per owner; the single-group behavior was only enforced by the old function's `.maybeSingle()`.
 
-### 5. i18n
-Add translation keys to `src/i18n/locales/en.json`:
-- `meds.outOfStock`: "Count zero — refill to update"
-- `meds.zeroStock`: "Out of stock"
+### 2. UI (`src/routes/_app/chat-care.tsx`)
+- Replace the plain Group `<Button>` with a new `GroupPicker` component (sibling of `NewChatPicker`) using `Popover`:
+  - Header: "Groups"
+  - Body: list of existing groups (name + member count). Clicking sets the active thread.
+  - Footer: "Create new group" button → swaps the popover body to a small form:
+    - Text input: group name (default "Care team")
+    - Checkbox list of active caregivers (reuses the same source `NewChatPicker` already queries)
+    - "Create" button → calls `createGroupThread`, invalidates `["care-chat","threads"]`, opens the new thread.
+- Empty state inside the popover: "No groups yet" + the same Create action.
+- Keep the existing `Users` icon trigger and tooltip.
 
-### 6. Verify
-- TypeScript check passes
-- Existing tests pass
-- Visual check: a med with `pills_remaining = 0` shows the new message on `/meds` and `/today` instead of dose times
+### 3. Responsiveness
+- Popover width `w-72` on mobile, `w-80` on md+, matching `NewChatPicker`.
+- Form inputs use existing shadcn `Input` / `Checkbox` so they inherit dark-mode tokens.
 
-## Technical details
-- The `Medication` type in `src/routes/_app/meds.tsx` already includes `pills_remaining: number | null`
-- The `regenerate_today_pending_doses` function iterates `public.medications`; adding `and (pills_remaining is null or pills_remaining > 0)` to the `for med in` query is the minimal DB change
-- For `today-doses.tsx`, the `ensureTodayDoses` helper in `src/lib/meds-today.ts` will need to select `pills_remaining` from the joined `medications` relation
+### 4. Tests / verification
+- Manual: click Group with 0 groups → see "Create new group"; create one → thread opens and appears in sidebar; click Group again → group is listed and selectable.
+- Typecheck + em-dash check.
+
+## Out of scope
+- Editing group name or membership after creation (can be a follow-up on the group thread header).
+- Removing groups.
