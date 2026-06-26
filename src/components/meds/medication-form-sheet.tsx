@@ -709,6 +709,7 @@ export function MedicationFormSheet({
               {!isRescue && (
                 <>
                   <GroupedFormLabel>{t("meds.form.duration")}</GroupedFormLabel>
+                  <div ref={durationRef}>
                   <GroupedFormCard>
                     <GroupedFormRow
                       label={t("meds.form.startDate")}
@@ -731,6 +732,7 @@ export function MedicationFormSheet({
                       />
                     </GroupedFormRow>
                   </GroupedFormCard>
+                  </div>
                 </>
               )}
 
