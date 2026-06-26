@@ -1,0 +1,1 @@
+ALTER TABLE public.care_threads DROP CONSTRAINT IF EXISTS care_threads_group_unique;
