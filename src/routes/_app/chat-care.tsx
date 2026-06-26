@@ -327,17 +327,6 @@ function CareChatPage() {
     void navigate({ search: { thread: id } });
   };
 
-  const createGroupFn = useServerFn(getOrCreateGroupThread);
-  const handleNewGroup = async () => {
-    try {
-      const r = await createGroupFn();
-      await qc.invalidateQueries({ queryKey: ["care-chat", "threads"] });
-      setActive(r.threadId);
-    } catch (e) {
-      toast.error(userMessage(e, "Couldn't open group chat"));
-    }
-  };
-
   const showList = !activeId; // mobile: list-only when no thread selected
 
   return (
@@ -354,16 +343,7 @@ function CareChatPage() {
             <h1 className="text-base font-semibold">Care chat</h1>
             <div className="flex items-center gap-1">
               <NewChatPicker onPicked={setActive} />
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 gap-1.5 text-xs"
-                onClick={handleNewGroup}
-                title="Open or create group chat with all your caregivers"
-              >
-                <Users className="h-3.5 w-3.5" />
-                Group
-              </Button>
+              <GroupPicker onPicked={setActive} />
             </div>
           </header>
           <div className="flex-1 overflow-y-auto">
