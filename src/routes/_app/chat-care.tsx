@@ -26,6 +26,8 @@ import {
   leaveCareThread,
   getOrCreateDirectThread,
   getCareAttachmentUrl,
+  listGroupThreads,
+  createGroupThread,
 } from "@/lib/care-chat.functions";
 import { listMyCaregivers, listPeopleSharingWithMe } from "@/lib/care.functions";
 import { userMessage } from "@/lib/user-message";
@@ -36,6 +38,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const searchSchema = z.object({ thread: z.string().uuid().optional() });
 
