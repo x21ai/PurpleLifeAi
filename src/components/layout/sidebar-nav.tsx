@@ -99,7 +99,9 @@ function loadOpen(): Record<string, boolean> {
 function isPathInGroup(group: NavGroup, pathname: string): boolean {
   if (group.to && pathname === group.to) return true;
   if (!group.children) return false;
-  return group.children.some((c) => pathname === c.to || pathname.startsWith(c.to + "/"));
+  return group.children.some((c) =>
+    c.exact ? pathname === c.to : pathname === c.to || pathname.startsWith(c.to + "/"),
+  );
 }
 
 export function SidebarNav() {
