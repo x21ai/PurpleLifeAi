@@ -7,6 +7,7 @@ import { useEffect, useMemo } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSidebarCollapsedPref } from "@/components/layout/sidebar-nav";
 import {
   Select,
   SelectContent,
@@ -441,9 +442,15 @@ function QuickLogBar({
   canBiometric: boolean;
 }) {
   if (!canSeizure && !canJournal && !canBiometric) return null;
+  const [collapsed] = useSidebarCollapsedPref();
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 pb-[max(env(safe-area-inset-bottom),12px)]">
-      <div className="mx-auto max-w-3xl px-4">
+    <div
+      className={
+        "pointer-events-none fixed bottom-0 right-0 left-0 md:left-16 z-40 pb-[max(env(safe-area-inset-bottom),12px)] " +
+        (collapsed ? "lg:left-16" : "lg:left-64")
+      }
+    >
+      <div className="mx-auto max-w-4xl px-5 sm:px-10 lg:px-16">
         <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-border bg-background/95 px-3 py-2 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <span className="mr-1 hidden text-[11px] uppercase tracking-wide text-muted-foreground sm:inline">
             Quick log
