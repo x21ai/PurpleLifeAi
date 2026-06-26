@@ -1,8 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
 import { lazy, Suspense } from "react";
-import { Bell, ChevronRight, ExternalLink, Plus, Smartphone, Activity } from "lucide-react";
+import { Bell, ChevronRight, ExternalLink, Plus, Smartphone, Activity, Watch, Heart, Apple } from "lucide-react";
 import { SheetPage, SheetCard, SheetSectionLabel } from "@/components/sheet/sheet-page";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
 
 const OuraConnection = lazy(() =>
@@ -25,9 +32,22 @@ export const Route = createFileRoute("/_app/tools")({
 
 function ToolsPage() {
   const { t } = useTranslation();
+  const [pickerOpen, setPickerOpen] = React.useState(false);
+
+  const scrollToCard = (id: string) => {
+    setPickerOpen(false);
+    requestAnimationFrame(() => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.classList.add("ring-2", "ring-accent");
+      setTimeout(() => el.classList.remove("ring-2", "ring-accent"), 1600);
+    });
+  };
+
   return (
     <SheetPage title={t("tools.title")}>
-      <SheetCard className="!p-0">
+      <SheetCard id="device-oura" className="!p-0 transition-shadow">
         <Suspense fallback={<div className="h-24 animate-pulse" aria-hidden />}>
           <div className="p-5 sm:p-7 [&_button]:bg-muted [&_button]:border-border [&_button]:text-foreground [&_button]:hover:bg-muted/80 [&_h2]:text-foreground [&_p]:text-muted-foreground [&_a]:text-accent">
             <OuraConnection />
@@ -35,7 +55,7 @@ function ToolsPage() {
         </Suspense>
       </SheetCard>
 
-      <SheetCard className="!p-0">
+      <SheetCard id="device-whoop" className="!p-0 transition-shadow">
         <Suspense fallback={<div className="h-24 animate-pulse" aria-hidden />}>
           <div className="p-5 sm:p-7 [&_button]:bg-muted [&_button]:border-border [&_button]:text-foreground [&_button]:hover:bg-muted/80 [&_h2]:text-foreground [&_p]:text-muted-foreground [&_a]:text-accent">
             <WhoopConnection />
@@ -43,7 +63,7 @@ function ToolsPage() {
         </Suspense>
       </SheetCard>
 
-      <SheetCard className="!p-0">
+      <SheetCard id="device-apple-health" className="!p-0 transition-shadow">
         <Suspense fallback={<div className="h-24 animate-pulse" aria-hidden />}>
           <div className="p-5 sm:p-7 [&_button]:bg-muted [&_button]:border-border [&_button]:text-foreground [&_button]:hover:bg-muted/80 [&_h2]:text-foreground [&_p]:text-muted-foreground [&_a]:text-accent">
             <AppleHealthConnection />
@@ -53,11 +73,50 @@ function ToolsPage() {
 
       <button
         type="button"
+        onClick={() => setPickerOpen(true)}
         className="flex w-full items-center gap-3 rounded-2xl border border-border bg-muted/60 p-5 text-[15px] text-accent hover:bg-muted transition-colors"
       >
         <Plus className="h-5 w-5" />
         Set up a new device
       </button>
+
+      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set up a new device</DialogTitle>
+            <DialogDescription>
+              Choose a device or app to connect. Purple supports these today.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-2 flex flex-col gap-2">
+            <DevicePickerRow
+              icon={<Watch className="h-5 w-5" />}
+              title="Oura Ring"
+              subtitle="Sleep, readiness, HRV"
+              onClick={() => scrollToCard("device-oura")}
+            />
+            <DevicePickerRow
+              icon={<Heart className="h-5 w-5" />}
+              title="Whoop"
+              subtitle="Recovery, strain, sleep"
+              onClick={() => scrollToCard("device-whoop")}
+            />
+            <DevicePickerRow
+              icon={<Apple className="h-5 w-5" />}
+              title="Apple Health"
+              subtitle="Steps, heart rate, workouts"
+              onClick={() => scrollToCard("device-apple-health")}
+            />
+          </div>
+          <p className="mt-3 text-[12px] text-muted-foreground">
+            More devices are on the way. Email{" "}
+            <a className="text-accent underline" href="mailto:hello@purplelife.org">
+              hello@purplelife.org
+            </a>{" "}
+            to request one.
+          </p>
+        </DialogContent>
+      </Dialog>
 
       <SheetSectionLabel>Notifications</SheetSectionLabel>
       <SheetCard className="!p-0">
@@ -86,6 +145,37 @@ function ToolsPage() {
         </div>
       </SheetCard>
     </SheetPage>
+  );
+}
+
+function DevicePickerRow({
+  icon,
+  title,
+  subtitle,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/40 px-4 py-3 text-left transition-colors hover:bg-muted"
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-foreground">
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-[14px] text-foreground">{title}</p>
+          <p className="mt-0.5 truncate text-[12px] text-muted-foreground">{subtitle}</p>
+        </div>
+      </div>
+      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+    </button>
   );
 }
 
