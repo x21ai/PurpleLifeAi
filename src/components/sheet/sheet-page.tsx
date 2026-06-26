@@ -67,11 +67,13 @@ export function SheetPage({ title, closeTo, aside, children }: Props) {
 export function SheetCard({
   children,
   className = "",
+  id,
 }: {
   children: React.ReactNode;
   className?: string;
+  id?: string;
 }) {
-  return <section className={`sheet-card p-5 sm:p-7 ${className}`}>{children}</section>;
+  return <section id={id} className={`sheet-card p-5 sm:p-7 ${className}`}>{children}</section>;
 }
 
 export function SheetSectionLabel({ children }: { children: React.ReactNode }) {
