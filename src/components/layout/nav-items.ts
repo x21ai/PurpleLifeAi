@@ -32,6 +32,8 @@ export type NavLeaf = {
   to: string;
   label: string;
   icon: LucideIcon;
+  /** When true, only highlight on exact pathname match (not child routes). */
+  exact?: boolean;
 };
 
 export type NavGroup = {
@@ -92,7 +94,7 @@ export const navTree: NavGroup[] = [
     icon: User,
     children: [
       { to: "/account", label: "Profile", icon: User },
-      { to: "/settings", label: "Settings", icon: Settings2 },
+      { to: "/settings", label: "Settings", icon: Settings2, exact: true },
       { to: "/settings/sharing", label: "Sharing", icon: Shield },
     ],
   },

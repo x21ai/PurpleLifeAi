@@ -285,7 +285,7 @@ function GroupItem({
               to={c.to}
               label={c.label}
               Icon={c.icon}
-              active={pathname === c.to || pathname.startsWith(c.to + "/")}
+              active={c.exact ? pathname === c.to : pathname === c.to || pathname.startsWith(c.to + "/")}
             />
           ))}
         </PopoverContent>
@@ -382,7 +382,7 @@ function GroupItem({
               to={c.to}
               label={c.label}
               Icon={c.icon}
-              active={pathname === c.to || pathname.startsWith(c.to + "/")}
+              active={c.exact ? pathname === c.to : pathname === c.to || pathname.startsWith(c.to + "/")}
             />
           ))}
         </div>
