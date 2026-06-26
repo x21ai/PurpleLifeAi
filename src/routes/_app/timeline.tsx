@@ -382,7 +382,7 @@ function TimelinePage() {
           <ol className="relative border-l border-border pl-6 space-y-5">
             {visible.map((r) => (
               <li key={r.id} className="relative">
-                <span className="absolute -left-[31px] top-1.5 grid h-6 w-6 place-items-center rounded-full bg-card border border-border text-primary">
+                <span className="absolute -left-[36px] top-1.5 grid h-6 w-6 place-items-center rounded-full bg-card border border-border text-primary shadow-sm">
                   {r.kind === "seizure" && <Zap className="h-3.5 w-3.5" />}
                   {r.kind === "journal" && <BookOpen className="h-3.5 w-3.5" />}
                   {r.kind === "dose" && <Pill className="h-3.5 w-3.5" />}
