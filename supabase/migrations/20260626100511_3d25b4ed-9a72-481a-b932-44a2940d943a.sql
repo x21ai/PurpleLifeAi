@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS public.care_threads_group_unique;
