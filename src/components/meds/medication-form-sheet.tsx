@@ -157,6 +157,18 @@ export function MedicationFormSheet({
 
   const isRescue = kind === "rescue";
   const isEditing = !!editingMedId;
+  const isPastIntent = intent === "past" && !isEditing;
+  const durationRef = React.useRef<HTMLDivElement | null>(null);
+
+  // When opened in "past" intent, scroll the Duration card into view so the
+  // date fields are the obvious next step.
+  React.useEffect(() => {
+    if (!open || !isPastIntent) return;
+    const id = window.setTimeout(() => {
+      durationRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 250);
+    return () => window.clearTimeout(id);
+  }, [open, isPastIntent]);
 
   const dictSetters = React.useMemo(
     () => ({ setName, setKind, setDosageForm, setDosageAmount, setDosageUnit, setUnitMode }),
