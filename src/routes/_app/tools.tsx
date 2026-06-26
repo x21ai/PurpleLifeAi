@@ -74,7 +74,7 @@ function ToolsPage() {
       <button
         type="button"
         onClick={() => setPickerOpen(true)}
-        className="flex w-full items-center gap-3 rounded-2xl border border-border bg-muted/60 p-5 text-[15px] text-accent hover:bg-muted transition-colors"
+        className="flex w-full items-center gap-3 rounded-2xl border border-border bg-muted/60 p-5 text-[15px] text-white hover:bg-muted transition-colors"
       >
         <Plus className="h-5 w-5" />
         Set up a new device
