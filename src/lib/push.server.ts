@@ -8,7 +8,14 @@ export const VAPID_PUBLIC_KEY =
 export function getWebPush() {
   if (!configured) {
     const privateKey = process.env.VAPID_PRIVATE_KEY;
-    const subject = process.env.VAPID_SUBJECT || "mailto:hello@purplelife.org";
+    const FALLBACK_SUBJECT = "mailto:hello@purplelife.org";
+    const raw = (process.env.VAPID_SUBJECT || "").trim();
+    const isValidSubject =
+      raw.startsWith("mailto:") || /^https?:\/\//i.test(raw);
+    const subject = isValidSubject ? raw : FALLBACK_SUBJECT;
+    if (raw && !isValidSubject) {
+      console.warn("[push] VAPID_SUBJECT is not a valid URL/mailto, using fallback");
+    }
     if (!privateKey) throw new Error("VAPID_PRIVATE_KEY not configured");
     webpush.setVapidDetails(subject, VAPID_PUBLIC_KEY, privateKey);
     configured = true;
