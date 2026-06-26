@@ -1,12 +1,18 @@
-## Problem
-The circular icon indicators on the Timeline page are misaligned with the vertical border line. The current `absolute -left-[31px]` calculation is off by 5px, so each icon sits to the right of the border instead of being perfectly centered on it. This makes the timeline look unprofessional.
+## Fix: Center the Quick Log bar under the caregiver page content
 
-## Fix
-In `src/routes/_app/timeline.tsx`, change the icon span positioning:
-- **From:** `absolute -left-[31px] top-1.5 ...`
-- **To:** `absolute -left-[36px] top-1.5 ...`
+### Problem
+The `QuickLogBar` at the bottom of the caregiver dashboard uses `fixed inset-x-0 bottom-0`, which positions it relative to the full viewport. Because the sidebar pushes the main content area to the right, the bar is visually offset from the page content above it. The bar also uses `max-w-3xl` and `px-4`, while the page content uses `max-w-4xl` and `px-5 sm:px-10 lg:px-16`, so it is both narrower and misaligned.
 
-This centers the 24px-wide icon circle on the 1px border line (`pl-6` = 24px padding + 12px half-width = 36px).
+### Fix
+In `src/routes/_app/care.$ownerId.tsx`, update the `QuickLogBar` component:
 
-## Verification
-Open the Timeline page and confirm each icon circle is perfectly bisected by the vertical border line across all viewport sizes.
+1. **Import `useSidebarCollapsedPref`** from `@/components/layout/sidebar-nav`.
+2. **Read the collapse state** inside `QuickLogBar` so the offset matches the sidebar.
+3. **Adjust the fixed positioning**:
+   - Replace `fixed inset-x-0 bottom-0` with `fixed bottom-0 right-0 left-0 md:left-16 lg:left-64` when expanded, and `lg:left-16` when collapsed.
+   - This makes the bar span only the main content area, not the sidebar.
+4. **Match the content width and padding**:
+   - Change the inner container from `mx-auto max-w-3xl px-4` to `mx-auto max-w-4xl px-5 sm:px-10 lg:px-16`.
+
+### Verification
+Open a caregiver dashboard on desktop (sidebar expanded). The Quick Log bar should sit perfectly centered under the page content, aligned with the "No biometrics yet" card and the tab row above it.
