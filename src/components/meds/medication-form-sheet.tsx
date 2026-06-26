@@ -590,6 +590,16 @@ export function MedicationFormSheet({
             disabled={formLoading}
           />
 
+          {isPastIntent && (
+            <div className="mt-4 rounded-xl border border-border bg-secondary/40 px-4 py-3 text-sm text-foreground">
+              <p className="font-medium">Adding a past medication</p>
+              <p className="mt-1 text-muted-foreground text-xs">
+                Set the start and (optional) stop date below to backfill an old prescription.
+                Purple won&apos;t create reminders for dates in the past.
+              </p>
+            </div>
+          )}
+
           {formLoading ? (
             <FormSectionSkeleton />
           ) : (
