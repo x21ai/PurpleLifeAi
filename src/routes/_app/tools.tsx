@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
 import { lazy, Suspense } from "react";
-import { Bell, ChevronRight, ExternalLink, Plus, Smartphone, Activity, Watch, Heart, Apple } from "lucide-react";
+import { Bell, ChevronRight, Plus, Smartphone, Activity, Watch, Heart, Apple } from "lucide-react";
 import { SheetPage, SheetCard, SheetSectionLabel } from "@/components/sheet/sheet-page";
 import {
   Dialog,
@@ -139,9 +139,9 @@ function ToolsPage() {
       <SheetSectionLabel>Wear and care</SheetSectionLabel>
       <SheetCard className="!p-0">
         <div className="divide-y divide-border/60">
-          <ExternalRow href="https://purplelife.org/how-purple-thinks" title="How Purple thinks" />
-          <ExternalRow href="https://purplelife.org/privacy" title="Privacy &amp; data" />
-          <ExternalRow href="https://purplelife.org/about" title="About Purple" />
+          <InternalRow to="/how-purple-thinks" title="How Purple thinks" />
+          <InternalRow to="/privacy" title="Privacy &amp; data" />
+          <InternalRow to="/about" title="About Purple" />
         </div>
       </SheetCard>
     </SheetPage>
@@ -209,16 +209,14 @@ function ToolRow({
   );
 }
 
-function ExternalRow({ href, title }: { href: string; title: string }) {
+function InternalRow({ to, title }: { to: string; title: string }) {
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
+    <Link
+      to={to as never}
       className="flex items-center justify-between gap-4 px-5 py-4 sm:px-7 transition-colors hover:bg-muted"
     >
       <p className="text-[15px] text-foreground" dangerouslySetInnerHTML={{ __html: title }} />
-      <ExternalLink className="h-4 w-4 sheet-muted" />
-    </a>
+      <ChevronRight className="h-4 w-4 sheet-muted" />
+    </Link>
   );
 }
