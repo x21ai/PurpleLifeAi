@@ -715,6 +715,7 @@ function MedsPage() {
           if (!v) {
             setEditingMedId(null);
             setPrefill(null);
+            setAddIntent("new");
           }
         }}
         onSaved={load}
@@ -722,6 +723,7 @@ function MedsPage() {
         editingMedId={editingMedId}
         prefill={prefill}
         userMedNames={userMedNames}
+        intent={addIntent}
       />
 
       <ScanMedSheet
