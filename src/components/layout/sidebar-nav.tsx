@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronDown, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronDown, Menu } from "lucide-react";
 import { navTree, filterNavTree, type NavGroup, type NavLeaf } from "./nav-items";
 import { cn } from "@/lib/utils";
 import { usePlatformFlags } from "@/lib/platform-flags";
@@ -150,12 +150,17 @@ export function SidebarNav() {
           collapsed ? "lg:w-16" : "lg:w-64",
         )}
       >
-        <div className="flex items-center justify-center lg:justify-start h-14 px-0 lg:px-6 border-b border-border">
+        <div
+          className={cn(
+            "flex items-center h-14 border-b border-border",
+            collapsed ? "justify-center px-0" : "justify-center lg:justify-between px-0 lg:px-4",
+          )}
+        >
           <Link
             to="/today"
             className={cn(
-              "flex items-center flex-1",
-              collapsed ? "justify-center" : "justify-center lg:justify-start",
+              "flex items-center",
+              collapsed ? "justify-center flex-1" : "justify-center lg:justify-start",
             )}
             aria-label="Purple, home"
           >
@@ -177,6 +182,16 @@ export function SidebarNav() {
               P
             </span>
           </Link>
+          {!collapsed && (
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              aria-label="Collapse sidebar"
+              className="hidden lg:inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+            >
+              <Menu className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         <nav className="flex-1 overflow-y-auto hide-scrollbar py-4 px-2 lg:px-3 space-y-0.5" aria-label="Primary">
@@ -204,27 +219,6 @@ export function SidebarNav() {
             <PendingInboxBadge variant="full" />
           </div>
         </nav>
-
-        <div className="hidden lg:block border-t border-border">
-          <button
-            type="button"
-            onClick={toggleCollapsed}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className={cn(
-              "w-full flex items-center gap-3 px-3 py-3 text-[13px] text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground",
-              collapsed ? "justify-center" : "justify-start",
-            )}
-          >
-            {collapsed ? (
-              <PanelLeftOpen className="h-4 w-4 shrink-0" />
-            ) : (
-              <>
-                <PanelLeftClose className="h-4 w-4 shrink-0" />
-                <span className="hidden lg:inline">Collapse sidebar</span>
-              </>
-            )}
-          </button>
-        </div>
       </aside>
     </TooltipProvider>
   );

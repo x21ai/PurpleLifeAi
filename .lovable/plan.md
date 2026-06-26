@@ -1,32 +1,29 @@
 ## Goal
-Let users trigger a wearable sync (Oura + Whoop) from anywhere in the app instead of navigating to Settings/Tools. Apple Health is push-only and stays excluded from the action.
+Move the sidebar collapse/expand control to a burger (Menu) icon at the top of the sidebar. When the sidebar is expanded, the burger sits at the right of the logo area (top of sidebar). When the sidebar is collapsed, the burger appears at the left of the desktop top header so the user can expand it again.
 
-## Approach
-Add a compact sync icon-button to the shared `TopBar` (desktop/tablet) and the `MobileTopBar` (mobile) so it shows on every authenticated screen, including Today. Reuses the existing sync logic from `src/components/biometrics/sync-status.tsx` so behavior matches the Settings card exactly.
+Only applies to `lg+` (desktop) where the sidebar can be user-collapsed. On md (tablet) the sidebar is always icon-only and on mobile the existing mobile top bar / drawer remains unchanged.
 
 ## Changes
 
-1. **New component `src/components/biometrics/header-sync-button.tsx`**
-   - Icon-only button (`RefreshCw`, spins while syncing) sized to fit the 14h header (`h-8 w-8 rounded-full`), with `aria-label="Sync wearable data"` and a tooltip "Sync wearable data".
-   - On mount, checks `oura_tokens` + `whoop_tokens` for the current user. Renders nothing if neither is connected (keeps header clean for users without wearables, matches Apple-restraint preference).
-   - On click: runs the same `Promise.allSettled` over connected providers as `WearableSyncStatus.sync()` (oura-sync edge function + `whoopIncrementalSync` server fn), with the same toast feedback (success / partial / fail, plus the "Apple Health pushes automatically" note when Apple is also connected).
-   - After a successful sync, dispatches a `window` custom event `purple:wearable-synced` so the Today page can refresh its biometrics.
+### 1. `src/components/layout/sidebar-nav.tsx`
+- Import `Menu` from `lucide-react` (replace `PanelLeftClose`/`PanelLeftOpen`).
+- In the logo header row (`h-14` div):
+  - Keep the Purple wordmark/`P` on the left.
+  - Add a burger toggle button on the right side, visible only when sidebar is expanded (`lg:` + not collapsed). Hidden when collapsed (since the rail has no room and the header burger takes over).
+  - Adjust the header row to `justify-between` on lg when expanded so logo is left and burger is right.
+- Remove the existing bottom "Collapse sidebar" button block at the end of the aside.
 
-2. **`src/components/layout/top-bar.tsx`** (desktop/tablet, ≥ md)
-   - Insert `<HeaderSyncButton />` before `<PendingInboxBadge />` so the action sits left of the inbox/profile cluster.
+### 2. `src/components/layout/top-bar.tsx`
+- Use `useSidebarCollapsedPref()` to read collapsed state and toggle.
+- When collapsed (lg+), render a burger `Menu` button on the LEFT side of the header (before the existing right-aligned cluster). Change header layout to `justify-between` with a left slot and the existing right slot.
+- When expanded, render nothing on the left (the sidebar header hosts the burger).
+- Hidden on `<lg` since user-collapse only applies at lg+.
 
-3. **`src/components/layout/mobile-top-bar.tsx`** (mobile)
-   - Add the same `<HeaderSyncButton />` in the right-side action cluster, sized identically so the header stays balanced on 375px, 768px, and 1024px viewports.
+### 3. Untouched
+- `MobileTopBar`, `BottomNav`, mobile drawer behavior — unchanged.
+- Tablet (md→lg) icon-rail behavior — unchanged (it's viewport-driven, not user-toggle).
+- Sidebar nav items, groups, tooltips, popovers — unchanged.
 
-4. **`src/routes/_app/today.tsx`** (light touch)
-   - Listen for `purple:wearable-synced` and call the existing `load()` + bump `syncTick` so the Today scores and sync-status badge refresh immediately when the header button is used. No layout changes.
-
-## Out of scope
-- No changes to the Settings / Tools sync cards (header button is additive).
-- Apple Health push-only behavior unchanged.
-- Pull-to-refresh on Today unchanged.
-
-## Verification
-- Desktop 1440 / tablet 1024 / 768 / mobile 375 (workspace rule: cover all viewports): header shows the sync icon when a wearable is connected, hidden otherwise; clicking spins the icon, fires toast, and Today scores refresh without reload.
-- Confirm header alignment stays right-aligned and doesn't overflow on 375px.
-- Confirm icon disappears on routes still inside `_app` for a user with no wearable tokens.
+## Behavior summary
+- Expanded sidebar (lg+): burger in sidebar header (right of "Purple" wordmark). Click → collapse.
+- Collapsed sidebar (lg+): burger in top header (far left). Click → expand. Sidebar header shows only the "P" mark, no burger.
