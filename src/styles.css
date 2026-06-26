@@ -645,9 +645,13 @@ body::-webkit-scrollbar,
     border-radius: 4px;
   }
 
-  /* Marketing fade-in-on-scroll. Add `data-reveal` to a section and toggle
-     `data-revealed` via IntersectionObserver. Reduced-motion below disables. */
-  [data-reveal] {
+  /* Marketing fade-in-on-scroll.
+     `[data-reveal]` elements are fully visible by default. The
+     `useRevealOnScroll` hook adds `.reveal-pending` on mount to opt them
+     into the fade-in transition, then sets `data-revealed="true"` once
+     they enter the viewport. If JS never runs (no-JS, hydration error,
+     IO stall), the image stays visible. */
+  [data-reveal].reveal-pending {
     opacity: 0;
     transform: translateY(12px);
     transition:
@@ -655,7 +659,7 @@ body::-webkit-scrollbar,
       transform 700ms ease-out;
     will-change: opacity, transform;
   }
-  [data-reveal][data-revealed="true"] {
+  [data-reveal].reveal-pending[data-revealed="true"] {
     opacity: 1;
     transform: none;
   }
@@ -667,7 +671,8 @@ body::-webkit-scrollbar,
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
     }
-    [data-reveal] {
+    [data-reveal],
+    [data-reveal].reveal-pending {
       opacity: 1 !important;
       transform: none !important;
     }
