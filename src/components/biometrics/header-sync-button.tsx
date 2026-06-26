@@ -60,7 +60,7 @@ export function HeaderSyncButton() {
     const active = WEARABLE_PROVIDERS.filter((p) => connected[p.id]);
     if (active.length === 0) {
       if (appleConnected) {
-        toast.info("Apple Health pushes automatically — no manual sync needed");
+        toast.info("Apple Health pushes automatically, no manual sync needed");
       } else {
         toast.info("Connect a wearable in Tools to sync data");
       }
