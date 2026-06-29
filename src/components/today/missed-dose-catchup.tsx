@@ -79,6 +79,15 @@ export function MissedDoseCatchup() {
       const now = Date.now();
       const since = new Date(now - 24 * 60 * 60 * 1000).toISOString();
       const until = new Date(now - 60 * 60 * 1000).toISOString();
+      // Retire stale pending doses (>24h old) so the catchup card stops
+      // cycling through ancient unresolved reminders forever.
+      await supabase
+        .from("medication_doses")
+        .update({ status: "missed" })
+        .eq("user_id", userId)
+        .eq("status", "pending")
+        .lt("scheduled_at", since);
+      if (cancelled) return;
       const [{ data: doses }, { data: logRows }] = await Promise.all([
         supabase
           .from("medication_doses")
