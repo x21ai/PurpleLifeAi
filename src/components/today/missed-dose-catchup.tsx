@@ -126,9 +126,12 @@ export function MissedDoseCatchup() {
 
   const act = async (doseId: string, status: "taken" | "skipped") => {
     setBusy(doseId);
-    // Optimistically suppress so navigation/refresh can't bring it back.
+    // Optimistically suppress this dose AND hide the whole catchup card so
+    // a second old pending dose doesn't immediately surface in its place.
     rememberDose(doseId, DOSE_TTL_MS);
-    setMissed((prev) => prev.filter((d) => d.id !== doseId));
+    rememberDose(ALL_SENTINEL, ALL_TTL_MS);
+    setMissed([]);
+    setDismissed(true);
     const { error } = await supabase
       .from("medication_doses")
       .update(status === "taken" ? { status, taken_at: new Date().toISOString() } : { status })
