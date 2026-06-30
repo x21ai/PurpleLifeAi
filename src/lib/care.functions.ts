@@ -832,7 +832,137 @@ export const acceptInvite = createServerFn({ method: "POST" })
       action: "accepted",
     });
 
+    // Clear any in-app care_invite alerts for this user (best-effort).
+    try {
+      await supabaseAdmin
+        .from("alerts")
+        .update({ read_at: new Date().toISOString() })
+        .eq("user_id", userId)
+        .eq("kind", "care_invite")
+        .is("read_at", null);
+    } catch (err) {
+      console.warn("[care] clear invite alerts failed", err);
+    }
+
     return { relationship_id: rel.id, owner_id: rel.owner_id };
+  });
+
+/**
+ * List pending care invites addressed to the current user's email. Surfaced
+ * in-app on the Today page and care inbox so existing Purple users see
+ * invites even if they haven't opened the email.
+ */
+export const listIncomingCareInvites = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
+    const email = (u?.user?.email ?? "").trim().toLowerCase();
+    if (!email) return { invites: [] as Array<Record<string, unknown>> };
+
+    const nowIso = new Date().toISOString();
+    const { data: rels, error } = await supabaseAdmin
+      .from("care_relationships")
+      .select("id, owner_id, role, invite_token, invite_email, created_at, expires_at")
+      .eq("status", "pending")
+      .ilike("invite_email", email)
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    const ownerIds = Array.from(new Set((rels ?? []).map((r) => r.owner_id)));
+    let profilesById: Record<
+      string,
+      { first_name: string | null; last_name: string | null; community_display_name: string | null }
+    > = {};
+    if (ownerIds.length > 0) {
+      const { data: profiles } = await supabaseAdmin
+        .from("profiles")
+        .select("id, first_name, last_name, community_display_name")
+        .in("id", ownerIds);
+      profilesById = Object.fromEntries(
+        (profiles ?? []).map((p) => [
+          p.id,
+          {
+            first_name: p.first_name,
+            last_name: p.last_name,
+            community_display_name: p.community_display_name,
+          },
+        ]),
+      );
+    }
+
+    const invites = (rels ?? []).map((r) => {
+      const prof = profilesById[r.owner_id];
+      const ownerName =
+        prof?.community_display_name?.trim() ||
+        [prof?.first_name, prof?.last_name].filter(Boolean).join(" ").trim() ||
+        "A Purple member";
+      return {
+        id: r.id,
+        owner_id: r.owner_id,
+        role: r.role,
+        invite_token: r.invite_token,
+        created_at: r.created_at,
+        expires_at: r.expires_at,
+        owner_name: ownerName,
+        role_label: ROLE_LABELS[r.role as CareRole] ?? r.role,
+      };
+    });
+    return { invites };
+  });
+
+export const declineIncomingCareInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { relationship_id: string }) =>
+    z.object({ relationship_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
+    const email = (u?.user?.email ?? "").trim().toLowerCase();
+    if (!email) throw new Error("Could not resolve your email.");
+
+    const { data: rel, error } = await supabaseAdmin
+      .from("care_relationships")
+      .select("id, status, invite_email")
+      .eq("id", data.relationship_id)
+      .single();
+    if (error || !rel) throw new Error("Invite not found");
+    if (rel.status !== "pending") throw new Error("Invite is no longer pending");
+    if (String(rel.invite_email ?? "").trim().toLowerCase() !== email) {
+      throw new Error("This invite was sent to a different email address.");
+    }
+
+    const { error: uErr } = await supabaseAdmin
+      .from("care_relationships")
+      .update({ status: "declined" })
+      .eq("id", rel.id);
+    if (uErr) throw new Error(uErr.message);
+
+    try {
+      await supabaseAdmin.from("care_audit_log").insert({
+        relationship_id: rel.id,
+        owner_id: null as unknown as string,
+        actor_id: userId,
+        action: "declined",
+      });
+    } catch {
+      /* audit best-effort */
+    }
+
+    try {
+      await supabaseAdmin
+        .from("alerts")
+        .update({ read_at: new Date().toISOString() })
+        .eq("user_id", userId)
+        .eq("kind", "care_invite")
+        .is("read_at", null);
+    } catch {
+      /* ignore */
+    }
+
+    return { ok: true };
   });
 
 export const proposeChange = createServerFn({ method: "POST" })
