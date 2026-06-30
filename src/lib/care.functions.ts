@@ -4,7 +4,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { CareRole, CareScope } from "./care.scopes";
 import { ROLE_DEFAULT_SCOPES, ROLE_LABELS } from "./care.scopes";
-import { sendTransactionalEmail } from "./email/send";
 import { getRequest } from "@tanstack/react-start/server";
 import {
   notifyOwnerOfCaregiverWrite,
@@ -17,6 +16,124 @@ function newInviteToken(): string {
     crypto.randomUUID().replace(/-/g, "") +
     crypto.randomUUID().replace(/-/g, "")
   );
+}
+
+/**
+ * Render the `care-invite` React Email template and send it directly via the
+ * Resend HTTP API. We deliberately skip the PGMQ queue + pg_cron pump here
+ * because that pipeline is fragile in preview (cron job URL points at a
+ * different path) and caregiver invites must be delivered immediately for the
+ * recipient to act on them. Best-effort: any error is logged and surfaced
+ * via `email_send_log`, never thrown back to the inviter.
+ */
+async function sendCareInviteEmailDirect(params: {
+  recipientEmail: string;
+  inviterName: string;
+  roleLabel: string;
+  acceptUrl: string;
+  expiresAt: string | null;
+  idempotencyKey: string;
+}): Promise<{ ok: boolean; reason?: string }> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return { ok: false, reason: "missing_resend_api_key" };
+  }
+  const recipient = params.recipientEmail.trim().toLowerCase();
+  const messageId = crypto.randomUUID();
+
+  // Suppression check (best-effort)
+  try {
+    const { data: suppressed } = await supabaseAdmin
+      .from("suppressed_emails")
+      .select("id")
+      .eq("email", recipient)
+      .maybeSingle();
+    if (suppressed) return { ok: false, reason: "suppressed" };
+  } catch {
+    /* ignore */
+  }
+
+  let html: string;
+  let plainText: string;
+  let subject: string;
+  try {
+    const React = await import("react");
+    const { render } = await import("@react-email/components");
+    const { TEMPLATES } = await import("./email-templates/registry");
+    const tpl = TEMPLATES["care-invite"];
+    if (!tpl) return { ok: false, reason: "template_missing" };
+    const data: Record<string, unknown> = {
+      inviterName: params.inviterName || undefined,
+      roleLabel: params.roleLabel,
+      acceptUrl: params.acceptUrl,
+      expiresAt: params.expiresAt,
+    };
+    const element = React.createElement(
+      tpl.component as React.ComponentType<Record<string, unknown>>,
+      data,
+    );
+    html = await render(element);
+    plainText = await render(element, { plainText: true });
+    subject = typeof tpl.subject === "function" ? tpl.subject(data) : tpl.subject;
+  } catch (err) {
+    console.warn("[care-invite] template render failed", err);
+    return { ok: false, reason: "render_failed" };
+  }
+
+  // Log a pending row so the send is visible in admin tooling.
+  try {
+    await supabaseAdmin.from("email_send_log").insert({
+      message_id: messageId,
+      template_name: "care-invite",
+      recipient_email: recipient,
+      status: "pending",
+    });
+  } catch {
+    /* ignore log failure */
+  }
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": params.idempotencyKey,
+      },
+      body: JSON.stringify({
+        from: "Purple <noreply@notify.purplelife.org>",
+        to: [recipient],
+        subject,
+        html,
+        text: plainText,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      const reason = `resend_${res.status}: ${body.slice(0, 200)}`;
+      await supabaseAdmin
+        .from("email_send_log")
+        .update({ status: "failed", error_message: reason.slice(0, 1000) })
+        .eq("message_id", messageId);
+      return { ok: false, reason };
+    }
+    await supabaseAdmin
+      .from("email_send_log")
+      .update({ status: "sent", error_message: null })
+      .eq("message_id", messageId);
+    return { ok: true };
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    try {
+      await supabaseAdmin
+        .from("email_send_log")
+        .update({ status: "failed", error_message: reason.slice(0, 1000) })
+        .eq("message_id", messageId);
+    } catch {
+      /* ignore */
+    }
+    return { ok: false, reason };
+  }
 }
 
 const emailSchema = z.string().trim().toLowerCase().email().max(255);
