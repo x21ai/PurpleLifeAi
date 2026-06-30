@@ -38,6 +38,7 @@ import { TodayInstallBanner } from "@/components/pwa/today-install-banner";
 import { ConnectWearablesCard } from "@/components/today/connect-wearables-card";
 import { MissedDoseCatchup } from "@/components/today/missed-dose-catchup";
 import { RestoreBanner } from "@/components/settings/restore-banner";
+import { IncomingCareInvitesCard } from "@/components/care/incoming-care-invites-card";
 import { OuraSyncStatus } from "@/components/biometrics/sync-status";
 import {
   promptsForConditions,
@@ -341,6 +342,7 @@ function TodayPage() {
         </div>
       )}
       <RestoreBanner />
+      <IncomingCareInvitesCard />
       <div className="mb-6">
         <TodayInstallBanner />
       </div>
