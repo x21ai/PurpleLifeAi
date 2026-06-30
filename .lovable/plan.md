@@ -1,58 +1,63 @@
-## Problem
+# Fix caregiver invitations (email + in-app notification)
 
-On `/today` the "you may have missed your X dose yesterday" card returns every visit — even right after tapping **I took it** — and it keeps proposing a different old dose each time.
+## What's broken today
 
-### Root cause (verified against the live DB)
-
-The user has many `medication_doses` rows in `status='pending'` from days ago (e.g. 2026‑06‑28, 2026‑06‑27). `MissedDoseCatchup` queries the last 24h of `pending` doses and shows the first one. When you mark that single dose `taken`, it disappears, but the **next** old pending dose immediately surfaces, so the card looks like it "comes back."
-
-There is no duplicate-row bug — the doses are real, just never resolved. The fix is to:
-
-1. Retire stale pending doses so the catchup stops cycling through them.
-2. Make a single user action on the catchup dismiss the *card*, not just one row.
-3. Keep the per-dose write so "I took it" / "I missed it" is recorded correctly.
+1. **Email not delivered.** `inviteCaregiver` enqueues a "care-invite" email via `sendTransactionalEmail` → PGMQ queue → `pg_cron` POST to the queue-processor route. The cron job is configured to POST to `https://project--<preview-id>.lovable.app/lovable/email/queue/process`, but the actual route is `/api/email/queue/process`. So invites sit in the queue forever (verified: 1 message stuck since 2026-06-26, 4 days old; only "pending" rows since then, no "sent"/"failed").
+2. **No in-app pickup if the invitee already has an account.** `inviteCaregiver` already inserts an `alerts` row with `kind='care_invite'` for the matched user, but no screen in the app reads that alert — `listCaregiverOwners` only returns relationships where `caregiver_id` is set, and `caregiver_id` is null until the invitee opens the email link. So a Purple user invited by another Purple user sees nothing inside the app.
+3. **Push best-effort.** Already wired in `inviteCaregiver`; will be left as-is.
 
 ## Plan
 
-### 1. Auto-retire stale pending doses (`src/components/today/missed-dose-catchup.tsx`)
+### 1. Send the care-invite email directly (skip the broken queue)
 
-When the Today page mounts, before reading the catchup list, run one update:
+In `src/lib/care.functions.ts` `inviteCaregiver`, replace the `sendTransactionalEmail({ templateName: "care-invite", … })` call with a direct Resend send using the same React Email template:
 
-```
-update medication_doses
-set status = 'missed'
-where user_id = <me>
-  and status = 'pending'
-  and scheduled_at < now() - interval '24 hours'
-```
+- Render `care-invite` template (already in `src/lib/email-templates/registry.ts`) with `@react-email/components` `render()`.
+- POST to `https://api.resend.com/emails` with `process.env.RESEND_API_KEY`, `from = "Purple <noreply@notify.purplelife.org>"`, idempotency key `care-invite-<rel.id>`.
+- Write a row to `email_send_log` with `status='sent'` (or `'failed'` + error message) so existing observability still works.
+- Keep the call inside the existing try/catch so a Resend failure never blocks the invitation; surface `emailSent` in the response as today.
 
-This is the same semantic the card already implies ("you may have missed…") — doses more than 24h old are no longer actionable as a reminder. After this sweep, the catchup window (24h → 1h ago) only contains genuinely recent misses.
+This bypasses the queue and works on both preview and production (Resend key is already in the project secrets).
 
-### 2. One action dismisses the whole catchup, not just one dose
+Out of scope: fixing the global pg_cron URL — that's a migration-era pump used by many templates and the user explicitly said not to lean on Lovable Cloud infra. Care invites just go direct.
 
-Today's flow surfaces doses one at a time from a pool of up to 10. Change it so:
+### 2. Surface pending invites in-app for existing Purple users
 
-- Tapping **I took it** updates that specific dose to `taken` (with `taken_at = now()`) — unchanged, this is the authoritative record.
-- Tapping **I missed it** updates that specific dose to `skipped` — unchanged.
-- After either action (or **Not now**), the entire card is hidden for 24h via the existing `ALL_SENTINEL` localStorage key. No second dose pops up in the same session.
-- The next day, if there's a genuinely recent missed dose (1–24h old), the card returns once, for that dose only.
+Add a new server function `listIncomingCareInvites` in `src/lib/care.functions.ts`:
 
-Users who want to reconcile older doses use the existing `/meds/history` page (the **Review in Meds** link already points there).
+- Look up the current user's email via `context.claims.email` (or `supabase.auth.getUser`).
+- Return `care_relationships` rows where `status = 'pending'`, `expires_at` is null or in the future, and `lower(invite_email) = <user email>`. Include `id`, `owner_id`, `role`, `invite_token`, `created_at`, `expires_at`, and the owner's display name (`profiles.first_name/last_name/community_display_name`).
 
-### 3. Keep the delivery-log + reminder-cancel side effects
+Render the invites in two places, both using a new `<IncomingCareInvitesCard />` component:
 
-`cancelDoseReminder(doseId)` still fires after a successful action so the local notification is cleared. The `notification_delivery_log` write stays unchanged.
+- **Today page** (`src/routes/_app/today.tsx`) — show above the existing content when there are pending invites, so they can't be missed.
+- **Care inbox** (`src/routes/_app/care.inbox.tsx`) — a dedicated section at the top.
 
-### 4. No schema change
+Each invite row shows: "{Owner name} invited you as their {role}" + Accept and Decline buttons. Accept navigates to `/care/accept?token=<invite_token>` (existing flow handles the rest). Decline calls a new lightweight `declineIncomingCareInvite` server fn that flips `status` to `'declined'` after verifying the invite_email matches the caller's email.
 
-Status values `pending | taken | skipped | missed` already exist and are used elsewhere (the DB shows rows with each). No migration needed.
+### 3. Mark the matching `alerts` row read on accept/decline
 
-## Files touched
+In the existing `acceptCareInvite` handler and the new decline handler, update any `alerts` rows for the caller with `kind='care_invite'` and a body referencing this relationship to `read_at = now()`, so the bell badge clears.
 
-- `src/components/today/missed-dose-catchup.tsx` — add the stale-sweep on mount, dismiss the whole card after any action.
+## Files to touch
+
+- `src/lib/care.functions.ts` — rewrite the email send in `inviteCaregiver`; add `listIncomingCareInvites` and `declineIncomingCareInvite`; clear alert rows on accept/decline.
+- `src/components/care/incoming-care-invites-card.tsx` — new component (Accept / Decline UI, polls via TanStack Query every 60s).
+- `src/routes/_app/today.tsx` — render the card above existing content.
+- `src/routes/_app/care.inbox.tsx` — render the card at top.
 
 ## Out of scope
 
-- Dose generation / duplicate prevention (DB check shows no duplicates per medication+time).
-- Redesigning the meds history reconciliation UI.
-- Push/notification delivery changes.
+- Fixing the global pg_cron pump URL or restructuring the email queue.
+- Changing the care-invite email design.
+- New push-notification logic (existing path stays).
+- Any change to the owner-side caregiver list UI.
+
+## Verification
+
+- Send an invite from one test account to the email of another existing test account. Confirm:
+  - Resend dashboard shows the message; recipient inbox receives it.
+  - The recipient sees the invite card on `/today` and `/care/inbox` without opening the email.
+  - Accept → relationship becomes active, alert row is marked read, card disappears.
+  - Decline → relationship becomes `declined`, card disappears.
+- Build passes; no new typecheck errors.

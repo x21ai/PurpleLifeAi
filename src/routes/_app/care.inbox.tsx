@@ -14,6 +14,7 @@ import {
   decidePendingChangesBulk,
   listPendingChangesDetailed,
 } from "@/lib/care.functions";
+import { IncomingCareInvitesCard } from "@/components/care/incoming-care-invites-card";
 
 type FilterKey = "all" | "meds" | "journal" | "other";
 const FILTERS: Array<{ key: FilterKey; label: string }> = [
@@ -118,6 +119,10 @@ function InboxPage() {
       <p className="mt-6 body-serif text-foreground/75 max-w-[600px]">
         Caregivers proposed these edits to your record. Nothing is applied until you approve it.
       </p>
+
+      <div className="mt-8">
+        <IncomingCareInvitesCard />
+      </div>
 
       <section className="mt-10">
         {/* Filter chips */}

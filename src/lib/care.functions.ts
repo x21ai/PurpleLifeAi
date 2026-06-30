@@ -4,7 +4,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { CareRole, CareScope } from "./care.scopes";
 import { ROLE_DEFAULT_SCOPES, ROLE_LABELS } from "./care.scopes";
-import { sendTransactionalEmail } from "./email/send";
 import { getRequest } from "@tanstack/react-start/server";
 import {
   notifyOwnerOfCaregiverWrite,
@@ -17,6 +16,124 @@ function newInviteToken(): string {
     crypto.randomUUID().replace(/-/g, "") +
     crypto.randomUUID().replace(/-/g, "")
   );
+}
+
+/**
+ * Render the `care-invite` React Email template and send it directly via the
+ * Resend HTTP API. We deliberately skip the PGMQ queue + pg_cron pump here
+ * because that pipeline is fragile in preview (cron job URL points at a
+ * different path) and caregiver invites must be delivered immediately for the
+ * recipient to act on them. Best-effort: any error is logged and surfaced
+ * via `email_send_log`, never thrown back to the inviter.
+ */
+async function sendCareInviteEmailDirect(params: {
+  recipientEmail: string;
+  inviterName: string;
+  roleLabel: string;
+  acceptUrl: string;
+  expiresAt: string | null;
+  idempotencyKey: string;
+}): Promise<{ ok: boolean; reason?: string }> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return { ok: false, reason: "missing_resend_api_key" };
+  }
+  const recipient = params.recipientEmail.trim().toLowerCase();
+  const messageId = crypto.randomUUID();
+
+  // Suppression check (best-effort)
+  try {
+    const { data: suppressed } = await supabaseAdmin
+      .from("suppressed_emails")
+      .select("id")
+      .eq("email", recipient)
+      .maybeSingle();
+    if (suppressed) return { ok: false, reason: "suppressed" };
+  } catch {
+    /* ignore */
+  }
+
+  let html: string;
+  let plainText: string;
+  let subject: string;
+  try {
+    const React = await import("react");
+    const { render } = await import("@react-email/components");
+    const { TEMPLATES } = await import("./email-templates/registry");
+    const tpl = TEMPLATES["care-invite"];
+    if (!tpl) return { ok: false, reason: "template_missing" };
+    const data: Record<string, unknown> = {
+      inviterName: params.inviterName || undefined,
+      roleLabel: params.roleLabel,
+      acceptUrl: params.acceptUrl,
+      expiresAt: params.expiresAt,
+    };
+    const element = React.createElement(
+      tpl.component as React.ComponentType<Record<string, unknown>>,
+      data,
+    );
+    html = await render(element);
+    plainText = await render(element, { plainText: true });
+    subject = typeof tpl.subject === "function" ? tpl.subject(data) : tpl.subject;
+  } catch (err) {
+    console.warn("[care-invite] template render failed", err);
+    return { ok: false, reason: "render_failed" };
+  }
+
+  // Log a pending row so the send is visible in admin tooling.
+  try {
+    await supabaseAdmin.from("email_send_log").insert({
+      message_id: messageId,
+      template_name: "care-invite",
+      recipient_email: recipient,
+      status: "pending",
+    });
+  } catch {
+    /* ignore log failure */
+  }
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": params.idempotencyKey,
+      },
+      body: JSON.stringify({
+        from: "Purple <noreply@notify.purplelife.org>",
+        to: [recipient],
+        subject,
+        html,
+        text: plainText,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      const reason = `resend_${res.status}: ${body.slice(0, 200)}`;
+      await supabaseAdmin
+        .from("email_send_log")
+        .update({ status: "failed", error_message: reason.slice(0, 1000) })
+        .eq("message_id", messageId);
+      return { ok: false, reason };
+    }
+    await supabaseAdmin
+      .from("email_send_log")
+      .update({ status: "sent", error_message: null })
+      .eq("message_id", messageId);
+    return { ok: true };
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    try {
+      await supabaseAdmin
+        .from("email_send_log")
+        .update({ status: "failed", error_message: reason.slice(0, 1000) })
+        .eq("message_id", messageId);
+    } catch {
+      /* ignore */
+    }
+    return { ok: false, reason };
+  }
 }
 
 const emailSchema = z.string().trim().toLowerCase().email().max(255);
@@ -93,18 +210,18 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
         .filter(Boolean)
         .join(" ")
         .trim();
-      const result = await sendTransactionalEmail({
-        templateName: "care-invite",
+      const result = await sendCareInviteEmailDirect({
         recipientEmail: data.email,
         idempotencyKey: `care-invite-${rel.id}`,
-        templateData: {
-          inviterName: inviterName || undefined,
-          roleLabel: ROLE_LABELS[data.role as CareRole],
-          acceptUrl,
-          expiresAt: (rel as { expires_at?: string | null }).expires_at ?? null,
-        },
+        inviterName,
+        roleLabel: ROLE_LABELS[data.role as CareRole],
+        acceptUrl,
+        expiresAt: (rel as { expires_at?: string | null }).expires_at ?? null,
       });
       emailSent = !!result?.ok;
+      if (!result?.ok) {
+        console.warn("[care-invite] direct send failed", result?.reason);
+      }
     } catch (err) {
       console.warn("care-invite email failed (link still available in UI)", err);
     }
@@ -715,7 +832,147 @@ export const acceptInvite = createServerFn({ method: "POST" })
       action: "accepted",
     });
 
+    // Clear any in-app care_invite alerts for this user (best-effort).
+    try {
+      await supabaseAdmin
+        .from("alerts")
+        .update({ acknowledged: true, acknowledged_at: new Date().toISOString() })
+        .eq("user_id", userId)
+        .eq("kind", "care_invite")
+        .eq("acknowledged", false);
+    } catch (err) {
+      console.warn("[care] clear invite alerts failed", err);
+    }
+
     return { relationship_id: rel.id, owner_id: rel.owner_id };
+  });
+
+/**
+ * List pending care invites addressed to the current user's email. Surfaced
+ * in-app on the Today page and care inbox so existing Purple users see
+ * invites even if they haven't opened the email.
+ */
+export const listIncomingCareInvites = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
+    const email = (u?.user?.email ?? "").trim().toLowerCase();
+    type Invite = {
+      id: string;
+      owner_id: string;
+      role: string;
+      invite_token: string | null;
+      created_at: string;
+      expires_at: string | null;
+      owner_name: string;
+      role_label: string;
+    };
+    if (!email) return { invites: [] as Invite[] };
+
+    const nowIso = new Date().toISOString();
+    const { data: rels, error } = await supabaseAdmin
+      .from("care_relationships")
+      .select("id, owner_id, role, invite_token, invite_email, created_at, expires_at")
+      .eq("status", "pending")
+      .ilike("invite_email", email)
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    const ownerIds = Array.from(new Set((rels ?? []).map((r) => r.owner_id)));
+    let profilesById: Record<
+      string,
+      { first_name: string | null; last_name: string | null; community_display_name: string | null }
+    > = {};
+    if (ownerIds.length > 0) {
+      const { data: profiles } = await supabaseAdmin
+        .from("profiles")
+        .select("id, first_name, last_name, community_display_name")
+        .in("id", ownerIds);
+      profilesById = Object.fromEntries(
+        (profiles ?? []).map((p) => [
+          p.id,
+          {
+            first_name: p.first_name,
+            last_name: p.last_name,
+            community_display_name: p.community_display_name,
+          },
+        ]),
+      );
+    }
+
+    const invites: Invite[] = (rels ?? []).map((r) => {
+      const prof = profilesById[r.owner_id];
+      const ownerName =
+        prof?.community_display_name?.trim() ||
+        [prof?.first_name, prof?.last_name].filter(Boolean).join(" ").trim() ||
+        "A Purple member";
+      return {
+        id: r.id,
+        owner_id: r.owner_id,
+        role: r.role,
+        invite_token: r.invite_token,
+        created_at: r.created_at,
+        expires_at: r.expires_at,
+        owner_name: ownerName,
+        role_label: ROLE_LABELS[r.role as CareRole] ?? r.role,
+      };
+    });
+    return { invites };
+  });
+
+export const declineIncomingCareInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { relationship_id: string }) =>
+    z.object({ relationship_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
+    const email = (u?.user?.email ?? "").trim().toLowerCase();
+    if (!email) throw new Error("Could not resolve your email.");
+
+    const { data: rel, error } = await supabaseAdmin
+      .from("care_relationships")
+      .select("id, status, invite_email")
+      .eq("id", data.relationship_id)
+      .single();
+    if (error || !rel) throw new Error("Invite not found");
+    if (rel.status !== "pending") throw new Error("Invite is no longer pending");
+    if (String(rel.invite_email ?? "").trim().toLowerCase() !== email) {
+      throw new Error("This invite was sent to a different email address.");
+    }
+
+    const { error: uErr } = await supabaseAdmin
+      .from("care_relationships")
+      .update({ status: "revoked" })
+      .eq("id", rel.id);
+    if (uErr) throw new Error(uErr.message);
+
+    try {
+      await supabaseAdmin.from("care_audit_log").insert({
+        relationship_id: rel.id,
+        owner_id: null as unknown as string,
+        actor_id: userId,
+        action: "declined",
+      });
+    } catch {
+      /* audit best-effort */
+    }
+
+    try {
+      await supabaseAdmin
+        .from("alerts")
+        .update({ acknowledged: true, acknowledged_at: new Date().toISOString() })
+        .eq("user_id", userId)
+        .eq("kind", "care_invite")
+        .eq("acknowledged", false);
+    } catch {
+      /* ignore */
+    }
+
+    return { ok: true };
   });
 
 export const proposeChange = createServerFn({ method: "POST" })
