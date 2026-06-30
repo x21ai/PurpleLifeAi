@@ -858,7 +858,17 @@ export const listIncomingCareInvites = createServerFn({ method: "GET" })
     const { userId } = context;
     const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
     const email = (u?.user?.email ?? "").trim().toLowerCase();
-    if (!email) return { invites: [] as Array<Record<string, unknown>> };
+    type Invite = {
+      id: string;
+      owner_id: string;
+      role: string;
+      invite_token: string | null;
+      created_at: string;
+      expires_at: string | null;
+      owner_name: string;
+      role_label: string;
+    };
+    if (!email) return { invites: [] as Invite[] };
 
     const nowIso = new Date().toISOString();
     const { data: rels, error } = await supabaseAdmin
@@ -892,7 +902,7 @@ export const listIncomingCareInvites = createServerFn({ method: "GET" })
       );
     }
 
-    const invites = (rels ?? []).map((r) => {
+    const invites: Invite[] = (rels ?? []).map((r) => {
       const prof = profilesById[r.owner_id];
       const ownerName =
         prof?.community_display_name?.trim() ||
@@ -936,7 +946,7 @@ export const declineIncomingCareInvite = createServerFn({ method: "POST" })
 
     const { error: uErr } = await supabaseAdmin
       .from("care_relationships")
-      .update({ status: "declined" })
+      .update({ status: "revoked" })
       .eq("id", rel.id);
     if (uErr) throw new Error(uErr.message);
 
@@ -954,10 +964,10 @@ export const declineIncomingCareInvite = createServerFn({ method: "POST" })
     try {
       await supabaseAdmin
         .from("alerts")
-        .update({ read_at: new Date().toISOString() })
+        .update({ acknowledged: true, acknowledged_at: new Date().toISOString() })
         .eq("user_id", userId)
         .eq("kind", "care_invite")
-        .is("read_at", null);
+        .eq("acknowledged", false);
     } catch {
       /* ignore */
     }
