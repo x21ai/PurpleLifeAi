@@ -210,18 +210,18 @@ export const inviteCaregiver = createServerFn({ method: "POST" })
         .filter(Boolean)
         .join(" ")
         .trim();
-      const result = await sendTransactionalEmail({
-        templateName: "care-invite",
+      const result = await sendCareInviteEmailDirect({
         recipientEmail: data.email,
         idempotencyKey: `care-invite-${rel.id}`,
-        templateData: {
-          inviterName: inviterName || undefined,
-          roleLabel: ROLE_LABELS[data.role as CareRole],
-          acceptUrl,
-          expiresAt: (rel as { expires_at?: string | null }).expires_at ?? null,
-        },
+        inviterName,
+        roleLabel: ROLE_LABELS[data.role as CareRole],
+        acceptUrl,
+        expiresAt: (rel as { expires_at?: string | null }).expires_at ?? null,
       });
       emailSent = !!result?.ok;
+      if (!result?.ok) {
+        console.warn("[care-invite] direct send failed", result?.reason);
+      }
     } catch (err) {
       console.warn("care-invite email failed (link still available in UI)", err);
     }
