@@ -836,10 +836,10 @@ export const acceptInvite = createServerFn({ method: "POST" })
     try {
       await supabaseAdmin
         .from("alerts")
-        .update({ read_at: new Date().toISOString() })
+        .update({ acknowledged: true, acknowledged_at: new Date().toISOString() })
         .eq("user_id", userId)
         .eq("kind", "care_invite")
-        .is("read_at", null);
+        .eq("acknowledged", false);
     } catch (err) {
       console.warn("[care] clear invite alerts failed", err);
     }
