@@ -91,9 +91,13 @@ function scanCode() {
 
 async function scanDatabase() {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEYS;
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_SECRET_KEYS;
   if (!url || !key) {
-    console.warn("[db] Skipping DB scan: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set.");
+    console.warn("[db] Skipping DB scan: SUPABASE_URL and service role key not set.");
     return [];
   }
   const headers = { apikey: key, Authorization: `Bearer ${key}` };
