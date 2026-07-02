@@ -17,7 +17,6 @@ import {
   type ScoreSnapshot,
   type HealthNarrative,
 } from "@/lib/health-scores.functions";
-import { DemoBadge, DemoNotice } from "@/components/common/demo-badge";
 
 function steps(n: number | null | undefined): string {
   return n == null ? "–" : n.toLocaleString();
@@ -92,12 +91,6 @@ function MyHealthPage() {
 
       {/* Hero */}
       <section className="mt-16 sm:mt-24">
-        {!real && (
-          <div className="flex items-center">
-            <DemoBadge />
-          </div>
-        )}
-
         {/* Decorative arc */}
         <svg viewBox="0 0 600 80" className="mt-6 w-full opacity-60" aria-hidden="true">
           <defs>
@@ -117,7 +110,14 @@ function MyHealthPage() {
           {narrative?.narrative ??
             "Purple is gathering your recent days to summarize your patterns here."}
         </p>
-        {(!real || narrative?.demo) && <DemoNotice className="mt-4" />}
+        {!real && (
+          <Link
+            to="/settings"
+            className="mt-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            Connect a device to see your readings <ChevronRight className="h-4 w-4" />
+          </Link>
+        )}
 
         <button
           type="button"
@@ -143,11 +143,11 @@ function MyHealthPage() {
         </section>
       ) : (
         <section className="mt-16 divide-y divide-border/60">
-          <SectionRow icon={Moon} name="Sleep Health" status="good" metric="sleep_score" sub="Typical sleep score: 70" />
-          <SectionRow icon={Waves} name="Stress Management" status="thriving" metric="stress" sub="Cumulative Stress: Low" />
-          <SectionRow icon={Heart} name="Heart Health" status="good" metric="resting_hr" sub="Cardiovascular Age: 2.5 years older" />
-          <SectionRow icon={Activity} name="Activity" status="thriving" metric="steps" sub="Step average: 5,511 / day" />
-          <SectionRow icon={Clock} name="Sleep Regularity" status="attention" metric="sleep_efficiency" sub="Bedtime varies ±1h 20m" />
+          <SectionRow icon={Moon} name="Sleep Health" metric="sleep_score" sub="No data yet" />
+          <SectionRow icon={Waves} name="Stress Management" metric="stress" sub="No data yet" />
+          <SectionRow icon={Heart} name="Heart Health" metric="resting_hr" sub="No data yet" />
+          <SectionRow icon={Activity} name="Activity" metric="steps" sub="No data yet" />
+          <SectionRow icon={Clock} name="Readiness" metric="readiness" sub="No data yet" />
         </section>
       )}
 
@@ -156,31 +156,35 @@ function MyHealthPage() {
         <div className="h-10 w-10 grid place-items-center rounded-full bg-[color:var(--purple-primary)]/15 text-[color:var(--purple-primary)]">
           <Activity className="h-5 w-5" />
         </div>
-        <div className="mt-4 flex items-center gap-3">
-          <p className="label-eyebrow text-muted-foreground">Step Average</p>
-          {!hasSteps && <DemoBadge />}
-        </div>
-        <p className="mt-2 numeric-display font-serif text-[48px] sm:text-[56px] text-foreground leading-none">
-          {hasSteps ? steps(snap?.stepsAvg30) : "5,511"}<span className="text-lg text-muted-foreground ml-2 font-sans">steps / day</span>
-        </p>
-        <p className="mt-4 body-serif text-foreground/70 max-w-[600px]">
-          It&rsquo;s natural for daily steps to dip every now and then. Focus on the long haul, and embrace movement whenever it fits your schedule.
-        </p>
-        <div className="mt-8 space-y-5">
-          {hasSteps ? (
-            <>
+        <p className="mt-4 label-eyebrow text-muted-foreground">Step Average</p>
+        {hasSteps ? (
+          <>
+            <p className="mt-2 numeric-display font-serif text-[48px] sm:text-[56px] text-foreground leading-none">
+              {steps(snap?.stepsAvg30)}<span className="text-lg text-muted-foreground ml-2 font-sans">steps / day</span>
+            </p>
+            <p className="mt-4 body-serif text-foreground/70 max-w-[600px]">
+              It&rsquo;s natural for daily steps to dip every now and then. Focus on the long haul, and embrace movement whenever it fits your schedule.
+            </p>
+            <div className="mt-8 space-y-5">
               <ProgressLine label="30-day average" value={snap?.stepsAvg30 ?? 0} max={10000} tone="warn" right={steps(snap?.stepsAvg30)} />
               <ProgressLine label="60-day average" value={snap?.stepsAvg60 ?? 0} max={10000} tone="warn" right={steps(snap?.stepsAvg60)} />
               <ProgressLine label="Baseline goal" value={9000} max={10000} tone="muted" dashed right="9,000" />
-            </>
-          ) : (
-            <>
-              <ProgressLine label="30-day average" value={5511} max={10000} tone="warn" right="5,511" />
-              <ProgressLine label="60-day average" value={5840} max={10000} tone="warn" right="5,840" />
-              <ProgressLine label="Baseline goal" value={9000} max={10000} tone="muted" dashed right="9,000" />
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="mt-2 numeric-display font-serif text-[48px] sm:text-[56px] text-foreground leading-none">–</p>
+            <p className="mt-4 body-serif text-foreground/70 max-w-[600px]">
+              Connect a device or keep logging activity to see your step averages here.
+            </p>
+            <Link
+              to="/settings"
+              className="mt-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+            >
+              Connect a device <ChevronRight className="h-4 w-4" />
+            </Link>
+          </>
+        )}
       </section>
 
       {/* Your conditions, deep-link into each one */}
@@ -244,20 +248,22 @@ function SectionRow({
 }: {
   icon: LucideIcon;
   name: string;
-  status: Status;
+  status?: Status;
   sub: string;
   metric?: MetricKey;
 }) {
   const content = (
     <>
-      <div className={`h-12 w-12 grid place-items-center rounded-full bg-gradient-to-br ${STATUS_GRAD[status]}`}>
+      <div className={`h-12 w-12 grid place-items-center rounded-full bg-gradient-to-br ${status ? STATUS_GRAD[status] : "from-secondary to-transparent"}`}>
         <Icon className="h-5 w-5 text-foreground" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[17px] font-semibold text-foreground">{name}</p>
-        <p className={`mt-0.5 text-[11px] uppercase tracking-[0.12em] font-medium ${STATUS_COLOR[status]}`}>
-          {STATUS_LABEL[status]}
-        </p>
+        {status != null && (
+          <p className={`mt-0.5 text-[11px] uppercase tracking-[0.12em] font-medium ${STATUS_COLOR[status]}`}>
+            {STATUS_LABEL[status]}
+          </p>
+        )}
         <p className="mt-1 text-[13px] text-muted-foreground">{sub}</p>
       </div>
       <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />

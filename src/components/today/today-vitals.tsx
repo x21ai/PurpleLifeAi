@@ -58,7 +58,7 @@ function VitalTile({ item }: { item: VitalItem }) {
 /**
  * Unified vitals across every connected device (Oura, Whoop, Apple Health),
  * pulled from the cross-source score snapshot. Shows only metrics that have
- * real data; falls back to a clearly labeled demo when there is none.
+ * real data; shows a connect prompt when there is none.
  */
 export function TodayVitals() {
   const fetchSnapshot = useServerFn(getScoreSnapshot);

@@ -23,13 +23,15 @@ test("vitals page renders without fabricated numbers", async ({ page }) => {
   await expect(page).toHaveURL(/\/vitals/);
   await expectNoServerError(page);
   await expect(page.getByText(/Readiness/i).first()).toBeVisible();
-  // A user with no biometrics sees clearly labelled demo data.
-  await expect(page.getByText(/Demo data/i).first()).toBeVisible();
+  // Without biometrics, vitals show empty states, not invented scores.
+  await expect(page.locator("body")).not.toContainText(/5,511|5511|Demo data/i);
+  await expect(page.getByText(/No data yet|No data/i).first()).toBeVisible();
 });
 
-test("my health page renders narrative and demo labelling", async ({ page }) => {
+test("my health page renders connect prompt without fake metrics", async ({ page }) => {
   await gotoApp(page, "/my-health");
   await expect(page).toHaveURL(/\/my-health/);
   await expectNoServerError(page);
-  await expect(page.getByText(/Demo data/i).first()).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(/5,511|5511|Demo data|Typical sleep score/i);
+  await expect(page.getByText(/Connect a device|No data yet/i).first()).toBeVisible();
 });

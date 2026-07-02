@@ -6,7 +6,7 @@ import { loadAndDerivePatternCards } from "./insights-patterns.functions";
 /**
  * Latest known wearable / biometric scores for the Vitals and My Health
  * screens. Every field is null when the user has no data for it, so the UI can
- * fall back to clearly labelled demo values rather than inventing numbers.
+ * show empty states rather than inventing numbers.
  */
 export type ScoreSnapshot = {
   readiness: number | null;
@@ -99,13 +99,13 @@ export const getScoreSnapshot = createServerFn({ method: "GET" })
 /**
  * A short, grounded health narrative for the My Health hero. Cached once per
  * day per user in `health_narratives` so the model is called at most daily.
- * Returns `demo: true` with a generic, non-fabricated line when there is not
- * enough real data to summarize.
+ * Returns `demo: true` with connect guidance when there is not enough real
+ * data to summarize.
  */
 export type HealthNarrative = { narrative: string; demo: boolean };
 
-const DEMO_NARRATIVE =
-  "This is a sample overview. Once you connect a device or log a few days, Purple will summarize your real patterns here.";
+const EMPTY_NARRATIVE =
+  "Connect a device or log a few days and Purple will summarize your patterns here.";
 
 function todayKey(): string {
   return new Date().toISOString().slice(0, 10);
@@ -145,7 +145,7 @@ export const getHealthNarrative = createServerFn({ method: "GET" })
     const rows = (bio as Array<Record<string, number | string | null>> | null) ?? [];
     const hasData = rows.length > 0 || cards.length > 0;
     if (!hasData) {
-      return { narrative: DEMO_NARRATIVE, demo: true };
+      return { narrative: EMPTY_NARRATIVE, demo: true };
     }
 
     const conditions = ((profile?.conditions as string[] | null) ?? []).join(", ") || "none recorded";
@@ -180,12 +180,12 @@ export const getHealthNarrative = createServerFn({ method: "GET" })
     try {
       narrative = (await callAIForUser(supabase, userId, { system, prompt, maxTokens: 220 })).trim();
     } catch {
-      // If the model is unavailable, fall back to the demo line rather than
+      // If the model is unavailable, fall back to connect guidance rather than
       // surfacing an error or fabricating a summary.
-      return { narrative: DEMO_NARRATIVE, demo: true };
+      return { narrative: EMPTY_NARRATIVE, demo: true };
     }
     if (!narrative) {
-      return { narrative: DEMO_NARRATIVE, demo: true };
+      return { narrative: EMPTY_NARRATIVE, demo: true };
     }
 
     await supabase

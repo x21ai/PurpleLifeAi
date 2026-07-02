@@ -39,8 +39,6 @@ function VitalsPage() {
     queryFn: () => fetchSnapshot(),
   });
 
-  // Until we confirm real data exists, treat the screen as demo so sample
-  // numbers are always labelled and never mistaken for the user's readings.
   const real = snap?.hasData ?? false;
   const latestLabel = snap?.latestAt
     ? new Date(snap.latestAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })
@@ -81,12 +79,12 @@ function VitalsPage() {
 
       <Section icon={Sparkles} name="Readiness">
         <MetricCard title="Readiness Score" status={real ? "Latest" : "No data"} band="fair" value={real ? fmt(snap?.readiness) : EMPTY} />
-        <MetricCard title="Symptom Radar" status="No signs" band="good" value={EMPTY} />
+        <MetricCard title="Symptom Radar" status="No data" band="fair" value={EMPTY} />
       </Section>
 
       <Section icon={Moon} name="Sleep">
         <MetricCard title="Sleep Score" status={real ? "Latest" : "No data"} band="fair" value={real ? fmt(snap?.sleepScore) : EMPTY} />
-        <MetricCard title="Body Clock" status="Aligned" band="good" value={EMPTY} />
+        <MetricCard title="Body Clock" status="No data" band="fair" value={EMPTY} />
       </Section>
 
       <Section icon={Activity} name="Activity">
