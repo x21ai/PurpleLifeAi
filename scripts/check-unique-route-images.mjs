@@ -10,7 +10,7 @@
  * Skips in-app routes under src/routes/_app/* — those have their own visual
  * vocabulary and may legitimately share assets.
  */
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, basename } from "node:path";
 
 const CALM_IMAGES_DIR = "src/lib/calm-images";
@@ -112,3 +112,23 @@ if (dupes.length > 0) {
 }
 
 console.log(`✓ All ${assetUsage.size} marketing assets are used by exactly one route.`);
+// Reject Lovable CDN pointers: they 404 outside Lovable preview.
+const calmDir = CALM_IMAGES_DIR;
+let lovableBad = false;
+for (const file of readdirSync(calmDir)) {
+  if (!file.endsWith(".ts") || file.startsWith("_")) continue;
+  const src = readFileSync(join(calmDir, file), "utf8");
+  if (src.includes("__l5e") || src.includes(".asset.json")) {
+    console.error(`✗ ${join(calmDir, file)} references Lovable CDN assets (__l5e or .asset.json). Use local src/assets/*.jpg with vite imagetools instead.`);
+    lovableBad = true;
+  }
+  const importRe = /import\s+\w+\s+from\s+["']@\/assets\/([^"'?]+)(?:\?[^"']*)?["']/g;
+  for (const m of src.matchAll(importRe)) {
+    const assetPath = join("src/assets", m[1]);
+    if (!existsSync(assetPath)) {
+      console.error(`✗ Missing marketing asset file: ${assetPath} (imported from ${file})`);
+      lovableBad = true;
+    }
+  }
+}
+if (lovableBad) process.exit(1);

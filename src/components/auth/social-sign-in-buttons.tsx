@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { lovable } from "@/integrations/lovable";
+import { supabase } from "@/integrations/supabase/client";
+import { oauthRedirectUrl } from "@/lib/auth-oauth";
+import { isLovablePreviewHost } from "@/lib/lovable-preview";
 import { isNativeApp } from "@/lib/native";
 import { nativeSignInWithOAuth } from "@/lib/native/oauth";
 import { toast } from "sonner";
@@ -61,20 +64,34 @@ export function SocialSignInButtons({ helper }: { helper?: string } = {}) {
       }
       return;
     }
-    const result = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: window.location.origin,
+    if (isLovablePreviewHost()) {
+      const result = await lovable.auth.signInWithOAuth(provider, {
+        redirect_uri: window.location.origin,
+      });
+      if (result.redirected) return;
+      if (result.error) {
+        setBusy(null);
+        toast.error(
+          provider === "apple"
+            ? "Apple sign-in didn't work. Try email, or try again in a moment."
+            : "Google sign-in didn't work. Try email, or try again in a moment.",
+        );
+      }
+      return;
+    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: oauthRedirectUrl() },
     });
-    if (result.redirected) return;
-    if (result.error) {
+    if (error) {
       setBusy(null);
       toast.error(
         provider === "apple"
           ? "Apple sign-in didn't work. Try email, or try again in a moment."
           : "Google sign-in didn't work. Try email, or try again in a moment.",
       );
-      return;
     }
-    // Session set by lovable wrapper; root onAuthStateChange handles routing.
+    // signInWithOAuth navigates the browser to the provider; nothing else to do.
   };
 
   return (
