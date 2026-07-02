@@ -206,11 +206,29 @@ function SignInPage() {
       password,
       options: { emailRedirectTo: window.location.origin + "/today" },
     });
+    const showAlreadyRegistered = () => {
+      const msg = t("signIn.alreadyRegistered");
+      setMode("signin");
+      setErrorMsg(msg);
+      toast.error(msg);
+      setStatus("error");
+    };
     if (error) {
+      if (error.message.toLowerCase().includes("already registered")) {
+        showAlreadyRegistered();
+        return;
+      }
       const msg = friendlyAuthError(error.message);
       setErrorMsg(msg);
       toast.error(msg);
       setStatus("error");
+      return;
+    }
+    // With email confirmations enabled, Supabase protects against email
+    // enumeration: signUp for an existing confirmed email "succeeds" with an
+    // obfuscated user that has no identities instead of returning an error.
+    if (!data.session && data.user && (data.user.identities?.length ?? 0) === 0) {
+      showAlreadyRegistered();
       return;
     }
     // Persist auto-detected locale prefill so /welcome shows sensible defaults.
@@ -369,6 +387,11 @@ function SignInPage() {
                         className={`h-14 text-lg font-serif rounded-xl ${status === "error" ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         disabled={status === "submitting"}
                       />
+                      {status === "error" && errorMsg && (
+                        <p role="alert" className="text-sm text-destructive pt-1">
+                          {errorMsg}
+                        </p>
+                      )}
                       {mode === "register" && (
                         <p className="text-xs text-muted-foreground pt-1">
                           We&rsquo;ll ask a few quick things after you confirm your email, region, conditions, and anything else that helps Purple help you.

@@ -497,6 +497,7 @@
     "freeForever": "Gratis para siempre. Código abierto. Sin anuncios.",
     "oauthError": "El inicio de sesión no se completó. Inténtalo de nuevo o usa tu correo.",
     "enterEmailFirst": "Escribe tu correo arriba y pulsa ¿Olvidaste tu contraseña?",
+    "alreadyRegistered": "Este correo ya tiene una cuenta de Purple. Inicia sesión o usa ¿Olvidaste tu contraseña? si no la recuerdas.",
     "trustLine": "Sin anuncios. Sin rastreadores. Tus datos son tuyos.",
     "trustLink": "Cómo cumplimos esa promesa"
   },
