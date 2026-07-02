@@ -87,6 +87,7 @@ Verified present and wired as of the audit date.
 | Supabase types check | `bun run check:supabase-types` | `types.ts` truncated or regenerated against the wrong project (requires `health_narratives`, `sync_mode`, community view names, and at least 3000 lines) | prebuild, CI |
 | Live data check | `bun run check:live-data` | Placeholder or test data in marketing pages and seeds | CI |
 | Unique images check | `bun run check:unique-images` | Two marketing routes sharing a hero image, plus any `__l5e` or `.asset.json` Lovable CDN pointer in `src/lib/calm-images/`, plus imports of asset files that do not exist on disk | CI |
+| Lovable auth guard | `bun run check:lovable-auth` | Any file in `src/` that imports `@/integrations/lovable` or calls `lovable.auth` without also branching on `isLovablePreviewHost` (the OAuth production incident, case study 3) | CI |
 | Type check | `bunx tsc --noEmit` | Type errors, broken imports, contract drift | CI |
 | Build | `bun run build` | Anything that compiles under tsc but fails to bundle (prebuild gates run again here) | CI, deploy |
 | Entry budget | `bun run check:entry-budget` | Client bundle bloat regressions | CI |
@@ -95,10 +96,10 @@ Verified present and wired as of the audit date.
 | Visual layout | `tests/e2e/visual-layout.spec.ts` | Full-bleed drift, uncapped sheet widths on desktop | manual, before deploy |
 | Prod smoke | `bun run test:e2e:prod` (Doppler creds) | The deployed site actually working, signed-in flows included | manual, after deploy |
 
-CI (`.github/workflows/ci.yml`) triggers on pull requests and pushes to
-`main`. Pushes to `lovable/redesign` do not trigger CI by themselves; the
-gates run when Cursor reviews locally and again when the merge lands on
-`main`. See backlog.
+CI (`.github/workflows/ci.yml`) triggers on pull requests and on pushes to
+both `main` and `lovable/redesign`, so Lovable's raw pushes get the full gate
+suite automatically before Cursor even starts the review. The gates run again
+when the merge lands on `main`.
 
 ## Environment parity
 
@@ -156,13 +157,15 @@ files served through vite imagetools.
 **Why preview hid it:** that client only works on Lovable preview hosts. On
 `www.purplelife.org`, Apple and Google sign-in silently failed.
 
-**Guard now:** a runtime split rather than a CI check.
-`src/lib/lovable-preview.ts` exports `isLovablePreviewHost()`, and
+**Guard now:** two layers. At runtime, `src/lib/lovable-preview.ts` exports
+`isLovablePreviewHost()`, and
 `src/components/auth/social-sign-in-buttons.tsx` branches: Lovable preview
 hosts use `lovable.auth`, everything else uses
-`supabase.auth.signInWithOAuth`. There is currently no CI guard that rejects a
-new unguarded `lovable.auth` call site; that relies on Cursor review (see
-backlog).
+`supabase.auth.signInWithOAuth`. In CI,
+`scripts/check-lovable-auth-guard.mjs` (`bun run check:lovable-auth`) fails
+if any file in `src/` imports `@/integrations/lovable` or calls
+`lovable.auth` without also referencing `isLovablePreviewHost` in the same
+file, so a reintroduced unguarded call site cannot merge.
 
 ## Runbook: Lovable pushed changes
 
@@ -223,16 +226,9 @@ backlog).
 
 - **No PR-based review flow.** The `gh` CLI is unavailable locally and no
   GitHub token is configured, so review happens in the working tree and merges
-  are direct pushes. A PR per Lovable drop would give CI-before-merge,
-  reviewable diffs, and an audit trail. This also means CI does not run on
-  `lovable/redesign` pushes at all (CI triggers on PRs and `main` only), so
-  the first automated run of the gates happens after the code is already on
-  `main`. Adding `lovable/redesign` to the CI push triggers would be a
-  one-line fix and is the cheapest improvement available.
-- **No CI guard for `lovable.auth` usage.** Case study 3's fix is a runtime
-  branch, and nothing stops Lovable reintroducing an unguarded
-  `lovable.auth.*` call. A small check script (fail if `lovable.auth` appears
-  in a file that does not also gate on `isLovablePreviewHost`) would close it.
+  are direct pushes. CI now runs on `lovable/redesign` pushes, which covers
+  the automated gates, but a PR per Lovable drop would still add reviewable
+  diffs, required-check enforcement before merge, and an audit trail.
 - **The Lovable CDN pointer check only scans `src/lib/calm-images/`.** A
   `__l5e` or `.asset.json` reference elsewhere in `src/` would slip through.
   Widening the scan to all of `src/` is low cost.

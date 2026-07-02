@@ -24,6 +24,7 @@
     "check:live-data:db": "node scripts/check-no-test-data.mjs --db",
     "check:em-dash": "node scripts/check-no-em-dash.mjs",
     "check:unique-images": "node scripts/check-unique-route-images.mjs",
+    "check:lovable-auth": "node scripts/check-lovable-auth-guard.mjs",
     "check:entry-budget": "node scripts/check-entry-budget.mjs",
     "test:responsive": "playwright test tests/e2e/responsive-sweep.spec.ts",
     "test:vitals": "playwright test tests/e2e/web-vitals.spec.ts --project=desktop-1024 --workers=1",

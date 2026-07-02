@@ -6,7 +6,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, lovable/redesign]
 
 env:
   VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
@@ -24,6 +24,7 @@ jobs:
       - run: bun run check:supabase-types
       - run: bun run check:live-data
       - run: bun run check:unique-images
+      - run: bun run check:lovable-auth
       # Repo-wide `bun run lint` carries pre-existing prettier debt and stays
       # out of CI until a one-shot format lands. Type safety is enforced here.
       - run: bunx tsc --noEmit
