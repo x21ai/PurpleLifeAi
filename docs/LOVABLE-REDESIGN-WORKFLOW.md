@@ -1,5 +1,8 @@
 # Lovable redesign workflow
 
+> Full sync architecture, quality gate reference, case studies, and release
+> runbooks live in [`SYNC-AND-RELEASE.md`](SYNC-AND-RELEASE.md).
+
 Whole-app redesign happens in Lovable. GitHub `main` on `AstroAii/purpledrw` is
 the sync bus between Lovable and Cursor. Production (`www.purplelife.org`) does
 **not** auto-deploy on every push during redesign; Cursor reviews and tests every
