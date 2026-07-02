@@ -514,7 +514,14 @@
     "done": "Password updated. Taking you to Purple…",
     "openFromEmail": "Open this page from the link in your reset email.",
     "tooShort": "Password must be at least 8 characters.",
-    "mismatch": "Passwords don't match."
+    "mismatch": "Passwords don't match.",
+    "mfaPrompt": "This account has two-factor authentication. Enter the 6-digit code from your authenticator app to continue.",
+    "mfaCodeLabel": "Authenticator code",
+    "mfaPlaceholder": "123456",
+    "mfaVerifying": "Verifying…",
+    "mfaVerifyBtn": "Verify code",
+    "mfaInvalid": "That code didn't work. Check your authenticator app and try again.",
+    "mfaNeeded": "This account has two-factor authentication. Enter your authenticator code to continue."
   },
   "doseCatchup": {
     "body": "You may have missed your {{time}} {{med}} dose yesterday. Want to log it?",
