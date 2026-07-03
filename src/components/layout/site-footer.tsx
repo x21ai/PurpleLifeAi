@@ -37,7 +37,7 @@ export function SiteFooter() {
             GitHub
           </a>
         </nav>
-        <p className="text-xs">© {year} Purple · Free forever. · Built by X21 Ai</p>
+        <p className="text-xs">© {year} Purple · Free forever · Built by X21 Ai</p>
       </div>
     </footer>
   );
