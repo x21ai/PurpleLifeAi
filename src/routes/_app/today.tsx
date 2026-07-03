@@ -152,6 +152,10 @@ function TodayPage() {
   const [firstWords, setFirstWords] = useState<string | null>(null);
   // Secondary cards are tucked behind a disclosure so the top stays calm.
   const [showMore, setShowMore] = useState(false);
+  // Selected date for the horizontal date strip. Defaults to today; when the
+  // user picks another day we show a historical caption and keep today-only
+  // nudges hidden.
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
 
   useEffect(() => setNow(new Date()), []);
 
