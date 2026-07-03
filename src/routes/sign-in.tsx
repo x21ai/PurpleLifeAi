@@ -96,6 +96,7 @@ function SignInPage() {
   });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [status, setStatus] = useState<
     "idle" | "submitting" | "verify-sent" | "reset-sent" | "error"
   >("idle");
