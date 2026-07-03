@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { SocialSignInButtons } from "@/components/auth/social-sign-in-buttons";
 import { isOAuthCallbackUrl, waitForOAuthSession } from "@/lib/auth-oauth";
 import { toast } from "sonner";
@@ -94,6 +96,7 @@ function SignInPage() {
   });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [status, setStatus] = useState<
     "idle" | "submitting" | "verify-sent" | "reset-sent" | "error"
   >("idle");
@@ -173,6 +176,13 @@ function SignInPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) return;
+    if (mode === "register" && !agreed) {
+      const msg = "Please agree to the terms of use and privacy policy to continue.";
+      setErrorMsg(msg);
+      toast.error(msg);
+      setStatus("error");
+      return;
+    }
     setStatus("submitting");
     setErrorMsg(null);
     if (mode === "signin") {
@@ -419,15 +429,36 @@ function SignInPage() {
                   <p role="alert" className="text-sm text-destructive">{errorMsg}</p>
                 )}
                 {mode === "register" && (
-                  <p className="text-xs text-muted-foreground">
-                    We&rsquo;ll ask a few quick things after you confirm your email, region, conditions, and anything else that helps Purple help you.
-                  </p>
+                  <>
+                    <div className="flex items-start gap-2.5">
+                      <Checkbox
+                        id="agree-terms"
+                        checked={agreed}
+                        onCheckedChange={(checked) => setAgreed(checked === true)}
+                        aria-describedby="agree-terms-label"
+                      />
+                      <Label id="agree-terms-label" htmlFor="agree-terms" className="text-xs text-muted-foreground leading-tight cursor-pointer">
+                        I agree to the{" "}
+                        <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">
+                          terms of use
+                        </Link>{" "}
+                        and{" "}
+                        <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
+                          privacy policy
+                        </Link>
+                        <span aria-hidden="true" className="text-destructive ml-0.5">*</span>
+                      </Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      We&rsquo;ll ask a few quick things after you confirm your email, region, conditions, and anything else that helps Purple help you.
+                    </p>
+                  </>
                 )}
 
                 <Button
                   type="submit"
                   className="w-full h-12 text-base rounded-md mt-2"
-                  disabled={status === "submitting"}
+                  disabled={status === "submitting" || (mode === "register" && !agreed)}
                 >
                   {status === "submitting"
                     ? mode === "signin" ? t("signIn.signingIn") : t("signIn.creating")
