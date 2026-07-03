@@ -176,6 +176,13 @@ function SignInPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) return;
+    if (mode === "register" && !agreed) {
+      const msg = "Please agree to the terms of use and privacy policy to continue.";
+      setErrorMsg(msg);
+      toast.error(msg);
+      setStatus("error");
+      return;
+    }
     setStatus("submitting");
     setErrorMsg(null);
     if (mode === "signin") {
