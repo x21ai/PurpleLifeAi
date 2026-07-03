@@ -30,8 +30,8 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 | Runtime | Cloudflare Worker (`wrangler.deploy.jsonc`, entry `src/server.ts`, `nodejs_compat`) |
 | Package manager | bun (commands below) |
 | Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
-| Git heads | `main` and `lovable/redesign` at `0367edc` (synced) |
-| Production deploy | Worker `purplelife`, version `bd28333c-3141-4881-8df5-da51d0fd991d` |
+| Git heads | `main` and `lovable/redesign` at `19d8d4d` (synced) |
+| Production deploy | Worker `purplelife`, version `0819ad08-5097-4f76-af96-eb8610942f58` (commit `19d8d4d`) |
 | Dev server | `bun run dev` on port 8080 |
 | E2E local | `bun run test:e2e` (boots dev server unless `E2E_BASE_URL` set) |
 | E2E prod | `bun run test:e2e:prod` (580 tests, 5 viewports, ~1.5h; Doppler creds) |
@@ -61,7 +61,7 @@ Redesign baseline on `main`: commit `7086ffa` (perf/responsive/native foundation
 
 ## Recent changes (2026-07-02 to 2026-07-03)
 
-1. **iOS / PWA mobile fixes (2026-07-03, uncommitted):** Date strip edge padding + margin parity with Today column; mobile nav sheet scroll containment + GitHub link removed; PWA install banner platform detection (`src/lib/pwa-platform.ts`) with iOS Safari vs Chrome guidance; keyboard focus helper + 16px inputs on mobile; Apple Health Tools copy (Health Auto Export steps, no HealthKit on web); manifest `start_url` `/today`, `display_override`.
+1. **iOS / PWA mobile fixes (2026-07-03, `19d8d4d`, deploy `0819ad08`):** Date strip edge padding + margin parity with Today column; mobile nav sheet scroll containment + GitHub link removed; PWA install banner platform detection (`src/lib/pwa-platform.ts`) with iOS Safari vs Chrome guidance; keyboard focus helper + 16px inputs on mobile; Apple Health Tools copy (Health Auto Export steps, no HealthKit on web); manifest `start_url` `/today`, `display_override`.
 2. **Lovable merge (2026-07-03):** Today `DateStrip`, historical day view, date-aware vitals, sign-in redesign; follow-up commit removed score-tile date gating (`d209c34`). Deploy `bd28333c`.
 2. **Lovable redesign merged and deployed** to prod; OAuth host split, home images restored from Lovable CDN breakage.
 2. **Auth fixes:** MFA-aware reset password, duplicate-email signup message, supabase-js 2.110.0.
