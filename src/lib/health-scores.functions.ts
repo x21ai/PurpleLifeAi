@@ -50,16 +50,16 @@ export const getScoreSnapshot = createServerFn({ method: "GET" })
   .inputValidator((data?: { date?: string | null }) => ({
     date: data?.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date : null,
   }))
-  .handler(async ({ context, data }): Promise<ScoreSnapshot> => {
+  .handler(async ({ context, data: input }): Promise<ScoreSnapshot> => {
     const { supabase, userId } = context;
     const since = new Date(Date.now() - 60 * DAY_MS).toISOString();
     // When a specific day is requested, narrow the "latest" values to rows
     // whose recorded_at falls inside that UTC day. Trailing step averages
     // continue to use the rolling 30/60 window from today.
-    const dayStartIso = data.date ? `${data.date}T00:00:00.000Z` : null;
-    const dayEndIso = data.date ? `${data.date}T23:59:59.999Z` : null;
+    const dayStartIso = input.date ? `${input.date}T00:00:00.000Z` : null;
+    const dayEndIso = input.date ? `${input.date}T23:59:59.999Z` : null;
 
-    const { data } = await supabase
+    const { data: rowData } = await supabase
       .from("biometrics")
       .select(
         "recorded_at, oura_readiness_score, sleep_score, oura_activity_score, oura_stress_score, hrv_rmssd_ms, resting_hr_bpm, vo2_max, spo2_pct, steps",
@@ -69,7 +69,7 @@ export const getScoreSnapshot = createServerFn({ method: "GET" })
       .order("recorded_at", { ascending: false })
       .limit(200);
 
-    const rows = (data as ScoreRow[] | null) ?? [];
+    const rows = (rowData as ScoreRow[] | null) ?? [];
     const dayRows = dayStartIso && dayEndIso
       ? rows.filter((r) => {
           const t = r.recorded_at;
