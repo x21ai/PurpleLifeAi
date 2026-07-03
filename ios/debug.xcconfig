@@ -1,1 +1,4 @@
 CAPACITOR_DEBUG = true
+
+// Optional Apple Team ID (gitignored LocalSigning.xcconfig or xcodebuild DEVELOPMENT_TEAM=...)
+#include? "signing.xcconfig"

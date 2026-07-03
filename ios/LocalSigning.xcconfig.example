@@ -1,0 +1,4 @@
+// Copy to LocalSigning.xcconfig (gitignored) or generate via:
+//   doppler run --project cursor-cloudflare --config prd_cloudlfare -- bun run ios:local-signing
+// Doppler secret name: DEVELOPMENT_TEAM (10-character Apple Team ID)
+DEVELOPMENT_TEAM =

@@ -35,7 +35,8 @@
     "native:add": "bunx cap add ios && bunx cap add android",
     "native:sync": "bunx cap sync",
     "native:open:ios": "bunx cap open ios",
-    "native:open:android": "bunx cap open android"
+    "native:open:android": "bunx cap open android",
+    "ios:local-signing": "bash scripts/ios-write-local-signing.sh"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.82",

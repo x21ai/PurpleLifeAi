@@ -1,0 +1,3 @@
+// Pull team ID from gitignored LocalSigning.xcconfig (see LocalSigning.xcconfig.example).
+// Or pass at build time: xcodebuild DEVELOPMENT_TEAM=XXXXXXXXXX ...
+#include? "LocalSigning.xcconfig"
