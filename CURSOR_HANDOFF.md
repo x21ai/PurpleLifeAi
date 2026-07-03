@@ -61,7 +61,8 @@ Redesign baseline on `main`: commit `7086ffa` (perf/responsive/native foundation
 
 ## Recent changes (2026-07-02 to 2026-07-03)
 
-1. **Lovable merge (2026-07-03):** Today `DateStrip`, historical day view, date-aware vitals, sign-in redesign; follow-up commit removed score-tile date gating (`d209c34`). Deploy `bd28333c`.
+1. **iOS / PWA mobile fixes (2026-07-03, uncommitted):** Date strip edge padding + margin parity with Today column; mobile nav sheet scroll containment + GitHub link removed; PWA install banner platform detection (`src/lib/pwa-platform.ts`) with iOS Safari vs Chrome guidance; keyboard focus helper + 16px inputs on mobile; Apple Health Tools copy (Health Auto Export steps, no HealthKit on web); manifest `start_url` `/today`, `display_override`.
+2. **Lovable merge (2026-07-03):** Today `DateStrip`, historical day view, date-aware vitals, sign-in redesign; follow-up commit removed score-tile date gating (`d209c34`). Deploy `bd28333c`.
 2. **Lovable redesign merged and deployed** to prod; OAuth host split, home images restored from Lovable CDN breakage.
 2. **Auth fixes:** MFA-aware reset password, duplicate-email signup message, supabase-js 2.110.0.
 3. **HIPAA data cleanup:** removed fake health metrics; empty states + connect prompts; `check-no-fake-vitals.mjs` CI guard.

@@ -36,11 +36,14 @@ export function MobileTopBar() {
           >
             <Menu className="h-5 w-5" />
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0">
-            <SheetHeader className="px-5 pt-6 pb-3 text-left">
+          <SheetContent side="left" className="w-72 p-0 flex flex-col h-full overflow-hidden">
+            <SheetHeader className="shrink-0 px-5 pt-6 pb-3 text-left border-b border-border">
               <SheetTitle className="wordmark text-[13px] text-foreground">Purple</SheetTitle>
             </SheetHeader>
-            <nav className="px-3 py-2 space-y-1" aria-label="Mobile primary">
+            <nav
+              className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-2 space-y-1"
+              aria-label="Mobile primary"
+            >
               {tree.map((group) => (
                 <MobileGroup
                   key={group.id}
@@ -53,7 +56,7 @@ export function MobileTopBar() {
               ))}
               <CaregiverNavLink variant="sheet" onClick={() => setOpen(false)} />
             </nav>
-            <div className="mt-2 mx-3 pt-4 border-t border-border space-y-1 text-[14px]">
+            <div className="shrink-0 mx-3 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-border space-y-1 text-[14px]">
               <Link
                 to="/charter"
                 onClick={() => setOpen(false)}
@@ -75,14 +78,6 @@ export function MobileTopBar() {
               >
                 Terms
               </Link>
-              <a
-                href="https://github.com/purplelife/purple"
-                target="_blank"
-                rel="noreferrer noopener"
-                className="block px-3 py-2 text-muted-foreground hover:text-foreground"
-              >
-                Open source on GitHub
-              </a>
             </div>
           </SheetContent>
         </Sheet>

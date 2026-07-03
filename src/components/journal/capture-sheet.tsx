@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useVoiceCapture } from "./use-voice-capture";
 import { promptsForConditions } from "@/lib/condition-prompts";
 import { userMessage } from "@/lib/user-message";
+import { focusInput } from "@/lib/focus-input";
 
 type Attachment = {
   id: string;
@@ -117,12 +118,12 @@ export function CaptureSheet({
       if (prev.includes(prompt)) return prev;
       return prev.trimEnd() + "\n\n" + scaffold;
     });
-    setTimeout(() => textareaRef.current?.focus(), 0);
+    focusInput(textareaRef.current);
   };
 
   React.useEffect(() => {
     if (open) {
-      setTimeout(() => textareaRef.current?.focus(), 50);
+      focusInput(textareaRef.current, 120);
     } else {
       // Reset on close
       setText("");
@@ -286,7 +287,11 @@ export function CaptureSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[92dvh] sm:h-[88dvh] flex flex-col p-0 rounded-t-2xl">
+      <SheetContent
+        side="bottom"
+        className="h-[92dvh] sm:h-[88dvh] flex flex-col p-0 rounded-t-2xl"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <SheetHeader className="border-b border-border">
           <SheetColumn className="flex flex-row items-center justify-between space-y-0 px-5 pt-5 pb-3 pr-14">
             <SheetTitle className="font-serif text-lg font-normal">New entry</SheetTitle>

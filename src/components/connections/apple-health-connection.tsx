@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Smartphone, Copy, Check, Loader2 } from "lucide-react";
+import { Smartphone, Copy, Check, Loader2, ExternalLink } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -89,8 +89,10 @@ export function AppleHealthConnection() {
       const res = await fetch(url, { method: "GET" });
       if (res.ok) {
         toast.success("Webhook reachable. Purple is listening for your exports.");
+      } else if (res.status === 401) {
+        toast.error("Invalid webhook token. Tap Disconnect, then Connect again.");
       } else {
-        toast.error("Webhook test failed. Recopy the URL into Health Auto Export.");
+        toast.error(`Webhook test failed (${res.status}). Recopy the URL into Health Auto Export.`);
       }
     } catch {
       toast.error("Could not reach the webhook. Check your connection and the URL.");
@@ -184,11 +186,34 @@ export function AppleHealthConnection() {
           </div>
         </div>
 
-        <div className="pl-11 space-y-2">
-          <p className="text-xs text-muted-foreground">
-            In Health Auto Export (iOS) add an automation pointing to this URL, JSON format, every
-            1–6 hours:
+        <div className="pl-11 space-y-3">
+          <p className="text-xs text-muted-foreground rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+            Purple is a web app, so it cannot show an Apple HealthKit permission like native apps.
+            Data reaches Purple when the <strong>Health Auto Export</strong> app on your iPhone POSTs
+            readings to your personal URL below.
           </p>
+          <div>
+            <p className="text-xs font-medium text-foreground">Setup in Health Auto Export</p>
+            <ol className="mt-1.5 space-y-1 text-xs text-muted-foreground list-decimal pl-4">
+              <li>
+                Install{" "}
+                <a
+                  href="https://apps.apple.com/app/health-auto-export-json-csv/id1115567069"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex items-center gap-0.5 underline text-foreground"
+                >
+                  Health Auto Export
+                  <ExternalLink className="h-3 w-3" aria-hidden />
+                </a>{" "}
+                from the App Store.
+              </li>
+              <li>Open Automations → add REST API (or Webhook).</li>
+              <li>Paste the URL below. Method: POST. Format: JSON.</li>
+              <li>Select metrics: sleep, HRV, resting HR, steps, SpO₂, and others you track.</li>
+              <li>Set schedule to every 1–6 hours, then run Test in HAE and tap Test here.</li>
+            </ol>
+          </div>
           <div className="flex items-center gap-2">
             <code className="flex-1 truncate rounded-md border border-foreground/10 bg-foreground/[0.04] px-3 py-2 text-[11px] font-mono">
               {url}
@@ -202,7 +227,8 @@ export function AppleHealthConnection() {
             <Link to="/apple-health-import" className="underline">
               Upload your export.xml
             </Link>
-            .
+            . A native Purple iOS app with direct HealthKit is planned; the web uses this push-only
+            path today.
           </p>
         </div>
       </div>
@@ -210,23 +236,31 @@ export function AppleHealthConnection() {
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 py-2">
-      <div className="flex items-center gap-3 min-w-0">
-        <span className="rounded-full bg-secondary p-2 text-secondary-foreground shrink-0">
-          <Smartphone className="h-4 w-4" />
-        </span>
-        <div className="min-w-0">
-          <p className="font-serif text-base text-foreground">Apple Health</p>
-          <p className="text-xs text-muted-foreground truncate">
-            {connected === null
-              ? "\u00a0"
-              : "Sleep, HRV, steps, VO2max (via Health Auto Export or XML)"}
-          </p>
+    <div className="py-2 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="rounded-full bg-secondary p-2 text-secondary-foreground shrink-0">
+            <Smartphone className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <p className="font-serif text-base text-foreground">Apple Health</p>
+            <p className="text-xs text-muted-foreground">
+              {connected === null
+                ? "\u00a0"
+                : "Via Health Auto Export on iPhone (no HealthKit prompt in the browser)"}
+            </p>
+          </div>
         </div>
+        <Button size="sm" onClick={() => void connect()} disabled={busy}>
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Connect"}
+        </Button>
       </div>
-      <Button size="sm" onClick={() => void connect()} disabled={busy}>
-        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Connect"}
-      </Button>
+      {connected !== null && (
+        <p className="text-xs text-muted-foreground pl-11">
+          Tap Connect to get your personal webhook URL, then finish setup in the Health Auto Export
+          app. Purple cannot pull from Apple Health directly.
+        </p>
+      )}
     </div>
   );
 }

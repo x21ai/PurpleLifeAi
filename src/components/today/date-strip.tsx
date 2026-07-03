@@ -8,33 +8,88 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 export interface DateStripProps {
   value: Date;
   onChange: (d: Date) => void;
-  /** How many days back from today to render. Default 30. */
+  /** Past days to show (not counting today). Default 7. */
   daysBack?: number;
+  /** Future days to show after today (visible, not selectable). Default 7. */
+  daysForward?: number;
   className?: string;
 }
 
 /**
- * Horizontal, snap-scrolling date strip inspired by health-tracking apps
- * (Olivia, Apple Fitness). Renders `daysBack` rounded day tiles ending at
- * today; the selected tile is highlighted and auto-scrolled into view.
+ * Nudge scroll until the tile's visual center matches the scroller's center.
+ * Uses getBoundingClientRect so padding and responsive widths stay correct.
  */
-export function DateStrip({ value, onChange, daysBack = 30, className }: DateStripProps) {
+function scrollTileToCenter(scroller: HTMLElement, tile: HTMLElement) {
+  const scrollerRect = scroller.getBoundingClientRect();
+  const tileRect = tile.getBoundingClientRect();
+  const scrollerCenter = scrollerRect.left + scrollerRect.width / 2;
+  const tileCenter = tileRect.left + tileRect.width / 2;
+  scroller.scrollLeft += tileCenter - scrollerCenter;
+}
+
+/**
+ * Horizontal date strip: symmetric past/today/future tiles; today centered on load
+ * and on resize at any viewport width.
+ */
+export function DateStrip({
+  value,
+  onChange,
+  daysBack = 7,
+  daysForward = 7,
+  className,
+}: DateStripProps) {
   const today = React.useMemo(() => startOfDay(new Date()), []);
-  const days = React.useMemo(
-    () => Array.from({ length: daysBack }, (_, i) => addDays(today, -(daysBack - 1 - i))),
-    [today, daysBack],
-  );
+  const days = React.useMemo(() => {
+    const past = Array.from({ length: daysBack }, (_, i) =>
+      addDays(today, -(daysBack - i)),
+    );
+    const future = Array.from({ length: daysForward }, (_, i) =>
+      addDays(today, i + 1),
+    );
+    return [...past, today, ...future];
+  }, [today, daysBack, daysForward]);
 
   const scrollerRef = React.useRef<HTMLDivElement>(null);
   const selectedRef = React.useRef<HTMLButtonElement>(null);
+  const todayRef = React.useRef<HTMLButtonElement>(null);
+  /** Half the scroller width minus half a tile; lets any day scroll to true center. */
+  const [edgePad, setEdgePad] = React.useState(0);
 
-  React.useEffect(() => {
-    selectedRef.current?.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest",
+  const measureEdgePad = React.useCallback(() => {
+    const scroller = scrollerRef.current;
+    const tile = todayRef.current ?? selectedRef.current;
+    if (!scroller) return;
+    const tileW = tile?.offsetWidth ?? 56;
+    setEdgePad(Math.max(0, scroller.clientWidth / 2 - tileW / 2));
+  }, []);
+
+  const centerActiveTile = React.useCallback(() => {
+    const scroller = scrollerRef.current;
+    const target = isSameDay(value, today) ? todayRef.current : selectedRef.current;
+    if (!scroller || !target) return;
+    scrollTileToCenter(scroller, target);
+  }, [value, today]);
+
+  React.useLayoutEffect(() => {
+    centerActiveTile();
+    const id = requestAnimationFrame(() => {
+      centerActiveTile();
+      requestAnimationFrame(centerActiveTile);
     });
-  }, [value]);
+    return () => cancelAnimationFrame(id);
+  }, [centerActiveTile, days]);
+
+  React.useLayoutEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const ro = new ResizeObserver(() => {
+      measureEdgePad();
+      centerActiveTile();
+    });
+    ro.observe(scroller);
+    measureEdgePad();
+    return () => ro.disconnect();
+  }, [centerActiveTile, measureEdgePad]);
 
   const goDelta = (delta: number) => {
     const next = addDays(value, delta);
@@ -103,47 +158,60 @@ export function DateStrip({ value, onChange, daysBack = 30, className }: DateStr
 
       <div
         ref={scrollerRef}
-        className="-mx-4 sm:-mx-6 px-4 sm:px-6 flex gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-none [&::-webkit-scrollbar]:hidden"
+        className="-mx-5 sm:-mx-8 overflow-x-auto snap-x snap-mandatory scroll-px-[50%] px-5 sm:px-8 scrollbar-none [&::-webkit-scrollbar]:hidden"
         role="listbox"
         aria-label="Select a date"
       >
-        {days.map((d) => {
-          const isSelected = isSameDay(d, value);
-          const isToday = isSameDay(d, today);
-          return (
-            <button
-              key={d.toISOString()}
-              ref={isSelected ? selectedRef : undefined}
-              type="button"
-              role="option"
-              aria-selected={isSelected}
-              onClick={() => onChange(d)}
-              className={cn(
-                "shrink-0 snap-center w-14 sm:w-16 h-[68px] rounded-2xl border flex flex-col items-center justify-center gap-0.5 transition-colors",
-                isSelected
-                  ? "bg-card border-primary ring-1 ring-primary text-foreground shadow-sm"
-                  : "bg-card/60 border-border text-muted-foreground hover:text-foreground hover:bg-card",
-              )}
-            >
-              <span
+        <div
+          className="flex w-max gap-2"
+          style={{ paddingLeft: edgePad, paddingRight: edgePad }}
+        >
+          {days.map((d) => {
+            const isSelected = isSameDay(d, value);
+            const isToday = isSameDay(d, today);
+            const isFuture = d > today;
+            return (
+              <button
+                key={d.toISOString()}
+                ref={isToday ? todayRef : isSelected ? selectedRef : undefined}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                aria-disabled={isFuture}
+                disabled={isFuture}
+                onClick={() => {
+                  if (!isFuture) onChange(d);
+                }}
                 className={cn(
-                  "text-[10px] uppercase tracking-[0.12em]",
-                  isSelected && isToday ? "text-primary font-semibold" : "",
+                  "shrink-0 snap-center w-14 sm:w-16 h-[68px] rounded-2xl border flex flex-col items-center justify-center gap-0.5 transition-colors",
+                  isFuture &&
+                    "opacity-35 cursor-default border-border/50 bg-card/30 text-muted-foreground",
+                  !isFuture &&
+                    (isSelected
+                      ? "bg-card border-primary ring-1 ring-primary text-foreground shadow-sm"
+                      : "bg-card/60 border-border text-muted-foreground hover:text-foreground hover:bg-card"),
                 )}
               >
-                {isToday ? "Today" : format(d, "EEE")}
-              </span>
-              <span
-                className={cn(
-                  "font-serif text-xl tabular-nums",
-                  isSelected ? "text-foreground" : "",
-                )}
-              >
-                {format(d, "d")}
-              </span>
-            </button>
-          );
-        })}
+                <span
+                  className={cn(
+                    "text-[10px] uppercase tracking-[0.12em]",
+                    isSelected && isToday ? "text-primary font-semibold" : "",
+                  )}
+                >
+                  {isToday ? "Today" : format(d, "EEE")}
+                </span>
+                <span
+                  className={cn(
+                    "font-serif text-xl tabular-nums",
+                    isSelected && !isFuture ? "text-foreground" : "",
+                  )}
+                >
+                  {format(d, "d")}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

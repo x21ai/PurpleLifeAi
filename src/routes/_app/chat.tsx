@@ -20,6 +20,7 @@ import { executePurpleAction } from "@/lib/purple-actions.functions";
 import { useIsPro } from "@/lib/pro-gate";
 import { ProGate } from "@/components/pro/pro-gate";
 import { userMessage } from "@/lib/user-message";
+import { focusInput } from "@/lib/focus-input";
 
 const FREE_DAILY_LIMIT = 10;
 const ASK_LIMIT_STORAGE_KEY = "purple-ask-message-stamps";
@@ -188,7 +189,7 @@ function AskPage() {
 
   // Refocus the composer after a stream finishes.
   React.useEffect(() => {
-    if (status === "ready") inputRef.current?.focus();
+    if (status === "ready") focusInput(inputRef.current);
   }, [status]);
 
   const onConfirm = async (key: string, proposal: Proposal) => {
@@ -307,7 +308,7 @@ function AskPage() {
             onKeyDown={onKeyDown}
             placeholder="Ask anything about your patterns…"
             rows={1}
-            className="flex-1 resize-none rounded-2xl border border-border bg-secondary/40 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 max-h-40"
+            className="flex-1 resize-none rounded-2xl border border-border bg-secondary/40 px-4 py-3 text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 max-h-40"
           />
           {voice.supported && (
             <Button
