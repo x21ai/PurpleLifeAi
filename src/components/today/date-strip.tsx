@@ -1,8 +1,9 @@
 import * as React from "react";
 import { addDays, format, isSameDay, startOfDay } from "date-fns";
-import { CalendarCheck, ChevronDown } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DatePicker } from "@/components/ui/date-picker";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export interface DateStripProps {
   value: Date;
@@ -42,7 +43,7 @@ export function DateStrip({ value, onChange, daysBack = 30, className }: DateStr
     onChange(next);
   };
 
-  const monthLabel = format(value, "MMMM yyyy");
+  const [pickerOpen, setPickerOpen] = React.useState(false);
 
   return (
     <section
@@ -57,26 +58,47 @@ export function DateStrip({ value, onChange, daysBack = 30, className }: DateStr
         }
       }}
     >
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 mb-3">
-        <div className="min-w-0 flex items-center gap-1">
-          <DatePicker
-            value={value}
-            onChange={(d) => d && onChange(startOfDay(d))}
-            disableFuture
-          />
-        </div>
-        <button
-          type="button"
-          onClick={() => onChange(today)}
-          disabled={isSameDay(value, today)}
-          className={cn(
-            "shrink-0 inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground",
-            "transition-opacity disabled:opacity-40 disabled:cursor-default hover:bg-secondary/60",
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <span className="text-sm font-medium text-foreground tabular-nums">
+          {format(value, "MMM d")}
+        </span>
+        <div className="flex items-center gap-1.5">
+          {!isSameDay(value, today) && (
+            <button
+              type="button"
+              onClick={() => onChange(today)}
+              className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+            >
+              Today
+            </button>
           )}
-        >
-          <CalendarCheck className="h-3.5 w-3.5" />
-          Today
-        </button>
+          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label="Pick a date"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+              >
+                <CalendarIcon className="h-3.5 w-3.5" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={value}
+                onSelect={(d) => {
+                  if (d) {
+                    onChange(startOfDay(d));
+                    setPickerOpen(false);
+                  }
+                }}
+                disabled={(d) => d > today}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       <div
