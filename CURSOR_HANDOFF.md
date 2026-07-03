@@ -30,7 +30,7 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 | Runtime | Cloudflare Worker (`wrangler.deploy.jsonc`, entry `src/server.ts`, `nodejs_compat`) |
 | Package manager | bun (commands below) |
 | Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
-| Git heads | `main` and `lovable/redesign` at `6e2d98e` (synced; PWA code `19d8d4d`) |
+| Git heads | `main` and `lovable/redesign` at `5da7b61` (synced; PWA code `19d8d4d`) |
 | Production deploy | Worker `purplelife`, version `321a9227-551a-4cc6-87b1-4270a1d800a9` (commit `19d8d4d`) |
 | Dev server | `bun run dev` on port 8080 |
 | E2E local | `bun run test:e2e` (boots dev server unless `E2E_BASE_URL` set) |
