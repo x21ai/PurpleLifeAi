@@ -83,14 +83,15 @@ the web build. Full runbook: `docs/native-app-setup.md`. Durable decision:
 | npm scripts | `package.json` | `native:install`, `native:add`, `native:sync`, `native:open:*` |
 | Web Apple Health webhook | `/api/public/hooks/apple-health` | Push-only Health Auto Export for browser users |
 
-### Not generated yet (human / toolchain gated)
+### Toolchain and store (human / toolchain gated)
 
 | Gap | Blocker | Next step |
 |-----|---------|-----------|
-| `ios/` and `android/` project dirs | No Xcode/Android SDK in agent sandbox | On a Mac: `bun run native:install`, `native:add`, `native:sync` |
+| **iOS simulator build on owner Mac** | **`/Applications/Xcode.app` not installed**; only incomplete App Store payload **`/Applications/Xcode.appdownload`** | Wait for download to finish so **`Xcode.app`** exists in `/Applications`. Then the agent runs **`scripts/native-ios-build.sh`** (no manual steps): `xcode-select`, `bun run native:sync`, `pod install` when a Podfile exists (CapApp-SPM skips pods), `xcodebuild` Debug simulator build. One-time sudo may be required: `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`. |
+| `ios/` / `android/` committed to git | Dirs generated locally; may be untracked | After first green simulator build: commit native projects if policy allows, or document regen via `native:add` / `native:sync` |
 | Push delivery | `native_push_tokens` live (migration applied 2026-07-03); no APNs/FCM credentials in Worker yet | Wire APNs/FCM secrets and send path |
-| HealthKit / Health Connect native projects | `ios/` / `android/` not committed; Xcode HealthKit capability + `Info.plist` usage strings | On Mac: `native:sync`, enable HealthKit in Xcode, add `NSHealthShareUsageDescription`; Android manifest per `docs/android-health-connect-setup.md` |
-| OAuth deep links in native projects | `ios/` / `android/` not committed | Register `org.purplelife.app://auth-callback` in plist, manifest, Supabase, Google/Apple consoles |
+| HealthKit / Health Connect entitlements | HealthKit capability + `Info.plist` usage strings | Enable HealthKit in Xcode, add `NSHealthShareUsageDescription`; Android manifest per `docs/android-health-connect-setup.md` |
+| OAuth deep links in native projects | Plist / manifest URLs | Register `org.purplelife.app://auth-callback` in plist, manifest, Supabase, Google/Apple consoles |
 | Xcode signing and provisioning | Apple Developer Program ($99/yr) | Certificates, profiles, Push capability in Xcode |
 | Store submission | App Store + Play Developer accounts | TestFlight / Play internal track before production; justify 4.2 native value (push, local notifications, HealthKit) |
 
@@ -115,6 +116,7 @@ entitlements, permissions, icons, `capacitor.config.ts` shell changes). See
 7. **Full prod e2e (2026-07-03):** 445 passed, 32 skipped, 89 flaky, 12 hard failures (mostly stale `samuel-fixes.spec.ts` + tablet web-vitals budgets). HIPAA `integrations-vitals` tests passed on all viewports.
 8. **Native app docs (2026-07-03):** Expanded `docs/native-app-setup.md` (HealthKit execution checklist, web vs store sync model), `mem/native-app-healthkit.md`, handoff native track table.
 9. **Native HealthKit wiring (2026-07-03):** `health-ios.ts` migrated to `@capgo/capacitor-health` (`Health` plugin, same as Android); `health.ts` routes iOS permissions/read; `apple-health-connection.tsx` native Connect + `syncNativeHealthBatch`; health helpers re-exported from `src/lib/native/index.ts`.
+10. **Native iOS build script (2026-07-03):** `scripts/native-ios-build.sh` for automated simulator build; handoff blocker documents incomplete `Xcode.appdownload` until App Store install completes.
 
 ## Environment variables
 
