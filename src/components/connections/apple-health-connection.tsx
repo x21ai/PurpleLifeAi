@@ -29,7 +29,16 @@ function relativeTime(iso: string | null): string {
 type SyncState = "receiving" | "stale" | "reachable" | "waiting";
 
 function NativeAppleHealthConnection() {
-  const { linked, loaded, busy, syncState, statusText, connect, syncNow } = useNativeAppleHealth();
+  const {
+    healthKitAuthorized,
+    hasSyncedData,
+    loaded,
+    busy,
+    syncState,
+    statusText,
+    connect,
+    syncNow,
+  } = useNativeAppleHealth();
 
   const dotClass =
     syncState === "receiving"
@@ -38,7 +47,7 @@ function NativeAppleHealthConnection() {
         ? "bg-[color:var(--data-warn)]"
         : "bg-muted-foreground/50";
 
-  if (linked) {
+  if (healthKitAuthorized) {
     return (
       <div className="py-2 space-y-3">
         <div className="flex items-center justify-between gap-3">
@@ -85,14 +94,20 @@ function NativeAppleHealthConnection() {
             </p>
           </div>
         </div>
-        <Button size="sm" onClick={() => void connect()} disabled={busy}>
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Connect"}
+        <Button size="sm" onClick={() => void connect()} disabled={busy || !loaded}>
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Connect Apple Health"}
         </Button>
       </div>
       {loaded && (
         <p className="text-xs text-muted-foreground pl-11">
           Tap Connect to grant HealthKit access. Purple reads your vitals on this iPhone and
           syncs them to your account.
+        </p>
+      )}
+      {loaded && hasSyncedData && (
+        <p className="text-xs text-muted-foreground pl-11 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+          Previous data in your account may be from web import or Health Auto Export. Tap Connect
+          to link HealthKit on this iPhone.
         </p>
       )}
     </div>
@@ -361,11 +376,11 @@ export function WelcomeAppleHealthConnect({
 }: {
   onConnected?: () => void;
 }) {
-  const { linked, loaded, busy, connect } = useNativeAppleHealth();
+  const { healthKitAuthorized, loaded, busy, connect } = useNativeAppleHealth();
 
   useEffect(() => {
-    if (linked) onConnected?.();
-  }, [linked, onConnected]);
+    if (healthKitAuthorized) onConnected?.();
+  }, [healthKitAuthorized, onConnected]);
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 flex items-center justify-between gap-4">
@@ -376,13 +391,13 @@ export function WelcomeAppleHealthConnect({
         <div className="min-w-0">
           <p className="font-serif text-base text-foreground">Apple Health</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {linked
+            {healthKitAuthorized
               ? "Connected · vitals sync from HealthKit"
               : "Sleep, heart rate, steps, and more from this iPhone"}
           </p>
         </div>
       </div>
-      {!linked && (
+      {!healthKitAuthorized && (
         <Button size="sm" onClick={() => void connect()} disabled={busy || !loaded}>
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Connect Apple Health"}
         </Button>

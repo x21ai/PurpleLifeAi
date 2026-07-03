@@ -3,7 +3,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { syncNativeHealthBatch } from "@/lib/native-health.functions";
-import { readNativeHealthMetrics, requestNativeHealthPermissions } from "@/lib/native";
+import {
+  getNativeHealthAuthorizationStatus,
+  readNativeHealthMetrics,
+  requestNativeHealthPermissions,
+} from "@/lib/native";
 import { userMessage } from "@/lib/user-message";
 
 const DAY_MS = 24 * 3600 * 1000;
@@ -24,10 +28,17 @@ function relativeTime(iso: string | null): string {
 
 export function useNativeAppleHealth() {
   const syncBatch = useServerFn(syncNativeHealthBatch);
-  const [linked, setLinked] = useState(false);
+  const [healthKitAuthorized, setHealthKitAuthorized] = useState(false);
+  const [hasSyncedData, setHasSyncedData] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [lastData, setLastData] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const refreshAuth = useCallback(async () => {
+    const status = await getNativeHealthAuthorizationStatus();
+    setHealthKitAuthorized(status.authorized);
+    return status.authorized;
+  }, []);
 
   const refresh = useCallback(async () => {
     const { data: sess } = await supabase.auth.getSession();
@@ -43,34 +54,51 @@ export function useNativeAppleHealth() {
       .limit(1)
       .maybeSingle();
     setLastData(bio?.recorded_at ?? null);
-    if (bio?.recorded_at) setLinked(true);
+    setHasSyncedData(!!bio?.recorded_at);
+
+    await refreshAuth();
     setLoaded(true);
-  }, []);
+  }, [refreshAuth]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
   const syncState: NativeAppleHealthSyncState = (() => {
+    if (!healthKitAuthorized) return "waiting";
     const dataAge = lastData ? Date.now() - new Date(lastData).getTime() : Infinity;
     if (dataAge < FRESH_WINDOW_MS) return "receiving";
     if (lastData) return "stale";
-    return linked ? "reachable" : "waiting";
+    return "reachable";
   })();
 
   const statusText: Record<NativeAppleHealthSyncState, string> = {
     receiving: `Syncing · latest data ${relativeTime(lastData)}`,
     stale: `Last data ${relativeTime(lastData)} · open Purple to refresh from HealthKit`,
     reachable: "Connected · waiting for the first HealthKit sync",
-    waiting: "Not connected · grant HealthKit access to sync vitals",
+    waiting: hasSyncedData
+      ? `Account has older Apple Health data · tap Connect to link HealthKit on this iPhone`
+      : "Not connected · grant HealthKit access to sync vitals",
+  };
+
+  const ensurePermissions = async (): Promise<boolean> => {
+    const alreadyAuthorized = await refreshAuth();
+    if (alreadyAuthorized) return true;
+
+    const granted = await requestNativeHealthPermissions();
+    if (granted) {
+      setHealthKitAuthorized(true);
+      return true;
+    }
+
+    setHealthKitAuthorized(false);
+    toast.error("HealthKit permission was not granted. Open Settings to allow access.");
+    return false;
   };
 
   const runNativeSync = async () => {
-    const granted = await requestNativeHealthPermissions();
-    if (!granted) {
-      toast.error("HealthKit permission was not granted. Open Settings to allow access.");
-      return false;
-    }
+    const granted = await ensurePermissions();
+    if (!granted) return false;
 
     const days = await readNativeHealthMetrics(90);
     if (days.length === 0) {
@@ -88,7 +116,6 @@ export function useNativeAppleHealth() {
     try {
       const ok = await runNativeSync();
       if (ok) {
-        setLinked(true);
         toast.success("Apple Health connected. Vitals synced from HealthKit.");
       }
     } catch (e) {
@@ -102,8 +129,8 @@ export function useNativeAppleHealth() {
   const syncNow = async () => {
     setBusy(true);
     try {
-      await runNativeSync();
-      toast.success("HealthKit sync complete.");
+      const ok = await runNativeSync();
+      if (ok) toast.success("HealthKit sync complete.");
     } catch (e) {
       toast.error(userMessage(e, "Couldn't sync Apple Health"));
     } finally {
@@ -113,7 +140,11 @@ export function useNativeAppleHealth() {
   };
 
   return {
-    linked,
+    /** Native HealthKit permission on this device (never inferred from DB rows). */
+    healthKitAuthorized,
+    /** @deprecated Use healthKitAuthorized. Kept for callers not yet updated. */
+    linked: healthKitAuthorized,
+    hasSyncedData,
     loaded,
     lastData,
     busy,

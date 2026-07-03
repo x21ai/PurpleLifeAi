@@ -50,6 +50,17 @@ type AuthorizationStatus = {
   readDenied?: string[];
 };
 
+export type HealthConnectAuthStatus = {
+  authorized: boolean;
+  readAuthorized: string[];
+  readDenied: string[];
+};
+
+function isFullyAuthorized(status: AuthorizationStatus | undefined): boolean {
+  const authorized = status?.readAuthorized ?? [];
+  return READ_TYPES.every((type) => authorized.includes(type));
+}
+
 function isAndroidNative(): boolean {
   return isNativeApp() && nativePlatform() === "android";
 }
@@ -102,6 +113,32 @@ export async function isHealthConnectAvailable(): Promise<{
   return { available: true };
 }
 
+/** Current Health Connect authorization without prompting. */
+export async function getHealthConnectAuthorizationStatus(): Promise<HealthConnectAuthStatus> {
+  if (!isAndroidNative()) {
+    return { authorized: false, readAuthorized: [], readDenied: [] };
+  }
+
+  const availability = await isHealthConnectAvailable();
+  if (!availability.available) {
+    return { authorized: false, readAuthorized: [], readDenied: [] };
+  }
+
+  const status = (await callPlugin(HEALTH_PLUGIN, "checkAuthorization", {
+    read: [...READ_TYPES],
+    write: [],
+  })) as AuthorizationStatus | undefined;
+
+  const readAuthorized = status?.readAuthorized ?? [];
+  const readDenied = status?.readDenied ?? [];
+
+  return {
+    authorized: isFullyAuthorized(status),
+    readAuthorized,
+    readDenied,
+  };
+}
+
 /** Opens the Health Connect permission sheet for sleep, HRV, steps, and heart rate. */
 export async function requestHealthConnectPermissions(): Promise<boolean> {
   if (!isAndroidNative()) return false;
@@ -113,8 +150,7 @@ export async function requestHealthConnectPermissions(): Promise<boolean> {
     write: [],
   })) as AuthorizationStatus | undefined;
 
-  const authorized = status?.readAuthorized ?? [];
-  return READ_TYPES.every((type) => authorized.includes(type));
+  return isFullyAuthorized(status);
 }
 
 /** Read and aggregate Health Connect samples into daily rows. */

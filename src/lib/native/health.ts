@@ -1,6 +1,7 @@
 import { isNativeApp, nativePlatform } from "./capacitor";
 import {
   HEALTH_CONNECT_SOURCE,
+  getHealthConnectAuthorizationStatus,
   isHealthConnectAvailable,
   readHealthConnectMetrics,
   requestHealthConnectPermissions,
@@ -8,6 +9,7 @@ import {
 } from "./health-android";
 import {
   HEALTHKIT_SOURCE,
+  getHealthKitAuthorizationStatus,
   isHealthKitAvailable,
   readHealthKitMetrics,
   requestHealthKitPermissions,
@@ -28,6 +30,12 @@ export type NativeHealthAvailability = {
   reason?: string;
 };
 
+export type NativeHealthAuthStatus = {
+  authorized: boolean;
+  readAuthorized: string[];
+  readDenied: string[];
+};
+
 /** Biometrics source string for the active native platform, or null on web. */
 export function nativeHealthSource(): "health_connect" | "apple_health" | null {
   if (!isNativeApp()) return null;
@@ -42,6 +50,14 @@ export async function isNativeHealthAvailable(): Promise<NativeHealthAvailabilit
   if (nativePlatform() === "android") return isHealthConnectAvailable();
   if (nativePlatform() === "ios") return isHealthKitAvailable();
   return { available: false, reason: "unsupported_platform" };
+}
+
+/** Check native health authorization without prompting the user. */
+export async function getNativeHealthAuthorizationStatus(): Promise<NativeHealthAuthStatus> {
+  if (!isNativeApp()) return { authorized: false, readAuthorized: [], readDenied: [] };
+  if (nativePlatform() === "android") return getHealthConnectAuthorizationStatus();
+  if (nativePlatform() === "ios") return getHealthKitAuthorizationStatus();
+  return { authorized: false, readAuthorized: [], readDenied: [] };
 }
 
 /** Request native health permissions for the current platform. */

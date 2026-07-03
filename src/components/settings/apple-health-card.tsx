@@ -54,7 +54,16 @@ export function AppleHealthCard() {
 
 function NativeAppleHealthSettingsCard() {
   const { t } = useTranslation();
-  const { linked, loaded, busy, syncState, statusText, connect, syncNow } = useNativeAppleHealth();
+  const {
+    healthKitAuthorized,
+    hasSyncedData,
+    loaded,
+    busy,
+    syncState,
+    statusText,
+    connect,
+    syncNow,
+  } = useNativeAppleHealth();
 
   const dotClass =
     syncState === "receiving"
@@ -73,7 +82,7 @@ function NativeAppleHealthSettingsCard() {
           <h2 className="font-serif text-xl text-foreground">{t("appleHealth.nativeTitle")}</h2>
           <p className="mt-1 text-xs text-muted-foreground max-w-md">{t("appleHealth.nativeBody")}</p>
         </div>
-        {linked && (
+        {healthKitAuthorized && (
           <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-700 dark:text-emerald-300">
             <CheckCircle2 className="h-3 w-3" /> {t("appleHealth.connected")}
           </span>
@@ -90,7 +99,7 @@ function NativeAppleHealthSettingsCard() {
             </p>
           )}
         </div>
-        {linked ? (
+        {healthKitAuthorized ? (
           <Button size="sm" variant="outline" onClick={() => void syncNow()} disabled={busy}>
             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("appleHealth.syncNow")}
           </Button>
@@ -100,6 +109,12 @@ function NativeAppleHealthSettingsCard() {
           </Button>
         )}
       </div>
+
+      {loaded && !healthKitAuthorized && hasSyncedData && (
+        <p className="mt-3 text-xs text-muted-foreground rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+          {t("appleHealth.webImportNote")}
+        </p>
+      )}
 
       <p className="mt-4 text-xs text-muted-foreground">{t("appleHealth.nativeHint")}</p>
     </section>

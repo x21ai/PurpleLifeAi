@@ -484,7 +484,8 @@
     "nativeHint": "Tap Connect to open the Health Access permission sheet. Open Purple after workouts or sleep to refresh vitals.",
     "connect": "Connect Apple Health",
     "syncNow": "Sync now",
-    "connected": "Connected"
+    "connected": "Connected",
+    "webImportNote": "Previous data in your account may be from web import or Health Auto Export. Tap Connect to link HealthKit on this iPhone."
   },
   "signIn": {
     "eyebrow": "Sign in",

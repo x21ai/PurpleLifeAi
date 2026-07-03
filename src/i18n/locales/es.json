@@ -482,7 +482,8 @@
     "nativeHint": "Toca Conectar para abrir el permiso de Acceso a Salud. Abre Purple después de entrenar o dormir para actualizar tus signos.",
     "connect": "Conectar Apple Health",
     "syncNow": "Sincronizar ahora",
-    "connected": "Conectado"
+    "connected": "Conectado",
+    "webImportNote": "Los datos anteriores pueden ser de importación web o Health Auto Export. Toca Conectar para vincular HealthKit en este iPhone."
   },
   "signIn": {
     "eyebrow": "Iniciar sesión",

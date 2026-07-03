@@ -5,6 +5,7 @@ import { registerDeviceToken as saveNativePushToken } from "@/lib/native-push.fu
 export { isNativeApp, nativePlatform } from "./capacitor";
 export { isNativeIos, useNativeIos } from "./use-native-ios";
 export {
+  getNativeHealthAuthorizationStatus,
   isNativeHealthAvailable,
   nativeHealthSource,
   readNativeHealthMetrics,

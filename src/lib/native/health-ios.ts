@@ -57,6 +57,30 @@ type AuthorizationStatus = {
   readDenied?: string[];
 };
 
+export type HealthKitAuthStatus = {
+  authorized: boolean;
+  readAuthorized: string[];
+  readDenied: string[];
+};
+
+const HEALTHKIT_AUTH_STORAGE_KEY = "purple:healthkit:authorized:v1";
+
+function getHealthKitAuthLocalFlag(): boolean {
+  if (typeof localStorage === "undefined") return false;
+  return localStorage.getItem(HEALTHKIT_AUTH_STORAGE_KEY) === "1";
+}
+
+function setHealthKitAuthLocalFlag(authorized: boolean): void {
+  if (typeof localStorage === "undefined") return;
+  if (authorized) localStorage.setItem(HEALTHKIT_AUTH_STORAGE_KEY, "1");
+  else localStorage.removeItem(HEALTHKIT_AUTH_STORAGE_KEY);
+}
+
+function isFullyAuthorized(status: AuthorizationStatus | undefined): boolean {
+  const authorized = status?.readAuthorized ?? [];
+  return READ_TYPES.every((type) => authorized.includes(type));
+}
+
 function isIosNative(): boolean {
   return isNativeApp() && nativePlatform() === "ios";
 }
@@ -106,6 +130,30 @@ export async function isHealthKitAvailable(): Promise<{
   return { available: true };
 }
 
+/** Current HealthKit authorization without prompting (plus device connect flag). */
+export async function getHealthKitAuthorizationStatus(): Promise<HealthKitAuthStatus> {
+  if (!isIosNative()) {
+    return { authorized: false, readAuthorized: [], readDenied: [] };
+  }
+
+  const availability = await isHealthKitAvailable();
+  if (!availability.available) {
+    return { authorized: false, readAuthorized: [], readDenied: [] };
+  }
+
+  const status = (await callPlugin(HEALTH_PLUGIN, "checkAuthorization", {
+    read: [...READ_TYPES],
+    write: [],
+  })) as AuthorizationStatus | undefined;
+
+  const readAuthorized = status?.readAuthorized ?? [];
+  const readDenied = status?.readDenied ?? [];
+  const pluginAuthorized = isFullyAuthorized(status);
+  const authorized = pluginAuthorized || getHealthKitAuthLocalFlag();
+
+  return { authorized, readAuthorized, readDenied };
+}
+
 /** Opens the HealthKit permission sheet for sleep, HRV, steps, heart rate, and VO2 max. */
 export async function requestHealthKitPermissions(): Promise<boolean> {
   if (!isIosNative()) return false;
@@ -117,8 +165,9 @@ export async function requestHealthKitPermissions(): Promise<boolean> {
     write: [],
   })) as AuthorizationStatus | undefined;
 
-  const authorized = status?.readAuthorized ?? [];
-  return READ_TYPES.every((type) => authorized.includes(type));
+  const granted = isFullyAuthorized(status);
+  if (granted) setHealthKitAuthLocalFlag(true);
+  return granted;
 }
 
 /** Read and aggregate HealthKit samples into daily rows. */
