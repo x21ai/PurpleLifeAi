@@ -4,10 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { SiteFooter } from "@/components/layout/site-footer";
-import { ResponsiveImage } from "@/components/marketing/responsive-image";
-import { signInImages } from "@/lib/calm-images/sign-in";
 import { SocialSignInButtons } from "@/components/auth/social-sign-in-buttons";
 import { isOAuthCallbackUrl, waitForOAuthSession } from "@/lib/auth-oauth";
 import { toast } from "sonner";
@@ -262,192 +258,214 @@ function SignInPage() {
   };
 
   return (
-    <div className="relative min-h-dvh text-foreground">
-      {/* Full-bleed hero photo */}
-      <div className="fixed inset-0 -z-10 bg-background">
-        <ResponsiveImage
-          asset={signInImages.hero}
-          priority
-          sizes="100vw"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        {/* Right-side gradient so the form column reads cleanly over the photo */}
+    <div className="h-dvh overflow-hidden grid grid-cols-1 lg:grid-cols-2 bg-background text-foreground">
+      {/* LEFT — brand panel */}
+      <aside className="hidden lg:flex relative flex-col justify-between p-14 xl:p-16 bg-[#050505] text-white overflow-hidden">
+        {/* Ambient aura mesh */}
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-1/4 -left-1/4 h-[70%] w-[70%] rounded-full bg-purple-600/20 blur-[120px]" />
+          <div className="absolute -bottom-1/4 -right-1/4 h-[60%] w-[60%] rounded-full bg-indigo-600/15 blur-[100px]" />
+          <div className="absolute top-1/3 left-1/3 h-[40%] w-[40%] rounded-full bg-fuchsia-900/10 blur-[110px]" />
+        </div>
+        {/* Subtle grain overlay */}
         <div
-          className="absolute inset-0 bg-gradient-to-l from-background via-background/85 to-background/10 lg:from-background lg:via-background/70 lg:to-background/0"
-          aria-hidden="true"
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.04] mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.7'/></svg>\")",
+          }}
         />
-      </div>
+        {/* Decorative concentric arcs, top-right */}
+        <svg
+          aria-hidden
+          className="pointer-events-none absolute -top-24 -right-24 h-[680px] w-[680px] text-white/[0.06]"
+          viewBox="0 0 600 600"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1"
+        >
+          {[520, 440, 360, 280, 200, 120].map((r) => (
+            <path key={r} d={`M 600 ${600 - r} A ${r} ${r} 0 0 0 ${600 - r} 600`} />
+          ))}
+        </svg>
 
-      <div className="lg:grid lg:grid-cols-[1fr_minmax(420px,560px)]">
-        {/* Wordmark column, left, breathing room on the photo */}
-        <aside className="hidden lg:flex flex-col justify-end p-14 min-h-dvh">
-          <p
-            className="label-eyebrow"
-            style={{ color: "#FFFFFF", opacity: 0.92, textShadow: "0 1px 2px rgba(0,0,0,0.45)" }}
-          >
+        <p className="relative z-10 text-xs font-semibold tracking-[0.3em] uppercase text-white/90">
+          PURPLE
+        </p>
+
+        <div className="relative z-10 max-w-md">
+          <h2 className="font-serif text-6xl xl:text-7xl leading-[0.95] tracking-tight">
+            Welcome to <br /> Purple.
+          </h2>
+          <div className="mt-6 h-px w-12 bg-white/20" />
+          <p className="mt-6 text-base leading-relaxed text-white/70 max-w-sm">
+            {t("signIn.tag1")}
+          </p>
+        </div>
+
+        <p className="relative z-10 text-xs text-white/50">
+          © {new Date().getFullYear()} Purple. All rights reserved.
+        </p>
+      </aside>
+
+      {/* RIGHT — auth column */}
+      <main className="flex flex-col justify-center px-6 sm:px-12 lg:px-20 py-8 lg:py-10 overflow-y-auto">
+        <div className="w-full max-w-[400px] mx-auto">
+          {/* Mobile-only wordmark */}
+          <p className="lg:hidden text-xs font-semibold tracking-[0.3em] uppercase text-primary mb-6">
             PURPLE
           </p>
-          <p
-            className="mt-4 font-serif italic text-lg max-w-sm leading-relaxed"
-            style={{ color: "#FFFFFF", opacity: 0.85, textShadow: "0 1px 2px rgba(0,0,0,0.45)" }}
-          >
-            {t("signIn.freeForever")}
-          </p>
-        </aside>
 
-        {/* Form panel */}
-        <main className="flex items-center justify-center px-6 sm:px-10 lg:px-14 py-12 lg:py-16 min-h-dvh">
-          <div className="w-full max-w-md">
-            <p className="label-eyebrow">{t("signIn.eyebrow")}</p>
-            <h1 className="mt-5 font-serif text-5xl sm:text-6xl lg:text-7xl leading-[1.02] tracking-tight text-foreground">
-              {t("signIn.title")}
-            </h1>
-
-            <div className="mt-8 space-y-3 text-base sm:text-[17px] leading-relaxed text-muted-foreground max-w-prose">
-              <p>{t("signIn.tag1")}</p>
-              <p>{t("signIn.tag2")}</p>
+          {status === "verify-sent" ? (
+            <div className="rounded-2xl border border-border bg-secondary/60 p-6">
+              <p className="label-eyebrow">{t("signIn.checkInbox")}</p>
+              <p className="mt-3 font-serif text-2xl text-secondary-foreground leading-snug">
+                {t("signIn.confirmEmail")}
+              </p>
+              <button
+                type="button"
+                onClick={() => { setMode("signin"); setStatus("idle"); }}
+                className="mt-4 text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+              >
+                {t("signIn.confirmedElsewhere", { defaultValue: "Confirmed on another device? Sign in" })}
+              </button>
             </div>
+          ) : status === "reset-sent" ? (
+            <div className="rounded-2xl border border-border bg-secondary/60 p-6">
+              <p className="label-eyebrow">{t("signIn.checkInbox")}</p>
+              <p className="mt-3 font-serif text-2xl text-secondary-foreground leading-snug">
+                {t("signIn.resetSent")}
+              </p>
+              <button
+                type="button"
+                onClick={() => setStatus("idle")}
+                className="mt-4 text-sm font-sans text-muted-foreground underline underline-offset-4"
+              >
+                {t("signIn.backToSignIn")}
+              </button>
+            </div>
+          ) : (
+            <div>
+              <h1 className="font-serif text-3xl lg:text-4xl tracking-tight text-foreground">
+                {mode === "signin" ? "Welcome back!" : "Create your account"}
+              </h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {mode === "signin" ? (
+                  <>
+                    Don&rsquo;t have an account?{" "}
+                    <button
+                      type="button"
+                      onClick={() => { setMode("register"); setErrorMsg(null); }}
+                      className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+                    >
+                      Create a new account now
+                    </button>
+                    , it&rsquo;s FREE! Takes less than a minute.
+                  </>
+                ) : (
+                  <>
+                    Already have an account?{" "}
+                    <button
+                      type="button"
+                      onClick={() => { setMode("signin"); setErrorMsg(null); }}
+                      className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+                    >
+                      Sign in
+                    </button>
+                  </>
+                )}
+              </p>
 
-            {status === "verify-sent" ? (
-              <div className="mt-10 rounded-2xl border border-border bg-secondary/60 p-6">
-                <p className="label-eyebrow">{t("signIn.checkInbox")}</p>
-                <p className="mt-3 font-serif text-2xl text-secondary-foreground leading-snug">
-                  {t("signIn.confirmEmail")}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode("signin");
-                    setStatus("idle");
-                  }}
-                  className="mt-4 text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
-                >
-                  {t("signIn.confirmedElsewhere", {
-                    defaultValue: "Confirmed on another device? Sign in",
-                  })}
-                </button>
-              </div>
-            ) : status === "reset-sent" ? (
-              <div className="mt-10 rounded-2xl border border-border bg-secondary/60 p-6">
-                <p className="label-eyebrow">{t("signIn.checkInbox")}</p>
-                <p className="mt-3 font-serif text-2xl text-secondary-foreground leading-snug">
-                  {t("signIn.resetSent")}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setStatus("idle")}
-                  className="mt-4 text-sm font-sans text-muted-foreground underline underline-offset-4"
-                >
-                  {t("signIn.backToSignIn")}
-                </button>
-              </div>
-            ) : (
-              <div className="mt-10">
-                <Tabs value={mode} onValueChange={(v) => { setMode(v as "signin" | "register"); setErrorMsg(null); }}>
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="signin">{t("signIn.tabSignIn")}</TabsTrigger>
-                    <TabsTrigger value="register">{t("signIn.tabRegister")}</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value={mode} forceMount>
-                    <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-                      <label htmlFor="email" className="label-eyebrow block">
-                        {t("signIn.email")}
-                      </label>
-                      <Input
-                        id="email"
-                        type="email"
-                        required
-                        autoComplete="email"
-                        inputMode="email"
-                        placeholder="you@example.com" // live-data-guard:allow (input placeholder, not stored data)
-                        value={email}
-                        onChange={(e) => {
-                          setEmail(e.target.value);
-                          if (status === "error") { setStatus("idle"); setErrorMsg(null); }
-                        }}
-                        aria-invalid={status === "error"}
-                        className={`h-14 text-lg font-serif rounded-xl ${status === "error" ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                        disabled={status === "submitting"}
-                      />
-                      <label htmlFor="password" className="label-eyebrow block pt-1">
-                        {t("signIn.password")}
-                      </label>
-                      <PasswordInput
-                        id="password"
-                        required
-                        minLength={8}
-                        autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                        placeholder={mode === "register" ? t("signIn.passwordPlaceholderNew") : t("signIn.passwordPlaceholderSignIn")}
-                        value={password}
-                        onChange={(e) => {
-                          setPassword(e.target.value);
-                          if (status === "error") { setStatus("idle"); setErrorMsg(null); }
-                        }}
-                        aria-invalid={status === "error"}
-                        className={`h-14 text-lg font-serif rounded-xl ${status === "error" ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                        disabled={status === "submitting"}
-                      />
-                      {status === "error" && errorMsg && (
-                        <p role="alert" className="text-sm text-destructive pt-1">
-                          {errorMsg}
-                        </p>
-                      )}
-                      {mode === "register" && (
-                        <p className="text-xs text-muted-foreground pt-1">
-                          We&rsquo;ll ask a few quick things after you confirm your email, region, conditions, and anything else that helps Purple help you.
-                        </p>
-                      )}
-                      <Button
-                        type="submit"
-                        className="w-full h-14 text-base rounded-xl"
-                        disabled={status === "submitting"}
-                      >
-                        {status === "submitting"
-                          ? mode === "signin" ? t("signIn.signingIn") : t("signIn.creating")
-                          : mode === "signin" ? t("signIn.signIn") : t("signIn.createAccount")}
-                      </Button>
-                      {mode === "signin" && (
-                        <div className="pt-1 text-right">
-                          <button
-                            type="button"
-                            onClick={handleForgotPassword}
-                            disabled={status === "submitting"}
-                            className="text-sm font-sans text-muted-foreground hover:text-foreground underline underline-offset-4 disabled:opacity-50"
-                          >
-                            {t("signIn.forgot")}
-                          </button>
-                        </div>
-                      )}
-                    </form>
-                  </TabsContent>
-                </Tabs>
-                <div className="relative my-8">
-                  <div className="absolute inset-0 flex items-center" aria-hidden>
-                    <span className="w-full border-t border-border" />
-                  </div>
-                  <p className="relative flex justify-center">
-                    <span className="bg-background px-3 text-xs font-sans uppercase tracking-widest text-muted-foreground">
-                      {t("signIn.orUseAnother")}
-                    </span>
-                  </p>
+              <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+                <div>
+                  <Input
+                    id="email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    inputMode="email"
+                    placeholder="Email address" // live-data-guard:allow (input placeholder, not stored data)
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (status === "error") { setStatus("idle"); setErrorMsg(null); }
+                    }}
+                    aria-invalid={status === "error"}
+                    className={`h-11 rounded-none border-0 border-b bg-transparent px-0 text-base shadow-none focus-visible:ring-0 focus-visible:border-primary ${status === "error" ? "border-destructive" : "border-border"}`}
+                    disabled={status === "submitting"}
+                  />
                 </div>
-                <SocialSignInButtons helper="" />
-                <p className="mt-8 text-center text-xs text-muted-foreground">
-                  {t("signIn.trustLine")}{" "}
-                  <Link
-                    to="/trust"
-                    className="underline underline-offset-4 hover:text-foreground"
-                  >
-                    {t("signIn.trustLink")}
-                  </Link>
-                </p>
-              </div>
-            )}
 
-          </div>
-        </main>
-      </div>
-      <SiteFooter />
+                <div>
+                  <PasswordInput
+                    id="password"
+                    required
+                    minLength={8}
+                    autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (status === "error") { setStatus("idle"); setErrorMsg(null); }
+                    }}
+                    aria-invalid={status === "error"}
+                    className={`h-11 rounded-none border-0 border-b bg-transparent px-0 text-base shadow-none focus-visible:ring-0 focus-visible:border-primary ${status === "error" ? "border-destructive" : "border-border"}`}
+                    disabled={status === "submitting"}
+                  />
+                </div>
+
+                {status === "error" && errorMsg && (
+                  <p role="alert" className="text-sm text-destructive">{errorMsg}</p>
+                )}
+                {mode === "register" && (
+                  <p className="text-xs text-muted-foreground">
+                    We&rsquo;ll ask a few quick things after you confirm your email, region, conditions, and anything else that helps Purple help you.
+                  </p>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-base rounded-md mt-2"
+                  disabled={status === "submitting"}
+                >
+                  {status === "submitting"
+                    ? mode === "signin" ? t("signIn.signingIn") : t("signIn.creating")
+                    : mode === "signin" ? "Login Now" : t("signIn.createAccount")}
+                </Button>
+              </form>
+
+              <div className="mt-4">
+                <SocialSignInButtons helper="" />
+              </div>
+
+              {mode === "signin" && (
+                <p className="mt-6 text-center text-sm text-muted-foreground">
+                  Forgot password?{" "}
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={status === "submitting"}
+                    className="font-medium text-foreground underline underline-offset-4 hover:text-primary disabled:opacity-50"
+                  >
+                    Click here
+                  </button>
+                </p>
+              )}
+
+              <p className="mt-6 text-center text-xs text-muted-foreground">
+                {t("signIn.trustLine")}{" "}
+                <Link
+                  to="/trust"
+                  className="underline underline-offset-4 hover:text-foreground"
+                >
+                  {t("signIn.trustLink")}
+                </Link>
+              </p>
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 }

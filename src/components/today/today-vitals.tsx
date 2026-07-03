@@ -3,7 +3,9 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { getScoreSnapshot, type ScoreSnapshot } from "@/lib/health-scores.functions";
+import { useAuth } from "@/integrations/supabase/auth-context";
 
 type VitalItem = {
   key: string;
@@ -60,12 +62,16 @@ function VitalTile({ item }: { item: VitalItem }) {
  * pulled from the cross-source score snapshot. Shows only metrics that have
  * real data; shows a connect prompt when there is none.
  */
-export function TodayVitals() {
+export function TodayVitals({ date }: { date?: Date } = {}) {
   const fetchSnapshot = useServerFn(getScoreSnapshot);
+  const { session } = useAuth();
+  const ymd = date ? format(date, "yyyy-MM-dd") : null;
+  const isToday = !ymd || ymd === format(new Date(), "yyyy-MM-dd");
   const { data } = useQuery<ScoreSnapshot>({
-    queryKey: ["score-snapshot"],
-    queryFn: () => fetchSnapshot(),
+    queryKey: ["score-snapshot", ymd ?? "today"],
+    queryFn: () => fetchSnapshot(ymd ? { data: { date: ymd } } : undefined),
     staleTime: 60_000,
+    enabled: !!session,
   });
 
   // While the snapshot loads, render a same-shape skeleton so the section
@@ -96,10 +102,11 @@ export function TodayVitals() {
         <div className="flex items-center justify-between gap-3 mb-3">
           <p className="label-eyebrow text-muted-foreground">Your signals</p>
         </div>
-        <Link
+        {isToday ? (
+          <Link
           to="/settings"
           className="block rounded-2xl border border-border bg-card px-4 py-5 hover:bg-secondary/60 transition"
-        >
+          >
           <p className="text-sm text-foreground">Connect a device to see your signals</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Oura, Whoop, or Apple Health: your readings appear here once synced.
@@ -107,7 +114,17 @@ export function TodayVitals() {
           <span className="mt-3 inline-flex items-center text-xs text-muted-foreground">
             Connect <ChevronRight className="h-3.5 w-3.5" />
           </span>
-        </Link>
+          </Link>
+        ) : (
+          <div className="rounded-2xl border border-border bg-card px-4 py-5">
+            <p className="text-sm text-foreground">
+              No signals recorded on {format(date!, "EEEE, MMMM d")}.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Purple only shows readings that were actually captured that day.
+            </p>
+          </div>
+        )}
       </section>
     );
   }

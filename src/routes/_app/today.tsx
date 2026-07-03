@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import {
   BookOpen,
   Pill,
@@ -58,6 +58,7 @@ import { OnboardingChecklist } from "@/components/today/onboarding-checklist";
 import { FirstEntryNudge } from "@/components/today/first-entry-nudge";
 import { ReEngagementNudge } from "@/components/today/re-engagement-nudge";
 import { TodayVitals } from "@/components/today/today-vitals";
+import { DateStrip } from "@/components/today/date-strip";
 
 // Below-the-fold cards live behind the "More for today" disclosure. Loading
 // them lazily keeps them (and their dependencies) out of the initial /today
@@ -151,6 +152,11 @@ function TodayPage() {
   const [firstWords, setFirstWords] = useState<string | null>(null);
   // Secondary cards are tucked behind a disclosure so the top stays calm.
   const [showMore, setShowMore] = useState(false);
+  // Selected date for the horizontal date strip. Defaults to today; when the
+  // user picks another day we show a historical caption and keep today-only
+  // nudges hidden.
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+  const isToday = isSameDay(selectedDate, new Date());
 
   useEffect(() => setNow(new Date()), []);
 
@@ -341,15 +347,17 @@ function TodayPage() {
           />
         </div>
       )}
-      <RestoreBanner />
-      <IncomingCareInvitesCard />
-      <div className="mb-6">
-        <TodayInstallBanner />
-      </div>
+      {isToday && <RestoreBanner />}
+      {isToday && <IncomingCareInvitesCard />}
+      {isToday && (
+        <div className="mb-6">
+          <TodayInstallBanner />
+        </div>
+      )}
 
-      <MissedDoseCatchup />
+      {isToday && <MissedDoseCatchup />}
 
-      {journalCount === 0 && !emptyDismissed && (
+      {isToday && journalCount === 0 && !emptyDismissed && (
         <TodayEmptyState
           onDismiss={() => {
             sessionStorage.setItem("purple-today-empty-dismissed", "1");
@@ -359,37 +367,68 @@ function TodayPage() {
       )}
 
       <p className="label-eyebrow" suppressHydrationWarning>
-        {now ? format(now, "EEEE, MMMM d") : "\u00a0"}
+        {isToday
+          ? now
+            ? format(now, "EEEE, MMMM d")
+            : "\u00a0"
+          : format(selectedDate, "EEEE, MMMM d")}
       </p>
 
       <h1
         className="font-serif text-[32px] sm:text-[40px] leading-[1.15] tracking-tight mt-6 text-foreground"
         suppressHydrationWarning
       >
-        <span suppressHydrationWarning>{greeting}</span>
-        {firstName ? `, ${firstName}` : ""}.
+        {isToday ? (
+          <>
+            <span suppressHydrationWarning>{greeting}</span>
+            {firstName ? `, ${firstName}` : ""}.
+          </>
+        ) : (
+          <>Looking back{firstName ? `, ${firstName}` : ""}.</>
+        )}
       </h1>
 
-      {firstWords ? (
+      {isToday && firstWords ? (
         <p className="mt-2 text-sm text-muted-foreground" suppressHydrationWarning>
           {t("todayPage.firstWordsNote", { words: firstWords })}
         </p>
       ) : (
+        isToday &&
         greetingSuffix &&
         !forecast?.ai_narrative && (
           <p className="mt-2 text-sm text-muted-foreground">{greetingSuffix}</p>
         )
       )}
 
-      {forecast?.ai_narrative ? (
+      {isToday && forecast?.ai_narrative ? (
         <p className="body-serif mt-4 max-w-[600px] text-foreground/75">{forecast.ai_narrative}</p>
-      ) : (
+      ) : isToday ? (
         <p className="body-serif mt-4 max-w-[600px] text-foreground/60">{conditionPrompt}</p>
+      ) : (
+        <p className="body-serif mt-4 max-w-[600px] text-foreground/60">
+          Here's how {format(selectedDate, "EEEE, MMMM d")} went.
+        </p>
+      )}
+
+      <DateStrip value={selectedDate} onChange={setSelectedDate} />
+      {!isToday && (
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-full border border-border bg-card px-4 py-2 text-xs">
+          <span className="text-muted-foreground">
+            Viewing {format(selectedDate, "EEEE, MMMM d")}
+          </span>
+          <button
+            type="button"
+            onClick={() => setSelectedDate(new Date())}
+            className="font-medium text-foreground hover:text-primary transition-colors"
+          >
+            Back to today
+          </button>
+        </div>
       )}
 
       <section className="mt-12 sm:mt-16 grid grid-cols-3 items-center gap-2">
         <ScoreTile
-          value={readiness ?? "–"}
+          value={isToday ? (readiness ?? "–") : "–"}
           label="Readiness"
           active={focus === "readiness"}
           onClick={() => {
@@ -398,7 +437,7 @@ function TodayPage() {
           }}
         />
         <ScoreTile
-          value={sleep ?? "–"}
+          value={isToday ? (sleep ?? "–") : "–"}
           label="Sleep"
           active={focus === "sleep"}
           onClick={() => {
@@ -407,7 +446,7 @@ function TodayPage() {
           }}
         />
         <ScoreTile
-          value={activity ?? "–"}
+          value={isToday ? (activity ?? "–") : "–"}
           label="Activity"
           active={focus === "activity"}
           onClick={() => {
@@ -417,7 +456,7 @@ function TodayPage() {
         />
       </section>
 
-      <TodayVitals />
+      <TodayVitals date={selectedDate} />
 
       {expanded && typeof focusScore === "number" && (
         <div
@@ -486,8 +525,8 @@ function TodayPage() {
       </section>
 
       <TodayWidgetBoundary name="doses">
-        <MedsMiniTimeline className="mb-3" />
-        <TodayDoses />
+        <MedsMiniTimeline className="mb-3" date={selectedDate} />
+        <TodayDoses date={selectedDate} />
       </TodayWidgetBoundary>
 
       <div className="mt-10">

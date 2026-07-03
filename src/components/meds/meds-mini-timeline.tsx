@@ -54,17 +54,19 @@ function formatTime(d: Date): string {
  * - "Now" line shows current time.
  * - Tooltip-style hover shows name + time + status.
  */
-export function MedsMiniTimeline({ className }: { className?: string }) {
+export function MedsMiniTimeline({ className, date }: { className?: string; date?: Date }) {
   const { session } = useAuth();
   const userId = session?.user.id;
   const [now, setNow] = React.useState(() => new Date());
+  const isToday = !date || startOfDay(date).getTime() === startOfDay(now).getTime();
 
   React.useEffect(() => {
+    if (!isToday) return;
     const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
-  }, []);
+  }, [isToday]);
 
-  const dayStart = startOfDay(now);
+  const dayStart = startOfDay(date ?? now);
   const dayEnd = new Date(dayStart.getTime() + 86400000);
 
   const q = useQuery({
@@ -90,7 +92,7 @@ export function MedsMiniTimeline({ className }: { className?: string }) {
   });
 
   const doses = q.data ?? [];
-  const nowPct = ((now.getTime() - dayStart.getTime()) / 86400000) * 100;
+  const nowPct = isToday ? ((now.getTime() - dayStart.getTime()) / 86400000) * 100 : -1;
 
   // Cluster doses within ~15 min into a single group at the same x position.
   type Group = { key: string; time: number; items: DoseRow[] };
@@ -138,7 +140,9 @@ export function MedsMiniTimeline({ className }: { className?: string }) {
       <div className="flex items-center justify-between gap-3 mb-3">
         <div className="flex items-center gap-2 text-sm">
           <Pill className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">Today’s doses</span>
+          <span className="font-medium">
+            {isToday ? "Today’s doses" : `Doses on ${dayStart.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`}
+          </span>
         </div>
         <div className="text-xs text-muted-foreground tabular-nums">
           {counts.total === 0
@@ -159,11 +163,13 @@ export function MedsMiniTimeline({ className }: { className?: string }) {
           />
         ))}
         {/* now */}
-        <div
-          className="absolute top-0 bottom-0 w-px bg-foreground/40"
-          style={{ left: `${nowPct}%` }}
-          aria-hidden
-        />
+        {isToday && (
+          <div
+            className="absolute top-0 bottom-0 w-px bg-foreground/40"
+            style={{ left: `${nowPct}%` }}
+            aria-hidden
+          />
+        )}
         {/* dose groups */}
         {groups.map((g) => {
           const pct = Math.min(100, Math.max(0, ((g.time - dayStart.getTime()) / 86400000) * 100));
