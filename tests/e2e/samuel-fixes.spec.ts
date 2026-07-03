@@ -28,12 +28,9 @@ async function robustFill(locator: Locator, value: string) {
 /** Sign in with the env test user, hardened against the mobile webkit fill race. */
 async function signInRobust(page: Page) {
   await gotoApp(page, "/sign-in");
-  await robustFill(page.getByLabel(/email/i), TEST_EMAIL!);
-  await robustFill(page.getByLabel(/password/i).first(), TEST_PASSWORD!);
-  await page
-    .getByRole("tabpanel", { name: /sign in/i })
-    .getByRole("button", { name: /^sign in$/i })
-    .click();
+  await robustFill(page.getByPlaceholder(/email address/i), TEST_EMAIL!);
+  await robustFill(page.getByPlaceholder(/^password$/i), TEST_PASSWORD!);
+  await page.getByRole("button", { name: /^login now$/i }).click();
   await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"), { timeout: 30_000 });
 }
 
@@ -69,10 +66,10 @@ test("verify-sent screen offers a cross-device sign-in fallback", async ({ page 
   });
 
   await gotoApp(page, "/sign-up"); // redirects to /sign-in#register
-  const emailField = page.getByLabel(/email/i);
+  const emailField = page.getByPlaceholder(/email address/i);
   await expect(emailField).toBeEditable();
   await robustFill(emailField, email);
-  await robustFill(page.getByLabel(/password/i).first(), `pw-${Date.now()}aA1!`);
+  await robustFill(page.getByPlaceholder(/^password$/i), `pw-${Date.now()}aA1!`);
   await page
     .locator("form")
     .getByRole("button", { name: /create account/i })
@@ -134,12 +131,9 @@ test("onboarding stores first and last name in separate columns", async ({ page 
 
   try {
     await gotoApp(page, "/sign-in");
-    await robustFill(page.getByLabel(/email/i), email);
-    await robustFill(page.getByLabel(/password/i).first(), password);
-    await page
-      .getByRole("tabpanel", { name: /sign in/i })
-      .getByRole("button", { name: /^sign in$/i })
-      .click();
+    await robustFill(page.getByPlaceholder(/email address/i), email);
+    await robustFill(page.getByPlaceholder(/^password$/i), password);
+    await page.getByRole("button", { name: /^login now$/i }).click();
 
     await page.waitForURL(/\/welcome/, { timeout: 20_000 });
     await page.getByLabel(/first name/i).fill("River");

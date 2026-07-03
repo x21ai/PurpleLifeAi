@@ -259,7 +259,7 @@ function SignInPage() {
 
   return (
     <div className="h-dvh overflow-hidden grid grid-cols-1 lg:grid-cols-2 bg-background text-foreground">
-      {/* LEFT — brand panel */}
+      {/* LEFT: brand panel */}
       <aside className="hidden lg:flex relative flex-col justify-between p-14 xl:p-16 bg-[#050505] text-white overflow-hidden">
         {/* Ambient aura mesh */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
@@ -309,7 +309,7 @@ function SignInPage() {
         </p>
       </aside>
 
-      {/* RIGHT — auth column */}
+      {/* RIGHT: auth column */}
       <main className="flex flex-col justify-center px-6 sm:px-12 lg:px-20 py-8 lg:py-10 overflow-y-auto">
         <div className="w-full max-w-[400px] mx-auto">
           {/* Mobile-only wordmark */}

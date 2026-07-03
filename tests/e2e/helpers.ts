@@ -28,17 +28,14 @@ export async function signIn(page: Page) {
   const password = testPassword();
   if (!email || !password) return false;
   await gotoApp(page, "/sign-in");
-  const emailField = page.getByLabel(/email/i);
-  const passwordField = page.getByLabel(/password/i).first();
+  const emailField = page.getByPlaceholder(/email address/i);
+  const passwordField = page.getByPlaceholder(/^password$/i);
   await expect(emailField).toBeEditable();
   await emailField.fill(email);
   await passwordField.fill(password);
   await expect(emailField).toHaveValue(email);
   await expect(passwordField).toHaveValue(password);
-  await page
-    .getByRole("tabpanel", { name: /sign in/i })
-    .getByRole("button", { name: /^sign in$/i })
-    .click();
+  await page.getByRole("button", { name: /^login now$/i }).click();
   await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"), {
     timeout: REMOTE_E2E ? 30_000 : 15_000,
   });

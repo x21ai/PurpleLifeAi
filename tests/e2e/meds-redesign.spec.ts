@@ -19,8 +19,8 @@ async function robustFill(locator: Locator, value: string) {
 
 async function signInRobust(page: Page) {
   await gotoApp(page, "/sign-in");
-  await robustFill(page.getByLabel(/email/i), TEST_EMAIL!);
-  await robustFill(page.getByLabel(/password/i).first(), TEST_PASSWORD!);
+  await robustFill(page.getByPlaceholder(/email address/i), TEST_EMAIL!);
+  await robustFill(page.getByPlaceholder(/^password$/i), TEST_PASSWORD!);
   await page
     .getByRole("tabpanel", { name: /sign in/i })
     .getByRole("button", { name: /^sign in$/i })
