@@ -438,7 +438,7 @@ function TodayPage() {
 
       <section className="mt-12 sm:mt-16 grid grid-cols-3 items-center gap-2">
         <ScoreTile
-          value={isToday ? (readiness ?? "–") : "–"}
+          value={readiness ?? "–"}
           label="Readiness"
           active={focus === "readiness"}
           onClick={() => {
@@ -447,7 +447,7 @@ function TodayPage() {
           }}
         />
         <ScoreTile
-          value={isToday ? (sleep ?? "–") : "–"}
+          value={sleep ?? "–"}
           label="Sleep"
           active={focus === "sleep"}
           onClick={() => {
@@ -456,7 +456,7 @@ function TodayPage() {
           }}
         />
         <ScoreTile
-          value={isToday ? (activity ?? "–") : "–"}
+          value={activity ?? "–"}
           label="Activity"
           active={focus === "activity"}
           onClick={() => {
