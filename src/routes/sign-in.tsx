@@ -429,15 +429,36 @@ function SignInPage() {
                   <p role="alert" className="text-sm text-destructive">{errorMsg}</p>
                 )}
                 {mode === "register" && (
-                  <p className="text-xs text-muted-foreground">
-                    We&rsquo;ll ask a few quick things after you confirm your email, region, conditions, and anything else that helps Purple help you.
-                  </p>
+                  <>
+                    <div className="flex items-start gap-2.5">
+                      <Checkbox
+                        id="agree-terms"
+                        checked={agreed}
+                        onCheckedChange={(checked) => setAgreed(checked === true)}
+                        aria-describedby="agree-terms-label"
+                      />
+                      <Label id="agree-terms-label" htmlFor="agree-terms" className="text-xs text-muted-foreground leading-tight cursor-pointer">
+                        I agree to the{" "}
+                        <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">
+                          terms of use
+                        </Link>{" "}
+                        and{" "}
+                        <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
+                          privacy policy
+                        </Link>
+                        <span aria-hidden="true" className="text-destructive ml-0.5">*</span>
+                      </Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      We&rsquo;ll ask a few quick things after you confirm your email, region, conditions, and anything else that helps Purple help you.
+                    </p>
+                  </>
                 )}
 
                 <Button
                   type="submit"
                   className="w-full h-12 text-base rounded-md mt-2"
-                  disabled={status === "submitting"}
+                  disabled={status === "submitting" || (mode === "register" && !agreed)}
                 >
                   {status === "submitting"
                     ? mode === "signin" ? t("signIn.signingIn") : t("signIn.creating")
