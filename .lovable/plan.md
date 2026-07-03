@@ -1,63 +1,63 @@
-# Fix caregiver invitations (email + in-app notification)
 
-## What's broken today
+## Goal
+Redesign `/sign-in` so it fits in one viewport (no scroll on desktop/tablet), uses the empty left column, and cleanly separates password sign-in from Google/Apple. Keep the existing brand (calm hero photo, PURPLE wordmark, serif headline, dark form panel).
 
-1. **Email not delivered.** `inviteCaregiver` enqueues a "care-invite" email via `sendTransactionalEmail` → PGMQ queue → `pg_cron` POST to the queue-processor route. The cron job is configured to POST to `https://project--<preview-id>.lovable.app/lovable/email/queue/process`, but the actual route is `/api/email/queue/process`. So invites sit in the queue forever (verified: 1 message stuck since 2026-06-26, 4 days old; only "pending" rows since then, no "sent"/"failed").
-2. **No in-app pickup if the invitee already has an account.** `inviteCaregiver` already inserts an `alerts` row with `kind='care_invite'` for the matched user, but no screen in the app reads that alert — `listCaregiverOwners` only returns relationships where `caregiver_id` is set, and `caregiver_id` is null until the invitee opens the email link. So a Purple user invited by another Purple user sees nothing inside the app.
-3. **Push best-effort.** Already wired in `inviteCaregiver`; will be left as-is.
+## Layout at a glance (desktop / tablet ≥ 1024px)
 
-## Plan
+```text
+┌──────────────────────────────┬────────────────────────────────────┐
+│ LEFT — brand / social         │ RIGHT — email + password           │
+│                               │                                    │
+│  PURPLE                       │  SIGN IN                           │
+│                               │  A quiet intelligence              │
+│  A quiet intelligence         │  for your health.                  │
+│  for your health.             │                                    │
+│  (serif headline, 2 lines)    │  [ Sign in | Create account ]      │
+│                               │                                    │
+│  Two calm tag lines.          │  Email                             │
+│                               │  [ you@example.com           ]     │
+│  ── Continue with ──          │  Password                          │
+│  [  Continue with Google  ]   │  [ ••••••••••••••          👁 ]    │
+│  [  Continue with Apple   ]   │  [        Sign in           ]      │
+│                               │  Forgot password?                  │
+│  Free forever · Private       │                                    │
+└──────────────────────────────┴────────────────────────────────────┘
+```
 
-### 1. Send the care-invite email directly (skip the broken queue)
+- Full-height 50/50 split, `min-h-dvh`, `overflow-hidden`, no page scroll.
+- Left panel keeps the hero photo with a left-to-right dark gradient so PURPLE + copy + social buttons read cleanly on the image.
+- Right panel is the dark form card (as today) but tightened: smaller headline on this screen (headline lives on the left now), tighter vertical rhythm, form fits without scroll at 1024×640 and up.
+- Social buttons move OUT of the form column into the left panel — clear separation between "password path" (right) and "one-tap identity" (left), which is the standard split-auth pattern used by Linear, Stripe, Vercel.
 
-In `src/lib/care.functions.ts` `inviteCaregiver`, replace the `sendTransactionalEmail({ templateName: "care-invite", … })` call with a direct Resend send using the same React Email template:
+## Layout at a glance (mobile & small tablet < 1024px)
 
-- Render `care-invite` template (already in `src/lib/email-templates/registry.ts`) with `@react-email/components` `render()`.
-- POST to `https://api.resend.com/emails` with `process.env.RESEND_API_KEY`, `from = "Purple <noreply@notify.purplelife.org>"`, idempotency key `care-invite-<rel.id>`.
-- Write a row to `email_send_log` with `status='sent'` (or `'failed'` + error message) so existing observability still works.
-- Keep the call inside the existing try/catch so a Resend failure never blocks the invitation; surface `emailSent` in the response as today.
+- Single column, stacked (this is how it works today).
+- Order: PURPLE wordmark → serif headline (smaller) → tabs → form → divider → Google/Apple → footer line.
+- Reduce vertical spacing (headline goes from `text-6xl/7xl` down to `text-4xl`, form gaps from `space-y-4` → `space-y-3`, inputs `h-12` instead of `h-14`) so mobile fits in roughly one viewport too.
+- Keep native mobile scroll if the software keyboard opens (do not lock `overflow-hidden` on `<body>`).
 
-This bypasses the queue and works on both preview and production (Resend key is already in the project secrets).
+## What changes in code
 
-Out of scope: fixing the global pg_cron URL — that's a migration-era pump used by many templates and the user explicitly said not to lean on Lovable Cloud infra. Care invites just go direct.
+Only `src/routes/sign-in.tsx` (presentation). No changes to auth logic, `SocialSignInButtons`, or any server function.
 
-### 2. Surface pending invites in-app for existing Purple users
-
-Add a new server function `listIncomingCareInvites` in `src/lib/care.functions.ts`:
-
-- Look up the current user's email via `context.claims.email` (or `supabase.auth.getUser`).
-- Return `care_relationships` rows where `status = 'pending'`, `expires_at` is null or in the future, and `lower(invite_email) = <user email>`. Include `id`, `owner_id`, `role`, `invite_token`, `created_at`, `expires_at`, and the owner's display name (`profiles.first_name/last_name/community_display_name`).
-
-Render the invites in two places, both using a new `<IncomingCareInvitesCard />` component:
-
-- **Today page** (`src/routes/_app/today.tsx`) — show above the existing content when there are pending invites, so they can't be missed.
-- **Care inbox** (`src/routes/_app/care.inbox.tsx`) — a dedicated section at the top.
-
-Each invite row shows: "{Owner name} invited you as their {role}" + Accept and Decline buttons. Accept navigates to `/care/accept?token=<invite_token>` (existing flow handles the rest). Decline calls a new lightweight `declineIncomingCareInvite` server fn that flips `status` to `'declined'` after verifying the invite_email matches the caller's email.
-
-### 3. Mark the matching `alerts` row read on accept/decline
-
-In the existing `acceptCareInvite` handler and the new decline handler, update any `alerts` rows for the caller with `kind='care_invite'` and a body referencing this relationship to `read_at = now()`, so the bell badge clears.
-
-## Files to touch
-
-- `src/lib/care.functions.ts` — rewrite the email send in `inviteCaregiver`; add `listIncomingCareInvites` and `declineIncomingCareInvite`; clear alert rows on accept/decline.
-- `src/components/care/incoming-care-invites-card.tsx` — new component (Accept / Decline UI, polls via TanStack Query every 60s).
-- `src/routes/_app/today.tsx` — render the card above existing content.
-- `src/routes/_app/care.inbox.tsx` — render the card at top.
+1. Wrap the page in `h-dvh overflow-hidden` on `lg:` (not on mobile — mobile keeps scroll for keyboard safety).
+2. Replace the current `lg:grid-cols-[1fr_minmax(420px,560px)]` with a balanced `lg:grid-cols-2` split. Left column becomes an active brand + social panel, right column becomes the form.
+3. Move `<SocialSignInButtons />` and the "Continue with" divider from the right column into the left column, below the tagline copy. Keep the same component, just relocate.
+4. Tighten the right column:
+   - Headline shrinks on `lg:` (only shows small "Welcome back / Create your account" heading — the big serif headline lives on the left).
+   - Inputs: keep `h-14` on `<lg`, use `h-12` on `lg:` to save vertical space.
+   - Form spacing: `space-y-4` on `<lg`, `space-y-3` on `lg:`.
+   - "Forgot password?" moves inline next to the Password label (right-aligned) instead of below the button, saving one row.
+5. Ensure the right column vertically centers its content (`flex items-center`) so the form sits at optical center regardless of tab (Sign in vs Create account).
+6. Left column footer line: keep "Free forever · Private by design" (existing copy, no period per prior fix) pinned to bottom-left with `mt-auto`.
+7. Preserve all existing behavior: OAuth callback handling, invite capture, locale prefill, verify-sent / reset-sent states (those states render inside the right column and stay scrollable if content grows).
+8. Respect the workspace rule "do updates for all versions": verified against mobile / tablet / desktop breakpoints above.
 
 ## Out of scope
+- No changes to auth flow, Supabase calls, translations keys, or the `SocialSignInButtons` component itself.
+- No new colors, fonts, or design tokens.
+- No changes to `/reset-password` or the marketing footer beyond what's already on this page.
 
-- Fixing the global pg_cron pump URL or restructuring the email queue.
-- Changing the care-invite email design.
-- New push-notification logic (existing path stays).
-- Any change to the owner-side caregiver list UI.
-
-## Verification
-
-- Send an invite from one test account to the email of another existing test account. Confirm:
-  - Resend dashboard shows the message; recipient inbox receives it.
-  - The recipient sees the invite card on `/today` and `/care/inbox` without opening the email.
-  - Accept → relationship becomes active, alert row is marked read, card disappears.
-  - Decline → relationship becomes `declined`, card disappears.
-- Build passes; no new typecheck errors.
+## Verification after build
+- Playwright screenshots at 390×844 (mobile), 834×1112 (tablet), 1280×800 (desktop), 1440×900 — confirm no vertical scrollbar on `lg:` widths and form is fully visible.
+- Manually confirm: tabs switch, Google/Apple buttons live on the left, forgot-password link works, verify-sent and reset-sent states still render inside the right column.
