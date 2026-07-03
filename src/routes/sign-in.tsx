@@ -260,7 +260,7 @@ function SignInPage() {
   };
 
   return (
-    <div className="relative min-h-dvh flex items-center justify-center bg-background text-foreground px-4 sm:px-6 py-6 lg:py-10">
+    <div className="relative min-h-dvh flex flex-col items-center justify-center bg-background text-foreground px-4 sm:px-6 py-6 lg:py-10">
       <div className="w-full max-w-5xl lg:h-[720px] rounded-[32px] lg:rounded-[40px] border border-border bg-card shadow-[0_40px_80px_-20px_rgba(0,0,0,0.08)] overflow-hidden grid grid-cols-1 lg:grid-cols-[42%_1fr]">
         {/* LEFT — editorial brand panel */}
         <aside className="hidden lg:flex flex-col justify-between bg-secondary/60 border-r border-border p-14">
