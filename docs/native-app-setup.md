@@ -76,14 +76,48 @@ a native WebView, so the native shell owns reminders while installed.
 
 ## 5. Health (HealthKit / Health Connect)
 
-Augments the existing Apple Health webhook by reading vitals natively.
+Augments the existing Apple Health webhook by reading vitals natively. On the
+web, Apple Health is push-only via Health Auto Export
+(`/api/public/hooks/apple-health?token=<secret>`). The native iOS app adds a
+direct HealthKit read path; Android uses Health Connect. Both land in
+`biometrics` with the same `source` values the webhook uses (`apple_health`,
+`health_connect`).
 
-- iOS: add a HealthKit-capable Capacitor health plugin (e.g.
-  `@perfood/capacitor-healthkit` or a maintained equivalent), add the HealthKit
-  entitlement and usage strings in Xcode.
-- Android: Health Connect plugin + the Health Connect permissions.
-- Map the native samples into the `biometrics` table (source `apple_health` /
-  `health_connect`) through an authenticated server function.
+### HealthKit execution checklist (iOS)
+
+Run on a Mac with Xcode after `bun run native:add` and `bun run native:sync`.
+Cursor can wire the web and server code; the steps marked **human** need a local
+machine, Apple Developer account, or App Store review context.
+
+| Step | Owner | Action |
+|------|-------|--------|
+| 1 | Cursor | Pick a maintained Capacitor HealthKit plugin (e.g. `@perfood/capacitor-healthkit` or equivalent). Add it via `bun add`, then `bun run native:sync`. |
+| 2 | Cursor | Add `src/lib/native/healthkit.ts` (or similar) that calls the plugin through `callPlugin()` / `plugin()` in `src/lib/native/capacitor.ts`, guarded by `isNativeApp()` and `nativePlatform() === "ios"`. |
+| 3 | Cursor | Add an authenticated server function (standard `*.functions.ts` + `*.server.ts` split) to upsert native samples into `biometrics` with `source='apple_health'`, scoped to the authenticated `user_id`. Verify the live schema before shipping. |
+| 4 | Cursor | Surface a native-only connect flow on Tools (or extend the Apple Health card when `isNativeApp()` is true) so users can grant HealthKit permission in-app. Keep the web copy that explains Health Auto Export for browser users. |
+| 5 | **human** | In Xcode: enable the HealthKit capability on the app target, add `NSHealthShareUsageDescription` (and write strings if writing samples later) to `Info.plist`. |
+| 6 | **human** | In Apple Developer portal: confirm the App ID includes HealthKit; rebuild and run on a physical iPhone (HealthKit does not work in Simulator for all types). |
+| 7 | Cursor + **human** | Test: grant permission, trigger a read, confirm rows in `biometrics` with `source='apple_health'` and that `/vitals` shows real data (no fake metrics). |
+| 8 | Cursor | Add visit-mode or pull sync consistent with wearables (`src/lib/wearable-sync.ts` pattern) so native HealthKit refresh respects the same throttle and user controls. |
+
+### Health Connect checklist (Android)
+
+| Step | Owner | Action |
+|------|-------|--------|
+| 1 | Cursor | Add a Health Connect Capacitor plugin, sync with `bun run native:sync`. |
+| 2 | Cursor | Mirror the iOS server upsert path with `source='health_connect'`. |
+| 3 | **human** | Declare Health Connect permissions in `AndroidManifest.xml` and satisfy Play policy for health data. |
+| 4 | **human** | Test on a physical Android device with Health Connect installed. |
+
+### Data model notes
+
+- Reuse `biometrics` and existing metric naming (`src/lib/metric-naming.ts`). Do
+  not invent parallel tables for native-only vitals.
+- Native reads complement, do not replace, the webhook: users on web/PWA keep
+  Health Auto Export; users on the installed app can use direct HealthKit.
+- `apple_health_tokens.last_webhook_at` stays webhook-specific; track native
+  sync separately (e.g. `last_sync_at` on a native health config row or reuse
+  an existing tokens table column after schema review).
 
 ## 6. OAuth deep link registration
 
@@ -104,12 +138,33 @@ Register it everywhere:
 - App Store guideline 4.2: justify the native value (push + local notifications +
   HealthKit) so a thin WebView is not rejected.
 
-## 8. Keeping native in sync
+## 8. Sync model: web deploy vs store release
 
-The WebView loads production, so most updates ship by deploying the web app, no
-store release needed. Re-release the native app only when native code, plugins,
-permissions, or the shell config change. After any such change:
+The Capacitor shell loads production directly (`capacitor.config.ts`
+`server.url` = `https://www.purplelife.org`). The WebView always runs the live
+site, so **most product changes ship with a normal Cloudflare Worker deploy** and
+users see them on next app launch without an App Store or Play Store update.
+
+| Change type | How it ships | User action |
+|-------------|--------------|-------------|
+| UI, routes, copy, SSR logic, API routes, Supabase schema (web-facing) | `bun run build:prod` + Worker deploy (`docs/SYNC-AND-RELEASE.md`) | Open or background-resume the app |
+| `src/lib/native/*` JS (OAuth, reminders, future HealthKit bridge) | Same web deploy (JS is served from production) | Open or background-resume the app |
+| New Capacitor plugin, `capacitor.config.ts`, entitlements, permissions, `Info.plist`, `AndroidManifest.xml`, icons, splash assets | `bun run native:sync`, rebuild in Xcode/Android Studio, **store release** | Update from App Store / Play Store |
+| OAuth redirect URL or deep-link scheme change | Native project edit + Supabase/provider console + **store release** if manifest/plist changed | Update app if store build changed |
+
+**Rule of thumb:** if the diff only touches `src/`, `public/`, Worker code, or
+migrations, deploy the web app. If the diff touches `ios/`, `android/`, native
+plugins, or platform permissions, run `bun run native:sync`, cut a new native
+build, and submit to TestFlight / Play internal testing before production.
 
 ```bash
+# After any native project or plugin change:
 bun run native:sync
+bun run native:open:ios      # or native:open:android
+# Archive (iOS) or bundle AAB (Android), then upload to the store console
 ```
+
+Web deploy does **not** replace store review for native-only capabilities: Apple
+still requires a binary that declares HealthKit, push, and URL schemes even when
+the UI loads remotely (App Store guideline 4.2: document push, local
+notifications, and HealthKit as the native value-add).

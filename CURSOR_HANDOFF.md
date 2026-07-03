@@ -18,7 +18,8 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 - Lovable exit + Cloudflare cutover plan: `docs/LOVABLE-MIGRATION.md`
 - Supabase manual deploy procedure: `docs/manual-deploy-bundle.md`
 - OAuth provider setup: `docs/oauth-provider-setup.md`
-- Durable decisions: `mem/index.md` (no em dashes, footer visibility, metric naming, post-task documentation)
+- Native iOS/Android (Capacitor): `docs/native-app-setup.md` (HealthKit checklist, sync model)
+- Durable decisions: `mem/index.md` (no em dashes, footer visibility, metric naming, native HealthKit, post-task documentation)
 - Editor rules: `.cursor/rules/` (conventions, server functions, Cloudflare constraints, lovable-redesign-workflow, **post-task-documentation**)
 
 ## Quick facts
@@ -59,6 +60,47 @@ Cron Triggers fan out from `scheduled()` in `src/server.ts` through a `SELF` ser
 
 Redesign baseline on `main`: commit `7086ffa` (perf/responsive/native foundation).
 
+## Native app track (Capacitor)
+
+Thin hybrid shell: WebView loads production (`capacitor.config.ts`), native
+plugins bridge through `src/lib/native/*` without bundling `@capacitor/*` into
+the web build. Full runbook: `docs/native-app-setup.md`. Durable decision:
+`mem/native-app-healthkit.md`.
+
+### Implemented in repo (ships with web deploy)
+
+| Area | Location | Notes |
+|------|----------|-------|
+| Capacitor config | `capacitor.config.ts` | `server.url` = `https://www.purplelife.org` |
+| Runtime bridge | `src/lib/native/capacitor.ts` | `isNativeApp()`, `callPlugin()`, web no-op |
+| Shell init | `src/lib/native/index.ts` | Status bar, splash hide, Android back button |
+| Local dose reminders | `src/lib/native/index.ts` | `scheduleNativeMedReminders()` via Capacitor Local Notifications |
+| Native OAuth | `src/lib/native/oauth.ts`, `social-sign-in-buttons.tsx` | System browser + `org.purplelife.app://auth-callback` deep link |
+| Native health bridge | `src/lib/native/health-ios.ts`, `health-android.ts`, `health.ts` | `@capgo/capacitor-health` via `Health` plugin; iOS HealthKit + Android Health Connect daily aggregation |
+| Native health sync | `src/lib/native-health.functions.ts`, `src/lib/native-health.server.ts`, `/api/health/native-sync` | Authenticated upsert into `biometrics` (`apple_health`, `health_connect`) |
+| Apple Health UI | `apple-health-connection.tsx` | Web: Health Auto Export webhook; native iOS: HealthKit Connect + `syncNativeHealthBatch` |
+| Startup hook | `src/components/common/deferred-startup.tsx` | Skips web SW reminders when `isNativeApp()` |
+| npm scripts | `package.json` | `native:install`, `native:add`, `native:sync`, `native:open:*` |
+| Web Apple Health webhook | `/api/public/hooks/apple-health` | Push-only Health Auto Export for browser users |
+
+### Not generated yet (human / toolchain gated)
+
+| Gap | Blocker | Next step |
+|-----|---------|-----------|
+| `ios/` and `android/` project dirs | No Xcode/Android SDK in agent sandbox | On a Mac: `bun run native:install`, `native:add`, `native:sync` |
+| Push delivery | `native_push_tokens` migration in repo; types not regenerated; no APNs/FCM credentials | Apply migration on live DB, regenerate `types.ts`, wire APNs/FCM secrets |
+| HealthKit / Health Connect native projects | `ios/` / `android/` not committed; Xcode HealthKit capability + `Info.plist` usage strings | On Mac: `native:sync`, enable HealthKit in Xcode, add `NSHealthShareUsageDescription`; Android manifest per `docs/android-health-connect-setup.md` |
+| OAuth deep links in native projects | `ios/` / `android/` not committed | Register `org.purplelife.app://auth-callback` in plist, manifest, Supabase, Google/Apple consoles |
+| Xcode signing and provisioning | Apple Developer Program ($99/yr) | Certificates, profiles, Push capability in Xcode |
+| Store submission | App Store + Play Developer accounts | TestFlight / Play internal track before production; justify 4.2 native value (push, local notifications, HealthKit) |
+
+### Sync model
+
+Web deploy updates UI and `src/lib/native/*` JS instantly for installed apps
+(next launch). Store release required only for native project changes (plugins,
+entitlements, permissions, icons, `capacitor.config.ts` shell changes). See
+`docs/native-app-setup.md` section 8.
+
 ## Recent changes (2026-07-02 to 2026-07-03)
 
 1. **iOS / PWA mobile fixes (2026-07-03, `19d8d4d`, deploy `321a9227`):** Date strip edge padding + margin parity with Today column; mobile nav sheet scroll containment + GitHub link removed; PWA install banner platform detection (`src/lib/pwa-platform.ts`) with iOS Safari vs Chrome guidance; keyboard focus helper + 16px inputs on mobile; Apple Health Tools copy (Health Auto Export steps, no HealthKit on web); manifest `start_url` `/today`, `display_override`.
@@ -70,6 +112,8 @@ Redesign baseline on `main`: commit `7086ffa` (perf/responsive/native foundation
 5. **Docs:** `docs/SYNC-AND-RELEASE.md` runbook; post-task documentation rule (`.cursor/rules/post-task-documentation.mdc`).
 6. **Post-deploy smoke (2026-07-03):** `routes-smoke` + `today` on `desktop-1024` against prod: 17 passed.
 7. **Full prod e2e (2026-07-03):** 445 passed, 32 skipped, 89 flaky, 12 hard failures (mostly stale `samuel-fixes.spec.ts` + tablet web-vitals budgets). HIPAA `integrations-vitals` tests passed on all viewports.
+8. **Native app docs (2026-07-03):** Expanded `docs/native-app-setup.md` (HealthKit execution checklist, web vs store sync model), `mem/native-app-healthkit.md`, handoff native track table.
+9. **Native HealthKit wiring (2026-07-03):** `health-ios.ts` migrated to `@capgo/capacitor-health` (`Health` plugin, same as Android); `health.ts` routes iOS permissions/read; `apple-health-connection.tsx` native Connect + `syncNativeHealthBatch`; health helpers re-exported from `src/lib/native/index.ts`.
 
 ## Environment variables
 

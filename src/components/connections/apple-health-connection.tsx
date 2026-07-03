@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getOrCreateAppleHealthConfig, disconnectAppleHealth } from "@/lib/apple-health.functions";
+import { syncNativeHealthBatch } from "@/lib/native-health.functions";
+import {
+  isNativeApp,
+  nativePlatform,
+  readNativeHealthMetrics,
+  requestNativeHealthPermissions,
+} from "@/lib/native";
 import { toast } from "sonner";
 import { userMessage } from "@/lib/user-message";
 
@@ -26,7 +33,177 @@ function relativeTime(iso: string | null): string {
 
 type SyncState = "receiving" | "stale" | "reachable" | "waiting";
 
+function isNativeIos(): boolean {
+  return isNativeApp() && nativePlatform() === "ios";
+}
+
+function NativeAppleHealthConnection() {
+  const syncBatch = useServerFn(syncNativeHealthBatch);
+  const [linked, setLinked] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [lastData, setLastData] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const refresh = useCallback(async () => {
+    const { data: sess } = await supabase.auth.getSession();
+    if (!sess.session) return;
+    const uid = sess.session.user.id;
+
+    const { data: bio } = await supabase
+      .from("biometrics")
+      .select("recorded_at")
+      .eq("user_id", uid)
+      .eq("source", "apple_health")
+      .order("recorded_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setLastData(bio?.recorded_at ?? null);
+    if (bio?.recorded_at) setLinked(true);
+    setLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const syncState: SyncState = (() => {
+    const dataAge = lastData ? Date.now() - new Date(lastData).getTime() : Infinity;
+    if (dataAge < FRESH_WINDOW_MS) return "receiving";
+    if (lastData) return "stale";
+    return "waiting";
+  })();
+
+  const STATUS_TEXT: Record<SyncState, string> = {
+    receiving: `Syncing · latest data ${relativeTime(lastData)}`,
+    stale: `Last data ${relativeTime(lastData)} · open Purple to refresh from HealthKit`,
+    reachable: "Connected · waiting for the first HealthKit sync",
+    waiting: "Not connected · grant HealthKit access to sync vitals",
+  };
+
+  const runNativeSync = async () => {
+    const granted = await requestNativeHealthPermissions();
+    if (!granted) {
+      toast.error("HealthKit permission was not granted. Open Settings to allow access.");
+      return false;
+    }
+
+    const days = await readNativeHealthMetrics(90);
+    if (days.length === 0) {
+      toast.info("No HealthKit samples yet. Wear your watch or phone and try again later.");
+      return true;
+    }
+
+    const samples = days.map(({ source: _source, ...rest }) => rest);
+    await syncBatch({ data: { source: "apple_health", samples } });
+    return true;
+  };
+
+  const connect = async () => {
+    setBusy(true);
+    try {
+      const ok = await runNativeSync();
+      if (ok) {
+        setLinked(true);
+        toast.success("Apple Health connected. Vitals synced from HealthKit.");
+      }
+    } catch (e) {
+      toast.error(userMessage(e, "Couldn't sync Apple Health"));
+    } finally {
+      setBusy(false);
+      void refresh();
+    }
+  };
+
+  const syncNow = async () => {
+    setBusy(true);
+    try {
+      await runNativeSync();
+      toast.success("HealthKit sync complete.");
+    } catch (e) {
+      toast.error(userMessage(e, "Couldn't sync Apple Health"));
+    } finally {
+      setBusy(false);
+      void refresh();
+    }
+  };
+
+  const dotClass =
+    syncState === "receiving"
+      ? "bg-[color:var(--data-good)]"
+      : syncState === "stale"
+        ? "bg-[color:var(--data-warn)]"
+        : "bg-muted-foreground/50";
+
+  if (linked) {
+    return (
+      <div className="py-2 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="rounded-full bg-secondary p-2 text-secondary-foreground shrink-0">
+              <Smartphone className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="font-serif text-base text-foreground">Apple Health</p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <span
+                  className={`h-1.5 w-1.5 rounded-full shrink-0 ${dotClass}`}
+                  aria-hidden="true"
+                />
+                {STATUS_TEXT[syncState]}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button size="sm" variant="outline" onClick={() => void syncNow()} disabled={busy}>
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Sync now"}
+            </Button>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground pl-11 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+          Purple reads sleep, HRV, heart rate, steps, and VO2 max directly from HealthKit on
+          this device. Open Purple after workouts or sleep to refresh vitals.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-2 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="rounded-full bg-secondary p-2 text-secondary-foreground shrink-0">
+            <Smartphone className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <p className="font-serif text-base text-foreground">Apple Health</p>
+            <p className="text-xs text-muted-foreground">
+              {loaded ? "Direct HealthKit sync in the Purple iOS app" : "\u00a0"}
+            </p>
+          </div>
+        </div>
+        <Button size="sm" onClick={() => void connect()} disabled={busy}>
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Connect"}
+        </Button>
+      </div>
+      {loaded && (
+        <p className="text-xs text-muted-foreground pl-11">
+          Tap Connect to grant HealthKit access. Purple reads your vitals on this iPhone and
+          syncs them to your account.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function AppleHealthConnection() {
+  if (isNativeIos()) {
+    return <NativeAppleHealthConnection />;
+  }
+
+  return <WebAppleHealthConnection />;
+}
+
+function WebAppleHealthConnection() {
   const ensureConfig = useServerFn(getOrCreateAppleHealthConfig);
   const disconnect = useServerFn(disconnectAppleHealth);
   const [connected, setConnected] = useState<boolean | null>(null);
@@ -227,8 +404,7 @@ export function AppleHealthConnection() {
             <Link to="/apple-health-import" className="underline">
               Upload your export.xml
             </Link>
-            . A native Purple iOS app with direct HealthKit is planned; the web uses this push-only
-            path today.
+            . On the Purple iOS app, HealthKit syncs directly without Health Auto Export.
           </p>
         </div>
       </div>
@@ -258,7 +434,7 @@ export function AppleHealthConnection() {
       {connected !== null && (
         <p className="text-xs text-muted-foreground pl-11">
           Tap Connect to get your personal webhook URL, then finish setup in the Health Auto Export
-          app. Purple cannot pull from Apple Health directly.
+          app. Purple cannot pull from Apple Health directly in the browser.
         </p>
       )}
     </div>

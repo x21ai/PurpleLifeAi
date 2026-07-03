@@ -1,7 +1,14 @@
 import { isNativeApp, nativePlatform, plugin, callPlugin } from "./capacitor";
 import { loadUpcomingScheduledDoses } from "@/lib/med-notifications";
+import { registerDeviceToken as saveNativePushToken } from "@/lib/native-push.functions";
 
 export { isNativeApp, nativePlatform } from "./capacitor";
+export {
+  isNativeHealthAvailable,
+  nativeHealthSource,
+  readNativeHealthMetrics,
+  requestNativeHealthPermissions,
+} from "./health";
 
 let initialized = false;
 
@@ -55,9 +62,13 @@ async function setupPushNotifications(): Promise<void> {
 }
 
 async function registerDeviceToken(token: string): Promise<void> {
-  // Backend device-token storage + APNs/FCM sender are provisioned as part of
-  // the native ship checklist (docs/native-app-setup.md). Capture for now.
-  console.info("[native] push device token registered", `${token.slice(0, 8)}…`);
+  const platform = nativePlatform();
+  if (platform !== "ios" && platform !== "android") return;
+  try {
+    await saveNativePushToken({ data: { token, platform } });
+  } catch (err) {
+    console.warn("[native] failed to register push token", err);
+  }
 }
 
 /**

@@ -10,4 +10,5 @@ Metric labels always show the canonical human name from `src/lib/metric-naming.t
 - [Footer visibility](mem://design/footer-visibility) - Footer shown on mobile/tablet/desktop for marketing pages, hidden in the signed-in app shell.
 - [No em dashes](mem://constraint/no-em-dash) - Banned char `—` and the replacement table by context (comma, and/or, colon, period, ·, en dash for "no data").
 - [Metric naming + as-printed rule](mem://feature/metric-naming) - Canonical name map and when to hide "as printed" subtitle on charts.
+- [Native app and HealthKit](native-app-healthkit.md) - Capacitor shell loads production; web deploy vs store release; web push-only Apple Health vs planned native HealthKit read.
 - [Sync and release workflow](../docs/SYNC-AND-RELEASE.md) - How Lovable, Cursor, and production stay in step: branch flow, gates, case studies, runbooks.
