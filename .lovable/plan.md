@@ -1,63 +1,52 @@
+## Redesign /sign-in — Editorial Card Split (selected direction)
 
-## Goal
-Redesign `/sign-in` so it fits in one viewport (no scroll on desktop/tablet), uses the empty left column, and cleanly separates password sign-in from Google/Apple. Keep the existing brand (calm hero photo, PURPLE wordmark, serif headline, dark form panel).
+Replace the current full-bleed two-column layout with a single centered rounded card that combines an editorial brand panel (left) and the auth form (right). Applies to desktop, tablet, and mobile.
 
-## Layout at a glance (desktop / tablet ≥ 1024px)
+### Scope
+- Frontend only: `src/routes/sign-in.tsx`.
+- No changes to auth flow, Supabase calls, translations, `SocialSignInButtons`, or `PasswordInput`.
+- All colors continue to use existing design tokens (no hardcoded hex added to CSS). We map the prototype's cream/violet palette to existing tokens: cream page background → `bg-background`, card → `bg-card`, panel → `bg-secondary`, accent copy → `text-primary`, border → `border-border`, muted copy → `text-muted-foreground`.
 
-```text
-┌──────────────────────────────┬────────────────────────────────────┐
-│ LEFT — brand / social         │ RIGHT — email + password           │
-│                               │                                    │
-│  PURPLE                       │  SIGN IN                           │
-│                               │  A quiet intelligence              │
-│  A quiet intelligence         │  for your health.                  │
-│  for your health.             │                                    │
-│  (serif headline, 2 lines)    │  [ Sign in | Create account ]      │
-│                               │                                    │
-│  Two calm tag lines.          │  Email                             │
-│                               │  [ you@example.com           ]     │
-│  ── Continue with ──          │  Password                          │
-│  [  Continue with Google  ]   │  [ ••••••••••••••          👁 ]    │
-│  [  Continue with Apple   ]   │  [        Sign in           ]      │
-│                               │  Forgot password?                  │
-│  Free forever · Private       │                                    │
-└──────────────────────────────┴────────────────────────────────────┘
-```
+### Desktop / large tablets (`lg+`, ≥1024px)
+- Full-viewport wrapper: `min-h-dvh flex items-center justify-center bg-background px-6 py-10`.
+- Hero photo REMOVED behind card and REPLACED by a calm background token; the photo currently competes with the form and forces the shadowed text hack. Keeps brand quiet.
+- Centered card: `w-full max-w-5xl h-[720px] rounded-[40px] border border-border bg-card shadow-[0_40px_80px_-20px_rgba(0,0,0,0.08)] overflow-hidden grid grid-cols-[42%_1fr]`.
+- Left panel (`bg-secondary/60 border-r border-border p-14 flex flex-col justify-between`):
+  - Top: PURPLE eyebrow (`label-eyebrow text-primary`).
+  - Middle: serif headline (`font-serif text-5xl leading-[1.05] text-foreground`) + short muted tagline paragraph (existing `t("signIn.tag1")`).
+  - Bottom: privacy line with small green dot: "No ads. No trackers. Your data is yours." (existing `t("signIn.trustLine")` variant).
+- Right panel (`p-14 flex flex-col justify-center`):
+  - Inner column `w-full max-w-[380px] mx-auto`.
+  - Segmented Sign in / Create account pill (reuse `Tabs` component styled via existing `TabsList` — no new component). Centered above form with `mb-10`.
+  - **Social buttons FIRST** (`SocialSignInButtons` unchanged) — Apple then Google, stacked, full width.
+  - "or" divider (thin border + centered uppercase micro-label).
+  - Email + password form; forgot link right-aligned inside password label row (existing behavior).
+  - Primary Sign in button `h-12 rounded-2xl`.
+- Verify-sent / reset-sent status blocks stay inside the right panel.
 
-- Full-height 50/50 split, `min-h-dvh`, `overflow-hidden`, no page scroll.
-- Left panel keeps the hero photo with a left-to-right dark gradient so PURPLE + copy + social buttons read cleanly on the image.
-- Right panel is the dark form card (as today) but tightened: smaller headline on this screen (headline lives on the left now), tighter vertical rhythm, form fits without scroll at 1024×640 and up.
-- Social buttons move OUT of the form column into the left panel — clear separation between "password path" (right) and "one-tap identity" (left), which is the standard split-auth pattern used by Linear, Stripe, Vercel.
+### Tablet (md 768–1023px)
+- Same centered card but stacked: `grid-cols-1`, left panel becomes a compact top band (`p-8`, headline text-3xl, hides bottom privacy line — moved to footer of card).
+- Card height auto (`h-auto`, `min-h-[640px]`).
 
-## Layout at a glance (mobile & small tablet < 1024px)
+### Mobile (<768px)
+- No card chrome. `bg-background px-6 py-10`.
+- Order: PURPLE eyebrow → serif headline → tagline → segmented tab → social buttons → divider → form → trust line.
+- Same spacing tokens as before (space-y-3 form rows, h-12 inputs).
 
-- Single column, stacked (this is how it works today).
-- Order: PURPLE wordmark → serif headline (smaller) → tabs → form → divider → Google/Apple → footer line.
-- Reduce vertical spacing (headline goes from `text-6xl/7xl` down to `text-4xl`, form gaps from `space-y-4` → `space-y-3`, inputs `h-12` instead of `h-14`) so mobile fits in roughly one viewport too.
-- Keep native mobile scroll if the software keyboard opens (do not lock `overflow-hidden` on `<body>`).
+### Behavior kept identical
+- All state, handlers, `useEffect`s, invite/locale prefill, verify-sent + reset-sent screens, oauth error toast, error styling, disabled states, translations — unchanged.
+- `SiteFooter` continues to render on mobile only; hidden on `lg`.
 
-## What changes in code
+### Tokens & CSS
+- No new tokens required. Uses existing `--background`, `--card`, `--secondary`, `--border`, `--primary`, `--muted-foreground`, `--foreground`, and `label-eyebrow` utility.
+- Remove the fixed hero photo layer and its dark gradient overlay from this route (the calm card is the composition now).
 
-Only `src/routes/sign-in.tsx` (presentation). No changes to auth logic, `SocialSignInButtons`, or any server function.
+### Verification
+- Playwright screenshots at 390×844, 834×1112, 1280×800, 1440×900. Confirm:
+  - Desktop: single card, no scroll, both auth methods visible, headline balanced.
+  - Tablet: stacked card, no scroll.
+  - Mobile: no card, no scroll beyond expected form length.
+- Confirm no console/network regressions on `/sign-in`.
 
-1. Wrap the page in `h-dvh overflow-hidden` on `lg:` (not on mobile — mobile keeps scroll for keyboard safety).
-2. Replace the current `lg:grid-cols-[1fr_minmax(420px,560px)]` with a balanced `lg:grid-cols-2` split. Left column becomes an active brand + social panel, right column becomes the form.
-3. Move `<SocialSignInButtons />` and the "Continue with" divider from the right column into the left column, below the tagline copy. Keep the same component, just relocate.
-4. Tighten the right column:
-   - Headline shrinks on `lg:` (only shows small "Welcome back / Create your account" heading — the big serif headline lives on the left).
-   - Inputs: keep `h-14` on `<lg`, use `h-12` on `lg:` to save vertical space.
-   - Form spacing: `space-y-4` on `<lg`, `space-y-3` on `lg:`.
-   - "Forgot password?" moves inline next to the Password label (right-aligned) instead of below the button, saving one row.
-5. Ensure the right column vertically centers its content (`flex items-center`) so the form sits at optical center regardless of tab (Sign in vs Create account).
-6. Left column footer line: keep "Free forever · Private by design" (existing copy, no period per prior fix) pinned to bottom-left with `mt-auto`.
-7. Preserve all existing behavior: OAuth callback handling, invite capture, locale prefill, verify-sent / reset-sent states (those states render inside the right column and stay scrollable if content grows).
-8. Respect the workspace rule "do updates for all versions": verified against mobile / tablet / desktop breakpoints above.
-
-## Out of scope
-- No changes to auth flow, Supabase calls, translations keys, or the `SocialSignInButtons` component itself.
-- No new colors, fonts, or design tokens.
-- No changes to `/reset-password` or the marketing footer beyond what's already on this page.
-
-## Verification after build
-- Playwright screenshots at 390×844 (mobile), 834×1112 (tablet), 1280×800 (desktop), 1440×900 — confirm no vertical scrollbar on `lg:` widths and form is fully visible.
-- Manually confirm: tabs switch, Google/Apple buttons live on the left, forgot-password link works, verify-sent and reset-sent states still render inside the right column.
+### Files
+- Edit: `src/routes/sign-in.tsx` (only the JSX inside `SignInPage` return + remove the ResponsiveImage/signInImages imports if unused).

@@ -6,8 +6,6 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SiteFooter } from "@/components/layout/site-footer";
-import { ResponsiveImage } from "@/components/marketing/responsive-image";
-import { signInImages } from "@/lib/calm-images/sign-in";
 import { SocialSignInButtons } from "@/components/auth/social-sign-in-buttons";
 import { isOAuthCallbackUrl, waitForOAuthSession } from "@/lib/auth-oauth";
 import { toast } from "sonner";
@@ -262,86 +260,41 @@ function SignInPage() {
   };
 
   return (
-    <div className="relative min-h-dvh lg:h-dvh lg:overflow-hidden text-foreground">
-      {/* Full-bleed hero photo */}
-      <div className="fixed inset-0 -z-10 bg-background">
-        <ResponsiveImage
-          asset={signInImages.hero}
-          priority
-          sizes="100vw"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        {/* Right-side gradient so the form column reads cleanly over the photo.
-            On lg+, both halves need contrast, so darken across the whole viewport. */}
-        <div
-          className="absolute inset-0 bg-gradient-to-l from-background via-background/85 to-background/10 lg:bg-gradient-to-br lg:from-background/80 lg:via-background/70 lg:to-background/80"
-          aria-hidden="true"
-        />
-      </div>
+    <div className="relative min-h-dvh flex flex-col items-center justify-center bg-background text-foreground px-4 sm:px-6 py-6 lg:py-10">
+      <div className="w-full max-w-5xl lg:h-[720px] rounded-[32px] lg:rounded-[40px] border border-border bg-card shadow-[0_40px_80px_-20px_rgba(0,0,0,0.08)] overflow-hidden grid grid-cols-1 lg:grid-cols-[42%_1fr]">
+        {/* LEFT — editorial brand panel */}
+        <aside className="hidden lg:flex flex-col justify-between bg-secondary/60 border-r border-border p-14">
+          <p className="label-eyebrow text-primary">PURPLE</p>
 
-      <div className="lg:grid lg:grid-cols-2 lg:h-dvh">
-        {/* LEFT — brand + social identity (desktop only) */}
-        <aside
-          className="hidden lg:flex flex-col justify-between px-14 py-12 h-dvh"
-          style={{ textShadow: "0 1px 2px rgba(0,0,0,0.45)" }}
-        >
-          <p className="label-eyebrow" style={{ color: "#FFFFFF", opacity: 0.92 }}>
-            PURPLE
-          </p>
-
-          <div className="max-w-md">
-            <h2 className="font-serif text-5xl xl:text-6xl leading-[1.02] tracking-tight" style={{ color: "#FFFFFF" }}>
+          <div className="max-w-sm">
+            <h2 className="font-serif text-5xl leading-[1.05] tracking-tight text-foreground">
               {t("signIn.title")}
             </h2>
-            <p className="mt-6 text-base leading-relaxed" style={{ color: "#FFFFFF", opacity: 0.9 }}>
+            <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
               {t("signIn.tag1")}
             </p>
-            <p className="mt-2 text-base leading-relaxed" style={{ color: "#FFFFFF", opacity: 0.9 }}>
-              {t("signIn.tag2")}
-            </p>
-
-            <div className="relative my-7">
-              <div className="absolute inset-0 flex items-center" aria-hidden>
-                <span className="w-full border-t" style={{ borderColor: "rgba(255,255,255,0.25)" }} />
-              </div>
-              <p className="relative flex justify-start">
-                <span className="pr-3 text-xs font-sans uppercase tracking-widest" style={{ color: "#FFFFFF", opacity: 0.75, background: "transparent" }}>
-                  {t("signIn.orUseAnother")}
-                </span>
-              </p>
-            </div>
-
-            <SocialSignInButtons helper="" />
           </div>
 
-          <p className="font-serif italic text-sm" style={{ color: "#FFFFFF", opacity: 0.8 }}>
-            {t("signIn.freeForever")}
+          <p className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+            No ads. No trackers. Your data is yours.
           </p>
         </aside>
 
-        {/* RIGHT — email/password form */}
-        <main className="flex items-center justify-center px-6 sm:px-10 lg:px-14 py-10 lg:py-8 min-h-dvh lg:min-h-0 lg:h-dvh">
-          <div className="w-full max-w-md">
-            {/* Mobile-only brand block; desktop shows this in the left column */}
-            <div className="lg:hidden">
-              <p className="label-eyebrow">{t("signIn.eyebrow")}</p>
-              <h1 className="mt-4 font-serif text-4xl sm:text-5xl leading-[1.05] tracking-tight text-foreground">
-                {t("signIn.title")}
-              </h1>
-              <div className="mt-5 space-y-2 text-base leading-relaxed text-muted-foreground max-w-prose">
-                <p>{t("signIn.tag1")}</p>
-                <p>{t("signIn.tag2")}</p>
-              </div>
-            </div>
+        {/* Mobile-only compact brand header */}
+        <div className="lg:hidden px-6 pt-8 pb-2">
+          <p className="label-eyebrow text-primary">PURPLE</p>
+          <h1 className="mt-3 font-serif text-3xl sm:text-4xl leading-[1.05] tracking-tight text-foreground">
+            {t("signIn.title")}
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            {t("signIn.tag1")}
+          </p>
+        </div>
 
-            {/* Desktop-only compact heading */}
-            <div className="hidden lg:block">
-              <p className="label-eyebrow">{t("signIn.eyebrow")}</p>
-              <h1 className="mt-3 font-serif text-3xl leading-tight tracking-tight text-foreground">
-                {mode === "signin" ? t("signIn.signIn") : t("signIn.createAccount")}
-              </h1>
-            </div>
-
+        {/* RIGHT — auth column */}
+        <main className="flex flex-col justify-center px-6 sm:px-10 lg:px-14 py-8 lg:py-10">
+          <div className="w-full max-w-[380px] mx-auto">
             {status === "verify-sent" ? (
               <div className="mt-8 rounded-2xl border border-border bg-secondary/60 p-6">
                 <p className="label-eyebrow">{t("signIn.checkInbox")}</p>
@@ -376,14 +329,25 @@ function SignInPage() {
                 </button>
               </div>
             ) : (
-              <div className="mt-8 lg:mt-6">
+              <div>
                 <Tabs value={mode} onValueChange={(v) => { setMode(v as "signin" | "register"); setErrorMsg(null); }}>
-                  <TabsList className="grid w-full grid-cols-2">
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
                     <TabsTrigger value="signin">{t("signIn.tabSignIn")}</TabsTrigger>
                     <TabsTrigger value="register">{t("signIn.tabRegister")}</TabsTrigger>
                   </TabsList>
                   <TabsContent value={mode} forceMount>
-                    <form onSubmit={handleSubmit} className="mt-5 space-y-3 lg:space-y-3">
+                    <SocialSignInButtons helper="" />
+                    <div className="relative my-6">
+                      <div className="absolute inset-0 flex items-center" aria-hidden>
+                        <span className="w-full border-t border-border" />
+                      </div>
+                      <p className="relative flex justify-center">
+                        <span className="bg-card px-3 text-[10px] font-sans uppercase tracking-widest text-muted-foreground">
+                          {t("signIn.orUseAnother")}
+                        </span>
+                      </p>
+                    </div>
+                    <form onSubmit={handleSubmit} className="space-y-3">
                       <label htmlFor="email" className="label-eyebrow block">
                         {t("signIn.email")}
                       </label>
@@ -445,7 +409,7 @@ function SignInPage() {
                       )}
                       <Button
                         type="submit"
-                        className="w-full h-12 text-base rounded-xl"
+                        className="w-full h-12 text-base rounded-xl mt-2"
                         disabled={status === "submitting"}
                       >
                         {status === "submitting"
@@ -455,21 +419,6 @@ function SignInPage() {
                     </form>
                   </TabsContent>
                 </Tabs>
-
-                {/* Mobile-only social buttons; on desktop these live in the left column */}
-                <div className="lg:hidden">
-                  <div className="relative my-6">
-                    <div className="absolute inset-0 flex items-center" aria-hidden>
-                      <span className="w-full border-t border-border" />
-                    </div>
-                    <p className="relative flex justify-center">
-                      <span className="bg-background px-3 text-xs font-sans uppercase tracking-widest text-muted-foreground">
-                        {t("signIn.orUseAnother")}
-                      </span>
-                    </p>
-                  </div>
-                  <SocialSignInButtons helper="" />
-                </div>
 
                 <p className="mt-6 text-center text-xs text-muted-foreground">
                   {t("signIn.trustLine")}{" "}
