@@ -27,7 +27,17 @@ function cap(): CapacitorGlobal | undefined {
 
 /** True only inside the Capacitor iOS/Android shell. */
 export function isNativeApp(): boolean {
-  return cap()?.isNativePlatform?.() === true;
+  const c = cap();
+  if (!c) return false;
+  if (c.isNativePlatform?.() === true) return true;
+  const platform = c.getPlatform?.();
+  if (platform === "ios" || platform === "android") return true;
+  // Remote server.url pages: bridge can exist before isNativePlatform() is set.
+  const plugins = c.Plugins;
+  if (plugins && Object.keys(plugins).length > 0 && platform && platform !== "web") {
+    return true;
+  }
+  return false;
 }
 
 export function nativePlatform(): "ios" | "android" | "web" {

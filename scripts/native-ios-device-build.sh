@@ -56,6 +56,7 @@ xcodebuild \
   -configuration Debug \
   DEVELOPMENT_TEAM="${TEAM}" \
   -allowProvisioningUpdates \
+  -allowProvisioningDeviceRegistration \
   build
 
 log "Device build succeeded. Install from Xcode Devices window or: xcrun devicectl device install app --device <id> <path-to-App.app>"

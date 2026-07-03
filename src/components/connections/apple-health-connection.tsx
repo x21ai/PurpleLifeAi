@@ -37,6 +37,33 @@ function isNativeIos(): boolean {
   return isNativeApp() && nativePlatform() === "ios";
 }
 
+/** Wait for Capacitor bridge on remote server.url WebViews (injected after first paint). */
+function useNativeIos(): boolean | null {
+  const [nativeIos, setNativeIos] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const detect = () => isNativeIos();
+    if (detect()) {
+      setNativeIos(true);
+      return;
+    }
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      attempts += 1;
+      if (detect()) {
+        setNativeIos(true);
+        window.clearInterval(timer);
+      } else if (attempts >= 30) {
+        setNativeIos(false);
+        window.clearInterval(timer);
+      }
+    }, 100);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return nativeIos;
+}
+
 function NativeAppleHealthConnection() {
   const syncBatch = useServerFn(syncNativeHealthBatch);
   const [linked, setLinked] = useState(false);
@@ -196,7 +223,18 @@ function NativeAppleHealthConnection() {
 }
 
 export function AppleHealthConnection() {
-  if (isNativeIos()) {
+  const nativeIos = useNativeIos();
+
+  if (nativeIos === null) {
+    return (
+      <div className="flex items-center gap-3 py-2">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        <p className="text-xs text-muted-foreground">Loading Apple Health…</p>
+      </div>
+    );
+  }
+
+  if (nativeIos) {
     return <NativeAppleHealthConnection />;
   }
 
