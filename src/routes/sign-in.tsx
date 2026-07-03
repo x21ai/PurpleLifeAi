@@ -281,8 +281,7 @@ function SignInPage() {
 
         <div className="relative max-w-md">
           <h2 className="font-serif text-6xl xl:text-7xl leading-[0.95] tracking-tight">
-            Welcome to <br /> Purple
-            <span className="inline-block ml-2 origin-[70%_70%]">👋</span>
+            Welcome to <br /> Purple.
           </h2>
           <p className="mt-6 text-base leading-relaxed text-primary-foreground/80 max-w-sm">
             {t("signIn.tag1")}
