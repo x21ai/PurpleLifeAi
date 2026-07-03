@@ -17,6 +17,7 @@ import {
   type ScoreSnapshot,
   type HealthNarrative,
 } from "@/lib/health-scores.functions";
+import { useAuth } from "@/integrations/supabase/auth-context";
 
 function steps(n: number | null | undefined): string {
   return n == null ? "–" : n.toLocaleString();
@@ -58,18 +59,22 @@ function MyHealthPage() {
   const fetchProfile = useServerFn(getCareProfile);
   const fetchSnapshot = useServerFn(getScoreSnapshot);
   const fetchNarrative = useServerFn(getHealthNarrative);
+  const { session } = useAuth();
   const { data } = useQuery({
     queryKey: ["care-profile-summary"],
     queryFn: () => fetchProfile(),
+    enabled: !!session,
   });
   const { data: snap } = useQuery<ScoreSnapshot>({
     queryKey: ["score-snapshot"],
     queryFn: () => fetchSnapshot(),
+    enabled: !!session,
   });
   const { data: narrative } = useQuery<HealthNarrative>({
     queryKey: ["health-narrative"],
     queryFn: () => fetchNarrative(),
     staleTime: 6 * 60 * 60 * 1000,
+    enabled: !!session,
   });
   const userConditions = getConditions(data?.conditions ?? []);
 
