@@ -31,8 +31,8 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 | Runtime | Cloudflare Worker (`wrangler.deploy.jsonc`, entry `src/server.ts`, `nodejs_compat`) |
 | Package manager | bun (commands below) |
 | Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
-| Git heads | `main` and `lovable/redesign` at `8f527f9` (synced) |
-| Production deploy | Worker `purplelife`, version `566ab202-1d4c-454e-bad4-09d866dab18d` (commit `8f527f9`) |
+| Git heads | `main` and `lovable/redesign` at `bebe166` (synced) |
+| Production deploy | Worker `purplelife`, version `27be89de-937b-4824-a848-4f8a99b18696` (commit `bebe166`) |
 | Dev server | `bun run dev` on port 8080 |
 | E2E local | `bun run test:e2e` (boots dev server unless `E2E_BASE_URL` set) |
 | E2E prod | `bun run test:e2e:prod` (580 tests, 5 viewports, ~1.5h; Doppler creds) |
@@ -78,7 +78,7 @@ the web build. Full runbook: `docs/native-app-setup.md`. Durable decision:
 | Native OAuth | `src/lib/native/oauth.ts`, `social-sign-in-buttons.tsx` | System browser + `org.purplelife.app://auth-callback` deep link |
 | Native health bridge | `src/lib/native/health-ios.ts`, `health-android.ts`, `health.ts` | `@capgo/capacitor-health` via `Health` plugin; iOS HealthKit + Android Health Connect daily aggregation |
 | Native health sync | `src/lib/native-health.functions.ts`, `src/lib/native-health.server.ts`, `/api/health/native-sync` | Authenticated upsert into `biometrics` (`apple_health`, `health_connect`) |
-| Apple Health UI | `apple-health-connection.tsx` | Web: Health Auto Export webhook; native iOS: HealthKit Connect + `syncNativeHealthBatch` |
+| Apple Health UI | `apple-health-connection.tsx`, `apple-health-card.tsx` | Web: Health Auto Export webhook; native iOS: HealthKit Connect + `syncNativeHealthBatch` (Settings, Tools, onboarding step 2) |
 | Startup hook | `src/components/common/deferred-startup.tsx` | Skips web SW reminders when `isNativeApp()` |
 | npm scripts | `package.json` | `native:install`, `native:add`, `native:sync`, `native:open:*` |
 | Web Apple Health webhook | `/api/public/hooks/apple-health` | Push-only Health Auto Export for browser users |
@@ -126,6 +126,7 @@ entitlements, permissions, icons, `capacitor.config.ts` shell changes). See
 
 ## Recent changes (2026-07-02 to 2026-07-03)
 
+1. **Native Apple Health UX (2026-07-03, `bebe166`, deploy `27be89de`):** Settings `/settings/sharing` shows HealthKit connect/sync on native iOS (no webhook/HAE/ZIP); welcome onboarding adds optional step 2 "Connect with devices and apps"; PWA install banner hidden in native app; `/apple-health-import` redirects native iOS to Settings. Shared hooks: `use-native-ios.ts`, `use-native-apple-health.ts`. Gates: `check:em-dash`, `tsc`, `build:prod`.
 1. **Native HealthKit/push ship (2026-07-03, `1a24bd8`, deploy `9a6481ac`):** `native_push_tokens` + `biometrics` `health_connect` source applied on live `xxnzmfzsjplrutrgbzxy` via Management API; native health/push server functions, `/api/health/native-sync`, Capacitor health bridges, docs (`docs/native-oauth-setup.md`, `docs/android-health-connect-setup.md`). Gates: `check:em-dash`, `tsc --noEmit`, `build:prod`.
 1. **iOS / PWA mobile fixes (2026-07-03, `19d8d4d`, deploy `321a9227`):** Date strip edge padding + margin parity with Today column; mobile nav sheet scroll containment + GitHub link removed; PWA install banner platform detection (`src/lib/pwa-platform.ts`) with iOS Safari vs Chrome guidance; keyboard focus helper + 16px inputs on mobile; Apple Health Tools copy (Health Auto Export steps, no HealthKit on web); manifest `start_url` `/today`, `display_override`.
 2. **Lovable merge (2026-07-03):** Today `DateStrip`, historical day view, date-aware vitals, sign-in redesign; follow-up commit removed score-tile date gating (`d209c34`). Deploy `bd28333c`.
