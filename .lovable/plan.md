@@ -1,44 +1,50 @@
 ## Goal
 
-Add an Olivia-style horizontal date strip near the top of `/today` so users can swipe/scroll through recent dates and view that day's stats (vitals, doses, journal entries). The reference layout shows: month label + "Today" jump button on top, then a horizontally scrolling row of day cards (Wed 17 / Thu 18 / Today 19 / Sat 20 / Sun 21…), with the selected day highlighted.
+When a user taps a date in the strip on `/today`, every data section below re-queries for that day instead of always showing "latest". Selecting today keeps current behavior.
 
 ## Scope
 
-Frontend/presentation only. No schema or server-function changes. Existing data readers (`getScoreSnapshot`, `getDosesForDate`, journal lists, etc.) already accept a date parameter or will be filtered client-side by the selected date.
+Frontend only. Reuse existing server functions and Supabase queries; no schema changes, no new endpoints.
 
-## New component
+## Changes
 
-`src/components/today/date-strip.tsx`
-- Props: `value: Date`, `onChange: (d: Date) => void`, `daysBack?: number = 30`.
-- Header row: left = current month + year with a small chevron (opens a date picker popover reusing `@/components/ui/date-picker`); right = "Today" pill button with calendar icon that jumps to today.
-- Scrollable row: `overflow-x-auto snap-x snap-mandatory` with 14–30 rounded day tiles (`w-14 sm:w-16 h-16`), each showing weekday abbreviation and day-of-month. Selected tile: `bg-card ring-1 ring-primary` with primary text; today's tile shows the "Today" label instead of weekday.
-- Auto-scrolls the selected tile into view on mount and when `value` changes.
-- Keyboard: left/right arrows move by one day.
-- Mobile-first, works desktop/tablet (uses `min-w-0`, `shrink-0` per responsive rules).
+### 1. `src/lib/health-scores.functions.ts`
+- Add optional `date?: string` (YYYY-MM-DD) input to `getScoreSnapshot` via `.inputValidator`.
+- When `date` is provided, filter biometrics to `recorded_at` within that local day and return the latest row inside that window (still 60-day lookback for `stepsAvg30/60`, which stay "trailing from today"). When absent, current behavior is unchanged.
 
-## Today page wiring (`src/routes/_app/today.tsx`)
+### 2. `src/components/today/today-vitals.tsx`
+- Accept optional `date?: Date` prop.
+- Include the date in the react-query `queryKey` (`["score-snapshot", ymd]`) and pass it to `fetchSnapshot({ data: { date: ymd } })`.
+- Empty-state copy for non-today days: "No signals recorded on {date}."
 
-- Add `const [selectedDate, setSelectedDate] = useState(new Date())`.
-- Render `<DateStrip value={selectedDate} onChange={setSelectedDate} />` directly under the greeting header, above `TodayVitals`.
-- Pass `selectedDate` down to date-aware sections:
-  - `TodayVitals` — accept optional `date` prop; when set, query snapshot for that date (add a `date?: string` arg to the `getScoreSnapshot` call — server fn already supports a date, otherwise fall back to today for the initial pass and mark follow-up).
-  - `TodayDoses` / `MedsMiniTimeline` — pass `date={selectedDate}` (both already accept a date via `meds-today.ts`).
-  - Journal-of-the-day and hydration cards — filter by selected day.
-- When `selectedDate` is not today, hide today-only nudges (install banner, onboarding checklist, first-entry nudge, re-engagement) and show a subtle "Viewing {formatted date}" caption with a "Back to today" link.
+### 3. `src/components/meds/today-doses.tsx` and `src/components/meds/meds-mini-timeline.tsx`
+- Accept optional `date?: Date` prop.
+- When `date` is today (or omitted), keep `ensureTodayDoses` behavior.
+- When `date` is a past day, use existing `getDosesForDate(userId, date)` (already in `src/lib/meds-today.ts`) and disable status-change actions with a small "Viewing {date}" note; hide the notification-permission nudge.
+- Section title switches from "Today's doses" to "Doses on {date}".
 
-## Styling
+### 4. `src/routes/_app/today.tsx`
+- Pass `selectedDate` to `<TodayVitals>`, `<MedsMiniTimeline>` and `<TodayDoses>`.
+- Compute `isToday = isSameDay(selectedDate, new Date())`.
+- When `!isToday`:
+  - Hide today-only nudges: `TodayInstallBanner`, `MissedDoseCatchup`, `TodayEmptyState`, `RestoreBanner`, `IncomingCareInvitesCard`, `FirstEntryNudge`, `ReEngagementNudge`, `OnboardingChecklist`, `ConditionWelcomeNudge`, admin announcement, hydration/aura quick-add, trip banner.
+  - Replace the "historical stats coming soon" caption with a compact "Viewing {EEEE, MMMM d} — [Back to today]" bar just under the strip.
+  - Keep the score tiles/vitals/doses cards visible and driven by `selectedDate`.
+- Journal count query: when `!isToday`, also query journal entries created on that day for the "journal" quick action badge (optional; only if trivial — otherwise skip).
 
-- Use existing tokens: `bg-card`, `border-border`, `text-foreground`, `text-muted-foreground`, `ring-primary`. No hardcoded colors.
-- Serif day number (`font-serif text-xl`) to match Purple's typography; uppercase eyebrow weekday (`label-eyebrow`).
-- Hide scrollbar with `[&::-webkit-scrollbar]:hidden scrollbar-none`.
-
-## Verification
-
-- Playwright screenshots at 390×844, 834×1112, 1280×800: strip scrolls horizontally, selected day highlighted, tapping a day updates the vitals/doses below, "Today" button returns to today.
-- Console: no errors when switching dates.
+### 5. `BodyMeasurementsRow` (temp Δ / resp / SpO₂ inside "More for today")
+- Also gate on `selectedDate`: pull the latest biometrics row within that day using the same query pattern already in `load()`, keyed by `selectedDate`.
 
 ## Out of scope
 
-- No new server functions or DB migrations.
-- No historical backfill of vitals — dates with no data show the existing empty states.
-- No calendar month grid view (chevron popover reuses existing `DatePicker`).
+- Historical AI narrative / forecast rewrite (forecast stays today-only; hidden on past days).
+- Regenerating past doses (past days remain read-only).
+- Future dates (strip already blocks them).
+- Wearable pull-to-refresh (still refreshes latest, not the selected day).
+
+## Verification
+
+Playwright at 390×844, 834×1112 and 1440×900:
+1. Load `/today`, screenshot.
+2. Tap yesterday's tile: assert "Viewing …" bar shows, banners hidden, vitals/doses re-render (or show empty-state for that day).
+3. Tap "Back to today": assert today-only sections reappear.
