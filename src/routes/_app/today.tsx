@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import {
   BookOpen,
   Pill,
@@ -58,6 +58,7 @@ import { OnboardingChecklist } from "@/components/today/onboarding-checklist";
 import { FirstEntryNudge } from "@/components/today/first-entry-nudge";
 import { ReEngagementNudge } from "@/components/today/re-engagement-nudge";
 import { TodayVitals } from "@/components/today/today-vitals";
+import { DateStrip } from "@/components/today/date-strip";
 
 // Below-the-fold cards live behind the "More for today" disclosure. Loading
 // them lazily keeps them (and their dependencies) out of the initial /today
@@ -151,6 +152,10 @@ function TodayPage() {
   const [firstWords, setFirstWords] = useState<string | null>(null);
   // Secondary cards are tucked behind a disclosure so the top stays calm.
   const [showMore, setShowMore] = useState(false);
+  // Selected date for the horizontal date strip. Defaults to today; when the
+  // user picks another day we show a historical caption and keep today-only
+  // nudges hidden.
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
 
   useEffect(() => setNow(new Date()), []);
 
@@ -385,6 +390,14 @@ function TodayPage() {
         <p className="body-serif mt-4 max-w-[600px] text-foreground/75">{forecast.ai_narrative}</p>
       ) : (
         <p className="body-serif mt-4 max-w-[600px] text-foreground/60">{conditionPrompt}</p>
+      )}
+
+      <DateStrip value={selectedDate} onChange={setSelectedDate} />
+      {!isSameDay(selectedDate, new Date()) && (
+        <p className="mt-3 text-xs text-muted-foreground">
+          Viewing {format(selectedDate, "EEEE, MMMM d")}. Historical daily stats are coming soon;
+          today's snapshot is shown below.
+        </p>
       )}
 
       <section className="mt-12 sm:mt-16 grid grid-cols-3 items-center gap-2">
