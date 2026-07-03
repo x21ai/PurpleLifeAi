@@ -22,10 +22,12 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { whoopIncrementalSync } from "@/lib/whoop.functions";
+import { getScoreSnapshot, type ScoreSnapshot } from "@/lib/health-scores.functions";
 import { WEARABLE_PROVIDERS } from "@/lib/wearable-sync";
 import { ScoreTile } from "@/components/ui-oura/v2/score-tile";
 import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
@@ -323,9 +325,17 @@ function TodayPage() {
     return getTodayGreeting(profile?.conditions ?? [], now.getHours()).greetingSuffix;
   }, [profile?.conditions, now, careGreeting]);
 
-  const readiness = bio?.oura_readiness_score ?? null;
-  const sleep = bio?.sleep_score ?? null;
-  const activity = bio?.oura_activity_score ?? null;
+  const fetchSnapshot = useServerFn(getScoreSnapshot);
+  const ymd = format(selectedDate, "yyyy-MM-dd");
+  const { data: snapshot } = useQuery<ScoreSnapshot>({
+    queryKey: ["score-snapshot", ymd],
+    queryFn: () => fetchSnapshot(isToday ? undefined : { data: { date: ymd } }),
+    staleTime: 60_000,
+    enabled: !!userId,
+  });
+  const readiness = snapshot?.readiness ?? null;
+  const sleep = snapshot?.sleepScore ?? null;
+  const activity = snapshot?.activity ?? null;
 
   const focusScore = focus === "readiness" ? readiness : focus === "sleep" ? sleep : activity;
   const focusLabel = focus === "readiness" ? "Readiness" : focus === "sleep" ? "Sleep" : "Activity";
@@ -428,7 +438,7 @@ function TodayPage() {
 
       <section className="mt-12 sm:mt-16 grid grid-cols-3 items-center gap-2">
         <ScoreTile
-          value={isToday ? (readiness ?? "–") : "–"}
+          value={readiness ?? "–"}
           label="Readiness"
           active={focus === "readiness"}
           onClick={() => {
@@ -437,7 +447,7 @@ function TodayPage() {
           }}
         />
         <ScoreTile
-          value={isToday ? (sleep ?? "–") : "–"}
+          value={sleep ?? "–"}
           label="Sleep"
           active={focus === "sleep"}
           onClick={() => {
@@ -446,7 +456,7 @@ function TodayPage() {
           }}
         />
         <ScoreTile
-          value={isToday ? (activity ?? "–") : "–"}
+          value={activity ?? "–"}
           label="Activity"
           active={focus === "activity"}
           onClick={() => {
