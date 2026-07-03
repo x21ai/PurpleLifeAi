@@ -7,6 +7,10 @@ alwaysApply: true
 
 Purple is an AI-powered health journal (epilepsy and pattern-driven conditions) built with TanStack Start (React 19), Vite 7, Tailwind 4, Supabase, and Stripe, deployed to Cloudflare Workers. Brand domain: `https://www.purplelife.org`.
 
+## Agent operations
+
+Operational work (Doppler, Supabase API, wrangler, git, native CLI) is agent-owned. See `.cursor/rules/no-manual-operator-work.mdc`.
+
 ## Runtime and commands
 
 - Package manager and runtime is **bun**. Never assume `npm test`. The real commands live in `package.json`:

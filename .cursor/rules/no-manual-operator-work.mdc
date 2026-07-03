@@ -1,0 +1,44 @@
+---
+description: Agents run operational work via CLI and APIs; never offload manual dashboard or GUI steps to the operator.
+alwaysApply: true
+---
+
+# No manual operator work
+
+The agent executes operational work end to end. Do not instruct the operator to open GUIs, paste SQL, click through dashboards, or perform steps the agent can run in the shell.
+
+## Agent executes
+
+Run these yourself (credentials from Doppler when needed):
+
+- **Secrets and env**: `doppler run --project cursor-cloudflare --config prd_cloudlfare -- ...`
+- **Supabase**: Management API (`POST /v1/projects/{ref}/database/query` for DDL, `/secrets`, edge function deploy via `bunx supabase@latest functions deploy`), `psql` via Session pooler (5432), type regen, migration apply
+- **Cloudflare**: `wrangler deploy`, DNS via API (`CLOUDFLARE_DNS`), cron and route config in repo
+- **Build and quality**: `bun run` dev, build, lint, all `check:*` gates, Playwright e2e
+- **Git**: fetch, diff, branch, commit (when asked), push (when asked)
+- **Native (Capacitor)**: `npx cap sync`, `xcodebuild` CLI, `Info.plist` / entitlements edits in repo, Android Gradle via CLI
+
+Prefer documented runbooks (`docs/SYNC-AND-RELEASE.md`, `docs/manual-deploy-bundle.md`, `docs/native-app-setup.md`) over ad hoc instructions.
+
+## Never offload unless truly impossible
+
+Do not ask the operator to:
+
+- Open Xcode or Android Studio for tasks CLI can do (build, signing config in repo, plist edits)
+- Paste SQL into the Supabase SQL editor (use Management API or `psql`)
+- Click through Supabase, Cloudflare, or Doppler dashboards for routine config
+- Map env vars by hand when Doppler holds the values
+
+**Allowed exceptions** (say why, then ask for the minimum human action):
+
+- App Store / Xcode download or license acceptance with no CLI path
+- Physical device USB not connected for on-device debugging
+- Apple or Google 2FA with no API or stored session
+- Destructive production actions needing explicit approval (drop data, force push to `main`)
+- Third-party consoles with no API (Oura/Whoop OAuth app registration, App Store Connect review)
+
+## When blocked
+
+1. Check Doppler (`cursor-cloudflare` / `prd_cloudlfare`) before asking for secrets.
+2. If missing access, ask the user to grant Doppler or API credentials, not to perform the operation manually.
+3. Report what you tried, the error, and the exact credential or permission still needed.

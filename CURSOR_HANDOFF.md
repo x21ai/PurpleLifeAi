@@ -82,18 +82,40 @@ the web build. Full runbook: `docs/native-app-setup.md`. Durable decision:
 | Startup hook | `src/components/common/deferred-startup.tsx` | Skips web SW reminders when `isNativeApp()` |
 | npm scripts | `package.json` | `native:install`, `native:add`, `native:sync`, `native:open:*` |
 | Web Apple Health webhook | `/api/public/hooks/apple-health` | Push-only Health Auto Export for browser users |
+| Native projects in git | `ios/` (`6ba6997`), `android/` (`2710085`) | HealthKit entitlements, `Info.plist` usage strings, `org.purplelife.app` OAuth URL scheme, `@capgo/capacitor-health` wired in both platforms |
+| Live DB for native health/push | `native_push_tokens`, `biometrics.health_connect` | Migrations applied on `xxnzmfzsjplrutrgbzxy` (2026-07-03) |
 
-### Toolchain and store (human / toolchain gated)
+### Agent-automated (no manual operator GUI steps)
 
-| Gap | Blocker | Next step |
-|-----|---------|-----------|
-| **iOS simulator build on owner Mac** | **`/Applications/Xcode.app` not installed**; only incomplete App Store payload **`/Applications/Xcode.appdownload`** | Wait for download to finish so **`Xcode.app`** exists in `/Applications`. Then the agent runs **`scripts/native-ios-build.sh`** (no manual steps): `xcode-select`, `bun run native:sync`, `pod install` when a Podfile exists (CapApp-SPM skips pods), `xcodebuild` Debug simulator build. One-time sudo may be required: `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`. |
-| `ios/` / `android/` committed to git | Dirs generated locally; may be untracked | After first green simulator build: commit native projects if policy allows, or document regen via `native:add` / `native:sync` |
-| Push delivery | `native_push_tokens` live (migration applied 2026-07-03); no APNs/FCM credentials in Worker yet | Wire APNs/FCM secrets and send path |
-| HealthKit / Health Connect entitlements | HealthKit capability + `Info.plist` usage strings | Enable HealthKit in Xcode, add `NSHealthShareUsageDescription`; Android manifest per `docs/android-health-connect-setup.md` |
-| OAuth deep links in native projects | Plist / manifest URLs | Register `org.purplelife.app://auth-callback` in plist, manifest, Supabase, Google/Apple consoles |
-| Xcode signing and provisioning | Apple Developer Program ($99/yr) | Certificates, profiles, Push capability in Xcode |
-| Store submission | App Store + Play Developer accounts | TestFlight / Play internal track before production; justify 4.2 native value (push, local notifications, HealthKit) |
+The agent runs these end to end via scripts, Doppler, and APIs. Do not hand off dashboard or Xcode GUI work for items in this table.
+
+| Area | Command / path | Notes |
+|------|----------------|-------|
+| Capacitor sync | `bun run native:sync` | Copies web assets and plugin config into `ios/` and `android/` |
+| iOS simulator build | `scripts/native-ios-build.sh` | `xcode-select`, `native:sync`, `pod install` when a Podfile exists (CapApp-SPM skips pods), `xcodebuild` Debug simulator |
+| Worker deploy | `bun run build:prod` + `wrangler deploy` | Doppler `cursor-cloudflare` / `prd_cloudlfare` |
+| Supabase migrations / DDL | Management API `POST /v1/projects/{ref}/database/query` | CLI `db query --linked` may 403; see `docs/manual-deploy-bundle.md` |
+| Edge functions | `bunx supabase@latest functions deploy <name> --project-ref xxnzmfzsjplrutrgbzxy` | |
+| Doppler secrets | `doppler run --project cursor-cloudflare --config prd_cloudlfare -- ...` | Agent resolves keys; do not ask the user for manual env mapping |
+| Native health backend | `/api/health/native-sync`, `native-health.server.ts` | Shipped `1a24bd8`, deploy `9a6481ac` |
+
+### Environment-blocked (machine or account limits, not operator GUI work)
+
+| Blocker | What it blocks | Unblocks when |
+|---------|----------------|---------------|
+| **`/Applications/Xcode.app` missing** | `xcodebuild`, simulator build, on-Mac iOS validation | App Store install finishes (`Xcode.app` in `/Applications`; incomplete payload is `Xcode.appdownload`). Agent then runs `scripts/native-ios-build.sh`. One-time sudo may be required: `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`. |
+| **Physical device USB** | On-device HealthKit / notification smoke tests | Owner connects an iPhone or Android device to the build Mac |
+| **Apple 2FA / signing without API token** | Device signing, TestFlight archive, Push capability provisioning | User supplies `DEVELOPMENT_TEAM` in Doppler or grants full Apple Developer access (see below) |
+| **APNs / FCM credentials** | Native push delivery (`native_push_tokens` table is live) | Wire APNs/FCM secrets into Worker and send path |
+| **Store developer accounts** | TestFlight / Play internal track submission | App Store Connect + Play Console accounts active |
+
+### Apple signing and team access
+
+If the agent is blocked on code signing, provisioning profiles, or team ID:
+
+1. Ask the user for **`DEVELOPMENT_TEAM`** (Apple team ID) in Doppler `cursor-cloudflare` / `prd_cloudlfare`, **or** full Apple Developer Program access (API key or account the agent can use for signing).
+2. Do **not** assign manual Xcode GUI steps (open Signing & Capabilities, click through certificates, etc.). The agent configures `DEVELOPMENT_TEAM` in the Xcode project or xcconfig and retries `scripts/native-ios-build.sh` / `xcodebuild`.
+3. OAuth redirect `org.purplelife.app://auth-callback` is already in native plist/manifest; provider consoles (Supabase, Google, Apple) still need the URL registered if not done yet.
 
 ### Sync model
 
@@ -114,9 +136,10 @@ entitlements, permissions, icons, `capacitor.config.ts` shell changes). See
 5. **Docs:** `docs/SYNC-AND-RELEASE.md` runbook; post-task documentation rule (`.cursor/rules/post-task-documentation.mdc`).
 6. **Post-deploy smoke (2026-07-03):** `routes-smoke` + `today` on `desktop-1024` against prod: 17 passed.
 7. **Full prod e2e (2026-07-03):** 445 passed, 32 skipped, 89 flaky, 12 hard failures (mostly stale `samuel-fixes.spec.ts` + tablet web-vitals budgets). HIPAA `integrations-vitals` tests passed on all viewports.
-8. **Native app docs (2026-07-03):** Expanded `docs/native-app-setup.md` (HealthKit execution checklist, web vs store sync model), `mem/native-app-healthkit.md`, handoff native track table.
+8. **Native app docs (2026-07-03):** Expanded `docs/native-app-setup.md` (HealthKit execution checklist, web vs store sync model), `mem/native-app-healthkit.md`, handoff native track tables (agent-automated vs environment-blocked).
 9. **Native HealthKit wiring (2026-07-03):** `health-ios.ts` migrated to `@capgo/capacitor-health` (`Health` plugin, same as Android); `health.ts` routes iOS permissions/read; `apple-health-connection.tsx` native Connect + `syncNativeHealthBatch`; health helpers re-exported from `src/lib/native/index.ts`.
-10. **Native iOS build script (2026-07-03):** `scripts/native-ios-build.sh` for automated simulator build; handoff blocker documents incomplete `Xcode.appdownload` until App Store install completes.
+10. **Native projects committed (2026-07-03):** `ios/` (`6ba6997`), `android/` (`2710085`) with HealthKit entitlements, OAuth URL scheme, Health Connect plugin wiring.
+11. **Native iOS build (2026-07-03):** `scripts/native-ios-build.sh`; `Xcode.app` installed (26.6 / 17F113), `xcode-select` OK. **Blocker:** Xcode license not accepted — run `sudo xcodebuild -license accept` locally, then re-run script. CLT alone cannot build iOS (`mem/native-ios-xcode-vs-clt.md`).
 
 ## Environment variables
 
