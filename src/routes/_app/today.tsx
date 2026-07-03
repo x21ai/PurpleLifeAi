@@ -393,7 +393,7 @@ function TodayPage() {
       )}
 
       <DateStrip value={selectedDate} onChange={setSelectedDate} />
-      {!isSameDayLocal(selectedDate, new Date()) && (
+      {!isSameDay(selectedDate, new Date()) && (
         <p className="mt-3 text-xs text-muted-foreground">
           Viewing {format(selectedDate, "EEEE, MMMM d")}. Historical daily stats are coming soon;
           today's snapshot is shown below.
