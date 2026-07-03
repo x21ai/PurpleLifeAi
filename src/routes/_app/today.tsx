@@ -58,6 +58,7 @@ import { OnboardingChecklist } from "@/components/today/onboarding-checklist";
 import { FirstEntryNudge } from "@/components/today/first-entry-nudge";
 import { ReEngagementNudge } from "@/components/today/re-engagement-nudge";
 import { TodayVitals } from "@/components/today/today-vitals";
+import { DateStrip } from "@/components/today/date-strip";
 
 // Below-the-fold cards live behind the "More for today" disclosure. Loading
 // them lazily keeps them (and their dependencies) out of the initial /today
