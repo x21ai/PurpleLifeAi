@@ -260,11 +260,26 @@ function SignInPage() {
   return (
     <div className="h-dvh overflow-hidden grid grid-cols-1 lg:grid-cols-2 bg-background text-foreground">
       {/* LEFT — brand panel */}
-      <aside className="hidden lg:flex relative flex-col justify-between p-14 xl:p-16 bg-primary text-primary-foreground overflow-hidden">
+      <aside className="hidden lg:flex relative flex-col justify-between p-14 xl:p-16 bg-[#050505] text-white overflow-hidden">
+        {/* Ambient aura mesh */}
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-1/4 -left-1/4 h-[70%] w-[70%] rounded-full bg-purple-600/20 blur-[120px]" />
+          <div className="absolute -bottom-1/4 -right-1/4 h-[60%] w-[60%] rounded-full bg-indigo-600/15 blur-[100px]" />
+          <div className="absolute top-1/3 left-1/3 h-[40%] w-[40%] rounded-full bg-fuchsia-900/10 blur-[110px]" />
+        </div>
+        {/* Subtle grain overlay */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.04] mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.7'/></svg>\")",
+          }}
+        />
         {/* Decorative concentric arcs, top-right */}
         <svg
           aria-hidden
-          className="pointer-events-none absolute -top-24 -right-24 h-[680px] w-[680px] text-primary-foreground/15"
+          className="pointer-events-none absolute -top-24 -right-24 h-[680px] w-[680px] text-white/[0.06]"
           viewBox="0 0 600 600"
           fill="none"
           stroke="currentColor"
@@ -275,20 +290,21 @@ function SignInPage() {
           ))}
         </svg>
 
-        <p className="relative text-xs font-semibold tracking-[0.3em] uppercase text-primary-foreground/90">
+        <p className="relative z-10 text-xs font-semibold tracking-[0.3em] uppercase text-white/90">
           PURPLE
         </p>
 
-        <div className="relative max-w-md">
+        <div className="relative z-10 max-w-md">
           <h2 className="font-serif text-6xl xl:text-7xl leading-[0.95] tracking-tight">
             Welcome to <br /> Purple.
           </h2>
-          <p className="mt-6 text-base leading-relaxed text-primary-foreground/80 max-w-sm">
+          <div className="mt-6 h-px w-12 bg-white/20" />
+          <p className="mt-6 text-base leading-relaxed text-white/70 max-w-sm">
             {t("signIn.tag1")}
           </p>
         </div>
 
-        <p className="relative text-xs text-primary-foreground/70">
+        <p className="relative z-10 text-xs text-white/50">
           © {new Date().getFullYear()} Purple. All rights reserved.
         </p>
       </aside>
