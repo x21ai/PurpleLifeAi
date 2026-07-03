@@ -156,6 +156,7 @@ function TodayPage() {
   // user picks another day we show a historical caption and keep today-only
   // nudges hidden.
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+  const isToday = isSameDay(selectedDate, new Date());
 
   useEffect(() => setNow(new Date()), []);
 
@@ -346,15 +347,17 @@ function TodayPage() {
           />
         </div>
       )}
-      <RestoreBanner />
-      <IncomingCareInvitesCard />
-      <div className="mb-6">
-        <TodayInstallBanner />
-      </div>
+      {isToday && <RestoreBanner />}
+      {isToday && <IncomingCareInvitesCard />}
+      {isToday && (
+        <div className="mb-6">
+          <TodayInstallBanner />
+        </div>
+      )}
 
-      <MissedDoseCatchup />
+      {isToday && <MissedDoseCatchup />}
 
-      {journalCount === 0 && !emptyDismissed && (
+      {isToday && journalCount === 0 && !emptyDismissed && (
         <TodayEmptyState
           onDismiss={() => {
             sessionStorage.setItem("purple-today-empty-dismissed", "1");
@@ -393,16 +396,24 @@ function TodayPage() {
       )}
 
       <DateStrip value={selectedDate} onChange={setSelectedDate} />
-      {!isSameDay(selectedDate, new Date()) && (
-        <p className="mt-3 text-xs text-muted-foreground">
-          Viewing {format(selectedDate, "EEEE, MMMM d")}. Historical daily stats are coming soon;
-          today's snapshot is shown below.
-        </p>
+      {!isToday && (
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-full border border-border bg-card px-4 py-2 text-xs">
+          <span className="text-muted-foreground">
+            Viewing {format(selectedDate, "EEEE, MMMM d")}
+          </span>
+          <button
+            type="button"
+            onClick={() => setSelectedDate(new Date())}
+            className="font-medium text-foreground hover:text-primary transition-colors"
+          >
+            Back to today
+          </button>
+        </div>
       )}
 
       <section className="mt-12 sm:mt-16 grid grid-cols-3 items-center gap-2">
         <ScoreTile
-          value={readiness ?? "–"}
+          value={isToday ? (readiness ?? "–") : "–"}
           label="Readiness"
           active={focus === "readiness"}
           onClick={() => {
@@ -411,7 +422,7 @@ function TodayPage() {
           }}
         />
         <ScoreTile
-          value={sleep ?? "–"}
+          value={isToday ? (sleep ?? "–") : "–"}
           label="Sleep"
           active={focus === "sleep"}
           onClick={() => {
@@ -420,7 +431,7 @@ function TodayPage() {
           }}
         />
         <ScoreTile
-          value={activity ?? "–"}
+          value={isToday ? (activity ?? "–") : "–"}
           label="Activity"
           active={focus === "activity"}
           onClick={() => {
@@ -430,7 +441,7 @@ function TodayPage() {
         />
       </section>
 
-      <TodayVitals />
+      <TodayVitals date={selectedDate} />
 
       {expanded && typeof focusScore === "number" && (
         <div
@@ -499,8 +510,8 @@ function TodayPage() {
       </section>
 
       <TodayWidgetBoundary name="doses">
-        <MedsMiniTimeline className="mb-3" />
-        <TodayDoses />
+        <MedsMiniTimeline className="mb-3" date={selectedDate} />
+        <TodayDoses date={selectedDate} />
       </TodayWidgetBoundary>
 
       <div className="mt-10">
