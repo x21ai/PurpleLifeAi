@@ -30,8 +30,8 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 | Runtime | Cloudflare Worker (`wrangler.deploy.jsonc`, entry `src/server.ts`, `nodejs_compat`) |
 | Package manager | bun (commands below) |
 | Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
-| Git heads | `main` and `lovable/redesign` both at `c5c34de` (synced) |
-| Production deploy | Worker `purplelife`, version `62b07582-3ae0-4050-be4a-515e6a0ae8c7` |
+| Git heads | `main` and `lovable/redesign` at `710c28e` (synced after merge) |
+| Production deploy | Worker `purplelife`, pending redeploy after Lovable date-strip merge |
 | Dev server | `bun run dev` on port 8080 |
 | E2E local | `bun run test:e2e` (boots dev server unless `E2E_BASE_URL` set) |
 | E2E prod | `bun run test:e2e:prod` (580 tests, 5 viewports, ~1.5h; Doppler creds) |
@@ -61,7 +61,8 @@ Redesign baseline on `main`: commit `7086ffa` (perf/responsive/native foundation
 
 ## Recent changes (2026-07-02 to 2026-07-03)
 
-1. **Lovable redesign merged and deployed** to prod; OAuth host split, home images restored from Lovable CDN breakage.
+1. **Lovable merge (2026-07-03):** 43 commits: Today `DateStrip`, historical day viewing, date-aware `TodayVitals`/`getScoreSnapshot`, sign-in layout redesign; gatekeeper fixed em dashes and Playwright auth selectors.
+2. **Lovable redesign merged and deployed** to prod; OAuth host split, home images restored from Lovable CDN breakage.
 2. **Auth fixes:** MFA-aware reset password, duplicate-email signup message, supabase-js 2.110.0.
 3. **HIPAA data cleanup:** removed fake health metrics; empty states + connect prompts; `check-no-fake-vitals.mjs` CI guard.
 4. **CI:** `check:lovable-auth`, CI on `lovable/redesign` pushes, `check:live-data:db` auto-resolves Doppler `SERVICE_ROLE_KEY`.
