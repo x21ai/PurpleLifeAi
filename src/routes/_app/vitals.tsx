@@ -9,6 +9,7 @@ import { useRouteTheme } from "@/lib/use-route-theme";
 import type { LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getScoreSnapshot, type ScoreSnapshot } from "@/lib/health-scores.functions";
+import { useAuth } from "@/integrations/supabase/auth-context";
 
 export const Route = createFileRoute("/_app/vitals")({
   head: () => ({ meta: [{ title: "Vitals · Purple" }] }),
@@ -34,9 +35,11 @@ function VitalsPage() {
   useRouteTheme("dark");
   const { t } = useTranslation();
   const fetchSnapshot = useServerFn(getScoreSnapshot);
+  const { session } = useAuth();
   const { data: snap } = useQuery<ScoreSnapshot>({
     queryKey: ["score-snapshot"],
     queryFn: () => fetchSnapshot(),
+    enabled: !!session,
   });
 
   const real = snap?.hasData ?? false;
