@@ -367,32 +367,47 @@ function TodayPage() {
       )}
 
       <p className="label-eyebrow" suppressHydrationWarning>
-        {now ? format(now, "EEEE, MMMM d") : "\u00a0"}
+        {isToday
+          ? now
+            ? format(now, "EEEE, MMMM d")
+            : "\u00a0"
+          : format(selectedDate, "EEEE, MMMM d")}
       </p>
 
       <h1
         className="font-serif text-[32px] sm:text-[40px] leading-[1.15] tracking-tight mt-6 text-foreground"
         suppressHydrationWarning
       >
-        <span suppressHydrationWarning>{greeting}</span>
-        {firstName ? `, ${firstName}` : ""}.
+        {isToday ? (
+          <>
+            <span suppressHydrationWarning>{greeting}</span>
+            {firstName ? `, ${firstName}` : ""}.
+          </>
+        ) : (
+          <>Looking back{firstName ? `, ${firstName}` : ""}.</>
+        )}
       </h1>
 
-      {firstWords ? (
+      {isToday && firstWords ? (
         <p className="mt-2 text-sm text-muted-foreground" suppressHydrationWarning>
           {t("todayPage.firstWordsNote", { words: firstWords })}
         </p>
       ) : (
+        isToday &&
         greetingSuffix &&
         !forecast?.ai_narrative && (
           <p className="mt-2 text-sm text-muted-foreground">{greetingSuffix}</p>
         )
       )}
 
-      {forecast?.ai_narrative ? (
+      {isToday && forecast?.ai_narrative ? (
         <p className="body-serif mt-4 max-w-[600px] text-foreground/75">{forecast.ai_narrative}</p>
-      ) : (
+      ) : isToday ? (
         <p className="body-serif mt-4 max-w-[600px] text-foreground/60">{conditionPrompt}</p>
+      ) : (
+        <p className="body-serif mt-4 max-w-[600px] text-foreground/60">
+          Here's how {format(selectedDate, "EEEE, MMMM d")} went.
+        </p>
       )}
 
       <DateStrip value={selectedDate} onChange={setSelectedDate} />
