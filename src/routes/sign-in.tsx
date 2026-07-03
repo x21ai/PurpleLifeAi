@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { SocialSignInButtons } from "@/components/auth/social-sign-in-buttons";
 import { isOAuthCallbackUrl, waitForOAuthSession } from "@/lib/auth-oauth";
 import { toast } from "sonner";
