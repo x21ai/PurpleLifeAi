@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getScoreSnapshot, type ScoreSnapshot } from "@/lib/health-scores.functions";
+import { useAuth } from "@/integrations/supabase/auth-context";
 
 type VitalItem = {
   key: string;
@@ -62,10 +63,12 @@ function VitalTile({ item }: { item: VitalItem }) {
  */
 export function TodayVitals() {
   const fetchSnapshot = useServerFn(getScoreSnapshot);
+  const { session } = useAuth();
   const { data } = useQuery<ScoreSnapshot>({
     queryKey: ["score-snapshot"],
     queryFn: () => fetchSnapshot(),
     staleTime: 60_000,
+    enabled: !!session,
   });
 
   // While the snapshot loads, render a same-shape skeleton so the section
