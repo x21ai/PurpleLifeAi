@@ -392,6 +392,14 @@ function TodayPage() {
         <p className="body-serif mt-4 max-w-[600px] text-foreground/60">{conditionPrompt}</p>
       )}
 
+      <DateStrip value={selectedDate} onChange={setSelectedDate} />
+      {!isSameDayLocal(selectedDate, new Date()) && (
+        <p className="mt-3 text-xs text-muted-foreground">
+          Viewing {format(selectedDate, "EEEE, MMMM d")}. Historical daily stats are coming soon;
+          today's snapshot is shown below.
+        </p>
+      )}
+
       <section className="mt-12 sm:mt-16 grid grid-cols-3 items-center gap-2">
         <ScoreTile
           value={readiness ?? "–"}
