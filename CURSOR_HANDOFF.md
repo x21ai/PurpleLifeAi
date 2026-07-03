@@ -103,9 +103,9 @@ The agent runs these end to end via scripts, Doppler, and APIs. Do not hand off 
 
 | Blocker | What it blocks | Unblocks when |
 |---------|----------------|---------------|
-| **`/Applications/Xcode.app` missing** | `xcodebuild`, simulator build, on-Mac iOS validation | App Store install finishes (`Xcode.app` in `/Applications`; incomplete payload is `Xcode.appdownload`). Agent then runs `scripts/native-ios-build.sh`. One-time sudo may be required: `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`. |
-| **Physical device USB** | On-device HealthKit / notification smoke tests | Owner connects an iPhone or Android device to the build Mac |
-| **Apple 2FA / signing without API token** | Device signing, TestFlight archive, Push capability provisioning | User supplies `DEVELOPMENT_TEAM` in Doppler or grants full Apple Developer access (see below) |
+| **`/Applications/Xcode.app` missing** | `xcodebuild` if script cannot find Xcode | Agent auto-detects `~/Downloads/Xcode-beta.app`, `/Applications/Xcode.app`, or `mdfind`. Uses `DEVELOPER_DIR` when `xcode-select` still points at CLT. |
+| **iOS Simulator runtimes** | Launch app in Simulator | Install an iOS simulator runtime in Xcode Settings, or use a USB iPhone (required for real HealthKit) |
+| **Apple 2FA / signing without API token** | Device signing, TestFlight archive | Add App Store Connect API key to Doppler `purple-life` (`APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_API_KEY` .p8 contents), or sign Apple ID into Xcode once on this Mac |
 | **APNs / FCM credentials** | Native push delivery (`native_push_tokens` table is live) | Wire APNs/FCM secrets into Worker and send path |
 | **Store developer accounts** | TestFlight / Play internal track submission | App Store Connect + Play Console accounts active |
 
@@ -113,7 +113,7 @@ The agent runs these end to end via scripts, Doppler, and APIs. Do not hand off 
 
 If the agent is blocked on code signing, provisioning profiles, or team ID:
 
-1. Ask the user for **`DEVELOPMENT_TEAM`** (Apple team ID) in Doppler `cursor-cloudflare` / `prd_cloudlfare`, **or** full Apple Developer Program access (API key or account the agent can use for signing).
+1. Ask the user for **`DEVELOPMENT_TEAM`** in Doppler `purple-life` / `prd` (or `cursor-cloudflare` / `prd_cloudlfare`), **or** full Apple Developer Program access (API key or account the agent can use for signing). Native secrets live in Doppler project **`purple-life`** (`DEVELOPMENT_TEAM` configured 2026-07-03).
 2. Do **not** assign manual Xcode GUI steps (open Signing & Capabilities, click through certificates, etc.). The agent configures `DEVELOPMENT_TEAM` in the Xcode project or xcconfig and retries `scripts/native-ios-build.sh` / `xcodebuild`.
 3. OAuth redirect `org.purplelife.app://auth-callback` is already in native plist/manifest; provider consoles (Supabase, Google, Apple) still need the URL registered if not done yet.
 
@@ -139,7 +139,7 @@ entitlements, permissions, icons, `capacitor.config.ts` shell changes). See
 8. **Native app docs (2026-07-03):** Expanded `docs/native-app-setup.md` (HealthKit execution checklist, web vs store sync model), `mem/native-app-healthkit.md`, handoff native track tables (agent-automated vs environment-blocked).
 9. **Native HealthKit wiring (2026-07-03):** `health-ios.ts` migrated to `@capgo/capacitor-health` (`Health` plugin, same as Android); `health.ts` routes iOS permissions/read; `apple-health-connection.tsx` native Connect + `syncNativeHealthBatch`; health helpers re-exported from `src/lib/native/index.ts`.
 10. **Native projects committed (2026-07-03):** `ios/` (`6ba6997`), `android/` (`2710085`) with HealthKit entitlements, OAuth URL scheme, Health Connect plugin wiring.
-11. **Native iOS build (2026-07-03):** `scripts/native-ios-build.sh`; `Xcode.app` installed (26.6 / 17F113), `xcode-select` OK. **Blocker:** Xcode license not accepted — run `sudo xcodebuild -license accept` locally, then re-run script. CLT alone cannot build iOS (`mem/native-ios-xcode-vs-clt.md`).
+11. **Native iOS build (2026-07-03):** `scripts/native-ios-build.sh` uses `xcode-select` at `/Applications/Xcode-beta.app` (Xcode 27.0). Simulator and **device builds succeed**; signing via Doppler `purple-life`/`DEVELOPMENT_TEAM` + Apple Development cert. **Install blocked** until iPhone Developer Mode is enabled (Settings → Privacy & Security). `bun run ios:device-build` for USB install.
 
 ## Environment variables
 

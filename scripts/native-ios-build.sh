@@ -4,9 +4,9 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-XCODE_APP="/Applications/Xcode.app"
+XCODE_APP=""
 XCODE_DOWNLOAD="/Applications/Xcode.appdownload"
-XCODE_DEV="${XCODE_APP}/Contents/Developer"
+XCODE_DEV=""
 IOS_DIR="${REPO_ROOT}/ios/App"
 PROJECT="${IOS_DIR}/App.xcodeproj"
 SCHEME="App"
@@ -21,14 +21,53 @@ fail() {
   exit 1
 }
 
+find_xcode_dev_dir() {
+  local selected=""
+  selected="$(xcode-select -p 2>/dev/null || true)"
+  if [[ -n "${selected}" && "${selected}" != *"CommandLineTools"* && -x "${selected}/usr/bin/xcodebuild" ]]; then
+    XCODE_DEV="${selected}"
+    if [[ "${selected}" == *".app/Contents/Developer" ]]; then
+      XCODE_APP="${selected%/Contents/Developer}"
+    fi
+    return 0
+  fi
+  local candidates=(
+    "/Applications/Xcode.app"
+    "/Applications/Xcode-beta.app"
+    "/Users/${USER}/Downloads/Xcode-beta.app"
+  )
+  local candidate=""
+  for candidate in "${candidates[@]}"; do
+    if [[ -d "${candidate}/Contents/Developer" ]]; then
+      XCODE_APP="${candidate}"
+      XCODE_DEV="${candidate}/Contents/Developer"
+      return 0
+    fi
+  done
+  local mdfind_hit=""
+  mdfind_hit="$(mdfind "kMDItemCFBundleIdentifier == 'com.apple.dt.Xcode'" 2>/dev/null | head -1 || true)"
+  if [[ -n "${mdfind_hit}" && -d "${mdfind_hit}/Contents/Developer" ]]; then
+    XCODE_APP="${mdfind_hit}"
+    XCODE_DEV="${mdfind_hit}/Contents/Developer"
+    return 0
+  fi
+  return 1
+}
+
 require_xcode_app() {
-  if [[ -d "${XCODE_APP}" ]]; then
+  if find_xcode_dev_dir; then
+    export DEVELOPER_DIR="${XCODE_DEV}"
+    if [[ -n "${XCODE_APP}" ]]; then
+      log "Using Xcode CLI at ${XCODE_DEV} (${XCODE_APP})"
+    else
+      log "Using Xcode CLI at ${XCODE_DEV} (from xcode-select)"
+    fi
     return 0
   fi
   if [[ -d "${XCODE_DOWNLOAD}" ]]; then
-    fail "Xcode is still downloading at ${XCODE_DOWNLOAD}. Wait for App Store install to finish (Xcode.app in /Applications), then re-run this script."
+    fail "Xcode is still downloading at ${XCODE_DOWNLOAD}. Wait for install to finish, then re-run."
   fi
-  fail "Xcode.app not found at ${XCODE_APP}. Install Xcode from the App Store, then re-run."
+  fail "Xcode.app not found. Install Xcode (App Store or Xcode-beta), then re-run."
 }
 
 ensure_xcode_select() {
@@ -38,14 +77,7 @@ ensure_xcode_select() {
     log "xcode-select already points to ${XCODE_DEV}"
     return 0
   fi
-  log "Setting active developer directory to ${XCODE_DEV}"
-  if [[ "$(id -u)" -eq 0 ]]; then
-    xcode-select -s "${XCODE_DEV}"
-  elif sudo -n true 2>/dev/null; then
-    sudo -n xcode-select -s "${XCODE_DEV}"
-  else
-    fail "Run once: sudo xcode-select -s ${XCODE_DEV}"
-  fi
+  log "Active developer dir: ${current:-unset}; building with DEVELOPER_DIR=${XCODE_DEV}"
 }
 
 accept_xcode_license_if_needed() {
