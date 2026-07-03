@@ -6,6 +6,7 @@ SiteFooter renders on all viewports for marketing/auth routes only. The signed-i
 Metric labels always show the canonical human name from `src/lib/metric-naming.ts`; the PDF's wording is preserved as "as printed: …" unless it matches the canonical. Never delete PDF wording from the DB.
 
 ## Memories
+- [Post-task documentation](mem/constraint/post-task-documentation.md) - After every completed task, sync CURSOR_HANDOFF, docs, Cursor rules, AGENTS.md, and mem/ so nothing is lost between sessions.
 - [Footer visibility](mem://design/footer-visibility) - Footer shown on mobile/tablet/desktop for marketing pages, hidden in the signed-in app shell.
 - [No em dashes](mem://constraint/no-em-dash) - Banned char `—` and the replacement table by context (comma, and/or, colon, period, ·, en dash for "no data").
 - [Metric naming + as-printed rule](mem://feature/metric-naming) - Canonical name map and when to hide "as printed" subtitle on charts.

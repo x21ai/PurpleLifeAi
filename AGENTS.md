@@ -1,7 +1,7 @@
 ## Learned User Preferences
 
-- When implementing an attached plan, do not edit the plan file itself.
-- Plan to-dos are pre-created; mark them in_progress and complete all without recreating them.
+- When implementing an attached plan, do not edit the plan file; mark pre-created to-dos in_progress and complete all without recreating them.
+- After every completed task, sync project documentation before claiming done: `CURSOR_HANDOFF.md` (operational state), relevant `docs/` runbooks, `.cursor/rules/` when conventions change, `AGENTS.md`/`mem/` for durable decisions, and paste-ready Lovable prompts for UI-only follow-ups. Mandatory per `.cursor/rules/post-task-documentation.mdc`; never leave important context only in chat.
 - When migration artifacts are missing from the repo, provide copy-paste Lovable prompts the user can run there.
 - At cutover, keep existing Oura/Whoop OAuth apps and only add workers.dev redirect URIs.
 - Migration cutover priority: preserve user UUIDs, public data, and storage; password reset is OK; password hashes are not required.

@@ -37,4 +37,4 @@ Purple is an AI-powered health journal (epilepsy and pattern-driven conditions) 
 
 ## Memory folder
 
-`mem/` holds durable decisions: `mem/index.md` is the index. Read it before changing footer layout, metric naming, or punctuation conventions. Add a new `mem/` note when a non-obvious decision is made.
+`mem/` holds durable decisions: `mem/index.md` is the index. Read it before changing footer layout, metric naming, or punctuation conventions. Add a new `mem/` note when a non-obvious decision is made. After every task, follow `.cursor/rules/post-task-documentation.mdc` to sync handoff and docs.

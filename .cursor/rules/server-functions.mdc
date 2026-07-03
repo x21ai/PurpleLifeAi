@@ -9,6 +9,8 @@ alwaysApply: false
 
 # Server functions and auth
 
+When server patterns change (new `*.server.ts`/`*.functions.ts` split, auth middleware, cron secrets, RLS scoping), update `CURSOR_HANDOFF.md`, relevant `docs/` runbooks, and `AGENTS.md` if durable. See `.cursor/rules/post-task-documentation.mdc`.
+
 ## The two-file pattern
 
 - `src/lib/<feature>.functions.ts`: `createServerFn()` RPCs callable from the client. These validate input with zod, attach auth via middleware, and contain no secrets.

@@ -202,6 +202,20 @@ file, so a reintroduced unguarded call site cannot merge.
    deploy: production serves built assets, not repo markdown.
 5. Post-deploy smoke as above.
 
+## Post-task documentation (mandatory)
+
+After every completed task, before claiming done, sync documentation so the next session knows what happened. Rule: `.cursor/rules/post-task-documentation.mdc` (`alwaysApply: true`). Memory note: `mem/constraint/post-task-documentation.md`.
+
+| Surface | What to update |
+|---------|----------------|
+| `CURSOR_HANDOFF.md` | Last updated date, commit/deploy heads, hosting state, recent changes, verify commands |
+| `docs/` | Runbooks touched by the work (`SYNC-AND-RELEASE.md`, `LOVABLE-REDESIGN-WORKFLOW.md`, deploy/oauth docs, etc.) |
+| `.cursor/rules/` | New conventions, CI guards, server patterns, Lovable pitfalls |
+| `AGENTS.md` | Recurring user preferences and durable workspace facts only |
+| `mem/` | Architectural or policy decisions; link from `mem/index.md` |
+
+Ship doc updates in the same commit as the code they describe when possible. Docs-only commits need no production deploy.
+
 ## Is this best practice? An honest assessment
 
 ### What matches industry norms

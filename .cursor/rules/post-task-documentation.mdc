@@ -1,0 +1,55 @@
+---
+description: Mandatory documentation sync after every completed task so agents never lose context.
+alwaysApply: true
+---
+
+# Post-task documentation (mandatory)
+
+After every completed prompt or task, before claiming done, update project documentation so the next agent or engineer understands what changed, why, and how to operate it. Skipping this step is not allowed.
+
+## When this applies
+
+- Any task that changed code, config, migrations, deploy state, tests, CI, auth, or operational runbooks
+- Any task that fixed a production incident or established a new convention
+- Any task where the user asked for a feature, fix, audit, deploy, or release
+- Trivial one-line typo fixes with zero behavioral impact may skip `docs/` and `mem/` but still update `CURSOR_HANDOFF.md` if operational state changed
+
+## Documentation targets (update what applies)
+
+| Target | Path | Update when |
+|--------|------|-------------|
+| Handoff | `CURSOR_HANDOFF.md` | Always: last-updated date, current commit/deploy, hosting state, known gaps, verification commands |
+| Runbooks | `docs/SYNC-AND-RELEASE.md`, `docs/LOVABLE-REDESIGN-WORKFLOW.md`, other `docs/*.md` | Workflow, gates, deploy, env, or release steps changed |
+| Cursor rules | `.cursor/rules/*.mdc` | New convention, guard, pitfall, or server pattern that should apply to future edits |
+| Server rules | `.cursor/rules/server-functions.mdc`, `cloudflare-workers.mdc` | Auth, RLS, secrets, Worker, or API route patterns changed |
+| Agent memory | `AGENTS.md` | Recurring user preference or durable workspace fact (max 12 bullets per section; dedupe) |
+| Durable decisions | `mem/*.md` + `mem/index.md` | Non-obvious decision that outlives one chat (naming, constraints, workflow) |
+| Lovable prompts | Paste-ready block in chat or `docs/` note | UI-only fix still needed on Lovable side |
+
+## Minimum checklist before "done"
+
+1. **CURSOR_HANDOFF.md**: refresh "Last updated", quick facts table if commands or gates changed, and a short "Recent changes" bullet list for this session.
+2. **Relevant `docs/`**: add or edit the runbook section that matches the work (sync, OAuth, deploy, testing, etc.).
+3. **`.cursor/rules/`**: if a mistake could recur, add or tighten a rule (CI guards belong in `project-conventions.mdc` or a dedicated `*.mdc`).
+4. **`AGENTS.md`**: only high-signal, recurring preferences or stable facts; no secrets, no one-off task detail.
+5. **`mem/`**: new note when the decision is architectural or policy-level; link from `mem/index.md`.
+6. **Continual learning**: run the continual-learning flow when the user asks, or when multiple durable preferences emerged in the session.
+
+## What to capture
+
+- What changed (files, routes, tables, env vars, deploy version)
+- Why (incident, user requirement, HIPAA, gate failure)
+- How to verify (exact `bun run` / Doppler / Playwright commands)
+- What remains open (follow-ups, flaky tests, manual owner steps)
+- Lovable vs Cursor ownership for anything not merged yet
+
+## What not to do
+
+- Do not rely on chat history as the system of record; write it into the repo.
+- Do not ask the user to update docs manually unless truly blocked.
+- Do not dump transient debug output into `docs/`; summarize durable facts only.
+- Do not store secrets in any markdown file.
+
+## Order of operations
+
+Complete the implementation and verification first, then documentation sync, then commit/push/deploy if the user requested shipping. Documentation updates ship in the same commit as the code they describe when possible.

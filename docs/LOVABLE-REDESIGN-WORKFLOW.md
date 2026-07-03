@@ -162,6 +162,10 @@ Summarize for the owner:
 - Do not assume Lovable changes are correct without reading the diff and running gates.
 - Do not re-enable push-to-main auto-deploy without owner request.
 
+## Post-task documentation
+
+After every completed review, fix, merge, or deploy, sync documentation before claiming done. Rule: [`.cursor/rules/post-task-documentation.mdc`](../.cursor/rules/post-task-documentation.mdc). At minimum update `CURSOR_HANDOFF.md`, any runbook section in this file or `docs/SYNC-AND-RELEASE.md`, and `AGENTS.md`/`mem/` when a durable decision was made.
+
 ## Ending the redesign phase
 
 When the owner declares redesign complete:
@@ -175,4 +179,5 @@ When the owner declares redesign complete:
 - [`LOVABLE-ENV-PARITY.md`](LOVABLE-ENV-PARITY.md) - preview env vars
 - [`LOVABLE-MIGRATION.md`](LOVABLE-MIGRATION.md) - historical Lovable exit plan
 - [`CURSOR_HANDOFF.md`](../CURSOR_HANDOFF.md) - operational handoff for agents
+- [`.cursor/rules/post-task-documentation.mdc`](../.cursor/rules/post-task-documentation.mdc) - mandatory doc sync after every task
 - [`.cursor/rules/lovable-redesign-workflow.mdc`](../.cursor/rules/lovable-redesign-workflow.mdc) - always-on agent rule

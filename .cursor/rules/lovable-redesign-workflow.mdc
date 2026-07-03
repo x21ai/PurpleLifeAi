@@ -23,6 +23,7 @@ When Lovable may have pushed, or the user says "check Lovable":
 3. Run Playwright smoke/responsive tests; prod e2e when creds available.
 4. If migrations changed, verify schema against live DB before trusting UI.
 5. Report Go/No-Go. On Go, ask the user before deploying live.
+6. Before claiming done, sync documentation per `.cursor/rules/post-task-documentation.mdc` (handoff, `docs/`, rules, `AGENTS.md`, `mem/`).
 
 ## Hard rules
 
