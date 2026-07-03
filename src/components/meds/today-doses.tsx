@@ -376,7 +376,7 @@ export function TodayDoses({ date }: { date?: Date } = {}) {
                   return null;
                 })()}
               </div>
-              {d.status === "pending" && outOfStock ? (
+              {isToday && d.status === "pending" && outOfStock ? (
                 <Link
                   to="/meds/$medId"
                   params={{ medId: d.medication!.id }}
@@ -384,7 +384,7 @@ export function TodayDoses({ date }: { date?: Date } = {}) {
                 >
                   Refill to update
                 </Link>
-              ) : d.status === "pending" ? (
+              ) : isToday && d.status === "pending" ? (
                 <div className="flex items-center gap-1.5">
                   <Button
                     size="sm"
