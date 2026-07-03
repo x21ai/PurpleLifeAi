@@ -30,8 +30,8 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 | Runtime | Cloudflare Worker (`wrangler.deploy.jsonc`, entry `src/server.ts`, `nodejs_compat`) |
 | Package manager | bun (commands below) |
 | Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
-| Git heads | `main` and `lovable/redesign` at `710c28e` (synced after merge) |
-| Production deploy | Worker `purplelife`, pending redeploy after Lovable date-strip merge |
+| Git heads | `main` and `lovable/redesign` at `0367edc` (synced) |
+| Production deploy | Worker `purplelife`, version `bd28333c-3141-4881-8df5-da51d0fd991d` |
 | Dev server | `bun run dev` on port 8080 |
 | E2E local | `bun run test:e2e` (boots dev server unless `E2E_BASE_URL` set) |
 | E2E prod | `bun run test:e2e:prod` (580 tests, 5 viewports, ~1.5h; Doppler creds) |
@@ -61,7 +61,7 @@ Redesign baseline on `main`: commit `7086ffa` (perf/responsive/native foundation
 
 ## Recent changes (2026-07-02 to 2026-07-03)
 
-1. **Lovable merge (2026-07-03):** 43 commits: Today `DateStrip`, historical day viewing, date-aware `TodayVitals`/`getScoreSnapshot`, sign-in layout redesign; gatekeeper fixed em dashes and Playwright auth selectors.
+1. **Lovable merge (2026-07-03):** Today `DateStrip`, historical day view, date-aware vitals, sign-in redesign; follow-up commit removed score-tile date gating (`d209c34`). Deploy `bd28333c`.
 2. **Lovable redesign merged and deployed** to prod; OAuth host split, home images restored from Lovable CDN breakage.
 2. **Auth fixes:** MFA-aware reset password, duplicate-email signup message, supabase-js 2.110.0.
 3. **HIPAA data cleanup:** removed fake health metrics; empty states + connect prompts; `check-no-fake-vitals.mjs` CI guard.
