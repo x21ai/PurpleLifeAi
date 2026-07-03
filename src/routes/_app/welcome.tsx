@@ -17,6 +17,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { redeemInviteCode } from "@/lib/invite-codes.functions";
 import { generateCareProfile } from "@/lib/care-profile.functions";
 import { getStoredInvite, clearStoredInvite } from "@/lib/invite-storage";
+import { useNativeIos } from "@/lib/native";
+import { WelcomeAppleHealthConnect } from "@/components/connections/apple-health-connection";
 
 const LOCALE_PREFILL_KEY = "purple-locale-prefill";
 // Read once by /today for the post-onboarding greeting.
@@ -47,7 +49,12 @@ function WelcomePage() {
   const redeem = useServerFn(redeemInviteCode);
   const regenerateCareProfile = useServerFn(generateCareProfile);
 
-  const [step, setStep] = useState<0 | 1>(0);
+  const nativeIos = useNativeIos();
+  const hasDeviceStep = nativeIos === true;
+  const stepCount = hasDeviceStep ? 3 : 2;
+  const journalStep = hasDeviceStep ? 2 : 1;
+
+  const [step, setStep] = useState<0 | 1 | 2>(0);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [conditions, setConditions] = useState<string[]>([]);
@@ -243,7 +250,7 @@ function WelcomePage() {
     <div className="mx-auto max-w-2xl px-5 sm:px-8 pt-8 sm:pt-12 pb-16">
       <div className="flex items-center justify-between mb-8">
         <div className="flex gap-1.5" aria-hidden="true">
-          {[0, 1].map((i) => (
+          {Array.from({ length: stepCount }).map((_, i) => (
             <span
               key={i}
               className={`h-1.5 w-8 rounded-full transition-colors ${
@@ -263,7 +270,9 @@ function WelcomePage() {
 
       {step === 0 && (
         <div>
-          <p className="label-eyebrow mb-4">{t("welcome.stepOneOfTwo")}</p>
+          <p className="label-eyebrow mb-4">
+            {hasDeviceStep ? t("welcome.stepOneOfThree") : t("welcome.stepOneOfTwo")}
+          </p>
           <h1 className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight text-foreground">
             {t("welcome.whoTitle")}
           </h1>
@@ -309,9 +318,32 @@ function WelcomePage() {
         </div>
       )}
 
-      {step === 1 && (phase === "compose" || phase === "saving") && (
+      {step === 1 && hasDeviceStep && (
         <div>
-          <p className="label-eyebrow mb-4">{t("welcome.stepTwoOfTwo")}</p>
+          <p className="label-eyebrow mb-4">{t("welcome.stepTwoOfThree")}</p>
+          <h1 className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight text-foreground">
+            {t("welcome.devicesTitle")}
+          </h1>
+          <p className="mt-5 text-lg text-muted-foreground max-w-lg">{t("welcome.connectBody")}</p>
+          <div className="mt-8 space-y-4">
+            <WelcomeAppleHealthConnect />
+          </div>
+          <div className="mt-10 flex items-center justify-between gap-3">
+            <Button variant="ghost" onClick={() => setStep(0)}>
+              {t("welcome.back")}
+            </Button>
+            <Button className="rounded-full px-7" onClick={() => setStep(2)}>
+              {t("welcome.continue")} <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {step === journalStep && (phase === "compose" || phase === "saving") && (
+        <div>
+          <p className="label-eyebrow mb-4">
+            {hasDeviceStep ? t("welcome.stepThreeOfThree") : t("welcome.stepTwoOfTwo")}
+          </p>
           <h1 className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight text-foreground">
             {t("welcome.tellTitle")}
           </h1>
@@ -362,7 +394,7 @@ function WelcomePage() {
             </div>
           </div>
           <div className="mt-10 flex items-center justify-between gap-3">
-            <Button variant="ghost" onClick={() => setStep(0)}>
+            <Button variant="ghost" onClick={() => setStep(hasDeviceStep ? 1 : 0)}>
               {t("welcome.back")}
             </Button>
             <Button
@@ -376,7 +408,7 @@ function WelcomePage() {
         </div>
       )}
 
-      {step === 1 && phase === "reading" && (
+      {step === journalStep && phase === "reading" && (
         <div className="py-16 text-center">
           <p className="font-serif text-2xl text-foreground animate-pulse">
             {t("welcome.reading")}
@@ -385,7 +417,7 @@ function WelcomePage() {
         </div>
       )}
 
-      {step === 1 && phase === "confirmed" && extraction && (
+      {step === journalStep && phase === "confirmed" && extraction && (
         <div>
           <p className="label-eyebrow mb-4">{t("welcome.heardEyebrow")}</p>
           <h1 className="font-serif text-4xl sm:text-5xl leading-[1.05] tracking-tight text-foreground">
@@ -426,7 +458,7 @@ function WelcomePage() {
         </div>
       )}
 
-      {step === 1 && phase === "stillReading" && (
+      {step === journalStep && phase === "stillReading" && (
         <div>
           <p className="label-eyebrow mb-4">{t("welcome.savedEyebrow")}</p>
           <h1 className="font-serif text-4xl sm:text-5xl leading-[1.05] tracking-tight text-foreground">

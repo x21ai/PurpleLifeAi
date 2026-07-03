@@ -3,6 +3,7 @@ import { loadUpcomingScheduledDoses } from "@/lib/med-notifications";
 import { registerDeviceToken as saveNativePushToken } from "@/lib/native-push.functions";
 
 export { isNativeApp, nativePlatform } from "./capacitor";
+export { isNativeIos, useNativeIos } from "./use-native-ios";
 export {
   isNativeHealthAvailable,
   nativeHealthSource,

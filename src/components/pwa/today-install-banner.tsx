@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Smartphone, X, Download, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { isNativeApp } from "@/lib/native";
 import {
   Dialog,
   DialogContent,
@@ -34,7 +35,7 @@ export function TodayInstallBanner() {
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
-    if (isStandalonePwa()) return;
+    if (isNativeApp() || isStandalonePwa()) return;
     if (localStorage.getItem(DISMISSED_KEY)) return;
     setDismissed(false);
     setCapability(installCapability());

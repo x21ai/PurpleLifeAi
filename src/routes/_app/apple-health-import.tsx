@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { ArrowLeft, FileUp, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SheetPage, SheetCard } from "@/components/sheet/sheet-page";
@@ -9,6 +9,8 @@ import { applyAppleHealthBackfill } from "@/lib/apple-health.functions";
 import { parseHealthExport, type ParseProgress } from "@/lib/apple-health-xml";
 import { toast } from "sonner";
 import { userMessage } from "@/lib/user-message";
+import { useNativeIos } from "@/lib/native";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_app/apple-health-import")({
   head: () => ({ meta: [{ title: "Apple Health import · Purple" }] }),
@@ -16,6 +18,33 @@ export const Route = createFileRoute("/_app/apple-health-import")({
 });
 
 function AppleHealthImportPage() {
+  useRouteTheme("dark");
+  const { t } = useTranslation();
+  const nativeIos = useNativeIos();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (nativeIos) {
+      navigate({ to: "/settings/sharing", replace: true });
+    }
+  }, [nativeIos, navigate]);
+
+  if (nativeIos === null || nativeIos) {
+    return (
+      <SheetPage title="Apple Health import">
+        <SheetCard>
+          <p className="text-sm text-muted-foreground">
+            <Loader2 className="inline h-3 w-3 animate-spin" /> {t("common.loading")}
+          </p>
+        </SheetCard>
+      </SheetPage>
+    );
+  }
+
+  return <WebAppleHealthImportPage />;
+}
+
+function WebAppleHealthImportPage() {
   useRouteTheme("dark");
   const backfill = useServerFn(applyAppleHealthBackfill);
   const [progress, setProgress] = useState<ParseProgress | null>(null);

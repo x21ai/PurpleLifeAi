@@ -449,6 +449,10 @@
     "inviteApplied": "Código de invitación aplicado",
     "stepOneOfTwo": "Paso 1 de 2",
     "stepTwoOfTwo": "Paso 2 de 2",
+    "stepOneOfThree": "Paso 1 de 3",
+    "stepTwoOfThree": "Paso 2 de 3",
+    "stepThreeOfThree": "Paso 3 de 3",
+    "devicesTitle": "Conecta dispositivos y apps",
     "whoBodyShort": "Solo tu nombre y lo que llevas contigo. Todo lo demás puede esperar.",
     "tellTitle": "Cuéntale a Purple sobre hoy.",
     "tellBody": "Con una frase basta. Escríbela o dila, como te salga.",
@@ -471,6 +475,14 @@
     "savedTitle": "Tu primera entrada está dentro.",
     "savedBody": "Purple todavía la está leyendo. Lo que encuentre estará en tu diario.",
     "entrySaveFailed": "No se guardó. Tus palabras siguen aquí, inténtalo una vez más."
+  },
+  "appleHealth": {
+    "nativeTitle": "Conectar Apple Health",
+    "nativeBody": "Purple lee sueño, VFC, frecuencia cardíaca, pasos y VO2 máx directamente desde HealthKit en este iPhone.",
+    "nativeHint": "Toca Conectar para abrir el permiso de Acceso a Salud. Abre Purple después de entrenar o dormir para actualizar tus signos.",
+    "connect": "Conectar Apple Health",
+    "syncNow": "Sincronizar ahora",
+    "connected": "Conectado"
   },
   "signIn": {
     "eyebrow": "Iniciar sesión",

@@ -451,6 +451,10 @@
     "inviteApplied": "Invite code applied",
     "stepOneOfTwo": "Step 1 of 2",
     "stepTwoOfTwo": "Step 2 of 2",
+    "stepOneOfThree": "Step 1 of 3",
+    "stepTwoOfThree": "Step 2 of 3",
+    "stepThreeOfThree": "Step 3 of 3",
+    "devicesTitle": "Connect with devices and apps",
     "whoBodyShort": "Just your first name, and what you are carrying. Everything else can wait.",
     "tellTitle": "Tell Purple about today.",
     "tellBody": "One sentence is enough. Write it or say it, however it comes out.",
@@ -473,6 +477,14 @@
     "savedTitle": "Your first entry is in.",
     "savedBody": "Purple is still reading it. What it finds will be waiting in your journal.",
     "entrySaveFailed": "That did not save. Your words are still here, try once more."
+  },
+  "appleHealth": {
+    "nativeTitle": "Connect Apple Health",
+    "nativeBody": "Purple reads sleep, HRV, heart rate, steps, and VO2 max directly from HealthKit on this iPhone.",
+    "nativeHint": "Tap Connect to open the Health Access permission sheet. Open Purple after workouts or sleep to refresh vitals.",
+    "connect": "Connect Apple Health",
+    "syncNow": "Sync now",
+    "connected": "Connected"
   },
   "signIn": {
     "eyebrow": "Sign in",

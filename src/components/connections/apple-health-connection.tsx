@@ -5,13 +5,8 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getOrCreateAppleHealthConfig, disconnectAppleHealth } from "@/lib/apple-health.functions";
-import { syncNativeHealthBatch } from "@/lib/native-health.functions";
-import {
-  isNativeApp,
-  nativePlatform,
-  readNativeHealthMetrics,
-  requestNativeHealthPermissions,
-} from "@/lib/native";
+import { useNativeIos } from "@/lib/native";
+import { useNativeAppleHealth } from "@/components/connections/use-native-apple-health";
 import { toast } from "sonner";
 import { userMessage } from "@/lib/user-message";
 
@@ -33,126 +28,8 @@ function relativeTime(iso: string | null): string {
 
 type SyncState = "receiving" | "stale" | "reachable" | "waiting";
 
-function isNativeIos(): boolean {
-  return isNativeApp() && nativePlatform() === "ios";
-}
-
-/** Wait for Capacitor bridge on remote server.url WebViews (injected after first paint). */
-function useNativeIos(): boolean | null {
-  const [nativeIos, setNativeIos] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    const detect = () => isNativeIos();
-    if (detect()) {
-      setNativeIos(true);
-      return;
-    }
-    let attempts = 0;
-    const timer = window.setInterval(() => {
-      attempts += 1;
-      if (detect()) {
-        setNativeIos(true);
-        window.clearInterval(timer);
-      } else if (attempts >= 30) {
-        setNativeIos(false);
-        window.clearInterval(timer);
-      }
-    }, 100);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  return nativeIos;
-}
-
 function NativeAppleHealthConnection() {
-  const syncBatch = useServerFn(syncNativeHealthBatch);
-  const [linked, setLinked] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const [lastData, setLastData] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const refresh = useCallback(async () => {
-    const { data: sess } = await supabase.auth.getSession();
-    if (!sess.session) return;
-    const uid = sess.session.user.id;
-
-    const { data: bio } = await supabase
-      .from("biometrics")
-      .select("recorded_at")
-      .eq("user_id", uid)
-      .eq("source", "apple_health")
-      .order("recorded_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    setLastData(bio?.recorded_at ?? null);
-    if (bio?.recorded_at) setLinked(true);
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  const syncState: SyncState = (() => {
-    const dataAge = lastData ? Date.now() - new Date(lastData).getTime() : Infinity;
-    if (dataAge < FRESH_WINDOW_MS) return "receiving";
-    if (lastData) return "stale";
-    return "waiting";
-  })();
-
-  const STATUS_TEXT: Record<SyncState, string> = {
-    receiving: `Syncing · latest data ${relativeTime(lastData)}`,
-    stale: `Last data ${relativeTime(lastData)} · open Purple to refresh from HealthKit`,
-    reachable: "Connected · waiting for the first HealthKit sync",
-    waiting: "Not connected · grant HealthKit access to sync vitals",
-  };
-
-  const runNativeSync = async () => {
-    const granted = await requestNativeHealthPermissions();
-    if (!granted) {
-      toast.error("HealthKit permission was not granted. Open Settings to allow access.");
-      return false;
-    }
-
-    const days = await readNativeHealthMetrics(90);
-    if (days.length === 0) {
-      toast.info("No HealthKit samples yet. Wear your watch or phone and try again later.");
-      return true;
-    }
-
-    const samples = days.map(({ source: _source, ...rest }) => rest);
-    await syncBatch({ data: { source: "apple_health", samples } });
-    return true;
-  };
-
-  const connect = async () => {
-    setBusy(true);
-    try {
-      const ok = await runNativeSync();
-      if (ok) {
-        setLinked(true);
-        toast.success("Apple Health connected. Vitals synced from HealthKit.");
-      }
-    } catch (e) {
-      toast.error(userMessage(e, "Couldn't sync Apple Health"));
-    } finally {
-      setBusy(false);
-      void refresh();
-    }
-  };
-
-  const syncNow = async () => {
-    setBusy(true);
-    try {
-      await runNativeSync();
-      toast.success("HealthKit sync complete.");
-    } catch (e) {
-      toast.error(userMessage(e, "Couldn't sync Apple Health"));
-    } finally {
-      setBusy(false);
-      void refresh();
-    }
-  };
+  const { linked, loaded, busy, syncState, statusText, connect, syncNow } = useNativeAppleHealth();
 
   const dotClass =
     syncState === "receiving"
@@ -176,7 +53,7 @@ function NativeAppleHealthConnection() {
                   className={`h-1.5 w-1.5 rounded-full shrink-0 ${dotClass}`}
                   aria-hidden="true"
                 />
-                {STATUS_TEXT[syncState]}
+                {statusText[syncState]}
               </p>
             </div>
           </div>
@@ -265,7 +142,6 @@ function WebAppleHealthConnection() {
     setSecret(data?.webhook_secret ?? null);
     setLastContact(data?.last_webhook_at ?? data?.last_sync_at ?? null);
 
-    // The real "is it working" signal: has any Apple Health datapoint landed?
     const { data: bio } = await supabase
       .from("biometrics")
       .select("recorded_at")
@@ -474,6 +350,42 @@ function WebAppleHealthConnection() {
           Tap Connect to get your personal webhook URL, then finish setup in the Health Auto Export
           app. Purple cannot pull from Apple Health directly in the browser.
         </p>
+      )}
+    </div>
+  );
+}
+
+/** Compact Apple Health connect row for onboarding (native iOS only). */
+export function WelcomeAppleHealthConnect({
+  onConnected,
+}: {
+  onConnected?: () => void;
+}) {
+  const { linked, loaded, busy, connect } = useNativeAppleHealth();
+
+  useEffect(() => {
+    if (linked) onConnected?.();
+  }, [linked, onConnected]);
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 flex items-center justify-between gap-4">
+      <div className="flex items-center gap-3 min-w-0">
+        <span className="rounded-full bg-secondary p-2.5 text-secondary-foreground shrink-0">
+          <Smartphone className="h-5 w-5" />
+        </span>
+        <div className="min-w-0">
+          <p className="font-serif text-base text-foreground">Apple Health</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {linked
+              ? "Connected · vitals sync from HealthKit"
+              : "Sleep, heart rate, steps, and more from this iPhone"}
+          </p>
+        </div>
+      </div>
+      {!linked && (
+        <Button size="sm" onClick={() => void connect()} disabled={busy || !loaded}>
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Connect Apple Health"}
+        </Button>
       )}
     </div>
   );
