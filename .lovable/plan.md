@@ -1,40 +1,62 @@
-## /sign-in — compact, background image restored, socials below primary
+## /sign-in — SaleSkip-style split layout
 
-Scope: frontend only, `src/routes/sign-in.tsx`. No auth/logic/translation changes. Card visual style stays; layout tightens and reorders.
+Restructure `/sign-in` to match the reference: full-bleed 50/50 split, colored brand panel on the left, clean form on the right. Fits the viewport (no scroll), all breakpoints.
 
-### Restore background hero
-- Re-add the fixed full-bleed `ResponsiveImage` (`signInImages.hero`) with an overlay gradient behind everything (`fixed inset-0 -z-10`).
-- Overlay tuned for card readability: soft `bg-gradient-to-br from-background/70 via-background/55 to-background/70` so the card sits on a calm, slightly translucent field with the photo showing through the outer margin.
-- Card gets subtle translucency: `bg-card/95 backdrop-blur-sm` so it still reads as solid but the photo peeks at edges.
+Scope: frontend only, `src/routes/sign-in.tsx`. No auth/logic/translation changes. `SocialSignInButtons` unchanged.
 
-### Fit-to-screen (no scroll) on every breakpoint
-- Outer wrapper: `h-dvh overflow-hidden` (was `min-h-dvh`). Use `flex items-center justify-center px-4 py-4 sm:py-6`.
-- Card sized to viewport, not a fixed 720px:
-  - Desktop (`lg`): `w-full max-w-5xl h-[min(680px,calc(100dvh-3rem))]`, `grid-cols-[42%_1fr]`.
-  - Tablet/mobile: `h-[calc(100dvh-2rem)] max-h-[720px]`, single column, right (auth) column scrolls internally only if truly needed via `overflow-y-auto` inside the auth panel — outer page never scrolls.
-- Remove the separate mobile `SiteFooter` block (was pushing scroll). Keep the "No ads. No trackers…" trust line inside the card instead.
+### Layout
 
-### Compact spacing
-- Left brand panel: `p-10 xl:p-12` (was `p-14`), headline `text-4xl xl:text-5xl` (was 5xl), tagline `text-sm`.
-- Right auth panel: `p-6 sm:p-10 lg:p-10` (was 14), inner column `max-w-[340px]`.
-- Form: `space-y-2.5`, inputs `h-11 rounded-xl` (were h-12), primary button `h-11 rounded-xl`.
-- Tab strip: `mb-4` (was 6). Divider: `my-4` (was 6).
-- Mobile brand header inside card: `pt-6 pb-2 px-6`, headline `text-2xl sm:text-3xl`, tagline single line clamp.
+- Outer wrapper: `h-dvh overflow-hidden grid grid-cols-1 lg:grid-cols-2 bg-background text-foreground`. No card, no rounded container — full bleed like the reference.
+- Drop the fixed hero background image and its overlay (the left panel is the visual anchor now, matching the reference).
 
-### Reorder: Sign in FIRST, socials below
-- Inside the auth flow (per `TabsContent`):
-  1. Segmented Sign in / Create account tabs
-  2. Email + Password + Forgot link + primary Sign in button
-  3. Divider row: "or continue with"
-  4. `SocialSignInButtons` (Apple + Google) — visually secondary, still full-width stacked
-  5. Trust line "No ads. No trackers…" + link to /trust
-- Rationale: primary email flow leads; social becomes an alternate path underneath.
+### Left panel (brand)
 
-### Behavior unchanged
-- All state, handlers, useEffects (`invite`, `locale prefill`, `oauth error`, `verify-sent` polling), verify/reset status panels, error styling, disabled states, translations, tab-switch behavior. `SocialSignInButtons` component unchanged.
+- `hidden lg:flex flex-col justify-between p-14 xl:p-16 bg-primary text-primary-foreground relative overflow-hidden`.
+- Subtle line motif (concentric arcs) rendered as an inline SVG in the top-right corner at low opacity (matches the reference's decorative curves).
+- Top: PURPLE wordmark (`text-primary-foreground/90 tracking-[0.3em] text-xs uppercase font-semibold`).
+- Middle: serif headline "Hello, welcome" + "PURPLE 👋" — reuse existing `t("signIn.title")` if it maps cleanly; otherwise render "Welcome to Purple" + waving-hand emoji. Font: `font-serif text-6xl xl:text-7xl leading-[0.95]`.
+- Sub-tagline paragraph (existing `t("signIn.tag1")`), `max-w-md text-primary-foreground/80`.
+- Bottom: `© {year} Purple. All rights reserved.` in muted primary-foreground.
+
+### Right panel (form) — desktop and mobile
+
+- `flex flex-col justify-center px-6 sm:px-12 lg:px-20 py-8 lg:py-10 bg-background overflow-y-auto`.
+- Inner column `w-full max-w-[400px] mx-auto space-y-6`.
+- Top: small "PURPLE" wordmark (mobile-only, since left panel handles it on desktop).
+- Heading: `font-serif text-3xl lg:text-4xl` — "Welcome back" (existing `t("signIn.signIn")` copy) OR "Create your account" when in register mode.
+- Sub-line: "Don't have an account? [Create a new account now](toggle)" as an inline link that swaps the Tabs value to `register`. In register mode, flips to "Already have an account? Sign in".
+- Remove the segmented Tabs pill (redundant with the inline link, matches reference).
+- **Underlined inputs** matching the reference:
+  - Email: no border, only `border-b border-border`, `bg-transparent rounded-none h-11 px-0 text-base focus:border-primary focus:ring-0`.
+  - Password: same styling; eye toggle stays via `PasswordInput` (we'll pass a className override that neutralizes the box).
+  - Floating "Password" label sits above; forgot link kept inline right of the password label (unchanged handler).
+- Primary button: `w-full h-11 rounded-md bg-foreground text-background` → "Login Now" style. Uses existing text `t("signIn.signIn")` / `t("signIn.createAccount")`.
+- Google + Apple stacked BELOW primary (order preserved from previous turn):
+  - Divider is dropped in favor of a subtle spacing block.
+  - `SocialSignInButtons` component reused as-is.
+- Bottom link: "Forgot password? [Click here]" wired to existing `handleForgotPassword`.
+
+### Mobile / tablet (<lg)
+
+- Left panel hidden. Right panel becomes single centered column with `pt-8 pb-6`.
+- Mobile brand block above the heading:
+  - PURPLE wordmark
+  - Compact serif headline `text-3xl`
+- Same inline "Don't have an account?" toggle. Same underline inputs and button order (primary → Google → Apple → forgot).
+- Uses `h-dvh` container with `overflow-y-auto` inside the right panel — outer page never scrolls; only the form column scrolls internally if a device is exceptionally short.
+
+### Preserved behavior
+
+- All state (`mode`, `email`, `password`, `status`, `errorMsg`), all `useEffect`s (invite capture, locale prefill, oauth error toast, verify-sent poll), verify-sent / reset-sent status panels (rendered in the right column with the same copy), disabled states, `friendlyAuthError`, invite redeem on sign-up.
+- Sign in vs Create account still governed by `mode`; the inline link toggles it instead of the tab pill.
+- Translations reused where copy maps 1:1; new bits ("Don't have an account? Create a new account now", "Already have an account? Sign in", "Forgot password? Click here", "© {year} Purple. All rights reserved.") added as plain strings for now (no i18n key churn this turn).
 
 ### Files
-- Edit: `src/routes/sign-in.tsx` (restore `ResponsiveImage` + `signInImages` imports; rewrite return JSX per above; drop the outer `<SiteFooter />` block).
+
+- Edit: `src/routes/sign-in.tsx` (rewrite JSX return; remove `ResponsiveImage` + `signInImages` + `Tabs`/`TabsList`/`TabsTrigger`/`TabsContent` imports if unused; keep everything else).
 
 ### Verification
-- Playwright screenshots at 390×844, 834×1112, 1280×800, 1440×900. Assert `document.documentElement.scrollHeight <= innerHeight` (no vertical scroll) and card fully visible; confirm Sign in button appears above the Apple/Google buttons; confirm hero photo visible around the card.
+
+- Playwright screenshots at 390×844, 834×1112, 1280×800, 1440×900.
+- Assert no vertical scroll on the outer page at each viewport.
+- Confirm left brand panel visible only on `lg+`, form column readable on all sizes, primary Sign in above social buttons, forgot link at the bottom.
