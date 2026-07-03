@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { cn, formatLocaleTime } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { ensureTodayDoses } from "@/lib/meds-today";
+import { ensureTodayDoses, getDosesForDate } from "@/lib/meds-today";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { toast } from "sonner";
 import { Bell, ChevronRight, Moon, MoreVertical, Pill } from "lucide-react";
@@ -63,9 +63,22 @@ function isScheduledMed(d: Dose): boolean {
   return d.medication.kind !== "rescue" && !d.medication.is_rescue;
 }
 
-export function TodayDoses() {
+export function TodayDoses({ date }: { date?: Date } = {}) {
   const { session } = useAuth();
   const userId = session?.user.id;
+  const isToday = React.useMemo(() => {
+    if (!date) return true;
+    const d = new Date(date);
+    const n = new Date();
+    return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
+  }, [date]);
+  const dateStr = React.useMemo(() => {
+    const d = date ?? new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${dd}`;
+  }, [date]);
   const [doses, setDoses] = React.useState<Dose[] | null>(null);
   const [homeTz, setHomeTz] = React.useState<string | null>(null);
   const [wakeTime, setWakeTime] = React.useState<string>("07:00");
@@ -89,12 +102,17 @@ export function TodayDoses() {
   const load = React.useCallback(async () => {
     if (!userId) return;
     try {
-      const { doses } = await ensureTodayDoses(userId);
-      setDoses(doses);
+      if (isToday) {
+        const { doses } = await ensureTodayDoses(userId);
+        setDoses(doses);
+      } else {
+        const { doses } = await getDosesForDate(userId, dateStr);
+        setDoses(doses as unknown as Dose[]);
+      }
     } catch (error) {
       console.error(error);
     }
-  }, [userId]);
+  }, [userId, isToday, dateStr]);
 
   React.useEffect(() => { void load(); }, [load]);
 
@@ -247,6 +265,7 @@ export function TodayDoses() {
   if (!userId) return null;
 
   const showPermNudge =
+    isToday &&
     permState === "default" &&
     !permDismissed &&
     (doses?.some((d) => d.status === "pending") ?? false);
@@ -254,7 +273,15 @@ export function TodayDoses() {
   return (
     <section className="mt-8 rounded-2xl border border-border bg-card p-5 sm:p-6">
       <div className="flex items-center justify-between">
-        <h2 className="font-serif text-xl text-foreground">Today</h2>
+        <h2 className="font-serif text-xl text-foreground">
+          {isToday
+            ? "Today"
+            : (date ?? new Date()).toLocaleDateString(undefined, {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+              })}
+        </h2>
         <Link
           to="/meds"
           className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground gap-0.5"
