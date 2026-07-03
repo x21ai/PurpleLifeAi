@@ -262,7 +262,7 @@ function SignInPage() {
   };
 
   return (
-    <div className="relative min-h-dvh text-foreground">
+    <div className="relative min-h-dvh lg:h-dvh lg:overflow-hidden text-foreground">
       {/* Full-bleed hero photo */}
       <div className="fixed inset-0 -z-10 bg-background">
         <ResponsiveImage
@@ -271,45 +271,79 @@ function SignInPage() {
           sizes="100vw"
           className="absolute inset-0 h-full w-full object-cover"
         />
-        {/* Right-side gradient so the form column reads cleanly over the photo */}
+        {/* Right-side gradient so the form column reads cleanly over the photo.
+            On lg+, both halves need contrast, so darken across the whole viewport. */}
         <div
-          className="absolute inset-0 bg-gradient-to-l from-background via-background/85 to-background/10 lg:from-background lg:via-background/70 lg:to-background/0"
+          className="absolute inset-0 bg-gradient-to-l from-background via-background/85 to-background/10 lg:bg-gradient-to-br lg:from-background/80 lg:via-background/70 lg:to-background/80"
           aria-hidden="true"
         />
       </div>
 
-      <div className="lg:grid lg:grid-cols-[1fr_minmax(420px,560px)]">
-        {/* Wordmark column, left, breathing room on the photo */}
-        <aside className="hidden lg:flex flex-col justify-end p-14 min-h-dvh">
-          <p
-            className="label-eyebrow"
-            style={{ color: "#FFFFFF", opacity: 0.92, textShadow: "0 1px 2px rgba(0,0,0,0.45)" }}
-          >
+      <div className="lg:grid lg:grid-cols-2 lg:h-dvh">
+        {/* LEFT — brand + social identity (desktop only) */}
+        <aside
+          className="hidden lg:flex flex-col justify-between px-14 py-12 h-dvh"
+          style={{ textShadow: "0 1px 2px rgba(0,0,0,0.45)" }}
+        >
+          <p className="label-eyebrow" style={{ color: "#FFFFFF", opacity: 0.92 }}>
             PURPLE
           </p>
-          <p
-            className="mt-4 font-serif italic text-lg max-w-sm leading-relaxed"
-            style={{ color: "#FFFFFF", opacity: 0.85, textShadow: "0 1px 2px rgba(0,0,0,0.45)" }}
-          >
+
+          <div className="max-w-md">
+            <h2 className="font-serif text-5xl xl:text-6xl leading-[1.02] tracking-tight" style={{ color: "#FFFFFF" }}>
+              {t("signIn.title")}
+            </h2>
+            <p className="mt-6 text-base leading-relaxed" style={{ color: "#FFFFFF", opacity: 0.9 }}>
+              {t("signIn.tag1")}
+            </p>
+            <p className="mt-2 text-base leading-relaxed" style={{ color: "#FFFFFF", opacity: 0.9 }}>
+              {t("signIn.tag2")}
+            </p>
+
+            <div className="relative my-7">
+              <div className="absolute inset-0 flex items-center" aria-hidden>
+                <span className="w-full border-t" style={{ borderColor: "rgba(255,255,255,0.25)" }} />
+              </div>
+              <p className="relative flex justify-start">
+                <span className="pr-3 text-xs font-sans uppercase tracking-widest" style={{ color: "#FFFFFF", opacity: 0.75, background: "transparent" }}>
+                  {t("signIn.orUseAnother")}
+                </span>
+              </p>
+            </div>
+
+            <SocialSignInButtons helper="" />
+          </div>
+
+          <p className="font-serif italic text-sm" style={{ color: "#FFFFFF", opacity: 0.8 }}>
             {t("signIn.freeForever")}
           </p>
         </aside>
 
-        {/* Form panel */}
-        <main className="flex items-center justify-center px-6 sm:px-10 lg:px-14 py-12 lg:py-16 min-h-dvh">
+        {/* RIGHT — email/password form */}
+        <main className="flex items-center justify-center px-6 sm:px-10 lg:px-14 py-10 lg:py-8 min-h-dvh lg:min-h-0 lg:h-dvh">
           <div className="w-full max-w-md">
-            <p className="label-eyebrow">{t("signIn.eyebrow")}</p>
-            <h1 className="mt-5 font-serif text-5xl sm:text-6xl lg:text-7xl leading-[1.02] tracking-tight text-foreground">
-              {t("signIn.title")}
-            </h1>
+            {/* Mobile-only brand block; desktop shows this in the left column */}
+            <div className="lg:hidden">
+              <p className="label-eyebrow">{t("signIn.eyebrow")}</p>
+              <h1 className="mt-4 font-serif text-4xl sm:text-5xl leading-[1.05] tracking-tight text-foreground">
+                {t("signIn.title")}
+              </h1>
+              <div className="mt-5 space-y-2 text-base leading-relaxed text-muted-foreground max-w-prose">
+                <p>{t("signIn.tag1")}</p>
+                <p>{t("signIn.tag2")}</p>
+              </div>
+            </div>
 
-            <div className="mt-8 space-y-3 text-base sm:text-[17px] leading-relaxed text-muted-foreground max-w-prose">
-              <p>{t("signIn.tag1")}</p>
-              <p>{t("signIn.tag2")}</p>
+            {/* Desktop-only compact heading */}
+            <div className="hidden lg:block">
+              <p className="label-eyebrow">{t("signIn.eyebrow")}</p>
+              <h1 className="mt-3 font-serif text-3xl leading-tight tracking-tight text-foreground">
+                {mode === "signin" ? t("signIn.signIn") : t("signIn.createAccount")}
+              </h1>
             </div>
 
             {status === "verify-sent" ? (
-              <div className="mt-10 rounded-2xl border border-border bg-secondary/60 p-6">
+              <div className="mt-8 rounded-2xl border border-border bg-secondary/60 p-6">
                 <p className="label-eyebrow">{t("signIn.checkInbox")}</p>
                 <p className="mt-3 font-serif text-2xl text-secondary-foreground leading-snug">
                   {t("signIn.confirmEmail")}
@@ -328,7 +362,7 @@ function SignInPage() {
                 </button>
               </div>
             ) : status === "reset-sent" ? (
-              <div className="mt-10 rounded-2xl border border-border bg-secondary/60 p-6">
+              <div className="mt-8 rounded-2xl border border-border bg-secondary/60 p-6">
                 <p className="label-eyebrow">{t("signIn.checkInbox")}</p>
                 <p className="mt-3 font-serif text-2xl text-secondary-foreground leading-snug">
                   {t("signIn.resetSent")}
@@ -342,14 +376,14 @@ function SignInPage() {
                 </button>
               </div>
             ) : (
-              <div className="mt-10">
+              <div className="mt-8 lg:mt-6">
                 <Tabs value={mode} onValueChange={(v) => { setMode(v as "signin" | "register"); setErrorMsg(null); }}>
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="signin">{t("signIn.tabSignIn")}</TabsTrigger>
                     <TabsTrigger value="register">{t("signIn.tabRegister")}</TabsTrigger>
                   </TabsList>
                   <TabsContent value={mode} forceMount>
-                    <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                    <form onSubmit={handleSubmit} className="mt-5 space-y-3 lg:space-y-3">
                       <label htmlFor="email" className="label-eyebrow block">
                         {t("signIn.email")}
                       </label>
@@ -366,12 +400,24 @@ function SignInPage() {
                           if (status === "error") { setStatus("idle"); setErrorMsg(null); }
                         }}
                         aria-invalid={status === "error"}
-                        className={`h-14 text-lg font-serif rounded-xl ${status === "error" ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                        className={`h-12 lg:h-12 text-base font-serif rounded-xl ${status === "error" ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         disabled={status === "submitting"}
                       />
-                      <label htmlFor="password" className="label-eyebrow block pt-1">
-                        {t("signIn.password")}
-                      </label>
+                      <div className="flex items-baseline justify-between pt-1">
+                        <label htmlFor="password" className="label-eyebrow block">
+                          {t("signIn.password")}
+                        </label>
+                        {mode === "signin" && (
+                          <button
+                            type="button"
+                            onClick={handleForgotPassword}
+                            disabled={status === "submitting"}
+                            className="text-xs font-sans text-muted-foreground hover:text-foreground underline underline-offset-4 disabled:opacity-50"
+                          >
+                            {t("signIn.forgot")}
+                          </button>
+                        )}
+                      </div>
                       <PasswordInput
                         id="password"
                         required
@@ -384,7 +430,7 @@ function SignInPage() {
                           if (status === "error") { setStatus("idle"); setErrorMsg(null); }
                         }}
                         aria-invalid={status === "error"}
-                        className={`h-14 text-lg font-serif rounded-xl ${status === "error" ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                        className={`h-12 lg:h-12 text-base font-serif rounded-xl ${status === "error" ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         disabled={status === "submitting"}
                       />
                       {status === "error" && errorMsg && (
@@ -393,46 +439,39 @@ function SignInPage() {
                         </p>
                       )}
                       {mode === "register" && (
-                        <p className="text-xs text-muted-foreground pt-1">
+                        <p className="text-xs text-muted-foreground pt-0.5">
                           We&rsquo;ll ask a few quick things after you confirm your email, region, conditions, and anything else that helps Purple help you.
                         </p>
                       )}
                       <Button
                         type="submit"
-                        className="w-full h-14 text-base rounded-xl"
+                        className="w-full h-12 text-base rounded-xl"
                         disabled={status === "submitting"}
                       >
                         {status === "submitting"
                           ? mode === "signin" ? t("signIn.signingIn") : t("signIn.creating")
                           : mode === "signin" ? t("signIn.signIn") : t("signIn.createAccount")}
                       </Button>
-                      {mode === "signin" && (
-                        <div className="pt-1 text-right">
-                          <button
-                            type="button"
-                            onClick={handleForgotPassword}
-                            disabled={status === "submitting"}
-                            className="text-sm font-sans text-muted-foreground hover:text-foreground underline underline-offset-4 disabled:opacity-50"
-                          >
-                            {t("signIn.forgot")}
-                          </button>
-                        </div>
-                      )}
                     </form>
                   </TabsContent>
                 </Tabs>
-                <div className="relative my-8">
-                  <div className="absolute inset-0 flex items-center" aria-hidden>
-                    <span className="w-full border-t border-border" />
+
+                {/* Mobile-only social buttons; on desktop these live in the left column */}
+                <div className="lg:hidden">
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center" aria-hidden>
+                      <span className="w-full border-t border-border" />
+                    </div>
+                    <p className="relative flex justify-center">
+                      <span className="bg-background px-3 text-xs font-sans uppercase tracking-widest text-muted-foreground">
+                        {t("signIn.orUseAnother")}
+                      </span>
+                    </p>
                   </div>
-                  <p className="relative flex justify-center">
-                    <span className="bg-background px-3 text-xs font-sans uppercase tracking-widest text-muted-foreground">
-                      {t("signIn.orUseAnother")}
-                    </span>
-                  </p>
+                  <SocialSignInButtons helper="" />
                 </div>
-                <SocialSignInButtons helper="" />
-                <p className="mt-8 text-center text-xs text-muted-foreground">
+
+                <p className="mt-6 text-center text-xs text-muted-foreground">
                   {t("signIn.trustLine")}{" "}
                   <Link
                     to="/trust"
@@ -447,7 +486,9 @@ function SignInPage() {
           </div>
         </main>
       </div>
-      <SiteFooter />
+      <div className="lg:hidden">
+        <SiteFooter />
+      </div>
     </div>
   );
 }
