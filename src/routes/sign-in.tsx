@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { SiteFooter } from "@/components/layout/site-footer";
+import { ResponsiveImage } from "@/components/marketing/responsive-image";
+import { signInImages } from "@/lib/calm-images/sign-in";
 import { SocialSignInButtons } from "@/components/auth/social-sign-in-buttons";
 import { isOAuthCallbackUrl, waitForOAuthSession } from "@/lib/auth-oauth";
 import { toast } from "sonner";
@@ -260,17 +261,31 @@ function SignInPage() {
   };
 
   return (
-    <div className="relative min-h-dvh flex flex-col items-center justify-center bg-background text-foreground px-4 sm:px-6 py-6 lg:py-10">
-      <div className="w-full max-w-5xl lg:h-[720px] rounded-[32px] lg:rounded-[40px] border border-border bg-card shadow-[0_40px_80px_-20px_rgba(0,0,0,0.08)] overflow-hidden grid grid-cols-1 lg:grid-cols-[42%_1fr]">
+    <div className="relative h-dvh overflow-hidden flex items-center justify-center text-foreground px-3 sm:px-6 py-3 sm:py-6">
+      {/* Full-bleed hero photo behind the card */}
+      <div className="fixed inset-0 -z-10 bg-background">
+        <ResponsiveImage
+          asset={signInImages.hero}
+          priority
+          sizes="100vw"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-br from-background/70 via-background/55 to-background/70"
+          aria-hidden="true"
+        />
+      </div>
+
+      <div className="w-full max-w-5xl h-full max-h-[720px] rounded-[28px] lg:rounded-[36px] border border-border bg-card/95 backdrop-blur-sm shadow-[0_40px_80px_-20px_rgba(0,0,0,0.18)] overflow-hidden grid grid-cols-1 lg:grid-cols-[42%_1fr]">
         {/* LEFT — editorial brand panel */}
-        <aside className="hidden lg:flex flex-col justify-between bg-secondary/60 border-r border-border p-14">
+        <aside className="hidden lg:flex flex-col justify-between bg-secondary/60 border-r border-border p-10 xl:p-12">
           <p className="label-eyebrow text-primary">PURPLE</p>
 
           <div className="max-w-sm">
-            <h2 className="font-serif text-5xl leading-[1.05] tracking-tight text-foreground">
+            <h2 className="font-serif text-4xl xl:text-5xl leading-[1.05] tracking-tight text-foreground">
               {t("signIn.title")}
             </h2>
-            <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
               {t("signIn.tag1")}
             </p>
           </div>
@@ -282,19 +297,16 @@ function SignInPage() {
         </aside>
 
         {/* Mobile-only compact brand header */}
-        <div className="lg:hidden px-6 pt-8 pb-2">
+        <div className="lg:hidden px-6 pt-6 pb-1">
           <p className="label-eyebrow text-primary">PURPLE</p>
-          <h1 className="mt-3 font-serif text-3xl sm:text-4xl leading-[1.05] tracking-tight text-foreground">
+          <h1 className="mt-2 font-serif text-2xl sm:text-3xl leading-[1.05] tracking-tight text-foreground">
             {t("signIn.title")}
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            {t("signIn.tag1")}
-          </p>
         </div>
 
         {/* RIGHT — auth column */}
-        <main className="flex flex-col justify-center px-6 sm:px-10 lg:px-14 py-8 lg:py-10">
-          <div className="w-full max-w-[380px] mx-auto">
+        <main className="flex flex-col justify-center px-6 sm:px-10 lg:px-10 py-4 sm:py-6 lg:py-8 overflow-y-auto">
+          <div className="w-full max-w-[340px] mx-auto">
             {status === "verify-sent" ? (
               <div className="mt-8 rounded-2xl border border-border bg-secondary/60 p-6">
                 <p className="label-eyebrow">{t("signIn.checkInbox")}</p>
@@ -331,23 +343,12 @@ function SignInPage() {
             ) : (
               <div>
                 <Tabs value={mode} onValueChange={(v) => { setMode(v as "signin" | "register"); setErrorMsg(null); }}>
-                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
                     <TabsTrigger value="signin">{t("signIn.tabSignIn")}</TabsTrigger>
                     <TabsTrigger value="register">{t("signIn.tabRegister")}</TabsTrigger>
                   </TabsList>
                   <TabsContent value={mode} forceMount>
-                    <SocialSignInButtons helper="" />
-                    <div className="relative my-6">
-                      <div className="absolute inset-0 flex items-center" aria-hidden>
-                        <span className="w-full border-t border-border" />
-                      </div>
-                      <p className="relative flex justify-center">
-                        <span className="bg-card px-3 text-[10px] font-sans uppercase tracking-widest text-muted-foreground">
-                          {t("signIn.orUseAnother")}
-                        </span>
-                      </p>
-                    </div>
-                    <form onSubmit={handleSubmit} className="space-y-3">
+                    <form onSubmit={handleSubmit} className="space-y-2.5">
                       <label htmlFor="email" className="label-eyebrow block">
                         {t("signIn.email")}
                       </label>
@@ -364,7 +365,7 @@ function SignInPage() {
                           if (status === "error") { setStatus("idle"); setErrorMsg(null); }
                         }}
                         aria-invalid={status === "error"}
-                        className={`h-12 lg:h-12 text-base font-serif rounded-xl ${status === "error" ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                        className={`h-11 text-base font-serif rounded-xl ${status === "error" ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         disabled={status === "submitting"}
                       />
                       <div className="flex items-baseline justify-between pt-1">
@@ -394,7 +395,7 @@ function SignInPage() {
                           if (status === "error") { setStatus("idle"); setErrorMsg(null); }
                         }}
                         aria-invalid={status === "error"}
-                        className={`h-12 lg:h-12 text-base font-serif rounded-xl ${status === "error" ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                        className={`h-11 text-base font-serif rounded-xl ${status === "error" ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         disabled={status === "submitting"}
                       />
                       {status === "error" && errorMsg && (
@@ -409,7 +410,7 @@ function SignInPage() {
                       )}
                       <Button
                         type="submit"
-                        className="w-full h-12 text-base rounded-xl mt-2"
+                        className="w-full h-11 text-base rounded-xl mt-2"
                         disabled={status === "submitting"}
                       >
                         {status === "submitting"
@@ -417,10 +418,22 @@ function SignInPage() {
                           : mode === "signin" ? t("signIn.signIn") : t("signIn.createAccount")}
                       </Button>
                     </form>
+
+                    <div className="relative my-4">
+                      <div className="absolute inset-0 flex items-center" aria-hidden>
+                        <span className="w-full border-t border-border" />
+                      </div>
+                      <p className="relative flex justify-center">
+                        <span className="bg-card px-3 text-[10px] font-sans uppercase tracking-widest text-muted-foreground">
+                          {t("signIn.orUseAnother")}
+                        </span>
+                      </p>
+                    </div>
+                    <SocialSignInButtons helper="" />
                   </TabsContent>
                 </Tabs>
 
-                <p className="mt-6 text-center text-xs text-muted-foreground">
+                <p className="mt-4 text-center text-xs text-muted-foreground">
                   {t("signIn.trustLine")}{" "}
                   <Link
                     to="/trust"
@@ -434,9 +447,6 @@ function SignInPage() {
 
           </div>
         </main>
-      </div>
-      <div className="lg:hidden">
-        <SiteFooter />
       </div>
     </div>
   );
