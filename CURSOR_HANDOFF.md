@@ -31,8 +31,8 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 | Runtime | Cloudflare Worker (`wrangler.deploy.jsonc`, entry `src/server.ts`, `nodejs_compat`) |
 | Package manager | bun (commands below) |
 | Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
-| Git heads | `main` and `lovable/redesign` at `d3a176e` (synced; PWA code `19d8d4d`) |
-| Production deploy | Worker `purplelife`, version `321a9227-551a-4cc6-87b1-4270a1d800a9` (commit `19d8d4d`) |
+| Git heads | `main` and `lovable/redesign` at `1a24bd8` (synced) |
+| Production deploy | Worker `purplelife`, version `9a6481ac-b53f-4cdc-a916-10172bd09d65` (commit `1a24bd8`) |
 | Dev server | `bun run dev` on port 8080 |
 | E2E local | `bun run test:e2e` (boots dev server unless `E2E_BASE_URL` set) |
 | E2E prod | `bun run test:e2e:prod` (580 tests, 5 viewports, ~1.5h; Doppler creds) |
@@ -88,7 +88,7 @@ the web build. Full runbook: `docs/native-app-setup.md`. Durable decision:
 | Gap | Blocker | Next step |
 |-----|---------|-----------|
 | `ios/` and `android/` project dirs | No Xcode/Android SDK in agent sandbox | On a Mac: `bun run native:install`, `native:add`, `native:sync` |
-| Push delivery | `native_push_tokens` migration in repo; types not regenerated; no APNs/FCM credentials | Apply migration on live DB, regenerate `types.ts`, wire APNs/FCM secrets |
+| Push delivery | `native_push_tokens` live (migration applied 2026-07-03); no APNs/FCM credentials in Worker yet | Wire APNs/FCM secrets and send path |
 | HealthKit / Health Connect native projects | `ios/` / `android/` not committed; Xcode HealthKit capability + `Info.plist` usage strings | On Mac: `native:sync`, enable HealthKit in Xcode, add `NSHealthShareUsageDescription`; Android manifest per `docs/android-health-connect-setup.md` |
 | OAuth deep links in native projects | `ios/` / `android/` not committed | Register `org.purplelife.app://auth-callback` in plist, manifest, Supabase, Google/Apple consoles |
 | Xcode signing and provisioning | Apple Developer Program ($99/yr) | Certificates, profiles, Push capability in Xcode |
@@ -103,6 +103,7 @@ entitlements, permissions, icons, `capacitor.config.ts` shell changes). See
 
 ## Recent changes (2026-07-02 to 2026-07-03)
 
+1. **Native HealthKit/push ship (2026-07-03, `1a24bd8`, deploy `9a6481ac`):** `native_push_tokens` + `biometrics` `health_connect` source applied on live `xxnzmfzsjplrutrgbzxy` via Management API; native health/push server functions, `/api/health/native-sync`, Capacitor health bridges, docs (`docs/native-oauth-setup.md`, `docs/android-health-connect-setup.md`). Gates: `check:em-dash`, `tsc --noEmit`, `build:prod`.
 1. **iOS / PWA mobile fixes (2026-07-03, `19d8d4d`, deploy `321a9227`):** Date strip edge padding + margin parity with Today column; mobile nav sheet scroll containment + GitHub link removed; PWA install banner platform detection (`src/lib/pwa-platform.ts`) with iOS Safari vs Chrome guidance; keyboard focus helper + 16px inputs on mobile; Apple Health Tools copy (Health Auto Export steps, no HealthKit on web); manifest `start_url` `/today`, `display_override`.
 2. **Lovable merge (2026-07-03):** Today `DateStrip`, historical day view, date-aware vitals, sign-in redesign; follow-up commit removed score-tile date gating (`d209c34`). Deploy `bd28333c`.
 2. **Lovable redesign merged and deployed** to prod; OAuth host split, home images restored from Lovable CDN breakage.
