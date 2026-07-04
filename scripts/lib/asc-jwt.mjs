@@ -33,9 +33,8 @@ const payload = Buffer.from(
 ).toString("base64url");
 
 const signingInput = `${header}.${payload}`;
-const sign = crypto.createSign("SHA256");
-sign.update(signingInput);
-sign.end();
-const signature = sign.sign(API_KEY, "base64url");
+const signature = crypto
+  .sign("sha256", Buffer.from(signingInput), { key: API_KEY, dsaEncoding: "ieee-p1363" })
+  .toString("base64url");
 
 process.stdout.write(`${signingInput}.${signature}`);

@@ -128,6 +128,7 @@ and **push** (when APNs is wired). See `docs/native-app-setup.md`.
 | Error | Fix |
 |-------|-----|
 | App record not found on App Store Connect | Run `asc-ensure-app.mjs` (needs API key), or create app manually in ASC with bundle ID `org.purplelife.app` |
+| ASC API 401 on `asc-ensure-app.mjs` | Use `dsaEncoding: ieee-p1363` in `scripts/lib/asc-jwt.mjs` (not `createSign` DER output) |
 | Missing API credentials | Add the three `APP_STORE_CONNECT_*` secrets to Doppler |
 | No signing certificate | Ensure Apple ID is on the developer team; archive uses automatic signing with `-allowProvisioningUpdates` |
 | Duplicate build number | Increment `CURRENT_PROJECT_VERSION` in the Xcode project |
@@ -135,31 +136,24 @@ and **push** (when APNs is wired). See `docs/native-app-setup.md`.
 
 ## Agent run log (2026-07-03, Xcode-beta 27.0)
 
-Environment: `xcode-select` → `/Applications/Xcode-beta.app`, team `C3HY4MF66F` from Doppler `purple-life/prd`.
+Environment: `DEVELOPER_DIR` → `/Applications/Xcode-beta.app`, team `C3HY4MF66F` from Doppler `purple-life/prd`.
 
 | Step | Result |
 |------|--------|
-| Doppler `APP_STORE_CONNECT_*` | **Missing** in `purple-life/prd` and `cursor-cloudflare/prd_cloudlfare` |
-| Doppler `DEVELOPMENT_TEAM` | **Present** (`C3HY4MF66F`) |
-| `PrivacyInfo.xcprivacy` in `project.pbxproj` | **Already linked** (Resources build phase) |
-| `bun run ios:local-signing` | **OK** → `ios/LocalSigning.xcconfig` |
-| `scripts/asc-ensure-app.mjs` | **Blocked** (no API key secrets) |
+| `bun run ios:check-asc` | **Pass** (all three `APP_STORE_CONNECT_*` + `DEVELOPMENT_TEAM`) |
+| `bun run ios:testflight` (first run) | **Fail** at `asc-ensure-app.mjs`: ASC **401** (JWT ES256 DER signatures; fixed in repo) |
+| `scripts/lib/asc-jwt.mjs` | **Fixed** (`crypto.sign` with `dsaEncoding: ieee-p1363`) |
+| `scripts/asc-ensure-app.mjs` (after JWT fix) | **Fail** ASC **403**: API key cannot **CREATE** app (use **Admin** in ASC UI or Admin API key) |
+| ASC lookup `org.purplelife.app` | **No app record** (bundle ID exists, Apple team seed `C3HY4MF66F`) |
+| Capacitor sync + local signing | **OK** (testflight script through signing step) |
 | `xcodebuild archive` Release | **OK** → `build/ios/Purple.xcarchive` (marketing **1.0**, build **1**) |
-| `xcodebuild -exportArchive` | **Failed** (exit 70): app record `org.purplelife.app` not found on App Store Connect |
-| TestFlight upload | **Not run** (export did not produce IPA) |
+| `xcodebuild -exportArchive` | **Failed**: app record `org.purplelife.app` not found on App Store Connect |
+| TestFlight upload | **Not completed** (export did not upload IPA) |
 
-Archive signing identity at export time: **Apple Development** (automatic team profile). After the ASC app record exists and API keys are in Doppler, re-archive or export may pick up **Apple Distribution** via `-allowProvisioningUpdates`.
+**Unblock TestFlight (owner in App Store Connect):**
 
-**Unblock TestFlight:** add the three secrets below, then `bun run ios:testflight` (or re-run export after `asc-ensure-app.mjs` creates the app record):
+1. **My Apps** → **+** → New App: name **Purple**, bundle ID `org.purplelife.app`, SKU e.g. `purple-life-ios-001`, primary locale **en-US** (requires **Admin**; current API key reads ASC but cannot create apps).
+2. Optional: new API key with **Admin** access so `asc-ensure-app.mjs` can create the record.
+3. Re-run: `bun run ios:testflight` (increment `CURRENT_PROJECT_VERSION` if duplicate build **1**).
 
-```bash
-doppler secrets set APP_STORE_CONNECT_KEY_ID="XXXXXXXXXX" \
-  APP_STORE_CONNECT_ISSUER_ID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" \
-  --project purple-life --config prd
-
-doppler secrets set APP_STORE_CONNECT_API_KEY="$(cat /path/to/AuthKey_XXXXXXXXXX.p8)" \
-  --project purple-life --config prd
-```
-
-Manual alternative: create **My Apps** → new app with bundle ID `org.purplelife.app` in App Store Connect, then re-run export/upload.
-
+After Apple processes the build (5–15 minutes): **TestFlight** → internal testers, then external group + Beta App Review if needed.

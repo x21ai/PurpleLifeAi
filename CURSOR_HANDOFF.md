@@ -1,6 +1,6 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-03 (TestFlight prep commit, ASC keys still missing).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-03 (TestFlight upload blocked: ASC app record missing; JWT signing fixed).
 
 Positioning: PurpleLife is an AI health journal for any health management (epilepsy was the founding focus; the condition catalog is general).
 
@@ -33,7 +33,7 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 | Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
 | Git heads | `lovable/redesign` at `31f9176` (native shell + TestFlight scripts committed); `main` at `311d466` |
 | Production deploy | Worker `purplelife`, version `9b7f3199` (2026-07-03 23:53 UTC) |
-| TestFlight | **Blocked:** Doppler `purple-life/prd` missing `APP_STORE_CONNECT_*`. Verify: `bun run ios:check-asc`. Upload: `bun run ios:testflight` after keys set. Runbook: `docs/testflight-setup.md` |
+| TestFlight | **Blocked:** ASC app record for `org.purplelife.app` not created (API key cannot POST `/v1/apps`). Doppler ASC secrets OK (`bun run ios:check-asc`). Archive OK (1.0 / build **1**). Fix JWT in `scripts/lib/asc-jwt.mjs` (ieee-p1363). Runbook: `docs/testflight-setup.md` |
 | Dev server | `bun run dev` on port 8080 |
 | E2E local | `bun run test:e2e` (boots dev server unless `E2E_BASE_URL` set) |
 | E2E prod | `bun run test:e2e:prod` (580 tests, 5 viewports, ~1.5h; Doppler creds) |
@@ -58,6 +58,14 @@ triggers on `workflow_dispatch`, not on push to `main`. Cursor runs the gatekeep
 checklist in `docs/LOVABLE-REDESIGN-WORKFLOW.md`, then asks the owner before deploy.
 Local path: `bun run build:prod` then `doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c 'export CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0; bunx wrangler deploy -c wrangler.deploy.jsonc'`.
 Cron Triggers fan out from `scheduled()` in `src/server.ts` through a `SELF` service binding.
+
+## Recent changes (2026-07-03, TestFlight)
+
+- `bun run ios:check-asc`: all four Doppler secrets present (`purple-life/prd`).
+- `bun run ios:testflight`: failed at `asc-ensure-app.mjs` until JWT fix; then 403 CREATE on apps (key lacks create permission).
+- Fixed `scripts/lib/asc-jwt.mjs` ES256 signing (`dsaEncoding: ieee-p1363`) so ASC API auth succeeds.
+- Manual archive + export: archive **OK**; export **failed** (no App Store Connect app record for `org.purplelife.app`).
+- Bundle ID exists in Developer (team `C3HY4MF66F`); create **My Apps → Purple** in ASC (Admin), then re-run `bun run ios:testflight`.
 
 Redesign baseline on `main`: commit `7086ffa` (perf/responsive/native foundation).
 
