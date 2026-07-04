@@ -10,6 +10,8 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 
 ## Machine switch handoff (2026-07-04)
 
+**Git save commit:** `eb9b3e41782f546c64384d34e996371764d9754b` on `origin/lovable/redesign`.
+
 **Purpose:** User changing computers. All in-progress Flutter work is committed and pushed on `lovable/redesign` (commit hash recorded in git log after push).
 
 ### Done (Phase 0-1, not full site parity)
@@ -102,7 +104,7 @@ Optional defines: `SUPABASE_URL` (default `https://auth.purplelife.org`), `SITE_
 | Runtime | Cloudflare Worker (`wrangler.deploy.jsonc`, entry `src/server.ts`, `nodejs_compat`) |
 | Package manager | bun (commands below) |
 | Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
-| Git heads | `lovable/redesign` at **`258f726`** (5-issue bugfix ship) |
+| Git heads | `lovable/redesign` at **`eb9b3e4`** (Flutter Phase 0-1 save) |
 | Production deploy | Worker `purplelife`, version **`af1200ed-ac7f-4182-9021-d455a276fbce`** (2026-07-04, native layout + sync time + caregiver toolbar + crash shell) |
 | TestFlight | Build **1.0 (4)** (`CURRENT_PROJECT_VERSION=4`, bundle `org.purplelife.app`, ASC app `6787298041`). **Upload succeeded** 2026-07-04 via `bun run ios:testflight` (export + App Store Connect upload 100%). ASC processing typically 5–15 min before installable. If archive fails: clear `~/Library/Caches/org.swift.swiftpm`, `~/Library/Developer/Xcode/DerivedData/App-*`, pre-resolve SPM, set `IDEBuildOperationMaxNumberOfConcurrentCompileTasks=1` on 8 GB RAM hosts. |
 | Dev server | `bun run dev` on port 8080 |
