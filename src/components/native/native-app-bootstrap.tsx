@@ -3,6 +3,7 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useNativeAppContext } from "@/lib/native-app-context";
 import { hideNativeLaunchChrome, initNativeApp } from "@/lib/native";
+import { NativeLaunchDiagnosticStrip } from "@/components/native/native-launch-diagnostic-strip";
 
 const MARKETING_PATHS = new Set([
   "/",
@@ -46,5 +47,5 @@ export function NativeAppBootstrap() {
     void initNativeApp();
   }, [isNativeApp]);
 
-  return null;
+  return <NativeLaunchDiagnosticStrip />;
 }

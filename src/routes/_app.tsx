@@ -18,7 +18,11 @@ export const Route = createFileRoute("/_app")({
     // First-run onboarding: source of truth is the DB so it persists across devices.
     // localStorage is a fast-path hint to avoid an extra query on every nav.
     if (location.pathname === "/welcome") return;
-    if (localStorage.getItem("purple-onboarded") === "1") return;
+    try {
+      if (localStorage.getItem("purple-onboarded") === "1") return;
+    } catch {
+      // Restrictive WKWebView storage policies must not abort route boot.
+    }
     const { data: profile } = await supabase
       .from("profiles")
       .select("onboarded_at, first_name")
@@ -26,7 +30,11 @@ export const Route = createFileRoute("/_app")({
       .maybeSingle();
     const done = !!(profile?.onboarded_at || profile?.first_name);
     if (done) {
-      localStorage.setItem("purple-onboarded", "1");
+      try {
+        localStorage.setItem("purple-onboarded", "1");
+      } catch {
+        // Best-effort cache only; DB remains source of truth.
+      }
       return;
     }
     throw redirect({ to: "/welcome" });

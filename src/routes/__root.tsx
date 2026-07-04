@@ -4,18 +4,27 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
 
 import appCss from "../styles.css?url";
+import { AppCrashFallback } from "@/components/error/app-crash-fallback";
+import { GlobalErrorBoundary } from "@/components/error/global-error-boundary";
+import { NativeDiagnosticsPanel } from "@/components/error/native-diagnostics-panel";
 import { AuthProvider } from "@/integrations/supabase/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider, themeBootstrapScript } from "@/lib/theme-provider";
 import { NativeAppProvider } from "@/lib/native-app-context";
 import { NativeAppBootstrap } from "@/components/native/native-app-bootstrap";
+import {
+  captureClientError,
+  installGlobalErrorCapture,
+  requestDiagnosticsPanelOpen,
+} from "@/lib/observability/client-errors";
 import "@/i18n";
 import { hydrateLocale } from "@/i18n";
 import { isNativeApp } from "@/lib/native/capacitor";
@@ -78,6 +87,13 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const [captured] = useState(() =>
+    captureClientError(error, {
+      source: "router.error-component",
+      channel: "runtime",
+      fatal: true,
+    }),
+  );
 
   const recover = async () => {
     try {
@@ -86,21 +102,11 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         await Promise.allSettled(regs.map((reg) => reg.unregister()));
       }
       if (typeof caches !== "undefined") {
+        const cacheKeys = await caches.keys();
         await Promise.allSettled(
-          [
-            "purple-shell-v2",
-            "purple-shell-v3",
-            "purple-shell-v6",
-            "purple-shell-v7",
-            "purple-shell-v8",
-            "purple-shell-v9",
-            "purple-shell-v10",
-            "purple-shell-v11",
-            "purple-shell-v12",
-            "purple-shell-v13",
-            "purple-shell-v14",
-            "purple-shell-v15",
-          ].map((name) => caches.delete(name)),
+          cacheKeys
+            .filter((name) => name.startsWith("purple-shell-v"))
+            .map((name) => caches.delete(name)),
         );
       }
     } catch {
@@ -111,31 +117,18 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     window.location.reload();
   };
 
+  const supportHref = `/contact?source=route-error&errorId=${encodeURIComponent(captured.id)}`;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => void recover()}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Try again
-          </button>
-          <a
-            href={isNativeApp() ? "/today" : "/"}
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Go home
-          </a>
-        </div>
-      </div>
-    </div>
+    <AppCrashFallback
+      title="This page did not load"
+      description="Purple hit an unexpected error while loading this screen."
+      errorId={captured.id}
+      onRetry={() => void recover()}
+      supportHref={supportHref}
+      onOpenDiagnostics={requestDiagnosticsPanelOpen}
+      showDiagnosticsAction={isNativeApp()}
+    />
   );
 }
 
@@ -245,7 +238,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [idle, setIdle] = useState(false);
+  const [diagFromQuery, setDiagFromQuery] = useState(false);
 
   // Resolve navigator → saved → default *after* hydration so the SSR markup
   // (always rendered in the default locale) matches the first client render.
@@ -257,6 +252,16 @@ function RootComponent() {
   useEffect(() => {
     hydrateLocale();
   }, []);
+
+  useEffect(() => {
+    return installGlobalErrorCapture();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const enabled = new URLSearchParams(window.location.search).get("diag") === "1";
+    setDiagFromQuery(enabled);
+  }, [pathname]);
 
   useEffect(() => {
     const {
@@ -293,20 +298,26 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <NativeAppProvider>
-          <AuthProvider>
-            <NativeAppBootstrap />
-            <Outlet />
-            <Toaster />
-            {idle && (
-              <Suspense fallback={null}>
-                <DeferredStartup />
-              </Suspense>
-            )}
-          </AuthProvider>
-        </NativeAppProvider>
-      </ThemeProvider>
+      <GlobalErrorBoundary>
+        <ThemeProvider>
+          <NativeAppProvider>
+            <AuthProvider>
+              <NativeAppBootstrap />
+              <Outlet />
+              <Toaster />
+              <NativeDiagnosticsPanel
+                showAccountTrigger={pathname === "/account"}
+                forceOpen={diagFromQuery}
+              />
+              {idle && (
+                <Suspense fallback={null}>
+                  <DeferredStartup />
+                </Suspense>
+              )}
+            </AuthProvider>
+          </NativeAppProvider>
+        </ThemeProvider>
+      </GlobalErrorBoundary>
     </QueryClientProvider>
   );
 }

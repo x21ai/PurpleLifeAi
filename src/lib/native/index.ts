@@ -1,10 +1,18 @@
-import { isNativeApp, nativePlatform, plugin, callPlugin } from "./capacitor";
+import {
+  isNativeApp,
+  nativePlatform,
+  nativeBridgeReady,
+  nativeAppBuildInfo,
+  plugin,
+  callPlugin,
+} from "./capacitor";
 import { loadUpcomingScheduledDoses } from "@/lib/med-notifications";
 import { registerDeviceToken as saveNativePushToken } from "@/lib/native-push.functions";
+import { captureSyncError } from "@/lib/observability/client-errors";
 import { initNativeOAuthDeepLink } from "./oauth";
 import { initNativeWearableOAuthDeepLink } from "./wearable-oauth";
 
-export { isNativeApp, nativePlatform } from "./capacitor";
+export { isNativeApp, nativePlatform, nativeBridgeReady, nativeAppBuildInfo } from "./capacitor";
 export {
   clearLastNativeLaunchIssue,
   getLastNativeLaunchIssue,
@@ -34,6 +42,10 @@ export {
 let initialized = false;
 let launchChromeHidden = false;
 let initInFlight: Promise<void> | null = null;
+let bridgeTimeoutReported = false;
+
+const BRIDGE_MESSAGE_SOURCE = "purple-native";
+const BRIDGE_TIMEOUT_CODE = "capacitor_bridge_unavailable";
 
 /** Hide Capacitor launch splash and style status bar as soon as the bridge is ready. */
 export async function hideNativeLaunchChrome(): Promise<void> {
@@ -63,11 +75,12 @@ export async function initNativeApp(): Promise<void> {
   if (initInFlight) return initInFlight;
 
   initInFlight = (async () => {
-    await waitForNativeBridge();
-    if (!isNativeApp() || initialized) return;
-    initialized = true;
-
     try {
+      const bridgeReady = await waitForNativeBridge();
+      if (!bridgeReady) return;
+      if (!isNativeApp() || initialized) return;
+      initialized = true;
+
       await hideNativeLaunchChrome();
 
       initNativeOAuthDeepLink();
@@ -78,6 +91,7 @@ export async function initNativeApp(): Promise<void> {
       setupAndroidBackButton();
     } catch (err) {
       console.warn("[native] initNativeApp failed", err);
+      captureSyncError(err, "native.init");
       initialized = false;
     } finally {
       initInFlight = null;
@@ -114,6 +128,7 @@ async function setupPushNotifications(): Promise<void> {
   });
   push.addListener?.("registrationError", (err) => {
     console.warn("[native] push registration error", err);
+    captureSyncError(err, "native.push.registration");
   });
 
   await callPlugin("PushNotifications", "register");
@@ -126,6 +141,7 @@ async function registerDeviceToken(token: string): Promise<void> {
     await saveNativePushToken({ data: { token, platform } });
   } catch (err) {
     console.warn("[native] failed to register push token", err);
+    captureSyncError(err, "native.push.token");
   }
 }
 
@@ -135,45 +151,50 @@ async function registerDeviceToken(token: string): Promise<void> {
  * the native shell owns dose reminders while installed.
  */
 async function scheduleNativeMedReminders(): Promise<void> {
-  const ln = plugin("LocalNotifications");
-  if (!ln) return;
+  try {
+    const ln = plugin("LocalNotifications");
+    if (!ln) return;
 
-  const existing = (await callPlugin("LocalNotifications", "checkPermissions")) as
-    | { display?: string }
-    | undefined;
-  let display = existing?.display;
-  if (display !== "granted") {
-    const perm = (await callPlugin("LocalNotifications", "requestPermissions")) as
+    const existing = (await callPlugin("LocalNotifications", "checkPermissions")) as
       | { display?: string }
       | undefined;
-    display = perm?.display;
-  }
-  if (display !== "granted") return;
+    let display = existing?.display;
+    if (display !== "granted") {
+      const perm = (await callPlugin("LocalNotifications", "requestPermissions")) as
+        | { display?: string }
+        | undefined;
+      display = perm?.display;
+    }
+    if (display !== "granted") return;
 
-  const doses = await loadUpcomingScheduledDoses();
-  const now = Date.now();
-  const notifications = doses
-    .filter((d) => new Date(d.scheduledAt).getTime() > now)
-    .slice(0, 60)
-    .map((d) => ({
-      id: hashId(d.doseId),
-      title: "Time for your medication",
-      body: d.dosage ? `${d.medName} (${d.dosage})` : d.medName,
-      schedule: { at: new Date(d.scheduledAt) },
-      extra: { doseId: d.doseId, url: "/meds" },
-    }));
+    const doses = await loadUpcomingScheduledDoses();
+    const now = Date.now();
+    const notifications = doses
+      .filter((d) => new Date(d.scheduledAt).getTime() > now)
+      .slice(0, 60)
+      .map((d) => ({
+        id: hashId(d.doseId),
+        title: "Time for your medication",
+        body: d.dosage ? `${d.medName} (${d.dosage})` : d.medName,
+        schedule: { at: new Date(d.scheduledAt) },
+        extra: { doseId: d.doseId, url: "/meds" },
+      }));
 
-  if (notifications.length === 0) return;
-  // Clear any stale schedule first so edits do not leave orphan reminders.
-  const pending = (await callPlugin("LocalNotifications", "getPending")) as
-    | { notifications?: Array<{ id: number }> }
-    | undefined;
-  if (pending?.notifications?.length) {
-    await callPlugin("LocalNotifications", "cancel", {
-      notifications: pending.notifications.map((n) => ({ id: n.id })),
-    });
+    if (notifications.length === 0) return;
+    // Clear any stale schedule first so edits do not leave orphan reminders.
+    const pending = (await callPlugin("LocalNotifications", "getPending")) as
+      | { notifications?: Array<{ id: number }> }
+      | undefined;
+    if (pending?.notifications?.length) {
+      await callPlugin("LocalNotifications", "cancel", {
+        notifications: pending.notifications.map((n) => ({ id: n.id })),
+      });
+    }
+    await callPlugin("LocalNotifications", "schedule", { notifications });
+  } catch (err) {
+    console.warn("[native] scheduleNativeMedReminders failed", err);
+    captureSyncError(err, "native.med-reminders");
   }
-  await callPlugin("LocalNotifications", "schedule", { notifications });
 }
 
 function setupAndroidBackButton(): void {
@@ -188,16 +209,52 @@ function setupAndroidBackButton(): void {
   });
 }
 
-async function waitForNativeBridge(timeoutMs = 2500): Promise<void> {
-  if (!isNativeApp()) return;
+function publishBridgeTimeoutIssue(timeoutMs: number): void {
+  if (typeof window === "undefined" || bridgeTimeoutReported) return;
+  bridgeTimeoutReported = true;
+
+  const buildParam = new URLSearchParams(window.location.search).get("build");
+  const timeoutError = `Timed out after ${timeoutMs}ms waiting for core Capacitor plugins.`;
+  const issue = {
+    code: BRIDGE_TIMEOUT_CODE,
+    message: "Capacitor bridge failed to initialize.",
+    error: timeoutError,
+    url: window.location.href,
+    at: new Date().toISOString(),
+    build: buildParam || undefined,
+  };
+
+  window.dispatchEvent(new CustomEvent("purple:native-launch-error", { detail: issue }));
+  try {
+    window.postMessage(
+      {
+        source: BRIDGE_MESSAGE_SOURCE,
+        type: "launch-error",
+        payload: issue,
+      },
+      "*",
+    );
+  } catch {
+    // Ignore postMessage failures, local event dispatch already fired.
+  }
+
+  console.warn("[native] bridge unavailable after timeout");
+  captureSyncError(new Error(timeoutError), "native.bridge.timeout");
+}
+
+async function waitForNativeBridge(timeoutMs = 2500): Promise<boolean> {
+  if (!isNativeApp()) return false;
   const hasCorePlugins = () => Boolean(plugin("SplashScreen") || plugin("StatusBar"));
-  if (hasCorePlugins()) return;
+  if (hasCorePlugins()) return true;
 
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
     await new Promise<void>((resolve) => window.setTimeout(resolve, 50));
-    if (hasCorePlugins()) return;
+    if (hasCorePlugins()) return true;
   }
+
+  publishBridgeTimeoutIssue(timeoutMs);
+  return false;
 }
 
 /** Stable positive 31-bit int id from a uuid string (LocalNotifications needs numeric ids). */

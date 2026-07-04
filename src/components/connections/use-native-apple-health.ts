@@ -38,38 +38,53 @@ export function useNativeAppleHealth() {
   const [busy, setBusy] = useState(false);
 
   const refreshAuth = useCallback(async () => {
-    const status = await getNativeHealthAuthorizationStatus();
-    setHealthKitAuthorized(status.authorized);
-    setPermissionDenied(status.readDenied.length > 0 && !status.authorized);
-    return status.authorized;
+    try {
+      const status = await getNativeHealthAuthorizationStatus();
+      setHealthKitAuthorized(status.authorized);
+      setPermissionDenied(status.readDenied.length > 0 && !status.authorized);
+      return status.authorized;
+    } catch (e) {
+      console.warn("[native] health auth status failed", e);
+      setHealthKitAuthorized(false);
+      setPermissionDenied(false);
+      return false;
+    }
   }, []);
 
   const refresh = useCallback(async () => {
-    const { data: sess } = await supabase.auth.getSession();
-    if (!sess.session) return;
-    const uid = sess.session.user.id;
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) {
+        setLoaded(true);
+        return;
+      }
+      const uid = sess.session.user.id;
 
-    const [{ data: bio }, { data: token }] = await Promise.all([
-      supabase
-        .from("biometrics")
-        .select("recorded_at")
-        .eq("user_id", uid)
-        .eq("source", "apple_health")
-        .order("recorded_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      supabase
-        .from("apple_health_tokens")
-        .select("last_sync_at")
-        .eq("user_id", uid)
-        .maybeSingle(),
-    ]);
-    setLastData(bio?.recorded_at ?? null);
-    setLastSyncAt(token?.last_sync_at ?? null);
-    setHasSyncedData(!!bio?.recorded_at);
+      const [{ data: bio }, { data: token }] = await Promise.all([
+        supabase
+          .from("biometrics")
+          .select("recorded_at")
+          .eq("user_id", uid)
+          .eq("source", "apple_health")
+          .order("recorded_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("apple_health_tokens")
+          .select("last_sync_at")
+          .eq("user_id", uid)
+          .maybeSingle(),
+      ]);
+      setLastData(bio?.recorded_at ?? null);
+      setLastSyncAt(token?.last_sync_at ?? null);
+      setHasSyncedData(!!bio?.recorded_at);
 
-    await refreshAuth();
-    setLoaded(true);
+      await refreshAuth();
+    } catch (e) {
+      console.warn("[native] apple health refresh failed", e);
+    } finally {
+      setLoaded(true);
+    }
   }, [refreshAuth]);
 
   useEffect(() => {

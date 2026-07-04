@@ -1,4 +1,5 @@
-import { callPlugin, isNativeApp, nativePlatform } from "./capacitor";
+import { callPlugin, isNativeApp, nativePlatform, plugin } from "./capacitor";
+import { captureSyncError } from "@/lib/observability/client-errors";
 
 /**
  * iOS HealthKit bridge via the runtime `window.Capacitor.Plugins.Health`
@@ -70,13 +71,21 @@ const HEALTHKIT_AUTH_STORAGE_KEY = "purple:healthkit:authorized:v1";
 
 function getHealthKitAuthLocalFlag(): boolean {
   if (typeof localStorage === "undefined") return false;
-  return localStorage.getItem(HEALTHKIT_AUTH_STORAGE_KEY) === "1";
+  try {
+    return localStorage.getItem(HEALTHKIT_AUTH_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
 function setHealthKitAuthLocalFlag(authorized: boolean): void {
   if (typeof localStorage === "undefined") return;
-  if (authorized) localStorage.setItem(HEALTHKIT_AUTH_STORAGE_KEY, "1");
-  else localStorage.removeItem(HEALTHKIT_AUTH_STORAGE_KEY);
+  try {
+    if (authorized) localStorage.setItem(HEALTHKIT_AUTH_STORAGE_KEY, "1");
+    else localStorage.removeItem(HEALTHKIT_AUTH_STORAGE_KEY);
+  } catch {
+    // Storage can be unavailable in restricted webviews.
+  }
 }
 
 function isCoreAuthorized(status: AuthorizationStatus | undefined): boolean {
@@ -86,6 +95,10 @@ function isCoreAuthorized(status: AuthorizationStatus | undefined): boolean {
 
 function isIosNative(): boolean {
   return isNativeApp() && nativePlatform() === "ios";
+}
+
+function hasHealthPlugin(): boolean {
+  return Boolean(plugin(HEALTH_PLUGIN));
 }
 
 function dayKey(iso: string | undefined): string | null {
@@ -124,9 +137,8 @@ export async function isHealthKitAvailable(): Promise<{
   reason?: string;
 }> {
   if (!isIosNative()) return { available: false, reason: "not_ios" };
-  const result = (await callPlugin(HEALTH_PLUGIN, "isAvailable")) as
-    | AvailabilityResult
-    | undefined;
+  if (!hasHealthPlugin()) return { available: false, reason: "bridge_not_ready" };
+  const result = (await callPlugin(HEALTH_PLUGIN, "isAvailable")) as AvailabilityResult | undefined;
   if (!result?.available) {
     return { available: false, reason: result?.reason ?? "unavailable" };
   }
@@ -158,8 +170,7 @@ export async function getHealthKitAuthorizationStatus(): Promise<HealthKitAuthSt
     return { authorized: true, readAuthorized, readDenied };
   }
 
-  const authorized =
-    getHealthKitAuthLocalFlag() && readAuthorized.length > 0;
+  const authorized = getHealthKitAuthLocalFlag() && readAuthorized.length > 0;
   if (!authorized) setHealthKitAuthLocalFlag(false);
 
   return { authorized, readAuthorized, readDenied };
@@ -192,116 +203,121 @@ export async function requestHealthKitPermissions(): Promise<boolean> {
 
 /** Read and aggregate HealthKit samples into daily rows. */
 export async function readHealthKitMetrics(daysBack = 90): Promise<HealthKitDay[]> {
-  if (!isIosNative()) return [];
+  try {
+    if (!isIosNative()) return [];
 
-  const availability = await isHealthKitAvailable();
-  if (!availability.available) return [];
+    const availability = await isHealthKitAvailable();
+    if (!availability.available) return [];
 
-  const { startDate, endDate } = isoRange(daysBack);
-  const byDay = new Map<string, HealthKitDay>();
-  const hrBuckets = new Map<string, { sum: number; n: number }>();
-  const hrvBuckets = new Map<string, { sum: number; n: number }>();
-  const stepsResult = (await callPlugin(HEALTH_PLUGIN, "queryAggregated", {
-    dataType: "steps",
-    startDate,
-    endDate,
-    bucket: "day",
-    aggregation: "sum",
-  })) as { samples?: AggregatedSample[] } | undefined;
+    const { startDate, endDate } = isoRange(daysBack);
+    const byDay = new Map<string, HealthKitDay>();
+    const hrBuckets = new Map<string, { sum: number; n: number }>();
+    const hrvBuckets = new Map<string, { sum: number; n: number }>();
+    const stepsResult = (await callPlugin(HEALTH_PLUGIN, "queryAggregated", {
+      dataType: "steps",
+      startDate,
+      endDate,
+      bucket: "day",
+      aggregation: "sum",
+    })) as { samples?: AggregatedSample[] } | undefined;
 
-  for (const sample of stepsResult?.samples ?? []) {
-    const date = dayKey(sample.startDate);
-    if (!date || !Number.isFinite(sample.value)) continue;
-    const row = ensureDay(byDay, date);
-    row.steps = Math.round(sample.value!);
-  }
+    for (const sample of stepsResult?.samples ?? []) {
+      const date = dayKey(sample.startDate);
+      if (!date || !Number.isFinite(sample.value)) continue;
+      const row = ensureDay(byDay, date);
+      row.steps = Math.round(sample.value!);
+    }
 
-  const restingResult = (await callPlugin(HEALTH_PLUGIN, "queryAggregated", {
-    dataType: "restingHeartRate",
-    startDate,
-    endDate,
-    bucket: "day",
-    aggregation: "average",
-  })) as { samples?: AggregatedSample[] } | undefined;
+    const restingResult = (await callPlugin(HEALTH_PLUGIN, "queryAggregated", {
+      dataType: "restingHeartRate",
+      startDate,
+      endDate,
+      bucket: "day",
+      aggregation: "average",
+    })) as { samples?: AggregatedSample[] } | undefined;
 
-  for (const sample of restingResult?.samples ?? []) {
-    const date = dayKey(sample.startDate);
-    if (!date || !Number.isFinite(sample.value)) continue;
-    ensureDay(byDay, date).resting_hr_bpm = Math.round(sample.value!);
-  }
+    for (const sample of restingResult?.samples ?? []) {
+      const date = dayKey(sample.startDate);
+      if (!date || !Number.isFinite(sample.value)) continue;
+      ensureDay(byDay, date).resting_hr_bpm = Math.round(sample.value!);
+    }
 
-  const heartRateResult = (await callPlugin(HEALTH_PLUGIN, "readSamples", {
-    dataType: "heartRate",
-    startDate,
-    endDate,
-    limit: 5000,
-    ascending: true,
-  })) as { samples?: HealthSample[] } | undefined;
+    const heartRateResult = (await callPlugin(HEALTH_PLUGIN, "readSamples", {
+      dataType: "heartRate",
+      startDate,
+      endDate,
+      limit: 5000,
+      ascending: true,
+    })) as { samples?: HealthSample[] } | undefined;
 
-  for (const sample of heartRateResult?.samples ?? []) {
-    const date = dayKey(sample.endDate ?? sample.startDate);
-    if (!date || !Number.isFinite(sample.value)) continue;
-    hrBuckets.set(date, bumpAvg(hrBuckets.get(date), sample.value!));
-  }
+    for (const sample of heartRateResult?.samples ?? []) {
+      const date = dayKey(sample.endDate ?? sample.startDate);
+      if (!date || !Number.isFinite(sample.value)) continue;
+      hrBuckets.set(date, bumpAvg(hrBuckets.get(date), sample.value!));
+    }
 
-  const hrvResult = (await callPlugin(HEALTH_PLUGIN, "readSamples", {
-    dataType: "heartRateVariability",
-    startDate,
-    endDate,
-    limit: 5000,
-    ascending: true,
-  })) as { samples?: HealthSample[] } | undefined;
+    const hrvResult = (await callPlugin(HEALTH_PLUGIN, "readSamples", {
+      dataType: "heartRateVariability",
+      startDate,
+      endDate,
+      limit: 5000,
+      ascending: true,
+    })) as { samples?: HealthSample[] } | undefined;
 
-  for (const sample of hrvResult?.samples ?? []) {
-    const date = dayKey(sample.endDate ?? sample.startDate);
-    if (!date || !Number.isFinite(sample.value)) continue;
-    hrvBuckets.set(date, bumpAvg(hrvBuckets.get(date), sample.value!));
-  }
+    for (const sample of hrvResult?.samples ?? []) {
+      const date = dayKey(sample.endDate ?? sample.startDate);
+      if (!date || !Number.isFinite(sample.value)) continue;
+      hrvBuckets.set(date, bumpAvg(hrvBuckets.get(date), sample.value!));
+    }
 
-  const sleepResult = (await callPlugin(HEALTH_PLUGIN, "readSamples", {
-    dataType: "sleep",
-    startDate,
-    endDate,
-    limit: 5000,
-    ascending: true,
-  })) as { samples?: HealthSample[] } | undefined;
+    const sleepResult = (await callPlugin(HEALTH_PLUGIN, "readSamples", {
+      dataType: "sleep",
+      startDate,
+      endDate,
+      limit: 5000,
+      ascending: true,
+    })) as { samples?: HealthSample[] } | undefined;
 
-  for (const sample of sleepResult?.samples ?? []) {
-    const date = dayKey(sample.endDate ?? sample.startDate);
-    if (!date) continue;
-    const row = ensureDay(byDay, date);
+    for (const sample of sleepResult?.samples ?? []) {
+      const date = dayKey(sample.endDate ?? sample.startDate);
+      if (!date) continue;
+      const row = ensureDay(byDay, date);
 
-    if (Array.isArray(sample.stages) && sample.stages.length > 0) {
-      let total = 0;
-      let rem = 0;
-      let deep = 0;
-      for (const stage of sample.stages) {
-        const minutes = stage.durationMinutes ?? 0;
-        if (minutes <= 0) continue;
-        total += minutes;
-        if (stage.stage === "rem") rem += minutes;
-        if (stage.stage === "deep") deep += minutes;
+      if (Array.isArray(sample.stages) && sample.stages.length > 0) {
+        let total = 0;
+        let rem = 0;
+        let deep = 0;
+        for (const stage of sample.stages) {
+          const minutes = stage.durationMinutes ?? 0;
+          if (minutes <= 0) continue;
+          total += minutes;
+          if (stage.stage === "rem") rem += minutes;
+          if (stage.stage === "deep") deep += minutes;
+        }
+        if (total > 0) row.sleep_total_min = (row.sleep_total_min ?? 0) + Math.round(total);
+        if (rem > 0) row.sleep_rem_min = (row.sleep_rem_min ?? 0) + Math.round(rem);
+        if (deep > 0) row.sleep_deep_min = (row.sleep_deep_min ?? 0) + Math.round(deep);
+        continue;
       }
-      if (total > 0) row.sleep_total_min = (row.sleep_total_min ?? 0) + Math.round(total);
-      if (rem > 0) row.sleep_rem_min = (row.sleep_rem_min ?? 0) + Math.round(rem);
-      if (deep > 0) row.sleep_deep_min = (row.sleep_deep_min ?? 0) + Math.round(deep);
-      continue;
+
+      if (Number.isFinite(sample.value) && sample.value! > 0) {
+        row.sleep_total_min = (row.sleep_total_min ?? 0) + Math.round(sample.value!);
+      }
     }
 
-    if (Number.isFinite(sample.value) && sample.value! > 0) {
-      row.sleep_total_min = (row.sleep_total_min ?? 0) + Math.round(sample.value!);
+    for (const [date, acc] of hrBuckets) {
+      if (acc.n === 0) continue;
+      ensureDay(byDay, date).hr_bpm = Math.round(acc.sum / acc.n);
     }
-  }
 
-  for (const [date, acc] of hrBuckets) {
-    if (acc.n === 0) continue;
-    ensureDay(byDay, date).hr_bpm = Math.round(acc.sum / acc.n);
-  }
+    for (const [date, acc] of hrvBuckets) {
+      if (acc.n === 0) continue;
+      ensureDay(byDay, date).hrv_rmssd_ms = Math.round((acc.sum / acc.n) * 10) / 10;
+    }
 
-  for (const [date, acc] of hrvBuckets) {
-    if (acc.n === 0) continue;
-    ensureDay(byDay, date).hrv_rmssd_ms = Math.round((acc.sum / acc.n) * 10) / 10;
+    return Array.from(byDay.values()).sort((a, b) => a.date.localeCompare(b.date));
+  } catch (err) {
+    captureSyncError(err, "native.healthkit.read");
+    return [];
   }
-
-  return Array.from(byDay.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
