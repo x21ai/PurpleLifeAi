@@ -1,0 +1,52 @@
+---
+description: On Lovable merge, update design tokens and port Flutter screens from web design source.
+alwaysApply: true
+---
+
+# Flutter + Lovable sync
+
+Purple ships Flutter from `flutter/`. Lovable owns web **design** on
+`lovable/redesign`. Cursor owns Flutter implementation, `design/tokens.json`,
+and web production gates.
+
+Full runbook: `docs/LOVABLE-FLUTTER-SYNC.md`. Durable decision:
+`mem/flutter-lovable-workflow.md`.
+
+## When Lovable may have pushed
+
+Trigger: user says Lovable updated, or `lovable/redesign` merged to `main`.
+
+1. **Web gates first** (same as lovable-redesign-workflow): `check:em-dash`,
+   `check:live-data`, `check:unique-images`, `check:lovable-auth`, `tsc`,
+   `build:prod`, `check:entry-budget`. Verify migrations against live DB if
+   schema changed.
+2. **Update tokens:** patch `design/tokens.json` from changed web theme
+   (`src/styles.css`, Tailwind semantic colors, spacing). Reference
+   `mem/design/liquid-glass-tokens.md` for glass values.
+3. **Port Flutter screens** for each changed app route under `src/routes/_app/`.
+   Use `flutter/lib/design/` widgets. Match layout intent (capped column,
+   sheet width), not DOM copy-paste.
+4. **Sync i18n** when `src/i18n/locales/en.json` changes (Flutter ARB under
+   `flutter/lib/l10n/`).
+5. **Verify:** `cd flutter && flutter analyze && flutter test`.
+6. **Document:** `CURSOR_HANDOFF.md`, and `mem/flutter-lovable-workflow.md` if
+   policy changed.
+
+## Hard rules
+
+- Lovable must not edit `flutter/`, `design/tokens.json`, or `types.ts`.
+- No fake health metrics in Flutter UI (same as `check-no-fake-vitals.mjs`).
+- Offline-first for signed-in Flutter routes: cache reads, queue writes.
+- No em dashes in user-facing strings.
+- No secrets in repo; Supabase keys from Doppler locally only.
+- Do not deploy Flutter store builds without owner approval (same as web).
+
+## Ownership split
+
+| Lovable | Cursor |
+|---------|--------|
+| Web UI on `lovable/redesign` | `flutter/` Dart, tokens, migrations, Worker |
+| Marketing layout iteration | GoRouter, Supabase client, offline sync |
+| Preview-only `lovable.auth` | Real OAuth, RLS, native HealthKit/Connect |
+
+Pure web UI fixes: paste-ready Lovable prompt. Backend or Flutter: fix in Cursor.

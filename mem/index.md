@@ -15,3 +15,4 @@ Metric labels always show the canonical human name from `src/lib/metric-naming.t
 - [Native app experience](native-app-experience.md) - NativeAppShell, route guards, offline gate; not the marketing website in a WebView.
 - [Native iOS: Xcode vs CLT](native-ios-xcode-vs-clt.md) - CLT cannot build Capacitor iOS; full Xcode.app, license, and xcode-select required.
 - [Sync and release workflow](../docs/SYNC-AND-RELEASE.md) - How Lovable, Cursor, and production stay in step: branch flow, gates, case studies, runbooks.
+- [Flutter + Lovable workflow](flutter-lovable-workflow.md) - Lovable design on `lovable/redesign`, Cursor Flutter under `flutter/`, `design/tokens.json` bridge, offline-first, phase rollout 0-5.

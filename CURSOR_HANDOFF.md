@@ -1,6 +1,6 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-04 (session: 5-issue bugfix ship, Worker `af1200ed`, TestFlight upload blocked).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-04 (machine switch: Flutter Phase 0-1 saved to GitHub on lovable/redesign).
 
 Positioning: PurpleLife is an AI health journal for any health management (epilepsy was the founding focus; the condition catalog is general).
 
@@ -8,19 +8,90 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 
 **Mandatory after every task:** sync documentation per `.cursor/rules/post-task-documentation.mdc` (handoff, `docs/`, rules, `AGENTS.md`, `mem/`). Never leave important context only in chat.
 
+## Machine switch handoff (2026-07-04)
+
+**Purpose:** User changing computers. All in-progress Flutter work is committed and pushed on `lovable/redesign` (commit hash recorded in git log after push).
+
+### Done (Phase 0-1, not full site parity)
+
+- **`flutter/`** multi-platform scaffold (`org.purplelife.app`), `design/tokens.json` bridge, Drift offline core, Supabase auth client, Worker API client, GoRouter shell (auth gate, glass nav, offline banner).
+- **Screens (signed-in app only):** sign-in, Today, Vitals, Journal (+ capture), Meds, Settings hub, Account, Tools (partial), Care dashboard, Chat route stubs.
+- **Health:** Apple Health panel + native sync hooks (`health` package wiring); not full wearable OAuth in Flutter yet.
+- **Web MVP:** release build + `./scripts/flutter-web-serve.sh` on port **8765** (IPv6 `::` bind).
+- **Docs/rules:** `docs/LOVABLE-FLUTTER-SYNC.md`, `mem/flutter-lovable-workflow.md`, `.cursor/rules/flutter-lovable-sync.mdc`.
+
+### Not done (explicit)
+
+- **Marketing site** (`/`, pricing, about, features, community, contact, trust): still **TanStack React** on `https://www.purplelife.org` only.
+- **Full Lovable design parity** in Flutter (heroes, charts, Oura-style imagery, marketing layout).
+- **Data on Flutter web:** screenshots showing **"Could not load today" / meds / vitals** likely **auth session, Supabase init, or missing `--dart-define=SUPABASE_ANON_KEY`** at build/run time (key must come from Doppler, never committed).
+- **UI polish:** bottom nav icon clipping reported; not fixed in this save.
+- **Chat / AI:** routes stubbed only; no streaming Worker AI UI.
+- **Reports, admin, sharing/travel settings:** stubs or absent.
+- **Flutter TestFlight / Play:** not shipped; owner approval required.
+
+### Product split (do not confuse)
+
+| Surface | Stack | Scope |
+|---------|-------|--------|
+| Public marketing + current prod app | Lovable design on web, Worker deploy | Full website |
+| **Flutter** | Cursor-owned `flutter/` | **Signed-in health journal app only** (Phase 0-1) |
+| Interim native store | **Capacitor** iOS shell loading prod web | TestFlight **1.0 (4)** separate track |
+
+Lovable remains **design source** on `lovable/redesign`; Cursor ports tokens and screens after merges.
+
+### New machine (exact commands)
+
+```bash
+git clone https://github.com/AstroAii/purpledrw.git
+cd purpledrw
+git checkout lovable/redesign
+# Doppler: cursor-cloudflare / prd_cloudlfare (VITE_SUPABASE_PUBLISHABLE_KEY, etc.)
+
+cd flutter
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+
+# From repo root: rebuild web with Supabase anon key baked via dart-define, then serve
+./scripts/flutter-web-serve.sh --rebuild
+# Open http://localhost:8765 or http://127.0.0.1:8765 (not file://)
+```
+
+Manual build equivalent:
+
+```bash
+doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+  bash -c 'cd flutter && flutter build web --release --base-href=/ \
+  --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY"'
+```
+
+Optional defines: `SUPABASE_URL` (default `https://auth.purplelife.org`), `SITE_URL`, `WORKER_API_BASE_URL`.
+
+**Verify:** `cd flutter && flutter analyze lib/ && flutter test`
+
+### Debugging "Could not load" on Flutter web
+
+1. Confirm release build used Doppler `VITE_SUPABASE_PUBLISHABLE_KEY` as `SUPABASE_ANON_KEY`.
+2. Sign in again (session / refresh token in secure storage on web can fail across rebuilds).
+3. Check browser devtools network to `auth.purplelife.org` and Worker API calls (401 vs CORS vs empty RLS).
+4. Offline banner: app may show cache miss before first successful sync.
+
+
+
 ## Orientation
 
 - Product and architecture: `docs/ARCHITECTURE.md`
 - Feature inventory and route map: `docs/FEATURES.md`
 - Sync and release runbook: `docs/SYNC-AND-RELEASE.md`
 - Lovable redesign gatekeeper: `docs/LOVABLE-REDESIGN-WORKFLOW.md` (baseline `7086ffa`)
+- Lovable design → Flutter sync: `docs/LOVABLE-FLUTTER-SYNC.md`, `mem/flutter-lovable-workflow.md`, `flutter/README.md`
 - Lovable preview env parity: `docs/LOVABLE-ENV-PARITY.md`
 - Lovable exit + Cloudflare cutover plan: `docs/LOVABLE-MIGRATION.md`
 - Supabase manual deploy procedure: `docs/manual-deploy-bundle.md`
 - OAuth provider setup: `docs/oauth-provider-setup.md`
 - Native iOS/Android (Capacitor): `docs/native-app-setup.md` (HealthKit checklist, sync model)
 - Durable decisions: `mem/index.md` (no em dashes, footer visibility, metric naming, native HealthKit, post-task documentation)
-- Editor rules: `.cursor/rules/` (conventions, server functions, Cloudflare constraints, lovable-redesign-workflow, **post-task-documentation**)
+- Editor rules: `.cursor/rules/` (conventions, server functions, Cloudflare constraints, lovable-redesign-workflow, **flutter-lovable-sync**, **post-task-documentation**)
 
 ## Quick facts
 
@@ -33,14 +104,124 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 | Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
 | Git heads | `lovable/redesign` at **`258f726`** (5-issue bugfix ship) |
 | Production deploy | Worker `purplelife`, version **`af1200ed-ac7f-4182-9021-d455a276fbce`** (2026-07-04, native layout + sync time + caregiver toolbar + crash shell) |
-| TestFlight | Build **1.0 (4)** in Xcode project; **upload blocked** this session (export `ditto` Desktop path on first attempt; retries hit OOM/SIGKILL + SPM cache corruption). USB Release **1.0 (4)** verified on iPhone Air iOS 27. Retry: `ARCHIVE_PATH=/tmp/Purple.xcarchive EXPORT_DIR=/tmp/Purple-export doppler run --project purple-life --config prd -- bun run ios:testflight` after clearing DerivedData if needed. |
+| TestFlight | Build **1.0 (4)** (`CURRENT_PROJECT_VERSION=4`, bundle `org.purplelife.app`, ASC app `6787298041`). **Upload succeeded** 2026-07-04 via `bun run ios:testflight` (export + App Store Connect upload 100%). ASC processing typically 5–15 min before installable. If archive fails: clear `~/Library/Caches/org.swift.swiftpm`, `~/Library/Developer/Xcode/DerivedData/App-*`, pre-resolve SPM, set `IDEBuildOperationMaxNumberOfConcurrentCompileTasks=1` on 8 GB RAM hosts. |
 | Dev server | `bun run dev` on port 8080 |
+| Flutter web (local) | **`http://localhost:8765`** or **`http://127.0.0.1:8765`** (address bar only, not `file://`). Start: `./scripts/flutter-web-serve.sh` (binds `::` for IPv6 localhost). `--rebuild` adds `--base-href=/`. Alt: `./scripts/flutter-web-serve.sh --dev` |
 | E2E local | `bun run test:e2e` (boots dev server unless `E2E_BASE_URL` set) |
 | E2E prod | `bun run test:e2e:prod` (580 tests, 5 viewports, ~1.5h; Doppler creds) |
 | Lint/format | `bun run lint`, `bun run format` |
 | Quality gates | `check:em-dash`, `check:live-data` (incl. `check-no-fake-vitals.mjs`), `check:lovable-auth`, `check:unique-images`, `check:supabase-types`, `check:entry-budget` |
 | DB live-data scan | `doppler run --project cursor-cloudflare --config prd_cloudlfare -- bun run check:live-data:db` |
 | Seeds | `bun run seed:research` (needs `OPENAI_API_KEY` + service role) |
+| Flutter Phase 0 | **`flutter/` integrated** (2026-07-04): scaffold, design tokens, offline core (Drift), shell/router, feature stubs. Runbook: `docs/LOVABLE-FLUTTER-SYNC.md`, `flutter/README.md` |
+| Flutter Phase 1 | **Complete** (2026-07-04 Agent F): merged Agents A/B/C routes, auth → Today flow, offline banner in shell, loading skeletons on async screens, `/chat` + `/chat-care` stubs. `flutter analyze lib/` zero issues; `flutter test` 3/3 pass |
+| Flutter scope | **Signed-in app only** (Phase 0/1). Not the full website. See [Flutter scope vs full website](#flutter-scope-vs-full-website-honest) below. |
+
+## Flutter scope vs full website (honest)
+
+**What Flutter is today:** a signed-in health journal app shell, not a port of the entire Purple website.
+
+| In Flutter (Phase 0/1) | Not in Flutter yet |
+|------------------------|-------------------|
+| Sign-in, Today, Vitals, Journal, Meds | Marketing pages (`/`, `/pricing`, `/about`, `/features`, `/community`, `/contact`, `/trust`) |
+| Settings hub, Account, Tools, Care dashboard | Admin console, reports PDF export |
+| Chat route stubs (`/chat`, `/chat-care`) | Streaming AI chat UI |
+| Offline banner, loading skeletons, Drift cache | Full Oura/Whoop OAuth flows (Tools panel is partial stub) |
+| Design tokens + liquid glass widgets | Marketing hero photos, metric chart visuals, Oura-style imagery |
+
+**Production website today:** TanStack Start on Cloudflare Worker at `https://www.purplelife.org` (marketing + signed-in app). **Flutter web local preview** at `http://localhost:8765` is the native client only; it does not serve marketing routes.
+
+**Why images look missing in Flutter:** React uses optimized JPEG heroes and moment photos from `src/assets/*.jpg` (via vite imagetools in `src/lib/calm-images/` and `src/components/today/hero-score-card.tsx`). Those assets are **not ported** to Flutter yet. Flutter currently has design tokens (`flutter/assets/design/tokens.json`) and a logo placeholder (`flutter/assets/branding/purple_logo.png`, copied from `public/icon-512.png`).
+
+**Design source:** Lovable on `lovable/redesign` remains the visual source of truth. Cursor ports screens and assets into Flutter screen by screen after each merge. Full asset plan: `docs/LOVABLE-FLUTTER-SYNC.md` section "Missing assets plan".
+
+**Phase 2 roadmap (next):** deepen Today/Vitals/my-health Supabase parity; pull-to-refresh sync; port chart widgets and key imagery into `flutter/assets/`; decide whether marketing stays React-only or gets a Flutter Web slice; wire logo and heroes into sign-in and Today when screens are touched.
+
+## Recent changes (2026-07-04, Flutter scope documentation)
+
+- Documented honest Flutter scope (signed-in app only, not full website) in this handoff and `docs/LOVABLE-FLUTTER-SYNC.md`.
+- Added missing assets inventory and Phase 2 port plan (marketing heroes, metric charts, branding).
+- Placeholder logo at `flutter/assets/branding/purple_logo.png` (from `public/icon-512.png`; wire in `pubspec.yaml` when sign-in/top bar needs it).
+
+## Recent changes (2026-07-04, Flutter Phase 1 Agent D web build)
+
+- **`flutter build web --release`** succeeded (CanvasKit via default web renderer; wasm dry-run warns on `flutter_secure_storage_web` only).
+- **`flutter/web/index.html`**: document title **Purple**, favicon `favicon.png`, meta description updated.
+- **Compile fix:** removed duplicate `AccountScreen` / `ToolsScreen` placeholders from `lib/features/settings/settings_placeholder_screen.dart` (real screens live under `features/account/` and `features/tools/`).
+- **Local preview:** **`http://localhost:8765`** serves `flutter/build/web` (`./scripts/flutter-web-serve.sh` from repo root; `--rebuild` runs Doppler release build with `--base-href=/`).
+- **Fix (2026-07-04):** prior serve used `--bind 127.0.0.1` only; macOS `localhost` often hits IPv6 `::1` first (connection refused). Script now binds **`::`** so both URLs return HTTP 200. Blank screen after load: hard-refresh or clear site data (stale `flutter_service_worker.js`). WASM web build not default; CanvasKit loads from `/canvaskit/` (same origin, no CORS).
+
+**Build commands:**
+
+```bash
+cd flutter
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+  flutter build web --release --base-href="/" \
+  --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY"
+cd build/web && python3 -m http.server 8765 --bind ::
+```
+
+## Flutter Phase 0 (complete)
+
+Multi-platform client under `flutter/` (iOS, Android, web, macOS, Windows). Phase 0 agents merged and integrated:
+
+| Layer | Path | Status |
+|-------|------|--------|
+| Scaffold | `flutter/` project, `org.purplelife.app` | Done |
+| Design | `design/tokens.json`, `lib/design/` | Done |
+| Offline core | `lib/core/` Drift + auth + sync | Done |
+| Shell | `lib/shell/` GoRouter, nav, auth gate | Done |
+| Features | `lib/features/` today, vitals, sign-in stubs | Done |
+
+**Run locally** (publishable key from Doppler, never commit):
+
+```bash
+cd flutter
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+  flutter run --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY"
+```
+
+Optional defines: `SUPABASE_URL` (default `https://auth.purplelife.org`), `SITE_URL`, `WORKER_API_BASE_URL`.
+
+**Verify:** `cd flutter && flutter analyze lib/ && flutter test`
+
+
+**Flutter web (local preview):** open **`http://localhost:8765`** or **`http://127.0.0.1:8765`** in the address bar only. Do not use `file://` or paste repo paths.
+
+```bash
+# from repo root (foreground; Ctrl+C to stop)
+./scripts/flutter-web-serve.sh
+
+# rebuild release web then serve
+./scripts/flutter-web-serve.sh --rebuild
+
+# dev server (flutter run web-server, hot reload)
+./scripts/flutter-web-serve.sh --dev
+```
+
+Verify: `curl -s -o /dev/null -w '%{http_code}' http://localhost:8765/` should print `200` (IPv4 and IPv6).
+
+If `flutter/build/web` is missing, the script runs `doppler run ... flutter build web --release --base-href=/` with `SUPABASE_ANON_KEY` from `VITE_SUPABASE_PUBLISHABLE_KEY`.
+
+
+**Integration fixes (2026-07-04):** unified `main.dart`/`app.dart` (`MaterialApp.router` + `PurpleTheme` + core provider bootstrap); renamed app auth state to `AppAuthState` (avoids Supabase `AuthState` collision); added `PurpleColors`/`ShellContentColumn` shell helpers; aligned shell glass widgets with design `GlassSurface` API; fixed `supabaseClientProvider` init order; router `initialLocation` `/sign-in`; removed duplicate `services/connectivity_service.dart` and agent placeholder markdown files; Drift `build_runner` codegen wired.
+
+**Phase 1 integration (2026-07-04, Agent F):** merged Agents A/B/C router routes; added `ChatScreen`/`ChatCareScreen` stubs at `/chat` and `/chat-care`; `OfflineBanner` on all shell routes; loading skeletons on Today, Vitals, Journal, Meds, Care; lint cleanup (`flutter analyze lib/` zero issues); `flutter test` 3/3 pass.
+
+**Open (Phase 2+):** my-health route, marketing imagery/charts in asset bundle, streaming chat UI, caregiver sharing flows, i18n ARB sync, native HealthKit/Connect OAuth, full wearable OAuth, store builds (owner approval required). Marketing pages stay on React unless Phase 5 chooses Flutter Web for public routes.
+
+## Flutter Phase 1 screen map
+
+| Route | Status |
+|-------|--------|
+| `/sign-in`, `/today`, `/vitals`, `/journal`, `/journal/new`, `/meds` | Functional |
+| `/settings`, `/account`, `/tools`, `/care/:ownerId` | Functional (partial stubs inside) |
+| `/settings/sharing`, `/settings/travel`, `/settings/reports`, `/settings/contact` | Stub |
+| `/chat`, `/chat-care` | Stub (routes wired) |
 
 ## Current hosting state
 
@@ -88,6 +269,38 @@ Subagent transcripts under `agent-transcripts/0b183bba-c600-4c86-8d1a-9e91eafaf7
 **iOS device:** `bun run ios:device-build` succeeded on **aa's iPhone Air** (`A3AE3F17-7880-5C6E-A421-95229F9ECD48`). Fixed `scripts/native-ios-device-build.sh` UUID parsing (device names with spaces broke `awk $3`).
 
 **User action after deploy:** Force-quit Purple on iPhone, reopen so the WebView loads `ede63b48` assets from `https://www.purplelife.org`. Then test **Settings → Connect Apple Health** (partial HealthKit grants should now connect).
+
+## Phase 0 Flutter foundation (2026-07-04, parallel agents)
+
+Six agents scaffold the Flutter multi-platform client while Lovable stays the web design source on `lovable/redesign`.
+
+| Agent | Task | Status | Key outputs |
+|-------|------|--------|-------------|
+| 1/6 | Flutter project scaffold | In progress | `flutter/` app, `pubspec.yaml`, platform folders |
+| 2/6 | `design/tokens.json` bridge | **COMPLETE** | `design/tokens.json`, `flutter/lib/design/*`, `design/README.md` |
+| 3/6 | Supabase client + env | In progress | `flutter/lib/core/supabase/`, Doppler-local env pattern |
+| 4/6 | Design system widgets | In progress | `flutter/lib/design_system/` consuming tokens |
+| 5/6 | CI analyze/test | In progress | Workflow or script for `flutter analyze` / `flutter test` |
+| 6/6 | Documentation + runbook | **COMPLETE** | `docs/LOVABLE-FLUTTER-SYNC.md`, `mem/flutter-lovable-workflow.md`, `flutter/README.md`, `.cursor/rules/flutter-lovable-sync.mdc`, `AGENTS.md`, handoff |
+
+**Phase 0 status:** **COMPLETE** (integration pass 2026-07-04). All six agent outputs merged; `flutter analyze lib/` zero errors; `flutter test` passes. Phase 1: auth + live data wiring per `docs/LOVABLE-FLUTTER-SYNC.md`.
+
+## Recent changes (2026-07-04, Phase 0 Flutter integration pass)
+
+- **Flutter web local:** URL `http://localhost:8765` (browser only); `scripts/flutter-web-serve.sh` serves `flutter/build/web` on port 8765.
+- **Integration:** Unified `app.dart` (`MaterialApp.router`, `PurpleTheme.dark()`, `routerProvider`, auth + connectivity bootstrap). Fixed auth layering (`AppAuthState` vs Supabase `AuthState`), `supabaseClientProvider` init order, shell/design API mismatches (`PurpleColors`, `ShellContentColumn`, token-based `GlassSurface`). Drift codegen via `build_runner`. Removed duplicate `services/connectivity_service.dart` and agent placeholder markdown. Router starts at `/sign-in`. Sign-in wrapped in `Scaffold` for Material ancestor.
+
+## Recent changes (2026-07-04, Phase 0 Flutter scaffold Agent 1/6)
+
+- **`flutter/` project scaffold:** `flutter create` with `--org org.purplelife --project-name purple_app`; platforms enabled (iOS, Android, web, macOS, Windows). Entry: `lib/main.dart` + `lib/app.dart`; `core/config/app_config.dart` (dart-define, default `https://auth.purplelife.org`); `core/constants/app_constants.dart`. Bundle ID `org.purplelife.app` on iOS/Android. Strict `analysis_options.yaml`. See `flutter/README.md`.
+
+## Recent changes (2026-07-04, Phase 0 design tokens)
+
+- **Agent 2/6 design tokens:** Added `design/tokens.json` (colors, glass, layout, spacing, radius, touch, typography) extracted from `src/styles.css`. Flutter layer: `flutter/lib/design/tokens.dart`, `purple_theme.dart`, `glass_surface.dart`, `glass_card.dart`, `glass_nav_bar.dart`; asset copy at `flutter/assets/design/tokens.json`. Flow documented in `design/README.md`.
+
+## Recent changes (2026-07-04, TestFlight upload 1.0 build 4)
+
+- **TestFlight upload:** Ran full gate sequence (`check:em-dash`, `check:native-shell`, `native:sync`, `ios:local-signing`, `ios:check-asc`, `ios:testflight`). First attempts failed (DerivedData disk I/O, corrupt SwiftPM Luciq artifact cache, `Package.swift` modified during resolve, SIGKILL on 8 GB RAM). Recovery: wipe `org.swift.swiftpm` + App DerivedData, pre-resolve packages, retry with `IDEBuildOperationMaxNumberOfConcurrentCompileTasks=1`. Final run: **ARCHIVE + EXPORT SUCCEEDED**, `Upload succeeded`, package processing on ASC. No build bump (still **1.0 (4)**). Optional `ios:device-build` skipped (no USB iPhone detected).
 
 ## Recent changes (2026-07-04, 5-issue bugfix ship)
 
