@@ -1,6 +1,6 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-03 (native shell verify + deploy).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-03 (TestFlight prep commit, ASC keys still missing).
 
 Positioning: PurpleLife is an AI health journal for any health management (epilepsy was the founding focus; the condition catalog is general).
 
@@ -31,8 +31,9 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 | Runtime | Cloudflare Worker (`wrangler.deploy.jsonc`, entry `src/server.ts`, `nodejs_compat`) |
 | Package manager | bun (commands below) |
 | Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
-| Git heads | `main` and `lovable/redesign` at `311d466` (local and origin aligned) |
-| Production deploy | Worker `purplelife`, version `9b7f3199` (2026-07-03 23:53 UTC; uncommitted native shell work at `311d466`) |
+| Git heads | `lovable/redesign` at `31f9176` (native shell + TestFlight scripts committed); `main` at `311d466` |
+| Production deploy | Worker `purplelife`, version `9b7f3199` (2026-07-03 23:53 UTC) |
+| TestFlight | **Blocked:** Doppler `purple-life/prd` missing `APP_STORE_CONNECT_*`. Verify: `bun run ios:check-asc`. Upload: `bun run ios:testflight` after keys set. Runbook: `docs/testflight-setup.md` |
 | Dev server | `bun run dev` on port 8080 |
 | E2E local | `bun run test:e2e` (boots dev server unless `E2E_BASE_URL` set) |
 | E2E prod | `bun run test:e2e:prod` (580 tests, 5 viewports, ~1.5h; Doppler creds) |
@@ -130,8 +131,8 @@ entitlements, permissions, icons, `capacitor.config.ts` shell changes). See
 
 ## Recent changes (2026-07-02 to 2026-07-03)
 
-1. **Native shell ship (2026-07-03, deploy `9b7f3199`):** Resumed stalled verify+deploy agent; all 8 native tasks verified complete in uncommitted working tree (no code gaps found): Oura/Whoop native OAuth (`wearable-oauth.ts`, `initNativeWearableOAuthDeepLink()` in `initNativeApp()`, oura/whoop connections); `NativeNotificationsPanel` on Tools with web `PhoneAlarmsSection` + med reminder banners gated; legal routes `/settings/privacy` + `/settings/terms`, route guard blocks marketing paths, Tools legal links native-aware; viewport fixes on chat-care/journal.new/chat; `NativeConnectivityGate` (`navigator.onLine` + GET `/`); shell architecture (`NativeAppShell`, `AppShellRouter`, `shell-routes.ts`, `shell-context.tsx`, `AppPage`, settings/today migrated). Gates: `check:em-dash`, `tsc --noEmit`, `build:prod`. Deploy: `wrangler deploy -c wrangler.deploy.jsonc` via Doppler. Prod smoke: `curl /today` HTTP 200. **Still uncommitted** at git `311d466`.
-1. **Ops sync (2026-07-03):** Site health check: prod `/`, `/today`, `/tools` HTTP 200; local dev on 8080 OK. `lovable/redesign` fast-forwarded to `main` (`311d466`) and pushed; no redeploy needed.
+1. **TestFlight prep commit (2026-07-03, `31f9176` on `lovable/redesign`):** Committed native shell, TestFlight scripts, `scripts/check-asc-doppler.sh`, `bun run ios:check-asc`. ASC API secrets still missing in Doppler; `ios:testflight` fails fast until owner adds keys (see `docs/testflight-setup.md` Step A/B).
+1. **Native shell ship (2026-07-03, deploy `9b7f3199`):** All 8 native tasks verified complete: Oura/Whoop native OAuth, `NativeNotificationsPanel`, legal routes, viewport fixes, connectivity gate, shell architecture. Gates passed; prod `/today` HTTP 200.
 1. **Native Apple Health UX v2 (2026-07-03, pending deploy):** Larger centered Health Access panel on Tools/Settings native iOS; full-width Connect + **Open Health Settings** link (`app-settings:` via Capacitor App); inline permission-denied message (no toast-only); stricter HealthKit auth (clears stale localStorage when denied). Files: `native-apple-health-panel.tsx`, `use-native-apple-health.ts`, `health-ios.ts` (`openHealthKitSettings`).
 1. **TestFlight pipeline (2026-07-03, blocked on API key):** `scripts/native-ios-testflight.sh`, `scripts/asc-ensure-app.mjs`, `ios/ExportOptions.plist`, `bun run ios:testflight`. Release archive succeeds locally; export blocked until App Store Connect app record exists. Needs Doppler `APP_STORE_CONNECT_*` secrets. Runbook: `docs/testflight-setup.md`.
 1. **Native app experience (2026-07-03, pending deploy):** `NativeAppShell` + `AppShellRouter`; `NativeRouteGuard`; `NativeConnectivityGate`; `NativeAppBootstrap` (cold start off marketing `/`); welcome/journal hide tab chrome; OAuth cold-start via `initNativeOAuthDeepLink()`; OAuth account deletion without password; camera/mic plist + `PrivacyInfo.xcprivacy`; push registration disabled until APNs; native med reschedule. Docs: `mem/native-app-experience.md`, `docs/native-app-store-review.md`.

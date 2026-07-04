@@ -89,15 +89,15 @@ sips -z 1024 1024 public/icon-512.png --out ios/App/App/Assets.xcassets/AppIcon.
 # Android: re-run the mipmap resize loop in docs/testflight-setup.md or cap sync tooling
 ```
 
-## TestFlight testers
+## TestFlight testers (after first upload processes)
 
-After the first build processes:
+After the agent uploads a build (or you upload manually), wait **5–15 minutes**, then in App Store Connect:
 
-1. App Store Connect → **My Apps** → **Purple** → **TestFlight**
-2. **Internal testing**: up to 100 users on your App Store Connect team (no review)
-3. **External testing**: add a group, submit for Beta App Review (first build only)
+1. **My Apps** → **Purple** → **TestFlight**
+2. **Internal testing:** add up to 100 team members (no Beta App Review)
+3. **External testing:** create a group, submit for Beta App Review (first external build only), share public link or email invites
 
-Share the public TestFlight link from the external group, or invite by email.
+The agent cannot add testers in App Store Connect UI; that step stays with the account holder.
 
 ## Version and build numbers
 
