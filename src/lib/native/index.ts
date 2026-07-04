@@ -5,6 +5,14 @@ import { initNativeOAuthDeepLink } from "./oauth";
 import { initNativeWearableOAuthDeepLink } from "./wearable-oauth";
 
 export { isNativeApp, nativePlatform } from "./capacitor";
+export {
+  clearLastNativeLaunchIssue,
+  getLastNativeLaunchIssue,
+  isNativeDiagnosticsEnabled,
+  onNativeDiagFlagChange,
+  onNativeLaunchIssueChange,
+  type NativeLaunchIssue,
+} from "./capacitor";
 export { isNativeIos, useNativeIos } from "./use-native-ios";
 export { useNativeApp } from "./use-native-app";
 export { NativeShellProvider, useRouteShellConfig, useShell } from "./shell-context";
@@ -25,6 +33,7 @@ export {
 
 let initialized = false;
 let launchChromeHidden = false;
+let initInFlight: Promise<void> | null = null;
 
 /** Hide Capacitor launch splash and style status bar as soon as the bridge is ready. */
 export async function hideNativeLaunchChrome(): Promise<void> {
@@ -51,20 +60,31 @@ export async function hideNativeLaunchChrome(): Promise<void> {
  */
 export async function initNativeApp(): Promise<void> {
   if (!isNativeApp() || initialized) return;
-  initialized = true;
+  if (initInFlight) return initInFlight;
 
-  try {
-    await hideNativeLaunchChrome();
+  initInFlight = (async () => {
+    await waitForNativeBridge();
+    if (!isNativeApp() || initialized) return;
+    initialized = true;
 
-    initNativeOAuthDeepLink();
-    initNativeWearableOAuthDeepLink();
-    // Remote push ships when APNs is configured (see docs/native-app-store-review.md).
-    // await setupPushNotifications();
-    await scheduleNativeMedReminders();
-    setupAndroidBackButton();
-  } catch (err) {
-    console.warn("[native] initNativeApp failed", err);
-  }
+    try {
+      await hideNativeLaunchChrome();
+
+      initNativeOAuthDeepLink();
+      initNativeWearableOAuthDeepLink();
+      // Remote push ships when APNs is configured (see docs/native-app-store-review.md).
+      // await setupPushNotifications();
+      await scheduleNativeMedReminders();
+      setupAndroidBackButton();
+    } catch (err) {
+      console.warn("[native] initNativeApp failed", err);
+      initialized = false;
+    } finally {
+      initInFlight = null;
+    }
+  })();
+
+  return initInFlight;
 }
 
 /** Re-schedule native local dose reminders after med edits (no-op on web). */
@@ -166,6 +186,18 @@ function setupAndroidBackButton(): void {
       void callPlugin("App", "exitApp");
     }
   });
+}
+
+async function waitForNativeBridge(timeoutMs = 2500): Promise<void> {
+  if (!isNativeApp()) return;
+  const hasCorePlugins = () => Boolean(plugin("SplashScreen") || plugin("StatusBar"));
+  if (hasCorePlugins()) return;
+
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 50));
+    if (hasCorePlugins()) return;
+  }
 }
 
 /** Stable positive 31-bit int id from a uuid string (LocalNotifications needs numeric ids). */

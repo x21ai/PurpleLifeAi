@@ -35,6 +35,12 @@ const config: CapacitorConfig = {
     hostname: "www.purplelife.org",
     androidScheme: "https",
     iosScheme: "https",
+    // Allow first-party auth/domain hops inside the WebView.
+    allowNavigation: [
+      "www.purplelife.org",
+      "purplelife.org",
+      "auth.purplelife.org",
+    ],
   },
   ios: {
     // Let web content draw under the status bar; safe-area insets in CSS

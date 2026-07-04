@@ -34,14 +34,158 @@
         font-size: 0.875rem;
         opacity: 0.72;
       }
+      .overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: grid;
+        place-items: center;
+        background: rgba(10, 7, 16, 0.94);
+        padding: 20px;
+      }
+      .card {
+        width: min(640px, 100%);
+        border: 1px solid rgba(250, 250, 252, 0.14);
+        border-radius: 16px;
+        background: rgba(24, 20, 31, 0.95);
+        box-shadow: 0 24px 40px rgba(0, 0, 0, 0.34);
+        padding: 18px 16px;
+      }
+      .card h1 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      .card p {
+        margin: 10px 0 0;
+        font-size: 0.9rem;
+        color: rgba(250, 250, 252, 0.9);
+      }
+      .meta {
+        margin-top: 12px;
+        font-size: 0.78rem;
+        line-height: 1.35;
+        opacity: 0.84;
+      }
+      .meta code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        color: #fff;
+        word-break: break-word;
+      }
+      .actions {
+        margin-top: 16px;
+        display: flex;
+        gap: 10px;
+      }
+      .retry {
+        border: 0;
+        border-radius: 10px;
+        background: #8e6bff;
+        color: #fff;
+        font-weight: 600;
+        font-size: 0.9rem;
+        min-height: 40px;
+        padding: 0 14px;
+      }
+      .overlay[hidden] {
+        display: none;
+      }
     </style>
   </head>
   <body>
     <div class="wrap">
       <div>
         <div class="title">Purple</div>
-        <div class="sub">Loading your health journal…</div>
+        <div class="sub" id="loading-sub">Loading your health journal...</div>
       </div>
     </div>
+    <div class="overlay" id="launch-overlay" hidden>
+      <div class="card">
+        <h1>Unable to load the live app</h1>
+        <p id="launch-message">
+          Purple could not open the remote app URL in this shell.
+        </p>
+        <div class="meta">
+          <div>URL: <code id="launch-url"></code></div>
+          <div>Error: <code id="launch-error"></code></div>
+          <div>Build: <code id="launch-build"></code></div>
+        </div>
+        <div class="actions">
+          <button class="retry" id="retry-btn" type="button">Retry</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      (() => {
+        const DEFAULT_URL = "https://www.purplelife.org";
+        const params = new URLSearchParams(window.location.search);
+        const state = {
+          targetUrl: params.get("targetUrl") || DEFAULT_URL,
+          build: params.get("build") || "unknown",
+          launchError: params.get("launchError"),
+        };
+
+        const overlay = document.getElementById("launch-overlay");
+        const launchUrl = document.getElementById("launch-url");
+        const launchError = document.getElementById("launch-error");
+        const launchBuild = document.getElementById("launch-build");
+        const launchMessage = document.getElementById("launch-message");
+        const loadingSub = document.getElementById("loading-sub");
+        const retryButton = document.getElementById("retry-btn");
+
+        function showOverlay(detail) {
+          const issue = detail || {};
+          const resolvedUrl = issue.url || state.targetUrl || DEFAULT_URL;
+          const resolvedError =
+            issue.error || issue.message || state.launchError || "Unknown launch error";
+          const resolvedBuild = issue.build || state.build || "unknown";
+
+          if (loadingSub) {
+            loadingSub.textContent = "Using local fallback shell";
+          }
+          if (launchMessage) {
+            launchMessage.textContent =
+              issue.message || "Purple could not open the remote app URL in this shell.";
+          }
+          if (launchUrl) launchUrl.textContent = resolvedUrl;
+          if (launchError) launchError.textContent = resolvedError;
+          if (launchBuild) launchBuild.textContent = resolvedBuild;
+          if (overlay) overlay.hidden = false;
+        }
+
+        function handleBridgeEvent(payload) {
+          if (!payload || typeof payload !== "object") return;
+          showOverlay(payload);
+        }
+
+        window.addEventListener("purple:native-launch-error", (event) => {
+          handleBridgeEvent(event && event.detail ? event.detail : null);
+        });
+
+        window.addEventListener("message", (event) => {
+          const data = event ? event.data : null;
+          if (!data || typeof data !== "object") return;
+          if (data.source !== "purple-native") return;
+          if (data.type !== "launch-error") return;
+          handleBridgeEvent(data.payload);
+        });
+
+        if (retryButton) {
+          retryButton.addEventListener("click", () => {
+            const target = state.targetUrl || DEFAULT_URL;
+            window.location.replace(target);
+          });
+        }
+
+        if (state.launchError) {
+          showOverlay({
+            url: state.targetUrl,
+            error: state.launchError,
+            build: state.build,
+            message: "Remote launch failed, fallback shell is active.",
+          });
+        }
+      })();
+    </script>
   </body>
 </html>

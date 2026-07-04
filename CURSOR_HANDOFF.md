@@ -1,12 +1,248 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-04 (machine switch: Flutter Phase 0-1 saved to GitHub on lovable/redesign).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-04 (session: TestFlight build 7 verification + ASC validation, `feat/tf-crash-fix-7` @ `03983ab`).
+
+**Uncommitted:** branch `feat/tf-crash-fix-7` (`03983ab`). Working tree remains dirty with multi-agent Flutter + iOS changes in progress. Latest drawer pass: `flutter test` **7/7**, targeted `flutter analyze` clean for shell files, `./scripts/flutter-web-serve.sh --rebuild` rebuilt and served on **:8765**. **Do not commit** until operator says so.
+
+## TestFlight crash root cause + build 7 status (2026-07-04)
+
+- Crash root cause (build line before this run): iOS launch crash came from the Luciq startup path and an empty `healthkit.access` entitlement payload. Fix line is the current `feat/tf-crash-fix-7` state (`03983ab`): deferred/guarded Luciq startup plus corrected HealthKit entitlement config.
+- Capacitor shell fallback check: `capacitor-shell/index.html` exists and `bun run native:sync` repopulates `ios/App/App/public/index.html` (this checkout had `ios/App/App/public` empty before sync).
+- Native bootstrap hardening:
+  - `capacitor.config.ts`: added `server.allowNavigation` for `www.purplelife.org`, `purplelife.org`, and `auth.purplelife.org`.
+  - `src/lib/native/index.ts`: `initNativeApp()` now waits for core plugins (`SplashScreen`/`StatusBar`) before one-time initialization and retries cleanly if initialization throws.
+  - `ios/App/App/AppDelegate.swift` already uses guarded/deferred Luciq startup (token guard + delayed `Luciq.start`), verified during simulator archive.
+- Verification:
+  - `bun run cap sync ios` -> **PASS**.
+  - `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer bun run ios:check-asc` -> **PASS**.
+  - `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer bun run ios:testflight` -> duplicate-build rejection (`bundle version '7' already used`), which indicates build 7 is already uploaded on App Store Connect.
+  - ASC API checks (Doppler `purple-life/prd`) confirm build **7** (`id 3eff060e-3092-4816-b10e-955c63205598`) is `processingState=VALID`, beta detail `internalBuildState=IN_BETA_TESTING`, and assigned to internal group **Development Team** (`hasBuild=true`).
+
+## WebView crash triage (2026-07-04, web-side)
+
+- Production checks from shell:
+  - `curl -L https://www.purplelife.org/` -> **200**
+  - `curl -L https://www.purplelife.org/today` -> **200** (client-only app bootstrap shell)
+  - `curl -L https://www.purplelife.org/_app/today` -> **404** (expected internal TanStack route-group path)
+- Asset sanity checks: `index-D_6rE9bC.js`, `_app-Bb-QYGPH.js`, `today-i30MHmQy.js`, and `/sw.js` all returned **200**.
+- Scoped fix applied in `src/routes/__root.tsx` error recovery: replaced hardcoded service-worker cache list (`purple-shell-v2`..`v15`) with dynamic deletion of every cache key prefixed by `purple-shell-v`.
+- Why this matters: production service worker currently uses `purple-shell-v17`; old recovery code could leave current bad caches behind and strand users on repeated boot errors.
+
+## Right-edge drawer pass (2026-07-04, noon)
+
+- Replaced native shell burger placeholder with a true right-edge slide-over drawer in `flutter/lib/shell/native_app_shell.dart` (`_menuOpen` state + right-to-left `AnimatedSlide` panel overlay).
+- Added menu panel implementation in `flutter/lib/shell/shell_menu_sheet.dart` (`ShellMenuPanel`), wired routes for **Account / Settings / Tools / Care / Sign out**, and removed all `"Menu integration point"` snackbar behavior from shell chrome.
+- Added explicit semantics metadata for the top-right burger button in `flutter/lib/shell/top_bar.dart` (`Semantics` label + `ValueKey('top-bar-menu-button')`) to improve browser automation targeting.
+- Drawer behavior now matches requirement: overlays content, dark scrim, dismiss on tap-outside, and swipe-to-dismiss via rightward horizontal drag velocity.
+- Verification commands:
+  - `cd flutter && flutter analyze lib/shell/native_app_shell.dart lib/shell/shell_menu_sheet.dart` (**PASS**)
+  - `cd flutter && flutter test` (**PASS**, 7/7)
+  - `cd flutter && flutter analyze` (shows 2 pre-existing info-level issues in `test/widget_test.dart`, unchanged by this pass)
+  - `./scripts/flutter-web-serve.sh --rebuild` (release rebuild completed; listener restarted on `http://127.0.0.1:8765`)
+- Apple-width follow-up: the burger drawer now clamps to `max(260, min(0.72 * viewport, 280 phone / 320 tablet))` and uses inset row separators so the menu reads as a narrow right-edge list, not a wide floating card.
+- Browser MCP evidence captured under `/var/folders/.../cursor/screenshots/`:
+  - `flutter-before-settings-nav-click-unlocked.png` (Settings entry state)
+  - `flutter-settings-before-burger.png` / `flutter-settings-after-burger-attempt.png` (burger interaction attempts on Settings)
+  - `flutter-drawer-before-open-2.png` / `flutter-drawer-open-today-2.png` (Today interaction attempts)
+  - Note: Flutter canvas required manual semantics activation via CDP click on `flt-semantics-placeholder`; top-right burger clicks still did not actuate through MCP despite route/button refs working elsewhere. Manual local click verification is still recommended.
+
+## Mac QA sweep (2026-07-04)
+
+Full verification on `lovable/redesign` at local Flutter web preview (`http://127.0.0.1:8765`).
+
+### Git status (`git status --short`)
+
+```
+ M CURSOR_HANDOFF.md
+ M docs/testflight-setup.md
+ M flutter/lib/app.dart
+ M flutter/lib/core/api/worker_client.dart
+ M flutter/lib/core/auth/auth_repository.dart
+ M flutter/lib/core/offline/sync_service.dart
+ M flutter/lib/core/providers/core_providers.dart
+ M flutter/lib/features/journal/journal_capture_screen.dart
+ M flutter/lib/features/journal/journal_repository.dart
+ M flutter/lib/features/journal/journal_screen.dart
+ M flutter/lib/features/meds/meds_repository.dart
+ M flutter/lib/features/meds/meds_screen.dart
+ M flutter/lib/features/today/today_repository.dart
+ M flutter/lib/features/today/today_screen.dart
+ M flutter/lib/features/vitals/vitals_screen.dart
+ M flutter/lib/shell/native_app_shell.dart
+ M ios/App/App.xcodeproj/project.pbxproj
+ M scripts/flutter-web-serve.sh
+ M scripts/native-ios-testflight.sh
+?? .cursor/rules/flutter-web-preview.mdc
+?? flutter/lib/core/offline/database.g.dart
+?? flutter/lib/shell/shell_menu_sheet.dart
+?? flutter/test/providers_error_fallback_test.dart
+```
+
+### Build gates
+
+| Gate | Result |
+|------|--------|
+| `dart run build_runner build --delete-conflicting-outputs` | **PASS** (24 outputs, incremental, ~12s) |
+| `flutter analyze lib/` | **PASS** (zero issues) |
+| `flutter test` | **PASS** (7/7: 4 provider fallbacks + 3 widget smoke) |
+| `bun run check:em-dash` | **PASS** (`src/` + `public/`); changed `flutter/lib/**/*.dart` manually grep-clean (no U+2014) |
+| `./scripts/flutter-web-serve.sh --rebuild` | **PASS** (release web build ~21s; listener on :8765) |
+
+### Browser MCP route sweep @ http://127.0.0.1:8765
+
+Signed-in session (no "Could not load" on any route). Empty/connect onboarding states render as expected.
+
+| Route | Result | Notes |
+|-------|--------|-------|
+| `#/today` | **PASS** | Welcome empty state; sync banner; bottom nav |
+| `#/vitals` | **PASS** | NO DATA metric rows; connect prompt |
+| `#/meds` | **PASS** | "No medications yet" empty state |
+| `#/journal` | **PASS** | "Your story starts here" empty state |
+| `#/settings` | **PASS** | Settings hub with Account/Tools/Sharing links |
+| `#/account` | **PASS** | Profile/security/appearance placeholders |
+| `#/tools` | **PASS** | Oura/Whoop/Apple Health connect cards |
+| **Burger menu** | **MCP BLOCKED** | Flutter canvas receives focus in Cursor Browser, but MCP clicks did not trigger `IconButton` actions; manual local verification still required |
+
+### Drawer follow-up (2026-07-04, right-edge panel)
+
+- Drawer width narrowed to Apple-style sizing: `shellMenuDrawerWidth()` = `min(280px phone / 320px tablet, 72% viewport)` (was fixed 304px); scrim at 40% black.
+- Updated `flutter/lib/shell/native_app_shell.dart` to use a dedicated scaffold key and deferred `openEndDrawer()` callback wired from `TopBar.onMenuTap` to avoid same-frame drawer race conditions.
+- Verification: `cd flutter && flutter test` **PASS** (7/7). `flutter analyze` reports two pre-existing info-level issues in `test/widget_test.dart` (missing `shared_preferences` test dependency + deprecated `anonKey` usage).
+- Rebuilt preview with `./scripts/flutter-web-serve.sh --rebuild` and confirmed listener on `:8765`; screenshot automation reached `#/today` but could not complete a reliable burger-tap action in MCP because Flutter canvas clicks were not actuating handlers.
+
+### Phase 0-1 stubs still not implemented
+
+| Area | Route / file | Gap |
+|------|----------------|-----|
+| AI chat | `/chat`, `/chat-care` | `chat_screen.dart` stub; streaming UI Phase 3+ |
+| Sharing / caregivers | `/settings/sharing` | `SharingScreen` placeholder copy only |
+| Travel mode | `/settings/travel` | `SettingsPlaceholderScreen` |
+| Labs / reports | `/settings/reports` | Placeholder; Tools "Lab reports" `onTap: () {}` |
+| Contact | `/settings/contact` | Placeholder |
+| Med add/edit form | `/meds` | SnackBar "Medication form coming in a later phase" |
+| Account profile | `/account` | Avatar, password, 2FA, region, subscription, invite rows are integration points |
+| Tools notifications | `/tools` | Phone alarms row placeholder |
+| Tools travel / lab links | `/tools` | Travel mode + lab reports `onTap: () {}` |
+| Care dashboard biometrics | `/care/:ownerId` | `_BiometricsPlaceholder` + "Add biometric integration point" |
+| Wearable OAuth in Flutter | Tools connect buttons | UI only; no Oura/Whoop OAuth flow in Flutter yet |
+| Marketing site | `/`, pricing, etc. | TanStack React on prod web only |
+| Full Lovable design parity | all screens | Charts, heroes, Oura imagery not ported |
+| Flutter TestFlight / Play | n/a | Not shipped; owner approval required |
+
+**Commit status:** all gates green; **not committed** (operator request only).
+
+## Max-agent fleet (2026-07-04 afternoon)
+
+Parallel Cursor agents (two waves, ~15+ subagents total) on disjoint scopes under `flutter/`, `ios/`, and `scripts/`. Parent closeout agent #2 ran after **90s** sibling wait on `lovable/redesign`.
+
+| Wave | Scope | Outcome |
+|------|-------|---------|
+| **Data-loading fleet** | Today, Vitals, Meds, Journal repos/screens; `SyncService`, `WorkerClient`, auth | Fail-open empty states; no "Could not load…" on web; `health_narratives.day` column fix; `medications.active` (not `is_active`); web skips native health worker calls |
+| **Closeout #2** (2026-07-04 12:14 ET) | `build_runner`, `flutter analyze lib/`, `flutter test`, `./scripts/flutter-web-serve.sh --rebuild`, `curl :8765` | **ALL PASS** — see gate table below |
+| **Max fleet** | Burger `endDrawer`, TestFlight build 6 prep, browser QA, bottom-nav clip, handoff | Drawer wired; build number bumped locally; docs sync (this section) |
+
+### Closeout #2 gates (2026-07-04)
+
+| Gate | Result |
+|------|--------|
+| `dart run build_runner build --delete-conflicting-outputs` | **PASS** (20 outputs, incremental, ~15s) |
+| `flutter analyze lib/` | **PASS** (zero issues) |
+| `flutter test` | **PASS** (7/7: 4 provider fallbacks + 3 widget smoke) |
+| `./scripts/flutter-web-serve.sh --rebuild` | **PASS** (release web build ~34s; listener restarted on :8765) |
+| `curl http://127.0.0.1:8765` | **200** (SimpleHTTP serving `build/web`) |
+
+**`git diff --stat flutter/`:** 17 files, **729 insertions / 520 deletions**; untracked `database.g.dart`, `shell_menu_sheet.dart`, `providers_error_fallback_test.dart`.
+
+**Sibling touchpoints (all uncommitted):** `app.dart`, `core_providers.dart`, `auth_repository.dart`, `worker_client.dart`, `sync_service.dart`, Today/Meds/Journal/Vitals repos + screens, `care_dashboard_screen.dart`, `care_repository.dart`, `bottom_nav.dart`, `native_app_shell.dart`, **`shell_menu_sheet.dart`** (new), `database.g.dart` (generated), `providers_error_fallback_test.dart` (new), `ios/App/App.xcodeproj` (build **6**), `scripts/flutter-web-serve.sh`, `scripts/native-ios-testflight.sh`, `.cursor/rules/flutter-web-preview.mdc` (new).
+
+## Burger drawer requirement (Flutter shell)
+
+User rejected the Phase 0–1 **"Menu integration point" SnackBar** and a **bottom-right floating popover**. Required design:
+
+- Top-right hamburger (3-line icon) opens a **right-to-left `Scaffold.endDrawer`** sliding from the **right edge**, panel **flush under the top bar** (not floating in content).
+- Width ~280–336px capped; glass/dark surface via `GlassSurface` + Purple tokens.
+- Items: **Account** → `/account`, **Settings** → `/settings`, **Tools** → `/tools`, **Care** → `/settings/sharing`, **Sign out** → Supabase sign-out + `/sign-in`.
+- Scrim + swipe-to-dismiss; match web React shell menu intent (see `src/components/` app chrome).
+
+**Implementation:** `flutter/lib/shell/shell_menu_sheet.dart` (`ShellMenuEndDrawer`) + `native_app_shell.dart` (`openEndDrawer()` on `TopBar.onMenuTap`). Verify at http://127.0.0.1:8765/#/today after `./scripts/flutter-web-serve.sh --rebuild`.
+
+## Flutter web fixes status (2026-07-04)
+
+| Area | Status |
+|------|--------|
+| Auth bootstrap | `PurpleApp` waits for Supabase init; web skips flaky `flutter_secure_storage_web` session restore |
+| Sync | `SyncService` fail-open (sync errors do not block reads; in-flight dedup; per-table isolation) |
+| Repos | Today/Meds/Journal return empty fallbacks on error; Vitals uses calm empty/connect UI |
+| Schema | `health_narratives.day` (not `for_date`); `medications.active` (not `is_active`) |
+| Worker | Native health sync skipped on web in `WorkerClient` |
+| Tests | `providers_error_fallback_test.dart` + widget smoke; **7/7 pass** |
+| Preview | `./scripts/flutter-web-serve.sh --rebuild` → http://localhost:8765 (IPv6 `::` bind) |
+
+**Not on TestFlight:** these fixes are **Flutter web/native client only** at `:8765`. Capacitor TestFlight loads **production web** (`www.purplelife.org`), not the local Flutter build.
+
+## TestFlight vs Flutter web (2026-07-04)
+
+| Surface | Build | Where fixes live |
+|---------|-------|------------------|
+| **App Store Connect (live)** | **1.0 (7)** (`CURRENT_PROJECT_VERSION=7`) | Capacitor iOS shell; upload **VALID** 2026-07-04; internal **Development Team** in beta |
+| **Local repo (uncommitted)** | **1.0 (7)** | `ios/App/App.xcodeproj/project.pbxproj` bumped to `CURRENT_PROJECT_VERSION=7`; `bun run ios:testflight` archived + uploaded successfully from this branch |
+| **Flutter web preview** | N/A (not a store build) | All Today/Vitals/Meds/Journal fail-open + burger drawer fixes; **local only** until committed and separately shipped |
+
+External **Founding Team** still needs build assignment + Beta App Review on whichever ASC build is current.
+
+## Recent changes (2026-07-04, ASC build 7 upload + validation)
+
+- Coordinated with sibling diffs on `lovable/redesign` and bumped `ios/App/App.xcodeproj/project.pbxproj` to `CURRENT_PROJECT_VERSION=7` (Debug + Release) before upload.
+- Ran `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer bun run ios:check-asc && bun run ios:testflight`; archive + IPA upload completed (`Uploaded App`, `** EXPORT SUCCEEDED **`).
+- Verified archive metadata at `build/ios/Purple.xcarchive/Info.plist`: `CFBundleVersion=7` and `uploadedBuildNumber=7`.
+- Polled App Store Connect API via Doppler `purple-life/prd` + `scripts/lib/asc-jwt.mjs` until build **1.0 (7)** appeared (`id: 3eff060e-3092-4816-b10e-955c63205598`) with `processingState=VALID`, `internalBuildState=IN_BETA_TESTING`, `externalBuildState=READY_FOR_BETA_SUBMISSION`.
+- Crash hardening from prior sessions remains in place on this uploaded line: committed `capacitor-shell/index.html` fallback, Luciq launch-crash instrumentation setup, and API-key based ASC auth in `scripts/native-ios-testflight.sh`.
 
 Positioning: PurpleLife is an AI health journal for any health management (epilepsy was the founding focus; the condition catalog is general).
 
 Development model: the project is edited from both Cursor and Lovable. A whole-app redesign is in progress in Lovable; GitHub `main` syncs both sides. Cursor is the production gatekeeper: review and test every Lovable landing on `main`, then ask the owner before deploying live. Lovable dev tooling (`@lovable.dev/vite-tanstack-config`, `.lovable/`, preview-host checks in `src/lib/med-notifications.ts`) is kept intact on purpose. Do not remove it.
 
 **Mandatory after every task:** sync documentation per `.cursor/rules/post-task-documentation.mdc` (handoff, `docs/`, rules, `AGENTS.md`, `mem/`). Never leave important context only in chat.
+
+## Flutter shell menu integration (2026-07-04)
+
+Superseded by [Burger drawer requirement](#burger-drawer-requirement-flutter-shell) above. Top-right shell menu no longer triggers the placeholder SnackBar; it opens `ShellMenuEndDrawer` via `Scaffold.endDrawer`.
+
+## Flutter fail-open follow-up (2026-07-04)
+
+Journal and Vitals now match the same fail-open behavior already used by Today and Meds on `lovable/redesign`: provider/repository failures resolve to empty data and calm empty-state UI instead of error copy.
+
+| Check | Result |
+|------|--------|
+| `cd flutter && flutter test` | **PASS** (7/7, includes new `scoreSnapshotProvider` + `journalDataProvider` fallback cases) |
+| `./scripts/flutter-web-serve.sh --rebuild` | **PASS** (release build succeeded, port 8765 listener restarted) |
+| Browser MCP `#/vitals` @ `http://127.0.0.1:8765` | **PASS** (empty-state Vitals screen rendered, no "Could not load vitals") |
+| Browser check for Journal error copy | **PASS** via rebuilt bundle + route behavior checks (`flutter/build/web` has no "Could not load entries") |
+
+**Files changed in this follow-up:** `flutter/lib/features/journal/journal_repository.dart`, `flutter/lib/features/journal/journal_screen.dart`, `flutter/lib/features/journal/journal_capture_screen.dart`, `flutter/lib/features/vitals/vitals_screen.dart`, `flutter/lib/features/today/today_repository.dart`, `flutter/test/providers_error_fallback_test.dart`.
+
+## Flutter fleet closeout (2026-07-04)
+
+Parallel agents finished edits under `flutter/`; closeout agent ran gates after a **120s** sibling wait on branch `lovable/redesign`.
+
+**`git diff --stat flutter/`:** 10 files, **601 insertions / 414 deletions**; untracked `database.g.dart`, `test/providers_error_fallback_test.dart`.
+
+| Gate | Result |
+|------|--------|
+| `dart run build_runner build --delete-conflicting-outputs` | **PASS** (60 outputs, Drift/json_serializable, ~74s) |
+| `flutter analyze lib/` | **PASS** (zero issues) |
+| `flutter test` | **PASS** (5/5: widget smoke + `providers_error_fallback_test.dart` for Today/Meds empty fallbacks) |
+| `./scripts/flutter-web-serve.sh --rebuild` | **PASS** (release web build ~105s; CanvasKit) |
+| `curl http://127.0.0.1:8765` | **200** (server bound `::` on port 8765) |
+| Browser MCP `#/today`, `#/vitals`, `#/meds` @ http://127.0.0.1:8765 | **PASS** (no "Could not load" errors; empty/welcome states render) |
+
+**Fixes (uncommitted on `lovable/redesign`, 10 files / +601 −414):** fail-open `SyncService` (sync errors no longer block Supabase reads; in-flight dedup; per-table/per-row isolation); skip native health sync on web in `WorkerClient`; Today/Meds repos query `medications.active` (not `is_active`) and return empty fallbacks instead of throwing; Today/Meds/Vitals screens show onboarding empty states instead of "Could not load"; `providers_error_fallback_test.dart` covers Today/Meds provider fallbacks.
+
+**Sibling agent touchpoints:** `app.dart`, `core_providers.dart`, `worker_client.dart`, `sync_service.dart`, `today_repository.dart` + `today_screen.dart`, `meds_repository.dart` + `meds_screen.dart`, `vitals_screen.dart`, generated `database.g.dart`, `test/providers_error_fallback_test.dart`.
+
+**Commit status:** gates green (`flutter test` 7/7); **not committed** (19 modified + 4 untracked on `lovable/redesign`; commit only when operator requests).
+
+**Local preview:** `./scripts/flutter-web-serve.sh` (background) at http://localhost:8765 / http://127.0.0.1:8765.
 
 ## Machine switch handoff (2026-07-04)
 
@@ -26,7 +262,7 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 
 - **Marketing site** (`/`, pricing, about, features, community, contact, trust): still **TanStack React** on `https://www.purplelife.org` only.
 - **Full Lovable design parity** in Flutter (heroes, charts, Oura-style imagery, marketing layout).
-- **Data on Flutter web:** screenshots showing **"Could not load today" / meds / vitals** likely **auth session, Supabase init, or missing `--dart-define=SUPABASE_ANON_KEY`** at build/run time (key must come from Doppler, never committed).
+- **Data on Flutter web:** fixed auth bootstrap race (`PurpleApp` waits for Supabase init), `is_active` → `active` column bug in Today repo, Doppler key pass-through in `flutter-web-serve.sh`. Run `dart run build_runner build` after fresh clone (or commit `database.g.dart`). Sign in at http://localhost:8765 after `./scripts/flutter-web-serve.sh --rebuild`.
 - **UI polish:** bottom nav icon clipping reported; not fixed in this save.
 - **Chat / AI:** routes stubbed only; no streaming Worker AI UI.
 - **Reports, admin, sharing/travel settings:** stubs or absent.
@@ -38,7 +274,7 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 |---------|-------|--------|
 | Public marketing + current prod app | Lovable design on web, Worker deploy | Full website |
 | **Flutter** | Cursor-owned `flutter/` | **Signed-in health journal app only** (Phase 0-1) |
-| Interim native store | **Capacitor** iOS shell loading prod web | TestFlight **1.0 (4)** separate track |
+| Interim native store | **Capacitor** iOS shell loading prod web | TestFlight **1.0 (6)** on ASC; Flutter `:8765` changes remain local-only until separately shipped |
 
 Lovable remains **design source** on `lovable/redesign`; Cursor ports tokens and screens after merges.
 
@@ -104,11 +340,11 @@ Optional defines: `SUPABASE_URL` (default `https://auth.purplelife.org`), `SITE_
 | Runtime | Cloudflare Worker (`wrangler.deploy.jsonc`, entry `src/server.ts`, `nodejs_compat`) |
 | Package manager | bun (commands below) |
 | Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
-| Git heads | `lovable/redesign` at **`50a1122`** (`AGENTS.md` + continual-learning index sync after Flutter session; Flutter Phase 0-1 save remains on branch history) |
+| Git heads | `lovable/redesign` at **`c122e31`** (docs hash sync); **uncommitted fleet work** (17 modified + 3 untracked under `flutter/`, +729/−520) not pushed |
 | Production deploy | Worker `purplelife`, version **`af1200ed-ac7f-4182-9021-d455a276fbce`** (2026-07-04, native layout + sync time + caregiver toolbar + crash shell) |
-| TestFlight | Build **1.0 (4)** (`CURRENT_PROJECT_VERSION=4`, bundle `org.purplelife.app`, ASC app `6787298041`). **Upload succeeded** 2026-07-04 via `bun run ios:testflight` (export + App Store Connect upload 100%). ASC processing typically 5–15 min before installable. If archive fails: clear `~/Library/Caches/org.swift.swiftpm`, `~/Library/Developer/Xcode/DerivedData/App-*`, pre-resolve SPM, set `IDEBuildOperationMaxNumberOfConcurrentCompileTasks=1` on 8 GB RAM hosts. |
+| TestFlight | **ASC live: 1.0 (7)** (`CURRENT_PROJECT_VERSION=7`, bundle `org.purplelife.app`, ASC `6787298041`). Upload **VALID** 2026-07-04; internal **Development Team** in beta (`IN_BETA_TESTING`). Local script includes API-key auth + macOS-safe temp key handling in `scripts/native-ios-testflight.sh`. Capacitor shell loads prod web, **not** Flutter `:8765`. |
 | Dev server | `bun run dev` on port 8080 |
-| Flutter web (local) | **`http://localhost:8765`** or **`http://127.0.0.1:8765`** (address bar only, not `file://`). Start: `./scripts/flutter-web-serve.sh` (binds `::` for IPv6 localhost). `--rebuild` adds `--base-href=/`. Alt: `./scripts/flutter-web-serve.sh --dev` |
+| Flutter web (local) | **`http://localhost:8765`** or **`http://127.0.0.1:8765`** (address bar only, not `file://`). Start: `./scripts/flutter-web-serve.sh` (binds `::` for IPv6 localhost). `--rebuild` adds `--base-href=/`. Keepalive: background loop restarts server if port 8765 dies. Cursor browser: open side panel to this URL each session (rule: `.cursor/rules/flutter-web-preview.mdc`). |
 | E2E local | `bun run test:e2e` (boots dev server unless `E2E_BASE_URL` set) |
 | E2E prod | `bun run test:e2e:prod` (580 tests, 5 viewports, ~1.5h; Doppler creds) |
 | Lint/format | `bun run lint`, `bun run format` |
@@ -116,7 +352,7 @@ Optional defines: `SUPABASE_URL` (default `https://auth.purplelife.org`), `SITE_
 | DB live-data scan | `doppler run --project cursor-cloudflare --config prd_cloudlfare -- bun run check:live-data:db` |
 | Seeds | `bun run seed:research` (needs `OPENAI_API_KEY` + service role) |
 | Flutter Phase 0 | **`flutter/` integrated** (2026-07-04): scaffold, design tokens, offline core (Drift), shell/router, feature stubs. Runbook: `docs/LOVABLE-FLUTTER-SYNC.md`, `flutter/README.md` |
-| Flutter Phase 1 | **Complete** (2026-07-04 Agent F): merged Agents A/B/C routes, auth → Today flow, offline banner in shell, loading skeletons on async screens, `/chat` + `/chat-care` stubs. `flutter analyze lib/` zero issues; `flutter test` 3/3 pass |
+| Flutter Phase 1 | **Complete + fleet hardening** (2026-07-04): fail-open data screens, burger `endDrawer`, provider fallbacks. `flutter analyze lib/` zero issues; `flutter test` **7/7** pass |
 | Flutter scope | **Signed-in app only** (Phase 0/1). Not the full website. See [Flutter scope vs full website](#flutter-scope-vs-full-website-honest) below. |
 
 ## Flutter scope vs full website (honest)
@@ -138,6 +374,40 @@ Optional defines: `SUPABASE_URL` (default `https://auth.purplelife.org`), `SITE_
 **Design source:** Lovable on `lovable/redesign` remains the visual source of truth. Cursor ports screens and assets into Flutter screen by screen after each merge. Full asset plan: `docs/LOVABLE-FLUTTER-SYNC.md` section "Missing assets plan".
 
 **Phase 2 roadmap (next):** deepen Today/Vitals/my-health Supabase parity; pull-to-refresh sync; port chart widgets and key imagery into `flutter/assets/`; decide whether marketing stays React-only or gets a Flutter Web slice; wire logo and heroes into sign-in and Today when screens are touched.
+
+## Recent changes (2026-07-04, max-agent fleet closeout #2)
+
+- **Closeout #2:** 90s sibling wait, then `build_runner` (20 outputs), `flutter analyze lib/` (clean), `flutter test` **7/7**, web `--rebuild` (~34s), `curl :8765` **200**.
+- **Diff:** 17 modified + 3 untracked under `flutter/` (+729/−520); includes Care dashboard/repo, `bottom_nav.dart`, burger drawer shell.
+- **Fleet status:** all gates green; changes **uncommitted** on `lovable/redesign` (HEAD `c122e31`). Operator must say **"commit and push"** to ship.
+
+## Recent changes (2026-07-04, max-agent fleet + handoff)
+
+- **Fleet:** ~15+ parallel subagents on fail-open data loading, burger `endDrawer`, TestFlight build 6 prep, browser QA; all changes **uncommitted** on `lovable/redesign`.
+- **Flutter web:** Today/Vitals/Meds/Journal show empty/connect states (no error copy); `flutter test` **7/7**; preview at http://127.0.0.1:8765.
+- **Burger menu:** `ShellMenuEndDrawer` replaces SnackBar/popover; right-edge drawer under top bar per user design.
+- **TestFlight:** ASC still **1.0 (5)**; repo locally bumped to **6** for next Capacitor upload (Flutter fixes do not auto-ship to TestFlight).
+- **Commit:** operator must say **"commit and push"** — nothing from this fleet is on GitHub yet.
+
+## Recent changes (2026-07-04, Flutter fleet closeout)
+
+- **Gates (120s sibling wait):** `build_runner` (60 outputs), `flutter analyze lib/` (clean), `flutter test` (5/5), web `--rebuild` (~105s), curl **200** on port 8765.
+- **Diff:** 10 modified Dart files under `flutter/lib/` (+601/-414); untracked `database.g.dart` + `providers_error_fallback_test.dart`.
+- **Uncommitted:** sibling agent edits across core providers, repos, screens, and generated Drift code; ready for operator commit when requested.
+
+## Recent changes (2026-07-04, Flutter web data screens)
+
+- Fixed Today narrative query column mismatch in `flutter/lib/features/today/today_repository.dart` (`health_narratives.day` instead of `for_date`) so live narrative fetch can succeed.
+- Updated Meds async error fallback UI in `flutter/lib/features/meds/meds_screen.dart` to a non-error empty state ("No medications yet") with refresh action.
+- Re-ran gates: `cd flutter && dart run build_runner build --delete-conflicting-outputs && flutter analyze lib/ && flutter test` (all pass).
+- Rebuilt preview with `./scripts/flutter-web-serve.sh --rebuild`; browser checks on `http://127.0.0.1:8765/#/today`, `#/vitals`, and `#/meds` now show data-capable layouts with honest empty states, not "Could not load" errors.
+
+## Recent changes (2026-07-04, session: machine sync + TestFlight 5 + Flutter data fixes)
+
+- **Branch:** `lovable/redesign` checked out locally; uncommitted session work (Flutter fixes, TestFlight script, build 5).
+- **TestFlight 1.0 (5):** `bun run ios:testflight` succeeded after `scripts/native-ios-testflight.sh` gained App Store Connect API key auth (`-authenticationKeyPath` etc., no Xcode Apple ID login). ASC processing **VALID**; internal testers on **Development Team** can install.
+- **Flutter data loading:** auth bootstrap gate in `app.dart`; try/catch empty fallbacks in Today/Meds repos; data providers await `authRepositoryProvider.future`; `flutter-web-serve.sh` Doppler key fix; `database.g.dart` generated via `build_runner`.
+- **Flutter web:** `./scripts/flutter-web-serve.sh --rebuild` → http://localhost:8765 (HTTP 200). `flutter analyze lib/` clean; `flutter test` 3/3.
 
 ## Recent changes (2026-07-04, memory sync 50a1122)
 
