@@ -31,7 +31,7 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 | Runtime | Cloudflare Worker (`wrangler.deploy.jsonc`, entry `src/server.ts`, `nodejs_compat`) |
 | Package manager | bun (commands below) |
 | Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
-| Git heads | `lovable/redesign` (5-issue bugfix ship commit pending push) |
+| Git heads | `lovable/redesign` at **`258f726`** (5-issue bugfix ship) |
 | Production deploy | Worker `purplelife`, version **`af1200ed-ac7f-4182-9021-d455a276fbce`** (2026-07-04, native layout + sync time + caregiver toolbar + crash shell) |
 | TestFlight | Build **1.0 (4)** in Xcode project; **upload blocked** this session (export `ditto` Desktop path on first attempt; retries hit OOM/SIGKILL + SPM cache corruption). USB Release **1.0 (4)** verified on iPhone Air iOS 27. Retry: `ARCHIVE_PATH=/tmp/Purple.xcarchive EXPORT_DIR=/tmp/Purple-export doppler run --project purple-life --config prd -- bun run ios:testflight` after clearing DerivedData if needed. |
 | Dev server | `bun run dev` on port 8080 |
