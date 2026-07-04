@@ -24,6 +24,22 @@ export {
 } from "./health";
 
 let initialized = false;
+let launchChromeHidden = false;
+
+/** Hide Capacitor launch splash and style status bar as soon as the bridge is ready. */
+export async function hideNativeLaunchChrome(): Promise<void> {
+  if (!isNativeApp() || launchChromeHidden) return;
+  launchChromeHidden = true;
+  try {
+    await callPlugin("StatusBar", "setStyle", { style: "DARK" });
+    if (nativePlatform() === "android") {
+      await callPlugin("StatusBar", "setBackgroundColor", { color: "#0a0710" });
+    }
+    await callPlugin("SplashScreen", "hide", {});
+  } catch (err) {
+    console.warn("[native] hideNativeLaunchChrome failed", err);
+  }
+}
 
 /**
  * One-time native shell setup, called from DeferredStartup after idle. Every
@@ -37,18 +53,18 @@ export async function initNativeApp(): Promise<void> {
   if (!isNativeApp() || initialized) return;
   initialized = true;
 
-  await callPlugin("StatusBar", "setStyle", { style: "DARK" });
-  if (nativePlatform() === "android") {
-    await callPlugin("StatusBar", "setBackgroundColor", { color: "#0a0710" });
-  }
-  await callPlugin("SplashScreen", "hide", {});
+  try {
+    await hideNativeLaunchChrome();
 
-  initNativeOAuthDeepLink();
-  initNativeWearableOAuthDeepLink();
-  // Remote push ships when APNs is configured (see docs/native-app-store-review.md).
-  // await setupPushNotifications();
-  await scheduleNativeMedReminders();
-  setupAndroidBackButton();
+    initNativeOAuthDeepLink();
+    initNativeWearableOAuthDeepLink();
+    // Remote push ships when APNs is configured (see docs/native-app-store-review.md).
+    // await setupPushNotifications();
+    await scheduleNativeMedReminders();
+    setupAndroidBackButton();
+  } catch (err) {
+    console.warn("[native] initNativeApp failed", err);
+  }
 }
 
 /** Re-schedule native local dose reminders after med edits (no-op on web). */
@@ -102,10 +118,17 @@ async function scheduleNativeMedReminders(): Promise<void> {
   const ln = plugin("LocalNotifications");
   if (!ln) return;
 
-  const perm = (await callPlugin("LocalNotifications", "requestPermissions")) as
+  const existing = (await callPlugin("LocalNotifications", "checkPermissions")) as
     | { display?: string }
     | undefined;
-  if (perm?.display !== "granted") return;
+  let display = existing?.display;
+  if (display !== "granted") {
+    const perm = (await callPlugin("LocalNotifications", "requestPermissions")) as
+      | { display?: string }
+      | undefined;
+    display = perm?.display;
+  }
+  if (display !== "granted") return;
 
   const doses = await loadUpcomingScheduledDoses();
   const now = Date.now();

@@ -140,9 +140,9 @@ function AccountPage() {
 function AppearancePicker() {
   const { mode, setMode } = useTheme();
   const opts: { v: ThemeMode; label: string; desc: string }[] = [
-    { v: "system", label: "System", desc: "Match device" },
+    { v: "dark", label: "Dark", desc: "Default" },
     { v: "light", label: "Light", desc: "Always light" },
-    { v: "dark", label: "Dark", desc: "Always dark" },
+    { v: "system", label: "System", desc: "Match device" },
   ];
   return (
     <div>
@@ -156,10 +156,10 @@ function AppearancePicker() {
               key={o.v}
               type="button"
               onClick={() => setMode(o.v)}
-              className={`rounded-2xl border p-4 text-left transition-colors ${
+              className={`glass-press sheet-card-inset p-4 text-left transition-colors ${
                 active
-                  ? "border-primary bg-primary/15 text-foreground"
-                  : "border-border bg-muted/60 text-foreground hover:bg-muted"
+                  ? "border-primary/50 ring-1 ring-primary/25 text-foreground"
+                  : "text-foreground hover:bg-secondary/30"
               }`}
               aria-pressed={active}
             >
@@ -240,7 +240,7 @@ function InviteCodeCard() {
         </div>
       ) : (
         <div className="mt-4 space-y-3">
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted px-4 py-3">
+          <div className="flex items-center justify-between gap-3 sheet-card-inset px-4 py-3">
             <code className="text-[15px] tracking-widest text-foreground">{code}</code>
             <span className="text-[12px] sheet-muted">Unlimited uses</span>
           </div>

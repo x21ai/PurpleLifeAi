@@ -80,7 +80,7 @@ function ToolsPage() {
       <button
         type="button"
         onClick={() => setPickerOpen(true)}
-        className="flex w-full items-center gap-3 rounded-2xl border border-border bg-muted/60 p-5 text-[15px] text-white hover:bg-muted transition-colors"
+        className="glass-press sheet-card flex w-full items-center gap-3 p-5 text-[15px] text-foreground transition-colors hover:bg-secondary/20"
       >
         <Plus className="h-5 w-5" />
         Set up a new device
@@ -135,7 +135,7 @@ function ToolsPage() {
 
       <SheetSectionLabel>Tools &amp; utilities</SheetSectionLabel>
       <SheetCard className="!p-0">
-        <div className="divide-y divide-border/60">
+        <div className="sheet-row-list">
           <ToolRow to="/meds" icon={<Activity className="h-4 w-4" />} title="Medications" subtitle="Schedules, reminders, adherence" />
           <ToolRow to="/reports" icon={<Smartphone className="h-4 w-4" />} title="Lab reports" subtitle="Upload PDFs or photos. See trends." />
           <ToolRow to="/settings/travel" icon={<Bell className="h-4 w-4" />} title="Travel mode" subtitle="Plan trips, anchor doses to home time" />
@@ -144,7 +144,7 @@ function ToolsPage() {
 
       <SheetSectionLabel>Wear and care</SheetSectionLabel>
       <SheetCard className="!p-0">
-        <div className="divide-y divide-border/60">
+        <div className="sheet-row-list">
           <InternalRow to="/settings/how-purple-thinks" title="How Purple thinks" />
           <InternalRow
             to={isNativeApp() ? "/settings/privacy" : "/privacy"}
@@ -176,18 +176,18 @@ function DevicePickerRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/40 px-4 py-3 text-left transition-colors hover:bg-muted"
+      className="glass-press sheet-card-inset flex items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-secondary/30"
     >
       <div className="flex min-w-0 items-center gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-foreground">
+        <span className="sheet-card-inset flex h-9 w-9 shrink-0 items-center justify-center text-foreground">
           {icon}
         </span>
         <div className="min-w-0">
           <p className="truncate text-[14px] text-foreground">{title}</p>
-          <p className="mt-0.5 truncate text-[12px] text-muted-foreground">{subtitle}</p>
+          <p className="mt-0.5 truncate text-[12px] sheet-muted">{subtitle}</p>
         </div>
       </div>
-      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      <ChevronRight className="sheet-chevron h-4 w-4" />
     </button>
   );
 }

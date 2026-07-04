@@ -30,10 +30,8 @@ shipping, paid developer accounts. None of it runs in CI or the agent sandbox.
 
 ```bash
 bun run native:install      # adds @capacitor/* deps
-bunx cap init Purple org.purplelife.app --web-dir dist/client  # if not using capacitor.config.ts
-bun run build               # produce dist/client for the fallback web dir
-bun run native:add          # cap add ios && cap add android
-bun run native:sync         # copy config + plugins into the native projects
+bunx cap init Purple org.purplelife.app --web-dir capacitor-shell  # if not using capacitor.config.ts
+bun run native:sync         # copies capacitor-shell/ (index.html) + config into native projects
 ```
 
 `ios/` and `android/` are generated, native project directories. Commit them (or
@@ -170,3 +168,34 @@ Web deploy does **not** replace store review for native-only capabilities: Apple
 still requires a binary that declares HealthKit, push, and URL schemes even when
 the UI loads remotely (App Store guideline 4.2: document push, local
 notifications, and HealthKit as the native value-add).
+
+## 9. Crash reporting (Luciq, formerly Instabug)
+
+The iOS shell integrates [Luciq](https://luciq.ai) for crash reports, session
+replays, and in-app bug reports (shake, screenshot, floating button).
+
+| Item | Value |
+|------|-------|
+| SPM package | `https://github.com/luciqai/luciq-ios-sdk` (product `Luciq`, import `LuciqSDK`) |
+| Init | `ios/App/App/AppDelegate.swift` on `didFinishLaunchingWithOptions` |
+| App token | Doppler `purple-life` / `prd` secret `LUCIQ_APP_TOKEN` |
+| Local xcconfig | `bun run ios:local-signing` writes `ios/LocalSigning.xcconfig` (gitignored) |
+| Dashboard | Luciq project **Purple - Beta** |
+
+```bash
+# Before archive or local device build:
+bun run ios:local-signing
+bun run native:sync
+```
+
+**Notes:**
+
+- TanStack Start does not emit `index.html` into `dist/client`. Capacitor uses
+  `capacitor-shell/index.html` as the local WebView fallback; production UI
+  still loads from `server.url`.
+- Crashes upload on the **next** app launch, not at crash time. Debug builds
+  with a debugger attached may skip dSYM upload; Release uses `dwarf-with-dsym`.
+- Optional: install the Luciq MCP agent (`luciqai/luciq-agent-ios` on GitHub) in
+  Cursor for AI-assisted SDK setup and crash triage.
+- After native changes, bump `CURRENT_PROJECT_VERSION` in `project.pbxproj` and
+  run `bun run ios:testflight` for a new TestFlight build.

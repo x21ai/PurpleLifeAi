@@ -34,6 +34,7 @@ export function useNativeAppleHealth() {
   const [hasSyncedData, setHasSyncedData] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [lastData, setLastData] = useState<string | null>(null);
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const refreshAuth = useCallback(async () => {
@@ -48,15 +49,23 @@ export function useNativeAppleHealth() {
     if (!sess.session) return;
     const uid = sess.session.user.id;
 
-    const { data: bio } = await supabase
-      .from("biometrics")
-      .select("recorded_at")
-      .eq("user_id", uid)
-      .eq("source", "apple_health")
-      .order("recorded_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const [{ data: bio }, { data: token }] = await Promise.all([
+      supabase
+        .from("biometrics")
+        .select("recorded_at")
+        .eq("user_id", uid)
+        .eq("source", "apple_health")
+        .order("recorded_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("apple_health_tokens")
+        .select("last_sync_at")
+        .eq("user_id", uid)
+        .maybeSingle(),
+    ]);
     setLastData(bio?.recorded_at ?? null);
+    setLastSyncAt(token?.last_sync_at ?? null);
     setHasSyncedData(!!bio?.recorded_at);
 
     await refreshAuth();
@@ -77,15 +86,20 @@ export function useNativeAppleHealth() {
 
   const syncState: NativeAppleHealthSyncState = (() => {
     if (!healthKitAuthorized) return "waiting";
-    const dataAge = lastData ? Date.now() - new Date(lastData).getTime() : Infinity;
+    const freshnessIso = lastSyncAt ?? lastData;
+    const dataAge = freshnessIso ? Date.now() - new Date(freshnessIso).getTime() : Infinity;
     if (dataAge < FRESH_WINDOW_MS) return "receiving";
-    if (lastData) return "stale";
+    if (lastSyncAt || lastData) return "stale";
     return "reachable";
   })();
 
   const statusText: Record<NativeAppleHealthSyncState, string> = {
-    receiving: `Syncing · latest data ${relativeTime(lastData)}`,
-    stale: `Last data ${relativeTime(lastData)} · open Purple to refresh from HealthKit`,
+    receiving: lastSyncAt
+      ? `Last synced ${relativeTime(lastSyncAt)}`
+      : `Syncing · latest vitals ${relativeTime(lastData)}`,
+    stale: lastSyncAt
+      ? `Last synced ${relativeTime(lastSyncAt)} · open Purple to refresh from HealthKit`
+      : `Last vitals ${relativeTime(lastData)} · open Purple to refresh from HealthKit`,
     reachable: "Connected · waiting for the first HealthKit sync",
     waiting: hasSyncedData
       ? `Account has older Apple Health data · connect HealthKit on this iPhone`
@@ -104,6 +118,7 @@ export function useNativeAppleHealth() {
 
     const samples = days.map(({ source: _source, ...rest }) => rest);
     await syncBatch({ data: { source: "apple_health", samples } });
+    setLastSyncAt(new Date().toISOString());
     return true;
   };
 
@@ -169,6 +184,7 @@ export function useNativeAppleHealth() {
     hasSyncedData,
     loaded,
     lastData,
+    lastSyncAt,
     busy,
     syncState,
     statusText,

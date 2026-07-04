@@ -18,11 +18,27 @@ type Props = {
   className?: string;
 };
 
+/** Wearable daily rows use UTC midnight or noon for a YYYY-MM-DD day key, not a sample time. */
+function isDailyBucketTimestamp(iso: string): boolean {
+  return /T(00|12):00:00(\.000)?Z$/.test(iso);
+}
+
+/** Latest biometrics.recorded_at for "Data through" (local calendar day or real sample time). */
+function formatDataThrough(iso: string): string {
+  const parsed = new Date(iso);
+  if (!isValid(parsed)) return "–";
+  if (isDailyBucketTimestamp(iso)) {
+    const [y, m, day] = iso.slice(0, 10).split("-").map(Number);
+    return format(new Date(y, m - 1, day), "EEE MMM d");
+  }
+  return format(parsed, "EEE h:mm a");
+}
+
 /**
  * Multi-provider wearable sync status + Sync now button.
- *  - dataThrough: latest biometrics.recorded_at across Oura + Whoop
- *  - lastPulled: most recent last_sync_at across connected pull providers,
- *    and apple_health_tokens.last_webhook_at if Apple Health is connected
+ *  - dataThrough: latest biometrics.recorded_at across all wearable sources
+ *  - lastPulled: most recent last_sync_at across connected pull providers
+ *    and apple_health_tokens.last_sync_at when Apple Health is connected
  *  - Sync now triggers every connected pull provider (Oura + Whoop) in
  *    parallel via Promise.allSettled. Apple Health is push-only and skipped.
  */
@@ -52,19 +68,18 @@ export function WearableSyncStatus({ variant = "detailed", onSynced, refreshSign
         return { id: p.id, row: data as { last_sync_at?: string | null; updated_at?: string | null } | null };
       }),
     );
-    const sources = WEARABLE_PROVIDERS.map((p) => p.id);
     const [{ data: bio }, { data: apple }] = await Promise.all([
       supabase
         .from("biometrics")
         .select("recorded_at")
         .eq("user_id", uid)
-        .in("source", sources)
+        .in("source", ["oura", "whoop", "apple_health", "health_connect"])
         .order("recorded_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
       supabase
         .from("apple_health_tokens")
-        .select("last_webhook_at, updated_at")
+        .select("last_sync_at, last_webhook_at, updated_at")
         .eq("user_id", uid)
         .maybeSingle(),
     ]);
@@ -78,7 +93,7 @@ export function WearableSyncStatus({ variant = "detailed", onSynced, refreshSign
     }
     setConnected(connMap);
     setAppleConnected(!!apple);
-    const appleTs = apple?.last_webhook_at ?? null;
+    const appleTs = apple?.last_sync_at ?? apple?.last_webhook_at ?? apple?.updated_at ?? null;
     if (appleTs) stamps.push(new Date(appleTs).getTime());
     const latest = stamps.length ? Math.max(...stamps) : null;
     setLastPulled(latest ? new Date(latest).toISOString() : null);
@@ -145,8 +160,9 @@ export function WearableSyncStatus({ variant = "detailed", onSynced, refreshSign
   const anyPullConnected = WEARABLE_PROVIDERS.some((p) => connected[p.id]);
   if (!anyPullConnected && !appleConnected) return null;
 
-  const dataDate = dataThrough && isValid(new Date(dataThrough)) ? new Date(dataThrough) : null;
   const pulledDate = lastPulled && isValid(new Date(lastPulled)) ? new Date(lastPulled) : null;
+  const dataThroughLabel =
+    dataThrough && isValid(new Date(dataThrough)) ? formatDataThrough(dataThrough) : null;
   const showButton = anyPullConnected;
 
   if (variant === "compact") {
@@ -156,10 +172,8 @@ export function WearableSyncStatus({ variant = "detailed", onSynced, refreshSign
           <span>
             {pulledDate ? `Last sync ${formatDistanceToNow(pulledDate, { addSuffix: true })}` : "Never synced"}
           </span>
-          {dataDate && (
-            <span className="text-muted-foreground/70">
-              Latest data {formatDistanceToNow(dataDate, { addSuffix: true })}
-            </span>
+          {dataThroughLabel && (
+            <span className="text-muted-foreground/70">Data through {dataThroughLabel}</span>
           )}
         </span>
         {showButton && (
@@ -187,7 +201,7 @@ export function WearableSyncStatus({ variant = "detailed", onSynced, refreshSign
         <p className="text-[11px] text-muted-foreground">
           Data through{" "}
           <span className="text-foreground/80">
-            {dataDate ? format(dataDate, "EEE h:mm a") : "–"}
+            {dataThroughLabel ?? "–"}
           </span>
         </p>
         <p className="text-[11px] text-muted-foreground">

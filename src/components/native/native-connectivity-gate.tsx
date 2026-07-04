@@ -2,21 +2,30 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { WifiOff, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const PING_TIMEOUT_MS = 8000;
+const PING_TIMEOUT_MS = 2500;
 
 async function canReachPurple(): Promise<boolean> {
   if (!navigator.onLine) return false;
 
-  const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), PING_TIMEOUT_MS);
-  try {
-    const res = await fetch("/", { method: "GET", cache: "no-store", signal: controller.signal });
-    return res.ok;
-  } catch {
-    return false;
-  } finally {
-    window.clearTimeout(timer);
+  async function ping(method: "HEAD" | "GET"): Promise<boolean> {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), PING_TIMEOUT_MS);
+    try {
+      const res = await fetch("/", {
+        method,
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      return res.ok || res.status === 405;
+    } catch {
+      return false;
+    } finally {
+      window.clearTimeout(timer);
+    }
   }
+
+  if (await ping("HEAD")) return true;
+  return ping("GET");
 }
 
 /**
@@ -24,22 +33,32 @@ async function canReachPurple(): Promise<boolean> {
  * Required for App Store review: hybrid apps must handle offline gracefully.
  */
 export function NativeConnectivityGate({ children }: { children: ReactNode }) {
-  const [online, setOnline] = useState<boolean | null>(() =>
-    typeof navigator !== "undefined" && !navigator.onLine ? false : null,
+  const [showOffline, setShowOffline] = useState(
+    () => typeof navigator !== "undefined" && !navigator.onLine,
   );
   const [checking, setChecking] = useState(false);
 
-  const check = useCallback(async () => {
+  /** Soft checks recover silently; strict checks (retry button) show the offline screen. */
+  const check = useCallback(async (strict = false) => {
+    if (!navigator.onLine) {
+      setShowOffline(true);
+      return false;
+    }
     setChecking(true);
     const ok = await canReachPurple();
-    setOnline(ok);
     setChecking(false);
+    if (ok) {
+      setShowOffline(false);
+    } else if (strict) {
+      setShowOffline(true);
+    }
+    return ok;
   }, []);
 
   useEffect(() => {
-    void check();
-    const onOnline = () => void check();
-    const onOffline = () => setOnline(false);
+    void check(false);
+    const onOnline = () => void check(false);
+    const onOffline = () => setShowOffline(true);
     window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
     return () => {
@@ -48,7 +67,7 @@ export function NativeConnectivityGate({ children }: { children: ReactNode }) {
     };
   }, [check]);
 
-  if (online === false) {
+  if (showOffline) {
     return (
       <div
         className="native-connectivity-offline flex min-h-dvh flex-col items-center justify-center bg-background px-8 text-center"
@@ -65,7 +84,11 @@ export function NativeConnectivityGate({ children }: { children: ReactNode }) {
           Check your internet connection. Purple needs network access to load your journal and
           health data.
         </p>
-        <Button className="mt-6 min-w-[10rem]" onClick={() => void check()} disabled={checking}>
+        <Button
+          className="glass-press touch-manipulation mt-6 min-h-11 min-w-[10rem]"
+          onClick={() => void check(true)}
+          disabled={checking}
+        >
           {checking ? (
             <RefreshCw className="h-4 w-4 animate-spin" />
           ) : (

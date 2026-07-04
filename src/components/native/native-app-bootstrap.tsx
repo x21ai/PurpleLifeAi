@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
-import { isNativeApp } from "@/lib/native/capacitor";
+import { useAuth } from "@/integrations/supabase/auth-context";
+import { useNativeAppContext } from "@/lib/native-app-context";
+import { hideNativeLaunchChrome, initNativeApp } from "@/lib/native";
 
 const MARKETING_PATHS = new Set([
   "/",
@@ -22,21 +23,28 @@ const MARKETING_PATHS = new Set([
 export function NativeAppBootstrap() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
+  const { isNativeApp } = useNativeAppContext();
+  const { session, loading } = useAuth();
 
   useEffect(() => {
-    if (!isNativeApp()) return;
+    if (!isNativeApp) return;
     if (!MARKETING_PATHS.has(pathname)) return;
+    if (loading) return;
 
-    void supabase.auth.getSession().then(({ data }) => {
-      navigate({ to: (data.session ? "/today" : "/sign-in") as never, replace: true });
-    });
-  }, [pathname, navigate]);
+    void navigate({ to: (session ? "/today" : "/sign-in") as never, replace: true });
+  }, [pathname, navigate, isNativeApp, session, loading]);
 
   useEffect(() => {
-    if (!isNativeApp()) return;
+    if (!isNativeApp) return;
     const splash = document.getElementById("purple-splash");
-    if (splash) splash.remove();
-  }, []);
+    if (splash) {
+      splash.style.pointerEvents = "none";
+      splash.style.opacity = "0";
+      splash.remove();
+    }
+    void hideNativeLaunchChrome();
+    void initNativeApp();
+  }, [isNativeApp]);
 
   return null;
 }

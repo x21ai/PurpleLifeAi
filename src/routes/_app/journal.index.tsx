@@ -124,7 +124,7 @@ function JournalPage() {
 
   return (
     <div
-      className="mx-auto max-w-3xl px-4 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-32"
+      className="mx-auto max-w-3xl min-h-full bg-[#faf8fb] bg-[radial-gradient(ellipse_90%_60%_at_50%_-15%,rgba(237,228,244,0.85),transparent_55%)] px-4 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-32"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -161,30 +161,30 @@ function JournalPage() {
       {loading ? (
         <div className="space-y-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-28 rounded-2xl bg-secondary/40 animate-pulse" />
+            <div key={i} className="glass-surface h-28 rounded-[20px] animate-pulse" />
           ))}
         </div>
       ) : (
         <>
-          <div className="mb-4 inline-flex rounded-full border border-border bg-secondary/40 p-1 text-sm">
+          <div className="glass-pill mb-4 inline-flex p-1 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
             <button
               type="button"
               onClick={() => setTab("active")}
-              className={`px-4 py-1.5 rounded-full transition ${tab === "active" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
+              className={`glass-press rounded-full px-4 py-2 transition ${tab === "active" ? "bg-background/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] text-foreground font-medium" : "text-muted-foreground"}`}
             >
               {t("journal.tabActive")}
             </button>
             <button
               type="button"
               onClick={() => setTab("archive")}
-              className={`px-4 py-1.5 rounded-full transition ${tab === "archive" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
+              className={`glass-press rounded-full px-4 py-2 transition ${tab === "archive" ? "bg-background/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] text-foreground font-medium" : "text-muted-foreground"}`}
             >
               {t("journal.tabArchive")}
             </button>
           </div>
 
           {/* Date filter bar */}
-          <div className="mb-6 rounded-2xl border border-border bg-secondary/30 p-3 space-y-3">
+          <div className="glass-surface mb-6 space-y-4 rounded-[20px] p-4">
             <div className="flex flex-wrap items-center gap-2">
               {[
                 { key: "all" as const, label: "All" },
@@ -196,7 +196,7 @@ function JournalPage() {
                   key={p.key}
                   type="button"
                   onClick={() => setPreset(p.key)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-background border border-border text-foreground hover:bg-secondary transition"
+                  className="glass-pill glass-press text-xs font-medium px-3 py-2 text-foreground transition hover:opacity-90 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
                 >
                   {p.label}
                 </button>
@@ -252,7 +252,7 @@ function JournalPage() {
             if (filtered.length === 0) {
               if (hasFilter) {
                 return (
-                  <div className="text-center py-12 px-6">
+                  <div className="glass-surface mx-auto max-w-md rounded-[20px] px-6 py-12 text-center">
                     <p className="text-sm text-muted-foreground">No entries in this date range.</p>
                     <button
                       type="button"
@@ -277,7 +277,7 @@ function JournalPage() {
 
             return (
               <>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {slice.map((e) => (
                     <EntryCard key={e.id} entry={e} />
                   ))}
@@ -289,7 +289,7 @@ function JournalPage() {
                         type="button"
                         onClick={() => setPage((p) => Math.max(1, p - 1))}
                         disabled={safePage === 1}
-                        className="px-3 py-1.5 text-xs rounded-md border border-border bg-secondary/40 hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="glass-pill glass-press px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-40 hover:opacity-90"
                       >
                         Prev
                       </button>
@@ -301,10 +301,10 @@ function JournalPage() {
                             key={n}
                             type="button"
                             onClick={() => setPage(n as number)}
-                            className={`min-w-[2rem] px-2.5 py-1.5 text-xs rounded-md border border-border ${
+                            className={`glass-pill glass-press min-w-[2rem] px-2.5 py-1.5 text-xs ${
                               n === safePage
                                 ? "bg-primary text-primary-foreground border-primary"
-                                : "bg-secondary/40 hover:bg-secondary"
+                                : "hover:opacity-90"
                             }`}
                           >
                             {n}
@@ -315,7 +315,7 @@ function JournalPage() {
                         type="button"
                         onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                         disabled={safePage === totalPages}
-                        className="px-3 py-1.5 text-xs rounded-md border border-border bg-secondary/40 hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="glass-pill glass-press px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-40 hover:opacity-90"
                       >
                         Next
                       </button>
@@ -335,7 +335,7 @@ function JournalPage() {
         type="button"
         onClick={() => navigate({ to: "/journal/new" })}
         aria-label={t("journal.newEntry")}
-        className="fixed bottom-24 right-5 md:bottom-8 md:right-8 z-40 inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 py-3.5 shadow-lg shadow-primary/30 hover:bg-primary/90 active:scale-[0.98] transition"
+        className="native-fab-fixed glass-press fixed bottom-24 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3.5 text-primary-foreground shadow-lg shadow-primary/30 transition hover:bg-primary/90 active:scale-[0.98] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] md:bottom-8 md:right-8"
         style={{ marginBottom: "env(safe-area-inset-bottom)" }}
       >
         <Plus className="h-5 w-5" />

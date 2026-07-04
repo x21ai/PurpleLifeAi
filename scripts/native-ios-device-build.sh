@@ -21,7 +21,9 @@ DOPPLER_CONFIG="${DOPPLER_CONFIG:-prd}"
 log "Resolving DEVELOPMENT_TEAM from Doppler ${DOPPLER_PROJECT}/${DOPPLER_CONFIG}"
 DOPPLER_PROJECT="${DOPPLER_PROJECT}" DOPPLER_CONFIG="${DOPPLER_CONFIG}" bun run ios:local-signing
 
-bash "${REPO_ROOT}/scripts/native-ios-build.sh" 2>/dev/null || true
+log "Syncing Capacitor iOS shell"
+(cd "${REPO_ROOT}" && bun run native:sync)
+node "${REPO_ROOT}/scripts/check-native-shell.mjs"
 
 XCODE_APP=""
 for candidate in "/Applications/Xcode.app" "/Applications/Xcode-beta.app" "/Users/${USER}/Downloads/Xcode-beta.app"; do
@@ -59,4 +61,31 @@ xcodebuild \
   -allowProvisioningDeviceRegistration \
   build
 
-log "Device build succeeded. Install from Xcode Devices window or: xcrun devicectl device install app --device <id> <path-to-App.app>"
+log "Device build succeeded."
+
+DEVICE_ID=""
+DEVICE_ID="$(xcrun devicectl list devices 2>/dev/null | awk '/physical/ && /iPhone/ {
+  for (i = 1; i <= NF; i++) {
+    if ($i ~ /^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$/) {
+      print $i
+      exit
+    }
+  }
+}')"
+if [[ -z "${DEVICE_ID}" ]]; then
+  log "No physical iPhone found for auto-install. Connect device and re-run, or install manually."
+  exit 0
+fi
+
+APP_PATH="$(find "${HOME}/Library/Developer/Xcode/DerivedData"/App-*/Build/Products/Debug-iphoneos -name 'App.app' -type d 2>/dev/null | head -1)"
+if [[ -z "${APP_PATH}" || ! -d "${APP_PATH}" ]]; then
+  fail "App.app not found under DerivedData Debug-iphoneos"
+fi
+
+log "Installing ${APP_PATH} on device ${DEVICE_ID}"
+xcrun devicectl device install app --device "${DEVICE_ID}" "${APP_PATH}"
+
+log "Launching org.purplelife.app"
+xcrun devicectl device process launch --device "${DEVICE_ID}" org.purplelife.app
+
+log "Installed and launched on connected iPhone."

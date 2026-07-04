@@ -33,13 +33,13 @@ export function NativeAppShell() {
     <NativeRouteGuard>
       <NativeConnectivityGate>
         <NativeShellProvider>
-        <div className="native-shell min-h-dvh bg-background text-foreground flex flex-col">
+        <div className="native-shell h-dvh bg-background text-foreground flex flex-col overflow-hidden">
           {!hideChrome && <MobileTopBar variant="native" />}
           <main
             className={
               hideChrome
-                ? "native-shell-main flex-1 flex flex-col min-h-0"
-                : "native-shell-main flex-1 flex flex-col min-h-0 pb-[calc(5.5rem+env(safe-area-inset-bottom))]"
+                ? "native-shell-main flex-1 flex flex-col min-h-0 overflow-y-auto"
+                : "native-shell-main native-shell-main--tabbed flex-1 flex flex-col min-h-0 overflow-y-auto"
             }
           >
             <div className="flex-1 min-h-0">

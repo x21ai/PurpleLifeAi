@@ -14,7 +14,7 @@ export function AppShell() {
       <MobileTopBar />
       <main
         className={
-          "pb-24 md:pb-0 min-h-dvh flex flex-col md:pl-16 " +
+          "pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-0 min-h-dvh flex flex-col md:pl-16 " +
           (collapsed ? "lg:pl-16" : "lg:pl-64")
         }
       >

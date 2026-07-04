@@ -1,6 +1,6 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-03 (TestFlight build 1.0/1 uploaded; ASC metadata partially filled).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-04 (session: 5-issue bugfix ship, Worker `af1200ed`, TestFlight upload blocked).
 
 Positioning: PurpleLife is an AI health journal for any health management (epilepsy was the founding focus; the condition catalog is general).
 
@@ -31,9 +31,9 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 | Runtime | Cloudflare Worker (`wrangler.deploy.jsonc`, entry `src/server.ts`, `nodejs_compat`) |
 | Package manager | bun (commands below) |
 | Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
-| Git heads | `lovable/redesign` at `31f9176` (native shell + TestFlight scripts committed); `main` at `311d466` |
-| Production deploy | Worker `purplelife`, version `9b7f3199` (2026-07-03 23:53 UTC) |
-| TestFlight | **Uploaded** build **1.0 (1)** for **Purple for Life** (ASC Apple ID `6787298041`, bundle `org.purplelife.app`). Processing 5–15 min. Doppler ASC secrets OK. Fix: added `NSHealthUpdateUsageDescription` to `ios/App/App/Info.plist`. Screenshots in `test-results/asc-screenshots/`. Runbook: `docs/testflight-setup.md` |
+| Git heads | `lovable/redesign` (5-issue bugfix ship commit pending push) |
+| Production deploy | Worker `purplelife`, version **`af1200ed-ac7f-4182-9021-d455a276fbce`** (2026-07-04, native layout + sync time + caregiver toolbar + crash shell) |
+| TestFlight | Build **1.0 (4)** in Xcode project; **upload blocked** this session (export `ditto` Desktop path on first attempt; retries hit OOM/SIGKILL + SPM cache corruption). USB Release **1.0 (4)** verified on iPhone Air iOS 27. Retry: `ARCHIVE_PATH=/tmp/Purple.xcarchive EXPORT_DIR=/tmp/Purple-export doppler run --project purple-life --config prd -- bun run ios:testflight` after clearing DerivedData if needed. |
 | Dev server | `bun run dev` on port 8080 |
 | E2E local | `bun run test:e2e` (boots dev server unless `E2E_BASE_URL` set) |
 | E2E prod | `bun run test:e2e:prod` (580 tests, 5 viewports, ~1.5h; Doppler creds) |
@@ -59,14 +59,57 @@ checklist in `docs/LOVABLE-REDESIGN-WORKFLOW.md`, then asks the owner before dep
 Local path: `bun run build:prod` then `doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c 'export CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0; bunx wrangler deploy -c wrangler.deploy.jsonc'`.
 Cron Triggers fan out from `scheduled()` in `src/server.ts` through a `SELF` service binding.
 
+## Session audit (2026-07-03, Cursor restart recovery)
+
+Subagent transcripts under `agent-transcripts/0b183bba-c600-4c86-8d1a-9e91eafaf7bc/subagents/`. Many agents were interrupted mid-run; code landed in the working tree and was finished/deployed by the parent audit.
+
+| Agent | Task | Status | Key files | Deployed |
+|-------|------|--------|-----------|----------|
+| `04e7fd10` | Apple Health connect fix | **COMPLETE** (audit) | `health-ios.ts` (vo2Max removed from AUTH_READ_TYPES; `isCoreAuthorized` partial-grant), `use-native-apple-health.ts` | Yes (`ede63b48`) |
+| `f6754ada` | TestFlight status | **COMPLETE** | ASC scripts, `docs/testflight-setup.md` | N/A (build 2 on ASC) |
+| `46d73269` | native-sync backend verify | **COMPLETE** | `native-health.server.ts`, `/api/health/native-sync` | Yes (prior `9a6481ac`) |
+| `5f7a1ee2` | Capgo HealthKit research | **COMPLETE** | research only | N/A |
+| `58ac1f1a` | Native touch UX polish | **COMPLETE** (audit) | `styles.css` (`touch-action`, `.glass-press`), `bottom-nav.tsx`, `mobile-top-bar.tsx`, native route guards | Yes (`ede63b48`) |
+| `a42091a9` | Sync time display fix | **COMPLETE** (audit) | `use-native-apple-health.ts` (`lastSyncAt`), `apple-health.server.ts` (`touchAppleHealthSync`) | Yes (`ede63b48`) |
+| `ef7c0f78` | Deploy pending fixes | **COMPLETE** (audit) | all pending web changes | Yes (`ede63b48`) |
+| `47e4d2d7` | Glass tokens (1/10) | **COMPLETE** | `styles.css` (`--glass-*`, `.glass-surface/card/nav/pill/press`) | Yes (`ede63b48`) |
+| `3f2f0052` | Glass nav (2/10) | **COMPLETE** (audit) | `bottom-nav.tsx`, `mobile-top-bar.tsx` (`nav-glass-bar`, `nav-glass-top`) | Yes (`ede63b48`) |
+| `ef01512c` | Glass Today (3/10) | **COMPLETE** (audit) | `today.tsx`, `date-strip.tsx` | Yes (`ede63b48`) |
+| `3fb73c3f` | Glass vitals (4/10) | **COMPLETE** (audit) | `vitals.tsx`, `metric-card.tsx`, `score-tile.tsx` | Yes (`ede63b48`) |
+| `e130114e` | Glass sheets (5/10) | **COMPLETE** | `sheet.tsx`, `dialog.tsx`, `drawer.tsx`, `alert-dialog.tsx` | Yes (`ede63b48`) |
+| `b238a89a` | Glass settings (6/10) | **COMPLETE** (audit) | `account.tsx`, `tools.tsx`, `sheet-page.tsx` | Yes (`ede63b48`) |
+| `fcb0f70a` | Glass journal (7/10) | **COMPLETE** (audit) | `journal.index.tsx`, `entry-card.tsx` | Yes (`ede63b48`) |
+| `48d2522a` | Glass meds (8/10) | **COMPLETE** (audit) | `today-panel.tsx` | Yes (`ede63b48`) |
+| `042a4af2` | Glass auth (9/10) | **COMPLETE** (audit) | `sign-in.tsx` (`glass-card`, `glass-input`, `glass-cta`) | Yes (`ede63b48`) |
+| `cf296b43` | Glass reports+deploy (10/10) | **COMPLETE** (audit) | report components + `chat.tsx` bubbles; Worker deploy | Yes (`ede63b48`) |
+
+**Figma MCP:** `plugin-figma-figma` requires auth (`mcp_auth`); tokens were not extracted from the iOS 27 kit. Glass values follow Apple HIG liquid-glass range (blur 24 to 36px, rgba fills, `@supports` fallbacks) in `styles.css`.
+
+**iOS device:** `bun run ios:device-build` succeeded on **aa's iPhone Air** (`A3AE3F17-7880-5C6E-A421-95229F9ECD48`). Fixed `scripts/native-ios-device-build.sh` UUID parsing (device names with spaces broke `awk $3`).
+
+**User action after deploy:** Force-quit Purple on iPhone, reopen so the WebView loads `ede63b48` assets from `https://www.purplelife.org`. Then test **Settings → Connect Apple Health** (partial HealthKit grants should now connect).
+
+## Recent changes (2026-07-04, 5-issue bugfix ship)
+
+- **Production web deploy (`af1200ed`):** Native layout scroll containment in `native-app-shell.tsx` (FAB `z-50` above nav), calendar-day sync labels in `sync-status.tsx`, unified glass toolbar on `care.$ownerId.tsx`, TSC fix (`canWrite` on `JournalPanel`). Gates: `check:em-dash`, `check:native-shell`, `tsc --noEmit`, `build:prod` all pass.
+- **TestFlight 1.0 (4):** Archive succeeded once; export failed (`ditto: Cannot get real path` for Desktop archive path). Use `ARCHIVE_PATH=/tmp/Purple.xcarchive` on retry. Subsequent upload attempts blocked by Xcode OOM (SIGKILL 137) and corrupted SPM/DerivedData from parallel retries; clear `~/Library/Developer/Xcode/DerivedData/App-*` and `~/Library/Caches/org.swift.swiftpm/artifacts` before next run.
+
+## Recent changes (2026-07-04, TestFlight launch crash)
+
+- **TestFlight launch crash on iOS 27 (build 4 fix):** Root cause was missing bundled `index.html`. Committed code still had `webDir: "dist/client"` (TanStack Start emits no root HTML); `capacitor-shell/index.html` existed only as an untracked local file, so ASC builds 1–2 shipped without a WebView fallback and Capacitor crashed at launch. Fix: commit `capacitor-shell/index.html`, keep `webDir: "capacitor-shell"`, add `scripts/check-native-shell.mjs` (runs before device/TestFlight builds), harden `ios:device-build` to always `native:sync`. Luciq: enable launch-crash sync, drop `.floatingButton` (UIKit conflict risk on iOS 26+). `CURRENT_PROJECT_VERSION=4`. Verified Release archive + USB install on iPhone Air iOS 27.
+
 ## Recent changes (2026-07-03, TestFlight + ASC)
 
+- **Native touch + responsiveness (2026-07-03, Agent 7/8):** Optimistic `NativeConnectivityGate` (soft background ping, offline only on `navigator.offLine` or strict retry); `NativeRouteGuard`/`NativeAppBootstrap` use `useAuth()` instead of async `getSession()`; faster Capacitor bridge poll in `use-native-app.ts`; `html.native-app` applied optimistically during bridge detection; CSS fixes for closed sheet `pointer-events`, z-index stacking, `.sheet-link` press feedback. `check:em-dash` pass; debug build installed on connected iPhone.
+- **Apple Health connect + liquid glass deploy (2026-07-03 night):** Removed `vo2Max` from iOS `AUTH_READ_TYPES` (Capgo enum rejects it); authorization uses `isCoreAuthorized` (any core type granted). `lastSyncAt` from `apple_health_tokens` drives "Last synced just now". Liquid glass design system across nav, Today, vitals, sheets, settings, journal, meds, auth, reports, chat. Prod deploy `ede63b48`. iPhone Air debug build reinstalled via fixed `ios:device-build` script.
+- **Luciq crash reporting + launch fix (2026-07-03 evening):** Integrated Luciq SDK 19.9.0 via SPM (`luciqai/luciq-ios-sdk`), init in `AppDelegate.swift`, token via Doppler `LUCIQ_APP_TOKEN` → `LocalSigning.xcconfig`. Added `capacitor-shell/index.html` (TanStack Start has no `index.html` in dist); `webDir` now `capacitor-shell`. Hardened `initNativeApp()` try/catch; med reminders check permissions before prompt. `CURRENT_PROJECT_VERSION=2`. **TestFlight build 2 uploaded**; **debug build installed and launched on iPhone Air** (no crash). `scripts/native-ios-device-build.sh` now auto-installs + launches on connected device.
 - Owner created ASC app **Purple for Life** (Apple ID `6787298041`, bundle `org.purplelife.app`).
 - `bun run ios:check-asc`: all four Doppler secrets present (`purple-life/prd`).
 - First `bun run ios:testflight`: export failed (missing `NSHealthUpdateUsageDescription` in `Info.plist`).
 - Added `NSHealthUpdateUsageDescription` to `ios/App/App/Info.plist`; second upload **succeeded** (1.0 / build **1**).
 - ASC co-browse: subtitle, Health & Fitness category, content rights, promotional text, description, keywords, review notes, E2E demo creds, manual release. Screenshots captured to `test-results/asc-screenshots/` via `scripts/capture-asc-screenshots.mjs`.
-- ASC still open: upload screenshots, finish age-ratings wizard, App Privacy (Admin), select build after processing, verify Save on version page.
+- ASC co-browse (2026-07-03 evening): Support URL `https://www.purplelife.org/contact`, Copyright `ideaTree Inc. 2026`, age-ratings wizard complete (Medical/Treatment None, Health/Wellness Yes, 4+ global), build **1.0 (1)** attached to version 1.0.
+- ASC still open: upload 4 iPhone 6.5" screenshots (browser MCP cannot file-upload), App Privacy questionnaire (Admin, not started), then **Add for Review**.
 
 Redesign baseline on `main`: commit `7086ffa` (perf/responsive/native foundation).
 

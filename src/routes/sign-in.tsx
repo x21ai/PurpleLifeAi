@@ -268,7 +268,7 @@ function SignInPage() {
   };
 
   return (
-    <div className="h-dvh overflow-hidden grid grid-cols-1 lg:grid-cols-2 bg-background text-foreground">
+    <div className="auth-canvas h-dvh overflow-hidden grid grid-cols-1 lg:grid-cols-2">
       {/* LEFT: brand panel */}
       <aside className="hidden lg:flex relative flex-col justify-between p-14 xl:p-16 bg-[#050505] text-white overflow-hidden">
         {/* Ambient aura mesh */}
@@ -321,53 +321,53 @@ function SignInPage() {
 
       {/* RIGHT: auth column */}
       <main className="flex flex-col justify-center px-6 sm:px-12 lg:px-20 py-8 lg:py-10 overflow-y-auto">
-        <div className="w-full max-w-[400px] mx-auto">
+        <div className="w-full max-w-[440px] mx-auto">
           {/* Mobile-only wordmark */}
-          <p className="lg:hidden text-xs font-semibold tracking-[0.3em] uppercase text-primary mb-6">
+          <p className="lg:hidden text-xs font-semibold tracking-[0.3em] uppercase text-white/90 mb-6">
             PURPLE
           </p>
 
           {status === "verify-sent" ? (
-            <div className="rounded-2xl border border-border bg-secondary/60 p-6">
-              <p className="label-eyebrow">{t("signIn.checkInbox")}</p>
-              <p className="mt-3 font-serif text-2xl text-secondary-foreground leading-snug">
+            <div className="glass-card auth-form-card">
+              <p className="label-eyebrow text-white/55">{t("signIn.checkInbox")}</p>
+              <p className="mt-3 font-serif text-2xl text-white leading-snug">
                 {t("signIn.confirmEmail")}
               </p>
               <button
                 type="button"
                 onClick={() => { setMode("signin"); setStatus("idle"); }}
-                className="mt-4 text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                className="mt-4 text-sm text-white/60 underline underline-offset-4 hover:text-white"
               >
                 {t("signIn.confirmedElsewhere", { defaultValue: "Confirmed on another device? Sign in" })}
               </button>
             </div>
           ) : status === "reset-sent" ? (
-            <div className="rounded-2xl border border-border bg-secondary/60 p-6">
-              <p className="label-eyebrow">{t("signIn.checkInbox")}</p>
-              <p className="mt-3 font-serif text-2xl text-secondary-foreground leading-snug">
+            <div className="glass-card auth-form-card">
+              <p className="label-eyebrow text-white/55">{t("signIn.checkInbox")}</p>
+              <p className="mt-3 font-serif text-2xl text-white leading-snug">
                 {t("signIn.resetSent")}
               </p>
               <button
                 type="button"
                 onClick={() => setStatus("idle")}
-                className="mt-4 text-sm font-sans text-muted-foreground underline underline-offset-4"
+                className="mt-4 text-sm font-sans text-white/60 underline underline-offset-4 hover:text-white"
               >
                 {t("signIn.backToSignIn")}
               </button>
             </div>
           ) : (
-            <div>
-              <h1 className="font-serif text-3xl lg:text-4xl tracking-tight text-foreground">
+            <div className="glass-card auth-form-card">
+              <h1 className="font-serif text-3xl lg:text-4xl tracking-tight text-white">
                 {mode === "signin" ? "Welcome back!" : "Create your account"}
               </h1>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-2 text-sm text-white/65">
                 {mode === "signin" ? (
                   <>
                     Don&rsquo;t have an account?{" "}
                     <button
                       type="button"
                       onClick={() => { setMode("register"); setErrorMsg(null); }}
-                      className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+                      className="font-medium text-white underline underline-offset-4 hover:text-purple-200"
                     >
                       Create a new account now
                     </button>
@@ -379,7 +379,7 @@ function SignInPage() {
                     <button
                       type="button"
                       onClick={() => { setMode("signin"); setErrorMsg(null); }}
-                      className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+                      className="font-medium text-white underline underline-offset-4 hover:text-purple-200"
                     >
                       Sign in
                     </button>
@@ -387,7 +387,7 @@ function SignInPage() {
                 )}
               </p>
 
-              <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+              <form onSubmit={handleSubmit} className="mt-8 space-y-4">
                 <div>
                   <Input
                     id="email"
@@ -402,7 +402,7 @@ function SignInPage() {
                       if (status === "error") { setStatus("idle"); setErrorMsg(null); }
                     }}
                     aria-invalid={status === "error"}
-                    className={`h-11 rounded-none border-0 border-b bg-transparent px-0 text-base shadow-none focus-visible:ring-0 focus-visible:border-primary ${status === "error" ? "border-destructive" : "border-border"}`}
+                    className={`glass-input h-11 px-3.5 text-base shadow-none focus-visible:ring-0 ${status === "error" ? "border-destructive" : ""}`}
                     disabled={status === "submitting"}
                   />
                 </div>
@@ -420,13 +420,13 @@ function SignInPage() {
                       if (status === "error") { setStatus("idle"); setErrorMsg(null); }
                     }}
                     aria-invalid={status === "error"}
-                    className={`h-11 rounded-none border-0 border-b bg-transparent px-0 text-base shadow-none focus-visible:ring-0 focus-visible:border-primary ${status === "error" ? "border-destructive" : "border-border"}`}
+                    className={`glass-input h-11 px-3.5 text-base shadow-none focus-visible:ring-0 ${status === "error" ? "border-destructive" : ""}`}
                     disabled={status === "submitting"}
                   />
                 </div>
 
                 {status === "error" && errorMsg && (
-                  <p role="alert" className="text-sm text-destructive">{errorMsg}</p>
+                  <p role="alert" className="text-sm text-[#e8745c]">{errorMsg}</p>
                 )}
                 {mode === "register" && (
                   <>
@@ -437,19 +437,19 @@ function SignInPage() {
                         onCheckedChange={(checked) => setAgreed(checked === true)}
                         aria-describedby="agree-terms-label"
                       />
-                      <Label id="agree-terms-label" htmlFor="agree-terms" className="text-xs text-muted-foreground leading-tight cursor-pointer">
+                      <Label id="agree-terms-label" htmlFor="agree-terms" className="text-xs text-white/60 leading-tight cursor-pointer">
                         I agree to the{" "}
-                        <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">
+                        <Link to="/terms" className="underline underline-offset-2 hover:text-white">
                           terms of use
                         </Link>{" "}
                         and{" "}
-                        <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
+                        <Link to="/privacy" className="underline underline-offset-2 hover:text-white">
                           privacy policy
                         </Link>
-                        <span aria-hidden="true" className="text-destructive ml-0.5">*</span>
+                        <span aria-hidden="true" className="text-[#e8745c] ml-0.5">*</span>
                       </Label>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-white/55">
                       We&rsquo;ll ask a few quick things after you confirm your email, region, conditions, and anything else that helps Purple help you.
                     </p>
                   </>
@@ -457,7 +457,7 @@ function SignInPage() {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 text-base rounded-md mt-2"
+                  className="glass-cta w-full h-12 text-base rounded-xl mt-2 border-0 bg-transparent hover:bg-transparent shadow-none"
                   disabled={status === "submitting" || (mode === "register" && !agreed)}
                 >
                   {status === "submitting"
@@ -471,24 +471,24 @@ function SignInPage() {
               </div>
 
               {mode === "signin" && (
-                <p className="mt-6 text-center text-sm text-muted-foreground">
+                <p className="mt-6 text-center text-sm text-white/60">
                   Forgot password?{" "}
                   <button
                     type="button"
                     onClick={handleForgotPassword}
                     disabled={status === "submitting"}
-                    className="font-medium text-foreground underline underline-offset-4 hover:text-primary disabled:opacity-50"
+                    className="font-medium text-white underline underline-offset-4 hover:text-purple-200 disabled:opacity-50"
                   >
                     Click here
                   </button>
                 </p>
               )}
 
-              <p className="mt-6 text-center text-xs text-muted-foreground">
+              <p className="mt-6 text-center text-xs text-white/50">
                 {t("signIn.trustLine")}{" "}
                 <Link
                   to="/trust"
-                  className="underline underline-offset-4 hover:text-foreground"
+                  className="underline underline-offset-4 hover:text-white"
                 >
                   {t("signIn.trustLink")}
                 </Link>

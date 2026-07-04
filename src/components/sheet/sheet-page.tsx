@@ -78,7 +78,11 @@ export function SheetCard({
   className?: string;
   id?: string;
 }) {
-  return <section id={id} className={`sheet-card p-5 sm:p-7 ${className}`}>{children}</section>;
+  return (
+    <section id={id} className={`sheet-card overflow-hidden p-5 sm:p-7 ${className}`}>
+      {children}
+    </section>
+  );
 }
 
 export function SheetSectionLabel({ children }: { children: React.ReactNode }) {
@@ -101,10 +105,10 @@ export function SheetRow({
   onClick?: () => void;
 }) {
   const inner = (
-    <div className="flex items-center justify-between gap-4 px-5 py-4 sm:px-7 sheet-link transition-colors">
+    <div className="flex items-center justify-between gap-4 px-5 py-4 sm:px-7 sheet-link">
       <div className="flex min-w-0 items-center gap-4">
         {icon && (
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-foreground">
+          <span className="sheet-card-inset flex h-9 w-9 shrink-0 items-center justify-center text-foreground">
             {icon}
           </span>
         )}
@@ -113,7 +117,7 @@ export function SheetRow({
           {subtitle && <p className="mt-0.5 truncate text-[13px] sheet-muted">{subtitle}</p>}
         </div>
       </div>
-      {trailing && <div className="shrink-0 sheet-muted">{trailing}</div>}
+      {trailing && <div className="sheet-chevron shrink-0">{trailing}</div>}
     </div>
   );
   if (onClick) {

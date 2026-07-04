@@ -44,7 +44,7 @@ export function QuickClinicianPdf() {
   });
 
   return (
-    <section className="mt-6 rounded-2xl border border-border bg-card p-5">
+    <section className="mt-6 glass-card rounded-2xl p-5">
       <div className="flex items-start gap-3">
         <FileText className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
         <div className="min-w-0 flex-1">

@@ -230,7 +230,7 @@ function MetricCard({
       <Link
         to="/reports/trends/$metricKey"
         params={{ metricKey: m.metric_key }}
-        className="flex flex-col gap-2 min-w-0"
+        className="glass-press flex flex-col gap-2 min-w-0"
       >
         <div className="min-w-0 pr-16">
           <p className="text-sm text-foreground line-clamp-2 leading-snug">{label}</p>

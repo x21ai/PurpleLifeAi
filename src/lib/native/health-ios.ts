@@ -11,14 +11,17 @@ export const HEALTHKIT_SOURCE = "apple_health" as const;
 
 const HEALTH_PLUGIN = "Health";
 
-const READ_TYPES = [
+/** Types passed to Health plugin auth checks (iOS enum has no vo2Max; including it rejects the call). */
+const AUTH_READ_TYPES = [
   "sleep",
   "heartRateVariability",
   "steps",
   "heartRate",
   "restingHeartRate",
-  "vo2Max",
 ] as const;
+
+/** Core vitals used to decide whether HealthKit is connected (partial grants are OK). */
+const CORE_READ_TYPES = AUTH_READ_TYPES;
 
 /** One day's HealthKit metrics, ready for server upsert. */
 export type HealthKitDay = {
@@ -76,9 +79,9 @@ function setHealthKitAuthLocalFlag(authorized: boolean): void {
   else localStorage.removeItem(HEALTHKIT_AUTH_STORAGE_KEY);
 }
 
-function isFullyAuthorized(status: AuthorizationStatus | undefined): boolean {
+function isCoreAuthorized(status: AuthorizationStatus | undefined): boolean {
   const authorized = status?.readAuthorized ?? [];
-  return READ_TYPES.every((type) => authorized.includes(type));
+  return CORE_READ_TYPES.some((type) => authorized.includes(type));
 }
 
 function isIosNative(): boolean {
@@ -142,19 +145,14 @@ export async function getHealthKitAuthorizationStatus(): Promise<HealthKitAuthSt
   }
 
   const status = (await callPlugin(HEALTH_PLUGIN, "checkAuthorization", {
-    read: [...READ_TYPES],
+    read: [...AUTH_READ_TYPES],
     write: [],
   })) as AuthorizationStatus | undefined;
 
   const readAuthorized = status?.readAuthorized ?? [];
   const readDenied = status?.readDenied ?? [];
-  const deniedRequired = READ_TYPES.some((type) => readDenied.includes(type));
-  if (deniedRequired) {
-    setHealthKitAuthLocalFlag(false);
-    return { authorized: false, readAuthorized, readDenied };
-  }
 
-  const pluginAuthorized = isFullyAuthorized(status);
+  const pluginAuthorized = isCoreAuthorized(status);
   if (pluginAuthorized) {
     setHealthKitAuthLocalFlag(true);
     return { authorized: true, readAuthorized, readDenied };
@@ -174,18 +172,20 @@ export async function openHealthKitSettings(): Promise<boolean> {
   return true;
 }
 
-/** Opens the HealthKit permission sheet for sleep, HRV, steps, heart rate, and VO2 max. */
+/** Opens the HealthKit permission sheet for sleep, HRV, steps, and heart rate. */
 export async function requestHealthKitPermissions(): Promise<boolean> {
   if (!isIosNative()) return false;
   const availability = await isHealthKitAvailable();
   if (!availability.available) return false;
 
   const status = (await callPlugin(HEALTH_PLUGIN, "requestAuthorization", {
-    read: [...READ_TYPES],
+    read: [...AUTH_READ_TYPES],
     write: [],
   })) as AuthorizationStatus | undefined;
 
-  const granted = isFullyAuthorized(status);
+  if (!status) return false;
+
+  const granted = isCoreAuthorized(status);
   if (granted) setHealthKitAuthLocalFlag(true);
   return granted;
 }
@@ -201,8 +201,6 @@ export async function readHealthKitMetrics(daysBack = 90): Promise<HealthKitDay[
   const byDay = new Map<string, HealthKitDay>();
   const hrBuckets = new Map<string, { sum: number; n: number }>();
   const hrvBuckets = new Map<string, { sum: number; n: number }>();
-  const vo2Buckets = new Map<string, { sum: number; n: number }>();
-
   const stepsResult = (await callPlugin(HEALTH_PLUGIN, "queryAggregated", {
     dataType: "steps",
     startDate,
@@ -260,20 +258,6 @@ export async function readHealthKitMetrics(daysBack = 90): Promise<HealthKitDay[
     hrvBuckets.set(date, bumpAvg(hrvBuckets.get(date), sample.value!));
   }
 
-  const vo2Result = (await callPlugin(HEALTH_PLUGIN, "readSamples", {
-    dataType: "vo2Max",
-    startDate,
-    endDate,
-    limit: 5000,
-    ascending: true,
-  })) as { samples?: HealthSample[] } | undefined;
-
-  for (const sample of vo2Result?.samples ?? []) {
-    const date = dayKey(sample.endDate ?? sample.startDate);
-    if (!date || !Number.isFinite(sample.value)) continue;
-    vo2Buckets.set(date, bumpAvg(vo2Buckets.get(date), sample.value!));
-  }
-
   const sleepResult = (await callPlugin(HEALTH_PLUGIN, "readSamples", {
     dataType: "sleep",
     startDate,
@@ -317,11 +301,6 @@ export async function readHealthKitMetrics(daysBack = 90): Promise<HealthKitDay[
   for (const [date, acc] of hrvBuckets) {
     if (acc.n === 0) continue;
     ensureDay(byDay, date).hrv_rmssd_ms = Math.round((acc.sum / acc.n) * 10) / 10;
-  }
-
-  for (const [date, acc] of vo2Buckets) {
-    if (acc.n === 0) continue;
-    ensureDay(byDay, date).vo2_max = Math.round((acc.sum / acc.n) * 10) / 10;
   }
 
   return Array.from(byDay.values()).sort((a, b) => a.date.localeCompare(b.date));

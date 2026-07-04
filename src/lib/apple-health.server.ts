@@ -173,14 +173,35 @@ export async function findUserBySecret(secret: string): Promise<string | null> {
   return data?.user_id ?? null;
 }
 
+function newWebhookSecret(): string {
+  const buf = new Uint8Array(32);
+  crypto.getRandomValues(buf);
+  return Array.from(buf)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export async function touchAppleHealthSync(userId: string, kind: "webhook" | "manual") {
   const stamp = new Date().toISOString();
-  await supabaseAdmin
+  const updates =
+    kind === "webhook"
+      ? { last_webhook_at: stamp, last_sync_at: stamp }
+      : { last_sync_at: stamp };
+
+  const { data: existing } = await supabaseAdmin
     .from("apple_health_tokens")
-    .update(
-      kind === "webhook"
-        ? { last_webhook_at: stamp, last_sync_at: stamp }
-        : { last_sync_at: stamp },
-    )
-    .eq("user_id", userId);
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (existing) {
+    await supabaseAdmin.from("apple_health_tokens").update(updates).eq("user_id", userId);
+    return;
+  }
+
+  await supabaseAdmin.from("apple_health_tokens").insert({
+    user_id: userId,
+    webhook_secret: newWebhookSecret(),
+    ...updates,
+  });
 }

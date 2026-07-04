@@ -344,7 +344,7 @@ function TodayPage() {
   return (
     <AppPage
       width="md"
-      className="px-5 sm:px-8 pt-10 sm:pt-16 pb-16"
+      className="min-h-full bg-[#0a0710] bg-[radial-gradient(ellipse_90%_55%_at_50%_-10%,rgba(176,132,209,0.14),transparent_58%)] px-5 sm:px-8 pt-10 sm:pt-16 pb-16"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -378,7 +378,7 @@ function TodayPage() {
         />
       )}
 
-      <p className="label-eyebrow" suppressHydrationWarning>
+      <p className="today-eyebrow" suppressHydrationWarning>
         {isToday
           ? now
             ? format(now, "EEEE, MMMM d")
@@ -387,7 +387,7 @@ function TodayPage() {
       </p>
 
       <h1
-        className="font-serif text-[32px] sm:text-[40px] leading-[1.15] tracking-tight mt-6 text-foreground"
+        className="today-hero-title text-[32px] sm:text-[40px] mt-6"
         suppressHydrationWarning
       >
         {isToday ? (
@@ -413,18 +413,18 @@ function TodayPage() {
       )}
 
       {isToday && forecast?.ai_narrative ? (
-        <p className="body-serif mt-4 max-w-[600px] text-foreground/75">{forecast.ai_narrative}</p>
+        <p className="today-lede mt-4 max-w-[600px] text-foreground/75">{forecast.ai_narrative}</p>
       ) : isToday ? (
-        <p className="body-serif mt-4 max-w-[600px] text-foreground/60">{conditionPrompt}</p>
+        <p className="today-lede mt-4 max-w-[600px] text-foreground/55">{conditionPrompt}</p>
       ) : (
-        <p className="body-serif mt-4 max-w-[600px] text-foreground/60">
+        <p className="today-lede mt-4 max-w-[600px] text-foreground/55">
           Here's how {format(selectedDate, "EEEE, MMMM d")} went.
         </p>
       )}
 
       <DateStrip value={selectedDate} onChange={setSelectedDate} />
       {!isToday && (
-        <div className="mt-3 flex items-center justify-between gap-3 rounded-full border border-border bg-card px-4 py-2 text-xs">
+        <div className="mt-4 flex items-center justify-between gap-3 glass-pill px-4 py-2.5 text-xs shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
           <span className="text-muted-foreground">
             Viewing {format(selectedDate, "EEEE, MMMM d")}
           </span>
@@ -438,7 +438,7 @@ function TodayPage() {
         </div>
       )}
 
-      <section className="mt-12 sm:mt-16 grid grid-cols-3 items-center gap-2">
+      <section className="mt-12 sm:mt-16 glass-surface rounded-[20px] p-2 sm:p-3 grid grid-cols-3 items-stretch gap-2">
         <ScoreTile
           value={readiness ?? "–"}
           label="Readiness"
@@ -472,7 +472,7 @@ function TodayPage() {
 
       {expanded && typeof focusScore === "number" && (
         <div
-          className="fixed inset-0 z-50 bg-background/95 backdrop-blur overflow-y-auto"
+          className="fixed inset-0 z-50 bg-[#0a0710]/92 backdrop-blur-xl overflow-y-auto"
           role="dialog"
           aria-modal="true"
           onClick={() => setExpanded(false)}
@@ -520,7 +520,7 @@ function TodayPage() {
 
       {forecast?.ai_narrative && (
         <div className="mt-12">
-          <NarrativeBlock>{forecast.ai_narrative}</NarrativeBlock>
+          <NarrativeBlock className="glass-card rounded-[20px] border-primary/10">{forecast.ai_narrative}</NarrativeBlock>
         </div>
       )}
 
@@ -546,7 +546,7 @@ function TodayPage() {
           type="button"
           onClick={() => setShowMore((v) => !v)}
           aria-expanded={showMore}
-          className="flex w-full items-center justify-between rounded-2xl bg-card ring-1 ring-border px-5 py-3 hover:bg-secondary/40 transition"
+          className="flex w-full items-center justify-between rounded-[20px] glass-surface glass-press px-5 py-4 transition hover:ring-1 hover:ring-white/10"
         >
           <span className="label-eyebrow text-muted-foreground">More for today</span>
           <ChevronDown
@@ -707,10 +707,10 @@ function QuickAction({
     <Link
       to={to}
       className={
-        "flex flex-col items-center justify-center gap-2 rounded-[16px] h-20 transition active:scale-[0.98] " +
+        "flex flex-col items-center justify-center gap-2 rounded-[18px] h-20 glass-press transition " +
         (tone === "accent"
-          ? "bg-[color:var(--purple-primary)]/15 text-[color:var(--purple-primary)] ring-1 ring-[color:var(--purple-primary)]/40 hover:bg-[color:var(--purple-primary)]/25"
-          : "bg-card text-foreground ring-1 ring-border hover:ring-foreground/30")
+          ? "glass-card bg-[color:var(--purple-primary)]/15 text-[color:var(--purple-primary)] ring-1 ring-[color:var(--purple-primary)]/40 hover:bg-[color:var(--purple-primary)]/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+          : "glass-card text-foreground hover:border-foreground/20")
       }
     >
       <Icon className="h-6 w-6" />

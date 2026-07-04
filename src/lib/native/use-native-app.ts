@@ -23,18 +23,21 @@ export function useNativeApp(): boolean | null {
 
   useEffect(() => {
     if (native !== null) return;
-    const detect = () => isNativeApp();
+    if (isNativeApp()) {
+      setNative(true);
+      return;
+    }
     let attempts = 0;
     const timer = window.setInterval(() => {
       attempts += 1;
-      if (detect()) {
+      if (isNativeApp()) {
         setNative(true);
         window.clearInterval(timer);
-      } else if (attempts >= 20) {
+      } else if (attempts >= 40) {
         setNative(false);
         window.clearInterval(timer);
       }
-    }, 50);
+    }, 25);
     return () => window.clearInterval(timer);
   }, [native]);
 

@@ -27,8 +27,9 @@ const DeferredStartup = lazy(() => import("@/components/common/deferred-startup"
 function dismissPurpleSplash() {
   const splash = document.getElementById("purple-splash");
   if (!splash) return;
+  splash.style.pointerEvents = "none";
   splash.style.opacity = "0";
-  window.setTimeout(() => splash.remove(), 420);
+  window.setTimeout(() => splash.remove(), 280);
 }
 
 function NotFoundComponent() {
@@ -203,7 +204,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
@@ -226,7 +227,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <style
           dangerouslySetInnerHTML={{
             __html:
-              "@keyframes purpleSplashHide{0%,70%{opacity:1;visibility:visible}100%{opacity:0;visibility:hidden;pointer-events:none}}#purple-splash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0A0710;transition:opacity .4s ease;animation:purpleSplashHide 1.8s ease forwards}#purple-splash .w{color:#FAFAFC;font-family:'Source Serif 4',Georgia,serif;font-weight:600;font-size:26px;letter-spacing:.42em;padding-left:.42em}@media (prefers-reduced-motion:reduce){#purple-splash{transition:none;animation:none}}",
+              "@keyframes purpleSplashHide{0%,35%{opacity:1;visibility:visible;pointer-events:auto}36%,100%{opacity:0;visibility:hidden;pointer-events:none}}#purple-splash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0A0710;transition:opacity .25s ease;animation:purpleSplashHide .65s ease forwards;pointer-events:none}#purple-splash .w{color:#FAFAFC;font-family:'Source Serif 4',Georgia,serif;font-weight:600;font-size:26px;letter-spacing:.42em;padding-left:.42em}html.native-app #purple-splash{animation-duration:.35s}@media (prefers-reduced-motion:reduce){#purple-splash{transition:none;animation:none;pointer-events:none}}",
           }}
         />
       </head>
@@ -270,14 +271,23 @@ function RootComponent() {
   }, [router, queryClient]);
 
   // Mount deferred startup work (service worker, Oura auto-sync) once the
-  // browser is idle so it never competes with first paint.
+  // browser is idle so it never competes with first paint. Native shell skips
+  // the idle wait so Capacitor splash hide and plugins init without blocking taps.
   useEffect(() => {
     const start = () => setIdle(true);
+    const mobileProd =
+      /iPhone|iPod|iPad|Android/i.test(navigator.userAgent) &&
+      (window.location.hostname === "www.purplelife.org" ||
+        window.location.hostname === "purplelife.org");
+    if (isNativeApp() || mobileProd) {
+      start();
+      return;
+    }
     if (typeof window.requestIdleCallback === "function") {
-      const id = window.requestIdleCallback(start, { timeout: 3000 });
+      const id = window.requestIdleCallback(start, { timeout: 800 });
       return () => window.cancelIdleCallback(id);
     }
-    const id = window.setTimeout(start, 1500);
+    const id = window.setTimeout(start, 400);
     return () => window.clearTimeout(id);
   }, []);
 

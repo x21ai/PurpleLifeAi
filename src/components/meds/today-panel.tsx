@@ -26,6 +26,19 @@ function dotStyle(status: string): string {
   }
 }
 
+function doseStatusPillClass(status: string): string {
+  switch (status) {
+    case "taken":
+      return "glass-pill bg-[color:var(--success)]/15 text-[color:var(--success)]";
+    case "missed":
+      return "glass-pill bg-destructive/15 text-destructive";
+    case "skipped":
+      return "glass-pill bg-muted/50 text-muted-foreground";
+    default:
+      return "glass-pill bg-primary/15 text-primary";
+  }
+}
+
 export function TodayPanel({
   doses,
   timezone,
@@ -90,12 +103,12 @@ export function TodayPanel({
   const canGoNext = !isToday;
 
   return (
-    <section id="today-doses" className="mt-4 rounded-2xl border border-border bg-card p-5 sm:p-6">
+    <section id="today-doses" className="mt-4 glass-card rounded-[20px] p-5 sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <Pill className="h-4 w-4 text-muted-foreground" />
-            <h2 className="font-serif text-xl text-foreground">
+            <h2 className="font-serif text-xl font-medium text-foreground">
               {isToday ? t("meds.todayDoses") : t("meds.dosesForDay")}
             </h2>
           </div>
@@ -105,7 +118,7 @@ export function TodayPanel({
                 type="button"
                 aria-label={t("meds.prevDay")}
                 onClick={() => onChangeDate(shiftDate(viewDate, -1))}
-                className="h-7 w-7 inline-flex items-center justify-center rounded-full hover:bg-secondary text-muted-foreground"
+                className="glass-pill glass-press h-11 w-11 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -118,7 +131,7 @@ export function TodayPanel({
                 aria-label={t("meds.nextDay")}
                 disabled={!canGoNext}
                 onClick={() => onChangeDate(shiftDate(viewDate, 1))}
-                className="h-7 w-7 inline-flex items-center justify-center rounded-full hover:bg-secondary text-muted-foreground disabled:opacity-30 disabled:pointer-events-none"
+                className="glass-pill glass-press h-11 w-11 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -128,7 +141,7 @@ export function TodayPanel({
                 max={todayStr}
                 onChange={(e) => e.target.value && onChangeDate(e.target.value)}
                 aria-label={t("meds.pickDate")}
-                className="ml-1 rounded-md border border-border bg-card px-2 py-1 text-xs text-muted-foreground"
+                className="glass-surface glass-press ml-1 min-h-11 rounded-[16px] px-3 py-2 text-xs text-muted-foreground"
               />
             </div>
           ) : (
@@ -158,7 +171,7 @@ export function TodayPanel({
           <Button
             size="sm"
             variant="outline"
-            className="rounded-full shrink-0"
+            className="glass-press min-h-11 rounded-full shrink-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
             onClick={onMarkAll}
             disabled={markingAll}
           >
@@ -173,7 +186,7 @@ export function TodayPanel({
       ) : doses.length === 0 ? (
         <div className="mt-4">
           <p className="text-sm text-muted-foreground">{t("meds.noDosesToday")}</p>
-          <Button size="sm" variant="outline" className="mt-3 rounded-full" onClick={onAddMed}>
+          <Button size="sm" variant="outline" className="glass-press mt-3 min-h-11 rounded-full" onClick={onAddMed}>
             {t("meds.addMedication")}
           </Button>
         </div>
@@ -231,13 +244,21 @@ export function TodayPanel({
             <span>12a</span>
           </div>
 
-          <ul className="mt-5 divide-y divide-border">
+          <ul className="mt-6 space-y-2">
             {doses.map((d) => {
               const outOfStock =
                 d.medication?.pills_remaining != null && d.medication.pills_remaining <= 0;
               return (
-              <li key={d.id} className="flex flex-wrap items-center gap-2 py-3 text-sm">
-                <span className="text-muted-foreground tabular-nums shrink-0">
+              <li
+                key={d.id}
+                className="glass-surface flex min-h-11 flex-wrap items-center gap-2 rounded-[16px] px-4 py-3 text-sm"
+              >
+                <span
+                  className={cn(
+                    "inline-flex min-h-11 shrink-0 items-center px-2.5 tabular-nums",
+                    doseStatusPillClass(d.status),
+                  )}
+                >
                   {formatLocaleTime(d.scheduled_at)}
                 </span>
                 <span className="text-foreground truncate flex-1 min-w-0">
@@ -257,10 +278,10 @@ export function TodayPanel({
                     </Link>
                   ) : null
                 ) : d.status === "pending" ? (
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex shrink-0 items-center gap-1.5">
                     <Button
                       size="sm"
-                      className="rounded-full h-8 px-3"
+                      className="glass-press min-h-11 rounded-full px-4"
                       onClick={() => onAction(d.id, "taken")}
                     >
                       Taken
@@ -268,7 +289,7 @@ export function TodayPanel({
                     <Button
                       size="sm"
                       variant="outline"
-                      className="rounded-full h-8 px-3"
+                      className="glass-press min-h-11 rounded-full px-4"
                       onClick={() => onAction(d.id, "snooze")}
                     >
                       Snooze
@@ -276,31 +297,40 @@ export function TodayPanel({
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="rounded-full h-8 px-3"
+                      className="glass-press min-h-11 rounded-full px-4"
                       onClick={() => onAction(d.id, "skip")}
                     >
                       Skip
                     </Button>
                   </div>
                 ) : d.status === "taken" ? (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs font-medium text-[color:var(--data-good)]">Taken</span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="glass-pill inline-flex min-h-11 items-center px-3 text-xs font-semibold text-[color:var(--data-good)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                      Taken
+                    </span>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="rounded-full h-8 px-3"
+                      className="glass-press min-h-11 rounded-full px-4"
                       onClick={() => onReclassify(d.id, "pending")}
                     >
                       Undo
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="capitalize text-muted-foreground">{d.status}</span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span
+                      className={cn(
+                        "inline-flex min-h-11 items-center px-3 text-xs capitalize",
+                        doseStatusPillClass(d.status),
+                      )}
+                    >
+                      {d.status}
+                    </span>
                     <Button
                       size="sm"
                       variant="outline"
-                      className="rounded-full h-8 px-3"
+                      className="glass-press min-h-11 rounded-full px-4"
                       onClick={() => onReclassify(d.id, "taken")}
                     >
                       I took it

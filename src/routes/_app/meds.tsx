@@ -702,7 +702,7 @@ function MedsPage() {
           setOpen(true);
         }}
         aria-label={t("meds.addMedication")}
-        className="fixed bottom-24 md:bottom-8 right-5 md:right-8 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center md:hidden"
+        className="native-fab-fixed fixed bottom-24 md:bottom-8 right-5 md:right-8 z-40 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center md:hidden"
         style={{ marginBottom: "env(safe-area-inset-bottom)" }}
       >
         <Plus className="h-6 w-6" />

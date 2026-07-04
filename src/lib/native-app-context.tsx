@@ -19,12 +19,12 @@ export function NativeAppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    if (isNativeApp) {
+    if (isNative !== false) {
       root.classList.add("native-app");
-    } else if (isNative === false) {
+    } else {
       root.classList.remove("native-app");
     }
-  }, [isNative, isNativeApp]);
+  }, [isNative]);
 
   return (
     <NativeAppContext.Provider value={{ isNative, isNativeApp }}>

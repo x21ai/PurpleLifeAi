@@ -94,9 +94,10 @@ accept_xcode_license_if_needed() {
   fi
 }
 
-sync_capacitor_ios() {
+  sync_capacitor_ios() {
   log "Syncing Capacitor iOS project from repo root"
   (cd "${REPO_ROOT}" && bun run native:sync)
+  node "${REPO_ROOT}/scripts/check-native-shell.mjs"
 }
 
 run_pod_install_if_needed() {

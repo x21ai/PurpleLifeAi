@@ -1,5 +1,5 @@
 {
-  "originHash" : "042d9a3e8b8fd182895c5127e779a4b8db1bb1464d5df9179434658f1c870d9b",
+  "originHash" : "accad73cd5a7a37453b20b8d831e40e788613cce09f26f53b69e3e910bb1b0da",
   "pins" : [
     {
       "identity" : "capacitor-swift-pm",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "2231987d85b8b0b289320b1d0947b4ae8345cde4",
         "version" : "8.4.1"
+      }
+    },
+    {
+      "identity" : "luciq-ios-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/luciqai/luciq-ios-sdk",
+      "state" : {
+        "revision" : "c950d0967bd8572383c4923765acead96f63b842",
+        "version" : "19.9.0"
       }
     }
   ],

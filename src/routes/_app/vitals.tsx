@@ -48,7 +48,7 @@ function VitalsPage() {
     : "Today";
 
   return (
-    <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-8 sm:pt-12 pb-32">
+    <div className="mx-auto max-w-3xl min-h-full bg-[#0a0710] bg-[radial-gradient(ellipse_90%_55%_at_50%_-10%,rgba(176,132,209,0.14),transparent_58%)] px-5 sm:px-10 lg:px-16 pt-8 sm:pt-12 pb-32">
       <Link to="/today" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> {t("vitals.back")}
       </Link>
@@ -74,8 +74,8 @@ function VitalsPage() {
       )}
 
       {/* Latest reading marker */}
-      <div className="mt-10 flex items-center gap-6 border-b border-border/60">
-        <span className="pb-3 text-sm text-foreground font-semibold border-b-2 border-[color:var(--purple-primary)] -mb-px">
+      <div className="mt-10 glass-surface rounded-[20px] px-5 flex items-center gap-6">
+        <span className="py-3 text-sm text-foreground font-semibold border-b-2 border-[color:var(--purple-primary)]">
           {real ? latestLabel : "No data yet"}
         </span>
       </div>
@@ -106,13 +106,13 @@ function VitalsPage() {
       </Section>
 
       <section className="mt-12">
-        <div className="flex items-center gap-3">
+        <div className="glass-surface inline-flex items-center gap-3 rounded-[20px] px-4 py-3">
           <Droplets className="h-4 w-4 text-muted-foreground" />
-          <h2 className="text-[18px] font-semibold text-foreground">Hydration & auras</h2>
+          <h2 className="text-[18px] font-semibold tracking-tight text-foreground">Hydration & auras</h2>
         </div>
         <Link
           to="/hydration"
-          className="mt-4 block rounded-[24px] bg-card p-5 sm:p-6 hover:bg-secondary/60 transition"
+          className="mt-4 block glass-card glass-press rounded-[20px] p-5 sm:p-6 transition hover:border-foreground/20"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -153,11 +153,11 @@ function Section({
 }) {
   return (
     <section className="mt-12">
-      <div className="flex items-center gap-3">
+      <div className="glass-surface inline-flex items-center gap-3 rounded-[20px] px-4 py-3">
         <Icon className="h-4 w-4 text-muted-foreground" />
-        <h2 className="text-[18px] font-semibold text-foreground">{name}</h2>
+        <h2 className="text-[18px] font-semibold tracking-tight text-foreground">{name}</h2>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4">
+      <div className="mt-4 grid grid-cols-2 gap-4">
         {children}
       </div>
     </section>
@@ -170,7 +170,7 @@ function MetricCard({
   return (
     <button
       type="button"
-      className="relative text-left rounded-[24px] bg-card p-5 sm:p-6 aspect-[1/1.1] flex flex-col justify-between hover:bg-secondary/60 transition"
+      className="relative text-left glass-card glass-press rounded-[20px] p-5 sm:p-6 aspect-[1/1.1] flex flex-col justify-between transition hover:border-foreground/20"
     >
       <div>
         <p className="text-[13px] text-muted-foreground">{title}</p>

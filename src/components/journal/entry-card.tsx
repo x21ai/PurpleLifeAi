@@ -181,10 +181,10 @@ export function EntryCard({ entry }: { entry: Entry }) {
   };
 
   return (
-    <article className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-sm">
+    <article className="glass-card rounded-[20px] p-4 sm:p-6">
       <header className="flex items-center justify-between text-xs text-muted-foreground">
         <div className="flex items-center gap-2">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-primary">
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full glass-pill text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
             <Icon className="h-3.5 w-3.5" />
           </span>
           <span suppressHydrationWarning className="flex flex-col leading-tight">
@@ -209,7 +209,7 @@ export function EntryCard({ entry }: { entry: Entry }) {
               type="button"
               onClick={retryExtract}
               disabled={busy}
-              className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-50"
+              className="glass-pill glass-press inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground disabled:opacity-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
             >
               {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
               {failed ? "Retry reading" : "Stuck, retry"}
@@ -329,7 +329,7 @@ export function EntryCard({ entry }: { entry: Entry }) {
       )}
 
       {cleanSummary && (
-        <div className="mt-4 rounded-xl bg-secondary/70 px-3 py-2 text-sm text-secondary-foreground">
+        <div className="glass-surface mt-4 rounded-[16px] px-4 py-3 text-sm text-secondary-foreground">
           <span className="font-serif">{cleanSummary}</span>
         </div>
       )}
@@ -339,7 +339,7 @@ export function EntryCard({ entry }: { entry: Entry }) {
           {entry.ai_tags.map((t) => (
             <span
               key={t}
-              className="inline-flex items-center rounded-full border border-primary/30 bg-background text-primary px-2.5 py-0.5 text-[11px] tracking-wide"
+              className="glass-pill inline-flex items-center border-primary/30 text-primary px-2.5 py-1 text-[11px] font-medium tracking-wide shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
               aria-label={`Tag: ${t}`}
             >
               {t}

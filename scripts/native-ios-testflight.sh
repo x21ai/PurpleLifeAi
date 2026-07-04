@@ -45,6 +45,7 @@ main() {
   cd "${REPO_ROOT}"
   log "Syncing Capacitor iOS project"
   bun run native:sync
+  node "${REPO_ROOT}/scripts/check-native-shell.mjs"
 
   log "Writing local signing team from Doppler ${DOPPLER_PROJECT}/${DOPPLER_CONFIG}"
   DOPPLER_PROJECT="${DOPPLER_PROJECT}" DOPPLER_CONFIG="${DOPPLER_CONFIG}" bun run ios:local-signing

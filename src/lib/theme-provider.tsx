@@ -36,12 +36,12 @@ function apply(resolved: "light" | "dark") {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = React.useState<ThemeMode>("system");
-  const [resolved, setResolved] = React.useState<"light" | "dark">("light");
+  const [mode, setModeState] = React.useState<ThemeMode>("dark");
+  const [resolved, setResolved] = React.useState<"light" | "dark">("dark");
 
   // Hydrate from localStorage on mount
   React.useEffect(() => {
-    let stored: ThemeMode = "system";
+    let stored: ThemeMode = "dark";
     try {
       const v = localStorage.getItem(STORAGE_KEY);
       if (v === "light" || v === "dark" || v === "system") stored = v;
@@ -79,7 +79,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
 export function useTheme(): Ctx {
   const ctx = React.useContext(ThemeContext);
-  if (!ctx) return { mode: "system", resolved: "light", setMode: () => {} };
+  if (!ctx) return { mode: "dark", resolved: "dark", setMode: () => {} };
   return ctx;
 }
 
@@ -92,7 +92,7 @@ export const themeBootstrapScript = `
 (function(){try{
   var k='${STORAGE_KEY}';
   var v=localStorage.getItem(k);
-  if(v!=='light'&&v!=='dark'&&v!=='system')v='system';
+  if(v!=='light'&&v!=='dark'&&v!=='system')v='dark';
   var dark=v==='dark'||(v==='system'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
   var c=document.documentElement.classList;
   if(dark)c.add('dark');else c.remove('dark');

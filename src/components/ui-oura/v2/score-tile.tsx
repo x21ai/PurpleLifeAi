@@ -21,14 +21,16 @@ export function ScoreTile({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center justify-center text-center transition outline-none",
-        active ? "scale-[1.3] py-6" : "opacity-60 hover:opacity-100 py-3",
+        "flex w-full flex-col items-center justify-center text-center outline-none glass-press rounded-[18px] transition-[transform,opacity,box-shadow] duration-200",
+        active
+          ? "glass-card scale-[1.02] py-5 sm:py-6 ring-1 ring-primary/35 shadow-[0_0_28px_rgba(176,132,209,0.12)]"
+          : "py-4 opacity-70 hover:opacity-100 hover:bg-white/[0.03]",
       )}
     >
       <span
         className={cn(
           "numeric-display text-foreground",
-          active ? "text-[72px] sm:text-[88px]" : "text-[40px] sm:text-[48px]",
+          active ? "text-[56px] sm:text-[72px]" : "text-[36px] sm:text-[44px]",
         )}
       >
         {typeof value === "number" ? <NumberCountUp value={value} /> : value}
@@ -36,7 +38,7 @@ export function ScoreTile({
       <span
         className={cn(
           "label-eyebrow mt-2",
-          active && "text-foreground/70",
+          active ? "text-foreground/85 font-semibold" : "text-muted-foreground font-medium",
         )}
       >
         {label}

@@ -123,7 +123,7 @@ export function MetricCard({
           <div className="flex flex-wrap items-center gap-1.5">
             <p className="label-eyebrow text-muted-foreground">{meta.label}</p>
             <span
-              className={`rounded-full px-2 py-0.5 text-[10px] tracking-wide uppercase font-medium ${tone.cls}`}
+              className={`rounded-full px-2 py-0.5 text-[10px] tracking-wide uppercase font-semibold glass-pill ${tone.cls}`}
             >
               {tone.label}
             </span>
@@ -245,7 +245,7 @@ export function MetricCard({
   if (disableLink) {
     return (
       <div
-        className={`block rounded-2xl border border-border bg-card ${
+        className={`block glass-card rounded-[20px] ${
           size === "hero" ? "p-5 sm:p-7" : "p-4 sm:p-5"
         }`}
       >
@@ -257,7 +257,7 @@ export function MetricCard({
     <Link
       to="/biometrics/$metric"
       params={{ metric }}
-      className={`group block rounded-2xl border border-border bg-card transition hover:border-foreground/30 hover:shadow-sm ${
+      className={`group block glass-card glass-press rounded-[20px] transition hover:border-foreground/20 ${
         size === "hero" ? "p-5 sm:p-7" : "p-4 sm:p-5"
       }`}
     >

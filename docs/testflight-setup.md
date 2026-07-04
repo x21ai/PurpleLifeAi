@@ -14,10 +14,11 @@ bun run ios:testflight
 This runs `scripts/native-ios-testflight.sh`, which:
 
 1. `bun run native:sync`
-2. Resolves `DEVELOPMENT_TEAM` from Doppler `purple-life` / `prd`
-3. Ensures an App Store Connect app record exists (`scripts/asc-ensure-app.mjs`)
-4. Archives a **Release** build (`xcodebuild archive`)
-5. Exports and uploads to App Store Connect (`ios/ExportOptions.plist`, method `app-store-connect`)
+2. `bun run check:native-shell` (fails if `capacitor-shell/index.html` or `ios/App/App/public/index.html` is missing)
+3. Resolves `DEVELOPMENT_TEAM` from Doppler `purple-life` / `prd`
+4. Ensures an App Store Connect app record exists (`scripts/asc-ensure-app.mjs`)
+5. Archives a **Release** build (`xcodebuild archive`)
+6. Exports and uploads to App Store Connect (`ios/ExportOptions.plist`, method `app-store-connect`)
 
 After upload, processing takes about **5–15 minutes**. Then add testers in
 [App Store Connect](https://appstoreconnect.apple.com) → **TestFlight**.
@@ -165,6 +166,7 @@ Environment: `DEVELOPER_DIR` → `/Applications/Xcode-beta.app`, team `C3HY4MF66
 | `ios/App/App/Info.plist` | **Fixed** (added `NSHealthUpdateUsageDescription`) |
 | Second `bun run ios:testflight` | **Pass** upload build **1.0 (1)** to TestFlight (processing 5–15 min) |
 | ASC metadata (co-browse) | Subtitle, category (Health & Fitness), content rights, promotional text, description, keywords, review notes, demo creds (Doppler E2E), manual release |
-| ASC still required | Screenshots upload, age-ratings wizard finish, App Privacy (Admin), select build after processing |
+| ASC metadata (evening co-browse) | Support URL `https://www.purplelife.org/contact`, Copyright `ideaTree Inc. 2026`, age ratings complete (4+ global), build **1.0 (1)** attached to version 1.0 |
+| ASC still required | Upload 4 iPhone 6.5" screenshots from `test-results/asc-screenshots/` (browser cannot file-upload), App Privacy questionnaire (Admin), **Add for Review** |
 
 **After build processes:** App Store Connect → **Purple for Life** → **TestFlight** → internal testers; version page → select build → **Add for Review** when metadata complete.

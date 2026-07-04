@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetColumn } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -181,7 +181,7 @@ function SharingPage() {
       {/* Pending approvals strip → inbox */}
       <Link
         to="/care/inbox"
-        className="mt-10 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 sm:p-6 transition-colors hover:bg-secondary/40"
+        className="mt-10 flex items-center justify-between gap-3 sharing-glass-card p-5 sm:p-6 transition-colors hover:bg-secondary/40"
       >
         <div className="flex items-center gap-3">
           {pendingCount > 0 ? <Badge variant="default">{pendingCount}</Badge> : null}
@@ -206,7 +206,7 @@ function SharingPage() {
       <AppleHealthCard />
 
       {/* People I share with */}
-      <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <section className="mt-6 sharing-glass-card p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-serif text-xl text-foreground">People I share with</h2>
           {canInviteFree ? (
@@ -378,7 +378,7 @@ function SharingPage() {
       />
 
       {/* People sharing with me */}
-      <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <section className="mt-6 sharing-glass-card p-5 sm:p-6">
         <h2 className="font-serif text-xl text-foreground">People sharing with me</h2>
         {sharedWithMe.isLoading ? (
           <p className="mt-3 text-sm text-muted-foreground"><Loader2 className="inline h-3 w-3 animate-spin" /> Loading…</p>
@@ -582,7 +582,7 @@ function DigestPreferenceCard() {
     onError: (e: any) => toast.error(userMessage(e, "That change didn't save. Try again in a moment.")),
   });
   return (
-    <section className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 sm:p-6">
+    <section className="mt-6 flex items-center justify-between gap-3 sharing-glass-card p-5 sm:p-6">
       <div>
         <h2 className="font-serif text-base text-foreground">Daily caregiver digest</h2>
         <p className="text-xs text-muted-foreground mt-1 max-w-md">
@@ -693,7 +693,7 @@ function ActivitySection({
   const resourceTypes = Array.from(new Set(entries.map((e) => e.resource_type).filter(Boolean) as string[]));
 
   return (
-    <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
+    <section className="mt-6 sharing-glass-card p-5 sm:p-6">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h2 className="font-serif text-xl text-foreground">Activity</h2>
@@ -824,15 +824,16 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button size="sm">
+        <Button size="sm" type="button" onClick={() => setOpen(true)}>
           <Mail className="h-3 w-3 mr-1" /> Invite
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[90dvh] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle className="font-serif text-2xl">Invite someone</SheetTitle>
-        </SheetHeader>
-        <div className="mt-4 space-y-5">
+      <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto">
+        <SheetColumn>
+          <SheetHeader>
+            <SheetTitle className="font-serif text-2xl">Invite someone</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4 space-y-5">
           <div>
             <Label htmlFor="invite-email">Their email</Label>
             <Input
@@ -870,7 +871,7 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
                   key={r}
                   type="button"
                   onClick={() => setRole(r)}
-                  className={`text-left rounded-xl border p-3 transition-colors ${
+                  className={`glass-press text-left rounded-xl border p-3 transition-colors ${
                     role === r ? "border-primary bg-primary/10" : "border-border hover:bg-secondary/40"
                   }`}
                 >
@@ -889,7 +890,8 @@ function InviteCaregiverSheet({ onInvited }: { onInvited: () => void }) {
           <p className="text-xs text-muted-foreground">
             They'll get a link to accept. Until they do, nothing is shared.
           </p>
-        </div>
+          </div>
+        </SheetColumn>
       </SheetContent>
     </Sheet>
   );
@@ -991,18 +993,21 @@ function ManageRelationshipSheet({
   return (
     <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (o) setGranted(new Set(currentScopes)); }}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm">Manage</Button>
+        <Button variant="outline" size="sm" type="button" onClick={() => setOpen(true)}>
+          Manage
+        </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[90dvh] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle className="font-serif text-2xl">Manage permissions</SheetTitle>
-        </SheetHeader>
-        <p className="text-xs text-muted-foreground mt-1">
-          {ROLE_LABELS[role]} · toggle exactly what this person can do.
-        </p>
-        <div className="mt-4 space-y-4">
+      <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto">
+        <SheetColumn>
+          <SheetHeader>
+            <SheetTitle className="font-serif text-2xl">Manage permissions</SheetTitle>
+          </SheetHeader>
+          <p className="text-xs text-muted-foreground mt-1">
+            {ROLE_LABELS[role]} · toggle exactly what this person can do.
+          </p>
+          <div className="mt-4 space-y-4">
           {CARE_RESOURCES.map((res) => (
-            <div key={res} className="rounded-xl border border-border p-3">
+            <div key={res} className="glass-inset p-3">
               <p className="font-serif text-sm capitalize text-foreground">{res}</p>
               <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {CARE_VERBS.map((v) => {
@@ -1019,7 +1024,7 @@ function ManageRelationshipSheet({
             </div>
           ))}
         </div>
-        <div className="mt-6 rounded-xl border border-border p-4">
+        <div className="mt-6 glass-inset p-4">
           <p className="font-serif text-sm text-foreground">Recent activity (last 30 days)</p>
           {audit.isLoading ? (
             <p className="mt-2 text-xs text-muted-foreground inline-flex items-center gap-2">
@@ -1053,6 +1058,7 @@ function ManageRelationshipSheet({
           </Button>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
         </div>
+        </SheetColumn>
       </SheetContent>
     </Sheet>
   );

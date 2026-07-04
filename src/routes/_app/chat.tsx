@@ -335,7 +335,7 @@ function AskPage() {
             onKeyDown={onKeyDown}
             placeholder="Ask anything about your patterns…"
             rows={1}
-            className="flex-1 resize-none rounded-2xl border border-border bg-secondary/40 px-4 py-3 text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 max-h-40"
+            className="glass-inset flex-1 resize-none rounded-2xl px-4 py-3 text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 max-h-40"
           />
           {voice.supported && (
             <Button
@@ -344,7 +344,7 @@ function AskPage() {
               onClick={() => void toggleMic()}
               disabled={thinking}
               aria-label={voice.listening ? "Stop voice input" : "Start voice input"}
-              className="h-11 w-11 rounded-full shrink-0"
+              className="glass-press h-11 w-11 rounded-full shrink-0"
             >
               {voice.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </Button>
@@ -354,7 +354,7 @@ function AskPage() {
             onClick={() => void send(input)}
             disabled={!input.trim() || thinking}
             aria-label="Send"
-            className="h-11 w-11 rounded-full shrink-0"
+            className="glass-press h-11 w-11 rounded-full shrink-0"
           >
             {thinking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
@@ -437,7 +437,7 @@ function EmptyState({
             key={s}
             type="button"
             onClick={() => onPick(s)}
-            className="shrink-0 sm:shrink text-left text-sm rounded-full border border-border/60 bg-secondary/40 hover:bg-secondary px-4 py-2.5 transition"
+            className="glass-pill glass-press shrink-0 sm:shrink text-left text-sm px-4 py-2.5 transition hover:bg-secondary/40"
           >
             {s}
           </button>
@@ -537,8 +537,8 @@ function Bubble({ role, text }: { role: UIMessage["role"]; text: string }) {
       <div
         className={
           isUser
-            ? "max-w-[85%] rounded-2xl rounded-br-md bg-primary text-primary-foreground px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap"
-            : "max-w-[90%] rounded-2xl rounded-bl-md bg-card border border-border text-foreground px-4 py-3 text-sm leading-relaxed prose prose-sm dark:prose-invert prose-p:my-2 prose-ul:my-2 max-w-none font-serif [&_a.source-chip]:no-underline"
+            ? "glass-bubble-user max-w-[85%] rounded-2xl rounded-br-md px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap"
+            : "glass-bubble-assistant max-w-[90%] rounded-2xl rounded-bl-md text-foreground px-4 py-3 text-sm leading-relaxed prose prose-sm dark:prose-invert prose-p:my-2 prose-ul:my-2 max-w-none font-serif [&_a.source-chip]:no-underline"
         }
       >
         {isUser ? text : renderWithSourceCitations(text)}
@@ -549,7 +549,7 @@ function Bubble({ role, text }: { role: UIMessage["role"]; text: string }) {
 
 function ThinkingDots() {
   return (
-    <div className="flex items-center gap-1.5 px-3 py-3 max-w-[60px] rounded-2xl rounded-bl-md bg-card border border-border">
+    <div className="glass-bubble-assistant flex items-center gap-1.5 px-3 py-3 max-w-[60px] rounded-2xl rounded-bl-md">
       <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/70 animate-[pulse_1.2s_ease-in-out_infinite]" />
       <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/70 animate-[pulse_1.2s_ease-in-out_0.2s_infinite]" />
       <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/70 animate-[pulse_1.2s_ease-in-out_0.4s_infinite]" />

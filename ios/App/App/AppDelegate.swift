@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import LuciqSDK
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,7 +8,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        if let token = Bundle.main.object(forInfoDictionaryKey: "LUCIQAppToken") as? String,
+           !token.isEmpty,
+           token != "$(LUCIQ_APP_TOKEN)" {
+            // Capture launch crashes on the next run (Luciq docs); must precede start.
+            CrashReporting.enableSendingLaunchCrashesSynchronously()
+            Luciq.start(
+                withToken: token,
+                invocationEvents: [.shake, .screenshot]
+            )
+        }
         return true
     }
 

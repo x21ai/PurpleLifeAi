@@ -113,8 +113,8 @@ export function DateStrip({
         }
       }}
     >
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <span className="text-sm font-medium text-foreground tabular-nums">
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <span className="text-sm font-semibold text-foreground tabular-nums tracking-tight">
           {format(value, "MMM d")}
         </span>
         <div className="flex items-center gap-1.5">
@@ -122,7 +122,7 @@ export function DateStrip({
             <button
               type="button"
               onClick={() => onChange(today)}
-              className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
+              className="glass-pill glass-press px-2.5 py-1 text-[11px] font-medium text-foreground hover:text-primary transition-colors"
             >
               Today
             </button>
@@ -132,7 +132,7 @@ export function DateStrip({
               <button
                 type="button"
                 aria-label="Pick a date"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                className="glass-pill glass-press inline-flex h-7 w-7 items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
               >
                 <CalendarIcon className="h-3.5 w-3.5" />
               </button>
@@ -183,13 +183,13 @@ export function DateStrip({
                   if (!isFuture) onChange(d);
                 }}
                 className={cn(
-                  "shrink-0 snap-center w-14 sm:w-16 h-[68px] rounded-2xl border flex flex-col items-center justify-center gap-0.5 transition-colors",
+                  "shrink-0 snap-center w-14 sm:w-16 h-[72px] rounded-[18px] flex flex-col items-center justify-center gap-1 transition-all duration-200 glass-press",
                   isFuture &&
-                    "opacity-35 cursor-default border-border/50 bg-card/30 text-muted-foreground",
+                    "opacity-30 cursor-default glass-surface text-muted-foreground border-transparent",
                   !isFuture &&
                     (isSelected
-                      ? "bg-card border-primary ring-1 ring-primary text-foreground shadow-sm"
-                      : "bg-card/60 border-border text-muted-foreground hover:text-foreground hover:bg-card"),
+                      ? "glass-card ring-1 ring-primary/40 text-foreground shadow-[0_0_24px_rgba(176,132,209,0.15)]"
+                      : "glass-surface text-muted-foreground hover:text-foreground hover:ring-1 hover:ring-white/10"),
                 )}
               >
                 <span

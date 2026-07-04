@@ -81,7 +81,7 @@ export function ConditionSuggestionsCard() {
           {suggestions.map((s) => (
             <li
               key={s.conditionKey}
-              className="rounded-xl border border-border bg-background/60 p-4"
+              className="glass-card rounded-xl p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">

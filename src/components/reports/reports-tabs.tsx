@@ -12,7 +12,7 @@ export function ReportsTabs() {
     { to: "/reports/documents", label: "Reports" },
   ];
   return (
-    <div className="mb-6 inline-flex rounded-full border border-foreground/10 bg-foreground/[0.04] p-1 text-sm">
+    <div className="mb-6 glass-surface inline-flex rounded-full p-1 text-sm">
       {tabs.map((t) => {
         const active = pathname.startsWith(t.to);
         return (
@@ -20,9 +20,9 @@ export function ReportsTabs() {
             key={t.to}
             to={t.to}
             className={cn(
-              "rounded-full px-4 py-1.5 transition-colors",
+              "glass-press inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full px-4 py-2 transition-[color,transform]",
               active
-                ? "bg-primary text-primary-foreground"
+                ? "nav-glass-row-active text-foreground font-medium scale-[1.02]"
                 : "text-foreground/70 hover:text-foreground",
             )}
           >

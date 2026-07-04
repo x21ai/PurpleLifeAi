@@ -41,6 +41,8 @@
 	<string>Purple reads Apple Health data you allow so your journal and vitals stay in sync with wearables and Health.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Purple may write health metrics you choose to sync so Apple Health stays aligned with your journal and vitals.</string>
+	<key>LUCIQAppToken</key>
+	<string>$(LUCIQ_APP_TOKEN)</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Purple uses the camera when you add photos or videos to a journal entry.</string>
 	<key>NSMicrophoneUsageDescription</key>
@@ -68,6 +70,8 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
 </dict>

@@ -27,7 +27,7 @@ export function ReportShell({
           {back ? (
             <Link
               to={back.to}
-              className="-ml-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground/80 hover:bg-accent hover:text-foreground"
+              className="glass-press -ml-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground/80 hover:bg-accent hover:text-foreground"
               aria-label={back.label ?? "Back"}
             >
               <ChevronLeft className="h-5 w-5" />

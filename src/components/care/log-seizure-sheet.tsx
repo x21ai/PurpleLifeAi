@@ -80,9 +80,13 @@ export function LogSeizureSheet({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="rounded-full">
-          <Plus className="h-4 w-4 mr-1" /> Log seizure
-        </Button>
+        <button
+          type="button"
+          className="glass-press inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-primary transition-colors hover:text-primary/90"
+        >
+          <Plus className="h-3.5 w-3.5 shrink-0" />
+          Log seizure
+        </button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>

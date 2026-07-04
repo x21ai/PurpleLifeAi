@@ -84,7 +84,7 @@ function MyHealthPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-6 sm:pt-10 pb-32">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="glass-surface flex items-center justify-between rounded-2xl px-2 py-1">
         <button type="button" aria-label="Info" className="h-9 w-9 grid place-items-center rounded-full hover:bg-secondary">
           <Info className="h-4 w-4 text-muted-foreground" />
         </button>
@@ -134,7 +134,7 @@ function MyHealthPage() {
 
       {/* Sections */}
       {real ? (
-        <section className="mt-16 divide-y divide-border/60">
+        <section className="mt-16 glass-card rounded-3xl overflow-hidden divide-y divide-border/60">
           <SectionRow icon={Moon} name="Sleep Health" status="good" metric="sleep_score"
             sub={snap?.sleepScore != null ? `Latest sleep score: ${Math.round(snap.sleepScore)}` : "No sleep data yet"} />
           <SectionRow icon={Waves} name="Stress Management" status="good" metric="stress"
@@ -147,7 +147,7 @@ function MyHealthPage() {
             sub={snap?.readiness != null ? `Latest readiness: ${Math.round(snap.readiness)}` : "No readiness data yet"} />
         </section>
       ) : (
-        <section className="mt-16 divide-y divide-border/60">
+        <section className="mt-16 glass-card rounded-3xl overflow-hidden divide-y divide-border/60">
           <SectionRow icon={Moon} name="Sleep Health" metric="sleep_score" sub="No data yet" />
           <SectionRow icon={Waves} name="Stress Management" metric="stress" sub="No data yet" />
           <SectionRow icon={Heart} name="Heart Health" metric="resting_hr" sub="No data yet" />
@@ -157,7 +157,7 @@ function MyHealthPage() {
       )}
 
       {/* Step Average detail card */}
-      <section className="mt-12 rounded-[24px] bg-card p-6 sm:p-8">
+      <section className="mt-12 glass-card rounded-[24px] p-6 sm:p-8">
         <div className="h-10 w-10 grid place-items-center rounded-full bg-[color:var(--purple-primary)]/15 text-[color:var(--purple-primary)]">
           <Activity className="h-5 w-5" />
         </div>
@@ -202,7 +202,7 @@ function MyHealthPage() {
                 <Link
                   to="/condition/$slug"
                   params={{ slug: c.slug }}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 hover:bg-secondary/40 transition"
+                  className="flex items-center justify-between gap-3 glass-card glass-press rounded-2xl px-4 py-3 transition hover:border-foreground/20"
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{c.label}</p>

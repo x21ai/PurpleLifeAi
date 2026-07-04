@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Menu, ChevronDown } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
@@ -14,34 +14,64 @@ import { HeaderSyncButton } from "@/components/biometrics/header-sync-button";
 export function MobileTopBar({ variant = "responsive" }: { variant?: "responsive" | "native" }) {
   const [open, setOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [scrolled, setScrolled] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { flags } = usePlatformFlags();
   const { isNativeApp } = useNativeAppContext();
   const tree = filterNavTree(navTree, flags, { native: isNativeApp });
 
+  useEffect(() => {
+    const readScroll = () => {
+      const y = window.scrollY;
+      const main = document.querySelector<HTMLElement>(".native-shell-main, main");
+      const mainY = main?.scrollTop ?? 0;
+      setScrolled(y > 6 || mainY > 6);
+    };
+    readScroll();
+    window.addEventListener("scroll", readScroll, { passive: true });
+    const main = document.querySelector<HTMLElement>(".native-shell-main, main");
+    main?.addEventListener("scroll", readScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", readScroll);
+      main?.removeEventListener("scroll", readScroll);
+    };
+  }, [pathname]);
+
   const headerClass =
     variant === "native"
-      ? "sticky top-0 z-30 flex items-center justify-between px-4 min-h-12 bg-background/90 backdrop-blur border-b border-border"
-      : "md:hidden sticky top-0 z-30 flex items-center justify-between px-4 min-h-12 bg-background/90 backdrop-blur border-b border-border";
+      ? "nav-glass-top sticky top-0 z-30"
+      : "nav-glass-top md:hidden sticky top-0 z-30";
 
   return (
-    <header className={headerClass} style={{ paddingTop: "env(safe-area-inset-top)" }}>
-      <Link to="/today" className="wordmark text-[12px] text-foreground" aria-label="Purple, home">
+    <header
+      className={headerClass}
+      data-scrolled={scrolled ? "true" : "false"}
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
+      <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 min-h-12">
+      <Link
+        to="/today"
+        className="glass-press wordmark inline-flex min-h-[44px] min-w-[44px] items-center text-[12px] text-foreground touch-manipulation"
+        aria-label="Purple, home"
+      >
         Purple
       </Link>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
         <HeaderSyncButton />
         <PendingInboxBadge />
         <ProfileMenu />
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger
             aria-label="Open menu"
-            className="inline-flex h-11 w-11 -mr-2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+            className="glass-press inline-flex h-11 w-11 min-h-[44px] min-w-[44px] -mr-2 touch-manipulation cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:text-foreground active:opacity-80 transition-opacity"
           >
             <Menu className="h-5 w-5" />
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0 flex flex-col h-full overflow-hidden">
-            <SheetHeader className="shrink-0 px-5 pt-6 pb-3 text-left border-b border-border">
+          <SheetContent
+            side="left"
+            className="nav-glass-sheet w-72 p-0 flex flex-col h-full overflow-hidden border-r"
+          >
+            <SheetHeader className="nav-glass-sheet-header shrink-0 px-5 pt-6 pb-3 text-left border-b">
               <SheetTitle className="wordmark text-[13px] text-foreground">Purple</SheetTitle>
             </SheetHeader>
             <nav
@@ -60,12 +90,12 @@ export function MobileTopBar({ variant = "responsive" }: { variant?: "responsive
               ))}
               <CaregiverNavLink variant="sheet" onClick={() => setOpen(false)} />
             </nav>
-            <div className="shrink-0 mx-3 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-border space-y-1 text-[14px]">
+            <div className="shrink-0 mx-3 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-[color:var(--glass-border)] space-y-0.5 text-[14px]">
               {variant !== "native" && (
                 <Link
                   to="/charter"
                   onClick={() => setOpen(false)}
-                  className="block px-3 py-2 text-muted-foreground hover:text-foreground"
+                  className="glass-press flex min-h-[44px] items-center rounded-xl px-3 text-muted-foreground hover:text-foreground touch-manipulation"
                 >
                   Charter
                 </Link>
@@ -73,20 +103,21 @@ export function MobileTopBar({ variant = "responsive" }: { variant?: "responsive
               <Link
                 to={variant === "native" ? "/settings/privacy" : "/privacy"}
                 onClick={() => setOpen(false)}
-                className="block px-3 py-2 text-muted-foreground hover:text-foreground"
+                className="glass-press flex min-h-[44px] items-center rounded-xl px-3 text-muted-foreground hover:text-foreground touch-manipulation"
               >
                 Privacy & safety
               </Link>
               <Link
                 to={variant === "native" ? "/settings/terms" : "/terms"}
                 onClick={() => setOpen(false)}
-                className="block px-3 py-2 text-muted-foreground hover:text-foreground"
+                className="glass-press flex min-h-[44px] items-center rounded-xl px-3 text-muted-foreground hover:text-foreground touch-manipulation"
               >
                 Terms
               </Link>
             </div>
           </SheetContent>
         </Sheet>
+      </div>
       </div>
     </header>
   );
@@ -111,9 +142,9 @@ function MobileGroup({
     (group.children?.some((c) => pathname === c.to || pathname.startsWith(c.to + "/")) ?? false);
 
   const rowClass = cn(
-    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] transition-colors w-full",
+    "glass-press flex items-center gap-3 rounded-xl px-3 py-2.5 min-h-[44px] text-[15px] transition-colors w-full",
     active
-      ? "bg-secondary text-foreground font-medium"
+      ? "nav-glass-row-active text-foreground font-medium"
       : "text-[color:var(--text-tertiary)] hover:bg-secondary/60 hover:text-foreground",
   );
 
@@ -167,7 +198,7 @@ function MobileGroup({
           }}
           aria-expanded={isOpen}
           aria-label={isOpen ? `Collapse ${group.label}` : `Expand ${group.label}`}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
+          className="glass-press inline-flex h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-secondary/60 hover:text-foreground touch-manipulation"
         >
           <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
         </button>
@@ -185,9 +216,9 @@ function MobileGroup({
                 onClick={onNavigate}
                 aria-current={childActive ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg px-3 py-2 text-[14px] transition-colors",
+                  "glass-press flex items-center gap-2 rounded-lg px-3 py-2 min-h-[44px] text-[14px] transition-colors",
                   childActive
-                    ? "bg-secondary text-foreground"
+                    ? "nav-glass-row-active text-foreground"
                     : "text-[color:var(--text-tertiary)] hover:bg-secondary/60 hover:text-foreground",
                 )}
               >

@@ -224,8 +224,12 @@ function CareDashboardPage() {
     ? `${firstName}${firstName.endsWith("s") ? "'" : "'s"} Dashboard`
     : `${displayName}${displayName.endsWith("s") ? "'" : "'s"} Dashboard`;
 
+  const canWriteBiometric = has("biometrics:write");
+  const canWriteJournal = has("journal:write");
+  const canWriteSeizure = has("seizures:write");
+
   return (
-    <div className="mx-auto max-w-4xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
+    <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
       <div className="flex items-center justify-between gap-3">
         <Link to="/care" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> All people
@@ -281,58 +285,38 @@ function CareDashboardPage() {
               onJump={(tab) => setActive(tab as TabKey)}
             />
           </div>
-          {/* Mobile: <Select>. Desktop: tabs. */}
-          <div className="sm:hidden">
-            <Select value={current} onValueChange={(v) => setActive(v as TabKey)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {tabs.map((t) => (
-                  <SelectItem key={t.key} value={t.key}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="mt-4 flex items-center justify-end gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  <EyeOff className="h-3 w-3" /> Customize tabs
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="text-xs">Show tabs (just for you)</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {ownerAllowedTabs.map((t) => {
-                  const shown = !caregiverHidden.includes(t.key);
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={t.key}
-                      checked={shown}
-                      onCheckedChange={(v) => toggleHide(t.key, Boolean(v))}
-                    >
-                      {t.label}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-                {ownerAllowedTabs.length === 0 && (
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                    Nothing to customize.
-                  </div>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
           <Tabs value={current} onValueChange={(v) => setActive(v as TabKey)} className="mt-2">
-            <TabsList className="hidden sm:flex sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 overflow-x-auto">
+            {/* Mobile: tab picker + actions in one glass bar */}
+            <div className="glass-surface mb-3 flex items-center gap-2 rounded-2xl p-2 sm:hidden">
+              <Select value={current} onValueChange={(v) => setActive(v as TabKey)}>
+                <SelectTrigger className="min-h-11 flex-1 border-0 bg-transparent shadow-none focus:ring-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {tabs.map((t) => (
+                    <SelectItem key={t.key} value={t.key}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <CareToolbarActions
+                ownerAllowedTabs={ownerAllowedTabs}
+                caregiverHidden={caregiverHidden}
+                toggleHide={toggleHide}
+                tab={current}
+                ownerId={ownerId}
+                ownerName={displayName}
+                canWriteBiometric={canWriteBiometric}
+                canWriteJournal={canWriteJournal}
+                canWriteSeizure={canWriteSeizure}
+              />
+            </div>
+            {/* Desktop: tabs + actions on one row */}
+            <div className="mb-3 hidden items-center gap-3 sm:flex">
+              <TabsList className="glass-surface sticky top-0 z-10 min-h-11 flex-1 overflow-x-auto rounded-2xl p-1">
               {tabs.map((t) => (
-                <TabsTrigger key={t.key} value={t.key} className="relative">
+                <TabsTrigger key={t.key} value={t.key} className="relative min-h-11 px-4">
                   <span>{t.label}</span>
                   {(() => {
                     const n = counts.data?.counts?.[t.key as keyof typeof counts.data.counts] ?? 0;
@@ -345,7 +329,19 @@ function CareDashboardPage() {
                   })()}
                 </TabsTrigger>
               ))}
-            </TabsList>
+              </TabsList>
+              <CareToolbarActions
+                ownerAllowedTabs={ownerAllowedTabs}
+                caregiverHidden={caregiverHidden}
+                toggleHide={toggleHide}
+                tab={current}
+                ownerId={ownerId}
+                ownerName={displayName}
+                canWriteBiometric={canWriteBiometric}
+                canWriteJournal={canWriteJournal}
+                canWriteSeizure={canWriteSeizure}
+              />
+            </div>
             {tabs.find((t) => t.key === "today") && (
               <TabsContent value="today" className="mt-4">
                 <TodayPanel ownerId={ownerId} onJump={(tab) => setActive(tab)} />
@@ -364,11 +360,7 @@ function CareDashboardPage() {
             )}
             {tabs.find((t) => t.key === "biometrics") && (
               <TabsContent value="biometrics" className="mt-4">
-                <BiometricsPanel
-                  ownerId={ownerId}
-                  ownerName={displayName}
-                  canWrite={has("biometrics:write")}
-                />
+                <BiometricsPanel ownerId={ownerId} />
               </TabsContent>
             )}
             {tabs.find((t) => t.key === "hydration") && (
@@ -386,18 +378,14 @@ function CareDashboardPage() {
                   ownerId={ownerId}
                   relationshipId={relationship.id}
                   canComment={has("journal:comment")}
-                  canWrite={has("journal:write")}
+                  canWrite={canWriteJournal}
                   ownerName={displayName}
                 />
               </TabsContent>
             )}
             {tabs.find((t) => t.key === "seizures") && (
               <TabsContent value="seizures" className="mt-4">
-                <SeizuresPanel
-                  ownerId={ownerId}
-                  ownerName={displayName}
-                  canWrite={has("seizures:write")}
-                />
+                <SeizuresPanel ownerId={ownerId} />
               </TabsContent>
             )}
             {tabs.find((t) => t.key === "reports") && (
@@ -428,6 +416,91 @@ function Section({ children }: { children: React.ReactNode }) {
   return <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">{children}</div>;
 }
 
+function CareToolbarActions({
+  ownerAllowedTabs,
+  caregiverHidden,
+  toggleHide,
+  tab,
+  ownerId,
+  ownerName,
+  canWriteBiometric,
+  canWriteJournal,
+  canWriteSeizure,
+}: {
+  ownerAllowedTabs: { key: TabKey; label: string; scope: string }[];
+  caregiverHidden: string[];
+  toggleHide: (key: TabKey, show: boolean) => void;
+  tab: TabKey;
+  ownerId: string;
+  ownerName: string;
+  canWriteBiometric: boolean;
+  canWriteJournal: boolean;
+  canWriteSeizure: boolean;
+}) {
+  const tabAction = (() => {
+    switch (tab) {
+      case "biometrics":
+        return canWriteBiometric ? (
+          <AddBiometricSheet ownerId={ownerId} ownerName={ownerName} />
+        ) : null;
+      case "journal":
+        return canWriteJournal ? (
+          <AddJournalSheet ownerId={ownerId} ownerName={ownerName} />
+        ) : null;
+      case "seizures":
+        return canWriteSeizure ? (
+          <LogSeizureSheet ownerId={ownerId} ownerName={ownerName} />
+        ) : null;
+      default:
+        return null;
+    }
+  })();
+
+  return (
+    <div className="inline-flex shrink-0 items-center gap-1 glass-pill p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label="Customize tabs"
+            className="glass-press inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <EyeOff className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden min-[380px]:inline">Customize</span>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel className="text-xs">Show tabs (just for you)</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {ownerAllowedTabs.map((t) => {
+            const shown = !caregiverHidden.includes(t.key);
+            return (
+              <DropdownMenuCheckboxItem
+                key={t.key}
+                checked={shown}
+                onCheckedChange={(v) => toggleHide(t.key, Boolean(v))}
+              >
+                {t.label}
+              </DropdownMenuCheckboxItem>
+            );
+          })}
+          {ownerAllowedTabs.length === 0 && (
+            <div className="px-2 py-1.5 text-xs text-muted-foreground">
+              Nothing to customize.
+            </div>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {tabAction ? (
+        <>
+          <span className="mx-0.5 h-5 w-px bg-border/60" aria-hidden />
+          {tabAction}
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 function QuickLogBar({
   ownerId,
   ownerName,
@@ -446,18 +519,30 @@ function QuickLogBar({
   return (
     <div
       className={
-        "pointer-events-none fixed bottom-0 right-0 left-0 md:left-16 z-40 pb-[max(env(safe-area-inset-bottom),12px)] " +
+        "native-quick-log-bar pointer-events-none fixed bottom-0 right-0 left-0 md:left-16 z-40 pb-[max(env(safe-area-inset-bottom),12px)] " +
         (collapsed ? "lg:left-16" : "lg:left-64")
       }
     >
-      <div className="mx-auto max-w-4xl px-5 sm:px-10 lg:px-16">
-        <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-border bg-background/95 px-3 py-2 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16">
+        <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 glass-card rounded-2xl px-3 py-2 shadow-lg">
           <span className="mr-1 hidden text-[11px] uppercase tracking-wide text-muted-foreground sm:inline">
             Quick log
           </span>
-          {canSeizure && <LogSeizureSheet ownerId={ownerId} ownerName={ownerName} />}
-          {canJournal && <AddJournalSheet ownerId={ownerId} ownerName={ownerName} />}
-          {canBiometric && <AddBiometricSheet ownerId={ownerId} ownerName={ownerName} />}
+          {canSeizure && (
+            <span className="[&_button]:min-h-11 [&_button]:bg-primary [&_button]:px-4 [&_button]:text-sm [&_button]:font-medium [&_button]:text-primary-foreground [&_button]:shadow-sm">
+              <LogSeizureSheet ownerId={ownerId} ownerName={ownerName} />
+            </span>
+          )}
+          {canJournal && (
+            <span className="[&_button]:min-h-11 [&_button]:bg-primary [&_button]:px-4 [&_button]:text-sm [&_button]:font-medium [&_button]:text-primary-foreground [&_button]:shadow-sm">
+              <AddJournalSheet ownerId={ownerId} ownerName={ownerName} />
+            </span>
+          )}
+          {canBiometric && (
+            <span className="[&_button]:min-h-11 [&_button]:bg-primary [&_button]:px-4 [&_button]:text-sm [&_button]:font-medium [&_button]:text-primary-foreground [&_button]:shadow-sm">
+              <AddBiometricSheet ownerId={ownerId} ownerName={ownerName} />
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -701,15 +786,7 @@ function MedsPanel({
 }
 
 /* ----- Biometrics ----- */
-function BiometricsPanel({
-  ownerId,
-  ownerName,
-  canWrite,
-}: {
-  ownerId: string;
-  ownerName: string;
-  canWrite: boolean;
-}) {
+function BiometricsPanel({ ownerId }: { ownerId: string }) {
   const fn = useServerFn(caregiverReadBiometrics);
   const q = useQuery({
     queryKey: ["care", "biometrics", ownerId],
@@ -721,18 +798,11 @@ function BiometricsPanel({
 
   if (rows.length === 0) {
     return (
-      <div className="space-y-4">
-        {canWrite && (
-          <div className="flex justify-end">
-            <AddBiometricSheet ownerId={ownerId} ownerName={ownerName} />
-          </div>
-        )}
-        <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
-          <p className="font-serif text-lg text-foreground">No biometrics yet</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Once a wearable is connected, the last 30 days appear here.
-          </p>
-        </div>
+      <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+        <p className="font-serif text-lg text-foreground">No biometrics yet</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Once a wearable is connected, the last 30 days appear here.
+        </p>
       </div>
     );
   }
@@ -753,17 +823,10 @@ function BiometricsPanel({
   }
 
   return (
-    <div className="space-y-4">
-      {canWrite && (
-        <div className="flex justify-end">
-          <AddBiometricSheet ownerId={ownerId} ownerName={ownerName} />
-        </div>
-      )}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-        {METRIC_ORDER.map((m) => (
-          <MetricCard key={m} metric={m} series={seriesByMetric[m]} disableLink />
-        ))}
-      </div>
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+      {METRIC_ORDER.map((m) => (
+        <MetricCard key={m} metric={m} series={seriesByMetric[m]} disableLink />
+      ))}
     </div>
   );
 }
@@ -822,15 +885,7 @@ function JournalPanel({
 }
 
 /* ----- Seizures ----- */
-function SeizuresPanel({
-  ownerId,
-  ownerName,
-  canWrite,
-}: {
-  ownerId: string;
-  ownerName: string;
-  canWrite: boolean;
-}) {
+function SeizuresPanel({ ownerId }: { ownerId: string }) {
   const fn = useServerFn(caregiverReadSeizures);
   const q = useQuery({
     queryKey: ["care", "seizures", ownerId],
@@ -839,16 +894,7 @@ function SeizuresPanel({
   if (q.isLoading) return <Empty>Loading…</Empty>;
   if (q.isError) return <Empty>{(q.error as any)?.message ?? "Couldn't load"}</Empty>;
   const events = q.data!.events;
-  return (
-    <div className="space-y-4">
-      {canWrite && (
-        <div className="flex justify-end">
-          <LogSeizureSheet ownerId={ownerId} ownerName={ownerName} />
-        </div>
-      )}
-      <SeizureListReadOnly events={events} />
-    </div>
-  );
+  return <SeizureListReadOnly events={events} />;
 }
 
 /* ----- Reports ----- */

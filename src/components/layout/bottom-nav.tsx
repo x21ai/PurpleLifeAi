@@ -30,38 +30,44 @@ export function BottomNav({ variant = "responsive" }: { variant?: "responsive" |
         aria-label={label}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex flex-col items-center justify-center gap-1 min-h-[60px] text-[11px] transition-colors",
+          "glass-press relative flex flex-col items-center justify-center gap-0.5 min-h-[60px] min-w-[44px] touch-manipulation cursor-pointer text-[11px] transition-[color,opacity] active:opacity-80",
           active
-            ? "text-[color:var(--purple-primary)]"
+            ? "nav-glass-tab-active text-[color:var(--purple-primary)]"
             : "text-[color:var(--text-tertiary)] hover:text-foreground",
         )}
       >
-        <Icon className="h-6 w-6" aria-hidden="true" strokeWidth={active ? 2 : 1.6} />
-        <span className="font-medium">{label}</span>
+        <span className="nav-tab-icon-wrap" aria-hidden="true">
+          <Icon className="h-6 w-6" strokeWidth={active ? 2 : 1.6} />
+        </span>
+        <span className="nav-tab-label font-medium">{label}</span>
       </Link>
     );
   };
 
   return (
     <nav
-      className={`${visibilityClass} bottom-0 inset-x-0 z-30 bg-background/95 backdrop-blur border-t border-border`}
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className={`${visibilityClass} bottom-0 inset-x-0 z-40 pointer-events-none touch-manipulation`}
+      style={{ paddingBottom: "max(0.625rem, env(safe-area-inset-bottom))" }}
       aria-label="Primary"
     >
-      <div className="grid grid-cols-5 items-center">
-        {renderTab(TABS[0])}
-        {renderTab(TABS[1])}
-        <div className="flex items-center justify-center">
-          <Link
-            to="/journal/new"
-            aria-label={t("nav.capture", { defaultValue: "Capture" })}
-            className="-mt-6 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--purple-primary)] text-white shadow-lg shadow-[color:var(--purple-primary)]/40 active:scale-95 transition"
-          >
-            <Plus className="h-7 w-7" aria-hidden="true" />
-          </Link>
+      <div className="mx-auto w-full max-w-3xl px-4 pointer-events-auto">
+        <div className="nav-glass-bar">
+          <div className="grid grid-cols-5 items-center">
+            {renderTab(TABS[0])}
+            {renderTab(TABS[1])}
+            <div className="flex items-center justify-center">
+              <Link
+                to="/journal/new"
+                aria-label={t("nav.capture", { defaultValue: "Capture" })}
+                className="glass-press -mt-6 inline-flex h-14 w-14 min-h-[56px] min-w-[56px] touch-manipulation cursor-pointer items-center justify-center rounded-full bg-[color:var(--purple-primary)] text-white shadow-lg shadow-[color:var(--purple-primary)]/40 ring-2 ring-[color:var(--glass-nav-border)] transition-[transform,opacity]"
+              >
+                <Plus className="h-7 w-7" aria-hidden="true" />
+              </Link>
+            </div>
+            {renderTab(TABS[2])}
+            {renderTab(TABS[3])}
+          </div>
         </div>
-        {renderTab(TABS[2])}
-        {renderTab(TABS[3])}
       </div>
     </nav>
   );

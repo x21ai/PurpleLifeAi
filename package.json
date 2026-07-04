@@ -24,6 +24,7 @@
     "check:fake-vitals": "node scripts/check-no-fake-vitals.mjs",
     "check:live-data:db": "node scripts/check-no-test-data.mjs --db",
     "check:em-dash": "node scripts/check-no-em-dash.mjs",
+    "check:native-shell": "node scripts/check-native-shell.mjs",
     "check:unique-images": "node scripts/check-unique-route-images.mjs",
     "check:lovable-auth": "node scripts/check-lovable-auth-guard.mjs",
     "check:entry-budget": "node scripts/check-entry-budget.mjs",

@@ -24,7 +24,8 @@ const config: CapacitorConfig = {
   // The web assets dir is only used for a fallback bundled shell; in normal
   // operation the WebView loads server.url (production) so the app always
   // tracks the deployed site.
-  webDir: "dist/client",
+  // Minimal local shell (index.html). Production UI loads from server.url.
+  webDir: "capacitor-shell",
   // Production remote URL: keep this set for store builds so the WebView loads the
   // live site (instant UI updates on deploy). Do not point at localhost here;
   // use `cap run` / Xcode live reload against a dev server only during local
@@ -40,13 +41,17 @@ const config: CapacitorConfig = {
     // (viewport-fit=cover) handle the notch.
     contentInset: "never",
     backgroundColor: "#0a0710",
+    allowsLinkPreview: false,
+    scrollEnabled: true,
+    preferredContentMode: "mobile",
   },
   android: {
     backgroundColor: "#0a0710",
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 600,
+      launchShowDuration: 300,
+      launchAutoHide: true,
       backgroundColor: "#0a0710",
       showSpinner: false,
       androidScaleType: "CENTER_CROP",

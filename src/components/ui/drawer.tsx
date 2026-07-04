@@ -17,13 +17,19 @@ const DrawerPortal = DrawerPrimitive.Portal;
 
 const DrawerClose = DrawerPrimitive.Close;
 
+const drawerOverlayClassName =
+  "fixed inset-0 z-50 bg-black/45 backdrop-blur-[12px] backdrop-saturate-[1.35] supports-[backdrop-filter]:bg-black/28";
+
+const drawerGlassHandleClassName =
+  "mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-foreground/12 ring-1 ring-inset ring-foreground/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] backdrop-blur-sm dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]";
+
 const DrawerOverlay = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Overlay
     ref={ref}
-    className={cn("fixed inset-0 z-50 bg-black/80", className)}
+    className={cn(drawerOverlayClassName, className)}
     {...props}
   />
 ));
@@ -38,12 +44,12 @@ const DrawerContent = React.forwardRef<
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background",
+        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-2xl glass-surface",
         className,
       )}
       {...props}
     >
-      <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+      <div aria-hidden className={drawerGlassHandleClassName} />
       {children}
     </DrawerPrimitive.Content>
   </DrawerPortal>
