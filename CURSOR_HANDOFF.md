@@ -1,6 +1,6 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-03 (TestFlight upload blocked: ASC app record missing; JWT signing fixed).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-03 (TestFlight build 1.0/1 uploaded; ASC metadata partially filled).
 
 Positioning: PurpleLife is an AI health journal for any health management (epilepsy was the founding focus; the condition catalog is general).
 
@@ -33,7 +33,7 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 | Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
 | Git heads | `lovable/redesign` at `31f9176` (native shell + TestFlight scripts committed); `main` at `311d466` |
 | Production deploy | Worker `purplelife`, version `9b7f3199` (2026-07-03 23:53 UTC) |
-| TestFlight | **Blocked:** ASC app record for `org.purplelife.app` not created (API key cannot POST `/v1/apps`). Doppler ASC secrets OK (`bun run ios:check-asc`). Archive OK (1.0 / build **1**). Fix JWT in `scripts/lib/asc-jwt.mjs` (ieee-p1363). Runbook: `docs/testflight-setup.md` |
+| TestFlight | **Uploaded** build **1.0 (1)** for **Purple for Life** (ASC Apple ID `6787298041`, bundle `org.purplelife.app`). Processing 5–15 min. Doppler ASC secrets OK. Fix: added `NSHealthUpdateUsageDescription` to `ios/App/App/Info.plist`. Screenshots in `test-results/asc-screenshots/`. Runbook: `docs/testflight-setup.md` |
 | Dev server | `bun run dev` on port 8080 |
 | E2E local | `bun run test:e2e` (boots dev server unless `E2E_BASE_URL` set) |
 | E2E prod | `bun run test:e2e:prod` (580 tests, 5 viewports, ~1.5h; Doppler creds) |
@@ -59,13 +59,14 @@ checklist in `docs/LOVABLE-REDESIGN-WORKFLOW.md`, then asks the owner before dep
 Local path: `bun run build:prod` then `doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c 'export CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0; bunx wrangler deploy -c wrangler.deploy.jsonc'`.
 Cron Triggers fan out from `scheduled()` in `src/server.ts` through a `SELF` service binding.
 
-## Recent changes (2026-07-03, TestFlight)
+## Recent changes (2026-07-03, TestFlight + ASC)
 
+- Owner created ASC app **Purple for Life** (Apple ID `6787298041`, bundle `org.purplelife.app`).
 - `bun run ios:check-asc`: all four Doppler secrets present (`purple-life/prd`).
-- `bun run ios:testflight`: failed at `asc-ensure-app.mjs` until JWT fix; then 403 CREATE on apps (key lacks create permission).
-- Fixed `scripts/lib/asc-jwt.mjs` ES256 signing (`dsaEncoding: ieee-p1363`) so ASC API auth succeeds.
-- Manual archive + export: archive **OK**; export **failed** (no App Store Connect app record for `org.purplelife.app`).
-- Bundle ID exists in Developer (team `C3HY4MF66F`); create **My Apps → Purple** in ASC (Admin), then re-run `bun run ios:testflight`.
+- First `bun run ios:testflight`: export failed (missing `NSHealthUpdateUsageDescription` in `Info.plist`).
+- Added `NSHealthUpdateUsageDescription` to `ios/App/App/Info.plist`; second upload **succeeded** (1.0 / build **1**).
+- ASC co-browse: subtitle, Health & Fitness category, content rights, promotional text, description, keywords, review notes, E2E demo creds, manual release. Screenshots captured to `test-results/asc-screenshots/` via `scripts/capture-asc-screenshots.mjs`.
+- ASC still open: upload screenshots, finish age-ratings wizard, App Privacy (Admin), select build after processing, verify Save on version page.
 
 Redesign baseline on `main`: commit `7086ffa` (perf/responsive/native foundation).
 

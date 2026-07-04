@@ -22,6 +22,25 @@ This runs `scripts/native-ios-testflight.sh`, which:
 After upload, processing takes about **5–15 minutes**. Then add testers in
 [App Store Connect](https://appstoreconnect.apple.com) → **TestFlight**.
 
+## App Store Connect record (2026-07-03)
+
+| Field | Value |
+|-------|--------|
+| App name | **Purple for Life** |
+| Bundle ID | `org.purplelife.app` |
+| Apple ID | `6787298041` |
+| Team | `C3HY4MF66F` (ideaTree Inc.) |
+| ASC URL | https://appstoreconnect.apple.com/apps/6787298041 |
+
+Capture screenshot candidates (1284×2778) for ASC upload:
+
+```bash
+doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c \
+  'TEST_USER_EMAIL=$E2E_TEST_USER_EMAIL TEST_USER_PASSWORD=$E2E_TEST_USER_PASSWORD node scripts/capture-asc-screenshots.mjs'
+```
+
+Output: `test-results/asc-screenshots/` (sign-in, today, settings, vitals).
+
 ## One-time: App Store Connect API key (Doppler)
 
 **Owner one-time (~5 min, cannot be automated):** Apple requires a human with Admin or
@@ -141,19 +160,11 @@ Environment: `DEVELOPER_DIR` → `/Applications/Xcode-beta.app`, team `C3HY4MF66
 | Step | Result |
 |------|--------|
 | `bun run ios:check-asc` | **Pass** (all three `APP_STORE_CONNECT_*` + `DEVELOPMENT_TEAM`) |
-| `bun run ios:testflight` (first run) | **Fail** at `asc-ensure-app.mjs`: ASC **401** (JWT ES256 DER signatures; fixed in repo) |
-| `scripts/lib/asc-jwt.mjs` | **Fixed** (`crypto.sign` with `dsaEncoding: ieee-p1363`) |
-| `scripts/asc-ensure-app.mjs` (after JWT fix) | **Fail** ASC **403**: API key cannot **CREATE** app (use **Admin** in ASC UI or Admin API key) |
-| ASC lookup `org.purplelife.app` | **No app record** (bundle ID exists, Apple team seed `C3HY4MF66F`) |
-| Capacitor sync + local signing | **OK** (testflight script through signing step) |
-| `xcodebuild archive` Release | **OK** → `build/ios/Purple.xcarchive` (marketing **1.0**, build **1**) |
-| `xcodebuild -exportArchive` | **Failed**: app record `org.purplelife.app` not found on App Store Connect |
-| TestFlight upload | **Not completed** (export did not upload IPA) |
+| ASC app record | **Exists** (owner created **Purple for Life**, Apple ID `6787298041`, bundle `org.purplelife.app`) |
+| First `bun run ios:testflight` | **Fail** export: missing `NSHealthUpdateUsageDescription` in `Info.plist` |
+| `ios/App/App/Info.plist` | **Fixed** (added `NSHealthUpdateUsageDescription`) |
+| Second `bun run ios:testflight` | **Pass** upload build **1.0 (1)** to TestFlight (processing 5–15 min) |
+| ASC metadata (co-browse) | Subtitle, category (Health & Fitness), content rights, promotional text, description, keywords, review notes, demo creds (Doppler E2E), manual release |
+| ASC still required | Screenshots upload, age-ratings wizard finish, App Privacy (Admin), select build after processing |
 
-**Unblock TestFlight (owner in App Store Connect):**
-
-1. **My Apps** → **+** → New App: name **Purple**, bundle ID `org.purplelife.app`, SKU e.g. `purple-life-ios-001`, primary locale **en-US** (requires **Admin**; current API key reads ASC but cannot create apps).
-2. Optional: new API key with **Admin** access so `asc-ensure-app.mjs` can create the record.
-3. Re-run: `bun run ios:testflight` (increment `CURRENT_PROJECT_VERSION` if duplicate build **1**).
-
-After Apple processes the build (5–15 minutes): **TestFlight** → internal testers, then external group + Beta App Review if needed.
+**After build processes:** App Store Connect → **Purple for Life** → **TestFlight** → internal testers; version page → select build → **Add for Review** when metadata complete.

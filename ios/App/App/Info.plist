@@ -39,6 +39,8 @@
 	<true/>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Purple reads Apple Health data you allow so your journal and vitals stay in sync with wearables and Health.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Purple may write health metrics you choose to sync so Apple Health stays aligned with your journal and vitals.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Purple uses the camera when you add photos or videos to a journal entry.</string>
 	<key>NSMicrophoneUsageDescription</key>
