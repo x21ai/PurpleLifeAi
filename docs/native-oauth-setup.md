@@ -159,13 +159,3 @@ export async function initNativeApp(): Promise<void> {
 ---
 
 ## 7. Patch checklist when native projects exist
-
-```bash
-# From repo root after bun run native:add
-test -f ios/App/App/Info.plist && echo "patch Info.plist CFBundleURLTypes"
-test -f android/app/src/main/AndroidManifest.xml && echo "patch MainActivity intent filter"
-bun run native:sync
-```
-
-If `ios/` or `android/` are missing, run `bun run native:install` and
-`bun run native:add` on a machine with Xcode and Android Studio first.

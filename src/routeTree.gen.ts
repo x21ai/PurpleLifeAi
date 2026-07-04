@@ -67,7 +67,9 @@ import { Route as ApiHealthNativeSyncRouteImport } from './routes/api/health/nat
 import { Route as ApiEmailSuppressionRouteImport } from './routes/api/email/suppression'
 import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
 import { Route as AppSettingsTravelRouteImport } from './routes/_app/settings.travel'
+import { Route as AppSettingsTermsRouteImport } from './routes/_app/settings.terms'
 import { Route as AppSettingsSharingRouteImport } from './routes/_app/settings.sharing'
+import { Route as AppSettingsPrivacyRouteImport } from './routes/_app/settings.privacy'
 import { Route as AppSettingsHowPurpleThinksRouteImport } from './routes/_app/settings.how-purple-thinks'
 import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
 import { Route as AppReportsNewRouteImport } from './routes/_app/reports.new'
@@ -402,9 +404,19 @@ const AppSettingsTravelRoute = AppSettingsTravelRouteImport.update({
   path: '/travel',
   getParentRoute: () => AppSettingsRoute,
 } as any)
+const AppSettingsTermsRoute = AppSettingsTermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
 const AppSettingsSharingRoute = AppSettingsSharingRouteImport.update({
   id: '/sharing',
   path: '/sharing',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsPrivacyRoute = AppSettingsPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => AppSettingsRoute,
 } as any)
 const AppSettingsHowPurpleThinksRoute =
@@ -717,7 +729,9 @@ export interface FileRoutesByFullPath {
   '/reports/new': typeof AppReportsNewRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
+  '/settings/privacy': typeof AppSettingsPrivacyRoute
   '/settings/sharing': typeof AppSettingsSharingRoute
+  '/settings/terms': typeof AppSettingsTermsRoute
   '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
@@ -820,7 +834,9 @@ export interface FileRoutesByTo {
   '/reports/new': typeof AppReportsNewRoute
   '/seizures/new': typeof AppSeizuresNewRoute
   '/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
+  '/settings/privacy': typeof AppSettingsPrivacyRoute
   '/settings/sharing': typeof AppSettingsSharingRoute
+  '/settings/terms': typeof AppSettingsTermsRoute
   '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
@@ -926,7 +942,9 @@ export interface FileRoutesById {
   '/_app/reports/new': typeof AppReportsNewRoute
   '/_app/seizures/new': typeof AppSeizuresNewRoute
   '/_app/settings/how-purple-thinks': typeof AppSettingsHowPurpleThinksRoute
+  '/_app/settings/privacy': typeof AppSettingsPrivacyRoute
   '/_app/settings/sharing': typeof AppSettingsSharingRoute
+  '/_app/settings/terms': typeof AppSettingsTermsRoute
   '/_app/settings/travel': typeof AppSettingsTravelRoute
   '/_app/today/risk': typeof AppTodayRiskRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
@@ -1032,7 +1050,9 @@ export interface FileRouteTypes {
     | '/reports/new'
     | '/seizures/new'
     | '/settings/how-purple-thinks'
+    | '/settings/privacy'
     | '/settings/sharing'
+    | '/settings/terms'
     | '/settings/travel'
     | '/today/risk'
     | '/api/email/suppression'
@@ -1135,7 +1155,9 @@ export interface FileRouteTypes {
     | '/reports/new'
     | '/seizures/new'
     | '/settings/how-purple-thinks'
+    | '/settings/privacy'
     | '/settings/sharing'
+    | '/settings/terms'
     | '/settings/travel'
     | '/today/risk'
     | '/api/email/suppression'
@@ -1240,7 +1262,9 @@ export interface FileRouteTypes {
     | '/_app/reports/new'
     | '/_app/seizures/new'
     | '/_app/settings/how-purple-thinks'
+    | '/_app/settings/privacy'
     | '/_app/settings/sharing'
+    | '/_app/settings/terms'
     | '/_app/settings/travel'
     | '/_app/today/risk'
     | '/api/email/suppression'
@@ -1733,11 +1757,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsTravelRouteImport
       parentRoute: typeof AppSettingsRoute
     }
+    '/_app/settings/terms': {
+      id: '/_app/settings/terms'
+      path: '/terms'
+      fullPath: '/settings/terms'
+      preLoaderRoute: typeof AppSettingsTermsRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
     '/_app/settings/sharing': {
       id: '/_app/settings/sharing'
       path: '/sharing'
       fullPath: '/settings/sharing'
       preLoaderRoute: typeof AppSettingsSharingRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/privacy': {
+      id: '/_app/settings/privacy'
+      path: '/privacy'
+      fullPath: '/settings/privacy'
+      preLoaderRoute: typeof AppSettingsPrivacyRouteImport
       parentRoute: typeof AppSettingsRoute
     }
     '/_app/settings/how-purple-thinks': {
@@ -2122,13 +2160,17 @@ const AppReportsRouteWithChildren = AppReportsRoute._addFileChildren(
 
 interface AppSettingsRouteChildren {
   AppSettingsHowPurpleThinksRoute: typeof AppSettingsHowPurpleThinksRoute
+  AppSettingsPrivacyRoute: typeof AppSettingsPrivacyRoute
   AppSettingsSharingRoute: typeof AppSettingsSharingRoute
+  AppSettingsTermsRoute: typeof AppSettingsTermsRoute
   AppSettingsTravelRoute: typeof AppSettingsTravelRoute
 }
 
 const AppSettingsRouteChildren: AppSettingsRouteChildren = {
   AppSettingsHowPurpleThinksRoute: AppSettingsHowPurpleThinksRoute,
+  AppSettingsPrivacyRoute: AppSettingsPrivacyRoute,
   AppSettingsSharingRoute: AppSettingsSharingRoute,
+  AppSettingsTermsRoute: AppSettingsTermsRoute,
   AppSettingsTravelRoute: AppSettingsTravelRoute,
 }
 

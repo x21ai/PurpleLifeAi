@@ -479,10 +479,13 @@
   "appleHealth": {
     "nativeTitle": "Conectar Apple Health",
     "nativeBody": "Purple lee sueño, VFC, frecuencia cardíaca, pasos y VO2 máx directamente desde HealthKit en este iPhone.",
-    "nativeHint": "Toca Conectar para abrir el permiso de Acceso a Salud. Abre Purple después de entrenar o dormir para actualizar tus signos.",
+    "nativeHint": "Abre Purple después de entrenar o dormir para actualizar tus signos. Usa Ajustes de Salud para cambiar lo que Purple puede leer.",
     "connect": "Conectar Apple Health",
     "syncNow": "Sincronizar ahora",
     "connected": "Conectado",
+    "openSettings": "Abrir Ajustes de Salud",
+    "permissionDenied": "No se concedió acceso a Salud. Abre Ajustes de Salud, toca Purple y activa los datos que quieras compartir.",
+    "connectSteps": "Toca Conectar para abrir la hoja de Acceso a Salud de iOS, o usa Ajustes de Salud para permitir o denegar el acceso.",
     "webImportNote": "Los datos anteriores pueden ser de importación web o Health Auto Export. Toca Conectar para vincular HealthKit en este iPhone."
   },
   "signIn": {

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { syncNativeHealthBatch } from "@/lib/native-health.functions";
 import {
   getNativeHealthAuthorizationStatus,
+  openNativeHealthSettings,
   readNativeHealthMetrics,
   requestNativeHealthPermissions,
 } from "@/lib/native";
@@ -29,6 +30,7 @@ function relativeTime(iso: string | null): string {
 export function useNativeAppleHealth() {
   const syncBatch = useServerFn(syncNativeHealthBatch);
   const [healthKitAuthorized, setHealthKitAuthorized] = useState(false);
+  const [permissionDenied, setPermissionDenied] = useState(false);
   const [hasSyncedData, setHasSyncedData] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [lastData, setLastData] = useState<string | null>(null);
@@ -37,6 +39,7 @@ export function useNativeAppleHealth() {
   const refreshAuth = useCallback(async () => {
     const status = await getNativeHealthAuthorizationStatus();
     setHealthKitAuthorized(status.authorized);
+    setPermissionDenied(status.readDenied.length > 0 && !status.authorized);
     return status.authorized;
   }, []);
 
@@ -64,6 +67,14 @@ export function useNativeAppleHealth() {
     void refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [refresh]);
+
   const syncState: NativeAppleHealthSyncState = (() => {
     if (!healthKitAuthorized) return "waiting";
     const dataAge = lastData ? Date.now() - new Date(lastData).getTime() : Infinity;
@@ -77,27 +88,12 @@ export function useNativeAppleHealth() {
     stale: `Last data ${relativeTime(lastData)} · open Purple to refresh from HealthKit`,
     reachable: "Connected · waiting for the first HealthKit sync",
     waiting: hasSyncedData
-      ? `Account has older Apple Health data · tap Connect to link HealthKit on this iPhone`
+      ? `Account has older Apple Health data · connect HealthKit on this iPhone`
       : "Not connected · grant HealthKit access to sync vitals",
   };
 
-  const ensurePermissions = async (): Promise<boolean> => {
-    const alreadyAuthorized = await refreshAuth();
-    if (alreadyAuthorized) return true;
-
-    const granted = await requestNativeHealthPermissions();
-    if (granted) {
-      setHealthKitAuthorized(true);
-      return true;
-    }
-
-    setHealthKitAuthorized(false);
-    toast.error("HealthKit permission was not granted. Open Settings to allow access.");
-    return false;
-  };
-
   const runNativeSync = async () => {
-    const granted = await ensurePermissions();
+    const granted = await refreshAuth();
     if (!granted) return false;
 
     const days = await readNativeHealthMetrics(90);
@@ -113,7 +109,20 @@ export function useNativeAppleHealth() {
 
   const connect = async () => {
     setBusy(true);
+    setPermissionDenied(false);
     try {
+      const alreadyAuthorized = await refreshAuth();
+      if (!alreadyAuthorized) {
+        const granted = await requestNativeHealthPermissions();
+        if (!granted) {
+          setHealthKitAuthorized(false);
+          setPermissionDenied(true);
+          return;
+        }
+        setHealthKitAuthorized(true);
+        setPermissionDenied(false);
+      }
+
       const ok = await runNativeSync();
       if (ok) {
         toast.success("Apple Health connected. Vitals synced from HealthKit.");
@@ -129,6 +138,11 @@ export function useNativeAppleHealth() {
   const syncNow = async () => {
     setBusy(true);
     try {
+      const granted = await refreshAuth();
+      if (!granted) {
+        setPermissionDenied(true);
+        return;
+      }
       const ok = await runNativeSync();
       if (ok) toast.success("HealthKit sync complete.");
     } catch (e) {
@@ -139,11 +153,19 @@ export function useNativeAppleHealth() {
     }
   };
 
+  const openSettings = async () => {
+    const opened = await openNativeHealthSettings();
+    if (!opened) {
+      toast.error("Couldn't open Settings. Open Settings, then Health, and allow Purple.");
+    }
+  };
+
   return {
     /** Native HealthKit permission on this device (never inferred from DB rows). */
     healthKitAuthorized,
     /** @deprecated Use healthKitAuthorized. Kept for callers not yet updated. */
     linked: healthKitAuthorized,
+    permissionDenied,
     hasSyncedData,
     loaded,
     lastData,
@@ -152,6 +174,7 @@ export function useNativeAppleHealth() {
     statusText,
     connect,
     syncNow,
+    openSettings,
     relativeTime,
   };
 }

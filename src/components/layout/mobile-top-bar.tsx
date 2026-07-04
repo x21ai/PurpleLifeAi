@@ -4,24 +4,28 @@ import { Menu, ChevronDown } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
 import { navTree, filterNavTree, type NavGroup } from "./nav-items";
 import { usePlatformFlags } from "@/lib/platform-flags";
+import { useNativeAppContext } from "@/lib/native-app-context";
 import { cn } from "@/lib/utils";
 import { PendingInboxBadge } from "@/components/care/pending-inbox-badge";
 import { CaregiverNavLink } from "./caregiver-nav-link";
 import { ProfileMenu } from "./profile-menu";
 import { HeaderSyncButton } from "@/components/biometrics/header-sync-button";
 
-export function MobileTopBar() {
+export function MobileTopBar({ variant = "responsive" }: { variant?: "responsive" | "native" }) {
   const [open, setOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { flags } = usePlatformFlags();
-  const tree = filterNavTree(navTree, flags);
+  const { isNativeApp } = useNativeAppContext();
+  const tree = filterNavTree(navTree, flags, { native: isNativeApp });
+
+  const headerClass =
+    variant === "native"
+      ? "sticky top-0 z-30 flex items-center justify-between px-4 min-h-12 bg-background/90 backdrop-blur border-b border-border"
+      : "md:hidden sticky top-0 z-30 flex items-center justify-between px-4 min-h-12 bg-background/90 backdrop-blur border-b border-border";
 
   return (
-    <header
-      className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 min-h-12 bg-background/90 backdrop-blur border-b border-border"
-      style={{ paddingTop: "env(safe-area-inset-top)" }}
-    >
+    <header className={headerClass} style={{ paddingTop: "env(safe-area-inset-top)" }}>
       <Link to="/today" className="wordmark text-[12px] text-foreground" aria-label="Purple, home">
         Purple
       </Link>
@@ -57,22 +61,24 @@ export function MobileTopBar() {
               <CaregiverNavLink variant="sheet" onClick={() => setOpen(false)} />
             </nav>
             <div className="shrink-0 mx-3 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-border space-y-1 text-[14px]">
+              {variant !== "native" && (
+                <Link
+                  to="/charter"
+                  onClick={() => setOpen(false)}
+                  className="block px-3 py-2 text-muted-foreground hover:text-foreground"
+                >
+                  Charter
+                </Link>
+              )}
               <Link
-                to="/charter"
-                onClick={() => setOpen(false)}
-                className="block px-3 py-2 text-muted-foreground hover:text-foreground"
-              >
-                Charter
-              </Link>
-              <Link
-                to="/privacy"
+                to={variant === "native" ? "/settings/privacy" : "/privacy"}
                 onClick={() => setOpen(false)}
                 className="block px-3 py-2 text-muted-foreground hover:text-foreground"
               >
                 Privacy & safety
               </Link>
               <Link
-                to="/terms"
+                to={variant === "native" ? "/settings/terms" : "/terms"}
                 onClick={() => setOpen(false)}
                 className="block px-3 py-2 text-muted-foreground hover:text-foreground"
               >

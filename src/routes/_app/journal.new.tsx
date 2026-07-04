@@ -11,6 +11,7 @@ import { useVoiceCapture } from "@/components/journal/use-voice-capture";
 import { queueEntry } from "@/lib/offline-journal-queue";
 import { VoiceWave } from "@/components/journal/voice-wave";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { useNativeAppContext } from "@/lib/native-app-context";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
@@ -71,6 +72,7 @@ function inferKind(text: string, voice: string, atts: Attachment[]): string {
 
 function JournalNewPage() {
   useRouteTheme("dark");
+  const { isNativeApp } = useNativeAppContext();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { session } = useAuth();
@@ -287,7 +289,13 @@ function JournalNewPage() {
   const showTranscript = voice.listening || voice.transcript.length > 0;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div
+      className={
+        isNativeApp
+          ? "flex flex-col flex-1 min-h-0 h-full bg-background text-foreground"
+          : "min-h-screen bg-background text-foreground"
+      }
+    >
       {/* Sticky top bar, matches sheet-page rhythm but with a Save action on the right */}
       <header
         className="sticky top-0 z-20 bg-background/85 backdrop-blur border-b border-border/60"

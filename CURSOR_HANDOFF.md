@@ -1,6 +1,6 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-03.
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-03 (native shell verify + deploy).
 
 Positioning: PurpleLife is an AI health journal for any health management (epilepsy was the founding focus; the condition catalog is general).
 
@@ -31,8 +31,8 @@ Development model: the project is edited from both Cursor and Lovable. A whole-a
 | Runtime | Cloudflare Worker (`wrangler.deploy.jsonc`, entry `src/server.ts`, `nodejs_compat`) |
 | Package manager | bun (commands below) |
 | Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
-| Git heads | `main` and `lovable/redesign` at `7029637` (main ahead until redesign sync) |
-| Production deploy | Worker `purplelife`, version `cbb9fb47-8737-4511-9b08-e1b5854fa03a` (commit `7029637`) |
+| Git heads | `main` and `lovable/redesign` at `311d466` (local and origin aligned) |
+| Production deploy | Worker `purplelife`, version `9b7f3199` (2026-07-03 23:53 UTC; uncommitted native shell work at `311d466`) |
 | Dev server | `bun run dev` on port 8080 |
 | E2E local | `bun run test:e2e` (boots dev server unless `E2E_BASE_URL` set) |
 | E2E prod | `bun run test:e2e:prod` (580 tests, 5 viewports, ~1.5h; Doppler creds) |
@@ -75,7 +75,11 @@ the web build. Full runbook: `docs/native-app-setup.md`. Durable decision:
 | Runtime bridge | `src/lib/native/capacitor.ts` | `isNativeApp()`, `callPlugin()`, web no-op |
 | Shell init | `src/lib/native/index.ts` | Status bar, splash hide, Android back button |
 | Local dose reminders | `src/lib/native/index.ts` | `scheduleNativeMedReminders()` via Capacitor Local Notifications |
-| Native OAuth | `src/lib/native/oauth.ts`, `social-sign-in-buttons.tsx` | System browser + `org.purplelife.app://auth-callback` deep link |
+| Native auth OAuth | `src/lib/native/oauth.ts`, `social-sign-in-buttons.tsx` | System browser + `org.purplelife.app://auth-callback` deep link |
+| Native wearable OAuth | `src/lib/native/wearable-oauth.ts` | Oura/Whoop system browser + `org.purplelife.app://oauth-{oura,whoop}-callback` |
+| Native shell | `NativeAppShell`, `NativeRouteGuard`, `NativeConnectivityGate`, `AppPage`, `shell-routes.ts` | Dedicated app chrome; marketing blocked; offline retry |
+| Native notifications | `native-notifications-panel.tsx` | Local notification permission on Tools (native); web phone alarms hidden |
+| Legal in-app | `/settings/privacy`, `/settings/terms` | Native route guard redirects `/privacy` and `/terms` |
 | Native health bridge | `src/lib/native/health-ios.ts`, `health-android.ts`, `health.ts` | `@capgo/capacitor-health` via `Health` plugin; iOS HealthKit + Android Health Connect daily aggregation |
 | Native health sync | `src/lib/native-health.functions.ts`, `src/lib/native-health.server.ts`, `/api/health/native-sync` | Authenticated upsert into `biometrics` (`apple_health`, `health_connect`) |
 | Apple Health UI | `apple-health-connection.tsx`, `apple-health-card.tsx` | Web: Health Auto Export webhook; native iOS: HealthKit Connect + `syncNativeHealthBatch` (Settings, Tools, onboarding step 2) |
@@ -105,7 +109,7 @@ The agent runs these end to end via scripts, Doppler, and APIs. Do not hand off 
 |---------|----------------|---------------|
 | **`/Applications/Xcode.app` missing** | `xcodebuild` if script cannot find Xcode | Agent auto-detects `~/Downloads/Xcode-beta.app`, `/Applications/Xcode.app`, or `mdfind`. Uses `DEVELOPER_DIR` when `xcode-select` still points at CLT. |
 | **iOS Simulator runtimes** | Launch app in Simulator | Install an iOS simulator runtime in Xcode Settings, or use a USB iPhone (required for real HealthKit) |
-| **Apple 2FA / signing without API token** | Device signing, TestFlight archive | Add App Store Connect API key to Doppler `purple-life` (`APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_API_KEY` .p8 contents), or sign Apple ID into Xcode once on this Mac |
+| **Apple 2FA / signing without API token** | Device signing, TestFlight archive | Add App Store Connect API key to Doppler `purple-life` (`APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_API_KEY` .p8 contents). Runbook: `docs/testflight-setup.md`, `bun run ios:testflight` |
 | **APNs / FCM credentials** | Native push delivery (`native_push_tokens` table is live) | Wire APNs/FCM secrets into Worker and send path |
 | **Store developer accounts** | TestFlight / Play internal track submission | App Store Connect + Play Console accounts active |
 
@@ -126,6 +130,11 @@ entitlements, permissions, icons, `capacitor.config.ts` shell changes). See
 
 ## Recent changes (2026-07-02 to 2026-07-03)
 
+1. **Native shell ship (2026-07-03, deploy `9b7f3199`):** Resumed stalled verify+deploy agent; all 8 native tasks verified complete in uncommitted working tree (no code gaps found): Oura/Whoop native OAuth (`wearable-oauth.ts`, `initNativeWearableOAuthDeepLink()` in `initNativeApp()`, oura/whoop connections); `NativeNotificationsPanel` on Tools with web `PhoneAlarmsSection` + med reminder banners gated; legal routes `/settings/privacy` + `/settings/terms`, route guard blocks marketing paths, Tools legal links native-aware; viewport fixes on chat-care/journal.new/chat; `NativeConnectivityGate` (`navigator.onLine` + GET `/`); shell architecture (`NativeAppShell`, `AppShellRouter`, `shell-routes.ts`, `shell-context.tsx`, `AppPage`, settings/today migrated). Gates: `check:em-dash`, `tsc --noEmit`, `build:prod`. Deploy: `wrangler deploy -c wrangler.deploy.jsonc` via Doppler. Prod smoke: `curl /today` HTTP 200. **Still uncommitted** at git `311d466`.
+1. **Ops sync (2026-07-03):** Site health check: prod `/`, `/today`, `/tools` HTTP 200; local dev on 8080 OK. `lovable/redesign` fast-forwarded to `main` (`311d466`) and pushed; no redeploy needed.
+1. **Native Apple Health UX v2 (2026-07-03, pending deploy):** Larger centered Health Access panel on Tools/Settings native iOS; full-width Connect + **Open Health Settings** link (`app-settings:` via Capacitor App); inline permission-denied message (no toast-only); stricter HealthKit auth (clears stale localStorage when denied). Files: `native-apple-health-panel.tsx`, `use-native-apple-health.ts`, `health-ios.ts` (`openHealthKitSettings`).
+1. **TestFlight pipeline (2026-07-03, blocked on API key):** `scripts/native-ios-testflight.sh`, `scripts/asc-ensure-app.mjs`, `ios/ExportOptions.plist`, `bun run ios:testflight`. Release archive succeeds locally; export blocked until App Store Connect app record exists. Needs Doppler `APP_STORE_CONNECT_*` secrets. Runbook: `docs/testflight-setup.md`.
+1. **Native app experience (2026-07-03, pending deploy):** `NativeAppShell` + `AppShellRouter`; `NativeRouteGuard`; `NativeConnectivityGate`; `NativeAppBootstrap` (cold start off marketing `/`); welcome/journal hide tab chrome; OAuth cold-start via `initNativeOAuthDeepLink()`; OAuth account deletion without password; camera/mic plist + `PrivacyInfo.xcprivacy`; push registration disabled until APNs; native med reschedule. Docs: `mem/native-app-experience.md`, `docs/native-app-store-review.md`.
 1. **HealthKit permission gate (2026-07-03, `7029637`, deploy `cbb9fb47`):** Native iOS no longer treats account `biometrics` rows (`source=apple_health` from webhook/HAE/import) as "connected". `getHealthKitAuthorizationStatus()` uses `@capgo/capacitor-health` `checkAuthorization` plus a device localStorage flag set only after successful `requestAuthorization`. UI: not authorized shows "Connect Apple Health" only (no Sync now); authorized shows Sync now + sync state from data freshness; stale web-import note when DB has data but HealthKit not linked. Files: `health-ios.ts`, `use-native-apple-health.ts`, `apple-health-connection.tsx`, `apple-health-card.tsx`.
 1. **Native Apple Health UX (2026-07-03, `bebe166`, deploy `27be89de`):** Settings `/settings/sharing` shows HealthKit connect/sync on native iOS (no webhook/HAE/ZIP); welcome onboarding adds optional step 2 "Connect with devices and apps"; PWA install banner hidden in native app; `/apple-health-import` redirects native iOS to Settings. Shared hooks: `use-native-ios.ts`, `use-native-apple-health.ts`. Gates: `check:em-dash`, `tsc`, `build:prod`.
 1. **Native HealthKit/push ship (2026-07-03, `1a24bd8`, deploy `9a6481ac`):** `native_push_tokens` + `biometrics` `health_connect` source applied on live `xxnzmfzsjplrutrgbzxy` via Management API; native health/push server functions, `/api/health/native-sync`, Capacitor health bridges, docs (`docs/native-oauth-setup.md`, `docs/android-health-connect-setup.md`). Gates: `check:em-dash`, `tsc --noEmit`, `build:prod`.

@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showsSeizureFeatures } from "@/lib/condition-prompts";
 import { useTranslation } from "react-i18next";
 import { usePlatformFlag } from "@/lib/platform-flags";
+import { AppPage } from "@/components/layout/app-page";
 
 // Code-split heavy below-the-fold sections so the link list renders fast.
 const PreferencesSection = lazy(() =>
@@ -79,7 +80,7 @@ function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
+    <AppPage width="lg" className="px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
       <p className="label-eyebrow text-muted-foreground">{t("settings.eyebrow")}</p>
       <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
         {t("settings.title1")}<br/>{t("settings.title2")}
@@ -108,7 +109,7 @@ function SettingsPage() {
       <section className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
         <Row to="/settings/sharing" icon={HeartHandshake} title={t("settings.rows.sharing")} subtitle={t("settings.rows.sharingSub")} />
         {communityEnabled && (
-          <Row to="/community" icon={Users} title={t("settings.rows.community")} subtitle={t("settings.rows.communitySub")} />
+          <Row to="/community-new" icon={Users} title={t("settings.rows.community")} subtitle={t("settings.rows.communitySub")} />
         )}
       </section>
 
@@ -197,7 +198,7 @@ function SettingsPage() {
           </section>
         </>
       )}
-    </div>
+    </AppPage>
   );
 }
 

@@ -14,8 +14,11 @@ import { AuthProvider } from "@/integrations/supabase/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider, themeBootstrapScript } from "@/lib/theme-provider";
+import { NativeAppProvider } from "@/lib/native-app-context";
+import { NativeAppBootstrap } from "@/components/native/native-app-bootstrap";
 import "@/i18n";
 import { hydrateLocale } from "@/i18n";
+import { isNativeApp } from "@/lib/native/capacitor";
 
 // Loaded after the browser goes idle so service worker registration and the
 // Oura auto-sync never compete with first paint (and stay out of the entry chunk).
@@ -60,7 +63,7 @@ function NotFoundComponent() {
         </p>
         <div className="mt-6">
           <Link
-            to="/"
+            to={(isNativeApp() ? "/today" : "/") as never}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Go home
@@ -124,7 +127,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             Try again
           </button>
           <a
-            href="/"
+            href={isNativeApp() ? "/today" : "/"}
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
             Go home
@@ -281,15 +284,18 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AuthProvider>
-          <Outlet />
-          <Toaster />
-          {idle && (
-            <Suspense fallback={null}>
-              <DeferredStartup />
-            </Suspense>
-          )}
-        </AuthProvider>
+        <NativeAppProvider>
+          <AuthProvider>
+            <NativeAppBootstrap />
+            <Outlet />
+            <Toaster />
+            {idle && (
+              <Suspense fallback={null}>
+                <DeferredStartup />
+              </Suspense>
+            )}
+          </AuthProvider>
+        </NativeAppProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

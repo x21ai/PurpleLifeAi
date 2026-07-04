@@ -29,6 +29,9 @@ supabase/.temp/
 .wrangler/
 .dev.vars
 
+# Local iOS archive/export artifacts
+build/ios/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { AppShell } from "@/components/layout/app-shell";
+import { AppShellRouter } from "@/components/layout/app-shell-router";
 import { supabase } from "@/integrations/supabase/client";
 import { isOAuthCallbackUrl, waitForOAuthSession } from "@/lib/auth-oauth";
 
@@ -31,5 +31,5 @@ export const Route = createFileRoute("/_app")({
     }
     throw redirect({ to: "/welcome" });
   },
-  component: AppShell,
+  component: AppShellRouter,
 });

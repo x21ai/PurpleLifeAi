@@ -7,6 +7,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { getWhoopConfig, whoopIncrementalSync } from "@/lib/whoop.functions";
 import { toast } from "sonner";
 import { userMessage } from "@/lib/user-message";
+import { isNativeApp } from "@/lib/native";
+import {
+  nativeOpenWearableOAuth,
+  nativeWearableRedirectUri,
+} from "@/lib/native/wearable-oauth";
 
 // Whoop OAuth scopes (v2 API). `offline` is required to receive a refresh token.
 const WHOOP_SCOPE = [
@@ -116,13 +121,19 @@ export function WhoopConnection() {
       );
       return;
     }
-    const redirect = window.location.origin + "/oauth/whoop/callback";
+    const redirect = isNativeApp()
+      ? nativeWearableRedirectUri("whoop")
+      : window.location.origin + "/oauth/whoop/callback";
     const url = new URL("https://api.prod.whoop.com/oauth/oauth2/auth");
     url.searchParams.set("response_type", "code");
     url.searchParams.set("client_id", cfg.client_id);
     url.searchParams.set("redirect_uri", redirect);
     url.searchParams.set("scope", WHOOP_SCOPE);
     url.searchParams.set("state", sess.session.user.id);
+    if (isNativeApp()) {
+      await nativeOpenWearableOAuth(url.toString());
+      return;
+    }
     const w = 520, h = 720;
     const left = window.screenX + (window.outerWidth - w) / 2;
     const top = window.screenY + (window.outerHeight - h) / 2;

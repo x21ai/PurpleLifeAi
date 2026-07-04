@@ -133,6 +133,8 @@ Register it everywhere:
 
 - iOS: signing certificate + provisioning profile in Xcode, app icons and
   launch screen, then Archive and upload to TestFlight; submit to the App Store.
+- **TestFlight runbook:** `docs/testflight-setup.md` (`bun run ios:testflight` after
+  App Store Connect API key is in Doppler `purple-life` / `prd`).
 - Android: generate an upload keystore, build an AAB, upload to the Play Console
   internal testing track, then promote to production.
 - App Store guideline 4.2: justify the native value (push + local notifications +

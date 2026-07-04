@@ -33,12 +33,18 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Purple reads Apple Health data you allow so your journal and vitals stay in sync with wearables and Health.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>Purple writes health entries only when you explicitly save data from the app.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Purple uses the camera when you add photos or videos to a journal entry.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Purple uses the microphone when you record voice journal entries.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Purple accesses your photo library when you attach images to journal entries.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

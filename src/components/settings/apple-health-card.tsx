@@ -1,15 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Copy, Loader2, RefreshCw, Trash2, ExternalLink, CheckCircle2, Smartphone } from "lucide-react";
+import { Copy, Loader2, RefreshCw, Trash2, ExternalLink, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-
 import { Button } from "@/components/ui/button";
 import { userMessage } from "@/lib/user-message";
 import { useNativeIos } from "@/lib/native";
-import { useNativeAppleHealth } from "@/components/connections/use-native-apple-health";
+import { NativeAppleHealthPanel } from "@/components/connections/native-apple-health-panel";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,79 +45,10 @@ export function AppleHealthCard() {
   }
 
   if (nativeIos) {
-    return <NativeAppleHealthSettingsCard />;
+    return <NativeAppleHealthPanel />;
   }
 
   return <WebAppleHealthCard />;
-}
-
-function NativeAppleHealthSettingsCard() {
-  const { t } = useTranslation();
-  const {
-    healthKitAuthorized,
-    hasSyncedData,
-    loaded,
-    busy,
-    syncState,
-    statusText,
-    connect,
-    syncNow,
-  } = useNativeAppleHealth();
-
-  const dotClass =
-    syncState === "receiving"
-      ? "bg-[color:var(--data-good)]"
-      : syncState === "stale"
-        ? "bg-[color:var(--data-warn)]"
-        : "bg-muted-foreground/50";
-
-  return (
-    <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-6">
-      <div className="flex items-start gap-3">
-        <span className="rounded-full bg-secondary p-2.5 text-secondary-foreground shrink-0">
-          <Smartphone className="h-5 w-5" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <h2 className="font-serif text-xl text-foreground">{t("appleHealth.nativeTitle")}</h2>
-          <p className="mt-1 text-xs text-muted-foreground max-w-md">{t("appleHealth.nativeBody")}</p>
-        </div>
-        {healthKitAuthorized && (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-700 dark:text-emerald-300">
-            <CheckCircle2 className="h-3 w-3" /> {t("appleHealth.connected")}
-          </span>
-        )}
-      </div>
-
-      <div className="mt-5 flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-foreground">Apple Health</p>
-          {loaded && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
-              <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${dotClass}`} aria-hidden="true" />
-              {statusText[syncState]}
-            </p>
-          )}
-        </div>
-        {healthKitAuthorized ? (
-          <Button size="sm" variant="outline" onClick={() => void syncNow()} disabled={busy}>
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("appleHealth.syncNow")}
-          </Button>
-        ) : (
-          <Button size="sm" onClick={() => void connect()} disabled={busy || !loaded}>
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("appleHealth.connect")}
-          </Button>
-        )}
-      </div>
-
-      {loaded && !healthKitAuthorized && hasSyncedData && (
-        <p className="mt-3 text-xs text-muted-foreground rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
-          {t("appleHealth.webImportNote")}
-        </p>
-      )}
-
-      <p className="mt-4 text-xs text-muted-foreground">{t("appleHealth.nativeHint")}</p>
-    </section>
-  );
 }
 
 function WebAppleHealthCard() {

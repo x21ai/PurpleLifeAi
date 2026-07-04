@@ -7,6 +7,7 @@ import {
   requestPermission,
   shouldShowReminderBanner,
 } from "@/lib/med-notifications";
+import { isNativeApp } from "@/lib/native/capacitor";
 
 /**
  * Slim, dismissible "enable notifications" banner. Rendered at the page level
@@ -17,6 +18,7 @@ export function ReminderNudge({ className }: { className?: string }) {
   const [perm, setPerm] = React.useState<NotificationPermission | "unsupported">("default");
 
   React.useEffect(() => {
+    if (isNativeApp()) return;
     setVisible(shouldShowReminderBanner());
     if (!notificationsSupported()) {
       setPerm("unsupported");
@@ -25,7 +27,7 @@ export function ReminderNudge({ className }: { className?: string }) {
     setPerm(Notification.permission);
   }, []);
 
-  if (!visible || perm === "granted" || perm === "unsupported") return null;
+  if (isNativeApp() || !visible || perm === "granted" || perm === "unsupported") return null;
 
   const dismiss = () => {
     dismissReminderBanner();

@@ -2,6 +2,7 @@
 // The SW stores upcoming doses in IndexedDB and checks every 60s.
 
 import { supabase } from "@/integrations/supabase/client";
+import { isNativeApp } from "@/lib/native/capacitor";
 
 export type ScheduledDose = {
   doseId: string;
@@ -83,6 +84,7 @@ export function isStandalonePwa(): boolean {
 
 export function shouldShowReminderBanner(): boolean {
   if (typeof window === "undefined") return false;
+  if (isNativeApp()) return false;
   if (isStandalonePwa()) return false;
   return !localStorage.getItem(DISMISSED_REMINDER_BANNER_KEY);
 }
@@ -250,6 +252,11 @@ export async function scheduleMedications(meds: ScheduledMed[]): Promise<void> {
 }
 
 export async function rearmMedicationNotifications(): Promise<void> {
+  if (isNativeApp()) {
+    const { rescheduleNativeMedReminders } = await import("@/lib/native");
+    await rescheduleNativeMedReminders();
+    return;
+  }
   if (!notificationsSupported()) return;
   if (Notification.permission !== "granted") return;
 

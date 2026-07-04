@@ -104,15 +104,29 @@ export const navTree: NavGroup[] = [
  * Hides nav entries for dark-launched surfaces (docs/LAUNCH-AUDIT.md).
  * Fails closed: while flags load, flagged entries stay hidden.
  */
-export function filterNavTree(tree: NavGroup[], flags: PlatformFlags | undefined): NavGroup[] {
+export function filterNavTree(
+  tree: NavGroup[],
+  flags: PlatformFlags | undefined,
+  options?: { native?: boolean },
+): NavGroup[] {
+  const native = options?.native === true;
   const visible = (to: string | undefined): boolean => {
+    if (native && to === "/community") return false;
     if (to === "/community") return flags?.community === true;
     if (to === "/my-health-dna") return flags?.dna === true;
     return true;
   };
+  const visibleChild = (to: string): boolean => {
+    if (native && to === "/apple-health-import") return false;
+    return visible(to);
+  };
   return tree
     .filter((g) => visible(g.to))
-    .map((g) => (g.children ? { ...g, children: g.children.filter((c) => visible(c.to)) } : g));
+    .map((g) =>
+      g.children
+        ? { ...g, children: g.children.filter((c) => visibleChild(c.to)) }
+        : g,
+    );
 }
 
 /** Legacy flat list, kept for the mobile bottom nav. */

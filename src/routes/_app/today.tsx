@@ -61,6 +61,7 @@ import { FirstEntryNudge } from "@/components/today/first-entry-nudge";
 import { ReEngagementNudge } from "@/components/today/re-engagement-nudge";
 import { TodayVitals } from "@/components/today/today-vitals";
 import { DateStrip } from "@/components/today/date-strip";
+import { AppPage } from "@/components/layout/app-page";
 
 // Below-the-fold cards live behind the "More for today" disclosure. Loading
 // them lazily keeps them (and their dependencies) out of the initial /today
@@ -341,8 +342,9 @@ function TodayPage() {
   const focusLabel = focus === "readiness" ? "Readiness" : focus === "sleep" ? "Sleep" : "Activity";
 
   return (
-    <div
-      className="mx-auto max-w-2xl px-5 sm:px-8 pt-10 sm:pt-16 pb-16"
+    <AppPage
+      width="md"
+      className="px-5 sm:px-8 pt-10 sm:pt-16 pb-16"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -666,7 +668,7 @@ function TodayPage() {
           )}
         </div>
       )}
-    </div>
+    </AppPage>
   );
 }
 

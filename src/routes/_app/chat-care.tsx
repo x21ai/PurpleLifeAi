@@ -7,6 +7,7 @@ import { Send, ChevronLeft, Users, MessageCircle, Loader2, Bell, BellOff, LogOut
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { useRouteTheme } from "@/lib/use-route-theme";
+import { useNativeAppContext } from "@/lib/native-app-context";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -512,6 +513,7 @@ function GroupPicker({ onPicked }: { onPicked: (threadId: string) => void }) {
 
 function CareChatPage() {
   useRouteTheme("light");
+  const { isNativeApp } = useNativeAppContext();
   const { session } = useAuth();
   const meId = session?.user.id;
   const navigate = useNavigate({ from: "/chat-care" });
@@ -536,7 +538,13 @@ function CareChatPage() {
   const showList = !activeId; // mobile: list-only when no thread selected
 
   return (
-    <div className="mx-auto flex h-[calc(100dvh-4rem)] max-w-6xl flex-col px-0 md:px-4 md:py-4">
+    <div
+      className={
+        isNativeApp
+          ? "mx-auto flex flex-1 min-h-0 h-full max-w-6xl flex-col px-0 md:px-4 md:py-4"
+          : "mx-auto flex h-[calc(100dvh-4rem)] max-w-6xl flex-col px-0 md:px-4 md:py-4"
+      }
+    >
       <div className="flex flex-1 overflow-hidden md:rounded-2xl md:border md:border-border md:bg-card md:shadow-sm">
         {/* Sidebar / list */}
         <aside

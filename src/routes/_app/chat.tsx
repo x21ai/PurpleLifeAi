@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/integrations/supabase/auth-context";
 import { getSuggestedQuestions, getFollowUps } from "@/lib/condition-prompts";
 import { useCareProfile } from "@/hooks/use-care-profile";
+import { useNativeAppContext } from "@/lib/native-app-context";
 import { DisclaimerFooter } from "@/components/chat/disclaimer-footer";
 import { FollowUpChips } from "@/components/chat/follow-up-chips";
 import { useVoiceCapture } from "@/components/journal/use-voice-capture";
@@ -72,6 +73,7 @@ export const Route = createFileRoute("/_app/chat")({
 function AskPage() {
   useRouteTheme("light");
   const { t } = useTranslation();
+  const { isNativeApp } = useNativeAppContext();
   const { session } = useAuth();
   const userId = session?.user.id;
   const accessToken = session?.access_token;
@@ -222,8 +224,20 @@ function AskPage() {
   void setMessages;
 
   return (
-    <div className="flex flex-col h-[100dvh] md:h-screen">
-      <header className="px-4 sm:px-10 lg:px-16 pt-12 sm:pt-20 pb-6 border-b border-border/40">
+    <div
+      className={
+        isNativeApp
+          ? "flex flex-col flex-1 min-h-0 h-full"
+          : "flex flex-col h-[100dvh] md:h-screen"
+      }
+    >
+      <header
+        className={
+          isNativeApp
+            ? "px-4 pt-4 pb-4 border-b border-border/40"
+            : "px-4 sm:px-10 lg:px-16 pt-12 sm:pt-20 pb-6 border-b border-border/40"
+        }
+      >
         <div className="mx-auto max-w-3xl">
           <p className="label-eyebrow text-muted-foreground">{t("chatPage.eyebrow")}</p>
           <h1 className="mt-2 font-serif text-[40px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
@@ -234,7 +248,14 @@ function AskPage() {
         </div>
       </header>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-10 lg:px-16 pb-28 md:pb-6">
+      <div
+        ref={scrollRef}
+        className={
+          isNativeApp
+            ? "flex-1 min-h-0 overflow-y-auto px-4 pb-4"
+            : "flex-1 overflow-y-auto px-4 sm:px-10 lg:px-16 pb-28 md:pb-6"
+        }
+      >
         <div className="mx-auto max-w-3xl py-8">
           {messages.length === 0 ? (
             <EmptyState onPick={(s) => send(s)} suggestions={suggestions} />
@@ -293,7 +314,13 @@ function AskPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-auto md:static left-0 right-0 border-t border-border/40 bg-background/95 backdrop-blur px-4 sm:px-10 lg:px-16 py-4">
+      <div
+        className={
+          isNativeApp
+            ? "shrink-0 border-t border-border/40 bg-background/95 backdrop-blur px-4 py-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            : "fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-auto md:static left-0 right-0 border-t border-border/40 bg-background/95 backdrop-blur px-4 sm:px-10 lg:px-16 py-4"
+        }
+      >
         <DisclaimerFooter />
         {overLimit ? (
           <div className="mx-auto max-w-3xl">

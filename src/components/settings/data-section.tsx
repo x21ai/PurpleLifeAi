@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import {
   exportAllUserData,
   softDeleteUserData,
+  softDeleteAuthenticatedUser,
+  userHasPasswordIdentity,
   restoreUserData,
   checkDeletionStatus,
   RESTORE_WINDOW_DAYS,
@@ -62,11 +64,18 @@ export function DataSection() {
     setPassword("");
   };
 
+  const needsPassword = session?.user ? userHasPasswordIdentity(session.user) : true;
+
   const onDelete = async () => {
-    if (confirmText.trim() !== "DELETE" || !password) return;
+    if (confirmText.trim() !== "DELETE") return;
+    if (needsPassword && !password) return;
     setDeleting(true);
     try {
-      await softDeleteUserData(password);
+      if (needsPassword) {
+        await softDeleteUserData(password);
+      } else {
+        await softDeleteAuthenticatedUser();
+      }
       toast.success(
         `Deletion scheduled. You have ${RESTORE_WINDOW_DAYS} days to restore by signing back in.`,
       );
@@ -200,16 +209,18 @@ export function DataSection() {
                 disabled={deleting}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="confirm-password">Re-enter your password</Label>
-              <PasswordInput
-                id="confirm-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                disabled={deleting}
-              />
-            </div>
+            {needsPassword && (
+              <div className="space-y-1.5">
+                <Label htmlFor="confirm-password">Re-enter your password</Label>
+                <PasswordInput
+                  id="confirm-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  disabled={deleting}
+                />
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">
               We recommend exporting your data first so you have a copy.
             </p>
@@ -220,7 +231,7 @@ export function DataSection() {
             </Button>
             <Button
               onClick={onDelete}
-              disabled={deleting || confirmText.trim() !== "DELETE" || !password}
+              disabled={deleting || confirmText.trim() !== "DELETE" || (needsPassword && !password)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}

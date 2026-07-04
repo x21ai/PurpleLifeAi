@@ -25,6 +25,10 @@ const config: CapacitorConfig = {
   // operation the WebView loads server.url (production) so the app always
   // tracks the deployed site.
   webDir: "dist/client",
+  // Production remote URL: keep this set for store builds so the WebView loads the
+  // live site (instant UI updates on deploy). Do not point at localhost here;
+  // use `cap run` / Xcode live reload against a dev server only during local
+  // native debugging, and revert before shipping.
   server: {
     url: "https://www.purplelife.org",
     hostname: "www.purplelife.org",

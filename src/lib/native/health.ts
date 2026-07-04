@@ -11,6 +11,7 @@ import {
   HEALTHKIT_SOURCE,
   getHealthKitAuthorizationStatus,
   isHealthKitAvailable,
+  openHealthKitSettings,
   readHealthKitMetrics,
   requestHealthKitPermissions,
   type HealthKitDay,
@@ -76,6 +77,13 @@ export async function readNativeHealthMetrics(
   if (nativePlatform() === "android") return readHealthConnectMetrics(daysBack);
   if (nativePlatform() === "ios") return readHealthKitMetrics(daysBack);
   return [];
+}
+
+/** Opens the platform health permission settings screen (iOS Settings app entry). */
+export async function openNativeHealthSettings(): Promise<boolean> {
+  if (!isNativeApp()) return false;
+  if (nativePlatform() === "ios") return openHealthKitSettings();
+  return false;
 }
 
 export { HEALTH_CONNECT_SOURCE };

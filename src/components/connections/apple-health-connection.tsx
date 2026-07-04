@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getOrCreateAppleHealthConfig, disconnectAppleHealth } from "@/lib/apple-health.functions";
 import { useNativeIos } from "@/lib/native";
+import { NativeAppleHealthPanel } from "@/components/connections/native-apple-health-panel";
 import { useNativeAppleHealth } from "@/components/connections/use-native-apple-health";
 import { toast } from "sonner";
 import { userMessage } from "@/lib/user-message";
@@ -28,92 +29,6 @@ function relativeTime(iso: string | null): string {
 
 type SyncState = "receiving" | "stale" | "reachable" | "waiting";
 
-function NativeAppleHealthConnection() {
-  const {
-    healthKitAuthorized,
-    hasSyncedData,
-    loaded,
-    busy,
-    syncState,
-    statusText,
-    connect,
-    syncNow,
-  } = useNativeAppleHealth();
-
-  const dotClass =
-    syncState === "receiving"
-      ? "bg-[color:var(--data-good)]"
-      : syncState === "stale"
-        ? "bg-[color:var(--data-warn)]"
-        : "bg-muted-foreground/50";
-
-  if (healthKitAuthorized) {
-    return (
-      <div className="py-2 space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="rounded-full bg-secondary p-2 text-secondary-foreground shrink-0">
-              <Smartphone className="h-4 w-4" />
-            </span>
-            <div className="min-w-0">
-              <p className="font-serif text-base text-foreground">Apple Health</p>
-              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <span
-                  className={`h-1.5 w-1.5 rounded-full shrink-0 ${dotClass}`}
-                  aria-hidden="true"
-                />
-                {statusText[syncState]}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button size="sm" variant="outline" onClick={() => void syncNow()} disabled={busy}>
-              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Sync now"}
-            </Button>
-          </div>
-        </div>
-        <p className="text-xs text-muted-foreground pl-11 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
-          Purple reads sleep, HRV, heart rate, steps, and VO2 max directly from HealthKit on
-          this device. Open Purple after workouts or sleep to refresh vitals.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="py-2 space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="rounded-full bg-secondary p-2 text-secondary-foreground shrink-0">
-            <Smartphone className="h-4 w-4" />
-          </span>
-          <div className="min-w-0">
-            <p className="font-serif text-base text-foreground">Apple Health</p>
-            <p className="text-xs text-muted-foreground">
-              {loaded ? "Direct HealthKit sync in the Purple iOS app" : "\u00a0"}
-            </p>
-          </div>
-        </div>
-        <Button size="sm" onClick={() => void connect()} disabled={busy || !loaded}>
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Connect Apple Health"}
-        </Button>
-      </div>
-      {loaded && (
-        <p className="text-xs text-muted-foreground pl-11">
-          Tap Connect to grant HealthKit access. Purple reads your vitals on this iPhone and
-          syncs them to your account.
-        </p>
-      )}
-      {loaded && hasSyncedData && (
-        <p className="text-xs text-muted-foreground pl-11 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
-          Previous data in your account may be from web import or Health Auto Export. Tap Connect
-          to link HealthKit on this iPhone.
-        </p>
-      )}
-    </div>
-  );
-}
-
 export function AppleHealthConnection() {
   const nativeIos = useNativeIos();
 
@@ -127,7 +42,7 @@ export function AppleHealthConnection() {
   }
 
   if (nativeIos) {
-    return <NativeAppleHealthConnection />;
+    return <NativeAppleHealthPanel embedded />;
   }
 
   return <WebAppleHealthConnection />;

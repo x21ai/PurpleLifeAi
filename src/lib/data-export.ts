@@ -142,8 +142,27 @@ export const RESTORE_WINDOW_DAYS = 60;
 /**
  * Soft-delete: marks the profile with a deletion request and a purge date
  * 60 days in the future. The user is then signed out by the caller. They
- * can sign back in within the window to restore. Requires the user's
- * password to be re-entered (verified by re-authenticating).
+ * can sign back in within the window to restore.
+ */
+export async function softDeleteAuthenticatedUser(): Promise<void> {
+  const { data: sess } = await supabase.auth.getSession();
+  const user = sess.session?.user;
+  if (!user) throw new Error("Not signed in");
+
+  const now = new Date();
+  const purgeAfter = new Date(
+    now.getTime() + RESTORE_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+  );
+  const { error } = await supabase
+    .from("profiles")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update({ deleted_at: now.toISOString(), purge_after: purgeAfter.toISOString() } as any)
+    .eq("id", user.id);
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Password users: re-auth with password before scheduling deletion.
  */
 export async function softDeleteUserData(password: string): Promise<void> {
   const { data: sess } = await supabase.auth.getSession();
@@ -158,16 +177,18 @@ export async function softDeleteUserData(password: string): Promise<void> {
   });
   if (pwErr) throw new Error("Password is incorrect");
 
-  const now = new Date();
-  const purgeAfter = new Date(
-    now.getTime() + RESTORE_WINDOW_DAYS * 24 * 60 * 60 * 1000,
-  );
-  const { error } = await supabase
-    .from("profiles")
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .update({ deleted_at: now.toISOString(), purge_after: purgeAfter.toISOString() } as any)
-    .eq("id", user.id);
-  if (error) throw new Error(error.message);
+  await softDeleteAuthenticatedUser();
+}
+
+/** True when the account has an email/password identity (not OAuth-only). */
+export function userHasPasswordIdentity(user: {
+  identities?: Array<{ provider?: string }>;
+  app_metadata?: { provider?: string; providers?: string[] };
+}): boolean {
+  if (user.identities?.some((i) => i.provider === "email")) return true;
+  const providers = user.app_metadata?.providers ?? [];
+  if (providers.includes("email")) return true;
+  return user.app_metadata?.provider === "email";
 }
 
 /** Clear the deletion request, restores full access. */

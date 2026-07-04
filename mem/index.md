@@ -11,5 +11,6 @@ Metric labels always show the canonical human name from `src/lib/metric-naming.t
 - [No em dashes](mem://constraint/no-em-dash) - Banned char `—` and the replacement table by context (comma, and/or, colon, period, ·, en dash for "no data").
 - [Metric naming + as-printed rule](mem://feature/metric-naming) - Canonical name map and when to hide "as printed" subtitle on charts.
 - [Native app and HealthKit](native-app-healthkit.md) - Capacitor shell loads production; web deploy vs store release; web push-only Apple Health vs planned native HealthKit read.
+- [Native app experience](native-app-experience.md) - NativeAppShell, route guards, offline gate; not the marketing website in a WebView.
 - [Native iOS: Xcode vs CLT](native-ios-xcode-vs-clt.md) - CLT cannot build Capacitor iOS; full Xcode.app, license, and xcode-select required.
 - [Sync and release workflow](../docs/SYNC-AND-RELEASE.md) - How Lovable, Cursor, and production stay in step: branch flow, gates, case studies, runbooks.

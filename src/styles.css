@@ -677,4 +677,20 @@ body::-webkit-scrollbar,
       transform: none !important;
     }
   }
+
+  /* Native Capacitor shell: always app chrome, never desktop web layout */
+  html.native-app {
+    -webkit-tap-highlight-color: transparent;
+  }
+  html.native-app .native-shell-main {
+    overscroll-behavior-y: contain;
+  }
+  html.native-app .native-shell-main input,
+  html.native-app .native-shell-main textarea,
+  html.native-app .native-shell-main select {
+    font-size: 16px;
+  }
+  html.native-app .native-shell-main .pb-24 {
+    padding-bottom: 1rem;
+  }
 }

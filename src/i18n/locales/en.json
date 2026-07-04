@@ -481,10 +481,13 @@
   "appleHealth": {
     "nativeTitle": "Connect Apple Health",
     "nativeBody": "Purple reads sleep, HRV, heart rate, steps, and VO2 max directly from HealthKit on this iPhone.",
-    "nativeHint": "Tap Connect to open the Health Access permission sheet. Open Purple after workouts or sleep to refresh vitals.",
+    "nativeHint": "Open Purple after workouts or sleep to refresh vitals. Use Health Settings to change what Purple can read.",
     "connect": "Connect Apple Health",
     "syncNow": "Sync now",
     "connected": "Connected",
+    "openSettings": "Open Health Settings",
+    "permissionDenied": "Health access was not granted. Open Health Settings, tap Purple, and turn on the data you want to share.",
+    "connectSteps": "Tap Connect to open the iOS Health Access sheet, or use Health Settings to allow or deny access.",
     "webImportNote": "Previous data in your account may be from web import or Health Auto Export. Tap Connect to link HealthKit on this iPhone."
   },
   "signIn": {

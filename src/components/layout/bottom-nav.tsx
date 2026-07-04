@@ -14,9 +14,10 @@ const TABS: Tab[] = [
   { to: "/settings", icon: Settings2, key: "nav.settings", label: "Settings" },
 ];
 
-export function BottomNav() {
+export function BottomNav({ variant = "responsive" }: { variant?: "responsive" | "native" }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { t } = useTranslation();
+  const visibilityClass = variant === "native" ? "fixed" : "md:hidden fixed";
 
   const renderTab = (tab: Tab) => {
     const active = pathname === tab.to || pathname.startsWith(tab.to + "/");
@@ -43,7 +44,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-background/95 backdrop-blur border-t border-border"
+      className={`${visibilityClass} bottom-0 inset-x-0 z-30 bg-background/95 backdrop-blur border-t border-border`}
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="Primary"
     >

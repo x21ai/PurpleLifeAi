@@ -3,6 +3,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/integrations/supabase/auth-context";
+import { useNativeAppContext } from "@/lib/native-app-context";
 
 /**
  * Floating "Ask Purple" button. Visible on every authenticated route
@@ -11,6 +12,7 @@ import { useAuth } from "@/integrations/supabase/auth-context";
  */
 export function AskFab() {
   const { session } = useAuth();
+  const { isNativeApp } = useNativeAppContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [enabled, setEnabled] = React.useState<boolean>(false);
 
@@ -31,6 +33,7 @@ export function AskFab() {
   }, [session?.user.id]);
 
   if (!enabled) return null;
+  if (isNativeApp) return null;
   if (pathname.startsWith("/chat")) return null;
   // Hide on routes that already render their own primary floating action,
   // so the buttons don't stack on tablet/desktop.

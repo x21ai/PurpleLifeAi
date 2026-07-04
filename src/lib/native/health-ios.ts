@@ -148,10 +148,30 @@ export async function getHealthKitAuthorizationStatus(): Promise<HealthKitAuthSt
 
   const readAuthorized = status?.readAuthorized ?? [];
   const readDenied = status?.readDenied ?? [];
+  const deniedRequired = READ_TYPES.some((type) => readDenied.includes(type));
+  if (deniedRequired) {
+    setHealthKitAuthLocalFlag(false);
+    return { authorized: false, readAuthorized, readDenied };
+  }
+
   const pluginAuthorized = isFullyAuthorized(status);
-  const authorized = pluginAuthorized || getHealthKitAuthLocalFlag();
+  if (pluginAuthorized) {
+    setHealthKitAuthLocalFlag(true);
+    return { authorized: true, readAuthorized, readDenied };
+  }
+
+  const authorized =
+    getHealthKitAuthLocalFlag() && readAuthorized.length > 0;
+  if (!authorized) setHealthKitAuthLocalFlag(false);
 
   return { authorized, readAuthorized, readDenied };
+}
+
+/** Opens iOS Settings for Purple (HealthKit toggles live under the app entry). */
+export async function openHealthKitSettings(): Promise<boolean> {
+  if (!isIosNative()) return false;
+  await callPlugin("App", "openUrl", { url: "app-settings:" });
+  return true;
 }
 
 /** Opens the HealthKit permission sheet for sleep, HRV, steps, heart rate, and VO2 max. */

@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
+import { isNativeApp } from "@/lib/native";
 
 const OuraConnection = lazy(() =>
   import("@/components/connections/oura-connection").then((m) => ({ default: m.OuraConnection })),
@@ -23,6 +24,11 @@ const AppleHealthConnection = lazy(() =>
 );
 const PhoneAlarmsSection = lazy(() =>
   import("@/components/settings/phone-alarms-section").then((m) => ({ default: m.PhoneAlarmsSection })),
+);
+const NativeNotificationsPanel = lazy(() =>
+  import("@/components/settings/native-notifications-panel").then((m) => ({
+    default: m.NativeNotificationsPanel,
+  })),
 );
 
 export const Route = createFileRoute("/_app/tools")({
@@ -122,7 +128,7 @@ function ToolsPage() {
       <SheetCard className="!p-0">
         <Suspense fallback={<div className="h-24 animate-pulse" aria-hidden />}>
           <div className="p-5 sm:p-7 [&_button]:bg-muted [&_button]:border-border [&_button]:text-foreground [&_button]:hover:bg-muted/80 [&_h2]:text-foreground [&_h3]:text-foreground [&_p]:text-muted-foreground [&_label]:text-foreground/80">
-            <PhoneAlarmsSection />
+            {isNativeApp() ? <NativeNotificationsPanel /> : <PhoneAlarmsSection />}
           </div>
         </Suspense>
       </SheetCard>
@@ -140,8 +146,15 @@ function ToolsPage() {
       <SheetCard className="!p-0">
         <div className="divide-y divide-border/60">
           <InternalRow to="/settings/how-purple-thinks" title="How Purple thinks" />
-          <InternalRow to="/privacy" title="Privacy &amp; data" />
-          <InternalRow to="/about" title="About Purple" />
+          <InternalRow
+            to={isNativeApp() ? "/settings/privacy" : "/privacy"}
+            title="Privacy &amp; data"
+          />
+          {isNativeApp() ? (
+            <InternalRow to="/settings/terms" title="Terms" />
+          ) : (
+            <InternalRow to="/about" title="About Purple" />
+          )}
         </div>
       </SheetCard>
     </SheetPage>

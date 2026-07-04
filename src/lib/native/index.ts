@@ -1,13 +1,24 @@
 import { isNativeApp, nativePlatform, plugin, callPlugin } from "./capacitor";
 import { loadUpcomingScheduledDoses } from "@/lib/med-notifications";
 import { registerDeviceToken as saveNativePushToken } from "@/lib/native-push.functions";
+import { initNativeOAuthDeepLink } from "./oauth";
+import { initNativeWearableOAuthDeepLink } from "./wearable-oauth";
 
 export { isNativeApp, nativePlatform } from "./capacitor";
 export { isNativeIos, useNativeIos } from "./use-native-ios";
+export { useNativeApp } from "./use-native-app";
+export { NativeShellProvider, useRouteShellConfig, useShell } from "./shell-context";
+export {
+  DEFAULT_SHELL,
+  SHELL_ROUTE_OVERRIDES,
+  resolveShellConfig,
+  type RouteShellConfig,
+} from "./shell-routes";
 export {
   getNativeHealthAuthorizationStatus,
   isNativeHealthAvailable,
   nativeHealthSource,
+  openNativeHealthSettings,
   readNativeHealthMetrics,
   requestNativeHealthPermissions,
 } from "./health";
@@ -32,9 +43,18 @@ export async function initNativeApp(): Promise<void> {
   }
   await callPlugin("SplashScreen", "hide", {});
 
-  await setupPushNotifications();
+  initNativeOAuthDeepLink();
+  initNativeWearableOAuthDeepLink();
+  // Remote push ships when APNs is configured (see docs/native-app-store-review.md).
+  // await setupPushNotifications();
   await scheduleNativeMedReminders();
   setupAndroidBackButton();
+}
+
+/** Re-schedule native local dose reminders after med edits (no-op on web). */
+export async function rescheduleNativeMedReminders(): Promise<void> {
+  if (!isNativeApp()) return;
+  await scheduleNativeMedReminders();
 }
 
 /**

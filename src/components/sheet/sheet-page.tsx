@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { X } from "lucide-react";
+import { useNativeAppContext } from "@/lib/native-app-context";
 
 type Props = {
   title: string;
@@ -20,6 +21,7 @@ type Props = {
 export function SheetPage({ title, closeTo, aside, children }: Props) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { isNativeApp } = useNativeAppContext();
   const onClose = () => {
     if (closeTo) {
       navigate({ to: closeTo as never });
@@ -33,9 +35,12 @@ export function SheetPage({ title, closeTo, aside, children }: Props) {
   };
   // Hide close on the canonical hub pages so they don't feel modal.
   const showClose = pathname !== "/settings";
+  const outerClass = isNativeApp
+    ? "mx-auto w-full max-w-xl px-5 pt-4 pb-6"
+    : "mx-auto w-full max-w-5xl px-5 pt-6 pb-24 sm:px-8 sm:pt-10 lg:px-12";
   return (
     <div className="sheet-canvas">
-      <div className="mx-auto w-full max-w-5xl px-5 pt-6 pb-24 sm:px-8 sm:pt-10 lg:px-12">
+      <div className={outerClass}>
         <header className="relative flex items-center justify-center pb-6 sm:pb-10">
           {showClose && (
             <button

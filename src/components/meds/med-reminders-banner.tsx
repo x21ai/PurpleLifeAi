@@ -1,15 +1,17 @@
 import * as React from "react";
 import { X, Smartphone } from "lucide-react";
 import { dismissReminderBanner, shouldShowReminderBanner } from "@/lib/med-notifications";
+import { isNativeApp } from "@/lib/native/capacitor";
 
 export function MedRemindersBanner() {
   const [visible, setVisible] = React.useState(false);
 
   React.useEffect(() => {
+    if (isNativeApp()) return;
     setVisible(shouldShowReminderBanner());
   }, []);
 
-  if (!visible) return null;
+  if (isNativeApp() || !visible) return null;
 
   const dismiss = () => {
     dismissReminderBanner();

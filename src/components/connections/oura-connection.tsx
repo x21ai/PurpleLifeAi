@@ -5,6 +5,11 @@ import { SyncModeSelect } from "@/components/connections/sync-mode-select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { userMessage } from "@/lib/user-message";
+import { isNativeApp } from "@/lib/native";
+import {
+  nativeOpenWearableOAuth,
+  nativeWearableRedirectUri,
+} from "@/lib/native/wearable-oauth";
 
 // Oura OAuth documented scopes. Keep the base set conservative until OAuth succeeds.
 const OURA_SCOPE = "email personal daily heartrate workout tag session spo2";
@@ -105,7 +110,9 @@ export function OuraConnection() {
       );
       return;
     }
-    const redirect = window.location.origin + "/oauth/oura/callback";
+    const redirect = isNativeApp()
+      ? nativeWearableRedirectUri("oura")
+      : window.location.origin + "/oauth/oura/callback";
     const url = new URL("https://cloud.ouraring.com/oauth/authorize");
     url.searchParams.set("response_type", "code");
     url.searchParams.set("client_id", cfg.client_id);
@@ -118,6 +125,10 @@ export function OuraConnection() {
       scope: OURA_SCOPE,
       authorizeUrl: url.toString(),
     });
+    if (isNativeApp()) {
+      await nativeOpenWearableOAuth(url.toString());
+      return;
+    }
     const w = 520, h = 720;
     const left = window.screenX + (window.outerWidth - w) / 2;
     const top = window.screenY + (window.outerHeight - h) / 2;
