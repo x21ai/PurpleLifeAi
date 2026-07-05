@@ -9,15 +9,32 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign` @ `8f81b69`**. TestFlight **1.0 (16) VALID**. Flutter test
-suite **80/80 green**; marketing routes wired at `/`, `/pricing`, `/privacy`, `/about`, `/trust`;
-P0-4 Today date strip, score strip, signals grid parity landed.
+Purple Life on **`lovable/redesign` @ `c6658d5`**. TestFlight **1.0 (16) VALID**. Flutter
+**`flutter analyze lib/`** clean; **`flutter test` 81/81**. Marketing routes at `/`, `/pricing`,
+`/privacy`, `/about`, `/trust` with path URL strategy + SPA `:8765` fallback; browser verified
+home + pricing (client nav).
 
-**Next action:** Browser verify marketing + `/today` on Flutter web `:8765` with signed-in session.
+**Next action:** Worker cutover for marketing on prod per `docs/FLUTTER-WEB-CUTOVER.md` when
+approved; public `/contact` route for marketing header (optional).
 
 ---
 
 ## Log
+
+### 2026-07-05T14:06:00Z — Marketing path URL strategy + browser verify
+
+- **Requested:** Port core marketing routes to Flutter; path routes on web; verify analyze/test/
+  browser; commit and push.
+- **Done:** `usePathUrlStrategy()` in `main.dart`; `flutter_web_plugins` dep; `/` cold-start fix
+  in `routes.dart`; `scripts/flutter-web-spa-serve.py` for `:8765` deep links. Browser MCP:
+  `/` shows "Your health, remembered." + "Begin today"; client nav `/pricing` shows "Simple
+  plans. Honest pricing." `flutter analyze lib/` 0 issues; `flutter test` **81/81**. Pushed
+  `c6658d5` to `origin/lovable/redesign`.
+- **Issues:** Marketing hero uses gradient stub (no calm-scene images yet). `/features`,
+  `/charter`, `/terms`, footer GitHub links stub/disabled. `/contact` from header requires sign-in.
+- **Stand / next:** Image assets + remaining marketing routes; Worker SPA routing at cutover.
+- **Who / where:** Cursor marketing subagent · darwin · lovable/redesign@c6658d5
+- **Timestamp:** 2026-07-05T14:06:00Z
 
 ### 2026-07-05T14:05:00Z — Marketing routes + P0-4 Today (stalled fleet closeout)
 
