@@ -9,18 +9,32 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign` @ `ec8b21b`**. TestFlight **1.0 (16) VALID**. Flutter test
-suite **79/79 green**; `flutter analyze lib/` clean after marketing fleet merge. Prior: P0-4 Today
-parity, P0-9 reports, P0-7 chat, P0-8 care inbox.
+Purple Life on **`lovable/redesign` @ `8f81b69`**. TestFlight **1.0 (16) VALID**. Flutter test
+suite **80/80 green**; marketing routes wired at `/`, `/pricing`, `/privacy`, `/about`, `/trust`;
+P0-4 Today date strip, score strip, signals grid parity landed.
 
-**Next action:** Wire marketing screens into GoRouter if not yet routed; rebuild Flutter web
-(`./scripts/flutter-web-serve.sh --rebuild`).
+**Next action:** Browser verify marketing + `/today` on Flutter web `:8765` with signed-in session.
 
 ---
 
 ## Log
 
-### 2026-07-05T14:30:00Z — Flutter green test suite after parallel fleet
+### 2026-07-05T14:05:00Z — Marketing routes + P0-4 Today (stalled fleet closeout)
+
+- **Requested:** Complete stalled marketing (Task A) and Today P0-4 (Task B) agents; analyze +
+  test; commit and push both; rebuild `:8765`.
+- **Done:** Task B already at `9b4e114` (date strip, score strip, signals grid, day-filtered
+  snapshots, `signals_grid_skeleton.dart`, `today_vital_items_test.dart`). Task A screens in
+  `ec8b21b`; GoRouter wiring in `8f81b69` (`router.dart`, `routes.dart` deep-link recognition).
+  `flutter analyze` clean; `flutter test` **80/80** pass. Rebuilt `:8765`; curl **200** on `/`
+  and `/pricing`. Pushed to `origin/lovable/redesign`.
+- **Issues:** Browser MCP unavailable in subagent; signed-in `/today` walk not browser-verified
+  (widget tests pass). Marketing `/contact` nav still hits protected route (sign-in gate).
+- **Stand / next:** Operator device QA on `/today` and marketing nav; Worker cutover per
+  `docs/FLUTTER-WEB-CUTOVER.md` when approved.
+- **Who / where:** Cursor subagent · darwin · lovable/redesign@8f81b69
+- **Timestamp:** 2026-07-05T14:05:00Z
+
 
 - **Requested:** `flutter test` fix all failures (chat, marketing, reports, today); analyze clean;
   commit and push.
