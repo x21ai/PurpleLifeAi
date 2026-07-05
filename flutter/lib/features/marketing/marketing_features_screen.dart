@@ -65,7 +65,7 @@ class MarketingFeaturesScreen extends StatelessWidget {
             ),
             child: Column(
               children: [
-                MarketingHeadline(
+                const MarketingHeadline(
                   '"${MarketingCopy.featuresCaregiverQuote}"',
                   fontSize: 28,
                 ),

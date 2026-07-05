@@ -110,7 +110,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                       'Purple watches quietly. When something shifts around a hard day, it remembers, so you do not have to.',
                 ),
                 const SizedBox(height: 32),
-                _SectionHeader(
+                const _SectionHeader(
                   eyebrow: 'For you',
                   title: 'What Purple is noticing',
                 ),
@@ -140,7 +140,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                   rhrLabel: _formatMetricAvg(rhrTrend),
                 ),
                 const SizedBox(height: 32),
-                _SectionHeader(eyebrow: 'Vitals', title: 'Latest readings'),
+                const _SectionHeader(eyebrow: 'Vitals', title: 'Latest readings'),
                 const SizedBox(height: 12),
                 Text(
                   'Pulled from uploaded reports and connected wearables. Open Vitals to log readings and see trends.',
@@ -163,7 +163,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 const SizedBox(height: 32),
                 Row(
                   children: [
-                    Expanded(
+                    const Expanded(
                       child: _SectionHeader(
                         eyebrow: 'Health records',
                         title: 'By category',
