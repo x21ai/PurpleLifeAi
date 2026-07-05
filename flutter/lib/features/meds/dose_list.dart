@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../design/purple_type.dart';
@@ -5,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../design/tokens.dart';
 import '../shared/glass_helpers.dart';
+import 'meds_today.dart';
 import 'models/dose.dart';
 import 'models/medication.dart';
 
@@ -55,6 +58,9 @@ class TodayDosePanel extends StatelessWidget {
     this.adherenceTotal = 0,
     this.timezone = 'UTC',
     this.todayLabel = '',
+    this.viewDate = '',
+    this.todayStr = '',
+    this.onChangeDate,
   });
 
   final List<MedicationDose> doses;
@@ -73,6 +79,18 @@ class TodayDosePanel extends StatelessWidget {
   final int adherenceTotal;
   final String timezone;
   final String todayLabel;
+  final String viewDate;
+  final String todayStr;
+  final ValueChanged<String>? onChangeDate;
+
+  bool get _isToday =>
+      viewDate.isEmpty || todayStr.isEmpty || viewDate == todayStr;
+
+  String get _effectiveViewDate =>
+      viewDate.isNotEmpty ? viewDate : todayStr;
+
+  String _timezoneLabel() =>
+      timezone.replaceAll('_', ' ');
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +100,7 @@ class TodayDosePanel extends StatelessWidget {
     final label = todayLabel.isNotEmpty
         ? todayLabel
         : DateFormat('EEE, MMM d').format(DateTime.now());
+    final canGoNext = !_isToday && onChangeDate != null;
 
     return GlassSurface(
       padding: const EdgeInsets.all(20),
@@ -106,7 +125,7 @@ class TodayDosePanel extends StatelessWidget {
                         const SizedBox(width: 8),
                         Flexible(
                           child: Text(
-                            "Today's doses",
+                            _isToday ? "Today's doses" : 'Doses for this day',
                             style: Theme.of(context)
                                 .textTheme
                                 .titleLarge
@@ -119,12 +138,32 @@ class TodayDosePanel extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '$label · $timezone',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.5),
-                          ),
-                    ),
+                    if (onChangeDate != null &&
+                        _effectiveViewDate.isNotEmpty &&
+                        todayStr.isNotEmpty)
+                      _DateNavigator(
+                        label: label,
+                        timezoneLabel: _timezoneLabel(),
+                        canGoNext: canGoNext,
+                        viewDate: _effectiveViewDate,
+                        todayStr: todayStr,
+                        onPrev: () => onChangeDate!(
+                          shiftDateStr(_effectiveViewDate, -1),
+                        ),
+                        onNext: canGoNext
+                            ? () => onChangeDate!(
+                                  shiftDateStr(_effectiveViewDate, 1),
+                                )
+                            : null,
+                        onPickDate: (picked) => onChangeDate!(picked),
+                      )
+                    else
+                      Text(
+                        '$label · ${_timezoneLabel()}',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.5),
+                            ),
+                      ),
                   ],
                 ),
               ),
@@ -154,7 +193,7 @@ class TodayDosePanel extends StatelessWidget {
                 ),
             ],
           ),
-          if (adherencePct != null) ...[
+          if (adherencePct != null && _isToday) ...[
             const SizedBox(height: 12),
             Text.rich(
               TextSpan(
@@ -212,7 +251,11 @@ class TodayDosePanel extends StatelessWidget {
                   ),
             ),
             const SizedBox(height: 12),
-            _DoseTimeline(doses: doses),
+            _DoseTimeline(
+              doses: doses,
+              viewDateYmd: _effectiveViewDate,
+              showNowMarker: _isToday,
+            ),
             const SizedBox(height: 20),
             ...doses.map(
               (dose) => Padding(
@@ -234,20 +277,191 @@ class TodayDosePanel extends StatelessWidget {
   }
 }
 
-/// 24-hour dot strip from web TodayPanel: baseline, hour ticks, now marker,
-/// one status-colored dot per dose.
-class _DoseTimeline extends StatelessWidget {
-  const _DoseTimeline({required this.doses});
+/// Prev/next day controls and date picker matching web TodayPanel header.
+class _DateNavigator extends StatelessWidget {
+  const _DateNavigator({
+    required this.label,
+    required this.timezoneLabel,
+    required this.viewDate,
+    required this.todayStr,
+    required this.onPrev,
+    required this.onPickDate,
+    this.canGoNext = false,
+    this.onNext,
+  });
 
-  final List<MedicationDose> doses;
+  final String label;
+  final String timezoneLabel;
+  final String viewDate;
+  final String todayStr;
+  final VoidCallback onPrev;
+  final VoidCallback? onNext;
+  final bool canGoNext;
+  final ValueChanged<String> onPickDate;
+
+  Future<void> _openPicker(BuildContext context) async {
+    final initial = DateTime.tryParse('${viewDate}T12:00:00') ?? DateTime.now();
+    final max = DateTime.tryParse('${todayStr}T12:00:00') ?? DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2000),
+      lastDate: max,
+    );
+    if (picked == null) return;
+    onPickDate(DateFormat('yyyy-MM-dd').format(picked));
+  }
 
   @override
   Widget build(BuildContext context) {
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 4,
+      runSpacing: 4,
+      children: [
+        _RoundNavButton(
+          icon: Icons.chevron_left,
+          tooltip: 'Previous day',
+          onTap: onPrev,
+        ),
+        Text(
+          '$label · $timezoneLabel',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+        ),
+        _RoundNavButton(
+          icon: Icons.chevron_right,
+          tooltip: 'Next day',
+          onTap: onNext,
+          enabled: canGoNext,
+        ),
+        OutlinedButton(
+          onPressed: () => _openPicker(context),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(0, 44),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            foregroundColor: Colors.white.withValues(alpha: 0.65),
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          child: Text(
+            viewDate,
+            style: const TextStyle(
+              fontSize: 12,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RoundNavButton extends StatelessWidget {
+  const _RoundNavButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onTap;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: OutlinedButton(
+        onPressed: enabled ? onTap : null,
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(44, 44),
+          padding: EdgeInsets.zero,
+          shape: const CircleBorder(),
+          foregroundColor: Colors.white.withValues(alpha: enabled ? 0.65 : 0.3),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+        ),
+        child: Icon(icon, size: 18),
+      ),
+    );
+  }
+}
+
+/// 24-hour dot strip from web TodayPanel: baseline, hour ticks, optional now
+/// marker, one status-colored dot per dose.
+class _DoseTimeline extends StatefulWidget {
+  const _DoseTimeline({
+    required this.doses,
+    required this.viewDateYmd,
+    this.showNowMarker = true,
+  });
+
+  final List<MedicationDose> doses;
+  final String viewDateYmd;
+  final bool showNowMarker;
+
+  @override
+  State<_DoseTimeline> createState() => _DoseTimelineState();
+}
+
+class _DoseTimelineState extends State<_DoseTimeline> {
+  late DateTime _now;
+  Timer? _nowTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _now = DateTime.now();
+    if (widget.showNowMarker) {
+      _startNowTimer();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _DoseTimeline oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.showNowMarker && !oldWidget.showNowMarker) {
+      _startNowTimer();
+    } else if (!widget.showNowMarker && oldWidget.showNowMarker) {
+      _nowTimer?.cancel();
+      _nowTimer = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _nowTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startNowTimer() {
+    _nowTimer?.cancel();
+    _nowTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!mounted) return;
+      setState(() => _now = DateTime.now());
+    });
+  }
+
+  DateTime get _dayStart {
+    final parsed = DateTime.tryParse('${widget.viewDateYmd}T00:00:00');
+    if (parsed != null) return parsed;
     final now = DateTime.now();
-    final dayStart = DateTime(now.year, now.month, now.day);
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     const dayMs = 86400000;
-    final nowFraction =
-        (now.difference(dayStart).inMilliseconds / dayMs).clamp(0.0, 1.0);
+    final dayStart = _dayStart;
+    final nowFraction = widget.showNowMarker
+        ? (_now.difference(dayStart).inMilliseconds / dayMs).clamp(0.0, 1.0)
+        : 0.0;
 
     return Column(
       children: [
@@ -278,29 +492,36 @@ class _DoseTimeline extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.12),
                       ),
                     ),
-                  Positioned(
-                    left: nowFraction * width,
-                    top: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 1,
-                      color: Colors.white.withValues(alpha: 0.4),
+                  if (widget.showNowMarker)
+                    Positioned(
+                      left: nowFraction * width,
+                      top: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 1,
+                        color: Colors.white.withValues(alpha: 0.4),
+                      ),
                     ),
-                  ),
-                  for (final dose in doses)
+                  for (final dose in widget.doses)
                     Positioned(
                       left: _doseFraction(dose, dayStart) * width - 6,
                       top: 14,
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _statusColor(dose.status),
-                          border: Border.all(
-                            width: 3,
-                            color: _statusColor(dose.status)
-                                .withValues(alpha: 0.3),
+                      child: Tooltip(
+                        message:
+                            '${dose.medication?.name ?? 'Dose'} · '
+                            '${_formatLocaleTime(dose.scheduledAt)} · '
+                            '${dose.status}',
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _statusColor(dose.status),
+                            border: Border.all(
+                              width: 3,
+                              color: _statusColor(dose.status)
+                                  .withValues(alpha: 0.3),
+                            ),
                           ),
                         ),
                       ),

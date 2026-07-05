@@ -4,6 +4,7 @@ import '../../design/purple_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../shell/bottom_nav.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
@@ -29,24 +30,29 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
   bool _markingAll = false;
   int _refreshSignal = 0;
 
-  /// Grouped section order and labels matching web KIND_LABEL_KEYS.
-  static const _kindSections = [
-    ('medication', 'Medications'),
-    ('supplement', 'Supplements'),
-    ('vitamin', 'Vitamins'),
-    ('herbal', 'Herbal'),
-    ('rescue', 'Rescue'),
-  ];
+  /// Empty = today in profile timezone (web `viewDate || todayStr`).
+  String? _viewDateYmd;
+
+  String? get _scheduleKey => _viewDateYmd;
 
   Future<void> _refresh() async {
+    ref.invalidate(medsScheduleProvider(_scheduleKey));
     ref.invalidate(medsDataProvider);
     try {
-      await ref.read(medsDataProvider.future);
+      await ref.read(medsScheduleProvider(_scheduleKey).future);
     } catch (_) {
       // Keep pull-to-refresh stable even if a provider failure slips through.
     }
     if (!mounted) return;
     setState(() => _refreshSignal += 1);
+  }
+
+  void _setViewDate(String dateYmd, {required String todayStr}) {
+    setState(() {
+      _viewDateYmd = dateYmd == todayStr ? null : dateYmd;
+      _refreshSignal += 1;
+    });
+    ref.invalidate(medsScheduleProvider(_scheduleKey));
   }
 
   Future<void> _doseAction(
@@ -77,6 +83,24 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
     final saved = await MedicationFormSheet.show(context);
     if (saved == true) await _refresh();
   }
+
+  void _showWebOnlyEntry(String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature is available on web for now.'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  /// Grouped section order and labels matching web KIND_LABEL_KEYS.
+  static const _kindSections = [
+    ('medication', 'Medications'),
+    ('supplement', 'Supplements'),
+    ('vitamin', 'Vitamins'),
+    ('herbal', 'Herbal'),
+    ('rescue', 'Rescue'),
+  ];
 
   void _openMed(Medication medication) {
     context.push(AppRoutes.medDetail(medication.id));
@@ -171,148 +195,158 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final medsAsync = ref.watch(medsDataProvider);
+    final medsAsync = ref.watch(medsScheduleProvider(_scheduleKey));
+    final showMobileFab = MediaQuery.sizeOf(context).width < 768;
 
     return CanvasBackground(
-      child: medsAsync.when(
-        loading: () => const SingleChildScrollView(
-          padding: EdgeInsets.only(top: 24, bottom: 120),
-          child: ContentColumn(
-            child: LoadingSkeleton(sectionTitle: 'Meds', tileCount: 3),
-          ),
-        ),
-        error: (_, __) => ContentColumn(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 24, bottom: 120),
-            child: _MedsEmptyCard(
-              icon: Icons.medication_outlined,
-              title: 'Add the medications you take.',
-              body: 'I will remind you and watch for missed doses.',
-              actionLabel: 'Refresh',
-              onAction: _refresh,
-            ),
-          ),
-        ),
-        data: (data) => RefreshIndicator(
-          onRefresh: _refresh,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(top: 24, bottom: 120),
-            child: ContentColumn(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _MedsHeader(
-                    isOffline: data.isOffline,
-                    hasLibrary: data.hasMeds,
-                  ),
-                  if (!data.hasMeds) ...[
-                    const SizedBox(height: 24),
-                    const NarrativeBlock(
-                      text:
-                          "Tap a med to see how you've been doing. Purple keeps "
-                          'a quiet ledger and nudges only when it matters.',
-                    ),
-                  ],
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      const Spacer(),
-                      Tooltip(
-                        message: 'Dose history',
-                        child: OutlinedButton(
-                          onPressed: () => context.push(AppRoutes.medsHistory),
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(44, 44),
-                            padding: EdgeInsets.zero,
-                            shape: const CircleBorder(),
-                            side: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.18),
-                            ),
-                          ),
-                          child: const Icon(Icons.history, size: 20),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      _AddMedButton(onTap: _openAddMed),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  TodayDosePanel(
-                    doses: data.todayDoses,
-                    timezone: data.timezone,
-                    todayLabel: data.todayLabel,
-                    markingAll: _markingAll,
-                    adherencePct: data.adherence?.pct,
-                    adherenceTaken: data.adherence?.taken ?? 0,
-                    adherenceTotal: data.adherence?.total ?? 0,
-                    onAddMed: _openAddMed,
-                    onOpenMed: _openMed,
-                    onTaken: (dose) => _doseAction(
-                      () =>
-                          ref.read(medsRepositoryProvider).markDoseTaken(dose.id),
-                    ),
-                    onSkip: (dose) => _doseAction(
-                      () => ref
-                          .read(medsRepositoryProvider)
-                          .markDoseSkipped(dose.id),
-                    ),
-                    onSnooze: (dose) => _doseAction(
-                      () => ref.read(medsRepositoryProvider).snoozeDose(dose.id),
-                      successMessage: 'Snoozed 10 min',
-                    ),
-                    onReclassify: (dose, next) => _doseAction(
-                      () => ref
-                          .read(medsRepositoryProvider)
-                          .reclassifyDose(dose.id, next),
-                      successMessage: next == 'taken'
-                          ? 'Marked as taken'
-                          : next == 'skipped'
-                              ? 'Marked as skipped'
-                              : 'Reset to pending',
-                    ),
-                    onMarkAllTaken: data.pendingDoses.isEmpty
-                        ? null
-                        : () => _markAllTaken(data),
-                  ),
-                  if (data.medications.isNotEmpty) ...[
-                    const SizedBox(height: 40),
-                    Text(
-                      'ALL MEDICATIONS',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            letterSpacing: 1.2,
-                            color: Colors.white.withValues(alpha: 0.45),
-                          ),
-                    ),
-                    const SizedBox(height: 12),
-                    _TabBarUnderline(
-                      tab: _tab,
-                      archivedCount: data.archivedMeds.length,
-                      onChanged: (value) => setState(() => _tab = value),
-                    ),
-                    if (_tab == 'active' && data.activeMeds.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      MedFilterChips(
-                        selected: _filter,
-                        onChanged: (value) => setState(() => _filter = value),
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    Text(
-                      'Tap a medication to see its dose history, edit the '
-                      'dose, or archive it.',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.5),
-                          ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  ..._buildLibrary(context, data),
-                ],
+      child: Stack(
+        children: [
+          medsAsync.when(
+            loading: () => const SingleChildScrollView(
+              padding: EdgeInsets.only(top: 24, bottom: 120),
+              child: ContentColumn(
+                child: LoadingSkeleton(sectionTitle: 'Meds', tileCount: 3),
               ),
             ),
+            error: (_, __) => ContentColumn(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 24, bottom: 120),
+                child: _MedsEmptyCard(
+                  icon: Icons.medication_outlined,
+                  title: 'Add the medications you take.',
+                  body: 'I will remind you and watch for missed doses.',
+                  actionLabel: 'Refresh',
+                  onAction: _refresh,
+                ),
+              ),
+            ),
+            data: (data) {
+              return RefreshIndicator(
+                onRefresh: _refresh,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.only(
+                    top: 24,
+                    bottom: showMobileFab ? 160 : 120,
+                  ),
+                  child: ContentColumn(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _MedsHeader(
+                          isOffline: data.isOffline,
+                          hasLibrary: data.hasMeds,
+                        ),
+                        if (!data.hasMeds) ...[
+                          const SizedBox(height: 24),
+                          const NarrativeBlock(
+                            text:
+                                "Tap a med to see how you've been doing. Purple keeps "
+                                'a quiet ledger and nudges only when it matters.',
+                          ),
+                        ],
+                        const SizedBox(height: 20),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: _MedsActionsToolbar(
+                            onAdd: _openAddMed,
+                            onScan: () => _showWebOnlyEntry('Scan label'),
+                            onVoice: () => _showWebOnlyEntry('Voice entry'),
+                            onHistory: () => context.push(AppRoutes.medsHistory),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TodayDosePanel(
+                          doses: data.todayDoses,
+                          timezone: data.timezone,
+                          todayLabel: data.todayLabel,
+                          viewDate: data.viewDateStr,
+                          todayStr: data.todayStr,
+                          onChangeDate: (date) =>
+                              _setViewDate(date, todayStr: data.todayStr),
+                          markingAll: _markingAll,
+                          adherencePct: data.adherence?.pct,
+                          adherenceTaken: data.adherence?.taken ?? 0,
+                          adherenceTotal: data.adherence?.total ?? 0,
+                          onAddMed: _openAddMed,
+                          onOpenMed: _openMed,
+                          onTaken: (dose) => _doseAction(
+                            () => ref
+                                .read(medsRepositoryProvider)
+                                .markDoseTaken(dose.id),
+                          ),
+                          onSkip: (dose) => _doseAction(
+                            () => ref
+                                .read(medsRepositoryProvider)
+                                .markDoseSkipped(dose.id),
+                          ),
+                          onSnooze: (dose) => _doseAction(
+                            () => ref
+                                .read(medsRepositoryProvider)
+                                .snoozeDose(dose.id),
+                            successMessage: 'Snoozed 10 min',
+                          ),
+                          onReclassify: (dose, next) => _doseAction(
+                            () => ref
+                                .read(medsRepositoryProvider)
+                                .reclassifyDose(dose.id, next),
+                            successMessage: next == 'taken'
+                                ? 'Marked as taken'
+                                : next == 'skipped'
+                                    ? 'Marked as skipped'
+                                    : 'Reset to pending',
+                          ),
+                          onMarkAllTaken: data.pendingDoses.isEmpty
+                              ? null
+                              : () => _markAllTaken(data),
+                        ),
+                        if (data.medications.isNotEmpty) ...[
+                          const SizedBox(height: 40),
+                          Text(
+                            'ALL MEDICATIONS',
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  letterSpacing: 1.2,
+                                  color: Colors.white.withValues(alpha: 0.45),
+                                ),
+                          ),
+                          const SizedBox(height: 12),
+                          _TabBarUnderline(
+                            tab: _tab,
+                            archivedCount: data.archivedMeds.length,
+                            onChanged: (value) => setState(() => _tab = value),
+                          ),
+                          if (_tab == 'active' && data.activeMeds.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            MedFilterChips(
+                              selected: _filter,
+                              onChanged: (value) => setState(() => _filter = value),
+                            ),
+                          ],
+                          const SizedBox(height: 16),
+                          Text(
+                            'Tap a medication to see its dose history, edit the '
+                            'dose, or archive it.',
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        ..._buildLibrary(context, data),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
-        ),
+          if (showMobileFab)
+            Positioned(
+              right: 20,
+              bottom: shellTabBarInset(context) + 12,
+              child: _MedsAddFab(onTap: _openAddMed),
+            ),
+        ],
       ),
     );
   }
@@ -463,24 +497,109 @@ class _MedsHeader extends StatelessWidget {
   }
 }
 
-/// Round "+" add-medication entry point matching the web actions toolbar.
-class _AddMedButton extends StatelessWidget {
-  const _AddMedButton({required this.onTap});
+/// Round icon toolbar matching web actionsToolbar (+, scan, voice, history).
+class _MedsActionsToolbar extends StatelessWidget {
+  const _MedsActionsToolbar({
+    required this.onAdd,
+    required this.onScan,
+    required this.onVoice,
+    required this.onHistory,
+  });
 
+  final VoidCallback onAdd;
+  final VoidCallback onScan;
+  final VoidCallback onVoice;
+  final VoidCallback onHistory;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      alignment: WrapAlignment.end,
+      children: [
+        Tooltip(
+          message: 'Add a medication',
+          child: FilledButton(
+            onPressed: onAdd,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(44, 44),
+              padding: EdgeInsets.zero,
+              shape: const CircleBorder(),
+            ),
+            child: const Icon(Icons.add, size: 20),
+          ),
+        ),
+        _ToolbarOutlineButton(
+          tooltip: 'Scan label',
+          icon: Icons.photo_camera_outlined,
+          onTap: onScan,
+        ),
+        _ToolbarOutlineButton(
+          tooltip: 'Voice entry',
+          icon: Icons.mic_none_outlined,
+          onTap: onVoice,
+        ),
+        _ToolbarOutlineButton(
+          tooltip: 'Dose history',
+          icon: Icons.history,
+          onTap: onHistory,
+        ),
+      ],
+    );
+  }
+}
+
+class _ToolbarOutlineButton extends StatelessWidget {
+  const _ToolbarOutlineButton({
+    required this.tooltip,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String tooltip;
+  final IconData icon;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: 'Add a medication',
-      child: FilledButton(
+      message: tooltip,
+      child: OutlinedButton(
         onPressed: onTap,
-        style: FilledButton.styleFrom(
+        style: OutlinedButton.styleFrom(
           minimumSize: const Size(44, 44),
           padding: EdgeInsets.zero,
           shape: const CircleBorder(),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
         ),
-        child: const Icon(Icons.add, size: 20),
+        child: Icon(icon, size: 20),
+      ),
+    );
+  }
+}
+
+/// Mobile-only FAB matching web `native-fab-fixed` add button.
+class _MedsAddFab extends StatelessWidget {
+  const _MedsAddFab({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Theme.of(context).colorScheme.primary,
+      elevation: 8,
+      shadowColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: const SizedBox(
+          width: 56,
+          height: 56,
+          child: Icon(Icons.add, size: 28, color: Colors.white),
+        ),
       ),
     );
   }

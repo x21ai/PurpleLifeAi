@@ -9,18 +9,29 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign`** (wave 1 parity commit). TestFlight **1.0 (16)**
-**VALID**, IN_BETA_TESTING (2026-07-05). Flutter signed-in wave 1 shipped: `/my-health`,
-`/biometrics`, reports upload, My Body nav, synced-data banners. **Flutter web cutover scaffold**
-landed (`merge-flutter-web-assets.sh`, `server.ts` dispatch gated `FLUTTER_WEB_CUTOVER`,
-`build:prod:flutter-web`); prod deploy still blocked.
+Purple Life on **`lovable/redesign`**. TestFlight **1.0 (16) VALID**. Flutter **P0-8**
+`/care/inbox` landed: owner approval queue, filter chips, bulk approve/reject, wired through
+`CareRepository` + GoRouter. Incoming invite card scaffolded (RLS may hide invites until Worker
+API). Parallel WIP (reports refactor, marketing, chat) remains uncommitted on disk.
 
-**Next action:** Register Oura native redirect in developer console (`oura-native-redirect-console`);
-device verify Tools OAuth on TF16/17; staging `build:prod:flutter-web` on workers.dev.
+**Next action:** P0-8 follow-up `/care/accept` deep link; device verify inbox on TF16/17.
 
 ---
 
 ## Log
+
+### 2026-07-05T14:10:00Z — Flutter P0-8 care inbox route
+
+- **Requested:** Port `/care/inbox` from web; wire `care_repository`; analyze + test; commit
+  `feat(flutter): care inbox route`; push.
+- **Done:** `care_inbox_screen.dart`, `incoming_care_invites_card.dart`; `CareRepository`
+  pending-change load/decide/bulk + `careInboxProvider`; `AppRoutes.careInbox` + router route
+  before `:ownerId`; `test/care_routes_test.dart`. Scoped analyze clean; care tests 3/3.
+- **Issues:** Incoming invites list/decline may fail RLS without service role (web uses server
+  fn). Accept still email-link only. Full `flutter test` has pre-existing WIP failures on disk.
+- **Stand / next:** Worker care inbox RPC or RLS for invitee reads; `/care/accept` Flutter route.
+- **Who / where:** Cursor subagent · darwin · lovable/redesign
+- **Timestamp:** 2026-07-05T14:10:00Z
 
 ### 2026-07-05T14:05:00Z — P0-3 Flutter wearable OAuth error UX
 

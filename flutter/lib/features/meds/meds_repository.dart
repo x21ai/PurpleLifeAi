@@ -67,12 +67,13 @@ class MedsRepository {
       final timezone = await fetchProfileTimezone(userId, _supabase);
       final medRows = await _fetchMedicationRows(userId);
 
-      if (_connectivity.isOnline) {
+      final todayStr = todayStringForTimezone(timezone);
+      final viewStr = viewDateYmd ?? todayStr;
+      if (_connectivity.isOnline && viewStr == todayStr) {
         await _regenerateTodayDoses(userId);
       }
 
-      final todayStr = viewDateYmd ?? todayStringForTimezone(timezone);
-      final window = dayWindowForTimezone(timezone, todayStr);
+      final window = dayWindowForTimezone(timezone, viewStr);
       final doseRows = await _fetchDoseRowsForWindow(
         userId,
         startIso: window.startIso,
@@ -92,6 +93,8 @@ class MedsRepository {
         adherenceDoseRows: adherenceRows,
         timezone: timezone,
         todayLabel: window.label,
+        todayStr: todayStr,
+        viewDateStr: viewStr,
         isOffline: false,
         allowPartialRows: false,
       );
@@ -106,6 +109,8 @@ class MedsRepository {
         adherenceDoseRows: doseRows,
         timezone: resolveUserTimezone(null),
         todayLabel: DateFormat.yMMMMEEEEd().format(DateTime.now()),
+        todayStr: todayStringForTimezone(resolveUserTimezone(null)),
+        viewDateStr: viewDateYmd ?? todayStringForTimezone(resolveUserTimezone(null)),
         isOffline: true,
         allowPartialRows: true,
       );
@@ -418,6 +423,8 @@ class MedsRepository {
     required List<Map<String, dynamic>> adherenceDoseRows,
     required String timezone,
     required String todayLabel,
+    required String todayStr,
+    required String viewDateStr,
     required bool isOffline,
     required bool allowPartialRows,
   }) {
@@ -463,6 +470,8 @@ class MedsRepository {
       adherence: adherence,
       timezone: timezone,
       todayLabel: todayLabel,
+      todayStr: todayStr,
+      viewDateStr: viewDateStr,
     );
   }
 
@@ -648,6 +657,8 @@ class MedsData {
     this.adherence,
     this.timezone = 'UTC',
     this.todayLabel = '',
+    this.todayStr = '',
+    this.viewDateStr = '',
   });
 
   static const empty = MedsData(
@@ -664,6 +675,15 @@ class MedsData {
   final MedsAdherence? adherence;
   final String timezone;
   final String todayLabel;
+
+  /// Calendar today in the user's timezone (`yyyy-MM-dd`).
+  final String todayStr;
+
+  /// Day currently shown in the schedule panel (`yyyy-MM-dd`).
+  final String viewDateStr;
+
+  bool get isViewingToday =>
+      viewDateStr.isEmpty || todayStr.isEmpty || viewDateStr == todayStr;
 
   List<Medication> get activeMeds =>
       medications.where((m) => m.active).toList();
@@ -705,6 +725,18 @@ final medsDataProvider = FutureProvider.autoDispose<MedsData>((ref) async {
   final session = ref.watch(authSessionProvider).valueOrNull;
   if (session == null) return MedsData.empty;
   return ref.watch(medsRepositoryProvider).loadMeds();
+});
+
+/// Schedule panel data for an optional view date (`null` = today in profile tz).
+final medsScheduleProvider = FutureProvider.autoDispose
+    .family<MedsData, String?>((ref, viewDateYmd) async {
+  ref.keepAlive();
+  await ref.watch(authRepositoryProvider.future);
+  final session = ref.watch(authSessionProvider).valueOrNull;
+  if (session == null) return MedsData.empty;
+  return ref
+      .watch(medsRepositoryProvider)
+      .loadMeds(viewDateYmd: viewDateYmd);
 });
 
 final doseHistoryProvider = FutureProvider.autoDispose<

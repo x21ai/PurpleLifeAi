@@ -97,3 +97,67 @@ bool showsSeizureFeatures(List<String> conditions) {
         lower.contains('convulsion');
   });
 }
+
+const _generalQuestions = [
+  'How am I sleeping?',
+  'Show last week\'s events',
+  'What patterns do you see in my journal?',
+];
+
+const _traitQuestions = <String, List<String>>{
+  'seizure_prone': [
+    'Show my seizures from the last 30 days',
+    'Any patterns before my recent episodes?',
+    'Have I been taking every dose on time?',
+  ],
+  'headache': [
+    'When did my last bad headache hit and what helped?',
+    'Which triggers show up most often in my journal?',
+    'How often am I using abortive meds this month?',
+  ],
+  'glycemic': [
+    'Show my recent highs and lows',
+    'Which meals seemed to push my glucose up?',
+    'How is my time-in-range trending?',
+  ],
+  'mood': [
+    'How has my mood trended this week?',
+    'What seemed to help on harder days?',
+    'Any patterns around sleep and mood?',
+  ],
+  'sleep_critical': [
+    'How is my sleep duration trending?',
+    'Any link between poor sleep and symptoms?',
+    'What changed in the last two weeks?',
+  ],
+  'pain': [
+    'How has my pain trended this week?',
+    'What helped most on flare days?',
+    'Any triggers worth noting recently?',
+  ],
+  'caregiver': [
+    'Summarize this week for me',
+    'Any episodes or missed doses this week?',
+    'What changed compared to last week?',
+  ],
+};
+
+/// Ask Purple starter chips (mirrors web `getSuggestedQuestions`).
+List<String> getSuggestedQuestions(List<String> conditions, {int cap = 5}) {
+  final traits = _traitsForConditions(conditions);
+  final pool = <String>[];
+  for (final trait in traits) {
+    final list = _traitQuestions[trait];
+    if (list != null) pool.addAll(list);
+  }
+  if (pool.isEmpty) {
+    return _generalQuestions.take(cap).toList();
+  }
+  final seen = <String>{};
+  final out = <String>[];
+  for (final item in pool) {
+    if (seen.add(item)) out.add(item);
+    if (out.length >= cap) break;
+  }
+  return out;
+}
