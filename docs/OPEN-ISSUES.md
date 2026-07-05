@@ -17,8 +17,10 @@ Format:
   approval before prod. Build: `./scripts/flutter-web-build-prod.sh`. _Raised 2026-07-05._
 
 - [ ] **tf-synced-data-visibility** — Tester ASC feedback (2026-07-05): "how do i see all my
-  synched data?" Flutter has no `/my-health` route, bottom nav maps Vitals not My Body, biometrics
-  hub missing. Track in `docs/FLUTTER-CUTOVER-GAP-MATRIX.md` P0-2. _Raised 2026-07-05 cutover audit._
+  synched data?" **Partially improved 2026-07-05:** Flutter `/my-health`, `/vitals`, and `/tools`
+  now show shared **All synced data (90 days)** panel with per-provider day counts, last sync
+  relative time, and link chips to Vitals / My Body / Biometrics / Tools. Biometrics hub depth
+  and bottom-nav My Body label still open for TF17+ re-verify. _Raised 2026-07-05 cutover audit._
 
 - [ ] **tf-oauth-not-working** — Tester ASC feedback (2026-07-05): "why is this not workibg"
   (Tools). Likely Oura native redirect + connect UX; ties to `oura-native-redirect-console`.
