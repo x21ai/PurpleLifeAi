@@ -9,6 +9,7 @@ import '../../core/offline/database.dart';
 import '../../core/offline/supabase_row_parse.dart';
 import '../../core/providers/core_providers.dart';
 import '../today/models/score_snapshot.dart';
+import 'synced_data_overview.dart';
 
 /// One daily value for metric trend charts.
 class MetricDayPoint {
@@ -66,9 +67,13 @@ class MetricTrendResult {
 
 /// Distinct-day counts per wearable source in the last 90 days.
 class WearableCoverage {
-  const WearableCoverage({required this.daysBySource});
+  const WearableCoverage({
+    required this.daysBySource,
+    this.lastReadingBySource = const {},
+  });
 
   final Map<String, int> daysBySource;
+  final Map<String, String> lastReadingBySource;
 
   int daysForSource(String source) => daysBySource[source] ?? 0;
 
@@ -231,13 +236,18 @@ class VitalsRepository {
     required int days,
   }) {
     final bySource = <String, Set<String>>{};
+    final latestBySource = <String, String>{};
     for (final row in rows) {
-      final day = formatSupabaseDateTime(row['recorded_at']);
-      if (day == null) continue;
-      final ymd = day.substring(0, 10);
+      final recordedAt = formatSupabaseDateTime(row['recorded_at']);
+      if (recordedAt == null) continue;
+      final ymd = recordedAt.substring(0, 10);
       final source = (row['source'] as String?)?.trim();
       if (source == null || source.isEmpty) continue;
       bySource.putIfAbsent(source, () => {}).add(ymd);
+      final prior = latestBySource[source];
+      if (prior == null || recordedAt.compareTo(prior) > 0) {
+        latestBySource[source] = recordedAt;
+      }
     }
 
     final today = DateTime.now();
@@ -255,7 +265,69 @@ class VitalsRepository {
       counts[entry.key] =
           entry.value.where((ymd) => window.contains(ymd)).length;
     }
-    return WearableCoverage(daysBySource: counts);
+    return WearableCoverage(
+      daysBySource: counts,
+      lastReadingBySource: latestBySource,
+    );
+  }
+
+  Future<SyncedDataOverview> loadSyncedDataOverview({int days = 90}) async {
+    final userId = _userId;
+    if (userId == null) return SyncedDataOverview.empty;
+
+    final coverage = await loadWearableCoverage(days: days);
+    try {
+      final rows = await Future.wait([
+        _supabase
+            .from('oura_tokens')
+            .select('last_sync_at, updated_at')
+            .eq('user_id', userId)
+            .maybeSingle(),
+        _supabase
+            .from('whoop_tokens')
+            .select('last_sync_at, updated_at')
+            .eq('user_id', userId)
+            .maybeSingle(),
+        _supabase
+            .from('apple_health_tokens')
+            .select('last_sync_at, updated_at')
+            .eq('user_id', userId)
+            .maybeSingle(),
+      ]);
+
+      final ouraRow = rows[0];
+      final whoopRow = rows[1];
+      final appleRow = rows[2];
+
+      String? tokenSync(Map<String, dynamic>? row) =>
+          (row?['last_sync_at'] as String?) ?? (row?['updated_at'] as String?);
+
+      return SyncedDataOverview.merge(
+        coverage: coverage,
+        tokenLastSync: {
+          'oura': tokenSync(ouraRow),
+          'whoop': tokenSync(whoopRow),
+          'apple_health': tokenSync(appleRow),
+          'health_connect': tokenSync(appleRow),
+        },
+        tokenConnected: {
+          'oura': ouraRow != null,
+          'whoop': whoopRow != null,
+          'apple_health': appleRow != null,
+          'health_connect': appleRow != null,
+        },
+        windowDays: days,
+      );
+    } catch (error, stack) {
+      debugPrint('[VitalsRepository] sync overview failed: $error\n$stack');
+      if (!_canUseOfflineCache(error)) rethrow;
+      return SyncedDataOverview.merge(
+        coverage: coverage,
+        tokenLastSync: const {},
+        tokenConnected: const {},
+        windowDays: days,
+      );
+    }
   }
 
   Future<ScoreSnapshot> loadScoreSnapshot({String? dateYmd}) async {
@@ -449,4 +521,13 @@ final wearableCoverageProvider =
   final session = ref.watch(authSessionProvider).valueOrNull;
   if (session == null) return WearableCoverage.empty;
   return ref.watch(vitalsRepositoryProvider).loadWearableCoverage();
+});
+
+final syncedDataOverviewProvider =
+    FutureProvider.autoDispose<SyncedDataOverview>((ref) async {
+  ref.keepAlive();
+  await ref.watch(authRepositoryProvider.future);
+  final session = ref.watch(authSessionProvider).valueOrNull;
+  if (session == null) return SyncedDataOverview.empty;
+  return ref.watch(vitalsRepositoryProvider).loadSyncedDataOverview();
 });

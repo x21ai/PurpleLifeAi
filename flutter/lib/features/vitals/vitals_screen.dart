@@ -14,6 +14,7 @@ import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
 import '../shared/metric_constants.dart';
 import 'metric_detail_screen.dart';
+import 'synced_data_panel.dart';
 import 'vitals_repository.dart';
 
 /// Status band colors mirroring web `BAND_COLOR` (data-good/info/warn/alert).
@@ -60,6 +61,7 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
       worker: ref.read(workerClientProvider),
     );
     ref.invalidate(vitalsSnapshotProvider);
+    ref.invalidate(syncedDataOverviewProvider);
     await ref.read(vitalsSnapshotProvider.future);
     if (!mounted) return;
     setState(() => _refreshSignal += 1);
@@ -68,7 +70,7 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
   @override
   Widget build(BuildContext context) {
     final snapshotAsync = ref.watch(vitalsSnapshotProvider);
-    final coverageAsync = ref.watch(wearableCoverageProvider);
+    final syncedAsync = ref.watch(syncedDataOverviewProvider);
 
     return CanvasBackground(
       child: SizedBox(
@@ -100,16 +102,17 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
                     _buildHeaderRow(context),
                     const SizedBox(height: 12),
                     _buildTitle(context),
-                    coverageAsync.when(
+                    syncedAsync.when(
                       loading: () => const SizedBox.shrink(),
                       error: (_, __) => const SizedBox.shrink(),
-                      data: (coverage) {
-                        if (coverage.daysBySource.isEmpty) {
+                      data: (overview) {
+                        if (!overview.hasAnyReadings &&
+                            !overview.hasAnyConnection) {
                           return const SizedBox.shrink();
                         }
                         return Padding(
                           padding: const EdgeInsets.only(top: 16),
-                          child: _SyncedCoverageStrip(coverage: coverage),
+                          child: SyncedDataCompactStrip(overview: overview),
                         );
                       },
                     ),
@@ -421,50 +424,6 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
       return rounded.round().toString();
     }
     return rounded.toStringAsFixed(1);
-  }
-}
-
-/// Compact synced-data summary for the vitals grid header.
-class _SyncedCoverageStrip extends StatelessWidget {
-  const _SyncedCoverageStrip({required this.coverage});
-
-  final WearableCoverage coverage;
-
-  static const _labels = {
-    'oura': 'Oura',
-    'whoop': 'Whoop',
-    'apple_health': 'Apple Health',
-    'health_connect': 'Health Connect',
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final parts = coverage.daysBySource.entries
-        .map((e) => '${_labels[e.key] ?? e.key}: ${e.value}d')
-        .join(' · ');
-    return GlassSurface(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      borderRadius: 14,
-      child: Row(
-        children: [
-          Icon(
-            Icons.sync,
-            size: 16,
-            color: Colors.white.withValues(alpha: 0.55),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Synced last 90 days · $parts',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.65),
-                    height: 1.35,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 

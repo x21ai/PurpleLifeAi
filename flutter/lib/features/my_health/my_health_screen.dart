@@ -10,6 +10,8 @@ import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
 import '../shared/narrative_block.dart';
 import '../today/models/score_snapshot.dart';
+import '../vitals/synced_data_overview.dart';
+import '../vitals/synced_data_panel.dart';
 import '../vitals/vitals_repository.dart';
 import 'my_health_repository.dart';
 
@@ -22,18 +24,18 @@ class MyHealthScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final snapshotAsync = ref.watch(vitalsSnapshotProvider);
     final narrativeAsync = ref.watch(healthNarrativeProvider);
-    final coverageAsync = ref.watch(wearableCoverageProvider);
+    final syncedAsync = ref.watch(syncedDataOverviewProvider);
 
     return CanvasBackground(
       child: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(vitalsSnapshotProvider);
           ref.invalidate(healthNarrativeProvider);
-          ref.invalidate(wearableCoverageProvider);
+          ref.invalidate(syncedDataOverviewProvider);
           await Future.wait([
             ref.read(vitalsSnapshotProvider.future),
             ref.read(healthNarrativeProvider.future),
-            ref.read(wearableCoverageProvider.future),
+            ref.read(syncedDataOverviewProvider.future),
           ]);
         },
         child: SingleChildScrollView(
@@ -48,12 +50,13 @@ class MyHealthScreen extends ConsumerWidget {
               error: (_, __) => _LoadError(
                 onRetry: () {
                   ref.invalidate(vitalsSnapshotProvider);
-                  ref.invalidate(wearableCoverageProvider);
+                  ref.invalidate(syncedDataOverviewProvider);
                 },
               ),
               data: (snap) {
                 final narrative = narrativeAsync.valueOrNull;
-                final coverage = coverageAsync.valueOrNull ?? WearableCoverage.empty;
+                final synced =
+                    syncedAsync.valueOrNull ?? SyncedDataOverview.empty;
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -104,10 +107,11 @@ class MyHealthScreen extends ConsumerWidget {
                         ),
                       ),
                     ],
-                    if (coverage.daysBySource.isNotEmpty) ...[
-                      const SizedBox(height: 24),
-                      _SyncedDataBanner(coverage: coverage),
-                    ],
+                    const SizedBox(height: 24),
+                    SyncedDataPanel(
+                      overview: synced,
+                      anchor: SyncedDataAnchor.myHealth,
+                    ),
                     const SizedBox(height: 24),
                     GlassSurface(
                       padding: EdgeInsets.zero,
@@ -273,68 +277,6 @@ class _HeaderBar extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.55),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SyncedDataBanner extends StatelessWidget {
-  const _SyncedDataBanner({required this.coverage});
-
-  final WearableCoverage coverage;
-
-  static const _sourceLabels = {
-    'oura': 'Oura',
-    'whoop': 'Whoop',
-    'apple_health': 'Apple Health',
-    'health_connect': 'Health Connect',
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final entries = coverage.daysBySource.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    return GlassSurface(
-      padding: const EdgeInsets.all(16),
-      borderRadius: 16,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'SYNCED DATA (90 DAYS)',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.45),
-                ),
-          ),
-          const SizedBox(height: 10),
-          for (final entry in entries)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _sourceLabels[entry.key] ?? entry.key,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.85),
-                          ),
-                    ),
-                  ),
-                  Text(
-                    '${entry.value} day${entry.value == 1 ? '' : 's'}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: parseTokenColor(
-                            PurpleTokens.loaded.colorsFor('dark').purplePrimary,
-                          ),
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );

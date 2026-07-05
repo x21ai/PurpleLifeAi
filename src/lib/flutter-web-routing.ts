@@ -22,7 +22,7 @@ export const FLUTTER_APP_PATH_PREFIXES = [
   "/reports",
 ] as const;
 
-/** TanStack marketing SSR paths — stay on TanStack even when cutover flag is on. */
+/** TanStack marketing SSR paths: stay on TanStack even when cutover flag is on. */
 export const MARKETING_TANSTACK_PATHS = new Set([
   "/",
   "/about",

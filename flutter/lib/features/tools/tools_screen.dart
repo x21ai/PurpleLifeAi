@@ -10,6 +10,8 @@ import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
 import '../health/apple_health_panel.dart';
 import '../shared/glass_helpers.dart';
+import '../vitals/synced_data_panel.dart';
+import '../vitals/synced_data_overview.dart';
 import '../vitals/vitals_repository.dart';
 import 'sync_mode_select.dart';
 import 'wearable_oauth.dart';
@@ -33,32 +35,7 @@ class _ProviderState {
   final String? lastSync;
 }
 
-String _relativeTime(String? iso) {
-  if (iso == null) return 'never';
-  final parsed = DateTime.tryParse(iso);
-  if (parsed == null) return 'never';
-  final minutes = DateTime.now().difference(parsed).inMinutes;
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return '$minutes min ago';
-  final hours = (minutes / 60).round();
-  if (hours < 24) return '${hours}h ago';
-  return '${(hours / 24).round()}d ago';
-}
-
-String _coverageSummary(WearableCoverage coverage) {
-  const labels = {
-    'oura': 'Oura',
-    'whoop': 'Whoop',
-    'apple_health': 'Apple Health',
-    'health_connect': 'Health Connect',
-  };
-  final parts = coverage.daysBySource.entries
-      .where((e) => e.value > 0)
-      .map((e) => '${labels[e.key] ?? e.key} ${e.value}d')
-      .toList();
-  if (parts.isEmpty) return 'none in last 90 days';
-  return '${parts.join(' · ')} in last 90 days';
-}
+String _relativeTime(String? iso) => syncedRelativeTime(iso);
 
 class _ToolsScreenState extends ConsumerState<ToolsScreen> {
   final _ouraKey = GlobalKey();
@@ -153,6 +130,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
             .maybeSingle(),
       ]);
       if (!mounted) return;
+      ref.invalidate(syncedDataOverviewProvider);
       setState(() {
         _oura = _stateFromRow(rows[0]);
         _whoop = _stateFromRow(rows[1]);
@@ -313,8 +291,9 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final coverage =
-        ref.watch(wearableCoverageProvider).valueOrNull ?? WearableCoverage.empty;
+    final synced =
+        ref.watch(syncedDataOverviewProvider).valueOrNull ??
+            SyncedDataOverview.empty;
 
     return CanvasBackground(
       child: SingleChildScrollView(
@@ -334,33 +313,12 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              if (coverage.daysBySource.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: GlassSurface(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Synced biometrics: ${_coverageSummary(coverage)}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.65),
-                                  height: 1.35,
-                                ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => context.go(AppRoutes.myHealth),
-                          child: const Text('My Body'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              SyncedDataPanel(
+                overview: synced,
+                anchor: SyncedDataAnchor.tools,
+                compact: true,
+              ),
+              const SizedBox(height: 12),
               if (_loadFailed) ...[
                 GlassSurface(
                   padding: const EdgeInsets.all(20),
@@ -398,7 +356,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                 backfilling: _ouraBackfilling,
                 errorMessage: _ouraError,
                 tokensTable: 'oura_tokens',
-                coverageDays: coverage.daysForSource('oura'),
+                coverageDays: synced.daysForSource('oura'),
                 onConnect: () => _connectWearable(WearableOAuthProvider.oura),
                 onSync: _syncOura,
                 onDisconnect: () => _disconnect('oura_tokens', 'Oura'),
@@ -415,7 +373,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                 busy: _whoopBusy,
                 errorMessage: _whoopError,
                 tokensTable: 'whoop_tokens',
-                coverageDays: coverage.daysForSource('whoop'),
+                coverageDays: synced.daysForSource('whoop'),
                 onConnect: () => _connectWearable(WearableOAuthProvider.whoop),
                 onSync: _syncWhoop,
                 onDisconnect: () => _disconnect('whoop_tokens', 'Whoop'),

@@ -81,6 +81,8 @@ abstract final class AppRoutes {
   static bool isReportId(String value) => _reportIdPattern.hasMatch(value);
 
   static const myHealth = '/my-health';
+  static const insights = '/insights';
+  static const timeline = '/timeline';
   static const biometrics = '/biometrics';
   static const settingsContact = '/settings/contact';
   static const contact = '/contact';
@@ -139,6 +141,8 @@ abstract final class AppRoutes {
     reportsTrendsPrefix,
     '/reports/',
     myHealth,
+    insights,
+    timeline,
     biometrics,
     '/biometrics/',
     settingsContact,

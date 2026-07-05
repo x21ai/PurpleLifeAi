@@ -1,0 +1,631 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+
+import '../../design/purple_type.dart';
+import '../../shell/routes.dart';
+import '../shared/glass_helpers.dart';
+import 'timeline_repository.dart';
+
+enum TimelineRange { day, week, month, year, custom }
+
+TimelineQuery timelineQueryForRange({
+  required TimelineRange range,
+  DateTime? customFrom,
+  DateTime? customTo,
+}) {
+  final now = DateTime.now();
+  final until = range == TimelineRange.custom ? (customTo ?? now) : now;
+  late DateTime since;
+  switch (range) {
+    case TimelineRange.day:
+      since = DateTime(now.year, now.month, now.day);
+    case TimelineRange.week:
+      final weekday = now.weekday;
+      since = DateTime(now.year, now.month, now.day)
+          .subtract(Duration(days: weekday - DateTime.monday));
+    case TimelineRange.month:
+      since = DateTime(now.year, now.month, 1);
+    case TimelineRange.year:
+      since = DateTime(now.year, 1, 1);
+    case TimelineRange.custom:
+      since = customFrom ??
+          DateTime(now.year, now.month, now.day).subtract(const Duration(days: 30));
+  }
+  return TimelineQuery(since: since, until: until);
+}
+
+/// Unified event timeline mirroring web `/timeline`.
+class TimelineScreen extends ConsumerStatefulWidget {
+  const TimelineScreen({super.key});
+
+  @override
+  ConsumerState<TimelineScreen> createState() => _TimelineScreenState();
+}
+
+class _TimelineScreenState extends ConsumerState<TimelineScreen> {
+  static const _pageSize = 25;
+
+  TimelineRange _range = TimelineRange.week;
+  String _search = '';
+  int _page = 1;
+  DateTime _customFrom =
+      DateTime.now().subtract(const Duration(days: 30));
+  DateTime _customTo = DateTime.now();
+
+  TimelineQuery get _query => timelineQueryForRange(
+        range: _range,
+        customFrom: DateTime(
+          _customFrom.year,
+          _customFrom.month,
+          _customFrom.day,
+        ),
+        customTo: _customTo,
+      );
+
+  Future<void> _refresh() async {
+    ref.invalidate(timelineEntriesProvider(_query));
+    try {
+      await ref.read(timelineEntriesProvider(_query).future);
+    } catch (_) {
+      // Fail open: keep prior rows or empty state.
+    }
+  }
+
+  void _setRange(TimelineRange range) {
+    setState(() {
+      _range = range;
+      _page = 1;
+    });
+  }
+
+  void _setSearch(String value) {
+    setState(() {
+      _search = value;
+      _page = 1;
+    });
+  }
+
+  void _showExportNotice() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'CSV, text, and print export are on the web app for now.',
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final entriesAsync = ref.watch(timelineEntriesProvider(_query));
+    final dateFormat = DateFormat('EEE, MMM d · h:mm a');
+
+    final q = _search.trim().toLowerCase();
+    final rows = entriesAsync.valueOrNull ?? const <TimelineEntry>[];
+    final filtered = q.isEmpty
+        ? rows
+        : rows.where((row) {
+            final haystack = '${row.title} ${row.body ?? ''}'.toLowerCase();
+            return haystack.contains(q);
+          }).toList();
+
+    final totalPages = (filtered.length / _pageSize).ceil().clamp(1, 999999);
+    final currentPage = _page.clamp(1, totalPages);
+    final startIdx = (currentPage - 1) * _pageSize;
+    final visible = filtered.skip(startIdx).take(_pageSize).toList();
+
+    return CanvasBackground(
+      child: RefreshIndicator(
+        onRefresh: _refresh,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(top: 24, bottom: 128),
+          child: ContentColumn(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'TIMELINE',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  letterSpacing: 1.4,
+                                  color: Colors.white.withValues(alpha: 0.55),
+                                ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Everything,\nin order.',
+                            style: Theme.of(context)
+                                .textTheme
+                                .displaySmall
+                                ?.copyWith(
+                                  fontFamily: PurpleType.serif,
+                                  fontSize: 40,
+                                  height: 1.05,
+                                  letterSpacing: 40 * -0.02,
+                                  color: Colors.white.withValues(alpha: 0.95),
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _showExportNotice,
+                      icon: const Icon(Icons.download_outlined, size: 18),
+                      label: const Text('Export'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white.withValues(alpha: 0.85),
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.15),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Seizures, journal entries, and doses, side by side. Filter by range, search, then export when you need to share with your care team.',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontFamily: PurpleType.serif,
+                        color: Colors.white.withValues(alpha: 0.75),
+                        height: 1.5,
+                      ),
+                ),
+                const SizedBox(height: 20),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      'Add:',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.55),
+                          ),
+                    ),
+                    _QuickAddChip(
+                      icon: Icons.menu_book_outlined,
+                      label: 'Journal entry',
+                      onTap: () => context.go(AppRoutes.journalNew),
+                    ),
+                    _QuickAddChip(
+                      icon: Icons.bolt_outlined,
+                      label: 'Seizure',
+                      onTap: () => context.go(AppRoutes.seizuresNew),
+                    ),
+                    _QuickAddChip(
+                      icon: Icons.medication_outlined,
+                      label: 'Dose',
+                      onTap: () => context.go(AppRoutes.meds),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final range in TimelineRange.values)
+                      _RangeChip(
+                        label: _rangeLabel(range),
+                        selected: _range == range,
+                        onTap: () => _setRange(range),
+                      ),
+                    SizedBox(
+                      width: 220,
+                      child: TextField(
+                        onChanged: _setSearch,
+                        decoration: InputDecoration(
+                          hintText: 'Search…',
+                          isDense: true,
+                          filled: true,
+                          fillColor: Colors.white.withValues(alpha: 0.06),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.12),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.12),
+                            ),
+                          ),
+                        ),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_range == TimelineRange.custom) ...[
+                  const SizedBox(height: 12),
+                  GlassSurface(
+                    padding: const EdgeInsets.all(12),
+                    child: Wrap(
+                      spacing: 16,
+                      runSpacing: 12,
+                      children: [
+                        _DateField(
+                          label: 'From',
+                          value: _customFrom,
+                          onPick: (date) => setState(() {
+                            _customFrom = date;
+                            _page = 1;
+                          }),
+                        ),
+                        _DateField(
+                          label: 'To',
+                          value: _customTo,
+                          onPick: (date) => setState(() {
+                            _customTo = date;
+                            _page = 1;
+                          }),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                entriesAsync.when(
+                  loading: () => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Center(
+                      child: Text(
+                        'Loading…',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.55),
+                            ),
+                      ),
+                    ),
+                  ),
+                  error: (_, __) => _TimelineEmpty(
+                    onJournal: () => context.go(AppRoutes.journalNew),
+                  ),
+                  data: (_) {
+                    if (filtered.isEmpty) {
+                      return _TimelineEmpty(
+                        onJournal: () => context.go(AppRoutes.journalNew),
+                      );
+                    }
+                    return Column(
+                      children: [
+                        for (final row in visible)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: _TimelineRow(
+                              entry: row,
+                              whenLabel: dateFormat.format(row.at.toLocal()),
+                            ),
+                          ),
+                        if (filtered.length > _pageSize)
+                          _PaginationBar(
+                            currentPage: currentPage,
+                            totalPages: totalPages,
+                            startIdx: startIdx,
+                            total: filtered.length,
+                            onPrevious: currentPage > 1
+                                ? () => setState(() => _page -= 1)
+                                : null,
+                            onNext: currentPage < totalPages
+                                ? () => setState(() => _page += 1)
+                                : null,
+                          ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Want to add older history? Medications and Log past event both accept any date.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.45),
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static String _rangeLabel(TimelineRange range) => switch (range) {
+        TimelineRange.day => 'Day',
+        TimelineRange.week => 'Week',
+        TimelineRange.month => 'Month',
+        TimelineRange.year => 'Year',
+        TimelineRange.custom => 'Custom',
+      };
+}
+
+class _QuickAddChip extends StatelessWidget {
+  const _QuickAddChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 16),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.white.withValues(alpha: 0.85),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+    );
+  }
+}
+
+class _RangeChip extends StatelessWidget {
+  const _RangeChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            color: selected
+                ? Theme.of(context).colorScheme.primary
+                : Colors.white.withValues(alpha: 0.06),
+            border: Border.all(
+              color: selected
+                  ? Theme.of(context).colorScheme.primary
+                  : Colors.white.withValues(alpha: 0.12),
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.85),
+              fontSize: 13,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DateField extends StatelessWidget {
+  const _DateField({
+    required this.label,
+    required this.value,
+    required this.onPick,
+  });
+
+  final String label;
+  final DateTime value;
+  final ValueChanged<DateTime> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final formatted = DateFormat.yMMMd().format(value);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                letterSpacing: 1.1,
+                color: Colors.white.withValues(alpha: 0.45),
+              ),
+        ),
+        const SizedBox(height: 4),
+        OutlinedButton(
+          onPressed: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: value,
+              firstDate: DateTime(2000),
+              lastDate: DateTime.now(),
+            );
+            if (picked != null) onPick(picked);
+          },
+          child: Text(formatted),
+        ),
+      ],
+    );
+  }
+}
+
+class _TimelineEmpty extends StatelessWidget {
+  const _TimelineEmpty({required this.onJournal});
+
+  final VoidCallback onJournal;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassSurface(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        children: [
+          Text(
+            'Nothing in this range yet.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.65),
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Entries, doses, and seizure logs from this range will line up here.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.55),
+                ),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton(
+            onPressed: onJournal,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white.withValues(alpha: 0.85),
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+              shape: const StadiumBorder(),
+            ),
+            child: const Text('Write a journal entry'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimelineRow extends StatelessWidget {
+  const _TimelineRow({required this.entry, required this.whenLabel});
+
+  final TimelineEntry entry;
+  final String whenLabel;
+
+  IconData get _icon => switch (entry.kind) {
+        TimelineEntryKind.seizure => Icons.bolt_outlined,
+        TimelineEntryKind.journal => Icons.menu_book_outlined,
+        TimelineEntryKind.dose => Icons.medication_outlined,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withValues(alpha: 0.06),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          ),
+          child: Icon(_icon, size: 16, color: Theme.of(context).colorScheme.primary),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: GlassSurface(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  whenLabel.toUpperCase(),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        letterSpacing: 0.8,
+                        color: Colors.white.withValues(alpha: 0.45),
+                      ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  entry.title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontFamily: PurpleType.serif,
+                        color: Colors.white.withValues(alpha: 0.92),
+                        height: 1.35,
+                      ),
+                ),
+                if (entry.body != null && entry.body!.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    entry.body!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          height: 1.45,
+                        ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PaginationBar extends StatelessWidget {
+  const _PaginationBar({
+    required this.currentPage,
+    required this.totalPages,
+    required this.startIdx,
+    required this.total,
+    required this.onPrevious,
+    required this.onNext,
+  });
+
+  final int currentPage;
+  final int totalPages;
+  final int startIdx;
+  final int total;
+  final VoidCallback? onPrevious;
+  final VoidCallback? onNext;
+
+  @override
+  Widget build(BuildContext context) {
+    final end = (startIdx + _TimelineScreenState._pageSize).clamp(0, total);
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            OutlinedButton(
+              onPressed: onPrevious,
+              child: const Text('Previous'),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '$currentPage / $totalPages',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+            ),
+            const SizedBox(width: 8),
+            OutlinedButton(
+              onPressed: onNext,
+              child: const Text('Next'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Showing ${startIdx + 1}–$end of $total',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.45),
+              ),
+        ),
+      ],
+    );
+  }
+}

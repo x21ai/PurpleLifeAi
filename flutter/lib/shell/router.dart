@@ -35,6 +35,8 @@ import '../features/settings/settings_placeholder_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/settings/sharing_screen.dart';
 import '../features/hydration/hydration_screen.dart';
+import '../features/insights/insights_screen.dart';
+import '../features/timeline/timeline_screen.dart';
 import '../features/seizures/log_seizure_screen.dart';
 import '../features/vitals/biometrics_hub_screen.dart';
 import '../features/vitals/metric_detail_screen.dart';
@@ -144,6 +146,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: AppRoutes.myHealth,
             name: 'my-health',
             builder: (context, state) => const MyHealthScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.insights,
+            name: 'insights',
+            builder: (context, state) => const InsightsScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.timeline,
+            name: 'timeline',
+            builder: (context, state) => const TimelineScreen(),
           ),
           GoRoute(
             path: AppRoutes.biometrics,
