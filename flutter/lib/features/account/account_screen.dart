@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../auth/auth_state.dart';
 import '../../core/providers/core_providers.dart';
@@ -47,8 +48,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   String? _country;
   String? _timezone;
   String? _locale;
-  bool _twoFactorEnabled = false;
-  bool _twoFactorKnown = false;
   String? _inviteCode;
   bool _inviteLoading = false;
   bool _inviteCopied = false;
@@ -131,25 +130,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         _loading = false;
         _loadFailed = true;
       });
-    }
-
-    await _loadTwoFactor();
-  }
-
-  Future<void> _loadTwoFactor() async {
-    try {
-      final factors = await _client.auth.mfa.listFactors();
-      final verified = factors.totp
-          .where((factor) => factor.status == FactorStatus.verified)
-          .toList();
-      if (!mounted) return;
-      setState(() {
-        _twoFactorEnabled = verified.isNotEmpty;
-        _twoFactorKnown = true;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _twoFactorKnown = false);
     }
   }
 
@@ -350,7 +330,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               const _SectionLabel('Security'),
               _SheetCard(child: _PasswordSection(client: _client)),
               const SizedBox(height: 12),
-              _SheetCard(child: _twoFactorSection(context)),
+              _SheetCard(child: _TwoFactorSection(client: _client)),
               const SizedBox(height: 20),
               const _SectionLabel('Region & language'),
               _SheetCard(child: _localeSection(context)),
@@ -605,34 +585,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
             ],
           ),
         ],
-      ],
-    );
-  }
-
-  Widget _twoFactorSection(BuildContext context) {
-    final status = !_twoFactorKnown
-        ? 'Status unavailable in the app right now.'
-        : _twoFactorEnabled
-            ? 'On. Codes are required on every sign-in.'
-            : 'Not enabled.';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Two-factor authentication', style: _titleStyle(context)),
-        const SizedBox(height: 4),
-        Text(
-          'Adds a 6-digit code from your authenticator app on every sign-in.',
-          style: _mutedStyle(context),
-        ),
-        const SizedBox(height: 12),
-        Text(status, style: _mutedStyle(context)),
-        const SizedBox(height: 12),
-        OutlinedButton(
-          onPressed: () => _showNotYetInApp(
-            'Set up two-factor authentication in the web app for now.',
-          ),
-          child: Text(_twoFactorEnabled ? 'Manage 2FA' : 'Enable 2FA'),
-        ),
       ],
     );
   }
@@ -903,6 +855,423 @@ class _PasswordSectionState extends State<_PasswordSection> {
                   color: _messageIsError
                       ? Theme.of(context).colorScheme.error
                       : const Color(0xFF6EE7B7),
+                ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// TOTP enrollment state while the user is adding an authenticator.
+class _TotpEnrollment {
+  const _TotpEnrollment({
+    required this.factorId,
+    required this.secret,
+    required this.uri,
+  });
+
+  final String factorId;
+  final String secret;
+
+  /// otpauth:// URI; opens the authenticator app directly on device.
+  final String uri;
+}
+
+/// Real 2FA via `supabase.auth.mfa`, mirroring web `two-factor-section.tsx`.
+///
+/// Enroll shows the TOTP secret and an "open authenticator" deep link instead
+/// of the web's QR image: on the phone itself there is no second camera to
+/// scan with, and the otpauth:// URI is the same payload the QR encodes.
+/// Never log or toast the secret.
+class _TwoFactorSection extends StatefulWidget {
+  const _TwoFactorSection({required this.client});
+
+  final SupabaseClient client;
+
+  @override
+  State<_TwoFactorSection> createState() => _TwoFactorSectionState();
+}
+
+class _TwoFactorSectionState extends State<_TwoFactorSection> {
+  final _codeController = TextEditingController();
+
+  /// null = still checking (web `hasFactor === null`); unknowable if the
+  /// status call failed.
+  bool? _hasFactor;
+  bool _statusFailed = false;
+  String? _factorId;
+  bool _busy = false;
+  _TotpEnrollment? _enrollment;
+  String? _error;
+  bool _secretCopied = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refresh() async {
+    try {
+      final factors = await widget.client.auth.mfa.listFactors();
+      final verified = factors.totp
+          .where((factor) => factor.status == FactorStatus.verified)
+          .toList();
+      if (!mounted) return;
+      setState(() {
+        _hasFactor = verified.isNotEmpty;
+        _factorId = verified.isNotEmpty ? verified.first.id : null;
+        _statusFailed = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _hasFactor = null;
+        _statusFailed = true;
+      });
+    }
+  }
+
+  String _errorMessage(Object error, String fallback) {
+    if (error is AuthException && error.message.isNotEmpty) {
+      return error.message;
+    }
+    return fallback;
+  }
+
+  Future<void> _startEnroll() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      // Clean any prior unverified attempts so we don't stack factors
+      // (mirrors web startEnroll).
+      final list = await widget.client.auth.mfa.listFactors();
+      for (final factor in list.totp) {
+        if (factor.status != FactorStatus.verified) {
+          await widget.client.auth.mfa.unenroll(factor.id);
+        }
+      }
+      final response =
+          await widget.client.auth.mfa.enroll(factorType: FactorType.totp);
+      final totp = response.totp;
+      if (totp == null) {
+        throw const AuthException("Couldn't start 2FA");
+      }
+      if (!mounted) return;
+      setState(() {
+        _enrollment = _TotpEnrollment(
+          factorId: response.id,
+          secret: totp.secret,
+          uri: totp.uri,
+        );
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = _errorMessage(error, "Couldn't start 2FA"));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _verify() async {
+    final enrollment = _enrollment;
+    if (enrollment == null) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final challenge = await widget.client.auth.mfa
+          .challenge(factorId: enrollment.factorId);
+      await widget.client.auth.mfa.verify(
+        factorId: enrollment.factorId,
+        challengeId: challenge.id,
+        code: _codeController.text.trim(),
+      );
+      if (!mounted) return;
+      setState(() {
+        _enrollment = null;
+        _codeController.clear();
+      });
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('2FA enabled')));
+      await _refresh();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = _errorMessage(
+            error,
+            "That didn't work. Try again in a moment.",
+          ));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _cancelEnroll() async {
+    final enrollment = _enrollment;
+    setState(() {
+      _enrollment = null;
+      _codeController.clear();
+      _error = null;
+      _secretCopied = false;
+    });
+    if (enrollment != null) {
+      // Best-effort cleanup of the unverified factor (web Cancel).
+      try {
+        await widget.client.auth.mfa.unenroll(enrollment.factorId);
+      } catch (_) {
+        // Leftover unverified factors are swept on the next enroll.
+      }
+    }
+  }
+
+  Future<void> _disable() async {
+    final factorId = _factorId;
+    if (factorId == null) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await widget.client.auth.mfa.unenroll(factorId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('2FA disabled')));
+      await _refresh();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = _errorMessage(
+            error,
+            "That didn't work. Try again in a moment.",
+          ));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _copySecret() async {
+    final secret = _enrollment?.secret;
+    if (secret == null) return;
+    await Clipboard.setData(ClipboardData(text: secret));
+    if (!mounted) return;
+    setState(() => _secretCopied = true);
+    Future<void>.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) setState(() => _secretCopied = false);
+    });
+  }
+
+  Future<void> _openAuthenticator() async {
+    final uri = _enrollment?.uri;
+    if (uri == null) return;
+    try {
+      final launched = await launchUrl(
+        Uri.parse(uri),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && mounted) {
+        setState(() {
+          _error = 'No authenticator app responded. '
+              'Copy the setup key instead.';
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error =
+            'No authenticator app responded. Copy the setup key instead.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              _hasFactor == true
+                  ? Icons.verified_user_outlined
+                  : Icons.shield_outlined,
+              size: 16,
+              color: _hasFactor == true
+                  ? const Color(0xFF6FB394)
+                  : const Color(0xFFB084D1),
+            ),
+            const SizedBox(width: 8),
+            Text('Two-factor authentication', style: _titleStyle(context)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Adds a 6-digit code from your authenticator app on every sign-in.',
+          style: _mutedStyle(context),
+        ),
+        const SizedBox(height: 12),
+        if (_hasFactor == null && !_statusFailed)
+          Text('Checking status…', style: _mutedStyle(context))
+        else if (_statusFailed) ...[
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Status unavailable right now.',
+                  style: _mutedStyle(context),
+                ),
+              ),
+              TextButton(onPressed: _refresh, child: const Text('Retry')),
+            ],
+          ),
+        ] else if (_hasFactor == true)
+          OutlinedButton(
+            onPressed: _busy ? null : _disable,
+            child: _busy
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Disable 2FA'),
+          )
+        else if (_enrollment == null)
+          OutlinedButton(
+            onPressed: _busy ? null : _startEnroll,
+            child: _busy
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Enable 2FA'),
+          ),
+        if (_enrollment != null) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: Colors.white.withValues(alpha: 0.03),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Add Purple to your authenticator app, then enter the '
+                  '6-digit code it shows.',
+                  style: _mutedStyle(context),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _openAuthenticator,
+                  icon: const Icon(Icons.open_in_new, size: 16),
+                  label: const Text('Open authenticator app'),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'OR ENTER THIS SETUP KEY',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontSize: 10,
+                        letterSpacing: 1.5,
+                        color: Colors.white.withValues(alpha: 0.45),
+                      ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.white.withValues(alpha: 0.06),
+                        ),
+                        child: Text(
+                          _enrollment!.secret,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontFamily: 'monospace',
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _copySecret,
+                      icon: Icon(
+                        _secretCopied ? Icons.check : Icons.copy,
+                        size: 16,
+                      ),
+                      color: Colors.white.withValues(alpha: 0.7),
+                      tooltip: 'Copy setup key',
+                      constraints: const BoxConstraints(
+                          minWidth: 44, minHeight: 44),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _codeController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration:
+                      _inputDecoration('6-digit code').copyWith(counterText: ''),
+                  style: _inputStyle(context),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    FilledButton(
+                      onPressed:
+                          _busy || _codeController.text.trim().length < 6
+                              ? null
+                              : _verify,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(88, 44),
+                      ),
+                      child: _busy
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child:
+                                  CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Verify'),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton(
+                      onPressed: _busy ? null : _cancelEnroll,
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(88, 44),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+        if (_error != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _error!,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
                 ),
           ),
         ],

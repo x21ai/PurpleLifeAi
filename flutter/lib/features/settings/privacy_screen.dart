@@ -75,7 +75,18 @@ class PrivacyScreen extends StatelessWidget {
                     'By default, only you. Caregivers and family members you invite '
                     'get read-only access to the scopes you choose. If a caregiver '
                     'tries to write on your behalf, you get a notice and the change '
-                    'waits for your approval.',
+                    'waits for your approval.\n\n'
+                    'Shared medical reports use one-time signed links that you can '
+                    'revoke at any time.',
+              ),
+              const SizedBox(height: 12),
+              const _PrivacyCard(
+                title: "Where it's stored",
+                body:
+                    'On managed cloud infrastructure (Supabase / PostgreSQL), '
+                    'encrypted in transit and at rest. Uploaded files (voice clips, '
+                    'photos, reports) live in private storage buckets and are served '
+                    'through short-lived signed URLs, never public links.',
               ),
               const SizedBox(height: 12),
               const _PrivacyCard(
@@ -83,7 +94,30 @@ class PrivacyScreen extends StatelessWidget {
                 body:
                     'Open Settings → Data to export everything, or to delete your '
                     'account. Deletion removes your journal, medications, biometrics, '
-                    'devices, sharing relationships, and uploaded files.',
+                    'devices, sharing relationships, and uploaded files. Backups are '
+                    'purged on a rolling schedule.',
+              ),
+              const SizedBox(height: 12),
+              const _PrivacyCard(
+                title: "What we'll never do",
+                body:
+                    '• Sell, rent, or share your data with brokers or advertisers.\n'
+                    '• Use your journal or biometrics to target ads.\n'
+                    '• Train AI models on your data without your explicit, opt-in '
+                    'consent.\n'
+                    '• Ship third-party trackers, behavioral analytics, or '
+                    'session-replay tools.\n'
+                    '• Lock you in. Your data is exportable and deletable at any '
+                    'time.',
+              ),
+              const SizedBox(height: 12),
+              const _PrivacyCard(
+                title: 'Children',
+                body:
+                    'Purple is not directed at children under 13. Parents and '
+                    "caregivers may use Purple to track a minor's health on their "
+                    'own account, but accounts must be created and managed by an '
+                    'adult.',
               ),
               const SizedBox(height: 12),
               _PrivacyCard(

@@ -36,6 +36,7 @@ import '../features/settings/privacy_screen.dart';
 import '../features/settings/settings_placeholder_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/settings/sharing_screen.dart';
+import '../features/settings/terms_screen.dart';
 import '../features/hydration/hydration_screen.dart';
 import '../features/insights/insights_screen.dart';
 import '../features/timeline/timeline_screen.dart';
@@ -370,6 +371,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: AppRoutes.settingsPrivacy,
             name: 'settings-privacy',
             builder: (context, state) => const PrivacyScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.settingsTerms,
+            name: 'settings-terms',
+            builder: (context, state) => const TermsScreen(),
           ),
           GoRoute(
             path: AppRoutes.settingsHowPurpleThinks,

@@ -128,10 +128,37 @@ Future<void> exportAllUserData(SupabaseClient client) async {
         DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
     final slug =
         '${captured.toIso8601String().substring(0, 10)}_${safeFile('${entry['id']}').substring(0, 8)}';
+    // Per-entry markdown mirrors web `data-export.ts` exportAllUserData:
+    // tags, kind/status, text, voice transcript, AI summary, media links.
+    final aiTags =
+        (entry['ai_tags'] as List?)?.whereType<String>().toList() ?? const [];
+    final voiceTranscript = entry['voice_transcript'] as String?;
+    final aiSummary = entry['ai_summary'] as String?;
+    final mediaUrls =
+        (entry['media_urls'] as List?)?.whereType<String>().toList() ??
+            const [];
     final lines = <String>[
       '# ${captured.toLocal()}',
       '',
+      if (aiTags.isNotEmpty) 'Tags: ${aiTags.join(', ')}',
+      'Kind: ${entry['kind']} · Status: ${entry['status']}',
+      '',
       if (entry['text'] != null) ...['## Text', '${entry['text']}', ''],
+      if (voiceTranscript != null && voiceTranscript.isNotEmpty) ...[
+        '## Voice transcript',
+        voiceTranscript,
+        '',
+      ],
+      if (aiSummary != null && aiSummary.isNotEmpty) ...[
+        '## AI summary',
+        aiSummary,
+        '',
+      ],
+      if (mediaUrls.isNotEmpty) ...[
+        '## Media',
+        for (final url in mediaUrls) '![]($url)',
+        '',
+      ],
     ];
     archive.addFile(ArchiveFile(
       'journal/$slug.md',
