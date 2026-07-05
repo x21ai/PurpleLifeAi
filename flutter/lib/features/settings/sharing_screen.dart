@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../shell/routes.dart';
 import '../care/care_relationship_tile.dart';
 import '../care/care_repository.dart';
+import '../health/apple_health_panel.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
@@ -80,6 +81,16 @@ class SharingScreen extends ConsumerWidget {
                   ),
                   data: (data) => _SharingBody(data: data),
                 ),
+                const SizedBox(height: 32),
+                Text(
+                  'APPLE HEALTH',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        letterSpacing: 1.2,
+                        color: Colors.white.withValues(alpha: 0.45),
+                      ),
+                ),
+                const SizedBox(height: 12),
+                const AppleHealthPanel(),
               ],
             ),
           ),

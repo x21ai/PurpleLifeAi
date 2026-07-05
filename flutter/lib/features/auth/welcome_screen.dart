@@ -6,6 +6,7 @@ import '../../core/providers/core_providers.dart';
 import '../../design/glass_card.dart';
 import '../../design/purple_theme.dart';
 import '../../shell/routes.dart';
+import '../health/welcome_apple_health_card.dart';
 import '../shared/glass_helpers.dart' hide GlassCard;
 
 /// Lightweight onboarding gate for users without profile onboarding metadata.
@@ -92,6 +93,17 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       ),
                 ),
                 const SizedBox(height: 24),
+                WelcomeAppleHealthCard(
+                  onConnected: () {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Apple Health connected. Vitals synced.'),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
                 GlassCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
