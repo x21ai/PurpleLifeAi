@@ -9,18 +9,74 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign`**. TestFlight **1.0 (15)** VALID; TF feedback sync/timezone
-fixes committed locally and pushed (sync bar off Meds/Vitals; Today sync labels name providers +
-clock time; Account timezone city labels). **`profiles.home_city`** live on NEW Supabase
-(`xxnzmfzsjplrutrgbzxy`). **Luciq Flutter** wired for crash reporting; agents run
-`bun run ios:check-tf-feedback` after uploads.
+Purple Life on **`lovable/redesign`** at **`fb3b018`** (settings scroll) atop **`2aeabd4`**
+(sync/timezone feedback), **`e1cd69d`** (Luciq), **`9b3de42`** (`home_city`). TestFlight **1.0 (16)**
+uploaded **2026-07-05 ~09:33 ET** (ASC **processing**, not yet in builds API; **15** still latest
+VALID). Gates before upload: `flutter analyze lib/` 0 issues, **47/47** tests. **Uncommitted local:**
+`pubspec.yaml` **1.0.0+16**, removed duplicate SPM Luciq from
+`flutter/ios/Runner.xcodeproj/project.pbxproj` (CocoaPods `luciq_flutter` only).
 
-**Next action:** Upload TF16 with settings scroll parity + sync/timezone fixes; verify Luciq
-crashes after TF16 install.
+**Next action:** Re-run `bun run ios:check-asc-builds` until **1.0 (16)** shows **VALID**; commit
+bump + pbxproj fix; device verify Luciq + settings + sync fixes on TF16.
 
 ---
 
 ## Log
+
+### 2026-07-05T13:36:00Z — Settings scroll re-verification (subagent)
+
+- **Requested:** Confirm Flutter `/settings` full scroll web parity; browser verify `:8765`; analyze +
+  test; resolve `tf-settings-design`.
+- **Done:** Compared web `settings.tsx` vs Flutter hub + inline sections (order matches). Rebuilt
+  `:8765`; browser MCP accessibility tree **108 nodes** (Preferences through Admin); scrollIntoView
+  screenshots for AI provider, Data, Help, About; `flutter analyze lib/features/settings/` clean;
+  `flutter test` **47/47** incl. `settings_screen_scroll_test.dart`.
+- **Issues:** None. Commit `fb3b018` already on `origin/lovable/redesign`; TF16 needed for tester
+  re-check.
+- **Stand / next:** Poll ASC for TF16 VALID; device sign-off on settings scroll.
+- **Who / where:** Cursor settings subagent · darwin · lovable/redesign@2b3fbb1
+- **Timestamp:** 2026-07-05T13:36:00Z
+
+
+- **Requested:** Ship TF16 bundling `home_city` (9b3de42), Luciq (e1cd69d), settings scroll
+  (fb3b018), TF sync/timezone feedback (2aeabd4).
+- **Done:** Polled `git pull` until fb3b018 + 2aeabd4 on branch; `flutter analyze lib/` + `flutter
+  test` 47/47; bumped `pubspec.yaml` to **1.0.0+16**; ASC pre-check TF15 VALID; fixed duplicate
+  LuciqSDK (removed SPM `luciq-ios-sdk` from Flutter `project.pbxproj`, keep CocoaPods via
+  `luciq_flutter`); `bun run ios:testflight` via Xcode-beta **EXPORT SUCCEEDED**, upload **100%**
+  (~09:33 ET); `bun run ios:check-tf-feedback` (7 ASC submissions, Luciq SDK token present).
+- **Issues:** ASC API still lists **1.0 (15)** as newest VALID (16 processing). Local **+16** and
+  pbxproj fix **not committed**. `xcode-select` points at CLT; script used `/Applications/Xcode-beta.app`.
+- **Stand / next:** Poll ASC for 16 VALID; commit chore bump + Luciq SPM dedupe; close TF feedback
+  items on device after install.
+- **Who / where:** Cursor TF upload subagent · darwin · lovable/redesign@2b3fbb1 (upload tree) +
+  local pbx/pubspec edits
+- **Timestamp:** 2026-07-05T13:35:00Z
+
+### 2026-07-05T13:34:00Z — Luciq vs Sentry observability audit
+
+- **Requested:** Can agents access Luciq without manual checks? Sentry project exists? Need both?
+- **Done:** Audit confirms SDK capture works; dashboard automation blocked until
+  `LUCIQ_API_TOKEN` + `LUCIQ_ACCOUNT_EMAIL` in Doppler. No Sentry in repo or Doppler; policy
+  keeps Luciq-only for TestFlight beta (no dual SDK).
+- **Issues:** User must add Luciq API creds in Luciq dashboard, then Doppler, for agent crash pulls.
+- **Stand / next:** TF16 upload; optional Luciq MCP install; do not create Sentry.
+- **Who / where:** agent d29d33cc · darwin · lovable/redesign@fb3b018
+- **Timestamp:** 2026-07-05T13:34:00Z
+
+### 2026-07-05T13:22:00Z — Post-fleet integration verification
+
+- **Requested:** Pull `lovable/redesign`, run Flutter gates, rebuild `:8765`, curl + browser
+  verify `#/settings` scroll and `#/account` city field; update `CURSOR_HANDOFF.md`.
+- **Done:** `git pull` up to date at `e1cd69d`; `flutter analyze lib/` 0 issues; `flutter test`
+  46/46; `./scripts/flutter-web-serve.sh --rebuild` OK; curl **200**; browser MCP verified
+  settings sections scroll and account city field (`e.g. Brooklyn`); re-fetch showed no new
+  settings/TF commits; `CURSOR_HANDOFF.md` integration section updated.
+- **Issues:** None blocking. Signed-in browser session required for account form (existing session
+  used).
+- **Stand / next:** TF16 upload with accumulated fixes; Luciq verify on device after TF16.
+- **Who / where:** Cursor agent · darwin · lovable/redesign@e1cd69d
+- **Timestamp:** 2026-07-05T13:22:00Z
 
 ### 2026-07-05T13:25:00Z — Flutter settings full scroll web parity
 
