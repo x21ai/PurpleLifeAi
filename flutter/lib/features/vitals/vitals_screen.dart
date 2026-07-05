@@ -269,7 +269,7 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
                           status: snap.hasData ? 'Latest' : 'No data',
                           band: MetricBand.fair,
                           value: _fmt(snap.vo2max),
-                          suffix: MetricUnits.vo2Sub,
+                          suffix: snap.vo2max == null ? null : MetricUnits.vo2Sub,
                           onTap: () => _openMetric(null),
                         ),
                         _MetricCard(

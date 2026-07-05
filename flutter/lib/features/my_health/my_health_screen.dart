@@ -13,6 +13,7 @@ import '../today/models/score_snapshot.dart';
 import '../vitals/synced_data_overview.dart';
 import '../vitals/synced_data_panel.dart';
 import '../vitals/vitals_repository.dart';
+import 'condition_catalog.dart';
 import 'my_health_repository.dart';
 
 /// Long-view health summary mirroring web `/my-health`: narrative, synced
@@ -25,6 +26,7 @@ class MyHealthScreen extends ConsumerWidget {
     final snapshotAsync = ref.watch(vitalsSnapshotProvider);
     final narrativeAsync = ref.watch(healthNarrativeProvider);
     final syncedAsync = ref.watch(syncedDataOverviewProvider);
+    final conditionsAsync = ref.watch(userConditionsProvider);
 
     return CanvasBackground(
       child: RefreshIndicator(
@@ -32,10 +34,12 @@ class MyHealthScreen extends ConsumerWidget {
           ref.invalidate(vitalsSnapshotProvider);
           ref.invalidate(healthNarrativeProvider);
           ref.invalidate(syncedDataOverviewProvider);
+          ref.invalidate(userConditionsProvider);
           await Future.wait([
             ref.read(vitalsSnapshotProvider.future),
             ref.read(healthNarrativeProvider.future),
             ref.read(syncedDataOverviewProvider.future),
+            ref.read(userConditionsProvider.future),
           ]);
         },
         child: SingleChildScrollView(
@@ -57,6 +61,8 @@ class MyHealthScreen extends ConsumerWidget {
                 final narrative = narrativeAsync.valueOrNull;
                 final synced =
                     syncedAsync.valueOrNull ?? SyncedDataOverview.empty;
+                final conditions =
+                    getConditions(conditionsAsync.valueOrNull ?? const []);
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -212,6 +218,12 @@ class MyHealthScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
+                    if (conditions.isNotEmpty) ...[
+                      const SizedBox(height: 32),
+                      _ConditionsSection(conditions: conditions),
+                    ],
+                    const SizedBox(height: 24),
+                    const _DnaInsightsCard(),
                     if (snap.isFromCache) ...[
                       const SizedBox(height: 8),
                       Text(
@@ -513,6 +525,148 @@ class _ProgressLine extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// "Your conditions" grid mirroring web `my-health.tsx`. Web deep-links each
+/// tile to `/condition/$slug`; that route does not exist in Flutter yet, so
+/// these render as non-navigating informational cards for this wave.
+class _ConditionsSection extends StatelessWidget {
+  const _ConditionsSection({required this.conditions});
+
+  final List<ConditionCatalogEntry> conditions;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'YOUR CONDITIONS',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                letterSpacing: 1.2,
+                color: Colors.white.withValues(alpha: 0.45),
+              ),
+        ),
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            const spacing = 8.0;
+            final twoCol = constraints.maxWidth >= 480;
+            final tileWidth = twoCol
+                ? (constraints.maxWidth - spacing) / 2
+                : constraints.maxWidth;
+            return Wrap(
+              spacing: spacing,
+              runSpacing: spacing,
+              children: [
+                for (final c in conditions)
+                  SizedBox(
+                    width: tileWidth,
+                    child: _ConditionTile(entry: c),
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _ConditionTile extends StatelessWidget {
+  const _ConditionTile({required this.entry});
+
+  final ConditionCatalogEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassSurface(
+      borderRadius: 16,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  conditionCategoryLabel(entry.category).toUpperCase(),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        letterSpacing: 1.0,
+                        color: Colors.white.withValues(alpha: 0.45),
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "DNA insights (optional)" card mirroring web `my-health.tsx`. Web links to
+/// `/my-health-dna`; that route does not exist in Flutter yet, so this renders
+/// as a non-navigating informational card for this wave.
+class _DnaInsightsCard extends StatelessWidget {
+  const _DnaInsightsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final purple = parseTokenColor(
+      PurpleTokens.loaded.colorsFor('dark').purplePrimary,
+    );
+    return GlassSurface(
+      borderRadius: 28,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: purple.withValues(alpha: 0.15),
+            ),
+            child: Icon(Icons.biotech_outlined, size: 20, color: purple),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'DNA insights (optional)',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Upload a raw file. We look at a small, curated set, never your whole genome.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.55),
+                        height: 1.4,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
