@@ -56,6 +56,7 @@ abstract final class AppRoutes {
   static const careInbox = '/care/inbox';
   static const careAccept = '/care/accept';
   static const careOwner = '/care/:ownerId';
+  static const careOwnerReport = '/care/:ownerId/reports/:reportId';
   static const settingsSharing = '/settings/sharing';
   static const settingsTravel = '/settings/travel';
   static const settingsReports = '/settings/reports';
@@ -93,6 +94,9 @@ abstract final class AppRoutes {
   static const chatCare = '/chat-care';
 
   static String careDashboard(String ownerId) => '/care/$ownerId';
+
+  static String careReport(String ownerId, String reportId) =>
+      '/care/$ownerId/reports/$reportId';
 
   static String medDetail(String medId) => '/meds/$medId';
 
