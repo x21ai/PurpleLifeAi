@@ -1,6 +1,26 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~23:30 ET (Settings web parity round 2).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~07:45 ET (morning verdict).
+
+## Morning verdict (2026-07-05 ~07:45 ET) — NOT all done
+
+**Install TestFlight build:** **1.0 (13)** only (`processing=VALID`, `IN_BETA_TESTING`). No build 14 on ASC yet (`pubspec` bumped to `+14` in uncommitted WIP only).
+
+| Question | Verdict | Evidence |
+|----------|---------|----------|
+| Settings fixed? | **Partial, not on TF13** | `563f7c2` landed hub modules, contact/privacy/how-purple-thinks, data export, Account theme+invite. Verify-fleet Cycle 3: Settings hub PASS. Travel mode still placeholder; `#/account` redirects to Today. **TF13 predates `563f7c2`** (uploaded Jul 4 20:09 PT). |
+| Apple Health connect on TF13/14? | **NO** | User reported TF13 still fails. Health fix agents (`d053`, `df80`) never finished; WIP in `health_service.dart` / `apple_health_panel.dart` uncommitted. No TF14 upload. |
+| Oura connect? | **Web yes, native unverified** | Verify-fleet Cycle 3: Oura connected on `:8765` (16d last sync). WIP `wearable_oauth.dart` + broken `tools_screen.dart` compile (186 analyze errors). Backend agent (`f28feec8`) never ran. |
+| Gates (this morning) | **RED on WIP tree** | `flutter analyze lib/`: **186 issues** (syntax errors in `tools_screen.dart`). `flutter test`: **30/34 PASS**. Committed HEAD: **1 analyze error** (`SettingsProfileFlags` import), **32/34** tests. |
+| Phase 5 cutover | **NO-GO** | Account broken, Apple Health not fixed on device, incomplete agent fleet, compile red on WIP. |
+
+**Completed overnight agents:** Settings round 2 (`563f7c2`, pushed); verify-fleet 3 cycles (docs updated).
+
+**Incomplete / never finished:** Apple Health TF14 (`d053`), Apple Health+Oura e2e (`df80`), Oura backend (`f28feec8`), Settings exhaustive (`d3cfe9f7`), morning doc (`2f2445d3`, no `FLUTTER-MORNING-STATUS.md`), deep test (`aee59c3e`).
+
+**User this morning:** Stay on **TF13** for now. Do not expect Settings round 2 or Apple Health fixes until agents finish WIP, gates green, and **TF14** uploads. No manual QA checklist needed from you.
+
+**Ops:** `:8765` listener was zombie (empty reply); `./scripts/flutter-web-serve.sh --rebuild` restarted at ~07:45 ET.
 
 ## Settings + Account web parity round 2 (2026-07-05 overnight)
 
