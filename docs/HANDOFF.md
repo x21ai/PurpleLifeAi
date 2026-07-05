@@ -9,15 +9,29 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign`**. TestFlight **1.0 (16) VALID**. Flutter **P0-6**
-meds schedule UX parity shipped (toolbar, 24h timeline, day nav, mobile FAB). **P0-8**
-`/care/inbox` landed. Parallel WIP (reports refactor, marketing) remains uncommitted on disk.
+Purple Life on **`lovable/redesign`**. TestFlight **1.0 (16) VALID**. Flutter **P0-7** chat
+shells on `/chat` and `/chat-care` (commit `a9c4361`, co-staged with P0-6 meds). **P0-8**
+`/care/inbox` at `8fdf829`. Parallel WIP (reports refactor, marketing) on disk.
 
-**Next action:** Device verify meds date nav + FAB on TF16/17; P0-8 `/care/accept` deep link.
+**Next action:** Wire care-chat Worker RPCs; device verify Ask Purple streaming on TF.
 
 ---
 
 ## Log
+
+### 2026-07-05T14:15:00Z — P0-7 Flutter chat routes shell
+
+- **Requested:** Wire `/chat` and `/chat-care` stubs vs web; real shell + empty/connect or API;
+  analyze + test; commit `feat(flutter): chat routes shell`; push.
+- **Done:** `flutter/lib/features/chat/` — Ask Purple shell (header, chips, composer,
+  disclaimer, SSE via `WorkerClient.postChatStream`); Care chat split list/conversation shell
+  with `sharingListProvider` connect/empty states; `getSuggestedQuestions` in
+  `condition_prompts.dart`; `test/chat_routes_test.dart` (6 pass). Scoped analyze clean.
+- **Issues:** Landed co-staged in `a9c4361` (meds commit) not isolated feat message. Care
+  message send still disabled (no Worker RPC client yet).
+- **Stand / next:** `feat(flutter): care chat API` slice; rebuild web preview for `/chat`.
+- **Who / where:** Cursor subagent · darwin · lovable/redesign@a9c4361
+- **Timestamp:** 2026-07-05T14:15:00Z
 
 ### 2026-07-05T14:12:00Z — P0-6 Flutter meds schedule UX parity
 

@@ -1,3 +1,5 @@
+export 'report_file_picker_stub.dart';
+
 import 'dart:async';
 import 'dart:typed_data';
 

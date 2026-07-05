@@ -495,7 +495,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                       icon: Icons.description_outlined,
                       title: 'Lab reports',
                       subtitle: 'Upload PDFs or photos. See trends.',
-                      onTap: () => context.go(AppRoutes.settingsReports),
+                      onTap: () => context.go(AppRoutes.reportsMetrics),
                     ),
                     _rowDivider(),
                     _ToolRow(

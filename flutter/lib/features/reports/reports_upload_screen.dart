@@ -61,7 +61,7 @@ class _ReportsUploadScreenState extends ConsumerState<ReportsUploadScreen> {
           ),
         ),
       );
-      context.go(AppRoutes.settingsReports);
+      context.go(AppRoutes.reportsDocuments);
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -85,7 +85,7 @@ class _ReportsUploadScreenState extends ConsumerState<ReportsUploadScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextButton.icon(
-                onPressed: _uploading ? null : () => context.go(AppRoutes.settingsReports),
+                onPressed: _uploading ? null : () => context.go(AppRoutes.reportsDocuments),
                 icon: Icon(
                   Icons.arrow_back,
                   color: Colors.white.withValues(alpha: 0.55),
