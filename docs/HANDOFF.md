@@ -9,16 +9,30 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign` @ `9b4e114`**. TestFlight **1.0 (16) VALID**. Flutter **P0-4**
-Today web parity shipped (date strip, Readiness/Sleep/Activity score strip, signals grid). Prior:
-P0-9 reports child routes, P0-7 chat, P0-8 care inbox.
+Purple Life on **`lovable/redesign` @ `ec8b21b`**. TestFlight **1.0 (16) VALID**. Flutter test
+suite **79/79 green**; `flutter analyze lib/` clean after marketing fleet merge. Prior: P0-4 Today
+parity, P0-9 reports, P0-7 chat, P0-8 care inbox.
 
-**Next action:** Rebuild Flutter web after Today merge (`./scripts/flutter-web-serve.sh --rebuild`);
-device verify date-strip past-day browsing.
+**Next action:** Wire marketing screens into GoRouter if not yet routed; rebuild Flutter web
+(`./scripts/flutter-web-serve.sh --rebuild`).
 
 ---
 
 ## Log
+
+### 2026-07-05T14:30:00Z — Flutter green test suite after parallel fleet
+
+- **Requested:** `flutter test` fix all failures (chat, marketing, reports, today); analyze clean;
+  commit and push.
+- **Done:** Today/chat/reports fixes already on branch (`9b4e114`, `04a98d9`, `d1da862`). Committed
+  marketing screens + `marketing_routes_test.dart`; `prefer_const_constructors` fixes in marketing
+  and `reports_detail_screen.dart`. `flutter test` **79/79**; `flutter analyze lib/` **0 issues**.
+  Pushed `ec8b21b` to `origin/lovable/redesign`.
+- **Issues:** Marketing screens not yet wired in GoRouter (widget tests only). PID/lock artifacts
+  untracked.
+- **Stand / next:** GoRouter marketing routes; web rebuild when lock free.
+- **Who / where:** Cursor subagent · darwin · lovable/redesign@ec8b21b
+- **Timestamp:** 2026-07-05T14:30:00Z
 
 ### 2026-07-05T14:05:00Z — P0-4 Flutter Today web parity
 
