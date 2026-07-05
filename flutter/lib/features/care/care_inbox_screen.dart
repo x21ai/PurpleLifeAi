@@ -78,6 +78,8 @@ class _CareInboxScreenState extends ConsumerState<CareInboxScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${result.ok} $past$suffix')),
       );
+      // Keep the top-bar pending badge in sync with the acted-on items.
+      ref.invalidate(carePendingCountProvider);
       await _refresh();
     } catch (error) {
       if (!mounted) return;
@@ -309,6 +311,8 @@ class _PendingChangeCardState extends ConsumerState<_PendingChangeCard> {
           ),
         ),
       );
+      // Keep the top-bar pending badge in sync with the acted-on item.
+      ref.invalidate(carePendingCountProvider);
       await widget.onChanged();
     } catch (error) {
       if (!mounted) return;
