@@ -1,6 +1,21 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 (Wave G ship-fleet audit; Flutter TestFlight **1.0 (12)** VALID; `lovable/redesign` uncommitted).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 (ship commit **918c766** pushed; Worker **c3ee806d**; TestFlight **1.0 (12)** VALID).
+
+## Ship complete (2026-07-05 ~02:50 ET)
+
+| Item | State |
+|------|--------|
+| Branch | `lovable/redesign` @ **918c766** (pushed to `origin`) |
+| Flutter gates | `flutter analyze lib/` PASS; **27/27** tests |
+| `check:em-dash` | PASS |
+| Worker prod | **c3ee806d-f9c0-421b-9186-e56c4a7448e5** (`doppler run … CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0 bunx wrangler deploy -c wrangler.deploy.jsonc`) |
+| Whoop routes | `GET /api/health/whoop-config` → **200** on `www.purplelife.org` |
+| TestFlight | **1.0 (12)** `processing=VALID`, `internal=IN_BETA_TESTING` (install latest Flutter native build) |
+
+**Manual (owner console only):** Register OAuth redirect URIs if not already present — prod `https://www.purplelife.org/oauth/whoop/callback`, `https://www.purplelife.org/oauth/oura/callback`; native `org.purplelife.app://oauth-whoop-callback` / `org.purplelife.app://oauth-oura-callback` in Whoop/Oura developer apps.
+
+**Not committed (local junk):** `.flutter-web-serve*.pid`, `Generated 2.xcconfig`, `flutter_export_environment 2.sh`, `flutter/ios/Flutter/Developer.xcconfig` (machine Xcode path).
 
 ## Overnight morning summary (2026-07-05)
 
@@ -71,7 +86,7 @@ cd flutter && flutter test   # 27/27 pass
 - **Notifications:** Tools section links to Settings with copy on snooze/quiet hours; push alerts still future.
 - **Deps:** explicit `app_links`, `url_launcher` in `flutter/pubspec.yaml`.
 - **Verify:** `cd flutter && flutter analyze lib/features/tools/ lib/core/api/worker_client.dart lib/shell/ && flutter test` → **27/27 PASS** (includes `test/wearable_oauth_test.dart`).
-- **Worker deploy:** Whoop OAuth routes need prod deploy (`whoop-config`, `whoop-exchange` under `src/routes/api/health/`).
+- **Worker deploy:** Done on **c3ee806d** (2026-07-05); routes live under `src/routes/api/health/whoop-*.ts`.
 
 ## Apple Health P0 fix — Flutter native HealthKit (2026-07-04 overnight)
 
