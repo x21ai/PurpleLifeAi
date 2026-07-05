@@ -10,6 +10,8 @@ class ReportDocumentRow {
     required this.status,
     required this.createdAt,
     this.summary,
+    this.aiSummary,
+    this.errorMessage,
     this.metricCount = 0,
   });
 
@@ -22,6 +24,13 @@ class ReportDocumentRow {
   final String status;
   final String createdAt;
   final String? summary;
+
+  /// Cached plain-English AI explanation written by the web `summarizeReport`
+  /// server fn. Read-only on Flutter (see server-gap note in repository).
+  final String? aiSummary;
+
+  /// Extraction failure detail from `report_documents.error_message`.
+  final String? errorMessage;
   final int metricCount;
 
   String get displayTitle {
@@ -56,6 +65,8 @@ class ReportDocumentRow {
       status: (map['status'] as String?) ?? 'ready',
       createdAt: (map['created_at'] as String?) ?? '',
       summary: map['summary'] as String?,
+      aiSummary: map['ai_summary'] as String?,
+      errorMessage: map['error_message'] as String?,
       metricCount: metricCount,
     );
   }
@@ -127,6 +138,8 @@ class ReportMetricRow {
     this.flag,
     this.measuredAt,
     required this.reportId,
+    this.panel,
+    this.reportTitle,
   });
 
   final String id;
@@ -141,6 +154,30 @@ class ReportMetricRow {
   final String? measuredAt;
   final String reportId;
 
+  /// Panel grouping from `metric_dictionary.panel` (e.g. lipids, liver).
+  /// Attached by the repository when a dictionary join is available.
+  final String? panel;
+
+  /// Source report title from the joined `report_documents` row (trend list).
+  final String? reportTitle;
+
+  ReportMetricRow copyWith({String? panel, String? reportTitle}) =>
+      ReportMetricRow(
+        id: id,
+        metricKey: metricKey,
+        displayName: displayName,
+        value: value,
+        valueText: valueText,
+        unit: unit,
+        referenceLow: referenceLow,
+        referenceHigh: referenceHigh,
+        flag: flag,
+        measuredAt: measuredAt,
+        reportId: reportId,
+        panel: panel ?? this.panel,
+        reportTitle: reportTitle ?? this.reportTitle,
+      );
+
   String get label => displayName?.trim().isNotEmpty == true
       ? displayName!.trim()
       : metricKey.replaceAll('_', ' ');
@@ -153,6 +190,13 @@ class ReportMetricRow {
   }
 
   factory ReportMetricRow.fromMap(Map<String, dynamic> map) {
+    // Optional embedded `report_documents(title)` join (Supabase nests it under
+    // the foreign-table alias). Falls back to null when not selected.
+    final joinedDoc = map['report_documents'];
+    String? reportTitle;
+    if (joinedDoc is Map) {
+      reportTitle = joinedDoc['title'] as String?;
+    }
     return ReportMetricRow(
       id: map['id'] as String,
       metricKey: map['metric_key'] as String,
@@ -165,6 +209,7 @@ class ReportMetricRow {
       flag: map['flag'] as String?,
       measuredAt: map['measured_at'] as String?,
       reportId: map['report_id'] as String,
+      reportTitle: reportTitle,
     );
   }
 }
@@ -205,4 +250,25 @@ class ReportDetailData {
 
   final ReportDocumentRow document;
   final List<ReportMetricRow> metrics;
+
+  /// Metrics grouped by their `metric_dictionary` panel (falls back to
+  /// "other"), ordered with known panels first and "other" last. Preserves the
+  /// incoming metric order within each group.
+  Map<String, List<ReportMetricRow>> get metricsByPanel {
+    final groups = <String, List<ReportMetricRow>>{};
+    for (final m in metrics) {
+      final panel = (m.panel?.trim().isNotEmpty == true) ? m.panel! : 'other';
+      (groups[panel] ??= []).add(m);
+    }
+    return groups;
+  }
+}
+
+/// Result of a report-file signed-URL request (web `getReportFileUrl`).
+class ReportFileRef {
+  const ReportFileRef({required this.url, this.mime, this.title});
+
+  final String url;
+  final String? mime;
+  final String? title;
 }

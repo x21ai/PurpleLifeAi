@@ -46,7 +46,7 @@ class ReportsRepository {
         .from('report_documents')
         .select(
           'id, title, report_type, report_category, report_date, file_mime, '
-          'status, created_at, summary',
+          'status, created_at, summary, ai_summary, error_message',
         )
         .order('report_date', ascending: false);
 
@@ -106,7 +106,7 @@ class ReportsRepository {
           .from('report_documents')
           .select(
             'id, title, report_type, report_category, report_date, file_mime, '
-            'status, created_at, summary',
+            'status, created_at, summary, ai_summary, error_message',
           )
           .eq('id', reportId)
           .maybeSingle();
@@ -136,12 +136,40 @@ class ReportsRepository {
           .eq('report_id', reportId)
           .order('display_name');
 
-      return (response as List)
+      final metrics = (response as List)
           .cast<Map<String, dynamic>>()
           .map(ReportMetricRow.fromMap)
           .toList();
+      return _attachPanels(metrics);
     } catch (_) {
       return const [];
+    }
+  }
+
+  /// Load `metric_dictionary.panel` for the given metric keys and return the
+  /// metrics with their `panel` attached, so the detail screen can group
+  /// values by panel (mirrors web `getReport`'s dictionary join). Best-effort:
+  /// on any failure the original metrics are returned unchanged.
+  Future<List<ReportMetricRow>> _attachPanels(
+    List<ReportMetricRow> metrics,
+  ) async {
+    if (metrics.isEmpty) return metrics;
+    final keys = metrics.map((m) => m.metricKey).toSet().toList();
+    try {
+      final response = await _supabase
+          .from('metric_dictionary')
+          .select('metric_key, panel')
+          .inFilter('metric_key', keys);
+      final panelByKey = <String, String?>{};
+      for (final row in (response as List).cast<Map<String, dynamic>>()) {
+        panelByKey[row['metric_key'] as String] = row['panel'] as String?;
+      }
+      if (panelByKey.isEmpty) return metrics;
+      return metrics
+          .map((m) => m.copyWith(panel: panelByKey[m.metricKey] ?? 'other'))
+          .toList();
+    } catch (_) {
+      return metrics;
     }
   }
 
@@ -150,6 +178,77 @@ class ReportsRepository {
     if (document == null) return null;
     final metrics = await loadMetricsForReport(reportId);
     return ReportDetailData(document: document, metrics: metrics);
+  }
+
+  /// Short-lived (5 min) signed URL for the uploaded report file — mirrors web
+  /// `getReportFileUrl` (reports.functions.ts). Client-doable: the auth'd
+  /// Supabase client is RLS-scoped to the owner's storage objects, so this is
+  /// equivalent to the server fn (which also uses the non-admin client).
+  /// Returns null when the report has no file or the URL cannot be signed.
+  Future<ReportFileRef?> getReportFileUrl(String reportId) async {
+    if (_userId == null) return null;
+    try {
+      final doc = await _supabase
+          .from('report_documents')
+          .select('file_path, file_mime, title')
+          .eq('id', reportId)
+          .maybeSingle();
+      final path = doc?['file_path'] as String?;
+      if (path == null || path.isEmpty) return null;
+      final url = await _supabase.storage
+          .from('reports')
+          .createSignedUrl(path, 300);
+      return ReportFileRef(
+        url: url,
+        mime: doc?['file_mime'] as String?,
+        title: doc?['title'] as String?,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Delete a report file + row + audit entry — mirrors web `deleteReport`
+  /// (reports.functions.ts). Client-doable via RLS (same non-admin client the
+  /// server fn uses). Throws on failure so the UI can surface an honest error;
+  /// if RLS blocks the delete this throws a [PostgrestException] rather than
+  /// silently succeeding.
+  Future<void> deleteReport(String reportId) async {
+    final userId = _userId;
+    if (userId == null) {
+      throw StateError('Sign in to delete reports.');
+    }
+
+    // Remove the storage object first (best-effort; row delete is the source
+    // of truth and is what RLS actually guards).
+    try {
+      final doc = await _supabase
+          .from('report_documents')
+          .select('file_path')
+          .eq('id', reportId)
+          .maybeSingle();
+      final path = doc?['file_path'] as String?;
+      if (path != null && path.isNotEmpty) {
+        await _supabase.storage.from('reports').remove([path]);
+      }
+    } catch (_) {
+      // Storage removal is non-fatal; proceed to delete the row.
+    }
+
+    await _supabase.from('report_documents').delete().eq('id', reportId);
+
+    // Best-effort PHI audit parity with the web fn. Never block delete on it.
+    try {
+      await _supabase.from('phi_access_log').insert({
+        'user_id': userId,
+        'actor_id': userId,
+        'action': 'delete',
+        'resource_type': 'report_document',
+        'resource_id': reportId,
+      });
+    } catch (_) {
+      // Audit insert is advisory; ignore RLS/schema differences.
+    }
   }
 
   Future<List<TrackedMetricSummary>> loadTrackedMetrics() async {
@@ -202,7 +301,8 @@ class ReportsRepository {
           .from('report_metrics')
           .select(
             'id, metric_key, display_name, value, value_text, unit, '
-            'reference_low, reference_high, flag, measured_at, report_id',
+            'reference_low, reference_high, flag, measured_at, report_id, '
+            'report_documents(title)',
           )
           .eq('metric_key', metricKey);
 
@@ -218,6 +318,31 @@ class ReportsRepository {
           .toList();
     } catch (_) {
       return const [];
+    }
+  }
+
+  /// One-shot fetch of every numeric reading grouped by `metric_key`, oldest
+  /// first — used to draw per-metric sparklines on the metrics grid without a
+  /// query per metric. Non-numeric rows are dropped by the caller.
+  Future<Map<String, List<ReportMetricRow>>> loadAllMetricSeries() async {
+    if (_userId == null) return const {};
+    try {
+      final response = await _supabase
+          .from('report_metrics')
+          .select(
+            'id, metric_key, display_name, value, value_text, unit, '
+            'reference_low, reference_high, flag, measured_at, report_id',
+          )
+          .order('measured_at', ascending: true);
+
+      final byKey = <String, List<ReportMetricRow>>{};
+      for (final map in (response as List).cast<Map<String, dynamic>>()) {
+        final row = ReportMetricRow.fromMap(map);
+        (byKey[row.metricKey] ??= []).add(row);
+      }
+      return byKey;
+    } catch (_) {
+      return const {};
     }
   }
 
@@ -294,4 +419,12 @@ final metricSeriesProvider = FutureProvider.autoDispose
     .family<List<ReportMetricRow>, String>((ref, metricKey) {
   ref.watch(authSessionProvider);
   return ref.watch(reportsRepositoryProvider).loadMetricSeries(metricKey);
+});
+
+/// All numeric metric series grouped by `metric_key`, for the metrics-grid
+/// sparklines. One query, cached for the grid's lifetime.
+final allMetricSeriesProvider = FutureProvider.autoDispose<
+    Map<String, List<ReportMetricRow>>>((ref) {
+  ref.watch(authSessionProvider);
+  return ref.watch(reportsRepositoryProvider).loadAllMetricSeries();
 });
