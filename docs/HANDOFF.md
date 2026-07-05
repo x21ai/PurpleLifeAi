@@ -9,16 +9,30 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign`**. TestFlight **1.0 (16) VALID**. Flutter **P0-8**
-`/care/inbox` landed: owner approval queue, filter chips, bulk approve/reject, wired through
-`CareRepository` + GoRouter. Incoming invite card scaffolded (RLS may hide invites until Worker
-API). Parallel WIP (reports refactor, marketing, chat) remains uncommitted on disk.
+Purple Life on **`lovable/redesign`**. TestFlight **1.0 (16) VALID**. Flutter **P0-6**
+meds schedule UX parity shipped (toolbar, 24h timeline, day nav, mobile FAB). **P0-8**
+`/care/inbox` landed. Parallel WIP (reports refactor, marketing) remains uncommitted on disk.
 
-**Next action:** P0-8 follow-up `/care/accept` deep link; device verify inbox on TF16/17.
+**Next action:** Device verify meds date nav + FAB on TF16/17; P0-8 `/care/accept` deep link.
 
 ---
 
 ## Log
+
+### 2026-07-05T14:12:00Z — P0-6 Flutter meds schedule UX parity
+
+- **Requested:** Meds toolbar, 24h timeline, FAB vs web `meds*.tsx`; scope
+  `flutter/lib/features/meds/` only; no fake doses; analyze + test; commit and push.
+- **Done:** `meds_screen.dart` — four-button toolbar (+/scan/voice/history), mobile FAB below
+  768px width, `medsScheduleProvider` with day navigation. `dose_list.dart` — prev/next day,
+  date picker, conditional now marker, adherence only on today. `meds_repository.dart` —
+  `todayStr`/`viewDateStr`, regenerate pending doses only when viewing today.
+  `test/meds_schedule_ux_test.dart` — 3 widget tests. Pushed `a9c4361`.
+- **Issues:** Scan/voice show web-only snackbar (no native capture). Commit also picked up
+  co-staged chat scaffold files from parallel disk WIP.
+- **Stand / next:** Native scan/voice med sheets; device verify schedule panel.
+- **Who / where:** Cursor subagent · darwin · lovable/redesign@a9c4361
+- **Timestamp:** 2026-07-05T14:12:00Z
 
 ### 2026-07-05T14:10:00Z — Flutter P0-8 care inbox route
 
