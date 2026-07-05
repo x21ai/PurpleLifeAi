@@ -9,17 +9,28 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign` @ `e19ee51`**. TestFlight **1.0 (16) VALID**. Flutter
-**`flutter analyze lib/`** clean; **`flutter test` 81/81**. Marketing routes wired at `/`,
-`/pricing`, `/privacy`, `/about`, `/trust` (public, outside signed-in shell); path URL
-strategy + SPA `:8765` fallback; curl **200** on `/` and `/pricing`.
+Purple Life on **`lovable/redesign`**. TestFlight **1.0 (17) VALID**. Flutter cutover gap
+matrix refreshed post-TF17 fleet: **23** signed-in gaps (22 Missing + 1 Stub), **32 Partial**,
+**0 Parity** of 55 `_app` routes. Fleet wired `/my-health`, `/biometrics`, `/care/inbox`,
+`/reports/*`, chat streaming, 5 marketing paths.
 
-**Next action:** Worker cutover for marketing on prod per `docs/FLUTTER-WEB-CUTOVER.md` when
-approved; optional public `/contact` route for marketing header.
+**Next action:** TF17 device sign-off on synced-data + chat; P0 OAuth console; Worker marketing
+cutover when approved.
 
 ---
 
 ## Log
+
+### 2026-07-05T14:36:00Z — Flutter cutover gap matrix post-TF17
+
+- **Requested:** Refresh `docs/FLUTTER-CUTOVER-GAP-MATRIX.md` route counts vs `router.dart` and
+  `src/routes/_app/`; update P0/P1/P2 for my-health, care, chat, reports, marketing; commit push.
+- **Done:** Full route audit; gap counts **Missing 22**, **Stub 1**, **Partial 32**, **Parity 0**
+  (total gaps 23, down from 33). P0/P1/P2 tables and Flutter inventory updated; TF17 ASC row.
+- **Issues:** Stage 5 still NO-GO; admin (13), insights, care.accept deep link remain Missing.
+- **Stand / next:** Device QA on TF17; Luciq crash triage; Oura console redirect.
+- **Who / where:** Cursor subagent · darwin · lovable/redesign
+- **Timestamp:** 2026-07-05T14:36:00Z
 
 ### 2026-07-05T14:10:00Z — Marketing GoRouter wire + path URLs + build 17
 
