@@ -1,5 +1,4 @@
-import 'dart:ui' as ui;
-
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,65 +8,96 @@ import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
-import '../shared/metric_constants.dart';
-import '../today/models/score_snapshot.dart';
+import 'biometric_metrics.dart';
 import 'vitals_repository.dart';
 
-/// Metadata for drilldown routes (`/biometrics/:metricKey` and `/vitals/metric/:metricKey`).
+/// Legacy lightweight metric metadata kept for backward compatibility with
+/// `vitals_screen.dart` (Wave-1). New code should use [BiometricMetricMeta]
+/// from `biometric_metrics.dart`.
 class MetricMeta {
-  const MetricMeta({
-    required this.key,
-    required this.label,
-    this.unit,
-  });
+  const MetricMeta({required this.key, required this.label, this.unit});
 
   final String key;
   final String label;
   final String? unit;
 }
 
-/// Valid metric keys mirroring web `METRIC_ORDER` subset surfaced on Vitals.
-const metricCatalog = <String, MetricMeta>{
-  'readiness': MetricMeta(
-    key: 'readiness',
-    label: MetricLabels.readinessScore,
-  ),
-  'sleep_score': MetricMeta(
-    key: 'sleep_score',
-    label: MetricLabels.sleepScore,
-  ),
-  'activity_score': MetricMeta(
-    key: 'activity_score',
-    label: MetricLabels.activityScore,
-  ),
-  'stress': MetricMeta(
-    key: 'stress',
-    label: MetricLabels.daytimeStress,
-  ),
-  'hrv': MetricMeta(
-    key: 'hrv',
-    label: MetricLabels.hrv,
-    unit: MetricUnits.ms,
-  ),
-  'resting_hr': MetricMeta(
-    key: 'resting_hr',
-    label: MetricLabels.restingHeartRate,
-    unit: MetricUnits.bpm,
-  ),
-  'spo2': MetricMeta(
-    key: 'spo2',
-    label: MetricLabels.spo2,
-    unit: MetricUnits.percent,
-  ),
-  'steps': MetricMeta(
-    key: 'steps',
-    label: MetricLabels.steps,
-  ),
-};
+/// Backward-compatible lookup: resolves any of the 18 ported metrics.
+///
+/// Previously only 8 keys resolved; widening this only enables more signals
+/// to open their detail page, which is the intended Wave-2 behavior.
+MetricMeta? metricMetaForKey(String key) {
+  final meta = biometricMetricForKey(key);
+  if (meta == null) return null;
+  return MetricMeta(key: meta.key, label: meta.label, unit: meta.unit);
+}
 
-MetricMeta? metricMetaForKey(String key) => metricCatalog[key];
+/// Legacy catalog view over the ported metrics (kept for compatibility).
+Map<String, MetricMeta> get metricCatalog => {
+      for (final key in metricOrder)
+        key: MetricMeta(
+          key: key,
+          label: biometricMetrics[key]!.label,
+          unit: biometricMetrics[key]!.unit,
+        ),
+    };
 
-/// Metric drilldown with range selector and trend chart.
+/// Resolve the Oura source line color (purple-primary token) at UI layer.
+Color sourceColorFor(SourceKey source) {
+  if (source == SourceKey.oura) {
+    return parseTokenColor(
+      PurpleTokens.loaded.colorsFor('dark').purplePrimary,
+    );
+  }
+  return sourceColors[source] ?? Colors.white;
+}
+
+/// Warning tone color from tokens (for "Pay attention" badges/bands).
+Color warningTokenColor() =>
+    parseTokenColor(PurpleTokens.loaded.colorsFor('dark').warning);
+
+/// Status badge shared by hub + detail.
+class StatusBadge extends StatelessWidget {
+  const StatusBadge({super.key, required this.meta, required this.status});
+
+  final BiometricMetricMeta meta;
+  final MetricStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = statusTone(meta, status);
+    late final Color bg;
+    late final Color fg;
+    switch (tone.tone) {
+      case StatusTone.warn:
+        final w = warningTokenColor();
+        bg = w.withValues(alpha: 0.15);
+        fg = w;
+      case StatusTone.good:
+        bg = Colors.white.withValues(alpha: 0.08);
+        fg = Colors.white.withValues(alpha: 0.85);
+      case StatusTone.neutral:
+        bg = Colors.white.withValues(alpha: 0.06);
+        fg = Colors.white.withValues(alpha: 0.55);
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        tone.label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: fg,
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+    );
+  }
+}
+
+/// Metric drilldown: baseline band, meaning, status, 5 ranges, compare overlay.
 class MetricDetailScreen extends ConsumerStatefulWidget {
   const MetricDetailScreen({super.key, required this.metricKey});
 
@@ -79,239 +109,502 @@ class MetricDetailScreen extends ConsumerStatefulWidget {
 
 class _MetricDetailScreenState extends ConsumerState<MetricDetailScreen> {
   int _rangeDays = 30;
-
-  static const _ranges = <int, String>{7: '7d', 30: '30d', 90: '90d'};
+  CompareMode _compare = CompareMode.previous;
 
   @override
   Widget build(BuildContext context) {
-    final meta = metricMetaForKey(widget.metricKey);
+    final meta = biometricMetricForKey(widget.metricKey);
     if (meta == null) {
       return _MetricNotFound(onBack: () => context.go(AppRoutes.biometrics));
     }
 
-    final snapshotAsync = ref.watch(vitalsSnapshotProvider);
-    final query = MetricTrendQuery(
+    final query = MetricSeriesQuery(
       metricKey: widget.metricKey,
       days: _rangeDays,
+      compareMode: _compare,
     );
-    final trendAsync = ref.watch(metricTrendProvider(query));
+    final seriesAsync = ref.watch(metricSeriesProvider(query));
     final muted = Colors.white.withValues(alpha: 0.55);
+    final rangeLabel = rangeOptions
+        .firstWhere((r) => r.days == _rangeDays, orElse: () => rangeOptions[2])
+        .label;
 
     return CanvasBackground(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.only(top: 24, bottom: 120),
-        child: ContentColumn(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextButton.icon(
-                onPressed: () => context.go(AppRoutes.biometrics),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                icon: Icon(Icons.arrow_back, size: 16, color: muted),
-                label: Text(
-                  'Biometrics',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: muted,
-                      ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              Text(
-                meta.label.toUpperCase(),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.45),
-                    ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                meta.label,
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      fontFamily: PurpleType.serif,
-                      fontSize: 44,
-                      height: 1.02,
-                      color: Colors.white.withValues(alpha: 0.95),
-                    ),
-              ),
-              const SizedBox(height: 20),
-              _RangeSelector(
-                ranges: _ranges,
-                selected: _rangeDays,
-                onSelected: (days) => setState(() => _rangeDays = days),
-              ),
-              const SizedBox(height: 24),
-              snapshotAsync.when(
-                loading: () => const GlassSurface(
-                  padding: EdgeInsets.all(24),
-                  child: Text('Loading latest reading…'),
-                ),
-                error: (_, __) => GlassSurface(
-                  borderRadius: 24,
-                  padding: const EdgeInsets.all(24),
-                  child: Text(
-                    'Could not load this metric right now. Pull to refresh and try again.',
+      child: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(metricSeriesProvider(query));
+          await ref.read(metricSeriesProvider(query).future);
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(top: 24, bottom: 120),
+          child: ContentColumn(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextButton.icon(
+                  onPressed: () => context.go(AppRoutes.biometrics),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  icon: Icon(Icons.arrow_back, size: 16, color: muted),
+                  label: Text(
+                    'Biometrics',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.7),
-                          height: 1.45,
+                          color: muted,
                         ),
                   ),
                 ),
-                data: (snap) {
-                  final value = _valueForMetric(snap, meta.key);
-                  final display = _formatValue(value);
-                  return GlassSurface(
+                const SizedBox(height: 32),
+                Text(
+                  categoryLabel[meta.category]!.toUpperCase(),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        letterSpacing: 1.2,
+                        color: Colors.white.withValues(alpha: 0.45),
+                      ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  meta.label,
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        fontFamily: PurpleType.serif,
+                        fontSize: 44,
+                        height: 1.02,
+                        color: Colors.white.withValues(alpha: 0.95),
+                      ),
+                ),
+                const SizedBox(height: 20),
+                _RangeSelector(
+                  selected: _rangeDays,
+                  onSelected: (days) => setState(() => _rangeDays = days),
+                ),
+                const SizedBox(height: 12),
+                _CompareSelector(
+                  selected: _compare,
+                  onSelected: (mode) => setState(() => _compare = mode),
+                ),
+                const SizedBox(height: 24),
+                seriesAsync.when(
+                  loading: () => const GlassSurface(
+                    padding: EdgeInsets.all(24),
+                    child: SizedBox(
+                      height: 120,
+                      child: Center(child: Text('Loading…')),
+                    ),
+                  ),
+                  error: (_, __) => GlassSurface(
                     borderRadius: 24,
                     padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Latest reading',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.55),
-                                  ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text.rich(
-                          TextSpan(
-                            text: display,
-                            style: Theme.of(context)
-                                .textTheme
-                                .displaySmall
-                                ?.copyWith(
-                                  fontFamily: PurpleType.serif,
-                                  fontSize: 56,
-                                  height: 1,
-                                  color: Colors.white.withValues(alpha: 0.95),
-                                ),
-                            children: meta.unit == null
-                                ? null
-                                : [
-                                    TextSpan(
-                                      text: ' ${meta.unit}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyLarge
-                                          ?.copyWith(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.55),
-                                          ),
-                                    ),
-                                  ],
+                    child: Text(
+                      'Could not load this metric right now. Pull to refresh and try again.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            height: 1.45,
                           ),
-                        ),
-                        if (snap.isFromCache) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            'Showing cached data (offline)',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
-                                ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.45),
-                                ),
-                          ),
-                        ],
-                        const SizedBox(height: 20),
-                        trendAsync.when(
-                          loading: () => const SizedBox(
-                            height: 160,
-                            child: Center(child: Text('Loading trend…')),
-                          ),
-                          error: (_, __) => const SizedBox.shrink(),
-                          data: (result) {
-                            final stats = result.stats;
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _StatsRow(stats: stats, unit: meta.unit),
-                                const SizedBox(height: 20),
-                                Text(
-                                  '${_ranges[_rangeDays]!.toUpperCase()} TREND',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
-                                      ?.copyWith(
-                                        letterSpacing: 1.2,
-                                        color:
-                                            Colors.white.withValues(alpha: 0.45),
-                                      ),
-                                ),
-                                const SizedBox(height: 12),
-                                SizedBox(
-                                  height: 160,
-                                  width: double.infinity,
-                                  child: result.points
-                                          .map((p) => p.value)
-                                          .whereType<double>()
-                                          .length <
-                                      2
-                                      ? Text(
-                                          'Not enough history yet for a ${_ranges[_rangeDays]} trend.',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium
-                                              ?.copyWith(
-                                                color: Colors.white
-                                                    .withValues(alpha: 0.7),
-                                                height: 1.45,
-                                              ),
-                                        )
-                                      : _MetricTrendChart(
-                                          points: result.points,
-                                          rangeDays: _rangeDays,
-                                        ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ],
                     ),
-                  );
-                },
-              ),
-            ],
+                  ),
+                  data: (result) => _DetailBody(
+                    meta: meta,
+                    result: result,
+                    rangeLabel: rangeLabel,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
 
-  String _formatValue(double? value) {
-    if (value == null) return '–';
-    if (value == value.roundToDouble()) return value.round().toString();
-    return value.toStringAsFixed(1);
+class _DetailBody extends StatelessWidget {
+  const _DetailBody({
+    required this.meta,
+    required this.result,
+    required this.rangeLabel,
+  });
+
+  final BiometricMetricMeta meta;
+  final MetricSeriesResult result;
+  final String rangeLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final present = result.presentSources;
+    final hasData = present.isNotEmpty;
+    final display = meta.format(result.headlineValue);
+    final tone = statusTone(meta, result.status);
+    final headlineColor = tone.tone == StatusTone.warn
+        ? warningTokenColor()
+        : Colors.white.withValues(alpha: 0.95);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GlassSurface(
+          borderRadius: 24,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Latest reading',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.55),
+                        ),
+                  ),
+                  const Spacer(),
+                  StatusBadge(meta: meta, status: result.status),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                display,
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      fontFamily: PurpleType.serif,
+                      fontSize: 56,
+                      height: 1,
+                      color: headlineColor,
+                    ),
+              ),
+              if (result.headlineSource != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'via ${sourceLabels[result.headlineSource]}',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.45),
+                      ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              if (!hasData)
+                Text(
+                  'No readings in this range yet.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        height: 1.45,
+                      ),
+                )
+              else ...[
+                Row(
+                  children: [
+                    Text(
+                      '${rangeLabel.toUpperCase()} TREND',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            letterSpacing: 1.2,
+                            color: Colors.white.withValues(alpha: 0.45),
+                          ),
+                    ),
+                    const Spacer(),
+                    if (result.deltaPct != null) _DeltaPill(delta: result.deltaPct!),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 180,
+                  width: double.infinity,
+                  child: _totalPointCount(result) < 2
+                      ? Center(
+                          child: Text(
+                            'Not enough history yet for a $rangeLabel trend.',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                  height: 1.45,
+                                ),
+                          ),
+                        )
+                      : _MetricChart(meta: meta, result: result),
+                ),
+                const SizedBox(height: 16),
+                SourceLegend(sources: present),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        GlassSurface(
+          borderRadius: 24,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'What this means for you',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.92),
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                meta.meaning,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      height: 1.5,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  meta.baselineHint,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        height: 1.45,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
-  double? _valueForMetric(ScoreSnapshot snap, String key) {
-    return switch (key) {
-      'readiness' => snap.readiness,
-      'sleep_score' => snap.sleepScore,
-      'activity_score' => snap.activity,
-      'stress' => snap.stress,
-      'hrv' => snap.hrvMs,
-      'resting_hr' => snap.restingHr,
-      'spo2' => snap.spo2,
-      'steps' => snap.steps,
-      _ => null,
-    };
+  int _totalPointCount(MetricSeriesResult result) => result.seriesBySource.values
+      .fold(0, (sum, list) => sum + list.where((p) => p.value != null).length);
+}
+
+class _DeltaPill extends StatelessWidget {
+  const _DeltaPill({required this.delta});
+
+  final double delta;
+
+  @override
+  Widget build(BuildContext context) {
+    final up = delta >= 0;
+    final sign = up ? '+' : '';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            up ? Icons.arrow_upward : Icons.arrow_downward,
+            size: 11,
+            color: Colors.white.withValues(alpha: 0.7),
+          ),
+          const SizedBox(width: 3),
+          Text(
+            '$sign${delta.toStringAsFixed(0)}%',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.75),
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// fl_chart line chart: one line per source + baseline ±1σ reference band.
+class _MetricChart extends StatelessWidget {
+  const _MetricChart({required this.meta, required this.result});
+
+  final BiometricMetricMeta meta;
+  final MetricSeriesResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    // Build a unified x-axis of yyyy-mm-dd across all present sources, sorted.
+    final dates = <String>{};
+    for (final series in result.seriesBySource.values) {
+      for (final p in series) {
+        if (p.value != null) dates.add(p.dateYmd);
+      }
+    }
+    final sortedDates = dates.toList()..sort();
+    final xIndex = {for (var i = 0; i < sortedDates.length; i++) sortedDates[i]: i};
+
+    final lineBars = <LineChartBarData>[];
+    var minY = double.infinity;
+    var maxY = -double.infinity;
+
+    for (final source in result.presentSources) {
+      final series = result.seriesBySource[source]!;
+      final spots = <FlSpot>[];
+      for (final p in series) {
+        final v = p.value;
+        final xi = xIndex[p.dateYmd];
+        if (v == null || xi == null) continue;
+        spots.add(FlSpot(xi.toDouble(), v));
+        if (v < minY) minY = v;
+        if (v > maxY) maxY = v;
+      }
+      if (spots.isEmpty) continue;
+      spots.sort((a, b) => a.x.compareTo(b.x));
+      final color = sourceColorFor(source);
+      lineBars.add(
+        LineChartBarData(
+          spots: spots,
+          isCurved: true,
+          curveSmoothness: 0.25,
+          color: color,
+          barWidth: 2.5,
+          isStrokeCapRound: true,
+          dotData: FlDotData(
+            show: result.days <= 30,
+            getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+              radius: 2.5,
+              color: color,
+              strokeWidth: 0,
+            ),
+          ),
+          belowBarData: BarAreaData(show: false),
+        ),
+      );
+    }
+
+    // Baseline ±1σ reference band (§3).
+    final mean = result.baseline.mean;
+    final stddev = result.baseline.stddev;
+    ExtraLinesData? extraLines;
+    if (mean != null && stddev != null) {
+      final sd = stddev < mean * 0.05 ? mean * 0.05 : stddev;
+      final lo = mean - sd;
+      final hi = mean + sd;
+      if (lo < minY) minY = lo;
+      if (hi > maxY) maxY = hi;
+      extraLines = ExtraLinesData(
+        horizontalLines: [
+          HorizontalLine(
+            y: mean,
+            color: Colors.white.withValues(alpha: 0.25),
+            strokeWidth: 1,
+            dashArray: [4, 4],
+          ),
+          HorizontalLine(
+            y: hi,
+            color: Colors.white.withValues(alpha: 0.12),
+            strokeWidth: 1,
+          ),
+          HorizontalLine(
+            y: lo,
+            color: Colors.white.withValues(alpha: 0.12),
+            strokeWidth: 1,
+          ),
+        ],
+      );
+    }
+
+    if (!minY.isFinite || !maxY.isFinite) {
+      return const SizedBox.shrink();
+    }
+    final span = (maxY - minY).abs() < 0.001 ? 1.0 : (maxY - minY);
+    final pad = span * 0.12;
+
+    return LineChart(
+      LineChartData(
+        minY: minY - pad,
+        maxY: maxY + pad,
+        minX: 0,
+        maxX: (sortedDates.length - 1).toDouble().clamp(1, double.infinity),
+        clipData: const FlClipData.all(),
+        gridData: const FlGridData(show: false),
+        borderData: FlBorderData(show: false),
+        extraLinesData: extraLines,
+        titlesData: FlTitlesData(
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 20,
+              interval: (sortedDates.length - 1)
+                  .toDouble()
+                  .clamp(1, double.infinity),
+              getTitlesWidget: (value, _) {
+                final i = value.round();
+                if (i < 0 || i >= sortedDates.length) {
+                  return const SizedBox.shrink();
+                }
+                if (i != 0 && i != sortedDates.length - 1) {
+                  return const SizedBox.shrink();
+                }
+                final d = DateTime.tryParse(sortedDates[i]);
+                return Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    d == null ? '' : DateFormat.MMMd().format(d),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.4),
+                      fontSize: 10,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        lineTouchData: const LineTouchData(enabled: false),
+        lineBarsData: lineBars,
+      ),
+    );
+  }
+}
+
+/// Source color legend.
+class SourceLegend extends StatelessWidget {
+  const SourceLegend({super.key, required this.sources});
+
+  final List<SourceKey> sources;
+
+  @override
+  Widget build(BuildContext context) {
+    if (sources.isEmpty) return const SizedBox.shrink();
+    return Wrap(
+      spacing: 16,
+      runSpacing: 8,
+      children: [
+        for (final s in sources)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 10,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: sourceColorFor(s),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                sourceLabels[s]!,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.55),
+                    ),
+              ),
+            ],
+          ),
+      ],
+    );
   }
 }
 
 class _RangeSelector extends StatelessWidget {
-  const _RangeSelector({
-    required this.ranges,
-    required this.selected,
-    required this.onSelected,
-  });
+  const _RangeSelector({required this.selected, required this.onSelected});
 
-  final Map<int, String> ranges;
   final int selected;
   final ValueChanged<int> onSelected;
 
@@ -321,236 +614,91 @@ class _RangeSelector extends StatelessWidget {
       PurpleTokens.loaded.colorsFor('dark').purplePrimary,
     );
 
-    return Row(
+    return Wrap(
+      spacing: 8,
       children: [
-        for (final entry in ranges.entries) ...[
-          if (entry.key != ranges.keys.first) const SizedBox(width: 8),
-          Material(
-            color: selected == entry.key
-                ? purple.withValues(alpha: 0.2)
-                : Colors.white.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(999),
-            child: InkWell(
-              onTap: () => onSelected(entry.key),
-              borderRadius: BorderRadius.circular(999),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text(
-                  entry.value,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: selected == entry.key
-                            ? Colors.white.withValues(alpha: 0.95)
-                            : Colors.white.withValues(alpha: 0.55),
-                        fontWeight: selected == entry.key
-                            ? FontWeight.w600
-                            : FontWeight.w500,
-                      ),
-                ),
+        for (final option in rangeOptions)
+          _Pill(
+            label: option.label,
+            selected: selected == option.days,
+            activeColor: purple,
+            onTap: () => onSelected(option.days),
+          ),
+      ],
+    );
+  }
+}
+
+class _CompareSelector extends StatelessWidget {
+  const _CompareSelector({required this.selected, required this.onSelected});
+
+  final CompareMode selected;
+  final ValueChanged<CompareMode> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final purple = parseTokenColor(
+      PurpleTokens.loaded.colorsFor('dark').purplePrimary,
+    );
+    return Wrap(
+      spacing: 8,
+      children: [
+        for (final mode in CompareMode.values)
+          _Pill(
+            label: compareModeLabel(mode),
+            selected: selected == mode,
+            activeColor: purple,
+            onTap: () => onSelected(mode),
+          ),
+      ],
+    );
+  }
+}
+
+class _Pill extends StatelessWidget {
+  const _Pill({
+    required this.label,
+    required this.selected,
+    required this.activeColor,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final Color activeColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected
+          ? activeColor.withValues(alpha: 0.2)
+          : Colors.white.withValues(alpha: 0.06),
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 36),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Center(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: selected
+                          ? Colors.white.withValues(alpha: 0.95)
+                          : Colors.white.withValues(alpha: 0.55),
+                      fontWeight:
+                          selected ? FontWeight.w600 : FontWeight.w500,
+                    ),
               ),
             ),
           ),
-        ],
-      ],
+        ),
+      ),
     );
   }
-}
-
-class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.stats, this.unit});
-
-  final MetricTrendStats stats;
-  final String? unit;
-
-  @override
-  Widget build(BuildContext context) {
-    final labelStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: Colors.white.withValues(alpha: 0.45),
-        );
-    final valueStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
-          color: Colors.white.withValues(alpha: 0.92),
-          fontWeight: FontWeight.w600,
-        );
-
-    String fmt(double? v) {
-      if (v == null) return '–';
-      final rounded = v == v.roundToDouble()
-          ? v.round().toString()
-          : v.toStringAsFixed(1);
-      return unit == null ? rounded : '$rounded $unit';
-    }
-
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Average', style: labelStyle),
-              const SizedBox(height: 4),
-              Text(fmt(stats.mean), style: valueStyle),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Days with data', style: labelStyle),
-              const SizedBox(height: 4),
-              Text('${stats.dayCount}', style: valueStyle),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Readings', style: labelStyle),
-              const SizedBox(height: 4),
-              Text('${stats.count}', style: valueStyle),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MetricTrendChart extends StatelessWidget {
-  const _MetricTrendChart({
-    required this.points,
-    required this.rangeDays,
-  });
-
-  final List<MetricDayPoint> points;
-  final int rangeDays;
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _TrendPainter(points: points, rangeDays: rangeDays),
-      child: const SizedBox.expand(),
-    );
-  }
-}
-
-class _TrendPainter extends CustomPainter {
-  _TrendPainter({required this.points, required this.rangeDays});
-
-  final List<MetricDayPoint> points;
-  final int rangeDays;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final values = points.map((p) => p.value).whereType<double>().toList();
-    if (values.length < 2) return;
-
-    final min = values.reduce((a, b) => a < b ? a : b);
-    final max = values.reduce((a, b) => a > b ? a : b);
-    final range = (max - min).abs() < 0.001 ? 1.0 : (max - min);
-
-    final linePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.85)
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final dotPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.9)
-      ..style = PaintingStyle.fill;
-
-    final fillPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Colors.white.withValues(alpha: 0.22),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final path = Path();
-    final fill = Path();
-    var started = false;
-    final coords = <Offset>[];
-
-    for (var i = 0; i < points.length; i++) {
-      final value = points[i].value;
-      if (value == null) continue;
-      final x = points.length == 1
-          ? size.width / 2
-          : i / (points.length - 1) * size.width;
-      final y = size.height - ((value - min) / range) * (size.height - 12) - 6;
-      final offset = Offset(x, y);
-      coords.add(offset);
-      if (!started) {
-        path.moveTo(x, y);
-        fill.moveTo(x, size.height);
-        fill.lineTo(x, y);
-        started = true;
-      } else {
-        path.lineTo(x, y);
-        fill.lineTo(x, y);
-      }
-    }
-
-    if (!started) return;
-    fill.lineTo(coords.last.dx, size.height);
-    fill.close();
-    canvas.drawPath(fill, fillPaint);
-    canvas.drawPath(path, linePaint);
-
-    if (rangeDays <= 30) {
-      for (final c in coords) {
-        canvas.drawCircle(c, 3, dotPaint);
-      }
-    }
-
-    final labelPaint = TextPainter(
-      textDirection: ui.TextDirection.ltr,
-    );
-    if (points.isNotEmpty) {
-      final first = points.first.dateYmd;
-      final last = points.last.dateYmd;
-      labelPaint.text = TextSpan(
-        text: _shortDate(first),
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.4),
-          fontSize: 10,
-        ),
-      );
-      labelPaint.layout();
-      labelPaint.paint(canvas, Offset(0, size.height - 14));
-
-      labelPaint.text = TextSpan(
-        text: _shortDate(last),
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.4),
-          fontSize: 10,
-        ),
-      );
-      labelPaint.layout();
-      labelPaint.paint(
-        canvas,
-        Offset(size.width - labelPaint.width, size.height - 14),
-      );
-    }
-  }
-
-  String _shortDate(String ymd) {
-    try {
-      final d = DateTime.parse(ymd);
-      return DateFormat.MMMd().format(d);
-    } catch (_) {
-      return ymd;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _TrendPainter oldDelegate) =>
-      oldDelegate.points != points || oldDelegate.rangeDays != rangeDays;
 }
 
 class _MetricNotFound extends StatelessWidget {
