@@ -7,6 +7,7 @@ import '../features/auth/welcome_screen.dart';
 import '../features/care/care_accept_screen.dart';
 import '../features/care/care_dashboard_screen.dart';
 import '../features/care/care_index_screen.dart';
+import '../features/care/care_report_screen.dart';
 import '../features/care/care_inbox_screen.dart';
 import '../features/chat/chat_screen.dart';
 import '../features/journal/journal_capture_screen.dart';
@@ -267,6 +268,20 @@ final routerProvider = Provider<GoRouter>((ref) {
               final ownerId = state.pathParameters['ownerId'] ?? '';
               return CareDashboardScreen(ownerId: ownerId);
             },
+            routes: [
+              GoRoute(
+                path: 'reports/:reportId',
+                name: 'care-report',
+                builder: (context, state) {
+                  final ownerId = state.pathParameters['ownerId'] ?? '';
+                  final reportId = state.pathParameters['reportId'] ?? '';
+                  return CareReportScreen(
+                    ownerId: ownerId,
+                    reportId: reportId,
+                  );
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: AppRoutes.settingsSharing,

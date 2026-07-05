@@ -465,10 +465,16 @@ class _ToolbarActions extends StatelessWidget {
             ),
             IconButton(
               onPressed: () {
+                // Caregiver biometric logging on the owner's behalf is a
+                // scope-audited server write (web `addBiometric` /
+                // AddBiometricSheet) with no Flutter-callable route yet.
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Add biometric integration point'),
-                    duration: Duration(seconds: 1),
+                    content: Text(
+                      'Logging on their behalf is being enabled. '
+                      'Use the Purple web app for now.',
+                    ),
+                    duration: Duration(seconds: 3),
                   ),
                 );
               },
@@ -493,48 +499,81 @@ class _TabPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     switch (tab) {
       case CareTabKey.biometrics:
-        return _BiometricsPlaceholder(ownerId: ownerId);
+        // Genuinely reachable client-side today via `careBiometricsProvider`
+        // (direct RLS-safe read of the owner's `biometrics` rows).
+        return _BiometricsTab(ownerId: ownerId);
       case CareTabKey.today:
-        return const _ComingSoonPanel(
-          title: 'Today',
-          body: 'Risk forecast and active alerts will appear here.',
+        return const _CaregiverAccessGate(
+          eyebrow: 'Today',
+          feature: "their risk forecast and alerts",
         );
       case CareTabKey.meds:
-        return const _ComingSoonPanel(
-          title: 'Meds',
-          body: 'Today doses and medication list will appear here.',
+        return const _CaregiverAccessGate(
+          eyebrow: 'Meds',
+          feature: "their medications and today's doses",
         );
       case CareTabKey.hydration:
-        return const _ComingSoonPanel(
-          title: 'Hydration',
-          body: 'Hydration timeline will appear here.',
+        return const _CaregiverAccessGate(
+          eyebrow: 'Hydration',
+          feature: "their hydration timeline",
         );
       case CareTabKey.journal:
-        return const _ComingSoonPanel(
-          title: 'Journal',
-          body: 'Recent journal entries will appear here.',
+        return const _CaregiverAccessGate(
+          eyebrow: 'Journal',
+          feature: 'their recent journal entries',
         );
       case CareTabKey.seizures:
-        return const _ComingSoonPanel(
-          title: 'Seizures',
-          body: 'Seizure events will appear here.',
+        return const _CaregiverAccessGate(
+          eyebrow: 'Seizures',
+          feature: 'their seizure log',
         );
       case CareTabKey.reports:
-        return const _ComingSoonPanel(
-          title: 'Reports',
-          body: 'Lab reports will appear here.',
+        return const _CaregiverAccessGate(
+          eyebrow: 'Reports',
+          feature: 'their lab reports',
         );
       case CareTabKey.chat:
-        return const _ComingSoonPanel(
-          title: 'Chat',
-          body: 'Direct chat with them will appear here.',
+        return const _CaregiverAccessGate(
+          eyebrow: 'Chat',
+          feature: 'a private message thread with them',
         );
     }
   }
 }
 
-class _BiometricsPlaceholder extends ConsumerWidget {
-  const _BiometricsPlaceholder({required this.ownerId});
+/// Definition of a wearable metric fetched by `loadOwnerBiometrics`.
+class _BioMetric {
+  const _BioMetric({
+    required this.column,
+    required this.label,
+    this.unit,
+  });
+
+  final String column;
+  final String label;
+  final String? unit;
+}
+
+/// Metrics that map to the columns `CareRepository.loadOwnerBiometrics`
+/// actually selects. Kept in sync with that select list so we never render a
+/// tile with no backing data.
+const _bioMetrics = <_BioMetric>[
+  _BioMetric(column: 'oura_readiness_score', label: 'Readiness'),
+  _BioMetric(column: 'sleep_score', label: 'Sleep'),
+  _BioMetric(column: 'oura_activity_score', label: 'Activity'),
+  _BioMetric(column: 'hrv_rmssd_ms', label: 'HRV', unit: 'ms'),
+  _BioMetric(column: 'resting_hr_bpm', label: 'Resting HR', unit: 'bpm'),
+  _BioMetric(column: 'steps', label: 'Steps'),
+];
+
+/// Biometrics tab — the one caregiver-scoped read that is genuinely reachable
+/// client-side today (RLS-safe direct read of the owner's `biometrics`).
+///
+/// Improvement over the prior placeholder: renders one card per metric with
+/// the latest value, its date, and the 30-day range, instead of repeating the
+/// readiness score across eight identical tiles.
+class _BiometricsTab extends ConsumerWidget {
+  const _BiometricsTab({required this.ownerId});
 
   final String ownerId;
 
@@ -543,7 +582,8 @@ class _BiometricsPlaceholder extends ConsumerWidget {
     final biometricsAsync = ref.watch(careBiometricsProvider(ownerId));
 
     return biometricsAsync.when(
-      loading: () => const LoadingSkeleton(sectionTitle: 'Biometrics', tileCount: 4),
+      loading: () =>
+          const LoadingSkeleton(sectionTitle: 'Biometrics', tileCount: 4),
       error: (_, __) => const EmptyState(
         eyebrow: 'Biometrics',
         title: 'No biometrics yet',
@@ -551,9 +591,10 @@ class _BiometricsPlaceholder extends ConsumerWidget {
       ),
       data: (snapshot) {
         if (!snapshot.scopeGranted) {
-          return const _ComingSoonPanel(
-            title: 'Biometrics',
-            body: 'You do not have biometrics read access for this person.',
+          return const _CaregiverAccessGate(
+            eyebrow: 'Biometrics',
+            feature: 'their biometrics',
+            noScope: true,
           );
         }
 
@@ -565,6 +606,9 @@ class _BiometricsPlaceholder extends ConsumerWidget {
                 'Once a wearable is connected, the last 30 days appear here.',
           );
         }
+
+        final width = MediaQuery.sizeOf(context).width;
+        final columns = width < 400 ? 2 : (width < 700 ? 2 : 3);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,43 +623,28 @@ class _BiometricsPlaceholder extends ConsumerWidget {
                       ),
                 ),
               ),
+            Text(
+              'Last 30 days',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    letterSpacing: 1.1,
+                    color: Colors.white.withValues(alpha: 0.45),
+                  ),
+            ),
+            const SizedBox(height: 12),
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: columns,
                 mainAxisSpacing: 8,
                 crossAxisSpacing: 8,
-                childAspectRatio: 1.5,
+                childAspectRatio: 1.4,
               ),
-              itemCount: snapshot.rows.length.clamp(0, 8),
+              itemCount: _bioMetrics.length,
               itemBuilder: (context, index) {
-                final row = snapshot.rows[snapshot.rows.length - 1 - index];
-                final recordedAt = row['recorded_at'] as String?;
-                final readiness = row['oura_readiness_score'];
-                return GlassCard(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Readiness',
-                        style: Theme.of(context).textTheme.labelSmall,
-                      ),
-                      const Spacer(),
-                      Text(
-                        readiness?.toString() ?? '–',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.95),
-                            ),
-                      ),
-                      if (recordedAt != null)
-                        Text(
-                          recordedAt.split('T').first,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                    ],
-                  ),
+                return _BiometricMetricCard(
+                  metric: _bioMetrics[index],
+                  rows: snapshot.rows,
                 );
               },
             ),
@@ -626,34 +655,133 @@ class _BiometricsPlaceholder extends ConsumerWidget {
   }
 }
 
-class _ComingSoonPanel extends StatelessWidget {
-  const _ComingSoonPanel({required this.title, required this.body});
+class _BiometricMetricCard extends StatelessWidget {
+  const _BiometricMetricCard({required this.metric, required this.rows});
 
-  final String title;
-  final String body;
+  final _BioMetric metric;
+  final List<Map<String, dynamic>> rows;
+
+  double? _numeric(Object? raw) {
+    if (raw is num) return raw.toDouble();
+    if (raw is String) return double.tryParse(raw);
+    return null;
+  }
+
+  String _fmt(double value) => value.round().toString();
 
   @override
   Widget build(BuildContext context) {
+    // rows arrive ascending by recorded_at; walk backwards for latest non-null.
+    double? latest;
+    String? latestDate;
+    double? min;
+    double? max;
+
+    for (var i = rows.length - 1; i >= 0; i--) {
+      final value = _numeric(rows[i][metric.column]);
+      if (value == null) continue;
+      latest ??= value;
+      latestDate ??= (rows[i]['recorded_at'] as String?)?.split('T').first;
+      min = (min == null || value < min) ? value : min;
+      max = (max == null || value > max) ? value : max;
+    }
+
+    final valueText = latest != null
+        ? '${_fmt(latest)}${metric.unit != null ? ' ${metric.unit}' : ''}'
+        : '–';
+    final hasData = latest != null;
+
     return GlassCard(
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            metric.label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.6),
+                ),
+          ),
+          const Spacer(),
+          Text(
+            valueText,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: Colors.white.withValues(alpha: 0.95),
                   fontFamily: PurpleType.serif,
                 ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            body,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.65),
-                ),
-          ),
+          const SizedBox(height: 4),
+          if (hasData && min != null && max != null && min != max)
+            Text(
+              'Range ${_fmt(min)}–${_fmt(max)}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
+            )
+          else if (latestDate != null)
+            Text(
+              latestDate,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
+            )
+          else
+            Text(
+              'No readings',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.4),
+                  ),
+            ),
         ],
       ),
+    );
+  }
+}
+
+/// Honest gap state for caregiver-scoped tabs whose data is not reachable from
+/// Flutter today. The web versions read through scope-guarded server functions
+/// (`caregiverReadToday/Meds/Journal/Seizures/Reports`, hydration/aura reads,
+/// and the care-chat thread fn) that run on `supabaseAdmin` behind
+/// `assertScope`. Flutter has no server-fn client and RLS blocks a caregiver
+/// from reading another user's rows directly, so we cannot honestly populate
+/// these here without a server route. No fabricated data, no RLS bypass.
+class _CaregiverAccessGate extends StatelessWidget {
+  const _CaregiverAccessGate({
+    required this.eyebrow,
+    required this.feature,
+    this.noScope = false,
+  });
+
+  final String eyebrow;
+
+  /// Human phrase for what would appear, e.g. "their medications".
+  final String feature;
+
+  /// When true, the caregiver simply lacks the read scope (a permissions
+  /// message) rather than the feature being backend-blocked.
+  final bool noScope;
+
+  @override
+  Widget build(BuildContext context) {
+    if (noScope) {
+      return EmptyState(
+        eyebrow: eyebrow,
+        title: 'No access to $feature',
+        body:
+            'You do not have read access for this. Ask them to grant it in '
+            'Settings, Sharing.',
+      );
+    }
+
+    return EmptyState(
+      eyebrow: eyebrow,
+      title: 'Caregiver access is being enabled',
+      body:
+          'Securely showing $feature here needs scope-checked access with '
+          'privacy auditing. That access is being turned on. In the meantime, '
+          'you can view it on the Purple web app.',
     );
   }
 }
