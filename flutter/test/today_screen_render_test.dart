@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:purple_app/features/meds/meds_repository.dart';
 import 'package:purple_app/features/today/models/score_snapshot.dart';
 import 'package:purple_app/features/today/models/today_data.dart';
@@ -25,11 +26,14 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
+    final todayYmd = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           todayDataProvider.overrideWith((ref) => Future.value(data)),
-          medsForDayProvider('2026-07-04').overrideWith((ref) => Future.value(meds)),
+          medsForDayProvider(todayYmd)
+              .overrideWith((ref) => Future.value(meds)),
         ],
         child: const MaterialApp(home: Scaffold(body: TodayScreen())),
       ),

@@ -1,6 +1,18 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~07:45 ET (morning verdict).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~07:50 ET (compile gates restored).
+
+## Morning compile fix (2026-07-05 ~07:50 ET) — gates green
+
+**Fix:** Restored `tools_screen.dart` class structure (missing `_pollOuraBackfill` brace), `health_providers.dart` import on `apple_health_panel.dart`, `WearableOAuthListener` in `app.dart`, closed `wearable_oauth_test.dart` group, dynamic `medsForDayProvider` date in `today_screen_render_test.dart`.
+
+| Gate | Status |
+|------|--------|
+| `flutter analyze lib/` | **PASS** (0 issues) |
+| `flutter test` | **44/44 PASS** |
+| `curl :8765` | **200** after `./scripts/flutter-web-serve.sh --rebuild` |
+
+**WIP preserved:** Oura OAuth deep link, inline Tools errors, Apple Health panel hardening, Worker CORS for Flutter web (`src/lib/flutter-api-cors.ts`).
 
 ## Morning verdict (2026-07-05 ~07:45 ET) — NOT all done
 
@@ -11,7 +23,7 @@ Operational state of the PurpleLife project for the next agent or engineer. Last
 | Settings fixed? | **Partial, not on TF13** | `563f7c2` landed hub modules, contact/privacy/how-purple-thinks, data export, Account theme+invite. Verify-fleet Cycle 3: Settings hub PASS. Travel mode still placeholder; `#/account` redirects to Today. **TF13 predates `563f7c2`** (uploaded Jul 4 20:09 PT). |
 | Apple Health connect on TF13/14? | **NO** | User reported TF13 still fails. Health fix agents (`d053`, `df80`) never finished; WIP in `health_service.dart` / `apple_health_panel.dart` uncommitted. No TF14 upload. |
 | Oura connect? | **Web yes, native fixed in WIP** | Verify-fleet Cycle 3: Oura connected on `:8765`. Native OAuth: `wearable_oauth.dart` + `tools_screen.dart` compile fixed; `org.purplelife.app://oauth-oura-callback` deep link + inline Tools errors; `wearable_oauth_test` 10/10 PASS. TF14 pending upload. |
-| Gates (this morning) | **OAuth slice green** | `flutter analyze` on wearable_oauth/tools_screen/app: **0 issues**. `wearable_oauth_test`: **10/10 PASS**. Full `lib/` may still have other WIP errors outside this slice. |
+| Gates (this morning) | **Green** | `flutter analyze lib/`: **0 issues**. `flutter test`: **44/44 PASS**. `:8765` **200**. |
 | Phase 5 cutover | **NO-GO** | Account broken, Apple Health not fixed on device, incomplete agent fleet, compile red on WIP. |
 
 **Completed overnight agents:** Settings round 2 (`563f7c2`, pushed); verify-fleet 3 cycles (docs updated).

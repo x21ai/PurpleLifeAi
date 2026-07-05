@@ -271,4 +271,41 @@ Automated re-check after parallel agents may have landed. Method: 15 min initial
 
 **Cycle 2 verdict:** Gates unchanged green; no new agent regressions in analyze/test. Tools route navigation flaky on second pass (P0 carry-over). **NO-GO** unchanged.
 
-### Cycle 3 — pending
+### Cycle 3 — 2026-07-05 ~23:22 ET (verify-fleet final, parent agent)
+
+| Check | Result |
+|-------|--------|
+| `./scripts/flutter-web-serve.sh --rebuild` | **PASS** — server was **DOWN** between cycles; rebuild restored `:8765` **200** |
+| `flutter analyze lib/` | **PASS** (0 issues; prior ~23:05 pass had 3 health-slice lints, now clean) |
+| `flutter test` | **PASS** (**34/34**, up from 27/27) |
+| `curl http://127.0.0.1:8765/` | **200** |
+| `bun run ios:check-asc-builds` | **PASS** — **1.0 (11)**, **1.0 (12)**, **1.0 (13)** all `processing=VALID` |
+
+**Account:** `pmt@eigital.com` cached session on Flutter `:8765`. **Viewport:** ~390px (Cursor browser MCP).
+
+| Route / flow | Flutter `:8765` | Web prod | Parity | Notes |
+|--------------|-----------------|----------|--------|-------|
+| **Sign-in / session** | PASS | PASS | OK | Cached session both sides; no re-auth needed. |
+| **Today** `#/today` | PASS | PASS | **Partial** | Same narrative + Crestor/asprin doses. Flutter hero **87 / 82 / 58**; prod hero **– / – / –** but signals HRV 26.56 ms, RHR 67, SpO₂ 95.5%. |
+| **Vitals** `#/vitals` | PASS | PASS (`/my-health`) | **Partial** | Flutter: Readiness **LATEST**, Symptom Radar **NO DATA**, sync bar. Prod My Body: 90-day narrative, Sleep/Stress/Heart tiles, Advisor CTA. Bottom nav differs (Flutter Vitals/Meds vs prod My Body/Patterns). |
+| **Meds** `#/meds` | PASS | PASS | **Partial** | Same headline, 63%, 5/8 logged, Crestor 10:00 + asprin 16:00 Taken/Undo. Prod adds add-med/scan/voice row, on-time streak, all-meds list, export. |
+| **Journal** `#/journal` | PASS | PASS | **Good** | Light canvas, Active tab, Tue May 26 2026 entry, + New entry FAB on both. |
+| **Settings** `#/settings` | PASS | PASS | **Partial** | Hub cards + "All in your control." match. Prod scroll shows Lab reports, Sharing, Travel, Add past history below hub; Flutter hub-only verified (MCP scroll still blocked on canvas). |
+| **Tools** `#/tools` | PASS | PASS | **Partial** | Oura connected (16d), Whoop connected (3 min), Sync/Disconnect + auto-sync on both. Prod adds 90-day summary lines + Apple Health HAE Test/Disconnect panel; Flutter web shows iOS-app + HAE URL guidance card. |
+| **Account** `#/account` | **Broken** | PASS | **Gap** | Hash nav to `#/account` **redirects to `#/today`** (screenshot confirms Today, not profile form). Prod Account: email, photo upload, 2FA, locale, appearance. |
+| **Care** `#/care` | PASS | (not opened) | **Partial** | Flutter empty state "No caregivers yet" + Invite caregiver. Prod sharing tree not re-opened this cycle. |
+| **Burger / endDrawer** | **Partial** | (not opened) | **Unverified** | Hamburger visible; coordinate clicks hit Sync tooltip, drawer never opened in MCP. Hash routes for Settings/Tools/Care work; Account broken. |
+| **Sign out** | Not tested | Not tested | **Open** | Skipped to preserve cached session for prod side-by-side. |
+| **Bottom nav** | PASS | PASS | **Partial** | Today, Vitals, Meds, Settings tabs render; Journal via center FAB not exercised. Prod labels Today / My Body / Patterns / Settings. |
+
+**Cycle 3 verdict:** Core tabs + Tools OAuth **PASS** with real `pmt@eigital.com` data. **Account hash redirect** remains **Broken**. Gates **PASS** (analyze 0, test 34/34, ASC 11–13 VALID). **NO-GO** for Phase 5 cutover unchanged.
+
+### Overnight fleet summary (3 cycles complete)
+
+| Cycle | Time (ET) | Gates | Browser | ASC |
+|-------|-----------|-------|---------|-----|
+| 1 | ~02:02 | analyze/test PASS (27/27) | Full route sweep; Tools OAuth landed | 11+12 VALID |
+| 2 | ~02:50 | analyze/test PASS (27/27) | Today PASS; Tools nav flaky | 11+12 VALID |
+| 3 | ~23:22 | analyze/test PASS (34/34) | Full matrix; Account broken | 11+12+13 VALID |
+
+**No trivial one-line fixes applied.** P0 list above stands for follow-up agents.

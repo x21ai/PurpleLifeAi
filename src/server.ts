@@ -2,6 +2,10 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import {
+  applyFlutterApiCors,
+  handleFlutterApiCorsPreflight,
+} from "./lib/flutter-api-cors";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -208,6 +212,9 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const preflight = handleFlutterApiCorsPreflight(request);
+      if (preflight) return preflight;
+
       const cacheable = isCacheableMarketingRequest(request);
       const edgeCache = cacheable ? getEdgeCache() : null;
 
@@ -236,7 +243,7 @@ export default {
         return cachedResponse;
       }
 
-      return normalized;
+      return applyFlutterApiCors(request, normalized);
     } catch (error) {
       console.error(error);
       return brandedErrorResponse();

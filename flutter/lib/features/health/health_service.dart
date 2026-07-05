@@ -13,6 +13,13 @@ const kHealthConnectSource = 'health_connect';
 
 const _authStorageKey = 'purple:healthkit:authorized:v1';
 
+/// Keychain options for the HealthKit connect flag (survives app restarts).
+const _healthSecureStorage = FlutterSecureStorage(
+  iOptions: IOSOptions(
+    accessibility: KeychainAccessibility.first_unlock_this_device,
+  ),
+);
+
 /// Daily native health metrics ready for Worker `/api/health/native-sync`.
 class NativeHealthDay {
   const NativeHealthDay({
@@ -94,6 +101,16 @@ class HealthAvailability {
   final String? reason;
 }
 
+/// User-visible failure from HealthKit / Health Connect connect or read.
+class HealthServiceException implements Exception {
+  const HealthServiceException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 /// True when HealthKit / Health Connect can run (iOS or Android only).
 bool get isNativeHealthPlatform {
   if (kIsWeb) return false;
@@ -106,20 +123,18 @@ bool get isNativeHealthPlatform {
 /// authorization requests on iOS (see `src/lib/native/health-ios.ts`).
 class HealthService {
   HealthService({FlutterSecureStorage? secureStorage})
-      : _secureStorage = secureStorage ?? const FlutterSecureStorage();
+      : _secureStorage = secureStorage ?? _healthSecureStorage;
 
   final FlutterSecureStorage _secureStorage;
   Health? _health;
 
-  /// iOS auth types only. No VO2_MAX. Sleep maps to HealthKit sleepAnalysis.
+  /// iOS auth types only. No VO2_MAX. Single sleep type mirrors web `sleep`.
   static const iosAuthTypes = <HealthDataType>[
     HealthDataType.STEPS,
     HealthDataType.HEART_RATE_VARIABILITY_RMSSD,
     HealthDataType.HEART_RATE,
     HealthDataType.RESTING_HEART_RATE,
-    HealthDataType.SLEEP_LIGHT,
-    HealthDataType.SLEEP_REM,
-    HealthDataType.SLEEP_DEEP,
+    HealthDataType.SLEEP_ASLEEP,
   ];
 
   static const androidAuthTypes = <HealthDataType>[
@@ -180,10 +195,23 @@ class HealthService {
   }
 
   Future<void> _writeAuthFlag(bool authorized) async {
-    if (authorized) {
-      await _secureStorage.write(key: _authStorageKey, value: '1');
-    } else {
-      await _secureStorage.delete(key: _authStorageKey);
+    try {
+      if (authorized) {
+        await _secureStorage.write(key: _authStorageKey, value: '1');
+        final persisted = await _secureStorage.read(key: _authStorageKey);
+        if (persisted != '1') {
+          throw const HealthServiceException(
+            'Could not save HealthKit connection on this device. Try Connect again.',
+          );
+        }
+      } else {
+        await _secureStorage.delete(key: _authStorageKey);
+      }
+    } catch (error) {
+      if (error is HealthServiceException) rethrow;
+      throw HealthServiceException(
+        'Could not save HealthKit connection: $error',
+      );
     }
   }
 
@@ -264,33 +292,42 @@ class HealthService {
     if (!isNativeHealthPlatform) return false;
 
     final availability = await isAvailable();
-    if (!availability.available) return false;
+    if (!availability.available) {
+      throw HealthServiceException(
+        availability.reason == 'health_connect_unavailable'
+            ? 'Install or update Health Connect on this phone, then try again.'
+            : 'Health data is unavailable on this device right now.',
+      );
+    }
 
     try {
       final health = await _client();
-      final granted = await health.requestAuthorization(
+      // iOS: Apple's completion `success` reflects WRITE grants only. For
+      // read-only requests it is often false even after the user taps Allow.
+      // Never gate connect on the bool (matches Capacitor `health-ios.ts`).
+      await health.requestAuthorization(
         _authTypes,
         permissions: List.filled(_authTypes.length, HealthDataAccess.READ),
       );
 
-      if (!granted) {
-        await _writeAuthFlag(false);
-        return false;
-      }
-
-      // iOS: requestAuthorization success is the signal; hasPermissions often
-      // returns null for READ (HealthKit privacy). Match Capacitor/web flow.
       if (Platform.isIOS) {
         await _writeAuthFlag(true);
         return true;
       }
 
       final hasAccess = await _isCoreAuthorized(health);
-      if (hasAccess) await _writeAuthFlag(true);
-      return hasAccess;
-    } catch (_) {
+      if (hasAccess) {
+        await _writeAuthFlag(true);
+        return true;
+      }
       await _writeAuthFlag(false);
       return false;
+    } catch (error) {
+      await _writeAuthFlag(false);
+      if (error is HealthServiceException) rethrow;
+      throw HealthServiceException(
+        'Health permission request failed: $error',
+      );
     }
   }
 
@@ -457,8 +494,8 @@ class HealthService {
       final rows = byDay.values.toList()
         ..sort((a, b) => a.date.compareTo(b.date));
       return rows;
-    } catch (_) {
-      return [];
+    } catch (error) {
+      throw HealthServiceException('Could not read health samples: $error');
     }
   }
 

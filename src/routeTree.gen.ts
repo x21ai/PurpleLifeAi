@@ -63,8 +63,12 @@ import { Route as ShareReportTokenRouteImport } from './routes/share.report.$tok
 import { Route as OauthWhoopCallbackRouteImport } from './routes/oauth.whoop.callback'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
+import { Route as ApiHealthWhoopSyncRouteImport } from './routes/api/health/whoop-sync'
+import { Route as ApiHealthWhoopExchangeRouteImport } from './routes/api/health/whoop-exchange'
+import { Route as ApiHealthWhoopConfigRouteImport } from './routes/api/health/whoop-config'
 import { Route as ApiHealthNativeSyncRouteImport } from './routes/api/health/native-sync'
 import { Route as ApiEmailSuppressionRouteImport } from './routes/api/email/suppression'
+import { Route as ApiAccountPersonalShareCodeRouteImport } from './routes/api/account/personal-share-code'
 import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
 import { Route as AppSettingsTravelRouteImport } from './routes/_app/settings.travel'
 import { Route as AppSettingsTermsRouteImport } from './routes/_app/settings.terms'
@@ -384,6 +388,21 @@ const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
   path: '/api/public/stripe-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHealthWhoopSyncRoute = ApiHealthWhoopSyncRouteImport.update({
+  id: '/api/health/whoop-sync',
+  path: '/api/health/whoop-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthWhoopExchangeRoute = ApiHealthWhoopExchangeRouteImport.update({
+  id: '/api/health/whoop-exchange',
+  path: '/api/health/whoop-exchange',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthWhoopConfigRoute = ApiHealthWhoopConfigRouteImport.update({
+  id: '/api/health/whoop-config',
+  path: '/api/health/whoop-config',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHealthNativeSyncRoute = ApiHealthNativeSyncRouteImport.update({
   id: '/api/health/native-sync',
   path: '/api/health/native-sync',
@@ -394,6 +413,12 @@ const ApiEmailSuppressionRoute = ApiEmailSuppressionRouteImport.update({
   path: '/api/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAccountPersonalShareCodeRoute =
+  ApiAccountPersonalShareCodeRouteImport.update({
+    id: '/api/account/personal-share-code',
+    path: '/api/account/personal-share-code',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppTodayRiskRoute = AppTodayRiskRouteImport.update({
   id: '/risk',
   path: '/risk',
@@ -734,8 +759,12 @@ export interface FileRoutesByFullPath {
   '/settings/terms': typeof AppSettingsTermsRoute
   '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
+  '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/health/native-sync': typeof ApiHealthNativeSyncRoute
+  '/api/health/whoop-config': typeof ApiHealthWhoopConfigRoute
+  '/api/health/whoop-exchange': typeof ApiHealthWhoopExchangeRoute
+  '/api/health/whoop-sync': typeof ApiHealthWhoopSyncRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
@@ -839,8 +868,12 @@ export interface FileRoutesByTo {
   '/settings/terms': typeof AppSettingsTermsRoute
   '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
+  '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/health/native-sync': typeof ApiHealthNativeSyncRoute
+  '/api/health/whoop-config': typeof ApiHealthWhoopConfigRoute
+  '/api/health/whoop-exchange': typeof ApiHealthWhoopExchangeRoute
+  '/api/health/whoop-sync': typeof ApiHealthWhoopSyncRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
@@ -947,8 +980,12 @@ export interface FileRoutesById {
   '/_app/settings/terms': typeof AppSettingsTermsRoute
   '/_app/settings/travel': typeof AppSettingsTravelRoute
   '/_app/today/risk': typeof AppTodayRiskRoute
+  '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/health/native-sync': typeof ApiHealthNativeSyncRoute
+  '/api/health/whoop-config': typeof ApiHealthWhoopConfigRoute
+  '/api/health/whoop-exchange': typeof ApiHealthWhoopExchangeRoute
+  '/api/health/whoop-sync': typeof ApiHealthWhoopSyncRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
@@ -1055,8 +1092,12 @@ export interface FileRouteTypes {
     | '/settings/terms'
     | '/settings/travel'
     | '/today/risk'
+    | '/api/account/personal-share-code'
     | '/api/email/suppression'
     | '/api/health/native-sync'
+    | '/api/health/whoop-config'
+    | '/api/health/whoop-exchange'
+    | '/api/health/whoop-sync'
     | '/api/public/stripe-webhook'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
@@ -1160,8 +1201,12 @@ export interface FileRouteTypes {
     | '/settings/terms'
     | '/settings/travel'
     | '/today/risk'
+    | '/api/account/personal-share-code'
     | '/api/email/suppression'
     | '/api/health/native-sync'
+    | '/api/health/whoop-config'
+    | '/api/health/whoop-exchange'
+    | '/api/health/whoop-sync'
     | '/api/public/stripe-webhook'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
@@ -1267,8 +1312,12 @@ export interface FileRouteTypes {
     | '/_app/settings/terms'
     | '/_app/settings/travel'
     | '/_app/today/risk'
+    | '/api/account/personal-share-code'
     | '/api/email/suppression'
     | '/api/health/native-sync'
+    | '/api/health/whoop-config'
+    | '/api/health/whoop-exchange'
+    | '/api/health/whoop-sync'
     | '/api/public/stripe-webhook'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
@@ -1325,8 +1374,12 @@ export interface RootRouteChildren {
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   FriendAcceptRoute: typeof FriendAcceptRoute
   FriendJoinRoute: typeof FriendJoinRoute
+  ApiAccountPersonalShareCodeRoute: typeof ApiAccountPersonalShareCodeRoute
   ApiEmailSuppressionRoute: typeof ApiEmailSuppressionRoute
   ApiHealthNativeSyncRoute: typeof ApiHealthNativeSyncRoute
+  ApiHealthWhoopConfigRoute: typeof ApiHealthWhoopConfigRoute
+  ApiHealthWhoopExchangeRoute: typeof ApiHealthWhoopExchangeRoute
+  ApiHealthWhoopSyncRoute: typeof ApiHealthWhoopSyncRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   OauthWhoopCallbackRoute: typeof OauthWhoopCallbackRoute
@@ -1729,6 +1782,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/health/whoop-sync': {
+      id: '/api/health/whoop-sync'
+      path: '/api/health/whoop-sync'
+      fullPath: '/api/health/whoop-sync'
+      preLoaderRoute: typeof ApiHealthWhoopSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health/whoop-exchange': {
+      id: '/api/health/whoop-exchange'
+      path: '/api/health/whoop-exchange'
+      fullPath: '/api/health/whoop-exchange'
+      preLoaderRoute: typeof ApiHealthWhoopExchangeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health/whoop-config': {
+      id: '/api/health/whoop-config'
+      path: '/api/health/whoop-config'
+      fullPath: '/api/health/whoop-config'
+      preLoaderRoute: typeof ApiHealthWhoopConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/health/native-sync': {
       id: '/api/health/native-sync'
       path: '/api/health/native-sync'
@@ -1741,6 +1815,13 @@ declare module '@tanstack/react-router' {
       path: '/api/email/suppression'
       fullPath: '/api/email/suppression'
       preLoaderRoute: typeof ApiEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/account/personal-share-code': {
+      id: '/api/account/personal-share-code'
+      path: '/api/account/personal-share-code'
+      fullPath: '/api/account/personal-share-code'
+      preLoaderRoute: typeof ApiAccountPersonalShareCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/today/risk': {
@@ -2307,8 +2388,12 @@ const rootRouteChildren: RootRouteChildren = {
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   FriendAcceptRoute: FriendAcceptRoute,
   FriendJoinRoute: FriendJoinRoute,
+  ApiAccountPersonalShareCodeRoute: ApiAccountPersonalShareCodeRoute,
   ApiEmailSuppressionRoute: ApiEmailSuppressionRoute,
   ApiHealthNativeSyncRoute: ApiHealthNativeSyncRoute,
+  ApiHealthWhoopConfigRoute: ApiHealthWhoopConfigRoute,
+  ApiHealthWhoopExchangeRoute: ApiHealthWhoopExchangeRoute,
+  ApiHealthWhoopSyncRoute: ApiHealthWhoopSyncRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   OauthWhoopCallbackRoute: OauthWhoopCallbackRoute,

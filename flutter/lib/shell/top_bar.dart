@@ -57,41 +57,14 @@ class _TopBarState extends ConsumerState<TopBar> {
                   onTap: () => context.go(AppRoutes.today),
                 ),
                 const Spacer(),
-                IconButton(
-                  onPressed: _syncing ? null : _syncNow,
-                  icon: _syncing
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: PurpleColors.foregroundTertiary,
-                          ),
-                        )
-                      : const Icon(Icons.sync_rounded, size: 22),
-                  color: PurpleColors.foregroundTertiary,
-                  tooltip: 'Sync',
-                  constraints: const BoxConstraints(
-                    minWidth: 44,
-                    minHeight: 44,
-                  ),
+                _SyncButton(
+                  syncing: _syncing,
+                  onTap: _syncing ? null : _syncNow,
                 ),
-                _ProfileMenuButton(onTap: widget.onMenuTap),
-                Semantics(
-                  button: true,
-                  label: 'Open menu',
-                  child: IconButton(
-                    key: const ValueKey('top-bar-menu-button'),
-                    onPressed: widget.onMenuTap,
-                    icon: const Icon(Icons.menu_rounded, size: 22),
-                    color: PurpleColors.foregroundTertiary,
-                    tooltip: 'Open menu',
-                    constraints: const BoxConstraints(
-                      minWidth: 44,
-                      minHeight: 44,
-                    ),
-                  ),
+                _ProfileMenuButton(
+                  onTap: () => context.go(AppRoutes.account),
                 ),
+                _ShellMenuButton(onTap: widget.onMenuTap),
               ],
             ),
           ),
@@ -101,9 +74,92 @@ class _TopBarState extends ConsumerState<TopBar> {
   }
 }
 
-/// Ports web `ProfileMenu` (mobile-top-bar.tsx): the user's avatar photo or
-/// initials circle. Tapping opens the shell menu, which carries the same
-/// Account / Settings / Sign out entries as the web dropdown.
+/// Fixed 44x44 sync control so its hit box cannot overlap the trailing menu.
+class _SyncButton extends StatelessWidget {
+  const _SyncButton({
+    required this.syncing,
+    required this.onTap,
+  });
+
+  final bool syncing;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      enabled: onTap != null,
+      label: 'Sync',
+      identifier: 'top-bar-sync-button',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: const ValueKey('top-bar-sync-button'),
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Center(
+              child: syncing
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: PurpleColors.foregroundTertiary,
+                      ),
+                    )
+                  : Icon(
+                      Icons.sync_rounded,
+                      size: 22,
+                      color: PurpleColors.foregroundTertiary,
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Top-right hamburger: opens [Scaffold.endDrawer] via [TopBar.onMenuTap].
+class _ShellMenuButton extends StatelessWidget {
+  const _ShellMenuButton({required this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      enabled: onTap != null,
+      label: 'Open menu',
+      identifier: 'top-bar-menu-button',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: const ValueKey('top-bar-menu-button'),
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Center(
+              child: Icon(
+                Icons.menu_rounded,
+                size: 22,
+                color: PurpleColors.foregroundTertiary,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Ports web `ProfileMenu` avatar: photo or initials circle. Tapping opens Account.
 class _ProfileMenuButton extends ConsumerWidget {
   const _ProfileMenuButton({required this.onTap});
 
@@ -115,7 +171,9 @@ class _ProfileMenuButton extends ConsumerWidget {
 
     return Semantics(
       button: true,
-      label: 'Open account menu',
+      enabled: onTap != null,
+      label: 'Open account',
+      identifier: 'top-bar-profile-button',
       child: Material(
         color: Colors.transparent,
         child: InkWell(

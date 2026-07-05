@@ -138,52 +138,76 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
         setState(() {
           _authorized = false;
           _permissionDenied = true;
-          _lastError =
-              'HealthKit access is off. Open Settings, Health, and allow Purple.';
+          _lastError = status.reason != null
+              ? _availabilityMessage(status.reason)
+              : 'HealthKit access is off. Open Settings, Health, and allow Purple.';
         });
       }
       return;
     }
 
-    final result = await sync.readAndSync(healthService: _healthService);
-    if (!mounted) return;
+    try {
+      final result = await sync.readAndSync(healthService: _healthService);
+      if (!mounted) return;
 
-    if (result.empty) {
+      if (result.empty) {
+        setState(() {
+          _lastError = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No health samples yet. Wear your watch or phone and try again later.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      if (result.queued) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Health data saved offline. Purple will upload when you are back online.',
+            ),
+          ),
+        );
+      } else {
+        await _loadSyncTimestamps();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result.upserted > 0
+                  ? 'Health sync complete (${result.upserted} days).'
+                  : 'Health sync complete.',
+            ),
+          ),
+        );
+      }
+      setState(() => _lastError = null);
+    } on HealthServiceException catch (e) {
+      if (!mounted) return;
+      setState(() => _lastError = e.message);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } on WorkerApiException catch (e) {
+      if (!mounted) return;
+      final message = _workerSyncErrorMessage(e);
+      setState(() => _lastError = message);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _lastError = null;
+        _lastError = 'Could not sync $_platformLabel. Try again in a moment.';
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'No health samples yet. Wear your watch or phone and try again later.',
-          ),
-        ),
-      );
-      return;
-    }
-
-    if (result.queued) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Health data saved offline. Purple will upload when you are back online.',
-          ),
-        ),
-      );
-    } else {
-      await _loadSyncTimestamps();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            result.upserted > 0
-                ? 'Health sync complete (${result.upserted} days).'
-                : 'Health sync complete.',
-          ),
-        ),
+        SnackBar(content: Text('Could not sync $_platformLabel: $e')),
       );
     }
-    setState(() => _lastError = null);
   }
 
   Future<void> _connect() async {
@@ -199,6 +223,9 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
           setState(() {
             _lastError = _availabilityMessage(availability.reason);
           });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(_availabilityMessage(availability.reason))),
+          );
         }
         return;
       }
@@ -231,12 +258,17 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
       }
     } on WorkerApiException catch (e) {
       if (mounted) {
-        setState(() {
-          _lastError =
-              'Sync failed (${e.statusCode}). Check your connection and try again.';
-        });
+        final message = _workerSyncErrorMessage(e);
+        setState(() => _lastError = message);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sync failed: ${e.message}')),
+          SnackBar(content: Text(message)),
+        );
+      }
+    } on HealthServiceException catch (e) {
+      if (mounted) {
+        setState(() => _lastError = e.message);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
         );
       }
     } catch (e) {
@@ -265,12 +297,17 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
       await _runSync(_syncClient());
     } on WorkerApiException catch (e) {
       if (mounted) {
-        setState(() {
-          _lastError =
-              'Sync failed (${e.statusCode}). Check your connection and try again.';
-        });
+        final message = _workerSyncErrorMessage(e);
+        setState(() => _lastError = message);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sync failed: ${e.message}')),
+          SnackBar(content: Text(message)),
+        );
+      }
+    } on HealthServiceException catch (e) {
+      if (mounted) {
+        setState(() => _lastError = e.message);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
         );
       }
     } catch (e) {
@@ -308,9 +345,31 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
         return 'Use the Purple iOS or Android app to connect Apple Health.';
       case 'unsupported_platform':
         return 'Health sync requires the Purple iOS or Android app.';
+      case 'status_check_failed':
+        return 'Could not check HealthKit status. Pull to refresh.';
       default:
+        if (reason != null && reason.startsWith('status_check_failed:')) {
+          return 'Could not check HealthKit status. Pull to refresh.';
+        }
         return 'Health data is unavailable on this device right now.';
     }
+  }
+
+  String _workerSyncErrorMessage(WorkerApiException error) {
+    if (error.statusCode == 401 || error.statusCode == 403) {
+      return 'Sign in again, then retry Health sync.';
+    }
+    if (error.statusCode >= 500) {
+      return 'Purple could not save health data (${error.statusCode}). Try again in a moment.';
+    }
+    if (error.message == 'native_health_sync_skipped') {
+      return 'Health sync is unavailable for this account right now.';
+    }
+    final detail = error.message.trim();
+    if (detail.isNotEmpty && detail.length < 120) {
+      return 'Sync failed (${error.statusCode}): $detail';
+    }
+    return 'Sync failed (${error.statusCode}). Check your connection and try again.';
   }
 
   _AppleHealthSyncState get _syncState {

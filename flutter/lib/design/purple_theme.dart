@@ -339,6 +339,11 @@ ThemeData buildPurpleDarkTheme({PurpleTokens? tokens}) {
   );
 }
 
+/// Light theme for Account appearance preference (web `.sheet-canvas` light).
+ThemeData buildPurpleLightTheme({PurpleTokens? tokens}) {
+  return PurpleTheme.light(tokens: tokens);
+}
+
 /// Theme extension for token access inside widgets.
 class PurpleThemeExtension extends ThemeExtension<PurpleThemeExtension> {
   const PurpleThemeExtension({

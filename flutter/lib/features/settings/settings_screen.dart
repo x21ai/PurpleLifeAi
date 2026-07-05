@@ -12,6 +12,7 @@ import 'settings_sections.dart' show
     ConditionHistorySection,
     DataSection,
     PreferencesSection,
+    SettingsProfileFlags,
     WhatITrackSection,
     openPurpleUrl,
     settingsProfileFlagsProvider;

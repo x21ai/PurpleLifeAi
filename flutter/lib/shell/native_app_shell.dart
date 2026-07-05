@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../design/purple_theme.dart';
@@ -40,28 +38,25 @@ class NativeAppShell extends StatefulWidget {
 }
 
 class _NativeAppShellState extends State<NativeAppShell> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _scrolled = false;
-  bool _menuOpen = false;
 
   bool get _hideChrome => shellHidesChrome(widget.location);
 
-  static const _topBarHeight = 48.0;
-
   void _openMenu() {
-    if (_hideChrome || _menuOpen) return;
-    setState(() => _menuOpen = true);
-  }
-
-  void _closeMenu() {
-    if (!_menuOpen) return;
-    setState(() => _menuOpen = false);
+    if (_hideChrome) return;
+    // Defer one frame so Scaffold.endDrawer is ready on web canvases.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _hideChrome) return;
+      _scaffoldKey.currentState?.openEndDrawer();
+    });
   }
 
   @override
   void didUpdateWidget(covariant NativeAppShell oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_menuOpen && (oldWidget.location != widget.location || _hideChrome)) {
-      _menuOpen = false;
+    if (oldWidget.location != widget.location || _hideChrome) {
+      _scaffoldKey.currentState?.closeEndDrawer();
     }
   }
 
@@ -81,60 +76,6 @@ class _NativeAppShellState extends State<NativeAppShell> {
       return constraints.maxHeight;
     }
     return MediaQuery.sizeOf(context).height;
-  }
-
-  Widget _buildMenuOverlay(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final topOffset = mediaQuery.padding.top + _topBarHeight;
-    final panelWidth = shellMenuDrawerWidth(mediaQuery.size.width);
-    final panelHeight = math.max(0.0, mediaQuery.size.height - topOffset);
-
-    return Positioned.fill(
-      child: IgnorePointer(
-        ignoring: !_menuOpen,
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 170),
-          curve: Curves.easeOut,
-          opacity: _menuOpen ? 1 : 0,
-          child: Stack(
-            children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: _closeMenu,
-                child: ColoredBox(color: Colors.black.withValues(alpha: 0.4)),
-              ),
-              Align(
-                alignment: Alignment.topRight,
-                child: Padding(
-                  padding: EdgeInsets.only(top: topOffset),
-                  child: AnimatedSlide(
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.easeOutCubic,
-                    offset: _menuOpen ? Offset.zero : const Offset(1, 0),
-                    child: SizedBox(
-                      width: panelWidth,
-                      height: panelHeight,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onHorizontalDragEnd: (details) {
-                          if ((details.primaryVelocity ?? 0) > 260) {
-                            _closeMenu();
-                          }
-                        },
-                        child: ShellMenuPanel(
-                          location: widget.location,
-                          onDismiss: _closeMenu,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _buildShellBody(BuildContext context, BoxConstraints constraints) {
@@ -180,7 +121,6 @@ class _NativeAppShellState extends State<NativeAppShell> {
               bottom: 0,
               child: BottomNav(location: widget.location),
             ),
-          if (!_hideChrome) _buildMenuOverlay(context),
         ],
       ),
     );
@@ -190,8 +130,12 @@ class _NativeAppShellState extends State<NativeAppShell> {
   Widget build(BuildContext context) {
     // Explicit viewport sizing avoids unbounded shell height issues on web.
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: purpleCanvasDark,
       resizeToAvoidBottomInset: false,
+      endDrawer: _hideChrome
+          ? null
+          : ShellMenuEndDrawer(location: widget.location),
       body: Stack(
         fit: StackFit.expand,
         children: [

@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../auth/auth_state.dart';
 import '../features/account/account_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/auth/welcome_screen.dart';
@@ -26,23 +25,21 @@ import '../features/vitals/metric_detail_screen.dart';
 import '../features/today/today_risk_screen.dart';
 import '../features/today/today_screen.dart';
 import '../features/tools/tools_screen.dart';
-import '../core/providers/core_providers.dart';
 import '../features/tools/wearable_oauth_callback_screen.dart';
 import '../features/tools/wearable_oauth.dart';
 import '../features/vitals/vitals_screen.dart';
 import 'auth_gate.dart';
 import 'native_app_shell.dart';
+import 'router_refresh.dart';
 import 'routes.dart';
 
 /// Application router with auth redirect and feature screens wired in.
 final routerProvider = Provider<GoRouter>((ref) {
-  ref.watch(isAuthenticatedProvider);
-  ref.watch(authProvider);
-  // Bind app_links before first frame so cold-start OAuth callbacks keep code.
-  ref.watch(wearableOAuthServiceProvider);
+  final refresh = ref.watch(routerRefreshProvider);
 
-  return GoRouter(
-    initialLocation: AppRoutes.signIn,
+  final router = GoRouter(
+    initialLocation: resolvePlatformInitialLocation(),
+    refreshListenable: refresh,
     redirect: (context, state) => authRedirect(ref, state),
     routes: [
       GoRoute(
@@ -234,4 +231,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+
+  ref.onDispose(router.dispose);
+  return router;
 });
