@@ -9,14 +9,19 @@ import '../../core/offline/database.dart';
 import '../../core/offline/supabase_row_parse.dart';
 import '../../core/providers/core_providers.dart';
 import '../today/models/score_snapshot.dart';
+import 'biometric_metrics.dart';
 import 'synced_data_overview.dart';
 
 /// One daily value for metric trend charts.
+///
+/// [source] is the wearable source string (e.g. `oura`) when the point comes
+/// from a per-source series; it is null for legacy collapsed trends.
 class MetricDayPoint {
-  const MetricDayPoint({required this.dateYmd, this.value});
+  const MetricDayPoint({required this.dateYmd, this.value, this.source});
 
   final String dateYmd;
   final double? value;
+  final String? source;
 }
 
 /// Query key for [metricTrendProvider] (metric + window length).
@@ -35,6 +40,91 @@ class MetricTrendQuery {
 
   @override
   int get hashCode => Object.hash(metricKey, days);
+}
+
+/// Query key for [metricSeriesProvider] (metric + range + compare mode).
+class MetricSeriesQuery {
+  const MetricSeriesQuery({
+    required this.metricKey,
+    this.days = 30,
+    this.compareMode = CompareMode.none,
+  });
+
+  final String metricKey;
+  final int days;
+  final CompareMode compareMode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MetricSeriesQuery &&
+          metricKey == other.metricKey &&
+          days == other.days &&
+          compareMode == other.compareMode;
+
+  @override
+  int get hashCode => Object.hash(metricKey, days, compareMode);
+}
+
+/// Per-source metric series with a computed headline value + baseline status.
+///
+/// Mirrors the web index/detail rule: series are split by source, the
+/// most-recent-dated source is the headline, and the baseline is `stats` of
+/// that source's readings in `[-30:-3]` (drop the last 3, keep the 27 before).
+class MetricSeriesResult {
+  const MetricSeriesResult({
+    required this.metricKey,
+    required this.seriesBySource,
+    required this.days,
+    required this.compareMode,
+    this.headlineSource,
+    this.headlineValue,
+    this.headlineDateYmd,
+    this.baseline = MetricStats.empty,
+    this.status = MetricStatus.unknown,
+    this.currentAvg,
+    this.compareAvg,
+    this.deltaPct,
+  });
+
+  final String metricKey;
+
+  /// Per-source ordered (ascending date) series, only sources with ≥1 value.
+  final Map<SourceKey, List<MetricDayPoint>> seriesBySource;
+
+  final int days;
+  final CompareMode compareMode;
+
+  /// Source that provided the most-recent reading (the headline).
+  final SourceKey? headlineSource;
+  final double? headlineValue;
+  final String? headlineDateYmd;
+
+  /// Baseline stats over the headline source's `[-30:-3]` window.
+  final MetricStats baseline;
+
+  /// Classification of [headlineValue] vs [baseline].
+  final MetricStatus status;
+
+  /// Average over the current window (headline source), for compare pill.
+  final double? currentAvg;
+
+  /// Average over the comparison window (headline source).
+  final double? compareAvg;
+
+  /// Percentage delta `(cur - cmp)/abs(cmp)*100`, null when not computable.
+  final double? deltaPct;
+
+  /// Sources actually present (in canonical order).
+  List<SourceKey> get presentSources =>
+      sources.where(seriesBySource.containsKey).toList();
+
+  static const empty = MetricSeriesResult(
+    metricKey: '',
+    seriesBySource: {},
+    days: 30,
+    compareMode: CompareMode.none,
+  );
 }
 
 /// Aggregated trend stats mirroring web `stats()` from `biometric-metrics.ts`.
@@ -132,19 +222,9 @@ class VitalsRepository {
     }
   }
 
-  String? _columnForMetricKey(String metricKey) {
-    return switch (metricKey) {
-      'readiness' => 'oura_readiness_score',
-      'sleep_score' => 'sleep_score',
-      'activity_score' => 'oura_activity_score',
-      'stress' => 'oura_stress_score',
-      'hrv' => 'hrv_rmssd_ms',
-      'resting_hr' => 'resting_hr_bpm',
-      'spo2' => 'spo2_pct',
-      'steps' => 'steps',
-      _ => null,
-    };
-  }
+  /// Column lookup for all 18 metrics (delegates to ported metadata).
+  String? _columnForMetricKey(String metricKey) =>
+      biometricMetricForKey(metricKey)?.column;
 
   List<MetricDayPoint> _aggregateDailyTrend(
     List<Map<String, dynamic>> rows, {
@@ -199,6 +279,233 @@ class VitalsRepository {
       points: points,
       stats: statsFromPoints(points),
     );
+  }
+
+  /// Loads a per-source metric series with headline value, baseline status,
+  /// and (optionally) a comparison average. Mirrors the web index/detail rule.
+  ///
+  /// Additive: the legacy [loadMetricTrend]/[metricTrendProvider] path is
+  /// untouched, so existing callers keep working.
+  Future<MetricSeriesResult> loadMetricSeries(MetricSeriesQuery query) async {
+    final userId = _userId;
+    final meta = biometricMetricForKey(query.metricKey);
+    if (userId == null || meta == null) {
+      return MetricSeriesResult(
+        metricKey: query.metricKey,
+        seriesBySource: const {},
+        days: query.days,
+        compareMode: query.compareMode,
+      );
+    }
+
+    final column = meta.column;
+    final lookback = lookbackDaysForCompare(query.days, query.compareMode);
+    // +2 grace to catch late-arriving rows on the boundary day.
+    final since = DateTime.now().subtract(Duration(days: lookback + 2));
+    // 365d × up to 4 sources can exceed 500; scale the cap with the window.
+    final limit = lookback > 120 ? 4000 : 1000;
+
+    try {
+      final response = await _supabase
+          .from('biometrics')
+          .select('recorded_at, source, $column')
+          .eq('user_id', userId)
+          .gte('recorded_at', formatSupabaseFilterTimestamp(since))
+          .order('recorded_at', ascending: true)
+          .limit(limit);
+      final rows = (response as List).cast<Map<String, dynamic>>();
+      return _buildSeriesResult(rows, meta: meta, query: query);
+    } catch (error, stack) {
+      debugPrint('[VitalsRepository] metric series failed: $error\n$stack');
+      if (!_canUseOfflineCache(error)) rethrow;
+      try {
+        final rows =
+            await _database.readCachedTable('biometrics', userId: userId);
+        return _buildSeriesResult(rows, meta: meta, query: query);
+      } catch (_) {
+        return MetricSeriesResult(
+          metricKey: query.metricKey,
+          seriesBySource: const {},
+          days: query.days,
+          compareMode: query.compareMode,
+        );
+      }
+    }
+  }
+
+  MetricSeriesResult _buildSeriesResult(
+    List<Map<String, dynamic>> rows, {
+    required BiometricMetricMeta meta,
+    required MetricSeriesQuery query,
+  }) {
+    // Split by source; source defaults to "oura" when missing (web parity).
+    final bySrc = <SourceKey, List<MetricDayPoint>>{};
+    for (final row in rows) {
+      final recordedAt = formatSupabaseDateTime(row['recorded_at']);
+      if (recordedAt == null) continue;
+      final rawSource = (row['source'] as String?)?.trim();
+      final srcKey = sourceKeyFromString(
+        rawSource == null || rawSource.isEmpty ? 'oura' : rawSource,
+      );
+      if (srcKey == null) continue; // unknown source: skip
+      final value = _asDouble(row[meta.column]);
+      bySrc.putIfAbsent(srcKey, () => []).add(
+            MetricDayPoint(
+              dateYmd: recordedAt.substring(0, 10),
+              value: value,
+              source: sourceKeyToString(srcKey),
+            ),
+          );
+    }
+
+    // Drop sources with no non-null value.
+    bySrc.removeWhere(
+      (_, list) => list.every((p) => p.value == null),
+    );
+
+    if (bySrc.isEmpty) {
+      return MetricSeriesResult(
+        metricKey: query.metricKey,
+        seriesBySource: const {},
+        days: query.days,
+        compareMode: query.compareMode,
+      );
+    }
+
+    // Headline: source with the most-recent-dated non-null reading.
+    SourceKey? headlineSource;
+    MetricDayPoint? headlinePoint;
+    for (final entry in bySrc.entries) {
+      for (final p in entry.value) {
+        if (p.value == null) continue;
+        if (headlinePoint == null ||
+            p.dateYmd.compareTo(headlinePoint.dateYmd) > 0) {
+          headlinePoint = p;
+          headlineSource = entry.key;
+        }
+      }
+    }
+
+    final headlineSeries =
+        headlineSource == null ? const <MetricDayPoint>[] : bySrc[headlineSource]!;
+
+    // Baseline: stats over headline series [-30:-3] (drop last 3, keep 27).
+    final baseline = _baselineFromSeries(headlineSeries);
+    final status = classifyValue(meta, headlinePoint?.value, baseline);
+
+    // Comparison averages (headline source only).
+    final compare = _computeComparison(
+      headlineSeries,
+      windowDays: query.days,
+      mode: query.compareMode,
+    );
+
+    return MetricSeriesResult(
+      metricKey: query.metricKey,
+      seriesBySource: bySrc,
+      days: query.days,
+      compareMode: query.compareMode,
+      headlineSource: headlineSource,
+      headlineValue: headlinePoint?.value,
+      headlineDateYmd: headlinePoint?.dateYmd,
+      baseline: baseline,
+      status: status,
+      currentAvg: compare.$1,
+      compareAvg: compare.$2,
+      deltaPct: compare.$3,
+    );
+  }
+
+  /// Baseline = stats over the series `[-30:-3]` slice (drop last 3, keep 27).
+  MetricStats _baselineFromSeries(List<MetricDayPoint> series) {
+    final values = series.map((p) => p.value).toList();
+    if (values.length <= 3) return MetricStats.empty;
+    final end = values.length - 3;
+    final start = end - 27 < 0 ? 0 : end - 27;
+    return computeStats(values.sublist(start, end));
+  }
+
+  /// (currentAvg, compareAvg, deltaPct) over date-bounded windows (§8).
+  (double?, double?, double?) _computeComparison(
+    List<MetricDayPoint> series, {
+    required int windowDays,
+    required CompareMode mode,
+  }) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final curStart = today.subtract(Duration(days: windowDays));
+
+    double? avgBetween(DateTime startIncl, DateTime endExcl,
+        {bool endInclusive = false}) {
+      final vals = <double>[];
+      for (final p in series) {
+        final v = p.value;
+        if (v == null) continue;
+        final d = DateTime.tryParse(p.dateYmd);
+        if (d == null) continue;
+        final afterStart = !d.isBefore(startIncl);
+        final beforeEnd =
+            endInclusive ? !d.isAfter(endExcl) : d.isBefore(endExcl);
+        if (afterStart && beforeEnd) vals.add(v);
+      }
+      if (vals.isEmpty) return null;
+      return vals.reduce((a, b) => a + b) / vals.length;
+    }
+
+    final cur = avgBetween(curStart, today, endInclusive: true);
+
+    double? cmp;
+    switch (mode) {
+      case CompareMode.none:
+        cmp = null;
+      case CompareMode.previous:
+        cmp = avgBetween(
+          today.subtract(Duration(days: 2 * windowDays)),
+          curStart,
+        );
+      case CompareMode.yearAgo:
+        cmp = avgBetween(
+          today.subtract(Duration(days: 365 + windowDays)),
+          today.subtract(const Duration(days: 365)),
+        );
+    }
+
+    double? delta;
+    if (cur != null && cmp != null && cmp != 0) {
+      delta = (cur - cmp) / cmp.abs() * 100;
+    }
+    return (cur, cmp, delta);
+  }
+
+  /// Loads the pinned metric keys from `profiles.biometrics_pinned`.
+  /// Fails open to an empty list (pins are non-critical).
+  Future<List<String>> loadPinnedMetrics() async {
+    final userId = _userId;
+    if (userId == null) return const [];
+    try {
+      final row = await _supabase
+          .from('profiles')
+          .select('biometrics_pinned')
+          .eq('id', userId)
+          .maybeSingle();
+      final raw = row?['biometrics_pinned'];
+      if (raw is List) {
+        return raw.whereType<String>().where(metricOrder.contains).toList();
+      }
+    } catch (error, stack) {
+      debugPrint('[VitalsRepository] load pins failed: $error\n$stack');
+    }
+    return const [];
+  }
+
+  /// Persists the pinned metric keys to `profiles.biometrics_pinned`.
+  /// Throws on failure so the UI can roll back the optimistic update.
+  Future<void> savePinnedMetrics(List<String> keys) async {
+    final userId = _userId;
+    if (userId == null) return;
+    await _supabase
+        .from('profiles')
+        .update({'biometrics_pinned': keys}).eq('id', userId);
   }
 
   Future<WearableCoverage> loadWearableCoverage({int days = 90}) async {
@@ -512,6 +819,33 @@ final metricTrendProvider = FutureProvider.autoDispose
     );
   }
   return ref.watch(vitalsRepositoryProvider).loadMetricTrendResult(query);
+});
+
+/// Per-source metric series with headline/baseline/compare (new Biometrics UI).
+final metricSeriesProvider = FutureProvider.autoDispose
+    .family<MetricSeriesResult, MetricSeriesQuery>((ref, query) async {
+  ref.keepAlive();
+  await ref.watch(authRepositoryProvider.future);
+  final session = ref.watch(authSessionProvider).valueOrNull;
+  if (session == null) {
+    return MetricSeriesResult(
+      metricKey: query.metricKey,
+      seriesBySource: const {},
+      days: query.days,
+      compareMode: query.compareMode,
+    );
+  }
+  return ref.watch(vitalsRepositoryProvider).loadMetricSeries(query);
+});
+
+/// Pinned biometric metric keys from `profiles.biometrics_pinned`.
+final pinnedMetricsProvider =
+    FutureProvider.autoDispose<List<String>>((ref) async {
+  ref.keepAlive();
+  await ref.watch(authRepositoryProvider.future);
+  final session = ref.watch(authSessionProvider).valueOrNull;
+  if (session == null) return const [];
+  return ref.watch(vitalsRepositoryProvider).loadPinnedMetrics();
 });
 
 final wearableCoverageProvider =
