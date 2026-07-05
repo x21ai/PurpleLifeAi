@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../core/providers/core_providers.dart';
 import 'models/report_row.dart';
@@ -93,6 +96,52 @@ class ReportsRepository {
         .cast<Map<String, dynamic>>()
         .map(MedicalReportRow.fromMap)
         .toList();
+  }
+
+  static const _maxUploadBytes = 15 * 1024 * 1024;
+
+  /// Upload a lab PDF or image to storage and insert a `report_documents` row.
+  Future<void> uploadReport({
+    required String filename,
+    required List<int> bytes,
+    required String mimeType,
+  }) async {
+    final userId = _userId;
+    if (userId == null) {
+      throw StateError('Sign in to upload reports.');
+    }
+    if (bytes.length > _maxUploadBytes) {
+      throw StateError('File is over 15 MB.');
+    }
+
+    final ext = filename.contains('.')
+        ? filename.split('.').last.toLowerCase()
+        : 'bin';
+    final path =
+        '$userId/${DateTime.now().millisecondsSinceEpoch}-${const Uuid().v4()}.$ext';
+
+    await _supabase.storage.from('reports').uploadBinary(
+          path,
+          Uint8List.fromList(bytes),
+          fileOptions: FileOptions(
+            contentType: mimeType.isNotEmpty ? mimeType : 'application/octet-stream',
+            upsert: false,
+          ),
+        );
+
+    var placeholderTitle = filename.replaceAll(RegExp(r'\.[^.]+$'), '').trim();
+    if (placeholderTitle.isEmpty) placeholderTitle = 'Untitled report';
+    if (placeholderTitle.length > 200) {
+      placeholderTitle = placeholderTitle.substring(0, 200);
+    }
+
+    await _supabase.from('report_documents').insert({
+      'user_id': userId,
+      'title': placeholderTitle,
+      'file_path': path,
+      'file_mime': mimeType.isNotEmpty ? mimeType : 'application/octet-stream',
+      'status': 'processing',
+    });
   }
 }
 

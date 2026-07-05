@@ -27,9 +27,9 @@ class BottomNav extends StatelessWidget {
   static const _tabs = [
     _NavTab(path: AppRoutes.today, icon: Icons.wb_sunny_outlined, label: 'Today'),
     _NavTab(
-      path: AppRoutes.vitals,
+      path: AppRoutes.myHealth,
       icon: Icons.monitor_heart_outlined,
-      label: 'Vitals',
+      label: 'My Body',
     ),
     _NavTab(path: AppRoutes.meds, icon: Icons.medication_outlined, label: 'Meds'),
     _NavTab(
@@ -40,6 +40,11 @@ class BottomNav extends StatelessWidget {
   ];
 
   bool _isActive(String path) {
+    if (path == AppRoutes.myHealth) {
+      return location == AppRoutes.myHealth ||
+          location == AppRoutes.vitals ||
+          location.startsWith('${AppRoutes.vitals}/');
+    }
     return location == path || location.startsWith('$path/');
   }
 

@@ -9,10 +9,12 @@ import '../features/care/care_index_screen.dart';
 import '../features/chat/chat_screen.dart';
 import '../features/journal/journal_capture_screen.dart';
 import '../features/journal/journal_screen.dart';
+import '../features/my_health/my_health_screen.dart';
 import '../features/meds/med_detail_screen.dart';
 import '../features/meds/meds_history_screen.dart';
 import '../features/meds/meds_screen.dart';
 import '../features/reports/reports_hub_screen.dart';
+import '../features/reports/reports_upload_screen.dart';
 import '../features/settings/contact_screen.dart';
 import '../features/settings/how_purple_thinks_screen.dart';
 import '../features/settings/privacy_screen.dart';
@@ -21,6 +23,7 @@ import '../features/settings/settings_screen.dart';
 import '../features/settings/sharing_screen.dart';
 import '../features/hydration/hydration_screen.dart';
 import '../features/seizures/log_seizure_screen.dart';
+import '../features/vitals/biometrics_hub_screen.dart';
 import '../features/vitals/metric_detail_screen.dart';
 import '../features/today/today_risk_screen.dart';
 import '../features/today/today_screen.dart';
@@ -81,6 +84,26 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: 'risk',
                 name: 'today-risk',
                 builder: (context, state) => const TodayRiskScreen(),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: AppRoutes.myHealth,
+            name: 'my-health',
+            builder: (context, state) => const MyHealthScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.biometrics,
+            name: 'biometrics',
+            builder: (context, state) => const BiometricsHubScreen(),
+            routes: [
+              GoRoute(
+                path: ':metricKey',
+                name: 'biometrics-metric',
+                builder: (context, state) {
+                  final metricKey = state.pathParameters['metricKey'] ?? '';
+                  return MetricDetailScreen(metricKey: metricKey);
+                },
               ),
             ],
           ),
@@ -185,6 +208,18 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: AppRoutes.settingsReports,
             name: 'settings-reports',
             builder: (context, state) => const ReportsHubScreen(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                name: 'settings-reports-new',
+                builder: (context, state) => const ReportsUploadScreen(),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: AppRoutes.reportsNewRedirect,
+            name: 'reports-new-redirect',
+            redirect: (context, state) => AppRoutes.settingsReportsNew,
           ),
           GoRoute(
             path: '/reports',

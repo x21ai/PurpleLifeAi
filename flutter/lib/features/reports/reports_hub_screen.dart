@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../shell/routes.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
@@ -67,6 +68,12 @@ class ReportsHubScreen extends ConsumerWidget {
                       ),
                 ),
                 const SizedBox(height: 28),
+                FilledButton.icon(
+                  onPressed: () => context.go(AppRoutes.settingsReportsNew),
+                  icon: const Icon(Icons.upload_file_outlined),
+                  label: const Text('Upload lab report'),
+                ),
+                const SizedBox(height: 20),
                 hubAsync.when(
                   loading: () => const LoadingSkeleton(
                     sectionTitle: 'Reports',
@@ -108,7 +115,7 @@ class _ReportsBody extends StatelessWidget {
         eyebrow: 'Reports',
         title: 'No reports yet',
         body:
-            'Upload lab PDFs or photos on the web app. Processed reports and trends appear here.',
+            'Upload a lab PDF or photo with the button above. Purple extracts metrics for trends.',
       );
     }
 
@@ -145,7 +152,7 @@ class _ReportsBody extends StatelessWidget {
         ],
         const SizedBox(height: 16),
         Text(
-          'Upload, reprocess, and metric trends are available on the web app for now.',
+          'Metric trends and document reprocess stay on the web app for now.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Colors.white.withValues(alpha: 0.45),
                 height: 1.4,

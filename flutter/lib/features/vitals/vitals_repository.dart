@@ -1,3 +1,5 @@
+import 'dart:math' show sqrt;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -14,6 +16,63 @@ class MetricDayPoint {
 
   final String dateYmd;
   final double? value;
+}
+
+/// Query key for [metricTrendProvider] (metric + window length).
+class MetricTrendQuery {
+  const MetricTrendQuery({required this.metricKey, this.days = 7});
+
+  final String metricKey;
+  final int days;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MetricTrendQuery &&
+          metricKey == other.metricKey &&
+          days == other.days;
+
+  @override
+  int get hashCode => Object.hash(metricKey, days);
+}
+
+/// Aggregated trend stats mirroring web `stats()` from `biometric-metrics.ts`.
+class MetricTrendStats {
+  const MetricTrendStats({
+    this.mean,
+    this.stddev,
+    required this.count,
+    required this.dayCount,
+  });
+
+  final double? mean;
+  final double? stddev;
+
+  /// Number of non-null readings in the window.
+  final int count;
+
+  /// Calendar days with at least one reading.
+  final int dayCount;
+
+  static const empty = MetricTrendStats(count: 0, dayCount: 0);
+}
+
+class MetricTrendResult {
+  const MetricTrendResult({required this.points, required this.stats});
+
+  final List<MetricDayPoint> points;
+  final MetricTrendStats stats;
+}
+
+/// Distinct-day counts per wearable source in the last 90 days.
+class WearableCoverage {
+  const WearableCoverage({required this.daysBySource});
+
+  final Map<String, int> daysBySource;
+
+  int daysForSource(String source) => daysBySource[source] ?? 0;
+
+  static const empty = WearableCoverage(daysBySource: {});
 }
 
 /// Loads Vitals biometrics from Supabase with offline cache fallback only.
@@ -106,6 +165,97 @@ class VitalsRepository {
       points.add(MetricDayPoint(dateYmd: ymd, value: byDay[ymd]));
     }
     return points;
+  }
+
+  MetricTrendStats statsFromPoints(List<MetricDayPoint> points) {
+    final values = points.map((p) => p.value).whereType<double>().toList();
+    final dayCount = points.where((p) => p.value != null).length;
+    if (values.isEmpty) {
+      return MetricTrendStats(count: 0, dayCount: dayCount);
+    }
+    final mean = values.reduce((a, b) => a + b) / values.length;
+    final variance =
+        values.map((v) => (v - mean) * (v - mean)).reduce((a, b) => a + b) /
+            values.length;
+    return MetricTrendStats(
+      mean: mean,
+      stddev: variance > 0 ? sqrt(variance) : 0,
+      count: values.length,
+      dayCount: dayCount,
+    );
+  }
+
+  Future<MetricTrendResult> loadMetricTrendResult(MetricTrendQuery query) async {
+    final points = await loadMetricTrend(
+      query.metricKey,
+      days: query.days,
+    );
+    return MetricTrendResult(
+      points: points,
+      stats: statsFromPoints(points),
+    );
+  }
+
+  Future<WearableCoverage> loadWearableCoverage({int days = 90}) async {
+    final userId = _userId;
+    if (userId == null) return WearableCoverage.empty;
+
+    final since = DateTime.now().subtract(Duration(days: days + 2));
+    try {
+      final response = await _supabase
+          .from('biometrics')
+          .select('recorded_at, source')
+          .eq('user_id', userId)
+          .gte('recorded_at', formatSupabaseFilterTimestamp(since))
+          .order('recorded_at', ascending: true)
+          .limit(2000);
+      return _aggregateCoverage(
+        (response as List).cast<Map<String, dynamic>>(),
+        days: days,
+      );
+    } catch (error, stack) {
+      debugPrint('[VitalsRepository] coverage failed: $error\n$stack');
+      if (!_canUseOfflineCache(error)) rethrow;
+      try {
+        final rows =
+            await _database.readCachedTable('biometrics', userId: userId);
+        return _aggregateCoverage(rows, days: days);
+      } catch (_) {
+        return WearableCoverage.empty;
+      }
+    }
+  }
+
+  WearableCoverage _aggregateCoverage(
+    List<Map<String, dynamic>> rows, {
+    required int days,
+  }) {
+    final bySource = <String, Set<String>>{};
+    for (final row in rows) {
+      final day = formatSupabaseDateTime(row['recorded_at']);
+      if (day == null) continue;
+      final ymd = day.substring(0, 10);
+      final source = (row['source'] as String?)?.trim();
+      if (source == null || source.isEmpty) continue;
+      bySource.putIfAbsent(source, () => {}).add(ymd);
+    }
+
+    final today = DateTime.now();
+    final window = <String>{};
+    for (var i = 0; i < days; i++) {
+      final d = DateTime(today.year, today.month, today.day)
+          .subtract(Duration(days: i));
+      window.add(
+        '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}',
+      );
+    }
+
+    final counts = <String, int>{};
+    for (final entry in bySource.entries) {
+      counts[entry.key] =
+          entry.value.where((ymd) => window.contains(ymd)).length;
+    }
+    return WearableCoverage(daysBySource: counts);
   }
 
   Future<ScoreSnapshot> loadScoreSnapshot({String? dateYmd}) async {
@@ -279,10 +429,24 @@ final vitalsSnapshotProvider =
 });
 
 final metricTrendProvider = FutureProvider.autoDispose
-    .family<List<MetricDayPoint>, String>((ref, metricKey) async {
+    .family<MetricTrendResult, MetricTrendQuery>((ref, query) async {
   ref.keepAlive();
   await ref.watch(authRepositoryProvider.future);
   final session = ref.watch(authSessionProvider).valueOrNull;
-  if (session == null) return const [];
-  return ref.watch(vitalsRepositoryProvider).loadMetricTrend(metricKey);
+  if (session == null) {
+    return const MetricTrendResult(
+      points: [],
+      stats: MetricTrendStats.empty,
+    );
+  }
+  return ref.watch(vitalsRepositoryProvider).loadMetricTrendResult(query);
+});
+
+final wearableCoverageProvider =
+    FutureProvider.autoDispose<WearableCoverage>((ref) async {
+  ref.keepAlive();
+  await ref.watch(authRepositoryProvider.future);
+  final session = ref.watch(authSessionProvider).valueOrNull;
+  if (session == null) return WearableCoverage.empty;
+  return ref.watch(vitalsRepositoryProvider).loadWearableCoverage();
 });

@@ -48,6 +48,10 @@ abstract final class AppRoutes {
   static const settingsSharing = '/settings/sharing';
   static const settingsTravel = '/settings/travel';
   static const settingsReports = '/settings/reports';
+  static const settingsReportsNew = '/settings/reports/new';
+  static const reportsNewRedirect = '/reports/new';
+  static const myHealth = '/my-health';
+  static const biometrics = '/biometrics';
   static const reportsRedirect = '/reports';
   static const settingsContact = '/settings/contact';
   static const contact = '/contact';
@@ -61,6 +65,8 @@ abstract final class AppRoutes {
   static String medDetail(String medId) => '/meds/$medId';
 
   static String vitalsMetric(String metricKey) => '/vitals/metric/$metricKey';
+
+  static String biometricsMetric(String metricKey) => '/biometrics/$metricKey';
 
   static const protectedPaths = [
     welcome,
@@ -84,6 +90,11 @@ abstract final class AppRoutes {
     settingsSharing,
     settingsTravel,
     settingsReports,
+    settingsReportsNew,
+    reportsNewRedirect,
+    myHealth,
+    biometrics,
+    '/biometrics/',
     reportsRedirect,
     settingsContact,
     contact,

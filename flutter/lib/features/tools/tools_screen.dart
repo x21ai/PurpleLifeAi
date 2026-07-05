@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
 import '../health/apple_health_panel.dart';
 import '../shared/glass_helpers.dart';
+import '../vitals/vitals_repository.dart';
 import 'sync_mode_select.dart';
 import 'wearable_oauth.dart';
 
@@ -42,6 +44,21 @@ String _relativeTime(String? iso) {
   final hours = (minutes / 60).round();
   if (hours < 24) return '${hours}h ago';
   return '${(hours / 24).round()}d ago';
+}
+
+String _coverageSummary(WearableCoverage coverage) {
+  const labels = {
+    'oura': 'Oura',
+    'whoop': 'Whoop',
+    'apple_health': 'Apple Health',
+    'health_connect': 'Health Connect',
+  };
+  final parts = coverage.daysBySource.entries
+      .where((e) => e.value > 0)
+      .map((e) => '${labels[e.key] ?? e.key} ${e.value}d')
+      .toList();
+  if (parts.isEmpty) return 'none in last 90 days';
+  return '${parts.join(' · ')} in last 90 days';
 }
 
 class _ToolsScreenState extends ConsumerState<ToolsScreen> {
@@ -297,6 +314,9 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final coverage =
+        ref.watch(wearableCoverageProvider).valueOrNull ?? WearableCoverage.empty;
+
     return CanvasBackground(
       child: SingleChildScrollView(
         padding: const EdgeInsets.only(top: 16, bottom: 120),
@@ -315,6 +335,33 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                 ),
               ),
               const SizedBox(height: 12),
+              if (coverage.daysBySource.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: GlassSurface(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Synced biometrics: ${_coverageSummary(coverage)}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.65),
+                                  height: 1.35,
+                                ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => context.go(AppRoutes.myHealth),
+                          child: const Text('My Body'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               if (_loadFailed) ...[
                 GlassSurface(
                   padding: const EdgeInsets.all(20),
@@ -351,6 +398,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                 backfilling: _ouraBackfilling,
                 errorMessage: _ouraError,
                 tokensTable: 'oura_tokens',
+                coverageDays: coverage.daysForSource('oura'),
                 onConnect: () => _connectWearable(WearableOAuthProvider.oura),
                 onSync: _syncOura,
                 onDisconnect: () => _disconnect('oura_tokens', 'Oura'),
@@ -366,6 +414,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                 busy: _whoopBusy,
                 errorMessage: _whoopError,
                 tokensTable: 'whoop_tokens',
+                coverageDays: coverage.daysForSource('whoop'),
                 onConnect: () => _connectWearable(WearableOAuthProvider.whoop),
                 onSync: _syncWhoop,
                 onDisconnect: () => _disconnect('whoop_tokens', 'Whoop'),
@@ -465,12 +514,12 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                   children: [
                     _InternalRow(
                       title: 'How Purple thinks',
-                      onTap: () => _showWebOnly('How Purple thinks'),
+                      onTap: () => context.go(AppRoutes.settingsHowPurpleThinks),
                     ),
                     _rowDivider(),
                     _InternalRow(
                       title: 'Privacy & data',
-                      onTap: () => _showWebOnly('Privacy & data'),
+                      onTap: () => context.go(AppRoutes.settingsPrivacy),
                     ),
                     _rowDivider(),
                     _InternalRow(
@@ -575,6 +624,7 @@ class _ConnectionCard extends StatelessWidget {
     required this.disconnectedSubtitle,
     required this.busy,
     required this.tokensTable,
+    this.coverageDays,
     required this.onConnect,
     required this.onSync,
     required this.onDisconnect,
@@ -591,6 +641,7 @@ class _ConnectionCard extends StatelessWidget {
   final bool backfilling;
   final String? errorMessage;
   final String tokensTable;
+  final int? coverageDays;
   final VoidCallback onConnect;
   final Future<void> Function()? onSync;
   final VoidCallback onDisconnect;
@@ -659,12 +710,37 @@ class _ConnectionCard extends StatelessWidget {
                 ),
             ],
           ),
+          if (connected &&
+              !backfilling &&
+              coverageDays != null &&
+              coverageDays! > 0) ...[
+            const SizedBox(height: 8),
+            Text(
+              '$coverageDays day${coverageDays == 1 ? '' : 's'} of readings in last 90 days',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.45),
+                  ),
+            ),
+          ],
           if (errorMessage != null && errorMessage!.isNotEmpty) ...[
             const SizedBox(height: 10),
             Text(
               errorMessage!,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: const Color(0xFFFF8A80),
+                    height: 1.35,
+                  ),
+            ),
+          ] else if (!connected &&
+              loaded &&
+              title == 'Oura Ring' &&
+              !kIsWeb) ...[
+            const SizedBox(height: 10),
+            Text(
+              'On iPhone, Oura needs ${WearableOAuth.nativeRedirectOura} '
+              'registered in the Oura developer console before Connect works.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.5),
                     height: 1.35,
                   ),
             ),

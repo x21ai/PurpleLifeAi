@@ -68,6 +68,7 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
   @override
   Widget build(BuildContext context) {
     final snapshotAsync = ref.watch(vitalsSnapshotProvider);
+    final coverageAsync = ref.watch(wearableCoverageProvider);
 
     return CanvasBackground(
       child: SizedBox(
@@ -99,9 +100,51 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
                     _buildHeaderRow(context),
                     const SizedBox(height: 12),
                     _buildTitle(context),
+                    coverageAsync.when(
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                      data: (coverage) {
+                        if (coverage.daysBySource.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: _SyncedCoverageStrip(coverage: coverage),
+                        );
+                      },
+                    ),
                     if (!snap.hasData) ...[
                       const SizedBox(height: 16),
                       _buildConnectLink(context),
+                    ] else ...[
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () => context.go(AppRoutes.myHealth),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'See all synced data in My Body',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.55),
+                                  ),
+                            ),
+                            Icon(
+                              Icons.chevron_right,
+                              size: 16,
+                              color: Colors.white.withValues(alpha: 0.55),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                     const SizedBox(height: 24),
                     _LatestReadingMarker(
@@ -344,7 +387,7 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
   Widget _buildConnectLink(BuildContext context) {
     final muted = Colors.white.withValues(alpha: 0.55);
     return TextButton(
-      onPressed: () => context.go('/settings'),
+      onPressed: () => context.go(AppRoutes.tools),
       style: TextButton.styleFrom(
         padding: EdgeInsets.zero,
         minimumSize: Size.zero,
@@ -378,6 +421,50 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
       return rounded.round().toString();
     }
     return rounded.toStringAsFixed(1);
+  }
+}
+
+/// Compact synced-data summary for the vitals grid header.
+class _SyncedCoverageStrip extends StatelessWidget {
+  const _SyncedCoverageStrip({required this.coverage});
+
+  final WearableCoverage coverage;
+
+  static const _labels = {
+    'oura': 'Oura',
+    'whoop': 'Whoop',
+    'apple_health': 'Apple Health',
+    'health_connect': 'Health Connect',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final parts = coverage.daysBySource.entries
+        .map((e) => '${_labels[e.key] ?? e.key}: ${e.value}d')
+        .join(' · ');
+    return GlassSurface(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      borderRadius: 14,
+      child: Row(
+        children: [
+          Icon(
+            Icons.sync,
+            size: 16,
+            color: Colors.white.withValues(alpha: 0.55),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Synced last 90 days · $parts',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.65),
+                    height: 1.35,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

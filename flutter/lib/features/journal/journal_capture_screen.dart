@@ -163,18 +163,7 @@ class _JournalCaptureScreenState extends ConsumerState<JournalCaptureScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _CaptureDock(
-                        palette: palette,
-                        onNativeOnly: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Voice, photo, and video capture ship on iOS and Android. Text entries work here now.',
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                      const _CaptureDock(),
                       const SizedBox(height: 16),
                       Text(
                         "If Purple can't reach the server, your entry is saved on this device and will sync when you're back online.",
@@ -198,18 +187,13 @@ class _JournalCaptureScreenState extends ConsumerState<JournalCaptureScreen> {
 }
 
 /// Bottom capture dock mirroring web journal.new: Record / Photo / Video.
-/// Flutter web is text-first; native multimodal ships in a later phase.
+/// Disabled with honest "Mobile app" subtitles (no snackbar).
 class _CaptureDock extends StatelessWidget {
-  const _CaptureDock({
-    required this.palette,
-    required this.onNativeOnly,
-  });
-
-  final JournalPalette palette;
-  final VoidCallback onNativeOnly;
+  const _CaptureDock();
 
   @override
   Widget build(BuildContext context) {
+    final palette = JournalPalette.dark();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -229,7 +213,6 @@ class _CaptureDock extends StatelessWidget {
                 palette: palette,
                 icon: Icons.mic_none,
                 label: 'Record',
-                onTap: onNativeOnly,
               ),
             ),
             const SizedBox(width: 10),
@@ -238,7 +221,6 @@ class _CaptureDock extends StatelessWidget {
                 palette: palette,
                 icon: Icons.photo_camera_outlined,
                 label: 'Photo',
-                onTap: onNativeOnly,
               ),
             ),
             const SizedBox(width: 10),
@@ -247,7 +229,6 @@ class _CaptureDock extends StatelessWidget {
                 palette: palette,
                 icon: Icons.videocam_outlined,
                 label: 'Video',
-                onTap: onNativeOnly,
               ),
             ),
           ],
@@ -262,41 +243,43 @@ class _DockButton extends StatelessWidget {
     required this.palette,
     required this.icon,
     required this.label,
-    required this.onTap,
   });
 
   final JournalPalette palette;
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: palette.glassFill,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: palette.divider),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, size: 20, color: palette.textSecondary),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                style: journalSans(
-                  fontSize: 12,
-                  color: palette.textSecondary,
-                ),
+    return Opacity(
+      opacity: 0.55,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: palette.glassFill,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: palette.divider),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 20, color: palette.textSecondary),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: journalSans(
+                fontSize: 12,
+                color: palette.textSecondary,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Mobile app',
+              style: journalSans(
+                fontSize: 10,
+                color: palette.textQuaternary,
+              ),
+            ),
+          ],
         ),
       ),
     );
