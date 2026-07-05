@@ -9,19 +9,31 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign` @ `c6658d5`**. TestFlight **1.0 (16) VALID**. Flutter
-**`flutter analyze lib/`** clean; **`flutter test` 81/81**. Marketing routes at `/`, `/pricing`,
-`/privacy`, `/about`, `/trust` with path URL strategy + SPA `:8765` fallback; browser verified
-home + pricing (client nav).
+Purple Life on **`lovable/redesign` @ `e19ee51`**. TestFlight **1.0 (16) VALID**. Flutter
+**`flutter analyze lib/`** clean; **`flutter test` 81/81**. Marketing routes wired at `/`,
+`/pricing`, `/privacy`, `/about`, `/trust` (public, outside signed-in shell); path URL
+strategy + SPA `:8765` fallback; curl **200** on `/` and `/pricing`.
 
 **Next action:** Worker cutover for marketing on prod per `docs/FLUTTER-WEB-CUTOVER.md` when
-approved; public `/contact` route for marketing header (optional).
+approved; optional public `/contact` route for marketing header.
 
 ---
 
 ## Log
 
-### 2026-07-05T14:06:00Z — Marketing path URL strategy + browser verify
+### 2026-07-05T14:10:00Z — Marketing GoRouter wire + path URLs + build 17
+
+- **Requested:** Wire `/`, `/pricing`, `/privacy`, `/about`, `/trust` in GoRouter (public);
+  path URLs on Flutter web; analyze + test green; verify `:8765`; bump `1.0.0+17`; commit push.
+- **Done:** Routes in `8f81b69` (GoRouter outside ShellRoute); path URL + SPA serve in `c6658d5`;
+  `flutter analyze lib/` 0 issues; `flutter test` **81/81**; `--rebuild` served `:8765` with
+  HTTP 200 on `/` and `/pricing`; pubspec **1.0.0+17** committed and pushed. TestFlight skipped
+  (policy: gates only, no upload this session).
+- **Issues:** Browser MCP unavailable in subagent; verified via curl + serve logs. PID artifacts
+  untracked.
+- **Stand / next:** Prod Worker path routing when operator approves cutover.
+- **Who / where:** Cursor subagent · darwin · lovable/redesign
+- **Timestamp:** 2026-07-05T14:10:00Z
 
 - **Requested:** Port core marketing routes to Flutter; path routes on web; verify analyze/test/
   browser; commit and push.
