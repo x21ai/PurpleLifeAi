@@ -21,6 +21,19 @@
 
 **Still Wave 2+:** OAuth connect in Tools, reports/care trees, theme persistence (Light/System), care inbox badge, global Georgia→Source Serif 4 (Settings screen done).
 
+### Wave 3 phase sweep (2026-07-05 overnight)
+
+| Item | Status |
+|------|--------|
+| Hydration `/hydration` (quick-add, goal, day timeline) | **Done** |
+| Today risk `/today/risk` (`risk_forecasts` drilldown) | **Done** |
+| Seizures `/seizures/new` (quick log + detailed form) | **Done** |
+| Vitals metric drilldown 7-day trend chart | **Done** |
+| Vitals edit affordance → Tools | **Done** |
+| Gates | **34/34** `flutter test`; analyze 0 errors (warnings only) |
+
+**Still Wave 4+:** Chat streaming, push notifications, full reports upload, theme persistence (settings agent), Account polish.
+
 ### Wave 2 partial (2026-07-04 overnight)
 
 | Item | Status |
@@ -188,8 +201,8 @@ Related docs: `docs/FLUTTER-CUTOVER-GAP-MATRIX.md`, `docs/FLUTTER-DESIGN-PARITY-
 | **Tools** `/tools` | PASS (web stub) | PASS | **Gap** | Flutter web shows **Native only — Connect on your phone** (expected on web). Prod: Oura + Whoop connected with sync/disconnect, Apple Health HAE URL, phone alarms. |
 | **Burger / endDrawer** | **Partial** | **Partial** | **Unverified** | Both show hamburger in top bar. Flutter coordinate clicks did not open endDrawer; prod "Open menu" not exercised (navigation interrupted). Prior fleet reported endDrawer wired in `shell_menu_sheet.dart`. |
 | **Avatar (top bar)** | PASS | PASS | **Good** | Gold **A** avatar visible on both; prod opens "Open account menu" dropdown (not expanded in this pass). |
-| **Today risk** `/today/risk` | PASS (stub) | **Partial** | **Gap** | Flutter: dedicated stub ("Full risk reading" placeholder). Prod URL `/today/risk` renders **Today** page content (scores still –, same narrative), not a separate risk drilldown UI. |
-| **Hydration** `/hydration` | PASS (stub) | PASS | **Gap** | Flutter: stub ("Hydration timeline coming soon"). Prod: full intake UI (0.00 L / 2.0 L goal, quick-add 250/500 ml, Water/Electrolytes, snap/voice). |
+| **Today risk** `/today/risk` | PASS | **Partial** | **Improved** | Flutter: `risk_forecasts` arc, band, narrative, factor list. Prod URL still renders Today shell (web quirk). |
+| **Hydration** `/hydration` | PASS | PASS | **Partial** | Flutter: goal ring, 250/500 ml quick-add, water/electrolyte dialogs, day timeline. No snap/voice/aura yet. |
 
 ### Wave 1 + Settings slice verdict (runtime)
 
@@ -241,6 +254,21 @@ Automated re-check after parallel agents may have landed. Method: 15 min initial
 4. **Mid-rebuild preview hang** — `Loading Purple` persists until hard reload when `flutter-web-serve.sh --rebuild` swaps `build/web`; document single rebuild owner or serve-from-temp-dir during build.
 5. **Account route** — `#/account` still flaky in prior passes; verify GoRouter + hub card navigation.
 
-### Cycle 2 — pending
+### Cycle 2 — 2026-07-05 ~02:50 ET
+
+| Check | Result |
+|-------|--------|
+| `flutter analyze lib/` | **PASS** |
+| `flutter test` | **PASS** (**27/27**) |
+| `curl http://127.0.0.1:8765/` | **200** |
+| `bun run ios:check-asc-builds` | **PASS** — **1.0 (11)** and **1.0 (12)** both VALID |
+
+| Spot check | Result |
+|------------|--------|
+| Flutter Today (after 6s boot) | **PASS** — scores 87/82/58, same narrative |
+| Flutter `#/tools` | **Flaky** — brief Loading Purple, then landed on `#/today` (not Tools UI) |
+| Prod `/today` | **Not confirmed** — splash persisted; prior cycle PASS after 12s hydrate |
+
+**Cycle 2 verdict:** Gates unchanged green; no new agent regressions in analyze/test. Tools route navigation flaky on second pass (P0 carry-over). **NO-GO** unchanged.
 
 ### Cycle 3 — pending

@@ -1,19 +1,25 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 (Apple Health overnight fleet; Flutter **1.0 (13)** pending upload).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 (Apple Health parity commit; TestFlight **1.0 (12)** VALID).
+
+## Overnight phase sweep (2026-07-05)
+
+Flutter features agent (excluding settings/health): hydration repository + screen, risk forecast drilldown, seizure logging form, vitals 7-day metric trends. **34/34** `flutter test`; analyze 0 errors.
 
 ## Apple Health overnight fleet (2026-07-05)
 
 **Root cause (recap):** iOS `health` plugin `hasPermissions()` returns `null` for READ; connect flow must trust `requestAuthorization` + secure-storage flag (matches Capacitor `health-ios.ts`).
 
-**This session (build 13):**
+**This session (Dart-only; no TestFlight 13 required):**
 - `health_service.dart`: iOS auth without VO2_MAX; staged sleep (LIGHT+REM+DEEP) aggregation; device-auth gating.
 - `native_health_autosync.dart` + `native_health_startup.dart`: visit-mode sync (3h throttle on `apple_health_tokens.last_sync_at`), wired in `AuthGate`.
+- `apple_health_panel.dart`: web-import note, connected badge, HealthKit copy parity; reload `last_sync_at` from DB after sync.
+- `sharing_screen.dart`: full `AppleHealthPanel` (web `AppleHealthCard` on Settings/sharing).
+- `welcome_apple_health_card.dart` + `welcome_screen.dart`: optional connect row (web `WelcomeAppleHealthConnect`).
 - `wearable_sync.dart`: pull-to-refresh + Today sync includes native HealthKit when device authorized.
-- `sync_status_bar.dart`: native iOS `_appleConnected` from HealthKit auth, not prior `biometrics` rows; last pulled uses `apple_health_tokens.last_sync_at`.
+- `sync_status_bar.dart`: native iOS `_appleConnected` from HealthKit auth OR token; Tools sync hint when only Apple connected.
 - `vitals_screen.dart`: pull-to-refresh triggers wearable + native health sync.
-- `health_providers.dart`: shared `nativeHealthSyncProvider`.
-- `pubspec.yaml`: **1.0.0+13** (Dart-only health fixes; plist/entitlements unchanged from build 12).
+- `health_providers.dart`: shared `healthServiceProvider`.
 
 **Verify (agent):**
 ```bash
@@ -21,7 +27,7 @@ cd flutter && flutter analyze lib/features/health/ lib/features/vitals/sync_stat
 cd flutter && flutter test test/health_service_test.dart   # 4/4 pass
 ```
 
-**Verify (iOS device / TestFlight 13):**
+**Verify (iOS device / TestFlight 1.0 (12)):** Dart-only changes; rebuild not required for plist. Re-upload **13+** only if native/ios changes land later.
 1. Tools → Apple Health → Connect → HealthKit sheet.
 2. Grant sleep/HRV/steps/HR → snackbar sync complete; status **Last synced** from `apple_health_tokens.last_sync_at`.
 3. Deny → yellow Settings guidance.

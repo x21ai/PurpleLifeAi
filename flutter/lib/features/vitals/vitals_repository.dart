@@ -8,6 +8,14 @@ import '../../core/offline/supabase_row_parse.dart';
 import '../../core/providers/core_providers.dart';
 import '../today/models/score_snapshot.dart';
 
+/// One daily value for metric trend charts.
+class MetricDayPoint {
+  const MetricDayPoint({required this.dateYmd, this.value});
+
+  final String dateYmd;
+  final double? value;
+}
+
 /// Loads Vitals biometrics from Supabase with offline cache fallback only.
 /// Unlike Today, does not fail-open when online: errors surface retry UI.
 class VitalsRepository {
@@ -25,6 +33,80 @@ class VitalsRepository {
 
   String? get _userId =>
       _supabase.auth.currentSession?.user.id ?? _supabase.auth.currentUser?.id;
+
+  /// Latest value per calendar day for the last [days] days (newest last).
+  Future<List<MetricDayPoint>> loadMetricTrend(
+    String metricKey, {
+    int days = 7,
+  }) async {
+    final userId = _userId;
+    if (userId == null) return const [];
+
+    final column = _columnForMetricKey(metricKey);
+    if (column == null) return const [];
+
+    final since = DateTime.now().subtract(Duration(days: days + 2));
+    try {
+      final response = await _supabase
+          .from('biometrics')
+          .select('recorded_at, $column')
+          .eq('user_id', userId)
+          .gte('recorded_at', formatSupabaseFilterTimestamp(since))
+          .order('recorded_at', ascending: true)
+          .limit(500);
+      final rows = (response as List).cast<Map<String, dynamic>>();
+      return _aggregateDailyTrend(rows, column: column, days: days);
+    } catch (error, stack) {
+      debugPrint('[VitalsRepository] metric trend failed: $error\n$stack');
+      if (!_canUseOfflineCache(error)) rethrow;
+      try {
+        final rows = await _database.readCachedTable('biometrics', userId: userId);
+        return _aggregateDailyTrend(rows, column: column, days: days);
+      } catch (_) {
+        return const [];
+      }
+    }
+  }
+
+  String? _columnForMetricKey(String metricKey) {
+    return switch (metricKey) {
+      'readiness' => 'oura_readiness_score',
+      'sleep_score' => 'sleep_score',
+      'activity_score' => 'oura_activity_score',
+      'stress' => 'oura_stress_score',
+      'hrv' => 'hrv_rmssd_ms',
+      'resting_hr' => 'resting_hr_bpm',
+      'spo2' => 'spo2_pct',
+      'steps' => 'steps',
+      _ => null,
+    };
+  }
+
+  List<MetricDayPoint> _aggregateDailyTrend(
+    List<Map<String, dynamic>> rows, {
+    required String column,
+    required int days,
+  }) {
+    final byDay = <String, double>{};
+    for (final row in rows) {
+      final day = formatSupabaseDateTime(row['recorded_at']);
+      if (day == null) continue;
+      final ymd = day.substring(0, 10);
+      final value = _asDouble(row[column]);
+      if (value != null) byDay[ymd] = value;
+    }
+
+    final today = DateTime.now();
+    final points = <MetricDayPoint>[];
+    for (var i = days - 1; i >= 0; i--) {
+      final d = DateTime(today.year, today.month, today.day)
+          .subtract(Duration(days: i));
+      final ymd =
+          '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      points.add(MetricDayPoint(dateYmd: ymd, value: byDay[ymd]));
+    }
+    return points;
+  }
 
   Future<ScoreSnapshot> loadScoreSnapshot({String? dateYmd}) async {
     final userId = _userId;
@@ -194,4 +276,13 @@ final vitalsSnapshotProvider =
   if (session == null) return ScoreSnapshot.empty;
   final repository = ref.watch(vitalsRepositoryProvider);
   return repository.loadScoreSnapshot();
+});
+
+final metricTrendProvider = FutureProvider.autoDispose
+    .family<List<MetricDayPoint>, String>((ref, metricKey) async {
+  ref.keepAlive();
+  await ref.watch(authRepositoryProvider.future);
+  final session = ref.watch(authSessionProvider).valueOrNull;
+  if (session == null) return const [];
+  return ref.watch(vitalsRepositoryProvider).loadMetricTrend(metricKey);
 });

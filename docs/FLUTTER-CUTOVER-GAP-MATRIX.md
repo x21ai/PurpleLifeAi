@@ -133,9 +133,9 @@ From `flutter/lib/shell/routes.dart` + `router.dart`:
 | Feature / route | Web | Flutter | Status | Gap notes |
 |-----------------|-----|---------|--------|-----------|
 | **Today** `/today` | Full dashboard | `TodayScreen` + `today_repository.dart` | **Partial** | Scores, narrative, doses, pull-to-refresh, sync bar. Missing: `/today/risk`, hydration quick-add, travel banners, weekly recap, condition tips |
-| **Today risk** `/today/risk` | Risk drilldown | — | **Missing** | No route |
+| **Today risk** `/today/risk` | Risk drilldown | `TodayRiskScreen` + `risk_forecast_repository.dart` | **Partial** | Real `risk_forecasts` arc, band, narrative, factors |
 | **Vitals** `/vitals` | Goals + grid + insights link | `VitalsScreen` + offline biometrics | **Partial** | Real reads, empty states, sync bar. No metric drilldown |
-| **Biometrics hub** `/biometrics`, `/biometrics/$metric` | Full metric browser + charts | Folded into Vitals only | **Missing** / **Partial** | No per-metric route or charts |
+| **Biometrics hub** `/biometrics`, `/biometrics/$metric` | Full metric browser + charts | `/vitals/metric/:metricKey` | **Partial** | Latest value + 7-day trend sparkline |
 | **My Health** `/my-health` | Body/condition hub | — | **Missing** | |
 | **Meds** `/meds` | Library + today's doses + add flows | `MedsScreen` + dose actions | **Partial** | Read/mark doses, filters, offline. No add/edit med, schedules UI, scan/voice |
 | **Meds detail** `/meds/$medId` | Full med editor | — | **Missing** | |
@@ -176,18 +176,18 @@ From `flutter/lib/shell/routes.dart` + `router.dart`:
 |-----------|---------------|--------|
 | `/welcome` | `/welcome` | Partial |
 | `/today` | `/today` | Partial |
-| `/today/risk` | — | Missing |
+| `/today/risk` | `/today/risk` | Partial |
 | `/vitals` | `/vitals` | Partial |
 | `/biometrics` | — (vitals overlap) | Missing |
-| `/biometrics/$metric` | — | Missing |
+| `/biometrics/$metric` | `/vitals/metric/:metricKey` | Partial |
 | `/my-health` | — | Missing |
 | `/my-health-dna` | — | Missing |
 | `/apple-health-import` | — | Missing |
 | `/journal` | `/journal` | Partial |
 | `/journal/new` | `/journal/new` | Partial |
-| `/seizures/new` | — | Missing |
+| `/seizures/new` | `/seizures/new` | Partial |
 | `/timeline` | — | Missing |
-| `/hydration` | — | Missing |
+| `/hydration` | `/hydration` | Partial |
 | `/insights` | — | Missing |
 | `/meds` | `/meds` | Partial |
 | `/meds/$medId` | — | Missing |

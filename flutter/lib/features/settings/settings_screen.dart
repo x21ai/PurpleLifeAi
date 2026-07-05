@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
+import 'settings_hub.dart';
+import 'platform_flags.dart';
 import 'settings_sections.dart';
 
 /// Settings hub ported from web `src/routes/_app/settings.tsx`.
@@ -18,6 +20,8 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final flags = ref.watch(settingsProfileFlagsProvider).valueOrNull ??
         const SettingsProfileFlags();
+    final platform = ref.watch(platformFlagsProvider).valueOrNull ??
+        const PlatformFlags();
 
     return CanvasBackground(
       child: SingleChildScrollView(
@@ -51,7 +55,7 @@ class SettingsScreen extends ConsumerWidget {
                     ),
               ),
               const SizedBox(height: 24),
-              const _HubCards(current: 'settings'),
+              const SettingsHubCards(current: 'settings'),
               const SizedBox(height: 28),
               const _GroupLabel(title: 'Your health'),
               _SettingsSection(
@@ -67,7 +71,7 @@ class SettingsScreen extends ConsumerWidget {
                     title: 'Lab reports',
                     subtitle:
                         'Upload labs as PDF or photo. See trends. Educational only.',
-                    onTap: () => context.go('/settings/reports'),
+                    onTap: () => context.go(AppRoutes.reportsRedirect),
                   ),
                   if (flags.showSeizure)
                     _SettingsRow(
@@ -88,8 +92,15 @@ class SettingsScreen extends ConsumerWidget {
                     title: 'Sharing & access',
                     subtitle:
                         'Invite caregivers, set what they see, approve edits',
-                    onTap: () => context.go('/settings/sharing'),
+                    onTap: () => context.go(AppRoutes.settingsSharing),
                   ),
+                  if (platform.community)
+                    _SettingsRow(
+                      icon: Icons.groups_outlined,
+                      title: 'Community',
+                      subtitle: 'Share experiences and find resources',
+                      onTap: () => openPurpleUrl('/community'),
+                    ),
                 ],
               ),
               const SizedBox(height: 20),
@@ -100,7 +111,7 @@ class SettingsScreen extends ConsumerWidget {
                     icon: Icons.flight_outlined,
                     title: 'Travel mode',
                     subtitle: 'Plan trips, anchor doses to home time',
-                    onTap: () => context.go('/settings/travel'),
+                    onTap: () => context.go(AppRoutes.settingsTravel),
                   ),
                 ],
               ),
@@ -125,7 +136,7 @@ class SettingsScreen extends ConsumerWidget {
                     icon: Icons.chat_bubble_outline,
                     title: 'Contact the team',
                     subtitle: 'Questions, feedback, anything',
-                    onTap: () => context.go('/settings/contact'),
+                    onTap: () => context.go(AppRoutes.settingsContact),
                   ),
                 ],
               ),
@@ -219,7 +230,7 @@ class _PastHistoryCard extends StatelessWidget {
                   iconColor: Theme.of(context).colorScheme.primary,
                   title: 'Old medications',
                   subtitle: 'Set start & end dates in the past',
-                  onTap: () => context.go('/meds'),
+                  onTap: () => context.go('${AppRoutes.meds}?add=past'),
                 ),
                 if (showSeizure)
                   _PastHistoryTile(
@@ -315,115 +326,6 @@ class _PastHistoryTile extends StatelessWidget {
                 Icons.chevron_right,
                 size: 18,
                 color: Colors.white.withValues(alpha: 0.35),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HubCards extends StatelessWidget {
-  const _HubCards({required this.current});
-
-  final String current;
-
-  @override
-  Widget build(BuildContext context) {
-    final cards = [
-      _HubCard(
-        icon: Icons.account_circle_outlined,
-        title: 'Account',
-        subtitle: 'Profile, security, language, appearance',
-        active: current == 'account',
-        onTap: () => context.go('/account'),
-      ),
-      _HubCard(
-        icon: Icons.settings_outlined,
-        title: 'Settings',
-        subtitle: 'Preferences, sharing, data',
-        active: current == 'settings',
-        onTap: () => context.go('/settings'),
-      ),
-      _HubCard(
-        icon: Icons.build_outlined,
-        title: 'Tools',
-        subtitle: 'Devices, alarms, integrations',
-        active: current == 'tools',
-        onTap: () => context.go('/tools'),
-      ),
-    ];
-
-    return Column(
-      children: [
-        for (var i = 0; i < cards.length; i++) ...[
-          if (i > 0) const SizedBox(height: 12),
-          cards[i],
-        ],
-      ],
-    );
-  }
-}
-
-/// Hub card matching web `HubCard`: icon above title above subtitle, active
-/// card carries a primary border and soft primary tint.
-class _HubCard extends StatelessWidget {
-  const _HubCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.active,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: active
-                ? primary.withValues(alpha: 0.05)
-                : Colors.white.withValues(alpha: 0.03),
-            border: Border.all(
-              color: active
-                  ? primary.withValues(alpha: 0.6)
-                  : Colors.white.withValues(alpha: 0.1),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, size: 20, color: primary),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontFamily: PurpleType.serif,
-                      color: Colors.white.withValues(alpha: 0.95),
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.55),
-                    ),
               ),
             ],
           ),
@@ -555,63 +457,6 @@ class _SettingsRow extends StatelessWidget {
                 Icons.chevron_right,
                 size: 18,
                 color: Colors.white.withValues(alpha: 0.35),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Re-export hub layout for account and tools placeholder screens.
-class SettingsHubLayout extends StatelessWidget {
-  const SettingsHubLayout({
-    super.key,
-    required this.hub,
-    required this.title,
-    required this.body,
-  });
-
-  final String hub;
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    return CanvasBackground(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.only(top: 24, bottom: 120),
-        child: ContentColumn(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextButton.icon(
-                onPressed: () => context.go('/settings'),
-                icon: Icon(Icons.arrow_back,
-                    color: Colors.white.withValues(alpha: 0.55)),
-                label: Text(
-                  'Settings',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _HubCards(current: hub),
-              const SizedBox(height: 24),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontFamily: PurpleType.serif,
-                      color: Colors.white.withValues(alpha: 0.95),
-                    ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                body,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.65),
-                      height: 1.5,
-                    ),
               ),
             ],
           ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
@@ -77,6 +78,7 @@ class MetricDetailScreen extends ConsumerWidget {
     }
 
     final snapshotAsync = ref.watch(vitalsSnapshotProvider);
+    final trendAsync = ref.watch(metricTrendProvider(metricKey));
     final tokens = PurpleTokens.loaded;
     final muted = Colors.white.withValues(alpha: 0.55);
 
@@ -117,7 +119,7 @@ class MetricDetailScreen extends ConsumerWidget {
               Text(
                 meta.label,
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      fontFamily: 'Georgia',
+                      fontFamily: PurpleType.serif,
                       fontSize: 44,
                       height: 1.02,
                       color: Colors.white.withValues(alpha: 0.95),
@@ -168,7 +170,7 @@ class MetricDetailScreen extends ConsumerWidget {
                                 .textTheme
                                 .displaySmall
                                 ?.copyWith(
-                                  fontFamily: 'Georgia',
+                                  fontFamily: PurpleType.serif,
                                   fontSize: 56,
                                   height: 1,
                                   color: Colors.white.withValues(alpha: 0.95),
@@ -202,13 +204,49 @@ class MetricDetailScreen extends ConsumerWidget {
                           ),
                         ],
                         const SizedBox(height: 20),
-                        Text(
-                          'Trend charts, ranges, and Ask Purple for this signal ship in a later phase. Your latest value is real when a device is connected.',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.7),
-                                    height: 1.45,
-                                  ),
+                        trendAsync.when(
+                          loading: () => const SizedBox(
+                            height: 120,
+                            child: Center(child: Text('Loading trend…')),
+                          ),
+                          error: (_, __) => const SizedBox.shrink(),
+                          data: (points) {
+                            final values =
+                                points.map((p) => p.value).whereType<double>().toList();
+                            if (values.length < 2) {
+                              return Text(
+                                'Not enough history yet for a 7-day trend.',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.7),
+                                      height: 1.45,
+                                    ),
+                              );
+                            }
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '7-DAY TREND',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        letterSpacing: 1.2,
+                                        color: Colors.white.withValues(alpha: 0.45),
+                                      ),
+                                ),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  height: 120,
+                                  width: double.infinity,
+                                  child: _MetricTrendChart(points: points),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -235,6 +273,82 @@ class MetricDetailScreen extends ConsumerWidget {
       _ => null,
     };
   }
+}
+
+class _MetricTrendChart extends StatelessWidget {
+  const _MetricTrendChart({required this.points});
+
+  final List<MetricDayPoint> points;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _TrendPainter(points: points),
+      child: const SizedBox.expand(),
+    );
+  }
+}
+
+class _TrendPainter extends CustomPainter {
+  _TrendPainter({required this.points});
+
+  final List<MetricDayPoint> points;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final values = points.map((p) => p.value).whereType<double>().toList();
+    if (values.length < 2) return;
+
+    final min = values.reduce((a, b) => a < b ? a : b);
+    final max = values.reduce((a, b) => a > b ? a : b);
+    final range = (max - min).abs() < 0.001 ? 1.0 : (max - min);
+
+    final linePaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.85)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.white.withValues(alpha: 0.18),
+          Colors.transparent,
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final path = Path();
+    final fill = Path();
+    var started = false;
+
+    for (var i = 0; i < points.length; i++) {
+      final value = points[i].value;
+      if (value == null) continue;
+      final x = points.length == 1 ? 0.0 : i / (points.length - 1) * size.width;
+      final y = size.height - ((value - min) / range) * (size.height - 8) - 4;
+      if (!started) {
+        path.moveTo(x, y);
+        fill.moveTo(x, size.height);
+        fill.lineTo(x, y);
+        started = true;
+      } else {
+        path.lineTo(x, y);
+        fill.lineTo(x, y);
+      }
+    }
+
+    if (!started) return;
+    fill.lineTo(size.width, size.height);
+    fill.close();
+    canvas.drawPath(fill, fillPaint);
+    canvas.drawPath(path, linePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TrendPainter oldDelegate) =>
+      oldDelegate.points != points;
 }
 
 class _MetricNotFound extends StatelessWidget {
