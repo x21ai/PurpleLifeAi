@@ -20,8 +20,8 @@ class ReportsDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (!AppRoutes.isReportId(reportId)) {
-      return _ReportShell(
-        child: const EmptyState(
+      return const _ReportShell(
+        child: EmptyState(
           eyebrow: 'Report',
           title: 'Report not found',
           body: 'This link does not point to a valid report.',
