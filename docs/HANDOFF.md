@@ -9,16 +9,25 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign`**. TestFlight **1.0 (17) VALID**. Flutter **My Body**,
-**Vitals**, and **Tools** share an **All synced data (90 days)** panel: per-provider day
-counts, last sync relative time, and link chips to Vitals / My Body / Biometrics / Tools.
+**`main` and `lovable/redesign` synced at `7fd1bc2`** (pushed to `origin/main` 2026-07-05).
+TestFlight **1.0 (17) VALID**. Merge gates passed: em-dash, live-data, unique-images,
+lovable-auth, `tsc --noEmit`, `build:prod`, `flutter analyze lib/`, **91/91** `flutter test`.
+No production Worker deploy (operator approval required).
 
-**Next action:** TF17 device re-verify `tf-synced-data-visibility`; biometrics hub depth still
-partial.
+**Next action:** Optional push `lovable/redesign` to match `main`; TF17 device QA; Stage 5 cutover still NO-GO.
 
 ---
 
 ## Log
+
+### 2026-07-05T14:42:00Z — Merge lovable/redesign → main (gates + push)
+
+- **Requested:** Operator-approved merge `origin/lovable/redesign` into `main` with full quality gates; push `main`; no prod deploy.
+- **Done:** Fast-forward `main` `311d466` → `7fd1bc2` (includes gate commit `fix(flutter): pass merge gates for insights, vitals, and chat`). Gates: `check:em-dash`, `check:live-data`, `check:unique-images`, `check:lovable-auth`, `tsc --noEmit`, Doppler `build:prod`, `flutter analyze lib/`, `flutter test` **91/91**. `git push origin main` **OK** (`311d466..7fd1bc2`).
+- **Issues:** Local `docs/OPEN-ISSUES.md` edits unstaged; duplicate `lib/shell/top_bar 2.dart` triggers analyze info on some runs; `lovable/redesign` remote may trail `main` by 1 commit until pushed.
+- **Stand / next:** `git push origin lovable/redesign` to align branches; prod deploy only with explicit approval.
+- **Who / where:** Cursor merge subagent · darwin · main@7fd1bc2
+- **Timestamp:** 2026-07-05T14:42:00Z.
 
 ### 2026-07-05T14:40:00Z — Flutter synced data visibility depth
 
