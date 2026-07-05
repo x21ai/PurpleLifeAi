@@ -37,6 +37,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   final _firstController = TextEditingController();
   final _lastController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _homeCityController = TextEditingController();
   final _genderCustomController = TextEditingController();
 
   bool _loading = true;
@@ -59,6 +60,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
 
   Timer? _nameTimer;
   Timer? _phoneTimer;
+  Timer? _homeCityTimer;
   Timer? _genderTimer;
 
   @override
@@ -71,10 +73,12 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   void dispose() {
     _nameTimer?.cancel();
     _phoneTimer?.cancel();
+    _homeCityTimer?.cancel();
     _genderTimer?.cancel();
     _firstController.dispose();
     _lastController.dispose();
     _phoneController.dispose();
+    _homeCityController.dispose();
     _genderCustomController.dispose();
     super.dispose();
   }
@@ -94,7 +98,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       final row = await _client
           .from('profiles')
           .select(
-              'first_name, last_name, phone, gender, country, timezone, locale')
+              'first_name, last_name, phone, gender, country, home_city, timezone, locale')
           .eq('id', userId)
           .maybeSingle();
       final session = _client.auth.currentSession;
@@ -113,6 +117,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           _genderCustomController.text = gender;
         }
         _country = row?['country'] as String?;
+        _homeCityController.text = (row?['home_city'] as String?) ?? '';
         _timezone = row?['timezone'] as String?;
         _locale = row?['locale'] as String?;
         _email = session?.user.email;
@@ -211,6 +216,26 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       if (mounted) setState(() => _genderState = _SaveState.saved);
     } catch (_) {
       if (mounted) setState(() => _genderState = _SaveState.error);
+    }
+  }
+
+  void _scheduleHomeCitySave() {
+    _homeCityTimer?.cancel();
+    _homeCityTimer = Timer(const Duration(milliseconds: 600), _saveHomeCity);
+  }
+
+  Future<void> _saveHomeCity() async {
+    final userId = _userId;
+    if (userId == null) return;
+    setState(() => _localeState = _SaveState.saving);
+    try {
+      final city = _homeCityController.text.trim();
+      await _client.from('profiles').update({
+        'home_city': city.isEmpty ? null : city,
+      }).eq('id', userId);
+      if (mounted) setState(() => _localeState = _SaveState.saved);
+    } catch (_) {
+      if (mounted) setState(() => _localeState = _SaveState.error);
     }
   }
 
@@ -641,6 +666,17 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               : (value) => _saveLocale(country: value),
         ),
         const SizedBox(height: 12),
+        Text('City', style: _mutedStyle(context)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _homeCityController,
+          enabled: !_loading,
+          textCapitalization: TextCapitalization.words,
+          decoration: _inputDecoration('e.g. Brooklyn'),
+          style: _inputStyle(context),
+          onChanged: (_) => _scheduleHomeCitySave(),
+        ),
+        const SizedBox(height: 12),
         Text('Time zone', style: _mutedStyle(context)),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
@@ -654,7 +690,10 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           style: _inputStyle(context),
           items: [
             for (final tz in commonTimezones)
-              DropdownMenuItem(value: tz, child: Text(tz)),
+              DropdownMenuItem(
+                value: tz,
+                child: Text(timezoneLabel(tz)),
+              ),
           ],
           onChanged: _loading
               ? null
@@ -664,7 +703,10 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         ),
         if (_timezone != null && !commonTimezones.contains(_timezone)) ...[
           const SizedBox(height: 6),
-          Text('Current: $_timezone', style: _mutedStyle(context)),
+          Text(
+            'Current: ${timezoneLabel(_timezone!)}',
+            style: _mutedStyle(context),
+          ),
         ],
         const SizedBox(height: 12),
         Text('Language', style: _mutedStyle(context)),

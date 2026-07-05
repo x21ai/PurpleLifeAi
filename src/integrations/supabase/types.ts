@@ -141,18 +141,27 @@ export type Database = {
       }
       app_settings: {
         Row: {
+          feature_community_enabled: boolean
+          feature_dna_enabled: boolean
+          feature_friends_enabled: boolean
           id: boolean
           pro_features: Json
           pro_free_for_everyone: boolean
           updated_at: string
         }
         Insert: {
+          feature_community_enabled?: boolean
+          feature_dna_enabled?: boolean
+          feature_friends_enabled?: boolean
           id?: boolean
           pro_features?: Json
           pro_free_for_everyone?: boolean
           updated_at?: string
         }
         Update: {
+          feature_community_enabled?: boolean
+          feature_dna_enabled?: boolean
+          feature_friends_enabled?: boolean
           id?: boolean
           pro_features?: Json
           pro_free_for_everyone?: boolean
@@ -1352,25 +1361,19 @@ export type Database = {
         Row: {
           created_at: string
           day: string
-          id: string
           narrative: string
-          updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
           day: string
-          id?: string
           narrative: string
-          updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
           day?: string
-          id?: string
           narrative?: string
-          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -1958,6 +1961,27 @@ export type Database = {
         }
         Relationships: []
       }
+      native_push_tokens: {
+        Row: {
+          platform: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          platform: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notification_delivery_log: {
         Row: {
           acknowledged_action: string | null
@@ -2001,27 +2025,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      native_push_tokens: {
-        Row: {
-          platform: string
-          token: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          platform: string
-          token: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          platform?: string
-          token?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       oura_tokens: {
         Row: {
@@ -2269,6 +2272,7 @@ export type Database = {
           first_name: string | null
           floating_ask_enabled: boolean
           gender: string | null
+          home_city: string | null
           id: string
           idle_timeout_minutes: number
           last_name: string | null
@@ -2321,6 +2325,7 @@ export type Database = {
           first_name?: string | null
           floating_ask_enabled?: boolean
           gender?: string | null
+          home_city?: string | null
           id: string
           idle_timeout_minutes?: number
           last_name?: string | null
@@ -2373,6 +2378,7 @@ export type Database = {
           first_name?: string | null
           floating_ask_enabled?: boolean
           gender?: string | null
+          home_city?: string | null
           id?: string
           idle_timeout_minutes?: number
           last_name?: string | null
@@ -3328,6 +3334,8 @@ export type Database = {
         Returns: undefined
       }
       seed_daily_medication_doses: { Args: never; Returns: undefined }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "user" | "admin" | "super_admin"

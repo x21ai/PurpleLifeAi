@@ -31,6 +31,7 @@ function AccountPage() {
   const userId = session?.user?.id;
   const [locale, setLocaleState] = React.useState<LocaleValues>({
     country: null,
+    homeCity: null,
     timezone: null,
     locale: "en",
   });
@@ -43,12 +44,13 @@ function AccountPage() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("country, timezone, locale")
+        .select("country, home_city, timezone, locale")
         .eq("id", userId)
         .maybeSingle();
       if (cancelled || !data) return;
       setLocaleState({
         country: data.country ?? null,
+        homeCity: data.home_city ?? null,
         timezone: data.timezone ?? null,
         locale: (data.locale as SupportedLocale) ?? "en",
       });
@@ -65,7 +67,12 @@ function AccountPage() {
     setSavingLocale(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ country: next.country, timezone: next.timezone, locale: next.locale })
+      .update({
+        country: next.country,
+        home_city: next.homeCity,
+        timezone: next.timezone,
+        locale: next.locale,
+      })
       .eq("id", userId);
     setSavingLocale(false);
     if (error) return toast.error("Couldn't save region & language");

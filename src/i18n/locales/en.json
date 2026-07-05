@@ -311,6 +311,8 @@
     "subtitle": "How Purple shows times and which language it speaks.",
     "country": "Country",
     "countryPlaceholder": "Select your country",
+    "homeCity": "City",
+    "homeCityPlaceholder": "e.g. Brooklyn",
     "timezone": "Time zone",
     "timezoneDetect": "Use my device",
     "language": "Language",

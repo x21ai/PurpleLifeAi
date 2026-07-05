@@ -309,6 +309,8 @@
     "subtitle": "Cómo Purple muestra las horas y el idioma en el que te habla.",
     "country": "País",
     "countryPlaceholder": "Elige tu país",
+    "homeCity": "Ciudad",
+    "homeCityPlaceholder": "p. ej. Madrid",
     "timezone": "Zona horaria",
     "timezoneDetect": "Usar la de mi dispositivo",
     "language": "Idioma",

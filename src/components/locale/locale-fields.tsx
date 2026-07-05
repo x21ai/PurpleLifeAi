@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Globe, Clock, Languages } from "lucide-react";
+import { Globe, Clock, Languages, MapPin } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import {
   COUNTRIES,
   detectBrowserCountry,
@@ -22,6 +23,7 @@ import { SUPPORTED_LOCALES, type SupportedLocale } from "@/i18n";
 
 export type LocaleValues = {
   country: string | null;
+  homeCity: string | null;
   timezone: string | null;
   locale: SupportedLocale;
 };
@@ -96,6 +98,26 @@ export function LocaleFields({ values, onChange, disabled, compact, showTitle }:
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div>
+        <Label
+          htmlFor="locale-home-city"
+          className="flex items-center gap-2 text-sm text-foreground"
+        >
+          <MapPin className="h-3.5 w-3.5 text-primary" />
+          {t("locale.homeCity")}
+        </Label>
+        <Input
+          id="locale-home-city"
+          className="mt-1.5"
+          placeholder={t("locale.homeCityPlaceholder")}
+          value={values.homeCity ?? ""}
+          onChange={(e) =>
+            onChange({ ...values, homeCity: e.target.value.trim() || null })
+          }
+          disabled={disabled}
+        />
       </div>
 
       <div>
