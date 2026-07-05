@@ -1,8 +1,44 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~09:25 ET (settings scroll parity verified).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~10:00 ET (Flutter web cutover runbook + TF16 commit).
 
-**Recent:** Flutter `/settings` full scroll web parity verified (`settings_screen_scroll_test.dart`, 47/47 tests). `tf-settings-design` resolved in OPEN-ISSUES; needs TF16 upload for tester re-check.
+**Recent:** Committed **d62472b** TF16 Luciq SPM dedupe (`1.0.0+16`). Added `docs/FLUTTER-WEB-CUTOVER.md` and `scripts/flutter-web-build-prod.sh` (Worker Flutter web plan, no prod deploy).
+
+## Flutter web cutover (plan only, 2026-07-05)
+
+| Item | Path / command |
+|------|----------------|
+| Runbook | `docs/FLUTTER-WEB-CUTOVER.md` |
+| Prod web build | `./scripts/flutter-web-build-prod.sh` → `flutter/build/web` |
+| Local preview | `./scripts/flutter-web-serve.sh --rebuild` → `:8765` |
+| TanStack dev (keep) | `bun run dev` → `:8080` for Lovable design + Worker API dev |
+| Prod deploy | **Blocked** — needs `server.ts` routing + owner approval |
+
+**Worker changes (future):** merge Flutter into `dist/client/_flutter/`, path dispatch in `src/server.ts`, optional `run_worker_first` in `wrangler.deploy.jsonc`. DNS unchanged.
+
+
+## Integration verification (2026-07-05 ~09:22 ET)
+
+**Branch:** `lovable/redesign` · **HEAD:** `e1cd69dbeb76d56ed3965ccd9339868e181ab331` (`e1cd69d` feat(flutter): luciq_flutter crash reporting)
+
+| Gate | Status |
+|------|--------|
+| `git pull origin lovable/redesign` | **Already up to date** (re-fetch at ~09:22 ET, no settings/TF commits) |
+| `flutter analyze lib/` | **PASS** (0 issues) |
+| `flutter test` | **46/46 PASS** |
+| `./scripts/flutter-web-serve.sh --rebuild` | **PASS** (release build, Drift wasm copied, :8765 restarted) |
+| `curl http://127.0.0.1:8765/` | **200** |
+| Browser `#/settings` | **PASS** — hub cards + scroll sections (YOUR HEALTH, PEOPLE, conditions, AI, export) |
+| Browser `#/account` | **PASS** — stays on `#/account`; city text field visible (`e.g. Brooklyn`); timezone label "New York" |
+
+**Verify:**
+```bash
+git pull origin lovable/redesign && git rev-parse HEAD
+cd flutter && flutter analyze lib/ && flutter test
+./scripts/flutter-web-serve.sh --rebuild
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8765/
+# Browser: http://127.0.0.1:8765/#/settings and /#/account (signed-in session)
+```
 
 **Session start:** read `docs/HANDOFF.md` (snapshot + log), `docs/DECISIONS.md`, and
 `docs/OPEN-ISSUES.md` first (`.cursor/rules/00-handoff.mdc`). This file is extended

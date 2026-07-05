@@ -3,7 +3,7 @@
 **Status:** Flutter **1.0 (11)** VALID on TestFlight (2026-07-04 evening)  
 **Goal:** Ship `org.purplelife.app` to TestFlight as a **Flutter native binary**, replacing the Capacitor WebView shell on the **same** App Store Connect app record.
 
-**Related:** [`testflight-setup.md`](testflight-setup.md), [`LOVABLE-FLUTTER-SYNC.md`](LOVABLE-FLUTTER-SYNC.md), [`features/PHASE5_CUTOVER_ORCHESTRATOR.md`](features/PHASE5_CUTOVER_ORCHESTRATOR.md), [`flutter/README.md`](../flutter/README.md)
+**Related:** [`testflight-setup.md`](testflight-setup.md), [`LOVABLE-FLUTTER-SYNC.md`](LOVABLE-FLUTTER-SYNC.md), [`FLUTTER-WEB-CUTOVER.md`](FLUTTER-WEB-CUTOVER.md) (prod web, plan only), [`features/PHASE5_CUTOVER_ORCHESTRATOR.md`](features/PHASE5_CUTOVER_ORCHESTRATOR.md), [`flutter/README.md`](../flutter/README.md)
 
 **Hard rules:** Same bundle ID (`org.purplelife.app`), same ASC app (`6787298041`). Capacitor `ios/` stays for rollback until Stage 6.
 

@@ -12,6 +12,10 @@ Format:
 
 ## Flutter / TestFlight
 
+- [ ] **flutter-web-cutover-impl** — Runbook at `docs/FLUTTER-WEB-CUTOVER.md` (plan only).
+  Needs `merge-flutter-web-assets.sh`, `src/server.ts` path dispatch, staging smoke, owner
+  approval before prod. Build: `./scripts/flutter-web-build-prod.sh`. _Raised 2026-07-05._
+
 - [ ] **tf-synced-data-visibility** — Tester ASC feedback (2026-07-05): "how do i see all my
   synched data?" Flutter has no `/my-health` route, bottom nav maps Vitals not My Body, biometrics
   hub missing. Track in `docs/FLUTTER-CUTOVER-GAP-MATRIX.md` P0-2. _Raised 2026-07-05 cutover audit._

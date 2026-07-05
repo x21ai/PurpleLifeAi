@@ -9,19 +9,36 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign`**. TestFlight **1.0 (16)** **VALID**, IN_BETA_TESTING
-(2026-07-05). Cutover audit refreshed: **33 route gaps** (30 Missing + 3 Stub) of 55 web `_app`
-paths; **0 parity** routes. ASC beta feedback mapped in `docs/FLUTTER-CUTOVER-GAP-MATRIX.md`
-(P0-2 synced-data visibility, P0-3 OAuth, P0-1 crashes open). Phase 5 **NO-GO**.
+Purple Life on **`lovable/redesign`** at **`d62472b`** (TF16 Luciq dedupe commit). TestFlight
+**1.0 (16)** **VALID**, IN_BETA_TESTING (2026-07-05). **Flutter web cutover** runbook scaffolded:
+`docs/FLUTTER-WEB-CUTOVER.md` + `scripts/flutter-web-build-prod.sh` (plan only, no prod deploy).
+Phase 5 native cutover on TestFlight; prod web still TanStack `_app` until Worker dispatch ships.
 
-**Next action:** Device verify TF16 fixes (`tf16-device-verify`); implement P0 slices starting
-with `/my-health` + Oura redirect console.
+**Next action:** Device verify TF16 (`tf16-device-verify`); implement Worker merge + `server.ts`
+routing when owner approves Flutter web cutover staging.
 
 ---
 
 ## Log
 
-### 2026-07-05T17:55:00Z — Flutter cutover gap audit from TF feedback
+### 2026-07-05T14:00:00Z — Flutter web cutover runbook + TF16 commit
+
+- **Requested:** Document Worker path for Flutter web at www.purplelife.org; scaffold prod build
+  script; list Worker route changes (plan only); commit TF16 Luciq dedupe; push.
+- **Done:** Added `docs/FLUTTER-WEB-CUTOVER.md` (build pipeline, asset paths, path-based Worker
+  dispatch vs TanStack SSR, rollback, `:8080` vs `:8765` roles). Added
+  `scripts/flutter-web-build-prod.sh` (Doppler dart-defines → `flutter/build/web`). Linked from
+  `docs/FLUTTER-TESTFLIGHT-CUTOVER.md`. Committed **d62472b** `chore(ios): TF16 build bump and
+  Luciq dedupe` (`1.0.0+16`, removed duplicate SPM Luciq, Podfile.lock). `flutter test` **47/47**
+  on committed tree (parallel fleet WIP in untracked `lib/features/marketing/` breaks local
+  analyze until merged).
+- **Issues:** Worker `src/server.ts` dispatch + `merge-flutter-web-assets.sh` not implemented.
+  `flutter-phase5-nogo` still blocks prod Flutter web. Parallel agents left untracked marketing/
+  reports WIP on disk.
+- **Stand / next:** Staging cutover on workers.dev; owner approval before prod deploy.
+- **Who / where:** Cursor subagent · darwin · lovable/redesign@d62472b
+- **Timestamp:** 2026-07-05T14:00:00Z
+
 
 - **Requested:** Pull ASC/Luciq feedback, confirm TF16, map feedback to Flutter gaps, compare web vs
   Flutter routes, refresh gap matrix and open issues; audit only, commit + push.
