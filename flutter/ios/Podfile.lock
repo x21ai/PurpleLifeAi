@@ -10,6 +10,10 @@ PODS:
     - Flutter
   - health (13.3.1):
     - Flutter
+  - Luciq (19.8.1)
+  - luciq_flutter (19.8.0):
+    - Flutter
+    - Luciq (= 19.8.1)
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -48,12 +52,14 @@ DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_secure_storage (from `.symlinks/plugins/flutter_secure_storage/ios`)
   - health (from `.symlinks/plugins/health/ios`)
+  - luciq_flutter (from `.symlinks/plugins/luciq_flutter/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sqlite3_flutter_libs (from `.symlinks/plugins/sqlite3_flutter_libs/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
 
 SPEC REPOS:
   trunk:
+    - Luciq
     - sqlite3
 
 EXTERNAL SOURCES:
@@ -69,6 +75,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_secure_storage/ios"
   health:
     :path: ".symlinks/plugins/health/ios"
+  luciq_flutter:
+    :path: ".symlinks/plugins/luciq_flutter/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   sqlite3_flutter_libs:
@@ -83,6 +91,8 @@ SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_secure_storage: 1ed9476fba7e7a782b22888f956cce43e2c62f13
   health: 4decf5d74e8f54c58a8c07a385fc72f629a831d9
+  Luciq: 118cb8fea1a7430468b790d949b62251b4f144a1
+  luciq_flutter: 33f40da845fab03cab1dafb16900914e3d1cc06e
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   sqlite3: a51c07cf16e023d6c48abd5e5791a61a47354921
   sqlite3_flutter_libs: b3e120efe9a82017e5552a620f696589ed4f62ab
