@@ -28,6 +28,11 @@ bool _isKnownAppPath(String path) {
 /// Public route paths for feature integration.
 abstract final class AppRoutes {
   static const signIn = '/sign-in';
+  static const marketingHome = '/';
+  static const pricing = '/pricing';
+  static const marketingPrivacy = '/privacy';
+  static const about = '/about';
+  static const trust = '/trust';
   static const welcome = '/welcome';
   static const today = '/today';
   static const todayRisk = '/today/risk';
@@ -44,15 +49,35 @@ abstract final class AppRoutes {
   static const oauthOuraCallback = '/oauth/oura/callback';
   static const oauthWhoopCallback = '/oauth/whoop/callback';
   static const careIndex = '/care';
+  static const careInbox = '/care/inbox';
   static const careOwner = '/care/:ownerId';
   static const settingsSharing = '/settings/sharing';
   static const settingsTravel = '/settings/travel';
   static const settingsReports = '/settings/reports';
   static const settingsReportsNew = '/settings/reports/new';
+
+  static const reports = '/reports';
+  static const reportsMetrics = '/reports/metrics';
+  static const reportsDocuments = '/reports/documents';
+  static const reportsMedicalHistory = '/reports/medical-history';
+  static const reportsNew = '/reports/new';
   static const reportsNewRedirect = '/reports/new';
+  static const reportsRedirect = '/reports';
+  static const reportsTrendsPrefix = '/reports/trends/';
+
+  static String reportDetail(String reportId) => '/reports/$reportId';
+
+  static String reportTrend(String metricKey) => '/reports/trends/$metricKey';
+
+  static final _reportIdPattern = RegExp(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+    caseSensitive: false,
+  );
+
+  static bool isReportId(String value) => _reportIdPattern.hasMatch(value);
+
   static const myHealth = '/my-health';
   static const biometrics = '/biometrics';
-  static const reportsRedirect = '/reports';
   static const settingsContact = '/settings/contact';
   static const contact = '/contact';
   static const settingsPrivacy = '/settings/privacy';
@@ -67,6 +92,14 @@ abstract final class AppRoutes {
   static String vitalsMetric(String metricKey) => '/vitals/metric/$metricKey';
 
   static String biometricsMetric(String metricKey) => '/biometrics/$metricKey';
+
+  static const marketingPaths = [
+    marketingHome,
+    pricing,
+    marketingPrivacy,
+    about,
+    trust,
+  ];
 
   static const protectedPaths = [
     welcome,
@@ -91,11 +124,16 @@ abstract final class AppRoutes {
     settingsTravel,
     settingsReports,
     settingsReportsNew,
-    reportsNewRedirect,
+    reports,
+    reportsMetrics,
+    reportsDocuments,
+    reportsMedicalHistory,
+    reportsNew,
+    reportsTrendsPrefix,
+    '/reports/',
     myHealth,
     biometrics,
     '/biometrics/',
-    reportsRedirect,
     settingsContact,
     contact,
     settingsPrivacy,

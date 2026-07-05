@@ -380,6 +380,313 @@ class CareRepository {
         .toList();
   }
 
+  static const pendingTypeLabels = <String, String>{
+    'add_journal_comment': 'Note appended to a journal entry',
+    'add_meds_note': 'Note appended to a medication',
+  };
+
+  Future<CareInboxData> loadCareInbox() async {
+    final userId = _caregiverId;
+    if (userId == null) {
+      return const CareInboxData(
+        changes: [],
+        incomingInvites: [],
+        loadError: 'Sign in to view your inbox.',
+      );
+    }
+
+    if (!_connectivity.isOnline) {
+      return const CareInboxData(
+        changes: [],
+        incomingInvites: [],
+        loadError: 'Offline. Reconnect to load your inbox.',
+      );
+    }
+
+    try {
+      final changes = await _loadPendingChangesDetailed(userId);
+      final incomingInvites = await _loadIncomingCareInvites(userId);
+      return CareInboxData(
+        changes: changes,
+        incomingInvites: incomingInvites,
+      );
+    } catch (_) {
+      return const CareInboxData(
+        changes: [],
+        incomingInvites: [],
+        loadError: 'Could not load your inbox right now.',
+      );
+    }
+  }
+
+  Future<void> decidePendingChange({
+    required String changeId,
+    required String decision,
+    String? note,
+  }) async {
+    final userId = _caregiverId;
+    if (userId == null) {
+      throw CareAccessException('Sign in to decide pending changes.');
+    }
+
+    final change = await _supabase
+        .from('pending_changes')
+        .select('*')
+        .eq('id', changeId)
+        .maybeSingle();
+    if (change == null) {
+      throw CareAccessException('Change not found.');
+    }
+    if (change['owner_id'] != userId) {
+      throw CareAccessException('Change not found.');
+    }
+    if (change['status'] != 'pending') {
+      throw CareAccessException('Already decided.');
+    }
+
+    if (decision == 'approved') {
+      await _applyPendingChange(change);
+    }
+
+    await _supabase.from('pending_changes').update({
+      'status': decision,
+      'decided_at': DateTime.now().toUtc().toIso8601String(),
+      'decision_note': note,
+    }).eq('id', changeId);
+
+    await _supabase.from('care_audit_log').insert({
+      'relationship_id': change['relationship_id'],
+      'owner_id': userId,
+      'actor_id': userId,
+      'action': decision,
+      'resource_type': 'pending_change',
+      'resource_id': changeId,
+      'metadata': {'type': change['type']},
+    });
+  }
+
+  Future<BulkDecideResult> decidePendingChangesBulk({
+    required List<String> ids,
+    required String decision,
+    String? note,
+  }) async {
+    var ok = 0;
+    var failed = 0;
+    for (final id in ids) {
+      try {
+        await decidePendingChange(changeId: id, decision: decision, note: note);
+        ok++;
+      } catch (_) {
+        failed++;
+      }
+    }
+    return BulkDecideResult(ok: ok, failed: failed);
+  }
+
+  Future<void> declineIncomingCareInvite(String relationshipId) async {
+    final userId = _caregiverId;
+    final email = _currentUserEmail();
+    if (userId == null || email == null) {
+      throw CareAccessException('Sign in to decline this invite.');
+    }
+
+    final rel = await _supabase
+        .from('care_relationships')
+        .select('id, status, invite_email')
+        .eq('id', relationshipId)
+        .maybeSingle();
+    if (rel == null) {
+      throw CareAccessException('Invite not found.');
+    }
+    if (rel['status'] != 'pending') {
+      throw CareAccessException('Invite is no longer pending.');
+    }
+    final inviteEmail = (rel['invite_email'] as String?)?.trim().toLowerCase();
+    if (inviteEmail != email) {
+      throw CareAccessException('This invite was sent to a different email address.');
+    }
+
+    await _supabase
+        .from('care_relationships')
+        .update({'status': 'revoked'})
+        .eq('id', relationshipId);
+  }
+
+  Future<List<PendingChangeDetail>> _loadPendingChangesDetailed(
+    String ownerId,
+  ) async {
+    final response = await _supabase
+        .from('pending_changes')
+        .select('*')
+        .eq('owner_id', ownerId)
+        .eq('status', 'pending')
+        .order('created_at', ascending: false)
+        .limit(100);
+
+    final rows = (response as List).cast<Map<String, dynamic>>();
+    final caregiverIds = rows
+        .map((row) => row['caregiver_id'] as String?)
+        .whereType<String>()
+        .toSet();
+    final profiles = await _loadCaregiverProfiles(caregiverIds);
+
+    final detailed = <PendingChangeDetail>[];
+    for (final row in rows) {
+      final type = row['type'] as String? ?? '';
+      final targetId = row['target_id'] as String?;
+      String? currentValue;
+      if (type == 'add_journal_comment' && targetId != null) {
+        final entry = await _supabase
+            .from('journal_entries')
+            .select('text')
+            .eq('id', targetId)
+            .eq('user_id', ownerId)
+            .maybeSingle();
+        currentValue = entry?['text'] as String?;
+      } else if (type == 'add_meds_note' && targetId != null) {
+        final med = await _supabase
+            .from('medications')
+            .select('name, notes')
+            .eq('id', targetId)
+            .eq('user_id', ownerId)
+            .maybeSingle();
+        if (med != null) {
+          final name = med['name'] as String? ?? '';
+          final notes = med['notes'] as String? ?? '';
+          currentValue = '$name\n$notes';
+        }
+      }
+
+      final payload = row['payload'];
+      final proposedText = payload is Map
+          ? (payload['text'] as String? ?? '')
+          : '';
+
+      final caregiverId = row['caregiver_id'] as String?;
+      detailed.add(
+        PendingChangeDetail(
+          id: row['id'] as String,
+          type: type,
+          typeLabel: pendingTypeLabels[type] ?? type,
+          createdAt: row['created_at'] as String? ?? '',
+          currentValue: currentValue,
+          proposedText: proposedText,
+          caregiverProfile:
+              caregiverId != null ? profiles[caregiverId] : null,
+        ),
+      );
+    }
+    return detailed;
+  }
+
+  Future<List<IncomingCareInvite>> _loadIncomingCareInvites(
+    String userId,
+  ) async {
+    final email = _currentUserEmail();
+    if (email == null || email.isEmpty) return const [];
+
+    final nowIso = DateTime.now().toUtc().toIso8601String();
+    final response = await _supabase
+        .from('care_relationships')
+        .select(
+          'id, owner_id, role, invite_email, created_at, expires_at',
+        )
+        .eq('status', 'pending')
+        .ilike('invite_email', email)
+        .or('expires_at.is.null,expires_at.gt.$nowIso')
+        .order('created_at', ascending: false);
+
+    final rows = (response as List).cast<Map<String, dynamic>>();
+    if (rows.isEmpty) return const [];
+
+    final ownerIds = rows.map((row) => row['owner_id'] as String).toSet();
+    final ownerNames = await _loadOwnerDisplayNames(ownerIds);
+
+    return rows.map((row) {
+      final role = row['role'] as String? ?? CareRole.caregiver.name;
+      final parsedRole = parseCareRole(role);
+      return IncomingCareInvite(
+        id: row['id'] as String,
+        ownerId: row['owner_id'] as String,
+        role: role,
+        roleLabel: parsedRole != null
+            ? careRoleLabels[parsedRole]!
+            : role,
+        ownerName: ownerNames[row['owner_id'] as String] ?? 'A Purple member',
+        createdAt: row['created_at'] as String? ?? '',
+      );
+    }).toList();
+  }
+
+  Future<Map<String, CaregiverProfileSummary>> _loadCaregiverProfiles(
+    Set<String> caregiverIds,
+  ) async {
+    if (caregiverIds.isEmpty) return const {};
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select('id, first_name, last_name, community_display_name')
+          .inFilter('id', caregiverIds.toList());
+      final profiles = <String, CaregiverProfileSummary>{};
+      for (final row in (response as List).cast<Map<String, dynamic>>()) {
+        profiles[row['id'] as String] = CaregiverProfileSummary.fromMap(row);
+      }
+      return profiles;
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  Future<void> _applyPendingChange(Map<String, dynamic> change) async {
+    final type = change['type'] as String? ?? '';
+    final targetId = change['target_id'] as String?;
+    final ownerId = change['owner_id'] as String;
+    final payload = change['payload'];
+    final text = payload is Map ? (payload['text'] as String? ?? '') : '';
+
+    if (type == 'add_journal_comment' && targetId != null) {
+      final note = text.length > 2000 ? text.substring(0, 2000) : text;
+      final stamp =
+          '\n\n- Caregiver note (approved ${DateTime.now().toUtc().toIso8601String().substring(0, 10)}):\n$note';
+      final entry = await _supabase
+          .from('journal_entries')
+          .select('text')
+          .eq('id', targetId)
+          .eq('user_id', ownerId)
+          .maybeSingle();
+      if (entry == null) {
+        throw CareAccessException('Target journal entry not found.');
+      }
+      final newText = '${entry['text'] ?? ''}$stamp';
+      await _supabase
+          .from('journal_entries')
+          .update({'text': newText})
+          .eq('id', targetId)
+          .eq('user_id', ownerId);
+    } else if (type == 'add_meds_note' && targetId != null) {
+      final note = text.length > 1000 ? text.substring(0, 1000) : text;
+      final med = await _supabase
+          .from('medications')
+          .select('notes')
+          .eq('id', targetId)
+          .eq('user_id', ownerId)
+          .maybeSingle();
+      if (med == null) {
+        throw CareAccessException('Target medication not found.');
+      }
+      final newNotes = '${med['notes'] ?? ''}\n- Caregiver: $note'.trim();
+      await _supabase
+          .from('medications')
+          .update({'notes': newNotes})
+          .eq('id', targetId)
+          .eq('user_id', ownerId);
+    }
+  }
+
+  String? _currentUserEmail() {
+    return _supabase.auth.currentUser?.email?.trim().toLowerCase();
+  }
+
   Future<Map<String, String>> _loadOwnerDisplayNames(Set<String> ownerIds) async {
     if (ownerIds.isEmpty) return const {};
 
@@ -576,4 +883,103 @@ final sharingListProvider = FutureProvider.autoDispose<SharingListData>((ref) {
 final careIndexProvider = FutureProvider.autoDispose<CareIndexData>((ref) {
   ref.watch(authSessionProvider);
   return ref.watch(careRepositoryProvider).loadCareIndex();
+});
+
+class CaregiverProfileSummary {
+  const CaregiverProfileSummary({
+    this.firstName,
+    this.lastName,
+    this.communityDisplayName,
+  });
+
+  final String? firstName;
+  final String? lastName;
+  final String? communityDisplayName;
+
+  String displayName() {
+    final community = communityDisplayName?.trim();
+    if (community != null && community.isNotEmpty) return community;
+    final parts = [firstName, lastName]
+        .whereType<String>()
+        .where((part) => part.trim().isNotEmpty)
+        .join(' ')
+        .trim();
+    return parts.isEmpty ? 'A caregiver' : parts;
+  }
+
+  factory CaregiverProfileSummary.fromMap(Map<String, dynamic> map) {
+    return CaregiverProfileSummary(
+      firstName: map['first_name'] as String?,
+      lastName: map['last_name'] as String?,
+      communityDisplayName: map['community_display_name'] as String?,
+    );
+  }
+}
+
+class PendingChangeDetail {
+  const PendingChangeDetail({
+    required this.id,
+    required this.type,
+    required this.typeLabel,
+    required this.createdAt,
+    required this.proposedText,
+    this.currentValue,
+    this.caregiverProfile,
+  });
+
+  final String id;
+  final String type;
+  final String typeLabel;
+  final String createdAt;
+  final String proposedText;
+  final String? currentValue;
+  final CaregiverProfileSummary? caregiverProfile;
+
+  String filterBucket() {
+    if (type.contains('meds')) return 'meds';
+    if (type.contains('journal')) return 'journal';
+    return 'other';
+  }
+}
+
+class IncomingCareInvite {
+  const IncomingCareInvite({
+    required this.id,
+    required this.ownerId,
+    required this.role,
+    required this.roleLabel,
+    required this.ownerName,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String ownerId;
+  final String role;
+  final String roleLabel;
+  final String ownerName;
+  final String createdAt;
+}
+
+class CareInboxData {
+  const CareInboxData({
+    required this.changes,
+    required this.incomingInvites,
+    this.loadError,
+  });
+
+  final List<PendingChangeDetail> changes;
+  final List<IncomingCareInvite> incomingInvites;
+  final String? loadError;
+}
+
+class BulkDecideResult {
+  const BulkDecideResult({required this.ok, required this.failed});
+
+  final int ok;
+  final int failed;
+}
+
+final careInboxProvider = FutureProvider.autoDispose<CareInboxData>((ref) {
+  ref.watch(authSessionProvider);
+  return ref.watch(careRepositoryProvider).loadCareInbox();
 });

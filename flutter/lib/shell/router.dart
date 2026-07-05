@@ -6,6 +6,7 @@ import '../features/auth/sign_in_screen.dart';
 import '../features/auth/welcome_screen.dart';
 import '../features/care/care_dashboard_screen.dart';
 import '../features/care/care_index_screen.dart';
+import '../features/care/care_inbox_screen.dart';
 import '../features/chat/chat_screen.dart';
 import '../features/journal/journal_capture_screen.dart';
 import '../features/journal/journal_screen.dart';
@@ -13,7 +14,11 @@ import '../features/my_health/my_health_screen.dart';
 import '../features/meds/med_detail_screen.dart';
 import '../features/meds/meds_history_screen.dart';
 import '../features/meds/meds_screen.dart';
-import '../features/reports/reports_hub_screen.dart';
+import '../features/reports/reports_detail_screen.dart';
+import '../features/reports/reports_documents_screen.dart';
+import '../features/reports/reports_medical_history_screen.dart';
+import '../features/reports/reports_metrics_screen.dart';
+import '../features/reports/reports_trend_screen.dart';
 import '../features/reports/reports_upload_screen.dart';
 import '../features/settings/contact_screen.dart';
 import '../features/settings/how_purple_thinks_screen.dart';
@@ -183,6 +188,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const CareIndexScreen(),
           ),
           GoRoute(
+            path: AppRoutes.careInbox,
+            name: 'care-inbox',
+            builder: (context, state) => const CareInboxScreen(),
+          ),
+          GoRoute(
             path: AppRoutes.careOwner,
             name: 'care-dashboard',
             builder: (context, state) {
@@ -207,24 +217,61 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.settingsReports,
             name: 'settings-reports',
-            builder: (context, state) => const ReportsHubScreen(),
+            redirect: (context, state) => AppRoutes.reportsMetrics,
+          ),
+          GoRoute(
+            path: AppRoutes.settingsReportsNew,
+            name: 'settings-reports-new',
+            redirect: (context, state) => AppRoutes.reportsNew,
+          ),
+          GoRoute(
+            path: AppRoutes.reports,
+            name: 'reports',
+            redirect: (context, state) {
+              if (state.uri.path == AppRoutes.reports) {
+                return AppRoutes.reportsMetrics;
+              }
+              return null;
+            },
             routes: [
               GoRoute(
+                path: 'metrics',
+                name: 'reports-metrics',
+                builder: (context, state) => const ReportsMetricsScreen(),
+              ),
+              GoRoute(
+                path: 'documents',
+                name: 'reports-documents',
+                builder: (context, state) => const ReportsDocumentsScreen(),
+              ),
+              GoRoute(
+                path: 'medical-history',
+                name: 'reports-medical-history',
+                builder: (context, state) =>
+                    const ReportsMedicalHistoryScreen(),
+              ),
+              GoRoute(
                 path: 'new',
-                name: 'settings-reports-new',
+                name: 'reports-new',
                 builder: (context, state) => const ReportsUploadScreen(),
               ),
+              GoRoute(
+                path: 'trends/:metricKey',
+                name: 'reports-trend',
+                builder: (context, state) {
+                  final metricKey = state.pathParameters['metricKey']!;
+                  return ReportsTrendScreen(metricKey: metricKey);
+                },
+              ),
+              GoRoute(
+                path: ':reportId',
+                name: 'reports-detail',
+                builder: (context, state) {
+                  final reportId = state.pathParameters['reportId']!;
+                  return ReportsDetailScreen(reportId: reportId);
+                },
+              ),
             ],
-          ),
-          GoRoute(
-            path: AppRoutes.reportsNewRedirect,
-            name: 'reports-new-redirect',
-            redirect: (context, state) => AppRoutes.settingsReportsNew,
-          ),
-          GoRoute(
-            path: '/reports',
-            name: 'reports-redirect',
-            redirect: (context, state) => AppRoutes.settingsReports,
           ),
           GoRoute(
             path: AppRoutes.settingsContact,
