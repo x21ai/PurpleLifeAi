@@ -155,9 +155,9 @@ Feature flag: `FLUTTER_WEB_CUTOVER` env var on Worker (default `false` until dep
 | # | File / config | Change |
 |---|---------------|--------|
 | 1 | `scripts/flutter-web-build-prod.sh` | **Done** — prod Flutter web build |
-| 2 | `scripts/merge-flutter-web-assets.sh` | **New (future)** — copy `flutter/build/web` → `dist/client/_flutter/` |
-| 3 | `package.json` | **Future** — `"build:prod:flutter-web"`: TanStack build + Flutter build + merge |
-| 4 | `src/server.ts` | **Future** — `isFlutterAppPath()`, static asset routing, SPA fallback via `ASSETS` |
+| 2 | `scripts/merge-flutter-web-assets.sh` | **Done** — copy `flutter/build/web` → `dist/client/_flutter/` |
+| 3 | `package.json` | **Done** — `"build:prod:flutter-web"`: TanStack build + Flutter build + merge |
+| 4 | `src/server.ts` | **Done (stub)** — `isFlutterAppPath()`, static asset routing, SPA fallback via `ASSETS` (gated `FLUTTER_WEB_CUTOVER`) |
 | 5 | `src/lib/flutter-api-cors.ts` | **Future** — extend origins if needed |
 | 6 | `wrangler.deploy.jsonc` | **Optional** — `"assets": { "run_worker_first": true }` so `/api/*` never serves static files by accident |
 | 7 | `.github/workflows/deploy.yml` | **Future** — call Flutter web build in deploy job when cutover enabled |
@@ -217,7 +217,7 @@ bun run check:em-dash && bun run check:supabase-types && bunx tsc --noEmit && bu
 | Blocker | Detail |
 |---------|--------|
 | **flutter-phase5-nogo** | Feature gaps vs TanStack `_app` (Vitals depth, Tools stats, Settings export/2FA, journal capture, reports). |
-| **No merge + server dispatch** | `merge-flutter-web-assets.sh` and `src/server.ts` routing not implemented yet. |
+| **No merge + server dispatch** | ~~Not implemented~~ **Scaffold landed** — enable with `FLUTTER_WEB_CUTOVER=true` on Worker after staging smoke. |
 | **Manual deploy policy** | Redesign phase: owner approval required (`docs/SYNC-AND-RELEASE.md`). |
 | **E2E coverage** | Playwright prod smoke assumes TanStack `_app` routes. |
 | **Partial route map** | Admin/biometrics/reports routes lack Flutter ports; need fallback strategy. |

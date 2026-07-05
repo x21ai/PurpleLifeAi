@@ -9,6 +9,7 @@
     "check:supabase-types": "node scripts/check-supabase-types.mjs",
     "build": "vite build",
     "build:prod": "doppler run --project cursor-cloudflare --config prd_cloudlfare -- bun run build",
+    "build:prod:flutter-web": "bun run build:prod && bash scripts/flutter-web-build-prod.sh && bash scripts/merge-flutter-web-assets.sh",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",

@@ -11,14 +11,30 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 Purple Life on **`lovable/redesign`** (wave 1 parity commit). TestFlight **1.0 (16)**
 **VALID**, IN_BETA_TESTING (2026-07-05). Flutter signed-in wave 1 shipped: `/my-health`,
-`/biometrics`, reports upload, My Body nav, synced-data banners.
+`/biometrics`, reports upload, My Body nav, synced-data banners. **Flutter web cutover scaffold**
+landed (`merge-flutter-web-assets.sh`, `server.ts` dispatch gated `FLUTTER_WEB_CUTOVER`,
+`build:prod:flutter-web`); prod deploy still blocked.
 
-**Next action:** Device verify My Body + Tools OAuth on TF16/17; register Oura native
-redirect in Oura console (`oura-native-redirect-console`).
+**Next action:** Staging `build:prod:flutter-web` on workers.dev; device verify My Body + Tools
+OAuth on TF16/17; register Oura native redirect (`oura-native-redirect-console`).
 
 ---
 
 ## Log
+
+### 2026-07-05T18:30:00Z — Flutter web Worker cutover scaffold
+
+- **Requested:** Implement merge script, `server.ts` path dispatch stub, `build:prod:flutter-web`
+  chain; commit + push; no prod deploy.
+- **Done:** `scripts/merge-flutter-web-assets.sh`; `src/lib/flutter-web-routing.ts` +
+  `src/server.ts` dispatch (`/api/*`, `/oauth/*` → TanStack; Flutter static + SPA fallback when
+  `FLUTTER_WEB_CUTOVER=true`; marketing TanStack fallback). `package.json`
+  `build:prod:flutter-web`. `bunx tsc --noEmit` pass.
+- **Issues:** Flag defaults off; no staging smoke; `flutter-phase5-nogo` and E2E TanStack paths
+  remain.
+- **Stand / next:** `build:prod:flutter-web` on workers.dev; owner sign-off before wrangler deploy.
+- **Who / where:** Cursor subagent · darwin · lovable/redesign
+- **Timestamp:** 2026-07-05T18:30:00Z
 
 ### 2026-07-05T18:10:00Z — Flutter signed-in route parity wave 1
 

@@ -6,6 +6,14 @@ import {
   applyFlutterApiCors,
   handleFlutterApiCorsPreflight,
 } from "./lib/flutter-api-cors";
+import {
+  isFlutterAppPath,
+  isFlutterStaticAsset,
+  isFlutterWebCutoverEnabled,
+  isMarketingTanStackPath,
+  normalizePathname,
+  rewriteFlutterAssetPath,
+} from "./lib/flutter-web-routing";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -72,11 +80,21 @@ const EMAIL_QUEUE_PROCESSOR = "/api/email/queue/process";
 const EMAIL_PUMP_CRON = "* * * * *";
 const EMAIL_PUMP_MAX_ITERATIONS = 3;
 
+type AssetsBinding = {
+  fetch: (request: Request) => Promise<Response>;
+};
+
 type CronEnv = {
   CRON_SECRET?: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
   PUBLIC_SITE_URL?: string;
   SELF?: { fetch: (request: Request) => Promise<Response> };
+};
+
+type WorkerEnv = CronEnv & {
+  ASSETS?: AssetsBinding;
+  /** When "true" or "1", signed-in app paths serve Flutter web SPA from _flutter/index.html. */
+  FLUTTER_WEB_CUTOVER?: string;
 };
 
 // Prefer the self service binding; a plain fetch to our own hostname is a
@@ -195,6 +213,76 @@ function isCatastrophicSsrErrorBody(body: string, responseStatus: number): boole
 
 // h3 swallows in-handler throws into a normal 500 Response with body
 // {"unhandled":true,"message":"HTTPError"}, try/catch alone never fires for those.
+async function serveFlutterAsset(
+  request: Request,
+  env: WorkerEnv,
+  pathname: string,
+): Promise<Response | null> {
+  const assets = env.ASSETS;
+  if (!assets) return null;
+
+  const url = new URL(request.url);
+  url.pathname = rewriteFlutterAssetPath(pathname);
+  const assetRequest = new Request(url.toString(), request);
+  const response = await assets.fetch(assetRequest);
+  if (response.status === 404) return null;
+  return response;
+}
+
+async function serveFlutterSpaFallback(
+  request: Request,
+  env: WorkerEnv,
+): Promise<Response | null> {
+  const assets = env.ASSETS;
+  if (!assets) return null;
+
+  const url = new URL(request.url);
+  url.pathname = "/_flutter/index.html";
+  const spaRequest = new Request(url.toString(), {
+    method: "GET",
+    headers: request.headers,
+  });
+  const response = await assets.fetch(spaRequest);
+  if (response.status === 404) return null;
+  return response;
+}
+
+async function handleTanStackRequest(
+  request: Request,
+  env: unknown,
+  ctx: unknown,
+): Promise<Response> {
+  const cacheable = isCacheableMarketingRequest(request);
+  const edgeCache = cacheable ? getEdgeCache() : null;
+
+  if (edgeCache) {
+    const hit = await edgeCache.match(request).catch(() => null);
+    if (hit) return hit;
+  }
+
+  const handler = await getServerEntry();
+  const response = await handler.fetch(request, env, ctx);
+  const normalized = await normalizeCatastrophicSsrResponse(response);
+
+  if (
+    cacheable &&
+    normalized.status === 200 &&
+    (normalized.headers.get("content-type") ?? "").includes("text/html") &&
+    !normalized.headers.has("set-cookie")
+  ) {
+    const cachedResponse = new Response(normalized.body, normalized);
+    cachedResponse.headers.set("cache-control", MARKETING_CACHE_CONTROL);
+    if (edgeCache) {
+      const waitUntil = (ctx as { waitUntil?: (p: Promise<unknown>) => void })?.waitUntil;
+      const put = edgeCache.put(request, cachedResponse.clone()).catch(() => undefined);
+      if (typeof waitUntil === "function") waitUntil.call(ctx, put);
+    }
+    return cachedResponse;
+  }
+
+  return normalized;
+}
+
 async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
   if (response.status < 500) return response;
   const contentType = response.headers.get("content-type") ?? "";
@@ -215,35 +303,32 @@ export default {
       const preflight = handleFlutterApiCorsPreflight(request);
       if (preflight) return preflight;
 
-      const cacheable = isCacheableMarketingRequest(request);
-      const edgeCache = cacheable ? getEdgeCache() : null;
+      const workerEnv = (env ?? {}) as WorkerEnv;
+      const pathname = normalizePathname(new URL(request.url).pathname);
 
-      if (edgeCache) {
-        const hit = await edgeCache.match(request).catch(() => null);
-        if (hit) return hit;
+      // Worker API routes and OAuth token exchange stay on TanStack handlers.
+      if (pathname.startsWith("/api/") || pathname.startsWith("/oauth/")) {
+        return applyFlutterApiCors(request, await handleTanStackRequest(request, env, ctx));
       }
 
-      const handler = await getServerEntry();
-      const response = await handler.fetch(request, env, ctx);
-      const normalized = await normalizeCatastrophicSsrResponse(response);
-
-      if (
-        cacheable &&
-        normalized.status === 200 &&
-        (normalized.headers.get("content-type") ?? "").includes("text/html") &&
-        !normalized.headers.has("set-cookie")
-      ) {
-        const cachedResponse = new Response(normalized.body, normalized);
-        cachedResponse.headers.set("cache-control", MARKETING_CACHE_CONTROL);
-        if (edgeCache) {
-          const waitUntil = (ctx as { waitUntil?: (p: Promise<unknown>) => void })?.waitUntil;
-          const put = edgeCache.put(request, cachedResponse.clone()).catch(() => undefined);
-          if (typeof waitUntil === "function") waitUntil.call(ctx, put);
+      if (request.method === "GET") {
+        if (isFlutterStaticAsset(pathname)) {
+          const asset = await serveFlutterAsset(request, workerEnv, pathname);
+          if (asset) return asset;
         }
-        return cachedResponse;
+
+        if (
+          isFlutterWebCutoverEnabled(workerEnv) &&
+          isFlutterAppPath(pathname) &&
+          !isMarketingTanStackPath(pathname)
+        ) {
+          const spa = await serveFlutterSpaFallback(request, workerEnv);
+          if (spa) return spa;
+        }
       }
 
-      return applyFlutterApiCors(request, normalized);
+      // Marketing and legacy TanStack _app/* SSR (default until FLUTTER_WEB_CUTOVER is on).
+      return applyFlutterApiCors(request, await handleTanStackRequest(request, env, ctx));
     } catch (error) {
       console.error(error);
       return brandedErrorResponse();
