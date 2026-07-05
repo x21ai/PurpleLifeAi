@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -391,6 +390,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                 key: _ouraKey,
                 icon: Icons.watch_outlined,
                 title: 'Oura Ring',
+                provider: WearableOAuthProvider.oura,
                 state: _oura,
                 loaded: _loaded && !_loadFailed,
                 disconnectedSubtitle: 'Sleep, readiness, HRV, temperature',
@@ -408,6 +408,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                 key: _whoopKey,
                 icon: Icons.favorite_outline,
                 title: 'Whoop',
+                provider: WearableOAuthProvider.whoop,
                 state: _whoop,
                 loaded: _loaded && !_loadFailed,
                 disconnectedSubtitle: 'Recovery, strain, sleep, HRV',
@@ -619,6 +620,7 @@ class _ConnectionCard extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
+    required this.provider,
     required this.state,
     required this.loaded,
     required this.disconnectedSubtitle,
@@ -634,6 +636,7 @@ class _ConnectionCard extends StatelessWidget {
 
   final IconData icon;
   final String title;
+  final WearableOAuthProvider provider;
   final _ProviderState state;
   final bool loaded;
   final String disconnectedSubtitle;
@@ -649,6 +652,7 @@ class _ConnectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final connected = loaded && state.connected;
+    final setupHint = WearableOAuth.nativeConnectSetupHint(provider);
     final statusText = !loaded
         ? 'Checking status'
         : connected
@@ -731,14 +735,10 @@ class _ConnectionCard extends StatelessWidget {
                     height: 1.35,
                   ),
             ),
-          ] else if (!connected &&
-              loaded &&
-              title == 'Oura Ring' &&
-              !kIsWeb) ...[
+          ] else if (!connected && loaded && setupHint != null) ...[
             const SizedBox(height: 10),
             Text(
-              'On iPhone, Oura needs ${WearableOAuth.nativeRedirectOura} '
-              'registered in the Oura developer console before Connect works.',
+              setupHint,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Colors.white.withValues(alpha: 0.5),
                     height: 1.35,

@@ -15,12 +15,28 @@ Purple Life on **`lovable/redesign`** (wave 1 parity commit). TestFlight **1.0 (
 landed (`merge-flutter-web-assets.sh`, `server.ts` dispatch gated `FLUTTER_WEB_CUTOVER`,
 `build:prod:flutter-web`); prod deploy still blocked.
 
-**Next action:** Staging `build:prod:flutter-web` on workers.dev; device verify My Body + Tools
-OAuth on TF16/17; register Oura native redirect (`oura-native-redirect-console`).
+**Next action:** Register Oura native redirect in developer console (`oura-native-redirect-console`);
+device verify Tools OAuth on TF16/17; staging `build:prod:flutter-web` on workers.dev.
 
 ---
 
 ## Log
+
+### 2026-07-05T14:05:00Z — P0-3 Flutter wearable OAuth error UX
+
+- **Requested:** Improve Tools Oura/Whoop OAuth inline errors; register redirect hint for
+  `org.purplelife.app://oauth-oura-callback`; compare web tools integration UI; analyze + test;
+  commit and push.
+- **Done:** `wearable_oauth.dart` — `whoopFunctionErrorMessage`, `oauthCallbackQueryErrorMessage`,
+  `nativeConnectSetupHint`, `emitWearableOAuthFailure`; Whoop exchange + callback error mapping.
+  `tools_screen.dart` — inline errors on both cards, native pre-connect hints (Oura + Whoop).
+  `wearable_oauth_callback_screen.dart` — emits failures to Tools stream. Tests extended.
+  `flutter analyze lib/features/tools/` + `flutter test test/wearable_oauth_test.dart` pass.
+- **Issues:** Oura developer console still needs native redirect URI registered (UX only).
+- **Stand / next:** Owner adds `org.purplelife.app://oauth-oura-callback` in Oura console; TF device
+  verify connect path.
+- **Who / where:** Cursor subagent · darwin · lovable/redesign
+- **Timestamp:** 2026-07-05T14:05:00Z
 
 ### 2026-07-05T18:30:00Z — Flutter web Worker cutover scaffold
 

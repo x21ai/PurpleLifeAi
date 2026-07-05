@@ -55,10 +55,10 @@ Format:
   wearable stats, symptom radar data gaps, Worker-only Settings (export/2FA/avatar),
   journal voice/photo native capture, full reports upload. _Raised 2026-07-05 by verify fleet._
 
-- [ ] **oura-native-redirect-console** — Native Oura connect may fail until
-  `org.purplelife.app://oauth-oura-callback` is registered in Oura developer console
-  (in addition to prod web callback). Inline Tools error should show hint. _Raised 2026-07-05
-  by OAuth fleet._
+- [ ] **oura-native-redirect-console** — **Flutter UX done 2026-07-05:** Tools shows inline
+  errors plus pre-connect hint to register `org.purplelife.app://oauth-oura-callback` (and Whoop
+  native URI) in provider developer consoles. **Still open:** owner must add the Oura redirect URI
+  in the Oura developer console for native connect to succeed. _Raised 2026-07-05 by OAuth fleet._
 
 - [ ] **tf16-device-verify** — Apple Health Connect, settings scroll, sync bar labels, and
   Account `home_city` need confirmation on physical iPhone with **TestFlight 1.0 (16)** (ASC VALID

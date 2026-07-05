@@ -68,6 +68,21 @@ abstract final class WearableOAuth {
     }
     return null;
   }
+
+  /// Pre-connect hint for native apps when redirect URI must be registered manually.
+  static String? nativeConnectSetupHint(WearableOAuthProvider provider) {
+    if (kIsWeb) return null;
+    final redirect = switch (provider) {
+      WearableOAuthProvider.oura => nativeRedirectOura,
+      WearableOAuthProvider.whoop => nativeRedirectWhoop,
+    };
+    final console = switch (provider) {
+      WearableOAuthProvider.oura => 'Oura',
+      WearableOAuthProvider.whoop => 'Whoop',
+    };
+    return 'On iPhone, register $redirect in the $console developer '
+        'console before Connect works.';
+  }
 }
 
 /// User-facing Oura edge-function errors (sync + OAuth exchange).
@@ -93,6 +108,41 @@ String ouraFunctionErrorMessage(
   return 'Oura connection failed. Try again.';
 }
 
+/// User-facing Whoop Worker errors (OAuth exchange + sync).
+String whoopFunctionErrorMessage(
+  dynamic data, {
+  int? statusCode,
+}) {
+  if (data is Map) {
+    final error = data['error'];
+    if (error is String && error.isNotEmpty) {
+      final lower = error.toLowerCase();
+      if (lower.contains('redirect_uri') || lower.contains('redirect uri')) {
+        return 'Whoop rejected the redirect URI. Register '
+            '${WearableOAuth.nativeRedirectWhoop} in the Whoop developer console, '
+            'then try again.';
+      }
+      return error;
+    }
+  }
+  if (statusCode != null) {
+    return "Couldn't reach Whoop sync service (HTTP $statusCode). Please try again.";
+  }
+  return 'Whoop connection failed. Try again.';
+}
+
+/// Maps OAuth `error` query params to readable copy (mirrors web callbacks).
+String oauthCallbackQueryErrorMessage(String oauthError, String? description) {
+  final lower = oauthError.toLowerCase();
+  if (lower == 'access_denied') {
+    return 'Sign-in was cancelled. Tap Connect to try again.';
+  }
+  if (description != null && description.isNotEmpty) {
+    return '$oauthError: $description';
+  }
+  return oauthError;
+}
+
 /// Broadcast when a wearable OAuth flow completes successfully.
 final StreamController<WearableOAuthProvider> wearableOAuthConnectedController =
     StreamController<WearableOAuthProvider>.broadcast();
@@ -110,6 +160,18 @@ class WearableOAuthFailure {
 
   final WearableOAuthProvider provider;
   final String message;
+}
+
+/// Emits an OAuth failure for Tools inline display (not SnackBars).
+void emitWearableOAuthFailure(
+  WearableOAuthProvider provider,
+  String message,
+) {
+  if (!wearableOAuthErrorController.isClosed) {
+    wearableOAuthErrorController.add(
+      WearableOAuthFailure(provider: provider, message: message),
+    );
+  }
 }
 
 /// Opens provider consent in the system browser and completes exchange when
@@ -178,14 +240,27 @@ class WearableOAuthService {
       debugPrint('[wearable_oauth] callback failed: $error\n$stack');
       final provider = WearableOAuth.providerFromCallbackUri(uri);
       if (provider != null) {
-        _emitFailure(
-          provider,
-          error is StateError
-              ? error.message
-              : 'Something went wrong finishing sign-in. Try again.',
-        );
+        _emitFailure(provider, _callbackFailureMessage(provider, error));
       }
     }
+  }
+
+  String _callbackFailureMessage(WearableOAuthProvider provider, Object error) {
+    if (error is StateError) return error.message;
+    if (error is WorkerApiException) {
+      final message = error.message;
+      return provider == WearableOAuthProvider.oura
+          ? ouraFunctionErrorMessage(
+              {'error': message},
+              statusCode: error.statusCode,
+            )
+          : whoopFunctionErrorMessage(
+              {'error': message},
+              statusCode: error.statusCode,
+            );
+    }
+    final label = provider == WearableOAuthProvider.oura ? 'Oura' : 'Whoop';
+    return "Something went wrong finishing $label sign-in. Try again.";
   }
 
   Future<void> _flushPendingCallback() async {
@@ -309,9 +384,7 @@ class WearableOAuthService {
     if (oauthError != null && oauthError.isNotEmpty) {
       final description = uri.queryParameters['error_description'];
       throw StateError(
-        description == null || description.isEmpty
-            ? oauthError
-            : '$oauthError: $description',
+        oauthCallbackQueryErrorMessage(oauthError, description),
       );
     }
 
@@ -356,18 +429,23 @@ class WearableOAuthService {
         throw StateError(ouraFunctionErrorMessage(data));
       }
     } else {
-      await _worker.postWhoopExchange(code: code, redirectUri: redirectUri);
+      try {
+        await _worker.postWhoopExchange(code: code, redirectUri: redirectUri);
+      } on WorkerApiException catch (error) {
+        throw StateError(
+          whoopFunctionErrorMessage(
+            {'error': error.message},
+            statusCode: error.statusCode,
+          ),
+        );
+      }
     }
 
     wearableOAuthConnectedController.add(provider);
   }
 
   void _emitFailure(WearableOAuthProvider provider, String message) {
-    if (!wearableOAuthErrorController.isClosed) {
-      wearableOAuthErrorController.add(
-        WearableOAuthFailure(provider: provider, message: message),
-      );
-    }
+    emitWearableOAuthFailure(provider, message);
   }
 }
 

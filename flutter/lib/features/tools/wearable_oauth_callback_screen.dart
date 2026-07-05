@@ -47,11 +47,13 @@ class _WearableOAuthCallbackScreenState
       context.go(AppRoutes.tools);
     } catch (error) {
       if (!mounted) return;
+      final message = error is StateError
+          ? error.message
+          : 'Something went wrong. Try connecting again from Tools.';
+      emitWearableOAuthFailure(widget.provider, message);
       setState(() {
         _error = true;
-        _message = error is StateError
-            ? error.message
-            : 'Something went wrong. Try connecting again from Tools.';
+        _message = message;
       });
     }
   }

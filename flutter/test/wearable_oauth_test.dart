@@ -92,4 +92,40 @@ void main() {
       );
     });
   });
+
+  group('whoopFunctionErrorMessage', () {
+    test('surfaces redirect URI registration hint', () {
+      expect(
+        whoopFunctionErrorMessage(
+          {'error': 'invalid redirect_uri'},
+        ),
+        contains('org.purplelife.app://oauth-whoop-callback'),
+      );
+    });
+
+    test('returns server error with status code', () {
+      expect(
+        whoopFunctionErrorMessage(null, statusCode: 502),
+        contains('502'),
+      );
+    });
+  });
+
+  group('oauthCallbackQueryErrorMessage', () {
+    test('maps access_denied to friendly copy', () {
+      expect(
+        oauthCallbackQueryErrorMessage('access_denied', null),
+        contains('cancelled'),
+      );
+    });
+  });
+
+  group('WearableOAuth.nativeConnectSetupHint', () {
+    test('Oura hint includes native redirect URI', () {
+      expect(
+        WearableOAuth.nativeConnectSetupHint(WearableOAuthProvider.oura),
+        contains('org.purplelife.app://oauth-oura-callback'),
+      );
+    });
+  });
 }
