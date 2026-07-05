@@ -15,11 +15,26 @@ clock time; Account timezone city labels). **`profiles.home_city`** live on NEW 
 (`xxnzmfzsjplrutrgbzxy`). **Luciq Flutter** wired for crash reporting; agents run
 `bun run ios:check-tf-feedback` after uploads.
 
-**Next action:** Upload TF16 with committed fixes; verify Luciq crashes after TF16 install.
+**Next action:** Upload TF16 with settings scroll parity + sync/timezone fixes; verify Luciq
+crashes after TF16 install.
 
 ---
 
 ## Log
+
+### 2026-07-05T13:25:00Z — Flutter settings full scroll web parity
+
+- **Requested:** Complete Flutter `/settings` full scroll parity with prod web; verify, resolve
+  `tf-settings-design`, commit and push.
+- **Done:** Confirmed inline sections already wired in `settings_screen.dart` +
+  `settings_sections.dart` (Preferences through Admin); added
+  `flutter/test/settings_screen_scroll_test.dart`; `flutter analyze lib/` clean; `flutter test`
+  47/47; browser verified `http://127.0.0.1:8765/#/settings` (108 interactive a11y nodes incl.
+  Export, Contact, About, Admin); resolved `tf-settings-design` in OPEN-ISSUES.
+- **Issues:** TF16 upload needed for tester re-check; Travel sub-route still placeholder.
+- **Stand / next:** Upload TF16; run `bun run ios:check-tf-feedback` after VALID.
+- **Who / where:** Cursor agent · darwin · lovable/redesign (this commit)
+- **Timestamp:** 2026-07-05T13:25:00Z
 
 ### 2026-07-05T13:20:00Z — TestFlight sync bar and timezone label fixes (commit)
 

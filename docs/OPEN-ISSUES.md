@@ -12,8 +12,10 @@ Format:
 
 ## Flutter / TestFlight
 
-- [ ] **tf-settings-design** — Tester feedback (2026-07-05): Settings page design does not match web.
-  Screenshot submission `ALxJqBnRf2EPuNHdhU3ggWQ`. Needs visual parity pass on TF16+.
+- [x] ~~**tf-settings-design**~~ — RESOLVED 2026-07-05: Flutter `/settings` renders full scroll
+  parity with web (Preferences, AI provider, What I track, Health history, Data, Help, About,
+  Admin inline sections with wired Supabase fields). Verified on `:8765` accessibility tree +
+  `settings_screen_scroll_test.dart`. Needs TF16+ upload for tester re-check.
   _Raised 2026-07-05 from ASC beta feedback._
 
 - [ ] **tf-crash-report** — Tester reported "App is crashing" (2026-07-04 screenshot feedback);

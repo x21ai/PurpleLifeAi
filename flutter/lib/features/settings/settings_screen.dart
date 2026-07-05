@@ -34,6 +34,8 @@ class SettingsScreen extends ConsumerWidget {
 
     return CanvasBackground(
       child: SingleChildScrollView(
+        primary: true,
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.only(top: 24, bottom: 120),
         child: ContentColumn(
           child: Column(
@@ -217,12 +219,14 @@ class _PastHistoryCard extends StatelessWidget {
                 color: Theme.of(context).colorScheme.primary,
               ),
               const SizedBox(width: 8),
-              Text(
-                'Add past history',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontFamily: PurpleType.serif,
-                      color: Colors.white.withValues(alpha: 0.95),
-                    ),
+              Expanded(
+                child: Text(
+                  'Add past history',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontFamily: PurpleType.serif,
+                        color: Colors.white.withValues(alpha: 0.95),
+                      ),
+                ),
               ),
             ],
           ),

@@ -74,6 +74,18 @@ const conditionLabels = <String, String>{
 
 String conditionLabel(String id) => conditionLabels[id] ?? id;
 
+/// Safe Supabase access for sections that must fail open in tests or before init.
+SupabaseClient? optionalSettingsSupabaseClient() {
+  try {
+    return Supabase.instance.client;
+  } catch (_) {
+    return null;
+  }
+}
+
+String? optionalSettingsUserId() =>
+    optionalSettingsSupabaseClient()?.auth.currentSession?.user.id;
+
 /// Profile flags for the Settings hub: seizure gating + admin role.
 class SettingsProfileFlags {
   const SettingsProfileFlags({
@@ -90,9 +102,9 @@ class SettingsProfileFlags {
 final settingsProfileFlagsProvider =
     FutureProvider<SettingsProfileFlags>((ref) async {
   await ref.watch(authRepositoryProvider.future);
-  final client = Supabase.instance.client;
-  final userId = client.auth.currentSession?.user.id;
-  if (userId == null) return const SettingsProfileFlags();
+  final client = optionalSettingsSupabaseClient();
+  final userId = client?.auth.currentSession?.user.id;
+  if (userId == null || client == null) return const SettingsProfileFlags();
 
   var conditions = const <String>[];
   var isAdmin = false;
@@ -202,7 +214,9 @@ Widget _labelWithIcon(
     children: [
       Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
       const SizedBox(width: 8),
-      Text(label, style: sectionRowTitleStyle(context)),
+      Expanded(
+        child: Text(label, style: sectionRowTitleStyle(context)),
+      ),
       if (saving) ...[
         const SizedBox(width: 8),
         SizedBox(
@@ -274,9 +288,9 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
   final _waterController = TextEditingController();
   Timer? _waterTimer;
 
-  SupabaseClient get _client => Supabase.instance.client;
+  SupabaseClient? get _client => optionalSettingsSupabaseClient();
 
-  String? get _userId => _client.auth.currentSession?.user.id;
+  String? get _userId => optionalSettingsUserId();
 
   @override
   void initState() {
@@ -294,12 +308,13 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
 
   Future<void> _load() async {
     final userId = _userId;
-    if (userId == null) {
+    final client = _client;
+    if (userId == null || client == null) {
       if (mounted) setState(() => _loading = false);
       return;
     }
     try {
-      final row = await _client
+      final row = await client
           .from('profiles')
           .select(
               'ai_model_preference, floating_ask_enabled, wake_time, sleep_time, '
@@ -326,7 +341,7 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
         }
         _conditions = merged;
         if (legacy.isNotEmpty) {
-          unawaited(_client.from('profiles').update({
+          unawaited(client.from('profiles').update({
             'conditions': merged,
             'conditions_note': null,
           }).eq('id', userId));
@@ -355,9 +370,10 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
 
   Future<bool> _update(Map<String, dynamic> patch) async {
     final userId = _userId;
-    if (userId == null) return false;
+    final client = _client;
+    if (userId == null || client == null) return false;
     try {
-      await _client.from('profiles').update(patch).eq('id', userId);
+      await client.from('profiles').update(patch).eq('id', userId);
       return true;
     } catch (_) {
       if (mounted) {
@@ -938,13 +954,16 @@ class _ConditionChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: active
-                      ? Colors.white
-                      : Colors.white.withValues(alpha: 0.92),
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: active
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.92),
+                  ),
                 ),
               ),
               if (removable && active) ...[
@@ -1045,9 +1064,9 @@ class _AiProviderSectionState extends State<AiProviderSection> {
   bool _loading = true;
   String? _saving;
 
-  SupabaseClient get _client => Supabase.instance.client;
+  SupabaseClient? get _client => optionalSettingsSupabaseClient();
 
-  String? get _userId => _client.auth.currentSession?.user.id;
+  String? get _userId => optionalSettingsUserId();
 
   @override
   void initState() {
@@ -1057,12 +1076,13 @@ class _AiProviderSectionState extends State<AiProviderSection> {
 
   Future<void> _load() async {
     final userId = _userId;
-    if (userId == null) {
+    final client = _client;
+    if (userId == null || client == null) {
       if (mounted) setState(() => _loading = false);
       return;
     }
     try {
-      final row = await _client
+      final row = await client
           .from('profiles')
           .select('ai_provider')
           .eq('id', userId)
@@ -1079,7 +1099,9 @@ class _AiProviderSectionState extends State<AiProviderSection> {
 
   Future<void> _pick(_AiProviderOption option) async {
     final userId = _userId;
+    final client = _client;
     if (userId == null ||
+        client == null ||
         option.disabled ||
         option.id == _current ||
         _saving != null) {
@@ -1087,7 +1109,7 @@ class _AiProviderSectionState extends State<AiProviderSection> {
     }
     setState(() => _saving = option.id);
     try {
-      await _client
+      await client
           .from('profiles')
           .update({'ai_provider': option.id}).eq('id', userId);
       if (!mounted) return;
@@ -1227,9 +1249,9 @@ class _WhatITrackSectionState extends State<WhatITrackSection> {
   Map<String, bool> _overrides = {};
   String? _savingKey;
 
-  SupabaseClient get _client => Supabase.instance.client;
+  SupabaseClient? get _client => optionalSettingsSupabaseClient();
 
-  String? get _userId => _client.auth.currentSession?.user.id;
+  String? get _userId => optionalSettingsUserId();
 
   @override
   void initState() {
@@ -1239,12 +1261,13 @@ class _WhatITrackSectionState extends State<WhatITrackSection> {
 
   Future<void> _load() async {
     final userId = _userId;
-    if (userId == null) {
+    final client = _client;
+    if (userId == null || client == null) {
       if (mounted) setState(() => _loading = false);
       return;
     }
     try {
-      final row = await _client
+      final row = await client
           .from('profiles')
           .select('conditions, feature_overrides')
           .eq('id', userId)
@@ -1270,7 +1293,8 @@ class _WhatITrackSectionState extends State<WhatITrackSection> {
 
   Future<void> _setOverride(String key, bool? value) async {
     final userId = _userId;
-    if (userId == null) return;
+    final client = _client;
+    if (userId == null || client == null) return;
     final next = Map<String, bool>.from(_overrides);
     if (value == null) {
       next.remove(key);
@@ -1282,7 +1306,7 @@ class _WhatITrackSectionState extends State<WhatITrackSection> {
       _savingKey = key;
     });
     try {
-      await _client
+      await client
           .from('profiles')
           .update({'feature_overrides': next}).eq('id', userId);
     } catch (_) {
@@ -1298,10 +1322,11 @@ class _WhatITrackSectionState extends State<WhatITrackSection> {
 
   Future<void> _resetAll() async {
     final userId = _userId;
-    if (userId == null) return;
+    final client = _client;
+    if (userId == null || client == null) return;
     setState(() => _overrides = {});
     try {
-      await _client
+      await client
           .from('profiles')
           .update({'feature_overrides': <String, bool>{}}).eq('id', userId);
     } catch (_) {
@@ -1487,9 +1512,9 @@ class _ConditionHistorySectionState extends State<ConditionHistorySection> {
   final _famConditionController = TextEditingController();
   final _famRelationController = TextEditingController();
 
-  SupabaseClient get _client => Supabase.instance.client;
+  SupabaseClient? get _client => optionalSettingsSupabaseClient();
 
-  String? get _userId => _client.auth.currentSession?.user.id;
+  String? get _userId => optionalSettingsUserId();
 
   @override
   void initState() {
@@ -1506,12 +1531,13 @@ class _ConditionHistorySectionState extends State<ConditionHistorySection> {
 
   Future<void> _load() async {
     final userId = _userId;
-    if (userId == null) {
+    final client = _client;
+    if (userId == null || client == null) {
       if (mounted) setState(() => _loading = false);
       return;
     }
     try {
-      final row = await _client
+      final row = await client
           .from('profiles')
           .select('conditions, conditions_archived, family_history')
           .eq('id', userId)
@@ -1539,10 +1565,11 @@ class _ConditionHistorySectionState extends State<ConditionHistorySection> {
 
   Future<bool> _persist(Map<String, dynamic> patch) async {
     final userId = _userId;
-    if (userId == null) return false;
+    final client = _client;
+    if (userId == null || client == null) return false;
     setState(() => _saving = true);
     try {
-      await _client.from('profiles').update(patch).eq('id', userId);
+      await client.from('profiles').update(patch).eq('id', userId);
       return true;
     } catch (_) {
       if (mounted) {
@@ -1691,28 +1718,32 @@ class _ConditionHistorySectionState extends State<ConditionHistorySection> {
                         border:
                             Border.all(color: Colors.white.withValues(alpha: 0.1)),
                       ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(
-                            child: Text(
-                              conditionLabel(c),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.white.withValues(alpha: 0.92),
-                              ),
+                          Text(
+                            conditionLabel(c),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withValues(alpha: 0.92),
                             ),
                           ),
-                          TextButton(
-                            onPressed: _loading || _saving
-                                ? null
-                                : () => _archive(c, 'remission'),
-                            child: const Text('In remission'),
-                          ),
-                          TextButton(
-                            onPressed: _loading || _saving
-                                ? null
-                                : () => _archive(c, 'resolved'),
-                            child: const Text('Resolved'),
+                          Wrap(
+                            spacing: 4,
+                            children: [
+                              TextButton(
+                                onPressed: _loading || _saving
+                                    ? null
+                                    : () => _archive(c, 'remission'),
+                                child: const Text('In remission'),
+                              ),
+                              TextButton(
+                                onPressed: _loading || _saving
+                                    ? null
+                                    : () => _archive(c, 'resolved'),
+                                child: const Text('Resolved'),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -1923,9 +1954,9 @@ class _DataSectionState extends State<DataSection> {
   DeletionStatus? _pendingDeletion;
   bool _restoring = false;
 
-  SupabaseClient get _client => Supabase.instance.client;
+  SupabaseClient? get _client => optionalSettingsSupabaseClient();
 
-  String? get _userId => _client.auth.currentSession?.user.id;
+  String? get _userId => optionalSettingsUserId();
 
   @override
   void initState() {
@@ -1935,12 +1966,13 @@ class _DataSectionState extends State<DataSection> {
 
   Future<void> _loadStatus() async {
     final userId = _userId;
-    if (userId == null) {
+    final client = _client;
+    if (userId == null || client == null) {
       if (mounted) setState(() => _loadingStatus = false);
       return;
     }
     try {
-      final status = await checkDeletionStatus(_client, userId);
+      final status = await checkDeletionStatus(client, userId);
       if (mounted) setState(() => _pendingDeletion = status);
     } finally {
       if (mounted) setState(() => _loadingStatus = false);
@@ -1948,9 +1980,11 @@ class _DataSectionState extends State<DataSection> {
   }
 
   Future<void> _export() async {
+    final client = _client;
+    if (client == null) return;
     setState(() => _exporting = true);
     try {
-      await exportAllUserData(_client);
+      await exportAllUserData(client);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Your archive is downloading')),
@@ -1966,9 +2000,11 @@ class _DataSectionState extends State<DataSection> {
   }
 
   Future<void> _restore() async {
+    final client = _client;
+    if (client == null) return;
     setState(() => _restoring = true);
     try {
-      await restoreUserData(_client);
+      await restoreUserData(client);
       if (!mounted) return;
       setState(() => _pendingDeletion = null);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1989,8 +2025,9 @@ class _DataSectionState extends State<DataSection> {
   }
 
   Future<void> _confirmDelete() async {
-    final user = _client.auth.currentSession?.user;
-    if (user == null) return;
+    final client = _client;
+    final user = client?.auth.currentSession?.user;
+    if (user == null || client == null) return;
     final needsPassword = userHasPasswordIdentity(user);
     final confirmController = TextEditingController();
     final passwordController = TextEditingController();
@@ -2057,15 +2094,15 @@ class _DataSectionState extends State<DataSection> {
                           try {
                             if (needsPassword) {
                               await softDeleteUserData(
-                                _client,
+                                client,
                                 password: passwordController.text,
                               );
                             } else {
-                              await softDeleteAuthenticatedUser(_client);
+                              await softDeleteAuthenticatedUser(client);
                             }
                             if (!dialogContext.mounted) return;
                             Navigator.of(dialogContext).pop();
-                            await _client.auth.signOut();
+                            await client.auth.signOut();
                             if (!mounted) return;
                             GoRouter.of(this.context).go('/sign-in');
                           } catch (e) {

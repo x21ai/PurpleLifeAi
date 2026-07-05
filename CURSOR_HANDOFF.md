@@ -1,6 +1,12 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~08:05 ET (TF15 VALID on ASC).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~09:25 ET (settings scroll parity verified).
+
+**Recent:** Flutter `/settings` full scroll web parity verified (`settings_screen_scroll_test.dart`, 47/47 tests). `tf-settings-design` resolved in OPEN-ISSUES; needs TF16 upload for tester re-check.
+
+**Session start:** read `docs/HANDOFF.md` (snapshot + log), `docs/DECISIONS.md`, and
+`docs/OPEN-ISSUES.md` first (`.cursor/rules/00-handoff.mdc`). This file is extended
+operational detail; append task completion to `docs/HANDOFF.md` before claiming done.
 
 ## TestFlight 1.0 (15) — install this build (2026-07-05 ~08:05 ET)
 
