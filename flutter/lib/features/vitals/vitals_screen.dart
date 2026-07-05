@@ -6,8 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/providers/core_providers.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
+import '../today/wearable_sync.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
 import '../shared/metric_constants.dart';
@@ -54,6 +56,10 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
   }
 
   Future<void> _refresh() async {
+    await syncConnectedWearables(
+      supabase: ref.read(supabaseClientProvider),
+      worker: ref.read(workerClientProvider),
+    );
     ref.invalidate(vitalsSnapshotProvider);
     await ref.read(vitalsSnapshotProvider.future);
     if (!mounted) return;
@@ -310,9 +316,9 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
           width: 36,
           height: 36,
           child: IconButton(
-            onPressed: () {},
+            onPressed: () => context.go(AppRoutes.tools),
             padding: EdgeInsets.zero,
-            tooltip: 'Edit',
+            tooltip: 'Devices',
             icon: Icon(
               Icons.edit_outlined,
               size: 16,

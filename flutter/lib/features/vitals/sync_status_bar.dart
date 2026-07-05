@@ -1,9 +1,13 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/core_providers.dart';
+import '../health/health_providers.dart';
+import '../health/health_service.dart';
 import '../today/wearable_sync.dart';
 
 /// Wearable sync status bar ported from `src/components/biometrics/sync-status.tsx`.
@@ -37,6 +41,7 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
   String? _loadError;
   Map<String, bool> _connected = {};
   bool _appleConnected = false;
+  bool _nativeHealthKitLinked = false;
   String? _dataThrough;
   String? _lastPulledIso;
 
@@ -94,6 +99,13 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
           .eq('user_id', uid)
           .maybeSingle();
 
+      var nativeHealthKitLinked = false;
+      if (isNativeHealthPlatform && Platform.isIOS) {
+        final auth =
+            await ref.read(healthServiceProvider).authorizationStatus();
+        nativeHealthKitLinked = auth.authorized;
+      }
+
       final connected = <String, bool>{};
       final stamps = <int>[];
       for (final entry in tokenRows) {
@@ -105,7 +117,9 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
         if (ts != null) stamps.add(ts.millisecondsSinceEpoch);
       }
 
-      final appleConnected = apple != null;
+      // Native iOS: connected state is device HealthKit auth, not prior DB rows.
+      final appleConnected = nativeHealthKitLinked ||
+          (!isNativeHealthPlatform && apple != null);
       final appleTs = _pickTimestamp(
         apple?['last_sync_at'] as String?,
         apple?['last_webhook_at'] as String?,
@@ -123,6 +137,7 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
       setState(() {
         _connected = connected;
         _appleConnected = appleConnected;
+        _nativeHealthKitLinked = nativeHealthKitLinked;
         _dataThrough = bio?['recorded_at'] as String?;
         _lastPulledIso = latest?.toUtc().toIso8601String();
         _loaded = true;
@@ -157,7 +172,18 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
   Future<void> _syncNow() async {
     if (_busy) return;
     final active = _pullProviders.where((p) => _connected[p.id] == true).toList();
-    if (active.isEmpty) return;
+    if (active.isEmpty && !_nativeHealthKitLinked) {
+      if (_appleConnected && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Apple Health pushes automatically when Health Auto Export is configured.',
+            ),
+          ),
+        );
+      }
+      return;
+    }
 
     setState(() => _busy = true);
     try {
@@ -195,7 +221,7 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
     final pulledDate = _lastPulledIso == null ? null : DateTime.tryParse(_lastPulledIso!);
     final dataThroughLabel =
         _dataThrough == null ? null : formatDataThrough(_dataThrough!);
-    final showButton = _anyPullConnected;
+    final showButton = _anyPullConnected || _appleConnected;
 
     if (widget.variant == SyncStatusVariant.compact) {
       return Row(

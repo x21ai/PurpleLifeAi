@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../auth/auth_state.dart';
 import '../core/providers/core_providers.dart';
+import '../features/health/native_health_startup.dart';
 import 'routes.dart';
 
 /// Redirects unauthenticated users to sign-in; keeps signed-in users off auth.
@@ -106,6 +107,6 @@ class AuthGate extends ConsumerWidget {
     if (!isAuthenticated) {
       return const SizedBox.shrink();
     }
-    return child;
+    return NativeHealthStartupListener(child: child);
   }
 }

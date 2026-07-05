@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:purple_app/features/health/health_service.dart';
+import 'package:purple_app/features/health/native_health_autosync.dart';
 
 void main() {
   group('NativeHealthDay', () {
@@ -38,6 +39,12 @@ void main() {
   group('isNativeHealthPlatform', () {
     test('is false on Flutter test VM (web/desktop CI)', () {
       expect(isNativeHealthPlatform, isFalse);
+    });
+  });
+
+  group('nativeHealthSyncThrottle', () {
+    test('matches web 3 hour wearable throttle', () {
+      expect(nativeHealthSyncThrottle, const Duration(hours: 3));
     });
   });
 }

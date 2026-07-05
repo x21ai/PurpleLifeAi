@@ -111,13 +111,13 @@ class HealthService {
   final FlutterSecureStorage _secureStorage;
   Health? _health;
 
-  /// iOS auth types only. No VO2_MAX.
+  /// iOS auth types only. No VO2_MAX. Sleep maps to HealthKit sleepAnalysis.
   static const iosAuthTypes = <HealthDataType>[
     HealthDataType.STEPS,
     HealthDataType.HEART_RATE_VARIABILITY_RMSSD,
     HealthDataType.HEART_RATE,
     HealthDataType.RESTING_HEART_RATE,
-    HealthDataType.SLEEP_ASLEEP,
+    HealthDataType.SLEEP_LIGHT,
     HealthDataType.SLEEP_REM,
     HealthDataType.SLEEP_DEEP,
   ];
@@ -232,6 +232,7 @@ class HealthService {
 
       if (Platform.isIOS) {
         final localFlag = await _readAuthFlag();
+        // Match web fallback: device connect flag after requestAuthorization.
         if (localFlag) {
           return const HealthAuthStatus(authorized: true);
         }
@@ -243,6 +244,11 @@ class HealthService {
           authorized: false,
           readDenied: _authTypes.map((t) => t.name).toList(),
         );
+      }
+
+      // iOS READ checks often return null (undetermined); never treat as denied.
+      if (Platform.isIOS) {
+        return const HealthAuthStatus(authorized: false);
       }
 
       return const HealthAuthStatus(authorized: false);
@@ -378,14 +384,22 @@ class HealthService {
       }
 
       final sleepPoints = await health.getHealthDataFromTypes(
-        types: const [
-          HealthDataType.SLEEP_ASLEEP,
-          HealthDataType.SLEEP_REM,
-          HealthDataType.SLEEP_DEEP,
-        ],
+        types: Platform.isIOS
+            ? const [
+                HealthDataType.SLEEP_LIGHT,
+                HealthDataType.SLEEP_REM,
+                HealthDataType.SLEEP_DEEP,
+                HealthDataType.SLEEP_ASLEEP,
+              ]
+            : const [
+                HealthDataType.SLEEP_ASLEEP,
+                HealthDataType.SLEEP_REM,
+                HealthDataType.SLEEP_DEEP,
+              ],
         startTime: start,
         endTime: end,
       );
+      final lightBuckets = <String, int>{};
       for (final point in sleepPoints) {
         final date = _dayKey(point.dateTo);
         if (date == null) continue;
@@ -402,11 +416,28 @@ class HealthService {
           case HealthDataType.SLEEP_DEEP:
             byDay[date] =
                 row.merge(sleepDeepMin: (row.sleepDeepMin ?? 0) + minutes);
+          case HealthDataType.SLEEP_LIGHT:
+            lightBuckets[date] = (lightBuckets[date] ?? 0) + minutes;
           case HealthDataType.SLEEP_ASLEEP:
-            byDay[date] =
-                row.merge(sleepTotalMin: (row.sleepTotalMin ?? 0) + minutes);
+            // Legacy total-asleep samples when staged sleep is unavailable.
+            if (!lightBuckets.containsKey(date) &&
+                (row.sleepRemMin == null && row.sleepDeepMin == null)) {
+              byDay[date] =
+                  row.merge(sleepTotalMin: (row.sleepTotalMin ?? 0) + minutes);
+            }
           default:
             break;
+        }
+      }
+
+      for (final entry in lightBuckets.entries) {
+        final date = entry.key;
+        final row = _ensureDay(byDay, date);
+        final rem = row.sleepRemMin ?? 0;
+        final deep = row.sleepDeepMin ?? 0;
+        final total = entry.value + rem + deep;
+        if (total > 0) {
+          byDay[date] = row.merge(sleepTotalMin: total);
         }
       }
 

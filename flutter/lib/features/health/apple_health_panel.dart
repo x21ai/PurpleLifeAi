@@ -6,9 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api/worker_client.dart';
-import '../../core/providers/core_providers.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
+import 'health_providers.dart';
 import 'health_service.dart';
 import 'native_health_sync.dart';
 
@@ -31,8 +31,6 @@ class AppleHealthPanel extends ConsumerStatefulWidget {
 
 class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
     with WidgetsBindingObserver {
-  final _healthService = HealthService();
-
   bool _loaded = false;
   bool _busy = false;
   bool _authorized = false;
@@ -46,6 +44,8 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
 
   String get _platformLabel =>
       Platform.isIOS ? 'Apple Health' : 'Health Connect';
+
+  HealthService get _healthService => ref.read(healthServiceProvider);
 
   @override
   void initState() {
@@ -128,10 +128,7 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
   }
 
   NativeHealthSync _syncClient() {
-    return NativeHealthSync(
-      workerClient: ref.read(workerClientProvider),
-      syncService: ref.read(syncServiceProvider),
-    );
+    return ref.read(nativeHealthSyncProvider);
   }
 
   Future<void> _runSync(NativeHealthSync sync) async {
@@ -174,7 +171,8 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
         ),
       );
     } else {
-      setState(() => _lastSyncAt = DateTime.now().toUtc().toIso8601String());
+      await _loadSyncTimestamps();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -333,8 +331,8 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
             : 'Syncing · latest vitals ${_relativeTime(_lastDataAt)}';
       case _AppleHealthSyncState.stale:
         return _lastSyncAt != null
-            ? 'Last synced ${_relativeTime(freshness)} · open Purple to refresh'
-            : 'Last vitals ${_relativeTime(_lastDataAt)} · open Purple to refresh';
+            ? 'Last synced ${_relativeTime(freshness)} · open Purple to refresh from HealthKit'
+            : 'Last vitals ${_relativeTime(_lastDataAt)} · open Purple to refresh from HealthKit';
       case _AppleHealthSyncState.reachable:
         return 'Connected · waiting for the first HealthKit sync';
       case _AppleHealthSyncState.waiting:
@@ -383,7 +381,40 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
 
     return GlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      child: inner,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (_authorized && _loaded) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: Colors.green.withValues(alpha: 0.12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_circle,
+                        size: 14, color: Colors.green.shade300),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Connected',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Colors.green.shade200,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          inner,
+        ],
+      ),
     );
   }
 
@@ -549,6 +580,13 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
                 ),
           ),
         ],
+        if (_loaded &&
+            _hasSyncedData &&
+            !_authorized &&
+            !_permissionDenied) ...[
+          const SizedBox(height: 12),
+          _WebImportNote(platformLabel: _platformLabel),
+        ],
       ],
     );
   }
@@ -570,12 +608,18 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
         ),
         const SizedBox(height: 8),
         Text(
-          'Grant access to sleep, HRV, steps, and heart rate so Purple can spot patterns.',
+          Platform.isIOS
+              ? 'Purple reads sleep, HRV, heart rate, and steps directly from HealthKit on this iPhone.'
+              : 'Purple reads sleep, HRV, heart rate, and steps from Health Connect on this phone.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Colors.white.withValues(alpha: 0.7),
               ),
           textAlign: TextAlign.center,
         ),
+        if (_loaded && _hasSyncedData && !_permissionDenied) ...[
+          const SizedBox(height: 16),
+          _WebImportNote(platformLabel: _platformLabel),
+        ],
         const SizedBox(height: 24),
         SizedBox(
           width: 280,
@@ -600,9 +644,22 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
           const SizedBox(height: 16),
           Text(
             _lastError ??
-                'Permission denied. Open Settings, Health, and allow Purple to read vitals.',
+                'Health access was not granted. Open Health Settings, tap Purple, and turn on the data you want to share.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: const Color(0xFFEAB308),
+                ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+        if (_loaded) ...[
+          const SizedBox(height: 16),
+          Text(
+            Platform.isIOS
+                ? 'Tap Connect to open the iOS Health Access sheet, or use Health Settings to allow or deny access.'
+                : 'Tap Connect to open Health Connect permissions for Purple.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.45),
+                  height: 1.4,
                 ),
             textAlign: TextAlign.center,
           ),
@@ -668,7 +725,19 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
           ),
         ),
         const SizedBox(height: 12),
-        TextButton(onPressed: _openSettings, child: const Text('Open Settings')),
+        TextButton(
+          onPressed: _openSettings,
+          child: const Text('Open Health Settings'),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Open Purple after workouts or sleep to refresh vitals. Use Health Settings to change what Purple can read.',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.45),
+                height: 1.4,
+              ),
+          textAlign: TextAlign.center,
+        ),
         if (_lastError != null) ...[
           const SizedBox(height: 12),
           Text(
@@ -680,6 +749,35 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
           ),
         ],
       ],
+    );
+  }
+}
+
+class _WebImportNote extends StatelessWidget {
+  const _WebImportNote({required this.platformLabel});
+
+  final String platformLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.white.withValues(alpha: 0.05),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Text(
+        Platform.isIOS
+            ? 'Previous data in your account may be from web import or Health Auto Export. '
+                'Tap Connect to link HealthKit on this iPhone.'
+            : 'Previous data in your account may be from another device. '
+                'Tap Connect to link Health Connect on this phone.',
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Colors.white.withValues(alpha: 0.55),
+              height: 1.4,
+            ),
+      ),
     );
   }
 }

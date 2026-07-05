@@ -1,6 +1,36 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 (ship commit **918c766** pushed; Worker **c3ee806d**; TestFlight **1.0 (12)** VALID).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 (Apple Health overnight fleet; Flutter **1.0 (13)** pending upload).
+
+## Apple Health overnight fleet (2026-07-05)
+
+**Root cause (recap):** iOS `health` plugin `hasPermissions()` returns `null` for READ; connect flow must trust `requestAuthorization` + secure-storage flag (matches Capacitor `health-ios.ts`).
+
+**This session (build 13):**
+- `health_service.dart`: iOS auth without VO2_MAX; staged sleep (LIGHT+REM+DEEP) aggregation; device-auth gating.
+- `native_health_autosync.dart` + `native_health_startup.dart`: visit-mode sync (3h throttle on `apple_health_tokens.last_sync_at`), wired in `AuthGate`.
+- `wearable_sync.dart`: pull-to-refresh + Today sync includes native HealthKit when device authorized.
+- `sync_status_bar.dart`: native iOS `_appleConnected` from HealthKit auth, not prior `biometrics` rows; last pulled uses `apple_health_tokens.last_sync_at`.
+- `vitals_screen.dart`: pull-to-refresh triggers wearable + native health sync.
+- `health_providers.dart`: shared `nativeHealthSyncProvider`.
+- `pubspec.yaml`: **1.0.0+13** (Dart-only health fixes; plist/entitlements unchanged from build 12).
+
+**Verify (agent):**
+```bash
+cd flutter && flutter analyze lib/features/health/ lib/features/vitals/sync_status_bar.dart lib/features/today/wearable_sync.dart lib/shell/auth_gate.dart  # 0 issues
+cd flutter && flutter test test/health_service_test.dart   # 4/4 pass
+```
+
+**Verify (iOS device / TestFlight 13):**
+1. Tools → Apple Health → Connect → HealthKit sheet.
+2. Grant sleep/HRV/steps/HR → snackbar sync complete; status **Last synced** from `apple_health_tokens.last_sync_at`.
+3. Deny → yellow Settings guidance.
+4. Pull-to-refresh on Today/Vitals → native sync when authorized.
+5. Airplane mode → offline queue; online auto-flush via `SyncService`.
+
+**USB device:** `00008150-00192C141A87801C` not detected this session (`flutter devices` → macOS + Chrome only). Use TestFlight **1.0 (13)** after upload.
+
+**Upload:** `bun run ios:flutter-testflight` (Doppler `purple-life`/`prd` signing + ASC API).
 
 ## Ship complete (2026-07-05 ~02:50 ET)
 
@@ -56,7 +86,7 @@ Operational state of the PurpleLife project for the next agent or engineer. Last
 
 ## Overnight verify fleet (2026-07-05)
 
-**Cycle 1 (~02:02 ET):** `flutter analyze lib/` PASS; `flutter test` **27/27** PASS; `curl :8765` **200**; ASC **1.0 (11)** and **1.0 (12)** both `processing=VALID`. Browser QA (`pmt@eigital.com`): Today/Meds/Journal/Vitals/Settings hub/Tools **PASS** with noted partials; Tools now shows Oura+Whoop connected + Apple Health web panel (Wave 2 OAuth landed). Prod Today hydrates ~12s; hero scores **–** on web vs numeric on Flutter. Mid-`--rebuild` caused transient **Loading Purple** until hard reload. Full table + P0 list: `docs/FLUTTER-PAGE-BY-PAGE-COMPARISON.md` → **Overnight verify fleet**. Cycles 2–3 pending (30 min interval).
+**Cycle 2 (~02:50 ET):** Gates unchanged (analyze PASS, **27/27** test, `:8765` 200, ASC **11+12** VALID). Today spot-check PASS; `#/tools` nav flaky (redirected to Today). Cycles 3 pending.
 
 ## Wave 3 Care + Sharing + Reports (2026-07-04 overnight)
 
@@ -87,6 +117,39 @@ cd flutter && flutter test   # 27/27 pass
 - **Deps:** explicit `app_links`, `url_launcher` in `flutter/pubspec.yaml`.
 - **Verify:** `cd flutter && flutter analyze lib/features/tools/ lib/core/api/worker_client.dart lib/shell/ && flutter test` → **27/27 PASS** (includes `test/wearable_oauth_test.dart`).
 - **Worker deploy:** Done on **c3ee806d** (2026-07-05); routes live under `src/routes/api/health/whoop-*.ts`.
+
+## Apple Health parity audit + fix (2026-07-05)
+
+**Gap matrix (web/Capacitor vs Flutter before this fix):**
+
+| Area | Web/Capacitor | Flutter before | Status |
+|------|---------------|----------------|--------|
+| iOS auth (`hasPermissions` null) | Trust `requestAuthorization` + secure flag | Fixed overnight | **Done** |
+| `isCoreAuthorized` / partial grants | `health-ios.ts` | `health_service.dart` | **Done** |
+| vo2Max omitted from auth | Capgo enum | `health` package types | **Done** |
+| Last synced source | `apple_health_tokens.last_sync_at` | Mixed local clock + DB | **Fixed** (reload DB after sync) |
+| Connect gate | Device HealthKit auth, not `biometrics` rows | Same | **Done** |
+| Native sync API | `POST /api/health/native-sync` | WorkerClient + offline queue | **Done** |
+| Tools panel | Connect/Sync/Settings + status dot | Embedded row | **Done** |
+| Settings/sharing panel | `AppleHealthCard` / `NativeAppleHealthPanel` | Missing | **Added** (`sharing_screen.dart`) |
+| Welcome onboarding step | `WelcomeAppleHealthConnect` | Missing | **Added** (`welcome_apple_health_card.dart`) |
+| Web import note | When DB has data but HealthKit not linked | Missing | **Added** |
+| Visit/resume auto-sync | Deferred startup + 3h throttle | Missing | **Added** (`native_health_autosync.dart`, `native_health_startup.dart`, `AuthGate`) |
+| Vitals sync bar | Apple token + HealthKit hint | Token row only | **Fixed** (native auth OR token; Tools sync hint) |
+| Web HAE webhook UI | Full webhook card on web | Web stub on `:8765` | **Expected** (native-only on Flutter web) |
+| Sleep aggregation | Single `sleep` type + stages | `SLEEP_LIGHT/REM/DEEP` | **Aligned** (iOS staged sleep) |
+
+**Files (this commit):** `flutter/lib/features/health/*`, `sharing_screen.dart`, `welcome_screen.dart`, `sync_status_bar.dart`, `auth_gate.dart`, `test/health_service_test.dart`.
+
+**Verify (agent):**
+```bash
+cd flutter && flutter analyze lib/features/health/ && flutter test   # 27/27
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8765/        # 200
+```
+
+**Verify (TestFlight 1.0 (12) on iPhone):** Tools + Settings → Sharing → Apple Health → Connect → grant → Sync → **Last synced** from `apple_health_tokens.last_sync_at`. Resume app → throttled background sync (3h).
+
+**No TestFlight 13 needed** for this commit (Dart-only; plist/entitlements unchanged since build 12).
 
 ## Apple Health P0 fix — Flutter native HealthKit (2026-07-04 overnight)
 
