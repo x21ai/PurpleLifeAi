@@ -9,15 +9,33 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign`**. TestFlight **1.0 (16) VALID**. Flutter **P0-9** reports
-child routes at `/reports/*` (metrics, documents, medical-history, new, detail, trends). Prior:
-P0-7 chat, P0-8 care inbox. Parallel WIP (marketing) on disk untracked.
+Purple Life on **`lovable/redesign` @ `9b4e114`**. TestFlight **1.0 (16) VALID**. Flutter **P0-4**
+Today web parity shipped (date strip, Readiness/Sleep/Activity score strip, signals grid). Prior:
+P0-9 reports child routes, P0-7 chat, P0-8 care inbox.
 
-**Next action:** Device verify reports upload on Flutter web `:8765`; charts/AI remain web-only.
+**Next action:** Rebuild Flutter web after Today merge (`./scripts/flutter-web-serve.sh --rebuild`);
+device verify date-strip past-day browsing.
 
 ---
 
 ## Log
+
+### 2026-07-05T14:05:00Z — P0-4 Flutter Today web parity
+
+- **Requested:** Today parity — date strip, signals grid, score strip vs web `today.tsx`;
+  scope `flutter/lib/features/today/`; analyze + test; browser `:8765/#/today`; commit push.
+- **Done:** Confirmed/landed date strip, glass three-up score strip (Readiness/Sleep/Activity),
+  "YOUR SIGNALS" grid with connect/empty states, quick actions, More-for-today disclosure (prior
+  work). This commit: day-filtered `hasData` from real metrics in `today_repository.dart`;
+  `signals_grid_skeleton.dart` for past-day loading; connect routes use `AppRoutes.settings`;
+  `test/today_vital_items_test.dart`. `flutter analyze lib/features/today/` clean;
+  `flutter test` **79/79** pass. Browser verified `:8765/#/today` (date strip, scores, signals).
+- **Issues:** Full `flutter analyze lib/` still red on untracked marketing WIP (out of scope).
+  Web rebuild blocked by concurrent `flutter-web-serve` lock; existing server served stale-enough
+  build with real signed-in data for verify.
+- **Stand / next:** `--rebuild` when lock free; update gap matrix P0-4 to Parity.
+- **Who / where:** Cursor subagent · darwin · lovable/redesign@9b4e114
+- **Timestamp:** 2026-07-05T14:05:00Z
 
 ### 2026-07-05T14:20:00Z — P0-9 Flutter reports child routes
 
