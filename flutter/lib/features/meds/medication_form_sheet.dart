@@ -72,6 +72,9 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
 
   bool get _canSave =>
       !_loading &&
+      // For edits, never allow saving until the existing row hydrated —
+      // saving over defaults would wipe the medication's real values.
+      (widget.editingMedId == null || _existing != null) &&
       _nameController.text.trim().isNotEmpty &&
       (_isRescue || _amountController.text.trim().isNotEmpty);
 
@@ -98,7 +101,13 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
       final med = await ref
           .read(medsRepositoryProvider)
           .loadMedicationById(widget.editingMedId!);
-      if (!mounted || med == null) return;
+      if (!mounted) return;
+      if (med == null) {
+        // Row missing (or cache miss offline): saving over blank defaults
+        // would wipe the medication's real values, so bail out instead.
+        _abortEditSheet();
+        return;
+      }
       setState(() {
         _existing = med;
         _nameController.text = med.name;
@@ -119,9 +128,24 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
             ..addAll(times.map((t) => TextEditingController(text: t)));
         }
       });
+    } catch (_) {
+      // Hydration failed: without the existing row, save would clobber real
+      // values with defaults (the exact bug Wave-1 fixed). Close instead.
+      if (mounted) _abortEditSheet();
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  /// Closes the edit sheet when the existing medication could not be loaded,
+  /// so a save can never overwrite real values with blank defaults.
+  void _abortEditSheet() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Couldn't load this medication. Try again in a moment."),
+      ),
+    );
+    Navigator.of(context).pop(false);
   }
 
   @override

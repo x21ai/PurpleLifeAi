@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/providers/core_providers.dart';
 import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
 import '../meds/meds_repository.dart';
@@ -510,7 +511,7 @@ class _TimelineEmpty extends StatelessWidget {
   }
 }
 
-class _TimelineRow extends ConsumerWidget {
+class _TimelineRow extends ConsumerStatefulWidget {
   const _TimelineRow({
     required this.entry,
     required this.whenLabel,
@@ -521,19 +522,27 @@ class _TimelineRow extends ConsumerWidget {
   final String whenLabel;
   final TimelineQuery query;
 
+  @override
+  ConsumerState<_TimelineRow> createState() => _TimelineRowState();
+}
+
+class _TimelineRowState extends ConsumerState<_TimelineRow> {
+  /// True while a dose mutation + sync flush is in flight; disables the
+  /// row's action buttons so a double tap cannot queue duplicate writes.
+  bool _busy = false;
+
+  TimelineEntry get entry => widget.entry;
+
   IconData get _icon => switch (entry.kind) {
         TimelineEntryKind.seizure => Icons.bolt_outlined,
         TimelineEntryKind.journal => Icons.menu_book_outlined,
         TimelineEntryKind.dose => Icons.medication_outlined,
       };
 
-  Future<void> _updateDose(
-    BuildContext context,
-    WidgetRef ref,
-    String next,
-  ) async {
+  Future<void> _updateDose(String next) async {
     final doseId = entry.doseId;
-    if (doseId == null) return;
+    if (doseId == null || _busy) return;
+    setState(() => _busy = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
       // Reuse the shared meds mutation methods (see meds_screen.dart).
@@ -546,17 +555,23 @@ class _TimelineRow extends ConsumerWidget {
         default:
           await repo.reclassifyDose(doseId, next);
       }
+      // The repo methods only queue the write locally. Flush the queue to
+      // Supabase BEFORE re-reading, otherwise timelineEntriesProvider (which
+      // reads Supabase directly) refetches the old row and the status reverts.
+      final syncResult = await ref.read(syncServiceProvider).syncAll();
+      final flushed = syncResult.queueSent > 0 && syncResult.queueFailed == 0;
       // Refresh timeline and any meds views so status reflects immediately.
-      ref.invalidate(timelineEntriesProvider(query));
+      ref.invalidate(timelineEntriesProvider(widget.query));
       ref.invalidate(medsDataProvider);
+      final actionLabel = next == 'taken'
+          ? 'Marked as taken'
+          : next == 'skipped'
+              ? 'Marked as skipped'
+              : 'Reset to pending';
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            next == 'taken'
-                ? 'Marked as taken'
-                : next == 'skipped'
-                    ? 'Marked as skipped'
-                    : 'Reset to pending',
+            flushed ? actionLabel : '$actionLabel — will sync when online',
           ),
         ),
       );
@@ -564,11 +579,13 @@ class _TimelineRow extends ConsumerWidget {
       messenger.showSnackBar(
         const SnackBar(content: Text('Could not update dose')),
       );
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isDose = entry.kind == TimelineEntryKind.dose && entry.doseId != null;
     final status = entry.doseStatus ?? 'pending';
 
@@ -593,7 +610,7 @@ class _TimelineRow extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  whenLabel.toUpperCase(),
+                  widget.whenLabel.toUpperCase(),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         letterSpacing: 0.8,
                         color: Colors.white.withValues(alpha: 0.45),
@@ -628,12 +645,12 @@ class _TimelineRow extends ConsumerWidget {
                         _DoseActionButton(
                           label: 'I took it',
                           filled: true,
-                          onTap: () => _updateDose(context, ref, 'taken'),
+                          onTap: _busy ? null : () => _updateDose('taken'),
                         ),
                         if (status != 'skipped')
                           _DoseActionButton(
                             label: 'Skip',
-                            onTap: () => _updateDose(context, ref, 'skipped'),
+                            onTap: _busy ? null : () => _updateDose('skipped'),
                           ),
                       ],
                     )
@@ -641,7 +658,7 @@ class _TimelineRow extends ConsumerWidget {
                     _DoseActionButton(
                       label: 'Undo',
                       muted: true,
-                      onTap: () => _updateDose(context, ref, 'pending'),
+                      onTap: _busy ? null : () => _updateDose('pending'),
                     ),
                 ],
               ],
@@ -663,12 +680,15 @@ class _DoseActionButton extends StatelessWidget {
   });
 
   final String label;
-  final VoidCallback onTap;
+
+  /// Null disables the button (used while a dose mutation is in flight).
+  final VoidCallback? onTap;
   final bool filled;
   final bool muted;
 
   @override
   Widget build(BuildContext context) {
+    final disabled = onTap == null;
     final primary = Theme.of(context).colorScheme.primary;
     final Color background;
     final Color foreground;
@@ -692,22 +712,25 @@ class _DoseActionButton extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44),
-          child: Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(999),
-              color: background,
-              border: Border.all(color: border),
-            ),
-            child: Text(
-              label,
-              style: TextStyle(
-                color: foreground,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+        child: Opacity(
+          opacity: disabled ? 0.5 : 1,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44),
+            child: Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                color: background,
+                border: Border.all(color: border),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: foreground,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
