@@ -14,6 +14,9 @@ import '../features/meds/med_detail_screen.dart';
 import '../features/meds/meds_history_screen.dart';
 import '../features/meds/meds_screen.dart';
 import '../features/reports/reports_hub_screen.dart';
+import '../features/settings/contact_screen.dart';
+import '../features/settings/how_purple_thinks_screen.dart';
+import '../features/settings/privacy_screen.dart';
 import '../features/settings/settings_placeholder_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/settings/sharing_screen.dart';
@@ -191,21 +194,22 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.settingsContact,
             name: 'settings-contact',
-            builder: (context, state) => const SettingsPlaceholderScreen(
-              title: 'Contact',
-              body: 'Reach the Purple team with questions or feedback.',
-            ),
+            redirect: (context, state) => AppRoutes.contact,
+          ),
+          GoRoute(
+            path: AppRoutes.contact,
+            name: 'contact',
+            builder: (context, state) => const ContactScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.settingsPrivacy,
+            name: 'settings-privacy',
+            builder: (context, state) => const PrivacyScreen(),
           ),
           GoRoute(
             path: AppRoutes.settingsHowPurpleThinks,
             name: 'settings-how-purple-thinks',
-            builder: (context, state) => const SettingsPlaceholderScreen(
-              title: 'How Purple thinks',
-              body:
-                  'What Purple reads, when it acts, and what stays private. '
-                  'Full copy ships in a later phase; read the web article at '
-                  'purplelife.org/settings/how-purple-thinks for now.',
-            ),
+            builder: (context, state) => const HowPurpleThinksScreen(),
           ),
           GoRoute(
             path: AppRoutes.chat,

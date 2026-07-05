@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'settings_screen.dart';
+import 'settings_hub.dart';
 
 /// Placeholder for settings sub-routes not yet fully ported.
 class SettingsPlaceholderScreen extends StatelessWidget {

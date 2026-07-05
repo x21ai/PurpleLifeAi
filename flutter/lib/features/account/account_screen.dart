@@ -1,16 +1,20 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/auth_state.dart';
+import '../../core/providers/core_providers.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
+import '../settings/settings_hub.dart';
 import '../shared/glass_helpers.dart';
 import 'locale_data.dart';
 import 'profile_avatar.dart';
+import 'theme_preference.dart';
 
 const _genderPresets = ['Female', 'Male', 'Non-binary', 'Prefer not to say'];
 const _genderSelfDescribe = '__self__';
@@ -44,6 +48,9 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   String? _locale;
   bool _twoFactorEnabled = false;
   bool _twoFactorKnown = false;
+  String? _inviteCode;
+  bool _inviteLoading = false;
+  bool _inviteCopied = false;
 
   _SaveState _nameState = _SaveState.idle;
   _SaveState _phoneState = _SaveState.idle;
@@ -237,6 +244,33 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     if (mounted) context.go(AppRoutes.signIn);
   }
 
+  Future<void> _createInviteCode() async {
+    setState(() => _inviteLoading = true);
+    try {
+      final worker = ref.read(workerClientProvider);
+      final result = await worker.postPersonalShareCode();
+      if (!mounted) return;
+      setState(() {
+        _inviteCode = result['code'] as String?;
+        _inviteLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _inviteLoading = false);
+      _showNotYetInApp("Couldn't get an invite code. Try again in a moment.");
+    }
+  }
+
+  Future<void> _copyInviteLink() async {
+    if (_inviteCode == null) return;
+    final link = 'https://www.purplelife.org/?invite=$_inviteCode';
+    await Clipboard.setData(ClipboardData(text: link));
+    setState(() => _inviteCopied = true);
+    Future<void>.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) setState(() => _inviteCopied = false);
+    });
+  }
+
   void _showNotYetInApp(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
@@ -281,6 +315,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 ),
               ),
               const SizedBox(height: 12),
+              const SettingsHubCards(current: 'account'),
+              const SizedBox(height: 20),
               const _SectionLabel('Profile'),
               _SheetCard(child: _avatarCard(context)),
               const SizedBox(height: 12),
@@ -317,12 +353,58 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                           'Share Purple with someone who could use a calmer way to track their health.',
                     ),
                     const SizedBox(height: 16),
-                    OutlinedButton(
-                      onPressed: () => _showNotYetInApp(
-                        'Invite codes are created in the web app for now.',
+                    if (_inviteCode == null)
+                      OutlinedButton(
+                        onPressed: _inviteLoading ? null : _createInviteCode,
+                        child: _inviteLoading
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('Create my invite code'),
+                      )
+                    else ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              _inviteCode!,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    letterSpacing: 2,
+                                    color:
+                                        Colors.white.withValues(alpha: 0.92),
+                                  ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              'Unlimited uses',
+                              style: _mutedStyle(context),
+                            ),
+                          ],
+                        ),
                       ),
-                      child: const Text('Create my invite code'),
-                    ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: _copyInviteLink,
+                        icon: Icon(
+                          _inviteCopied ? Icons.check : Icons.copy,
+                          size: 16,
+                        ),
+                        label: Text(_inviteCopied ? 'Copied' : 'Copy link'),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -609,6 +691,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   }
 
   Widget _appearanceSection(BuildContext context) {
+    final mode = ref.watch(themePreferenceProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -621,36 +704,22 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(
-              child: _AppearanceTile(
-                label: 'Dark',
-                description: 'Default',
-                selected: true,
-                onTap: () {},
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _AppearanceTile(
-                label: 'Light',
-                description: 'Always light',
-                selected: false,
-                onTap: () => _showNotYetInApp(
-                  'Light appearance ships in a later app update.',
+            for (var i = 0; i < PurpleThemeMode.values.length; i++) ...[
+              if (i > 0) const SizedBox(width: 8),
+              Expanded(
+                child: _AppearanceTile(
+                  label: themeModeLabel(PurpleThemeMode.values[i]),
+                  description:
+                      themeModeDescription(PurpleThemeMode.values[i]),
+                  selected: mode == PurpleThemeMode.values[i],
+                  onTap: () async {
+                    await ref
+                        .read(themePreferenceProvider.notifier)
+                        .setMode(PurpleThemeMode.values[i]);
+                  },
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _AppearanceTile(
-                label: 'System',
-                description: 'Match device',
-                selected: false,
-                onTap: () => _showNotYetInApp(
-                  'System appearance ships in a later app update.',
-                ),
-              ),
-            ),
+            ],
           ],
         ),
       ],

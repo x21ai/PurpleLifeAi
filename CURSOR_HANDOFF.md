@@ -1,8 +1,50 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~03:30 ET (overnight deps-audit subagent).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~23:30 ET (Settings web parity round 2).
 
-## Overnight deps-audit subagent (2026-07-05 ~03:30 ET)
+## Settings + Account web parity round 2 (2026-07-05 overnight)
+
+Fixed broken Settings hub imports on `lovable/redesign` (committed `settings_screen.dart` referenced missing `settings_hub.dart` / `platform_flags.dart`). Wired sub-routes and Account fields to match web.
+
+| Area | Change |
+|------|--------|
+| **Hub** | `SettingsHubCards` extracted; 3-column grid on wide viewports |
+| **Flags** | `platformFlagsProvider` gates Community row (same as web `app_settings`) |
+| **Routes** | `/contact` form → `contact_messages`; `/settings/privacy` in-app copy; `/settings/how-purple-thinks` full article; `/reports` labs link |
+| **Data** | Client-side ZIP export + soft-delete/restore (web `data-export.ts` parity) |
+| **About** | Privacy row → in-app `/settings/privacy` (not external only) |
+| **Account** | Hub cards; theme preference persisted (`purple-theme` / SharedPreferences); invite code via Worker `POST /api/account/personal-share-code` |
+| **Worker** | New `src/routes/api/account/personal-share-code.ts` (needs deploy for invite in prod) |
+
+**Verify:**
+```bash
+cd flutter && flutter analyze lib/features/settings/ lib/features/account/ && flutter test   # 34/34 PASS
+./scripts/flutter-web-serve.sh --rebuild   # Doppler cursor-cloudflare/prd_cloudlfare
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8765/   # 200
+```
+
+**Browser (`:8765`, rebuilt bundle):** Settings strings present in `main.dart.js`; MCP canvas still poor for Flutter scroll/hash (`#/settings` may not stick on cold hash nav; use bottom-nav Settings tab or drawer). **Travel mode** remains placeholder (web trip CRUD + server-fn schedule gen not ported).
+
+**Still open:** `#/account` hash redirect to Today (pre-existing); full light/system theme rendering; Travel mode screen; Worker deploy for invite API.
+
+## Overnight verify-fleet final (2026-07-05, 3 cycles)
+
+**Schedule:** 15 min initial wait, then cycles at ~02:02 / ~02:50 / ~23:22 ET (30 min spacing; cycle 3 after other agents landed).
+
+| Gate | Cycle 1 | Cycle 2 | Cycle 3 (final) |
+|------|---------|---------|-----------------|
+| `flutter analyze lib/` | PASS | PASS | **PASS** (0 issues) |
+| `flutter test` | 27/27 | 27/27 | **34/34** |
+| `curl :8765` | 200 | 200 | **200** (was DOWN mid-gap; `--rebuild` restored) |
+| ASC build **11** VALID | **PASS** | **PASS** | **PASS** |
+| ASC latest | 11+12 | 11+12 | **13** also VALID (install **1.0 (13)** for beta) |
+
+**Browser (`pmt@eigital.com`):** Today/Meds/Journal/Vitals/Settings hub/Tools **PASS** with real data. Tools OAuth (Oura+Whoop) landed on Flutter web. **Account `#/account` Broken** (redirects to Today). Settings inline sections not scrollable in MCP canvas. Prod hero scores **–** vs Flutter **87/82/58**. **NO-GO** Phase 5 cutover unchanged.
+
+**P0 for other agents:** Account hash redirect; prod hero score dash; Vitals Symptom Radar NO DATA; Settings MCP scroll; mid-rebuild Loading Purple hang; endDrawer unverified in MCP.
+
+Full matrix: `docs/FLUTTER-PAGE-BY-PAGE-COMPARISON.md` → **Overnight verify fleet**. No commits from verify agent.
+
 
 | Package | Locked | Latest (pub) | Decision |
 |---------|--------|------------|----------|

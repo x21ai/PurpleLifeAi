@@ -2162,10 +2162,12 @@ class _DataSectionState extends State<DataSection> {
             ),
           ],
           const SizedBox(height: 16),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              IconButton.filled(
-                tooltip: 'Export your data',
+              OutlinedButton.icon(
                 onPressed: _exporting || _loadingStatus ? null : _export,
                 icon: _exporting
                     ? const SizedBox(
@@ -2174,16 +2176,23 @@ class _DataSectionState extends State<DataSection> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.download_outlined, size: 18),
+                label: const Text('Export your data'),
               ),
-              if (_pendingDeletion == null) ...[
-                const SizedBox(width: 8),
-                IconButton(
-                  tooltip: 'Delete account',
+              if (_pendingDeletion == null)
+                TextButton.icon(
                   onPressed: _confirmDelete,
-                  color: Theme.of(context).colorScheme.error,
-                  icon: const Icon(Icons.delete_outline, size: 18),
+                  icon: Icon(
+                    Icons.delete_outline,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  label: Text(
+                    'Delete account',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
                 ),
-              ],
             ],
           ),
         ],

@@ -6,7 +6,15 @@ import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
 import 'settings_hub.dart';
 import 'platform_flags.dart';
-import 'settings_sections.dart';
+import 'settings_sections.dart' show
+    AboutSection,
+    AiProviderSection,
+    ConditionHistorySection,
+    DataSection,
+    PreferencesSection,
+    WhatITrackSection,
+    openPurpleUrl,
+    settingsProfileFlagsProvider;
 
 /// Settings hub ported from web `src/routes/_app/settings.tsx`.
 ///
@@ -99,7 +107,7 @@ class SettingsScreen extends ConsumerWidget {
                       icon: Icons.groups_outlined,
                       title: 'Community',
                       subtitle: 'Share experiences and find resources',
-                      onTap: () => openPurpleUrl('/community'),
+                      onTap: () => openPurpleUrl('/community-new'),
                     ),
                 ],
               ),
@@ -117,18 +125,18 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               _PastHistoryCard(showSeizure: flags.showSeizure),
+              const SizedBox(height: 28),
+              const PreferencesSection(key: Key('settings-preferences')),
               const SizedBox(height: 20),
-              const PreferencesSection(),
+              const AiProviderSection(key: Key('settings-ai-provider')),
               const SizedBox(height: 20),
-              const AiProviderSection(),
+              const WhatITrackSection(key: Key('settings-what-i-track')),
               const SizedBox(height: 20),
-              const WhatITrackSection(),
-              const SizedBox(height: 20),
-              const ConditionHistorySection(),
-              const SizedBox(height: 20),
+              const ConditionHistorySection(key: Key('settings-health-history')),
+              const SizedBox(height: 28),
               const _GroupLabel(title: 'Data'),
-              const DataSection(),
-              const SizedBox(height: 20),
+              const DataSection(key: Key('settings-data')),
+              const SizedBox(height: 28),
               const _GroupLabel(title: 'Help'),
               _SettingsSection(
                 children: [
@@ -141,7 +149,7 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              const AboutSection(),
+              const AboutSection(key: Key('settings-about')),
               const SizedBox(height: 32),
               Text(
                 'Looking for connections, alarms, or your device? They moved '
@@ -162,13 +170,19 @@ class SettingsScreen extends ConsumerWidget {
                       title: 'Admin console',
                       subtitle: 'Manage users, messages, and community',
                       iconTone: _RowIconTone.primary,
-                      onTap: () => showWebOnlySheet(
-                        context,
-                        title: 'Admin console',
-                        message:
-                            'The admin console lives in the web app at '
-                            'purplelife.org/admin.',
-                      ),
+                      onTap: () async {
+                        try {
+                          await openPurpleUrl('/admin');
+                        } catch (_) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Could not open admin console'),
+                              ),
+                            );
+                          }
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -343,7 +357,7 @@ class _GroupLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(top: 32, bottom: 10),
       child: Text(
         title.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(

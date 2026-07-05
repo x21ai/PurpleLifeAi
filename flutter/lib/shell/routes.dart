@@ -23,6 +23,8 @@ abstract final class AppRoutes {
   static const settingsReports = '/settings/reports';
   static const reportsRedirect = '/reports';
   static const settingsContact = '/settings/contact';
+  static const contact = '/contact';
+  static const settingsPrivacy = '/settings/privacy';
   static const settingsHowPurpleThinks = '/settings/how-purple-thinks';
   static const chat = '/chat';
   static const chatCare = '/chat-care';
@@ -57,6 +59,8 @@ abstract final class AppRoutes {
     settingsReports,
     reportsRedirect,
     settingsContact,
+    contact,
+    settingsPrivacy,
     settingsHowPurpleThinks,
     chat,
     chatCare,

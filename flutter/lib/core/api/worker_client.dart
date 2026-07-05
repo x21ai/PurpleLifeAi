@@ -97,11 +97,13 @@ class WorkerClient {
   }
 
   /// GET /api/health/whoop-config (OAuth client id for Whoop connect).
+  ///
+  /// Public on the Worker (no session required), matching web `getWhoopConfig`.
+  /// Skips Authorization so Flutter web preview avoids a CORS preflight on GET.
   Future<Map<String, dynamic>> getWhoopConfig() async {
-    final headers = await _authHeaders(includeJsonContentType: false);
     final response = await _http.get(
       _uri('/health/whoop-config'),
-      headers: headers,
+      headers: const {'Accept': 'application/json'},
     );
     return _decodeResponse(response);
   }
@@ -136,6 +138,16 @@ class WorkerClient {
       throw WorkerApiException(streamed.statusCode, buffer.toString());
     }
     return buffer.toString();
+  }
+
+  /// POST /api/account/personal-share-code (invite code for Account screen).
+  Future<Map<String, dynamic>> postPersonalShareCode() async {
+    final headers = await _authHeaders(includeJsonContentType: !kIsWeb);
+    final response = await _http.post(
+      _uri('/account/personal-share-code'),
+      headers: headers,
+    );
+    return _decodeResponse(response);
   }
 
   Map<String, dynamic> _decodeResponse(http.Response response) {
