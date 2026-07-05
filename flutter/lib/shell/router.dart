@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../features/account/account_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/auth/welcome_screen.dart';
+import '../features/care/care_accept_screen.dart';
 import '../features/care/care_dashboard_screen.dart';
 import '../features/care/care_index_screen.dart';
 import '../features/care/care_inbox_screen.dart';
@@ -251,6 +252,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: AppRoutes.careInbox,
             name: 'care-inbox',
             builder: (context, state) => const CareInboxScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.careAccept,
+            name: 'care-accept',
+            builder: (context, state) => CareAcceptScreen(
+              token: state.uri.queryParameters['token'],
+            ),
           ),
           GoRoute(
             path: AppRoutes.careOwner,

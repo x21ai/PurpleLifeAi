@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../design/purple_type.dart';
+import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
@@ -160,7 +160,7 @@ class _TrendBody extends StatelessWidget {
         Text(
           'Readings',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontFamily: GoogleFonts.sourceSerif4().fontFamily,
+                fontFamily: PurpleType.serif,
                 color: Colors.white.withValues(alpha: 0.95),
               ),
         ),
@@ -197,8 +197,8 @@ class _TrendBody extends StatelessWidget {
                       row.flag!.toUpperCase(),
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: row.flag == 'high'
-                                ? const Color(0xFFFF8A80)
-                                : const Color(0xFFF3D58B),
+                                ? _dangerColor
+                                : _warningColor,
                           ),
                     ),
                   Icon(
@@ -256,3 +256,11 @@ class _StatChip extends StatelessWidget {
     );
   }
 }
+
+/// Out-of-range (high) lab value color, from dark design tokens.
+Color get _dangerColor =>
+    parseTokenColor(PurpleTokens.loaded.colorsFor('dark').danger);
+
+/// Below-range (low) lab value color, from dark design tokens.
+Color get _warningColor =>
+    parseTokenColor(PurpleTokens.loaded.colorsFor('dark').warning);

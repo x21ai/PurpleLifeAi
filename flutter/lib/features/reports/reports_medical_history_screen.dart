@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
@@ -72,7 +71,7 @@ class ReportsMedicalHistoryScreen extends ConsumerWidget {
                     Text(
                       'Generate on web',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontFamily: GoogleFonts.sourceSerif4().fontFamily,
+                            fontFamily: PurpleType.serif,
                             color: Colors.white.withValues(alpha: 0.95),
                           ),
                     ),

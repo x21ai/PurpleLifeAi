@@ -1,6 +1,11 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/network/connectivity_service.dart';
 import '../../core/offline/supabase_row_parse.dart';
 import '../../core/providers/core_providers.dart';
@@ -86,11 +91,17 @@ class CareRepository {
   CareRepository({
     required SupabaseClient supabase,
     required ConnectivityService connectivity,
+    required AppConfig config,
+    http.Client? httpClient,
   })  : _supabase = supabase,
-        _connectivity = connectivity;
+        _connectivity = connectivity,
+        _config = config,
+        _http = httpClient ?? http.Client();
 
   final SupabaseClient _supabase;
   final ConnectivityService _connectivity;
+  final AppConfig _config;
+  final http.Client _http;
   final Map<String, CareOverview> _overviewCache = {};
   final Map<String, CareBiometricsSnapshot> _biometricsCache = {};
 
@@ -419,6 +430,29 @@ class CareRepository {
     }
   }
 
+  /// Count of pending caregiver changes awaiting the signed-in owner's review.
+  ///
+  /// Mirrors web `getPendingChangesCount` (`pending_changes` where
+  /// `owner_id = me AND status = 'pending'`). Read directly under the
+  /// `pending_owner_all` RLS policy (`auth.uid() = owner_id`), so no service
+  /// role is required. Returns 0 when signed out or offline.
+  Future<int> pendingChangesCount() async {
+    final userId = _caregiverId;
+    if (userId == null) return 0;
+    if (!_connectivity.isOnline) return 0;
+
+    try {
+      final rows = await _supabase
+          .from('pending_changes')
+          .select('id')
+          .eq('owner_id', userId)
+          .eq('status', 'pending');
+      return (rows as List).length;
+    } catch (_) {
+      return 0;
+    }
+  }
+
   Future<void> decidePendingChange({
     required String changeId,
     required String decision,
@@ -512,6 +546,84 @@ class CareRepository {
         .eq('id', relationshipId);
   }
 
+  /// Accept a caregiver invite by its single-use token.
+  ///
+  /// Mirrors the web `acceptInvite` server contract exactly (marketing
+  /// `src/routes/care.accept.tsx` -> `src/lib/care.functions.ts` `acceptInvite`):
+  /// an authenticated `POST { invite_token }`. The mutation flips the
+  /// relationship to `active`, verifies the accepter's email matches the
+  /// invite, and writes the audit-log row.
+  ///
+  /// SECURITY: the accept UPDATE requires service role — RLS gives caregivers
+  /// SELECT-only on `care_relationships` (`care_rel_caregiver_select`; there is
+  /// no caregiver UPDATE policy). So this must go through the server, never a
+  /// direct client `.update()`. We call the Worker API route that fronts the
+  /// server function, mirroring the established WorkerClient pattern
+  /// (`/api/health/whoop-sync`, `/api/account/personal-share-code`).
+  ///
+  /// Returns the accepted relationship's `ownerId` so callers can route into
+  /// that owner's dashboard.
+  Future<String> acceptInvite(String inviteToken) async {
+    final token = inviteToken.trim();
+    if (token.length < 20 || token.length > 128) {
+      throw CareAccessException('This invite link is invalid or incomplete.');
+    }
+
+    final session = _supabase.auth.currentSession;
+    final accessToken = session?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      throw CareAccessException('Sign in to accept this invite.');
+    }
+
+    if (!_connectivity.isOnline) {
+      throw CareAccessException('Offline. Reconnect to accept this invite.');
+    }
+
+    final headers = <String, String>{
+      'Authorization': 'Bearer $accessToken',
+      'Accept': 'application/json',
+      // Match WorkerClient: skip Content-Type on web to avoid CORS preflight.
+      if (!kIsWeb) 'Content-Type': 'application/json',
+    };
+
+    http.Response response;
+    try {
+      response = await _http.post(
+        Uri.parse('${_config.workerApiBaseUrl}/care/accept'),
+        headers: headers,
+        body: jsonEncode({'invite_token': token}),
+      );
+    } catch (_) {
+      throw CareAccessException(
+        "Couldn't reach Purple to accept this invite. Try again.",
+      );
+    }
+
+    Map<String, dynamic> decoded;
+    try {
+      decoded = response.body.isEmpty
+          ? <String, dynamic>{}
+          : jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      decoded = <String, dynamic>{};
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final message = decoded['error'] as String? ??
+          "Couldn't accept this invite.";
+      throw CareAccessException(message);
+    }
+
+    final ownerId = decoded['owner_id'] as String?;
+    if (ownerId == null || ownerId.isEmpty) {
+      // Contract fulfilled but shape unexpected: surface a safe generic error.
+      throw CareAccessException("Couldn't accept this invite.");
+    }
+    return ownerId;
+  }
+
+  void dispose() => _http.close();
+
   Future<List<PendingChangeDetail>> _loadPendingChangesDetailed(
     String ownerId,
   ) async {
@@ -589,7 +701,8 @@ class CareRepository {
     final response = await _supabase
         .from('care_relationships')
         .select(
-          'id, owner_id, role, invite_email, created_at, expires_at',
+          'id, owner_id, role, invite_email, invite_token, created_at, '
+          'expires_at',
         )
         .eq('status', 'pending')
         .ilike('invite_email', email)
@@ -614,6 +727,7 @@ class CareRepository {
             : role,
         ownerName: ownerNames[row['owner_id'] as String] ?? 'A Purple member',
         createdAt: row['created_at'] as String? ?? '',
+        inviteToken: row['invite_token'] as String?,
       );
     }).toList();
   }
@@ -751,10 +865,13 @@ extension _CareBiometricsCopy on CareBiometricsSnapshot {
 
 final careRepositoryProvider = Provider<CareRepository>((ref) {
   ref.watch(authRepositoryProvider);
-  return CareRepository(
+  final repo = CareRepository(
     supabase: ref.watch(supabaseClientProvider),
     connectivity: ref.watch(connectivityServiceProvider),
+    config: ref.watch(appConfigProvider),
   );
+  ref.onDispose(repo.dispose);
+  return repo;
 });
 
 final careOverviewProvider =
@@ -950,6 +1067,7 @@ class IncomingCareInvite {
     required this.roleLabel,
     required this.ownerName,
     required this.createdAt,
+    this.inviteToken,
   });
 
   final String id;
@@ -958,6 +1076,10 @@ class IncomingCareInvite {
   final String roleLabel;
   final String ownerName;
   final String createdAt;
+
+  /// Single-use invite token used to accept via the server contract. Null once
+  /// the invite is no longer pending (DB trigger clears it on status change).
+  final String? inviteToken;
 }
 
 class CareInboxData {
@@ -982,4 +1104,13 @@ class BulkDecideResult {
 final careInboxProvider = FutureProvider.autoDispose<CareInboxData>((ref) {
   ref.watch(authSessionProvider);
   return ref.watch(careRepositoryProvider).loadCareInbox();
+});
+
+/// Pending caregiver-change count for the top-bar inbox badge.
+///
+/// Mirrors web `PendingInboxBadge` (`getPendingChangesCount`). Kept alive so
+/// the header badge stays warm across screens; refreshed on auth changes.
+final carePendingCountProvider = FutureProvider<int>((ref) {
+  ref.watch(authSessionProvider);
+  return ref.watch(careRepositoryProvider).pendingChangesCount();
 });

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../design/purple_type.dart';
+import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
@@ -179,7 +179,7 @@ class _ReportDetailBody extends StatelessWidget {
           Text(
             'Purple is extracting values. This can take up to a minute.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFFF3D58B),
+                  color: _warningColor,
                 ),
           ),
         ],
@@ -188,7 +188,7 @@ class _ReportDetailBody extends StatelessWidget {
           Text(
             'Extraction failed. Re-run from the web app or upload again.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFFFF8A80),
+                  color: _dangerColor,
                 ),
           ),
         ],
@@ -197,7 +197,7 @@ class _ReportDetailBody extends StatelessWidget {
           Text(
             'Extracted values',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontFamily: GoogleFonts.sourceSerif4().fontFamily,
+                  fontFamily: PurpleType.serif,
                   color: Colors.white.withValues(alpha: 0.95),
                 ),
           ),
@@ -237,9 +237,9 @@ class _ReportDetailBody extends StatelessWidget {
                       metric.valueLabel,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             color: metric.flag == 'high'
-                                ? const Color(0xFFFF8A80)
+                                ? _dangerColor
                                 : metric.flag == 'low'
-                                    ? const Color(0xFFF3D58B)
+                                    ? _warningColor
                                     : Colors.white.withValues(alpha: 0.95),
                           ),
                     ),
@@ -269,3 +269,11 @@ class _ReportDetailBody extends StatelessWidget {
     );
   }
 }
+
+/// Out-of-range (high) lab value color, from dark design tokens.
+Color get _dangerColor =>
+    parseTokenColor(PurpleTokens.loaded.colorsFor('dark').danger);
+
+/// Below-range (low) / pending lab value color, from dark design tokens.
+Color get _warningColor =>
+    parseTokenColor(PurpleTokens.loaded.colorsFor('dark').warning);

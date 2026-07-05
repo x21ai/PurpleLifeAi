@@ -21,6 +21,21 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Log
 
+### 2026-07-05T00:00:00Z — Wave-1 care/reports fixes (accept loop, inbox badge, tokens)
+
+- **Requested:** (P0) fix broken caregiver-invite accept loop; (P0) add missing top-bar inbox badge; (P1) token color cleanup in reports+care. Flutter-only, branch `wave1-care-reports`, worktree off `lovable/redesign`.
+- **Done:**
+  - **Accept loop:** added `inviteToken` to `IncomingCareInvite` + populated it in `care_repository.dart` `_loadIncomingCareInvites` (now selects `invite_token`). Implemented `CareRepository.acceptInvite(token)` mirroring web `acceptInvite` contract shape (authenticated `POST {invite_token}` to `${workerApiBaseUrl}/care/accept`, Bearer session token, WorkerClient conventions). Replaced dead-snackbar Accept button in `incoming_care_invites_card.dart` with a real accept (loading spinner, error snackbar, navigates to owner dashboard on success). Added new `CareAcceptScreen` (`features/care/care_accept_screen.dart`) and in-app GoRoute `/care/accept?token=` in `shell/router.dart` (+ `careAccept` const in `routes.dart`); signed-out users are redirected to sign-in with token preserved via existing `authRedirect` `from` mechanism (`/care` is already a protected prefix).
+  - **Inbox badge:** added `CareRepository.pendingChangesCount()` + `carePendingCountProvider` (mirrors web `getPendingChangesCount`: `pending_changes` where `owner_id=me AND status='pending'`, readable under `pending_owner_all` RLS — no service role). Added `_PendingInboxBadge` widget in `shell/top_bar.dart` after the sync button, before profile menu, 44pt tap target, purple count pill, navigates to `/care/inbox`; hidden when count 0.
+  - **Tokens:** `0xFFFF8A80`→ token `danger`, `0xFFF3D58B`→ token `warning` (via `parseTokenColor(PurpleTokens.loaded.colorsFor('dark').*)`) in reports_detail/trend/upload; modal surface `0xFF1A1224`→`PurpleColors.backgroundTertiary` (care_dashboard, ×2). Routed all inline `GoogleFonts.sourceSerif4()` in-scope through `PurpleType.serif` (reports_detail/trend/medical-history/report_tiles/reports_layout, care_index ×2, care_inbox ×2). Skipped web-only mint `#5CE0AC` per instructions.
+- **Issues / RISK:**
+  - **Accept + decline require a server route that does not yet exist.** RLS gives caregivers **SELECT-only** on `care_relationships` (`care_rel_caregiver_select`; no caregiver UPDATE policy — see migration `20260527094605...`). The web accept UPDATE runs with **service role** via a TanStack `createServerFn`, which is **not** exposed as a stable `/api/...` Worker route (no `src/routes/api/care/accept.ts`). Flutter's `acceptInvite` posts to `/api/care/accept` (matching the established mirror pattern) but that route must be added on the **web/Worker** side before accept works end-to-end; until then the call returns a clear error, not a silent no-op. **The pre-existing `declineIncomingCareInvite` direct `.update({'status':'revoked'})` is ALSO RLS-blocked today** (silent 0-row no-op) — same root cause; not fixed here (out of P0 scope, needs the same server route or a decline route). See OPEN-ISSUES `care-accept-server-route`.
+  - Did NOT weaken RLS or invent a Supabase mutation. Did NOT edit `core/api/worker_client.dart` (out of scope); the authenticated POST lives inside `care_repository.dart` and duplicates WorkerClient's auth/URL conventions.
+  - Touched `lib/shell/routes.dart` (one-line route const) in addition to router.dart/top_bar.dart — necessary to register the new route; did not touch bottom_nav/shell_menu_sheet/pubspec/ios.
+- **Stand / next:** `flutter pub get` OK; `flutter analyze lib/` **clean**; `flutter test` **91/91**. Committed on `wave1-care-reports` (not pushed). **Next:** web team adds `POST /api/care/accept` (and ideally `/api/care/decline`) Worker route fronting the `acceptInvite` server fn, with Flutter CORS; then re-verify accept/decline end-to-end on device.
+- **Who / where:** Claude Code (Wave-1 writer) · darwin · wave1-care-reports
+- **Timestamp:** 2026-07-05T00:00:00Z
+
 ### 2026-07-05T16:02:00Z — Luciq MCP + Doppler integration
 
 - **Requested:** Wire Luciq OAuth token from `servers-teamkeys/dev` for agent crash triage.
