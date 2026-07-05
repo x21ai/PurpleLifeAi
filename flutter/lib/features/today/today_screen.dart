@@ -18,6 +18,7 @@ import '../shared/score_hero.dart';
 import '../shared/score_tile.dart';
 import '../vitals/sync_status_bar.dart';
 import 'date_strip.dart';
+import 'signals_grid_skeleton.dart';
 import 'models/score_snapshot.dart';
 import 'models/today_data.dart';
 import 'today_repository.dart';
@@ -336,11 +337,18 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
             onTileTap: (key) => _onTileTap(key, data.scores, narrative),
             onSignalTap: _onSignalTap,
             onViewAll: () => context.go(AppRoutes.vitals),
-            onConnect: () => context.go('/settings'),
+            onConnect: () => context.go(AppRoutes.settings),
           )
         else
           dayScoresAsync.when(
-            loading: () => const ScoreTileStripSkeleton(),
+            loading: () => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const ScoreTileStripSkeleton(),
+                SizedBox(height: PurpleTokens.loaded.spacing.x2),
+                const SignalsGridSkeleton(),
+              ],
+            ),
             error: (_, __) => _ScoresAndSignals(
               scores: ScoreSnapshot.empty,
               focus: _focus,
@@ -349,7 +357,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
               onTileTap: (_) {},
               onSignalTap: _onSignalTap,
               onViewAll: () => context.go(AppRoutes.vitals),
-              onConnect: () => context.go('/settings'),
+              onConnect: () => context.go(AppRoutes.settings),
             ),
             data: (dayScores) => _ScoresAndSignals(
               scores: dayScores,
@@ -359,7 +367,7 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
               onTileTap: (key) => _onTileTap(key, dayScores, narrative),
               onSignalTap: _onSignalTap,
               onViewAll: () => context.go(AppRoutes.vitals),
-              onConnect: () => context.go('/settings'),
+              onConnect: () => context.go(AppRoutes.settings),
             ),
           ),
         if (hasNarrative) ...[

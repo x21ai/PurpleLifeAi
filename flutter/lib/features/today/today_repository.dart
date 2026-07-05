@@ -211,7 +211,7 @@ class TodayRepository {
       return (values.reduce((a, b) => a + b) / values.length).roundToDouble();
     }
 
-    return ScoreSnapshot(
+    final snapshot = ScoreSnapshot(
       readiness: latestFor('oura_readiness_score'),
       sleepScore: latestFor('sleep_score'),
       activity: latestFor('oura_activity_score'),
@@ -225,9 +225,16 @@ class TodayRepository {
       stepsAvg60: averageStepsWithin(60),
       tempDeviationC: latestFor('body_temp_deviation_c'),
       respRateBpm: latestFor('respiratory_rate_bpm'),
-      latestAt: formatSupabaseDateTime(rows.first['recorded_at']),
-      hasData: rows.isNotEmpty,
+      latestAt: dayRows.isNotEmpty
+          ? formatSupabaseDateTime(dayRows.first['recorded_at'])
+          : formatSupabaseDateTime(rows.first['recorded_at']),
+      hasData: false,
     );
+    final hasAnyMetric = snapshot.readiness != null ||
+        snapshot.sleepScore != null ||
+        snapshot.activity != null ||
+        buildTodayVitalItems(snapshot).isNotEmpty;
+    return snapshot.copyWith(hasData: hasAnyMetric);
   }
 
   Future<_ProfileFields> _fetchProfileFieldsSafe(String userId) async {
