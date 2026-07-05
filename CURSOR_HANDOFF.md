@@ -1,6 +1,54 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 (Apple Health **151f491**; analyze fix **89d2910**; TestFlight **1.0 (13)** VALID on ASC).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~03:30 ET (overnight deps-audit subagent).
+
+## Overnight deps-audit subagent (2026-07-05 ~03:30 ET)
+
+| Package | Locked | Latest (pub) | Decision |
+|---------|--------|------------|----------|
+| `health` | **13.3.1** | 13.3.1 | **Keep** — already current; Apple Health blockers are app-side (`hasPermissions` null), not package version |
+| `supabase_flutter` | **2.15.4** | 2.15.4 | **Keep** — at max within `^2.9.0` |
+| `url_launcher` | **6.3.2** | 6.3.2 | **Keep** |
+| `app_links` | **6.4.1** | 7.2.0 | **Skip major** — OAuth/deep links work on 6.x; 7.x needs migration |
+| `go_router` | **14.8.1** | 17.3.0 | **Skip major** — no OAuth/Health blocker in patch line |
+
+**Actions:** No `pubspec.yaml` / `pubspec.lock` changes. `flutter pub upgrade` on blocker set: no-op. **27/27** `flutter test` PASS; `flutter analyze` 8 issues (health uncommitted slice + tests/tools, unchanged by audit).
+
+**iOS health-agent poll:** 6×5 min (~30 min) on `flutter/ios/Runner/Info.plist` + `Runner.entitlements` — **no changes** vs repo; **no TestFlight 14 upload**.
+
+**ASC:** `ios:check-asc-builds` — **1.0 (13)** `processing=VALID`, `internal=IN_BETA_TESTING` (latest install for beta).
+
+
+## Verify-fleet Cycle 3 (2026-07-05 ~23:05 ET)
+
+Agent-owned browser QA on `:8765` vs `https://www.purplelife.org` (`pmt@eigital.com`, ~390px MCP).
+
+| Gate | Result |
+|------|--------|
+| `./scripts/flutter-web-serve.sh --rebuild` | **PASS** — `curl :8765` **200** |
+| `flutter analyze lib/` | **WARN** — 3 issues on uncommitted `health/` + `sharing_screen.dart` (not 0) |
+| `flutter test` | **PASS** **27/27** |
+| `check:em-dash` (docs) | **PASS** |
+| ASC `ios:check-asc-builds` | **PASS** — **1.0 (12)** + **1.0 (11)** VALID |
+
+| Route | Flutter | Prod | Verdict |
+|-------|---------|------|---------|
+| Today | PASS (87/82/58, narrative, doses) | PASS (hero –, signals HRV/RHR/SpO₂) | **Partial** |
+| Vitals | PASS (Readiness LATEST, Radar NO DATA) | PASS (My Body rich narrative) | **Partial** |
+| Meds | PASS (63%, Crestor/asprin Taken) | PASS (+ streak, all-meds) | **Partial** |
+| Journal | PASS (May 26 entry, filters) | PASS | **Good** |
+| Settings hub | PASS (Account/Settings/Tools cards) | PASS (+ Lab/Sharing/Travel below) | **Partial** |
+| Tools | PASS (Oura+Whoop connected) | PASS (+ 90d stats, HAE panel) | **Partial** |
+| Account `#/account` | **FAIL** — redirects to Today | PASS | **Broken** |
+| Care `#/care` | PASS (empty invite state) | — | **Partial** |
+| Burger endDrawer | Unverified (MCP coords) | — | **Partial** |
+| Sign out | Skipped (session preserve) | — | Open |
+
+**Evidence:** MCP screenshots — Flutter Today scores + gold avatar; Meds timeline 63%; Journal light canvas; Tools Oura 16d / Whoop 3m; Settings hub; prod Today hero dashes vs Flutter 87/82/58; prod My Body 90-day copy; prod Tools HAE Test button.
+
+**P0 for fix agents:** `#/account` redirect; burger drawer MCP/semantics; analyze clean on health slice before next TF upload.
+
+Full matrix: `docs/FLUTTER-PAGE-BY-PAGE-COMPARISON.md` Cycle 3.
 
 ## Overnight phase sweep (2026-07-05)
 
@@ -66,7 +114,7 @@ cd flutter && flutter test test/health_service_test.dart   # 4/4 pass
 | C Core tabs | core-fleet | Today/Vitals/Journal/Meds gaps closed; **27/27** tests |
 | D Care/Sharing/Reports | routes-fleet | Partial list screens; no invite/upload |
 | E Typography | design-fleet | (see design parity section) |
-| F Verify | verify-fleet | Cycle 1 PASS; cycles 2–3 pending |
+| F Verify | verify-fleet | Cycle 1–3 **complete** (2026-07-05 ~23:05 ET); see Cycle 3 table below |
 | **G Ship** | **ship-fleet** | **Package audit: no pub upgrades.** Native hash stable 6×10 min poll; **no duplicate TF upload** (build **12** already VALID, same native code as poll baseline). ASC confirmed **1.0 (12)** `processing=VALID`. |
 
 **Install TestFlight:** Purple for Life → **1.0 (12)** (Apple Health plist + OAuth URL scheme). Build **11** still VALID; build **10** rejected.
