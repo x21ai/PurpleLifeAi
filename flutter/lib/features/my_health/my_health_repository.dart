@@ -49,6 +49,26 @@ class MyHealthRepository {
     }
     return null;
   }
+
+  /// Load the user's condition slugs from `profiles.conditions`, matching the
+  /// web `getCareProfile` data source. Fails open to an empty list so the
+  /// section hides rather than blocking My Health.
+  Future<List<String>> loadConditions() async {
+    final userId = _userId;
+    if (userId == null) return const [];
+    try {
+      final row = await _supabase
+          .from('profiles')
+          .select('conditions')
+          .eq('id', userId)
+          .maybeSingle();
+      final raw = row?['conditions'];
+      if (raw is List) return raw.whereType<String>().toList();
+    } catch (_) {
+      // Fail open: hide the conditions section rather than error the page.
+    }
+    return const [];
+  }
 }
 
 final myHealthRepositoryProvider = Provider<MyHealthRepository>((ref) {
@@ -62,4 +82,13 @@ final healthNarrativeProvider = FutureProvider.autoDispose<String?>((ref) async 
   final session = ref.watch(authSessionProvider).valueOrNull;
   if (session == null) return null;
   return ref.watch(myHealthRepositoryProvider).loadNarrative();
+});
+
+final userConditionsProvider =
+    FutureProvider.autoDispose<List<String>>((ref) async {
+  ref.keepAlive();
+  await ref.watch(authRepositoryProvider.future);
+  final session = ref.watch(authSessionProvider).valueOrNull;
+  if (session == null) return const [];
+  return ref.watch(myHealthRepositoryProvider).loadConditions();
 });

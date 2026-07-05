@@ -17,6 +17,25 @@ ScoreArcTone _bandTone(String band) {
   };
 }
 
+/// Per-band chip tint mirroring web `bandTone`: `high` uses the alert token,
+/// `elevated` the warning token, lower bands a neutral white wash.
+({Color bg, Color fg}) _bandChip(String band) {
+  final colors = PurpleTokens.loaded.colorsFor('dark');
+  switch (band) {
+    case 'high':
+      final alert = parseTokenColor(colors.danger);
+      return (bg: alert.withValues(alpha: 0.15), fg: alert);
+    case 'elevated':
+      final warn = parseTokenColor(colors.warning);
+      return (bg: warn.withValues(alpha: 0.15), fg: warn);
+    default:
+      return (
+        bg: Colors.white.withValues(alpha: 0.08),
+        fg: Colors.white.withValues(alpha: 0.8),
+      );
+  }
+}
+
 String _bandLabel(String band) {
   return switch (band) {
     'high' => 'High',
@@ -185,19 +204,27 @@ class _ForecastBody extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  '${_bandLabel(forecast.band)} · score ${forecast.riskScore}',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        letterSpacing: 1.4,
-                        color: Colors.white.withValues(alpha: 0.8),
-                      ),
-                ),
+              Builder(
+                builder: (context) {
+                  final chip = _bandChip(forecast.band);
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: chip.bg,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '${_bandLabel(forecast.band)} · score ${forecast.riskScore}',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            letterSpacing: 1.4,
+                            color: chip.fg,
+                          ),
+                    ),
+                  );
+                },
               ),
               if (forecast.aiNarrative != null &&
                   forecast.aiNarrative!.isNotEmpty) ...[
