@@ -55,3 +55,13 @@ String? countryName(String? code) {
   }
   return code;
 }
+
+/// Human-friendly city label from an IANA zone (e.g. America/New_York → New York).
+String timezoneLabel(String tz) {
+  if (tz == 'UTC') return 'UTC';
+  final slash = tz.lastIndexOf('/');
+  if (slash >= 0 && slash < tz.length - 1) {
+    return tz.substring(slash + 1).replaceAll('_', ' ');
+  }
+  return tz.replaceAll('_', ' ');
+}

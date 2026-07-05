@@ -7,18 +7,29 @@ alwaysApply: true
 
 After every completed prompt or task, before claiming done, update project documentation so the next agent or engineer understands what changed, why, and how to operate it. Skipping this step is not allowed.
 
+Works with `.cursor/rules/00-handoff.mdc`: the **log entry in `docs/HANDOFF.md` is the
+completion gate**. This rule covers Purple-specific targets beyond that trio.
+
+## Session start (before any work)
+
+Read in order: `docs/HANDOFF.md`, `docs/DECISIONS.md`, `docs/OPEN-ISSUES.md`. If the
+task conflicts with any, stop and surface it first. See `00-handoff.mdc`.
+
 ## When this applies
 
 - Any task that changed code, config, migrations, deploy state, tests, CI, auth, or operational runbooks
 - Any task that fixed a production incident or established a new convention
 - Any task where the user asked for a feature, fix, audit, deploy, or release
-- Trivial one-line typo fixes with zero behavioral impact may skip `docs/` and `mem/` but still update `CURSOR_HANDOFF.md` if operational state changed
+- Trivial one-line typo fixes with zero behavioral impact may skip runbooks and `mem/` but must still append a minimal log entry to `docs/HANDOFF.md`; update `CURSOR_HANDOFF.md` if operational state changed
 
 ## Documentation targets (update what applies)
 
 | Target | Path | Update when |
 |--------|------|-------------|
-| Handoff | `CURSOR_HANDOFF.md` | Always: last-updated date, current commit/deploy, hosting state, known gaps, verification commands |
+| Handoff log (required) | `docs/HANDOFF.md` | Always: append log entry, refresh Current snapshot (see `00-handoff.mdc`) |
+| Decisions | `docs/DECISIONS.md` | Standing decision made or superseded |
+| Open issues | `docs/OPEN-ISSUES.md` | New blocker or issue resolved |
+| Extended ops | `CURSOR_HANDOFF.md` | Always: last-updated date, current commit/deploy, hosting state, known gaps, verification commands |
 | Runbooks | `docs/SYNC-AND-RELEASE.md`, `docs/LOVABLE-REDESIGN-WORKFLOW.md`, other `docs/*.md` | Workflow, gates, deploy, env, or release steps changed |
 | Cursor rules | `.cursor/rules/*.mdc` | New convention, guard, pitfall, or server pattern that should apply to future edits |
 | Server rules | `.cursor/rules/server-functions.mdc`, `cloudflare-workers.mdc` | Auth, RLS, secrets, Worker, or API route patterns changed |
@@ -28,12 +39,14 @@ After every completed prompt or task, before claiming done, update project docum
 
 ## Minimum checklist before "done"
 
-1. **CURSOR_HANDOFF.md**: refresh "Last updated", quick facts table if commands or gates changed, and a short "Recent changes" bullet list for this session.
-2. **Relevant `docs/`**: add or edit the runbook section that matches the work (sync, OAuth, deploy, testing, etc.).
-3. **`.cursor/rules/`**: if a mistake could recur, add or tighten a rule (CI guards belong in `project-conventions.mdc` or a dedicated `*.mdc`).
-4. **`AGENTS.md`**: only high-signal, recurring preferences or stable facts; no secrets, no one-off task detail.
-5. **`mem/`**: new note when the decision is architectural or policy-level; link from `mem/index.md`.
-6. **Continual learning**: run the continual-learning flow when the user asks, or when multiple durable preferences emerged in the session.
+1. **`docs/HANDOFF.md`**: append log entry (newest at top), refresh Current snapshot block.
+2. **`docs/DECISIONS.md` / `docs/OPEN-ISSUES.md`**: update when relevant.
+3. **`CURSOR_HANDOFF.md`**: refresh "Last updated", quick facts table if commands or gates changed, and a short "Recent changes" bullet list for this session.
+4. **Relevant `docs/`**: add or edit the runbook section that matches the work (sync, OAuth, deploy, testing, etc.).
+5. **`.cursor/rules/`**: if a mistake could recur, add or tighten a rule (CI guards belong in `project-conventions.mdc` or a dedicated `*.mdc`).
+6. **`AGENTS.md`**: only high-signal, recurring preferences or stable facts; no secrets, no one-off task detail.
+7. **`mem/`**: new note when the decision is architectural or policy-level; link from `mem/index.md`.
+8. **Continual learning**: run the continual-learning flow when the user asks, or when multiple durable preferences emerged in the session.
 
 ## What to capture
 

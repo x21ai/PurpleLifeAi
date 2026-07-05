@@ -13,7 +13,6 @@ import '../today/wearable_sync.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
 import '../shared/metric_constants.dart';
-import 'sync_status_bar.dart';
 import 'metric_detail_screen.dart';
 import 'vitals_repository.dart';
 
@@ -104,8 +103,6 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
                       const SizedBox(height: 16),
                       _buildConnectLink(context),
                     ],
-                    const SizedBox(height: 24),
-                    SyncStatusBar(refreshSignal: _refreshSignal),
                     const SizedBox(height: 24),
                     _LatestReadingMarker(
                       label: snap.hasData && snap.latestAt != null

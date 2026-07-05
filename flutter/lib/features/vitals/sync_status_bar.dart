@@ -169,6 +169,22 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
 
   bool get _anyPullConnected => _pullProviders.any((p) => _connected[p.id] == true);
 
+  List<String> get _activeSyncLabels {
+    final labels = <String>[
+      for (final p in _pullProviders)
+        if (_connected[p.id] == true) p.label,
+    ];
+    if (_nativeHealthKitLinked) labels.add('Apple Health');
+    return labels;
+  }
+
+  String get _syncButtonLabel {
+    if (!_busy) return 'Sync now';
+    final labels = _activeSyncLabels;
+    if (labels.isEmpty) return 'Syncing…';
+    return 'Syncing ${labels.join(', ')}…';
+  }
+
   Future<void> _syncNow() async {
     if (_busy) return;
     final active = _pullProviders.where((p) => _connected[p.id] == true).toList();
@@ -218,7 +234,9 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
 
     if (!_anyPullConnected && !_appleConnected) return const SizedBox.shrink();
 
-    final pulledDate = _lastPulledIso == null ? null : DateTime.tryParse(_lastPulledIso!);
+    final pulledDate = _lastPulledIso == null
+        ? null
+        : DateTime.tryParse(_lastPulledIso!)?.toLocal();
     final dataThroughLabel =
         _dataThrough == null ? null : formatDataThrough(_dataThrough!);
     final showButton = _anyPullConnected || _appleConnected;
@@ -233,7 +251,7 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
                 Text(
                   pulledDate == null
                       ? 'Never synced'
-                      : 'Last sync ${formatRelativeTime(pulledDate)}',
+                      : 'Last sync ${formatRelativeTime(pulledDate)} · ${DateFormat.jm().format(pulledDate)}',
                   style: _labelStyle(context),
                 ),
                 if (dataThroughLabel != null)
@@ -257,7 +275,7 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
                       ),
                     )
                   : Icon(Icons.refresh, size: 16, color: Colors.white.withValues(alpha: 0.65)),
-              tooltip: 'Sync wearables now',
+              tooltip: _syncButtonLabel,
             ),
         ],
       );
@@ -287,7 +305,9 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
                   style: _labelStyle(context),
                   children: [
                     TextSpan(
-                      text: pulledDate == null ? 'never' : formatRelativeTime(pulledDate),
+                      text: pulledDate == null
+                          ? 'never'
+                          : '${formatRelativeTime(pulledDate)} · ${DateFormat('EEE h:mm a').format(pulledDate)}',
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
                     ),
                   ],
@@ -309,7 +329,7 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
                     ),
                   )
                 : Icon(Icons.refresh, size: 16, color: Colors.white.withValues(alpha: 0.8)),
-            label: Text(_busy ? 'Syncing' : 'Sync now'),
+            label: Text(_syncButtonLabel),
           ),
       ],
     );
@@ -365,10 +385,11 @@ String formatDataThrough(String iso) {
 }
 
 String formatRelativeTime(DateTime date) {
-  final diff = DateTime.now().difference(date);
+  final local = date.toLocal();
+  final diff = DateTime.now().difference(local);
   if (diff.inSeconds < 60) return 'just now';
   if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
   if (diff.inHours < 24) return '${diff.inHours}h ago';
   if (diff.inDays < 7) return '${diff.inDays}d ago';
-  return DateFormat.MMMd().format(date);
+  return DateFormat.MMMd().format(local);
 }

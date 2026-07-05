@@ -8,7 +8,6 @@ import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
 import '../shared/narrative_block.dart';
-import '../vitals/sync_status_bar.dart';
 import 'dose_list.dart';
 import 'medication_form_sheet.dart';
 import 'meds_repository.dart';
@@ -218,9 +217,7 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      Expanded(
-                        child: SyncStatusBar(refreshSignal: _refreshSignal),
-                      ),
+                      const Spacer(),
                       Tooltip(
                         message: 'Dose history',
                         child: OutlinedButton(

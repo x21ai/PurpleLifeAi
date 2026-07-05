@@ -9,17 +9,32 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign`**. TestFlight **1.0 (15)** VALID. **`profiles.home_city`**
-nullable text column live on NEW Supabase (`xxnzmfzsjplrutrgbzxy`); Flutter Account and web
-Account persist a user-entered city separate from IANA timezone labels. **Luciq Flutter**
-(`luciq_flutter`, Doppler `LUCIQ_APP_TOKEN` on TF builds) wired for crash reporting; agents
-run `bun run ios:check-tf-feedback` after uploads.
+Purple Life on **`lovable/redesign`**. TestFlight **1.0 (15)** VALID; TF feedback sync/timezone
+fixes committed locally and pushed (sync bar off Meds/Vitals; Today sync labels name providers +
+clock time; Account timezone city labels). **`profiles.home_city`** live on NEW Supabase
+(`xxnzmfzsjplrutrgbzxy`). **Luciq Flutter** wired for crash reporting; agents run
+`bun run ios:check-tf-feedback` after uploads.
 
-**Next action:** Ship TF16 with TF feedback fixes; verify Luciq crashes after TF16 install.
+**Next action:** Upload TF16 with committed fixes; verify Luciq crashes after TF16 install.
 
 ---
 
 ## Log
+
+### 2026-07-05T13:20:00Z — TestFlight sync bar and timezone label fixes (commit)
+
+- **Requested:** Commit uncommitted TestFlight feedback fixes (sync bar, timezone labels) and
+  handoff kit files; push `lovable/redesign`.
+- **Done:** Committed `sync_status_bar.dart` (provider names in sync button, relative + clock
+  last sync, local time), removed `SyncStatusBar` from Meds/Vitals, `timezoneLabel()` in
+  `locale_data.dart`; handoff kit (`00-handoff.mdc`, `CLAUDE.md`, `install-handoff-kit.sh`,
+  post-task doc rule updates); `flutter analyze` 0 errors (5 pre-existing info), `flutter test`
+  46/46; pushed to `origin/lovable/redesign`.
+- **Issues:** Settings design still wrong per tester (see OPEN-ISSUES); fixes need TF16 upload to
+  reach testers.
+- **Stand / next:** Upload TF16; run `bun run ios:check-tf-feedback` after VALID.
+- **Who / where:** Cursor agent · darwin · lovable/redesign (this commit)
+- **Timestamp:** 2026-07-05T13:20:00Z
 
 ### 2026-07-05T13:30:00Z — Luciq Flutter crash reporting
 
@@ -61,7 +76,7 @@ run `bun run ios:check-tf-feedback` after uploads.
 - **Issues:** Settings design still wrong per tester; crash screenshot with no ASC crash log;
   fixes need TF16 upload.
 - **Stand / next:** Upload TF16; Settings parity agent; optional ASC webhook for real-time feedback.
-- **Who / where:** Cursor agent · darwin · lovable/redesign (uncommitted)
+- **Who / where:** Cursor agent · darwin · lovable/redesign (superseded by commit above)
 - **Timestamp:** 2026-07-05T13:10:00Z
 
 ### 2026-07-05T12:05:00Z — Install handoff/documentation discipline kit

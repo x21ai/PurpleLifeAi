@@ -1,0 +1,54 @@
+---
+description: Permanent handoff and documentation discipline. Read state before work, record state after work. Applies to every request.
+alwaysApply: true
+---
+
+# Handoff and Documentation Rule (load-bearing, non-negotiable)
+
+Multiple developers, machines, and agent sessions work on Purple. Knowledge must never
+be lost between them. Documentation is part of finishing the task, not optional cleanup.
+
+This rule works alongside `.cursor/rules/post-task-documentation.mdc`. Both apply.
+
+## On EVERY session start, before changing anything
+
+1. Read `docs/HANDOFF.md` in full (current snapshot + newest log entries).
+2. Read `docs/DECISIONS.md` (standing architectural and security decisions).
+3. Read `docs/OPEN-ISSUES.md` (known blockers and deferred work).
+4. For Purple operational detail (TestFlight, Doppler, gates), skim `CURSOR_HANDOFF.md`
+   quick-facts and the section matching your task.
+5. If anything you are about to do conflicts with those files, stop and surface the
+   conflict before proceeding.
+
+## On EVERY task completion, before it is done
+
+Append a new entry to the top of the **Log** section in `docs/HANDOFF.md`:
+
+- **Requested** — the actual ask (one or two lines).
+- **Done** — concrete changes: files, commands, config, infra.
+- **Issues** — broken, incomplete, deferred, or risky items.
+- **Stand / next** — current state and the single next action.
+- **Who / where** — developer or agent identity, machine, branch@commit.
+- **Timestamp** — ISO 8601 UTC.
+
+Also update when relevant:
+
+- **Current snapshot** block at the top of `docs/HANDOFF.md` (overwrite each session).
+- `docs/DECISIONS.md` if a standing decision was made or superseded.
+- `docs/OPEN-ISSUES.md` — add new issues; mark resolved (do not delete).
+- `CURSOR_HANDOFF.md` — operational runbook detail (TestFlight, deploy, verify commands).
+- Relevant `docs/*.md` runbooks, `AGENTS.md`, `mem/`, `.cursor/rules/*.mdc` per
+  `post-task-documentation.mdc`.
+
+## Hard constraints
+
+- A task is **NOT** complete until the `docs/HANDOFF.md` log entry is written.
+- Never delete history from handoff docs. Append and mark status.
+- Never write secrets, tokens, credentials, or key material into any doc or rule file.
+  Reference the secret's location (e.g. Doppler project/config name), never its value.
+- Keep entries factual and specific. No vague optimism, no filler.
+- Cross-repo or cross-branch dependencies must be stated explicitly.
+
+## Install kit on other repos
+
+Run `scripts/install-handoff-kit.sh` from repo root (idempotent; skips existing files).
