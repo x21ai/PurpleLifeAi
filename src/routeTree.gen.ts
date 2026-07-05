@@ -68,6 +68,8 @@ import { Route as ApiHealthWhoopExchangeRouteImport } from './routes/api/health/
 import { Route as ApiHealthWhoopConfigRouteImport } from './routes/api/health/whoop-config'
 import { Route as ApiHealthNativeSyncRouteImport } from './routes/api/health/native-sync'
 import { Route as ApiEmailSuppressionRouteImport } from './routes/api/email/suppression'
+import { Route as ApiCareDeclineRouteImport } from './routes/api/care/decline'
+import { Route as ApiCareAcceptRouteImport } from './routes/api/care/accept'
 import { Route as ApiAccountPersonalShareCodeRouteImport } from './routes/api/account/personal-share-code'
 import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
 import { Route as AppSettingsTravelRouteImport } from './routes/_app/settings.travel'
@@ -411,6 +413,16 @@ const ApiHealthNativeSyncRoute = ApiHealthNativeSyncRouteImport.update({
 const ApiEmailSuppressionRoute = ApiEmailSuppressionRouteImport.update({
   id: '/api/email/suppression',
   path: '/api/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareDeclineRoute = ApiCareDeclineRouteImport.update({
+  id: '/api/care/decline',
+  path: '/api/care/decline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareAcceptRoute = ApiCareAcceptRouteImport.update({
+  id: '/api/care/accept',
+  path: '/api/care/accept',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAccountPersonalShareCodeRoute =
@@ -760,6 +772,8 @@ export interface FileRoutesByFullPath {
   '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
+  '/api/care/accept': typeof ApiCareAcceptRoute
+  '/api/care/decline': typeof ApiCareDeclineRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/health/native-sync': typeof ApiHealthNativeSyncRoute
   '/api/health/whoop-config': typeof ApiHealthWhoopConfigRoute
@@ -869,6 +883,8 @@ export interface FileRoutesByTo {
   '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
+  '/api/care/accept': typeof ApiCareAcceptRoute
+  '/api/care/decline': typeof ApiCareDeclineRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/health/native-sync': typeof ApiHealthNativeSyncRoute
   '/api/health/whoop-config': typeof ApiHealthWhoopConfigRoute
@@ -981,6 +997,8 @@ export interface FileRoutesById {
   '/_app/settings/travel': typeof AppSettingsTravelRoute
   '/_app/today/risk': typeof AppTodayRiskRoute
   '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
+  '/api/care/accept': typeof ApiCareAcceptRoute
+  '/api/care/decline': typeof ApiCareDeclineRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/health/native-sync': typeof ApiHealthNativeSyncRoute
   '/api/health/whoop-config': typeof ApiHealthWhoopConfigRoute
@@ -1093,6 +1111,8 @@ export interface FileRouteTypes {
     | '/settings/travel'
     | '/today/risk'
     | '/api/account/personal-share-code'
+    | '/api/care/accept'
+    | '/api/care/decline'
     | '/api/email/suppression'
     | '/api/health/native-sync'
     | '/api/health/whoop-config'
@@ -1202,6 +1222,8 @@ export interface FileRouteTypes {
     | '/settings/travel'
     | '/today/risk'
     | '/api/account/personal-share-code'
+    | '/api/care/accept'
+    | '/api/care/decline'
     | '/api/email/suppression'
     | '/api/health/native-sync'
     | '/api/health/whoop-config'
@@ -1313,6 +1335,8 @@ export interface FileRouteTypes {
     | '/_app/settings/travel'
     | '/_app/today/risk'
     | '/api/account/personal-share-code'
+    | '/api/care/accept'
+    | '/api/care/decline'
     | '/api/email/suppression'
     | '/api/health/native-sync'
     | '/api/health/whoop-config'
@@ -1375,6 +1399,8 @@ export interface RootRouteChildren {
   FriendAcceptRoute: typeof FriendAcceptRoute
   FriendJoinRoute: typeof FriendJoinRoute
   ApiAccountPersonalShareCodeRoute: typeof ApiAccountPersonalShareCodeRoute
+  ApiCareAcceptRoute: typeof ApiCareAcceptRoute
+  ApiCareDeclineRoute: typeof ApiCareDeclineRoute
   ApiEmailSuppressionRoute: typeof ApiEmailSuppressionRoute
   ApiHealthNativeSyncRoute: typeof ApiHealthNativeSyncRoute
   ApiHealthWhoopConfigRoute: typeof ApiHealthWhoopConfigRoute
@@ -1815,6 +1841,20 @@ declare module '@tanstack/react-router' {
       path: '/api/email/suppression'
       fullPath: '/api/email/suppression'
       preLoaderRoute: typeof ApiEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/care/decline': {
+      id: '/api/care/decline'
+      path: '/api/care/decline'
+      fullPath: '/api/care/decline'
+      preLoaderRoute: typeof ApiCareDeclineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/care/accept': {
+      id: '/api/care/accept'
+      path: '/api/care/accept'
+      fullPath: '/api/care/accept'
+      preLoaderRoute: typeof ApiCareAcceptRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/account/personal-share-code': {
@@ -2389,6 +2429,8 @@ const rootRouteChildren: RootRouteChildren = {
   FriendAcceptRoute: FriendAcceptRoute,
   FriendJoinRoute: FriendJoinRoute,
   ApiAccountPersonalShareCodeRoute: ApiAccountPersonalShareCodeRoute,
+  ApiCareAcceptRoute: ApiCareAcceptRoute,
+  ApiCareDeclineRoute: ApiCareDeclineRoute,
   ApiEmailSuppressionRoute: ApiEmailSuppressionRoute,
   ApiHealthNativeSyncRoute: ApiHealthNativeSyncRoute,
   ApiHealthWhoopConfigRoute: ApiHealthWhoopConfigRoute,
