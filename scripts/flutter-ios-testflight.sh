@@ -126,11 +126,18 @@ main() {
   flutter config --no-enable-swift-package-manager >/dev/null 2>&1 || true
 
   log "Compiling Flutter Release (no codesign, build ${BUILD_NUMBER})"
+  LUCIQ_TOKEN=""
+  if LUCIQ_TOKEN="$(doppler secrets get LUCIQ_APP_TOKEN --project "${DOPPLER_PROJECT}" --config "${DOPPLER_CONFIG}" --plain 2>/dev/null)"; then
+    log "Luciq SDK token loaded from Doppler (${DOPPLER_PROJECT}/${DOPPLER_CONFIG})"
+  else
+    log "WARN: LUCIQ_APP_TOKEN missing; TestFlight build will ship without Luciq dart-define"
+  fi
   doppler run --project "${FLUTTER_DOPPLER_PROJECT}" --config "${FLUTTER_DOPPLER_CONFIG}" -- bash -c '
     flutter build ios --release --no-codesign \
       --build-number="'"${BUILD_NUMBER}"'" \
       --build-name=1.0.0 \
-      --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY"
+      --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY" \
+      --dart-define=LUCIQ_APP_TOKEN="'"${LUCIQ_TOKEN}"'"
   '
 
   WORKSPACE="${FLUTTER_DIR}/ios/Runner.xcworkspace"

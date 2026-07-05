@@ -29,6 +29,32 @@ This runs `scripts/flutter-ios-testflight.sh`, which:
 After upload, processing takes about **5–15 minutes**. Then add testers in
 [App Store Connect](https://appstoreconnect.apple.com) → **TestFlight**.
 
+## Crash reporting (Luciq)
+
+Flutter TestFlight builds report crashes via **`luciq_flutter`** (Dart init in
+`flutter/lib/main.dart`) plus native iOS SDK from the plugin. Capacitor rollback
+still uses native Luciq in `ios/App/AppDelegate.swift`.
+
+| Item | Value |
+|------|--------|
+| Flutter package | `luciq_flutter` (^19.8) |
+| SDK app token | Doppler `purple-life` / `prd` → **`LUCIQ_APP_TOKEN`** |
+| Build injection | `scripts/flutter-ios-testflight.sh` → `--dart-define=LUCIQ_APP_TOKEN=...` |
+| Dashboard | Luciq project **Flutter - Purple - Beta** |
+| Agent checks | `bun run ios:check-tf-feedback` (ASC + Luciq) after each upload |
+
+**Do we need Luciq?** For TestFlight beta, yes while ASC crash logs stay empty
+(see open issue `tf-crash-report`). Free alternatives (Sentry free tier, Firebase
+Crashlytics, ASC crash API alone) are documented in
+`mem/observability/crash-reporting.md`. Do not commit SDK or dashboard tokens.
+
+Optional dashboard API (automated agent summaries): add `LUCIQ_API_TOKEN` and
+`LUCIQ_ACCOUNT_EMAIL` to Doppler (Luciq MCP token or support@luciq.ai). SDK token
+alone is enough for crash capture on device.
+
+Crashes upload on the **next** app launch, not at crash time. Shake invokes
+in-app feedback when Luciq is initialized.
+
 ### Capacitor rollback (deprecated)
 
 Do **not** use unless you must ship the old WebView shell (`ios/App/` loads

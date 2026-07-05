@@ -30,6 +30,7 @@ dependencies:
   url_launcher: ^6.3.1
   uuid: ^4.5.1
   timezone: ^0.11.1
+  luciq_flutter: ^19.8.0
 
 dev_dependencies:
   build_runner: ^2.4.15

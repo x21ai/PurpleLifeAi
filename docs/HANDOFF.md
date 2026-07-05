@@ -11,13 +11,30 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 Purple Life on **`lovable/redesign`**. TestFlight **1.0 (15)** VALID. **`profiles.home_city`**
 nullable text column live on NEW Supabase (`xxnzmfzsjplrutrgbzxy`); Flutter Account and web
-Account persist a user-entered city separate from IANA timezone labels.
+Account persist a user-entered city separate from IANA timezone labels. **Luciq Flutter**
+(`luciq_flutter`, Doppler `LUCIQ_APP_TOKEN` on TF builds) wired for crash reporting; agents
+run `bun run ios:check-tf-feedback` after uploads.
 
-**Next action:** Ship TF16 with TF feedback fixes; continue Settings visual parity pass.
+**Next action:** Ship TF16 with TF feedback fixes; verify Luciq crashes after TF16 install.
 
 ---
 
 ## Log
+
+### 2026-07-05T13:30:00Z — Luciq Flutter crash reporting
+
+- **Requested:** Luciq vs free alternatives; integrate `luciq_flutter`; agent periodic checks.
+- **Done:** Added `luciq_flutter` ^19.8, `luciq_bootstrap.dart`, dart-define injection in
+  `flutter-ios-testflight.sh`; removed duplicate native Luciq init from Flutter AppDelegate;
+  `scripts/luciq-fetch-reports.mjs`, `check-testflight-feedback.mjs`, `ios:check-luciq`,
+  `ios:check-tf-feedback`; `mem/observability/crash-reporting.md`, testflight-setup section,
+  `.cursor/rules/flutter-testflight-observability.mdc`; analyze 0 issues, 46/46 tests.
+- **Issues:** Dashboard API automation needs optional `LUCIQ_API_TOKEN` + `LUCIQ_ACCOUNT_EMAIL`
+  in Doppler; SDK token alone sufficient for device crash capture. `tf-crash-report` open until
+  TF16+ verified in Luciq UI.
+- **Stand / next:** Upload TF16; run `bun run ios:check-tf-feedback` after VALID.
+- **Who / where:** Cursor agent · darwin · lovable/redesign (this commit)
+- **Timestamp:** 2026-07-05T13:30:00Z
 
 ### 2026-07-05T13:20:00Z — profiles.home_city field (DB + Flutter + web Account)
 
