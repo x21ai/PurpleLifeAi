@@ -2,8 +2,17 @@
 
 Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~10:00 ET (Flutter web cutover runbook + TF16 commit).
 
-**Recent:** Committed **d62472b** TF16 Luciq SPM dedupe (`1.0.0+16`). Added `docs/FLUTTER-WEB-CUTOVER.md` and `scripts/flutter-web-build-prod.sh` (Worker Flutter web plan, no prod deploy).
+**Recent:** **`main@7fd1bc2`** merged from `lovable/redesign` (2026-07-05); gates PASS; pushed to GitHub. No prod deploy.
 
+
+## Main merge (2026-07-05)
+
+| Item | Value |
+|------|--------|
+| Merge tip | `7fd1bc2` (fast-forward from `311d466`) |
+| Push | `origin/main` updated |
+| Gates | em-dash, live-data, unique-images, lovable-auth, tsc, build:prod, flutter analyze lib/, flutter test 91/91 |
+| Deploy | **Not run** (manual approval required) |
 ## Flutter web cutover (plan only, 2026-07-05)
 
 | Item | Path / command |
