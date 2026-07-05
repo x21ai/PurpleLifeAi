@@ -161,3 +161,34 @@ List<String> getSuggestedQuestions(List<String> conditions, {int cap = 5}) {
   }
   return out;
 }
+
+/// Follow-up chip suggestions under an assistant reply (mirrors web
+/// `getFollowUps`): up to 3 items combining topic hints keyed on the user's
+/// last message with condition-flavored starters.
+List<String> getFollowUps(List<String> conditions, String lastUserMessage) {
+  final base = getSuggestedQuestions(conditions);
+  final msg = lastUserMessage.toLowerCase();
+  final topical = <String>[];
+  if (RegExp(r'sleep|slept|rest').hasMatch(msg)) {
+    topical.add('How is sleep trending this month?');
+  }
+  if (RegExp(r'pain|ache|hurt').hasMatch(msg)) {
+    topical.add('What helped most on flare days?');
+  }
+  if (RegExp(r'mood|anxious|down|sad').hasMatch(msg)) {
+    topical.add('What seems to help on harder days?');
+  }
+  if (RegExp(r'med|dose|pill').hasMatch(msg)) {
+    topical.add('Have I been taking every dose on time?');
+  }
+  if (RegExp(r'trigger|caused|why').hasMatch(msg)) {
+    topical.add('What patterns do you see in my journal?');
+  }
+  final out = <String>[];
+  final seen = <String>{};
+  for (final s in [...topical, ...base]) {
+    if (seen.add(s)) out.add(s);
+    if (out.length >= 3) break;
+  }
+  return out;
+}

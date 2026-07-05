@@ -21,6 +21,26 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Log
 
+### 2026-07-05T00:00:00Z — Wave-2 Ask-Purple parity (action cards, markdown/citations, daily limit, follow-ups, save-to-journal)
+
+- **Requested:** Ask-Purple (AI chat) web→Flutter parity per `wave2-specs/chat.md §1`: (P0) tool-action confirm cards + direct-Supabase executor for 5 kinds; (P0) markdown + `[Source: … ](url)` citation pills; (P1) free-tier 10/day limit; (P1) follow-up chips + Save-to-journal. Branch `wave2-askpurple`, worktree only. Scope: `flutter/lib/features/chat/ask_purple_screen.dart`, `chat_repository.dart`, `chat_copy.dart` (+ new files under `features/chat/`). Did NOT touch `care_chat_*`.
+- **Done:**
+  - **`chat_repository.dart`:** `sendAskPurple` now yields `AskPurpleChunk{text, proposals}` — parses `tool-proposeAction` parts (`input`/`args` → `{kind, summary, params}`) in addition to `text-delta`/`error`. Added `ProposalKind` enum (5 kinds + labels), `Proposal` model (with `displayParams` filter dropping null/""/empty-array), `ActionResult`. Added `executeAction(Proposal)` — Dart port of server `executePurpleAction`, direct RLS-scoped Supabase writes replicating tables/payloads exactly (`medications` insert w/ `is_rescue`/`active`; `seizure_events` insert w/ `detection_source:'ai_chat'`; `journal_entries` insert `status:'processing'`; `medication_doses` update-by-scheduled_at else insert; `medications` archive update `active:false`+`end_date` YYYY-MM-DD; validation errors name/text/medication_id required). Added `saveAnswerToJournal` (insert `journal_entries` `status:'complete'`, `ai_tags:['ask-purple']`, exact `**Q:**/**Purple:**` body). Provider now injects `supabaseClientProvider`.
+  - **New `action_confirm_card.dart`:** `ProposalStatus` enum + `ActionConfirmCard` (kind label, summary, filtered param list, Confirm/Cancel, pending/confirmed→Done/cancelled/failed states), dark-glass via `GlassSurface`, `colorScheme.primary`/`.error`, 44pt targets.
+  - **New `citation_text.dart`:** `CitationText` renders assistant markdown via `flutter_markdown` `MarkdownBody`, splits `[Source: …](url)` regex into tappable (primary-tinted) / muted pills, opens links via `url_launcher`. User bubbles stay plain `Text`.
+  - **New `ask_limit.dart`:** `AskLimit` — SharedPreferences key `purple-ask-message-stamps`, JSON epoch-ms array, 24h window, `freeDailyLimit=10`, `usedToday()`/`pushStamp()`.
+  - **`condition_prompts.dart`:** added `getFollowUps(conditions, lastUserMessage)` (topical keyword hints + starters, dedup, cap 3) mirroring web.
+  - **`ask_purple_screen.dart`:** rewired transcript to carry per-turn proposals/statuses; renders action cards, follow-up chips under last idle proposal-less assistant turn, Save-to-journal button per idle assistant turn; markdown/citation bubbles; daily-limit block (snackbar over limit) + `_LimitGate` composer replacement + "N left" hint at ≤3; preserved offline guard, SafeArea, streaming.
+  - **`chat_copy.dart`:** added action/journal/limit copy strings.
+  - **Tests:** added 5 unit tests in `test/chat_routes_test.dart` (follow-up topical/fallback/dedup; proposal kind mapping; displayParams filter).
+- **Issues / SERVER-GAPS flagged:**
+  - **No native Pro entitlement flag exists in Flutter** (account screen defers subscription to web). Web gates the limit on `useIsPro()`; there is no equivalent client flag, so the **10/day free limit applies to ALL native users** and the over-limit `_LimitGate` is an upsell pointing to purplelife.org rather than a real ProGate. If Pro users must get unlimited on native, a Pro/entitlement flag (or `/api` check) needs to be exposed to the client — flagged, not faked.
+  - **Action executor writes go directly to Supabase under RLS** (per spec, matching the pattern) — no worker route. Assumes the same user INSERT/UPDATE RLS policies the web user-scoped client relies on are in place for `medications`, `seizure_events`, `journal_entries`, `medication_doses`. If any table lacks a user policy, that kind's Confirm surfaces the Supabase error on the card (fail state), not a silent no-op.
+  - `mark_dose_taken` update-by-`scheduled_at` cannot report 0-row matches as an error; mirrors web (web also returns ok on 0 rows).
+- **Stand / next:** `flutter pub get` OK; `flutter analyze lib/` **clean (No issues found!)**; `flutter test` **96/96** (91 prior + 5 new). Committed on `wave2-askpurple` (NOT pushed). **Next:** parent lands slice + runs gate; web/product decides on native Pro flag for unlimited.
+- **Who / where:** Claude Code (Wave-2 Ask-Purple writer) · darwin · wave2-askpurple
+- **Timestamp:** 2026-07-05T00:00:00Z
+
 ### 2026-07-05T00:00:00Z — Wave-1 care/reports fixes (accept loop, inbox badge, tokens)
 
 - **Requested:** (P0) fix broken caregiver-invite accept loop; (P0) add missing top-bar inbox badge; (P1) token color cleanup in reports+care. Flutter-only, branch `wave1-care-reports`, worktree off `lovable/redesign`.
