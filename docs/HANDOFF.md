@@ -9,15 +9,29 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign`**. TestFlight **1.0 (16) VALID**. Flutter **P0-7** chat
-shells on `/chat` and `/chat-care` (commit `a9c4361`, co-staged with P0-6 meds). **P0-8**
-`/care/inbox` at `8fdf829`. Parallel WIP (reports refactor, marketing) on disk.
+Purple Life on **`lovable/redesign`**. TestFlight **1.0 (16) VALID**. Flutter **P0-9** reports
+child routes at `/reports/*` (metrics, documents, medical-history, new, detail, trends). Prior:
+P0-7 chat, P0-8 care inbox. Parallel WIP (marketing) on disk untracked.
 
-**Next action:** Wire care-chat Worker RPCs; device verify Ask Purple streaming on TF.
+**Next action:** Device verify reports upload on Flutter web `:8765`; charts/AI remain web-only.
 
 ---
 
 ## Log
+
+### 2026-07-05T14:20:00Z — P0-9 Flutter reports child routes
+
+- **Requested:** Add six missing `/reports/*` child routes vs web; honest empty/upload states;
+  scope `flutter/lib/features/reports/` + router; analyze + test; commit and push.
+- **Done:** Routes `/reports/metrics`, `/documents`, `/medical-history`, `/new`,
+  `/:reportId`, `/trends/:metricKey` with `ReportsLayout` tabs; repository loaders for
+  tracked metrics, detail, series; removed monolithic hub; `test/reports_routes_test.dart`.
+  `flutter analyze` exit 0; `flutter test` 79/79 pass.
+- **Issues:** Trend charts, PDF generate, bulk download, reprocess, AI explain remain web-only
+  (honest copy in UI). `/settings/reports` redirects to `/reports/metrics`.
+- **Stand / next:** Worker file URL for Flutter report detail view; optional chart widget.
+- **Who / where:** Cursor subagent · darwin · lovable/redesign
+- **Timestamp:** 2026-07-05T14:20:00Z
 
 ### 2026-07-05T14:15:00Z — P0-7 Flutter chat routes shell
 
