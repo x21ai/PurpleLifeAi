@@ -9,16 +9,45 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-**`main` and `lovable/redesign` @ `ef05394`** (staging prep docs pushed to `origin/main` 2026-07-05).
-TestFlight **1.0 (17) VALID**. **`bun run build:prod:flutter-web` PASS** (2026-07-05 staging prep).
-Staging smoke checklist in **`docs/FLUTTER-WEB-CUTOVER.md`**; `purplelife-staging` workers.dev deploy
-not run yet. **`FLUTTER_WEB_CUTOVER=true` on prod blocked** until staging rows 1–17 pass + owner approval.
+**`lovable/redesign` @ `68bf214`** (pubspec **1.0.0+18**, pushed 2026-07-05). **`main` @ `ef05394`** (includes merge wave through `523de05` / `7fd1bc2` fleet). **`origin/lovable/redesign` aligned** with merge + TF18 bump + analyze const fixes.
 
-**Next action:** Deploy `purplelife-staging` on workers.dev; run staging smoke checklist (no prod deploy).
+**TestFlight 1.0 (18):** ASC **VALID** 2026-07-05 (internal + external **IN_BETA_TESTING**). Wave: care chat, insights, timeline, marketing extras, synced data panel. **1.0 (17)** also VALID (external READY_FOR_BETA_SUBMISSION).
+
+**Flutter gates:** `flutter analyze lib/` **clean**; `flutter test` **91/91**. Local **266 untracked `* 2.*` Finder duplicates** removed from `flutter/` to unblock analyze (not in git).
+
+**Next action:** Restart Cursor for Luciq MCP; triage **tf-crash-report** via MCP on TF18; tester install TF18; Oura console redirect (owner).
 
 ---
 
 ## Log
+
+### 2026-07-05T16:02:00Z — Luciq MCP + Doppler integration
+
+- **Requested:** Wire Luciq OAuth token from `servers-teamkeys/dev` for agent crash triage.
+- **Done:** `scripts/luciq-sync-doppler-secrets.sh`, `scripts/install-luciq-mcp-cursor.sh`,
+  `luciq:sync-secrets`, `luciq:install-mcp` in `package.json`; `luciq-fetch-reports.mjs`
+  accepts `LUCIQ_OAUTH_TOKEN`, returns `status: mcp` when REST 401 (MCP token expected);
+  synced `LUCIQ_API_TOKEN` + `LUCIQ_ACCOUNT_EMAIL` to `purple-life/prd`; installed Luciq MCP
+  in `~/.cursor/mcp.json` (restart Cursor required).
+- **Verified:** MCP HTTP `initialize` 200; `list_applications` shows **Flutter - Purple**
+  (`slug=flutter-purple`, beta) and **Purple** iOS (`slug=purple`, beta); `list_crashes` returns
+  **0 crashes** on both (matches ASC crash submissions API empty for Jul 4 feedback).
+- **Issues:** Legacy dashboard REST still 401 with MCP OAuth token; use Luciq MCP for stacks.
+  Jul 4 "App is crashing" screenshot feedback has no Luciq stack yet (SDK may not have fired or
+  tester on pre-Luciq build).
+- **Stand / next:** Restart Cursor for in-IDE Luciq MCP; retriage after TF18+ installs with SDK;
+  re-run `ios:check-tf-feedback`.
+- **Who / where:** Cursor agent · darwin · main
+- **Timestamp:** 2026-07-05T16:02:00Z
+
+### 2026-07-05T14:47:54Z — TestFlight 18 ship (merge wave)
+
+- **Requested:** Sync `lovable/redesign` with `main`; bump **1.0.0+18**; analyze + test; `ios:testflight`; ASC checks; HANDOFF.
+- **Done:** `lovable/redesign` already contained `origin/main` (`ef05394`); pushed **`3afdcbb`** (pubspec +18), **`68bf214`** (const analyze fixes). `flutter test` **91/91**. `doppler run --project purple-life --config prd -- bun run ios:testflight` **EXPORT + upload OK** (~4 min). `ios:check-asc-builds` / `ios:check-tf-feedback` run (10 beta screenshots; synced-data / sync UX themes).
+- **Issues:** ASC list not yet showing build **18** (processing). TF17 still **VALID** / internal **IN_BETA_TESTING**. Duplicate `* 2.dart` files on disk can break analyze until deleted.
+- **Stand / next:** Poll ASC for **1.0 (18) VALID**; tester install on internal group.
+- **Who / where:** Cursor command subagent · darwin · lovable/redesign@68bf214
+- **Timestamp:** 2026-07-05T14:47:54Z
 
 ### 2026-07-05T14:45:00Z — Staging prep: build + workers.dev smoke checklist
 

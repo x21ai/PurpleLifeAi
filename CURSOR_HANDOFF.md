@@ -1,11 +1,23 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~10:00 ET (Flutter web cutover runbook + TF16 commit).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~12:05 ET (Luciq MCP + Doppler integration).
 
-**Recent:** **`main@7fd1bc2`** merged from `lovable/redesign` (2026-07-05); gates PASS; pushed to GitHub. No prod deploy.
+**Recent:** Luciq MCP wired (`luciq:sync-secrets`, `luciq:install-mcp`); `ios:check-luciq` returns `status: "mcp"` (REST 401 expected). Restart Cursor for MCP crash triage on **Flutter - Purple - Beta**.
 
+## Luciq MCP + Doppler (2026-07-05)
 
-## Main merge (2026-07-05)
+| Item | Detail |
+|------|--------|
+| Sync | `bun run luciq:sync-secrets` — `LUCIQ_OAUTH_TOKEN` from `servers-teamkeys/dev` → `purple-life/prd` as `LUCIQ_API_TOKEN` + `LUCIQ_ACCOUNT_EMAIL` |
+| Cursor MCP | `bun run luciq:install-mcp` — merges into `~/.cursor/mcp.json`; **restart Cursor** |
+| Check | `bun run ios:check-luciq -- --json` → `dashboardApiConfigured: true`, `status: "mcp"` |
+| Triage | Luciq MCP → **Flutter - Purple** beta (`slug=flutter-purple`, `list_crashes`); legacy REST 401 with MCP token is expected |
+| Verified 2026-07-05 | MCP HTTP OK; **0 crashes** in Luciq for `flutter-purple`/`purple` beta (ASC crash API also empty) |
+| SDK | `LUCIQ_APP_TOKEN` unchanged (TestFlight `--dart-define`) |
+
+Scripts: `scripts/luciq-sync-doppler-secrets.sh`, `scripts/install-luciq-mcp-cursor.sh`, `scripts/luciq-fetch-reports.mjs`.
+
+**Main merge (2026-07-05):** **`main@7fd1bc2`** merged from `lovable/redesign`; gates PASS; pushed to GitHub. No prod deploy.
 
 | Item | Value |
 |------|--------|

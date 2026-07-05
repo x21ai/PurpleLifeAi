@@ -35,9 +35,26 @@ a deliberate migration (noise and duplicate PII).
 ## Agent runbook (after TestFlight upload)
 
 ```bash
-bun run ios:check-tf-feedback   # ASC screenshots/crashes + Luciq summary
+bun run luciq:sync-secrets      # once: copy MCP token servers-teamkeys/dev -> purple-life/prd
+bun run luciq:install-mcp       # once per machine: ~/.cursor/mcp.json, restart Cursor
+bun run ios:check-tf-feedback   # ASC screenshots/crashes + Luciq cred check
 bun run ios:check-asc-builds    # confirm VALID build number
 ```
+
+### Doppler map
+
+| Role | Project / config | Secrets |
+|------|------------------|---------|
+| Source (team keys) | `servers-teamkeys` / `dev` | `LUCIQ_OAUTH_TOKEN` |
+| Purple runtime | `purple-life` / `prd` | `LUCIQ_APP_TOKEN` (SDK), `LUCIQ_API_TOKEN`, `LUCIQ_ACCOUNT_EMAIL` |
+
+### Cursor MCP (crash triage)
+
+1. `bun run luciq:install-mcp` writes `https://api.luciq.ai/api/mcp` with Email + Token headers to `~/.cursor/mcp.json` (never commit tokens to repo).
+2. Restart Cursor; verify Luciq MCP connected.
+3. Query **Flutter - Purple - Beta** crashes for build 18+ (MCP tools: `list_crashes`, `list_occurrences_tokens`, etc.).
+
+Legacy REST `ios:check-luciq` may return `status: "mcp"` (401 on dashboard-api) when using MCP OAuth token; that is expected.
 
 See `docs/testflight-setup.md` § Crash reporting and
 `.cursor/rules/flutter-testflight-observability.mdc`.

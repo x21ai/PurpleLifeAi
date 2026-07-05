@@ -48,9 +48,26 @@ still uses native Luciq in `ios/App/AppDelegate.swift`.
 Crashlytics, ASC crash API alone) are documented in
 `mem/observability/crash-reporting.md`. Do not commit SDK or dashboard tokens.
 
-Optional dashboard API (automated agent summaries): add `LUCIQ_API_TOKEN` and
-`LUCIQ_ACCOUNT_EMAIL` to Doppler (Luciq MCP token or support@luciq.ai). SDK token
-alone is enough for crash capture on device.
+### Luciq MCP + Doppler (agent automation)
+
+| Step | Command |
+|------|---------|
+| Sync token to Purple runtime | `bun run luciq:sync-secrets` |
+| Install Cursor MCP (local) | `bun run luciq:install-mcp` then **restart Cursor** |
+| Verify creds | `bun run ios:check-luciq -- --json` → `dashboardApiConfigured: true`, `status: "mcp"` |
+| Triage crashes | Luciq MCP in Cursor → **Flutter - Purple - Beta** |
+
+| Secret | Doppler location | Purpose |
+|--------|------------------|---------|
+| `LUCIQ_OAUTH_TOKEN` | `servers-teamkeys` / `dev` | Source MCP token (team keys) |
+| `LUCIQ_API_TOKEN` | `purple-life` / `prd` | Runtime copy (sync script) |
+| `LUCIQ_ACCOUNT_EMAIL` | `purple-life` / `prd` | `pmt@eatos.com` |
+| `LUCIQ_APP_TOKEN` | `purple-life` / `prd` | SDK app token (device builds) |
+
+MCP server URL: `https://api.luciq.ai/api/mcp` with headers `Email` + `Token` (see Luciq docs).
+The MCP OAuth token does **not** work on legacy REST `dashboard-api.instabug.com`; use MCP for stack traces.
+
+SDK token alone is enough for crash capture on device.
 
 Crashes upload on the **next** app launch, not at crash time. Shake invokes
 in-app feedback when Luciq is initialized.

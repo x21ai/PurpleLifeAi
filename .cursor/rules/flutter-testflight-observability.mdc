@@ -19,22 +19,32 @@ bun run ios:check-asc-builds
 
 | Command | Source | What it covers |
 |---------|--------|----------------|
-| `ios:check-tf-feedback` | ASC API + Luciq | Screenshot comments, crash submissions, Luciq app list / manual hint |
+| `ios:check-tf-feedback` | ASC API + Luciq | Screenshot comments, crash submissions, Luciq MCP hint |
 | `ios:check-asc-feedback` | ASC only | Same ASC half without Luciq |
-| `ios:check-luciq` | Luciq dashboard API (optional) | Needs `LUCIQ_API_TOKEN` + `LUCIQ_ACCOUNT_EMAIL` in Doppler |
+| `ios:check-luciq` | Luciq | SDK + MCP cred check (`status: mcp` or `ok`) |
+| `luciq:sync-secrets` | Doppler | Copy `LUCIQ_OAUTH_TOKEN` from `servers-teamkeys/dev` to `purple-life/prd` |
+| `luciq:install-mcp` | Local Cursor | Merge Luciq HTTP MCP into `~/.cursor/mcp.json` (restart Cursor) |
 
-## Luciq SDK token (build time)
+## Luciq tokens (Doppler)
 
-- Doppler `purple-life` / `prd`: **`LUCIQ_APP_TOKEN`** (SDK app token, never commit).
-- Injected via `--dart-define=LUCIQ_APP_TOKEN=...` in `scripts/flutter-ios-testflight.sh`.
-- Flutter init: `flutter/lib/core/observability/luciq_bootstrap.dart` (skips web + empty token).
-- Dashboard project: **Flutter - Purple - Beta**.
+| Secret | Project / config | Purpose |
+|--------|------------------|---------|
+| `LUCIQ_APP_TOKEN` | `purple-life` / `prd` | SDK on device (TestFlight `--dart-define`) |
+| `LUCIQ_OAUTH_TOKEN` | `servers-teamkeys` / `dev` | **Source** MCP/API token |
+| `LUCIQ_API_TOKEN` | `purple-life` / `prd` | **Runtime** copy from sync (same value as OAuth token) |
+| `LUCIQ_ACCOUNT_EMAIL` | `purple-life` / `prd` | Luciq account (`pmt@eatos.com`) |
+
+Dashboard project: **Flutter - Purple - Beta**.
+
+**Note:** MCP OAuth token does **not** authenticate legacy REST (`dashboard-api.instabug.com`).
+`ios:check-luciq` returns `status: "mcp"` when creds are synced; use **Luciq MCP** in Cursor for crash stacks.
 
 ## When testers report crashes
 
 1. ASC `betaFeedbackCrashSubmissions` is often **empty** for screenshot-only reports.
-2. Check Luciq **Crashes** and **App Health** (crashes upload on **next launch**).
-3. Track open issue **`tf-crash-report`** in `docs/OPEN-ISSUES.md`.
+2. Run `bun run luciq:sync-secrets` if `dashboardApiConfigured` is false.
+3. Run `bun run luciq:install-mcp` (once per machine), restart Cursor, query **Flutter - Purple - Beta** via Luciq MCP (`list_crashes`, etc.).
+4. Track open issue **`tf-crash-report`** in `docs/OPEN-ISSUES.md`.
 
 ## Alternatives (policy)
 

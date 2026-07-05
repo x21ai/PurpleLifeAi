@@ -3,9 +3,10 @@
  * Summarize Luciq crash/health signals for Purple Flutter TestFlight.
  *
  * SDK token (LUCIQ_APP_TOKEN) is for the mobile app only. Dashboard queries need
- * optional Doppler secrets (request from Luciq support or generate MCP token in
- * Account Management → Luciq MCP):
- *   LUCIQ_API_TOKEN      — dashboard or MCP API token
+ * optional Doppler secrets (MCP token in servers-teamkeys/dev LUCIQ_OAUTH_TOKEN;
+ * synced to purple-life/prd as LUCIQ_API_TOKEN via luciq:sync-secrets):
+ *   LUCIQ_API_TOKEN      — dashboard or MCP API token (runtime)
+ *   LUCIQ_OAUTH_TOKEN    — alias accepted (source in servers-teamkeys/dev)
  *   LUCIQ_ACCOUNT_EMAIL  — Luciq account email
  *
  * Usage:
@@ -47,8 +48,14 @@ function appLabel(app) {
   );
 }
 
+function resolveApiToken() {
+  const api = process.env.LUCIQ_API_TOKEN?.trim() ?? "";
+  if (api) return api;
+  return process.env.LUCIQ_OAUTH_TOKEN?.trim() ?? "";
+}
+
 async function main() {
-  const apiToken = process.env.LUCIQ_API_TOKEN?.trim() ?? "";
+  const apiToken = resolveApiToken();
   const email = process.env.LUCIQ_ACCOUNT_EMAIL?.trim() ?? "";
   const sdkConfigured = Boolean(process.env.LUCIQ_APP_TOKEN?.trim());
 
@@ -64,9 +71,8 @@ async function main() {
       ...base,
       status: "manual",
       hint:
-        "Add LUCIQ_API_TOKEN + LUCIQ_ACCOUNT_EMAIL to Doppler purple-life/prd for " +
-        "automated crash summaries, or open the Luciq dashboard manually. SDK builds " +
-        "still use LUCIQ_APP_TOKEN via --dart-define.",
+        "Run bun run luciq:sync-secrets, then luciq:install-mcp for Cursor MCP. " +
+        "SDK builds still use LUCIQ_APP_TOKEN via --dart-define.",
     };
     if (asJson) {
       console.log(JSON.stringify(msg, null, 2));
@@ -83,7 +89,31 @@ async function main() {
     return;
   }
 
-  const appsPayload = await luciqFetch("/api/web/applications", apiToken, email);
+  let appsPayload;
+  try {
+    appsPayload = await luciqFetch("/api/web/applications", apiToken, email);
+  } catch (err) {
+    const isAuth = /401|Authentication failed/i.test(String(err.message));
+    const msg = {
+      ...base,
+      status: isAuth ? "mcp" : "error",
+      dashboardApiConfigured: true,
+      error: isAuth ? undefined : err.message,
+      hint: isAuth
+        ? "LUCIQ_OAUTH_TOKEN is for Luciq MCP (api.luciq.ai), not legacy REST. " +
+          "Run bun run luciq:install-mcp, restart Cursor, query Flutter - Purple - Beta crashes via MCP."
+        : "Check LUCIQ_API_TOKEN + LUCIQ_ACCOUNT_EMAIL or use manual dashboard.",
+    };
+    if (asJson) {
+      console.log(JSON.stringify(msg, null, 2));
+      process.exit(isAuth ? 0 : 1);
+    }
+    console.log("[luciq] Dashboard REST auth failed (MCP token is expected).");
+    console.log("[luciq] Run: bun run luciq:install-mcp");
+    console.log(`[luciq] ${base.manualUrl}`);
+    return;
+  }
+
   const apps = pickApplications(appsPayload);
   const purpleApps = apps.filter((a) => {
     const label = `${a?.name ?? ""} ${a?.slug ?? ""}`.toLowerCase();

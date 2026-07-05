@@ -12,6 +12,19 @@ Format:
 
 ## Flutter / TestFlight
 
+- [ ] **tf-settings-shell-nav** — Tester ASC feedback (2026-07-05 15:41 ET, build 17/18): wants
+  settings/shell burger **left of Purple logo**, menu slide **left to right** (not right
+  `endDrawer`), more connections visible. Conflicts with current AGENTS.md right-drawer rule;
+  needs product decision then Flutter shell work. _Raised 2026-07-05 ASC after TF18._
+
+- [ ] **tf-heading-typography** — Tester ASC feedback (2026-07-05 15:41 ET): section heading too
+  long, too large vs web. Identify screen(s) from screenshot; match web type scale from
+  `design/tokens.json`. _Raised 2026-07-05 ASC after TF18._
+
+- [ ] **tf-bottom-whitespace** — Tester ASC feedback (2026-07-05 15:40 ET, recurring): excess
+  whitespace above bottom nav on multiple tabs. Likely safe-area / shell padding; compare web
+  `_app` layout. _Raised 2026-07-05 ASC after TF18._
+
 - [ ] **flutter-web-cutover-impl** — Runbook at `docs/FLUTTER-WEB-CUTOVER.md` (plan only).
   Needs `merge-flutter-web-assets.sh`, `src/server.ts` path dispatch, staging smoke, owner
   approval before prod. Build: `./scripts/flutter-web-build-prod.sh`. _Raised 2026-07-05._
@@ -38,11 +51,11 @@ Format:
   _Raised 2026-07-05 from ASC beta feedback._
 
 - [ ] **tf-crash-report** — Tester reported "App is crashing" (2026-07-04 screenshot feedback);
-  ASC crash submissions API shows 0 crash logs. **Luciq Flutter SDK wired 2026-07-05**
-  (`luciq_flutter`, Doppler `LUCIQ_APP_TOKEN` dart-define on TestFlight builds). After TF16+
-  upload, agents run `bun run ios:check-tf-feedback` and check Luciq dashboard **Flutter -
-  Purple - Beta** → Crashes.
-  _Raised 2026-07-05 from ASC beta feedback._
+  ASC crash submissions API shows 0 crash logs. **Luciq Flutter SDK wired** on TF16+
+  (`luciq_flutter`, `LUCIQ_APP_TOKEN`). **2026-07-05:** Doppler sync (`luciq:sync-secrets`),
+  Cursor MCP install (`luciq:install-mcp`, `pmt@eatos.com`, token from `servers-teamkeys/dev`).
+  Triage via Luciq MCP **Flutter - Purple - Beta** after Cursor restart (REST API returns 401
+  for MCP token; expected). _Raised 2026-07-05 from ASC beta feedback._
 
 - [x] ~~**tf-sync-bar-every-page**~~ — RESOLVED 2026-07-05: Removed `SyncStatusBar` from Meds and
   Vitals; kept on Today (+ Tools integrations cards). Sync button labels name providers.
