@@ -6,8 +6,10 @@ import '../../shell/routes.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
+import 'models/report_row.dart';
 import 'reports_repository.dart';
 import 'widgets/reports_layout.dart';
+import 'widgets/trend_chart.dart';
 
 /// Lab metric trends hub mirroring web `/reports/metrics`.
 class ReportsMetricsScreen extends ConsumerWidget {
@@ -16,6 +18,7 @@ class ReportsMetricsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final metricsAsync = ref.watch(trackedMetricsProvider);
+    final seriesAsync = ref.watch(allMetricSeriesProvider);
 
     return ReportsLayout(
       activeTab: ReportsTab.metrics,
@@ -94,6 +97,8 @@ class ReportsMetricsScreen extends ConsumerWidget {
                             ],
                           ),
                         ),
+                        _sparkline(seriesAsync, metric.metricKey),
+                        const SizedBox(width: 8),
                         Icon(
                           Icons.chevron_right,
                           color: Colors.white.withValues(alpha: 0.4),
@@ -102,18 +107,23 @@ class ReportsMetricsScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-              const SizedBox(height: 12),
-              Text(
-                'Trend charts and AI insights on the web app include reference ranges and export.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.45),
-                      height: 1.4,
-                    ),
-              ),
             ],
           );
         },
       ),
     );
+  }
+
+  /// Sparkline for a metric row, drawn from the pre-loaded all-series map.
+  /// Renders an empty box while loading / when fewer than 2 numeric readings.
+  Widget _sparkline(
+    AsyncValue<Map<String, List<ReportMetricRow>>> seriesAsync,
+    String metricKey,
+  ) {
+    final rows = seriesAsync.asData?.value[metricKey] ?? const [];
+    if (rows.where((r) => r.value != null).length < 2) {
+      return const SizedBox(width: 64, height: 24);
+    }
+    return MetricSparkline(rows: rows);
   }
 }

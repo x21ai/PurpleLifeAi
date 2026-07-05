@@ -10,6 +10,7 @@ import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
 import 'models/report_row.dart';
 import 'reports_repository.dart';
+import 'widgets/trend_chart.dart';
 
 /// Metric trend detail mirroring web `/reports/trends/$metricKey`.
 class ReportsTrendScreen extends ConsumerWidget {
@@ -137,7 +138,7 @@ class _TrendBody extends StatelessWidget {
             borderRadius: 20,
             padding: const EdgeInsets.all(20),
             child: Text(
-              'Upload another report with this metric to unlock a trend chart. Charts and CSV export are on the web app today.',
+              'Upload another report with this metric to unlock a trend chart.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Colors.white.withValues(alpha: 0.65),
                     height: 1.45,
@@ -147,13 +148,29 @@ class _TrendBody extends StatelessWidget {
         else
           GlassSurface(
             borderRadius: 20,
-            padding: const EdgeInsets.all(20),
-            child: Text(
-              '${numericRows.length} numeric readings tracked. Interactive charts, AI insights, and CSV export are on the web app.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.65),
-                    height: 1.45,
+            padding: const EdgeInsets.fromLTRB(12, 20, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                MetricLineChart(
+                  rows: numericRows,
+                  referenceLow: latest.referenceLow,
+                  referenceHigh: latest.referenceHigh,
+                ),
+                if (latest.referenceLow != null &&
+                    latest.referenceHigh != null) ...[
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Text(
+                      'Shaded band = reference range ${latest.referenceLow}–${latest.referenceHigh}${unit != null ? ' $unit' : ''}',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.45),
+                          ),
+                    ),
                   ),
+                ],
+              ],
             ),
           ),
         const SizedBox(height: 28),
@@ -184,7 +201,11 @@ class _TrendBody extends StatelessWidget {
                               ),
                         ),
                         Text(
-                          _dateLabel(row.measuredAt),
+                          [
+                            _dateLabel(row.measuredAt),
+                            if (row.reportTitle?.trim().isNotEmpty == true)
+                              row.reportTitle!.trim(),
+                          ].join(' · '),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Colors.white.withValues(alpha: 0.55),
                               ),
