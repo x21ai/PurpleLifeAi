@@ -1,0 +1,99 @@
+---
+description: Parallel-agent safety. Parallelize disjoint work, serialize shared resources, no agent grades its own work, only verified work lands. Wins over "max agents" on any conflict.
+alwaysApply: true
+---
+
+# Agent Orchestration Safety (HARD RULE)
+
+Even when asked for "max agents", "many parallel agents", or "24/7 parallel
+work", DO NOT dispatch tasks that fight over the same resource. More agents must
+never make the system worse. Use only as many agents as the work is genuinely
+independent, not a target count. This rule wins over any "max agents" instruction.
+
+## What "disjoint" means
+Disjoint = no shared write target AND no shared upstream dependency being
+modified. Different folders is not enough: two files that import the same type
+being changed are NOT disjoint.
+
+## Single-owner resources (ONE agent at a time)
+| Resource | Rule | Forbidden |
+|---|---|---|
+| Dev server port | One owner per port | Second agent start/kill/rebind same port |
+| Long-running process (API/DB/worker) | One owner | Duplicate start or `kill -9` without lock |
+| Build output dir | One build agent | Parallel builds to same `dist/`/`build/`/`.next/` |
+| Package install | One install agent per root | Parallel npm/pnpm/yarn/cargo/pub install |
+| DB migrations | One migration agent | Parallel migrate/up/deploy on same database |
+| Git destructive ops | One agent | Parallel rebase/clean/reset/force-push |
+| Lock/mutex/PID files | Respect existing lock | Ignoring `.lock`, `flock`, PID files |
+| Native iOS/Android sync | One `cap sync` + Xcode owner | Parallel edits to `ios/` + upload |
+| Store/TestFlight upload | One owner per build number | Two agents bumping version or re-uploading |
+| Production deploy | One owner per environment | Parallel deploys to same env |
+| Shared config in a wave | One writer per file | Two agents patching the same config/router |
+
+Read the repo's own scripts (`package.json`, project scripts) for the actual
+ports and commands. Do not invent a competing dev/build command. Before starting
+a server or build, check one isn't already running.
+
+## Dispatch
+1. Read-only agents (audit/grep/review): unlimited. Write agents: capped at 5–6
+   per wave, and only as many as there are genuinely independent pieces.
+2. Collision check before every dispatch: if a candidate needs a resource
+   another agent holds, serialize or defer it. Never dispatch into a collision.
+3. Priority: (1) restore working dev env, (2) fix compile/test failures,
+   (3) rebuild, (4) feature/QA, (5) cosmetic/docs.
+4. State the plan explicitly before starting, e.g. "5 agents on independent
+   modules; 1 server owner; 1 build owner."
+5. Freeze on breakage: stop spawning when a shared resource is broken; fix with
+   one owner first, then resume.
+
+## No agent grades its own work
+- Writer ≠ auditor ≠ orchestrator. The agent that wrote a change does not
+  approve it; the agent that planned the split does not audit its own plan. A
+  separate agent reviews.
+- Audit depth scales with risk: full review for auth, payments, native,
+  migrations, or anything user-facing that can break; trivial/doc/read-only
+  changes get a light check only.
+
+## Responding to "max agents" / "asap" / "as fast as possible"
+This is a standing instruction: when the operator says "max agents", "asap", or
+"as fast as possible", interpret it as "reach a correct, verified result in the
+least wall-clock time", NOT "spawn the largest number of agents". Then:
+1. Decompose the task and find the real parallelism (independent, disjoint
+   pieces). Run exactly that many write agents, up to the 5-6 cap. Unlimited
+   read-only agents. Fewer agents is correct when the work does not split.
+2. Assign single owners for every shared resource (each server port, build,
+   install, migration, deploy) BEFORE dispatching. Never let "asap" put two
+   agents on one port/build/DB.
+3. If the dev env or a shared resource is currently broken, FIX THAT FIRST with
+   one owner (restore server, dedupe stalled tasks) before spawning anything.
+   "asap" never means pile more agents onto a broken base.
+4. Each slice still passes the verification gate before it lands. Speed does not
+   waive verification; unverified work is not "done", it's rework waiting.
+5. State the plan in one line before starting, e.g. "asap: 4 write agents on
+   independent modules, 1 server owner on the dev port, 1 build owner; E2E gate
+   before any land."
+"asap" changes HOW HARD you parallelize the independent work. It never relaxes
+the single-owner, no-self-approval, or verified-before-landing rules.
+
+## Only verified work lands; don't revert the trunk
+- Build and verify each change in isolation (worktree/branch); it lands only
+  after passing verification (builds, runs, no errors). A failing change is
+  rejected and discarded, never merged then reverted.
+- If broken state slips through, restore the last known-good state immediately,
+  then fix the check that let it through.
+- No full rebuild until compile/typecheck/tests pass OR a known-good backup
+  exists. If a rebuild fails, restore the backup; never leave a half-written
+  output dir. One rebuild owner per worktree.
+- Never leave the user on a broken build. Fix or reject before cosmetic work.
+
+## Failure response
+1. Stop dispatching new server/build/install agents.
+2. One agent: diagnose and restore last known-good state.
+3. One agent: fix root cause (compile, config, deps).
+4. One rebuild owner: rebuild/restart via project scripts.
+5. Verify end-to-end, then resume parallel agents on disjoint scopes.
+
+## Changing this rule
+Do NOT edit, weaken, or override this rule without explicit operator approval.
+If a task seems to require changing it, STOP and ask first, stating the change
+and why. Repo-specific rules may ADD stricter constraints, never relax these.
