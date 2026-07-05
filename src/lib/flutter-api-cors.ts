@@ -10,6 +10,8 @@ const FLUTTER_WEB_ORIGINS = new Set([
 
 /** Worker routes Flutter calls from a different origin than the site host. */
 const FLUTTER_CORS_PATHS = new Set([
+  "/api/care/accept",
+  "/api/care/decline",
   "/api/health/whoop-config",
   "/api/health/whoop-exchange",
   "/api/health/whoop-sync",
