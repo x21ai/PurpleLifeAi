@@ -9,19 +9,30 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign`** at **`fb3b018`** (settings scroll) atop **`2aeabd4`**
-(sync/timezone feedback), **`e1cd69d`** (Luciq), **`9b3de42`** (`home_city`). TestFlight **1.0 (16)**
-uploaded **2026-07-05 ~09:33 ET** (ASC **processing**, not yet in builds API; **15** still latest
-VALID). Gates before upload: `flutter analyze lib/` 0 issues, **47/47** tests. **Uncommitted local:**
-`pubspec.yaml` **1.0.0+16**, removed duplicate SPM Luciq from
-`flutter/ios/Runner.xcodeproj/project.pbxproj` (CocoaPods `luciq_flutter` only).
+Purple Life on **`lovable/redesign`**. TestFlight **1.0 (16)** **VALID**, IN_BETA_TESTING
+(2026-07-05). Cutover audit refreshed: **33 route gaps** (30 Missing + 3 Stub) of 55 web `_app`
+paths; **0 parity** routes. ASC beta feedback mapped in `docs/FLUTTER-CUTOVER-GAP-MATRIX.md`
+(P0-2 synced-data visibility, P0-3 OAuth, P0-1 crashes open). Phase 5 **NO-GO**.
 
-**Next action:** Re-run `bun run ios:check-asc-builds` until **1.0 (16)** shows **VALID**; commit
-bump + pbxproj fix; device verify Luciq + settings + sync fixes on TF16.
+**Next action:** Device verify TF16 fixes (`tf16-device-verify`); implement P0 slices starting
+with `/my-health` + Oura redirect console.
 
 ---
 
 ## Log
+
+### 2026-07-05T17:55:00Z — Flutter cutover gap audit from TF feedback
+
+- **Requested:** Pull ASC/Luciq feedback, confirm TF16, map feedback to Flutter gaps, compare web vs
+  Flutter routes, refresh gap matrix and open issues; audit only, commit + push.
+- **Done:** `bun run ios:check-tf-feedback` (10 ASC submissions); `bun run ios:check-asc-builds`
+  (**1.0 (16) VALID**); refreshed `docs/FLUTTER-CUTOVER-GAP-MATRIX.md` with P0/P1/P2 table,
+  feedback map, route counts (33 gaps); `docs/OPEN-ISSUES.md` (`tf-synced-data-visibility`,
+  `tf-oauth-not-working`, resolved `tf16-asc-processing`).
+- **Issues:** Luciq dashboard API creds still absent (manual crash triage). No screen work this pass.
+- **Stand / next:** `tf16-device-verify` on iPhone; ship P0-2 `/my-health` + P0-3 Oura console.
+- **Who / where:** Cursor cutover audit subagent · darwin · lovable/redesign
+- **Timestamp:** 2026-07-05T17:55:00Z
 
 ### 2026-07-05T13:36:00Z — Settings scroll re-verification (subagent)
 

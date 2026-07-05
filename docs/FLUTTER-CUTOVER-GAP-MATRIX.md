@@ -1,294 +1,232 @@
-# Flutter Stage 5 Cutover Gap Matrix (Stage 0)
+# Flutter Stage 5 Cutover Gap Matrix
 
-**Date:** 2026-07-04  
-**Baseline:** Web `src/routes/_app/**` vs Flutter `flutter/lib/shell/routes.dart` + `router.dart`  
-**Phase reference:** `docs/LOVABLE-FLUTTER-SYNC.md` Phase 1 table (marked complete 2026-07-04)  
+**Date:** 2026-07-05 (refreshed from ASC beta feedback + route audit)  
+**Baseline:** Web `src/routes/_app/**` (55 files) + marketing `src/routes/*.tsx` (30 files) vs Flutter `flutter/lib/shell/router.dart`  
+**Phase reference:** `docs/LOVABLE-FLUTTER-SYNC.md` Phase 5 exit criteria  
 **Status legend:** **Parity** | **Partial** | **Stub** | **Missing**
 
 ---
 
 ## Executive summary
 
-| Metric | Web | Flutter |
-|--------|-----|---------|
-| Signed-in route files | 55 under `src/routes/_app/` | 18 GoRouter paths (incl. `/sign-in`) |
-| Phase complete (per runbook) | Production web on TanStack | **Phase 1 only** (auth + shell + route map) |
-| Capacitor interim | ASC build 1.0 (9) live | Flutter TestFlight path not ready |
+| Metric | Web | Flutter (2026-07-05) |
+|--------|-----|----------------------|
+| Signed-in `_app` route files | **55** | **28** GoRouter paths (incl. OAuth callbacks) |
+| Marketing route files (TanStack-only by policy) | **30** | **1** (`/sign-in`; marketing stays on Worker) |
+| Route gaps (Missing + Stub) | — | **33** of 55 signed-in paths |
+| Partial implementations | — | **22** routes exist but fail design or depth bar |
+| TestFlight latest VALID | Capacitor retired | **1.0 (16)** IN_BETA_TESTING (2026-07-05) |
 
-### Stage 5 Go/No-Go (today): **NO-GO**
+### Stage 5 Go/No-Go: **NO-GO**
 
-Flutter is not at Phase 5 exit criteria (*TestFlight/Play beta, optional Flutter web, owner Capacitor retirement decision*). Phase 1 route map exists; Phases 2–4 are largely open.
-
----
-
-## Phase 1 cross-check (`docs/LOVABLE-FLUTTER-SYNC.md`)
-
-| Phase 1 area | Doc status | Stage 0 reassessment |
-|--------------|------------|----------------------|
-| Auth + session | Done | **Partial** — email/password + Google/Apple OAuth; no sign-up/reset-password routes |
-| Shell | Done | **Parity** — `NativeAppShell`, glass bottom nav, top bar, `endDrawer` menu, `OfflineBanner` |
-| GoRouter map | Done | **Partial** — 18 routes vs 55 web `_app` routes |
-| Loading polish | Done | **Parity** — `LoadingSkeleton` on core async screens |
-| Offline UX | Done | **Partial** — Drift cache + sync queue on some tables; not all writes queued |
-| Codegen (Drift) | Done | **Parity** — `database.g.dart` present |
-
-Phase 1 "functional vs stub" table still accurate for Chat, Sharing, Travel, Reports/Contact placeholders, and Tools OAuth.
+Tester feedback on TF15/16 confirms daily-use gaps (synced-data visibility, OAuth failures, settings layout before TF16 bundle, crashes). Route map grew since 2026-07-04 audit (`/meds/:id`, `/care`, reports hub, OAuth callbacks) but **30 paths still Missing**, **3 Stub**, and core screens remain **Partial** per `docs/FLUTTER-DESIGN-PARITY-CHECKLIST.md`.
 
 ---
 
-## Web route inventory (`src/routes/_app/**`)
+## Why prior Luciq / browser audits did not finish migration
 
-55 files → signed-in URL map:
+Prior audits scoped **visual deltas on five screens** (Today, Vitals, Meds, Journal, Settings) and **Luciq observability wiring**, not a **full 55-route inventory** or tester-driven cutover backlog. They could not close migration because **missing routes** (`/my-health`, `/insights`, reports children, chat, care inbox) and **integration depth** (OAuth console, synced-data surfaces, Worker-only account actions) were out of scope.
 
-| URL path | Web file |
+---
+
+## ASC beta feedback → Flutter gap map (2026-07-05)
+
+Source: `bun run ios:check-tf-feedback` (10 submissions, tester a@arora.net, TF15 era unless noted).
+
+| # | Feedback (paraphrased) | Likely screen | Flutter gap | Priority | TF16 status |
+|---|------------------------|---------------|-------------|----------|-------------|
+| 1 | App is crashing | Global | `tf-crash-report` — Luciq SDK wired; triage dashboard after TF16 install | **P0** | Open — needs Luciq crash pull |
+| 2 | Not the correct settings page design | `/settings` | Hub + inline sections shipped `fb3b018`; design parity checklist sections still P1 | **P0** | Fixed in TF16 — **device re-verify** |
+| 3 | Syncing but does not say what | Sync bar | Provider labels in sync bar `2aeabd4` | **P0** | Fixed in TF16 — device re-verify |
+| 4 | Sync time is wrong | Sync bar / timezone | Local TZ + relative clock `2aeabd4` | **P0** | Fixed in TF16 — device re-verify |
+| 5 | Same sync button every page | Shell | Removed from Meds/Vitals; Today + Tools only `2aeabd4` | **P0** | Fixed in TF16 — device re-verify |
+| 6 | NYC should show city not only timezone | `/account` | `home_city` field `9b3de42` | **P0** | Fixed in TF16 — device re-verify |
+| 7 | Why is this not working | `/tools` OAuth | Oura native redirect URI not in Oura console (`oura-native-redirect-console`); connect may fail silently | **P0** | Open |
+| 8 | How do I see all my synced data? | `/vitals`, `/my-health`, `/biometrics` | No `/my-health` route; vitals partial; no biometrics hub; bottom nav uses Vitals not My Body | **P0** | Open — `tf-synced-data-visibility` |
+| 9 | (screenshot, no comment) | Unknown | — | P2 | Triage with Luciq session |
+| 10 | (screenshot, no comment) | Unknown | — | P2 | Triage with Luciq session |
+
+---
+
+## Prioritized backlog (P0 / P1 / P2)
+
+### P0 — Tester-blocking (ship before Phase 5 Go)
+
+| ID | Item | Web route(s) | Flutter state | Evidence |
+|----|------|--------------|---------------|----------|
+| P0-1 | Crash triage on TF16+ | — | Luciq SDK in bundle | ASC feedback "App is crashing" |
+| P0-2 | Synced data visibility | `/my-health`, `/biometrics`, `/vitals` | `/my-health` **Missing**; vitals **Partial**; nav maps Vitals not My Body | ASC "how do i see all my synched data?" |
+| P0-3 | Wearable OAuth reliability | `/tools`, `/oauth/*/callback` | Routes exist; Oura console redirect gap | ASC "why is this not workibg" |
+| P0-4 | Today daily-use parity | `/today`, `/today/risk` | **Partial** — no date strip, signals grid, score strip shape | Design checklist §1 P0s |
+| P0-5 | Settings + Account device sign-off | `/settings`, `/account` | Settings scroll shipped; Account placeholders remain | ASC settings design + `tf16-device-verify` |
+| P0-6 | Meds schedule UX | `/meds`, `/meds/$medId`, `/meds/history` | Routes exist **Partial** — missing toolbar, timeline, FAB | Design checklist §3 P0s |
+| P0-7 | Chat not wired | `/chat`, `/chat-care` | **Stub** empty states | Phase 5 blocker |
+| P0-8 | Care inbox + accept flow | `/care/inbox`, `/care.accept` (marketing) | `/care/inbox` **Missing**; no deep link handler | Caregiver loop incomplete |
+| P0-9 | Reports depth | `/reports/*` (7 routes) | Hub only at `/settings/reports`; 6 child routes **Missing** | Settings row + labs UX |
+| P0-10 | Push + dose reminders | `/tools` notifications | **Missing** notification stack | Phase 4 gate |
+
+### P1 — Core parity (post-P0, pre-cutover)
+
+| ID | Item | Web route(s) | Flutter state |
+|----|------|--------------|---------------|
+| P1-1 | Vitals / My Body design | `/vitals`, `/my-health` | Vitals **Partial**; my-health **Missing** |
+| P1-2 | Journal multimodal | `/journal`, `/journal/new` | Light canvas, FAB, media, AI pipeline **Partial** |
+| P1-3 | Insights tab route | `/insights` | **Missing**; bottom nav has no Insights |
+| P1-4 | Biometrics drilldown charts | `/biometrics/$metric` | `/vitals/metric/:key` **Partial** stub charts |
+| P1-5 | Sharing + care dashboard depth | `/settings/sharing`, `/care/$ownerId` | Sharing **Partial**; care reports sub-route **Missing** |
+| P1-6 | Settings completeness | `/settings/terms`, Worker export/2FA | terms **Missing**; export/2FA UI stubs |
+| P1-7 | Welcome onboarding | `/welcome` | **Partial** — conditions, wearables, notifications |
+| P1-8 | Hydration + seizures | `/hydration`, `/seizures/new` | **Partial** |
+| P1-9 | Shell polish | top bar sync, inbox badge | Header sync partial; inbox badge **Missing** |
+| P1-10 | Global design tokens | all `_app` | Georgia/hardcoded colors — checklist §0 P0 |
+
+### P2 — Marketing / admin / nice-to-have
+
+| ID | Item | Notes |
+|----|------|-------|
+| P2-1 | Marketing pages (30 routes) | Stay TanStack on Worker; Flutter Phase 0–1 policy |
+| P2-2 | Admin suite (13 routes) | Explicit mobile exclude unless owner requests |
+| P2-3 | Community / friends / conditions | `/community-new`, `/friends/$id`, `/condition/$slug` **Missing** |
+| P2-4 | DNA upload | `/my-health-dna` **Missing** |
+| P2-5 | Apple Health XML import | `/apple-health-import` **Missing** (native sync preferred) |
+| P2-6 | Timeline | `/timeline` **Missing** |
+| P2-7 | Travel mode | `/settings/travel` **Stub** placeholder |
+| P2-8 | Capacitor retirement | Owner decision after P0 device sign-off |
+
+---
+
+## Flutter route inventory (current)
+
+From `flutter/lib/shell/router.dart` + `routes.dart`:
+
+| Path | Screen | Status |
+|------|--------|--------|
+| `/sign-in` | SignInScreen | Partial |
+| `/oauth/oura/callback` | WearableOAuthCallbackScreen | Partial |
+| `/oauth/whoop/callback` | WearableOAuthCallbackScreen | Partial |
+| `/welcome` | WelcomeScreen | Partial |
+| `/today` | TodayScreen | Partial |
+| `/today/risk` | TodayRiskScreen | Partial |
+| `/vitals` | VitalsScreen | Partial |
+| `/vitals/metric/:metricKey` | MetricDetailScreen | Partial |
+| `/seizures/new` | LogSeizureScreen | Partial |
+| `/hydration` | HydrationScreen | Partial |
+| `/journal` | JournalScreen | Partial |
+| `/journal/new` | JournalCaptureScreen | Partial |
+| `/meds` | MedsScreen | Partial |
+| `/meds/history` | MedsHistoryScreen | Partial |
+| `/meds/:medId` | MedDetailScreen | Partial |
+| `/settings` | SettingsScreen | Partial |
+| `/account` | AccountScreen | Partial |
+| `/tools` | ToolsScreen | Partial |
+| `/care` | CareIndexScreen | Partial |
+| `/care/:ownerId` | CareDashboardScreen | Partial |
+| `/settings/sharing` | SharingScreen | Partial |
+| `/settings/travel` | SettingsPlaceholderScreen | **Stub** |
+| `/settings/reports`, `/reports` | ReportsHubScreen | Partial (hub only) |
+| `/contact` | ContactScreen | Partial |
+| `/settings/privacy` | PrivacyScreen | Partial |
+| `/settings/how-purple-thinks` | HowPurpleThinksScreen | Partial |
+| `/chat` | ChatScreen | **Stub** |
+| `/chat-care` | ChatCareScreen | **Stub** |
+
+**Flutter-only:** `/sign-in`, OAuth callbacks, `/contact` (web uses marketing `/contact`).
+
+---
+
+## Web `_app` routes still Missing or Stub in Flutter
+
+### Missing (30 paths — no GoRouter entry)
+
+| Web path | Web file |
 |----------|----------|
-| `/welcome` | `welcome.tsx` |
-| `/today` | `today.tsx` |
-| `/today/risk` | `today.risk.tsx` |
-| `/vitals` | `vitals.tsx` |
 | `/biometrics` | `biometrics.index.tsx` |
-| `/biometrics/$metric` | `biometrics.$metric.tsx` |
 | `/my-health` | `my-health.tsx` |
 | `/my-health-dna` | `my-health-dna.tsx` |
 | `/apple-health-import` | `apple-health-import.tsx` |
-| `/journal` | `journal.index.tsx` |
-| `/journal/new` | `journal.new.tsx` |
-| `/seizures/new` | `seizures.new.tsx` |
 | `/timeline` | `timeline.tsx` |
-| `/hydration` | `hydration.tsx` |
 | `/insights` | `insights.tsx` |
-| `/meds` | `meds.tsx` |
-| `/meds/$medId` | `meds.$medId.tsx` |
-| `/meds/history` | `meds.history.tsx` |
-| `/reports` | `reports.tsx` (layout) |
+| `/care/inbox` | `care.inbox.tsx` |
+| `/care/$ownerId/reports/$reportId` | `care.$ownerId.reports.$reportId.tsx` |
+| `/settings/terms` | `settings.terms.tsx` |
+| `/condition/$slug` | `condition.$slug.tsx` |
+| `/community-new` | `community-new.tsx` |
+| `/friends/$friendshipId` | `friends.$friendshipId.tsx` |
 | `/reports/metrics` | `reports.metrics.tsx` |
 | `/reports/documents` | `reports.documents.tsx` |
 | `/reports/medical-history` | `reports.medical-history.tsx` |
 | `/reports/new` | `reports.new.tsx` |
 | `/reports/$reportId` | `reports.$reportId.tsx` |
 | `/reports/trends/$metricKey` | `reports.trends.$metricKey.tsx` |
-| `/chat` | `chat.tsx` |
-| `/chat-care` | `chat-care.tsx` |
-| `/care` | `care.index.tsx` |
-| `/care/inbox` | `care.inbox.tsx` |
-| `/care/$ownerId` | `care.$ownerId.tsx` |
-| `/care/$ownerId/reports/$reportId` | `care.$ownerId.reports.$reportId.tsx` |
-| `/settings` | `settings.tsx` |
-| `/settings/sharing` | `settings.sharing.tsx` |
-| `/settings/travel` | `settings.travel.tsx` |
-| `/settings/privacy` | `settings.privacy.tsx` |
-| `/settings/terms` | `settings.terms.tsx` |
-| `/settings/how-purple-thinks` | `settings.how-purple-thinks.tsx` |
-| `/account` | `account.tsx` |
-| `/tools` | `tools.tsx` |
-| `/condition/$slug` | `condition.$slug.tsx` |
-| `/community-new` | `community-new.tsx` |
-| `/friends/$friendshipId` | `friends.$friendshipId.tsx` |
-| `/admin` | `admin.tsx` (layout) |
-| `/admin/` | `admin.index.tsx` |
-| `/admin/users` | `admin.users.tsx` |
-| `/admin/billing` | `admin.billing.tsx` |
-| `/admin/community` | `admin.community.tsx` |
-| `/admin/contact` | `admin.contact.tsx` |
-| `/admin/feedback` | `admin.feedback.tsx` |
-| `/admin/messages` | `admin.messages.tsx` |
-| `/admin/migration-export` | `admin.migration-export.tsx` |
-| `/admin/promo` | `admin.promo.tsx` |
-| `/admin/reports/duplicates` | `admin.reports.duplicates.tsx` |
-| `/admin/resources` | `admin.resources.tsx` |
-| `/admin/rules` | `admin.rules.tsx` |
+| `/admin` + 12 children | `admin*.tsx` (13 routes) |
 
-OAuth callbacks (outside `_app` but required for wearables): `/oauth/oura/callback`, `/oauth/whoop/callback`.
+Note: `/biometrics/$metric` is covered by `/vitals/metric/:metricKey` (**Partial**, not Missing).
+
+### Stub (3 paths)
+
+| Path | Notes |
+|------|-------|
+| `/settings/travel` | Placeholder copy only |
+| `/chat` | Empty state — no Worker streaming |
+| `/chat-care` | Empty state — no caregiver DMs |
+
+### Partial (22 paths)
+
+All other Flutter routes listed above fail full web parity (data depth, design checklist, or Worker-only actions).
 
 ---
 
-## Flutter route inventory
+## Route gap counts
 
-From `flutter/lib/shell/routes.dart` + `router.dart`:
+| Category | Count (of 55 `_app` web routes) |
+|----------|----------------------------------|
+| **Missing** | **30** |
+| **Stub** | **3** |
+| **Partial** | **22** |
+| **Parity** | **0** |
+| **Total gaps (Missing + Stub)** | **33** |
 
-| Path | Screen | In bottom nav |
-|------|--------|---------------|
-| `/sign-in` | `SignInScreen` | — |
-| `/welcome` | `WelcomeScreen` | — |
-| `/today` | `TodayScreen` | Yes |
-| `/vitals` | `VitalsScreen` | Yes |
-| `/journal` | `JournalScreen` | FAB |
-| `/journal/new` | `JournalCaptureScreen` | — |
-| `/meds` | `MedsScreen` | Yes |
-| `/settings` | `SettingsScreen` | Yes |
-| `/account` | `AccountScreen` | Menu |
-| `/tools` | `ToolsScreen` | Menu |
-| `/care/:ownerId` | `CareDashboardScreen` | Menu → sharing stub |
-| `/settings/sharing` | `SharingScreen` (placeholder) | — |
-| `/settings/travel` | `SettingsPlaceholderScreen` | — |
-| `/settings/reports` | `SettingsPlaceholderScreen` | — |
-| `/settings/contact` | `SettingsPlaceholderScreen` | — |
-| `/chat` | `ChatScreen` (stub) | — |
-| `/chat-care` | `ChatCareScreen` (stub) | — |
+Marketing: **28** routes intentionally absent from Flutter (TanStack-only); **2** shared (`/sign-in`, OAuth callbacks).
 
 ---
 
-## Priority feature matrix (requested areas)
+## TestFlight / ASC status
 
-| Feature / route | Web | Flutter | Status | Gap notes |
-|-----------------|-----|---------|--------|-----------|
-| **Today** `/today` | Full dashboard | `TodayScreen` + `today_repository.dart` | **Partial** | Scores, narrative, doses, pull-to-refresh, sync bar. Missing: `/today/risk`, hydration quick-add, travel banners, weekly recap, condition tips |
-| **Today risk** `/today/risk` | Risk drilldown | `TodayRiskScreen` + `risk_forecast_repository.dart` | **Partial** | Real `risk_forecasts` arc, band, narrative, factors |
-| **Vitals** `/vitals` | Goals + grid + insights link | `VitalsScreen` + offline biometrics | **Partial** | Real reads, empty states, sync bar. No metric drilldown |
-| **Biometrics hub** `/biometrics`, `/biometrics/$metric` | Full metric browser + charts | `/vitals/metric/:metricKey` | **Partial** | Latest value + 7-day trend sparkline |
-| **My Health** `/my-health` | Body/condition hub | — | **Missing** | |
-| **Meds** `/meds` | Library + today's doses + add flows | `MedsScreen` + dose actions | **Partial** | Read/mark doses, filters, offline. No add/edit med, schedules UI, scan/voice |
-| **Meds detail** `/meds/$medId` | Full med editor | — | **Missing** | |
-| **Meds history** `/meds/history` | Editable dose history | — | **Missing** | |
-| **Journal** `/journal` | List, archive, AI summaries | `JournalScreen` | **Partial** | Displays `ai_summary` if present; no on-device trigger for `journal-processor` |
-| **Journal capture** `/journal/new` | Text, voice, photo | `JournalCaptureScreen` | **Partial** | Text + offline queue only; no voice/photo |
-| **Settings hub** `/settings` | Full hub + child `<Outlet/>` | `SettingsScreen` | **Partial** | Hub navigation works; several targets are stubs |
-| **Settings/sharing** | Invite, scopes, caregiver list | `SharingScreen` placeholder | **Stub** | |
-| **Settings/travel** | Trip mode, ICS export | Placeholder | **Stub** | |
-| **Settings/privacy** | Privacy controls | — | **Missing** | |
-| **Settings/terms** | Terms link | — | **Missing** | |
-| **Settings/how-purple-thinks** | AI explainer | — | **Missing** | |
-| **Settings/reports** (Flutter) | N/A (web uses `/reports/*`) | Placeholder | **Stub** | Web reports tree entirely absent |
-| **Settings/contact** | Contact form | Placeholder | **Stub** | |
-| **Account** `/account` | Profile, 2FA, billing, export | `AccountScreen` | **Partial** | Profile read + sign out; password, 2FA, locale, subscription are UI stubs |
-| **Tools** `/tools` | Wearable OAuth, Apple Health, notifications | `ToolsScreen` | **Partial** | Static device cards; Connect `onPressed: () {}`. `AppleHealthPanel` exists but is **not wired** |
-| **Care index** `/care` | People you care for | Menu → `/settings/sharing` | **Missing** | No `/care` list route |
-| **Care inbox** `/care/inbox` | Pending invites | — | **Missing** | |
-| **Care dashboard** `/care/$ownerId` | Scoped tabs, writes, reports | `CareDashboardScreen` | **Partial** | Scoped tabs, biometrics read. Missing invite flow, inbox, reports sub-route |
-| **Chat** `/chat` | Streaming AI via Worker | `ChatScreen` | **Stub** | Empty state only |
-| **Chat care** `/chat-care` | Caregiver DMs | `ChatCareScreen` | **Stub** | Empty state only |
-| **Welcome** `/welcome` | Name, conditions, wearables, notifications | `WelcomeScreen` | **Partial** | First name + `onboarded_at` only |
-| **Health native** | Capacitor + webhook on web | `health_service.dart`, `native_health_sync.dart`, `apple_health_panel.dart` | **Partial** | iOS entitlements + Worker `/api/health/native-sync`. Panel not integrated in Tools |
-| **OAuth wearables** | `/tools` + `/oauth/*/callback` + cron/edge | Static cards + `SyncStatusBar` pull if tokens exist | **Stub** | No Flutter OAuth connect |
-| **Push / med reminders** | SW alarms, web push, `med-dose-action` | Notifications section placeholder | **Missing** | No `flutter_local_notifications`, FCM/APNs, or `native_push_tokens` client |
-| **Reports** `/reports/*` | Full labs/reports UX | — | **Missing** | 7 web routes |
-| **Seizures / timeline / hydration** | Logging surfaces | — | **Missing** | |
-| **Apple Health XML import** | `/apple-health-import` | — | **Missing** | |
-| **DNA** `/my-health-dna` | Pro upload | — | **Missing** | |
-| **Community / friends / conditions** | Social + condition pages | — | **Missing** | |
-| **Admin** `/admin/*` | 13 admin routes | — | **Missing** | Likely out of mobile cutover scope |
+| Build | Processing | Internal | External | Uploaded |
+|-------|------------|----------|----------|----------|
+| **1.0 (16)** | **VALID** | IN_BETA_TESTING | READY_FOR_BETA_SUBMISSION | 2026-07-05 ~09:34 PT |
+| 1.0 (15) | VALID | IN_BETA_TESTING | READY_FOR_BETA_SUBMISSION | 2026-07-05 |
+| 1.0 (14) | VALID | IN_BETA_TESTING | READY_FOR_BETA_SUBMISSION | 2026-07-05 |
+
+Verify: `bun run ios:check-asc-builds`, `bun run ios:check-tf-feedback`.
 
 ---
 
-## Full route-by-route matrix (all `_app` routes)
+## Recommended implementation slices (ordered)
 
-| Web route | Flutter route | Status |
-|-----------|---------------|--------|
-| `/welcome` | `/welcome` | Partial |
-| `/today` | `/today` | Partial |
-| `/today/risk` | `/today/risk` | Partial |
-| `/vitals` | `/vitals` | Partial |
-| `/biometrics` | — (vitals overlap) | Missing |
-| `/biometrics/$metric` | `/vitals/metric/:metricKey` | Partial |
-| `/my-health` | — | Missing |
-| `/my-health-dna` | — | Missing |
-| `/apple-health-import` | — | Missing |
-| `/journal` | `/journal` | Partial |
-| `/journal/new` | `/journal/new` | Partial |
-| `/seizures/new` | `/seizures/new` | Partial |
-| `/timeline` | — | Missing |
-| `/hydration` | `/hydration` | Partial |
-| `/insights` | — | Missing |
-| `/meds` | `/meds` | Partial |
-| `/meds/$medId` | — | Missing |
-| `/meds/history` | — | Missing |
-| `/reports` + 6 children | `/settings/reports` stub only | Missing |
-| `/chat` | `/chat` | Stub |
-| `/chat-care` | `/chat-care` | Stub |
-| `/care` | — | Missing |
-| `/care/inbox` | — | Missing |
-| `/care/$ownerId` | `/care/:ownerId` | Partial |
-| `/care/$ownerId/reports/$reportId` | — | Missing |
-| `/settings` | `/settings` | Partial |
-| `/settings/sharing` | `/settings/sharing` | Stub |
-| `/settings/travel` | `/settings/travel` | Stub |
-| `/settings/privacy` | — | Missing |
-| `/settings/terms` | — | Missing |
-| `/settings/how-purple-thinks` | — | Missing |
-| `/account` | `/account` | Partial |
-| `/tools` | `/tools` | Partial |
-| `/condition/$slug` | — | Missing |
-| `/community-new` | — | Missing |
-| `/friends/$friendshipId` | — | Missing |
-| `/admin/*` (13 routes) | — | Missing |
-
-**Flutter-only:** `/sign-in` (web uses marketing auth routes outside `_app`).
-
-**Counts:** Parity 0 · Partial 12 · Stub 5 · Missing 38+ (admin/community block)
+1. **P0-2** — Add `/my-health` route + retarget bottom nav "My Body"; wire vitals/biometrics reads.
+2. **P0-3** — Register Oura native redirect; surface inline Tools error (`oura-native-redirect-console`).
+3. **P0-4** — Today date strip + signals grid + score strip (design checklist §1).
+4. **P0-6** — Meds toolbar, 24h timeline, FAB + form sheet.
+5. **P0-7** — Chat Worker streaming client.
+6. **P0-8** — `/care/inbox` + `care.accept` deep link.
+7. **P0-9** — Reports child routes from hub.
+8. **P0-1** — Pull Luciq crashes after TF16 tester session; file fixes.
 
 ---
 
-## Stage 5 blockers (ordered)
-
-### P0 — Cutover gates (Phase 4–5)
-
-1. **Wearable OAuth** — Oura/Whoop connect is noop in `tools_screen.dart`; no `/oauth/*/callback` handling in Flutter.
-2. **Native health UX** — `AppleHealthPanel` built but not mounted; Tools shows static "Not connected".
-3. **Push + local med reminders** — No notification stack in `pubspec.yaml`; Tools notifications row is placeholder.
-4. **Chat** — `/chat` and `/chat-care` are empty-state stubs; no Worker `/api/chat` streaming.
-5. **Caregiver flows** — Sharing stub; no `/care`, `/care/inbox`, invite accept, or care chat.
-6. **Meds depth** — No `/meds/$medId`, `/meds/history`, add med, or reminder scheduling.
-7. **Reports / labs** — Entire `/reports/*` tree missing.
-8. **Store ship path** — No Flutter `ExportOptions.plist`, `flutter build ipa` pipeline, or Play internal track doc completion (Capacitor ASC 1.0 (9) is separate track).
-
-### P1 — Phase 2–3 parity
-
-9. **Biometrics drilldown** — `/biometrics/$metric` charts and goals.
-10. **Journal multimodal** — Voice, photo, AI extraction pipeline.
-11. **Today sub-routes** — Risk, hydration, travel, recap cards.
-12. **Settings completeness** — Privacy, terms, how-purple-thinks, real contact form.
-13. **Account** — Password, 2FA, locale persistence, Stripe subscription, data export.
-14. **Welcome onboarding** — Conditions, wearables, notification prefs (web parity).
-
-### P2 — Scope decisions
-
-15. **Admin / community / DNA** — Explicit exclude-from-Flutter decision needed for Stage 5, or accept Missing.
-16. **Capacitor retirement** — Owner decision per Phase 5; dual-ship until parity proven on device.
-17. **Flutter web production** — Local preview only (`:8765`); no Worker static route or subdomain.
-
----
-
-## Phase roadmap alignment
-
-| Phase | Goal | Current state |
-|-------|------|---------------|
-| **0** Foundation | Scaffold, tokens, CI | Done |
-| **1** Auth + shell | Route map, nav, offline banner | **Done** (per runbook) |
-| **2** Core health home | Today, vitals, my-health deep parity | **In progress** — Partial Today/Vitals; my-health Missing |
-| **3** Journal + meds + settings | Feature parity, local dose reminders | **Early** — Partial journal/meds; settings stubs; no reminders |
-| **4** Native integrations | HealthKit, wearables OAuth, offline queue, push | **Early** — Health code exists unwired; OAuth/push Missing |
-| **5** Store parity + cutover | TestFlight/Play beta, Capacitor decision | **Not started** |
-
----
-
-## Verification commands (Stage 0)
+## Verification commands
 
 ```bash
-# Web route count
-find src/routes/_app -name '*.tsx' | wc -l
-
-# Flutter routes
-grep -E "static const|path: AppRoutes" flutter/lib/shell/routes.dart flutter/lib/shell/router.dart
-
-# Phase 1 gates
+bun run ios:check-tf-feedback
+bun run ios:check-asc-builds
+find src/routes/_app -name '*.tsx' ! -name '_app.tsx' | wc -l   # expect 55
 cd flutter && flutter analyze lib/ && flutter test
-
-# Native health code present but unwired
-rg "AppleHealthPanel" flutter/lib
-rg "onPressed: \(\) \{\}" flutter/lib/features/tools/tools_screen.dart
+./scripts/flutter-web-serve.sh --rebuild   # :8765 browser parity
 ```
 
----
-
-## Recommended next slices
-
-1. Wire `AppleHealthPanel` into `ToolsScreen` device cards (iOS/Android only).
-2. Port `/settings/sharing` + `/care` index from web `settings.sharing.tsx` / `care.index.tsx`.
-3. Add `/meds/$medId` and `/meds/history` routes.
-4. Implement Oura/Whoop OAuth via `url_launcher` + deep link callbacks.
-5. Add `flutter_local_notifications` for dose reminders (Phase 3).
-6. Port `/chat` streaming client against Worker `/api/chat`.
+Cross-reference: `docs/FLUTTER-DESIGN-PARITY-CHECKLIST.md`, `docs/OPEN-ISSUES.md`, `docs/LOVABLE-FLUTTER-SYNC.md`.
 
 ---
 
-*Stage 0 read-only audit. See `docs/FLUTTER-STAGE1-SIGNOFF.md` for automated Stage 1 gates and `docs/features/PHASE5_CUTOVER_ORCHESTRATOR.md` for staged cutover plan.*
+*Audit-only refresh 2026-07-05. No screen implementation in this pass.*

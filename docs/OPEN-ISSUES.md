@@ -12,6 +12,19 @@ Format:
 
 ## Flutter / TestFlight
 
+- [ ] **tf-synced-data-visibility** — Tester ASC feedback (2026-07-05): "how do i see all my
+  synched data?" Flutter has no `/my-health` route, bottom nav maps Vitals not My Body, biometrics
+  hub missing. Track in `docs/FLUTTER-CUTOVER-GAP-MATRIX.md` P0-2. _Raised 2026-07-05 cutover audit._
+
+- [ ] **tf-oauth-not-working** — Tester ASC feedback (2026-07-05): "why is this not workibg"
+  (Tools). Likely Oura native redirect + connect UX; ties to `oura-native-redirect-console`.
+  _Raised 2026-07-05 cutover audit._
+
+- [x] ~~**tf16-asc-processing**~~ — RESOLVED 2026-07-05: ASC builds API shows **1.0 (16)** VALID,
+  IN_BETA_TESTING. Bundle: Luciq, settings scroll, `home_city`, sync fixes. Re-run
+  `bun run ios:check-asc-builds` before future uploads only.
+  _Raised 2026-07-05 by TF upload agent._
+
 - [x] ~~**tf-settings-design**~~ — RESOLVED 2026-07-05: Flutter `/settings` renders full scroll
   parity with web (Preferences, AI provider, What I track, Health history, Data, Help, About,
   Admin inline sections with wired Supabase fields). Verified on `:8765` accessibility tree +
@@ -43,9 +56,9 @@ Format:
   (in addition to prod web callback). Inline Tools error should show hint. _Raised 2026-07-05
   by OAuth fleet._
 
-- [ ] **tf15-device-verify** — Apple Health Connect + Sync and Settings scroll sections
-  need confirmation on physical iPhone with **TestFlight 1.0 (15)** (agent cannot run
-  HealthKit in CI). _Raised 2026-07-05 by morning status._
+- [ ] **tf16-device-verify** — Apple Health Connect, settings scroll, sync bar labels, and
+  Account `home_city` need confirmation on physical iPhone with **TestFlight 1.0 (16)** (ASC VALID
+  2026-07-05). Agent cannot run HealthKit in CI. Supersedes tf15-device-verify. _Raised 2026-07-05._
 
 - [x] ~~**apple-health-bool-gate**~~ — RESOLVED 2026-07-05: iOS Keychain connect flag
   after `requestAuthorization` (TF14/15). Was blocking connect on TF13.
