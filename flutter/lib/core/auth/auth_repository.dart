@@ -79,9 +79,13 @@ class AuthRepository {
     );
   }
 
+  /// Ends the Supabase session and clears secure-storage backup.
+  ///
+  /// UI should call [signOutSessionProvider] instead so offline cache and
+  /// Riverpod data providers are cleared for the active user first.
   Future<void> signOut() async {
     await _client.auth.signOut();
-    await _secureStorage.delete(key: _secureSessionKey);
+    await _clearPersistedSession();
   }
 
   Future<String?> accessToken() async {
@@ -96,8 +100,10 @@ class AuthRepository {
   }
 
   Future<void> _persistSession(Session? session) async {
+    // Web already persists Supabase sessions in browser storage.
+    if (kIsWeb) return;
     if (session == null) {
-      await _secureStorage.delete(key: _secureSessionKey);
+      await _clearPersistedSession();
       return;
     }
     try {
@@ -111,13 +117,22 @@ class AuthRepository {
   }
 
   Future<void> _restoreSecureSession() async {
+    if (kIsWeb) return;
     try {
       final raw = await _secureStorage.read(key: _secureSessionKey);
       if (raw == null || raw.isEmpty) return;
       await _client.auth.recoverSession(raw);
     } catch (e, st) {
       debugPrint('[AuthRepository] secure session restore failed: $e\n$st');
+      await _clearPersistedSession();
+    }
+  }
+
+  Future<void> _clearPersistedSession() async {
+    try {
       await _secureStorage.delete(key: _secureSessionKey);
+    } catch (e, st) {
+      debugPrint('[AuthRepository] secure session clear failed: $e\n$st');
     }
   }
 }

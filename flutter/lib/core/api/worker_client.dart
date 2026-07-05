@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../auth/auth_repository.dart';
@@ -21,16 +22,24 @@ class WorkerClient {
 
   Uri _uri(String path) => Uri.parse('${_config.workerApiBaseUrl}$path');
 
-  Future<Map<String, String>> _authHeaders() async {
+  Future<Map<String, String>> _authHeaders({
+    String accept = 'application/json',
+    bool includeJsonContentType = true,
+  }) async {
     final token = await _auth.accessToken();
     if (token == null || token.isEmpty) {
       throw StateError('Worker API requires authenticated session');
     }
-    return {
+    final headers = <String, String>{
       'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      'Accept': accept,
     };
+    // On web, avoid adding extra non-simple headers beyond Authorization.
+    // This keeps cross-origin preflight requirements minimal for /api calls.
+    if (includeJsonContentType && !kIsWeb) {
+      headers['Content-Type'] = 'application/json';
+    }
+    return headers;
   }
 
   /// POST /api/health/native-sync (HealthKit / Health Connect batch ingest).
@@ -38,6 +47,15 @@ class WorkerClient {
     required String source,
     required List<Map<String, dynamic>> samples,
   }) async {
+    if (kIsWeb) {
+      return {
+        'ok': true,
+        'skipped': true,
+        'reason': 'native_health_sync_not_supported_on_web',
+        'sample_count': samples.length,
+      };
+    }
+
     final headers = await _authHeaders();
     final body = jsonEncode({
       'source': source,
@@ -57,18 +75,52 @@ class WorkerClient {
   Future<http.StreamedResponse> postChatStream({
     required List<Map<String, dynamic>> messages,
   }) async {
-    final token = await _auth.accessToken();
-    if (token == null || token.isEmpty) {
-      throw StateError('Chat API requires authenticated session');
-    }
-
+    final headers = await _authHeaders(
+      accept: 'text/event-stream',
+      includeJsonContentType: true,
+    );
     final request = http.Request('POST', _uri('/chat'))
-      ..headers['Authorization'] = 'Bearer $token'
-      ..headers['Content-Type'] = 'application/json'
-      ..headers['Accept'] = 'text/event-stream'
+      ..headers.addAll(headers)
       ..body = jsonEncode({'messages': messages});
 
     return _http.send(request);
+  }
+
+  /// POST /api/health/whoop-sync (incremental Whoop pull, mirrors web server fn).
+  Future<Map<String, dynamic>> postWhoopIncrementalSync() async {
+    final headers = await _authHeaders(includeJsonContentType: !kIsWeb);
+    final response = await _http.post(
+      _uri('/health/whoop-sync'),
+      headers: headers,
+    );
+    return _decodeResponse(response);
+  }
+
+  /// GET /api/health/whoop-config (OAuth client id for Whoop connect).
+  Future<Map<String, dynamic>> getWhoopConfig() async {
+    final headers = await _authHeaders(includeJsonContentType: false);
+    final response = await _http.get(
+      _uri('/health/whoop-config'),
+      headers: headers,
+    );
+    return _decodeResponse(response);
+  }
+
+  /// POST /api/health/whoop-exchange (OAuth code exchange + backfill).
+  Future<Map<String, dynamic>> postWhoopExchange({
+    required String code,
+    required String redirectUri,
+  }) async {
+    final headers = await _authHeaders(includeJsonContentType: !kIsWeb);
+    final response = await _http.post(
+      _uri('/health/whoop-exchange'),
+      headers: headers,
+      body: jsonEncode({
+        'code': code,
+        'redirect_uri': redirectUri,
+      }),
+    );
+    return _decodeResponse(response);
   }
 
   /// POST /api/chat (non-streaming helper for simple clients).

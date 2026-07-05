@@ -35,16 +35,13 @@ final connectivityServiceProvider = Provider<ConnectivityService>((ref) {
   final config = ref.watch(appConfigProvider);
   final service = ConnectivityService(config: config);
   ref.onDispose(service.dispose);
-  unawaited(service.start());
+  unawaited(service.start().catchError((Object _, StackTrace __) {}));
   return service;
 });
 
 final workerClientProvider = Provider<WorkerClient>((ref) {
   final config = ref.watch(appConfigProvider);
-  final auth = ref.watch(authRepositoryProvider).valueOrNull;
-  if (auth == null) {
-    throw StateError('WorkerClient requires initialized AuthRepository');
-  }
+  final auth = ref.watch(authRepositoryProvider).requireValue;
   final client = WorkerClient(config: config, authRepository: auth);
   ref.onDispose(client.dispose);
   return client;
@@ -52,10 +49,7 @@ final workerClientProvider = Provider<WorkerClient>((ref) {
 
 final syncServiceProvider = Provider<SyncService>((ref) {
   final db = ref.watch(appDatabaseProvider);
-  final auth = ref.watch(authRepositoryProvider).valueOrNull;
-  if (auth == null) {
-    throw StateError('SyncService requires initialized AuthRepository');
-  }
+  final auth = ref.watch(authRepositoryProvider).requireValue;
   final connectivity = ref.watch(connectivityServiceProvider);
   final worker = ref.watch(workerClientProvider);
   final service = SyncService(
@@ -65,7 +59,7 @@ final syncServiceProvider = Provider<SyncService>((ref) {
     workerClient: worker,
     supabaseClient: ref.watch(supabaseClientProvider),
   );
-  unawaited(service.start());
+  unawaited(service.start().catchError((Object _, StackTrace __) {}));
   return service;
 });
 
@@ -84,24 +78,28 @@ final authSessionProvider = StreamProvider<Session?>((ref) async* {
 
 final cachedBiometricsProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  await ref.watch(authRepositoryProvider.future);
   final sync = ref.watch(syncServiceProvider);
   return sync.readCached(tableName: SyncTables.biometrics);
 });
 
 final cachedMedicationsProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  await ref.watch(authRepositoryProvider.future);
   final sync = ref.watch(syncServiceProvider);
   return sync.readCached(tableName: SyncTables.medications);
 });
 
 final cachedDosesProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  await ref.watch(authRepositoryProvider.future);
   final sync = ref.watch(syncServiceProvider);
   return sync.readCached(tableName: SyncTables.medicationDoses);
 });
 
 final cachedJournalProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  await ref.watch(authRepositoryProvider.future);
   final sync = ref.watch(syncServiceProvider);
   return sync.readCached(tableName: SyncTables.journalEntries);
 });

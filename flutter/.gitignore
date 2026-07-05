@@ -30,6 +30,8 @@ coverage/
 # Android
 **/android/.gradle/
 **/android/local.properties
+**/ios/Flutter/Developer.local.xcconfig
+**/ios/Flutter/LocalSigning.xcconfig
 **/android/captures/
 **/android/key.properties
 

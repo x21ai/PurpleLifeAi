@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:health/health.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Source slug written to `biometrics.source` for Apple HealthKit rows.
 const kAppleHealthSource = 'apple_health';
@@ -77,11 +78,13 @@ class HealthAuthStatus {
     required this.authorized,
     this.readAuthorized = const [],
     this.readDenied = const [],
+    this.reason,
   });
 
   final bool authorized;
   final List<String> readAuthorized;
   final List<String> readDenied;
+  final String? reason;
 }
 
 class HealthAvailability {
@@ -184,44 +187,71 @@ class HealthService {
     }
   }
 
-  Future<bool> _hasReadPermissions(Health health) async {
-    return await health.hasPermissions(
-          _authTypes,
-          permissions: [HealthDataAccess.READ],
-        ) ==
-        true;
+  /// HealthKit never confirms READ grants; treat null as undetermined on iOS.
+  Future<bool?> _readPermissionState(Health health) async {
+    return health.hasPermissions(
+      _authTypes,
+      permissions: List.filled(_authTypes.length, HealthDataAccess.READ),
+    );
+  }
+
+  /// Partial grants are OK (mirrors web `isCoreAuthorized`).
+  Future<bool> _isCoreAuthorized(Health health) async {
+    final state = await _readPermissionState(health);
+    if (state == true) return true;
+    if (Platform.isIOS) {
+      return await _readAuthFlag();
+    }
+    return false;
   }
 
   Future<HealthAuthStatus> authorizationStatus() async {
     if (!isNativeHealthPlatform) {
-      return const HealthAuthStatus(authorized: false);
+      return const HealthAuthStatus(authorized: false, reason: 'not_native');
     }
 
     final availability = await isAvailable();
     if (!availability.available) {
-      return const HealthAuthStatus(authorized: false);
-    }
-
-    final health = await _client();
-    final hasAll = await _hasReadPermissions(health);
-
-    if (hasAll) {
-      await _writeAuthFlag(true);
       return HealthAuthStatus(
-        authorized: true,
-        readAuthorized: _authTypes.map((t) => t.name).toList(),
+        authorized: false,
+        reason: availability.reason ?? 'unavailable',
       );
     }
 
-    if (Platform.isIOS) {
-      final localFlag = await _readAuthFlag();
-      if (localFlag) {
-        return const HealthAuthStatus(authorized: true);
-      }
-    }
+    try {
+      final health = await _client();
+      final permissionState = await _readPermissionState(health);
 
-    await _writeAuthFlag(false);
-    return const HealthAuthStatus(authorized: false);
+      if (permissionState == true) {
+        await _writeAuthFlag(true);
+        return HealthAuthStatus(
+          authorized: true,
+          readAuthorized: _authTypes.map((t) => t.name).toList(),
+        );
+      }
+
+      if (Platform.isIOS) {
+        final localFlag = await _readAuthFlag();
+        if (localFlag) {
+          return const HealthAuthStatus(authorized: true);
+        }
+      }
+
+      if (permissionState == false) {
+        await _writeAuthFlag(false);
+        return HealthAuthStatus(
+          authorized: false,
+          readDenied: _authTypes.map((t) => t.name).toList(),
+        );
+      }
+
+      return const HealthAuthStatus(authorized: false);
+    } catch (e) {
+      return HealthAuthStatus(
+        authorized: false,
+        reason: 'status_check_failed: $e',
+      );
+    }
   }
 
   Future<bool> requestPermissions() async {
@@ -230,15 +260,41 @@ class HealthService {
     final availability = await isAvailable();
     if (!availability.available) return false;
 
-    final health = await _client();
-    final granted = await health.requestAuthorization(
-      _authTypes,
-      permissions: [HealthDataAccess.READ],
-    );
+    try {
+      final health = await _client();
+      final granted = await health.requestAuthorization(
+        _authTypes,
+        permissions: List.filled(_authTypes.length, HealthDataAccess.READ),
+      );
 
-    final hasAccess = granted && await _hasReadPermissions(health);
-    if (hasAccess) await _writeAuthFlag(true);
-    return hasAccess;
+      if (!granted) {
+        await _writeAuthFlag(false);
+        return false;
+      }
+
+      // iOS: requestAuthorization success is the signal; hasPermissions often
+      // returns null for READ (HealthKit privacy). Match Capacitor/web flow.
+      if (Platform.isIOS) {
+        await _writeAuthFlag(true);
+        return true;
+      }
+
+      final hasAccess = await _isCoreAuthorized(health);
+      if (hasAccess) await _writeAuthFlag(true);
+      return hasAccess;
+    } catch (_) {
+      await _writeAuthFlag(false);
+      return false;
+    }
+  }
+
+  /// Opens iOS Settings (Health toggles live under the Purple app entry).
+  Future<bool> openHealthSettings() async {
+    if (!isNativeHealthPlatform) return false;
+    final uri = Platform.isIOS
+        ? Uri.parse('app-settings:')
+        : Uri.parse('package:org.purplelife.app');
+    return launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   Future<List<NativeHealthDay>> readMetrics({int daysBack = 90}) async {
@@ -247,125 +303,132 @@ class HealthService {
     final availability = await isAvailable();
     if (!availability.available) return [];
 
-    final health = await _client();
-    final end = DateTime.now();
-    final start = end.subtract(Duration(days: daysBack));
-    final byDay = <String, NativeHealthDay>{};
-    final hrBuckets = <String, _AvgBucket>{};
-    final hrvBuckets = <String, _AvgBucket>{};
+    final auth = await authorizationStatus();
+    if (!auth.authorized) return [];
 
-    final stepPoints = await health.getHealthDataFromTypes(
-      types: [HealthDataType.STEPS],
-      startTime: start,
-      endTime: end,
-    );
-    for (final point in stepPoints) {
-      final date = _dayKey(point.dateFrom);
-      if (date == null) continue;
-      final value = point.value;
-      if (value is! NumericHealthValue) continue;
-      final stepsValue = value.numericValue.round();
-      if (stepsValue <= 0) continue;
-      final row = _ensureDay(byDay, date);
-      byDay[date] = row.merge(steps: (row.steps ?? 0) + stepsValue);
-    }
+    try {
+      final health = await _client();
+      final end = DateTime.now();
+      final start = end.subtract(Duration(days: daysBack));
+      final byDay = <String, NativeHealthDay>{};
+      final hrBuckets = <String, _AvgBucket>{};
+      final hrvBuckets = <String, _AvgBucket>{};
 
-    if (Platform.isIOS) {
-      final restingPoints = await health.getHealthDataFromTypes(
-        types: [HealthDataType.RESTING_HEART_RATE],
+      final stepPoints = await health.getHealthDataFromTypes(
+        types: [HealthDataType.STEPS],
         startTime: start,
         endTime: end,
       );
-      for (final point in restingPoints) {
+      for (final point in stepPoints) {
         final date = _dayKey(point.dateFrom);
         if (date == null) continue;
         final value = point.value;
         if (value is! NumericHealthValue) continue;
-        final bpm = value.numericValue.round();
-        if (bpm <= 0) continue;
-        byDay[date] = _ensureDay(byDay, date).merge(restingHrBpm: bpm);
+        final stepsValue = value.numericValue.round();
+        if (stepsValue <= 0) continue;
+        final row = _ensureDay(byDay, date);
+        byDay[date] = row.merge(steps: (row.steps ?? 0) + stepsValue);
       }
-    }
 
-    final heartPoints = await health.getHealthDataFromTypes(
-      types: [HealthDataType.HEART_RATE],
-      startTime: start,
-      endTime: end,
-    );
-    for (final point in heartPoints) {
-      final date = _dayKey(point.dateTo);
-      if (date == null) continue;
-      final value = point.value;
-      if (value is! NumericHealthValue) continue;
-      final bpm = value.numericValue.toDouble();
-      if (bpm <= 0 || !bpm.isFinite) continue;
-      hrBuckets[date] = hrBuckets[date]?.add(bpm) ?? _AvgBucket(bpm, 1);
-    }
-
-    final hrvPoints = await health.getHealthDataFromTypes(
-      types: [HealthDataType.HEART_RATE_VARIABILITY_RMSSD],
-      startTime: start,
-      endTime: end,
-    );
-    for (final point in hrvPoints) {
-      final date = _dayKey(point.dateTo);
-      if (date == null) continue;
-      final value = point.value;
-      if (value is! NumericHealthValue) continue;
-      final ms = value.numericValue.toDouble();
-      if (ms <= 0 || !ms.isFinite) continue;
-      hrvBuckets[date] = hrvBuckets[date]?.add(ms) ?? _AvgBucket(ms, 1);
-    }
-
-    final sleepPoints = await health.getHealthDataFromTypes(
-      types: const [
-        HealthDataType.SLEEP_ASLEEP,
-        HealthDataType.SLEEP_REM,
-        HealthDataType.SLEEP_DEEP,
-      ],
-      startTime: start,
-      endTime: end,
-    );
-    for (final point in sleepPoints) {
-      final date = _dayKey(point.dateTo);
-      if (date == null) continue;
-      final value = point.value;
-      if (value is! NumericHealthValue) continue;
-      final minutes = value.numericValue.round();
-      if (minutes <= 0) continue;
-
-      final row = _ensureDay(byDay, date);
-      switch (point.type) {
-        case HealthDataType.SLEEP_REM:
-          byDay[date] =
-              row.merge(sleepRemMin: (row.sleepRemMin ?? 0) + minutes);
-        case HealthDataType.SLEEP_DEEP:
-          byDay[date] =
-              row.merge(sleepDeepMin: (row.sleepDeepMin ?? 0) + minutes);
-        case HealthDataType.SLEEP_ASLEEP:
-          byDay[date] =
-              row.merge(sleepTotalMin: (row.sleepTotalMin ?? 0) + minutes);
-        default:
-          break;
+      if (Platform.isIOS) {
+        final restingPoints = await health.getHealthDataFromTypes(
+          types: [HealthDataType.RESTING_HEART_RATE],
+          startTime: start,
+          endTime: end,
+        );
+        for (final point in restingPoints) {
+          final date = _dayKey(point.dateFrom);
+          if (date == null) continue;
+          final value = point.value;
+          if (value is! NumericHealthValue) continue;
+          final bpm = value.numericValue.round();
+          if (bpm <= 0) continue;
+          byDay[date] = _ensureDay(byDay, date).merge(restingHrBpm: bpm);
+        }
       }
-    }
 
-    for (final entry in hrBuckets.entries) {
-      if (entry.value.count == 0) continue;
-      final avg = (entry.value.sum / entry.value.count).round();
-      byDay[entry.key] = _ensureDay(byDay, entry.key).merge(hrBpm: avg);
-    }
+      final heartPoints = await health.getHealthDataFromTypes(
+        types: [HealthDataType.HEART_RATE],
+        startTime: start,
+        endTime: end,
+      );
+      for (final point in heartPoints) {
+        final date = _dayKey(point.dateTo);
+        if (date == null) continue;
+        final value = point.value;
+        if (value is! NumericHealthValue) continue;
+        final bpm = value.numericValue.toDouble();
+        if (bpm <= 0 || !bpm.isFinite) continue;
+        hrBuckets[date] = hrBuckets[date]?.add(bpm) ?? _AvgBucket(bpm, 1);
+      }
 
-    for (final entry in hrvBuckets.entries) {
-      if (entry.value.count == 0) continue;
-      final avg =
-          ((entry.value.sum / entry.value.count) * 10).roundToDouble() / 10;
-      byDay[entry.key] = _ensureDay(byDay, entry.key).merge(hrvRmssdMs: avg);
-    }
+      final hrvPoints = await health.getHealthDataFromTypes(
+        types: [HealthDataType.HEART_RATE_VARIABILITY_RMSSD],
+        startTime: start,
+        endTime: end,
+      );
+      for (final point in hrvPoints) {
+        final date = _dayKey(point.dateTo);
+        if (date == null) continue;
+        final value = point.value;
+        if (value is! NumericHealthValue) continue;
+        final ms = value.numericValue.toDouble();
+        if (ms <= 0 || !ms.isFinite) continue;
+        hrvBuckets[date] = hrvBuckets[date]?.add(ms) ?? _AvgBucket(ms, 1);
+      }
 
-    final rows = byDay.values.toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
-    return rows;
+      final sleepPoints = await health.getHealthDataFromTypes(
+        types: const [
+          HealthDataType.SLEEP_ASLEEP,
+          HealthDataType.SLEEP_REM,
+          HealthDataType.SLEEP_DEEP,
+        ],
+        startTime: start,
+        endTime: end,
+      );
+      for (final point in sleepPoints) {
+        final date = _dayKey(point.dateTo);
+        if (date == null) continue;
+        final value = point.value;
+        if (value is! NumericHealthValue) continue;
+        final minutes = value.numericValue.round();
+        if (minutes <= 0) continue;
+
+        final row = _ensureDay(byDay, date);
+        switch (point.type) {
+          case HealthDataType.SLEEP_REM:
+            byDay[date] =
+                row.merge(sleepRemMin: (row.sleepRemMin ?? 0) + minutes);
+          case HealthDataType.SLEEP_DEEP:
+            byDay[date] =
+                row.merge(sleepDeepMin: (row.sleepDeepMin ?? 0) + minutes);
+          case HealthDataType.SLEEP_ASLEEP:
+            byDay[date] =
+                row.merge(sleepTotalMin: (row.sleepTotalMin ?? 0) + minutes);
+          default:
+            break;
+        }
+      }
+
+      for (final entry in hrBuckets.entries) {
+        if (entry.value.count == 0) continue;
+        final avg = (entry.value.sum / entry.value.count).round();
+        byDay[entry.key] = _ensureDay(byDay, entry.key).merge(hrBpm: avg);
+      }
+
+      for (final entry in hrvBuckets.entries) {
+        if (entry.value.count == 0) continue;
+        final avg =
+            ((entry.value.sum / entry.value.count) * 10).roundToDouble() / 10;
+        byDay[entry.key] = _ensureDay(byDay, entry.key).merge(hrvRmssdMs: avg);
+      }
+
+      final rows = byDay.values.toList()
+        ..sort((a, b) => a.date.compareTo(b.date));
+      return rows;
+    } catch (_) {
+      return [];
+    }
   }
 
   NativeHealthDay _ensureDay(Map<String, NativeHealthDay> map, String date) {

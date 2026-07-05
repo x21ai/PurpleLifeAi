@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../../design/purple_type.dart';
 import 'glass_helpers.dart';
 
 /// Calm empty state card with glass styling. No fake health data.
@@ -65,7 +66,7 @@ class EmptyState extends StatelessWidget {
               Text(
                 title,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontFamily: 'Georgia',
+                      fontFamily: PurpleType.serif,
                       height: 1.05,
                       color: Colors.white.withValues(alpha: 0.95),
                     ),

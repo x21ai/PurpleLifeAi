@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../auth/auth_state.dart';
-import '../../core/providers/core_providers.dart';
+import '../../design/purple_type.dart';
+import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
+import 'settings_sections.dart';
 
-/// Settings hub with navigation rows for account, sharing, tools, and health links.
+/// Settings hub ported from web `src/routes/_app/settings.tsx`.
+///
+/// Section order and copy mirror the web page: hub cards, Your health,
+/// People, App, Add past history, Preferences, AI provider, What I track,
+/// Health history, Data, Help + About, the "moved" footnote, and Admin.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final auth = ref.watch(authProvider);
+    final flags = ref.watch(settingsProfileFlagsProvider).valueOrNull ??
+        const SettingsProfileFlags();
 
     return CanvasBackground(
       child: SingleChildScrollView(
@@ -30,16 +35,16 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Your\nspace',
+                'All in your\ncontrol.',
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      fontFamily: 'Georgia',
+                      fontFamily: PurpleType.serif,
                       height: 1.02,
                       color: Colors.white.withValues(alpha: 0.95),
                     ),
               ),
               const SizedBox(height: 12),
               Text(
-                'Account, preferences, and tools for your health journey.',
+                'Account, privacy, integrations, and how Purple talks to you.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.white.withValues(alpha: 0.65),
                       height: 1.5,
@@ -54,15 +59,24 @@ class SettingsScreen extends ConsumerWidget {
                   _SettingsRow(
                     icon: Icons.medication_outlined,
                     title: 'Medications',
-                    subtitle: 'Doses, reminders, and library',
+                    subtitle: 'Schedules, reminders, and adherence',
                     onTap: () => context.go('/meds'),
                   ),
                   _SettingsRow(
                     icon: Icons.description_outlined,
-                    title: 'Labs and reports',
-                    subtitle: 'Upload and review documents',
+                    title: 'Lab reports',
+                    subtitle:
+                        'Upload labs as PDF or photo. See trends. Educational only.',
                     onTap: () => context.go('/settings/reports'),
                   ),
+                  if (flags.showSeizure)
+                    _SettingsRow(
+                      icon: Icons.bolt_outlined,
+                      title: 'Past episodes',
+                      subtitle: 'Log seizures from any date or time',
+                      iconTone: _RowIconTone.destructive,
+                      onTap: () => context.go(AppRoutes.seizuresNew),
+                    ),
                 ],
               ),
               const SizedBox(height: 20),
@@ -71,8 +85,9 @@ class SettingsScreen extends ConsumerWidget {
                 children: [
                   _SettingsRow(
                     icon: Icons.favorite_outline,
-                    title: 'Sharing',
-                    subtitle: 'Caregivers and trusted contacts',
+                    title: 'Sharing & access',
+                    subtitle:
+                        'Invite caregivers, set what they see, approve edits',
                     onTap: () => context.go('/settings/sharing'),
                   ),
                 ],
@@ -83,68 +98,223 @@ class SettingsScreen extends ConsumerWidget {
                 children: [
                   _SettingsRow(
                     icon: Icons.flight_outlined,
-                    title: 'Travel',
-                    subtitle: 'Time zone and trip mode',
+                    title: 'Travel mode',
+                    subtitle: 'Plan trips, anchor doses to home time',
                     onTap: () => context.go('/settings/travel'),
                   ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _PastHistoryCard(showSeizure: flags.showSeizure),
+              const SizedBox(height: 20),
+              const PreferencesSection(),
+              const SizedBox(height: 20),
+              const AiProviderSection(),
+              const SizedBox(height: 20),
+              const WhatITrackSection(),
+              const SizedBox(height: 20),
+              const ConditionHistorySection(),
+              const SizedBox(height: 20),
+              const _GroupLabel(title: 'Data'),
+              const DataSection(),
+              const SizedBox(height: 20),
+              const _GroupLabel(title: 'Help'),
+              _SettingsSection(
+                children: [
                   _SettingsRow(
-                    icon: Icons.mail_outline,
-                    title: 'Contact',
-                    subtitle: 'Questions and feedback',
+                    icon: Icons.chat_bubble_outline,
+                    title: 'Contact the team',
+                    subtitle: 'Questions, feedback, anything',
                     onTap: () => context.go('/settings/contact'),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              GlassSurface(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.person_outline,
-                          size: 20,
-                          color: Colors.white.withValues(alpha: 0.65),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          'Signed in',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                        ),
-                      ],
+              const SizedBox(height: 12),
+              const AboutSection(),
+              const SizedBox(height: 32),
+              Text(
+                'Looking for connections, alarms, or your device? They moved '
+                'to Tools. Name, password, 2FA, region, language, and '
+                'appearance live in Account.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.45),
+                      height: 1.5,
                     ),
-                    if (auth.userId != null) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        auth.userId!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.45),
-                            ),
+              ),
+              if (flags.isAdmin) ...[
+                const SizedBox(height: 20),
+                const _GroupLabel(title: 'Admin'),
+                _SettingsSection(
+                  children: [
+                    _SettingsRow(
+                      icon: Icons.shield_outlined,
+                      title: 'Admin console',
+                      subtitle: 'Manage users, messages, and community',
+                      iconTone: _RowIconTone.primary,
+                      onTap: () => showWebOnlySheet(
+                        context,
+                        title: 'Admin console',
+                        message:
+                            'The admin console lives in the web app at '
+                            'purplelife.org/admin.',
                       ),
-                    ],
-                    const SizedBox(height: 16),
-                    OutlinedButton(
-                      onPressed: () async {
-                        final authRepo =
-                            await ref.read(authRepositoryProvider.future);
-                        await authRepo.signOut();
-                        if (context.mounted) context.go('/sign-in');
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white.withValues(alpha: 0.85),
-                        side: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: const Text('Sign out'),
                     ),
                   ],
                 ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Add past history" card ported from the web settings page.
+class _PastHistoryCard extends StatelessWidget {
+  const _PastHistoryCard({required this.showSeizure});
+
+  final bool showSeizure;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassSurface(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.history,
+                size: 18,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Add past history',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontFamily: PurpleType.serif,
+                      color: Colors.white.withValues(alpha: 0.95),
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Backfill old medications and past episodes so Purple can see '
+            'your full story. Each form lets you pick any date.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.55),
+                  height: 1.5,
+                ),
+          ),
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= 520;
+              final tiles = <Widget>[
+                _PastHistoryTile(
+                  icon: Icons.medication_outlined,
+                  iconColor: Theme.of(context).colorScheme.primary,
+                  title: 'Old medications',
+                  subtitle: 'Set start & end dates in the past',
+                  onTap: () => context.go('/meds'),
+                ),
+                if (showSeizure)
+                  _PastHistoryTile(
+                    icon: Icons.bolt_outlined,
+                    iconColor: Theme.of(context).colorScheme.error,
+                    title: 'Past episodes',
+                    subtitle: 'Log seizures from any date or time',
+                    onTap: () => context.go(AppRoutes.seizuresNew),
+                  ),
+              ];
+              if (wide && tiles.length > 1) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: tiles[0]),
+                    const SizedBox(width: 12),
+                    Expanded(child: tiles[1]),
+                  ],
+                );
+              }
+              return Column(
+                children: [
+                  for (var i = 0; i < tiles.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 10),
+                    tiles[i],
+                  ],
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PastHistoryTile extends StatelessWidget {
+  const _PastHistoryTile({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 44),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.1),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: iconColor),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontFamily: PurpleType.serif,
+                            color: Colors.white.withValues(alpha: 0.92),
+                          ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: Colors.white.withValues(alpha: 0.35),
               ),
             ],
           ),
@@ -161,56 +331,43 @@ class _HubCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 520;
-        final cards = [
-          _HubCard(
-            icon: Icons.account_circle_outlined,
-            title: 'Account',
-            subtitle: 'Profile and security',
-            active: current == 'account',
-            onTap: () => context.go('/account'),
-          ),
-          _HubCard(
-            icon: Icons.settings_outlined,
-            title: 'Settings',
-            subtitle: 'Preferences and data',
-            active: current == 'settings',
-            onTap: () => context.go('/settings'),
-          ),
-          _HubCard(
-            icon: Icons.build_outlined,
-            title: 'Tools',
-            subtitle: 'Integrations and devices',
-            active: current == 'tools',
-            onTap: () => context.go('/tools'),
-          ),
-        ];
+    final cards = [
+      _HubCard(
+        icon: Icons.account_circle_outlined,
+        title: 'Account',
+        subtitle: 'Profile, security, language, appearance',
+        active: current == 'account',
+        onTap: () => context.go('/account'),
+      ),
+      _HubCard(
+        icon: Icons.settings_outlined,
+        title: 'Settings',
+        subtitle: 'Preferences, sharing, data',
+        active: current == 'settings',
+        onTap: () => context.go('/settings'),
+      ),
+      _HubCard(
+        icon: Icons.build_outlined,
+        title: 'Tools',
+        subtitle: 'Devices, alarms, integrations',
+        active: current == 'tools',
+        onTap: () => context.go('/tools'),
+      ),
+    ];
 
-        if (wide) {
-          return Row(
-            children: [
-              for (var i = 0; i < cards.length; i++) ...[
-                if (i > 0) const SizedBox(width: 12),
-                Expanded(child: cards[i]),
-              ],
-            ],
-          );
-        }
-        return Column(
-          children: [
-            for (var i = 0; i < cards.length; i++) ...[
-              if (i > 0) const SizedBox(height: 12),
-              cards[i],
-            ],
-          ],
-        );
-      },
+    return Column(
+      children: [
+        for (var i = 0; i < cards.length; i++) ...[
+          if (i > 0) const SizedBox(height: 12),
+          cards[i],
+        ],
+      ],
     );
   }
 }
 
+/// Hub card matching web `HubCard`: icon above title above subtitle, active
+/// card carries a primary border and soft primary tint.
 class _HubCard extends StatelessWidget {
   const _HubCard({
     required this.icon,
@@ -228,39 +385,49 @@ class _HubCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Icon(
-            icon,
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
             color: active
-                ? Theme.of(context).colorScheme.primary
-                : Colors.white.withValues(alpha: 0.65),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.95),
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.55),
-                      ),
-                ),
-              ],
+                ? primary.withValues(alpha: 0.05)
+                : Colors.white.withValues(alpha: 0.03),
+            border: Border.all(
+              color: active
+                  ? primary.withValues(alpha: 0.6)
+                  : Colors.white.withValues(alpha: 0.1),
             ),
           ),
-        ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 20, color: primary),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontFamily: PurpleType.serif,
+                      color: Colors.white.withValues(alpha: 0.95),
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.55),
+                    ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -311,30 +478,58 @@ class _SettingsSection extends StatelessWidget {
   }
 }
 
+enum _RowIconTone { standard, primary, destructive }
+
 class _SettingsRow extends StatelessWidget {
   const _SettingsRow({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.iconTone = _RowIconTone.standard,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final _RowIconTone iconTone;
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final Color chipColor;
+    final Color iconColor;
+    switch (iconTone) {
+      case _RowIconTone.primary:
+        chipColor = scheme.primary.withValues(alpha: 0.12);
+        iconColor = scheme.primary;
+      case _RowIconTone.destructive:
+        chipColor = scheme.error.withValues(alpha: 0.12);
+        iconColor = scheme.error;
+      case _RowIconTone.standard:
+        chipColor = Colors.white.withValues(alpha: 0.08);
+        iconColor = Colors.white.withValues(alpha: 0.8);
+    }
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 64),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Row(
             children: [
-              Icon(icon, size: 22, color: Colors.white.withValues(alpha: 0.65)),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: chipColor,
+                ),
+                child: Icon(icon, size: 18, color: iconColor),
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -343,8 +538,8 @@ class _SettingsRow extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontFamily: PurpleType.serif,
                             color: Colors.white.withValues(alpha: 0.92),
-                            fontWeight: FontWeight.w500,
                           ),
                     ),
                     Text(
@@ -358,6 +553,7 @@ class _SettingsRow extends StatelessWidget {
               ),
               Icon(
                 Icons.chevron_right,
+                size: 18,
                 color: Colors.white.withValues(alpha: 0.35),
               ),
             ],
@@ -405,7 +601,7 @@ class SettingsHubLayout extends StatelessWidget {
               Text(
                 title,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontFamily: 'Georgia',
+                      fontFamily: PurpleType.serif,
                       color: Colors.white.withValues(alpha: 0.95),
                     ),
               ),

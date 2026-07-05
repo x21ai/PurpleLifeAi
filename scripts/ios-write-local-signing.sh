@@ -2,6 +2,7 @@
 set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="${REPO_ROOT}/ios/LocalSigning.xcconfig"
+FLUTTER_OUT="${REPO_ROOT}/flutter/ios/Flutter/LocalSigning.xcconfig"
 DOPPLER_PROJECT="${DOPPLER_PROJECT:-purple-life}"
 DOPPLER_CONFIG="${DOPPLER_CONFIG:-prd}"
 resolve_secret() {
@@ -43,3 +44,6 @@ fi
   fi
 } > "${OUT}"
 echo "Wrote ${OUT}"
+mkdir -p "$(dirname "${FLUTTER_OUT}")"
+cp "${OUT}" "${FLUTTER_OUT}"
+echo "Wrote ${FLUTTER_OUT}"

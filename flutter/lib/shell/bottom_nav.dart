@@ -26,7 +26,11 @@ class BottomNav extends StatelessWidget {
 
   static const _tabs = [
     _NavTab(path: AppRoutes.today, icon: Icons.wb_sunny_outlined, label: 'Today'),
-    _NavTab(path: AppRoutes.vitals, icon: Icons.favorite_outline, label: 'Vitals'),
+    _NavTab(
+      path: AppRoutes.vitals,
+      icon: Icons.monitor_heart_outlined,
+      label: 'Vitals',
+    ),
     _NavTab(path: AppRoutes.meds, icon: Icons.medication_outlined, label: 'Meds'),
     _NavTab(
       path: AppRoutes.settings,
@@ -109,19 +113,31 @@ class _TabButton extends StatelessWidget {
           onTap: () => context.go(tab.path),
           borderRadius: BorderRadius.circular(16),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 56),
+            constraints: const BoxConstraints(minHeight: 60),
             child: Padding(
-              padding: const EdgeInsets.only(top: 4, bottom: 2),
+              padding: const EdgeInsets.only(top: 2, bottom: 0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: Icon(tab.icon, size: 24, color: color),
+                  // Web `nav-glass-tab-active`: active icon sits in a soft
+                  // purple pill and reads heavier than inactive tabs.
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 140),
+                    curve: Curves.easeOutCubic,
+                    width: 44,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15),
+                      color: active
+                          ? PurpleColors.purplePrimary.withValues(alpha: 0.14)
+                          : Colors.transparent,
+                    ),
+                    child: Center(
+                      child: Icon(tab.icon, size: 24, color: color),
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     tab.label,
                     maxLines: 1,
@@ -130,7 +146,7 @@ class _TabButton extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11,
                       height: 1.2,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: active ? FontWeight.w600 : FontWeight.w500,
                       color: color,
                     ),
                   ),

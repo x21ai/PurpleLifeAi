@@ -1,0 +1,29 @@
+#!/bin/sh
+# hooks_runner only forwards allowlisted env vars (PATH, HOME, ...), not DEVELOPER_DIR.
+# Prepend ios/scripts to PATH in xcode_backend_build.sh so native-asset hooks invoke this
+# shim and xcrun resolves iphoneos when xcode-select points at CommandLineTools.
+set -eu
+
+if [ -z "${DEVELOPER_DIR:-}" ]; then
+  for candidate in \
+    /Applications/Xcode-beta.app/Contents/Developer \
+    /Applications/Xcode.app/Contents/Developer \
+    "$HOME/Downloads/Xcode-beta.app/Contents/Developer"
+  do
+    if [ -x "${candidate}/usr/bin/xcodebuild" ]; then
+      DEVELOPER_DIR="${candidate}"
+      break
+    fi
+  done
+fi
+
+if [ -n "${DEVELOPER_DIR:-}" ]; then
+  export DEVELOPER_DIR
+fi
+
+REAL_XCRUN=/usr/bin/xcrun
+if [ ! -x "${REAL_XCRUN}" ]; then
+  REAL_XCRUN="$(command -v xcrun)"
+fi
+
+exec "${REAL_XCRUN}" "$@"

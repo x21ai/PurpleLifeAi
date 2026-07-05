@@ -1,7 +1,12 @@
 # TestFlight setup (Purple iOS)
 
-Ship the Capacitor iOS shell (`org.purplelife.app`) to **TestFlight** so beta
-users can install Purple without USB/Xcode.
+Ship the **Flutter** native app (`flutter/`, bundle `org.purplelife.app`) to
+**TestFlight** so beta users can install Purple without USB/Xcode.
+
+**Primary path:** `bun run ios:testflight` → `scripts/flutter-ios-testflight.sh`
+
+**Deprecated (Capacitor WebView rollback only):** `bun run ios:testflight:capacitor`
+→ `scripts/native-ios-testflight.sh`
 
 ## What is automated
 
@@ -11,17 +16,30 @@ From a Mac with full Xcode:
 bun run ios:testflight
 ```
 
-This runs `scripts/native-ios-testflight.sh`, which:
+This runs `scripts/flutter-ios-testflight.sh`, which:
 
-1. `bun run native:sync`
-2. `bun run check:native-shell` (fails if `capacitor-shell/index.html` or `ios/App/App/public/index.html` is missing)
-3. Resolves `DEVELOPMENT_TEAM` from Doppler `purple-life` / `prd`
-4. Ensures an App Store Connect app record exists (`scripts/asc-ensure-app.mjs`)
-5. Archives a **Release** build (`xcodebuild archive`)
-6. Exports and uploads to App Store Connect (`ios/ExportOptions.plist`, method `app-store-connect`)
+1. `flutter analyze lib/` and `flutter test`
+2. `bun run ios:check-asc` (Doppler `purple-life` / `prd` ASC API key + team)
+3. `bun run ios:local-signing` (writes `LocalSigning.xcconfig` for Flutter + Capacitor)
+4. Reads build number from `flutter/pubspec.yaml` (`version: x.y.z+N`)
+5. Ensures an App Store Connect app record exists (`scripts/asc-ensure-app.mjs`)
+6. `flutter build ipa --release` (signed archive under `flutter/build/ios/archive/`)
+7. Exports and uploads to App Store Connect (`flutter/ios/ExportOptions.plist`, method `app-store-connect`)
 
 After upload, processing takes about **5–15 minutes**. Then add testers in
 [App Store Connect](https://appstoreconnect.apple.com) → **TestFlight**.
+
+### Capacitor rollback (deprecated)
+
+Do **not** use unless you must ship the old WebView shell (`ios/App/` loads
+`https://www.purplelife.org`):
+
+```bash
+bun run ios:testflight:capacitor
+```
+
+Runs `scripts/native-ios-testflight.sh` (`native:sync`, `check:native-shell`,
+Capacitor `xcodebuild archive`). Script prints a deprecation warning on start.
 
 ## App Store Connect record (2026-07-03)
 
@@ -41,6 +59,23 @@ doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c \
 ```
 
 Output: `test-results/asc-screenshots/` (sign-in, today, settings, vitals).
+
+## Latest validated upload (2026-07-04)
+
+| Item | Status |
+|------|--------|
+| Command | `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer bun run ios:check-asc && bun run ios:testflight` |
+| Uploaded build | **1.0 (7)** (`org.purplelife.app`, Apple ID `6787298041`) |
+| ASC build ID | `3eff060e-3092-4816-b10e-955c63205598` |
+| ASC processing state | `VALID` |
+| ASC internal state | `IN_BETA_TESTING` |
+| ASC external state | `READY_FOR_BETA_SUBMISSION` |
+
+Crash/upload hardening confirmed on this line:
+
+- `capacitor-shell/index.html` remains committed and guarded by `check:native-shell` to prevent the prior launch crash from missing shell assets.
+- Luciq launch-crash reporting integration remains enabled in the iOS project.
+- `scripts/native-ios-testflight.sh` continues to use App Store Connect API key auth (`-authenticationKeyPath`, `-authenticationKeyID`, `-authenticationKeyIssuerID`) so no manual Xcode Apple ID login is required.
 
 ## One-time: App Store Connect API key (Doppler)
 
@@ -121,10 +156,15 @@ The agent cannot add testers in App Store Connect UI; that step stays with the a
 
 ## Version and build numbers
 
+**Flutter (primary):**
+
+- Marketing version + build: `version:` in `flutter/pubspec.yaml` (e.g. `1.0.0+10`)
+- Build number (`+N`) must exceed the latest ASC upload; increment before each TestFlight upload
+
+**Capacitor (deprecated rollback):**
+
 - Marketing version: `MARKETING_VERSION` in `ios/App/App.xcodeproj` (currently `1.0`)
 - Build number: `CURRENT_PROJECT_VERSION` (increment for each TestFlight upload)
-
-Bump `CURRENT_PROJECT_VERSION` before each upload when Apple rejects duplicate builds.
 
 ## Verify locally before upload
 
@@ -150,7 +190,7 @@ and **push** (when APNs is wired). See `docs/native-app-setup.md`.
 | App record not found on App Store Connect | Run `asc-ensure-app.mjs` (needs API key), or create app manually in ASC with bundle ID `org.purplelife.app` |
 | ASC API 401 on `asc-ensure-app.mjs` | Use `dsaEncoding: ieee-p1363` in `scripts/lib/asc-jwt.mjs` (not `createSign` DER output) |
 | Missing API credentials | Add the three `APP_STORE_CONNECT_*` secrets to Doppler |
-| No signing certificate | Ensure Apple ID is on the developer team; archive uses automatic signing with `-allowProvisioningUpdates` |
+| No signing certificate | `scripts/native-ios-testflight.sh` passes App Store Connect API key to `xcodebuild` (`-authenticationKeyPath` etc.) so no Apple ID login in Xcode GUI is required when Doppler has the three `APP_STORE_CONNECT_*` secrets |
 | Duplicate build number | Increment `CURRENT_PROJECT_VERSION` in the Xcode project |
 | HealthKit entitlement | Confirm App ID has HealthKit in Developer portal |
 

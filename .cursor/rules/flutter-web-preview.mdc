@@ -1,0 +1,26 @@
+---
+description: Keep Flutter web preview at localhost:8765 running and open in Cursor browser during Flutter work.
+alwaysApply: true
+---
+
+# Flutter web preview (always on)
+
+**Single owner:** one persistent background shell runs `./scripts/flutter-web-serve.sh` (foreground python, PID file `.flutter-web-serve.pid`). Never dispatch multiple agents with authority over `:8765`; the serve script must NOT be daemonized with nohup (agent shells reap detached children, killing the listener seconds after start). Drift on web requires `sqlite3.wasm` + `drift_worker.js` in `flutter/web/` (copied to `build/web` by the script); without them every data screen errors before any Supabase call.
+
+When working on `lovable/redesign` or any branch with `flutter/`:
+
+1. **Keep the Flutter web server running** at http://localhost:8765:
+   ```bash
+   ./scripts/flutter-web-serve.sh
+   ```
+   If `build/web` is stale or auth fails, use `--rebuild` (Doppler `cursor-cloudflare` / `prd_cloudlfare`).
+
+2. **Open in Cursor browser** (side panel preferred) at the start of every session:
+   - URL: `http://localhost:8765` or `http://127.0.0.1:8765`
+   - Never use `file://` paths.
+
+3. **If port 8765 is not listening**, start the server in the background before other Flutter work.
+
+4. After code changes under `flutter/lib/`, rebuild with `./scripts/flutter-web-serve.sh --rebuild` and hard-refresh the browser tab.
+
+This is the signed-in Flutter app preview only (not the TanStack marketing site). Production web remains `bun run dev` on port 8080.

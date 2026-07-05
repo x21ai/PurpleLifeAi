@@ -91,7 +91,15 @@ class AppDatabase extends _$AppDatabase {
   int get schemaVersion => 1;
 
   static QueryExecutor _openConnection() {
-    return driftDatabase(name: 'purple_offline');
+    // On web this requires sqlite3.wasm + drift_worker.js served next to
+    // index.html (copied into build/web by scripts/flutter-web-serve.sh).
+    return driftDatabase(
+      name: 'purple_offline',
+      web: DriftWebOptions(
+        sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+        driftWorker: Uri.parse('drift_worker.js'),
+      ),
+    );
   }
 
   Future<DateTime?> lastSyncedAt(String tableName) async {

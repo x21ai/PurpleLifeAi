@@ -1,14 +1,27 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/auth_state.dart';
-import '../../core/providers/core_providers.dart';
-import '../../design/purple_theme.dart';
+import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
+import 'locale_data.dart';
+import 'profile_avatar.dart';
 
-/// Account settings sheet (mirrors web `account.tsx` sections).
+const _genderPresets = ['Female', 'Male', 'Non-binary', 'Prefer not to say'];
+const _genderSelfDescribe = '__self__';
+
+enum _SaveState { idle, saving, saved, error }
+
+/// Account sheet ported from web `src/routes/_app/account.tsx`.
+///
+/// Profile fields autosave to `profiles` like the web page. Password updates
+/// go through Supabase auth. Appearance and locale editing are display-level
+/// parity; the app ships dark-only for now.
 class AccountScreen extends ConsumerStatefulWidget {
   const AccountScreen({super.key});
 
@@ -17,168 +30,300 @@ class AccountScreen extends ConsumerStatefulWidget {
 }
 
 class _AccountScreenState extends ConsumerState<AccountScreen> {
-  bool _loadingProfile = true;
-  String? _firstName;
+  final _firstController = TextEditingController();
+  final _lastController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _genderCustomController = TextEditingController();
+
+  bool _loading = true;
+  bool _loadFailed = false;
   String? _email;
-  String _appearance = 'dark';
+  String _gender = '';
+  String? _country;
+  String? _timezone;
+  String? _locale;
+  bool _twoFactorEnabled = false;
+  bool _twoFactorKnown = false;
+
+  _SaveState _nameState = _SaveState.idle;
+  _SaveState _phoneState = _SaveState.idle;
+  _SaveState _genderState = _SaveState.idle;
+  _SaveState _localeState = _SaveState.idle;
+
+  Timer? _nameTimer;
+  Timer? _phoneTimer;
+  Timer? _genderTimer;
 
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    _load();
   }
 
-  Future<void> _loadProfile() async {
-    final userId = ref.read(authProvider).userId;
+  @override
+  void dispose() {
+    _nameTimer?.cancel();
+    _phoneTimer?.cancel();
+    _genderTimer?.cancel();
+    _firstController.dispose();
+    _lastController.dispose();
+    _phoneController.dispose();
+    _genderCustomController.dispose();
+    super.dispose();
+  }
+
+  String? get _userId => ref.read(authProvider).userId;
+
+  SupabaseClient get _client => Supabase.instance.client;
+
+  Future<void> _load() async {
+    final userId = _userId;
     if (userId == null) {
-      if (mounted) setState(() => _loadingProfile = false);
+      if (mounted) setState(() => _loading = false);
       return;
     }
 
     try {
-      final supabase = ref.read(supabaseClientProvider);
-      final row = await supabase
+      final row = await _client
           .from('profiles')
-          .select('first_name, locale, country, timezone')
+          .select(
+              'first_name, last_name, phone, gender, country, timezone, locale')
           .eq('id', userId)
           .maybeSingle();
-      final session = ref.read(authSessionProvider).valueOrNull;
-      if (mounted) {
-        setState(() {
-          _firstName = row?['first_name'] as String?;
-          _email = session?.user.email;
-          _loadingProfile = false;
-        });
-      }
+      final session = _client.auth.currentSession;
+      if (!mounted) return;
+      setState(() {
+        _firstController.text = (row?['first_name'] as String?) ?? '';
+        _lastController.text = (row?['last_name'] as String?) ?? '';
+        _phoneController.text = (row?['phone'] as String?) ??
+            session?.user.phone ??
+            '';
+        final gender = (row?['gender'] as String?) ?? '';
+        if (gender.isEmpty || _genderPresets.contains(gender)) {
+          _gender = gender;
+        } else {
+          _gender = _genderSelfDescribe;
+          _genderCustomController.text = gender;
+        }
+        _country = row?['country'] as String?;
+        _timezone = row?['timezone'] as String?;
+        _locale = row?['locale'] as String?;
+        _email = session?.user.email;
+        _loading = false;
+        _loadFailed = false;
+      });
     } catch (_) {
-      if (mounted) setState(() => _loadingProfile = false);
+      if (!mounted) return;
+      setState(() {
+        _email = _client.auth.currentSession?.user.email;
+        _loading = false;
+        _loadFailed = true;
+      });
+    }
+
+    await _loadTwoFactor();
+  }
+
+  Future<void> _loadTwoFactor() async {
+    try {
+      final factors = await _client.auth.mfa.listFactors();
+      final verified = factors.totp
+          .where((factor) => factor.status == FactorStatus.verified)
+          .toList();
+      if (!mounted) return;
+      setState(() {
+        _twoFactorEnabled = verified.isNotEmpty;
+        _twoFactorKnown = true;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _twoFactorKnown = false);
+    }
+  }
+
+  void _scheduleNameSave() {
+    _nameTimer?.cancel();
+    _nameTimer = Timer(const Duration(milliseconds: 600), _saveName);
+  }
+
+  void _schedulePhoneSave() {
+    _phoneTimer?.cancel();
+    _phoneTimer = Timer(const Duration(milliseconds: 600), _savePhone);
+  }
+
+  void _scheduleGenderSave() {
+    _genderTimer?.cancel();
+    _genderTimer = Timer(const Duration(milliseconds: 600), _saveGender);
+  }
+
+  Future<void> _saveName() async {
+    final userId = _userId;
+    if (userId == null) return;
+    setState(() => _nameState = _SaveState.saving);
+    try {
+      final first = _firstController.text.trim();
+      final last = _lastController.text.trim();
+      await _client.from('profiles').update({
+        'first_name': first.isEmpty ? null : first,
+        'last_name': last.isEmpty ? null : last,
+      }).eq('id', userId);
+      // Keep the top bar / drawer identity in sync with the new name.
+      ref.invalidate(avatarProfileProvider);
+      if (mounted) setState(() => _nameState = _SaveState.saved);
+    } catch (_) {
+      if (mounted) setState(() => _nameState = _SaveState.error);
+    }
+  }
+
+  Future<void> _savePhone() async {
+    final userId = _userId;
+    if (userId == null) return;
+    setState(() => _phoneState = _SaveState.saving);
+    try {
+      final phone = _phoneController.text.trim();
+      await _client
+          .from('profiles')
+          .update({'phone': phone.isEmpty ? null : phone}).eq('id', userId);
+      if (mounted) setState(() => _phoneState = _SaveState.saved);
+    } catch (_) {
+      if (mounted) setState(() => _phoneState = _SaveState.error);
+    }
+  }
+
+  Future<void> _saveGender() async {
+    final userId = _userId;
+    if (userId == null) return;
+    setState(() => _genderState = _SaveState.saving);
+    try {
+      final value = _gender == _genderSelfDescribe
+          ? _genderCustomController.text.trim()
+          : _gender;
+      await _client
+          .from('profiles')
+          .update({'gender': value.isEmpty ? null : value}).eq('id', userId);
+      if (mounted) setState(() => _genderState = _SaveState.saved);
+    } catch (_) {
+      if (mounted) setState(() => _genderState = _SaveState.error);
+    }
+  }
+
+  Future<void> _saveLocale({
+    String? country,
+    String? timezone,
+    String? locale,
+  }) async {
+    final userId = _userId;
+    if (userId == null) return;
+    setState(() {
+      if (country != null) _country = country.isEmpty ? null : country;
+      if (timezone != null) _timezone = timezone.isEmpty ? null : timezone;
+      if (locale != null) _locale = locale.isEmpty ? null : locale;
+      _localeState = _SaveState.saving;
+    });
+    try {
+      await _client.from('profiles').update({
+        'country': _country,
+        'timezone': _timezone,
+        'locale': _locale ?? 'en',
+      }).eq('id', userId);
+      if (mounted) setState(() => _localeState = _SaveState.saved);
+    } catch (_) {
+      if (mounted) setState(() => _localeState = _SaveState.error);
     }
   }
 
   Future<void> _signOut() async {
-    final auth = await ref.read(authRepositoryProvider.future);
-    await auth.signOut();
+    await ref.read(signOutSessionProvider)();
     if (mounted) context.go(AppRoutes.signIn);
+  }
+
+  void _showNotYetInApp(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return CanvasBackground(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.only(top: 24, bottom: 120),
-        child: ShellContentColumn(
+        padding: const EdgeInsets.only(top: 16, bottom: 120),
+        child: ContentColumn(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Account',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontFamily: 'Georgia',
-                      color: Colors.white.withValues(alpha: 0.95),
-                    ),
-              ),
-              const SizedBox(height: 24),
-              const _SectionLabel('Profile'),
-              _SheetCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // Sheet header: close X at the left edge, centered title
+              // (web `sheet-page.tsx` layout).
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Text(
-                      _loadingProfile
-                          ? 'Loading profile…'
-                          : (_firstName?.trim().isNotEmpty == true
-                              ? _firstName!.trim()
-                              : 'Your profile'),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        onPressed: () => context.go(AppRoutes.settings),
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                        color: Colors.white.withValues(alpha: 0.6),
+                        tooltip: 'Close',
+                        constraints:
+                            const BoxConstraints(minWidth: 44, minHeight: 44),
+                      ),
                     ),
-                    const SizedBox(height: 6),
                     Text(
-                      'Avatar and profile fields integration point',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.55),
+                      'Account',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.95),
                           ),
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              const _SectionLabel('Security'),
-              const _SheetCard(
-                child: _PlaceholderRow(
-                  title: 'Password',
-                  subtitle: 'Change your password',
                 ),
               ),
               const SizedBox(height: 12),
-              const _SheetCard(
-                child: _PlaceholderRow(
-                  title: 'Two-factor authentication',
-                  subtitle: 'Add an extra layer of security',
-                ),
-              ),
+              const _SectionLabel('Profile'),
+              _SheetCard(child: _avatarCard(context)),
+              const SizedBox(height: 12),
+              _SheetCard(child: _profileFields(context)),
               const SizedBox(height: 20),
-              const _SectionLabel('Language & region'),
-              const _SheetCard(
-                child: _PlaceholderRow(
-                  title: 'Region & language',
-                  subtitle: 'Country, timezone, and language preferences',
-                ),
-              ),
+              const _SectionLabel('Security'),
+              _SheetCard(child: _PasswordSection(client: _client)),
+              const SizedBox(height: 12),
+              _SheetCard(child: _twoFactorSection(context)),
+              const SizedBox(height: 20),
+              const _SectionLabel('Region & language'),
+              _SheetCard(child: _localeSection(context)),
               const SizedBox(height: 20),
               const _SectionLabel('Appearance'),
-              _SheetCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Appearance',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Choose how Purple looks across every page.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.55),
-                          ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        for (final opt in _appearanceOptions)
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: _AppearanceTile(
-                                label: opt.label,
-                                description: opt.description,
-                                selected: _appearance == opt.value,
-                                onTap: () => setState(() => _appearance = opt.value),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              _SheetCard(child: _appearanceSection(context)),
               const SizedBox(height: 20),
               const _SectionLabel('Subscription'),
               const _SheetCard(
-                child: _PlaceholderRow(
+                child: _InfoBlock(
                   title: 'Your plan',
-                  subtitle: 'Subscription management integration point',
+                  body:
+                      'Manage your subscription in the web app at purplelife.org.',
                 ),
               ),
               const SizedBox(height: 20),
               const _SectionLabel('Invite'),
-              const _SheetCard(
-                child: _PlaceholderRow(
-                  title: 'Get an invite code',
-                  subtitle: 'Share Purple with someone who could use a calmer health journal',
+              _SheetCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _InfoBlock(
+                      title: 'Get an invite code',
+                      body:
+                          'Share Purple with someone who could use a calmer way to track their health.',
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton(
+                      onPressed: () => _showNotYetInApp(
+                        'Invite codes are created in the web app for now.',
+                      ),
+                      child: const Text('Create my invite code'),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 20),
@@ -189,16 +334,12 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   children: [
                     Text(
                       'Signed in as',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
+                      style: _titleStyle(context),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
-                      _email ?? '–',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.55),
-                          ),
+                      _email ?? 'Unknown',
+                      style: _mutedStyle(context),
                     ),
                     const SizedBox(height: 16),
                     OutlinedButton(
@@ -214,25 +355,469 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       ),
     );
   }
+
+  Widget _avatarCard(BuildContext context) {
+    // Same source as the top bar: profiles.avatar_path resolved to a signed
+    // URL, with an initials fallback (web `AvatarCard`).
+    final profile = ref.watch(avatarProfileProvider).valueOrNull ??
+        AvatarProfile(
+          firstName: _firstController.text.trim(),
+          lastName: _lastController.text.trim(),
+          email: _email,
+        );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Profile picture', style: _titleStyle(context)),
+        const SizedBox(height: 4),
+        Text(
+          'Used in your menu and shared with caregivers.',
+          style: _mutedStyle(context),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            ProfileAvatarCircle(profile: profile, size: 64),
+            const SizedBox(width: 16),
+            OutlinedButton(
+              onPressed: () => _showNotYetInApp(
+                'Photo upload is available in the web app for now.',
+              ),
+              child: const Text('Upload photo'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _profileFields(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Full name', style: _titleStyle(context)),
+        const SizedBox(height: 4),
+        Text('How Purple addresses you.', style: _mutedStyle(context)),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _firstController,
+                enabled: !_loading,
+                decoration: _inputDecoration('First'),
+                style: _inputStyle(context),
+                onChanged: (_) => _scheduleNameSave(),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: _lastController,
+                enabled: !_loading,
+                decoration: _inputDecoration('Last'),
+                style: _inputStyle(context),
+                onChanged: (_) => _scheduleNameSave(),
+              ),
+            ),
+          ],
+        ),
+        _SavedIndicator(state: _nameState),
+        _divider(),
+        Text('Email', style: _titleStyle(context)),
+        const SizedBox(height: 4),
+        Text(_email ?? 'Unknown', style: _mutedStyle(context)),
+        _divider(),
+        Text('Phone number', style: _titleStyle(context)),
+        const SizedBox(height: 4),
+        Text(
+          'Visible to people you share your account with so they can reach '
+          'you. Include country code.',
+          style: _mutedStyle(context),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _phoneController,
+          enabled: !_loading,
+          keyboardType: TextInputType.phone,
+          decoration: _inputDecoration('+1 555 555 5555'),
+          style: _inputStyle(context),
+          onChanged: (_) => _schedulePhoneSave(),
+        ),
+        _SavedIndicator(state: _phoneState),
+        _divider(),
+        Text('Gender', style: _titleStyle(context)),
+        const SizedBox(height: 4),
+        Text(
+          'Optional. Shown to people you share with.',
+          style: _mutedStyle(context),
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          key: ValueKey('gender-$_gender'),
+          initialValue: _gender.isEmpty ? null : _gender,
+          decoration: _inputDecoration('Select'),
+          dropdownColor: const Color(0xFF1A1224),
+          style: _inputStyle(context),
+          items: [
+            for (final preset in _genderPresets)
+              DropdownMenuItem(value: preset, child: Text(preset)),
+            const DropdownMenuItem(
+              value: _genderSelfDescribe,
+              child: Text('Self-describe'),
+            ),
+          ],
+          onChanged: _loading
+              ? null
+              : (value) {
+                  setState(() => _gender = value ?? '');
+                  _scheduleGenderSave();
+                },
+        ),
+        if (_gender == _genderSelfDescribe) ...[
+          const SizedBox(height: 8),
+          TextField(
+            controller: _genderCustomController,
+            decoration: _inputDecoration('Describe in your own words'),
+            style: _inputStyle(context),
+            onChanged: (_) => _scheduleGenderSave(),
+          ),
+        ],
+        _SavedIndicator(state: _genderState),
+        if (_loadFailed) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Profile is unavailable right now.',
+                  style: _mutedStyle(context),
+                ),
+              ),
+              TextButton(onPressed: _load, child: const Text('Retry')),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _twoFactorSection(BuildContext context) {
+    final status = !_twoFactorKnown
+        ? 'Status unavailable in the app right now.'
+        : _twoFactorEnabled
+            ? 'On. Codes are required on every sign-in.'
+            : 'Not enabled.';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Two-factor authentication', style: _titleStyle(context)),
+        const SizedBox(height: 4),
+        Text(
+          'Adds a 6-digit code from your authenticator app on every sign-in.',
+          style: _mutedStyle(context),
+        ),
+        const SizedBox(height: 12),
+        Text(status, style: _mutedStyle(context)),
+        const SizedBox(height: 12),
+        OutlinedButton(
+          onPressed: () => _showNotYetInApp(
+            'Set up two-factor authentication in the web app for now.',
+          ),
+          child: Text(_twoFactorEnabled ? 'Manage 2FA' : 'Enable 2FA'),
+        ),
+      ],
+    );
+  }
+
+  Widget _localeSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Region & language', style: _titleStyle(context)),
+        const SizedBox(height: 4),
+        Text(
+          'How Purple shows times and which language it speaks.',
+          style: _mutedStyle(context),
+        ),
+        const SizedBox(height: 16),
+        Text('Country', style: _mutedStyle(context)),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          key: ValueKey('country-$_country'),
+          initialValue: _country,
+          isExpanded: true,
+          decoration: _inputDecoration('Select country'),
+          dropdownColor: const Color(0xFF1A1224),
+          style: _inputStyle(context),
+          items: [
+            for (final entry in localeCountries)
+              DropdownMenuItem(value: entry.key, child: Text(entry.value)),
+          ],
+          onChanged: _loading
+              ? null
+              : (value) => _saveLocale(country: value),
+        ),
+        const SizedBox(height: 12),
+        Text('Time zone', style: _mutedStyle(context)),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          key: ValueKey('timezone-$_timezone'),
+          initialValue: _timezone != null && commonTimezones.contains(_timezone)
+              ? _timezone
+              : null,
+          isExpanded: true,
+          decoration: _inputDecoration('Select time zone'),
+          dropdownColor: const Color(0xFF1A1224),
+          style: _inputStyle(context),
+          items: [
+            for (final tz in commonTimezones)
+              DropdownMenuItem(value: tz, child: Text(tz)),
+          ],
+          onChanged: _loading
+              ? null
+              : (value) {
+                  if (value != null) _saveLocale(timezone: value);
+                },
+        ),
+        if (_timezone != null && !commonTimezones.contains(_timezone)) ...[
+          const SizedBox(height: 6),
+          Text('Current: $_timezone', style: _mutedStyle(context)),
+        ],
+        const SizedBox(height: 12),
+        Text('Language', style: _mutedStyle(context)),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          key: ValueKey('locale-$_locale'),
+          initialValue: _locale ?? 'en',
+          decoration: _inputDecoration('Select language'),
+          dropdownColor: const Color(0xFF1A1224),
+          style: _inputStyle(context),
+          items: [
+            for (final entry in supportedLocales)
+              DropdownMenuItem(value: entry.key, child: Text(entry.value)),
+          ],
+          onChanged: _loading
+              ? null
+              : (value) {
+                  if (value != null) _saveLocale(locale: value);
+                },
+        ),
+        _SavedIndicator(state: _localeState),
+      ],
+    );
+  }
+
+  Widget _appearanceSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Appearance', style: _titleStyle(context)),
+        const SizedBox(height: 4),
+        Text(
+          'Choose how Purple looks across every page.',
+          style: _mutedStyle(context),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _AppearanceTile(
+                label: 'Dark',
+                description: 'Default',
+                selected: true,
+                onTap: () {},
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _AppearanceTile(
+                label: 'Light',
+                description: 'Always light',
+                selected: false,
+                onTap: () => _showNotYetInApp(
+                  'Light appearance ships in a later app update.',
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _AppearanceTile(
+                label: 'System',
+                description: 'Match device',
+                selected: false,
+                onTap: () => _showNotYetInApp(
+                  'System appearance ships in a later app update.',
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _divider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+    );
+  }
 }
 
-class _AppearanceOption {
-  const _AppearanceOption({
-    required this.value,
-    required this.label,
-    required this.description,
-  });
+/// Real password change through Supabase auth (mirrors web PasswordSection).
+class _PasswordSection extends StatefulWidget {
+  const _PasswordSection({required this.client});
 
-  final String value;
-  final String label;
-  final String description;
+  final SupabaseClient client;
+
+  @override
+  State<_PasswordSection> createState() => _PasswordSectionState();
 }
 
-const _appearanceOptions = [
-  _AppearanceOption(value: 'dark', label: 'Dark', description: 'Default'),
-  _AppearanceOption(value: 'light', label: 'Light', description: 'Always light'),
-  _AppearanceOption(value: 'system', label: 'System', description: 'Match device'),
-];
+class _PasswordSectionState extends State<_PasswordSection> {
+  final _passwordController = TextEditingController();
+  final _confirmController = TextEditingController();
+  bool _busy = false;
+  String? _message;
+  bool _messageIsError = false;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
+
+  bool get _canSave =>
+      !_busy &&
+      _passwordController.text.isNotEmpty &&
+      _confirmController.text.isNotEmpty;
+
+  Future<void> _save() async {
+    final password = _passwordController.text;
+    if (password.length < 8) {
+      setState(() {
+        _message = 'Minimum 8 characters.';
+        _messageIsError = true;
+      });
+      return;
+    }
+    if (password != _confirmController.text) {
+      setState(() {
+        _message = 'Passwords do not match.';
+        _messageIsError = true;
+      });
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    try {
+      await widget.client.auth.updateUser(UserAttributes(password: password));
+      if (!mounted) return;
+      _passwordController.clear();
+      _confirmController.clear();
+      setState(() {
+        _busy = false;
+        _message = 'Password updated.';
+        _messageIsError = false;
+      });
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _message = error.message;
+        _messageIsError = true;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _message = 'That did not work. Try again in a moment.';
+        _messageIsError = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Change password', style: _titleStyle(context)),
+        const SizedBox(height: 4),
+        Text('Minimum 8 characters.', style: _mutedStyle(context)),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: _inputDecoration('New password'),
+                style: _inputStyle(context),
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: _confirmController,
+                obscureText: true,
+                decoration: _inputDecoration('Confirm'),
+                style: _inputStyle(context),
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton(
+          onPressed: _canSave ? _save : null,
+          child: _busy
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Update password'),
+        ),
+        if (_message != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _message!,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: _messageIsError
+                      ? Theme.of(context).colorScheme.error
+                      : const Color(0xFF6EE7B7),
+                ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _InfoBlock extends StatelessWidget {
+  const _InfoBlock({required this.title, required this.body});
+
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: _titleStyle(context)),
+        const SizedBox(height: 4),
+        Text(body, style: _mutedStyle(context)),
+      ],
+    );
+  }
+}
 
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.label);
@@ -242,11 +827,13 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 8, left: 4),
       child: Text(
         label.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              letterSpacing: 1.1,
+              // Web sheet section labels: 11px, tracking 0.18em.
+              fontSize: 11,
+              letterSpacing: 11 * 0.18,
               color: Colors.white.withValues(alpha: 0.45),
             ),
       ),
@@ -261,38 +848,53 @@ class _SheetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
+    return GlassSurface(
       padding: const EdgeInsets.all(20),
+      // Web sheet cards use radius.sheetCard (28) from design tokens.
+      borderRadius: PurpleTokens.loaded.radius.sheetCard,
       child: child,
     );
   }
 }
 
-class _PlaceholderRow extends StatelessWidget {
-  const _PlaceholderRow({required this.title, required this.subtitle});
+class _SavedIndicator extends StatelessWidget {
+  const _SavedIndicator({required this.state});
 
-  final String title;
-  final String subtitle;
+  final _SaveState state;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.9),
+    if (state == _SaveState.idle) return const SizedBox(height: 18);
+    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: state == _SaveState.error
+              ? Theme.of(context).colorScheme.error
+              : Colors.white.withValues(alpha: 0.5),
+        );
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        children: [
+          if (state == _SaveState.saving) ...[
+            SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white.withValues(alpha: 0.5),
               ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          subtitle,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.55),
-              ),
-        ),
-      ],
+            ),
+            const SizedBox(width: 6),
+            Text('Saving', style: style),
+          ],
+          if (state == _SaveState.saved) ...[
+            const Icon(Icons.check, size: 12, color: Color(0xFF6EE7B7)),
+            const SizedBox(width: 6),
+            Text('Saved', style: style),
+          ],
+          if (state == _SaveState.error)
+            Text('Could not save, try again', style: style),
+        ],
+      ),
     );
   }
 }
@@ -312,36 +914,86 @@ class _AppearanceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(14),
-      borderRadius: 16,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: selected
-              ? Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5))
-              : null,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.9),
-                  ),
+    final primary = Theme.of(context).colorScheme.primary;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 64),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            color: Colors.white.withValues(alpha: 0.04),
+            border: Border.all(
+              color: selected
+                  ? primary.withValues(alpha: 0.5)
+                  : Colors.white.withValues(alpha: 0.1),
             ),
-            const SizedBox(height: 4),
-            Text(
-              description,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.5),
-                  ),
-            ),
-          ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.92),
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+TextStyle? _titleStyle(BuildContext context) {
+  return Theme.of(context).textTheme.bodyLarge?.copyWith(
+        color: Colors.white.withValues(alpha: 0.92),
+      );
+}
+
+TextStyle? _mutedStyle(BuildContext context) {
+  return Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: Colors.white.withValues(alpha: 0.55),
+        height: 1.4,
+      );
+}
+
+TextStyle _inputStyle(BuildContext context) {
+  return TextStyle(
+    fontSize: 15,
+    color: Colors.white.withValues(alpha: 0.92),
+  );
+}
+
+InputDecoration _inputDecoration(String hint) {
+  return InputDecoration(
+    hintText: hint,
+    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+    filled: true,
+    fillColor: Colors.white.withValues(alpha: 0.04),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
+    ),
+    disabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+    ),
+  );
 }

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/network/connectivity_service.dart';
+import '../../core/offline/supabase_row_parse.dart';
 import '../../core/providers/core_providers.dart';
 import 'care_scopes.dart';
 
@@ -93,7 +94,8 @@ class CareRepository {
   final Map<String, CareOverview> _overviewCache = {};
   final Map<String, CareBiometricsSnapshot> _biometricsCache = {};
 
-  String? get _caregiverId => _supabase.auth.currentUser?.id;
+  String? get _caregiverId =>
+      _supabase.auth.currentSession?.user.id ?? _supabase.auth.currentUser?.id;
 
   Future<CareOverview> loadOverview(String ownerId) async {
     final caregiverId = _caregiverId;
@@ -109,20 +111,13 @@ class CareRepository {
       throw CareAccessException('Offline. Reconnect to load this dashboard.');
     }
 
-    try {
-      final overview = await _fetchOverview(ownerId, caregiverId);
-      _overviewCache[ownerId] = overview;
-      return overview;
-    } catch (e) {
-      final cached = _overviewCache[ownerId];
-      if (cached != null) {
-        return cached.copyWith(isFromCache: true);
-      }
-      rethrow;
-    }
+    final overview = await _fetchOverview(ownerId, caregiverId);
+    _overviewCache[ownerId] = overview;
+    return overview;
   }
 
-  Future<CareOverview> _fetchOverview(String ownerId, String caregiverId) async {
+  Future<CareOverview> _fetchOverview(
+      String ownerId, String caregiverId) async {
     final rel = await _supabase
         .from('care_relationships')
         .select(
@@ -141,7 +136,8 @@ class CareRepository {
     }
 
     final expiresAt = rel['expires_at'] as String?;
-    if (expiresAt != null && DateTime.parse(expiresAt).isBefore(DateTime.now())) {
+    if (expiresAt != null &&
+        DateTime.parse(expiresAt).isBefore(DateTime.now())) {
       throw CareAccessException('Access expired.');
     }
 
@@ -177,7 +173,11 @@ class CareRepository {
         final community = profile['community_display_name'] as String?;
         displayName = community?.trim().isNotEmpty == true
             ? community!.trim()
-            : [firstName, lastName].whereType<String>().where((s) => s.trim().isNotEmpty).join(' ').trim();
+            : [firstName, lastName]
+                .whereType<String>()
+                .where((s) => s.trim().isNotEmpty)
+                .join(' ')
+                .trim();
         if (displayName.isEmpty) displayName = null;
         phone = profile['phone'] as String?;
       }
@@ -225,10 +225,9 @@ class CareRepository {
     }
 
     try {
-      final since = DateTime.now()
-          .subtract(const Duration(days: 30))
-          .toUtc()
-          .toIso8601String();
+      final since = formatSupabaseFilterTimestamp(
+        DateTime.now().subtract(const Duration(days: 30)),
+      );
       final response = await _supabase
           .from('biometrics')
           .select('id, recorded_at, oura_readiness_score, sleep_score, '
@@ -246,14 +245,10 @@ class CareRepository {
       _biometricsCache[ownerId] = snapshot;
       return snapshot;
     } catch (e) {
-      final cached = _biometricsCache[ownerId];
-      if (cached != null) {
-        return cached.copyWith(isFromCache: true);
-      }
       return const CareBiometricsSnapshot(
         rows: [],
         scopeGranted: true,
-        loadError: 'Could not load biometrics yet.',
+        loadError: 'Could not load biometrics right now. Pull to retry.',
       );
     }
   }
@@ -274,6 +269,144 @@ class CareRepository {
       return raw.whereType<String>().toList();
     }
     return const [];
+  }
+
+  Future<SharingListData> loadSharingLists() async {
+    final userId = _caregiverId;
+    if (userId == null) {
+      return const SharingListData(
+        myCaregivers: [],
+        sharingWithMe: [],
+        loadError: 'Sign in to view sharing settings.',
+      );
+    }
+
+    try {
+      final results = await Future.wait([
+        _listRelationships(ownerId: userId),
+        _listRelationships(caregiverId: userId),
+      ]);
+      return SharingListData(
+        myCaregivers: results[0],
+        sharingWithMe: results[1],
+      );
+    } catch (_) {
+      return const SharingListData(
+        myCaregivers: [],
+        sharingWithMe: [],
+        loadError: 'Could not load care relationships right now.',
+      );
+    }
+  }
+
+  Future<CareIndexData> loadCareIndex() async {
+    final userId = _caregiverId;
+    if (userId == null) {
+      return const CareIndexData(
+        owners: [],
+        pendingInvites: [],
+        myCaregivers: [],
+        loadError: 'Sign in to view care.',
+      );
+    }
+
+    try {
+      final caregiverRows = await _listRelationships(caregiverId: userId);
+      final activeOwners =
+          caregiverRows.where((row) => row.status == 'active').toList();
+      final pendingInvites =
+          caregiverRows.where((row) => row.status == 'pending').toList();
+      final ownerNames = await _loadOwnerDisplayNames(
+        activeOwners.map((row) => row.ownerId).toSet(),
+      );
+      final owners = activeOwners
+          .map(
+            (row) => CareRelationshipRow(
+              id: row.id,
+              ownerId: row.ownerId,
+              caregiverId: row.caregiverId,
+              inviteEmail: row.inviteEmail,
+              role: row.role,
+              status: row.status,
+              relationshipLabel: row.relationshipLabel,
+              createdAt: row.createdAt,
+              acceptedAt: row.acceptedAt,
+              expiresAt: row.expiresAt,
+              inviteToken: row.inviteToken,
+              ownerDisplayName: ownerNames[row.ownerId],
+            ),
+          )
+          .toList();
+      final myCaregivers = await _listRelationships(ownerId: userId);
+      return CareIndexData(
+        owners: owners,
+        pendingInvites: pendingInvites,
+        myCaregivers: myCaregivers,
+      );
+    } catch (_) {
+      return const CareIndexData(
+        owners: [],
+        pendingInvites: [],
+        myCaregivers: [],
+        loadError: 'Could not load care relationships right now.',
+      );
+    }
+  }
+
+  Future<List<CareRelationshipRow>> _listRelationships({
+    String? ownerId,
+    String? caregiverId,
+  }) async {
+    var query = _supabase
+        .from('care_relationships')
+        .select(
+          'id, owner_id, caregiver_id, invite_email, role, status, '
+          'relationship_label, created_at, accepted_at, expires_at, invite_token',
+        )
+        .isFilter('archived_at', null);
+
+    if (ownerId != null) {
+      query = query.eq('owner_id', ownerId);
+    }
+    if (caregiverId != null) {
+      query = query.eq('caregiver_id', caregiverId);
+    }
+
+    final response = await query.order('created_at', ascending: false);
+    return (response as List)
+        .cast<Map<String, dynamic>>()
+        .map(CareRelationshipRow.fromMap)
+        .where((row) => row.status == 'active' || row.status == 'pending')
+        .toList();
+  }
+
+  Future<Map<String, String>> _loadOwnerDisplayNames(Set<String> ownerIds) async {
+    if (ownerIds.isEmpty) return const {};
+
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select('id, first_name, last_name, community_display_name')
+          .inFilter('id', ownerIds.toList());
+      final names = <String, String>{};
+      for (final row in (response as List).cast<Map<String, dynamic>>()) {
+        final id = row['id'] as String;
+        final community = row['community_display_name'] as String?;
+        final first = row['first_name'] as String?;
+        final last = row['last_name'] as String?;
+        final display = community?.trim().isNotEmpty == true
+            ? community!.trim()
+            : [first, last]
+                .whereType<String>()
+                .where((part) => part.trim().isNotEmpty)
+                .join(' ')
+                .trim();
+        if (display.isNotEmpty) names[id] = display;
+      }
+      return names;
+    } catch (_) {
+      return const {};
+    }
   }
 }
 
@@ -329,4 +462,118 @@ final careBiometricsProvider = FutureProvider.autoDispose
   final repo = ref.watch(careRepositoryProvider);
   final overview = await ref.watch(careOverviewProvider(ownerId).future);
   return repo.loadOwnerBiometrics(ownerId: ownerId, overview: overview);
+});
+
+/// Row from `care_relationships` for list screens.
+class CareRelationshipRow {
+  const CareRelationshipRow({
+    required this.id,
+    required this.ownerId,
+    this.caregiverId,
+    required this.inviteEmail,
+    required this.role,
+    required this.status,
+    this.relationshipLabel,
+    this.createdAt,
+    this.acceptedAt,
+    this.expiresAt,
+    this.inviteToken,
+    this.ownerDisplayName,
+  });
+
+  final String id;
+  final String ownerId;
+  final String? caregiverId;
+  final String inviteEmail;
+  final String role;
+  final String status;
+  final String? relationshipLabel;
+  final String? createdAt;
+  final String? acceptedAt;
+  final String? expiresAt;
+  final String? inviteToken;
+  final String? ownerDisplayName;
+
+  String get subtitle {
+    final label = relationshipLabel?.trim();
+    if (label != null && label.isNotEmpty) return label;
+    final role = parseCareRole(this.role);
+    if (role != null) return careRoleLabels[role]!;
+    return this.role;
+  }
+
+  String get primaryLabel {
+    final name = ownerDisplayName?.trim();
+    if (name != null && name.isNotEmpty) return name;
+    final email = inviteEmail.trim();
+    if (email.isNotEmpty) return email;
+    return 'Care relationship';
+  }
+
+  factory CareRelationshipRow.fromMap(
+    Map<String, dynamic> map, {
+    String? ownerDisplayName,
+  }) {
+    return CareRelationshipRow(
+      id: map['id'] as String,
+      ownerId: map['owner_id'] as String,
+      caregiverId: map['caregiver_id'] as String?,
+      inviteEmail: (map['invite_email'] as String?) ?? '',
+      role: (map['role'] as String?) ?? CareRole.caregiver.name,
+      status: (map['status'] as String?) ?? 'pending',
+      relationshipLabel: map['relationship_label'] as String?,
+      createdAt: map['created_at'] as String?,
+      acceptedAt: map['accepted_at'] as String?,
+      expiresAt: map['expires_at'] as String?,
+      inviteToken: map['invite_token'] as String?,
+      ownerDisplayName: ownerDisplayName,
+    );
+  }
+}
+
+class CareIndexData {
+  const CareIndexData({
+    required this.owners,
+    required this.pendingInvites,
+    required this.myCaregivers,
+    this.loadError,
+  });
+
+  final List<CareRelationshipRow> owners;
+  final List<CareRelationshipRow> pendingInvites;
+  final List<CareRelationshipRow> myCaregivers;
+  final String? loadError;
+
+  static const empty = CareIndexData(
+    owners: [],
+    pendingInvites: [],
+    myCaregivers: [],
+  );
+}
+
+class SharingListData {
+  const SharingListData({
+    required this.myCaregivers,
+    required this.sharingWithMe,
+    this.loadError,
+  });
+
+  final List<CareRelationshipRow> myCaregivers;
+  final List<CareRelationshipRow> sharingWithMe;
+  final String? loadError;
+
+  static const empty = SharingListData(
+    myCaregivers: [],
+    sharingWithMe: [],
+  );
+}
+
+final sharingListProvider = FutureProvider.autoDispose<SharingListData>((ref) {
+  ref.watch(authSessionProvider);
+  return ref.watch(careRepositoryProvider).loadSharingLists();
+});
+
+final careIndexProvider = FutureProvider.autoDispose<CareIndexData>((ref) {
+  ref.watch(authSessionProvider);
+  return ref.watch(careRepositoryProvider).loadCareIndex();
 });

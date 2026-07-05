@@ -1,7 +1,7 @@
 # Flutter + Lovable workflow (durable decision)
 
 **Date:** 2026-07-04  
-**Status:** Phase 0 foundation in progress
+**Status:** Phase 5 — Flutter-only native (Capacitor deprecated 2026-07-04)
 
 ## Decision
 
@@ -47,12 +47,21 @@ After each Lovable push the user coordinates (or CI detects) a merge to
 
 Cursor rule: [`.cursor/rules/flutter-lovable-sync.mdc`](../.cursor/rules/flutter-lovable-sync.mdc).
 
-## Coexistence with Capacitor
+## Capacitor deprecated (operator 2026-07-04)
 
-Until Phase 5, Capacitor TestFlight builds may continue (`ios/`, `android/`,
-`docs/native-app-setup.md`). Flutter uses the same Supabase project and Worker
-APIs. Bundle ID strategy for Flutter iOS should converge on `org.purplelife.app`
-when cutover is approved.
+**Policy:** Flutter native is the only store/TestFlight path going forward. Do
+not build or ship Capacitor WebView IPAs unless explicitly rolling back.
+
+| History | Detail |
+|---------|--------|
+| ASC builds 1–9 | Capacitor WebView (`ios/App/`, prod TanStack at `www.purplelife.org`) |
+| Build 10+ | Flutter only (`flutter/ios/`, `bun run ios:flutter-testflight`) |
+| Rollback | `bun run ios:testflight:capacitor` — scripts kept in repo, not default |
+
+Capacitor `ios/`, `android/`, and `docs/native-app-setup.md` remain for
+reference. Flutter uses the same Supabase project, Worker APIs, and bundle ID
+`org.purplelife.app`. Full cutover runbook:
+[`docs/FLUTTER-TESTFLIGHT-CUTOVER.md`](../docs/FLUTTER-TESTFLIGHT-CUTOVER.md).
 
 ## Offline-first
 
@@ -63,6 +72,6 @@ only.
 ## Phase map
 
 0 Foundation → 1 Auth/shell → 2 Today/vitals → 3 Journal/meds/settings →
-4 Health/wearables/push → 5 Store parity and Capacitor cutover decision.
+4 Health/wearables/push → 5 Flutter TestFlight (Capacitor retired 2026-07-04).
 
 Full runbook: [`docs/LOVABLE-FLUTTER-SYNC.md`](../docs/LOVABLE-FLUTTER-SYNC.md).

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'tokens.dart';
+import 'purple_type.dart';
 
 /// Canonical dark canvas from React `.auth-canvas` / app shell.
 const Color purpleCanvasDark = Color(0xFF0A0710);
@@ -157,13 +158,13 @@ class PurpleTheme {
         height: typography.lineHeight('numericDisplay'),
         color: textPrimary,
       ),
-      titleMedium: GoogleFonts.sourceSerif4(
+      titleMedium: PurpleType.serifStyle(
         fontWeight: _fontWeight(weights.regular),
         fontSize: typography.labelSize('bodySerif'),
         height: typography.lineHeight('bodySerif'),
         color: textSecondary,
       ),
-      headlineMedium: GoogleFonts.sourceSerif4(
+      headlineMedium: PurpleType.serifStyle(
         fontWeight: _fontWeight(weights.regular),
         fontSize: 28,
         height: 1.15,

@@ -1,8 +1,424 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-04 (session: TestFlight build 7 verification + ASC validation, `feat/tf-crash-fix-7` @ `03983ab`).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 (Wave G ship-fleet audit; Flutter TestFlight **1.0 (12)** VALID; `lovable/redesign` uncommitted).
 
-**Uncommitted:** branch `feat/tf-crash-fix-7` (`03983ab`). Working tree remains dirty with multi-agent Flutter + iOS changes in progress. Latest drawer pass: `flutter test` **7/7**, targeted `flutter analyze` clean for shell files, `./scripts/flutter-web-serve.sh --rebuild` rebuilt and served on **:8765**. **Do not commit** until operator says so.
+## Overnight morning summary (2026-07-05)
+
+| Wave | Agent | Result |
+|------|-------|--------|
+| A Settings + Account | settings-fleet | Hub parity wired; browser QA partial (scroll/blocker) |
+| B Apple Health + Tools | health-tools-fleet | HealthKit auth fix + Tools OAuth; **1.0 (12)** ships plist/OAuth |
+| C Core tabs | core-fleet | Today/Vitals/Journal/Meds gaps closed; **27/27** tests |
+| D Care/Sharing/Reports | routes-fleet | Partial list screens; no invite/upload |
+| E Typography | design-fleet | (see design parity section) |
+| F Verify | verify-fleet | Cycle 1 PASS; cycles 2–3 pending |
+| **G Ship** | **ship-fleet** | **Package audit: no pub upgrades.** Native hash stable 6×10 min poll; **no duplicate TF upload** (build **12** already VALID, same native code as poll baseline). ASC confirmed **1.0 (12)** `processing=VALID`. |
+
+**Install TestFlight:** Purple for Life → **1.0 (12)** (Apple Health plist + OAuth URL scheme). Build **11** still VALID; build **10** rejected.
+
+## Wave G ship-fleet — package audit + TestFlight (2026-07-05 ~02:36 UTC)
+
+**1. `flutter pub outdated` (blocker packages):**
+
+| Package | Locked | Latest | Action |
+|---------|--------|--------|--------|
+| `health` (Flutter HealthKit; not Capgo) | **13.3.1** | current | **Keep** — no resolvable bump in outdated report |
+| `supabase_flutter` | **2.15.4** (transitive `supabase` 2.13.4) | current | **Keep** — not flagged outdated |
+| `go_router` | **14.8.1** | 17.3.0 | **Keep** — major jump; no settings/health blocker |
+| Other notable | `drift` 2.28→2.34, `connectivity_plus` 6→7, `flutter_riverpod` 2→3 | — | **Skip** — not blocker scope; minimal semver rule |
+
+14 lockfile entries upgradable via `flutter pub upgrade`; 20 constrained below latest major. **No `pubspec.yaml` changes applied.**
+
+**2. Fleet stability poll (6 cycles × 10 min, max ~50 min):**
+
+- `flutter/ios` + `pubspec.yaml` + `pubspec.lock` status hash **unchanged** all 6 polls (`bc0d8666…`).
+- `flutter/lib` changed **60 → 76** files then stable (Dart-only fleet work).
+- **Decision:** per operator rule, **do not upload** when native layer unchanged and **1.0 (12)** already VALID with same native code.
+
+**3. ASC poll:** `bun run ios:check-asc-builds` → **1.0 (12)** `processing=VALID`, `internal=IN_BETA_TESTING`, uploaded 2026-07-04 18:55 PT. No build **13** needed overnight.
+
+**4. Skipped:** `bun run ios:testflight` (would duplicate build 12). No commit (operator directive).
+
+## Overnight verify fleet (2026-07-05)
+
+**Cycle 1 (~02:02 ET):** `flutter analyze lib/` PASS; `flutter test` **27/27** PASS; `curl :8765` **200**; ASC **1.0 (11)** and **1.0 (12)** both `processing=VALID`. Browser QA (`pmt@eigital.com`): Today/Meds/Journal/Vitals/Settings hub/Tools **PASS** with noted partials; Tools now shows Oura+Whoop connected + Apple Health web panel (Wave 2 OAuth landed). Prod Today hydrates ~12s; hero scores **–** on web vs numeric on Flutter. Mid-`--rebuild` caused transient **Loading Purple** until hard reload. Full table + P0 list: `docs/FLUTTER-PAGE-BY-PAGE-COMPARISON.md` → **Overnight verify fleet**. Cycles 2–3 pending (30 min interval).
+
+## Wave 3 Care + Sharing + Reports (2026-07-04 overnight)
+
+Partial web parity (read-only lists, no invite/edit/upload flows yet):
+
+- **`/care`** (`care_index_screen.dart`): People you care for + my caregivers; links to `/care/:ownerId` dashboards and `/settings/sharing`.
+- **`/settings/sharing`** (`sharing_screen.dart`): Lists `care_relationships` as owner (my caregivers) and as caregiver (people sharing with me). Empty states, not placeholders.
+- **`/settings/reports`** (`reports_hub_screen.dart`): Read-only hub from `report_documents` + `medical_reports` (metric counts via `report_metrics`). **`/reports` redirects** to `/settings/reports`.
+- **Drawer Care** → `/care` (was `/settings/sharing`).
+- **Repositories:** extended `care_repository.dart`; new `reports/reports_repository.dart`.
+- **Compile fix:** `SyncTables` in `sync_service.dart` changed from `abstract final class` to `abstract class` so `static const` members compile (blocked `flutter test`).
+
+**Verify:**
+```bash
+cd flutter && flutter analyze lib/features/care/ lib/features/settings/sharing_screen.dart lib/features/reports/ lib/shell/
+cd flutter && flutter test   # 27/27 pass
+```
+
+**Still web-only:** invite caregiver, scope editing, report upload/reprocess, metric trends drilldown.
+
+## Tools integrations slice (2026-07-04 overnight)
+
+- **Oura/Whoop connect in-app:** `flutter/lib/features/tools/wearable_oauth.dart` opens provider OAuth via `url_launcher` (external browser). Oura config/exchange uses Supabase `oura-sync` edge fn; Whoop uses Worker `GET /api/health/whoop-config` + `POST /api/health/whoop-exchange` (new routes mirror `whoop.functions.ts`).
+- **OAuth callbacks:** GoRouter routes `/oauth/oura/callback` and `/oauth/whoop/callback` (`wearable_oauth_callback_screen.dart`). Native deep links via `app_links`: `org.purplelife.app://oauth-oura-callback` / `oauth-whoop-callback` (same as Capacitor `src/lib/native/wearable-oauth.ts`). **Native URL scheme `org.purplelife.app` registered in `flutter/ios/Runner/Info.plist` (`CFBundleURLTypes`) and `flutter/android/app/src/main/AndroidManifest.xml` (Oura/Whoop deep-link hosts). Shipped on TestFlight **1.0 (12)**.
+- **Sync mode:** `SyncModeSelect` widget on connected cards writes `sync_mode` + `sync_interval_hours` to `oura_tokens` / `whoop_tokens` (web parity).
+- **Whoop manual sync** button wired via existing `WorkerClient.postWhoopIncrementalSync()`.
+- **Notifications:** Tools section links to Settings with copy on snooze/quiet hours; push alerts still future.
+- **Deps:** explicit `app_links`, `url_launcher` in `flutter/pubspec.yaml`.
+- **Verify:** `cd flutter && flutter analyze lib/features/tools/ lib/core/api/worker_client.dart lib/shell/ && flutter test` → **27/27 PASS** (includes `test/wearable_oauth_test.dart`).
+- **Worker deploy:** Whoop OAuth routes need prod deploy (`whoop-config`, `whoop-exchange` under `src/routes/api/health/`).
+
+## Apple Health P0 fix — Flutter native HealthKit (2026-07-04 overnight)
+
+**Root cause:** iOS `health` plugin `hasPermissions()` returns `null` for READ (HealthKit privacy). Connect required `hasPermissions == true`, so authorization failed after a successful HealthKit prompt.
+
+**Fixes (uncommitted):**
+- `flutter/lib/features/health/health_service.dart`: iOS auth trusts `requestAuthorization` success + secure-storage flag (matches web `health-ios.ts`); partial grants OK; `openHealthSettings()` via `app-settings:`.
+- `flutter/lib/features/health/apple_health_panel.dart`: Tools embedded row (Connect/Sync/Settings); sync-state dot + last-synced; actionable error banners; resume refresh.
+- `flutter/lib/features/health/native_health_sync.dart` + `sync_service.dart`: offline queue `queueNativeHealthSync` → Drift flush → `POST /api/health/native-sync`.
+- `flutter/ios/Runner/Info.plist`: `NSHealthShareUsageDescription` / `NSHealthUpdateUsageDescription` aligned with Capacitor `ios/App/App/Info.plist`. Entitlement `com.apple.developer.healthkit` unchanged.
+
+**Verify (agent):**
+```bash
+cd flutter && flutter analyze lib/features/health/ lib/core/offline/sync_service.dart  # 0 errors
+cd flutter && flutter test   # 27/27 pass (test/health_service_test.dart)
+```
+
+**Verify (iOS device; TestFlight build 12+ after plist change):**
+1. Tools → Apple Health → **Connect** → HealthKit sheet.
+2. Grant metrics → snackbar sync complete (or empty-samples info).
+3. Status shows **Last synced** from `apple_health_tokens.last_sync_at`.
+4. Deny → yellow inline Settings guidance (not silent fail).
+5. Airplane mode → sync queues offline; online auto-flush.
+
+**Web `:8765`:** Tools shows web stub ("Install Purple iOS app…") — expected.
+
+**Ship note:** TestFlight **1.0 (12)** uploaded 2026-07-04 ~9:54 PM ET (`DEVELOPER_DIR=Xcode-beta`, `bun run ios:testflight`). Plist: Health usage strings, journal privacy keys, `LUCIQAppToken`, OAuth URL scheme; entitlements dropped empty `healthkit.access` array.
+
+## Flutter TestFlight 1.0 (12) — Apple Health + OAuth schemes (2026-07-04 ~9:54 PM ET)
+
+**Status: VALID on TestFlight.** xcodebuild **Upload succeeded** for build **12** (`pubspec.yaml` `1.0.0+12`, upload session ref `8cefed68`). ASC API **1.0 (12)** `processing=VALID` ~10:00 PM ET (poll 2 of 5, ~2.5 min after first poll showed only **1.0 (11)**).
+
+| Item | Value |
+|------|-------|
+| ASC build | **1.0 (12)** `id=b8077e73-de3c-4d4d-a855-0ef0ca67c3e7`, `processing=VALID`, `internal=IN_BETA_TESTING`, `external=READY_FOR_BETA_SUBMISSION`, uploaded 2026-07-04 18:55:28 PT |
+| Prior VALID | **1.0 (11)** `internal=IN_BETA_TESTING` |
+| Upload | `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer` + Doppler `purple-life/prd` |
+| Gates | `flutter analyze lib/` (0 issues), `flutter test` **27/27** |
+| iOS plist | `CFBundleURLTypes` → `org.purplelife.app` (Oura/Whoop native callbacks); updated Health share/update strings; `LUCIQAppToken`; journal mic/camera/photo keys; `ITSAppUsesNonExemptEncryption=false` |
+| Entitlements | `com.apple.developer.healthkit` only (removed empty `healthkit.access`) |
+| Lint fixes for TF script | `dart fix` prefer_const_constructors (today/hydration); `sign_out_cache_test.dart` explicit `AsyncLoading<T>` types |
+
+**Verify:** `doppler run --project purple-life --config prd -- bun run ios:check-asc-builds` → **1.0 (12)** VALID (confirmed 2026-07-04 ~10:00 PM ET).
+
+**Install:** Purple for Life → **1.0 (12)** (supersedes 11 for HealthKit + OAuth return testing). No ITMS rejection.
+
+## Flutter TestFlight 1.0 (11) — ITMS-90683 fix VALID (2026-07-04 ~9:37 PM ET)
+
+**Status: VALID on TestFlight.** Build **10** rejected (ITMS-90683 missing `NSMicrophoneUsageDescription`). Build **11** adds Capacitor-matched privacy keys to `flutter/ios/Runner/Info.plist`, bumps `pubspec.yaml` to `1.0.0+11`, uploads via `FLUTTER_IOS_BUILD_ROOT=/tmp/purpledrw-flutter-tf11`.
+
+| Item | Value |
+|------|-------|
+| ASC build | **1.0 (11)** `processing=VALID`, `internal=IN_BETA_TESTING` |
+| Upload | `Upload succeeded` ~9:32 PM ET |
+| ASC API | Build 11 listed ~4 min after upload |
+| Privacy keys added | `NSMicrophoneUsageDescription`, `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`, `ITSAppUsesNonExemptEncryption` |
+| Verify | `bun run ios:check-asc-builds` |
+
+**Install:** Purple for Life → **1.0 (11)** (Flutter native). Do not use rejected build 10.
+
+## Flutter TestFlight 1.0 (10) — REJECTED (2026-07-04)
+
+First Flutter upload ~9:07 PM ET. Apple rejected with **ITMS-90683** (missing `NSMicrophoneUsageDescription`). Superseded by build **11**.
+
+**This session (`ios:testflight`, no Capacitor):**
+- `cd flutter && flutter analyze lib/ && flutter test` → **PASS** (20/20).
+- `bun run ios:check-asc` → **PASS**.
+- First `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer bun run ios:testflight` attempts failed: concurrent fleet `xcodebuild` on `flutter/build/ios` (`Flutter.framework.dSYM` rsync exit 255; Pods `all-product-headers.yaml` missing; `Failed to receive dependency graph response`). Resolved by waiting for exclusive Xcode, cleaning `DerivedData/Runner-*`, fresh `pod install`, retry.
+- Successful archive **CFBundleVersion=10**, `xcodebuild` **EXPORT SUCCEEDED** / `Upload succeeded` ~**21:11 ET** (`/tmp/purple-tf10-final.log`). ASC never listed **1.0 (10)** as VALID; Apple email **ITMS-90683**; fix shipped as build **11**.
+- **ASC poll (30 min, 2026-07-04 ~21:27–21:57 ET):** `bun run ios:check-asc-builds` every 3 min (10 polls). **1.0 (10)** never appeared in the API list (not VALID). First new build: **1.0 (11)** `processing=VALID` ~21:36 ET; final poll **1.0 (12)** `processing=VALID` ~21:57 ET. Install **1.0 (12)** or **1.0 (11)** from TestFlight, not build 9/10.
+
+## Flutter-only native app (operator decision 2026-07-04)
+
+**Policy:** Ship **Flutter native only** for iOS/Android store builds going forward. **Do not build or upload Capacitor WebView IPAs** unless explicitly rolling back.
+
+| Track | Status |
+|-------|--------|
+| **Flutter** (`flutter/ios/`, `bun run ios:testflight`) | **Default** — **1.0 (12)** VALID 2026-07-04; **1.0 (11)** VALID; build 10 rejected ITMS-90683 |
+| **Capacitor** (`ios/App/`, `bun run ios:testflight:capacitor`) | **Deprecated** — scripts remain for rollback only |
+
+**ASC history:** TestFlight builds **1–9** Capacitor WebView. **Build 10** rejected (ITMS-90683). **Build 11** VALID. **Build 12** VALID (Flutter native: Apple Health plist + OAuth URL scheme). See `docs/FLUTTER-TESTFLIGHT-CUTOVER.md`.
+
+**Working tree:** branch `lovable/redesign` (uncommitted, 3 commits ahead of origin). TestFlight: install **1.0 (12)** (current VALID); **1.0 (11)** still available.
+
+## Wave 1 Meds slice (2026-07-04 evening)
+
+- **`regenerate_today_pending_doses` RPC** + profile TZ day windows ported in `flutter/lib/features/meds/meds_today.dart` and `meds_repository.dart` (rescue filter + dedupe).
+- **GoRouter** nested `/meds/history` and `/meds/:medId` (replaces Navigator stub).
+- **Add-med bottom sheet** (`medication_form_sheet.dart`); library row kebab edit/archive/restore.
+- **Data-layer fix:** online empty Supabase reads no longer fall back to stale Drift cache.
+- Verify: `cd flutter && flutter analyze lib/features/meds/ && flutter test` (20/20 pass).
+
+## Overnight Settings hub parity P0 (2026-07-04 late)
+
+Full Settings hub wired to match web `settings.tsx` section order and Supabase-backed profile fields (Worker-only paths stay honest stubs).
+
+| Area | Change |
+|------|--------|
+| **Hub layout** | Account / Settings / Tools cards always column stack; Add past history tiles 2-col on wide |
+| **Seizure gating** | Past episodes row + tile navigate to `/seizures/new` when `showsSeizureFeatures(conditions)` |
+| **Preferences** | Your focus chips + custom condition add (writes `profiles.conditions`); sleep/snooze/water/quiet/digest/floating ask/AI model save + reload via `ValueKey` dropdowns |
+| **AI provider** | Writes `profiles.ai_provider` (unchanged, verified) |
+| **What I track** | Full `feature_catalog.dart` port; toggles write `profiles.feature_overrides` |
+| **Health history** | Archive/restore/add conditions + family history CRUD on `profiles.*` columns |
+| **About** | Charter/privacy open `purplelife.org` in browser; GitHub external link (`url_launcher`) |
+| **Account locale** | Country/timezone/language dropdowns autosave to `profiles` (was read-only SnackBar) |
+| **Routes** | `/settings/how-purple-thinks`, `/seizures/new` placeholder screens |
+
+- **Still Worker-only:** data export/deletion, invite codes, 2FA setup, avatar upload, admin console, appearance Light/System.
+- **Verify:** `cd flutter && flutter analyze lib/features/settings/ lib/features/account/account_screen.dart` → **0 issues**; `flutter test` → **27/27 PASS**.
+- **Preview (browser QA follow-up 3a8b3a8c, 2026-07-04 ~10:05 PM ET):** **VERIFIED** on `:8765` after `./scripts/flutter-web-serve.sh --rebuild` (Doppler `cursor-cloudflare`/`prd_cloudlfare`; build `main.dart.js` 21:54 ET). `curl http://127.0.0.1:8765` → **HTTP 200** (2817 B HTML, not blank/refused). Cursor browser signed-in session (`e2e-smoke@purplelife.org`); `#/settings` loads full hub (not `SettingsPlaceholderScreen`). **Visible wired sections:** hub cards (Account/Settings/Tools), Your health (Medications, Lab reports), People (Sharing & access), App (Travel mode), Add past history card, Preferences→About order confirmed in `settings_screen.dart` + rebuilt bundle strings (`Preferences`, `AI provider`, `What I track`, `Health history`, `Your data`, `Contact the team`, `About`). **Help/About captured:** Contact the team, Founding charter, Privacy & safety, Open source on GitHub; Admin console for admin user. **Data** section is honest web-only copy (export/deletion), not dead buttons. **PENDING:** burger `endDrawer` did not open via Flutter canvas coordinate clicks (use bottom-nav Settings or `#/settings`); below-fold Preferences/AI/What I track/Health history/Data panels require pointer-swipe scroll in Flutter web (automation flaky, strings present in bundle).
+
+## Page-by-page comparison audit (2026-07-04 evening)
+
+Six parallel read-only agents compared TanStack web (`src/routes/_app/**`) vs Flutter (`:8765`). **No fixes applied yet.** Consolidated report: `docs/FLUTTER-PAGE-BY-PAGE-COMPARISON.md`.
+
+- **0/55 routes at full parity**; 10 partial, 7 stub, 38 missing.
+- **Root causes of "everything broken":** missing `regenerate_today_pending_doses`, profile TZ vs device local for doses, narrative table mismatch (`risk_forecasts` vs `health_narratives`), pull-to-refresh skips Whoop sync, web fail-open to empty cache, journal pending badge bug.
+- **Wave 1 (approve before coding):** meds RPC + TZ, add med form, `/meds/history`, narrative + wearable sync, journal pending fix (**done 2026-07-04** — see below).
+- Runtime browser QA: **done** 2026-07-04 ~21:00 ET — table in `docs/FLUTTER-PAGE-BY-PAGE-COMPARISON.md` (Wave 1 + Settings slice; `pmt@eigital.com`; `:8765` vs prod).
+
+### Wave 1 TODAY + SYNC slice (2026-07-04)
+
+- **Narrative:** `TodayRepository` reads `risk_forecasts.ai_narrative` (latest row) first; falls back to `health_narratives` when no forecast narrative.
+- **Pull-to-refresh:** Today `_refresh()` calls `syncConnectedWearables()` (Oura edge `oura-sync` + Whoop Worker) before invalidating providers; bumps `SyncStatusBar` `refreshSignal`.
+- **Whoop sync:** `WorkerClient.postWhoopIncrementalSync()` → `POST /api/health/whoop-sync` (new Worker route mirroring `whoopIncrementalSync` server fn). Shared helper: `flutter/lib/features/today/wearable_sync.dart`.
+- **Selected-day doses:** `medsForDayProvider(dateYmd)` loads doses for date-strip selection (not today-only).
+- **Score overlay:** "See the full reading" → `/today/risk` (stub `TodayRiskScreen` until full risk detail ships).
+- **Verify:** `cd flutter && flutter analyze lib/features/today/ lib/features/vitals/sync_status_bar.dart lib/core/api/worker_client.dart && flutter test test/today_screen_render_test.dart`
+
+### Wave 1 Journal slice (2026-07-04)
+
+- **`pendingUpload` fix:** `JournalRepository` now marks upload-pending from Drift `SyncQueue` record IDs only (not `status == 'processing'`). Offline banner count uses queue length; entry cards show **reading…** / retry for AI processing and **Pending** only for queued offline writes (web parity).
+- **Verify:** `cd flutter && flutter analyze lib/features/journal/ && flutter test test/journal_pending_upload_test.dart test/providers_error_fallback_test.dart`
+- **Wave 1 compile unblock (2026-07-04):** fixed parallel-merge type errors in `med_detail_screen.dart` (`AsyncValue<List<MedicationDose>>`), `meds_history_screen.dart` (`MedicationDose` row type), `meds_repository.dart` (`rpc<void>`); `flutter analyze lib/` 0 errors, `flutter test` **20/20** (includes `sign_out_cache_test`, `journal_pending_upload_test`).
+
+### Overnight core-tab gaps slice (2026-07-04 late)
+
+P0/P1 items from `docs/FLUTTER-PAGE-BY-PAGE-COMPARISON.md` for Today / Vitals / Journal / Meds data paths (settings/tools out of scope):
+
+| Fix | Status |
+|-----|--------|
+| Journal capture multimodal dock (Record/Photo/Video) with honest native-only SnackBar; text save path unchanged | **Done** — `journal_capture_screen.dart` |
+| Vitals metric tap → `/vitals/metric/:key` drilldown stub with latest real value | **Done** — `metric_detail_screen.dart`, `vitals_screen.dart` |
+| Today condition-aware lede prompts from profile `conditions` | **Done** — `condition_prompts.dart`, `TodayRepository` |
+| Seizure quick action when epilepsy/seizure condition | **Done** — `/seizures/new` stub + Today third quick-action tile |
+| Hydration link in Today "More for today" | **Done** |
+| Fail-open: Today offline fallback keeps profile/narrative/counts (not scores-only) | **Done** — `today_repository.dart` |
+| Fail-open: Journal online empty list no longer falls back to stale cache | **Done** — `journal_repository.dart` |
+
+- **Verify:** `cd flutter && flutter analyze lib/ && flutter test` → **27/27 PASS** (2026-07-04 overnight).
+- **Still Wave 2+:** full biometric trend charts, native voice/photo journal capture, full seizure log form, OAuth Tools connect.
+
+## Design parity wave (2026-07-04 evening) — VERIFIED
+
+Six-agent fleet ported web design (`src/routes/_app/*`, `en.json`, `design/tokens.json`) to Flutter on disjoint scopes. Acceptance bar: `docs/FLUTTER-DESIGN-PARITY-CHECKLIST.md`. All verified in Cursor browser on `:8765` signed in as `pmt@eigital.com`:
+
+- **Today**: greeting + real AI narrative, horizontal date strip with day view, Readiness/Sleep/Activity strip (87/82/58), Your signals grid, Journal/Meds quick actions, Today's doses. Regression fixed: `CrossAxisAlignment.stretch` in score strip Row threw "infinite height" and blanked the route; guarded by `test/today_screen_render_test.dart`.
+- **Meds**: "Your schedule, your record.", 14-day adherence (63%), 24h dose timeline, Taken/Undo/reclassify actions, grouped library.
+- **Journal**: web-exact light canvas (#faf8fb + lavender glow), serif header, filters, kebab entry actions, pagination.
+- **Vitals**: web title copy, status band colors, Metabolic Health + Hydration sections.
+- **Settings/Account/Tools**: web section order, real profile autosave + password change, real Oura/Whoop token state, `AppleHealthPanel` wired in Tools; top-bar sync triggers real `SyncService.syncAll()`.
+- `flutter analyze lib/` 0 issues; `flutter test` 16/16 (includes new Today render test). Drift web fix: `database.dart` must NOT import `drift/wasm.dart` directly (breaks VM tests); use `driftDatabase(web: DriftWebOptions(...))` with assets copied by `flutter-web-serve.sh`.
+
+## Phase 5 cutover orchestration (2026-07-04)
+
+| Stage | Doc | Status |
+|-------|-----|--------|
+| 0 Gap audit | `docs/FLUTTER-CUTOVER-GAP-MATRIX.md` | **Done** — 55 web vs 18 Flutter routes; P0 blockers listed |
+| 1 Data stable | `docs/FLUTTER-STAGE1-SIGNOFF.md` | **PASS** — `flutter analyze lib/` 0 issues, `flutter test` 14/14; browser QA on `:8765` (Today Readiness 87 + "Good evening, a.", Meds Crestor+asprin, Vitals Readiness 87). Fixes: Drift `sqlite3.wasm`/`drift_worker.js` copy, `--pwa-strategy=none`, web fail-open + skip Drift cache on online reads, `flutter-web-serve.sh` PID/lock + `0.0.0.0` bind + `nohup` daemon |
+| 2 iOS build | `docs/features/PHASE5_2_IOS_BUILD.md` | **Done** — ios-only symlink via `scripts/flutter-build-dirs.sh` + `scripts/flutter-ios-build.sh`; web stays in `flutter/build/web` (no top-level build symlink) |
+| 5 TestFlight plan | `docs/FLUTTER-TESTFLIGHT-CUTOVER.md` | **VALID** — Flutter **1.0 (11)** on TestFlight (build 10 rejected ITMS-90683) |
+| Orchestrator | `docs/features/PHASE5_CUTOVER_ORCHESTRATOR.md` | Active |
+
+**Install (TestFlight):** Purple for Life → **1.0 (11)** (Flutter native). Build 10 rejected; do not install.
+
+
+## Flutter TestFlight upload execution (2026-07-04 ~21:00 ET)
+
+- **Gates:** `cd flutter && flutter analyze lib/` 0 issues; `flutter test` **20/20**; `bun run ios:check-asc` PASS (`purple-life/prd`).
+- **Xcode:** `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer`.
+- **Command:** `FLUTTER_IOS_BUILD_ROOT=/tmp/purpledrw-flutter-tf10-upload bun run ios:flutter-testflight` (after Luciq SPM zip prefetch + isolated `/tmp` ios symlink; avoid parallel `xcodebuild` on shared DerivedData).
+- **Upload:** `** EXPORT SUCCEEDED **` + `Upload succeeded` for `purple_app.ipa` at **21:04:40 ET**. Archive `CFBundleVersion` **10**.
+- **ASC API:** `filter[version]=10` still empty after ~25 min polling (`bun run ios:check-asc-builds` / direct API). Latest installable VALID remains **1.0 (9)** until build 10 appears.
+- **Re-check:** `bun run ios:check-asc-builds` every few minutes until `1.0 (10) processing=VALID`.
+
+## Flutter TestFlight upload (2026-07-04 evening)
+
+- **Gates:** `flutter analyze lib/` 0 issues; `flutter test` 20/20
+- **Upload:** `xcodebuild archive` + `-exportArchive` on `flutter/ios/Runner.xcworkspace` with ASC API key; `Upload succeeded` for build **10**
+- **Script:** `scripts/flutter-ios-testflight.sh` → `bun run ios:testflight` (Capacitor rollback: `ios:testflight:capacitor`)
+- **Build number:** `flutter/pubspec.yaml` `1.0.0+10`
+- **Verify ASC:** `bun run ios:check-asc-builds` (expect **1.0 (10)** after processing)
+- **Blockers documented:** SPM off, two-step archive (not `flutter build ipa --` auth args), `/tmp` DerivedData, serialize concurrent Xcode agents — see `docs/FLUTTER-TESTFLIGHT-CUTOVER.md`
+
+## Flutter TestFlight infrastructure (2026-07-04)
+
+- **Script:** `scripts/flutter-ios-testflight.sh` (default TestFlight path; Capacitor rollback via `ios:testflight:capacitor` only).
+- **Artifacts:** `flutter/ios/ExportOptions.plist`, `ExportOptions-export.plist`, Luciq SPM 19.9.0 in `Runner.xcodeproj`, deferred Luciq in `AppDelegate.swift`, `LUCIQAppToken` in Info.plist, HealthKit entitlement aligned with Capacitor (no empty `healthkit.access`).
+- **Build number:** `flutter/pubspec.yaml` `1.0.0+11` (supersedes rejected build 10)
+- **Signing:** `ios:local-signing` now writes `flutter/ios/Flutter/LocalSigning.xcconfig` (gitignored) alongside Capacitor `ios/LocalSigning.xcconfig`.
+- **Push:** deferred (no `aps-environment` entitlement in Flutter yet).
+- **Next command (re-upload):** bump `pubspec.yaml` `+N`, then `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer bun run ios:check-asc && bun run ios:testflight`
+- **Verify:** `cd flutter && flutter analyze lib/` (0 issues after iOS changes).
+
+## ASC + TestFlight audit (2026-07-04 evening, read-only)
+
+**Credentials:** `bun run ios:check-asc` (Doppler `purple-life/prd`) → **PASS** (all four ASC secrets + `DEVELOPMENT_TEAM` present).
+
+**App record:** Purple for Life · bundle `org.purplelife.app` · ASC Apple ID `6787298041` · team `C3HY4MF66F`.
+
+### All ASC builds (`org.purplelife.app`)
+
+Queried App Store Connect API 2026-07-04 ~9:37 PM ET. **Build 11** Flutter native VALID. Build 10 rejected (ITMS-90683).
+
+| Build | ASC ID | Uploaded (PT) | Processing | Internal beta | External |
+|-------|--------|---------------|------------|---------------|----------|
+| **1.0 (11)** | `db3a14e0-…` | 2026-07-04 **18:33 PT** | VALID | IN_BETA_TESTING | READY_FOR_BETA_SUBMISSION |
+| **1.0 (10)** | — | 2026-07-04 upload | **REJECTED** (ITMS-90683) | — | — |
+| **1.0 (1)** | `87155be5-…` | 2026-07-03 18:36 | VALID | IN_BETA_TESTING | IN_BETA_TESTING |
+| **1.0 (2)** | `75a4df42-…` | 2026-07-03 19:20 | VALID | IN_BETA_TESTING | READY_FOR_BETA_SUBMISSION |
+| **1.0 (4)** | `2994016a-…` | 2026-07-04 04:56 | VALID | IN_BETA_TESTING | READY_FOR_BETA_SUBMISSION |
+| **1.0 (5)** | `6ba914d5-…` | 2026-07-04 07:54 | VALID | IN_BETA_TESTING | READY_FOR_BETA_SUBMISSION |
+| **1.0 (6)** | `2e5852e2-…` | 2026-07-04 09:13 | VALID | IN_BETA_TESTING | READY_FOR_BETA_SUBMISSION |
+| **1.0 (7)** | `3eff060e-…` | 2026-07-04 11:43 | VALID | IN_BETA_TESTING | READY_FOR_BETA_SUBMISSION |
+| **1.0 (8)** | `876899a0-…` | 2026-07-04 11:53 | VALID | IN_BETA_TESTING | READY_FOR_BETA_SUBMISSION |
+| **1.0 (9)** | `827f5280-…` | 2026-07-04 13:00 | VALID | IN_BETA_TESTING | READY_FOR_BETA_SUBMISSION |
+
+**Latest installable build:** **1.0 (11)** — Flutter native (ITMS-90683 fix).
+
+### Build numbers: Capacitor vs Flutter (repo)
+
+| Track | Path | Marketing | Build (`CFBundleVersion`) | Upload status |
+|-------|------|-----------|----------------------------|---------------|
+| **Capacitor (rollback)** | `ios/App/App.xcodeproj` | `1.0` | **`9`** | On ASC (build 9) |
+| **Flutter (default)** | `flutter/pubspec.yaml` | `1.0.0` | **`11`** | **VALID** on ASC TestFlight |
+
+First Flutter TestFlight upload must use build number **≥ 10** (or bump Capacitor first, then Flutter at N+1). Wire `scripts/flutter-ios-testflight.sh` per `docs/FLUTTER-TESTFLIGHT-CUTOVER.md` (`flutter/ios/ExportOptions.plist` exists; upload script not yet in `package.json`).
+
+### Flutter IPA upload history
+
+**None.** Evidence:
+
+- Git: only Capacitor uploads documented (`4dc438d` build 1, commits through `a34351d` build 8); no commits mention Flutter IPA or `flutter build ipa` upload.
+- Scripts: `scripts/native-ios-testflight.sh` (Capacitor) is wired as `bun run ios:testflight`; `scripts/flutter-ios-testflight.sh` is **planned only** (`docs/FLUTTER-TESTFLIGHT-CUTOVER.md`).
+- `scripts/flutter-ios-build.sh` runs `flutter build ios --release --no-codesign` (local device build prep, not ASC upload).
+
+### What "9 builds never worked" likely means
+
+The complaint is almost certainly about **Capacitor shell launch failures**, not missing Flutter parity:
+
+| Builds | Known Capacitor issue |
+|--------|----------------------|
+| **1–2** | Missing bundled `index.html` (`webDir` pointed at TanStack dist with no root HTML); instant WebView crash |
+| **3** | Skipped on ASC (never uploaded) |
+| **4–5** | Shell fallback committed; Luciq/launch hardening in progress |
+| **6–8** | Empty `healthkit.access` entitlement (launch crash); build **8** also shipped AppDelegate HEAD-probe that hijacked WebView to `capacitor://localhost` instead of prod URL |
+| **9** | Fix for 6–8 (minimal AppDelegate, entitlement cleanup); **VALID on ASC** — testers may still be on build 8 if TestFlight did not auto-update, or invite not accepted |
+
+**Flutter was never in the TestFlight loop.** Fixes on `:8765` (fail-open repos, burger drawer, design parity) do **not** reach TestFlight until a Flutter IPA is built and uploaded separately.
+
+### First Flutter TestFlight beta checklist
+
+Prerequisites (Stage 5 — owner approval required):
+
+- [ ] Stages 1–4 pass per `docs/features/PHASE5_CUTOVER_ORCHESTRATOR.md` (data stable, iOS release build, page parity bar)
+- [ ] `cd flutter && flutter analyze lib/` + `flutter test` green
+- [ ] `./scripts/flutter-web-serve.sh --rebuild` — signed-in real data on `:8765`
+- [ ] USB smoke: `flutter run --release -d <iphone>` (sign-in, Today, Meds, sign-out)
+- [ ] Bump `flutter/pubspec.yaml` to `1.0.0+10` (or `--build-number 10`, must exceed ASC **9**)
+- [ ] Add Luciq to `flutter/ios/Runner` (Capacitor has it; Flutter does not yet)
+- [ ] Implement + wire `scripts/flutter-ios-testflight.sh`; split `package.json` to `ios:testflight:capacitor` vs Flutter path
+- [ ] `flutter/ios/ExportOptions.plist` + Doppler dart-defines for Supabase keys
+- [ ] `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer bun run ios:check-asc && bun run ios:testflight` (Flutter script)
+- [ ] Poll ASC until build **VALID**; assign internal **Development Team**; USB verify before wider testers
+- [ ] Rollback plan: keep Capacitor `ios/` until Stage 6; re-point testers to last good Capacitor build if needed
+
+## TestFlight build 9 status check (2026-07-04, 6 PM ET, read-only)
+
+User reported "the TestFlight app does not even load." Investigation (no build/upload/commit):
+
+- **ASC API (Doppler `purple-life/prd`):** build **1.0 (9)** (`827f5280-50d8-4681-992b-f0e2e63dd0e6`, uploaded 2026-07-04 13:00 PT) is `processingState=VALID`, `internalBuildState=IN_BETA_TESTING`, `externalBuildState=READY_FOR_BETA_SUBMISSION`, not expired.
+- **Group access:** internal group **Development Team** (`0871a099`) has `hasAccessToAllBuilds=true`, so build 9 is auto-available. Testers: `a@arora.net` state **INSTALLED**, `jaspreet.singh@eigital.org` state **INVITED** (never accepted the TestFlight invite; must accept email invite before anything can install).
+- **Prod web (WebView target):** `https://www.purplelife.org` returns HTTP 200 with full HTML; `/today` 200.
+- **Uncommitted `ios/` diff matches build 9 exactly:** `CURRENT_PROJECT_VERSION=9`, empty `healthkit.access` entitlement removed, `AppDelegate.swift` minimal (deferred Luciq only; HEAD-probe/fallback-hijack code deleted). No launch blocker found in current code; `ios/App/App/public/` has the committed shell fallback.
+- **Most likely cause of "does not load":** the iPhone is still running **build 8** (HEAD-probe WebView hijack + empty entitlement crash). TestFlight does not always auto-update; the tester must open TestFlight and explicitly update to **1.0 (9)**, or delete the app and reinstall from TestFlight. Note the TestFlight app is the **Capacitor shell loading prod web**, not the Flutter app; Flutter has never been uploaded to TestFlight.
+
+**Install steps for the tester:** open **TestFlight** on iPhone → **Purple for Life** → confirm version shows **1.0 (9)** → tap **Update** (or delete the installed app first, then **Install**) → force-quit and reopen. If TestFlight still shows build 8, pull-to-refresh the TestFlight app list.
+
+## TestFlight build 9 launch fix (2026-07-04)
+
+**Root cause for build 6/7/8 not loading:** build 8 still shipped (a) empty `com.apple.developer.healthkit.access` entitlement array (iOS crash on launch) and (b) AppDelegate HEAD-probe logic that hijacked the WebView to `capacitor://localhost` fallback instead of letting Capacitor load `https://www.purplelife.org`.
+
+**Fix (uncommitted, uploaded as build 9):**
+- `ios/App/App/App.entitlements`: removed empty `healthkit.access` key; keep `healthkit` only.
+- `ios/App/App/AppDelegate.swift`: reverted to minimal launch path (deferred Luciq only, no HEAD probe / fallback shell hijack / launch-marker poison loop).
+- `CURRENT_PROJECT_VERSION=9`; `bun run cap sync ios`; `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer bun run ios:testflight` -> **Upload succeeded**.
+
+**Install:** TestFlight → Purple for Life → **1.0 (9)** (internal Development Team). Delete build 8 first, force-quit, reopen.
+
+**Local device verify (2026-07-04):** `aa's iPhone air` (iOS 26.6) via USB — `bun run ios:device-build` installed build **9** Debug and launched `org.purplelife.app` successfully.
+
+## Recent changes (2026-07-04, Flutter Wave 1 AUTH/CACHE P0 #10)
+
+- **Sign-out cache hygiene:** `signOutSessionProvider` in `flutter/lib/auth/auth_state.dart` clears Drift user cache via `SyncService.clearUserCache`, invalidates today/meds/journal/vitals + cached table providers, then calls `AuthRepository.signOut`. Burger menu (`shell_menu_sheet.dart`) and Account screen sign-out paths use the provider (not raw `auth.signOut()`).
+- **Test:** `flutter/test/sign_out_cache_test.dart` (2 cases: clears cache + invalidates providers; skips cache when no user).
+- **Verify:** `cd flutter && flutter analyze lib/auth lib/core/auth lib/core/providers lib/shell/shell_menu_sheet.dart lib/features/account/account_screen.dart` → 0 issues; `flutter test test/sign_out_cache_test.dart` → 2/2.
+
+## Recent changes (2026-07-04, Flutter Wave 1 ROUTES slice)
+
+- **`/today/risk`:** `TodayRiskScreen` ports web risk drilldown (score arc, readiness band chip, AI narrative, top factors, back to today). Fetches latest row from `risk_forecasts` via `latestRiskForecastProvider`. Today score overlay "See the full reading" now navigates here (was `/vitals`).
+- **`/hydration`:** stub `HydrationScreen` with back link to Vitals; Vitals hydration card tap wired via `GlassCard.onTap`.
+- **Today signals:** `TodayVitalItem.metric` slugs added; each tile navigates to `/vitals?metric=<slug>` (interim until `/biometrics/:metric` ships).
+- **Verify:** `flutter analyze` on route slice files 0 issues; `flutter test test/today_screen_render_test.dart` 2/2 PASS; full suite 17/19 (2 load failures pre-existing meds mock drift in sibling slice).
+
+## Recent changes (2026-07-04, Flutter `:8765` preview repair + Stage 1 PASS)
+
+- **`scripts/flutter-web-serve.sh`:** fixed bash guard (`[[ ... && already_serving ]]` always true); added `--status`, PID file `.flutter-web-serve.pid`, build lock, idempotent start when same pid owns `:8765`; copies `sqlite3.wasm` + `drift_worker.js` after every web build; binds `0.0.0.0` (IPv4+IPv6); builds with `--pwa-strategy=none`; starts `python3 -m http.server` via `nohup`+`disown` (stable daemon). **Stable command:** `./scripts/flutter-web-serve.sh` (rebuild: `--rebuild`).
+- **`flutter/lib/`:** web connectivity trusts online (no cross-origin HEAD to prod); data providers `await authRepositoryProvider.future` then `authSessionProvider.valueOrNull`; Drift uses explicit `WasmDatabase.open`; online biometric reads skip Drift cache on web; cache reads fail-open; `SyncService.readCached` try/catch.
+- **Browser verification (Cursor MCP, 2026-07-04 ~23:13 ET):** `curl http://127.0.0.1:8765/` **200**; sign-in screen renders; signed-in **pmt@eigital.com** data on `/today` (Readiness **87**), `/meds` (**Crestor** + **asprin**, 2 meds), `/vitals` (Readiness Score **87**). `flutter test` **14/14**.
+
+
+- Updated `flutter/lib/features/auth/sign_in_screen.dart` to match prod TanStack password-input behavior: added eye-toggle state with show/hide icon, mode-aware password autofill (`current` vs `new`), disabled autocorrect/suggestions for password entry, and preserved focus while toggling visibility.
+- Added `_passwordFocusNode` lifecycle management (`dispose`) and disabled eye-toggle interaction while auth submit is in-flight (`_busy`) to prevent accidental state changes mid-submit.
+- Verification:
+  - `cd flutter && flutter analyze lib/features/auth/sign_in_screen.dart` -> **PASS** (no issues)
+  - `cd flutter && flutter analyze` -> **FAIL** due pre-existing unrelated `TodayData` undefined-class error in `flutter/lib/features/today/today_screen.dart` plus existing info-level warnings
+  - `./scripts/flutter-web-serve.sh --rebuild` -> **PASS**; rebuilt and serving `flutter/build/web` on `http://localhost:8765` and `http://127.0.0.1:8765`
+
+## Recent changes (2026-07-04, TestFlight build 8 upload + ASC validation)
+
+- Included integrator commits in branch history before upload: `42de935` (Capacitor launch hardening) and `ec8340a` (build 7 baseline bump), then added release commit `a34351d` for web/native crash-fallback diagnostics plus `CURRENT_PROJECT_VERSION=8`.
+- Re-ran `bunx cap sync ios` and then `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer bun run ios:testflight` to complete build 8 if needed; archive succeeded but export/upload returned duplicate-version rejection (`bundle version '8' already used`).
+- Confirmed this means build 8 was already uploaded previously; no additional version bump was needed in this run.
+- Queried App Store Connect API (app `6787298041`) via Doppler `purple-life/prd` credentials: latest build `876899a0-a15f-4892-9f93-b490c3f4701a` has `version=8` (marketing `1.0`), `processingState=VALID`, and beta detail `internalBuildState=IN_BETA_TESTING` (`externalBuildState=READY_FOR_BETA_SUBMISSION`).
+- Build install target for testers: TestFlight internal group **Development Team** should install **Purple for Life 1.0 (8)**.
+
+Clarification (2026-07-04): Flutter web preview on `:8765` is the Phase 0-1 signed-in app shell ported from Lovable/TanStack design, so it is not yet identical to production `https://www.purplelife.org` (which still runs full TanStack routes and onboarding UX). Flutter routing now follows the same post-login default rule as prod by checking `profiles.onboarded_at` or `profiles.first_name`: onboarded users land on `/today`, users without onboarding metadata land on `/welcome`.
+
+## Live user safety (2026-07-04)
+
+- Audit scope: uncommitted `lovable/redesign` Flutter fail-open changes + commits `42de935`, `ec8340a`, `a34351d`.
+- No destructive SQL/migration/seed/schema changes found in this window.
+- Native/TestFlight commits are launch/diagnostics/build-number changes; no bulk DB write logic introduced.
+- **Fixed (2026-07-04):** Flutter post-login empty data on `:8765` was caused by fail-open `catch (_) => empty` in Today/Meds/Journal repos and providers, plus schema mismatches (`health_narratives.for_date` → `day`, `medications.is_active` → `active`). Repos now await `authSessionProvider.future`, use `currentSession?.user.id`, fetch Supabase online without swallowing errors, and cache-fallback only when offline/no session. Verify: `cd flutter && doppler run --project cursor-cloudflare --config prd_cloudlfare -- flutter test test/providers_error_fallback_test.dart` then `./scripts/flutter-web-serve.sh --rebuild` and hard-refresh `http://localhost:8765` as `pmt@eigital.com`.
+- Sync queue remains non-destructive but inserts are not fully idempotent on retry; monitor duplicate/failed queue items in preview testing.
+- Rollout policy: manual deploy only, no force migrations, backup snapshot required before any production rollout.
 
 ## TestFlight crash root cause + build 7 status (2026-07-04)
 
@@ -17,6 +433,26 @@ Operational state of the PurpleLife project for the next agent or engineer. Last
   - `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer bun run ios:check-asc` -> **PASS**.
   - `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer bun run ios:testflight` -> duplicate-build rejection (`bundle version '7' already used`), which indicates build 7 is already uploaded on App Store Connect.
   - ASC API checks (Doppler `purple-life/prd`) confirm build **7** (`id 3eff060e-3092-4816-b10e-955c63205598`) is `processingState=VALID`, beta detail `internalBuildState=IN_BETA_TESTING`, and assigned to internal group **Development Team** (`hasBuild=true`).
+
+## Recent changes (2026-07-04, build 7 observability hardening)
+
+- `capacitor-shell/index.html`: fallback overlay now always reports URL, error text, build label, and retry action; build defaults to static `"7"` when query params are absent.
+- Added a minimal shell diagnostics strip hook (`#diag-strip`) controlled by `?diag=1` or native `diag-flag` bridge payloads.
+- `src/lib/native/index.ts`: bridge timeout now emits a launch-error payload via both `CustomEvent("purple:native-launch-error")` and `window.postMessage({ source: "purple-native", type: "launch-error" })` when core Capacitor plugins fail to appear within 2.5s.
+- Native init now exits cleanly on bridge timeout and captures telemetry (`native.bridge.timeout`) instead of silently continuing.
+- Validation for this pass: `bun run tsc --noEmit` (**PASS**) and `ReadLints` clean on edited files.
+
+## Recent changes (2026-07-04, global crash fallback + diagnostics panel)
+
+- Added global React crash boundary and fallback UI under `src/components/error/` (`global-error-boundary.tsx`, `app-crash-fallback.tsx`) and mounted it from `src/routes/__root.tsx`.
+- Route-level error handling now shows a user-safe fallback with **Retry**, **Copy error ID**, **Contact support**, and **Open diagnostics** (native) instead of a minimal blank-failure state.
+- Added runtime observability module `src/lib/observability/client-errors.ts`:
+  - captures `window.onerror` and `window.unhandledrejection`
+  - stores `lastError` and `lastSyncError` in `sessionStorage`
+  - forwards to Sentry only when `window.Sentry` is available
+- Added native diagnostics drawer `src/components/error/native-diagnostics-panel.tsx`, reachable from Account (native trigger button) or `?diag=1`, showing app version, build, bridge readiness, connectivity, last sync error, and last runtime error.
+- Instrumented real native sync errors into diagnostics (`src/lib/native/index.ts`, `src/lib/native/health-ios.ts`, `src/lib/native/health-android.ts`) so the panel reflects actual failures.
+- Verification: `bunx eslint src/routes/__root.tsx src/components/error/app-crash-fallback.tsx src/components/error/global-error-boundary.tsx src/components/error/native-diagnostics-panel.tsx src/lib/observability/client-errors.ts src/lib/native/capacitor.ts src/lib/native/index.ts src/lib/native/health-ios.ts src/lib/native/health-android.ts` (**PASS**).
 
 ## WebView crash triage (2026-07-04, web-side)
 
@@ -184,9 +620,9 @@ User rejected the Phase 0–1 **"Menu integration point" SnackBar** and a **bott
 
 | Surface | Build | Where fixes live |
 |---------|-------|------------------|
-| **App Store Connect (live)** | **1.0 (7)** (`CURRENT_PROJECT_VERSION=7`) | Capacitor iOS shell; upload **VALID** 2026-07-04; internal **Development Team** in beta |
-| **Local repo (uncommitted)** | **1.0 (7)** | `ios/App/App.xcodeproj/project.pbxproj` bumped to `CURRENT_PROJECT_VERSION=7`; `bun run ios:testflight` archived + uploaded successfully from this branch |
-| **Flutter web preview** | N/A (not a store build) | All Today/Vitals/Meds/Journal fail-open + burger drawer fixes; **local only** until committed and separately shipped |
+| **App Store Connect (live)** | **1.0 (9)** Capacitor WebView | Loads prod TanStack web; **not Flutter**; internal **Development Team** in beta |
+| **Capacitor repo** | **1.0 (9)** | `ios/App/App.xcodeproj` → `CURRENT_PROJECT_VERSION=9`; upload via `bun run ios:testflight` |
+| **Flutter (never on ASC)** | **0.1.0 (1)** local only | `flutter/pubspec.yaml` `0.1.0+1`; `:8765` preview fixes do **not** ship via Capacitor TestFlight |
 
 External **Founding Team** still needs build assignment + Beta App Review on whichever ASC build is current.
 
@@ -340,9 +776,9 @@ Optional defines: `SUPABASE_URL` (default `https://auth.purplelife.org`), `SITE_
 | Runtime | Cloudflare Worker (`wrangler.deploy.jsonc`, entry `src/server.ts`, `nodejs_compat`) |
 | Package manager | bun (commands below) |
 | Database | Supabase project `xxnzmfzsjplrutrgbzxy` (Purple Life, us-east-2), ~100+ migrations, edge functions deployed |
-| Git heads | `lovable/redesign` at **`c122e31`** (docs hash sync); **uncommitted fleet work** (17 modified + 3 untracked under `flutter/`, +729/−520) not pushed |
+| Git heads | `lovable/redesign` at **`a34351d`** (includes crash-fallback release slice + build 8 bump); unrelated Flutter/docs work remains uncommitted |
 | Production deploy | Worker `purplelife`, version **`af1200ed-ac7f-4182-9021-d455a276fbce`** (2026-07-04, native layout + sync time + caregiver toolbar + crash shell) |
-| TestFlight | **ASC live: 1.0 (7)** (`CURRENT_PROJECT_VERSION=7`, bundle `org.purplelife.app`, ASC `6787298041`). Upload **VALID** 2026-07-04; internal **Development Team** in beta (`IN_BETA_TESTING`). Local script includes API-key auth + macOS-safe temp key handling in `scripts/native-ios-testflight.sh`. Capacitor shell loads prod web, **not** Flutter `:8765`. |
+| TestFlight | **ASC live: 1.0 (9)** — **Capacitor WebView only** (8 VALID builds on ASC: 1,2,4–9; build 3 skipped). Bundle `org.purplelife.app`, ASC `6787298041`. **No Flutter IPA ever uploaded** (`flutter/pubspec.yaml` still `0.1.0+1`). Capacitor `ios/` at build **9**; Flutter local build **1**. Upload script: `scripts/native-ios-testflight.sh`. See [ASC + TestFlight audit](#asc--testflight-audit-2026-07-04-evening-read-only). |
 | Dev server | `bun run dev` on port 8080 |
 | Flutter web (local) | **`http://localhost:8765`** or **`http://127.0.0.1:8765`** (address bar only, not `file://`). Start: `./scripts/flutter-web-serve.sh` (binds `::` for IPv6 localhost). `--rebuild` adds `--base-href=/`. Keepalive: background loop restarts server if port 8765 dies. Cursor browser: open side panel to this URL each session (rule: `.cursor/rules/flutter-web-preview.mdc`). |
 | E2E local | `bun run test:e2e` (boots dev server unless `E2E_BASE_URL` set) |
@@ -425,7 +861,7 @@ Optional defines: `SUPABASE_URL` (default `https://auth.purplelife.org`), `SITE_
 - **`flutter/web/index.html`**: document title **Purple**, favicon `favicon.png`, meta description updated.
 - **Compile fix:** removed duplicate `AccountScreen` / `ToolsScreen` placeholders from `lib/features/settings/settings_placeholder_screen.dart` (real screens live under `features/account/` and `features/tools/`).
 - **Local preview:** **`http://localhost:8765`** serves `flutter/build/web` (`./scripts/flutter-web-serve.sh` from repo root; `--rebuild` runs Doppler release build with `--base-href=/`).
-- **Fix (2026-07-04):** prior serve used `--bind 127.0.0.1` only; macOS `localhost` often hits IPv6 `::1` first (connection refused). Script now binds **`::`** so both URLs return HTTP 200. Blank screen after load: hard-refresh or clear site data (stale `flutter_service_worker.js`). WASM web build not default; CanvasKit loads from `/canvaskit/` (same origin, no CORS).
+- **Fix (2026-07-04):** prior serve used `--bind 127.0.0.1` only; macOS `localhost` often hits IPv6 `::1` first (connection refused). Script now binds **`::`** so both URLs return HTTP 200. **Blank black screen (2026-07-04):** Flutter 3.44 default PWA SW registers then unregisters and reloads clients on activate, leaving a dark `#0a0710` body until CanvasKit paints. Local preview build now passes **`--pwa-strategy=none`** (empty `flutter_service_worker.js`, `_flutter.loader.load()` with no SW). `flutter/web/index.html` shows a **Loading Purple** spinner until `flutter-first-frame`. If an old SW is cached, hard-refresh or clear site data once. WASM web build not default; CanvasKit loads from `/canvaskit/` (same origin, no CORS).
 
 **Build commands:**
 
@@ -434,7 +870,7 @@ cd flutter
 flutter pub get
 dart run build_runner build --delete-conflicting-outputs
 doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
-  flutter build web --release --base-href="/" \
+  flutter build web --release --base-href="/" --pwa-strategy=none \
   --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY"
 cd build/web && python3 -m http.server 8765 --bind ::
 ```

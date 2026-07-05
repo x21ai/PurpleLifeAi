@@ -1,0 +1,6 @@
+// Copy to LocalSigning.xcconfig (gitignored) or generate via:
+//   bun run ios:local-signing
+// from repo root (writes both Capacitor and Flutter signing files).
+
+DEVELOPMENT_TEAM = YOUR_TEAM_ID
+LUCIQ_APP_TOKEN = your_luciq_app_token

@@ -74,6 +74,10 @@ class ConnectivityService {
   }
 
   Future<bool> _evaluateOnline({required bool strict}) async {
+    // Browser builds cannot HEAD/GET the production site cross-origin (no CORS).
+    // Trust the platform network flag so Supabase reads are not misclassified offline.
+    if (kIsWeb) return true;
+
     final results = await _connectivity.checkConnectivity();
     if (_isDisconnected(results)) return false;
 

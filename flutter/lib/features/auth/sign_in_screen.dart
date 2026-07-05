@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+
+import '../../design/purple_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../auth/auth_state.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/providers/core_providers.dart';
 import '../../design/glass_card.dart';
@@ -25,7 +28,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _passwordFocusNode = FocusNode();
   bool _isRegister = false;
+  bool _showPassword = false;
   bool _busy = false;
   String? _error;
 
@@ -33,6 +38,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -59,6 +65,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         await auth.signUpWithEmail(email: email, password: password);
       } else {
         await auth.signInWithEmail(email: email, password: password);
+        ref.read(invalidateSessionDataProvider)();
       }
       if (!mounted) return;
       context.go('/today');
@@ -117,7 +124,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     'Purple',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontFamily: 'Georgia',
+                          fontFamily: PurpleType.serif,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 4.8,
                           color: titleColor,
@@ -148,11 +155,40 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                         const SizedBox(height: 16),
                         TextField(
                           controller: _passwordController,
-                          obscureText: true,
-                          autofillHints: const [AutofillHints.password],
+                          focusNode: _passwordFocusNode,
+                          obscureText: !_showPassword,
+                          keyboardType: TextInputType.visiblePassword,
+                          autofillHints: [
+                            _isRegister
+                                ? AutofillHints.newPassword
+                                : AutofillHints.password,
+                          ],
+                          autocorrect: false,
+                          enableSuggestions: false,
                           style: const TextStyle(color: _foreground),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Password',
+                            suffixIcon: IconButton(
+                              visualDensity: VisualDensity.compact,
+                              splashRadius: 20,
+                              onPressed: _busy
+                                  ? null
+                                  : () {
+                                      setState(
+                                        () => _showPassword = !_showPassword,
+                                      );
+                                      _passwordFocusNode.requestFocus();
+                                    },
+                              tooltip: _showPassword
+                                  ? 'Hide password'
+                                  : 'Show password',
+                              icon: Icon(
+                                _showPassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: subtitleColor,
+                              ),
+                            ),
                           ),
                           onSubmitted: (_) => _busy ? null : _submit(),
                         ),

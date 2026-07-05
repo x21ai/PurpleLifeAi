@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../design/purple_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -36,12 +38,16 @@ class _CareDashboardScreenState extends ConsumerState<CareDashboardScreen> {
         error: (error, _) => SingleChildScrollView(
           padding: const EdgeInsets.only(top: 24, bottom: 120),
           child: ContentColumn(
-            child: _NoAccessView(
-              message: error is CareAccessException
-                  ? error.message
-                  : 'Could not load this dashboard.',
-              onBack: () => context.go('/settings'),
-            ),
+            child: error is CareAccessException
+                ? _NoAccessView(
+                    message: error.message,
+                    onBack: () => context.go('/care'),
+                  )
+                : const EmptyState(
+                    eyebrow: 'Care',
+                    title: 'No care dashboard yet',
+                    body: 'Pull to refresh and try again in a moment.',
+                  ),
           ),
         ),
         data: (overview) => _DashboardBody(
@@ -107,7 +113,7 @@ class _DashboardBody extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextButton.icon(
-                onPressed: () => context.go('/settings'),
+                onPressed: () => context.go('/care'),
                 icon: Icon(Icons.arrow_back, color: Colors.white.withValues(alpha: 0.55)),
                 label: Text(
                   'All people',
@@ -126,7 +132,7 @@ class _DashboardBody extends ConsumerWidget {
               Text(
                 overview.dashboardTitle(),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontFamily: 'Georgia',
+                      fontFamily: PurpleType.serif,
                       height: 1.04,
                       color: Colors.white.withValues(alpha: 0.95),
                     ),
@@ -537,9 +543,10 @@ class _BiometricsPlaceholder extends ConsumerWidget {
 
     return biometricsAsync.when(
       loading: () => const LoadingSkeleton(sectionTitle: 'Biometrics', tileCount: 4),
-      error: (_, __) => const _ComingSoonPanel(
-        title: 'Biometrics',
-        body: 'Could not load biometrics.',
+      error: (_, __) => const EmptyState(
+        eyebrow: 'Biometrics',
+        title: 'No biometrics yet',
+        body: 'Pull to refresh after they connect a wearable.',
       ),
       data: (snapshot) {
         if (!snapshot.scopeGranted) {
@@ -634,7 +641,7 @@ class _ComingSoonPanel extends StatelessWidget {
             title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: Colors.white.withValues(alpha: 0.95),
-                  fontFamily: 'Georgia',
+                  fontFamily: PurpleType.serif,
                 ),
           ),
           const SizedBox(height: 8),
@@ -673,7 +680,7 @@ class _NoAccessView extends StatelessWidget {
         Text(
           'No access',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontFamily: 'Georgia',
+                fontFamily: PurpleType.serif,
                 color: Colors.white.withValues(alpha: 0.95),
               ),
         ),

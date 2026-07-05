@@ -12,7 +12,42 @@ class PurpleApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(authRepositoryProvider);
+    final authInit = ref.watch(authRepositoryProvider);
+
+    if (authInit.isLoading) {
+      return const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        themeMode: ThemeMode.dark,
+        home: Scaffold(
+          backgroundColor: purpleCanvasDark,
+          body: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    if (authInit.hasError) {
+      final message = authInit.error is StateError
+          ? authInit.error.toString()
+          : 'Could not start Purple. Check your connection and try again.';
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        themeMode: ThemeMode.dark,
+        home: Scaffold(
+          backgroundColor: purpleCanvasDark,
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     ref.watch(connectivityServiceProvider);
 
     final router = ref.watch(routerProvider);

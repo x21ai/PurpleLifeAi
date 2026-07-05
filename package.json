@@ -39,8 +39,11 @@
     "native:open:android": "bunx cap open android",
     "ios:local-signing": "bash scripts/ios-write-local-signing.sh",
     "ios:device-build": "bash scripts/native-ios-device-build.sh",
-    "ios:testflight": "bash scripts/native-ios-testflight.sh",
-    "ios:check-asc": "bash scripts/check-asc-doppler.sh"
+    "ios:testflight": "bash scripts/flutter-ios-testflight.sh",
+    "ios:flutter-testflight": "bash scripts/flutter-ios-testflight.sh",
+    "ios:testflight:capacitor": "bash scripts/native-ios-testflight.sh",
+    "ios:check-asc": "bash scripts/check-asc-doppler.sh",
+    "ios:check-asc-builds": "doppler run --project purple-life --config prd -- node scripts/asc-list-builds.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.82",

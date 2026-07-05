@@ -9,9 +9,13 @@ import '../api/worker_client.dart';
 import '../auth/auth_repository.dart';
 import '../network/connectivity_service.dart';
 import 'database.dart';
+import 'supabase_row_parse.dart';
 
 /// Known Supabase tables mirrored locally.
-abstract final class SyncTables {
+abstract class SyncTables {
+
+  static const nativeHealth = 'native_health';
+
   static const biometrics = 'biometrics';
   static const medications = 'medications';
   static const medicationDoses = 'medication_doses';
@@ -51,16 +55,25 @@ class SyncService {
   final SupabaseClient _supabase;
   final Uuid _uuid;
 
-  bool _syncing = false;
+  bool _started = false;
+  Future<SyncResult>? _inFlightSync;
+  String? get _currentUserId =>
+      _auth.currentSession?.user.id ?? _auth.currentUser?.id;
+
+  /// Removes all Drift cache rows for [userId] (call before sign-out).
+  Future<void> clearUserCache(String userId) => _db.clearUserCache(userId);
 
   Future<void> start() async {
+    if (_started) return;
+    _started = true;
+
     _connectivity.onlineStream.listen((online) {
       if (online) {
-        unawaited(syncAll());
+        unawaited(_safeSyncAll(trigger: 'connectivity'));
       }
     });
     if (_connectivity.isOnline) {
-      await syncAll();
+      unawaited(_safeSyncAll(trigger: 'startup'));
     }
   }
 
@@ -71,7 +84,7 @@ class SyncService {
     required Map<String, dynamic> payload,
     String? recordId,
   }) async {
-    final userId = _auth.currentUser?.id;
+    final userId = _currentUserId;
     if (userId == null) {
       throw StateError('Cannot queue write without authenticated user');
     }
@@ -90,25 +103,76 @@ class SyncService {
     await _applyOptimisticCache(tableName, enriched, pendingUpload: true);
   }
 
+  /// Queue a native HealthKit / Health Connect batch for Worker flush.
+  Future<void> queueNativeHealthSync({
+    required String source,
+    required List<Map<String, dynamic>> samples,
+  }) async {
+    await queueWrite(
+      tableName: SyncTables.nativeHealth,
+      operation: 'native_health_sync',
+      payload: {
+        'source': source,
+        'samples': samples,
+      },
+    );
+  }
+
   /// Full sync: flush queue, then pull latest rows from Supabase.
-  Future<SyncResult> syncAll() async {
-    if (_syncing) return SyncResult.skipped();
+  Future<SyncResult> syncAll() {
     if (!_connectivity.isOnline || !_auth.isAuthenticated) {
-      return SyncResult.skipped();
+      return Future.value(SyncResult.skipped());
     }
 
-    _syncing = true;
+    final inFlight = _inFlightSync;
+    if (inFlight != null) return inFlight;
+
+    // Fail open: sync errors should never block direct Supabase reads
+    // in callers (for example meds/today on web when worker calls fail).
+    final next = _runSync().catchError((Object e, StackTrace st) {
+      debugPrint('[SyncService] syncAll failed, continuing: $e\n$st');
+      return SyncResult.skipped();
+    });
+    _inFlightSync = next;
+    return next.whenComplete(() {
+      if (identical(_inFlightSync, next)) {
+        _inFlightSync = null;
+      }
+    });
+  }
+
+  Future<void> _safeSyncAll({required String trigger}) async {
+    try {
+      await syncAll();
+    } catch (e, st) {
+      debugPrint('[SyncService] syncAll failed during $trigger: $e\n$st');
+    }
+  }
+
+  Future<SyncResult> _runSync() async {
+    var queueSent = 0;
+    var queueFailed = 0;
+    var rowsPulled = 0;
+
     try {
       final flush = await _flushQueue();
-      final pull = await _pullAllTables();
-      return SyncResult(
-        queueSent: flush.sent,
-        queueFailed: flush.failed,
-        rowsPulled: pull,
-      );
-    } finally {
-      _syncing = false;
+      queueSent = flush.sent;
+      queueFailed = flush.failed;
+    } catch (e, st) {
+      debugPrint('[SyncService] queue flush failed: $e\n$st');
     }
+
+    try {
+      rowsPulled = await _pullAllTables();
+    } catch (e, st) {
+      debugPrint('[SyncService] table pull failed: $e\n$st');
+    }
+
+    return SyncResult(
+      queueSent: queueSent,
+      queueFailed: queueFailed,
+      rowsPulled: rowsPulled,
+    );
   }
 
   Future<({int sent, int failed})> _flushQueue() async {
@@ -118,8 +182,7 @@ class SyncService {
 
     for (final item in pending) {
       try {
-        final payload =
-            jsonDecode(item.payloadJson) as Map<String, dynamic>;
+        final payload = jsonDecode(item.payloadJson) as Map<String, dynamic>;
         await _applyRemoteWrite(
           tableName: item.targetTable,
           operation: item.operation,
@@ -161,8 +224,7 @@ class SyncService {
       case 'native_health_sync':
         await _worker.postNativeHealthSync(
           source: payload['source'] as String,
-          samples: (payload['samples'] as List)
-              .cast<Map<String, dynamic>>(),
+          samples: (payload['samples'] as List).cast<Map<String, dynamic>>(),
         );
       default:
         throw UnsupportedError('Unknown sync operation: $operation');
@@ -180,12 +242,16 @@ class SyncService {
   }
 
   Future<int> _pullAllTables() async {
-    final userId = _auth.currentUser?.id;
+    final userId = _currentUserId;
     if (userId == null) return 0;
 
     var total = 0;
     for (final table in SyncTables.all) {
-      total += await _pullTable(table, userId);
+      try {
+        total += await _pullTable(table, userId);
+      } catch (e, st) {
+        debugPrint('[SyncService] pull failed for $table: $e\n$st');
+      }
     }
     return total;
   }
@@ -196,14 +262,23 @@ class SyncService {
 
     final timestampColumn = _timestampColumn(tableName);
     if (since != null && timestampColumn != null) {
-      query = query.gte(timestampColumn, since.toUtc().toIso8601String());
+      query = query.gte(
+        timestampColumn,
+        formatSupabaseFilterTimestamp(since),
+      );
     }
 
     final rows = await query;
     final list = (rows as List).cast<Map<String, dynamic>>();
 
     for (final row in list) {
-      await _upsertServerRow(tableName, row);
+      try {
+        await _upsertServerRow(tableName, row);
+      } catch (e, st) {
+        debugPrint(
+          '[SyncService] cache upsert failed for $tableName/${row['id']}: $e\n$st',
+        );
+      }
     }
 
     await _db.setLastSyncedAt(tableName, DateTime.now().toUtc());
@@ -242,12 +317,16 @@ class SyncService {
     Map<String, dynamic> row, {
     required bool pendingUpload,
   }) async {
-    final id = row['id'] as String;
-    final userId = row['user_id'] as String;
+    final id = row['id']?.toString();
+    final userId = row['user_id']?.toString();
+    if (id == null || id.isEmpty || userId == null || userId.isEmpty) {
+      return;
+    }
 
     switch (tableName) {
       case SyncTables.biometrics:
-        final recordedAt = DateTime.parse(row['recorded_at'] as String);
+        final recordedAt = _parseTimestamp(row['recorded_at']);
+        if (recordedAt == null) return;
         await _db.upsertBiometricCache(
           id: id,
           userId: userId,
@@ -255,9 +334,9 @@ class SyncService {
           recordedAt: recordedAt,
         );
       case SyncTables.medications:
-        final updatedAt = DateTime.parse(
-          (row['updated_at'] ?? row['created_at']) as String,
-        );
+        final updatedAt =
+            _parseTimestamp(row['updated_at'] ?? row['created_at']);
+        if (updatedAt == null) return;
         await _db.upsertMedicationCache(
           id: id,
           userId: userId,
@@ -265,18 +344,24 @@ class SyncService {
           updatedAt: updatedAt,
         );
       case SyncTables.medicationDoses:
-        final scheduledAt = DateTime.parse(row['scheduled_at'] as String);
+        final scheduledAt = _parseTimestamp(row['scheduled_at']);
+        final medicationId = row['medication_id']?.toString();
+        if (scheduledAt == null ||
+            medicationId == null ||
+            medicationId.isEmpty) {
+          return;
+        }
         await _db.upsertDoseCache(
           id: id,
           userId: userId,
-          medicationId: row['medication_id'] as String,
+          medicationId: medicationId,
           payload: row,
           scheduledAt: scheduledAt,
         );
       case SyncTables.journalEntries:
-        final capturedAt = DateTime.parse(
-          (row['captured_at'] ?? row['created_at']) as String,
-        );
+        final capturedAt =
+            _parseTimestamp(row['captured_at'] ?? row['created_at']);
+        if (capturedAt == null) return;
         await _db.upsertJournalCache(
           id: id,
           userId: userId,
@@ -287,12 +372,26 @@ class SyncService {
     }
   }
 
+  DateTime? _parseTimestamp(Object? raw) {
+    if (raw == null) return null;
+    if (raw is DateTime) return raw.toUtc();
+    if (raw is String && raw.isNotEmpty) {
+      return DateTime.tryParse(raw)?.toUtc();
+    }
+    return null;
+  }
+
   Future<List<Map<String, dynamic>>> readCached({
     required String tableName,
   }) async {
-    final userId = _auth.currentUser?.id;
+    final userId = _currentUserId;
     if (userId == null) return const [];
-    return _db.readCachedTable(tableName, userId: userId);
+    try {
+      return await _db.readCachedTable(tableName, userId: userId);
+    } catch (error, stack) {
+      debugPrint('[SyncService] readCached failed for $tableName: $error\n$stack');
+      return const [];
+    }
   }
 }
 

@@ -1,11 +1,12 @@
 {
   "pins" : [
     {
-      "identity" : "csqlite",
+      "identity" : "luciq-ios-sdk",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/simolus3/CSQLite.git",
+      "location" : "https://github.com/luciqai/luciq-ios-sdk",
       "state" : {
-        "revision" : "1ee46d19a4f451a7aa64ffc64fc99b4748131e62"
+        "revision" : "c950d0967bd8572383c4923765acead96f63b842",
+        "version" : "19.9.0"
       }
     }
   ],

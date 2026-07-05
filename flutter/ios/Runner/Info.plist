@@ -22,10 +22,23 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>org.purplelife.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>org.purplelife.app</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>LUCIQAppToken</key>
+	<string>$(LUCIQ_APP_TOKEN)</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -48,9 +61,17 @@
 		</dict>
 	</dict>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Purple reads sleep, heart rate, HRV, and steps from Apple Health to help you spot patterns.</string>
+	<string>Purple reads Apple Health data you allow so your journal and vitals stay in sync with wearables and Health.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Purple does not write to Apple Health.</string>
+	<string>Purple may write health metrics you choose to sync so Apple Health stays aligned with your journal and vitals.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Purple uses the camera when you add photos or videos to a journal entry.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Purple uses the microphone when you record voice journal entries.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Purple accesses your photo library when you attach images to journal entries.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

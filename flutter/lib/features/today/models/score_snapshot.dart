@@ -13,6 +13,8 @@ class ScoreSnapshot {
     this.steps,
     this.stepsAvg30,
     this.stepsAvg60,
+    this.tempDeviationC,
+    this.respRateBpm,
     this.latestAt,
     this.hasData = false,
     this.isFromCache = false,
@@ -29,6 +31,12 @@ class ScoreSnapshot {
   final double? steps;
   final double? stepsAvg30;
   final double? stepsAvg60;
+
+  /// Body temperature deviation in degrees C (web "Temp Δ" measurement).
+  final double? tempDeviationC;
+
+  /// Respiratory rate breaths/min (web "Resp /min" measurement).
+  final double? respRateBpm;
   final String? latestAt;
   final bool hasData;
   final bool isFromCache;
@@ -47,6 +55,8 @@ class ScoreSnapshot {
     double? steps,
     double? stepsAvg30,
     double? stepsAvg60,
+    double? tempDeviationC,
+    double? respRateBpm,
     String? latestAt,
     bool? hasData,
     bool? isFromCache,
@@ -63,6 +73,8 @@ class ScoreSnapshot {
       steps: steps ?? this.steps,
       stepsAvg30: stepsAvg30 ?? this.stepsAvg30,
       stepsAvg60: stepsAvg60 ?? this.stepsAvg60,
+      tempDeviationC: tempDeviationC ?? this.tempDeviationC,
+      respRateBpm: respRateBpm ?? this.respRateBpm,
       latestAt: latestAt ?? this.latestAt,
       hasData: hasData ?? this.hasData,
       isFromCache: isFromCache ?? this.isFromCache,
@@ -77,12 +89,16 @@ class TodayVitalItem {
     required this.label,
     required this.value,
     this.unit,
+    this.metric,
   });
 
   final String key;
   final String label;
   final double value;
   final String? unit;
+
+  /// Biometrics route slug when one exists (web `/biometrics/$metric`).
+  final String? metric;
 }
 
 List<TodayVitalItem> buildTodayVitalItems(ScoreSnapshot snapshot) {
@@ -92,18 +108,21 @@ List<TodayVitalItem> buildTodayVitalItems(ScoreSnapshot snapshot) {
         key: 'readiness',
         label: 'Readiness',
         value: snapshot.readiness!,
+        metric: 'readiness',
       ),
     if (snapshot.sleepScore != null)
       TodayVitalItem(
         key: 'sleep',
         label: 'Sleep',
         value: snapshot.sleepScore!,
+        metric: 'sleep_score',
       ),
     if (snapshot.activity != null)
       TodayVitalItem(
         key: 'activity',
         label: 'Activity',
         value: snapshot.activity!,
+        metric: 'activity_score',
       ),
     if (snapshot.hrvMs != null)
       TodayVitalItem(
@@ -111,6 +130,7 @@ List<TodayVitalItem> buildTodayVitalItems(ScoreSnapshot snapshot) {
         label: 'HRV',
         value: snapshot.hrvMs!,
         unit: 'ms',
+        metric: 'hrv',
       ),
     if (snapshot.restingHr != null)
       TodayVitalItem(
@@ -118,6 +138,7 @@ List<TodayVitalItem> buildTodayVitalItems(ScoreSnapshot snapshot) {
         label: 'Resting HR',
         value: snapshot.restingHr!,
         unit: 'bpm',
+        metric: 'resting_hr',
       ),
     if (snapshot.spo2 != null)
       TodayVitalItem(
@@ -125,18 +146,21 @@ List<TodayVitalItem> buildTodayVitalItems(ScoreSnapshot snapshot) {
         label: 'SpO₂',
         value: snapshot.spo2!,
         unit: '%',
+        metric: 'spo2',
       ),
     if (snapshot.stress != null)
       TodayVitalItem(
         key: 'stress',
         label: 'Stress',
         value: snapshot.stress!,
+        metric: 'stress',
       ),
     if (snapshot.steps != null)
       TodayVitalItem(
         key: 'steps',
         label: 'Steps',
         value: snapshot.steps!,
+        metric: 'steps',
       ),
     if (snapshot.vo2max != null)
       TodayVitalItem(

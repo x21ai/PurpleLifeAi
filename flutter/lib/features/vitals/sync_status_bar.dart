@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/providers/core_providers.dart';
+import '../today/wearable_sync.dart';
+
 /// Wearable sync status bar ported from `src/components/biometrics/sync-status.tsx`.
 class SyncStatusBar extends ConsumerStatefulWidget {
   const SyncStatusBar({
@@ -31,6 +34,7 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
 
   bool _loaded = false;
   bool _busy = false;
+  String? _loadError;
   Map<String, bool> _connected = {};
   bool _appleConnected = false;
   String? _dataThrough;
@@ -53,67 +57,90 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
   Future<void> _refresh() async {
     final session = Supabase.instance.client.auth.currentSession;
     if (session == null) {
-      setState(() => _loaded = true);
+      if (!mounted) return;
+      setState(() {
+        _loaded = true;
+        _loadError = null;
+      });
       return;
     }
     final uid = session.user.id;
     final client = Supabase.instance.client;
 
-    final tokenRows = await Future.wait(
-      _pullProviders.map((provider) async {
-        final row = await client
-            .from(provider.tokensTable)
-            .select('updated_at, last_sync_at')
-            .eq('user_id', uid)
-            .maybeSingle();
-        return _TokenRow(id: provider.id, row: row);
-      }),
-    );
-
-    final bio = await client
-        .from('biometrics')
-        .select('recorded_at')
-        .eq('user_id', uid)
-        .inFilter('source', _wearableSources)
-        .order('recorded_at', ascending: false)
-        .limit(1)
-        .maybeSingle();
-
-    final apple = await client
-        .from('apple_health_tokens')
-        .select('last_sync_at, last_webhook_at, updated_at')
-        .eq('user_id', uid)
-        .maybeSingle();
-
-    final connected = <String, bool>{};
-    final stamps = <int>[];
-    for (final entry in tokenRows) {
-      connected[entry.id] = entry.row != null;
-      final ts = _pickTimestamp(
-        entry.row?['last_sync_at'] as String?,
-        entry.row?['updated_at'] as String?,
+    try {
+      final tokenRows = await Future.wait(
+        _pullProviders.map((provider) async {
+          final row = await client
+              .from(provider.tokensTable)
+              .select('updated_at, last_sync_at')
+              .eq('user_id', uid)
+              .maybeSingle();
+          return _TokenRow(id: provider.id, row: row);
+        }),
       );
-      if (ts != null) stamps.add(ts.millisecondsSinceEpoch);
+
+      final bio = await client
+          .from('biometrics')
+          .select('recorded_at')
+          .eq('user_id', uid)
+          .inFilter('source', _wearableSources)
+          .order('recorded_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      final apple = await client
+          .from('apple_health_tokens')
+          .select('last_sync_at, last_webhook_at, updated_at')
+          .eq('user_id', uid)
+          .maybeSingle();
+
+      final connected = <String, bool>{};
+      final stamps = <int>[];
+      for (final entry in tokenRows) {
+        connected[entry.id] = entry.row != null;
+        final ts = _pickTimestamp(
+          entry.row?['last_sync_at'] as String?,
+          entry.row?['updated_at'] as String?,
+        );
+        if (ts != null) stamps.add(ts.millisecondsSinceEpoch);
+      }
+
+      final appleConnected = apple != null;
+      final appleTs = _pickTimestamp(
+        apple?['last_sync_at'] as String?,
+        apple?['last_webhook_at'] as String?,
+        apple?['updated_at'] as String?,
+      );
+      if (appleTs != null) stamps.add(appleTs.millisecondsSinceEpoch);
+
+      final latest = stamps.isEmpty
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(
+              stamps.reduce((a, b) => a > b ? a : b),
+            );
+
+      if (!mounted) return;
+      setState(() {
+        _connected = connected;
+        _appleConnected = appleConnected;
+        _dataThrough = bio?['recorded_at'] as String?;
+        _lastPulledIso = latest?.toUtc().toIso8601String();
+        _loaded = true;
+        _loadError = null;
+      });
+    } on PostgrestException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loaded = true;
+        _loadError = error.message;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loaded = true;
+        _loadError = error.toString();
+      });
     }
-
-    final appleConnected = apple != null;
-    final appleTs = _pickTimestamp(
-      apple?['last_sync_at'] as String?,
-      apple?['last_webhook_at'] as String?,
-      apple?['updated_at'] as String?,
-    );
-    if (appleTs != null) stamps.add(appleTs.millisecondsSinceEpoch);
-
-    final latest = stamps.isEmpty ? null : DateTime.fromMillisecondsSinceEpoch(stamps.reduce((a, b) => a > b ? a : b));
-
-    if (!mounted) return;
-    setState(() {
-      _connected = connected;
-      _appleConnected = appleConnected;
-      _dataThrough = bio?['recorded_at'] as String?;
-      _lastPulledIso = latest?.toUtc().toIso8601String();
-      _loaded = true;
-    });
   }
 
   DateTime? _pickTimestamp(String? primary, [String? secondary, String? tertiary]) {
@@ -134,16 +161,9 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
 
     setState(() => _busy = true);
     try {
-      await Future.wait(
-        active.map((provider) async {
-          if (provider.id == 'oura') {
-            await Supabase.instance.client.functions.invoke(
-              'oura-sync',
-              body: const {'action': 'incremental'},
-            );
-          }
-          // Whoop sync runs on Worker in web; native Flutter can call Worker later.
-        }),
+      await syncConnectedWearables(
+        supabase: Supabase.instance.client,
+        worker: ref.read(workerClientProvider),
       );
       await _refresh();
       widget.onSynced?.call();
@@ -155,6 +175,21 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
   @override
   Widget build(BuildContext context) {
     if (!_loaded) return const SizedBox.shrink();
+
+    if (_loadError != null) {
+      return Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Sync status unavailable. Retry to load wearable sync info.',
+              style: _labelStyle(context),
+            ),
+          ),
+          TextButton(onPressed: _refresh, child: const Text('Retry')),
+        ],
+      );
+    }
+
     if (!_anyPullConnected && !_appleConnected) return const SizedBox.shrink();
 
     final pulledDate = _lastPulledIso == null ? null : DateTime.tryParse(_lastPulledIso!);

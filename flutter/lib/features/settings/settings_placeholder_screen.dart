@@ -22,17 +22,3 @@ class SettingsPlaceholderScreen extends StatelessWidget {
     );
   }
 }
-
-/// Sharing settings placeholder.
-class SharingScreen extends StatelessWidget {
-  const SharingScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const SettingsPlaceholderScreen(
-      title: 'Sharing',
-      body:
-          'Invite caregivers and manage what they can see. Full caregiver flows ship in a later phase.',
-    );
-  }
-}

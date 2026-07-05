@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
@@ -10,6 +11,10 @@ import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
 import 'health_service.dart';
 import 'native_health_sync.dart';
+
+const _freshWindow = Duration(days: 3);
+
+enum _AppleHealthSyncState { receiving, stale, reachable, waiting }
 
 /// Tools/settings panel for Apple Health (iOS) or Health Connect (Android).
 ///
@@ -24,20 +29,42 @@ class AppleHealthPanel extends ConsumerStatefulWidget {
   ConsumerState<AppleHealthPanel> createState() => _AppleHealthPanelState();
 }
 
-class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel> {
+class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
+    with WidgetsBindingObserver {
   final _healthService = HealthService();
 
   bool _loaded = false;
   bool _busy = false;
   bool _authorized = false;
   bool _permissionDenied = false;
+  bool _hasSyncedData = false;
+  bool _loadFailed = false;
   String? _lastSyncAt;
   String? _lastDataAt;
+  String? _statusReason;
+  String? _lastError;
+
+  String get _platformLabel =>
+      Platform.isIOS ? 'Apple Health' : 'Health Connect';
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_refresh());
+    }
   }
 
   Future<void> _refresh() async {
@@ -46,15 +73,27 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel> {
       return;
     }
 
-    final status = await _healthService.authorizationStatus();
-    await _loadSyncTimestamps();
+    try {
+      final status = await _healthService.authorizationStatus();
+      await _loadSyncTimestamps();
 
-    if (!mounted) return;
-    setState(() {
-      _authorized = status.authorized;
-      _permissionDenied = status.readDenied.isNotEmpty && !status.authorized;
-      _loaded = true;
-    });
+      if (!mounted) return;
+      setState(() {
+        _authorized = status.authorized;
+        _permissionDenied =
+            status.readDenied.isNotEmpty && !status.authorized;
+        _statusReason = status.reason;
+        _loadFailed = false;
+        _loaded = true;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadFailed = true;
+        _lastError = 'Could not check HealthKit status. Pull to refresh.';
+        _loaded = true;
+      });
+    }
   }
 
   Future<void> _loadSyncTimestamps() async {
@@ -65,30 +104,34 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel> {
     final source =
         Platform.isIOS ? kAppleHealthSource : kHealthConnectSource;
 
-    try {
-      final bio = await Supabase.instance.client
-          .from('biometrics')
-          .select('recorded_at')
-          .eq('user_id', uid)
-          .eq('source', source)
-          .order('recorded_at', ascending: false)
-          .limit(1)
-          .maybeSingle();
+    final bio = await Supabase.instance.client
+        .from('biometrics')
+        .select('recorded_at')
+        .eq('user_id', uid)
+        .eq('source', source)
+        .order('recorded_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
 
-      final token = await Supabase.instance.client
-          .from('apple_health_tokens')
-          .select('last_sync_at')
-          .eq('user_id', uid)
-          .maybeSingle();
+    final token = await Supabase.instance.client
+        .from('apple_health_tokens')
+        .select('last_sync_at')
+        .eq('user_id', uid)
+        .maybeSingle();
 
-      if (!mounted) return;
-      setState(() {
-        _lastDataAt = bio?['recorded_at'] as String?;
-        _lastSyncAt = token?['last_sync_at'] as String?;
-      });
-    } catch (_) {
-      // Offline or schema unavailable; panel still renders connect UI.
-    }
+    if (!mounted) return;
+    setState(() {
+      _lastDataAt = bio?['recorded_at'] as String?;
+      _lastSyncAt = token?['last_sync_at'] as String?;
+      _hasSyncedData = _lastDataAt != null;
+    });
+  }
+
+  NativeHealthSync _syncClient() {
+    return NativeHealthSync(
+      workerClient: ref.read(workerClientProvider),
+      syncService: ref.read(syncServiceProvider),
+    );
   }
 
   Future<void> _runSync(NativeHealthSync sync) async {
@@ -98,13 +141,20 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel> {
         setState(() {
           _authorized = false;
           _permissionDenied = true;
+          _lastError =
+              'HealthKit access is off. Open Settings, Health, and allow Purple.';
         });
       }
       return;
     }
 
     final result = await sync.readAndSync(healthService: _healthService);
-    if (result.empty && mounted) {
+    if (!mounted) return;
+
+    if (result.empty) {
+      setState(() {
+        _lastError = null;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -112,7 +162,18 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel> {
           ),
         ),
       );
-    } else if (mounted) {
+      return;
+    }
+
+    if (result.queued) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Health data saved offline. Purple will upload when you are back online.',
+          ),
+        ),
+      );
+    } else {
       setState(() => _lastSyncAt = DateTime.now().toUtc().toIso8601String());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -124,14 +185,26 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel> {
         ),
       );
     }
+    setState(() => _lastError = null);
   }
 
   Future<void> _connect() async {
     setState(() {
       _busy = true;
       _permissionDenied = false;
+      _lastError = null;
     });
     try {
+      final availability = await _healthService.isAvailable();
+      if (!availability.available) {
+        if (mounted) {
+          setState(() {
+            _lastError = _availabilityMessage(availability.reason);
+          });
+        }
+        return;
+      }
+
       final already = (await _healthService.authorizationStatus()).authorized;
       if (!already) {
         final granted = await _healthService.requestPermissions();
@@ -140,6 +213,8 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel> {
             setState(() {
               _authorized = false;
               _permissionDenied = true;
+              _lastError =
+                  'Permission denied. Open Settings, Health, and allow Purple to read vitals.';
             });
           }
           return;
@@ -149,24 +224,30 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel> {
       if (!mounted) return;
       setState(() => _authorized = true);
 
-      final sync = NativeHealthSync(workerClient: ref.read(workerClientProvider));
-      await _runSync(sync);
+      await _runSync(_syncClient());
 
-      if (mounted) {
+      if (mounted && _lastError == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Apple Health connected. Vitals synced.')),
+          SnackBar(content: Text('$_platformLabel connected. Vitals synced.')),
         );
       }
     } on WorkerApiException catch (e) {
       if (mounted) {
+        setState(() {
+          _lastError =
+              'Sync failed (${e.statusCode}). Check your connection and try again.';
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Sync failed: ${e.message}')),
         );
       }
     } catch (e) {
       if (mounted) {
+        setState(() {
+          _lastError = 'Could not sync $_platformLabel. Try again in a moment.';
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not sync Apple Health: $e')),
+          SnackBar(content: Text('Could not sync $_platformLabel: $e')),
         );
       }
     } finally {
@@ -178,15 +259,27 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel> {
   }
 
   Future<void> _syncNow() async {
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _lastError = null;
+    });
     try {
-      final sync = NativeHealthSync(workerClient: ref.read(workerClientProvider));
-      await _runSync(sync);
+      await _runSync(_syncClient());
     } on WorkerApiException catch (e) {
       if (mounted) {
+        setState(() {
+          _lastError =
+              'Sync failed (${e.statusCode}). Check your connection and try again.';
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Sync failed: ${e.message}')),
         );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _lastError = 'Could not sync $_platformLabel. Try again in a moment.';
+        });
       }
     } finally {
       if (mounted) {
@@ -196,17 +289,64 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel> {
     }
   }
 
-  String _statusLine() {
-    final freshness = _lastSyncAt ?? _lastDataAt;
-    if (freshness == null) {
-      return _authorized
-          ? 'Connected, waiting for the first sync'
-          : 'Not connected';
+  Future<void> _openSettings() async {
+    final opened = await _healthService.openHealthSettings();
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Could not open Settings. Open Settings, then Health, and allow Purple.',
+          ),
+        ),
+      );
     }
-    return 'Last synced ${_relativeTime(freshness)}';
   }
 
-  String _relativeTime(String iso) {
+  String _availabilityMessage(String? reason) {
+    switch (reason) {
+      case 'health_connect_unavailable':
+        return 'Install or update Health Connect on this phone, then try again.';
+      case 'web':
+        return 'Use the Purple iOS or Android app to connect Apple Health.';
+      case 'unsupported_platform':
+        return 'Health sync requires the Purple iOS or Android app.';
+      default:
+        return 'Health data is unavailable on this device right now.';
+    }
+  }
+
+  _AppleHealthSyncState get _syncState {
+    if (!_authorized) return _AppleHealthSyncState.waiting;
+    final freshness = _lastSyncAt ?? _lastDataAt;
+    if (freshness == null) return _AppleHealthSyncState.reachable;
+    final age = DateTime.now().difference(DateTime.parse(freshness));
+    if (age < _freshWindow) return _AppleHealthSyncState.receiving;
+    return _AppleHealthSyncState.stale;
+  }
+
+  String _statusLine() {
+    final freshness = _lastSyncAt ?? _lastDataAt;
+    switch (_syncState) {
+      case _AppleHealthSyncState.receiving:
+        return _lastSyncAt != null
+            ? 'Last synced ${_relativeTime(freshness)}'
+            : 'Syncing · latest vitals ${_relativeTime(_lastDataAt)}';
+      case _AppleHealthSyncState.stale:
+        return _lastSyncAt != null
+            ? 'Last synced ${_relativeTime(freshness)} · open Purple to refresh'
+            : 'Last vitals ${_relativeTime(_lastDataAt)} · open Purple to refresh';
+      case _AppleHealthSyncState.reachable:
+        return 'Connected · waiting for the first HealthKit sync';
+      case _AppleHealthSyncState.waiting:
+        if (_hasSyncedData) {
+          return 'Account has older Apple Health data · connect HealthKit on this iPhone';
+        }
+        return 'Not connected · grant HealthKit access to sync vitals';
+    }
+  }
+
+  String _relativeTime(String? iso) {
+    if (iso == null) return 'never';
     final diff = DateTime.now().difference(DateTime.parse(iso));
     final minutes = diff.inMinutes;
     if (minutes < 1) return 'just now';
@@ -216,17 +356,30 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel> {
     return '${(hours / 24).round()}d ago';
   }
 
+  Color _statusDotColor() {
+    switch (_syncState) {
+      case _AppleHealthSyncState.receiving:
+        return Colors.green.shade400;
+      case _AppleHealthSyncState.stale:
+        return const Color(0xFFEAB308);
+      case _AppleHealthSyncState.reachable:
+      case _AppleHealthSyncState.waiting:
+        return Colors.white.withValues(alpha: 0.45);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!isNativeHealthPlatform) {
       return _NonNativeEmptyState(embedded: widget.embedded);
     }
 
-    final inner = _authorized ? _connectedBody(context) : _connectBody(context);
-
     if (widget.embedded) {
-      return Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: inner);
+      return _embeddedBody(context);
     }
+
+    final inner =
+        _authorized ? _connectedBody(context) : _connectBody(context);
 
     return GlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -234,14 +387,181 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel> {
     );
   }
 
+  Widget _embeddedBody(BuildContext context) {
+    final subtitle = !_loaded
+        ? 'Checking status'
+        : _loadFailed
+            ? 'Status unavailable'
+            : _statusLine();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+              child: Icon(
+                _authorized ? Icons.favorite : Icons.smartphone,
+                size: 18,
+                color: _authorized
+                    ? Colors.green.shade300
+                    : Colors.white.withValues(alpha: 0.85),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _platformLabel,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontFamily: 'Georgia',
+                          color: Colors.white.withValues(alpha: 0.92),
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      if (_loaded && !_loadFailed) ...[
+                        Container(
+                          width: 6,
+                          height: 6,
+                          margin: const EdgeInsets.only(right: 6),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _statusDotColor(),
+                          ),
+                        ),
+                      ],
+                      Expanded(
+                        child: Text(
+                          subtitle,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.55),
+                                  ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (_loaded && !_authorized)
+              FilledButton(
+                onPressed: _busy ? null : _connect,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(88, 44),
+                  shape: const StadiumBorder(),
+                ),
+                child: _busy
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(Platform.isIOS ? 'Connect' : 'Connect'),
+              ),
+          ],
+        ),
+        if (_authorized) ...[
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              OutlinedButton(
+                onPressed: _busy ? null : _syncNow,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(72, 44),
+                ),
+                child: _busy
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Sync'),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: _openSettings,
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(88, 44),
+                  foregroundColor: Colors.white.withValues(alpha: 0.7),
+                ),
+                child: const Text('Settings'),
+              ),
+            ],
+          ),
+        ] else if (_loaded) ...[
+          const SizedBox(height: 10),
+          Text(
+            Platform.isIOS
+                ? 'Grant HealthKit access to sync sleep, HRV, steps, and heart rate from this iPhone.'
+                : 'Grant Health Connect access to sync vitals from this phone.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.45),
+                  height: 1.4,
+                ),
+          ),
+          if (!_authorized) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: _openSettings,
+                child: const Text('Open Health Settings'),
+              ),
+            ),
+          ],
+        ],
+        if (_permissionDenied || _lastError != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            _lastError ??
+                'Permission denied. Open Settings, Health, and allow Purple to read vitals.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFFEAB308),
+                  height: 1.4,
+                ),
+          ),
+        ],
+        if (_loadFailed) ...[
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(onPressed: _refresh, child: const Text('Retry')),
+          ),
+        ],
+        if (_statusReason != null && !_authorized && !_permissionDenied) ...[
+          const SizedBox(height: 8),
+          Text(
+            _availabilityMessage(_statusReason),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.45),
+                ),
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _connectBody(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(Icons.smartphone, size: 48, color: Colors.white.withValues(alpha: 0.7)),
+        Icon(Icons.smartphone,
+            size: 48, color: Colors.white.withValues(alpha: 0.7)),
         const SizedBox(height: 16),
         Text(
-          'Apple Health',
+          _platformLabel,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontFamily: 'Georgia',
                 color: Colors.white.withValues(alpha: 0.95),
@@ -271,13 +591,16 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Connect Apple Health'),
+                : Text('Connect $_platformLabel'),
           ),
         ),
-        if (_permissionDenied) ...[
+        const SizedBox(height: 12),
+        TextButton(onPressed: _openSettings, child: const Text('Open Settings')),
+        if (_permissionDenied || _lastError != null) ...[
           const SizedBox(height: 16),
           Text(
-            'Permission denied. Open Settings, Health, and allow Purple to read vitals.',
+            _lastError ??
+                'Permission denied. Open Settings, Health, and allow Purple to read vitals.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: const Color(0xFFEAB308),
                 ),
@@ -295,7 +618,7 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel> {
         Icon(Icons.favorite, size: 48, color: Colors.green.shade300),
         const SizedBox(height: 16),
         Text(
-          'Apple Health',
+          _platformLabel,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontFamily: 'Georgia',
                 color: Colors.white.withValues(alpha: 0.95),
@@ -303,12 +626,28 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
-        Text(
-          _loaded ? _statusLine() : '',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.7),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _statusDotColor(),
               ),
-          textAlign: TextAlign.center,
+            ),
+            Flexible(
+              child: Text(
+                _loaded ? _statusLine() : '',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 24),
         SizedBox(
@@ -329,13 +668,17 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel> {
           ),
         ),
         const SizedBox(height: 12),
-        Text(
-          'Open Settings, Health, to change which metrics Purple can read.',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.55),
-              ),
-          textAlign: TextAlign.center,
-        ),
+        TextButton(onPressed: _openSettings, child: const Text('Open Settings')),
+        if (_lastError != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            _lastError!,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFFEAB308),
+                ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ],
     );
   }
@@ -348,18 +691,60 @@ class _NonNativeEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const state = EmptyState(
-      eyebrow: 'Native only',
-      title: 'Connect on your phone',
-      body:
-          'Apple Health and Health Connect require the Purple iOS or Android app. '
-          'Install the native app on your phone to grant HealthKit or Health Connect access.',
-    );
+    if (embedded) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.08),
+            ),
+            child: Icon(
+              Icons.smartphone,
+              size: 18,
+              color: Colors.white.withValues(alpha: 0.85),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Apple Health',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontFamily: 'Georgia',
+                        color: Colors.white.withValues(alpha: 0.92),
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Install the Purple iOS app to connect HealthKit directly. '
+                  'On web, use Health Auto Export at purplelife.org/tools.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.55),
+                        height: 1.4,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
 
-    if (embedded) return state;
     return const Padding(
       padding: EdgeInsets.only(top: 16),
-      child: state,
+      child: EmptyState(
+        eyebrow: 'Native only',
+        title: 'Connect on your phone',
+        body:
+            'Apple Health and Health Connect require the Purple iOS or Android app. '
+            'Install the native app on your phone to grant HealthKit or Health Connect access.',
+      ),
     );
   }
 }

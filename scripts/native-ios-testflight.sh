@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Archive Purple iOS app and upload to TestFlight (App Store Connect).
+# DEPRECATED — do not use unless emergency Capacitor WebView rollback.
+# Primary TestFlight path: scripts/flutter-ios-testflight.sh (bun run ios:testflight).
+#
+# Archive Capacitor iOS shell and upload to TestFlight (App Store Connect).
 # Prerequisites: full Xcode.app, Doppler purple-life/prd with DEVELOPMENT_TEAM and
 # App Store Connect API key (APP_STORE_CONNECT_KEY_ID, ISSUER_ID, API_KEY .p8).
 set -euo pipefail
@@ -38,9 +41,41 @@ require_asc_secrets() {
     || fail "Add App Store Connect API key to Doppler ${DOPPLER_PROJECT}/${DOPPLER_CONFIG}: APP_STORE_CONNECT_KEY_ID, APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_API_KEY"
 }
 
+ASC_KEY_FILE=""
+ASC_KEY_ID=""
+ASC_ISSUER_ID=""
+ASC_AUTH_ARGS=()
+
+cleanup_asc_key() {
+  if [[ -n "${ASC_KEY_FILE}" && -f "${ASC_KEY_FILE}" ]]; then
+    rm -f "${ASC_KEY_FILE}"
+  fi
+}
+
+prepare_asc_auth() {
+  ASC_KEY_ID="$(doppler secrets get APP_STORE_CONNECT_KEY_ID --project "${DOPPLER_PROJECT}" --config "${DOPPLER_CONFIG}" --plain)"
+  ASC_ISSUER_ID="$(doppler secrets get APP_STORE_CONNECT_ISSUER_ID --project "${DOPPLER_PROJECT}" --config "${DOPPLER_CONFIG}" --plain)"
+  # macOS mktemp requires trailing Xs; extension is optional for xcodebuild auth key path.
+  ASC_KEY_FILE="$(mktemp "${TMPDIR:-/tmp}/AuthKey_XXXXXX")"
+  doppler secrets get APP_STORE_CONNECT_API_KEY --project "${DOPPLER_PROJECT}" --config "${DOPPLER_CONFIG}" --plain >"${ASC_KEY_FILE}"
+  chmod 600 "${ASC_KEY_FILE}"
+  trap cleanup_asc_key EXIT
+}
+
+xcodebuild_auth_args() {
+  ASC_AUTH_ARGS=(
+    -authenticationKeyPath "${ASC_KEY_FILE}"
+    -authenticationKeyID "${ASC_KEY_ID}"
+    -authenticationKeyIssuerID "${ASC_ISSUER_ID}"
+  )
+}
+
 main() {
+  log "DEPRECATED: Capacitor TestFlight upload. Use 'bun run ios:testflight' (Flutter) unless emergency rollback."
   find_xcode_dev_dir || fail "Xcode.app not found"
   require_asc_secrets
+  prepare_asc_auth
+  xcodebuild_auth_args
 
   cd "${REPO_ROOT}"
   log "Syncing Capacitor iOS project"
@@ -69,6 +104,7 @@ main() {
     DEVELOPMENT_TEAM="${TEAM}" \
     CODE_SIGN_STYLE=Automatic \
     -allowProvisioningUpdates \
+    "${ASC_AUTH_ARGS[@]}" \
     archive
 
   log "Exporting and uploading to App Store Connect / TestFlight"
@@ -78,7 +114,8 @@ main() {
     -exportPath "${EXPORT_DIR}" \
     -exportOptionsPlist "${REPO_ROOT}/ios/ExportOptions.plist" \
     DEVELOPMENT_TEAM="${TEAM}" \
-    -allowProvisioningUpdates
+    -allowProvisioningUpdates \
+    "${ASC_AUTH_ARGS[@]}"
 
   log "Upload complete. Open App Store Connect → TestFlight to add internal/external testers."
   log "Build processing usually takes 5–15 minutes before it is installable."
