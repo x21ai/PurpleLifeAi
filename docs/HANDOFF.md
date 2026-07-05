@@ -9,13 +9,17 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-05 orchestrated fix fleet (LOCAL ONLY, NOT pushed; TF19 pending):** fleet ran on Flutter branch `lovable/redesign`, base `4f69041`. **Wave 1 landed locally** (meds edit data-loss fix, timeline dose actions, care Accept wired client-side + inbox badge, My Health conditions grid, bottom-nav Meds→Insights, token cleanups) with gates `flutter analyze lib/` **clean** + `flutter test` **91/91**. **Wave 2 foundation landed** (fl_chart, flutter_markdown, seizure read repository). **Wave 2 in flight** on branches `wave2-insights` (`da858ae`) and `wave2-caredash` (`1d7c5a1`), gates green so far; askpurple / carechat / biometrics / reports writers still running. Nothing from the fleet is pushed or in TestFlight yet — see log entry below.
+
+**Server blocker:** caregiver accept/decline and ALL caregiver dashboard reads need Worker routes fronting `src/lib/care.functions.ts` server fns — see OPEN-ISSUES `care-accept-server-route` (extended 2026-07-05 with the full backlog).
+
 **`lovable/redesign` @ `68bf214`** (pubspec **1.0.0+18**, pushed 2026-07-05). **`main` @ `ef05394`** (includes merge wave through `523de05` / `7fd1bc2` fleet). **`origin/lovable/redesign` aligned** with merge + TF18 bump + analyze const fixes.
 
-**TestFlight 1.0 (18):** ASC **VALID** 2026-07-05 (internal + external **IN_BETA_TESTING**). Wave: care chat, insights, timeline, marketing extras, synced data panel. **1.0 (17)** also VALID (external READY_FOR_BETA_SUBMISSION).
+**TestFlight 1.0 (18):** ASC **VALID** 2026-07-05 (internal + external **IN_BETA_TESTING**). Wave: care chat, insights, timeline, marketing extras, synced data panel. **1.0 (17)** also VALID (external READY_FOR_BETA_SUBMISSION). **1.0 (19)**: pending — will carry the 2026-07-05 fleet once landed + pushed.
 
 **Flutter gates:** `flutter analyze lib/` **clean**; `flutter test` **91/91**. Local **266 untracked `* 2.*` Finder duplicates** removed from `flutter/` to unblock analyze (not in git).
 
-**Next action:** Restart Cursor for Luciq MCP; triage **tf-crash-report** via MCP on TF18; tester install TF18; Oura console redirect (owner).
+**Next action:** Land remaining Wave-2 writer branches serially (gate after each); push `lovable/redesign`; web team adds Worker routes per `care-accept-server-route`; then TF19. Also still open: Luciq MCP crash triage on TF18; Oura console redirect (owner).
 
 ---
 
@@ -84,6 +88,33 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 - **Stand / next:** `flutter analyze lib/` clean, `flutter test` 91/91. Committed `wave2-caredash` @ `1d7c5a1`, NOT pushed. Next: parent lands slice + runs gate; backend exposes caregiver server fns as Worker routes to wire the gap-stated tabs.
 - **Who / where:** Claude (Opus 4.8), Flutter feature writer. Worktree `wt-caredash`, branch `wave2-caredash`.
 - **Timestamp:** 2026-07-05T00:00:00Z
+### 2026-07-05T23:00:00Z — Orchestrated fix fleet: Wave 1 landed + Wave 2 foundation + Wave 2 in flight
+
+- **Requested:** Run an orchestrated multi-agent fix fleet on the Flutter app (branch `lovable/redesign`, base `4f69041`): close audit-found P0/P1 gaps (meds data-loss, care accept loop, My Health depth, nav parity, token cleanup), then build out Wave-2 depth (insights, care dashboard, charts/markdown foundation). Local only; no push; TF19 after landing.
+- **Done:**
+  - **Wave 1 (landed locally; gates `flutter analyze lib/` clean + `flutter test` 91/91 after each land):**
+    - Meds **edit data-loss fixed**: form now hydrates the full medication row and partial update preserves unedited columns.
+    - Meds history status colors **tokenized** + copy aligned with web.
+    - VO2max unit suffix gated on non-null value; elevated risk band chip restored to the **warning** token.
+    - My Health: **"Your conditions" grid** + **DNA insights card** added (non-navigating; target routes still missing).
+    - Bottom nav 3rd tab switched **Meds → Insights** (web parity); Meds added to the menu sheet.
+    - Timeline dose actions: **I took it / Skip / Undo** pills.
+    - Care invite **Accept wired client-side**: POST `/api/care/accept`, in-app `/care/accept?token=` route + `CareAcceptScreen`; top-bar **pending-inbox badge**.
+    - Token cleanup in reports/care: `0xFFFF8A80`→`danger`, `0xFFF3D58B`→`warning`, `0xFF1A1224`→`backgroundTertiary`.
+  - **Wave 2 foundation (landed):** `fl_chart 0.69.2` + `flutter_markdown 0.7.7+1` (pure Dart, no native pods); new `flutter/lib/features/seizures/seizure_repository.dart` (`SeizureEvent`, `loadRecent`, `recentSeizuresProvider`).
+  - **Wave 2 in flight (feature branches, gates green so far, NOT merged):**
+    - `wave2-insights` @ `da858ae` — vitals tiles, records category counts, 90-day seizure heatmap + list, fl_chart trends; AI noticing/pattern cards honestly gap-stated as server-only.
+    - `wave2-caredash` @ `1d7c5a1` — biometrics tab with real per-metric cards; other tabs honest gap-states; new `/care/:ownerId/reports/:reportId` route + `CareReport` gap-state screen.
+    - askpurple / carechat / biometrics / reports writers **still running** at time of writing.
+  - **Docs (this entry):** OPEN-ISSUES `care-accept-server-route` extended with the full Worker-route backlog; stale rows corrected in `FLUTTER-CUTOVER-GAP-MATRIX.md` (`/insights`, `/timeline` are registered, not Missing) and resolved items marked in `FLUTTER-DESIGN-PARITY-CHECKLIST.md` (§0 serif, §3 meds).
+- **Issues:**
+  - **All caregiver mutations and dashboard reads blocked server-side**: accept/decline plus every caregiver read (today, meds, journal, seizures, reports, hydration, chat thread) needs Worker routes fronting `src/lib/care.functions.ts` server fns; insights/reports AI cards also server-only. Full grouped backlog in OPEN-ISSUES `care-accept-server-route`. Flutter UI is wired and fails with clear errors, not silent no-ops.
+  - Wave-2 writer branches not yet merged; each must land serially with gates before push. Nothing pushed; **TF19 pending**.
+  - My Health conditions grid + DNA card are non-navigating (`/condition/$slug`, `/my-health-dna` routes still missing).
+  - Residual `fontFamily: 'Georgia'` in `apple_health_panel.dart` and `wearable_oauth_callback_screen.dart` (out of Wave-1 scope; core screens all on `PurpleType.serif`).
+- **Stand / next:** Wave 1 + Wave 2 foundation merged locally on the integration line; Wave 2 partially landed on branches. **Next:** finish remaining writers, land serially with gate-per-land, push `lovable/redesign`, web team adds Worker routes, then TF19.
+- **Who / where:** Claude Code orchestrated fleet · darwin · lovable/redesign (local worktrees off base `4f69041`; wave branches `wave1-*`, `wave2-*`)
+- **Timestamp:** 2026-07-05T23:00:00Z
 
 ### 2026-07-05T00:00:00Z — Wave-1 care/reports fixes (accept loop, inbox badge, tokens)
 

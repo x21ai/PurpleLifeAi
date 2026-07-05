@@ -1,6 +1,8 @@
 # Flutter design parity checklist (acceptance bar)
 
-Last updated: 2026-07-04 (read-only audit; no code changed)
+Last updated: 2026-07-05 (marked items resolved by the 2026-07-05 orchestrated fix fleet;
+verified against code in worktree; original 2026-07-04 findings preserved below with
+strikethrough, never deleted)
 
 The Flutter app on :8765 must match the original production app: the TanStack
 web routes under `src/routes/_app/**` as served from `www.purplelife.org`
@@ -40,12 +42,15 @@ Web token sources: `src/styles.css` (`:root` light, `.dark` dark) and
 `design/tokens.json`. Flutter loads `design/tokens.json` via
 `flutter/lib/design/tokens.dart` but screens frequently bypass it.
 
-- **[P0] Serif font is Georgia everywhere in Flutter.** Web serif is
+- **[P0] ~~Serif font is Georgia everywhere in Flutter.~~ DONE 2026-07-05.** All core
+  screens (today, vitals, meds, journal headers, dose cards, account, tools, reports,
+  care) now route serif through the shared `PurpleType.serif` constant, so the font swap
+  is one line. Residual `fontFamily: 'Georgia'` remains only in two auxiliary files
+  (`features/health/apple_health_panel.dart`, `features/tools/wearable_oauth_callback_screen.dart`)
+  — follow-up, not sign-off blocking. Original finding: Web serif is
   `Source Serif 4` (`tokens.json > typography.fontSerif`; `--font-serif` in
-  `styles.css`). Every `fontFamily: 'Georgia'` (today, vitals, meds, journal
-  headers, dose cards, account, tools) must render the bundled Source Serif 4
-  (add font asset if missing) or, at minimum, one shared `PurpleType.serif`
-  constant so a later font swap is one line.
+  `styles.css`); every `fontFamily: 'Georgia'` must render the bundled Source Serif 4
+  or, at minimum, one shared `PurpleType.serif` constant.
 - **[P0] Hardcoded `Colors.white.withValues(...)`, `Colors.amber`,
   `Colors.greenAccent`, `Colors.orangeAccent` instead of tokens.** Required
   mapping (dark set from `tokens.json > colors.dark`):
@@ -247,26 +252,32 @@ Web token sources: `src/styles.css` (`:root` light, `.dark` dark) and
 
 ### Deltas found
 
-- **[P0] Header copy wrong**: "MEDS / Your medications" instead of
-  "Medications / Your schedule, your record."
-- **[P0] No add flow affordances**: no toolbar (add/scan/voice/history), no
-  FAB. Add button currently only appears inside the empty state and shows a
-  SnackBar.
-- **[P0] Today's doses panel missing**: adherence stat, day navigation, 24h
-  dot timeline, taken/missed counts, Undo and "I took it" reclassify, and
-  out-of-stock refill link. Flutter's panel is title + rows with
-  Taken/Snooze/Skip only, and hides entirely when there are no doses (web
-  shows the empty panel with `meds.noDosesToday`).
-- **[P0] Library not grouped by kind**, no "All medications" eyebrow, no
-  archive count, no export-to-calendar, no kebab actions, no refill/stock
-  badges, no next-dose text, no inline Taken.
+- **[P0] ~~Header copy wrong~~ DONE 2026-07-05** (fleet; verified in code):
+  `meds_screen.dart` renders "Your schedule, / your record." Original: "MEDS / Your
+  medications" instead of "Medications / Your schedule, your record."
+- **[P0] ~~No add flow affordances~~ DONE 2026-07-05** (fleet; verified): round icon
+  toolbar (add/scan/voice/history) and mobile FAB (`_MedsAddFab`) exist and open the add
+  flow. Original: Add button only appeared inside the empty state and showed a SnackBar.
+- **[P0] ~~Today's doses panel missing~~ DONE 2026-07-05** (fleet; verified): panel has
+  `_DoseTimeline` 24h dot timeline (12a/6a/12p/6p/12a labels), "Mark all taken", Undo and
+  "I took it" reclassify. Also, 2026-07-05 fleet fixed the **meds edit data-loss bug**
+  (form hydrates full row; partial update preserves unedited columns). Original: panel
+  was title + rows with Taken/Snooze/Skip only and hid entirely with no doses.
+- **[P0] ~~Library not grouped by kind~~ DONE 2026-07-05** (fleet; verified):
+  `_groupedMeds` grouped active/all view per web `groupedMeds`. Original: no grouping,
+  no "All medications" eyebrow, no archive count, no export-to-calendar, no kebab
+  actions, no refill/stock badges, no next-dose text, no inline Taken. (Re-verify the
+  secondary affordances — export/kebab/badges — at device sign-off.)
 - **[P0] Refill forecast and adherence extras cards missing.**
 - **[P0] Tabs are pill-style; web uses underline tabs on a bottom border.**
 - **[P1] Empty-state copy**: "No medications yet..." vs web
   `meds.emptyTitle/emptyBody`.
-- **[P1] Filter chip label**: Flutter "Meds" vs web "Medications"; selected
-  chip on web is solid `--primary` with light text, not white/14%.
-- **[P1] Dose status colors**: use token success/destructive, not
+- **[P1] ~~Filter chip label~~ DONE 2026-07-05** (verified: chip reads "Medications").
+  Original: Flutter "Meds" vs web "Medications"; selected chip on web is solid
+  `--primary` with light text, not white/14%.
+- **[P1] ~~Dose status colors~~ DONE 2026-07-05** (fleet; verified: no
+  greenAccent/orangeAccent remains under `features/meds/`; meds history status colors
+  tokenized + copy aligned). Original: use token success/destructive, not
   greenAccent/orangeAccent.
 - **[P1] Reminder nudge and manage-hint line missing.**
 - **[P1] Web /meds renders on the standard theme canvas (no custom radial
