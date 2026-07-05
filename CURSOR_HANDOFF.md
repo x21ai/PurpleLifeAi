@@ -1,8 +1,40 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~07:52 ET (Apple Health TF14 shipped).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~08:05 ET (TF15 VALID on ASC).
 
-## Settings + Account P0 (2026-07-05 ~08:00 ET) — TF14 slice
+## TestFlight 1.0 (15) — install this build (2026-07-05 ~08:05 ET)
+
+**Install TestFlight build:** **1.0 (15)** (`processing=VALID`, ASC build id `e85ac1a5-f547-4cb1-b51b-aa091191ba15`, uploaded 2026-07-05 05:01 PT). Replaces **TF14**, which shipped **before** Settings/`#/account` (`99e836c`) and native Oura (`98d1ec8`).
+
+| Fix | Commit / detail |
+|-----|-----------------|
+| **Settings scroll** | Settings hub sections scroll correctly (`563f7c2` + compile fix `92e0c0b`) |
+| **`#/account` deep link** | `RouterRefreshNotifier`, stable GoRouter, `resolvePlatformInitialLocation()` — no bounce to `#/today` (`99e836c`) |
+| **Oura native** | Custom-scheme OAuth deep link + inline Tools errors (`98d1ec8`) |
+| **Apple Health** | Keychain connect flag, no bool auth gate, user-visible errors (`92e0c0b` health slice) |
+
+| Gate | Status |
+|------|--------|
+| `flutter analyze lib/` | **PASS** (0 issues) |
+| `flutter test` | **46/46 PASS** |
+| `pubspec` | **1.0.0+15** |
+| ASC | **1.0 (15) VALID** |
+
+**Verify:**
+```bash
+doppler run --project purple-life --config prd -- node scripts/asc-list-builds.mjs
+cd flutter && flutter analyze lib/ && flutter test
+```
+1. Install **1.0 (15)** from TestFlight (not 14).
+2. Cold-open `purplelife://` or web `#/account` — stays on Account.
+3. Tools → Oura connect (native deep link return).
+4. Tools → Apple Health Connect + Sync now.
+
+**Upload:** `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer doppler run --project purple-life --config prd -- bun run ios:testflight` (build 15, 2026-07-05).
+
+---
+
+## Settings + Account P0 (2026-07-05 ~08:00 ET) — in TF15
 
 **Fix:** `#/account` no longer bounces to `#/today` on cold hash nav. Root cause was GoRouter recreation on auth changes; now uses stable router + `RouterRefreshNotifier` + `resolvePlatformInitialLocation()`. `Scaffold.endDrawer` burger menu restored (replaces custom overlay). Settings round 2 (`563f7c2`) merged with WIP.
 
@@ -12,7 +44,7 @@ Operational state of the PurpleLife project for the next agent or engineer. Last
 | `flutter test` | **46/46 PASS** |
 | Browser `#/account` hash | **PASS** (stays on `#/account`, not `#/today`) |
 | Browser `#/settings` hash | **PASS** |
-| `pubspec` build | **1.0.0+14** (coordinated with health TF14) |
+| `pubspec` build | **1.0.0+15** (superseded by TF15 ASC upload) |
 
 **Verify:**
 ```bash
