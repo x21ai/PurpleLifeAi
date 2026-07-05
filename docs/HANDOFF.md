@@ -9,19 +9,33 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign`** at **`d62472b`** (TF16 Luciq dedupe commit). TestFlight
-**1.0 (16)** **VALID**, IN_BETA_TESTING (2026-07-05). **Flutter web cutover** runbook scaffolded:
-`docs/FLUTTER-WEB-CUTOVER.md` + `scripts/flutter-web-build-prod.sh` (plan only, no prod deploy).
-Phase 5 native cutover on TestFlight; prod web still TanStack `_app` until Worker dispatch ships.
+Purple Life on **`lovable/redesign`** (wave 1 parity commit). TestFlight **1.0 (16)**
+**VALID**, IN_BETA_TESTING (2026-07-05). Flutter signed-in wave 1 shipped: `/my-health`,
+`/biometrics`, reports upload, My Body nav, synced-data banners.
 
-**Next action:** Device verify TF16 (`tf16-device-verify`); implement Worker merge + `server.ts`
-routing when owner approves Flutter web cutover staging.
+**Next action:** Device verify My Body + Tools OAuth on TF16/17; register Oura native
+redirect in Oura console (`oura-native-redirect-console`).
 
 ---
 
 ## Log
 
-### 2026-07-05T14:00:00Z — Flutter web cutover runbook + TF16 commit
+### 2026-07-05T18:10:00Z — Flutter signed-in route parity wave 1
+
+- **Requested:** Complete P0 wave 1: `/my-health` + nav, Tools OAuth UX, vitals depth,
+  reports hub, journal honest capture; analyze + test; commit and push.
+- **Done:** Added `MyHealthScreen` + repository (narrative, 90-day coverage, metric rows);
+  bottom nav **My Body** → `/my-health`; `/biometrics` hub + trend drilldowns; vitals synced
+  strip + My Body link; Tools Oura redirect hint + coverage summary; reports upload route
+  (`/settings/reports/new`); journal platform-honest capture dock. `flutter test` **50/50**
+  (excludes WIP `marketing_routes_test.dart` on disk). Commit `fix(flutter): signed-in route
+  parity wave 1`.
+- **Issues:** Oura console redirect still manual (`tf-oauth-not-working`). Marketing Flutter
+  WIP remains untracked on disk.
+- **Stand / next:** TF device sign-off on synced-data visibility; ship TF17 when ready.
+- **Who / where:** Cursor subagent · darwin · lovable/redesign
+- **Timestamp:** 2026-07-05T18:10:00Z
+
 
 - **Requested:** Document Worker path for Flutter web at www.purplelife.org; scaffold prod build
   script; list Worker route changes (plan only); commit TF16 Luciq dedupe; push.
