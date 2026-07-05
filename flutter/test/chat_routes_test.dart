@@ -5,8 +5,8 @@ import 'package:purple_app/core/config/app_config.dart';
 import 'package:purple_app/core/providers/core_providers.dart';
 import 'package:purple_app/design/purple_theme.dart';
 import 'package:purple_app/design/tokens.dart';
-import 'package:purple_app/features/care/care_repository.dart';
 import 'package:purple_app/features/chat/ask_purple_screen.dart';
+import 'package:purple_app/features/chat/care_chat_repository.dart';
 import 'package:purple_app/features/chat/care_chat_screen.dart';
 import 'package:purple_app/features/chat/chat_copy.dart';
 import 'package:purple_app/features/chat/chat_repository.dart';
@@ -27,7 +27,7 @@ Widget _wrap(Widget child) {
       appConfigProvider.overrideWithValue(_testConfig),
       authSessionProvider.overrideWith((ref) => Stream.value(null)),
       chatConditionsProvider.overrideWith((ref) async => const []),
-      sharingListProvider.overrideWith((ref) async => SharingListData.empty),
+      careThreadsProvider.overrideWith((ref) async => const []),
       isOnlineProvider.overrideWith((ref) => Stream.value(true)),
     ],
     child: MaterialApp(

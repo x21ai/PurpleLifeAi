@@ -9,15 +9,32 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign`**. TestFlight **1.0 (17) VALID**. Flutter marketing now
-covers **8** public paths (`/`, `/pricing`, `/privacy`, `/about`, `/trust`, `/features`,
-`/charter`, `/terms`). Cutover gap matrix: **23** signed-in gaps remain.
+Purple Life on **`lovable/redesign`**. TestFlight **1.0 (17) VALID**. Flutter **Care chat**
+(`/chat-care`) lists threads and sends messages via Supabase RLS (mirrors web
+`care-chat.functions.ts`; no Worker RPC routes exist). Marketing covers **8** public paths.
 
-**Next action:** TF17 device sign-off; Worker marketing cutover when approved.
+**Next action:** TF17 device sign-off; optional Worker care-chat RPCs for caregiver thread
+creation without owner first.
 
 ---
 
 ## Log
+
+### 2026-07-05T14:36:00Z — Flutter care chat messaging wired
+
+- **Requested:** Wire `/chat-care` composer to web care chat APIs; `flutter analyze` + test;
+  commit `fix(flutter): wire care chat messaging`; push.
+- **Done:** `care_chat_repository.dart` (list threads, load messages, send, mark read,
+  owner `getOrCreateDirectThread`); `care_chat_screen.dart` thread list + live composer;
+  `chat_copy.dart` send/offline strings; `chat_routes_test.dart` provider override. Web APIs
+  are TanStack server fns (`listCareThreads`, `sendCareMessage`, etc.), not Worker `/api/*`.
+- **Issues:** Caregivers cannot create a new direct thread on Flutter until owner opens chat
+  (RLS); attachments/group threads deferred; full suite **87/88** (pre-existing
+  `insights_timeline_routes_test.dart` compile error on branch).
+- **Stand / next:** Optional Worker `/api/care-chat/*` for admin-only thread creation; realtime
+  subscription like web.
+- **Who / where:** Cursor subagent · darwin · lovable/redesign (uncommitted)
+- **Timestamp:** 2026-07-05T14:36:00Z
 
 ### 2026-07-05T14:40:00Z — Flutter marketing features charter terms routes
 

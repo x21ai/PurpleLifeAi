@@ -27,4 +27,8 @@ abstract final class ChatCopy {
   static const careComposerHint = 'Message';
   static const careNoRelationships =
       'No active care relationships yet. Invite someone from Settings → Sharing.';
+  static const careSendError =
+      'Could not send your message. Try again in a moment.';
+  static const careOffline =
+      'You are offline. Reconnect to send care chat messages.';
 }
