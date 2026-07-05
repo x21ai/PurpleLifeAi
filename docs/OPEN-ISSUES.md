@@ -12,6 +12,18 @@ Format:
 
 ## Flutter / TestFlight
 
+- [ ] **care-accept-server-route** — Caregiver-invite **accept and decline** need a
+  service-role server route that does not exist yet. RLS gives caregivers SELECT-only on
+  `care_relationships` (no caregiver UPDATE policy), so the status flip to `active`
+  (accept) / `revoked` (decline) must run server-side. Web does this via a TanStack
+  `createServerFn` (`src/lib/care.functions.ts` `acceptInvite`) that is **not** exposed as
+  a Worker `/api/...` route. Flutter now posts `POST /api/care/accept {invite_token}`
+  (mirroring the WorkerClient pattern) but it 404s until the web/Worker side adds
+  `src/routes/api/care/accept.ts` (and ideally `.../decline.ts`) fronting the server fn,
+  with Flutter CORS. **Also:** the existing Flutter `declineIncomingCareInvite` direct
+  `.update()` is silently RLS-blocked today (same root cause). _Raised 2026-07-05 by
+  Wave-1 care/reports agent._
+
 - [ ] **tf-settings-shell-nav** — Tester ASC feedback (2026-07-05 15:41 ET, build 17/18): wants
   settings/shell burger **left of Purple logo**, menu slide **left to right** (not right
   `endDrawer`), more connections visible. Conflicts with current AGENTS.md right-drawer rule;

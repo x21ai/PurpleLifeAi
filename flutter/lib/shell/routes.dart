@@ -54,6 +54,7 @@ abstract final class AppRoutes {
   static const oauthWhoopCallback = '/oauth/whoop/callback';
   static const careIndex = '/care';
   static const careInbox = '/care/inbox';
+  static const careAccept = '/care/accept';
   static const careOwner = '/care/:ownerId';
   static const settingsSharing = '/settings/sharing';
   static const settingsTravel = '/settings/travel';

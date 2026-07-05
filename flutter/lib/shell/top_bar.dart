@@ -7,6 +7,7 @@ import '../design/glass_surface.dart';
 import '../design/purple_theme.dart';
 import '../design/tokens.dart';
 import '../features/account/profile_avatar.dart';
+import '../features/care/care_repository.dart';
 import 'routes.dart';
 
 /// Scroll-reactive frosted glass header (ports mobile-top-bar.tsx native variant).
@@ -61,6 +62,7 @@ class _TopBarState extends ConsumerState<TopBar> {
                   syncing: _syncing,
                   onTap: _syncing ? null : _syncNow,
                 ),
+                const _PendingInboxBadge(),
                 _ProfileMenuButton(
                   onTap: () => context.go(AppRoutes.account),
                 ),
@@ -115,6 +117,72 @@ class _SyncButton extends StatelessWidget {
                       size: 22,
                       color: PurpleColors.foregroundTertiary,
                     ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Pending caregiver-inbox badge (ports web `PendingInboxBadge` compact
+/// variant). Hidden when there are no pending changes; taps open the inbox.
+class _PendingInboxBadge extends ConsumerWidget {
+  const _PendingInboxBadge();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(carePendingCountProvider).valueOrNull ?? 0;
+    if (count <= 0) return const SizedBox.shrink();
+
+    final label = count > 9 ? '9+' : '$count';
+
+    return Semantics(
+      button: true,
+      label: 'Caregiver inbox, $count pending',
+      identifier: 'top-bar-inbox-button',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: const ValueKey('top-bar-inbox-button'),
+          onTap: () => context.go(AppRoutes.careInbox),
+          customBorder: const CircleBorder(),
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Stack(
+              alignment: Alignment.center,
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  Icons.inbox_rounded,
+                  size: 22,
+                  color: PurpleColors.foregroundTertiary,
+                ),
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 16),
+                    height: 16,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: PurpleColors.purplePrimary,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

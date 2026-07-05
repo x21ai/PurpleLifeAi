@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../../../design/purple_type.dart';
 import '../../../shell/routes.dart';
 import '../../shared/glass_helpers.dart';
 import '../models/report_row.dart';
@@ -157,7 +157,7 @@ class ReportsSectionTitle extends StatelessWidget {
     return Text(
       title,
       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontFamily: GoogleFonts.sourceSerif4().fontFamily,
+            fontFamily: PurpleType.serif,
             color: Colors.white.withValues(alpha: 0.95),
           ),
     );

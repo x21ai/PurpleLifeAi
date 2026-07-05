@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../shell/routes.dart';
 import 'care_repository.dart';
 
 /// Pending care invites addressed to the signed-in user's email.
@@ -74,6 +76,44 @@ class _InviteRow extends ConsumerStatefulWidget {
 
 class _InviteRowState extends ConsumerState<_InviteRow> {
   var _busy = false;
+  var _accepting = false;
+
+  Future<void> _accept() async {
+    final token = widget.invite.inviteToken;
+    if (token == null || token.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'This invite link has expired. Ask them to resend it.',
+          ),
+        ),
+      );
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _accepting = true;
+    });
+    try {
+      final ownerId =
+          await ref.read(careRepositoryProvider).acceptInvite(token);
+      if (!mounted) return;
+      widget.onChanged?.call();
+      context.go(AppRoutes.careDashboard(ownerId));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _accepting = false;
+        });
+      }
+    }
+  }
 
   Future<void> _decline() async {
     setState(() => _busy = true);
@@ -141,18 +181,17 @@ class _InviteRowState extends ConsumerState<_InviteRow> {
             runSpacing: 8,
             children: [
               FilledButton.icon(
-                onPressed: _busy
-                    ? null
-                    : () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Open the invite link from your email to accept.',
-                            ),
-                          ),
-                        );
-                      },
-                icon: const Icon(Icons.check, size: 16),
+                onPressed: _busy ? null : _accept,
+                icon: _accepting
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.check, size: 16),
                 label: const Text('Accept'),
               ),
               OutlinedButton.icon(

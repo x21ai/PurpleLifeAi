@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../design/purple_type.dart';
+import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
 import 'report_file_picker.dart';
@@ -189,7 +190,7 @@ class _ReportsUploadScreenState extends ConsumerState<ReportsUploadScreen> {
                       Text(
                         _error!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFFFF8A80),
+                              color: _dangerColor,
                               height: 1.35,
                             ),
                       ),
@@ -204,3 +205,7 @@ class _ReportsUploadScreenState extends ConsumerState<ReportsUploadScreen> {
     );
   }
 }
+
+/// Error text color, from dark design tokens.
+Color get _dangerColor =>
+    parseTokenColor(PurpleTokens.loaded.colorsFor('dark').danger);

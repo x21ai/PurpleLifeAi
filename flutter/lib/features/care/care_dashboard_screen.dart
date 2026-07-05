@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../design/purple_theme.dart';
 import '../../design/purple_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -299,7 +300,7 @@ class _MobileTabPicker extends StatelessWidget {
       child: DropdownButton<CareTabKey>(
         value: current,
         isExpanded: true,
-        dropdownColor: const Color(0xFF1A1224),
+        dropdownColor: PurpleColors.backgroundTertiary,
         style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
         items: [
           for (final tab in tabs)
@@ -423,7 +424,7 @@ class _ToolbarActions extends StatelessWidget {
               size: 18,
               color: Colors.white.withValues(alpha: 0.65),
             ),
-            color: const Color(0xFF1A1224),
+            color: PurpleColors.backgroundTertiary,
             onSelected: (value) async {
               final tab = careTabKeyFromName(value);
               if (tab == null) return;
