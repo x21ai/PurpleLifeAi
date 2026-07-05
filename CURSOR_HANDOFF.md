@@ -1,6 +1,32 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~07:50 ET (compile gates restored).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~07:52 ET (Apple Health TF14 shipped).
+
+## Apple Health TF14 (2026-07-05 ~07:52 ET) — shipped
+
+**Install TestFlight build:** **1.0 (14)** (`processing=VALID`, `internal=IN_BETA_TESTING`, uploaded 2026-07-05 04:49 PT). Replace TF13 for Apple Health verification.
+
+| Fix | Detail |
+|-----|--------|
+| **Auth gate** | iOS `requestAuthorization` no longer gates on bool (write-only signal); sets Keychain connect flag after sheet (matches Capacitor `health-ios.ts`) |
+| **Auth types** | iOS omits VO2_MAX; single `SLEEP_ASLEEP` in auth request; staged sleep read at query time |
+| **Persistence** | `FlutterSecureStorage` with `first_unlock_this_device`; verify-after-write on connect flag |
+| **Errors** | `HealthServiceException` + SnackBar/`_lastError` on connect, sync, read, Worker failures in Tools panel + welcome card |
+| **Entitlements** | `Runner.entitlements` `com.apple.developer.healthkit`; `Info.plist` `NSHealthShareUsageDescription` + `NSHealthUpdateUsageDescription` unchanged |
+
+**Verify on device (TF14):**
+```bash
+# ASC
+doppler run --project purple-life --config prd -- node scripts/asc-list-builds.mjs
+# Gates (already run pre-upload)
+cd flutter && flutter analyze lib/features/health/ && flutter test test/health_service_test.dart
+```
+1. Install **1.0 (14)** from TestFlight.
+2. Tools → Apple Health → **Connect** → grant HealthKit sheet.
+3. Expect SnackBar "Apple Health connected" or explicit yellow error (never silent fail).
+4. **Sync now** → `apple_health_tokens.last_sync_at` updates when samples exist.
+
+**Commit:** `92e0c0b` (health_service, apple_health_panel, welcome card, pubspec `+14`). Upload via `DEVELOPER_DIR=Xcode-beta bun run ios:testflight`.
 
 ## Morning compile fix (2026-07-05 ~07:50 ET) — gates green
 
@@ -14,17 +40,17 @@ Operational state of the PurpleLife project for the next agent or engineer. Last
 
 **WIP preserved:** Oura OAuth deep link, inline Tools errors, Apple Health panel hardening, Worker CORS for Flutter web (`src/lib/flutter-api-cors.ts`).
 
-## Morning verdict (2026-07-05 ~07:45 ET) — NOT all done
+## Morning verdict (2026-07-05 ~07:45 ET) — superseded by TF14
 
-**Install TestFlight build:** **1.0 (13)** only (`processing=VALID`, `IN_BETA_TESTING`). No build 14 on ASC yet (`pubspec` bumped to `+14` in uncommitted WIP only).
+**Install TestFlight build:** **1.0 (14)** VALID (see Apple Health TF14 section above). TF13 obsolete for HealthKit fix verification.
 
 | Question | Verdict | Evidence |
 |----------|---------|----------|
-| Settings fixed? | **Partial, not on TF13** | `563f7c2` landed hub modules, contact/privacy/how-purple-thinks, data export, Account theme+invite. Verify-fleet Cycle 3: Settings hub PASS. Travel mode still placeholder; `#/account` redirects to Today. **TF13 predates `563f7c2`** (uploaded Jul 4 20:09 PT). |
-| Apple Health connect on TF13/14? | **NO** | User reported TF13 still fails. Health fix agents (`d053`, `df80`) never finished; WIP in `health_service.dart` / `apple_health_panel.dart` uncommitted. No TF14 upload. |
-| Oura connect? | **Web yes, native fixed in WIP** | Verify-fleet Cycle 3: Oura connected on `:8765`. Native OAuth: `wearable_oauth.dart` + `tools_screen.dart` compile fixed; `org.purplelife.app://oauth-oura-callback` deep link + inline Tools errors; `wearable_oauth_test` 10/10 PASS. TF14 pending upload. |
-| Gates (this morning) | **Green** | `flutter analyze lib/`: **0 issues**. `flutter test`: **44/44 PASS**. `:8765` **200**. |
-| Phase 5 cutover | **NO-GO** | Account broken, Apple Health not fixed on device, incomplete agent fleet, compile red on WIP. |
+| Settings fixed? | **Partial on TF14** | `563f7c2` + `92e0c0b` in build 14. Travel mode still placeholder; `#/account` redirects to Today. |
+| Apple Health connect on TF14? | **Fix shipped, device QA pending** | Auth bool gate removed; Keychain flag; user-visible errors. Install **1.0 (14)** and retest Connect + Sync. |
+| Oura connect? | **In TF14** | Native OAuth deep link + inline Tools errors in `92e0c0b`. |
+| Gates | **Green** | `flutter analyze lib/`: **0 issues**. `flutter test`: **44/44 PASS**. |
+| Phase 5 cutover | **NO-GO** | Account hash redirect; device Apple Health QA on TF14 still required. |
 
 **Completed overnight agents:** Settings round 2 (`563f7c2`, pushed); verify-fleet 3 cycles (docs updated).
 
