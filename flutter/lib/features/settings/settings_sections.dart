@@ -13,6 +13,7 @@ import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
 import '../shared/condition_prompts.dart';
 import '../shared/glass_helpers.dart';
+import 'data_export_service.dart';
 import 'feature_catalog.dart';
 
 /// Below-the-fold Settings sections ported from web
@@ -1908,13 +1909,203 @@ class _ConditionHistorySectionState extends State<ConditionHistorySection> {
   }
 }
 
-/// "Your data" section (web `data-section.tsx`). Export and deletion run
-/// through Worker server functions the app does not have yet, so this card
-/// keeps the copy and points to the web app instead of shipping dead buttons.
-class DataSection extends StatelessWidget {
+/// "Your data" section (web `data-section.tsx`): export zip + soft delete.
+class DataSection extends StatefulWidget {
   const DataSection({super.key});
 
-  static const _restoreWindowDays = 60;
+  @override
+  State<DataSection> createState() => _DataSectionState();
+}
+
+class _DataSectionState extends State<DataSection> {
+  bool _exporting = false;
+  bool _loadingStatus = true;
+  DeletionStatus? _pendingDeletion;
+  bool _restoring = false;
+
+  SupabaseClient get _client => Supabase.instance.client;
+
+  String? get _userId => _client.auth.currentSession?.user.id;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStatus();
+  }
+
+  Future<void> _loadStatus() async {
+    final userId = _userId;
+    if (userId == null) {
+      if (mounted) setState(() => _loadingStatus = false);
+      return;
+    }
+    try {
+      final status = await checkDeletionStatus(_client, userId);
+      if (mounted) setState(() => _pendingDeletion = status);
+    } finally {
+      if (mounted) setState(() => _loadingStatus = false);
+    }
+  }
+
+  Future<void> _export() async {
+    setState(() => _exporting = true);
+    try {
+      await exportAllUserData(_client);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your archive is downloading')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e is StateError ? e.message : 'Export failed')),
+      );
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  Future<void> _restore() async {
+    setState(() => _restoring = true);
+    try {
+      await restoreUserData(_client);
+      if (!mounted) return;
+      setState(() => _pendingDeletion = null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your account has been restored.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "The restore didn't finish. Nothing was changed, try again in a moment.",
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _restoring = false);
+    }
+  }
+
+  Future<void> _confirmDelete() async {
+    final user = _client.auth.currentSession?.user;
+    if (user == null) return;
+    final needsPassword = userHasPasswordIdentity(user);
+    final confirmController = TextEditingController();
+    final passwordController = TextEditingController();
+    var deleting = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final canDelete = confirmController.text.trim() == 'DELETE' &&
+                (!needsPassword || passwordController.text.isNotEmpty) &&
+                !deleting;
+            return AlertDialog(
+              backgroundColor: const Color(0xFF14101C),
+              title: Text('Delete everything?',
+                  style: sectionTitleStyle(context)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'This schedules every journal entry, biometric reading, '
+                      'medication, seizure log, and uploaded file tied to your '
+                      'account for permanent deletion.\n\n'
+                      'You will have $restoreWindowDays days to restore by signing '
+                      'back in. After that, everything is permanently erased.',
+                      style: sectionMutedStyle(context),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: confirmController,
+                      decoration: const InputDecoration(
+                        labelText: 'Type DELETE to confirm',
+                      ),
+                      onChanged: (_) => setDialogState(() {}),
+                    ),
+                    if (needsPassword) ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: passwordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Re-enter your password',
+                        ),
+                        onChanged: (_) => setDialogState(() {}),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: deleting
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Keep my data'),
+                ),
+                FilledButton(
+                  onPressed: canDelete
+                      ? () async {
+                          setDialogState(() => deleting = true);
+                          try {
+                            if (needsPassword) {
+                              await softDeleteUserData(
+                                _client,
+                                password: passwordController.text,
+                              );
+                            } else {
+                              await softDeleteAuthenticatedUser(_client);
+                            }
+                            if (!dialogContext.mounted) return;
+                            Navigator.of(dialogContext).pop();
+                            await _client.auth.signOut();
+                            if (!mounted) return;
+                            GoRouter.of(this.context).go('/sign-in');
+                          } catch (e) {
+                            setDialogState(() => deleting = false);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  e is AuthException
+                                      ? e.message
+                                      : 'Delete failed',
+                                ),
+                              ),
+                            );
+                          }
+                        }
+                      : null,
+                  child: deleting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Schedule deletion'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    confirmController.dispose();
+    passwordController.dispose();
+  }
+
+  int? get _daysRemaining {
+    final purge = _pendingDeletion?.purgeAfter;
+    if (purge == null) return null;
+    return purge.difference(DateTime.now()).inDays.clamp(0, restoreWindowDays);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1927,15 +2118,73 @@ class DataSection extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             'Take it with you anytime. Deletion is reversible for '
-            '$_restoreWindowDays days, after that, everything is permanently '
+            '$restoreWindowDays days, after that, everything is permanently '
             'erased.',
             style: sectionMutedStyle(context),
           ),
-          const SizedBox(height: 12),
-          Text(
-            'Export your archive and manage account deletion in the web app '
-            'at purplelife.org for now.',
-            style: sectionMutedStyle(context),
+          if (_pendingDeletion != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.error.withValues(alpha: 0.35),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Your account is scheduled for deletion',
+                    style: sectionRowTitleStyle(context),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Requested ${_pendingDeletion!.deletedAt.toLocal().toString().split(' ').first}.'
+                    '${_daysRemaining != null ? ' Permanent purge in $_daysRemaining day${_daysRemaining == 1 ? '' : 's'}.' : ''}',
+                    style: sectionMutedStyle(context),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: _restoring ? null : _restore,
+                    child: _restoring
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Restore my account'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              IconButton.filled(
+                tooltip: 'Export your data',
+                onPressed: _exporting || _loadingStatus ? null : _export,
+                icon: _exporting
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.download_outlined, size: 18),
+              ),
+              if (_pendingDeletion == null) ...[
+                const SizedBox(width: 8),
+                IconButton(
+                  tooltip: 'Delete account',
+                  onPressed: _confirmDelete,
+                  color: Theme.of(context).colorScheme.error,
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                ),
+              ],
+            ],
           ),
         ],
       ),
@@ -1989,18 +2238,7 @@ class AboutSection extends StatelessWidget {
           _AboutRow(
             icon: Icons.verified_user_outlined,
             title: 'Privacy & safety',
-            onTap: () async {
-              try {
-                await openPurpleUrl('/privacy');
-              } catch (_) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Could not open privacy policy')),
-                  );
-                }
-              }
-            },
+            onTap: () => context.go(AppRoutes.settingsPrivacy),
           ),
           Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
           _AboutRow(
