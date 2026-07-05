@@ -1,6 +1,6 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 (Apple Health parity commit; TestFlight **1.0 (12)** VALID).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 (Apple Health commit **a655ca2** pushed; pubspec **1.0 (13)**; TestFlight upload pending analyze fix).
 
 ## Overnight phase sweep (2026-07-05)
 
@@ -10,7 +10,7 @@ Flutter features agent (excluding settings/health): hydration repository + scree
 
 **Root cause (recap):** iOS `health` plugin `hasPermissions()` returns `null` for READ; connect flow must trust `requestAuthorization` + secure-storage flag (matches Capacitor `health-ios.ts`).
 
-**This session (Dart-only; no TestFlight 13 required):**
+**This session (`a655ca2`, pubspec **1.0.0+13**):**
 - `health_service.dart`: iOS auth without VO2_MAX; staged sleep (LIGHT+REM+DEEP) aggregation; device-auth gating.
 - `native_health_autosync.dart` + `native_health_startup.dart`: visit-mode sync (3h throttle on `apple_health_tokens.last_sync_at`), wired in `AuthGate`.
 - `apple_health_panel.dart`: web-import note, connected badge, HealthKit copy parity; reload `last_sync_at` from DB after sync.
@@ -19,7 +19,7 @@ Flutter features agent (excluding settings/health): hydration repository + scree
 - `wearable_sync.dart`: pull-to-refresh + Today sync includes native HealthKit when device authorized.
 - `sync_status_bar.dart`: native iOS `_appleConnected` from HealthKit auth OR token; Tools sync hint when only Apple connected.
 - `vitals_screen.dart`: pull-to-refresh triggers wearable + native health sync.
-- `health_providers.dart`: shared `healthServiceProvider`.
+- `health_providers.dart`: shared `healthServiceProvider` + `nativeHealthSyncProvider`.
 
 **Verify (agent):**
 ```bash
@@ -36,7 +36,9 @@ cd flutter && flutter test test/health_service_test.dart   # 4/4 pass
 
 **USB device:** `00008150-00192C141A87801C` not detected this session (`flutter devices` → macOS + Chrome only). Use TestFlight **1.0 (13)** after upload.
 
-**Upload:** `bun run ios:flutter-testflight` (Doppler `purple-life`/`prd` signing + ASC API).
+**Upload:** `bun run ios:flutter-testflight` (Doppler `purple-life`/`prd` signing + ASC API). **Blocked 2026-07-05:** script runs `flutter analyze lib/` which fails on pre-existing settings warnings (`settings_sections.dart`, `data_export_service.dart`); fix settings analyze or narrow script gate, then upload build **13**.
+
+**Commit:** `a655ca2` on `lovable/redesign` (pushed).
 
 ## Ship complete (2026-07-05 ~02:50 ET)
 
