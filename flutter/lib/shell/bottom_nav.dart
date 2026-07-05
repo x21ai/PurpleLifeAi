@@ -31,7 +31,11 @@ class BottomNav extends StatelessWidget {
       icon: Icons.monitor_heart_outlined,
       label: 'My Body',
     ),
-    _NavTab(path: AppRoutes.meds, icon: Icons.medication_outlined, label: 'Meds'),
+    _NavTab(
+      path: AppRoutes.insights,
+      icon: Icons.trending_up,
+      label: 'Insights',
+    ),
     _NavTab(
       path: AppRoutes.settings,
       icon: Icons.settings_outlined,

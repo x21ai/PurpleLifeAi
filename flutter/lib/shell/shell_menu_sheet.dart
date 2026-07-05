@@ -150,6 +150,13 @@ class ShellMenuPanel extends ConsumerWidget {
                   ),
                   _ShellMenuRowDivider(color: glassBorder),
                   _ShellMenuItem(
+                    icon: Icons.medication_outlined,
+                    label: 'Meds',
+                    selected: _matchesRoute(AppRoutes.meds),
+                    onTap: () => navigateTo(AppRoutes.meds),
+                  ),
+                  _ShellMenuRowDivider(color: glassBorder),
+                  _ShellMenuItem(
                     icon: Icons.settings_outlined,
                     label: 'Settings',
                     selected: _matchesRoute(AppRoutes.settings),

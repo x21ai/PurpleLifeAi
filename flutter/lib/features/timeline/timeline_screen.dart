@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
+import '../meds/meds_repository.dart';
 import '../shared/glass_helpers.dart';
 import 'timeline_repository.dart';
 
@@ -309,6 +310,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                             child: _TimelineRow(
                               entry: row,
                               whenLabel: dateFormat.format(row.at.toLocal()),
+                              query: _query,
                             ),
                           ),
                         if (filtered.length > _pageSize)
@@ -508,11 +510,16 @@ class _TimelineEmpty extends StatelessWidget {
   }
 }
 
-class _TimelineRow extends StatelessWidget {
-  const _TimelineRow({required this.entry, required this.whenLabel});
+class _TimelineRow extends ConsumerWidget {
+  const _TimelineRow({
+    required this.entry,
+    required this.whenLabel,
+    required this.query,
+  });
 
   final TimelineEntry entry;
   final String whenLabel;
+  final TimelineQuery query;
 
   IconData get _icon => switch (entry.kind) {
         TimelineEntryKind.seizure => Icons.bolt_outlined,
@@ -520,8 +527,51 @@ class _TimelineRow extends StatelessWidget {
         TimelineEntryKind.dose => Icons.medication_outlined,
       };
 
+  Future<void> _updateDose(
+    BuildContext context,
+    WidgetRef ref,
+    String next,
+  ) async {
+    final doseId = entry.doseId;
+    if (doseId == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      // Reuse the shared meds mutation methods (see meds_screen.dart).
+      final repo = ref.read(medsRepositoryProvider);
+      switch (next) {
+        case 'taken':
+          await repo.markDoseTaken(doseId);
+        case 'skipped':
+          await repo.markDoseSkipped(doseId);
+        default:
+          await repo.reclassifyDose(doseId, next);
+      }
+      // Refresh timeline and any meds views so status reflects immediately.
+      ref.invalidate(timelineEntriesProvider(query));
+      ref.invalidate(medsDataProvider);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            next == 'taken'
+                ? 'Marked as taken'
+                : next == 'skipped'
+                    ? 'Marked as skipped'
+                    : 'Reset to pending',
+          ),
+        ),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Could not update dose')),
+      );
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDose = entry.kind == TimelineEntryKind.dose && entry.doseId != null;
+    final status = entry.doseStatus ?? 'pending';
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -568,11 +618,101 @@ class _TimelineRow extends StatelessWidget {
                         ),
                   ),
                 ],
+                if (isDose) ...[
+                  const SizedBox(height: 12),
+                  if (status != 'taken')
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _DoseActionButton(
+                          label: 'I took it',
+                          filled: true,
+                          onTap: () => _updateDose(context, ref, 'taken'),
+                        ),
+                        if (status != 'skipped')
+                          _DoseActionButton(
+                            label: 'Skip',
+                            onTap: () => _updateDose(context, ref, 'skipped'),
+                          ),
+                      ],
+                    )
+                  else
+                    _DoseActionButton(
+                      label: 'Undo',
+                      muted: true,
+                      onTap: () => _updateDose(context, ref, 'pending'),
+                    ),
+                ],
               ],
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Pill-shaped dose action button matching web timeline (I took it / Skip / Undo).
+class _DoseActionButton extends StatelessWidget {
+  const _DoseActionButton({
+    required this.label,
+    required this.onTap,
+    this.filled = false,
+    this.muted = false,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final bool filled;
+  final bool muted;
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final Color background;
+    final Color foreground;
+    final Color border;
+    if (filled) {
+      background = primary;
+      foreground = Colors.white;
+      border = primary;
+    } else if (muted) {
+      background = Colors.transparent;
+      foreground = Colors.white.withValues(alpha: 0.55);
+      border = Colors.transparent;
+    } else {
+      background = Colors.white.withValues(alpha: 0.06);
+      foreground = Colors.white.withValues(alpha: 0.85);
+      border = Colors.white.withValues(alpha: 0.15);
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              color: background,
+              border: Border.all(color: border),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: foreground,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
