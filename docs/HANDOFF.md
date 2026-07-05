@@ -21,6 +21,19 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Log
 
+### 2026-07-05T00:00:00Z — Wave-2 care dashboard depth + honest gap states + report route
+
+- **Requested:** Wave-2 Care dashboard slice (Flutter-only, branch `wave2-caredash`, worktree off Wave-1+foundation). Deepen client-reachable tabs, replace vague "coming soon" with honest gap states for backend-blocked caregiver reads, add `/care/:ownerId/reports/:reportId` route + a CareReport screen. Strict scope: only `care_dashboard_screen.dart`, a NEW care report screen, `shell/router.dart`, `shell/routes.dart`. Accuracy over coverage; no fabricated data, no RLS bypass.
+- **Done:**
+  - **Biometrics tab (genuinely client-reachable):** rewrote `_BiometricsPlaceholder` → `_BiometricsTab` + `_BiometricMetricCard`. Renders one labeled card per wearable metric actually selected by `CareRepository.loadOwnerBiometrics` (readiness, sleep_score, activity, hrv_rmssd_ms, resting_hr_bpm, steps) with latest value + date + 30-day range, replacing eight identical readiness tiles. Preserves scope-gating (`scopeGranted`), cached-state banner, empty/error states. No repo changes (`care_repository.dart` untouched, per scope).
+  - **Backend-blocked tabs (honest gap):** replaced generic `_ComingSoonPanel` with `_CaregiverAccessGate` (polished glass EmptyState) for Today, Meds, Journal, Seizures, Reports, Hydration, Chat. No-scope variant reused for biometrics-without-scope.
+  - **New route + screen:** `care_report_screen.dart` (`CareReportScreen`) renders the honest gap state (dark-glass, EmptyState, 44pt back button). Registered `/care/:ownerId/reports/:reportId` as a child of `care-dashboard` GoRoute (name `care-report`); added `careOwnerReport` const + `careReport(ownerId, reportId)` helper to `routes.dart`. `/care` already a protected prefix so auth-gating is covered.
+  - Made the caregiver "add biometric" toolbar button honest (was a dev-stub snackbar).
+- **Issues / SERVER GAPS (routes needed, all currently server fns in `src/lib/care.functions.ts`, `supabaseAdmin` + `assertScope`, not Flutter-callable):** `caregiverReadToday` (1356) → Today; `caregiverReadMeds` (1233) + `caregiverMarkDose` (1414) → Meds; `caregiverReadJournal` (1274) + `proposeChange` (978) → Journal; `caregiverReadSeizures` (1289) + `caregiverLogSeizure` (1469) → Seizures; `caregiverReadReports` (1303) → Reports tab; `caregiverReadReport` (1323, must preserve `phi_access_log action:caregiver_view`) → CareReport screen; `listHydrationForDay`/`listAurasForDay` (scoped by ownerId) → Hydration; `getOrCreateDirectThread` (care-chat.functions.ts) → Chat; caregiver `addBiometric` write → toolbar. Recommend exposing each as a Worker route (Bearer session) mirroring `POST /api/care/accept`, preserving `assertScope`/`has_care_scope` + audit writes. Also NOT ported this slice: owner feature-gate on `scopedTabs` (`TAB_OWNER_FEATURE`), `CaregiverAlertsCard`, activity counts/unread badges (`getOwnerActivityCounts`/`markOwnerSeen`).
+- **Stand / next:** `flutter analyze lib/` clean, `flutter test` 91/91. Committed `wave2-caredash` @ `1d7c5a1`, NOT pushed. Next: parent lands slice + runs gate; backend exposes caregiver server fns as Worker routes to wire the gap-stated tabs.
+- **Who / where:** Claude (Opus 4.8), Flutter feature writer. Worktree `wt-caredash`, branch `wave2-caredash`.
+- **Timestamp:** 2026-07-05T00:00:00Z
+
 ### 2026-07-05T00:00:00Z — Wave-1 care/reports fixes (accept loop, inbox badge, tokens)
 
 - **Requested:** (P0) fix broken caregiver-invite accept loop; (P0) add missing top-bar inbox badge; (P1) token color cleanup in reports+care. Flutter-only, branch `wave1-care-reports`, worktree off `lovable/redesign`.
