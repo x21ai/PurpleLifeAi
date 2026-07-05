@@ -24,6 +24,40 @@ Format:
   `.update()` is silently RLS-blocked today (same root cause). _Raised 2026-07-05 by
   Wave-1 care/reports agent._
 
+  **Extended 2026-07-05 (Wave-2 fleet): full Worker-route backlog.** The same gap blocks
+  not just accept/decline but **every caregiver dashboard read** and the insights/reports
+  AI surfaces. All of these exist as TanStack `createServerFn`s in
+  `src/lib/care.functions.ts` (line refs below) but have no Flutter-callable Worker
+  `/api/...` routes. Flutter Wave-1/2 UI is wired against the mirror pattern and shows
+  clear errors / honest gap-states until these land. Grouped by priority:
+
+  1. **Care loop (P0 — invite flow is dead-ended without these):**
+     - `acceptInvite` — `POST /api/care/accept` (Flutter already posts this).
+     - `decline` — `POST /api/care/decline` (fixes the silent RLS no-op above).
+  2. **Caregiver dashboard reads/actions (blocks all `/care/$ownerId` tabs):**
+     - `caregiverReadToday` (L1356)
+     - `caregiverReadMeds` (L1233)
+     - `caregiverMarkDose` (L1414)
+     - `caregiverReadJournal` (L1274)
+     - `proposeChange` (L978)
+     - `caregiverReadSeizures` (L1289)
+     - `caregiverLogSeizure` (L1469)
+     - `caregiverReadReports` (L1303)
+     - `caregiverReadReport` (L1323) — **must preserve the `phi_access_log`
+       `caregiver_view` audit write** when fronted by a Worker route.
+     - `listHydrationForDay`
+     - `getOrCreateDirectThread` (also unblocks caregiver-initiated care chat, see
+       2026-07-05 care-chat HANDOFF entry).
+  3. **Insights / reports AI (blocks AI cards on `/insights` and report summaries;
+     Flutter currently shows honest server-only gap-states):**
+     - `getVitalsSnapshot`
+     - `getDailyInsightCards`
+     - `computeUserPatterns`
+     - `summarizeReport`
+     - `getMetricInsight`
+
+  _Extended 2026-07-05 by Wave-2 docs agent (orchestrated fleet)._
+
 - [ ] **tf-settings-shell-nav** — Tester ASC feedback (2026-07-05 15:41 ET, build 17/18): wants
   settings/shell burger **left of Purple logo**, menu slide **left to right** (not right
   `endDrawer`), more connections visible. Conflicts with current AGENTS.md right-drawer rule;

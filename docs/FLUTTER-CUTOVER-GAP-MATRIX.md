@@ -5,6 +5,17 @@
 **Phase reference:** `docs/LOVABLE-FLUTTER-SYNC.md` Phase 5 exit criteria  
 **Status legend:** **Parity** | **Partial** | **Stub** | **Missing**
 
+> **Correction + delta, 2026-07-05 PM (orchestrated fix fleet):** audit found this matrix
+> stale on two rows — **`/insights` and `/timeline` ARE registered** in
+> `flutter/lib/shell/router.dart` with substantial screens (P1-3 and P2-6 said Missing;
+> corrected to Partial below, verified against code). Fleet delta on top of TF18, **local
+> only, not pushed**: meds edit data-loss fix + dose timeline/toolbar depth, bottom-nav 3rd
+> tab Meds→Insights, timeline dose actions (I took it / Skip / Undo), care Accept wired
+> client-side + `/care/accept?token=` route + top-bar inbox badge, My Health conditions
+> grid + DNA card, fl_chart/flutter_markdown foundation, seizure read repository; wave2
+> insights/caredash depth in flight on branches. Caregiver server routes remain the
+> blocker — see OPEN-ISSUES `care-accept-server-route` (extended with full backlog).
+
 ---
 
 ## Executive summary
@@ -85,7 +96,7 @@ Source: `bun run ios:check-tf-feedback` (10 submissions, tester a@arora.net, TF1
 |----|------|--------------|---------------|
 | P1-1 | Vitals / My Body design | `/vitals`, `/my-health`, `/biometrics` | All **Partial** — my-health + biometrics hub wired TF17 |
 | P1-2 | Journal multimodal | `/journal`, `/journal/new` | Light canvas, FAB, media, AI pipeline **Partial** |
-| P1-3 | Insights tab route | `/insights` | **Missing**; bottom nav has no Insights |
+| P1-3 | Insights tab route | `/insights` | **Partial** (corrected 2026-07-05 — was wrongly Missing): route + substantial screen registered in `router.dart`; bottom nav 3rd tab now Insights (fleet); AI cards server-only gap-state |
 | P1-4 | Biometrics drilldown charts | `/biometrics/$metric` | `/biometrics/:metricKey` **Partial** — real charts vs stub |
 | P1-5 | Sharing + care dashboard depth | `/settings/sharing`, `/care/$ownerId`, `/care/$ownerId/reports/$reportId` | Sharing **Partial**; care report sub-route **Missing** |
 | P1-6 | Settings completeness | `/settings/terms`, Worker export/2FA | terms **Missing**; export/2FA UI stubs |
@@ -104,7 +115,7 @@ Source: `bun run ios:check-tf-feedback` (10 submissions, tester a@arora.net, TF1
 | P2-3 | Community / friends / conditions | `/community-new`, `/friends/$id`, `/condition/$slug` **Missing** |
 | P2-4 | DNA upload | `/my-health-dna` **Missing** |
 | P2-5 | Apple Health XML import | `/apple-health-import` **Missing** (native sync preferred) |
-| P2-6 | Timeline | `/timeline` **Missing** |
+| P2-6 | Timeline | `/timeline` **Partial** (corrected 2026-07-05 — was wrongly Missing): route + substantial screen registered in `router.dart`; dose actions (I took it / Skip / Undo) added by 2026-07-05 fleet |
 | P2-7 | Travel mode | `/settings/travel` **Stub** placeholder |
 | P2-8 | Capacitor retirement | Owner decision after P0 device sign-off |
 
@@ -180,8 +191,8 @@ From `flutter/lib/shell/router.dart` + `routes.dart`:
 |----------|----------|
 | `/my-health-dna` | `my-health-dna.tsx` |
 | `/apple-health-import` | `apple-health-import.tsx` |
-| `/timeline` | `timeline.tsx` |
-| `/insights` | `insights.tsx` |
+| ~~`/timeline`~~ | `timeline.tsx` — **corrected 2026-07-05: NOT missing**; GoRoute registered in `router.dart`, now Partial |
+| ~~`/insights`~~ | `insights.tsx` — **corrected 2026-07-05: NOT missing**; GoRoute registered in `router.dart`, now Partial |
 | `/care/$ownerId/reports/$reportId` | `care.$ownerId.reports.$reportId.tsx` |
 | `/settings/terms` | `settings.terms.tsx` |
 | `/condition/$slug` | `condition.$slug.tsx` |
@@ -237,7 +248,7 @@ Verify: `bun run ios:check-asc-builds`, `bun run ios:check-tf-feedback`.
 4. **P0-6** — Meds toolbar, 24h timeline, FAB + form sheet.
 5. **P0-9** — Reports upload/trends/detail parity vs web.
 6. **P0-1** — Pull Luciq crashes after TF17 tester session; file fixes.
-7. **P1-3** — `/insights` route + bottom nav tab.
+7. ~~**P1-3** — `/insights` route + bottom nav tab.~~ Done 2026-07-05 (route pre-existed; fleet added bottom-nav Insights tab; remaining depth is server-side AI cards).
 
 ---
 
