@@ -1,0 +1,52 @@
+---
+description: Knowledge must survive across sessions, machines, and developers. Read state before work, record state after. Create the docs if absent; never lose history.
+alwaysApply: true
+---
+
+# Handoff and Documentation (load-bearing, non-negotiable)
+
+Projects are worked on by multiple developers across multiple machines and agent
+sessions. Documentation is part of finishing the task, not optional cleanup.
+These files live in the repo being worked on. If they do not exist yet, CREATE
+them; do not skip the step because they're absent.
+
+## On EVERY session start, before changing anything
+Read these if present (create on first write if absent):
+1. `docs/HANDOFF.md` — current state of the world.
+2. `docs/DECISIONS.md` — standing architectural and security decisions.
+3. `docs/OPEN-ISSUES.md` — known problems and blockers.
+If the task conflicts with anything in them, stop and surface it first.
+
+## On EVERY task completion, before the task is done
+Append a new entry to the TOP of the log in `docs/HANDOFF.md` (create the file
+if it doesn't exist) with:
+- Requested — the actual ask, one or two lines.
+- Done — concrete changes: files, commands, config, infra.
+- Issues — anything broken, incomplete, deferred, or risky.
+- Stand / next — current state and the single next action if any.
+- Who / where — developer or agent identity, machine, branch@commit if known.
+- Timestamp — ISO 8601 UTC.
+Then refresh a "Current snapshot" block at the top of `docs/HANDOFF.md`.
+
+Also update when relevant (create if absent):
+- `docs/DECISIONS.md` — new standing decisions future work must respect.
+- `docs/OPEN-ISSUES.md` — add new issues; mark resolved ones resolved, do not
+  delete.
+- `docs/LEARNINGS.md` — durable lessons from the run (e.g. "slices editing a
+  shared type must serialize, not parallelize"), written by an agent other than
+  the one that made the mistake, so review is independent. Read this at session
+  start too, and let it change how you decompose future work.
+
+## Hard constraints
+- A task is NOT complete until the `docs/HANDOFF.md` entry is written. No
+  exceptions.
+- Never delete history from these docs. Append and mark status. History is the
+  point.
+- Never write secrets, tokens, credentials, or key material into any doc or rule
+  file. Reference the secret's location only, never its value.
+- Keep entries factual and specific. No vague optimism, no filler.
+- If a change spans multiple repos or submodules, note the cross-repo dependency.
+
+## Why this exists
+State lives in the repo, not in any one person's head or any one AI session.
+That is what makes knowledge survive across sessions, machines, and developers.
