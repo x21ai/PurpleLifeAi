@@ -20,6 +20,7 @@ String resolvePlatformInitialLocation({String fallback = AppRoutes.signIn}) {
 
 bool _isKnownAppPath(String path) {
   if (path == AppRoutes.signIn) return true;
+  if (AppRoutes.marketingPaths.contains(path)) return true;
   return AppRoutes.protectedPaths.any(
     (route) => path == route || path.startsWith('$route/'),
   );

@@ -10,6 +10,11 @@ import '../features/care/care_inbox_screen.dart';
 import '../features/chat/chat_screen.dart';
 import '../features/journal/journal_capture_screen.dart';
 import '../features/journal/journal_screen.dart';
+import '../features/marketing/marketing_about_screen.dart';
+import '../features/marketing/marketing_home_screen.dart';
+import '../features/marketing/marketing_pricing_screen.dart';
+import '../features/marketing/marketing_privacy_screen.dart';
+import '../features/marketing/marketing_trust_screen.dart';
 import '../features/my_health/my_health_screen.dart';
 import '../features/meds/med_detail_screen.dart';
 import '../features/meds/meds_history_screen.dart';
@@ -50,6 +55,31 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: refresh,
     redirect: (context, state) => authRedirect(ref, state),
     routes: [
+      GoRoute(
+        path: AppRoutes.marketingHome,
+        name: 'marketing-home',
+        builder: (context, state) => const MarketingHomeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.pricing,
+        name: 'marketing-pricing',
+        builder: (context, state) => const MarketingPricingScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.marketingPrivacy,
+        name: 'marketing-privacy',
+        builder: (context, state) => const MarketingPrivacyScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.about,
+        name: 'marketing-about',
+        builder: (context, state) => const MarketingAboutScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.trust,
+        name: 'marketing-trust',
+        builder: (context, state) => const MarketingTrustScreen(),
+      ),
       GoRoute(
         path: AppRoutes.signIn,
         name: 'sign-in',

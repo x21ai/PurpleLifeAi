@@ -13,5 +13,15 @@ void main() {
         isTrue,
       );
     });
+
+    test('recognizes marketing paths for deep links', () {
+      for (final path in AppRoutes.marketingPaths) {
+        expect(
+          AppRoutes.marketingPaths.contains(path),
+          isTrue,
+          reason: '$path should be a marketing route',
+        );
+      }
+    });
   });
 }
