@@ -9,16 +9,31 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign`**. TestFlight **1.0 (17) VALID**. Flutter **Care chat**
-(`/chat-care`) lists threads and sends messages via Supabase RLS (mirrors web
-`care-chat.functions.ts`; no Worker RPC routes exist). Marketing covers **8** public paths.
+Purple Life on **`lovable/redesign`**. TestFlight **1.0 (17) VALID**. Flutter **My Body**,
+**Vitals**, and **Tools** share an **All synced data (90 days)** panel: per-provider day
+counts, last sync relative time, and link chips to Vitals / My Body / Biometrics / Tools.
 
-**Next action:** TF17 device sign-off; optional Worker care-chat RPCs for caregiver thread
-creation without owner first.
+**Next action:** TF17 device re-verify `tf-synced-data-visibility`; biometrics hub depth still
+partial.
 
 ---
 
 ## Log
+
+### 2026-07-05T14:40:00Z — Flutter synced data visibility depth
+
+- **Requested:** Close `tf-synced-data-visibility`: clearer all-synced-data UX on My Body and
+  Tools (source breakdown, last sync per provider, link graph); scoped `my_health/`, `vitals/`,
+  `tools/`; analyze + test; commit; push; update OPEN-ISSUES.
+- **Done:** `synced_data_overview.dart`, `synced_data_panel.dart`, `loadSyncedDataOverview` +
+  `syncedDataOverviewProvider` in `vitals_repository.dart`; wired into `my_health_screen.dart`,
+  `vitals_screen.dart` (compact strip), `tools_screen.dart`; `synced_data_overview_test.dart`
+  (4 tests pass); `docs/OPEN-ISSUES.md` marked partially improved.
+- **Issues:** Biometrics hub screen depth and bottom-nav My Body label still open; full
+  `flutter test` **87/88** (pre-existing `insights_timeline_routes_test.dart` compile error).
+- **Stand / next:** TF17+ upload for tester re-check of synced-data panel on device.
+- **Who / where:** Cursor agent, `lovable/redesign`.
+- **Timestamp:** 2026-07-05T14:40:00Z.
 
 ### 2026-07-05T14:36:00Z — Flutter care chat messaging wired
 
