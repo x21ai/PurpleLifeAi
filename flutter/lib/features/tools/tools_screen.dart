@@ -55,8 +55,11 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
   _ProviderState _whoop = const _ProviderState(connected: false);
   bool _ouraBusy = false;
   bool _whoopBusy = false;
+  String? _ouraError;
+  String? _whoopError;
   StreamSubscription<WearableOAuthProvider>? _oauthSub;
-  WearableOAuthService? _oauth;
+  StreamSubscription<WearableOAuthFailure>? _oauthErrorSub;
+  bool _ouraBackfilling = false;
 
   SupabaseClient get _client => Supabase.instance.client;
 
@@ -66,28 +69,50 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
     _refresh();
     _oauthSub = wearableOAuthConnectedController.stream.listen((provider) {
       if (!mounted) return;
-      final label = provider == WearableOAuthProvider.oura ? 'Oura' : 'Whoop';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$label connected')),
-      );
+      setState(() {
+        if (provider == WearableOAuthProvider.oura) {
+          _ouraError = null;
+          _ouraBackfilling = true;
+        } else {
+          _whoopError = null;
+        }
+      });
+      if (provider == WearableOAuthProvider.oura) {
+        _pollOuraBackfill();
+      }
       unawaited(_refresh());
     });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _oauth ??= WearableOAuthService(
-      supabase: ref.read(supabaseClientProvider),
-      worker: ref.read(workerClientProvider),
-    )..ensureDeepLinkListener();
+    _oauthErrorSub = wearableOAuthErrorController.stream.listen((failure) {
+      if (!mounted) return;
+      setState(() {
+        if (failure.provider == WearableOAuthProvider.oura) {
+          _ouraError = failure.message;
+          _ouraBackfilling = false;
+        } else {
+          _whoopError = failure.message;
+        }
+      });
+    });
   }
 
   @override
   void dispose() {
     unawaited(_oauthSub?.cancel());
-    _oauth?.dispose();
+    unawaited(_oauthErrorSub?.cancel());
     super.dispose();
+  }
+
+  void _pollOuraBackfill() {
+    var polls = 0;
+    Timer.periodic(const Duration(seconds: 2), (timer) {
+      polls++;
+      if (!mounted || polls >= 15) {
+        timer.cancel();
+        if (mounted) setState(() => _ouraBackfilling = false);
+        return;
+      }
+      unawaited(_refresh());
+    });
   }
 
   Future<void> _refresh() async {
@@ -139,21 +164,32 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
   Future<void> _syncOura() async {
     setState(() => _ouraBusy = true);
     try {
-      await _client.functions.invoke(
+      final response = await _client.functions.invoke(
         'oura-sync',
         body: const {'action': 'incremental'},
       );
+      if (response.status != 200) {
+        throw StateError(
+          ouraFunctionErrorMessage(response.data, statusCode: response.status),
+        );
+      }
+      final data = response.data;
+      if (data is Map && data['error'] != null) {
+        throw StateError(ouraFunctionErrorMessage(data));
+      }
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('Synced')));
       }
       await _refresh();
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'The sync did not finish. Purple will try again next time, or you can retry now.',
+              error is StateError
+                  ? error.message
+                  : 'The sync did not finish. Purple will try again next time, or you can retry now.',
             ),
           ),
         );
@@ -222,19 +258,27 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
 
   Future<void> _connectWearable(WearableOAuthProvider provider) async {
     final label = provider == WearableOAuthProvider.oura ? 'Oura' : 'Whoop';
+    setState(() {
+      if (provider == WearableOAuthProvider.oura) {
+        _ouraError = null;
+      } else {
+        _whoopError = null;
+      }
+    });
     try {
-      await _oauth?.connect(provider);
+      await ref.read(wearableOAuthServiceProvider).connect(provider);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            error is StateError
-                ? error.message
-                : "Couldn't start $label sign-in. Try again.",
-          ),
-        ),
-      );
+      final message = error is StateError
+          ? error.message
+          : "Couldn't start $label sign-in. Try again.";
+      setState(() {
+        if (provider == WearableOAuthProvider.oura) {
+          _ouraError = message;
+        } else {
+          _whoopError = message;
+        }
+      });
     }
   }
 
@@ -303,7 +347,9 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                 state: _oura,
                 loaded: _loaded && !_loadFailed,
                 disconnectedSubtitle: 'Sleep, readiness, HRV, temperature',
-                busy: _ouraBusy,
+                busy: _ouraBusy || _ouraBackfilling,
+                backfilling: _ouraBackfilling,
+                errorMessage: _ouraError,
                 tokensTable: 'oura_tokens',
                 onConnect: () => _connectWearable(WearableOAuthProvider.oura),
                 onSync: _syncOura,
@@ -318,6 +364,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                 loaded: _loaded && !_loadFailed,
                 disconnectedSubtitle: 'Recovery, strain, sleep, HRV',
                 busy: _whoopBusy,
+                errorMessage: _whoopError,
                 tokensTable: 'whoop_tokens',
                 onConnect: () => _connectWearable(WearableOAuthProvider.whoop),
                 onSync: _syncWhoop,
@@ -531,6 +578,8 @@ class _ConnectionCard extends StatelessWidget {
     required this.onConnect,
     required this.onSync,
     required this.onDisconnect,
+    this.backfilling = false,
+    this.errorMessage,
   });
 
   final IconData icon;
@@ -539,6 +588,8 @@ class _ConnectionCard extends StatelessWidget {
   final bool loaded;
   final String disconnectedSubtitle;
   final bool busy;
+  final bool backfilling;
+  final String? errorMessage;
   final String tokensTable;
   final VoidCallback onConnect;
   final Future<void> Function()? onSync;
@@ -550,7 +601,9 @@ class _ConnectionCard extends StatelessWidget {
     final statusText = !loaded
         ? 'Checking status'
         : connected
-            ? 'Connected · Last synced ${_relativeTime(state.lastSync)}'
+            ? backfilling
+                ? 'Importing your last 90 days…'
+                : 'Connected · Last synced ${_relativeTime(state.lastSync)}'
             : disconnectedSubtitle;
 
     return GlassSurface(
@@ -606,6 +659,16 @@ class _ConnectionCard extends StatelessWidget {
                 ),
             ],
           ),
+          if (errorMessage != null && errorMessage!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              errorMessage!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFFFF8A80),
+                    height: 1.35,
+                  ),
+            ),
+          ],
           if (connected) ...[
             const SizedBox(height: 14),
             Row(

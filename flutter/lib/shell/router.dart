@@ -26,6 +26,7 @@ import '../features/vitals/metric_detail_screen.dart';
 import '../features/today/today_risk_screen.dart';
 import '../features/today/today_screen.dart';
 import '../features/tools/tools_screen.dart';
+import '../core/providers/core_providers.dart';
 import '../features/tools/wearable_oauth_callback_screen.dart';
 import '../features/tools/wearable_oauth.dart';
 import '../features/vitals/vitals_screen.dart';
@@ -37,6 +38,8 @@ import 'routes.dart';
 final routerProvider = Provider<GoRouter>((ref) {
   ref.watch(isAuthenticatedProvider);
   ref.watch(authProvider);
+  // Bind app_links before first frame so cold-start OAuth callbacks keep code.
+  ref.watch(wearableOAuthServiceProvider);
 
   return GoRouter(
     initialLocation: AppRoutes.signIn,

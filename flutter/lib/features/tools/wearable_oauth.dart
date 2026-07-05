@@ -2,11 +2,14 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api/worker_client.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/providers/core_providers.dart';
 
 /// Wearable OAuth providers supported in Tools (mirrors web connection cards).
 enum WearableOAuthProvider { oura, whoop }
@@ -42,6 +45,14 @@ abstract final class WearableOAuth {
   }
 
   static WearableOAuthProvider? providerFromCallbackUri(Uri uri) {
+    final host = uri.host;
+    if (host == 'oauth-oura-callback') {
+      return WearableOAuthProvider.oura;
+    }
+    if (host == 'oauth-whoop-callback') {
+      return WearableOAuthProvider.whoop;
+    }
+
     final value = uri.toString();
     if (value.startsWith(nativeRedirectOura)) {
       return WearableOAuthProvider.oura;
@@ -59,9 +70,47 @@ abstract final class WearableOAuth {
   }
 }
 
+/// User-facing Oura edge-function errors (sync + OAuth exchange).
+String ouraFunctionErrorMessage(
+  dynamic data, {
+  int? statusCode,
+}) {
+  if (data is Map) {
+    final error = data['error'];
+    if (error is String && error.isNotEmpty) {
+      final lower = error.toLowerCase();
+      if (lower.contains('redirect_uri') || lower.contains('redirect uri')) {
+        return 'Oura rejected the redirect URI. Register '
+            '${WearableOAuth.nativeRedirectOura} in the Oura developer console, '
+            'then try again.';
+      }
+      return error;
+    }
+  }
+  if (statusCode != null) {
+    return "Couldn't reach Oura sync service (HTTP $statusCode). Please try again.";
+  }
+  return 'Oura connection failed. Try again.';
+}
+
 /// Broadcast when a wearable OAuth flow completes successfully.
 final StreamController<WearableOAuthProvider> wearableOAuthConnectedController =
     StreamController<WearableOAuthProvider>.broadcast();
+
+/// Broadcast OAuth failures so Tools can show inline errors (not SnackBars).
+final StreamController<WearableOAuthFailure> wearableOAuthErrorController =
+    StreamController<WearableOAuthFailure>.broadcast();
+
+/// A wearable OAuth callback failed.
+class WearableOAuthFailure {
+  const WearableOAuthFailure({
+    required this.provider,
+    required this.message,
+  });
+
+  final WearableOAuthProvider provider;
+  final String message;
+}
 
 /// Opens provider consent in the system browser and completes exchange when
 /// the app receives the callback (deep link on native, in-app route on web).
@@ -79,41 +128,82 @@ class WearableOAuthService {
   final AppLinks _appLinks;
 
   StreamSubscription<Uri>? _linkSub;
+  StreamSubscription<AuthState>? _authSub;
   bool _listening = false;
+  Uri? _pendingCallback;
+  bool _processingPending = false;
 
-  /// Bind native deep-link listener (no-op on web).
+  /// Bind native deep-link listener (no-op on web). Safe to call repeatedly.
   void ensureDeepLinkListener() {
     if (kIsWeb || _listening) return;
     _listening = true;
     unawaited(_handleInitialLink());
     _linkSub = _appLinks.uriLinkStream.listen(
-      (uri) => unawaited(completeFromCallbackUri(uri)),
+      (uri) => unawaited(_safeCompleteFromCallbackUri(uri)),
       onError: (Object error) {
         debugPrint('[wearable_oauth] deep link error: $error');
       },
     );
+    _authSub = _supabase.auth.onAuthStateChange.listen((event) {
+      if (event.session != null && _pendingCallback != null) {
+        unawaited(_flushPendingCallback());
+      }
+    });
   }
 
   void dispose() {
     unawaited(_linkSub?.cancel());
+    unawaited(_authSub?.cancel());
     _linkSub = null;
+    _authSub = null;
     _listening = false;
+    _pendingCallback = null;
   }
 
   Future<void> _handleInitialLink() async {
     try {
       final initial = await _appLinks.getInitialLink();
       if (initial != null) {
-        await completeFromCallbackUri(initial);
+        await _safeCompleteFromCallbackUri(initial);
       }
     } catch (error) {
       debugPrint('[wearable_oauth] initial link failed: $error');
     }
   }
 
+  Future<void> _safeCompleteFromCallbackUri(Uri uri) async {
+    try {
+      await completeFromCallbackUri(uri);
+    } catch (error, stack) {
+      debugPrint('[wearable_oauth] callback failed: $error\n$stack');
+      final provider = WearableOAuth.providerFromCallbackUri(uri);
+      if (provider != null) {
+        _emitFailure(
+          provider,
+          error is StateError
+              ? error.message
+              : 'Something went wrong finishing sign-in. Try again.',
+        );
+      }
+    }
+  }
+
+  Future<void> _flushPendingCallback() async {
+    if (_processingPending) return;
+    final pending = _pendingCallback;
+    if (pending == null) return;
+    _processingPending = true;
+    try {
+      await _safeCompleteFromCallbackUri(pending);
+      _pendingCallback = null;
+    } finally {
+      _processingPending = false;
+    }
+  }
+
   Future<void> connect(WearableOAuthProvider provider) async {
     ensureDeepLinkListener();
-    final session = _supabase.auth.currentSession;
+    final session = await _waitForSession();
     if (session == null) {
       throw StateError('Please sign in first');
     }
@@ -137,6 +227,26 @@ class WearableOAuthService {
     if (!launched) {
       throw StateError('Could not open the sign-in page. Try again.');
     }
+  }
+
+  Future<Session?> _waitForSession({
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
+    final existing = _supabase.auth.currentSession;
+    if (existing != null) return existing;
+
+    final completer = Completer<Session?>();
+    late final StreamSubscription<AuthState> sub;
+    sub = _supabase.auth.onAuthStateChange.listen((event) {
+      if (event.session != null && !completer.isCompleted) {
+        completer.complete(event.session);
+      }
+    });
+
+    final session = await completer.future
+        .timeout(timeout, onTimeout: () => _supabase.auth.currentSession)
+        .whenComplete(() => sub.cancel());
+    return session;
   }
 
   Future<Uri> _buildOuraAuthorizeUrl({
@@ -210,10 +320,13 @@ class WearableOAuthService {
       throw StateError('Missing authorization code');
     }
 
-    final session = _supabase.auth.currentSession;
+    final session = await _waitForSession();
     if (session == null) {
-      throw StateError('Not signed in');
+      _pendingCallback = uri;
+      debugPrint('[wearable_oauth] session not ready; queued callback');
+      return;
     }
+    _pendingCallback = null;
 
     final state = uri.queryParameters['state'];
     if (state != null && state.isNotEmpty && state != session.user.id) {
@@ -230,13 +343,43 @@ class WearableOAuthService {
           'redirect_uri': redirectUri,
         },
       );
-      if (response.status != 200 || response.data == null) {
-        throw StateError('Oura connection failed. Try again.');
+      if (response.status != 200) {
+        throw StateError(
+          ouraFunctionErrorMessage(
+            response.data,
+            statusCode: response.status,
+          ),
+        );
+      }
+      final data = response.data;
+      if (data is Map && data['error'] != null) {
+        throw StateError(ouraFunctionErrorMessage(data));
       }
     } else {
       await _worker.postWhoopExchange(code: code, redirectUri: redirectUri);
     }
 
     wearableOAuthConnectedController.add(provider);
+  }
+
+  void _emitFailure(WearableOAuthProvider provider, String message) {
+    if (!wearableOAuthErrorController.isClosed) {
+      wearableOAuthErrorController.add(
+        WearableOAuthFailure(provider: provider, message: message),
+      );
+    }
+  }
+}
+
+/// Keeps native deep-link OAuth bound for the app lifetime (cold-start safe).
+class WearableOAuthListener extends ConsumerWidget {
+  const WearableOAuthListener({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(wearableOAuthServiceProvider);
+    return child;
   }
 }

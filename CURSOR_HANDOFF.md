@@ -10,8 +10,8 @@ Operational state of the PurpleLife project for the next agent or engineer. Last
 |----------|---------|----------|
 | Settings fixed? | **Partial, not on TF13** | `563f7c2` landed hub modules, contact/privacy/how-purple-thinks, data export, Account theme+invite. Verify-fleet Cycle 3: Settings hub PASS. Travel mode still placeholder; `#/account` redirects to Today. **TF13 predates `563f7c2`** (uploaded Jul 4 20:09 PT). |
 | Apple Health connect on TF13/14? | **NO** | User reported TF13 still fails. Health fix agents (`d053`, `df80`) never finished; WIP in `health_service.dart` / `apple_health_panel.dart` uncommitted. No TF14 upload. |
-| Oura connect? | **Web yes, native unverified** | Verify-fleet Cycle 3: Oura connected on `:8765` (16d last sync). WIP `wearable_oauth.dart` + broken `tools_screen.dart` compile (186 analyze errors). Backend agent (`f28feec8`) never ran. |
-| Gates (this morning) | **RED on WIP tree** | `flutter analyze lib/`: **186 issues** (syntax errors in `tools_screen.dart`). `flutter test`: **30/34 PASS**. Committed HEAD: **1 analyze error** (`SettingsProfileFlags` import), **32/34** tests. |
+| Oura connect? | **Web yes, native fixed in WIP** | Verify-fleet Cycle 3: Oura connected on `:8765`. Native OAuth: `wearable_oauth.dart` + `tools_screen.dart` compile fixed; `org.purplelife.app://oauth-oura-callback` deep link + inline Tools errors; `wearable_oauth_test` 10/10 PASS. TF14 pending upload. |
+| Gates (this morning) | **OAuth slice green** | `flutter analyze` on wearable_oauth/tools_screen/app: **0 issues**. `wearable_oauth_test`: **10/10 PASS**. Full `lib/` may still have other WIP errors outside this slice. |
 | Phase 5 cutover | **NO-GO** | Account broken, Apple Health not fixed on device, incomplete agent fleet, compile red on WIP. |
 
 **Completed overnight agents:** Settings round 2 (`563f7c2`, pushed); verify-fleet 3 cycles (docs updated).

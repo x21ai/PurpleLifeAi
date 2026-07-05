@@ -18,10 +18,35 @@ void main() {
     });
   });
 
+  group('WearableOAuth scopes', () {
+    test('Oura scope matches web oura-connection.tsx', () {
+      expect(
+        WearableOAuth.ouraScope,
+        'email personal daily heartrate workout tag session spo2',
+      );
+    });
+
+    test('Whoop scope includes offline for refresh token', () {
+      expect(WearableOAuth.whoopScope, contains('offline'));
+      expect(WearableOAuth.whoopScope, contains('read:recovery'));
+      expect(WearableOAuth.whoopScope, contains('read:sleep'));
+    });
+  });
+
   group('WearableOAuth.providerFromCallbackUri', () {
     test('parses native Oura deep link', () {
       final uri = Uri.parse(
         'org.purplelife.app://oauth-oura-callback?code=abc&state=user',
+      );
+      expect(
+        WearableOAuth.providerFromCallbackUri(uri),
+        WearableOAuthProvider.oura,
+      );
+    });
+
+    test('parses web Oura callback path', () {
+      final uri = Uri.parse(
+        'https://www.purplelife.org/oauth/oura/callback?code=abc',
       );
       expect(
         WearableOAuth.providerFromCallbackUri(uri),
@@ -36,6 +61,34 @@ void main() {
       expect(
         WearableOAuth.providerFromCallbackUri(uri),
         WearableOAuthProvider.whoop,
+      );
+    });
+
+    test('parses native Whoop deep link', () {
+      final uri = Uri.parse(
+        'org.purplelife.app://oauth-whoop-callback?code=abc&state=user',
+      );
+      expect(
+        WearableOAuth.providerFromCallbackUri(uri),
+        WearableOAuthProvider.whoop,
+      );
+    });
+  });
+
+  group('ouraFunctionErrorMessage', () {
+    test('surfaces redirect URI registration hint', () {
+      expect(
+        ouraFunctionErrorMessage(
+          {'error': 'Oura token exchange failed: 400 invalid redirect_uri'},
+        ),
+        contains('org.purplelife.app://oauth-oura-callback'),
+      );
+    });
+
+    test('returns server error with status code', () {
+      expect(
+        ouraFunctionErrorMessage(null, statusCode: 503),
+        contains('503'),
       );
     });
   });

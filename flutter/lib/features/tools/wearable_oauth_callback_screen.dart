@@ -32,10 +32,7 @@ class _WearableOAuthCallbackScreenState
   }
 
   Future<void> _complete() async {
-    final oauth = WearableOAuthService(
-      supabase: ref.read(supabaseClientProvider),
-      worker: ref.read(workerClientProvider),
-    );
+    final oauth = ref.read(wearableOAuthServiceProvider);
     try {
       await oauth.completeFromCallbackUri(Uri.base);
       if (!mounted) return;
@@ -56,8 +53,6 @@ class _WearableOAuthCallbackScreenState
             ? error.message
             : 'Something went wrong. Try connecting again from Tools.';
       });
-    } finally {
-      oauth.dispose();
     }
   }
 

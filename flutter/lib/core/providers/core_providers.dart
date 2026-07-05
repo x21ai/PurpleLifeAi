@@ -7,6 +7,7 @@ import '../api/worker_client.dart';
 import '../auth/auth_repository.dart';
 import '../config/app_config.dart';
 import '../network/connectivity_service.dart';
+import '../../features/tools/wearable_oauth.dart';
 import '../offline/database.dart';
 import '../offline/sync_service.dart';
 
@@ -45,6 +46,17 @@ final workerClientProvider = Provider<WorkerClient>((ref) {
   final client = WorkerClient(config: config, authRepository: auth);
   ref.onDispose(client.dispose);
   return client;
+});
+
+/// Native wearable OAuth deep links (Oura, Whoop). Initialized at app start so
+/// cold-start callbacks are not lost before Tools mounts.
+final wearableOAuthServiceProvider = Provider<WearableOAuthService>((ref) {
+  final service = WearableOAuthService(
+    supabase: ref.watch(supabaseClientProvider),
+    worker: ref.watch(workerClientProvider),
+  )..ensureDeepLinkListener();
+  ref.onDispose(service.dispose);
+  return service;
 });
 
 final syncServiceProvider = Provider<SyncService>((ref) {
