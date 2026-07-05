@@ -1,22 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show RealtimeChannel;
+
+import 'dart:async';
 
 import '../../core/providers/core_providers.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
+import 'care_attachment_view.dart';
+import 'care_chat_pickers.dart';
 import 'care_chat_repository.dart';
 import 'chat_copy.dart';
 
 /// Caregiver messaging shell mirroring web `/chat-care`.
-class ChatCareScreen extends ConsumerWidget {
+class ChatCareScreen extends ConsumerStatefulWidget {
   const ChatCareScreen({super.key, this.threadId});
 
   final String? threadId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ChatCareScreen> createState() => _ChatCareScreenState();
+}
+
+class _ChatCareScreenState extends ConsumerState<ChatCareScreen> {
+  Timer? _pollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Web polls the thread list every 15s (chat-care.tsx:527). Mirror it.
+    _pollTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (mounted) ref.invalidate(careThreadsProvider);
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final threadId = widget.threadId;
     final threadsAsync = ref.watch(careThreadsProvider);
     final width = MediaQuery.sizeOf(context).width;
     final showSplit = width >= 768;
@@ -160,6 +188,8 @@ class _ThreadListPanel extends ConsumerWidget {
               Expanded(
                 child: Text(
                   ChatCopy.careTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Colors.white.withValues(alpha: 0.95),
                         fontWeight: FontWeight.w600,
@@ -167,9 +197,30 @@ class _ThreadListPanel extends ConsumerWidget {
                 ),
               ),
               TextButton.icon(
-                onPressed: onOpenSharing,
-                icon: const Icon(Icons.group_add_outlined, size: 18),
-                label: const Text('Sharing'),
+                onPressed: () => showNewChatPicker(
+                  context,
+                  ref,
+                  onPicked: onSelectThread,
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 40),
+                ),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('New'),
+              ),
+              TextButton.icon(
+                onPressed: () => showGroupPicker(
+                  context,
+                  ref,
+                  onPicked: onSelectThread,
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: const Size(0, 40),
+                ),
+                icon: const Icon(Icons.groups_outlined, size: 18),
+                label: const Text('Group'),
               ),
             ],
           ),
@@ -430,26 +481,60 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
   final _scrollController = ScrollController();
   final _inputController = TextEditingController();
   var _sending = false;
+  var _muteBusy = false;
+
+  /// Live-appended inserts from the realtime channel, keyed by message id.
+  /// Merged with the fetched provider list on build.
+  final _liveById = <String, CareMessage>{};
+  RealtimeChannel? _channel;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _markRead());
+    _subscribe(widget.thread.id);
   }
 
   @override
   void didUpdateWidget(covariant _ConversationPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.thread.id != widget.thread.id) {
+      _unsubscribe();
+      _liveById.clear();
+      _subscribe(widget.thread.id);
       WidgetsBinding.instance.addPostFrameCallback((_) => _markRead());
     }
   }
 
   @override
   void dispose() {
+    _unsubscribe();
     _scrollController.dispose();
     _inputController.dispose();
     super.dispose();
+  }
+
+  void _subscribe(String threadId) {
+    final repo = ref.read(careChatRepositoryProvider);
+    _channel = repo.subscribeThread(threadId, (message) {
+      if (!mounted || message.threadId != widget.thread.id) return;
+      setState(() => _liveById[message.id] = message);
+      // Inbound message from someone else: refresh unread + mark read on open.
+      final meId = ref.read(authSessionProvider).valueOrNull?.user.id;
+      if (message.senderId != meId) {
+        _markRead();
+      }
+      ref.invalidate(careThreadsProvider);
+      _scrollToBottom();
+    });
+  }
+
+  void _unsubscribe() {
+    final channel = _channel;
+    if (channel != null) {
+      ref.read(careChatRepositoryProvider).removeChannel(channel);
+      _channel = null;
+    }
   }
 
   Future<void> _markRead() async {
@@ -486,10 +571,13 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
     _inputController.clear();
 
     try {
-      await ref.read(careChatRepositoryProvider).sendMessage(
+      final sent = await ref.read(careChatRepositoryProvider).sendMessage(
             threadId: widget.thread.id,
             body: text,
           );
+      // Merge our own message locally so it appears without a refetch race
+      // (realtime may not echo the sender's own insert in time).
+      _liveById[sent.id] = sent;
       ref.invalidate(careMessagesProvider(widget.thread.id));
       ref.invalidate(careThreadsProvider);
       if (mounted) setState(() => _sending = false);
@@ -507,9 +595,198 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
     }
   }
 
+  Future<void> _toggleMute() async {
+    if (_muteBusy) return;
+    setState(() => _muteBusy = true);
+    final next = !widget.thread.muted;
+    try {
+      await ref.read(careChatRepositoryProvider).setThreadMute(
+            threadId: widget.thread.id,
+            muted: next,
+          );
+      ref.invalidate(careThreadsProvider);
+      if (mounted) _showSnack(next ? 'Muted' : 'Unmuted');
+    } catch (_) {
+      if (mounted) {
+        _showSnack("That change didn't save. Try again in a moment.");
+      }
+    } finally {
+      if (mounted) setState(() => _muteBusy = false);
+    }
+  }
+
+  Future<void> _leave() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF15121D),
+        title: const Text('Leave this chat?',
+            style: TextStyle(color: Colors.white)),
+        content: Text(
+          'You can be re-added later by the chat owner.',
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Leave'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref.read(careChatRepositoryProvider).leaveThread(widget.thread.id);
+      ref.invalidate(careThreadsProvider);
+      if (!mounted) return;
+      _showSnack('You left the chat');
+      context.go(AppRoutes.chatCare);
+    } on CareChatException catch (e) {
+      if (mounted) _showSnack(e.message);
+    } catch (_) {
+      if (mounted) _showSnack("Couldn't leave");
+    }
+  }
+
+  /// Merge fetched messages with live inserts, dedupe by id, sort ascending.
+  List<CareMessage> _mergeMessages(List<CareMessage> fetched) {
+    final byId = <String, CareMessage>{};
+    for (final m in fetched) {
+      byId[m.id] = m;
+    }
+    for (final entry in _liveById.entries) {
+      byId.putIfAbsent(entry.key, () => entry.value);
+    }
+    final list = byId.values.toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    return list;
+  }
+
   void _showSnack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
+    );
+  }
+
+  String? _senderName(String senderId) {
+    for (final o in widget.thread.others) {
+      if (o.userId == senderId) return o.name;
+    }
+    return null;
+  }
+
+  bool _sameDay(String isoA, String isoB) {
+    final a = DateTime.parse(isoA).toLocal();
+    final b = DateTime.parse(isoB).toLocal();
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  Widget _daySeparator(BuildContext context, String iso) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 6),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            _dayLabel(iso),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  letterSpacing: 0.5,
+                ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _bubble(
+    BuildContext context, {
+    required CareMessage message,
+    required bool mine,
+    required bool isGroup,
+    required String? senderName,
+  }) {
+    final onPrimary = Theme.of(context).colorScheme.onPrimary;
+    return Align(
+      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.sizeOf(context).width * 0.78,
+        ),
+        decoration: BoxDecoration(
+          color: mine
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.85)
+              : Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment:
+              mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            if (!mine && isGroup && senderName != null) ...[
+              Text(
+                senderName,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.65),
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 3),
+            ],
+            if (message.isDeleted)
+              Text(
+                'Message deleted',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: (mine ? onPrimary : Colors.white)
+                          .withValues(alpha: 0.5),
+                      fontStyle: FontStyle.italic,
+                    ),
+              )
+            else ...[
+              if (message.attachments.isNotEmpty) ...[
+                ...message.attachments.map(
+                  (a) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: CareAttachmentView(
+                      threadId: widget.thread.id,
+                      attachment: a,
+                      mine: mine,
+                    ),
+                  ),
+                ),
+              ],
+              if (message.body.isNotEmpty)
+                Text(
+                  message.body,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: mine
+                            ? onPrimary
+                            : Colors.white.withValues(alpha: 0.92),
+                      ),
+                ),
+            ],
+            const SizedBox(height: 4),
+            Text(
+              _formatMessageTime(message.createdAt),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: mine
+                        ? onPrimary.withValues(alpha: 0.75)
+                        : Colors.white.withValues(alpha: 0.45),
+                  ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -556,6 +833,69 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                   ],
                 ),
               ),
+              if (widget.thread.muted)
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Icon(
+                    Icons.notifications_off_outlined,
+                    size: 18,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
+                ),
+              PopupMenuButton<String>(
+                tooltip: 'Chat options',
+                icon: Icon(
+                  Icons.more_vert,
+                  color: Colors.white.withValues(alpha: 0.7),
+                ),
+                color: const Color(0xFF1B1724),
+                enabled: !_muteBusy,
+                onSelected: (value) {
+                  if (value == 'mute') {
+                    _toggleMute();
+                  } else if (value == 'leave') {
+                    _leave();
+                  }
+                },
+                itemBuilder: (context) {
+                  final isOwner = widget.thread.ownerId == meId;
+                  return [
+                    PopupMenuItem<String>(
+                      value: 'mute',
+                      child: Row(
+                        children: [
+                          Icon(
+                            widget.thread.muted
+                                ? Icons.notifications_active_outlined
+                                : Icons.notifications_off_outlined,
+                            size: 18,
+                            color: Colors.white.withValues(alpha: 0.85),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            widget.thread.muted
+                                ? 'Unmute notifications'
+                                : 'Mute notifications',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (!isOwner)
+                      const PopupMenuItem<String>(
+                        value: 'leave',
+                        child: Row(
+                          children: [
+                            Icon(Icons.logout, size: 18, color: Color(0xFFFF6B6B)),
+                            SizedBox(width: 10),
+                            Text('Leave chat',
+                                style: TextStyle(color: Color(0xFFFF6B6B))),
+                          ],
+                        ),
+                      ),
+                  ];
+                },
+              ),
             ],
           ),
         ),
@@ -570,7 +910,8 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                 child: const Text('Could not load messages. Try again.'),
               ),
             ),
-            data: (messages) {
+            data: (fetched) {
+              final messages = _mergeMessages(fetched);
               if (messages.isEmpty) {
                 return Center(
                   child: Padding(
@@ -607,54 +948,30 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
 
               WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
 
+              final isGroup = widget.thread.kind == 'group';
               return ListView.builder(
                 controller: _scrollController,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                 itemCount: messages.length,
                 itemBuilder: (context, index) {
                   final message = messages[index];
+                  final prev = index > 0 ? messages[index - 1] : null;
+                  final showDaySep = prev == null ||
+                      !_sameDay(prev.createdAt, message.createdAt);
                   final mine = message.senderId == meId;
-                  return Align(
-                    alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      constraints: BoxConstraints(
-                        maxWidth: MediaQuery.sizeOf(context).width * 0.78,
+                  final senderName = _senderName(message.senderId);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (showDaySep) _daySeparator(context, message.createdAt),
+                      _bubble(
+                        context,
+                        message: message,
+                        mine: mine,
+                        isGroup: isGroup,
+                        senderName: senderName,
                       ),
-                      decoration: BoxDecoration(
-                        color: mine
-                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.85)
-                            : Colors.white.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment:
-                            mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            message.body,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: mine
-                                      ? Theme.of(context).colorScheme.onPrimary
-                                      : Colors.white.withValues(alpha: 0.92),
-                                ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _formatMessageTime(message.createdAt),
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: mine
-                                      ? Theme.of(context)
-                                          .colorScheme
-                                          .onPrimary
-                                          .withValues(alpha: 0.75)
-                                      : Colors.white.withValues(alpha: 0.45),
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    ],
                   );
                 },
               );
@@ -666,6 +983,10 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
+              // TODO(wave3): attachments — needs a native file/image picker.
+              // Web has an attach button + pending-file chips here
+              // (chat-care.tsx:937-1021). Rendering of received attachments is
+              // handled by CareAttachmentView; sending is deferred to Wave 3.
               Expanded(
                 child: TextField(
                   controller: _inputController,
@@ -724,6 +1045,21 @@ String _formatThreadTime(String iso) {
     return _formatClock(d);
   }
   return '${_month(d.month)} ${d.day}';
+}
+
+String _dayLabel(String iso) {
+  final d = DateTime.parse(iso).toLocal();
+  final today = DateTime.now();
+  if (d.year == today.year && d.month == today.month && d.day == today.day) {
+    return 'Today';
+  }
+  final yesterday = today.subtract(const Duration(days: 1));
+  if (d.year == yesterday.year &&
+      d.month == yesterday.month &&
+      d.day == yesterday.day) {
+    return 'Yesterday';
+  }
+  return '${_month(d.month)} ${d.day}, ${d.year}';
 }
 
 String _formatMessageTime(String iso) {
