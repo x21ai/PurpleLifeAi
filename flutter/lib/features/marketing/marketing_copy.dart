@@ -211,6 +211,141 @@ abstract final class MarketingCopy {
   static const trustCharterNote =
       'The longer version of these commitments lives in the Charter.';
 
+  // Features
+  static const featuresEyebrow = 'Features';
+  static const featuresHeadline = 'A quiet tool,\ndeeply useful.';
+  static const featuresIntro =
+      'Everything Purple does, without the spreadsheet feeling.';
+
+  static const featuresCaptureEyebrow = 'Capture';
+  static const featuresCaptureTitle = 'Type it. Say it. Snap it.';
+  static const featuresCaptureBody =
+      'A sentence. A 60-second voice memo. A photo of how a rash looks today. A short video. Purple transcribes, tags, and summarizes, so nothing slips through, and you don\'t think about filing.';
+
+  static const featuresAskEyebrow = 'Ask Purple';
+  static const featuresAskTitle = 'A question, answered in your own context.';
+  static const featuresAskBody =
+      'A quiet bubble waits on every screen. Claude answers by default, or pick OpenAI, Gemini, or Grok in Settings. Purple already knows your history, and asks before changing anything.';
+  static const featuresAskBullets = [
+    'Your choice of AI model. Switch any time.',
+    'Confirm-to-write on every action.',
+    'Your entries are the prompt, never the training data.',
+  ];
+
+  static const featuresSeeEyebrow = 'See';
+  static const featuresSeeTitle = 'One timeline. The whole picture.';
+  static const featuresSeeBody =
+      'Seizures, meds, journal moments, sleep, HRV, in one feed you can filter by day, week, month, or year. A daily forecast watches your sleep, missed doses, menstrual phase, and your own trigger history.';
+
+  static const featuresCaregiverQuote = 'For the people who help you carry it.';
+  static const featuresCaregiverAttribution =
+      'Caregivers, family, anyone you trust';
+
+  static const featuresRestEyebrow = 'And the rest';
+  static const featuresRestTitle = 'Quietly thorough.';
+  static const featuresRestItems = [
+    (
+      title: 'Smart meds',
+      body:
+          'Reminders, adherence, side-effect notes, refill alerts. Backdate old prescriptions to build full history.',
+    ),
+    (
+      title: 'Seizure log',
+      body:
+          'Quick capture with type, duration, witnesses, recovery, rescue meds. Backdate past episodes.',
+    ),
+    (
+      title: 'Biometrics',
+      body:
+          'Connect Oura, Whoop, Apple Health. Sleep, HRV, temperature deviation, SpO₂, respiratory rate.',
+    ),
+    (
+      title: 'Caregiver mode',
+      body:
+          'Share read-only access with the people who help. Every write needs your blessing first.',
+    ),
+    (
+      title: 'Travel mode',
+      body:
+          'An itinerary-driven medication schedule that shifts cleanly across time zones.',
+    ),
+    (
+      title: 'Yours to keep',
+      body:
+          'Export everything to JSON or PDF. Delete your account and everything goes with it.',
+    ),
+  ];
+
+  static const featuresFinalHeadline = 'Begin today.';
+  static const featuresFinalBody =
+      'Free forever. No ads. No selling your data.';
+  static const featuresFinalCta = 'Create your free account';
+
+  // Charter
+  static const charterEyebrow = 'About Purple';
+  static const charterHeadline = 'Why Purple exists.';
+  static const charterIntro =
+      'A quiet place to keep track of a body that doesn\'t always cooperate. For you, and for the people who love you.';
+
+  static const charterWhoTitle = 'Who Purple is for';
+  static const charterWhoP1 =
+      'Anyone living with a condition that asks for daily attention (epilepsy, migraine, diabetes, mental health, autoimmune, dysautonomia, long COVID, chronic pain) and the family members and caregivers who walk alongside them.';
+  static const charterWhoP2 =
+      'We\'re named after the global color for epilepsy awareness, and that\'s where our depth runs deepest. But Purple is condition-aware, not condition-locked. Whatever you\'re carrying, you\'re welcome here.';
+
+  static const charterFeelTitle = 'How it feels to use';
+  static const charterFeelP1 =
+      'Write a sentence. Speak a thought. Snap a photo of a prescription bottle. Purple listens, remembers, and quietly notices the patterns over time. No forms to fill out. No streaks to keep. No guilt if you put it down for a week.';
+  static const charterFeelP2 =
+      'It\'s here when you need it, and quiet when you don\'t.';
+
+  static const charterPromisesTitle = 'The promises we keep';
+  static const charterPromises = [
+    ('Free, forever.', 'For individuals and the people who care for them.'),
+    (
+      'Open source.',
+      'Apache 2.0. Read the code, run your own copy, fork it.',
+    ),
+    ('No ads. Ever.', 'Nothing in Purple is paid to be there.'),
+    (
+      'Your story is yours.',
+      'Export it whenever you want. Delete it whenever you want. We\'ll never sell it, rent it, or hand it to brokers.',
+    ),
+    (
+      'Conversation first.',
+      'Health shouldn\'t feel like paperwork.',
+    ),
+    (
+      'Not a medical device.',
+      'Purple supports you and your clinician. It doesn\'t replace either of you.',
+    ),
+  ];
+
+  static const charterWontTitle = 'Things we won\'t do';
+  static const charterWontItems = [
+    'Dark patterns or guilt loops to keep you in the app.',
+    'Behavioral advertising or third-party trackers.',
+    'Selling, renting, or sharing your data with brokers.',
+    'Paywalling the heart of Purple: journaling, medications, or sharing with the people who help you.',
+    'Lock-in. You can leave any time, with everything you brought.',
+  ];
+
+  static const charterStandardTitle = 'Our standard';
+  static const charterStandardBody =
+      'Calm. Quiet. Respectful of your energy. If a feature can\'t be built within these promises, we don\'t ship it.';
+  static const charterStandardClosing =
+      'Thank you for trusting us with even a small corner of your day.';
+
+  // Terms
+  static const termsEyebrow = 'Terms';
+  static const termsHeadline = 'The deal, in plain words.';
+  static const termsParagraphs = [
+    'Purple is a personal health journal. It is not a medical device and not a substitute for professional advice, diagnosis, or treatment. In an emergency, call your local emergency number.',
+    'You own your data. We don\'t sell it, we don\'t advertise against it, and you can export or delete it from Settings at any time.',
+    'Use Purple honestly. Don\'t abuse the service, attempt to break it, or upload content that isn\'t yours to share. We may suspend accounts that do.',
+    'The software is provided "as is" without warranty of any kind. To the extent allowed by law, the makers of Purple are not liable for damages arising from your use of it.',
+  ];
+
   // Header / footer
   static const wordmark = 'Purple';
   static const navAbout = 'About';

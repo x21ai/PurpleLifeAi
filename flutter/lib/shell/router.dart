@@ -11,9 +11,12 @@ import '../features/chat/chat_screen.dart';
 import '../features/journal/journal_capture_screen.dart';
 import '../features/journal/journal_screen.dart';
 import '../features/marketing/marketing_about_screen.dart';
+import '../features/marketing/marketing_charter_screen.dart';
+import '../features/marketing/marketing_features_screen.dart';
 import '../features/marketing/marketing_home_screen.dart';
 import '../features/marketing/marketing_pricing_screen.dart';
 import '../features/marketing/marketing_privacy_screen.dart';
+import '../features/marketing/marketing_terms_screen.dart';
 import '../features/marketing/marketing_trust_screen.dart';
 import '../features/my_health/my_health_screen.dart';
 import '../features/meds/med_detail_screen.dart';
@@ -79,6 +82,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.trust,
         name: 'marketing-trust',
         builder: (context, state) => const MarketingTrustScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.features,
+        name: 'marketing-features',
+        builder: (context, state) => const MarketingFeaturesScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.charter,
+        name: 'marketing-charter',
+        builder: (context, state) => const MarketingCharterScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.terms,
+        name: 'marketing-terms',
+        builder: (context, state) => const MarketingTermsScreen(),
       ),
       GoRoute(
         path: AppRoutes.signIn,

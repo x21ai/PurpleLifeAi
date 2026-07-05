@@ -218,6 +218,11 @@ class _MarketingFooter extends StatelessWidget {
                       color: textSecondary,
                     ),
                     _FooterLink(
+                      label: MarketingCopy.footerTerms,
+                      onTap: () => context.go(AppRoutes.terms),
+                      color: textSecondary,
+                    ),
+                    _FooterLink(
                       label: MarketingCopy.navContact,
                       onTap: () => context.go(AppRoutes.contact),
                       color: textSecondary,

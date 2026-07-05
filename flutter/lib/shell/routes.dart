@@ -34,6 +34,9 @@ abstract final class AppRoutes {
   static const marketingPrivacy = '/privacy';
   static const about = '/about';
   static const trust = '/trust';
+  static const features = '/features';
+  static const charter = '/charter';
+  static const terms = '/terms';
   static const welcome = '/welcome';
   static const today = '/today';
   static const todayRisk = '/today/risk';
@@ -100,6 +103,9 @@ abstract final class AppRoutes {
     marketingPrivacy,
     about,
     trust,
+    features,
+    charter,
+    terms,
   ];
 
   static const protectedPaths = [

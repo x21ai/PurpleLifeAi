@@ -9,19 +9,28 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-Purple Life on **`lovable/redesign`**. TestFlight **1.0 (17) VALID**. Flutter cutover gap
-matrix refreshed post-TF17 fleet: **23** signed-in gaps (22 Missing + 1 Stub), **32 Partial**,
-**0 Parity** of 55 `_app` routes. Fleet wired `/my-health`, `/biometrics`, `/care/inbox`,
-`/reports/*`, chat streaming, 5 marketing paths.
+Purple Life on **`lovable/redesign`**. TestFlight **1.0 (17) VALID**. Flutter marketing now
+covers **8** public paths (`/`, `/pricing`, `/privacy`, `/about`, `/trust`, `/features`,
+`/charter`, `/terms`). Cutover gap matrix: **23** signed-in gaps remain.
 
-**Next action:** TF17 device sign-off on synced-data + chat; P0 OAuth console; Worker marketing
-cutover when approved.
+**Next action:** TF17 device sign-off; Worker marketing cutover when approved.
 
 ---
 
 ## Log
 
-### 2026-07-05T14:36:00Z — Flutter cutover gap matrix post-TF17
+### 2026-07-05T14:40:00Z — Flutter marketing features charter terms routes
+
+- **Requested:** Wire `/features`, `/charter`, `/terms` Flutter marketing stubs from web copy;
+  analyze + test; commit push.
+- **Done:** `MarketingFeaturesScreen`, `MarketingCharterScreen`, `MarketingTermsScreen`;
+  copy in `marketing_copy.dart`; GoRouter + `AppRoutes.marketingPaths`; footer Terms link;
+  `marketing_routes_test.dart` **10/10** pass; `flutter analyze lib/features/marketing` clean.
+- **Issues:** Full `flutter analyze` still flags pre-existing vitals/chat files outside scope;
+  `widget_test.dart` load failure pre-existing (**81/82** full suite).
+- **Stand / next:** Marketing hero calm-scene images; `/contact` public route if needed.
+- **Who / where:** Cursor subagent · darwin · lovable/redesign
+- **Timestamp:** 2026-07-05T14:40:00Z
 
 - **Requested:** Refresh `docs/FLUTTER-CUTOVER-GAP-MATRIX.md` route counts vs `router.dart` and
   `src/routes/_app/`; update P0/P1/P2 for my-health, care, chat, reports, marketing; commit push.

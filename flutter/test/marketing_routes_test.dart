@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:purple_app/design/tokens.dart';
 import 'package:purple_app/features/marketing/marketing_about_screen.dart';
+import 'package:purple_app/features/marketing/marketing_charter_screen.dart';
 import 'package:purple_app/features/marketing/marketing_copy.dart';
+import 'package:purple_app/features/marketing/marketing_features_screen.dart';
 import 'package:purple_app/features/marketing/marketing_home_screen.dart';
 import 'package:purple_app/features/marketing/marketing_pricing_screen.dart';
 import 'package:purple_app/features/marketing/marketing_privacy_screen.dart';
+import 'package:purple_app/features/marketing/marketing_terms_screen.dart';
 import 'package:purple_app/features/marketing/marketing_trust_screen.dart';
 import 'package:purple_app/shell/routes.dart';
 
@@ -40,6 +43,9 @@ void main() {
         '/privacy',
         '/about',
         '/trust',
+        '/features',
+        '/charter',
+        '/terms',
       ]);
     });
   });
@@ -97,6 +103,30 @@ void main() {
         findsOneWidget,
       );
       expect(find.text(MarketingCopy.trustFounderName), findsOneWidget);
+    });
+
+    testWidgets('features renders hero and feature list', (tester) async {
+      await pumpMarketing(tester, const MarketingFeaturesScreen());
+
+      expect(find.textContaining('quiet tool'), findsOneWidget);
+      expect(
+        find.text(MarketingCopy.featuresRestItems.first.title),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('charter renders founding copy', (tester) async {
+      await pumpMarketing(tester, const MarketingCharterScreen());
+
+      expect(find.text(MarketingCopy.charterHeadline), findsOneWidget);
+      expect(find.text(MarketingCopy.charterWhoTitle), findsOneWidget);
+    });
+
+    testWidgets('terms renders plain-language copy', (tester) async {
+      await pumpMarketing(tester, const MarketingTermsScreen());
+
+      expect(find.text(MarketingCopy.termsHeadline), findsOneWidget);
+      expect(find.textContaining('personal health journal'), findsOneWidget);
     });
   });
 }
