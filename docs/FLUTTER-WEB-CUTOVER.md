@@ -1,6 +1,6 @@
 # Flutter web cutover at www.purplelife.org (Phase 5, Stage 7)
 
-**Status:** Plan and scaffold only. **Do not deploy production** without gate pass and explicit owner approval.
+**Status:** Scaffold + staging checklist ready. **Do not deploy production** without gate pass, staging smoke, and explicit owner approval.
 
 **Goal:** Serve the signed-in Purple app from **Flutter web** on the same host as today (`www.purplelife.org`), while **marketing pages** stay TanStack SSR. DNS unchanged (Worker routes stay on `purplelife.org` zone).
 
@@ -66,19 +66,15 @@ bun run build:prod
 
 Output: `dist/client/` (marketing + legacy `_app` bundles) and `dist/server/server.js`.
 
-### 3. Merge Flutter into deploy assets (to implement)
-
-Add a merge step **after both builds** (not wired in CI yet):
+### 3. Merge Flutter into deploy assets
 
 ```bash
-# Planned layout — implement in scripts/merge-flutter-web-assets.sh (future)
-FLUTTER_DEST="dist/client/_flutter"
-rm -rf "${FLUTTER_DEST}"
-mkdir -p "${FLUTTER_DEST}"
-cp -R flutter/build/web/. "${FLUTTER_DEST}/"
+./scripts/merge-flutter-web-assets.sh
+# Or full pipeline:
+bun run build:prod:flutter-web
 ```
 
-Using a `_flutter/` prefix avoids filename collisions with TanStack hashed assets (`assets/*.js`).
+Layout: `dist/client/_flutter/` (copied from `flutter/build/web/`). Prefix avoids collisions with TanStack hashed assets.
 
 ## Worker static routing vs TanStack fallback
 
@@ -201,15 +197,134 @@ Rollback time target: one Worker redeploy (< 5 min) if TanStack `dist/` artifact
 # Flutter gates
 cd flutter && flutter analyze lib/ && flutter test
 
-# Prod-style Flutter web build
-./scripts/flutter-web-build-prod.sh
+# Full cutover build (TanStack + Flutter web + merge)
+bun run build:prod:flutter-web
 
-# Preview (local static server)
+# Merge only (after both builds exist; safe to re-run)
+./scripts/merge-flutter-web-assets.sh
+
+# Preview (local static server; all routes served by Flutter, not Worker dispatch)
 ./scripts/flutter-web-serve.sh --rebuild
 curl -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8765/
+curl -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8765/today
 
 # TanStack gates (unchanged)
 bun run check:em-dash && bun run check:supabase-types && bunx tsc --noEmit && bun run build
+
+# Deploy bundle dry-run (no publish; confirms dist/client/_flutter in ASSETS)
+doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c '
+  CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} \
+  bunx wrangler deploy -c wrangler.deploy.jsonc --dry-run
+'
+```
+
+## Staging smoke (`workers.dev`, no prod deploy)
+
+**Purpose:** Validate Worker path dispatch (`FLUTTER_WEB_CUTOVER=true`) before touching
+`www.purplelife.org`. Staging uses a **separate Worker name** and **no zone routes** so prod
+DNS is unchanged.
+
+### Prerequisites
+
+- [ ] `bun run build:prod:flutter-web` exits 0
+- [ ] `dist/client/_flutter/index.html` and `dist/client/_flutter/main.dart.js` exist
+- [ ] `./scripts/merge-flutter-web-assets.sh` re-run succeeds (idempotent)
+- [ ] `wrangler deploy --dry-run` reports ASSETS binding with `_flutter/` artifacts
+- [ ] `flutter analyze lib/` and `flutter test` pass on `lovable/redesign`
+
+### Staging deploy (agents run; owner approval for prod only)
+
+```bash
+# 1. Build merged artifact (same as prod cutover)
+bun run build:prod:flutter-web
+
+# 2. Deploy to workers.dev ONLY (no purplelife.org routes)
+doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c '
+  CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} \
+  bunx wrangler deploy -c wrangler.deploy.jsonc \
+    --name purplelife-staging \
+    --routes "" \
+    --var FLUTTER_WEB_CUTOVER:true
+'
+
+# 3. Note the workers.dev URL from deploy output, e.g.:
+#    https://purplelife-staging.<account>.workers.dev
+```
+
+**Rollback staging:** redeploy with `--var FLUTTER_WEB_CUTOVER:false` or delete the
+`purplelife-staging` Worker in Cloudflare dashboard. Prod unaffected.
+
+### HTTP smoke checklist
+
+Replace `STAGING` with the deploy URL (no trailing slash). All checks use `curl -sS -o /dev/null -w '%{http_code}\n'`.
+
+| # | Request | Expected | Pass |
+|---|---------|----------|------|
+| 1 | `GET STAGING/` | `200` TanStack marketing HTML (not Flutter shell) | [ ] |
+| 2 | `GET STAGING/pricing` | `200` TanStack SSR | [ ] |
+| 3 | `GET STAGING/today` | `200` Flutter SPA (`/_flutter/index.html` body) | [ ] |
+| 4 | `GET STAGING/meds` | `200` Flutter SPA | [ ] |
+| 5 | `GET STAGING/sign-in` | `200` Flutter SPA | [ ] |
+| 6 | `GET STAGING/_flutter/main.dart.js` | `200` JS bundle | [ ] |
+| 7 | `GET STAGING/_flutter/sqlite3.wasm` | `200` Drift wasm | [ ] |
+| 8 | `GET STAGING/_flutter/drift_worker.js` | `200` Drift worker | [ ] |
+| 9 | `GET STAGING/api/health` (or known public API) | `200` or `401`, not static 404 | [ ] |
+| 10 | `GET STAGING/oauth/oura/callback` | Worker handler (not Flutter 404) | [ ] |
+
+**Body spot-checks (optional):**
+
+```bash
+curl -sS "STAGING/today" | head -5          # expect Flutter index.html (<!DOCTYPE html> + flutter_bootstrap)
+curl -sS "STAGING/" | head -5               # expect TanStack/React SSR markup, not flutter_bootstrap
+curl -sS "STAGING/_flutter/main.dart.js" | wc -c   # expect multi-MB bundle (> 1_000_000)
+```
+
+### Signed-in functional smoke (staging)
+
+Use Doppler E2E creds (`E2E_TEST_USER_EMAIL` / `E2E_TEST_USER_PASSWORD` from
+`cursor-cloudflare` / `prd_cloudlfare`). Reference account with rich data:
+`pmt@eigital.com` (see `docs/FLUTTER-STAGE1-SIGNOFF.md`).
+
+| # | Flow | Expected | Pass |
+|---|------|----------|------|
+| 11 | Sign in at `STAGING/sign-in` | Lands on `/today`; no infinite spinner | [ ] |
+| 12 | `/today` | Real scores or honest empty state; no fake vitals | [ ] |
+| 13 | `/meds` | Dose list loads (cache or network) | [ ] |
+| 14 | `/vitals` | Shell loads; symptom radar may be empty (known gap) | [ ] |
+| 15 | `/journal` | Entries list or empty state | [ ] |
+| 16 | `/tools` | Wearable connect cards render | [ ] |
+| 17 | Burger menu → Account / Settings | `endDrawer` opens; navigation works | [ ] |
+| 18 | Deep link `STAGING/meds/history` (if routed) | Flutter SPA 200, client router resolves | [ ] |
+
+### OAuth / API notes for staging
+
+- Staging hostname is **not** registered in Oura/Whoop redirect URIs by default. Wearable
+  OAuth connect on staging may fail until `https://purplelife-staging.<account>.workers.dev/oauth/*/callback`
+  is added in provider consoles (or test OAuth only on prod `:8080` / local `:8765`).
+- Flutter web on staging calls `WORKER_API_BASE_URL=https://www.purplelife.org/api` (baked at
+  build). API smoke on staging validates **routing**, not cross-host API unless build defines
+  are changed to point at staging.
+- For full API+Flutter integration smoke, either (a) add staging Worker API base to Flutter
+  build defines, or (b) run cutover smoke on prod with flag off first, then staging with same
+  host (owner decision).
+
+### Staging → prod promotion gate
+
+Do **not** set `FLUTTER_WEB_CUTOVER=true` on prod `purplelife` Worker until:
+
+1. All HTTP smoke rows 1–10 pass on `purplelife-staging.*.workers.dev`
+2. Signed-in rows 11–17 pass (or documented known gaps accepted)
+3. `flutter-phase5-nogo` gaps reviewed with owner
+4. Explicit owner reply `approved` for prod deploy (`docs/SYNC-AND-RELEASE.md`)
+
+Prod promotion (manual only, after approval):
+
+```bash
+bun run build:prod:flutter-web
+doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c '
+  CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} \
+  bunx wrangler deploy -c wrangler.deploy.jsonc --var FLUTTER_WEB_CUTOVER:true
+'
 ```
 
 ## Deploy blockers (current)
@@ -217,11 +332,12 @@ bun run check:em-dash && bun run check:supabase-types && bunx tsc --noEmit && bu
 | Blocker | Detail |
 |---------|--------|
 | **flutter-phase5-nogo** | Feature gaps vs TanStack `_app` (Vitals depth, Tools stats, Settings export/2FA, journal capture, reports). |
-| **No merge + server dispatch** | ~~Not implemented~~ **Scaffold landed** — enable with `FLUTTER_WEB_CUTOVER=true` on Worker after staging smoke. |
-| **Manual deploy policy** | Redesign phase: owner approval required (`docs/SYNC-AND-RELEASE.md`). |
-| **E2E coverage** | Playwright prod smoke assumes TanStack `_app` routes. |
-| **Partial route map** | Admin/biometrics/reports routes lack Flutter ports; need fallback strategy. |
-| **Staging** | No `workers.dev` Flutter cutover smoke yet (recommended before prod). |
+| **Staging smoke not executed** | Checklist below is documented; `purplelife-staging` workers.dev deploy + rows 1–17 still pending. |
+| **Manual deploy policy** | Redesign phase: owner approval required for prod (`docs/SYNC-AND-RELEASE.md`). |
+| **E2E coverage** | Playwright prod smoke assumes TanStack `_app` routes; update or scope-skip before prod flag on. |
+| **Partial route map** | `/admin/*`, `/biometrics/*`, `/my-health*`, `/insights`, `/timeline`, `/friends/*`, `/community-new`, `/apple-health-import`, `/condition/*`, full `/reports/*` lack Flutter ports; need TanStack fallback or delay. |
+| **OAuth redirect URIs** | Oura/Whoop consoles lack `purplelife-staging.*.workers.dev` callbacks; native URI registration still open (`docs/OPEN-ISSUES.md` **oura-native-redirect-console**). |
+| **Marketing dual stack** | Flutter GoRouter has marketing routes for `:8765` preview; Worker cutover keeps marketing on TanStack SSR. Confirm intentional before prod. |
 
 ## Operator sign-off
 
