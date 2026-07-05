@@ -1,6 +1,6 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 (Apple Health commit **a655ca2** pushed; pubspec **1.0 (13)**; TestFlight upload pending analyze fix).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 (Apple Health **151f491**; analyze fix **89d2910**; TestFlight **1.0 (13)** VALID on ASC).
 
 ## Overnight phase sweep (2026-07-05)
 
@@ -21,6 +21,8 @@ Flutter features agent (excluding settings/health): hydration repository + scree
 - `vitals_screen.dart`: pull-to-refresh triggers wearable + native health sync.
 - `health_providers.dart`: shared `healthServiceProvider` + `nativeHealthSyncProvider`.
 
+**Analyze fix (`89d2910`):** settings lint for TestFlight gate — `file_download_web.dart` deprecated import ignore, `const _ThinkCard` on How Purple thinks, `GoRouter.of(this.context)` after account delete; data export helpers + Your data section wiring.
+
 **Verify (agent):**
 ```bash
 cd flutter && flutter analyze lib/features/health/ lib/features/vitals/sync_status_bar.dart lib/features/today/wearable_sync.dart lib/shell/auth_gate.dart  # 0 issues
@@ -34,11 +36,11 @@ cd flutter && flutter test test/health_service_test.dart   # 4/4 pass
 4. Pull-to-refresh on Today/Vitals → native sync when authorized.
 5. Airplane mode → offline queue; online auto-flush via `SyncService`.
 
-**USB device:** `00008150-00192C141A87801C` not detected this session (`flutter devices` → macOS + Chrome only). Use TestFlight **1.0 (13)** after upload.
+**USB device:** `00008150-00192C141A87801C` not detected this session (`flutter devices` → macOS + Chrome only). Install TestFlight **1.0 (13)** (`573a788d-cbda-4335-8c69-0e07995db804`, uploaded 2026-07-04 20:09 PT).
 
-**Upload:** `bun run ios:flutter-testflight` (Doppler `purple-life`/`prd` signing + ASC API). **Blocked 2026-07-05:** script runs `flutter analyze lib/` which fails on pre-existing settings warnings (`settings_sections.dart`, `data_export_service.dart`); fix settings analyze or narrow script gate, then upload build **13**.
+**Upload (done):** `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer doppler run --project purple-life --config prd -- bun run ios:testflight` → build **13** uploaded and **VALID**. Analyze gate fix: commit **89d2910** (`flutter analyze lib/` 0 issues; **34/34** tests).
 
-**Commit:** `a655ca2` on `lovable/redesign` (pushed).
+**Commits:** Apple Health `151f491`; analyze/settings gate `89d2910` on `lovable/redesign` (push after handoff sync).
 
 ## Ship complete (2026-07-05 ~02:50 ET)
 
