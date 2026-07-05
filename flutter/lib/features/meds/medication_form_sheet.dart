@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../shared/glass_helpers.dart';
 import 'meds_repository.dart';
+import 'models/medication.dart';
 
 /// Bottom sheet to add a medication (name, kind, dosage, schedule).
 class MedicationFormSheet extends ConsumerStatefulWidget {
@@ -51,6 +52,13 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
 
   String _kind = 'medication';
   bool _saving = false;
+  bool _loading = false;
+
+  /// Full existing medication row for edits. Retained so save can pass through
+  /// any field the sheet has no UI control for (prescriber, pills_remaining,
+  /// refill threshold, with-food, start/end dates, alarm fields) instead of
+  /// letting them be nulled. Null when adding a new medication.
+  Medication? _existing;
 
   static const _kindOptions = [
     ('medication', 'Medication'),
@@ -63,6 +71,7 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
   bool get _isRescue => _kind == 'rescue';
 
   bool get _canSave =>
+      !_loading &&
       _nameController.text.trim().isNotEmpty &&
       (_isRescue || _amountController.text.trim().isNotEmpty);
 
@@ -74,6 +83,45 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
       _nameController.text = widget.initialName!;
     }
     _timeControllers.add(TextEditingController(text: '08:00'));
+    if (widget.editingMedId != null) {
+      _hydrateFromExisting();
+    }
+  }
+
+  /// Loads the full medication row for an edit and pre-fills every field the
+  /// sheet can edit (name, kind, amount, unit, times). Without this, unedited
+  /// fields would submit blank and wipe existing DB values. Fields the sheet
+  /// has no UI for are preserved via [_existing] on save.
+  Future<void> _hydrateFromExisting() async {
+    setState(() => _loading = true);
+    try {
+      final med = await ref
+          .read(medsRepositoryProvider)
+          .loadMedicationById(widget.editingMedId!);
+      if (!mounted || med == null) return;
+      setState(() {
+        _existing = med;
+        _nameController.text = med.name;
+        _kind = med.kind;
+        if (med.dosageAmount != null) {
+          _amountController.text = med.dosageAmount.toString();
+        }
+        if (med.dosageUnit != null && med.dosageUnit!.isNotEmpty) {
+          _unitController.text = med.dosageUnit!;
+        }
+        final times = med.timesOfDay;
+        if (times.isNotEmpty) {
+          for (final controller in _timeControllers) {
+            controller.dispose();
+          }
+          _timeControllers
+            ..clear()
+            ..addAll(times.map((t) => TextEditingController(text: t)));
+        }
+      });
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -103,6 +151,7 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
           dosageAmount: _isRescue ? null : _amountController.text.trim(),
           dosageUnit: _unitController.text.trim(),
           timesOfDay: _times,
+          existing: _existing,
         );
       } else {
         await repo.createMedication(

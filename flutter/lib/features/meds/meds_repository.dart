@@ -303,6 +303,7 @@ class MedsRepository {
     String? dosageAmount,
     String? dosageUnit,
     List<String> timesOfDay = const ['08:00'],
+    Medication? existing,
   }) async {
     final isRescueKind = kind == 'rescue';
     final amount = dosageAmount == null ? null : num.tryParse(dosageAmount);
@@ -316,14 +317,29 @@ class MedsRepository {
               .toList()
             ..sort());
 
+    // Fall back to the existing row for any editable field the sheet left
+    // blank, so an edit never nulls a value that was set before. Columns the
+    // sheet has no control over (prescriber, pills_remaining, refill_threshold,
+    // with_food, start/end dates, alarm fields) are intentionally absent from
+    // the payload: Supabase applies a partial update, so those are preserved.
+    final resolvedAmount = amount ?? (isRescueKind ? null : existing?.dosageAmount);
+    final resolvedUnit = unit.isEmpty ? existing?.dosageUnit : unit;
+    final resolvedDosage = resolvedAmount != null
+        ? '$resolvedAmount${resolvedUnit != null && resolvedUnit.isNotEmpty ? ' $resolvedUnit' : ''}'
+        : (dosageText ?? existing?.dosage);
+    final resolvedTimes = cleanTimes.isNotEmpty || isRescueKind
+        ? cleanTimes
+        : (existing?.timesOfDay ?? cleanTimes);
+
     final payload = <String, dynamic>{
       'id': medId,
       'name': name.trim(),
       'kind': kind,
-      'dosage': dosageText,
-      'dosage_amount': amount,
-      'dosage_unit': unit.isEmpty ? null : unit,
-      'times_of_day': cleanTimes,
+      'dosage': resolvedDosage,
+      'dosage_amount': resolvedAmount,
+      'dosage_unit':
+          (resolvedUnit == null || resolvedUnit.isEmpty) ? null : resolvedUnit,
+      'times_of_day': resolvedTimes,
       'is_rescue': isRescueKind,
     };
 

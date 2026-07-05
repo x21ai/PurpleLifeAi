@@ -4,6 +4,7 @@ import '../../design/purple_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
@@ -42,7 +43,8 @@ class MedsHistoryScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'HISTORY',
+                // Mirrors web meds.history.eyebrow.
+                'MEDICATIONS',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.2,
                       color: Colors.white.withValues(alpha: 0.45),
@@ -50,7 +52,8 @@ class MedsHistoryScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Dose log',
+                // Mirrors web meds.history.title.
+                'Dose history',
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
                       fontFamily: PurpleType.serif,
                       height: 1.02,
@@ -59,7 +62,8 @@ class MedsHistoryScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Last 30 days of scheduled doses.',
+                // Mirrors web meds.history.subtitle.
+                'Every scheduled dose across your medications, day by day.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.white.withValues(alpha: 0.55),
                     ),
@@ -245,16 +249,19 @@ class _HistoryDoseRow extends StatelessWidget {
     );
   }
 
+  /// Token-backed status color, matching `dose_list.dart` so the history log
+  /// and Today's doses share one palette instead of a divergent hardcoded one.
   Color _statusColor(String status) {
+    final colors = PurpleTokens.loaded.colorsFor('dark');
     switch (status) {
       case 'taken':
-        return Colors.greenAccent.shade200;
+        return parseTokenColor(colors.success);
       case 'missed':
-        return Colors.redAccent.shade200;
+        return parseTokenColor(colors.destructive);
       case 'skipped':
         return Colors.white.withValues(alpha: 0.55);
       default:
-        return Colors.purpleAccent.shade100;
+        return parseTokenColor(colors.purplePrimary);
     }
   }
 }
