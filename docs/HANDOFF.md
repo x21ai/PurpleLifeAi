@@ -9,16 +9,25 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-**`main` and `lovable/redesign` synced at `7fd1bc2`** (pushed to `origin/main` 2026-07-05).
-TestFlight **1.0 (17) VALID**. Merge gates passed: em-dash, live-data, unique-images,
-lovable-auth, `tsc --noEmit`, `build:prod`, `flutter analyze lib/`, **91/91** `flutter test`.
-No production Worker deploy (operator approval required).
+**`main` and `lovable/redesign` @ `ef05394`** (staging prep docs pushed to `origin/main` 2026-07-05).
+TestFlight **1.0 (17) VALID**. **`bun run build:prod:flutter-web` PASS** (2026-07-05 staging prep).
+Staging smoke checklist in **`docs/FLUTTER-WEB-CUTOVER.md`**; `purplelife-staging` workers.dev deploy
+not run yet. **`FLUTTER_WEB_CUTOVER=true` on prod blocked** until staging rows 1–17 pass + owner approval.
 
-**Next action:** Optional push `lovable/redesign` to match `main`; TF17 device QA; Stage 5 cutover still NO-GO.
+**Next action:** Deploy `purplelife-staging` on workers.dev; run staging smoke checklist (no prod deploy).
 
 ---
 
 ## Log
+
+### 2026-07-05T14:45:00Z — Staging prep: build + workers.dev smoke checklist
+
+- **Requested:** Git pull `lovable/redesign`; `bun run build:prod:flutter-web`; document workers.dev smoke in `docs/FLUTTER-WEB-CUTOVER.md`; test merge locally; commit docs; push. No prod deploy.
+- **Done:** **`bun run build:prod:flutter-web` PASS** (~122s; `dist/client/_flutter/` merged). `merge-flutter-web-assets.sh` re-run OK. `wrangler deploy --dry-run` OK (874 ASSETS). Added **Staging smoke (`workers.dev`)** section: prerequisites, `purplelife-staging` deploy (`--routes ""`, `--var FLUTTER_WEB_CUTOVER:true`), HTTP rows 1–10, signed-in rows 11–18, OAuth/API notes, prod promotion gate; updated deploy blockers.
+- **Issues:** Staging Worker deploy not executed (per no-prod-deploy). `dist/` local only.
+- **Stand / next:** Deploy `purplelife-staging`; execute checklist; owner approval before prod flag.
+- **Who / where:** Cursor subagent · darwin · main@ef05394
+- **Timestamp:** 2026-07-05T14:45:00Z
 
 ### 2026-07-05T14:42:00Z — Merge lovable/redesign → main (gates + push)
 
