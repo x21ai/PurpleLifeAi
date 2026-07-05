@@ -481,9 +481,11 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                       onTap: () => context.go(AppRoutes.settingsPrivacy),
                     ),
                     _rowDivider(),
+                    // Web tools.tsx shows Terms on native (About on web);
+                    // /settings/terms is the in-app terms sheet.
                     _InternalRow(
-                      title: 'About Purple',
-                      onTap: () => _showWebOnly('About Purple'),
+                      title: 'Terms',
+                      onTap: () => context.go(AppRoutes.settingsTerms),
                     ),
                   ],
                 ),
@@ -491,14 +493,6 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _showWebOnly(String label) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$label is available at purplelife.org for now.'),
       ),
     );
   }

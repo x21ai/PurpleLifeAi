@@ -21,6 +21,25 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Log
 
+### 2026-07-05T00:00:00Z — Wave-2 settings parity (6 audited fixes)
+
+- **Requested:** 6 web→Flutter parity fixes on branch `wave2-settings`, scoped to `features/settings|account|tools`, `auth/welcome_screen.dart`, `shell/routes.dart`+`router.dart` (terms route only), and one Info.plist key.
+- **Done:**
+  1. **[P0] Wearable OAuth callback delivery.** Added `FlutterDeepLinkingEnabled=false` to `flutter/ios/Runner/Info.plist` (syntax verified against app_links 7.2.0 example plist in pub cache) so Flutter's engine deep-linking no longer steals the `org.purplelife.app://oauth-*-callback` from app_links' `uriLinkStream`. The `nativeConnectSetupHint` was ALREADY surfaced pre-connect in the Tools `_ConnectionCard` (shown when disconnected+loaded, before failure) — no change needed there; verified in `tools_screen.dart`.
+  2. **[P1] Welcome screen.** Rewrote `welcome_screen.dart`: removed the dev copy ("keeps Flutter preview routing aligned with production"); ported web step-0 (first + last name, conditions picker writing `profiles.conditions`) using the read-only `condition_catalog.dart` catalog (grouped chips, max 12, prefill from existing profile). Invite-code redemption + generateCareProfile left as explicit TODO (Worker-blocked), no dead UI.
+  3. **[P1] 2FA.** Replaced the "set up in the web app" stub in `account_screen.dart` with a real `_TwoFactorSection` using `supabase.auth.mfa` (enroll TOTP → challenge → verify → unenroll/disable), mirroring web `two-factor-section.tsx`. On-device it shows the TOTP secret + an "Open authenticator app" `otpauth://` deep link instead of a QR image (no second camera to scan on the phone itself); secret never logged. Removed the old `_loadTwoFactor`/`_twoFactorSection` and their state fields.
+  4. **[P1] Data export enrichment.** `data_export_service.dart` per-entry journal markdown now includes `ai_tags`, kind/status line, `voice_transcript`, `ai_summary`, and `media_urls` links, matching web `data-export.ts`.
+  5. **[P1] Terms + privacy cards.** New `features/settings/terms_screen.dart` (ports web `settings.terms.tsx`), `settingsTerms='/settings/terms'` const + protectedPaths entry in `routes.dart`, GoRoute in `router.dart`. Tools "Wear and care" terms row now points at `/settings/terms` (was substituting an About web-only snackbar; removed the now-unused `_showWebOnly`). Added the 3 missing privacy cards to `privacy_screen.dart`: "Where it's stored", "What we'll never do", "Children" (+ signed-links line on "Who can see" and backups line on "Export and delete").
+  6. **[P1] Sharing screen partial.** `sharing_screen.dart` now wires DB-direct reads: pending-approval count via existing `carePendingCountProvider` (owner RLS SELECT, shown as a tappable strip → `/care/inbox`) and a new `archivedCaregiversProvider` (direct `care_relationships` SELECT where `archived_at IS NOT NULL`, owner RLS, collapsible "Show archived (N)"). Invite / scope editing / archive-unarchive-delete mutations kept web-only with explicit "blocked on Worker routes (care.functions.ts)" copy. No caregiver mutations invented.
+- **Exact Info.plist key added:** `<key>FlutterDeepLinkingEnabled</key><false/>` (with a comment explaining app_links owns the OAuth deep link).
+- **Gaps flagged / blocked (not faked):**
+  - Welcome invite-code redemption + care-profile generation: no Worker `/api` route for `invite-codes.functions.ts` / `care-profile.functions.ts`; left as TODO, no placeholder UI.
+  - Sharing caregiver mutations (invite/edit scope/archive/unarchive/delete): all web-side `care.functions.ts` server fns, no Worker route; kept web-only with explicit copy. Reads only in-app.
+  - 2FA on-device uses secret + `otpauth://` deep link rather than a scannable QR (deliberate: enrolling on the same phone can't self-scan).
+- **Stand / next:** `flutter pub get` OK; `flutter analyze lib/` **No issues found!**; `flutter test` **91/91**. Committed on `wave2-settings` (NOT pushed). Next: web team adds the Worker routes above to unblock welcome invite/care-profile and sharing mutations.
+- **Who / where:** Claude Code (Wave-2 settings writer) · darwin · wave2-settings
+- **Timestamp:** 2026-07-05T00:00:00Z
+
 ### 2026-07-05T00:00:00Z — Wave-1 care/reports fixes (accept loop, inbox badge, tokens)
 
 - **Requested:** (P0) fix broken caregiver-invite accept loop; (P0) add missing top-bar inbox badge; (P1) token color cleanup in reports+care. Flutter-only, branch `wave1-care-reports`, worktree off `lovable/redesign`.
