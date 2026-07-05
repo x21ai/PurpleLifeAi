@@ -14,6 +14,19 @@ abstract final class ChatCopy {
       'Could not reach Purple just now. Try again in a moment.';
   static const askOffline =
       'You are offline. Reconnect to ask Purple about your health data.';
+  static const askActionDone = 'Done.';
+  static const askActionError = "Couldn't complete that action.";
+  static const askSaveToJournal = 'Save to journal';
+  static const askSavedToJournal = 'Saved to journal';
+  static const askSaveJournalSuccess = 'Saved to your journal.';
+  static const askSaveJournalError = "Couldn't save to your journal.";
+  static const askLimitReached =
+      "You've used today's free Ask Purple messages. Manage your plan in the "
+      'web app at purplelife.org for unlimited.';
+  static const askLimitTitle = 'Daily limit reached';
+  static const askLimitBody =
+      "You've used your 10 free Ask Purple messages for today. Upgrade to Pro "
+      'in the web app at purplelife.org for unlimited questions.';
 
   static const careTitle = 'Care chat';
   static const careEmptyTitle = 'No conversations yet';

@@ -103,4 +103,61 @@ void main() {
       expect(find.text(ChatCopy.careEmptyTitle), findsOneWidget);
     });
   });
+
+  group('Ask Purple follow-ups', () {
+    test('surfaces topical hint keyed on last user message', () {
+      final chips = getFollowUps(const [], 'How did I sleep last night?');
+      expect(chips, contains('How is sleep trending this month?'));
+      expect(chips.length, lessThanOrEqualTo(3));
+    });
+
+    test('falls back to condition starters when no topic matches', () {
+      final chips = getFollowUps(const ['epilepsy'], 'thanks');
+      expect(chips, isNotEmpty);
+      expect(chips.length, lessThanOrEqualTo(3));
+    });
+
+    test('deduplicates and caps at three', () {
+      final chips = getFollowUps(const [], 'med dose pill sleep pain');
+      expect(chips.length, lessThanOrEqualTo(3));
+      expect(chips.toSet().length, chips.length);
+    });
+  });
+
+  group('Ask Purple proposal parsing', () {
+    test('maps every wire kind to its label', () {
+      expect(ProposalKind.fromWire('add_medication'), ProposalKind.addMedication);
+      expect(ProposalKind.fromWire('log_seizure'), ProposalKind.logSeizure);
+      expect(
+        ProposalKind.fromWire('create_journal_entry'),
+        ProposalKind.createJournalEntry,
+      );
+      expect(ProposalKind.fromWire('mark_dose_taken'), ProposalKind.markDoseTaken);
+      expect(
+        ProposalKind.fromWire('archive_medication'),
+        ProposalKind.archiveMedication,
+      );
+      expect(ProposalKind.fromWire('bogus'), isNull);
+    });
+
+    test('displayParams drops null, empty string, and empty array', () {
+      const proposal = Proposal(
+        kind: ProposalKind.addMedication,
+        summary: 'Add Keppra',
+        params: {
+          'name': 'Keppra',
+          'dosage': null,
+          'notes': '',
+          'times_of_day': <String>[],
+          'tags': ['am', 'pm'],
+        },
+      );
+      final map = {for (final e in proposal.displayParams) e.key: e.value};
+      expect(map.containsKey('name'), isTrue);
+      expect(map.containsKey('dosage'), isFalse);
+      expect(map.containsKey('notes'), isFalse);
+      expect(map.containsKey('times_of_day'), isFalse);
+      expect(map['tags'], 'am, pm');
+    });
+  });
 }
