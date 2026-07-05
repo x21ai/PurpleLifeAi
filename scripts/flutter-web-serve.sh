@@ -151,4 +151,4 @@ cd "${WEB_DIR}"
 write_pid_file "$$"
 release_serve_lock
 trap 'rm -f "${PID_FILE}"' EXIT
-exec python3 -m http.server "${PORT}" --bind "${HOST}"
+exec python3 "${REPO_ROOT}/scripts/flutter-web-spa-serve.py" "${PORT}" "${WEB_DIR}" --bind "${HOST}"

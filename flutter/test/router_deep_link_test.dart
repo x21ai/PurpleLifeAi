@@ -14,12 +14,17 @@ void main() {
       );
     });
 
+    test('marketing home is public and not protected', () {
+      expect(AppRoutes.marketingHome, '/');
+      expect(AppRoutes.protectedPaths.contains('/'), isFalse);
+    });
+
     test('recognizes marketing paths for deep links', () {
       for (final path in AppRoutes.marketingPaths) {
         expect(
-          AppRoutes.marketingPaths.contains(path),
-          isTrue,
-          reason: '$path should be a marketing route',
+          AppRoutes.protectedPaths.contains(path),
+          isFalse,
+          reason: '$path must stay public for cold links',
         );
       }
     });

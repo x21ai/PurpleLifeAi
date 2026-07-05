@@ -10,8 +10,8 @@ String resolvePlatformInitialLocation({String fallback = AppRoutes.signIn}) {
     if (_isKnownAppPath(path)) return path;
   }
 
-  final path = Uri.base.path;
-  if (path.isNotEmpty && path != '/' && _isKnownAppPath(path)) {
+  final path = Uri.base.path.isEmpty ? '/' : Uri.base.path;
+  if (_isKnownAppPath(path)) {
     return path;
   }
 
