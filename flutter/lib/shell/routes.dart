@@ -1,3 +1,30 @@
+import 'package:flutter/foundation.dart';
+
+/// Reads the browser hash/path on web so cold `#/account` links survive startup.
+String resolvePlatformInitialLocation({String fallback = AppRoutes.signIn}) {
+  if (!kIsWeb) return fallback;
+
+  final fragment = Uri.base.fragment;
+  if (fragment.isNotEmpty) {
+    final path = fragment.startsWith('/') ? fragment : '/$fragment';
+    if (_isKnownAppPath(path)) return path;
+  }
+
+  final path = Uri.base.path;
+  if (path.isNotEmpty && path != '/' && _isKnownAppPath(path)) {
+    return path;
+  }
+
+  return fallback;
+}
+
+bool _isKnownAppPath(String path) {
+  if (path == AppRoutes.signIn) return true;
+  return AppRoutes.protectedPaths.any(
+    (route) => path == route || path.startsWith('$route/'),
+  );
+}
+
 /// Public route paths for feature integration.
 abstract final class AppRoutes {
   static const signIn = '/sign-in';

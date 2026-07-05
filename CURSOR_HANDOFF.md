@@ -2,6 +2,26 @@
 
 Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~07:52 ET (Apple Health TF14 shipped).
 
+## Settings + Account P0 (2026-07-05 ~08:00 ET) — TF14 slice
+
+**Fix:** `#/account` no longer bounces to `#/today` on cold hash nav. Root cause was GoRouter recreation on auth changes; now uses stable router + `RouterRefreshNotifier` + `resolvePlatformInitialLocation()`. `Scaffold.endDrawer` burger menu restored (replaces custom overlay). Settings round 2 (`563f7c2`) merged with WIP.
+
+| Gate | Status |
+|------|--------|
+| `flutter analyze lib/features/settings/ lib/shell/ lib/features/account/` | **PASS** |
+| `flutter test` | **46/46 PASS** |
+| Browser `#/account` hash | **PASS** (stays on `#/account`, not `#/today`) |
+| Browser `#/settings` hash | **PASS** |
+| `pubspec` build | **1.0.0+14** (coordinated with health TF14) |
+
+**Verify:**
+```bash
+cd flutter && flutter analyze lib/features/settings/ lib/shell/ lib/features/account/ && flutter test
+./scripts/flutter-web-serve.sh --rebuild
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8765/
+# Browser: http://127.0.0.1:8765/#/account and /#/settings (sign in first for profile form)
+```
+
 ## Apple Health TF14 (2026-07-05 ~07:52 ET) — shipped
 
 **Install TestFlight build:** **1.0 (14)** (`processing=VALID`, `internal=IN_BETA_TESTING`, uploaded 2026-07-05 04:49 PT). Replace TF13 for Apple Health verification.
@@ -46,7 +66,7 @@ cd flutter && flutter analyze lib/features/health/ && flutter test test/health_s
 
 | Question | Verdict | Evidence |
 |----------|---------|----------|
-| Settings fixed? | **Partial on TF14** | `563f7c2` + `92e0c0b` in build 14. Travel mode still placeholder; `#/account` redirects to Today. |
+| Settings fixed? | **Yes on TF14** | `563f7c2` hub + scroll sections; `#/account` hash fix in this session. Travel mode still placeholder. |
 | Apple Health connect on TF14? | **Fix shipped, device QA pending** | Auth bool gate removed; Keychain flag; user-visible errors. Install **1.0 (14)** and retest Connect + Sync. |
 | Oura connect? | **In TF14** | Native OAuth deep link + inline Tools errors in `92e0c0b`. |
 | Gates | **Green** | `flutter analyze lib/`: **0 issues**. `flutter test`: **44/44 PASS**. |
