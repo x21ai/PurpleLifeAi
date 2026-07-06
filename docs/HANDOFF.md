@@ -9,21 +9,121 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 tf-login-wrong-surface investigated + fixed (TestFlight distribution, not Flutter code).**
+Tester report of a "web Welcome back! login page" on TestFlight was **not a Flutter bug**:
+`sign_in_screen.dart`/`welcome_screen.dart` were verified correct (code read, `flutter analyze`
+clean, `flutter test` 116/116, live render via `flutter-web-serve.sh`). Root cause: the external
+**"Founding Team"** beta group still had the **pre-cutover Capacitor build 1.0 (1)** (uploaded
+2026-07-03, `expired=false`) active; Capacitor loads **live** `www.purplelife.org` at runtime, so
+a tester stuck on that never-updated install sees the real web sign-in copy. Separately, the
+newest Flutter build **1.0 (19)** had never been submitted to the external group at all (external
+testers' latest available was **18**). **Fixed via ASC API:** expired build 1, added build 19 to
+the external group, submitted it for Beta App Review — **cleared within ~2 minutes**, confirmed
+`external=IN_BETA_TESTING` on re-poll. Full detail: OPEN-ISSUES `tf-login-wrong-surface`
+(resolved) and log entry below. **No app code changed, no new TestFlight build needed (still
+1.0 (19)). Only remaining step is the reporting tester deleting + reinstalling from TestFlight.**
+
 **2026-07-05 orchestrated fix fleet — SHIPPED to TestFlight as 1.0 (19).** Waves 1+2 landed on `lovable/redesign`, pushed to origin (`4d84721`), iOS archive + ASC upload **succeeded** (`** EXPORT SUCCEEDED **`). 11 slices integrated (meds / vitals / biometrics / reports / insights / ask-purple + care-chat / nav+timeline / settings depth + regression fixes; care-accept client wiring + new `/api/care/*` Worker routes; docs). Gates: `flutter analyze lib/` **clean**, `flutter test` **116/116**.
 
 **Not done — HANDED TO CURSOR** (see the "TF19 ship + Cursor handoff" log entry below and OPEN-ISSUES `care-accept-server-route`): (1) **DEPLOY** the new `/api/care/accept`+`/api/care/decline` Worker routes to web prod (written, `tsc`+`build` pass, NOT deployed); (2) caregiver invite-accept still **not functional end-to-end** — the in-app invites card is dead code (client RLS returns 0 rows; needs a server-listed source); (3) **Wave-3 native pickers** → reports upload + chat attachments still non-functional on device; (4) AI features (insights noticing/pattern cards, reports AI-explain) remain **web-only** (no Flutter endpoint); (5) **on-device verification** of TF19 (checklist in log entry).
 
 **`origin/lovable/redesign` @ `4d84721`** (pubspec **1.0.0+19**, pushed 2026-07-05). **`main` @ `ef05394`** unchanged — the fleet is **NOT merged to `main`**, and the Cloudflare web-prod deploy of the care-API routes is a **separate owner-gated step, NOT done**.
 
-**TestFlight 1.0 (19):** uploaded 2026-07-05 ~20:38 PT, **processing** (VALID expected in ~5–15 min; not yet in ASC list at upload time). Carries the full waves 1+2 fleet; replaces the Capacitor WebView binary on install. **1.0 (18)** VALID / IN_BETA_TESTING remains the prior installable build.
+**TestFlight 1.0 (19):** **VALID** (ASC 2026-07-05). Install **19** for waves 1+2 fleet.
+  New ASC (2026-07-06): "Unable to login", "Error is wrong". Luciq: **0 crashes** TF16–19.
 
-**Flutter gates:** `flutter analyze lib/` **clean**; `flutter test` **116/116** (was 91; +25 tests across the fleet). 9 untracked `* 2.*` Finder duplicates removed from `flutter/lib` to unblock analyze (not in git).
-
-**Next action (Cursor):** poll ASC for **1.0 (19) VALID** + tester install; deploy the care-API Worker routes; fix the dead invites-card source; run the on-device verification checklist. Still open from before: Luciq MCP crash triage; Oura console redirect (owner).
+**Next action (Cursor):** Tester **delete + reinstall** from TestFlight (build **19**, external group fixed);
+  then `flutter-auth-screen-parity` if login errors persist; deploy `/api/care/{accept,decline}`;
+  design P0 (typography, whitespace; burger drawer needs owner decision).
 
 ---
 
 ## Log
+
+### 2026-07-06T01:55:00Z — tf-login-wrong-surface root-caused and remediated via ASC API (no code change)
+
+- **Requested:** Investigate `welcome_screen.dart`, `sign_in_screen.dart`, `auth_gate.dart`,
+  `shell/router.dart` for the reported "Welcome back!" web-style login on TF19; check for a
+  WebView/URL-load fallback or `FlutterDeepLinkingEnabled` issue; fix if the Flutter copy was
+  reverted; run `flutter analyze`/`flutter test`; document; report whether TF20 is needed. Builds
+  on the prior triage entry below (2026-07-06T01:45:00Z, auth routing audit).
+- **Done:**
+  - **Confirmed no Flutter regression.** Read all 4 requested files + `shell/routes.dart`;
+    `sign_in_screen.dart` renders "Purple" (serif) / "Sign in" or "Create your account" /
+    email+password `GlassCard` / purple `FilledButton` "Sign in" / outlined "Continue with
+    Google"/"Continue with Apple" / "Need an account? Create one" — correct native design.
+    `git log --follow` shows it unchanged since the 2026-07-04 cutover commit `918c766` through
+    TF12-19 (no revert). Grepped all of `flutter/lib` for `webview|WebView|purplelife.org`: zero
+    WebView usage; the only `purplelife.org` hits are inert "manage in the web app" copy in
+    Settings/Account/Tools, none in the auth path. `resolvePlatformInitialLocation` only reads the
+    URL fragment when `kIsWeb`; native always falls back to `/sign-in`. Ran
+    `flutter analyze lib/features/auth/` (clean) and `flutter test` (**116/116**, incl.
+    `widget_test.dart: PurpleApp renders sign-in shell`). Rendered the real compiled screen via
+    `./scripts/flutter-web-serve.sh` (idle port 8765, started + verified with a browser
+    screenshot) — matches the intended design, not the reported web copy.
+  - **Found the actual root cause via ASC API** (`purple-life`/`prd` key, `scripts/lib/asc-jwt.mjs`):
+    `GET /v1/apps/6787298041/betaGroups` → external group **"Founding Team"**
+    (`8ad416f5-8248-48e6-9951-03af3f932b6c`). `GET .../betaGroups/{id}/builds` → that group had
+    builds **1, 13, 18** assigned, with build **1** (`87155be5-…`, uploaded 2026-07-03, i.e.
+    **before** the 7/4 Capacitor→Flutter cutover) still `expired=false`. Capacitor's
+    `capacitor.config.ts` loads **live** `https://www.purplelife.org` at runtime (confirmed by
+    the "Capacitor shell loads production" note in `AGENTS.md`), and `src/routes/sign-in.tsx`
+    contains "Welcome back!" / "Login Now" / "Create a new account now" verbatim — an exact match
+    for the tester's report. Separately, current build **1.0 (19)**
+    (`860f85fe-4072-4b51-b7fd-bb0a12366b08`) had **never been submitted to the external group**
+    (`externalBuildState=READY_FOR_BETA_SUBMISSION`); external testers' newest available build was
+    still **18**.
+  - **Remediated (App Store Connect API, no manual dashboard clicks):**
+    1. `PATCH /v1/builds/87155be5-…` `{expired:true}` → `200`. Forces any tester still on the
+       Capacitor install to update on next TestFlight open instead of silently reopening it.
+    2. `POST /v1/betaGroups/8ad416f5-…/relationships/builds` adding build 19 → `204`.
+    3. `POST /v1/betaAppReviewSubmissions` for build 19 → `201`,
+       `betaReviewState: WAITING_FOR_REVIEW` (Apple-side gate required before the external group
+       actually receives a build). **Re-polled `bun run ios:check-asc-builds` ~2 minutes later:
+       build 19 now shows `external=IN_BETA_TESTING`** — review cleared fast (expedited re-review
+       since the group already had a prior approved build). Fix is fully live on the ASC side.
+  - **Docs:** OPEN-ISSUES `tf-login-wrong-surface` marked resolved with full evidence trail
+    (superseding the "Raised" entry from the 01:45 triage); this log entry; Current snapshot
+    refreshed.
+- **Issues / NOT done:**
+  - Beta App Review cleared (confirmed `external=IN_BETA_TESTING`), but **cannot force the
+    reporting tester's device to update** — they must open TestFlight and update (ideally
+    delete-and-reinstall to guarantee the old Capacitor binary is discarded) rather than relaunch
+    the existing home-screen icon.
+  - `flutter-auth-screen-parity` (raw `e.toString()` Supabase errors, no forgot-password, no
+    web-parity two-panel glass layout) remains **open** and separate — a real Flutter UX gap for
+    testers already on genuine Flutter builds, intentionally untouched here since the reported bug
+    was the wrong-surface issue, not sign-in polish.
+- **Stand / next:** **No Flutter/app code changed. No TF20 needed for this fix** — it was a
+  TestFlight distribution/beta-group gap, not a build defect. Next: poll
+  `bun run ios:check-asc-builds` for build 19 `external=IN_BETA_TESTING`, then have the reporting
+  tester delete + reinstall Purple from TestFlight and re-verify the "Purple" / "Sign in" screen.
+  `flutter-auth-screen-parity` queued as separate follow-up work.
+- **Who / where:** Cursor (subagent, TestFlight-distribution fix) · darwin ·
+  `lovable/redesign@59caa42` (no git commits this session; ASC-only changes).
+- **Timestamp:** 2026-07-06T01:55:00Z
+
+### 2026-07-06T01:50:00Z — TF19 tester issues audit
+
+- **Done:** ASC 15 submissions; build **1.0 (19) VALID**; Luciq 0 crashes on `flutter-purple`/`purple`.
+  Confirmed open: `tf-settings-shell-nav`, `tf-heading-typography`, `tf-bottom-whitespace`,
+  `care-accept-server-route` (undeployed). New: `flutter-auth-screen-parity` (raw auth errors).
+- **Stand / next:** Deploy care Worker routes; fix Flutter sign-in UX; owner decision on left burger;
+  TF20 for design + auth fixes after verify.
+- **Who / where:** [TF19 audit agent](c412a736-7e53-463d-9b7a-e2ea4394391f) · `lovable/redesign@59caa42`
+- **Timestamp:** 2026-07-06T01:50:00Z
+
+### 2026-07-06T01:45:00Z — TF19 login screenshot triage (auth routing audit)
+
+- **Report:** Login page shows web "Welcome back!" / "Login Now" — wrong for Flutter TF19.
+- **Finding:** Strings are **TanStack web only** (`src/routes/sign-in.tsx`). TF19 builds Flutter
+  Runner via `flutter-ios-testflight.sh`. No Flutter routing bug found. Likely **Capacitor/stale
+  install** (build ≤9 loads prod web) or tester not on build 19.
+- **ASC (new):** 2026-07-06 "Unable to login", "Error is wrong" from a@arora.net (15 submissions total).
+- **Stand / next:** Tester delete + reinstall **1.0 (19)**; verify "Purple App" + "Sign in" headline;
+  if still web UI on build 19, escalate (would contradict codebase). Login-fix agent in flight.
+- **Who / where:** Cursor coordinator + [auth routing agent](72657b3f-5f2c-4021-b8eb-4456ba83619e)
+- **Timestamp:** 2026-07-06T01:45:00Z
 
 ### 2026-07-05T20:45:00Z — TF19 ship + Cursor handoff (waves 1+2 fleet)
 

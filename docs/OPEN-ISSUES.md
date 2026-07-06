@@ -12,6 +12,53 @@ Format:
 
 ## Flutter / TestFlight
 
+- [x] ~~**tf-login-wrong-surface**~~ — RESOLVED 2026-07-06: **confirmed root cause** and fixed the
+  TestFlight distribution gap (not a Flutter code bug). Investigation: `welcome_screen.dart` and
+  `sign_in_screen.dart` were read in full plus `shell/router.dart`/`auth_gate.dart`; no WebView,
+  no `purplelife.org` sign-in redirect, no reverted copy exists anywhere in `flutter/lib` (grepped
+  for `webview|WebView|purplelife.org`, only found benign "open in browser" links deep in
+  Settings/Tools/Account, none in the auth flow). `git log --follow` on `sign_in_screen.dart`
+  shows it has read "Purple" / "Sign in" / "Create your account" since the **2026-07-04 Flutter
+  cutover commit** (`918c766`), unchanged through TF12-19. `flutter test` (116/116, incl.
+  `widget_test.dart: PurpleApp renders sign-in shell`) and a live render via
+  `./scripts/flutter-web-serve.sh` both confirm the shipped screen is the correct Flutter design
+  (serif "Purple" title, dark glass card, purple gradient "Sign in" button, outlined
+  Google/Apple buttons) — the opposite of the reported "Welcome back!" web copy.
+  **Actual root cause, confirmed via ASC API:** the external **"Founding Team"** beta group
+  (`8ad416f5-8248-48e6-9951-03af3f932b6c`) still had **build 1.0 (1)** — the original
+  **pre-cutover Capacitor WebView shell** uploaded 2026-07-03, `expired=false` — active
+  alongside 13/18. Capacitor's `capacitor.config.ts` loads **live** `https://www.purplelife.org`
+  at runtime (not a bundled snapshot), so any tester still on that never-updated install sees
+  today's real web sign-in page (`src/routes/sign-in.tsx`: "Welcome back!" / "Login Now" /
+  "Create a new account now") — an exact match for the report. Separately, build **1.0 (19)**
+  (the newest Flutter build) had **never been submitted to the external group** at all
+  (`externalBuildState=READY_FOR_BETA_SUBMISSION`); external testers' newest available build
+  was still **18**, three behind current `HEAD`.
+  **Fix applied (ASC API, `purple-life`/`prd` key):** (1) `PATCH /v1/builds/{build1}` →
+  `expired:true` (forces any tester still on it to update on next TestFlight open, blocking
+  reopen of the Capacitor shell); (2) `POST /v1/betaGroups/{foundingTeam}/relationships/builds`
+  added build **1.0 (19)**; (3) `POST /v1/betaAppReviewSubmissions` for build 19 →
+  `betaReviewState: WAITING_FOR_REVIEW` (required before Apple serves it to the external group).
+  **Confirmed resolved end-to-end:** re-polled `bun run ios:check-asc-builds` ~2 min later —
+  build **1.0 (19)** now shows `external=IN_BETA_TESTING` (review cleared fast, an expedited
+  re-review since the group already had an approved build). **No Flutter code change needed or
+  made** — `sign_in_screen.dart`/`welcome_screen.dart` were already correct.
+  **Next:** ask the reporting tester to delete-and-reinstall Purple from TestFlight (not just
+  "Open") to guarantee the old Capacitor binary is discarded, not resumed from a backgrounded
+  state, then re-verify. New ASC feedback 2026-07-06 ("Unable to login", "Error is wrong") is tracked
+  separately as `flutter-auth-screen-parity` below (raw Supabase error strings once a tester
+  *is* on real Flutter TF19+ — a genuine Flutter UX gap, unrelated to this wrong-surface bug).
+  _Raised 2026-07-06 by Cursor (auth routing audit); resolved 2026-07-06 by Cursor (TestFlight
+  distribution fix)._
+
+- [ ] **flutter-auth-screen-parity** — When tester is on **Flutter TF19** (not Capacitor web),
+  sign-in still fails UX: `sign_in_screen.dart` shows raw `e.toString()` Supabase exceptions
+  ("Error is wrong" ASC 2026-07-06), no forgot-password flow, plain Material layout vs web
+  liquid-glass two-panel design (`sign-in.tsx` + `friendlyAuthError`). Port friendly error
+  mapping, forgot-password, and `GlassCard`/token styling. See also `tf-login-wrong-surface`
+  if "Welcome back!" appears (that is web/Capacitor, not this issue). _Raised 2026-07-06 by
+  TF19 audit._
+
 - [ ] **care-accept-server-route** — Caregiver-invite **accept and decline** need a
   service-role server route that does not exist yet. RLS gives caregivers SELECT-only on
   `care_relationships` (no caregiver UPDATE policy), so the status flip to `active`
