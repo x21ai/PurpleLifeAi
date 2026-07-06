@@ -9,6 +9,15 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TF23 reports / care / chat parity (committed, not pushed).**
+Commit `7a3de99` on `lovable/redesign`: shared `lab_upload_prompt.dart` + `merged_style.dart`;
+reports empty states use token-backed lab upload card; care dashboard Chat tab opens
+`/chat-care` via `getOrCreateDirectThread` (React `ChatPanel` parity); chat shells use
+`chat_style.dart` (SF Pro / merged palette). Removed redundant `fontFamily: PurpleType.serif`
+overrides in scope. Router untouched (`/chat-care` already wired). Verified:
+`flutter analyze lib/features/reports lib/features/care lib/features/chat` (info-only);
+`flutter test test/chat_routes_test.dart test/reports_routes_test.dart` pass. No push.
+
 **2026-07-06 TF23 Settings / Account / Tools theme parity (committed, not pushed).**
 New `flutter/lib/features/settings/settings_style.dart`: `SheetPalette`, `SheetCanvas`,
 `SheetGlass`, SF Pro text helpers, light-mode purple accents from `design/tokens.json`.
