@@ -517,33 +517,58 @@ class CareRepository {
     return BulkDecideResult(ok: ok, failed: failed);
   }
 
+  /// Decline a pending care invite addressed to the signed-in user's email.
+  ///
+  /// SECURITY: like [acceptInvite], the status flip to `revoked` requires
+  /// service role -- RLS's `care_rel_caregiver_select` is SELECT-only and
+  /// scoped to `auth.uid() = caregiver_id`, which is NULL on a still-pending
+  /// invite. A direct client `.update()` here is a silent 0-row no-op, so
+  /// this goes through the `/api/care/decline` Worker route instead (mirrors
+  /// [acceptInvite]'s `/api/care/accept` call).
   Future<void> declineIncomingCareInvite(String relationshipId) async {
-    final userId = _caregiverId;
-    final email = _currentUserEmail();
-    if (userId == null || email == null) {
+    final session = _supabase.auth.currentSession;
+    final accessToken = session?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) {
       throw CareAccessException('Sign in to decline this invite.');
     }
 
-    final rel = await _supabase
-        .from('care_relationships')
-        .select('id, status, invite_email')
-        .eq('id', relationshipId)
-        .maybeSingle();
-    if (rel == null) {
-      throw CareAccessException('Invite not found.');
-    }
-    if (rel['status'] != 'pending') {
-      throw CareAccessException('Invite is no longer pending.');
-    }
-    final inviteEmail = (rel['invite_email'] as String?)?.trim().toLowerCase();
-    if (inviteEmail != email) {
-      throw CareAccessException('This invite was sent to a different email address.');
+    if (!_connectivity.isOnline) {
+      throw CareAccessException('Offline. Reconnect to decline this invite.');
     }
 
-    await _supabase
-        .from('care_relationships')
-        .update({'status': 'revoked'})
-        .eq('id', relationshipId);
+    final headers = <String, String>{
+      'Authorization': 'Bearer $accessToken',
+      'Accept': 'application/json',
+      if (!kIsWeb) 'Content-Type': 'application/json',
+    };
+
+    http.Response response;
+    try {
+      response = await _http.post(
+        Uri.parse('${_config.workerApiBaseUrl}/care/decline'),
+        headers: headers,
+        body: jsonEncode({'relationship_id': relationshipId}),
+      );
+    } catch (_) {
+      throw CareAccessException(
+        "Couldn't reach Purple to decline this invite. Try again.",
+      );
+    }
+
+    Map<String, dynamic> decoded;
+    try {
+      decoded = response.body.isEmpty
+          ? <String, dynamic>{}
+          : jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      decoded = <String, dynamic>{};
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final message =
+          decoded['error'] as String? ?? "Couldn't decline this invite.";
+      throw CareAccessException(message);
+    }
   }
 
   /// Accept a caregiver invite by its single-use token.
@@ -691,41 +716,59 @@ class CareRepository {
     return detailed;
   }
 
+  /// List pending care invites addressed to the signed-in user's email.
+  ///
+  /// SECURITY: like [acceptInvite]/[declineIncomingCareInvite], a direct
+  /// client-side SELECT here is silently RLS-blocked -- `care_rel_caregiver_select`
+  /// only permits `auth.uid() = caregiver_id`, which is NULL on a pending
+  /// (not-yet-accepted) invite. So this calls the service-role
+  /// `/api/care/incoming-invites` Worker route (mirrors web's `listIncomingCareInvites`
+  /// server fn) instead of querying `care_relationships` directly.
   Future<List<IncomingCareInvite>> _loadIncomingCareInvites(
     String userId,
   ) async {
-    final email = _currentUserEmail();
-    if (email == null || email.isEmpty) return const [];
+    final session = _supabase.auth.currentSession;
+    final accessToken = session?.accessToken;
+    if (accessToken == null || accessToken.isEmpty) return const [];
 
-    final nowIso = DateTime.now().toUtc().toIso8601String();
-    final response = await _supabase
-        .from('care_relationships')
-        .select(
-          'id, owner_id, role, invite_email, invite_token, created_at, '
-          'expires_at',
-        )
-        .eq('status', 'pending')
-        .ilike('invite_email', email)
-        .or('expires_at.is.null,expires_at.gt.$nowIso')
-        .order('created_at', ascending: false);
+    final headers = <String, String>{
+      'Authorization': 'Bearer $accessToken',
+      'Accept': 'application/json',
+    };
 
-    final rows = (response as List).cast<Map<String, dynamic>>();
-    if (rows.isEmpty) return const [];
+    http.Response response;
+    try {
+      response = await _http.get(
+        Uri.parse('${_config.workerApiBaseUrl}/care/incoming-invites'),
+        headers: headers,
+      );
+    } catch (_) {
+      return const [];
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      return const [];
+    }
 
-    final ownerIds = rows.map((row) => row['owner_id'] as String).toSet();
-    final ownerNames = await _loadOwnerDisplayNames(ownerIds);
+    Map<String, dynamic> decoded;
+    try {
+      decoded = response.body.isEmpty
+          ? <String, dynamic>{}
+          : jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      return const [];
+    }
 
-    return rows.map((row) {
+    final rawInvites = decoded['invites'];
+    if (rawInvites is! List) return const [];
+
+    return rawInvites.whereType<Map<String, dynamic>>().map((row) {
       final role = row['role'] as String? ?? CareRole.caregiver.name;
-      final parsedRole = parseCareRole(role);
       return IncomingCareInvite(
         id: row['id'] as String,
         ownerId: row['owner_id'] as String,
         role: role,
-        roleLabel: parsedRole != null
-            ? careRoleLabels[parsedRole]!
-            : role,
-        ownerName: ownerNames[row['owner_id'] as String] ?? 'A Purple member',
+        roleLabel: row['role_label'] as String? ?? role,
+        ownerName: row['owner_name'] as String? ?? 'A Purple member',
         createdAt: row['created_at'] as String? ?? '',
         inviteToken: row['invite_token'] as String?,
       );
@@ -795,10 +838,6 @@ class CareRepository {
           .eq('id', targetId)
           .eq('user_id', ownerId);
     }
-  }
-
-  String? _currentUserEmail() {
-    return _supabase.auth.currentUser?.email?.trim().toLowerCase();
   }
 
   Future<Map<String, String>> _loadOwnerDisplayNames(Set<String> ownerIds) async {

@@ -12,6 +12,7 @@ const FLUTTER_WEB_ORIGINS = new Set([
 const FLUTTER_CORS_PATHS = new Set([
   "/api/care/accept",
   "/api/care/decline",
+  "/api/care/incoming-invites",
   "/api/health/whoop-config",
   "/api/health/whoop-exchange",
   "/api/health/whoop-sync",

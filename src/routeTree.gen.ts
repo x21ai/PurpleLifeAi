@@ -68,6 +68,7 @@ import { Route as ApiHealthWhoopExchangeRouteImport } from './routes/api/health/
 import { Route as ApiHealthWhoopConfigRouteImport } from './routes/api/health/whoop-config'
 import { Route as ApiHealthNativeSyncRouteImport } from './routes/api/health/native-sync'
 import { Route as ApiEmailSuppressionRouteImport } from './routes/api/email/suppression'
+import { Route as ApiCareIncomingInvitesRouteImport } from './routes/api/care/incoming-invites'
 import { Route as ApiCareDeclineRouteImport } from './routes/api/care/decline'
 import { Route as ApiCareAcceptRouteImport } from './routes/api/care/accept'
 import { Route as ApiAccountPersonalShareCodeRouteImport } from './routes/api/account/personal-share-code'
@@ -413,6 +414,11 @@ const ApiHealthNativeSyncRoute = ApiHealthNativeSyncRouteImport.update({
 const ApiEmailSuppressionRoute = ApiEmailSuppressionRouteImport.update({
   id: '/api/email/suppression',
   path: '/api/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareIncomingInvitesRoute = ApiCareIncomingInvitesRouteImport.update({
+  id: '/api/care/incoming-invites',
+  path: '/api/care/incoming-invites',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCareDeclineRoute = ApiCareDeclineRouteImport.update({
@@ -774,6 +780,7 @@ export interface FileRoutesByFullPath {
   '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
   '/api/care/accept': typeof ApiCareAcceptRoute
   '/api/care/decline': typeof ApiCareDeclineRoute
+  '/api/care/incoming-invites': typeof ApiCareIncomingInvitesRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/health/native-sync': typeof ApiHealthNativeSyncRoute
   '/api/health/whoop-config': typeof ApiHealthWhoopConfigRoute
@@ -885,6 +892,7 @@ export interface FileRoutesByTo {
   '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
   '/api/care/accept': typeof ApiCareAcceptRoute
   '/api/care/decline': typeof ApiCareDeclineRoute
+  '/api/care/incoming-invites': typeof ApiCareIncomingInvitesRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/health/native-sync': typeof ApiHealthNativeSyncRoute
   '/api/health/whoop-config': typeof ApiHealthWhoopConfigRoute
@@ -999,6 +1007,7 @@ export interface FileRoutesById {
   '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
   '/api/care/accept': typeof ApiCareAcceptRoute
   '/api/care/decline': typeof ApiCareDeclineRoute
+  '/api/care/incoming-invites': typeof ApiCareIncomingInvitesRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/health/native-sync': typeof ApiHealthNativeSyncRoute
   '/api/health/whoop-config': typeof ApiHealthWhoopConfigRoute
@@ -1113,6 +1122,7 @@ export interface FileRouteTypes {
     | '/api/account/personal-share-code'
     | '/api/care/accept'
     | '/api/care/decline'
+    | '/api/care/incoming-invites'
     | '/api/email/suppression'
     | '/api/health/native-sync'
     | '/api/health/whoop-config'
@@ -1224,6 +1234,7 @@ export interface FileRouteTypes {
     | '/api/account/personal-share-code'
     | '/api/care/accept'
     | '/api/care/decline'
+    | '/api/care/incoming-invites'
     | '/api/email/suppression'
     | '/api/health/native-sync'
     | '/api/health/whoop-config'
@@ -1337,6 +1348,7 @@ export interface FileRouteTypes {
     | '/api/account/personal-share-code'
     | '/api/care/accept'
     | '/api/care/decline'
+    | '/api/care/incoming-invites'
     | '/api/email/suppression'
     | '/api/health/native-sync'
     | '/api/health/whoop-config'
@@ -1401,6 +1413,7 @@ export interface RootRouteChildren {
   ApiAccountPersonalShareCodeRoute: typeof ApiAccountPersonalShareCodeRoute
   ApiCareAcceptRoute: typeof ApiCareAcceptRoute
   ApiCareDeclineRoute: typeof ApiCareDeclineRoute
+  ApiCareIncomingInvitesRoute: typeof ApiCareIncomingInvitesRoute
   ApiEmailSuppressionRoute: typeof ApiEmailSuppressionRoute
   ApiHealthNativeSyncRoute: typeof ApiHealthNativeSyncRoute
   ApiHealthWhoopConfigRoute: typeof ApiHealthWhoopConfigRoute
@@ -1841,6 +1854,13 @@ declare module '@tanstack/react-router' {
       path: '/api/email/suppression'
       fullPath: '/api/email/suppression'
       preLoaderRoute: typeof ApiEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/care/incoming-invites': {
+      id: '/api/care/incoming-invites'
+      path: '/api/care/incoming-invites'
+      fullPath: '/api/care/incoming-invites'
+      preLoaderRoute: typeof ApiCareIncomingInvitesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/care/decline': {
@@ -2431,6 +2451,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAccountPersonalShareCodeRoute: ApiAccountPersonalShareCodeRoute,
   ApiCareAcceptRoute: ApiCareAcceptRoute,
   ApiCareDeclineRoute: ApiCareDeclineRoute,
+  ApiCareIncomingInvitesRoute: ApiCareIncomingInvitesRoute,
   ApiEmailSuppressionRoute: ApiEmailSuppressionRoute,
   ApiHealthNativeSyncRoute: ApiHealthNativeSyncRoute,
   ApiHealthWhoopConfigRoute: ApiHealthWhoopConfigRoute,
