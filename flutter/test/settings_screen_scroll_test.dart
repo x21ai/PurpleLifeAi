@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:purple_app/design/purple_theme.dart';
 import 'package:purple_app/features/settings/platform_flags.dart';
 import 'package:purple_app/features/settings/settings_screen.dart';
 import 'package:purple_app/features/settings/settings_sections.dart';
