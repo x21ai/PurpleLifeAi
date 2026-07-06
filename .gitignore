@@ -42,3 +42,15 @@ build/ios/
 *.njsproj
 *.sln
 *.sw?
+
+# Local serve PID locks (flutter-web-serve, preview-design-serve)
+*.pid
+.flutter-web-serve*.pid
+.preview-design-serve*.pid
+
+# Playwright / e2e local artifacts
+test-results/
+
+# macOS Finder duplicate copies ("filename 2.ext")
+* 2.*
+**/* 2.*

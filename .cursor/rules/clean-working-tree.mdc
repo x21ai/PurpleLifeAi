@@ -1,0 +1,36 @@
+---
+description: Always leave a fully clean git working tree before handoff or close.
+alwaysApply: true
+---
+
+# Clean working tree (mandatory)
+
+Never claim "working tree clean aside from local junk." The working tree must be **fully clean** before handoff, push, or telling the operator they can close Cursor.
+
+## Before every handoff / push / close
+
+Run from repo root:
+
+```bash
+./scripts/clean-workspace-junk.sh
+git status -sb
+```
+
+If `git status` is not clean, fix it: delete junk, commit intentional changes, or restore tracked files. Do not leave untracked artifacts.
+
+## What counts as junk (delete, never commit)
+
+| Pattern | Examples |
+|---------|----------|
+| Serve PID locks | `.flutter-web-serve.pid`, `.flutter-web-serve 2.pid`, `.preview-design-serve.pid` |
+| Test artifacts | `test-results/` (Playwright traces, screenshots) |
+| macOS Finder duplicates | `* 2.*` anywhere under source (e.g. `plan 2.tsx`, `error-context 2.md`) |
+
+## What to do after cleanup
+
+- **Intentional doc/code changes:** commit and push (both `main` and `lovable/redesign` when applicable).
+- **Generated dirs** (`node_modules`, `flutter/build`, `Pods`): already gitignored; duplicate copies inside them may be removed by the script but are not reported as dirty.
+
+## Forbidden phrasing
+
+Do not say "clean aside from local junk" or "intentionally left out." Either the tree is clean or you are still working.
