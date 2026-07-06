@@ -57,6 +57,12 @@ class SyncService {
 
   bool _started = false;
   Future<SyncResult>? _inFlightSync;
+  DateTime? _lastCompletedSyncAt;
+
+  /// Minimum gap between full background syncs (queue flush + table pull).
+  /// Prevents tab switches and parallel repository loads from stacking work.
+  static const minBackgroundSyncInterval = Duration(seconds: 45);
+
   String? get _currentUserId =>
       _auth.currentSession?.user.id ?? _auth.currentUser?.id;
 
@@ -119,6 +125,9 @@ class SyncService {
   }
 
   /// Full sync: flush queue, then pull latest rows from Supabase.
+  ///
+  /// Concurrent callers share one in-flight run. Use [syncIfStale] for
+  /// background kicks so tab switches do not stack duplicate pulls.
   Future<SyncResult> syncAll() {
     if (!_connectivity.isOnline || !_auth.isAuthenticated) {
       return Future.value(SyncResult.skipped());
@@ -141,9 +150,20 @@ class SyncService {
     });
   }
 
+  /// Background sync with a minimum interval between completed runs.
+  Future<SyncResult> syncIfStale() {
+    if (_lastCompletedSyncAt != null) {
+      final elapsed = DateTime.now().difference(_lastCompletedSyncAt!);
+      if (elapsed < minBackgroundSyncInterval) {
+        return Future.value(SyncResult.skipped());
+      }
+    }
+    return syncAll();
+  }
+
   Future<void> _safeSyncAll({required String trigger}) async {
     try {
-      await syncAll();
+      await syncIfStale();
     } catch (e, st) {
       debugPrint('[SyncService] syncAll failed during $trigger: $e\n$st');
     }
@@ -168,11 +188,13 @@ class SyncService {
       debugPrint('[SyncService] table pull failed: $e\n$st');
     }
 
-    return SyncResult(
+    final result = SyncResult(
       queueSent: queueSent,
       queueFailed: queueFailed,
       rowsPulled: rowsPulled,
     );
+    _lastCompletedSyncAt = DateTime.now();
+    return result;
   }
 
   Future<({int sent, int failed})> _flushQueue() async {

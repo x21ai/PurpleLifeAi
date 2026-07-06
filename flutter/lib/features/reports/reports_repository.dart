@@ -399,6 +399,7 @@ final reportsRepositoryProvider = Provider<ReportsRepository>((ref) {
 });
 
 final reportsHubProvider = FutureProvider.autoDispose<ReportsHubData>((ref) {
+  ref.keepAlive();
   ref.watch(authSessionProvider);
   return ref.watch(reportsRepositoryProvider).loadHub();
 });

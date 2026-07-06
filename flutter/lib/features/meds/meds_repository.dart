@@ -375,7 +375,7 @@ class MedsRepository {
 
   void _kickSyncIfOnline() {
     if (!_connectivity.isOnline) return;
-    unawaited(_sync.syncAll());
+    unawaited(_sync.syncIfStale());
   }
 
   Future<void> _regenerateTodayDoses(String userId) async {

@@ -171,6 +171,7 @@ final aiInsightsRepositoryProvider = Provider<AiInsightsRepository>((ref) {
 /// day), mirroring the web Insights page's automatic behavior.
 final dailyInsightCardsProvider =
     FutureProvider.autoDispose<DailyInsightCardsResult>((ref) async {
+  ref.keepAlive();
   ref.watch(authSessionProvider);
   try {
     return await ref.watch(aiInsightsRepositoryProvider).loadDailyCards();

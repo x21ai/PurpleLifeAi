@@ -32,12 +32,20 @@ class TodayRepository {
     if (userId == null) return TodayData.empty;
     try {
       final scores = await _fetchScoreSnapshotOnline(userId, dateYmd: dateYmd);
-      final profile = await _fetchProfileFieldsSafe(userId);
-      final narrative = await _fetchNarrativeSafe(userId);
-      final medicationCount = await _fetchMedicationCountSafe(userId);
-      final journalEntryCount = await _fetchJournalCountSafe(userId);
-      final announcement = await _fetchAnnouncementSafe(userId);
-      final showWearablesNudge = await _fetchWearablesNudgeSafe(userId);
+      final extras = await Future.wait([
+        _fetchProfileFieldsSafe(userId),
+        _fetchNarrativeSafe(userId),
+        _fetchMedicationCountSafe(userId),
+        _fetchJournalCountSafe(userId),
+        _fetchAnnouncementSafe(userId),
+        _fetchWearablesNudgeSafe(userId),
+      ]);
+      final profile = extras[0] as _ProfileFields;
+      final narrative = extras[1] as String?;
+      final medicationCount = extras[2] as int;
+      final journalEntryCount = extras[3] as int;
+      final announcement = extras[4] as TodayAnnouncement?;
+      final showWearablesNudge = extras[5] as bool;
 
       return TodayData(
         scores: scores,
@@ -325,18 +333,20 @@ class TodayRepository {
       if (DateTime.now().difference(onboardedAt) < const Duration(days: 1)) {
         return false;
       }
-      final oura = await _supabase
-          .from('oura_tokens')
-          .select('user_id')
-          .eq('user_id', userId)
-          .maybeSingle();
-      if (oura != null) return false;
-      final whoop = await _supabase
-          .from('whoop_tokens')
-          .select('user_id')
-          .eq('user_id', userId)
-          .maybeSingle();
-      return whoop == null;
+      final tokens = await Future.wait([
+        _supabase
+            .from('oura_tokens')
+            .select('user_id')
+            .eq('user_id', userId)
+            .maybeSingle(),
+        _supabase
+            .from('whoop_tokens')
+            .select('user_id')
+            .eq('user_id', userId)
+            .maybeSingle(),
+      ]);
+      if (tokens[0] != null) return false;
+      return tokens[1] == null;
     } catch (error, stack) {
       debugPrint('[TodayRepository] wearables nudge failed: $error\n$stack');
       return false;

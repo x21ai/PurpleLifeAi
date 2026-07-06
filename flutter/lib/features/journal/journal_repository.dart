@@ -69,7 +69,7 @@ class JournalRepository {
 
   void _kickSyncIfOnline() {
     if (!_connectivity.isOnline) return;
-    unawaited(_sync.syncAll());
+    unawaited(_sync.syncIfStale());
   }
 
   Future<List<Map<String, dynamic>>> _fetchEntryRows(String userId) async {

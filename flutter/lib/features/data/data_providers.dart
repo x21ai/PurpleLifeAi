@@ -4,6 +4,7 @@ import '../../core/providers/core_providers.dart';
 import '../reports/models/report_row.dart';
 import '../reports/reports_repository.dart' hide metricSeriesProvider;
 import '../today/models/score_snapshot.dart';
+import '../today/models/today_data.dart';
 import '../today/today_repository.dart';
 import '../vitals/biometric_metrics.dart';
 import '../vitals/vitals_repository.dart';
@@ -170,45 +171,63 @@ String _formatNum(double value) {
   return value.toStringAsFixed(1);
 }
 
+WearableMetricLatest? _wearableFromSeries(
+  String key,
+  MetricSeriesResult series,
+) {
+  final def = biometricMetrics[key];
+  if (def == null) return null;
+  if (series.headlineValue == null && series.seriesBySource.isEmpty) {
+    return null;
+  }
+  final headlineSource = series.headlineSource;
+  final points = headlineSource != null
+      ? (series.seriesBySource[headlineSource] ?? const [])
+      : series.seriesBySource.values.expand((p) => p).toList();
+  final spark = points
+      .map((p) => p.value)
+      .whereType<double>()
+      .toList(growable: false);
+  return WearableMetricLatest(
+    metricKey: key,
+    label: def.label,
+    valueLabel: def.format(series.headlineValue),
+    source: _sourceLabel(series.headlineSource),
+    spark: spark.length >= 2 ? spark : const [],
+  );
+}
+
 /// Unified Data tab snapshot: lab flags + wearable rows.
 final dataScreenSnapshotProvider =
     FutureProvider.autoDispose<DataScreenSnapshot>((ref) async {
+  ref.keepAlive();
   ref.watch(authSessionProvider);
-  final labSeries = await ref.watch(allMetricSeriesProvider.future);
-  final today = await ref.watch(todayDataProvider.future);
+  final vitalsRepo = ref.read(vitalsRepositoryProvider);
+
+  final labAndToday = await Future.wait([
+    ref.watch(allMetricSeriesProvider.future),
+    ref.watch(todayDataProvider.future),
+  ]);
+  final labSeries = labAndToday[0] as Map<String, List<ReportMetricRow>>;
+  final today = labAndToday[1] as TodayData;
 
   final labMetrics = _labRows(labSeries);
   final summary = labMetrics.isEmpty
       ? LabFlagSummary.empty
       : _summarizeFlags(labSeries);
 
-  final wearables = <WearableMetricLatest>[];
-  for (final key in dataWearableMetricKeys) {
-    final def = biometricMetrics[key];
-    if (def == null) continue;
-    final q = MetricSeriesQuery(metricKey: key, days: 14);
-    final series =
-        await ref.read(vitalsRepositoryProvider).loadMetricSeries(q);
-    if (series.headlineValue == null && series.seriesBySource.isEmpty) {
-      continue;
-    }
-    final headlineSource = series.headlineSource;
-    final points = headlineSource != null
-        ? (series.seriesBySource[headlineSource] ?? const [])
-        : series.seriesBySource.values.expand((p) => p).toList();
-    final spark = points
-        .map((p) => p.value)
-        .whereType<double>()
-        .toList(growable: false);
-    wearables.add(
-      WearableMetricLatest(
-        metricKey: key,
-        label: def.label,
-        valueLabel: def.format(series.headlineValue),
-        source: _sourceLabel(series.headlineSource),
-        spark: spark.length >= 2 ? spark : const [],
+  final seriesByKey = await Future.wait(
+    dataWearableMetricKeys.map(
+      (key) => vitalsRepo.loadMetricSeries(
+        MetricSeriesQuery(metricKey: key, days: 14),
       ),
-    );
+    ),
+  );
+
+  final wearables = <WearableMetricLatest>[];
+  for (var i = 0; i < dataWearableMetricKeys.length; i++) {
+    final row = _wearableFromSeries(dataWearableMetricKeys[i], seriesByKey[i]);
+    if (row != null) wearables.add(row);
   }
 
   if (wearables.isEmpty && today.scores.hasData) {

@@ -69,24 +69,11 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     }
   }
 
-  ScoreSnapshot _resolveScores(TodayData data) {
-    if (_isToday) return data.scores;
-    final dayAsync = ref.watch(scoreSnapshotForDayProvider(_dateYmd));
-    return dayAsync.valueOrNull ?? ScoreSnapshot.empty;
-  }
-
-  bool _scoresLoading(TodayData data) {
-    if (_isToday) return false;
-    final dayAsync = ref.watch(scoreSnapshotForDayProvider(_dateYmd));
-    return dayAsync.isLoading;
-  }
-
   @override
   Widget build(BuildContext context) {
     final todayAsync = ref.watch(todayDataProvider);
     final hub = ref.watch(reportsHubProvider);
     final tokens = PurpleTokens.loaded;
-    final hasLabs = (hub.valueOrNull?.documents.length ?? 0) > 0;
 
     return CanvasBackground(
       child: SizedBox(
@@ -95,8 +82,15 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
           loading: _TodayLoadingView.new,
           error: (_, __) => _TodayLoadError(onRetry: _refresh),
           data: (data) {
-            final scores = _resolveScores(data);
-            final scoresLoading = _scoresLoading(data);
+            final dayScoresAsync = _isToday
+                ? null
+                : ref.watch(scoreSnapshotForDayProvider(_dateYmd));
+            final scores = _isToday
+                ? data.scores
+                : (dayScoresAsync?.valueOrNull ?? ScoreSnapshot.empty);
+            final scoresLoading =
+                !_isToday && (dayScoresAsync?.isLoading ?? false);
+            final hasLabs = (hub.valueOrNull?.documents.length ?? 0) > 0;
 
             return RefreshIndicator(
               onRefresh: _refresh,
