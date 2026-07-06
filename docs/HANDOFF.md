@@ -9,6 +9,15 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TF25 P0 blank-data fix — ready for upload (`f2ac82d8`).**
+Root cause: auth stream loading gap after reinstall (`authSessionProvider` still
+`AsyncLoading` while `AuthRepository.currentSession` already restored) left `AuthGate`
+blank and `todayDataProvider` returning empty without fetch; compounded by hung Supabase
+calls (no timeout) and stale Keychain sessions (`ensureValidSession`). Fix stack:
+`00279718` auth validation + gate spinner, `33a4d953` 15s provider fail-open,
+`f2ac82d8` `readActiveSession` + **1.0.0+25**. Luciq build **24**: **0 open crashes**.
+Verified: `flutter test` **159/159**, `:8765` redirects unauthenticated `/today` → sign-in.
+
 **2026-07-06 TF25/26 Merged Today preview parity (committed, not pushed).**
 `flutter/lib/features/today/`: removed dual-score hero for Merged preview layout; horizontal
 metric strip always shows Sleep · HRV · Efficiency · Rest HR (em dash empty states) for
@@ -451,6 +460,25 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T20:48:00Z — TF24 blank-data P0 → TF25 fix
+
+- **Requested** — TestFlight **1.0 (24)** report: app loads but no data, stuck/slow after
+  delete+reinstall; investigate auth, Today/Data providers, error swallowing; fix + TF25 if severe.
+- **Done** — Root cause: (1) `authSessionProvider` loading window after Keychain restore made
+  `AuthGate` render `SizedBox.shrink` and data providers skip fetch (`valueOrNull` null); (2) stale
+  invalid restored sessions; (3) hung Supabase with no provider timeout. Fixes:
+  `flutter/lib/core/auth/auth_state.dart` (`readActiveSession`, `authGateStatusProvider`),
+  `auth_gate.dart` spinner + session-error redirect, `auth_repository.dart` `ensureValidSession`,
+  `today_repository.dart` 15s `_guardTodayProviderLoad`, `data_providers.dart` per-query guards,
+  `today_screen.dart` / `data_screen.dart` fail-open banners. **pubspec 1.0.0+25** (`f2ac82d8`).
+  Luciq MCP `list_crashes` app_versions `1.0.0 (24)`: **0 crashes**.
+- **Issues** — `:8765` rebuild was slow; verified HTTP 200 + sign-in redirect only (E2E sign-in
+  not run in this slice). TF25 not uploaded to ASC yet.
+- **Stand / next** — `bun run ios:flutter-testflight` (or project script) for **1.0 (25)**;
+  Founding Team after VALID; operator retest reinstall path.
+- **Who / where** — Cursor subagent, local, `main` @ `f2ac82d8`.
+- **Timestamp** — 2026-07-06T20:48:00Z.
 
 ### 2026-07-06T20:43:00Z — TF25/26 Merged Today preview parity
 
