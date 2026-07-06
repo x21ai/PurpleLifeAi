@@ -1,13 +1,29 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~16:20 ET (TF23 uploaded, ASC processing).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~16:26 ET (TF23 VALID + Founding Team; TF24 next).
 
-**Recent (2026-07-06 ~16:20 ET): TF23 Merged shell uploaded (ASC processing).**
+## TestFlight — what build has what (2026-07-06)
+
+| Build | ASC status | Founding Team | Git commit | UI | Perf fix (`5ad1576`) | OAuth fix (`4430c13`) | Install? |
+|-------|------------|---------------|------------|-----|----------------------|----------------------|----------|
+| **1.0 (22)** | VALID | IN_BETA_TESTING | `00e9a56` | **Old** 4-tab (Today · My Body · Insights · Settings) | No | No | **Replace** — stale |
+| **1.0 (23)** | VALID | IN_BETA_TESTING | `d1f5675` / `b4a9dc1`+ | **Merged** 5-tab (Today · Data · FAB · Plan · Ask Maya) | **No** — query fan-out | No | **Install now** for new design |
+| **1.0 (24)** | Not uploaded | — | `bfaf648e` on `main` (pushed) | Merged + styling + Luciq Settings row | **Yes** (`5ad1576` syncIfStale 45s) | **Yes** (`4430c13` native deep link) | **Wait** — upload TF24 next |
+
+**Timeline:** TF22 uploaded **~14:28 ET** (before Merged). Merged shell landed **`b4a9dc1` ~16:06 ET**. TF23 uploaded **~16:20 ET**, ASC VALID **~16:24 ET** (poll 3). OAuth fix **`4430c13`** + perf **`5ad1576`** landed **after** TF23 cut → **ship TF24** for login + sync throttle.
+
+**TF23 observability triage (2026-07-06 ~16:26 ET):** `ios:check-asc-builds` → **1.0 (23) VALID**, internal + external **IN_BETA_TESTING**. `asc-add-build-to-group.mjs 23 "Founding Team"` → **Added** (beta review submit 422: already in valid state). `ios:check-tf-feedback` → **19** ASC screenshot submissions (mostly pre-TF22 duplicate-narrative + login errors; TF22 fixed narrative). `ios:check-luciq` → SDK token OK, MCP mode. Luciq MCP `list_crashes` filter `1.0.0 (23)` → **0 open crashes**. **Build ready** for Merged UI testing; OAuth/perf require TF24.
+
+**Prod web (`www.purplelife.org`):** Merged TanStack UI **is deployed** (5-tab nav, `/data`, `/plan`, `/ask-maya` in live `_app-*.js`). TestFlight Flutter **lags web** until you install TF23+.
+
+**Capacitor:** Retired. All TF builds ≥21 are Flutter native (`org.purplelife.app`). Old Capacitor WebView builds would load prod web (Merged UI) but are no longer uploaded.
+
+**Flutter web preview:** `http://127.0.0.1:8765` — HTTP 200; local tree at **`f4530cde`** (TF24-equivalent) if rebuilt with `--rebuild`.
+
+**Recent (2026-07-06 ~16:20 ET): TF23 Merged shell uploaded → VALID.**
 Commit **`b4a9dc1`** wires Flutter 5-tab Merged nav + `/data` `/plan` `/ask-maya`; branch
-`lovable/redesign` @ **`d1f5675`** pushed. `pubspec.yaml` **1.0.0+23**. TestFlight upload
-**EXPORT SUCCEEDED** (~16:19 ET). ASC API not yet listing 1.0 (23) VALID; retry
-`node scripts/asc-add-build-to-group.mjs 23 "Founding Team"` when build appears. Web `:8765`
-rebuilt (HTTP 200; sign-in for tab walkthrough).
+`lovable/redesign` @ **`d1f5675`** pushed. `pubspec.yaml` **1.0.0+23**. ASC **1.0 (23) VALID**,
+Founding Team **IN_BETA_TESTING**. Web `:8765` HTTP 200.
 
 **Recent (2026-07-06 ~16:30 ET): Flutter OAuth P0 fix (Capacitor parity).**
 Google/Apple login used broken `https://www.purplelife.org/auth/callback` redirect. Fixed:
