@@ -16,6 +16,9 @@ const FLUTTER_CORS_PATHS = new Set([
   "/api/health/whoop-config",
   "/api/health/whoop-exchange",
   "/api/health/whoop-sync",
+  "/api/ai/summarize-report",
+  "/api/ai/metric-insight",
+  "/api/ai/daily-insight-cards",
 ]);
 
 function isFlutterCorsPath(pathname: string): boolean {

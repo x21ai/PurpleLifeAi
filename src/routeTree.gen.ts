@@ -68,9 +68,18 @@ import { Route as ApiHealthWhoopExchangeRouteImport } from './routes/api/health/
 import { Route as ApiHealthWhoopConfigRouteImport } from './routes/api/health/whoop-config'
 import { Route as ApiHealthNativeSyncRouteImport } from './routes/api/health/native-sync'
 import { Route as ApiEmailSuppressionRouteImport } from './routes/api/email/suppression'
+import { Route as ApiCareTodayRouteImport } from './routes/api/care/today'
+import { Route as ApiCareSeizuresRouteImport } from './routes/api/care/seizures'
+import { Route as ApiCareReportsRouteImport } from './routes/api/care/reports'
+import { Route as ApiCareReportRouteImport } from './routes/api/care/report'
+import { Route as ApiCareMedsRouteImport } from './routes/api/care/meds'
+import { Route as ApiCareJournalRouteImport } from './routes/api/care/journal'
 import { Route as ApiCareIncomingInvitesRouteImport } from './routes/api/care/incoming-invites'
 import { Route as ApiCareDeclineRouteImport } from './routes/api/care/decline'
 import { Route as ApiCareAcceptRouteImport } from './routes/api/care/accept'
+import { Route as ApiAiSummarizeReportRouteImport } from './routes/api/ai/summarize-report'
+import { Route as ApiAiMetricInsightRouteImport } from './routes/api/ai/metric-insight'
+import { Route as ApiAiDailyInsightCardsRouteImport } from './routes/api/ai/daily-insight-cards'
 import { Route as ApiAccountPersonalShareCodeRouteImport } from './routes/api/account/personal-share-code'
 import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
 import { Route as AppSettingsTravelRouteImport } from './routes/_app/settings.travel'
@@ -416,6 +425,36 @@ const ApiEmailSuppressionRoute = ApiEmailSuppressionRouteImport.update({
   path: '/api/email/suppression',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCareTodayRoute = ApiCareTodayRouteImport.update({
+  id: '/api/care/today',
+  path: '/api/care/today',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareSeizuresRoute = ApiCareSeizuresRouteImport.update({
+  id: '/api/care/seizures',
+  path: '/api/care/seizures',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareReportsRoute = ApiCareReportsRouteImport.update({
+  id: '/api/care/reports',
+  path: '/api/care/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareReportRoute = ApiCareReportRouteImport.update({
+  id: '/api/care/report',
+  path: '/api/care/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareMedsRoute = ApiCareMedsRouteImport.update({
+  id: '/api/care/meds',
+  path: '/api/care/meds',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareJournalRoute = ApiCareJournalRouteImport.update({
+  id: '/api/care/journal',
+  path: '/api/care/journal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCareIncomingInvitesRoute = ApiCareIncomingInvitesRouteImport.update({
   id: '/api/care/incoming-invites',
   path: '/api/care/incoming-invites',
@@ -429,6 +468,21 @@ const ApiCareDeclineRoute = ApiCareDeclineRouteImport.update({
 const ApiCareAcceptRoute = ApiCareAcceptRouteImport.update({
   id: '/api/care/accept',
   path: '/api/care/accept',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiSummarizeReportRoute = ApiAiSummarizeReportRouteImport.update({
+  id: '/api/ai/summarize-report',
+  path: '/api/ai/summarize-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiMetricInsightRoute = ApiAiMetricInsightRouteImport.update({
+  id: '/api/ai/metric-insight',
+  path: '/api/ai/metric-insight',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiDailyInsightCardsRoute = ApiAiDailyInsightCardsRouteImport.update({
+  id: '/api/ai/daily-insight-cards',
+  path: '/api/ai/daily-insight-cards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAccountPersonalShareCodeRoute =
@@ -778,9 +832,18 @@ export interface FileRoutesByFullPath {
   '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
+  '/api/ai/daily-insight-cards': typeof ApiAiDailyInsightCardsRoute
+  '/api/ai/metric-insight': typeof ApiAiMetricInsightRoute
+  '/api/ai/summarize-report': typeof ApiAiSummarizeReportRoute
   '/api/care/accept': typeof ApiCareAcceptRoute
   '/api/care/decline': typeof ApiCareDeclineRoute
   '/api/care/incoming-invites': typeof ApiCareIncomingInvitesRoute
+  '/api/care/journal': typeof ApiCareJournalRoute
+  '/api/care/meds': typeof ApiCareMedsRoute
+  '/api/care/report': typeof ApiCareReportRoute
+  '/api/care/reports': typeof ApiCareReportsRoute
+  '/api/care/seizures': typeof ApiCareSeizuresRoute
+  '/api/care/today': typeof ApiCareTodayRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/health/native-sync': typeof ApiHealthNativeSyncRoute
   '/api/health/whoop-config': typeof ApiHealthWhoopConfigRoute
@@ -890,9 +953,18 @@ export interface FileRoutesByTo {
   '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
+  '/api/ai/daily-insight-cards': typeof ApiAiDailyInsightCardsRoute
+  '/api/ai/metric-insight': typeof ApiAiMetricInsightRoute
+  '/api/ai/summarize-report': typeof ApiAiSummarizeReportRoute
   '/api/care/accept': typeof ApiCareAcceptRoute
   '/api/care/decline': typeof ApiCareDeclineRoute
   '/api/care/incoming-invites': typeof ApiCareIncomingInvitesRoute
+  '/api/care/journal': typeof ApiCareJournalRoute
+  '/api/care/meds': typeof ApiCareMedsRoute
+  '/api/care/report': typeof ApiCareReportRoute
+  '/api/care/reports': typeof ApiCareReportsRoute
+  '/api/care/seizures': typeof ApiCareSeizuresRoute
+  '/api/care/today': typeof ApiCareTodayRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/health/native-sync': typeof ApiHealthNativeSyncRoute
   '/api/health/whoop-config': typeof ApiHealthWhoopConfigRoute
@@ -1005,9 +1077,18 @@ export interface FileRoutesById {
   '/_app/settings/travel': typeof AppSettingsTravelRoute
   '/_app/today/risk': typeof AppTodayRiskRoute
   '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
+  '/api/ai/daily-insight-cards': typeof ApiAiDailyInsightCardsRoute
+  '/api/ai/metric-insight': typeof ApiAiMetricInsightRoute
+  '/api/ai/summarize-report': typeof ApiAiSummarizeReportRoute
   '/api/care/accept': typeof ApiCareAcceptRoute
   '/api/care/decline': typeof ApiCareDeclineRoute
   '/api/care/incoming-invites': typeof ApiCareIncomingInvitesRoute
+  '/api/care/journal': typeof ApiCareJournalRoute
+  '/api/care/meds': typeof ApiCareMedsRoute
+  '/api/care/report': typeof ApiCareReportRoute
+  '/api/care/reports': typeof ApiCareReportsRoute
+  '/api/care/seizures': typeof ApiCareSeizuresRoute
+  '/api/care/today': typeof ApiCareTodayRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/health/native-sync': typeof ApiHealthNativeSyncRoute
   '/api/health/whoop-config': typeof ApiHealthWhoopConfigRoute
@@ -1120,9 +1201,18 @@ export interface FileRouteTypes {
     | '/settings/travel'
     | '/today/risk'
     | '/api/account/personal-share-code'
+    | '/api/ai/daily-insight-cards'
+    | '/api/ai/metric-insight'
+    | '/api/ai/summarize-report'
     | '/api/care/accept'
     | '/api/care/decline'
     | '/api/care/incoming-invites'
+    | '/api/care/journal'
+    | '/api/care/meds'
+    | '/api/care/report'
+    | '/api/care/reports'
+    | '/api/care/seizures'
+    | '/api/care/today'
     | '/api/email/suppression'
     | '/api/health/native-sync'
     | '/api/health/whoop-config'
@@ -1232,9 +1322,18 @@ export interface FileRouteTypes {
     | '/settings/travel'
     | '/today/risk'
     | '/api/account/personal-share-code'
+    | '/api/ai/daily-insight-cards'
+    | '/api/ai/metric-insight'
+    | '/api/ai/summarize-report'
     | '/api/care/accept'
     | '/api/care/decline'
     | '/api/care/incoming-invites'
+    | '/api/care/journal'
+    | '/api/care/meds'
+    | '/api/care/report'
+    | '/api/care/reports'
+    | '/api/care/seizures'
+    | '/api/care/today'
     | '/api/email/suppression'
     | '/api/health/native-sync'
     | '/api/health/whoop-config'
@@ -1346,9 +1445,18 @@ export interface FileRouteTypes {
     | '/_app/settings/travel'
     | '/_app/today/risk'
     | '/api/account/personal-share-code'
+    | '/api/ai/daily-insight-cards'
+    | '/api/ai/metric-insight'
+    | '/api/ai/summarize-report'
     | '/api/care/accept'
     | '/api/care/decline'
     | '/api/care/incoming-invites'
+    | '/api/care/journal'
+    | '/api/care/meds'
+    | '/api/care/report'
+    | '/api/care/reports'
+    | '/api/care/seizures'
+    | '/api/care/today'
     | '/api/email/suppression'
     | '/api/health/native-sync'
     | '/api/health/whoop-config'
@@ -1411,9 +1519,18 @@ export interface RootRouteChildren {
   FriendAcceptRoute: typeof FriendAcceptRoute
   FriendJoinRoute: typeof FriendJoinRoute
   ApiAccountPersonalShareCodeRoute: typeof ApiAccountPersonalShareCodeRoute
+  ApiAiDailyInsightCardsRoute: typeof ApiAiDailyInsightCardsRoute
+  ApiAiMetricInsightRoute: typeof ApiAiMetricInsightRoute
+  ApiAiSummarizeReportRoute: typeof ApiAiSummarizeReportRoute
   ApiCareAcceptRoute: typeof ApiCareAcceptRoute
   ApiCareDeclineRoute: typeof ApiCareDeclineRoute
   ApiCareIncomingInvitesRoute: typeof ApiCareIncomingInvitesRoute
+  ApiCareJournalRoute: typeof ApiCareJournalRoute
+  ApiCareMedsRoute: typeof ApiCareMedsRoute
+  ApiCareReportRoute: typeof ApiCareReportRoute
+  ApiCareReportsRoute: typeof ApiCareReportsRoute
+  ApiCareSeizuresRoute: typeof ApiCareSeizuresRoute
+  ApiCareTodayRoute: typeof ApiCareTodayRoute
   ApiEmailSuppressionRoute: typeof ApiEmailSuppressionRoute
   ApiHealthNativeSyncRoute: typeof ApiHealthNativeSyncRoute
   ApiHealthWhoopConfigRoute: typeof ApiHealthWhoopConfigRoute
@@ -1856,6 +1973,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEmailSuppressionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/care/today': {
+      id: '/api/care/today'
+      path: '/api/care/today'
+      fullPath: '/api/care/today'
+      preLoaderRoute: typeof ApiCareTodayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/care/seizures': {
+      id: '/api/care/seizures'
+      path: '/api/care/seizures'
+      fullPath: '/api/care/seizures'
+      preLoaderRoute: typeof ApiCareSeizuresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/care/reports': {
+      id: '/api/care/reports'
+      path: '/api/care/reports'
+      fullPath: '/api/care/reports'
+      preLoaderRoute: typeof ApiCareReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/care/report': {
+      id: '/api/care/report'
+      path: '/api/care/report'
+      fullPath: '/api/care/report'
+      preLoaderRoute: typeof ApiCareReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/care/meds': {
+      id: '/api/care/meds'
+      path: '/api/care/meds'
+      fullPath: '/api/care/meds'
+      preLoaderRoute: typeof ApiCareMedsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/care/journal': {
+      id: '/api/care/journal'
+      path: '/api/care/journal'
+      fullPath: '/api/care/journal'
+      preLoaderRoute: typeof ApiCareJournalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/care/incoming-invites': {
       id: '/api/care/incoming-invites'
       path: '/api/care/incoming-invites'
@@ -1875,6 +2034,27 @@ declare module '@tanstack/react-router' {
       path: '/api/care/accept'
       fullPath: '/api/care/accept'
       preLoaderRoute: typeof ApiCareAcceptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/summarize-report': {
+      id: '/api/ai/summarize-report'
+      path: '/api/ai/summarize-report'
+      fullPath: '/api/ai/summarize-report'
+      preLoaderRoute: typeof ApiAiSummarizeReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/metric-insight': {
+      id: '/api/ai/metric-insight'
+      path: '/api/ai/metric-insight'
+      fullPath: '/api/ai/metric-insight'
+      preLoaderRoute: typeof ApiAiMetricInsightRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/daily-insight-cards': {
+      id: '/api/ai/daily-insight-cards'
+      path: '/api/ai/daily-insight-cards'
+      fullPath: '/api/ai/daily-insight-cards'
+      preLoaderRoute: typeof ApiAiDailyInsightCardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/account/personal-share-code': {
@@ -2449,9 +2629,18 @@ const rootRouteChildren: RootRouteChildren = {
   FriendAcceptRoute: FriendAcceptRoute,
   FriendJoinRoute: FriendJoinRoute,
   ApiAccountPersonalShareCodeRoute: ApiAccountPersonalShareCodeRoute,
+  ApiAiDailyInsightCardsRoute: ApiAiDailyInsightCardsRoute,
+  ApiAiMetricInsightRoute: ApiAiMetricInsightRoute,
+  ApiAiSummarizeReportRoute: ApiAiSummarizeReportRoute,
   ApiCareAcceptRoute: ApiCareAcceptRoute,
   ApiCareDeclineRoute: ApiCareDeclineRoute,
   ApiCareIncomingInvitesRoute: ApiCareIncomingInvitesRoute,
+  ApiCareJournalRoute: ApiCareJournalRoute,
+  ApiCareMedsRoute: ApiCareMedsRoute,
+  ApiCareReportRoute: ApiCareReportRoute,
+  ApiCareReportsRoute: ApiCareReportsRoute,
+  ApiCareSeizuresRoute: ApiCareSeizuresRoute,
+  ApiCareTodayRoute: ApiCareTodayRoute,
   ApiEmailSuppressionRoute: ApiEmailSuppressionRoute,
   ApiHealthNativeSyncRoute: ApiHealthNativeSyncRoute,
   ApiHealthWhoopConfigRoute: ApiHealthWhoopConfigRoute,

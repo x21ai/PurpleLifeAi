@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolvePlatformModel } from "@/lib/ai-gateway.server";
 import { generateText, Output } from "ai";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type TrendMetricRow = {
   metric_key: string;
@@ -216,14 +217,32 @@ const InsightInput = z.object({
   force: z.boolean().optional(),
 });
 
-/** AI-generated trend summary for a single metric.
- *  On-demand: only runs when force=true; otherwise returns cached value if any.
- *  Cached per (user_id, metric_key, latest_at) so re-opens don't re-bill. */
-export const getMetricInsight = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => InsightInput.parse(input))
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+export type MetricInsightResult = {
+  summary: string | null;
+  bullets: string[];
+  suggestedQuestions: string[];
+  error: string | null;
+  cached: boolean;
+  latestAt: string | null;
+};
+
+/**
+ * Shared implementation behind the `getMetricInsight` server fn and the
+ * `/api/ai/metric-insight` Worker route (for Flutter and other non-TanStack
+ * clients). Both pass an already auth-scoped `supabase` client (RLS applies)
+ * plus the caller's `userId`; keep this the single source of truth for the
+ * per-metric AI trend summary logic.
+ *
+ * On-demand: only runs the AI call when `force=true`; otherwise returns the
+ * cached value if any. Cached per (user_id, metric_key, latest_at) so
+ * re-opens don't re-bill.
+ */
+export async function getMetricInsightForUser(
+  supabase: SupabaseClient,
+  userId: string,
+  input: { metricKey: string; force?: boolean },
+): Promise<MetricInsightResult> {
+    const data = input;
     const [{ data: rows, error }, { data: profile }] = await Promise.all([
       supabase
         .from("report_metrics")
@@ -331,18 +350,48 @@ export const getMetricInsight = createServerFn({ method: "POST" })
       const kind = /429|rate/i.test(msg) ? "rate_limited" : /402|credit/i.test(msg) ? "credits_exhausted" : msg;
       return { summary: null, bullets: [], suggestedQuestions: [], error: kind, cached: false, latestAt };
     }
-  });
+}
+
+/** AI-generated trend summary for a single metric.
+ *  On-demand: only runs when force=true; otherwise returns cached value if any.
+ *  Cached per (user_id, metric_key, latest_at) so re-opens don't re-bill. */
+export const getMetricInsight = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => InsightInput.parse(input))
+  .handler(async ({ data, context }) => getMetricInsightForUser(context.supabase, context.userId, data));
+
+export type DailyInsightCard = {
+  title: string;
+  body: string;
+  tone?: string;
+  metricKey?: string;
+};
+
+export type DailyInsightCardsResult = {
+  cards: DailyInsightCard[];
+  headline: string | null;
+  cached: boolean;
+  generatedFor: string;
+  error?: string;
+};
 
 /**
- * Phase 4.3: Generate 1-3 plain-English "For you" cards summarizing the most
- * notable recent observations across the user's metrics + vitals. Cached once
- * per day in metric_insights under the sentinel key `__daily_cards__`.
+ * Shared implementation behind the `getDailyInsightCards` server fn and the
+ * `/api/ai/daily-insight-cards` Worker route (for Flutter and other
+ * non-TanStack clients). Both pass an already auth-scoped `supabase` client
+ * (RLS applies) plus the caller's `userId`; keep this the single source of
+ * truth for the "For you" daily cards logic.
+ *
+ * Generate 1-3 plain-English "For you" cards summarizing the most notable
+ * recent observations across the user's metrics + vitals. Cached once per
+ * day in metric_insights under the sentinel key `__daily_cards__`.
  */
-export const getDailyInsightCards = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ force: z.boolean().optional() }).parse(input ?? {}))
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+export async function getDailyInsightCardsForUser(
+  supabase: SupabaseClient,
+  userId: string,
+  input: { force?: boolean },
+): Promise<DailyInsightCardsResult> {
+    const data = input;
     const today = new Date().toISOString().slice(0, 10);
 
     if (!data.force) {
@@ -453,4 +502,14 @@ export const getDailyInsightCards = createServerFn({ method: "POST" })
     } catch (e: any) {
       return { cards: [], headline: null, cached: false, generatedFor: today, error: e?.message ?? "AI failed" };
     }
-  });
+}
+
+/**
+ * Phase 4.3: Generate 1-3 plain-English "For you" cards summarizing the most
+ * notable recent observations across the user's metrics + vitals. Cached once
+ * per day in metric_insights under the sentinel key `__daily_cards__`.
+ */
+export const getDailyInsightCards = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ force: z.boolean().optional() }).parse(input ?? {}))
+  .handler(async ({ data, context }) => getDailyInsightCardsForUser(context.supabase, context.userId, data));

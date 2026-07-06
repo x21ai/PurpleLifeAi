@@ -9,6 +9,24 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 Care + AI Worker API routes deployed to prod.** Worker Version ID
+**`8d527d7f-1fe7-4903-8518-7a71f52be25b`** (`CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0`). New routes:
+`/api/care/today`, `/api/care/journal`, `/api/care/meds`, `/api/care/reports`, `/api/care/report`,
+`/api/care/seizures` (POST), `/api/care/incoming-invites` (GET), `/api/ai/daily-insight-cards`,
+`/api/ai/metric-insight`, `/api/ai/summarize-report`. Live verify: unauth POST/GET returns **401**
+(not 404). Removed accidental duplicate `src/routes/api/care/* 2.ts` files before build. Gates:
+`check:em-dash` PASS, `tsc --noEmit` PASS, `build:prod` PASS.
+
+**2026-07-06 Supabase Auth allow list includes Whoop native redirect** (`org.purplelife.app://oauth-whoop-callback` PATCH on project xxnzmfzsjplrutrgbzxy). Whoop Developer Portal registration still manual owner step; see `mem/native-wearable-oauth-redirects.md`.
+
+**2026-07-06 Portable mobile release templates.** Four agent plans in `docs/templates/`:
+`testflight-automation-plan.md`, `play-store-automation-plan.md`, `luciq-crash-reporting-plan.md`, `sentry-crash-reporting-plan.md`.
+
+**2026-07-06 Portable TestFlight automation template added.** Copy
+`docs/templates/testflight-automation-plan.md` to any project; attach in Cursor and
+execute. Documents Purple's ASC API key + xcodebuild upload pattern (no Fastlane, no
+Apple ID login) and optional Luciq wiring.
+
 **2026-07-06 Password-reset E2E verified + TTL UX deployed to prod.** Worker Version ID
 **`079af4f1-eccb-4789-8c7c-648ba7d55621`** (`CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0`).
 E2E: `pmt@eigital.com` password grant **PASS**; recover → `email_send_log.sent` within ~4s
@@ -200,6 +218,62 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06 — Deploy care + AI Worker API routes
+
+- **Requested** — Deploy pending Worker routes (care API, `/api/ai/*`, server libs); verify live;
+  confirm Whoop native redirect on Supabase allow list; commit `src/` (no Flutter).
+- **Done** — Reviewed `care.server.ts`, `ai-insights.server.ts`, `/api/ai/*`, care routes,
+  `flutter-api-cors.ts`, `reports.functions.ts`, `report-trends.functions.ts`. Deleted duplicate
+  `* 2.ts` care route files; `routeTree.gen.ts` regen via `build:prod`. `check:em-dash` PASS;
+  `tsc --noEmit` PASS; `doppler ... bun run build:prod` PASS; `wrangler deploy` → Version ID
+  **`8d527d7f-1fe7-4903-8518-7a71f52be25b`**. curl prod: care + AI routes **401** unauthenticated. Supabase GET auth config:
+  `org.purplelife.app://oauth-whoop-callback` already in `uri_allow_list` (no PATCH needed).
+- **Issues** — `incoming-invites` is GET-only (POST returns SPA HTML 200); use GET for auth probe.
+- **Stand / next** — Flutter client can wire to deployed endpoints; Whoop Developer Portal native
+  URI still manual owner step.
+- **Who / where** — Cursor parallel subagent (Worker deploy), local tree.
+- **Timestamp** — 2026-07-06T16:57:56Z
+
+### 2026-07-06 — Supabase Auth allow list: Whoop native redirect
+
+- **Requested** — Add `org.purplelife.app://oauth-whoop-callback` to Supabase Auth
+  `uri_allow_list` if missing; document Whoop portal manual step in
+  `mem/native-wearable-oauth-redirects.md`.
+- **Done** — GET `.../v1/projects/xxnzmfzsjplrutrgbzxy/config/auth`; PATCH appended
+  Whoop URI (HTTP 200). Updated `mem/native-wearable-oauth-redirects.md` (Supabase
+  allow list table + Whoop Developer Portal manual registration note).
+- **Issues** — Whoop Developer Portal redirect URIs still require owner manual
+  registration (no API).
+- **Stand / next** — Owner adds native + web Whoop URIs in Whoop developer portal.
+- **Who / where** — Cursor subagent (command execution), local tree, uncommitted.
+- **Timestamp** — 2026-07-06T16:55:50Z
+
+### 2026-07-06T15:12:00Z — Split TestFlight and Luciq portable plans
+
+- **Requested:** Separate `.md` files for TestFlight and Luciq so each can be attached
+  independently to other Cursor chats.
+- **Done:** Rewrote `docs/templates/testflight-automation-plan.md` (TestFlight only);
+  added `docs/templates/luciq-crash-reporting-plan.md` (Luciq SDK + MCP + agent scripts).
+  Each cross-links the other.
+- **Issues:** None.
+- **Stand / next:** Copy either file to target repo; attach + operator trigger phrase at bottom.
+- **Who / where:** Cursor agent, local, uncommitted.
+- **Timestamp:** 2026-07-06T15:12:00Z
+
+### 2026-07-06T15:05:00Z — Portable TestFlight automation plan template
+
+- **Requested:** Create a `.md` file explaining Purple's TestFlight/ASC setup that can
+  be attached to other Cursor chats for execution (eatOS and other apps).
+- **Done:** Added `docs/templates/testflight-automation-plan.md` — placeholders, audit
+  checklist, file list, xcodebuild upload pattern, optional GHA + Luciq, verification
+  gates, operator trigger phrase. References Purple scripts as source.
+- **Issues:** None. Template is copy-paste portable; target project must still do one-time
+  ASC API key generation in browser.
+- **Stand / next:** Copy file to target repo or attach from purpledrw; operator stores ASC
+  secrets; agent executes Phase 2 checklist.
+- **Who / where:** Cursor agent, local, uncommitted.
+- **Timestamp:** 2026-07-06T15:05:00Z
 
 ### 2026-07-06T14:32:00Z — Password-reset full E2E + TTL UX deploy
 

@@ -742,48 +742,58 @@ export const bulkDownloadReports = createServerFn({ method: "POST" })
     return { items };
   });
 
+export type AiReportSummary = {
+  headline: string;
+  explanation: string;
+  flagged: Array<{
+    metric: string;
+    value: string;
+    concern: string;
+    severity: "info" | "watch" | "attention";
+  }>;
+  questions: string[];
+};
+
 /**
- * Phase 4: Run an on-demand AI explanation of a report (plain-English summary
- * plus flagged values). Cached on the report row; pass `force=true` to re-run.
+ * Shared implementation behind the `summarizeReport` server fn and the
+ * `/api/ai/summarize-report` Worker route (for Flutter and other
+ * non-TanStack clients). Both pass an already auth-scoped `supabase` client
+ * (RLS applies) plus the caller's `userId`; keep this the single source of
+ * truth for the AI report-explanation logic.
  */
-export const summarizeReport = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({
-      id: z.string().uuid(),
-      force: z.boolean().optional(),
-    }).parse(input),
-  )
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { data: doc, error } = await supabase
-      .from("report_documents")
-      .select("id, user_id, title, report_type, report_date, report_category, summary, findings, impressions, ai_summary, ai_summary_at")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (error || !doc) throw new Error("Report not found");
+export async function summarizeReportForUser(
+  supabase: SupabaseClient,
+  userId: string,
+  input: { id: string; force?: boolean },
+): Promise<{ ok: true; cached: boolean; summary: AiReportSummary }> {
+  const { data: doc, error } = await supabase
+    .from("report_documents")
+    .select("id, user_id, title, report_type, report_date, report_category, summary, findings, impressions, ai_summary, ai_summary_at")
+    .eq("id", input.id)
+    .maybeSingle();
+  if (error || !doc) throw new Error("Report not found");
 
-    if (!data.force && doc.ai_summary) {
-      return { ok: true, cached: true, summary: doc.ai_summary };
-    }
+  if (!input.force && doc.ai_summary) {
+    return { ok: true, cached: true, summary: doc.ai_summary as AiReportSummary };
+  }
 
-    const { data: metrics } = await supabase
-      .from("report_metrics")
-      .select("metric_key, display_name, value, value_text, unit, reference_low, reference_high, flag")
-      .eq("report_id", doc.id);
+  const { data: metrics } = await supabase
+    .from("report_metrics")
+    .select("metric_key, display_name, value, value_text, unit, reference_low, reference_high, flag")
+    .eq("report_id", doc.id);
 
-    const metricLines = (metrics ?? [])
-      .map((m) => {
-        const v = m.value != null ? `${m.value}${m.unit ? ` ${m.unit}` : ""}` : (m.value_text ?? ",");
-        const range = m.reference_low != null && m.reference_high != null
-          ? ` (ref ${m.reference_low}–${m.reference_high}${m.unit ? ` ${m.unit}` : ""})`
-          : "";
-        const flag = m.flag && m.flag !== "normal" ? ` [${m.flag.toUpperCase()}]` : "";
-        return `- ${m.display_name ?? m.metric_key}: ${v}${range}${flag}`;
-      })
-      .join("\n");
+  const metricLines = (metrics ?? [])
+    .map((m) => {
+      const v = m.value != null ? `${m.value}${m.unit ? ` ${m.unit}` : ""}` : (m.value_text ?? ",");
+      const range = m.reference_low != null && m.reference_high != null
+        ? ` (ref ${m.reference_low}–${m.reference_high}${m.unit ? ` ${m.unit}` : ""})`
+        : "";
+      const flag = m.flag && m.flag !== "normal" ? ` [${m.flag.toUpperCase()}]` : "";
+      return `- ${m.display_name ?? m.metric_key}: ${v}${range}${flag}`;
+    })
+    .join("\n");
 
-    const system = `You are explaining a medical report to a patient in calm, plain English.
+  const system = `You are explaining a medical report to a patient in calm, plain English.
 You are NOT a doctor. Never diagnose, prescribe, or recommend treatments. Stay factual.
 Tone: gentle, respectful of the reader's energy. No alarmism.
 
@@ -801,7 +811,7 @@ severity must be one of: "info" | "watch" | "attention".
 Only include items in "flagged" that are actually out of range or otherwise notable.
 If there are no notable values, return flagged: [].`;
 
-    const prompt = `Report title: ${doc.title ?? "Untitled"}
+  const prompt = `Report title: ${doc.title ?? "Untitled"}
 Report type: ${doc.report_type ?? "unknown"}
 Report date: ${doc.report_date ?? "unknown"}
 Category: ${doc.report_category ?? "other"}
@@ -813,36 +823,50 @@ Existing short summary (from extraction): ${doc.summary ?? "(none)"}
 Findings: ${Array.isArray(doc.findings) ? (doc.findings as string[]).join("; ") : "(none)"}
 Impressions: ${Array.isArray(doc.impressions) ? (doc.impressions as string[]).join("; ") : "(none)"}`;
 
-    const responseText = await callAIForUser(supabase, userId, {
-      system,
-      prompt,
-      jsonMode: true,
-      maxTokens: 2048,
-    });
-    const parsed = tryParseJson<{
-      headline?: string;
-      explanation?: string;
-      flagged?: Array<{ metric?: string; value?: string; concern?: string; severity?: string }>;
-      questions?: string[];
-    }>(responseText);
-    if (!parsed) throw new Error("Couldn't parse AI response");
-
-    const cleaned = {
-      headline: String(parsed.headline ?? "").slice(0, 200),
-      explanation: String(parsed.explanation ?? "").slice(0, 2000),
-      flagged: Array.isArray(parsed.flagged) ? parsed.flagged.slice(0, 10).map((f) => ({
-        metric: String(f.metric ?? "").slice(0, 120),
-        value: String(f.value ?? "").slice(0, 80),
-        concern: String(f.concern ?? "").slice(0, 400),
-        severity: (["info", "watch", "attention"].includes(String(f.severity)) ? f.severity : "info") as "info" | "watch" | "attention",
-      })) : [],
-      questions: Array.isArray(parsed.questions) ? parsed.questions.slice(0, 3).map((q) => String(q).slice(0, 200)) : [],
-    };
-
-    await supabase
-      .from("report_documents")
-      .update({ ai_summary: cleaned, ai_summary_at: new Date().toISOString() })
-      .eq("id", doc.id);
-
-    return { ok: true, cached: false, summary: cleaned };
+  const responseText = await callAIForUser(supabase, userId, {
+    system,
+    prompt,
+    jsonMode: true,
+    maxTokens: 2048,
   });
+  const parsed = tryParseJson<{
+    headline?: string;
+    explanation?: string;
+    flagged?: Array<{ metric?: string; value?: string; concern?: string; severity?: string }>;
+    questions?: string[];
+  }>(responseText);
+  if (!parsed) throw new Error("Couldn't parse AI response");
+
+  const cleaned: AiReportSummary = {
+    headline: String(parsed.headline ?? "").slice(0, 200),
+    explanation: String(parsed.explanation ?? "").slice(0, 2000),
+    flagged: Array.isArray(parsed.flagged) ? parsed.flagged.slice(0, 10).map((f) => ({
+      metric: String(f.metric ?? "").slice(0, 120),
+      value: String(f.value ?? "").slice(0, 80),
+      concern: String(f.concern ?? "").slice(0, 400),
+      severity: (["info", "watch", "attention"].includes(String(f.severity)) ? f.severity : "info") as "info" | "watch" | "attention",
+    })) : [],
+    questions: Array.isArray(parsed.questions) ? parsed.questions.slice(0, 3).map((q) => String(q).slice(0, 200)) : [],
+  };
+
+  await supabase
+    .from("report_documents")
+    .update({ ai_summary: cleaned, ai_summary_at: new Date().toISOString() })
+    .eq("id", doc.id);
+
+  return { ok: true, cached: false, summary: cleaned };
+}
+
+/**
+ * Phase 4: Run an on-demand AI explanation of a report (plain-English summary
+ * plus flagged values). Cached on the report row; pass `force=true` to re-run.
+ */
+export const summarizeReport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      id: z.string().uuid(),
+      force: z.boolean().optional(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => summarizeReportForUser(context.supabase, context.userId, data));

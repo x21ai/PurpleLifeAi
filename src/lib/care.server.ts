@@ -232,3 +232,139 @@ export async function listIncomingInvitesForUser(
   });
   return { invites };
 }
+
+/* ---------- Caregiver dashboard reads (scope-guarded) ---------- */
+
+/**
+ * Service-role mirror of `assertScope` in `care.functions.ts`. Same
+ * `has_care_scope` RPC (checks an active, non-expired relationship plus the
+ * specific granted scope), but throws `CareApiError` so the Worker routes can
+ * map it to a real HTTP status (403) instead of a generic 500.
+ */
+async function assertScopeForUser(ownerId: string, caregiverId: string, scope: string) {
+  const { data, error } = await supabaseAdmin.rpc("has_care_scope", {
+    _owner_id: ownerId,
+    _caregiver_id: caregiverId,
+    _scope: scope,
+  });
+  if (error) throw new CareApiError(error.message, 500);
+  if (!data) throw new CareApiError("Missing scope: " + scope, 403);
+}
+
+/** Mirrors `caregiverReadToday` in `care.functions.ts`. */
+export async function caregiverReadTodayForUser(caregiverId: string, ownerId: string) {
+  await assertScopeForUser(ownerId, caregiverId, "today:read");
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: forecast } = await supabaseAdmin
+    .from("risk_forecasts")
+    .select("for_date, risk_score, band, ai_narrative, top_factors")
+    .eq("user_id", ownerId)
+    .eq("for_date", today)
+    .maybeSingle();
+  const { data: alerts } = await supabaseAdmin
+    .from("alerts")
+    .select("id, kind, title, body, severity, acknowledged, created_at")
+    .eq("user_id", ownerId)
+    .eq("acknowledged", false)
+    .order("created_at", { ascending: false })
+    .limit(10);
+  return { forecast, alerts: alerts ?? [] };
+}
+
+/** Mirrors `caregiverReadMeds` in `care.functions.ts`. */
+export async function caregiverReadMedsForUser(caregiverId: string, ownerId: string) {
+  await assertScopeForUser(ownerId, caregiverId, "meds:read");
+  const { data: meds } = await supabaseAdmin
+    .from("medications")
+    .select(
+      "id, name, dosage, times_of_day, schedule, is_rescue, active, notes, refill_date, pills_remaining, created_by_kind",
+    )
+    .eq("user_id", ownerId)
+    .eq("active", true)
+    .order("name");
+  const since = new Date(Date.now() - 7 * 86400_000).toISOString();
+  const { data: doses } = await supabaseAdmin
+    .from("medication_doses")
+    .select("id, medication_id, scheduled_at, taken_at, status, created_by_kind")
+    .eq("user_id", ownerId)
+    .gte("scheduled_at", since)
+    .order("scheduled_at", { ascending: false })
+    .limit(200);
+  return { meds: meds ?? [], doses: doses ?? [] };
+}
+
+/** Mirrors `caregiverReadJournal` in `care.functions.ts`. */
+export async function caregiverReadJournalForUser(caregiverId: string, ownerId: string) {
+  await assertScopeForUser(ownerId, caregiverId, "journal:read");
+  const { data: rows } = await supabaseAdmin
+    .from("journal_entries")
+    .select("id, captured_at, kind, text, ai_summary, ai_tags, created_by_kind")
+    .eq("user_id", ownerId)
+    .is("archived_at", null)
+    .order("captured_at", { ascending: false })
+    .limit(30);
+  return { entries: rows ?? [] };
+}
+
+/** Mirrors `caregiverReadSeizures` in `care.functions.ts`. */
+export async function caregiverReadSeizuresForUser(caregiverId: string, ownerId: string) {
+  await assertScopeForUser(ownerId, caregiverId, "seizures:read");
+  const { data: rows } = await supabaseAdmin
+    .from("seizure_events")
+    .select(
+      "id, started_at, ended_at, duration_seconds, type, severity, injury, rescue_med_given, notes, created_by_kind",
+    )
+    .eq("user_id", ownerId)
+    .order("started_at", { ascending: false })
+    .limit(30);
+  return { events: rows ?? [] };
+}
+
+/** Mirrors `caregiverReadReports` in `care.functions.ts`. */
+export async function caregiverReadReportsForUser(caregiverId: string, ownerId: string) {
+  await assertScopeForUser(ownerId, caregiverId, "reports:read");
+  const { data: rows } = await supabaseAdmin
+    .from("report_documents")
+    .select("id, title, report_type, report_date, file_mime, status, created_at")
+    .eq("user_id", ownerId)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  return { reports: rows ?? [] };
+}
+
+/**
+ * Mirrors `caregiverReadReport` in `care.functions.ts`, including the
+ * `phi_access_log` `caregiver_view` audit write on success.
+ */
+export async function caregiverReadReportForUser(
+  caregiverId: string,
+  ownerId: string,
+  reportId: string,
+) {
+  await assertScopeForUser(ownerId, caregiverId, "reports:read");
+  const { data: report, error: rErr } = await supabaseAdmin
+    .from("report_documents")
+    .select(
+      "id, title, report_type, report_date, file_mime, status, created_at, summary, ai_summary, ai_summary_at",
+    )
+    .eq("id", reportId)
+    .eq("user_id", ownerId)
+    .maybeSingle();
+  if (rErr) throw new CareApiError(rErr.message, 500);
+  if (!report) throw new CareApiError("Report not found", 404);
+  const { data: metrics } = await supabaseAdmin
+    .from("report_metrics")
+    .select(
+      "id, metric_key, display_name, value, value_text, unit, reference_low, reference_high, flag",
+    )
+    .eq("report_id", reportId)
+    .order("metric_key", { ascending: true });
+  await supabaseAdmin.from("phi_access_log").insert({
+    user_id: ownerId,
+    actor_id: caregiverId,
+    resource_type: "report_document",
+    resource_id: reportId,
+    action: "caregiver_view",
+  });
+  return { report, metrics: metrics ?? [] };
+}
