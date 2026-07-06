@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { SocialSignInButtons } from "@/components/auth/social-sign-in-buttons";
 import { isOAuthCallbackUrl, waitForOAuthSession } from "@/lib/auth-oauth";
+import { RECOVERY_LINK_TTL_LABEL } from "@/lib/auth-recovery";
 import { toast } from "sonner";
 import { setLocale, detectBrowserLocale, type SupportedLocale } from "@/i18n";
 import { useTranslation } from "react-i18next";
@@ -101,6 +102,7 @@ function SignInPage() {
     "idle" | "submitting" | "verify-sent" | "reset-sent" | "error"
   >("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [resetLinkExpired, setResetLinkExpired] = useState(false);
   const navigate = Route.useNavigate();
   const redeem = useServerFn(redeemInviteCode);
 
@@ -113,13 +115,14 @@ function SignInPage() {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("reset") === "expired") {
+      setResetLinkExpired(true);
       setErrorMsg(
-        "That reset link expired or was already used. Request a new one below, or sign in if you already set a password.",
+        `${t("signIn.resetExpired")} ${t("signIn.resetExpiredTtl", { ttl: RECOVERY_LINK_TTL_LABEL })} ${t("signIn.resetExpiredSignInHint")}`,
       );
       setStatus("error");
       window.history.replaceState({}, "", window.location.pathname);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const msg = oauthErrorMessage();
@@ -367,6 +370,12 @@ function SignInPage() {
               <p className="mt-3 font-serif text-2xl text-white leading-snug">
                 {t("signIn.resetSent")}
               </p>
+              <p className="mt-4 text-sm font-medium text-white/90">
+                {t("signIn.resetSentLatestOnly")}
+              </p>
+              <p className="mt-2 text-sm text-white/65">
+                {t("signIn.resetSentTtl", { ttl: RECOVERY_LINK_TTL_LABEL })}
+              </p>
               <button
                 type="button"
                 onClick={() => setStatus("idle")}
@@ -447,6 +456,11 @@ function SignInPage() {
 
                 {status === "error" && errorMsg && (
                   <p role="alert" className="text-sm text-[#e8745c]">{errorMsg}</p>
+                )}
+                {resetLinkExpired && mode === "signin" && (
+                  <p className="text-sm text-white/75">
+                    Sign in with your password above. Use Forgot password only if you still need a new link.
+                  </p>
                 )}
                 {mode === "register" && (
                   <>

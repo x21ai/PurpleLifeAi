@@ -10,6 +10,12 @@ import 'auth_redirect_uris.dart';
 
 const _secureSessionKey = 'purple.auth.session.v1';
 
+/// Supabase `mailer_otp_exp` for Purple Life (seconds).
+const recoveryLinkTtlSeconds = 3600;
+
+/// Human-readable recovery link TTL for user-facing copy.
+const recoveryLinkTtlLabel = '1 hour';
+
 /// Result of parsing a Supabase recovery or OAuth callback URL.
 class RecoveryBootstrapResult {
   const RecoveryBootstrapResult({

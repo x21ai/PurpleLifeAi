@@ -72,5 +72,6 @@ void main() {
       find.textContaining('That reset link expired or was already used'),
       findsOneWidget,
     );
+    expect(find.textContaining(recoveryLinkTtlLabel), findsOneWidget);
   });
 }

@@ -1,5 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ * Supabase Auth `mailer_otp_exp` for Purple Life (seconds). Recovery links
+ * expire after this window; only the latest send stays valid.
+ */
+export const RECOVERY_LINK_TTL_SECONDS = 3600;
+
+/** Human-readable TTL for reset-email and expired-link copy. */
+export const RECOVERY_LINK_TTL_LABEL = "1 hour";
+
 /** True when the URL carries a Supabase recovery or OAuth callback payload. */
 export function isAuthCallbackUrl(): boolean {
   if (typeof window === "undefined") return false;

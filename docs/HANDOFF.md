@@ -9,6 +9,18 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 Password-reset E2E verified + TTL UX deployed to prod.** Worker Version ID
+**`079af4f1-eccb-4789-8c7c-648ba7d55621`** (`CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0`).
+E2E: `pmt@eigital.com` password grant **PASS**; recover → `email_send_log.sent` within ~4s
+**PASS**; pg_cron `process-email-queue` active; `/reset-password` **200** with
+`auth-recovery-*.js` chunk (`RECOVERY_LINK_TTL_LABEL` = 1 hour from `mailer_otp_exp=3600`);
+admin `generateLink` → `www.purplelife.org/reset-password#access_token&type=recovery`
+**PASS**. UX: reset-sent shows latest-email-only + TTL; expired states steer to sign-in
+with password first. Flutter auth tests **9/9**. **TF21+** still required for native
+`org.purplelife.app://reset-password` deep link (TF20 lacks `auth_deep_link.dart`).
+Commit on branch (not pushed). `@eigital.com` corporate mail may quarantine recovery
+emails despite Resend delivered.
+
 **2026-07-06 `pmt@eigital.com` temp password rotated (3rd forgot-password report).**
 Ops set new temp password via `auth.admin.updateUserById`; sign-in verified against
 prod Supabase. Recovery emails at ~14:24 UTC show `sent` in `email_send_log` and
@@ -188,6 +200,31 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T14:32:00Z — Password-reset full E2E + TTL UX deploy
+
+- **Requested:** Full E2E password-reset matrix for `pmt@eigital.com`; fix UX gaps
+  (TTL copy, latest-email-only, expired-state sign-in hint); deploy; Flutter auth tests;
+  commit (no push).
+- **Done:** E2E matrix run against prod Supabase + `www.purplelife.org`. Password grant
+  **PASS**. Recover POST **PASS** (after 60s cooldown); `email_send_log.status=sent` in ~4s;
+  pg_cron `process-email-queue` active. `/reset-password` **200**; prod serves
+  `auth-recovery-*.js` with `exchangeCodeForSession` + `1 hour` TTL label.
+  Admin `generateLink` verify → `www.purplelife.org/reset-password` with recovery session
+  tokens (**PASS**). UX shipped: `sign-in.tsx` reset-sent TTL + latest-email-only;
+  `reset=expired` steers to password sign-in; `reset-password.tsx` dual CTAs (sign in /
+  request new link). Flutter: `recoveryLinkTtlLabel`, updated copy, auth tests **9/9**.
+  Gates: `check:em-dash` PASS, `tsc --noEmit` PASS, `build:prod` PASS. Deployed Worker
+  **`079af4f1-eccb-4789-8c7c-648ba7d55621`**. TTL discovered: `mailer_otp_exp=3600` (1h).
+  Committed auth-reset slice only (excluded unrelated WIP).
+- **Issues:** Early recover attempts hit 429 rate limit during test burst; Supabase
+  Management API `email_send_log` query intermittently OOM on Redis. `@eigital.com`
+  corporate mail may quarantine recovery despite Resend delivered (pre-existing).
+  TF21+ still needed for native deep-link reset on device.
+- **Stand / next:** Upload TF21+ with `auth_deep_link.dart`; IT allowlist for
+  `notify.purplelife.org` if `pmt@eigital.com` needs inbox delivery.
+- **Who / where:** Cursor subagent, local `lovable/redesign` working tree.
+- **Timestamp:** 2026-07-06T14:32:00Z
 
 ### 2026-07-06T14:30:00Z — pmt@eigital.com temp password rotation (eigital quarantine)
 

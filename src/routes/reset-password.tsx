@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { bootstrapRecoverySessionFromUrl } from "@/lib/auth-recovery";
+import { bootstrapRecoverySessionFromUrl, RECOVERY_LINK_TTL_LABEL } from "@/lib/auth-recovery";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -163,9 +163,17 @@ function ResetPasswordPage() {
         ) : linkExpired || (!ready && !bootstrapping) ? (
           <div className="mt-10 space-y-4">
             <p className="text-sm text-muted-foreground">
-              {errorMsg ?? t("resetPassword.openFromEmail")}
+              {errorMsg ?? t("resetPassword.linkExpired")}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {t("resetPassword.linkExpiredTtl", { ttl: RECOVERY_LINK_TTL_LABEL })}
             </p>
             <Button asChild className="w-full h-14 text-base rounded-xl">
+              <Link to="/sign-in">
+                {t("resetPassword.linkExpiredSignIn")}
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full h-14 text-base rounded-xl">
               <Link to="/sign-in" search={{ reset: "expired" }}>
                 {t("resetPassword.requestNewLink")}
               </Link>

@@ -98,7 +98,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     super.initState();
     if (widget.resetLinkExpired) {
       _error =
-          'That reset link expired or was already used. Request a new one below, or sign in if you already set a password.';
+          'That reset link expired or was already used. Reset links expire after $recoveryLinkTtlLabel. '
+          'Sign in with your password below, or request a new link only if you still need one.';
     }
   }
 
@@ -271,8 +272,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           SizedBox(height: spacing.xs),
                           Text(
                             'We sent a password reset link to '
-                            '${_emailController.text.trim()}. Follow it to '
-                            'choose a new password, then come back and sign in.',
+                            '${_emailController.text.trim()}. Use only the latest email; '
+                            'older links stop working when you request another. '
+                            'The link stays valid for $recoveryLinkTtlLabel.',
                             style: Theme.of(context)
                                 .textTheme
                                 .bodyMedium

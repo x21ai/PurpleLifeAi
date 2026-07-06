@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../auth/auth_state.dart';
+import '../../core/auth/auth_repository.dart';
 import '../../core/providers/core_providers.dart';
 import '../../design/glass_card.dart';
 import '../../design/purple_theme.dart';
@@ -72,7 +73,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       setState(() {
         _linkExpired = true;
         _error = result.message ??
-            'That reset link expired or was already used. Request a new one from sign in.';
+            'That reset link expired or was already used. Reset links expire after $recoveryLinkTtlLabel.';
       });
       return;
     }
@@ -175,7 +176,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       if (_linkExpired && !_done) ...[
                         Text(
                           _error ??
-                              'Request a new reset link from sign in, then open it from your email.',
+                              'Reset links expire after $recoveryLinkTtlLabel and only the latest email works.',
                           style: TextStyle(color: subtitleColor, fontSize: 14),
                         ),
                         const SizedBox(height: 12),
@@ -183,7 +184,14 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                           onPressed: _busy
                               ? null
                               : () => context.go(AppRoutes.signIn),
-                          child: const Text('Back to sign in'),
+                          child: const Text('Sign in with your password'),
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: _busy
+                              ? null
+                              : () => context.go('${AppRoutes.signIn}?reset=expired'),
+                          child: const Text('Request a new reset link'),
                         ),
                       ],
                       if (_ready && !_done) ...[

@@ -102,3 +102,44 @@ bun run dev   # or test against www.purplelife.org after deploy
 
 **Supabase dashboard:** Authentication → URL Configuration → Redirect URLs includes
 `org.purplelife.app://reset-password` and production `/reset-password` path.
+
+## Supabase recovery TTL and token rules (project `xxnzmfzsjplrutrgbzxy`)
+
+| Field | Default | Max | Meaning |
+|-------|---------|-----|---------|
+| `mailer_otp_exp` | **3600 s (1 hour)** | **86400 s (24 h)** | Recovery/magic-link OTP validity |
+| `jwt_exp` | **3600 s (1 hour)** | project setting | Access token after link is exchanged |
+| Send cooldown | **60 s** | — | Min interval between recovery requests per user |
+
+Query live values:
+
+```bash
+curl -s "https://api.supabase.com/v1/projects/xxnzmfzsjplrutrgbzxy/config/auth" \
+  -H "Authorization: Bearer $SUPABASE_PERSONAL_TOKEN" \
+  | jq '{mailer_otp_exp, jwt_exp, rate_limit_email_sent, rate_limit_otp}'
+```
+
+### Single-use and invalidation
+
+- Recovery links are **single-use**. Verify/exchange consumes the token.
+- Each new forgot-password request **revokes earlier OTPs**; only the **latest** email works.
+- Also fails when: TTL elapsed; corporate mail **link prefetch/scanners** hit the URL before the user.
+- Recovery creates a session before password change; web must `exchangeCodeForSession` on `/reset-password`.
+
+Increase TTL (optional, ops): `PATCH .../config/auth` with `{"mailer_otp_exp": 86400}` (max 24h).
+
+## Apple policy (distinct from OTP TTL)
+
+- **Guideline 4.8:** If the app offers Google (or other third-party) login for the primary account, it must also offer **Sign in with Apple**. Does **not** set recovery email duration.
+- **Apple ID users** recover through Apple, not Purple's reset email.
+- **HIG:** dedicated forgot-password flow, clear inbox confirmation, Sign in with Apple alongside Google on iOS.
+
+## Incident patterns (2026-07-06)
+
+| Issue | Cause | Mitigation |
+|-------|-------|------------|
+| Multiple sends invalidate links | Supabase token rotation | UX: use latest email only; 60s cooldown |
+| `@eigital.com` Resend delivered, inbox empty | Org quarantine/spam | Allowlist `notify.purplelife.org`; check quarantine |
+| Expired on first click | Old link / prefetch / PKCE not exchanged | Web bootstrap deployed; open **newest** email only |
+| Native reset from email | TF20 lacks deep link code | **TF21+** with `org.purplelife.app://reset-password` |
+| Email queue stuck | pg_cron `pgmq.metrics` bug | Fixed 2026-07-06 (`scripts/fix-email-pump-cron.sql`) |
