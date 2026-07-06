@@ -9,6 +9,11 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TF25 close-out — safe to close Cursor.**
+`main` + `lovable/redesign` **pushed** to origin @ **`7dc121d4`**. ASC **1.0 (25) VALID**,
+Founding Team **IN_BETA_TESTING** (`asc-add-build-to-group.mjs 25`). Upload ~17:04 ET, **EXPORT SUCCEEDED**.
+**No TF26** — `pubspec.yaml` **1.0.0+25**. **Testers: update TestFlight 24 → 25.**
+
 **2026-07-06 TestFlight 1.0 (25) VALID — Founding Team live (TF25 fleet).**
 `main` + `lovable/redesign` @ **`4f1eed2c`**. Flutter **1.0.0+25**: TF24 blank/stuck fixes
 (`00279718` auth validation, `33a4d953` Today timeouts, `f2ac82d8` readActiveSession glue,
@@ -23,7 +28,7 @@ Gates: **`flutter test` 162/162**. ASC **1.0 (25) VALID** ~17:08 ET; Founding Te
 `BugReporting.setEnabled` + `BugReporting.setInvocationEvents` for shake + screenshot;
 Settings row when token configured (tap retries bootstrap). TestFlight script verifies
 `LUCIQ_APP_TOKEN` in `Generated.xcconfig`. Doppler token matches **Flutter - Purple - Beta**.
-Verified: `flutter analyze` clean. **Next:** include in TF25/26 upload.
+Verified: `flutter analyze` clean. **Shipped in TF25 (build 25).**
 
 **2026-07-06 TF25 P0 meds Taken fix (this session, commit pending).**
 `TodayMedsSection` wires inline Taken / Snooze / Skip for pending doses (44pt
