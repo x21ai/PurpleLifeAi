@@ -245,12 +245,19 @@ class _MergedTodayBody extends StatelessWidget {
         if (isToday) SizedBox(height: tokens.spacing.md),
         if (scoresLoading)
           const _ScoresLoadingPlaceholder()
-        else
+        else ...[
+          TodayDualScoreHero(
+            scores: scores,
+            conditions: data.conditions,
+            onMetricTap: (key) => context.go(AppRoutes.biometricsMetric(key)),
+          ),
+          SizedBox(height: tokens.spacing.md),
           TodayMetricStrip(
             scores: scores,
             conditions: data.conditions,
             onMetricTap: (key) => context.go(AppRoutes.biometricsMetric(key)),
           ),
+        ],
         if (hasNarrative) ...[
           SizedBox(height: tokens.spacing.x2),
           TodayMayaCard(narrative: narrative),

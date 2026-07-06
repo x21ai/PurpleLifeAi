@@ -452,6 +452,23 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 
 ## Log
 
+### 2026-07-06T20:43:00Z — TF25/26 Merged Today preview parity
+
+- **Requested** — Align Flutter Merged Today with approved
+  `personalized-dashboard-preview.html` Merged mode: metric strip (Sleep/HRV/Efficiency/Rest HR
+  with empty states), onboarding pill, Maya card, protocol teaser, Ask Maya chips, inline
+  RECOMMENDED (Plan link only), meds section, quick actions. Scope: `flutter/lib/features/today/`
+  only. Commit for TF25/26 integrator.
+- **Done** — Commit `89cf2d00` on `lovable/redesign`: removed dual-score hero for strip-first
+  layout; `TodayMetricStrip` fixed four chips with em dash empty states; `sleepEfficiencyPct` on
+  `ScoreSnapshot` + `sleep_efficiency_pct` in repository; `TodayRecommendedInline` taps
+  `/plan?segment=recommended` with "See on Plan" CTA (no lab-order deep links). Meds section
+  unchanged (`adf42d6c`). Verified: `flutter test test/today*.dart` **6/6**.
+- **Issues** — None. Prior partial commit `3f26445e` (repository-only) superseded by this slice.
+- **Stand / next** — TF25/26 integrator merges with other fleet slices; no push from this agent.
+- **Who / where** — Cursor subagent, local, `lovable/redesign` @ `89cf2d00`.
+- **Timestamp** — 2026-07-06T20:43:00Z
+
 ### 2026-07-06T20:50:00Z — TF25 audit OPEN-ISSUES + gap matrix (docs only)
 
 - **Requested** — From audit `a198e779`: brief OPEN-ISSUES entries for Today doses regression
