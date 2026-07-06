@@ -76,6 +76,11 @@ Format:
 
 ## Flutter / TestFlight
 
+- [ ] **flutter-journal-media-capture** — Flutter journal new-entry is text-only; voice/photo/video
+  work on web (`journal.new.tsx` + `journal-media` uploads) but not wired on native. Capture screen
+  shows honest "coming soon" copy (`009fda0f`); `JournalRepository.saveEntry` always `media_urls: []`.
+  _Raised 2026-07-06 TF tester report._
+
 - [ ] **flutter-today-doses-regression** — Merged Today dropped the dose schedule card
   (`8a09f494`). **Partially fixed** `adf42d6c`: read-only `TodayMedsSection` restored on
   `/today`. **Gap:** web inline dose actions (Taken / Skip / Snooze) still only on `/meds`.

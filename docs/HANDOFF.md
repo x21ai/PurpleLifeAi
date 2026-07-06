@@ -9,6 +9,12 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 Journal capture UX fixes (`009fda0f`, lovable/redesign, not pushed).**
+TF tester report: photo/video are **stub** (text-only save; honest coming-soon banner replaces
+misleading disabled dock). Keyboard dismisses on tap-outside + scroll drag. "Change" date label no
+longer uses white underline (muted `textTertiary`). Verified: `flutter analyze` clean,
+`journal_pending_upload_test` **2/2**. **Next:** bump build + TestFlight upload for testers.
+
 **2026-07-06 TF25/26 Merged Today preview parity (committed, not pushed).**
 `flutter/lib/features/today/`: removed dual-score hero for Merged preview layout; horizontal
 metric strip always shows Sleep · HRV · Efficiency · Rest HR (em dash empty states) for
@@ -451,6 +457,20 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T20:52:00Z — Journal capture keyboard, Change label, media honesty
+
+- **Requested** — TF tester report on Journal capture: photo/video status, tap-outside keyboard
+  dismiss, white underlined "Change" on date picker. Fix minimal diff; commit on `lovable/redesign`.
+- **Done** — `009fda0f`: `journal_capture_screen.dart` — `GestureDetector` +
+  `ScrollViewKeyboardDismissBehavior.onDrag` unfocus keyboard; removed `TextDecoration.underline`
+  on "Change" (uses `textTertiary`); replaced disabled Photo/Video/Record dock (mislabeled
+  "Mobile app") with honest coming-soon copy. Logged `flutter-journal-media-capture` in
+  `docs/OPEN-ISSUES.md`. Verified: `flutter analyze` clean, `journal_pending_upload_test` **2/2**.
+- **Issues** — Native voice/photo/video capture still not implemented (web parity deferred).
+- **Stand / next** — TF integrator bumps build number and uploads TestFlight for tester re-check.
+- **Who / where** — Cursor subagent, local, `lovable/redesign` @ `009fda0f`.
+- **Timestamp** — 2026-07-06T20:52:00Z
 
 ### 2026-07-06T20:43:00Z — TF25/26 Merged Today preview parity
 
