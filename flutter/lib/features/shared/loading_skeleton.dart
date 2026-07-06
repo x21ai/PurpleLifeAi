@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'glass_helpers.dart';
+import 'merged_style.dart';
 
 /// Glass-styled loading placeholders that reserve layout height (CLS-safe).
 class LoadingSkeleton extends StatelessWidget {
@@ -15,16 +16,11 @@ class LoadingSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = mergedPalette();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          sectionTitle.toUpperCase(),
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                letterSpacing: 1.2,
-                color: Colors.white.withValues(alpha: 0.45),
-              ),
-        ),
+        MergedSectionLabel(sectionTitle),
         const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,
@@ -36,7 +32,7 @@ class LoadingSkeleton extends StatelessWidget {
             childAspectRatio: 1.6,
           ),
           itemCount: tileCount,
-          itemBuilder: (context, index) => const _PulseTile(),
+          itemBuilder: (context, index) => _PulseTile(palette: p),
         ),
       ],
     );
@@ -44,7 +40,9 @@ class LoadingSkeleton extends StatelessWidget {
 }
 
 class _PulseTile extends StatefulWidget {
-  const _PulseTile();
+  const _PulseTile({required this.palette});
+
+  final MergedPalette palette;
 
   @override
   State<_PulseTile> createState() => _PulseTileState();
@@ -70,6 +68,7 @@ class _PulseTileState extends State<_PulseTile> with SingleTickerProviderStateMi
 
   @override
   Widget build(BuildContext context) {
+    final shimmer = widget.palette.textPrimary;
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
@@ -88,7 +87,7 @@ class _PulseTileState extends State<_PulseTile> with SingleTickerProviderStateMi
               width: 72,
               height: 10,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
+                color: shimmer.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -97,7 +96,7 @@ class _PulseTileState extends State<_PulseTile> with SingleTickerProviderStateMi
               width: 48,
               height: 24,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.16),
+                color: shimmer.withValues(alpha: 0.16),
                 borderRadius: BorderRadius.circular(6),
               ),
             ),
@@ -114,6 +113,7 @@ class ScoreHeroSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final shimmer = mergedPalette().textPrimary;
     return GlassSurface(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
       borderRadius: 32,
@@ -123,7 +123,7 @@ class ScoreHeroSkeleton extends StatelessWidget {
             width: 88,
             height: 72,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.14),
+              color: shimmer.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(8),
             ),
           ),
@@ -132,7 +132,7 @@ class ScoreHeroSkeleton extends StatelessWidget {
             width: 72,
             height: 10,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
+              color: shimmer.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -148,6 +148,7 @@ class ScoreTileStripSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final shimmer = mergedPalette().textPrimary;
     return GlassSurface(
       padding: const EdgeInsets.all(8),
       child: Row(
@@ -159,7 +160,7 @@ class ScoreTileStripSkeleton extends StatelessWidget {
               child: Container(
                 height: 88,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: shimmer.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(18),
                 ),
               ),

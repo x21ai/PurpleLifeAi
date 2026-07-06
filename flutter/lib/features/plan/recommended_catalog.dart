@@ -34,7 +34,7 @@ class RecommendedContext {
 
 /// Static catalog mirroring preview `RECOMMENDED_CATALOG` (informational only).
 final recommendedCatalog = <RecommendedItem>[
-  RecommendedItem(
+  const RecommendedItem(
     id: 'wearable_sync',
     title: 'Sync Oura + Apple Health',
     category: 'Sleep & recovery',
@@ -43,6 +43,8 @@ final recommendedCatalog = <RecommendedItem>[
     route: '/tools',
     iconName: 'ring',
   ),
+  // showWhen closure prevents const on this entry.
+  // ignore: prefer_const_constructors
   RecommendedItem(
     id: 'lab_panel',
     title: 'Upload past labs',
@@ -53,7 +55,7 @@ final recommendedCatalog = <RecommendedItem>[
     iconName: 'doc',
     showWhen: (ctx) => !ctx.hasLabs,
   ),
-  RecommendedItem(
+  const RecommendedItem(
     id: 'sleep_hygiene',
     title: 'Sleep hygiene protocol',
     category: 'Protocol',
@@ -63,7 +65,7 @@ final recommendedCatalog = <RecommendedItem>[
     disclaimer: 'Discuss with your clinician. Informational only.',
     iconName: 'moon',
   ),
-  RecommendedItem(
+  const RecommendedItem(
     id: 'hrv_monitor',
     title: 'HRV + resting HR tracking',
     category: 'Cardio & metabolic',
@@ -72,7 +74,7 @@ final recommendedCatalog = <RecommendedItem>[
     route: '/tools',
     iconName: 'heart',
   ),
-  RecommendedItem(
+  const RecommendedItem(
     id: 'journal_prompts',
     title: 'Seizure + sleep journal pack',
     category: 'Neurology',
@@ -81,7 +83,7 @@ final recommendedCatalog = <RecommendedItem>[
     route: '/journal',
     iconName: 'journal',
   ),
-  RecommendedItem(
+  const RecommendedItem(
     id: 'caregiver_invite',
     title: 'Invite a caregiver',
     category: 'Care',
@@ -90,7 +92,7 @@ final recommendedCatalog = <RecommendedItem>[
     route: '/tools',
     iconName: 'people',
   ),
-  RecommendedItem(
+  const RecommendedItem(
     id: 'bp_trend',
     title: 'Blood pressure trend',
     category: 'Cardio & metabolic',

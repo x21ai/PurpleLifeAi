@@ -28,8 +28,8 @@ class MedDetailScreen extends ConsumerWidget {
 
     return CanvasBackground(
       child: medAsync.when(
-        loading: () => SingleChildScrollView(
-          padding: const EdgeInsets.only(top: 24, bottom: 120),
+        loading: () => const SingleChildScrollView(
+          padding: EdgeInsets.only(top: 24, bottom: 120),
           child: ContentColumn(
             child: LoadingSkeleton(sectionTitle: 'Medication', tileCount: 2),
           ),

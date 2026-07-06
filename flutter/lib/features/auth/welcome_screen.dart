@@ -9,6 +9,8 @@ import '../../shell/routes.dart';
 import '../health/welcome_apple_health_card.dart';
 import '../my_health/condition_catalog.dart';
 import '../shared/glass_helpers.dart' hide GlassCard;
+import '../shared/merged_style.dart';
+import 'onboarding_style.dart';
 
 // Web welcome (src/routes/_app/welcome.tsx) also auto-redeems stored invite
 // codes (redeemInviteCode) and fires generateCareProfile after saving the
@@ -188,8 +190,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final subtitleColor = Colors.white.withValues(alpha: 0.82);
-
     return Scaffold(
       backgroundColor: purpleCanvasDark,
       body: CanvasBackground(
@@ -203,18 +203,13 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 children: [
                   Text(
                     'Let me know who you are.',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    style: onboardingTitle(),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Just your first name, and what you are carrying. '
                     'Everything else can wait.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: subtitleColor,
-                        ),
+                    style: onboardingSubtitle(),
                   ),
                   const SizedBox(height: 24),
                   GlassCard(
@@ -241,21 +236,13 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         const SizedBox(height: 24),
                         Text(
                           'WHAT BRINGS YOU TO PURPLE?',
-                          style:
-                              Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    fontSize: 11,
-                                    letterSpacing: 11 * 0.18,
-                                    color: Colors.white.withValues(alpha: 0.5),
-                                  ),
+                          style: onboardingEyebrow(),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Pick anything that applies. You can change this '
                           'later in My Health.',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.55),
-                                  ),
+                          style: onboardingHint(),
                         ),
                         const SizedBox(height: 12),
                         _ConditionPicker(
@@ -323,20 +310,15 @@ class _NameField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
+          style: onboardingFieldLabel(),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
           textInputAction: TextInputAction.next,
           textCapitalization: TextCapitalization.words,
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            hintText: label,
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-          ),
+          style: TextStyle(color: mergedPalette().textPrimary),
+          decoration: onboardingInputDecoration(label),
         ),
       ],
     );

@@ -13,7 +13,7 @@ class ChatAskHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        MergedSectionLabel(ChatCopy.askEyebrow),
+        const MergedSectionLabel(ChatCopy.askEyebrow),
         const SizedBox(height: 8),
         Text(
           '${ChatCopy.askTitleLine1}\n${ChatCopy.askTitleLine2}',

@@ -360,9 +360,9 @@ class _AskHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ContentColumn(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-      child: const ChatAskHeader(),
+    return const ContentColumn(
+      padding: EdgeInsets.fromLTRB(20, 16, 20, 20),
+      child: ChatAskHeader(),
     );
   }
 }
