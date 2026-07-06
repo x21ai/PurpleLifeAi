@@ -150,11 +150,23 @@ class PurpleTheme {
               : const Color(0xFF6B6B73),
         ),
       ),
-      displayLarge: PurpleType.sansStyle(
+      displayLarge: PurpleType.serifStyle(
         fontWeight: _fontWeight(weights.display),
         fontFeatures: const [FontFeature.tabularFigures(), FontFeature.liningFigures()],
         letterSpacing: typography.letterSpacing('numericDisplay') * 44,
         height: typography.lineHeight('numericDisplay'),
+        color: textPrimary,
+      ),
+      displaySmall: PurpleType.serifStyle(
+        fontWeight: _fontWeight(weights.semibold),
+        fontSize: 36,
+        height: 1.05,
+        color: textPrimary,
+      ),
+      titleLarge: PurpleType.serifStyle(
+        fontWeight: _fontWeight(weights.semibold),
+        fontSize: 22,
+        height: 1.2,
         color: textPrimary,
       ),
       titleMedium: PurpleType.bodySerif(

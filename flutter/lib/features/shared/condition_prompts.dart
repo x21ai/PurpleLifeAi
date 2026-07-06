@@ -59,6 +59,10 @@ const _conditionTraits = <String, List<String>>{
   'caregiver': ['caregiver'],
 };
 
+/// Trait keys derived from profile condition slugs (mirrors web catalog).
+Set<String> traitsForConditions(List<String> conditions) =>
+    _traitsForConditions(conditions);
+
 Set<String> _traitsForConditions(List<String> conditions) {
   final traits = <String>{};
   for (final slug in conditions) {

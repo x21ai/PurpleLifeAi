@@ -24,6 +24,43 @@ class MetricDayPoint {
   final String? source;
 }
 
+/// A single biometric reading with full timestamp (for history lists).
+class MetricReading {
+  const MetricReading({
+    required this.recordedAt,
+    required this.value,
+    this.source,
+  });
+
+  final DateTime recordedAt;
+  final double value;
+  final String? source;
+}
+
+/// Query key for [metricReadingsProvider].
+class MetricReadingsQuery {
+  const MetricReadingsQuery({
+    required this.metricKey,
+    this.days = 90,
+    this.limit = 30,
+  });
+
+  final String metricKey;
+  final int days;
+  final int limit;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MetricReadingsQuery &&
+          metricKey == other.metricKey &&
+          days == other.days &&
+          limit == other.limit;
+
+  @override
+  int get hashCode => Object.hash(metricKey, days, limit);
+}
+
 /// Query key for [metricTrendProvider] (metric + window length).
 class MetricTrendQuery {
   const MetricTrendQuery({required this.metricKey, this.days = 7});
@@ -477,6 +514,60 @@ class VitalsRepository {
     return (cur, cmp, delta);
   }
 
+  /// Individual readings for a metric (newest first), for detail history lists.
+  Future<List<MetricReading>> loadMetricReadings(MetricReadingsQuery query) async {
+    final userId = _userId;
+    final meta = biometricMetricForKey(query.metricKey);
+    if (userId == null || meta == null) return const [];
+
+    final since = DateTime.now().subtract(Duration(days: query.days + 2));
+    try {
+      final response = await _supabase
+          .from('biometrics')
+          .select('recorded_at, source, ${meta.column}')
+          .eq('user_id', userId)
+          .gte('recorded_at', formatSupabaseFilterTimestamp(since))
+          .order('recorded_at', ascending: false)
+          .limit(query.limit);
+      return _parseReadings(
+        (response as List).cast<Map<String, dynamic>>(),
+        column: meta.column,
+      );
+    } catch (error, stack) {
+      debugPrint('[VitalsRepository] metric readings failed: $error\n$stack');
+      if (!_canUseOfflineCache(error)) rethrow;
+      try {
+        final rows =
+            await _database.readCachedTable('biometrics', userId: userId);
+        final parsed = _parseReadings(rows, column: meta.column);
+        parsed.sort((a, b) => b.recordedAt.compareTo(a.recordedAt));
+        return parsed.take(query.limit).toList();
+      } catch (_) {
+        return const [];
+      }
+    }
+  }
+
+  List<MetricReading> _parseReadings(
+    List<Map<String, dynamic>> rows, {
+    required String column,
+  }) {
+    final out = <MetricReading>[];
+    for (final row in rows) {
+      final recordedAt = parseSupabaseDateTime(row['recorded_at']);
+      final value = _asDouble(row[column]);
+      if (recordedAt == null || value == null) continue;
+      out.add(
+        MetricReading(
+          recordedAt: recordedAt,
+          value: value,
+          source: (row['source'] as String?)?.trim(),
+        ),
+      );
+    }
+    return out;
+  }
+
   /// Loads the pinned metric keys from `profiles.biometrics_pinned`.
   /// Fails open to an empty list (pins are non-critical).
   Future<List<String>> loadPinnedMetrics() async {
@@ -836,6 +927,16 @@ final metricSeriesProvider = FutureProvider.autoDispose
     );
   }
   return ref.watch(vitalsRepositoryProvider).loadMetricSeries(query);
+});
+
+/// Individual metric readings (newest first) for detail history lists.
+final metricReadingsProvider = FutureProvider.autoDispose
+    .family<List<MetricReading>, MetricReadingsQuery>((ref, query) async {
+  ref.keepAlive();
+  await ref.watch(authRepositoryProvider.future);
+  final session = ref.watch(authSessionProvider).valueOrNull;
+  if (session == null) return const [];
+  return ref.watch(vitalsRepositoryProvider).loadMetricReadings(query);
 });
 
 /// Pinned biometric metric keys from `profiles.biometrics_pinned`.

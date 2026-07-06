@@ -9,6 +9,17 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 Flutter Plan / Ask Maya / metric dates (parallel writer slice).**
+New `flutter/lib/features/plan/` (Protocol | Recommended segmented Plan tab; numbered protocol
+cards from `dailyInsightCardsProvider`; trait-ranked recommended grid). New
+`flutter/lib/features/ask_maya/` (greeting, condition prompt chips, upload labs CTA →
+`/reports/new`, chat deep link). Metric detail: latest date · source subtitle, chart x-axis
+start/mid/end labels, reading history list via `metricReadingsProvider`. Route constants
+`AppRoutes.plan` / `AppRoutes.askMaya` in `routes.dart` (shell agent wires GoRouter).
+`traitsForConditions` exported from `condition_prompts.dart`. `purple_theme` displaySmall/titleLarge
+use SF Pro serifStyle. Verified: `flutter analyze` on touched paths (info-only). **Shell/router
+wiring pending other agent.**
+
 **2026-07-06 Apple system typography (SF Pro stack).**
 Signed-in app shell uses platform SF Pro / system-ui stack instead of Inter + Source Serif 4.
 Web: `src/styles.css` `--font-sans` / `--font-serif`, removed Google Fonts from `__root.tsx`.
@@ -294,6 +305,21 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-07T02:15:00Z — Flutter Plan / Ask Maya / metric dates (parallel writer)
+
+- **Requested** — Parallel writer slice: Plan tab (Protocol | Recommended), Ask Maya landing,
+  metric detail dated readings/history, SF Pro typography theme tokens, route constants only.
+- **Done** — `flutter/lib/features/plan/plan_screen.dart`, `recommended_catalog.dart`;
+  `flutter/lib/features/ask_maya/ask_maya_screen.dart`; `metric_detail_screen.dart` (date · source,
+  chart ticks, history list); `vitals_repository.dart` (`MetricReading`, `metricReadingsProvider`);
+  `routes.dart` (`AppRoutes.plan`, `AppRoutes.askMaya`); `condition_prompts.dart`
+  (`traitsForConditions`); `purple_theme.dart` displaySmall/titleLarge.
+- **Issues** — GoRouter routes + bottom nav wiring owned by shell agent; screens not reachable until
+  merged. `flutter analyze` info-only (prefer_const_constructors in catalog).
+- **Stand / next** — Shell agent: register `/plan` and `/ask-maya` in `router.dart` + bottom nav.
+- **Who / where** — Cursor parallel writer · local · uncommitted
+- **Timestamp** — 2026-07-07T02:15:00Z
 
 ### 2026-07-07T01:00:00Z — Apple system typography (SF Pro stack)
 

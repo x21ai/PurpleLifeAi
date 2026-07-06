@@ -205,11 +205,22 @@ class _MetricDetailScreenState extends ConsumerState<MetricDetailScreen> {
                           ),
                     ),
                   ),
-                  data: (result) => _DetailBody(
-                    meta: meta,
-                    result: result,
-                    rangeLabel: rangeLabel,
-                  ),
+                  data: (result) {
+                    final readingsQuery = MetricReadingsQuery(
+                      metricKey: widget.metricKey,
+                      days: _rangeDays,
+                      limit: 20,
+                    );
+                    final readingsAsync =
+                        ref.watch(metricReadingsProvider(readingsQuery));
+                    return _DetailBody(
+                      meta: meta,
+                      result: result,
+                      rangeLabel: rangeLabel,
+                      readings: readingsAsync.valueOrNull ?? const [],
+                      readingsLoading: readingsAsync.isLoading,
+                    );
+                  },
                 ),
               ],
             ),
@@ -225,11 +236,30 @@ class _DetailBody extends StatelessWidget {
     required this.meta,
     required this.result,
     required this.rangeLabel,
+    required this.readings,
+    required this.readingsLoading,
   });
 
   final BiometricMetricMeta meta;
   final MetricSeriesResult result;
   final String rangeLabel;
+  final List<MetricReading> readings;
+  final bool readingsLoading;
+
+  String? _latestMetaLine() {
+    final dateYmd = result.headlineDateYmd;
+    final source = result.headlineSource;
+    if (dateYmd == null && source == null) return null;
+    final parts = <String>[];
+    if (dateYmd != null) {
+      final d = DateTime.tryParse(dateYmd);
+      parts.add(d == null ? dateYmd : DateFormat.MMMd().format(d));
+    }
+    if (source != null) {
+      parts.add(sourceLabels[source]!);
+    }
+    return parts.join(' · ');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -272,7 +302,15 @@ class _DetailBody extends StatelessWidget {
                       color: headlineColor,
                     ),
               ),
-              if (result.headlineSource != null) ...[
+              if (_latestMetaLine() != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _latestMetaLine()!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.55),
+                      ),
+                ),
+              ] else if (result.headlineSource != null) ...[
                 const SizedBox(height: 8),
                 Text(
                   'via ${sourceLabels[result.headlineSource]}',
@@ -329,6 +367,47 @@ class _DetailBody extends StatelessWidget {
             ],
           ),
         ),
+        if (hasData && (readings.isNotEmpty || readingsLoading)) ...[
+          const SizedBox(height: 16),
+          GlassSurface(
+            borderRadius: 24,
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Reading history',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                if (readingsLoading && readings.isEmpty)
+                  Text(
+                    'Loading readings…',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.55),
+                        ),
+                  )
+                else if (readings.isEmpty)
+                  Text(
+                    'No individual readings in this range.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.55),
+                        ),
+                  )
+                else
+                  for (var i = 0; i < readings.length && i < 8; i++)
+                    _ReadingHistoryRow(
+                      reading: readings[i],
+                      meta: meta,
+                      isLatest: i == 0,
+                    ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 16),
         GlassSurface(
           borderRadius: 24,
@@ -375,6 +454,65 @@ class _DetailBody extends StatelessWidget {
 
   int _totalPointCount(MetricSeriesResult result) => result.seriesBySource.values
       .fold(0, (sum, list) => sum + list.where((p) => p.value != null).length);
+}
+
+class _ReadingHistoryRow extends StatelessWidget {
+  const _ReadingHistoryRow({
+    required this.reading,
+    required this.meta,
+    required this.isLatest,
+  });
+
+  final MetricReading reading;
+  final BiometricMetricMeta meta;
+  final bool isLatest;
+
+  @override
+  Widget build(BuildContext context) {
+    final dateLabel = DateFormat.yMMMd().format(reading.recordedAt.toLocal());
+    final valueLabel = meta.format(reading.value);
+    final src = reading.source;
+    SourceKey? srcKey;
+    if (src != null && src.isNotEmpty) {
+      srcKey = sourceKeyFromString(src);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              dateLabel,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: isLatest
+                        ? Colors.white.withValues(alpha: 0.92)
+                        : Colors.white.withValues(alpha: 0.65),
+                    fontWeight: isLatest ? FontWeight.w600 : FontWeight.w400,
+                  ),
+            ),
+          ),
+          Text(
+            valueLabel,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontFamily: PurpleType.serif,
+                  color: Colors.white.withValues(alpha: 0.92),
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+          ),
+          if (srcKey != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              sourceLabels[srcKey]!,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.45),
+                  ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 class _DeltaPill extends StatelessWidget {
@@ -538,14 +676,23 @@ class _MetricChart extends StatelessWidget {
                 if (i < 0 || i >= sortedDates.length) {
                   return const SizedBox.shrink();
                 }
-                if (i != 0 && i != sortedDates.length - 1) {
+                // Show start, middle, and end date labels on the x-axis.
+                final tickIdx = sortedDates.length <= 3
+                    ? List.generate(sortedDates.length, (j) => j)
+                    : [0, sortedDates.length ~/ 2, sortedDates.length - 1];
+                if (!tickIdx.contains(i)) {
                   return const SizedBox.shrink();
                 }
                 final d = DateTime.tryParse(sortedDates[i]);
+                final label = d == null
+                    ? ''
+                    : (sortedDates.length > 60
+                        ? DateFormat.yMMMd().format(d)
+                        : DateFormat.MMMd().format(d));
                 return Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    d == null ? '' : DateFormat.MMMd().format(d),
+                    label,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.4),
                       fontSize: 10,

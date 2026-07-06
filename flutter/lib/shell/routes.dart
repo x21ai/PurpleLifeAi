@@ -41,6 +41,7 @@ abstract final class AppRoutes {
   static const welcome = '/welcome';
   static const today = '/today';
   static const todayRisk = '/today/risk';
+  static const data = '/data';
   static const vitals = '/vitals';
   static const seizuresNew = '/seizures/new';
   static const hydration = '/hydration';
@@ -94,6 +95,8 @@ abstract final class AppRoutes {
   static const settingsHowPurpleThinks = '/settings/how-purple-thinks';
   static const chat = '/chat';
   static const chatCare = '/chat-care';
+  static const plan = '/plan';
+  static const askMaya = '/ask-maya';
 
   static String careDashboard(String ownerId) => '/care/$ownerId';
 
@@ -121,6 +124,7 @@ abstract final class AppRoutes {
     welcome,
     today,
     todayRisk,
+    data,
     vitals,
     '/vitals/metric/',
     seizuresNew,
@@ -159,5 +163,7 @@ abstract final class AppRoutes {
     settingsHowPurpleThinks,
     chat,
     chatCare,
+    plan,
+    askMaya,
   ];
 }
