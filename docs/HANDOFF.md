@@ -9,6 +9,14 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TF25 Today meds section restore (committed, not pushed).**
+Merged Today regained pre-merge dose schedule card (`today_meds_section.dart`:
+`medsForDayProvider`, read-only `TodayMedsSection` with link to full dose flow).
+`meds_screen.dart` unchanged (filter chips, `TodayDosePanel` Taken/Snooze/Skip, mark all,
+library intact from `1ed98cf` restyle). Quick action **Meds** → `AppRoutes.meds`.
+Verified: `flutter test test/today_screen_render_test.dart test/meds_schedule_ux_test.dart`
+**6/6**.
+
 **2026-07-06 TF24 auth session validation fix (committed, not pushed).**
 Flutter auth: `ensureValidSession()` on bootstrap (refresh + `getUser`, sign-out on invalid
 Keychain restore after reinstall), `core/auth/auth_state.dart` gate status, `AuthGate` spinner
@@ -430,6 +438,23 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T20:45:00Z — TF25 Today meds section restore
+
+- **Requested** — Restore meds data and "take medications" lost in Merged Today design.
+  Re-add today's dose panel on Today; ensure meds_screen dose flow intact; Meds quick action
+  opens working dose flow. Scope: `flutter/lib/features/meds/` + today quick actions only.
+- **Done** — New `today_meds_section.dart` (`medsForDayProvider`, `TodayMedsSection` read-only
+  dose card restored from pre-merge `759cbff`). Wired into merged `today_screen.dart` after
+  quick actions; pull-to-refresh invalidates meds provider. `meds_screen.dart` already had full
+  `TodayDosePanel` (Taken/Snooze/Skip, mark all, filter chips, library) from `1ed98cf`; no edits.
+  Meds route remains on shell drawer (`shell_menu_sheet.dart`), not bottom tab. Tests updated.
+  Verified: `flutter test test/today_screen_render_test.dart test/meds_schedule_ux_test.dart` **6/6**.
+- **Issues** — Today dose card is read-only summary; full dose actions on `/meds` only (same as
+  pre-merge). No push (TF25 integrator merges).
+- **Stand / next** — Parent TF25 fleet merge; integrator lands with other disjoint slices.
+- **Who / where** — Cursor subagent, local, `lovable/redesign` (pre-commit).
+- **Timestamp** — 2026-07-06T20:45:00Z
 
 ### 2026-07-06T20:42:00Z — TF24 auth session validation (invalid restore / AsyncLoading gate)
 

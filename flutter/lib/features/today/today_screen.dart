@@ -15,6 +15,7 @@ import '../shared/loading_skeleton.dart';
 import 'date_strip.dart';
 import 'models/score_snapshot.dart';
 import 'models/today_data.dart';
+import 'today_meds_section.dart';
 import 'today_merged_widgets.dart';
 import 'today_repository.dart';
 import 'wearable_sync.dart';
@@ -56,14 +57,16 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
       worker: ref.read(workerClientProvider),
     );
     ref.invalidate(todayDataProvider);
+    ref.invalidate(medsForDayProvider(_dateYmd));
     if (!_isToday) {
       ref.invalidate(scoreSnapshotForDayProvider(_dateYmd));
     }
     try {
-      await ref.read(todayDataProvider.future);
-      if (!_isToday) {
-        await ref.read(scoreSnapshotForDayProvider(_dateYmd).future);
-      }
+      await Future.wait([
+        ref.read(todayDataProvider.future),
+        ref.read(medsForDayProvider(_dateYmd).future),
+        if (!_isToday) ref.read(scoreSnapshotForDayProvider(_dateYmd).future),
+      ]);
     } catch (_) {
       // Keep pull-to-refresh stable even if one provider fails.
     }
@@ -280,6 +283,12 @@ class _MergedTodayBody extends StatelessWidget {
           onMeds: () => context.go(AppRoutes.meds),
           onSeizure: () => context.go(AppRoutes.seizuresNew),
           onData: () => context.go(AppRoutes.data),
+        ),
+        SizedBox(height: tokens.spacing.lg),
+        TodayMedsSection(
+          selectedDate: selectedDate,
+          isToday: isToday,
+          medicationCount: data.medicationCount,
         ),
         SizedBox(height: tokens.spacing.md),
         if (scores.hasData)
