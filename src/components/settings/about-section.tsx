@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronRight, ExternalLink, FileText, ShieldCheck, Github } from "lucide-react";
+import { formatAppBuildLabel } from "@/lib/app-build-info";
 
 export function AboutSection() {
   return (
@@ -53,6 +54,12 @@ export function AboutSection() {
           </a>
         </li>
       </ul>
+      <p
+        className="px-5 sm:px-6 pb-5 sm:pb-6 pt-2 text-center text-xs text-muted-foreground"
+        data-testid="settings-about-version"
+      >
+        {formatAppBuildLabel()}
+      </p>
     </section>
   );
 }

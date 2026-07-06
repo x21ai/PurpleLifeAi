@@ -39,6 +39,8 @@ copy_drift_web_assets() {
 
 build_flutter_web_release() {
   log "Building Flutter web (release) with Doppler dart-defines"
+  # shellcheck source=app-build-env.sh
+  source "${REPO_ROOT}/scripts/app-build-env.sh"
   (
     cd "${FLUTTER_DIR}"
     doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
@@ -46,7 +48,8 @@ build_flutter_web_release() {
         --pwa-strategy=none \
         --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY" \
         --dart-define=SITE_URL="https://www.purplelife.org" \
-        --dart-define=WORKER_API_BASE_URL="https://www.purplelife.org/api"'
+        --dart-define=WORKER_API_BASE_URL="https://www.purplelife.org/api" \
+        --dart-define=BUILD_DATE="'"${BUILD_DATE}"'"'
   )
   copy_drift_web_assets
 }

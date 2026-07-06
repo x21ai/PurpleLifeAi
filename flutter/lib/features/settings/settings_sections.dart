@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/config/app_build_info.dart';
 import '../../core/providers/core_providers.dart';
 import '../../shell/routes.dart';
 import '../shared/condition_prompts.dart';
@@ -2210,8 +2211,44 @@ class AboutSection extends StatelessWidget {
               }
             },
           ),
+          const _AboutVersionFooter(),
         ],
       ),
+    );
+  }
+}
+
+class _AboutVersionFooter extends StatefulWidget {
+  const _AboutVersionFooter();
+
+  @override
+  State<_AboutVersionFooter> createState() => _AboutVersionFooterState();
+}
+
+class _AboutVersionFooterState extends State<_AboutVersionFooter> {
+  late final Future<AppBuildInfo> _infoFuture = AppBuildInfo.load();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.sheet;
+    return FutureBuilder<AppBuildInfo>(
+      future: _infoFuture,
+      builder: (context, snapshot) {
+        final label = snapshot.hasData
+            ? snapshot.data!.label
+            : 'Version · Unknown';
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          child: Text(
+            label,
+            key: const Key('settings-about-version'),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: palette.textMuted,
+                ),
+            textAlign: TextAlign.center,
+          ),
+        );
+      },
     );
   }
 }

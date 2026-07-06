@@ -76,13 +76,16 @@ release_serve_lock() {
 
 build_web() {
   log "Building Flutter web (release) with Doppler dart-defines"
+  # shellcheck source=app-build-env.sh
+  source "${REPO_ROOT}/scripts/app-build-env.sh"
   (
     cd "${FLUTTER_DIR}"
     doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
       bash -c 'flutter build web --release --base-href="/" --no-tree-shake-icons \
         --pwa-strategy=none \
         --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY" \
-        --dart-define=SITE_URL="http://127.0.0.1:'"${PORT}"'"'
+        --dart-define=SITE_URL="http://127.0.0.1:'"${PORT}"'" \
+        --dart-define=BUILD_DATE="'"${BUILD_DATE}"'"'
   )
   for asset in sqlite3.wasm drift_worker.js; do
     if [[ -f "${FLUTTER_DIR}/web/${asset}" ]]; then
@@ -121,11 +124,14 @@ if [[ "${1:-}" == "--dev" ]]; then
   log "Starting flutter run web-server on port ${PORT} (hot reload; Ctrl+C to stop)"
   cd "${FLUTTER_DIR}"
   write_pid_file "$$"
+  # shellcheck source=app-build-env.sh
+  source "${REPO_ROOT}/scripts/app-build-env.sh"
   exec doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
     bash -c 'flutter run -d web-server --web-port="'"${PORT}"'" --web-hostname=0.0.0.0 \
       --pwa-strategy=none \
       --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY" \
-      --dart-define=SITE_URL="http://127.0.0.1:'"${PORT}"'"'
+      --dart-define=SITE_URL="http://127.0.0.1:'"${PORT}"'" \
+      --dart-define=BUILD_DATE="'"${BUILD_DATE}"'"'
 fi
 
 acquire_serve_lock

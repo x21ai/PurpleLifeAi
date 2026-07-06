@@ -9,6 +9,13 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 About version/build date on Flutter + web Settings.**
+`lovable/redesign` (unpushed): Settings About shows `Version 1.0.0 (24) · Jul 6, 2026`
+format on Flutter (`AppBuildInfo` + `package_info_plus`) and TanStack (`formatAppBuildLabel`).
+`BUILD_DATE` injected via `scripts/app-build-env.sh` into TestFlight, Flutter web serve,
+and web `vite build`/`dev`. Gates: `flutter analyze` 0 issues, app_build_info + settings
+scroll tests pass.
+
 **2026-07-06 TestFlight 1.0 (23) VALID — Merged fleet shipped.**
 `main` + `lovable/redesign` @ **`d1f5675`**. Flutter **1.0.0+23**: 5-tab Merged shell
 (Today · Data · FAB · Plan · Ask Maya), `/data` `/plan` `/ask-maya`, dual-score Today,
@@ -398,6 +405,21 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T20:30:00Z — About version/build date (Flutter + web)
+
+- **Requested** — Show exact version, build number, and build date in Settings About on
+  Flutter and TanStack; inject `BUILD_DATE` at TestFlight and web build time.
+- **Done** — `flutter/lib/core/config/app_build_info.dart` + `package_info_plus`;
+  `src/lib/app-build-info.ts`; About footers in `settings_sections.dart` and
+  `about-section.tsx`; `scripts/app-build-env.sh` + `with-app-build-env.sh`; BUILD_DATE
+  dart-define in `flutter-ios-testflight.sh`, `flutter-web-serve.sh`,
+  `flutter-web-build-prod.sh`; web `dev`/`build` wrap with build env. Tests:
+  `flutter/test/app_build_info_test.dart`.
+- **Issues** — No push (TF24 agent may merge). Dev without build env shows Unknown date.
+- **Stand / next** — TF24 About should show ship date on device after upload.
+- **Who / where** — Cursor agent, local, `lovable/redesign`.
+- **Timestamp** — 2026-07-06T20:30:00Z.
 
 ### 2026-07-06T20:25:00Z — TF23 Merged fleet serial integrate + TestFlight ship
 

@@ -106,6 +106,10 @@ main() {
   BUILD_NUMBER="$(read_build_number)"
   log "Build number from pubspec.yaml: ${BUILD_NUMBER} (must exceed latest ASC Capacitor build)"
 
+  # shellcheck source=app-build-env.sh
+  source "${REPO_ROOT}/scripts/app-build-env.sh"
+  log "Build date stamp: ${BUILD_DATE}"
+
   log "Ensuring App Store Connect app record for org.purplelife.app"
   doppler run --project "${DOPPLER_PROJECT}" --config "${DOPPLER_CONFIG}" -- \
     node scripts/asc-ensure-app.mjs
@@ -137,7 +141,8 @@ main() {
       --build-number="'"${BUILD_NUMBER}"'" \
       --build-name=1.0.0 \
       --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY" \
-      --dart-define=LUCIQ_APP_TOKEN="'"${LUCIQ_TOKEN}"'"
+      --dart-define=LUCIQ_APP_TOKEN="'"${LUCIQ_TOKEN}"'" \
+      --dart-define=BUILD_DATE="'"${BUILD_DATE}"'"
   '
 
   WORKSPACE="${FLUTTER_DIR}/ios/Runner.xcworkspace"
