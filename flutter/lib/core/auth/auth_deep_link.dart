@@ -13,7 +13,7 @@ import '../constants/app_constants.dart';
 import '../providers/core_providers.dart';
 import 'auth_repository.dart';
 
-/// Handles native auth deep links (`reset-password`, future `auth-callback`).
+/// Handles native auth deep links (`reset-password`, `auth-callback`).
 class AuthDeepLinkService {
   AuthDeepLinkService({
     required SupabaseClient supabase,
@@ -61,12 +61,35 @@ class AuthDeepLinkService {
 
   Future<void> _handleUri(Uri uri) async {
     if (!_isAuthDeepLink(uri)) return;
-    if (uri.host != 'reset-password') return;
 
+    if (uri.host == 'reset-password') {
+      await _completeAuthCallback(
+        uri,
+        onSuccess: () => _router.go(AppRoutes.resetPassword),
+        expiredQuery: 'reset=expired',
+      );
+      return;
+    }
+
+    if (uri.host == 'auth-callback') {
+      await _completeAuthCallback(
+        uri,
+        onSuccess: () => _router.go(AppRoutes.today),
+      );
+    }
+  }
+
+  Future<void> _completeAuthCallback(
+    Uri uri, {
+    required VoidCallback onSuccess,
+    String? expiredQuery,
+  }) async {
     final parsedError = AuthRepository.parseAuthCallbackError(uri);
     if (parsedError != null) {
-      if (parsedError.expired) {
-        _router.go('${AppRoutes.signIn}?reset=expired');
+      if (parsedError.expired && expiredQuery != null) {
+        _router.go('${AppRoutes.signIn}?$expiredQuery');
+      } else {
+        _router.go(AppRoutes.signIn);
       }
       return;
     }
@@ -75,10 +98,14 @@ class AuthDeepLinkService {
 
     try {
       await _supabase.auth.getSessionFromUrl(uri);
-      _router.go(AppRoutes.resetPassword);
+      onSuccess();
     } catch (error, stack) {
       debugPrint('[auth_deep_link] session from url failed: $error\n$stack');
-      _router.go('${AppRoutes.signIn}?reset=expired');
+      _router.go(
+        expiredQuery != null
+            ? '${AppRoutes.signIn}?$expiredQuery'
+            : AppRoutes.signIn,
+      );
     }
   }
 

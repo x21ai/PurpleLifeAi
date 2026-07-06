@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../config/app_config.dart';
 import 'auth_redirect_uris.dart';
@@ -151,12 +152,28 @@ class AuthRepository {
     return response;
   }
 
+  /// Google/Apple OAuth (mirrors Capacitor `src/lib/native/oauth.ts`).
+  ///
+  /// Native opens the provider URL in the system browser and completes via
+  /// `org.purplelife.app://auth-callback`. Web redirects to the current origin.
   Future<bool> signInWithOAuth(OAuthProvider provider) async {
-    final redirectTo = '${_config.siteUrl}/auth/callback';
-    return _client.auth.signInWithOAuth(
-      provider,
+    final redirectTo = AuthRedirectUris.oauthCallback(_config.siteUrl);
+
+    if (kIsWeb) {
+      return _client.auth.signInWithOAuth(
+        provider,
+        redirectTo: redirectTo,
+      );
+    }
+
+    // skipBrowserRedirect parity: fetch URL, open externally, finish on deep link.
+    final response = await _client.auth.getOAuthSignInUrl(
+      provider: provider,
       redirectTo: redirectTo,
-      authScreenLaunchMode: LaunchMode.externalApplication,
+    );
+    return launchUrl(
+      Uri.parse(response.url),
+      mode: LaunchMode.externalApplication,
     );
   }
 

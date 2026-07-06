@@ -81,7 +81,8 @@ build_web() {
     doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
       bash -c 'flutter build web --release --base-href="/" --no-tree-shake-icons \
         --pwa-strategy=none \
-        --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY"'
+        --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY" \
+        --dart-define=SITE_URL="http://127.0.0.1:'"${PORT}"'"'
   )
   for asset in sqlite3.wasm drift_worker.js; do
     if [[ -f "${FLUTTER_DIR}/web/${asset}" ]]; then
@@ -123,7 +124,8 @@ if [[ "${1:-}" == "--dev" ]]; then
   exec doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
     bash -c 'flutter run -d web-server --web-port="'"${PORT}"'" --web-hostname=0.0.0.0 \
       --pwa-strategy=none \
-      --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY"'
+      --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY" \
+      --dart-define=SITE_URL="http://127.0.0.1:'"${PORT}"'"'
 fi
 
 acquire_serve_lock

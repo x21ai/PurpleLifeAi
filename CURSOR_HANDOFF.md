@@ -2,6 +2,15 @@
 
 Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~16:15 ET (TF23 Merged fleet integrate).
 
+**Recent (2026-07-06 ~16:30 ET): Flutter OAuth P0 fix (Capacitor parity).**
+Google/Apple login used broken `https://www.purplelife.org/auth/callback` redirect. Fixed:
+native `org.purplelife.app://auth-callback` + system browser (`getOAuthSignInUrl` +
+`LaunchMode.externalApplication`); web current-origin `/`; deep link handler navigates to
+`/today`; Android `auth-callback` intent filter; `flutter-web-serve.sh` passes
+`SITE_URL=http://127.0.0.1:8765` for local OAuth. **Owner step:** confirm Supabase Auth
+redirect allow list includes `org.purplelife.app://auth-callback` and
+`http://127.0.0.1:8765/` (Google/Apple providers enabled). Ref: `src/lib/native/oauth.ts`.
+
 **Recent (2026-07-06 ~16:15 ET): TF23 Merged fleet integrated (Flutter + TanStack).**
 `lovable/redesign` @ **`1ed98cf`** (13 commits ahead of origin, pushing this session). Flutter:
 5-tab Merged shell (Today · Data · FAB · Plan · Ask Maya), `/data` `/plan` `/ask-maya` routes,

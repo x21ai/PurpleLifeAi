@@ -5,6 +5,13 @@ void main() {
   group('AuthRepository.isAuthCallbackUri', () {
     test('detects PKCE code query param', () {
       final uri = Uri.parse(
+        'org.purplelife.app://auth-callback?code=abc123',
+      );
+      expect(AuthRepository.isAuthCallbackUri(uri), isTrue);
+    });
+
+    test('detects PKCE code on reset-password host', () {
+      final uri = Uri.parse(
         'org.purplelife.app://reset-password?code=abc123',
       );
       expect(AuthRepository.isAuthCallbackUri(uri), isTrue);

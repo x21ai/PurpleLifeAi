@@ -9,6 +9,19 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TF23 Merged shell shipped + uploaded (Flutter).**
+Commit **`b4a9dc1`** wires 5-tab nav (Today · Data · FAB · Plan · Ask Maya), routes
+`/data` `/plan` `/ask-maya`, merged Today + Data/Plan/Ask Maya screens, `pubspec` **1.0.0+23**.
+Branch `lovable/redesign` @ **`d1f5675`** (pushed). Gates: analyze clean, **135/135** tests.
+TestFlight upload **EXPORT SUCCEEDED** ~16:19 ET; ASC processing (not VALID yet).
+`asc-add-build-to-group.mjs 23` pending. `:8765` web rebuild verified HTTP 200.
+
+**2026-07-06 Flutter OAuth P0 fix (committed, not pushed).**
+Capacitor-parity Google/Apple OAuth: native `org.purplelife.app://auth-callback`, web origin
+`/`, deep link → `/today`, Android intent filter, `SITE_URL` on `:8765` web serve. Verified:
+`flutter analyze lib/core/auth/` clean, auth tests 25/25. Owner: Supabase redirect allow list
++ provider enable. No shell/Today Merged changes.
+
 **2026-07-06 Merged styling pass (events, onboarding, shared — committed, not pushed).**
 `events_style.dart`, `onboarding_style.dart`, timeline header + offline snackbar comma fix,
 welcome onboarding token typography, shared skeleton/hero/narrative via `merged_style.dart`.
