@@ -9,6 +9,14 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TF25/26 Merged Today preview parity (committed, not pushed).**
+`flutter/lib/features/today/`: removed dual-score hero for Merged preview layout; horizontal
+metric strip always shows Sleep · HRV · Efficiency · Rest HR (em dash empty states) for
+sleep-heart conditions; `sleepEfficiencyPct` from `sleep_efficiency_pct`; RECOMMENDED inline
+card taps `/plan?segment=recommended` (informational, no lab-order deep links). Meds section,
+quick actions, Maya card, protocol teaser, Ask Maya chips unchanged. Verified:
+`flutter test test/today*.dart` **6/6**.
+
 **2026-07-06 TF25 audit docs (`7c5f22d8`, not pushed).**
 Audit `a198e779`: logged `flutter-today-doses-regression` (partial fix `adf42d6c`) and
 `flutter-today-more-for-today-removed` in `docs/OPEN-ISSUES.md`; Today row in

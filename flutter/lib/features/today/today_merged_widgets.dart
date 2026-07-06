@@ -411,7 +411,7 @@ class TodayRecommendedInline extends StatelessWidget {
           color: purple.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
-            onTap: () => context.go(item.route),
+            onTap: () => context.go('${AppRoutes.plan}?segment=recommended'),
             borderRadius: BorderRadius.circular(16),
             child: Container(
               width: double.infinity,
@@ -442,7 +442,7 @@ class TodayRecommendedInline extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    item.cta,
+                    'See on Plan',
                     style: PurpleType.sansStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -459,7 +459,7 @@ class TodayRecommendedInline extends StatelessWidget {
   }
 }
 
-/// Horizontal metric strip for merged Today (sleep/HRV focus when relevant).
+/// Horizontal metric strip for merged Today (sleep/HRV/efficiency/rest HR focus).
 class TodayMetricStrip extends StatelessWidget {
   const TodayMetricStrip({
     super.key,
@@ -474,58 +474,94 @@ class TodayMetricStrip extends StatelessWidget {
 
   bool get _sleepHeartFocus => sleepHeartFocusForConditions(conditions);
 
+  static const _emptyValue = '—';
+
+  String _formatSleep() {
+    final score = scores.sleepScore;
+    if (score == null) return _emptyValue;
+    return score.round().toString();
+  }
+
+  String _formatHrv() {
+    final hrv = scores.hrvMs;
+    if (hrv == null) return _emptyValue;
+    return '${hrv.round()} ms';
+  }
+
+  String _formatEfficiency() {
+    final pct = scores.sleepEfficiencyPct;
+    if (pct == null) return _emptyValue;
+    return '${pct.round()}%';
+  }
+
+  String _formatRestHr() {
+    final hr = scores.restingHr;
+    if (hr == null) return _emptyValue;
+    return hr.round().toString();
+  }
+
+  String _formatReadiness() {
+    final ready = scores.readiness;
+    if (ready == null) return _emptyValue;
+    return ready.round().toString();
+  }
+
+  String _formatActivity() {
+    final activity = scores.activity;
+    if (activity == null) return _emptyValue;
+    return activity.round().toString();
+  }
+
   List<_StripChip> _chips() {
     if (_sleepHeartFocus) {
       return [
-        if (scores.sleepScore != null)
-          _StripChip(
-            label: 'Sleep',
-            value: scores.sleepScore!.round().toString(),
-            focused: true,
-            metricKey: 'sleep_score',
-          ),
-        if (scores.hrvMs != null)
-          _StripChip(
-            label: 'HRV',
-            value: '${scores.hrvMs!.round()} ms',
-            focused: true,
-            metricKey: 'hrv',
-          ),
-        if (scores.restingHr != null)
-          _StripChip(
-            label: 'Rest HR',
-            value: scores.restingHr!.round().toString(),
-            metricKey: 'resting_hr',
-          ),
-        if (scores.readiness != null)
-          _StripChip(
-            label: 'Ready',
-            value: scores.readiness!.round().toString(),
-            metricKey: 'readiness',
-          ),
+        _StripChip(
+          label: 'Sleep',
+          value: _formatSleep(),
+          focused: scores.sleepScore != null,
+          metricKey: scores.sleepScore != null ? 'sleep_score' : null,
+        ),
+        _StripChip(
+          label: 'HRV',
+          value: _formatHrv(),
+          focused: scores.hrvMs != null,
+          metricKey: scores.hrvMs != null ? 'hrv' : null,
+        ),
+        _StripChip(
+          label: 'Efficiency',
+          value: _formatEfficiency(),
+          focused: scores.sleepEfficiencyPct != null,
+          metricKey:
+              scores.sleepEfficiencyPct != null ? 'sleep_efficiency' : null,
+        ),
+        _StripChip(
+          label: 'Rest HR',
+          value: _formatRestHr(),
+          focused: scores.restingHr != null,
+          metricKey: scores.restingHr != null ? 'resting_hr' : null,
+        ),
       ];
     }
 
     return [
-      if (scores.readiness != null)
-        _StripChip(
-          label: 'Ready',
-          value: scores.readiness!.round().toString(),
-          focused: true,
-          metricKey: 'readiness',
-        ),
-      if (scores.sleepScore != null)
-        _StripChip(
-          label: 'Sleep',
-          value: scores.sleepScore!.round().toString(),
-          metricKey: 'sleep_score',
-        ),
-      if (scores.activity != null)
-        _StripChip(
-          label: 'Activity',
-          value: scores.activity!.round().toString(),
-          metricKey: 'activity_score',
-        ),
+      _StripChip(
+        label: 'Ready',
+        value: _formatReadiness(),
+        focused: scores.readiness != null,
+        metricKey: scores.readiness != null ? 'readiness' : null,
+      ),
+      _StripChip(
+        label: 'Sleep',
+        value: _formatSleep(),
+        focused: false,
+        metricKey: scores.sleepScore != null ? 'sleep_score' : null,
+      ),
+      _StripChip(
+        label: 'Activity',
+        value: _formatActivity(),
+        focused: false,
+        metricKey: scores.activity != null ? 'activity_score' : null,
+      ),
     ];
   }
 
@@ -536,6 +572,7 @@ class TodayMetricStrip extends StatelessWidget {
 
     final colors = PurpleTokens.loaded.colorsFor('dark');
     final purple = parseTokenColor(colors.purplePrimary);
+    final muted = Colors.white.withValues(alpha: 0.45);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -582,7 +619,9 @@ class TodayMetricStrip extends StatelessWidget {
                         style: PurpleType.displayStyle(
                           fontSize: 18,
                           height: 1.1,
-                          color: Colors.white.withValues(alpha: 0.95),
+                          color: chip.value == _emptyValue
+                              ? muted
+                              : Colors.white.withValues(alpha: 0.95),
                         ),
                       ),
                     ],

@@ -23,6 +23,7 @@ void main() {
     WidgetTester tester, {
     required TodayData data,
     MedsData? medsData,
+    ReportsHubData? reportsHub,
   }) async {
     tester.view.physicalSize = const Size(390, 2400);
     tester.view.devicePixelRatio = 1.0;
@@ -49,7 +50,7 @@ void main() {
         overrides: [
           todayDataProvider.overrideWith((ref) => Future.value(data)),
           reportsHubProvider.overrideWith(
-            (ref) => Future.value(ReportsHubData.empty),
+            (ref) => Future.value(reportsHub ?? ReportsHubData.empty),
           ),
           medsForDayProvider(todayYmd).overrideWith(
             (ref) => Future.value(resolvedMeds),
@@ -61,12 +62,13 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('renders merged Today with dual hero, date strip, and narrative',
+  testWidgets('renders merged Today with metric strip, Maya, and meds',
       (tester) async {
     const data = TodayData(
       scores: ScoreSnapshot(
         readiness: 82,
         sleepScore: 76,
+        sleepEfficiencyPct: 74,
         activity: 64,
         hrvMs: 52,
         restingHr: 58,
@@ -85,6 +87,18 @@ void main() {
     await pumpToday(
       tester,
       data: data,
+      reportsHub: const ReportsHubData(
+        documents: [
+          ReportDocumentRow(
+            id: 'r1',
+            title: 'CBC',
+            fileMime: 'application/pdf',
+            status: 'ready',
+            createdAt: '2026-07-01T00:00:00Z',
+          ),
+        ],
+        medicalReports: [],
+      ),
       medsData: MedsData(
         medications: const [
           Medication(
@@ -123,26 +137,31 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.textContaining(', Alex.'), findsOneWidget);
-    // Date strip header + today tile eyebrow.
     expect(
       find.text(DateFormat('MMM d').format(DateTime.now())),
       findsOneWidget,
     );
     expect(find.text('TODAY'), findsOneWidget);
-    // Dual score hero.
-    expect(find.text('READINESS'), findsOneWidget);
-    expect(find.text('SLEEP'), findsWidgets);
-    expect(find.text('82'), findsWidgets);
-    expect(find.text('76'), findsWidgets);
-    // Metric strip still present.
+    expect(
+      find.textContaining('Onboarding complete · 3/3'),
+      findsOneWidget,
+    );
+    expect(find.text('SLEEP'), findsOneWidget);
     expect(find.text('HRV'), findsOneWidget);
-    // Single Maya narrative surface.
+    expect(find.text('EFFICIENCY'), findsOneWidget);
+    expect(find.text('REST HR'), findsOneWidget);
+    expect(find.text('74%'), findsOneWidget);
+    expect(find.text('52 ms'), findsOneWidget);
     expect(find.text('MAYA · daily insight'), findsOneWidget);
     expect(
       find.text('Your signals look steady compared with yesterday.'),
       findsOneWidget,
     );
+    expect(find.text('Protect sleep window'), findsOneWidget);
     expect(find.text('See full plan'), findsOneWidget);
+    expect(find.text('ASK MAYA'), findsOneWidget);
+    expect(find.text('RECOMMENDED'), findsOneWidget);
+    expect(find.text('See on Plan'), findsOneWidget);
     expect(find.text('Journal'), findsOneWidget);
     expect(find.text('Meds'), findsOneWidget);
     expect(find.text('Today'), findsWidgets);
@@ -159,6 +178,23 @@ void main() {
     expect(find.text('Start where you are.'), findsOneWidget);
     expect(find.text('Daily check-in'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('metric strip shows empty states when scores missing',
+      (tester) async {
+    const data = TodayData(
+      scores: ScoreSnapshot(hasData: false),
+      conditions: const ['epilepsy'],
+      journalEntryCount: 1,
+    );
+
+    await pumpToday(tester, data: data);
+
+    expect(find.text('SLEEP'), findsOneWidget);
+    expect(find.text('HRV'), findsOneWidget);
+    expect(find.text('EFFICIENCY'), findsOneWidget);
+    expect(find.text('REST HR'), findsOneWidget);
+    expect(find.text('—'), findsNWidgets(4));
   });
 
   testWidgets('shows error banner with merged empty state on load failure',

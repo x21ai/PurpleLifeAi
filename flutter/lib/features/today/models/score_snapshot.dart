@@ -4,6 +4,7 @@ class ScoreSnapshot {
   const ScoreSnapshot({
     this.readiness,
     this.sleepScore,
+    this.sleepEfficiencyPct,
     this.activity,
     this.stress,
     this.hrvMs,
@@ -22,6 +23,9 @@ class ScoreSnapshot {
 
   final double? readiness;
   final double? sleepScore;
+
+  /// Sleep efficiency percentage from `sleep_efficiency_pct` (Oura/Whoop).
+  final double? sleepEfficiencyPct;
   final double? activity;
   final double? stress;
   final double? hrvMs;
@@ -46,6 +50,7 @@ class ScoreSnapshot {
   ScoreSnapshot copyWith({
     double? readiness,
     double? sleepScore,
+    double? sleepEfficiencyPct,
     double? activity,
     double? stress,
     double? hrvMs,
@@ -64,6 +69,7 @@ class ScoreSnapshot {
     return ScoreSnapshot(
       readiness: readiness ?? this.readiness,
       sleepScore: sleepScore ?? this.sleepScore,
+      sleepEfficiencyPct: sleepEfficiencyPct ?? this.sleepEfficiencyPct,
       activity: activity ?? this.activity,
       stress: stress ?? this.stress,
       hrvMs: hrvMs ?? this.hrvMs,
