@@ -27,7 +27,11 @@ class TermsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return CanvasBackground(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.only(top: 16, bottom: 120),
+        // Bottom padding is a small buffer only: NativeAppShell already
+        // reserves shellTabBarInset() worth of space for the floating nav
+        // bar, so stacking another ~120px here doubled up as excess
+        // whitespace (tf-bottom-whitespace).
+        padding: const EdgeInsets.only(top: 16, bottom: 32),
         child: ContentColumn(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

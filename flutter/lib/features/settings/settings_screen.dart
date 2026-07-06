@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../design/glass_surface.dart';
 import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
-import '../shared/glass_helpers.dart';
+import '../shared/glass_helpers.dart' hide GlassSurface;
 import 'settings_hub.dart';
 import 'platform_flags.dart';
 import 'settings_sections.dart' show
@@ -36,7 +37,11 @@ class SettingsScreen extends ConsumerWidget {
       child: SingleChildScrollView(
         primary: true,
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        padding: const EdgeInsets.only(top: 24, bottom: 120),
+        // Bottom padding is a small buffer only: NativeAppShell already
+        // reserves shellTabBarInset() worth of space for the floating nav
+        // bar, so stacking another ~120px here doubled up as excess
+        // whitespace (tf-bottom-whitespace).
+        padding: const EdgeInsets.only(top: 24, bottom: 32),
         child: ContentColumn(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,9 +56,14 @@ class SettingsScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               Text(
                 'All in your\ncontrol.',
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                // headlineMedium (28px), not the 44px marketing-hero scale
+                // used by feature screens (Vitals, My Health): Settings is a
+                // hub landing screen like Tools, so it takes the app's
+                // compact section-heading token instead. Fixes
+                // tf-heading-typography (tester: heading too large vs web).
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontFamily: PurpleType.serif,
-                      height: 1.02,
+                      height: 1.08,
                       color: Colors.white.withValues(alpha: 0.95),
                     ),
               ),

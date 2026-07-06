@@ -1,5 +1,9 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'care_chat_repository.dart';
 
@@ -408,4 +412,200 @@ class _GroupSheetState extends ConsumerState<_GroupSheet> {
       ),
     );
   }
+}
+
+/// A file picked for a pending care-chat attachment, already read into
+/// memory (small enough under the 15 MB cap to hold as bytes).
+class PickedChatFile {
+  const PickedChatFile({
+    required this.name,
+    required this.bytes,
+    required this.mimeType,
+  });
+
+  final String name;
+  final Uint8List bytes;
+  final String mimeType;
+}
+
+const _maxAttachmentBytes = 15 * 1024 * 1024;
+const _maxPendingFiles = 10;
+const _documentExtensions = [
+  'pdf',
+  'doc',
+  'docx',
+  'txt',
+  'csv',
+  'xlsx',
+  'pages',
+  'numbers',
+  'jpg',
+  'jpeg',
+  'png',
+  'heic',
+  'webp',
+];
+
+enum _AttachChoice { photoLibrary, camera, file }
+
+/// Attach-menu sheet offering native entry points equivalent to web's single
+/// hidden `<input accept="image/*,application/pdf,...">` (`chat-care.tsx`
+/// `ATTACHMENT_ACCEPT` / `addPending`). Returns picked files read into
+/// memory, already capped at 15 MB / 10 files to match web's `handleSend`.
+Future<List<PickedChatFile>> showAttachPicker(BuildContext context) async {
+  final choice = await _showCareSheet<_AttachChoice>(
+    context,
+    (ctx) => const _AttachChoiceSheet(),
+  );
+  if (choice == null) return const [];
+
+  try {
+    switch (choice) {
+      case _AttachChoice.photoLibrary:
+        return await _pickImages();
+      case _AttachChoice.camera:
+        return await _pickCameraPhoto();
+      case _AttachChoice.file:
+        return await _pickDocuments();
+    }
+  } catch (_) {
+    return const [];
+  }
+}
+
+class _AttachChoiceSheet extends StatelessWidget {
+  const _AttachChoiceSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _sheetTitle(context, 'Add attachment'),
+        _AttachOptionTile(
+          icon: Icons.photo_library_outlined,
+          label: 'Photo library',
+          onTap: () => Navigator.of(context).pop(_AttachChoice.photoLibrary),
+        ),
+        _AttachOptionTile(
+          icon: Icons.photo_camera_outlined,
+          label: 'Take photo',
+          onTap: () => Navigator.of(context).pop(_AttachChoice.camera),
+        ),
+        _AttachOptionTile(
+          icon: Icons.description_outlined,
+          label: 'Choose file',
+          onTap: () => Navigator.of(context).pop(_AttachChoice.file),
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+class _AttachOptionTile extends StatelessWidget {
+  const _AttachOptionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white.withValues(alpha: 0.85)),
+      title: Text(label, style: const TextStyle(color: Colors.white)),
+      onTap: onTap,
+    );
+  }
+}
+
+Future<List<PickedChatFile>> _pickImages() async {
+  final files = await ImagePicker().pickMultiImage(limit: _maxPendingFiles);
+  final out = <PickedChatFile>[];
+  for (final f in files) {
+    final bytes = await f.readAsBytes();
+    if (bytes.length > _maxAttachmentBytes) continue;
+    out.add(
+      PickedChatFile(
+        name: f.name,
+        bytes: bytes,
+        mimeType: f.mimeType ?? _guessImageMime(f.name),
+      ),
+    );
+  }
+  return out;
+}
+
+Future<List<PickedChatFile>> _pickCameraPhoto() async {
+  final f = await ImagePicker().pickImage(source: ImageSource.camera);
+  if (f == null) return const [];
+  final bytes = await f.readAsBytes();
+  if (bytes.length > _maxAttachmentBytes) return const [];
+  return [
+    PickedChatFile(
+      name: f.name,
+      bytes: bytes,
+      mimeType: f.mimeType ?? _guessImageMime(f.name),
+    ),
+  ];
+}
+
+Future<List<PickedChatFile>> _pickDocuments() async {
+  final result = await FilePicker.pickFiles(
+    allowMultiple: true,
+    withData: true,
+    type: FileType.custom,
+    allowedExtensions: _documentExtensions,
+  );
+  if (result == null) return const [];
+
+  final out = <PickedChatFile>[];
+  for (final file in result.files) {
+    final bytes = file.bytes;
+    if (bytes == null || bytes.length > _maxAttachmentBytes) continue;
+    if (out.length >= _maxPendingFiles) break;
+    out.add(
+      PickedChatFile(
+        name: file.name,
+        bytes: bytes,
+        mimeType: _guessMimeFromName(file.name),
+      ),
+    );
+  }
+  return out;
+}
+
+String _guessImageMime(String name) {
+  final lower = name.toLowerCase();
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  if (lower.endsWith('.heic')) return 'image/heic';
+  return 'image/jpeg';
+}
+
+String _guessMimeFromName(String name) {
+  final lower = name.toLowerCase();
+  if (lower.endsWith('.pdf')) return 'application/pdf';
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  if (lower.endsWith('.heic')) return 'image/heic';
+  if (lower.endsWith('.csv')) return 'text/csv';
+  if (lower.endsWith('.txt')) return 'text/plain';
+  if (lower.endsWith('.doc')) return 'application/msword';
+  if (lower.endsWith('.docx')) {
+    return 'application/vnd.openxmlformats-officedocument'
+        '.wordprocessingml.document';
+  }
+  if (lower.endsWith('.xlsx')) {
+    return 'application/vnd.openxmlformats-officedocument'
+        '.spreadsheetml.sheet';
+  }
+  return 'application/octet-stream';
 }

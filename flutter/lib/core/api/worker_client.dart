@@ -150,6 +150,109 @@ class WorkerClient {
     return _decodeResponse(response);
   }
 
+  /// POST /api/ai/daily-insight-cards ("For you" AI cards on Insights).
+  /// Mirrors web `getDailyInsightCards`: runs automatically once per day
+  /// (server-cached), so this is safe to call on screen load without a
+  /// "Run AI" button.
+  Future<Map<String, dynamic>> postDailyInsightCards({bool force = false}) async {
+    final headers = await _authHeaders(includeJsonContentType: !kIsWeb);
+    final response = await _http.post(
+      _uri('/ai/daily-insight-cards'),
+      headers: headers,
+      body: jsonEncode({'force': force}),
+    );
+    return _decodeResponse(response);
+  }
+
+  /// POST /api/ai/metric-insight (on-demand AI trend summary for one
+  /// metric). Mirrors web `getMetricInsight`: pass `force: false` first to
+  /// read any cached result without spending AI credits, then `force: true`
+  /// from a "Run AI insights" action.
+  Future<Map<String, dynamic>> postMetricInsight({
+    required String metricKey,
+    bool force = false,
+  }) async {
+    final headers = await _authHeaders(includeJsonContentType: !kIsWeb);
+    final response = await _http.post(
+      _uri('/ai/metric-insight'),
+      headers: headers,
+      body: jsonEncode({'metricKey': metricKey, 'force': force}),
+    );
+    return _decodeResponse(response);
+  }
+
+  /// POST /api/ai/summarize-report (on-demand AI plain-English report
+  /// explanation). Mirrors web `summarizeReport`; pass `force: true` to
+  /// re-run an already-cached explanation.
+  Future<Map<String, dynamic>> postSummarizeReport({
+    required String reportId,
+    bool force = false,
+  }) async {
+    final headers = await _authHeaders(includeJsonContentType: !kIsWeb);
+    final response = await _http.post(
+      _uri('/ai/summarize-report'),
+      headers: headers,
+      body: jsonEncode({'id': reportId, 'force': force}),
+    );
+    return _decodeResponse(response);
+  }
+
+  /// POST /api/care/today (caregiver dashboard Today tab). Mirrors
+  /// `caregiverReadToday` -> `{ forecast, alerts }`.
+  Future<Map<String, dynamic>> postCareToday({required String ownerId}) {
+    return _postCare('/care/today', {'owner_id': ownerId});
+  }
+
+  /// POST /api/care/meds (caregiver dashboard Meds tab). Mirrors
+  /// `caregiverReadMeds` -> `{ meds, doses }`.
+  Future<Map<String, dynamic>> postCareMeds({required String ownerId}) {
+    return _postCare('/care/meds', {'owner_id': ownerId});
+  }
+
+  /// POST /api/care/journal (caregiver dashboard Journal tab). Mirrors
+  /// `caregiverReadJournal` -> `{ entries }`.
+  Future<Map<String, dynamic>> postCareJournal({required String ownerId}) {
+    return _postCare('/care/journal', {'owner_id': ownerId});
+  }
+
+  /// POST /api/care/seizures (caregiver dashboard Seizures tab). Mirrors
+  /// `caregiverReadSeizures` -> `{ events }`.
+  Future<Map<String, dynamic>> postCareSeizures({required String ownerId}) {
+    return _postCare('/care/seizures', {'owner_id': ownerId});
+  }
+
+  /// POST /api/care/reports (caregiver dashboard Reports tab list). Mirrors
+  /// `caregiverReadReports` -> `{ reports }`.
+  Future<Map<String, dynamic>> postCareReports({required String ownerId}) {
+    return _postCare('/care/reports', {'owner_id': ownerId});
+  }
+
+  /// POST /api/care/report (caregiver single report detail). Mirrors
+  /// `caregiverReadReport` -> `{ report, metrics }`. Server-side writes the
+  /// mandatory `phi_access_log` `caregiver_view` audit row on success.
+  Future<Map<String, dynamic>> postCareReport({
+    required String ownerId,
+    required String reportId,
+  }) {
+    return _postCare('/care/report', {
+      'owner_id': ownerId,
+      'report_id': reportId,
+    });
+  }
+
+  Future<Map<String, dynamic>> _postCare(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
+    final headers = await _authHeaders(includeJsonContentType: !kIsWeb);
+    final response = await _http.post(
+      _uri(path),
+      headers: headers,
+      body: jsonEncode(body),
+    );
+    return _decodeResponse(response);
+  }
+
   Map<String, dynamic> _decodeResponse(http.Response response) {
     final body = response.body.isEmpty ? '{}' : response.body;
     Map<String, dynamic> decoded;

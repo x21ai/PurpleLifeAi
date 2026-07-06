@@ -1,3 +1,5 @@
+import 'report_ai_summary.dart';
+
 /// Uploaded lab report or clinician document from `report_documents`.
 class ReportDocumentRow {
   const ReportDocumentRow({
@@ -25,9 +27,11 @@ class ReportDocumentRow {
   final String createdAt;
   final String? summary;
 
-  /// Cached plain-English AI explanation written by the web `summarizeReport`
-  /// server fn. Read-only on Flutter (see server-gap note in repository).
-  final String? aiSummary;
+  /// Cached plain-English AI explanation, written either by the web
+  /// `summarizeReport` server fn or the Flutter-facing
+  /// `/api/ai/summarize-report` Worker route (both share the same
+  /// implementation and jsonb shape on `report_documents.ai_summary`).
+  final ReportAiSummary? aiSummary;
 
   /// Extraction failure detail from `report_documents.error_message`.
   final String? errorMessage;
@@ -51,6 +55,38 @@ class ReportDocumentRow {
     return raw.split('T').first;
   }
 
+  ReportDocumentRow copyWith({ReportAiSummary? aiSummary}) {
+    return ReportDocumentRow(
+      id: id,
+      title: title,
+      reportType: reportType,
+      reportCategory: reportCategory,
+      reportDate: reportDate,
+      fileMime: fileMime,
+      status: status,
+      createdAt: createdAt,
+      summary: summary,
+      aiSummary: aiSummary ?? this.aiSummary,
+      errorMessage: errorMessage,
+      metricCount: metricCount,
+    );
+  }
+
+  static ReportAiSummary? _parseAiSummary(dynamic raw) {
+    if (raw is Map) {
+      return ReportAiSummary.fromMap(Map<String, dynamic>.from(raw));
+    }
+    if (raw is String && raw.trim().isNotEmpty) {
+      return ReportAiSummary(
+        headline: '',
+        explanation: raw.trim(),
+        flagged: const [],
+        questions: const [],
+      );
+    }
+    return null;
+  }
+
   factory ReportDocumentRow.fromMap(
     Map<String, dynamic> map, {
     int metricCount = 0,
@@ -65,7 +101,7 @@ class ReportDocumentRow {
       status: (map['status'] as String?) ?? 'ready',
       createdAt: (map['created_at'] as String?) ?? '',
       summary: map['summary'] as String?,
-      aiSummary: map['ai_summary'] as String?,
+      aiSummary: _parseAiSummary(map['ai_summary']),
       errorMessage: map['error_message'] as String?,
       metricCount: metricCount,
     );

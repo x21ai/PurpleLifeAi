@@ -1,29 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../design/purple_type.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
+import '../shared/loading_skeleton.dart';
+import 'care_repository.dart';
 
 /// Read-only caregiver report detail — mirror of web
 /// `care.$ownerId.reports.$reportId.tsx` (`caregiverReadReport`).
 ///
-/// HONEST GAP STATE (backend-blocked):
-/// The web route reads the report through the scope-guarded server function
-/// `caregiverReadReport` (care.functions.ts:1323). That function runs on
-/// `supabaseAdmin` behind `assertScope('reports:read')` and — critically —
-/// writes a `phi_access_log { action: 'caregiver_view' }` audit row as a side
-/// effect. Flutter has no server-fn client, and RLS blocks a caregiver from
-/// reading another user's `report_documents` / `report_metrics` directly, so
-/// there is no RLS-safe client path that also preserves the mandatory PHI
-/// audit write. We therefore render an honest "access being enabled" state
-/// rather than fabricating a report or bypassing RLS.
-///
-/// Server route needed to make this real:
-///   `caregiverReadReport { owner_id, report_id }` exposed as a Worker route
-///   (e.g. POST /api/care/report), preserving `assertScope('reports:read')`
-///   and the `phi_access_log action:caregiver_view` write.
-class CareReportScreen extends StatelessWidget {
+/// Calls `POST /api/care/report` (fronts `caregiverReadReport` via
+/// `caregiverReadReportForUser` in `src/lib/care.server.ts`), which is
+/// scope-checked server-side (`assertScope('reports:read')`) and writes the
+/// mandatory `phi_access_log { action: 'caregiver_view' }` audit row on
+/// success -- preserved by the Worker route, not just the web server fn.
+class CareReportScreen extends ConsumerWidget {
   const CareReportScreen({
     super.key,
     required this.ownerId,
@@ -34,7 +27,11 @@ class CareReportScreen extends StatelessWidget {
   final String reportId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(
+      careReportDetailProvider(CareReportKey(ownerId, reportId)),
+    );
+
     return CanvasBackground(
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -67,7 +64,13 @@ class CareReportScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Report',
+                async.maybeWhen(
+                  data: (detail) =>
+                      (detail.report['title'] as String?) ??
+                      (detail.report['report_type'] as String?) ??
+                      'Report',
+                  orElse: () => 'Report',
+                ),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontFamily: PurpleType.serif,
                       height: 1.04,
@@ -75,20 +78,141 @@ class CareReportScreen extends StatelessWidget {
                     ),
               ),
               const SizedBox(height: 24),
-              const EmptyState(
-                eyebrow: 'Read-only',
-                title: 'Caregiver report view is being enabled',
-                body:
-                    'Viewing a shared lab report here needs scope-checked access '
-                    'that also records the required privacy audit. That secure '
-                    'access is being turned on. For now, open this report on the '
-                    'Purple web app, where read-only caregiver viewing is '
-                    'available.',
+              async.when(
+                loading: () => const LoadingSkeleton(
+                  sectionTitle: 'Report',
+                  tileCount: 3,
+                ),
+                error: (error, _) => EmptyState(
+                  eyebrow: 'Read-only',
+                  title: "Couldn't load this report",
+                  body: error is CareAccessException
+                      ? error.message
+                      : 'Pull to refresh and try again in a moment.',
+                ),
+                data: (detail) => _ReportDetailBody(detail: detail),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+class _ReportDetailBody extends StatelessWidget {
+  const _ReportDetailBody({required this.detail});
+
+  final CareReportDetail detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final report = detail.report;
+    final summary = (report['ai_summary'] as String?)?.trim().isNotEmpty == true
+        ? (report['ai_summary'] as String).trim()
+        : (report['summary'] as String?)?.trim();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'DETAILS',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      letterSpacing: 1.1,
+                      color: Colors.white.withValues(alpha: 0.45),
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                (report['report_date'] as String?) ??
+                    ((report['created_at'] as String?) ?? '').split('T').first,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+              ),
+              if ((report['status'] as String?)?.trim().isNotEmpty == true) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Status: ${report['status']}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.55),
+                      ),
+                ),
+              ],
+              if (summary != null && summary.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  summary,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.85),
+                      ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'METRICS',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                letterSpacing: 1.1,
+                color: Colors.white.withValues(alpha: 0.45),
+              ),
+        ),
+        const SizedBox(height: 8),
+        if (detail.metrics.isEmpty)
+          Text(
+            'No structured metrics were extracted from this report.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
+          )
+        else
+          ...detail.metrics.map(
+            (metric) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: GlassCard(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        (metric['display_name'] as String?) ??
+                            (metric['metric_key'] as String? ?? 'Metric'),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.85),
+                            ),
+                      ),
+                    ),
+                    Text(
+                      _formatMetricValue(metric),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: metric['flag'] != null &&
+                                    (metric['flag'] as String).isNotEmpty
+                                ? const Color(0xFFE8A6C4)
+                                : Colors.white.withValues(alpha: 0.9),
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _formatMetricValue(Map<String, dynamic> metric) {
+    final text = metric['value_text'] as String?;
+    if (text != null && text.trim().isNotEmpty) return text.trim();
+    final value = metric['value'];
+    final unit = metric['unit'] as String?;
+    if (value == null) return '–';
+    return unit != null && unit.trim().isNotEmpty ? '$value $unit' : '$value';
   }
 }

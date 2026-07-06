@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:purple_app/features/reports/models/report_ai_summary.dart';
 import 'package:purple_app/features/reports/models/report_row.dart';
 
 void main() {
@@ -76,11 +77,29 @@ void main() {
         'file_mime': 'application/pdf',
         'status': 'failed',
         'created_at': '2026-01-01',
-        'ai_summary': 'Looks stable overall.',
+        'ai_summary': {
+          'headline': 'Stable',
+          'explanation': 'Looks stable overall.',
+          'flagged': [],
+          'questions': [],
+        },
         'error_message': 'unreadable scan',
       });
-      expect(row.aiSummary, 'Looks stable overall.');
+      expect(row.aiSummary, isA<ReportAiSummary>());
+      expect(row.aiSummary!.explanation, 'Looks stable overall.');
       expect(row.errorMessage, 'unreadable scan');
+    });
+
+    test('tolerates legacy string ai_summary', () {
+      final row = ReportDocumentRow.fromMap({
+        'id': 'r1',
+        'title': 'CBC',
+        'file_mime': 'application/pdf',
+        'status': 'ready',
+        'created_at': '2026-01-01',
+        'ai_summary': 'Looks stable overall.',
+      });
+      expect(row.aiSummary!.displayText, 'Looks stable overall.');
     });
   });
 }

@@ -66,15 +66,13 @@ Format:
   or Admin API with Doppler `SERVICE_ROLE_KEY`. User should change password after
   first sign-in or via recovery email. _Raised 2026-07-06 by auth reset session._
 
-- [ ] **auth-reset-native-tf21** — Flutter native password recovery deep link
-  (`org.purplelife.app://reset-password`) is implemented in uncommitted WIP:
-  `auth_deep_link.dart`, `auth_redirect_uris.dart`, `reset_password_screen.dart`,
-  Android `AndroidManifest.xml` intent filter. Supabase Auth redirect allow list
-  **already includes** `org.purplelife.app://reset-password` (2026-07-06). Shipped
-  TestFlight **1.0 (20)** does **not** contain this code. **Needs TF21+** build
-  upload and device verify: trigger reset from Flutter sign-in → open email on
-  iPhone → app opens → reset screen → new password → sign-in. See
-  `mem/auth-password-reset.md`. _Raised 2026-07-06 by auth reset session._
+- [ ] **auth-reset-native-tf21** — Native password recovery deep link
+  (`org.purplelife.app://reset-password`) **shipped in TestFlight 1.0 (21)** VALID
+  2026-07-06 (`auth_deep_link.dart`, `reset_password_screen.dart`, Android intent
+  filter, Supabase allow list). **Device verify still pending:** trigger reset from
+  Flutter sign-in on iPhone → open email → app opens → reset screen → new password →
+  sign-in. `@eigital.com` corporate mail may quarantine recovery emails. See
+  `mem/auth-password-reset.md`. _Raised 2026-07-06; code shipped TF21, E2E pending._
 
 ## Flutter / TestFlight
 
@@ -117,18 +115,12 @@ Format:
   _Raised 2026-07-06 by Cursor (auth routing audit); resolved 2026-07-06 by Cursor (TestFlight
   distribution fix)._
 
-- [ ] **flutter-auth-screen-parity** — When tester is on **Flutter TF19** (not Capacitor web),
-  sign-in still fails UX: `sign_in_screen.dart` shows raw `e.toString()` Supabase exceptions
-  ("Error is wrong" ASC 2026-07-06), no forgot-password flow, plain Material layout vs web
-  liquid-glass two-panel design (`sign-in.tsx` + `friendlyAuthError`). Port friendly error
-  mapping, forgot-password, and `GlassCard`/token styling. See also `tf-login-wrong-surface`
-  if "Welcome back!" appears (that is web/Capacitor, not this issue). _Raised 2026-07-06 by
-  TF19 audit._
-
-  **Update 2026-07-06 (auth reset session):** forgot-password + native reset deep link
-  landed in uncommitted WIP (`sign_in_screen.dart` `_forgotPassword`,
-  `reset_password_screen.dart`, `auth_deep_link.dart`); still needs TF21+ and does not
-  yet cover friendly error mapping or liquid-glass layout parity.
+- [ ] **flutter-auth-screen-parity** — Partially addressed in TF21: `friendlyAuthError`
+  mapping, forgot-password flow, and `?reset=expired` on sign-in are in
+  `sign_in_screen.dart` / `reset_password_screen.dart` (tests pass). **Still open:**
+  liquid-glass two-panel layout parity vs web `sign-in.tsx` (`GlassCard`/token styling).
+  If "Welcome back!" appears, that is Capacitor web (`tf-login-wrong-surface`, resolved);
+  not this issue. _Raised 2026-07-06; friendly errors shipped TF21, layout deferred._
 
 - [x] ~~**care-accept-server-route**~~ — RESOLVED (deploy) 2026-07-06: `POST
   /api/care/accept`, `POST /api/care/decline`, and `GET /api/care/incoming-invites`

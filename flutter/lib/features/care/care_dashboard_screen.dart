@@ -5,6 +5,7 @@ import '../../design/purple_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../shell/routes.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
@@ -503,35 +504,20 @@ class _TabPanel extends ConsumerWidget {
         // (direct RLS-safe read of the owner's `biometrics` rows).
         return _BiometricsTab(ownerId: ownerId);
       case CareTabKey.today:
-        return const _CaregiverAccessGate(
-          eyebrow: 'Today',
-          feature: "their risk forecast and alerts",
-        );
+        return _TodayTab(ownerId: ownerId);
       case CareTabKey.meds:
-        return const _CaregiverAccessGate(
-          eyebrow: 'Meds',
-          feature: "their medications and today's doses",
-        );
+        return _MedsTab(ownerId: ownerId);
       case CareTabKey.hydration:
         return const _CaregiverAccessGate(
           eyebrow: 'Hydration',
           feature: "their hydration timeline",
         );
       case CareTabKey.journal:
-        return const _CaregiverAccessGate(
-          eyebrow: 'Journal',
-          feature: 'their recent journal entries',
-        );
+        return _JournalTab(ownerId: ownerId);
       case CareTabKey.seizures:
-        return const _CaregiverAccessGate(
-          eyebrow: 'Seizures',
-          feature: 'their seizure log',
-        );
+        return _SeizuresTab(ownerId: ownerId);
       case CareTabKey.reports:
-        return const _CaregiverAccessGate(
-          eyebrow: 'Reports',
-          feature: 'their lab reports',
-        );
+        return _ReportsTab(ownerId: ownerId);
       case CareTabKey.chat:
         return const _CaregiverAccessGate(
           eyebrow: 'Chat',
@@ -740,13 +726,520 @@ class _BiometricMetricCard extends StatelessWidget {
   }
 }
 
-/// Honest gap state for caregiver-scoped tabs whose data is not reachable from
-/// Flutter today. The web versions read through scope-guarded server functions
-/// (`caregiverReadToday/Meds/Journal/Seizures/Reports`, hydration/aura reads,
-/// and the care-chat thread fn) that run on `supabaseAdmin` behind
-/// `assertScope`. Flutter has no server-fn client and RLS blocks a caregiver
-/// from reading another user's rows directly, so we cannot honestly populate
-/// these here without a server route. No fabricated data, no RLS bypass.
+/// Caregiver "Today" tab: risk forecast + unacknowledged alerts, via
+/// `POST /api/care/today` (`caregiverReadToday`).
+class _TodayTab extends ConsumerWidget {
+  const _TodayTab({required this.ownerId});
+
+  final String ownerId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(careTodayProvider(ownerId));
+    return async.when(
+      loading: () => const LoadingSkeleton(sectionTitle: 'Today', tileCount: 2),
+      error: (_, __) => const EmptyState(
+        eyebrow: 'Today',
+        title: "Couldn't load today",
+        body: 'Pull to refresh and try again in a moment.',
+      ),
+      data: (snapshot) {
+        if (!snapshot.scopeGranted) {
+          return const _CaregiverAccessGate(
+            eyebrow: 'Today',
+            feature: 'their risk forecast and alerts',
+            noScope: true,
+          );
+        }
+        if (snapshot.loadError != null &&
+            snapshot.forecast == null &&
+            snapshot.alerts.isEmpty) {
+          return EmptyState(
+            eyebrow: 'Today',
+            title: "Couldn't load today",
+            body: snapshot.loadError!,
+          );
+        }
+        final forecast = snapshot.forecast;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (snapshot.isFromCache) const _CachedBanner(),
+            if (forecast != null)
+              GlassCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'RISK FORECAST',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            letterSpacing: 1.1,
+                            color: Colors.white.withValues(alpha: 0.45),
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${forecast['band'] ?? 'Unknown'} risk',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontFamily: PurpleType.serif,
+                            color: Colors.white.withValues(alpha: 0.95),
+                          ),
+                    ),
+                    if (forecast['risk_score'] != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Score ${forecast['risk_score']}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.55),
+                            ),
+                      ),
+                    ],
+                    if ((forecast['ai_narrative'] as String?)
+                            ?.trim()
+                            .isNotEmpty ==
+                        true) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        (forecast['ai_narrative'] as String).trim(),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.8),
+                            ),
+                      ),
+                    ],
+                  ],
+                ),
+              )
+            else
+              const EmptyState(
+                eyebrow: 'Today',
+                title: 'No forecast yet',
+                body: "There's no risk forecast for today yet.",
+              ),
+            const SizedBox(height: 16),
+            Text(
+              'ALERTS',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    letterSpacing: 1.1,
+                    color: Colors.white.withValues(alpha: 0.45),
+                  ),
+            ),
+            const SizedBox(height: 8),
+            if (snapshot.alerts.isEmpty)
+              Text(
+                'No active alerts.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
+              )
+            else
+              ...snapshot.alerts.map(
+                (alert) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: GlassCard(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          (alert['title'] as String?) ?? (alert['kind'] as String? ?? 'Alert'),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        if ((alert['body'] as String?)?.trim().isNotEmpty ==
+                            true) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            (alert['body'] as String).trim(),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.6),
+                                ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Caregiver "Meds" tab: active medications + last 7 days of doses, via
+/// `POST /api/care/meds` (`caregiverReadMeds`).
+class _MedsTab extends ConsumerWidget {
+  const _MedsTab({required this.ownerId});
+
+  final String ownerId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(careMedsProvider(ownerId));
+    return async.when(
+      loading: () => const LoadingSkeleton(sectionTitle: 'Meds', tileCount: 3),
+      error: (_, __) => const EmptyState(
+        eyebrow: 'Meds',
+        title: "Couldn't load medications",
+        body: 'Pull to refresh and try again in a moment.',
+      ),
+      data: (snapshot) {
+        if (!snapshot.scopeGranted) {
+          return const _CaregiverAccessGate(
+            eyebrow: 'Meds',
+            feature: "their medications and today's doses",
+            noScope: true,
+          );
+        }
+        if (snapshot.meds.isEmpty) {
+          return EmptyState(
+            eyebrow: 'Meds',
+            title: 'No active medications',
+            body: snapshot.loadError ?? 'Nothing is on their active medication list yet.',
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (snapshot.isFromCache) const _CachedBanner(),
+            ...snapshot.meds.map((med) {
+              final recentDoses = snapshot.doses
+                  .where((d) => d['medication_id'] == med['id'])
+                  .take(3)
+                  .toList();
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: GlassCard(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        (med['name'] as String?) ?? 'Medication',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.92),
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                      if ((med['dosage'] as String?)?.trim().isNotEmpty == true)
+                        Text(
+                          med['dosage'] as String,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.55),
+                              ),
+                        ),
+                      if (recentDoses.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: recentDoses
+                              .map(
+                                (dose) => _OutlineBadge(
+                                  label:
+                                      '${(dose['status'] as String?) ?? 'pending'} '
+                                      '${((dose['scheduled_at'] as String?) ?? '').split('T').first}',
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Caregiver "Journal" tab: recent journal entries, via
+/// `POST /api/care/journal` (`caregiverReadJournal`).
+class _JournalTab extends ConsumerWidget {
+  const _JournalTab({required this.ownerId});
+
+  final String ownerId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(careJournalProvider(ownerId));
+    return async.when(
+      loading: () => const LoadingSkeleton(sectionTitle: 'Journal', tileCount: 3),
+      error: (_, __) => const EmptyState(
+        eyebrow: 'Journal',
+        title: "Couldn't load journal entries",
+        body: 'Pull to refresh and try again in a moment.',
+      ),
+      data: (snapshot) {
+        if (!snapshot.scopeGranted) {
+          return const _CaregiverAccessGate(
+            eyebrow: 'Journal',
+            feature: 'their recent journal entries',
+            noScope: true,
+          );
+        }
+        if (snapshot.entries.isEmpty) {
+          return EmptyState(
+            eyebrow: 'Journal',
+            title: 'No journal entries yet',
+            body: snapshot.loadError ?? 'Entries they write will appear here.',
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (snapshot.isFromCache) const _CachedBanner(),
+            ...snapshot.entries.map(
+              (entry) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: GlassCard(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        ((entry['captured_at'] as String?) ?? '').split('T').first,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.45),
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        (entry['ai_summary'] as String?)?.trim().isNotEmpty == true
+                            ? (entry['ai_summary'] as String).trim()
+                            : ((entry['text'] as String?) ?? '').trim(),
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.85),
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Caregiver "Seizures" tab: recent seizure log, via
+/// `POST /api/care/seizures` (`caregiverReadSeizures`).
+class _SeizuresTab extends ConsumerWidget {
+  const _SeizuresTab({required this.ownerId});
+
+  final String ownerId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(careSeizuresProvider(ownerId));
+    return async.when(
+      loading: () => const LoadingSkeleton(sectionTitle: 'Seizures', tileCount: 3),
+      error: (_, __) => const EmptyState(
+        eyebrow: 'Seizures',
+        title: "Couldn't load seizure events",
+        body: 'Pull to refresh and try again in a moment.',
+      ),
+      data: (snapshot) {
+        if (!snapshot.scopeGranted) {
+          return const _CaregiverAccessGate(
+            eyebrow: 'Seizures',
+            feature: 'their seizure log',
+            noScope: true,
+          );
+        }
+        if (snapshot.events.isEmpty) {
+          return EmptyState(
+            eyebrow: 'Seizures',
+            title: 'No seizure events logged',
+            body: snapshot.loadError ?? 'Logged events will appear here.',
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (snapshot.isFromCache) const _CachedBanner(),
+            ...snapshot.events.map(
+              (event) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: GlassCard(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              ((event['started_at'] as String?) ?? '')
+                                  .replaceFirst('T', ' ')
+                                  .split('.')
+                                  .first,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ),
+                          if (event['type'] != null)
+                            _OutlineBadge(label: event['type'] as String),
+                        ],
+                      ),
+                      if (event['duration_seconds'] != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Duration ${event['duration_seconds']}s',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.55),
+                              ),
+                        ),
+                      ],
+                      if ((event['notes'] as String?)?.trim().isNotEmpty == true) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          (event['notes'] as String).trim(),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.65),
+                              ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Caregiver "Reports" tab list: lab report list, via `POST /api/care/reports`
+/// (`caregiverReadReports`). Tapping a row opens `CareReportScreen`, which
+/// loads the single-report detail (`caregiverReadReport`, PHI-audited).
+class _ReportsTab extends ConsumerWidget {
+  const _ReportsTab({required this.ownerId});
+
+  final String ownerId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(careReportsProvider(ownerId));
+    return async.when(
+      loading: () => const LoadingSkeleton(sectionTitle: 'Reports', tileCount: 3),
+      error: (_, __) => const EmptyState(
+        eyebrow: 'Reports',
+        title: "Couldn't load reports",
+        body: 'Pull to refresh and try again in a moment.',
+      ),
+      data: (snapshot) {
+        if (!snapshot.scopeGranted) {
+          return const _CaregiverAccessGate(
+            eyebrow: 'Reports',
+            feature: 'their lab reports',
+            noScope: true,
+          );
+        }
+        if (snapshot.reports.isEmpty) {
+          return EmptyState(
+            eyebrow: 'Reports',
+            title: 'No reports yet',
+            body: snapshot.loadError ?? 'Reports they upload will appear here.',
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (snapshot.isFromCache) const _CachedBanner(),
+            ...snapshot.reports.map(
+              (report) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: GlassCard(
+                  padding: const EdgeInsets.all(14),
+                  onTap: () => context.go(
+                    AppRoutes.careReport(ownerId, report['id'] as String),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              (report['title'] as String?) ??
+                                  (report['report_type'] as String?) ??
+                                  'Report',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              (report['report_date'] as String?) ??
+                                  ((report['created_at'] as String?) ?? '')
+                                      .split('T')
+                                      .first,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.5),
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        color: Colors.white.withValues(alpha: 0.4),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _CachedBanner extends StatelessWidget {
+  const _CachedBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        'Showing cached data',
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Colors.white.withValues(alpha: 0.5),
+            ),
+      ),
+    );
+  }
+}
+
+/// Honest gap state for caregiver-scoped tabs whose data is still not
+/// reachable from Flutter. Today/Meds/Journal/Seizures/Reports now call the
+/// Worker routes (`/api/care/{today,meds,journal,seizures,reports}`) that
+/// front the scope-guarded server functions in `care.server.ts`. Hydration
+/// and Chat still have no such route (`listHydrationForDay`,
+/// `getOrCreateDirectThread`), so RLS blocks a caregiver from reading those
+/// owner rows directly and we render this honest state instead of fabricating
+/// data or bypassing RLS.
 class _CaregiverAccessGate extends StatelessWidget {
   const _CaregiverAccessGate({
     required this.eyebrow,

@@ -1,7 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../core/providers/core_providers.dart';
+
+const _maxAttachmentBytes = 15 * 1024 * 1024;
 
 class CareChatException implements Exception {
   CareChatException(this.message);
@@ -400,6 +405,46 @@ class CareChatRepository {
         .eq('user_id', userId);
 
     return CareMessage.fromMap(inserted);
+  }
+
+  /// Upload a single pending attachment to storage ahead of [sendMessage].
+  /// Mirrors web's per-file upload loop before `sendCareMessage`
+  /// (`chat-care.tsx` `handleSend`): same bucket, path shape
+  /// (threadId/ms-uuid.ext), 15 MB cap, and image/file `kind` split on mime.
+  Future<CareAttachment> uploadAttachment({
+    required String threadId,
+    required String filename,
+    required List<int> bytes,
+    required String mimeType,
+  }) async {
+    final userId = _userId;
+    if (userId == null) {
+      throw CareChatException('Sign in to send attachments.');
+    }
+    if (bytes.length > _maxAttachmentBytes) {
+      throw CareChatException('File is over 15 MB.');
+    }
+
+    final ext = filename.contains('.')
+        ? filename.split('.').last.toLowerCase()
+        : 'bin';
+    final path =
+        '$threadId/${DateTime.now().millisecondsSinceEpoch}-${const Uuid().v4()}.$ext';
+    final mime = mimeType.isNotEmpty ? mimeType : 'application/octet-stream';
+
+    await _supabase.storage.from('care-chat-attachments').uploadBinary(
+          path,
+          Uint8List.fromList(bytes),
+          fileOptions: FileOptions(contentType: mime, upsert: false),
+        );
+
+    return CareAttachment(
+      path: path,
+      name: filename,
+      mime: mime,
+      size: bytes.length,
+      kind: mime.startsWith('image/') ? 'image' : 'file',
+    );
   }
 
   /// Signed URL for an attachment (300s TTL). Mirrors `getCareAttachmentUrl`.

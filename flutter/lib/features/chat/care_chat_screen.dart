@@ -480,6 +480,7 @@ class _ConversationPanel extends ConsumerStatefulWidget {
 class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
   final _scrollController = ScrollController();
   final _inputController = TextEditingController();
+  final _pendingAttachments = <PickedChatFile>[];
   var _sending = false;
   var _muteBusy = false;
 
@@ -557,9 +558,29 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
     });
   }
 
+  Future<void> _pickAttachments() async {
+    final online = ref.read(isOnlineProvider).valueOrNull ?? true;
+    if (!online) {
+      _showSnack(ChatCopy.careOffline);
+      return;
+    }
+    final picked = await showAttachPicker(context);
+    if (!mounted || picked.isEmpty) return;
+    setState(() {
+      _pendingAttachments.addAll(picked);
+      if (_pendingAttachments.length > 10) {
+        _pendingAttachments.removeRange(10, _pendingAttachments.length);
+      }
+    });
+  }
+
+  void _removePendingAttachment(int index) {
+    setState(() => _pendingAttachments.removeAt(index));
+  }
+
   Future<void> _send() async {
     final text = _inputController.text.trim();
-    if (text.isEmpty || _sending) return;
+    if ((text.isEmpty && _pendingAttachments.isEmpty) || _sending) return;
 
     final online = ref.read(isOnlineProvider).valueOrNull ?? true;
     if (!online) {
@@ -567,14 +588,32 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
       return;
     }
 
-    setState(() => _sending = true);
+    final filesToSend = List<PickedChatFile>.from(_pendingAttachments);
+    setState(() {
+      _sending = true;
+      _pendingAttachments.clear();
+    });
     _inputController.clear();
 
     try {
-      final sent = await ref.read(careChatRepositoryProvider).sendMessage(
+      final repo = ref.read(careChatRepositoryProvider);
+      final uploaded = <CareAttachment>[];
+      for (final file in filesToSend) {
+        uploaded.add(
+          await repo.uploadAttachment(
             threadId: widget.thread.id,
-            body: text,
-          );
+            filename: file.name,
+            bytes: file.bytes,
+            mimeType: file.mimeType,
+          ),
+        );
+      }
+
+      final sent = await repo.sendMessage(
+        threadId: widget.thread.id,
+        body: text,
+        attachments: uploaded,
+      );
       // Merge our own message locally so it appears without a refetch race
       // (realtime may not echo the sender's own insert in time).
       _liveById[sent.id] = sent;
@@ -584,12 +623,18 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
       _scrollToBottom();
     } on CareChatException catch (e) {
       if (!mounted) return;
-      setState(() => _sending = false);
+      setState(() {
+        _sending = false;
+        _pendingAttachments.addAll(filesToSend);
+      });
       _inputController.text = text;
       _showSnack(e.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _sending = false);
+      setState(() {
+        _sending = false;
+        _pendingAttachments.addAll(filesToSend);
+      });
       _inputController.text = text;
       _showSnack(ChatCopy.careSendError);
     }
@@ -979,14 +1024,48 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
           ),
         ),
         Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+        if (_pendingAttachments.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+            child: SizedBox(
+              height: 32,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _pendingAttachments.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final file = _pendingAttachments[index];
+                  return Chip(
+                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                    label: Text(
+                      file.name,
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    deleteIcon: Icon(
+                      Icons.close,
+                      size: 16,
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                    onDeleted: () => _removePendingAttachment(index),
+                  );
+                },
+              ),
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              // TODO(wave3): attachments — needs a native file/image picker.
-              // Web has an attach button + pending-file chips here
-              // (chat-care.tsx:937-1021). Rendering of received attachments is
-              // handled by CareAttachmentView; sending is deferred to Wave 3.
+              IconButton(
+                onPressed: _sending ? null : _pickAttachments,
+                tooltip: 'Attach',
+                icon: Icon(
+                  Icons.attach_file,
+                  color: Colors.white.withValues(alpha: 0.7),
+                ),
+              ),
               Expanded(
                 child: TextField(
                   controller: _inputController,

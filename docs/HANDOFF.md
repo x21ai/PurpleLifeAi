@@ -9,6 +9,21 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TestFlight 1.0 (21) shipped with native reset deep link + Flutter WIP.**
+Bumped `flutter/pubspec.yaml` to `1.0.0+21`. Gates: `flutter analyze lib/` clean,
+`flutter test` **135/135** (fixed `ReportAiSummary` model + reports detail screen;
+legacy string `ai_summary` tolerated). Migrated TOP 5 screens from legacy
+`glass_helpers.GlassSurface` to `design/glass_surface.dart` (today, vitals,
+settings, account, meds). Deleted 7 junk `" 2"` duplicate artifacts. Upload:
+`doppler run --project purple-life --config prd -- bun run ios:testflight`
+**EXPORT SUCCEEDED** (~13:02 ET). ASC **1.0 (21) processing=VALID**,
+`internal=IN_BETA_TESTING`, `external=IN_BETA_TESTING` (Founding Team group via
+`scripts/asc-add-build-to-group.mjs 21 "Founding Team"`). TF21 includes
+`auth_deep_link.dart`, `reset_password_screen.dart`, `friendlyAuthError` on
+sign-in, `?reset=expired` handling. **Device verify pending:** native
+`org.purplelife.app://reset-password` flow on iPhone. Commit on
+`lovable/redesign` (pushed). `main` fast-forward pending operator policy check.
+
 **2026-07-06 Care + AI Worker API routes deployed to prod.** Worker Version ID
 **`8d527d7f-1fe7-4903-8518-7a71f52be25b`** (`CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0`). New routes:
 `/api/care/today`, `/api/care/journal`, `/api/care/meds`, `/api/care/reports`, `/api/care/report`,
@@ -218,6 +233,29 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06 — TestFlight 1.0 (21) Flutter ship + gates
+
+- **Requested** — Complete TF21 TestFlight upload and pending Flutter/auth/design work
+  (gates, glass migration, native reset deep link, commit+push `lovable/redesign`).
+- **Done** — Fixed `ReportAiSummary` model + `reports_detail_screen.dart` compile errors;
+  `reports_detail_model_test` + `widget_test` pass. `flutter analyze lib/` clean;
+  `flutter test` **135/135**. Migrated `GlassSurface` on today/vitals/settings/account/meds
+  to `design/glass_surface.dart`. Deleted 7 `" 2"` junk artifacts. Bumped
+  `flutter/pubspec.yaml` to `1.0.0+21`. `ios:check-asc` PASS; `ios:testflight` upload
+  **EXPORT SUCCEEDED**; ASC **1.0 (21) VALID**, external Founding Team
+  `IN_BETA_TESTING` via `asc-add-build-to-group.mjs 21 "Founding Team"`. Committed all
+  `flutter/` WIP (care chat pickers, AI insights repo, reports AI summary, settings
+  polish, glass migration) + docs; pushed `lovable/redesign`.
+- **Issues** — Native `org.purplelife.app://reset-password` device E2E not run this
+  session (needs iPhone + corporate email quarantine may block recovery). Liquid-glass
+  sign-in layout parity vs web still open (`flutter-auth-screen-parity` partial). Care
+  dashboard Worker routes deployed separately (`fd1c06b`); Flutter client wired in this
+  commit but not browser-verified on `:8765`.
+- **Stand / next** — Tester on TF21: forgot-password → email → app opens reset screen →
+  new password → sign-in. Rebuild `:8765` if validating Flutter web locally.
+- **Who / where** — Cursor subagent (Flutter/TestFlight owner), `lovable/redesign`.
+- **Timestamp** — 2026-07-06T17:10:00Z
 
 ### 2026-07-06 — Deploy care + AI Worker API routes
 

@@ -83,7 +83,11 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
   Widget build(BuildContext context) {
     return CanvasBackground(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.only(top: 24, bottom: 120),
+        // Bottom padding is a small buffer only: NativeAppShell already
+        // reserves shellTabBarInset() worth of space for the floating nav
+        // bar, so stacking another ~120px here doubled up as excess
+        // whitespace (tf-bottom-whitespace).
+        padding: const EdgeInsets.only(top: 24, bottom: 32),
         child: ContentColumn(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,9 +112,15 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
               const SizedBox(height: 8),
               Text(
                 'Say hello.',
+                // 40px matches the sibling settings sub-page heading scale
+                // (Sharing, How Purple thinks); fixes tf-heading-typography
+                // (this was silently falling back to Material's 36px
+                // default since displaySmall has no size override in
+                // PurpleTheme).
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
                       fontFamily: PurpleType.serif,
-                      height: 1.02,
+                      fontSize: 40,
+                      height: 1.05,
                       color: Colors.white.withValues(alpha: 0.95),
                     ),
               ),

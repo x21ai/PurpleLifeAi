@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/api/worker_client.dart';
 import '../../core/config/app_config.dart';
 import '../../core/network/connectivity_service.dart';
 import '../../core/offline/supabase_row_parse.dart';
@@ -86,24 +87,120 @@ class CareBiometricsSnapshot {
   final String? loadError;
 }
 
+/// Caregiver "Today" tab: mirrors `caregiverReadToday` -> `{ forecast, alerts }`.
+class CareTodaySnapshot {
+  const CareTodaySnapshot({
+    required this.scopeGranted,
+    this.forecast,
+    this.alerts = const [],
+    this.isFromCache = false,
+    this.loadError,
+  });
+
+  final bool scopeGranted;
+  final Map<String, dynamic>? forecast;
+  final List<Map<String, dynamic>> alerts;
+  final bool isFromCache;
+  final String? loadError;
+}
+
+/// Caregiver "Meds" tab: mirrors `caregiverReadMeds` -> `{ meds, doses }`.
+class CareMedsSnapshot {
+  const CareMedsSnapshot({
+    required this.scopeGranted,
+    this.meds = const [],
+    this.doses = const [],
+    this.isFromCache = false,
+    this.loadError,
+  });
+
+  final bool scopeGranted;
+  final List<Map<String, dynamic>> meds;
+  final List<Map<String, dynamic>> doses;
+  final bool isFromCache;
+  final String? loadError;
+}
+
+/// Caregiver "Journal" tab: mirrors `caregiverReadJournal` -> `{ entries }`.
+class CareJournalSnapshot {
+  const CareJournalSnapshot({
+    required this.scopeGranted,
+    this.entries = const [],
+    this.isFromCache = false,
+    this.loadError,
+  });
+
+  final bool scopeGranted;
+  final List<Map<String, dynamic>> entries;
+  final bool isFromCache;
+  final String? loadError;
+}
+
+/// Caregiver "Seizures" tab: mirrors `caregiverReadSeizures` -> `{ events }`.
+class CareSeizuresSnapshot {
+  const CareSeizuresSnapshot({
+    required this.scopeGranted,
+    this.events = const [],
+    this.isFromCache = false,
+    this.loadError,
+  });
+
+  final bool scopeGranted;
+  final List<Map<String, dynamic>> events;
+  final bool isFromCache;
+  final String? loadError;
+}
+
+/// Caregiver "Reports" tab list: mirrors `caregiverReadReports` -> `{ reports }`.
+class CareReportsSnapshot {
+  const CareReportsSnapshot({
+    required this.scopeGranted,
+    this.reports = const [],
+    this.isFromCache = false,
+    this.loadError,
+  });
+
+  final bool scopeGranted;
+  final List<Map<String, dynamic>> reports;
+  final bool isFromCache;
+  final String? loadError;
+}
+
+/// Caregiver single-report detail: mirrors `caregiverReadReport` ->
+/// `{ report, metrics }`.
+class CareReportDetail {
+  const CareReportDetail({required this.report, required this.metrics});
+
+  final Map<String, dynamic> report;
+  final List<Map<String, dynamic>> metrics;
+}
+
 /// Direct Supabase queries against care tables with offline overview cache.
 class CareRepository {
   CareRepository({
     required SupabaseClient supabase,
     required ConnectivityService connectivity,
     required AppConfig config,
+    required WorkerClient worker,
     http.Client? httpClient,
   })  : _supabase = supabase,
         _connectivity = connectivity,
         _config = config,
+        _worker = worker,
         _http = httpClient ?? http.Client();
 
   final SupabaseClient _supabase;
   final ConnectivityService _connectivity;
   final AppConfig _config;
+  final WorkerClient _worker;
   final http.Client _http;
   final Map<String, CareOverview> _overviewCache = {};
   final Map<String, CareBiometricsSnapshot> _biometricsCache = {};
+  final Map<String, CareTodaySnapshot> _todayCache = {};
+  final Map<String, CareMedsSnapshot> _medsCache = {};
+  final Map<String, CareJournalSnapshot> _journalCache = {};
+  final Map<String, CareSeizuresSnapshot> _seizuresCache = {};
+  final Map<String, CareReportsSnapshot> _reportsCache = {};
 
   String? get _caregiverId =>
       _supabase.auth.currentSession?.user.id ?? _supabase.auth.currentUser?.id;
@@ -262,6 +359,218 @@ class CareRepository {
         loadError: 'Could not load biometrics right now. Pull to retry.',
       );
     }
+  }
+
+  /// Caregiver "Today" tab. Calls `POST /api/care/today` (fronts
+  /// `caregiverReadToday`, scope-checked server-side by `assertScope`).
+  Future<CareTodaySnapshot> loadOwnerToday({
+    required String ownerId,
+    required CareOverview overview,
+  }) async {
+    if (!overview.hasScope(CareScopes.todayRead)) {
+      return const CareTodaySnapshot(scopeGranted: false);
+    }
+    if (!_connectivity.isOnline) {
+      final cached = _todayCache[ownerId];
+      if (cached != null) return cached.copyWith(isFromCache: true);
+      return const CareTodaySnapshot(
+        scopeGranted: true,
+        loadError: 'Offline. Reconnect to load today.',
+      );
+    }
+    try {
+      final decoded = await _worker.postCareToday(ownerId: ownerId);
+      final snapshot = CareTodaySnapshot(
+        scopeGranted: true,
+        forecast: decoded['forecast'] as Map<String, dynamic>?,
+        alerts: (decoded['alerts'] as List? ?? const [])
+            .cast<Map<String, dynamic>>(),
+      );
+      _todayCache[ownerId] = snapshot;
+      return snapshot;
+    } catch (e) {
+      return CareTodaySnapshot(
+        scopeGranted: true,
+        loadError: _friendlyWorkerError(e, "Couldn't load today."),
+      );
+    }
+  }
+
+  /// Caregiver "Meds" tab. Calls `POST /api/care/meds` (fronts
+  /// `caregiverReadMeds`).
+  Future<CareMedsSnapshot> loadOwnerMeds({
+    required String ownerId,
+    required CareOverview overview,
+  }) async {
+    if (!overview.hasScope(CareScopes.medsRead)) {
+      return const CareMedsSnapshot(scopeGranted: false);
+    }
+    if (!_connectivity.isOnline) {
+      final cached = _medsCache[ownerId];
+      if (cached != null) return cached.copyWith(isFromCache: true);
+      return const CareMedsSnapshot(
+        scopeGranted: true,
+        loadError: 'Offline. Reconnect to load medications.',
+      );
+    }
+    try {
+      final decoded = await _worker.postCareMeds(ownerId: ownerId);
+      final snapshot = CareMedsSnapshot(
+        scopeGranted: true,
+        meds: (decoded['meds'] as List? ?? const [])
+            .cast<Map<String, dynamic>>(),
+        doses: (decoded['doses'] as List? ?? const [])
+            .cast<Map<String, dynamic>>(),
+      );
+      _medsCache[ownerId] = snapshot;
+      return snapshot;
+    } catch (e) {
+      return CareMedsSnapshot(
+        scopeGranted: true,
+        loadError: _friendlyWorkerError(e, "Couldn't load medications."),
+      );
+    }
+  }
+
+  /// Caregiver "Journal" tab. Calls `POST /api/care/journal` (fronts
+  /// `caregiverReadJournal`).
+  Future<CareJournalSnapshot> loadOwnerJournal({
+    required String ownerId,
+    required CareOverview overview,
+  }) async {
+    if (!overview.hasScope(CareScopes.journalRead)) {
+      return const CareJournalSnapshot(scopeGranted: false);
+    }
+    if (!_connectivity.isOnline) {
+      final cached = _journalCache[ownerId];
+      if (cached != null) return cached.copyWith(isFromCache: true);
+      return const CareJournalSnapshot(
+        scopeGranted: true,
+        loadError: 'Offline. Reconnect to load journal entries.',
+      );
+    }
+    try {
+      final decoded = await _worker.postCareJournal(ownerId: ownerId);
+      final snapshot = CareJournalSnapshot(
+        scopeGranted: true,
+        entries: (decoded['entries'] as List? ?? const [])
+            .cast<Map<String, dynamic>>(),
+      );
+      _journalCache[ownerId] = snapshot;
+      return snapshot;
+    } catch (e) {
+      return CareJournalSnapshot(
+        scopeGranted: true,
+        loadError: _friendlyWorkerError(e, "Couldn't load journal entries."),
+      );
+    }
+  }
+
+  /// Caregiver "Seizures" tab. Calls `POST /api/care/seizures` (fronts
+  /// `caregiverReadSeizures`).
+  Future<CareSeizuresSnapshot> loadOwnerSeizures({
+    required String ownerId,
+    required CareOverview overview,
+  }) async {
+    if (!overview.hasScope(CareScopes.seizuresRead)) {
+      return const CareSeizuresSnapshot(scopeGranted: false);
+    }
+    if (!_connectivity.isOnline) {
+      final cached = _seizuresCache[ownerId];
+      if (cached != null) return cached.copyWith(isFromCache: true);
+      return const CareSeizuresSnapshot(
+        scopeGranted: true,
+        loadError: 'Offline. Reconnect to load seizure events.',
+      );
+    }
+    try {
+      final decoded = await _worker.postCareSeizures(ownerId: ownerId);
+      final snapshot = CareSeizuresSnapshot(
+        scopeGranted: true,
+        events: (decoded['events'] as List? ?? const [])
+            .cast<Map<String, dynamic>>(),
+      );
+      _seizuresCache[ownerId] = snapshot;
+      return snapshot;
+    } catch (e) {
+      return CareSeizuresSnapshot(
+        scopeGranted: true,
+        loadError: _friendlyWorkerError(e, "Couldn't load seizure events."),
+      );
+    }
+  }
+
+  /// Caregiver "Reports" tab list. Calls `POST /api/care/reports` (fronts
+  /// `caregiverReadReports`).
+  Future<CareReportsSnapshot> loadOwnerReports({
+    required String ownerId,
+    required CareOverview overview,
+  }) async {
+    if (!overview.hasScope(CareScopes.reportsRead)) {
+      return const CareReportsSnapshot(scopeGranted: false);
+    }
+    if (!_connectivity.isOnline) {
+      final cached = _reportsCache[ownerId];
+      if (cached != null) return cached.copyWith(isFromCache: true);
+      return const CareReportsSnapshot(
+        scopeGranted: true,
+        loadError: 'Offline. Reconnect to load reports.',
+      );
+    }
+    try {
+      final decoded = await _worker.postCareReports(ownerId: ownerId);
+      final snapshot = CareReportsSnapshot(
+        scopeGranted: true,
+        reports: (decoded['reports'] as List? ?? const [])
+            .cast<Map<String, dynamic>>(),
+      );
+      _reportsCache[ownerId] = snapshot;
+      return snapshot;
+    } catch (e) {
+      return CareReportsSnapshot(
+        scopeGranted: true,
+        loadError: _friendlyWorkerError(e, "Couldn't load reports."),
+      );
+    }
+  }
+
+  /// Caregiver single-report detail. Calls `POST /api/care/report` (fronts
+  /// `caregiverReadReport`, which writes the mandatory `phi_access_log`
+  /// `caregiver_view` audit row server-side on success). Not cached: this is
+  /// a PHI-audited read and should reflect a fresh access each time.
+  Future<CareReportDetail> loadOwnerReport({
+    required String ownerId,
+    required String reportId,
+  }) async {
+    if (!_connectivity.isOnline) {
+      throw CareAccessException('Offline. Reconnect to load this report.');
+    }
+    try {
+      final decoded = await _worker.postCareReport(
+        ownerId: ownerId,
+        reportId: reportId,
+      );
+      final report = decoded['report'] as Map<String, dynamic>?;
+      if (report == null) {
+        throw CareAccessException("Couldn't load this report.");
+      }
+      final metrics = (decoded['metrics'] as List? ?? const [])
+          .cast<Map<String, dynamic>>();
+      return CareReportDetail(report: report, metrics: metrics);
+    } on CareAccessException {
+      rethrow;
+    } catch (e) {
+      throw CareAccessException(
+        _friendlyWorkerError(e, "Couldn't load this report."),
+      );
+    }
+  }
+
+  String _friendlyWorkerError(Object e, String fallback) {
+    if (e is WorkerApiException && e.message.trim().isNotEmpty) {
+      return e.message;
+    }
+    return fallback;
   }
 
   Future<void> setHiddenFeatures({
@@ -902,12 +1211,60 @@ extension _CareBiometricsCopy on CareBiometricsSnapshot {
   }
 }
 
+extension _CareTodayCopy on CareTodaySnapshot {
+  CareTodaySnapshot copyWith({bool? isFromCache}) => CareTodaySnapshot(
+        scopeGranted: scopeGranted,
+        forecast: forecast,
+        alerts: alerts,
+        isFromCache: isFromCache ?? this.isFromCache,
+        loadError: loadError,
+      );
+}
+
+extension _CareMedsCopy on CareMedsSnapshot {
+  CareMedsSnapshot copyWith({bool? isFromCache}) => CareMedsSnapshot(
+        scopeGranted: scopeGranted,
+        meds: meds,
+        doses: doses,
+        isFromCache: isFromCache ?? this.isFromCache,
+        loadError: loadError,
+      );
+}
+
+extension _CareJournalCopy on CareJournalSnapshot {
+  CareJournalSnapshot copyWith({bool? isFromCache}) => CareJournalSnapshot(
+        scopeGranted: scopeGranted,
+        entries: entries,
+        isFromCache: isFromCache ?? this.isFromCache,
+        loadError: loadError,
+      );
+}
+
+extension _CareSeizuresCopy on CareSeizuresSnapshot {
+  CareSeizuresSnapshot copyWith({bool? isFromCache}) => CareSeizuresSnapshot(
+        scopeGranted: scopeGranted,
+        events: events,
+        isFromCache: isFromCache ?? this.isFromCache,
+        loadError: loadError,
+      );
+}
+
+extension _CareReportsCopy on CareReportsSnapshot {
+  CareReportsSnapshot copyWith({bool? isFromCache}) => CareReportsSnapshot(
+        scopeGranted: scopeGranted,
+        reports: reports,
+        isFromCache: isFromCache ?? this.isFromCache,
+        loadError: loadError,
+      );
+}
+
 final careRepositoryProvider = Provider<CareRepository>((ref) {
   ref.watch(authRepositoryProvider);
   final repo = CareRepository(
     supabase: ref.watch(supabaseClientProvider),
     connectivity: ref.watch(connectivityServiceProvider),
     config: ref.watch(appConfigProvider),
+    worker: ref.watch(workerClientProvider),
   );
   ref.onDispose(repo.dispose);
   return repo;
@@ -925,6 +1282,70 @@ final careBiometricsProvider = FutureProvider.autoDispose
   final repo = ref.watch(careRepositoryProvider);
   final overview = await ref.watch(careOverviewProvider(ownerId).future);
   return repo.loadOwnerBiometrics(ownerId: ownerId, overview: overview);
+});
+
+final careTodayProvider = FutureProvider.autoDispose
+    .family<CareTodaySnapshot, String>((ref, ownerId) async {
+  ref.watch(authSessionProvider);
+  final repo = ref.watch(careRepositoryProvider);
+  final overview = await ref.watch(careOverviewProvider(ownerId).future);
+  return repo.loadOwnerToday(ownerId: ownerId, overview: overview);
+});
+
+final careMedsProvider = FutureProvider.autoDispose
+    .family<CareMedsSnapshot, String>((ref, ownerId) async {
+  ref.watch(authSessionProvider);
+  final repo = ref.watch(careRepositoryProvider);
+  final overview = await ref.watch(careOverviewProvider(ownerId).future);
+  return repo.loadOwnerMeds(ownerId: ownerId, overview: overview);
+});
+
+final careJournalProvider = FutureProvider.autoDispose
+    .family<CareJournalSnapshot, String>((ref, ownerId) async {
+  ref.watch(authSessionProvider);
+  final repo = ref.watch(careRepositoryProvider);
+  final overview = await ref.watch(careOverviewProvider(ownerId).future);
+  return repo.loadOwnerJournal(ownerId: ownerId, overview: overview);
+});
+
+final careSeizuresProvider = FutureProvider.autoDispose
+    .family<CareSeizuresSnapshot, String>((ref, ownerId) async {
+  ref.watch(authSessionProvider);
+  final repo = ref.watch(careRepositoryProvider);
+  final overview = await ref.watch(careOverviewProvider(ownerId).future);
+  return repo.loadOwnerSeizures(ownerId: ownerId, overview: overview);
+});
+
+final careReportsProvider = FutureProvider.autoDispose
+    .family<CareReportsSnapshot, String>((ref, ownerId) async {
+  ref.watch(authSessionProvider);
+  final repo = ref.watch(careRepositoryProvider);
+  final overview = await ref.watch(careOverviewProvider(ownerId).future);
+  return repo.loadOwnerReports(ownerId: ownerId, overview: overview);
+});
+
+/// Composite key for the single-report detail provider.
+class CareReportKey {
+  const CareReportKey(this.ownerId, this.reportId);
+
+  final String ownerId;
+  final String reportId;
+
+  @override
+  bool operator ==(Object other) =>
+      other is CareReportKey &&
+      other.ownerId == ownerId &&
+      other.reportId == reportId;
+
+  @override
+  int get hashCode => Object.hash(ownerId, reportId);
+}
+
+final careReportDetailProvider = FutureProvider.autoDispose
+    .family<CareReportDetail, CareReportKey>((ref, key) async {
+  ref.watch(authSessionProvider);
+  final repo = ref.watch(careRepositoryProvider);
+  return repo.loadOwnerReport(ownerId: key.ownerId, reportId: key.reportId);
 });
 
 /// Row from `care_relationships` for list screens.

@@ -1,8 +1,17 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~10:32 ET (password-reset E2E + TTL UX deploy).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~13:10 ET (TestFlight 1.0 (21) shipped).
 
-**Recent (2026-07-06 ~10:32 ET): Password-reset E2E verified + TTL UX LIVE.** Worker
+**Recent (2026-07-06 ~13:10 ET): TestFlight 1.0 (21) LIVE.** `flutter/pubspec.yaml`
+`1.0.0+21`. Gates: `flutter analyze lib/` clean, `flutter test` **135/135**.
+`doppler run --project purple-life --config prd -- bun run ios:testflight` →
+**EXPORT SUCCEEDED**. ASC: **1.0 (21) processing=VALID**, internal + external
+**IN_BETA_TESTING** (Founding Team). Includes native reset deep link
+(`auth_deep_link.dart`), `friendlyAuthError`, glass migration on top 5 screens.
+**Verify on device:** forgot-password → email → `org.purplelife.app://reset-password`
+→ reset screen. `bun run ios:check-asc-builds` to poll status.
+
+**Prior (2026-07-06 ~10:32 ET): Password-reset E2E verified + TTL UX LIVE.** Worker
 Version ID **`079af4f1-eccb-4789-8c7c-648ba7d55621`**. Recovery TTL **`mailer_otp_exp=3600`**
 (1 hour). UX: reset-sent warns latest-email-only + TTL; expired reset steers to sign-in
 with password first. Verify: `curl -s https://www.purplelife.org/assets/auth-recovery-*.js`

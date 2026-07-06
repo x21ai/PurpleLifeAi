@@ -7,8 +7,9 @@ import 'care_chat_repository.dart';
 /// Renders a persisted care-chat attachment: image thumbnail or file row.
 /// Fetches a short-lived signed URL (300s TTL) via the repository.
 ///
-/// Note: sending/adding attachments is deferred to Wave 3 (needs a native
-/// picker). This widget only renders attachments already stored on messages.
+/// This widget only renders attachments already stored on messages; picking
+/// and sending new attachments lives in `care_chat_pickers.dart`
+/// (`showAttachPicker`) and `CareChatRepository.uploadAttachment`.
 class CareAttachmentView extends ConsumerStatefulWidget {
   const CareAttachmentView({
     super.key,

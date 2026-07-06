@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../design/purple_type.dart';
+import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../reports/models/report_row.dart';
 import '../reports/reports_repository.dart';
@@ -13,16 +14,19 @@ import '../shared/narrative_block.dart';
 import '../today/models/score_snapshot.dart';
 import '../today/today_repository.dart';
 import '../vitals/vitals_repository.dart';
+import 'ai_insights_repository.dart';
 import 'insights_widgets.dart';
 
 /// Patterns hub mirroring web `/insights`: narrative header, observation
 /// cards, wearable trends, latest vitals, health-record counts, and tabbed
 /// deeper views (seizures heatmap, trend chart, patterns).
 ///
-/// AI-generated cards ("What Purple is noticing", `getDailyInsightCards`) and
-/// pattern cards (`computeUserPatterns`) are SERVER AI functions not exposed to
-/// Flutter — those blocks render an honest "generated on web" state and are
-/// flagged as server-gaps rather than fabricated.
+/// AI-generated cards ("What Purple is noticing") call the real
+/// `getDailyInsightCards` server logic via `/api/ai/daily-insight-cards`
+/// (see `ai_insights_repository.dart`). Pattern cards (`computeUserPatterns`)
+/// remain a SERVER-ONLY function with no Flutter Worker route yet — that
+/// block still renders an honest "generated on web" state rather than
+/// fabricated content.
 class InsightsScreen extends ConsumerStatefulWidget {
   const InsightsScreen({super.key});
 
@@ -88,6 +92,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           ref.invalidate(vitalsSnapshotProvider);
           ref.invalidate(reportsHubProvider);
           ref.invalidate(recentSeizuresProvider);
+          ref.invalidate(dailyInsightCardsProvider);
           await Future.wait([
             ref.read(todayDataProvider.future),
           ]);
@@ -128,11 +133,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                   title: 'What Purple is noticing',
                 ),
                 const SizedBox(height: 12),
-                // SERVER-GAP: getDailyInsightCards runs server-side AI over
-                // metrics/biometrics (report-trends.functions.ts) and is not
-                // exposed to Flutter. We do NOT fabricate card text — honest
-                // "generated on web" state instead.
-                const _NoticingWebOnlyCard(),
+                // Real AI cards via `/api/ai/daily-insight-cards` (mirrors web
+                // `getDailyInsightCards`, cached server-side once per day).
+                _NoticingCards(cards: ref.watch(dailyInsightCardsProvider)),
                 const SizedBox(height: 8),
                 Text(
                   'Observations only, never a diagnosis. Share with your clinician for context.',
@@ -230,9 +233,80 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 }
 
-/// Honest empty state for the AI "noticing" cards (server-side only).
-class _NoticingWebOnlyCard extends StatelessWidget {
-  const _NoticingWebOnlyCard();
+/// "What Purple is noticing" AI cards, backed by the real
+/// `dailyInsightCardsProvider` (`/api/ai/daily-insight-cards`). Renders a
+/// loading placeholder while the (server-cached, once-per-day) AI call runs,
+/// an honest empty state when there is not yet enough data, and the real
+/// headline + cards once generated.
+class _NoticingCards extends StatelessWidget {
+  const _NoticingCards({required this.cards});
+
+  final AsyncValue<DailyInsightCardsResult> cards;
+
+  @override
+  Widget build(BuildContext context) {
+    return cards.when(
+      loading: () => const _NoticingLoadingCard(),
+      error: (_, __) => const _NoticingEmptyCard(
+        message: 'Could not load your observations right now.',
+      ),
+      data: (result) {
+        if (result.cards.isEmpty) {
+          return _NoticingEmptyCard(
+            message: result.error == null
+                ? 'Log a few more readings or upload a report to unlock personalised observations.'
+                : 'Purple could not generate observations right now. Try again later.',
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (result.headline != null && result.headline!.trim().isNotEmpty) ...[
+              Text(
+                result.headline!.trim(),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      height: 1.4,
+                    ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            for (final card in result.cards) ...[
+              _NoticingCardTile(card: card),
+              const SizedBox(height: 8),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _NoticingLoadingCard extends StatelessWidget {
+  const _NoticingLoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const GlassSurface(
+      padding: EdgeInsets.all(20),
+      child: SizedBox(
+        height: 40,
+        child: Center(
+          child: SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NoticingEmptyCard extends StatelessWidget {
+  const _NoticingEmptyCard({required this.message});
+
+  final String message;
 
   @override
   Widget build(BuildContext context) {
@@ -249,13 +323,65 @@ class _NoticingWebOnlyCard extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Purple generates your personalised observations on the web app. '
-              'Log a few more readings or upload a report, then open Insights on '
-              'the web to see them.',
+              message,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.white.withValues(alpha: 0.65),
                     height: 1.5,
                   ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NoticingCardTile extends StatelessWidget {
+  const _NoticingCardTile({required this.card});
+
+  final DailyInsightCard card;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = PurpleTokens.loaded.colorsFor('dark');
+    final Color toneColor = switch (card.tone) {
+      'attention' => parseTokenColor(colors.danger),
+      'watch' => parseTokenColor(colors.warning),
+      _ => parseTokenColor(colors.purplePrimary),
+    };
+    return GlassSurface(
+      padding: const EdgeInsets.all(16),
+      borderRadius: 18,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            margin: const EdgeInsets.only(top: 6),
+            decoration: BoxDecoration(color: toneColor, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  card.title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  card.body,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.65),
+                        height: 1.4,
+                      ),
+                ),
+              ],
             ),
           ),
         ],

@@ -9,10 +9,11 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../auth/auth_state.dart';
 import '../../core/providers/core_providers.dart';
+import '../../design/glass_surface.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../settings/settings_hub.dart';
-import '../shared/glass_helpers.dart';
+import '../shared/glass_helpers.dart' hide GlassSurface;
 import 'locale_data.dart';
 import 'profile_avatar.dart';
 import 'theme_preference.dart';
@@ -1331,7 +1332,8 @@ class _SheetCard extends StatelessWidget {
     return GlassSurface(
       padding: const EdgeInsets.all(20),
       // Web sheet cards use radius.sheetCard (28) from design tokens.
-      borderRadius: PurpleTokens.loaded.radius.sheetCard,
+      borderRadius:
+          BorderRadius.circular(PurpleTokens.loaded.radius.sheetCard),
       child: child,
     );
   }

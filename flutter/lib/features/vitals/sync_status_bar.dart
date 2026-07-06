@@ -169,12 +169,26 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
 
   bool get _anyPullConnected => _pullProviders.any((p) => _connected[p.id] == true);
 
+  /// Sources the "Sync now" button actually pulls when tapped (Apple Health
+  /// push-based connections sync automatically, not via this button).
   List<String> get _activeSyncLabels {
     final labels = <String>[
       for (final p in _pullProviders)
         if (_connected[p.id] == true) p.label,
     ];
     if (_nativeHealthKitLinked) labels.add('Apple Health');
+    return labels;
+  }
+
+  /// All connected sources feeding this bar's "last synced" timestamp,
+  /// including push-based Apple Health. Named explicitly so testers see
+  /// *what* is syncing instead of a bare, unattributed timestamp.
+  List<String> get _connectedSourceLabels {
+    final labels = <String>[
+      for (final p in _pullProviders)
+        if (_connected[p.id] == true) p.label,
+    ];
+    if (_appleConnected) labels.add('Apple Health');
     return labels;
   }
 
@@ -240,6 +254,7 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
     final dataThroughLabel =
         _dataThrough == null ? null : formatDataThrough(_dataThrough!);
     final showButton = _anyPullConnected || _appleConnected;
+    final sourceLabel = _connectedSourceLabels.join(', ');
 
     if (widget.variant == SyncStatusVariant.compact) {
       return Row(
@@ -251,7 +266,9 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
                 Text(
                   pulledDate == null
                       ? 'Never synced'
-                      : 'Last sync ${formatRelativeTime(pulledDate)} · ${DateFormat.jm().format(pulledDate)}',
+                      : sourceLabel.isEmpty
+                          ? 'Last synced ${formatRelativeTime(pulledDate)} · ${DateFormat.jm().format(pulledDate)}'
+                          : 'Last synced ${formatRelativeTime(pulledDate)} from $sourceLabel',
                   style: _labelStyle(context),
                 ),
                 if (dataThroughLabel != null)
@@ -301,7 +318,7 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
               ),
               Text.rich(
                 TextSpan(
-                  text: 'Last pulled ',
+                  text: 'Last synced ',
                   style: _labelStyle(context),
                   children: [
                     TextSpan(
@@ -313,6 +330,11 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
                   ],
                 ),
               ),
+              if (sourceLabel.isNotEmpty)
+                Text(
+                  'From $sourceLabel',
+                  style: _labelStyle(context, opacity: 0.7),
+                ),
             ],
           ),
         ),

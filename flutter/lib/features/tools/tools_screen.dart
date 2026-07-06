@@ -10,6 +10,7 @@ import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
 import '../health/apple_health_panel.dart';
 import '../shared/glass_helpers.dart';
+import '../vitals/sync_status_bar.dart';
 import '../vitals/synced_data_panel.dart';
 import '../vitals/synced_data_overview.dart';
 import '../vitals/vitals_repository.dart';
@@ -53,6 +54,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
   StreamSubscription<WearableOAuthProvider>? _oauthSub;
   StreamSubscription<WearableOAuthFailure>? _oauthErrorSub;
   bool _ouraBackfilling = false;
+  int _syncTick = 0;
 
   SupabaseClient get _client => Supabase.instance.client;
 
@@ -296,8 +298,12 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
             SyncedDataOverview.empty;
 
     return CanvasBackground(
+      // Bottom padding is a small buffer only: NativeAppShell already
+      // reserves shellTabBarInset() worth of space for the floating nav
+      // bar, so stacking another ~120px here doubled up as excess
+      // whitespace (tf-bottom-whitespace).
       child: SingleChildScrollView(
-        padding: const EdgeInsets.only(top: 16, bottom: 120),
+        padding: const EdgeInsets.only(top: 16, bottom: 32),
         child: ContentColumn(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -311,6 +317,15 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                         color: Colors.white.withValues(alpha: 0.95),
                       ),
                 ),
+              ),
+              const SizedBox(height: 12),
+              SyncStatusBar(
+                variant: SyncStatusVariant.compact,
+                refreshSignal: _syncTick,
+                onSynced: () {
+                  if (mounted) setState(() => _syncTick += 1);
+                  unawaited(_refresh());
+                },
               ),
               const SizedBox(height: 12),
               SyncedDataPanel(

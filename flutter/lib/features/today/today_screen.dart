@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../design/glass_surface.dart';
 import '../../design/purple_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,7 +12,7 @@ import '../../shell/routes.dart';
 import '../meds/meds_repository.dart';
 import '../meds/models/dose.dart';
 import '../shared/condition_prompts.dart';
-import '../shared/glass_helpers.dart';
+import '../shared/glass_helpers.dart' hide GlassSurface;
 import '../shared/loading_skeleton.dart';
 import '../shared/narrative_block.dart';
 import '../shared/score_hero.dart';
@@ -248,9 +249,13 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
             onRefresh: _refresh,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
+              // Bottom padding is a small buffer only: NativeAppShell already
+              // reserves shellTabBarInset() worth of space below the body for
+              // the floating nav bar, so stacking another ~120px here doubled
+              // up as excess whitespace (tf-bottom-whitespace).
               padding: EdgeInsets.only(
                 top: tokens.spacing.x2,
-                bottom: 120,
+                bottom: tokens.spacing.xl,
               ),
               child: ContentColumn(
                 child: _buildBody(context, data, medsAsync),
@@ -416,7 +421,7 @@ class _TodayLoadingView extends StatelessWidget {
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.only(top: tokens.spacing.x2, bottom: 120),
+      padding: EdgeInsets.only(top: tokens.spacing.x2, bottom: tokens.spacing.xl),
       child: ContentColumn(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -460,9 +465,9 @@ class _TodayLoadError extends StatelessWidget {
 
     return ContentColumn(
       child: Padding(
-        padding: EdgeInsets.only(top: tokens.spacing.x2, bottom: 120),
+        padding: EdgeInsets.only(top: tokens.spacing.x2, bottom: tokens.spacing.xl),
         child: GlassSurface(
-          borderRadius: 24,
+          borderRadius: BorderRadius.circular(24),
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 22),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -817,7 +822,7 @@ class _ScoreStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassSurface(
       padding: const EdgeInsets.all(8),
-      borderRadius: 20,
+      borderRadius: BorderRadius.circular(20),
       // The page Column provides unbounded height (scroll view), so the
       // stretch row must size itself to the tallest tile via IntrinsicHeight;
       // bare stretch would force infinite height and blank the whole screen.
@@ -1218,7 +1223,7 @@ class _QuickActionCard extends StatelessWidget {
           splashColor: Colors.white.withValues(alpha: 0.06),
           highlightColor: Colors.white.withValues(alpha: 0.04),
           child: GlassSurface(
-            borderRadius: 18,
+            borderRadius: BorderRadius.circular(18),
             padding: EdgeInsets.zero,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1292,7 +1297,7 @@ class _MoreForToday extends StatelessWidget {
             splashColor: Colors.white.withValues(alpha: 0.06),
             highlightColor: Colors.white.withValues(alpha: 0.04),
             child: GlassSurface(
-              borderRadius: 20,
+              borderRadius: BorderRadius.circular(20),
               padding:
                   const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Row(

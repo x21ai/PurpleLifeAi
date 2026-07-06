@@ -9,8 +9,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
+import '../../design/glass_surface.dart';
 import '../shared/empty_state.dart';
-import '../shared/glass_helpers.dart';
+import '../shared/glass_helpers.dart' hide GlassSurface;
 import '../shared/loading_skeleton.dart';
 import 'models/report_row.dart';
 import 'reports_repository.dart';
@@ -282,11 +283,14 @@ class _ReportDetailBodyState extends ConsumerState<_ReportDetailBody> {
         // provider + credits). Show the cached explanation if the web app has
         // already generated one; otherwise an honest available-on-web state.
         const SizedBox(height: 20),
-        if (doc.aiSummary?.trim().isNotEmpty == true)
-          _InfoCard(label: 'AI EXPLANATION', body: doc.aiSummary!.trim())
+        if (doc.aiSummary?.hasContent == true)
+          _InfoCard(
+            label: 'AI EXPLANATION',
+            body: doc.aiSummary!.displayText,
+          )
         else
           GlassSurface(
-            borderRadius: 20,
+            borderRadius: BorderRadius.circular(20),
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -467,7 +471,7 @@ class _InfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassSurface(
-      borderRadius: 20,
+      borderRadius: BorderRadius.circular(20),
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/providers/core_providers.dart';
+import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
 import '../care/care_relationship_tile.dart';
 import '../care/care_repository.dart';
@@ -98,7 +99,11 @@ class SharingScreen extends ConsumerWidget {
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(top: 24, bottom: 120),
+          // Bottom padding is a small buffer only: NativeAppShell already
+          // reserves shellTabBarInset() worth of space for the floating nav
+          // bar, so stacking another ~120px here doubled up as excess
+          // whitespace (tf-bottom-whitespace).
+          padding: const EdgeInsets.only(top: 24, bottom: 32),
           child: ContentColumn(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,9 +130,14 @@ class SharingScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text(
                   'Sharing\nand access',
+                  // 40px matches web `settings.sharing.tsx` h1
+                  // (text-[40px]); fixes tf-heading-typography (this was
+                  // silently falling back to Material's 36px default since
+                  // displaySmall has no size override in PurpleTheme).
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontFamily: GoogleFonts.sourceSerif4().fontFamily,
-                        height: 1.02,
+                        fontFamily: PurpleType.serif,
+                        fontSize: 40,
+                        height: 1.05,
                         color: Colors.white.withValues(alpha: 0.95),
                       ),
                 ),

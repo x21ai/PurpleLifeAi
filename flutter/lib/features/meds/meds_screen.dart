@@ -4,9 +4,10 @@ import '../../design/purple_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../design/glass_surface.dart';
 import '../../shell/bottom_nav.dart';
 import '../../shell/routes.dart';
-import '../shared/glass_helpers.dart';
+import '../shared/glass_helpers.dart' hide GlassSurface;
 import '../shared/loading_skeleton.dart';
 import '../shared/narrative_block.dart';
 import 'dose_list.dart';

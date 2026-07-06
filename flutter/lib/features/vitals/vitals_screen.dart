@@ -7,10 +7,11 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/core_providers.dart';
+import '../../design/glass_surface.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../today/wearable_sync.dart';
-import '../shared/glass_helpers.dart';
+import '../shared/glass_helpers.dart' hide GlassSurface;
 import '../shared/loading_skeleton.dart';
 import '../shared/metric_constants.dart';
 import 'metric_detail_screen.dart';
@@ -76,8 +77,12 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
       child: SizedBox(
         width: double.infinity,
         child: snapshotAsync.when(
+          // Bottom padding is a small buffer only: NativeAppShell already
+          // reserves shellTabBarInset() worth of space for the floating nav
+          // bar, so stacking another ~128px here doubled up as excess
+          // whitespace (tf-bottom-whitespace).
           loading: () => const SingleChildScrollView(
-            padding: EdgeInsets.only(top: 32, bottom: 128),
+            padding: EdgeInsets.only(top: 32, bottom: 32),
             child: ContentColumn(
               child: LoadingSkeleton(sectionTitle: 'Vitals', tileCount: 4),
             ),
@@ -92,7 +97,7 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
             onRefresh: _refresh,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(top: 32, bottom: 128),
+              padding: const EdgeInsets.only(top: 32, bottom: 32),
               child: ContentColumn(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -475,9 +480,9 @@ class _VitalsLoadError extends StatelessWidget {
   Widget build(BuildContext context) {
     return ContentColumn(
       child: Padding(
-        padding: const EdgeInsets.only(top: 24, bottom: 120),
+        padding: const EdgeInsets.only(top: 24, bottom: 32),
         child: GlassSurface(
-          borderRadius: 24,
+          borderRadius: BorderRadius.circular(24),
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 22),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

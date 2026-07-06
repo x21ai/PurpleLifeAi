@@ -19,7 +19,7 @@ String resolvePlatformInitialLocation({String fallback = AppRoutes.signIn}) {
 }
 
 bool _isKnownAppPath(String path) {
-  if (path == AppRoutes.signIn) return true;
+  if (path == AppRoutes.signIn || path == AppRoutes.resetPassword) return true;
   if (AppRoutes.marketingPaths.contains(path)) return true;
   return AppRoutes.protectedPaths.any(
     (route) => path == route || path.startsWith('$route/'),
@@ -29,6 +29,7 @@ bool _isKnownAppPath(String path) {
 /// Public route paths for feature integration.
 abstract final class AppRoutes {
   static const signIn = '/sign-in';
+  static const resetPassword = '/reset-password';
   static const marketingHome = '/';
   static const pricing = '/pricing';
   static const marketingPrivacy = '/privacy';
