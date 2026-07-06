@@ -18,3 +18,4 @@ Metric labels always show the canonical human name from `src/lib/metric-naming.t
 - [Flutter + Lovable workflow](flutter-lovable-workflow.md) - Lovable design on `lovable/redesign`, Cursor Flutter under `flutter/`, `design/tokens.json` bridge, offline-first; **Flutter-only native** for TestFlight/store (Capacitor deprecated 2026-07-04, builds 1–9 were WebView).
 - [Auth password reset](auth-password-reset.md) - Recovery email redirect URIs, web PKCE bootstrap (`auth-recovery.ts`), native `reset-password` deep link, migration accounts without password hashes.
 - [Mobile crash reporting](observability/crash-reporting.md) - Luciq vs Sentry/Crashlytics/ASC; agent runbook after TestFlight upload.
+- [TestFlight beta feedback](observability/testflight-beta-feedback.md) - Share Beta Feedback iOS/TestFlight requirements, external tester alternatives, ASC + Luciq triage.

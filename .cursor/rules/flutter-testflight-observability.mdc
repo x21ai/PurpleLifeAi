@@ -1,28 +1,74 @@
 ---
-description: After TestFlight uploads, agents check ASC feedback and Luciq crashes.
-alwaysApply: false
-globs:
-  - flutter/**
-  - scripts/flutter-ios-testflight.sh
-  - scripts/*testflight*
-  - docs/testflight-setup.md
+description: Mandatory Luciq + ASC TestFlight triage before and after every upload (permanent).
+alwaysApply: true
 ---
 
-# TestFlight observability (agent checklist)
+# TestFlight observability (mandatory, permanent)
 
-After **`bun run ios:testflight`** completes and ASC shows **VALID**, run:
+**Policy:** On **every** TestFlight upload for Purple (`bun run ios:testflight`), agents MUST triage
+**all** Luciq crashes and **all** ASC TestFlight feedback (screenshots + crash submissions) before
+claiming the build ready for testers or closing the release task. This rule applies for the life
+of the project.
+
+Reference: `mem/observability/testflight-beta-feedback.md`, `mem/observability/crash-reporting.md`,
+`docs/testflight-setup.md`.
+
+## Before upload (baseline)
+
+Record the latest processed build number and note open Luciq/ASC items:
 
 ```bash
-bun run ios:check-tf-feedback
 bun run ios:check-asc-builds
+bun run ios:check-tf-feedback
+bun run ios:check-luciq -- --json
 ```
+
+If `dashboardApiConfigured` is false: `bun run luciq:sync-secrets`. If MCP unavailable:
+`bun run luciq:install-mcp` and restart Cursor.
+
+## After upload (when ASC shows VALID)
+
+Within the same session (or immediately on resume after processing):
+
+```bash
+bun run ios:check-asc-builds          # confirm new build VALID + group assignment
+bun run ios:check-tf-feedback           # ASC screenshots + crash submissions
+bun run ios:check-luciq -- --json       # SDK + MCP cred check
+```
+
+Then query **Luciq MCP** (project **Flutter - Purple - Beta**, slug `flutter-purple`, mode `beta`):
+
+- `list_crashes` — filter by `app_versions` for the new build (e.g. `1.0.0 (21)`) and open status
+- `list_bugs` — shake/in-app reports since last build
+- Optionally `list_issues` for regressions
+
+Legacy REST (`dashboard-api.instabug.com`) returns 401 for MCP tokens; use MCP only.
+
+## Triage gate (required before "build ready")
+
+For each new ASC submission and each new Luciq crash/bug since the prior build:
+
+1. **Reproduce or classify** — P0 (blocks sign-in/data), P1 (wrong UX/data), P2 (polish).
+2. **Fix** in-tree, or **append** to `docs/OPEN-ISSUES.md` with build number, reporter, and next action.
+3. **Resolve or defer explicitly** — never silently ignore screenshot feedback.
+
+**Do not claim build ready** when:
+
+- New Luciq **crash** regressions are open for this build (unless documented as known/environmental in OPEN-ISSUES).
+- Unaddressed **P0** ASC feedback exists (login failures, crashes, data loss).
+- `ios:check-luciq` shows SDK token missing (`LUCIQ_APP_TOKEN` must be in Doppler for TF builds).
+
+Acceptable to ship with open **P2** polish items only if logged in OPEN-ISSUES with owner.
+
+## Commands
 
 | Command | Source | What it covers |
 |---------|--------|----------------|
-| `ios:check-tf-feedback` | ASC API + Luciq | Screenshot comments, crash submissions, Luciq MCP hint |
+| `ios:check-tf-feedback` | ASC API + Luciq | Screenshot comments, crash submissions, Luciq cred check |
 | `ios:check-asc-feedback` | ASC only | Same ASC half without Luciq |
 | `ios:check-luciq` | Luciq | SDK + MCP cred check (`status: mcp` or `ok`) |
-| `luciq:sync-secrets` | Doppler | Copy `LUCIQ_OAUTH_TOKEN` from `servers-teamkeys/dev` to `purple-life/prd` |
+| `ios:check-asc-builds` | ASC | Build processing state, beta groups |
+| `luciq:sync-secrets` | Doppler | Copy `LUCIQ_OAUTH_TOKEN` from `servers-teamkeys/dev` → `purple-life/prd` |
 | `luciq:install-mcp` | Local Cursor | Merge Luciq HTTP MCP into `~/.cursor/mcp.json` (restart Cursor) |
 
 ## Luciq tokens (Doppler)
@@ -31,22 +77,22 @@ bun run ios:check-asc-builds
 |--------|------------------|---------|
 | `LUCIQ_APP_TOKEN` | `purple-life` / `prd` | SDK on device (TestFlight `--dart-define`) |
 | `LUCIQ_OAUTH_TOKEN` | `servers-teamkeys` / `dev` | **Source** MCP/API token |
-| `LUCIQ_API_TOKEN` | `purple-life` / `prd` | **Runtime** copy from sync (same value as OAuth token) |
-| `LUCIQ_ACCOUNT_EMAIL` | `purple-life` / `prd` | Luciq account (`pmt@eatos.com`) |
+| `LUCIQ_API_TOKEN` | `purple-life` / `prd` | **Runtime** copy from sync |
+| `LUCIQ_ACCOUNT_EMAIL` | `purple-life` / `prd` | Luciq account |
 
-Dashboard project: **Flutter - Purple - Beta**.
+## Tester feedback paths (when screenshot menu missing)
 
-**Note:** MCP OAuth token does **not** authenticate legacy REST (`dashboard-api.instabug.com`).
-`ios:check-luciq` returns `status: "mcp"` when creds are synced; use **Luciq MCP** in Cursor for crash stacks.
+External testers without **Share Beta Feedback** should use:
 
-## When testers report crashes
+1. **TestFlight app** → Purple → **Send Beta Feedback**
+2. **Shake device** in Purple (Luciq, TF16+)
+3. ASC **Feedback Email** (Test Information)
+4. `https://www.purplelife.org/contact`
 
-1. ASC `betaFeedbackCrashSubmissions` is often **empty** for screenshot-only reports.
-2. Run `bun run luciq:sync-secrets` if `dashboardApiConfigured` is false.
-3. Run `bun run luciq:install-mcp` (once per machine), restart Cursor, query **Flutter - Purple - Beta** via Luciq MCP (`list_crashes`, etc.).
-4. Track open issue **`tf-crash-report`** in `docs/OPEN-ISSUES.md`.
+Recommend external testers run **iOS 16+** and latest **TestFlight** app. See
+`mem/observability/testflight-beta-feedback.md` for why screenshot feedback is absent on older stacks.
 
-## Alternatives (policy)
+## Known gaps
 
-See `mem/observability/crash-reporting.md`. Luciq stays primary for TestFlight until
-`tf-crash-report` is resolved or cost/policy triggers migration (Sentry, Crashlytics).
+- ASC `betaFeedbackCrashSubmissions` is often **empty** for screenshot-only crash reports (`tf-crash-report`).
+- Luciq captures Dart/native crashes on **next launch**; triage both ASC and Luciq every build.

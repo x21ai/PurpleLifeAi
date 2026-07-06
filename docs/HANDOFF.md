@@ -9,6 +9,14 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 Permanent TestFlight observability rule + TF21 triage.** Rule
+`.cursor/rules/flutter-testflight-observability.mdc` set `alwaysApply: true`: agents
+must triage **all** Luciq crashes and ASC beta feedback before/after every
+`ios:testflight` upload. TF21: ASC **18** screenshot submissions (0 crash logs);
+Luciq MCP **0** crashes/bugs on `flutter-purple` beta. Share Beta Feedback is
+TestFlight 2.3+ / iOS version gated, not internal-vs-external; doc:
+`mem/observability/testflight-beta-feedback.md`.
+
 **2026-07-06 TestFlight 1.0 (21) shipped with native reset deep link + Flutter WIP.**
 Bumped `flutter/pubspec.yaml` to `1.0.0+21`. Gates: `flutter analyze lib/` clean,
 `flutter test` **135/135** (fixed `ReportAiSummary` model + reports detail screen;
@@ -233,6 +241,24 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T18:15:00Z — Permanent TestFlight observability + Share Beta Feedback research
+
+- **Requested** — Answer whether Luciq + ASC feedback are triaged every TestFlight release;
+  why external testers miss "Share Beta Feedback" on screenshots; create permanent rule and docs.
+- **Done** — Ran `ios:check-luciq` (status `mcp`, SDK configured), `ios:check-tf-feedback`
+  (18 ASC screenshot submissions, 0 crash logs). Luciq MCP `list_crashes` / `list_bugs` for
+  `flutter-purple` and `purple` beta: **zero** open items for TF21. Created
+  `mem/observability/testflight-beta-feedback.md`. Upgraded
+  `.cursor/rules/flutter-testflight-observability.mdc` to `alwaysApply: true` with before/after
+  upload triage gate. Updated `AGENTS.md`, `CURSOR_HANDOFF.md`, `mem/index.md`.
+- **Issues** — ASC crash API still empty for screenshot-only reports (`tf-crash-report` open,
+  low urgency). External testers on old TestFlight/iOS need alternate feedback paths documented
+  in mem note.
+- **Stand / next** — Enforce rule on TF22+; onboard Founding Team with TestFlight app
+  Send Beta Feedback + shake when screenshot menu missing.
+- **Who / where** — Cursor agent, local, `lovable/redesign` (uncommitted docs/rule).
+- **Timestamp** — 2026-07-06T18:15:00Z
 
 ### 2026-07-06 — TestFlight 1.0 (21) Flutter ship + gates
 
