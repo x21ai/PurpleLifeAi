@@ -1,6 +1,8 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~14:15 ET (TestFlight observability rule + TF21 triage).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~14:20 ET (git sync + docs commit).
+
+**Recent (2026-07-06 ~14:20 ET): Git synced to remote.** `main` and `lovable/redesign` both at **`1c1bd21`** on GitHub. Includes wearable OAuth mem (`mem/native-wearable-oauth-redirects.md`), observability templates under `docs/templates/`. Prod Worker still **`8d527d7f`** (care + AI routes); TF21 **1.0 (21)** VALID. Excluded from commit: `test-results/` (local Playwright artifacts).
 
 **Recent (2026-07-06 ~14:15 ET): Permanent TestFlight observability rule.** `.cursor/rules/flutter-testflight-observability.mdc` now `alwaysApply: true`: triage **all** Luciq crashes + ASC feedback before/after every upload. TF21 triage: ASC **18** screenshot submissions, **0** crash logs; Luciq MCP **0** crashes/bugs on `flutter-purple` beta. Share Beta Feedback requires TestFlight **2.3+** and enabled group feedback (not internal-vs-external); alternatives in `mem/observability/testflight-beta-feedback.md`. Commands: `bun run ios:check-tf-feedback`, Luciq MCP `list_crashes`.
 
