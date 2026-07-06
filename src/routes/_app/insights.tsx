@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 import { MetricNumber } from "@/components/ui-oura/metric-number";
 import { WaveTrend, type WaveSeries } from "@/components/ui-oura/wave-trend";
 import { useRouteTheme } from "@/lib/use-route-theme";
-import { NarrativeBlock } from "@/components/ui-oura/v2/narrative-block";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -66,16 +65,14 @@ function InsightsPage() {
   }, [session?.user.id]);
 
   return (
-    <div className="mx-auto max-w-4xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-32">
+    <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-32">
       <p className="label-eyebrow text-muted-foreground">{t("insights.eyebrow")}</p>
-      <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
+      <h1 className="mt-3 app-hero-title text-[32px] sm:text-[40px] text-foreground">
         {t("insights.title1")}<br/>{t("insights.title2")}
       </h1>
-      <div className="mt-8 max-w-[600px]">
-        <NarrativeBlock>
-          {t("insights.intro")}
-        </NarrativeBlock>
-      </div>
+      <p className="today-lede mt-6 max-w-[600px] text-foreground/55">
+        {t("insights.intro")}
+      </p>
 
       <ForYouRow />
 
@@ -146,7 +143,7 @@ function ForYouRow() {
       <div className="flex items-end justify-between gap-3">
         <div>
           <p className="label-eyebrow text-muted-foreground">For you</p>
-          <h2 className="mt-1 font-serif text-2xl text-foreground">
+          <h2 className="mt-1 app-section-title">
             {headline ?? "What Purple is noticing"}
           </h2>
         </div>

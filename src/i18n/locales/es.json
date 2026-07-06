@@ -12,6 +12,10 @@
   },
   "nav": {
     "today": "Hoy",
+    "data": "Datos",
+    "plan": "Plan",
+    "askMaya": "Pregunta a Maya",
+    "capture": "Capturar",
     "journal": "Diario",
     "timeline": "Cronología",
     "patterns": "Patrones",

@@ -107,7 +107,7 @@ function PlatformRulesPage() {
 
   return (
     <div>
-      <h1 className="font-serif text-4xl">Platform rules</h1>
+      <h1 className="app-hero-title text-2xl">Platform rules</h1>
       <p className="mt-2 text-muted-foreground">
         Toggle global rules and per-role / per-user overrides. Every change is audit-logged.
       </p>

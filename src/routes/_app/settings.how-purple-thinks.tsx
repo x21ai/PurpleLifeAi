@@ -21,7 +21,7 @@ function HowPage() {
       </Link>
 
       <p className="mt-6 label-eyebrow text-muted-foreground">{t("howPurple.eyebrow")}</p>
-      <h1 className="mt-3 font-serif text-[40px] sm:text-5xl leading-[1.05] tracking-[-0.02em] text-foreground">
+      <h1 className="mt-3 app-hero-title text-[28px] sm:text-[36px] text-foreground">
         {t("howPurple.title1")}<br />{t("howPurple.title2")}
       </h1>
 

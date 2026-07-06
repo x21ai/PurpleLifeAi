@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_app/care/inbox")({
   component: InboxPage,
   errorComponent: ({ error, reset }) => (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 pt-16 pb-24">
-      <h1 className="font-serif text-3xl text-foreground">Inbox</h1>
+      <h1 className="app-hero-title text-3xl text-foreground">Inbox</h1>
       <p className="mt-3 text-sm text-muted-foreground">
         We couldn't load your inbox. {error?.message ? `(${error.message})` : ""}
       </p>
@@ -113,10 +113,10 @@ function InboxPage() {
         <ArrowLeft className="h-4 w-4" /> Sharing & access
       </Link>
       <p className="label-eyebrow text-muted-foreground mt-6">Caregiver inbox</p>
-      <h1 className="mt-3 font-serif text-[40px] sm:text-6xl leading-[1.02] tracking-[-0.02em] text-foreground">
+      <h1 className="mt-3 app-hero-title text-[32px] sm:text-[40px] text-foreground">
         Changes waiting<br />for you
       </h1>
-      <p className="mt-6 body-serif text-foreground/75 max-w-[600px]">
+      <p className="today-lede mt-6 max-w-[600px] text-foreground/55">
         Caregivers proposed these edits to your record. Nothing is applied until you approve it.
       </p>
 

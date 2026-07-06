@@ -47,6 +47,9 @@ export type NavGroup = {
 
 export const navTree: NavGroup[] = [
   { id: "today", label: "Today", icon: Sun, to: "/today" },
+  { id: "data", label: "Data", icon: Activity, to: "/data" },
+  { id: "plan", label: "Plan", icon: TrendingUp, to: "/plan" },
+  { id: "ask-maya", label: "Ask Maya", icon: MessageCircle, to: "/ask-maya" },
   { id: "journal", label: "Journal", icon: BookOpen, to: "/journal" },
   {
     id: "body",

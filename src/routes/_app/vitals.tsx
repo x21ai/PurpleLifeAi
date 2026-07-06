@@ -61,7 +61,7 @@ function VitalsPage() {
           <Pencil className="h-4 w-4 text-muted-foreground" />
         </button>
       </div>
-      <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
+      <h1 className="mt-3 app-hero-title text-[32px] sm:text-[40px] text-foreground">
         {t("vitals.title1")}<br/>{t("vitals.title2")}
       </h1>
       {!real && (

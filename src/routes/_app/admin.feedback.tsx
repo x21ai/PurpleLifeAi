@@ -24,7 +24,7 @@ function AdminFeedback() {
 
   return (
     <div>
-      <h1 className="font-serif text-4xl">Feedback</h1>
+      <h1 className="app-hero-title text-2xl">Feedback</h1>
       <ul className="mt-6 space-y-3">
         {rows.map((r) => (
           <li key={r.id} className={`rounded-2xl border border-border bg-card p-5 ${r.resolved ? "opacity-60" : ""}`}>

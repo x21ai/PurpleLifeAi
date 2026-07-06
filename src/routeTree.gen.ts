@@ -44,14 +44,17 @@ import { Route as AppTodayRouteImport } from './routes/_app/today'
 import { Route as AppTimelineRouteImport } from './routes/_app/timeline'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppReportsRouteImport } from './routes/_app/reports'
+import { Route as AppPlanRouteImport } from './routes/_app/plan'
 import { Route as AppMyHealthDnaRouteImport } from './routes/_app/my-health-dna'
 import { Route as AppMyHealthRouteImport } from './routes/_app/my-health'
 import { Route as AppMedsRouteImport } from './routes/_app/meds'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
 import { Route as AppHydrationRouteImport } from './routes/_app/hydration'
+import { Route as AppDataRouteImport } from './routes/_app/data'
 import { Route as AppCommunityNewRouteImport } from './routes/_app/community-new'
 import { Route as AppChatCareRouteImport } from './routes/_app/chat-care'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
+import { Route as AppAskMayaRouteImport } from './routes/_app/ask-maya'
 import { Route as AppAppleHealthImportRouteImport } from './routes/_app/apple-health-import'
 import { Route as AppAdminRouteImport } from './routes/_app/admin'
 import { Route as AppAccountRouteImport } from './routes/_app/account'
@@ -305,6 +308,11 @@ const AppReportsRoute = AppReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPlanRoute = AppPlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMyHealthDnaRoute = AppMyHealthDnaRouteImport.update({
   id: '/my-health-dna',
   path: '/my-health-dna',
@@ -330,6 +338,11 @@ const AppHydrationRoute = AppHydrationRouteImport.update({
   path: '/hydration',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDataRoute = AppDataRouteImport.update({
+  id: '/data',
+  path: '/data',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCommunityNewRoute = AppCommunityNewRouteImport.update({
   id: '/community-new',
   path: '/community-new',
@@ -343,6 +356,11 @@ const AppChatCareRoute = AppChatCareRouteImport.update({
 const AppChatRoute = AppChatRouteImport.update({
   id: '/chat',
   path: '/chat',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAskMayaRoute = AppAskMayaRouteImport.update({
+  id: '/ask-maya',
+  path: '/ask-maya',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAppleHealthImportRoute = AppAppleHealthImportRouteImport.update({
@@ -779,14 +797,17 @@ export interface FileRoutesByFullPath {
   '/account': typeof AppAccountRoute
   '/admin': typeof AppAdminRouteWithChildren
   '/apple-health-import': typeof AppAppleHealthImportRoute
+  '/ask-maya': typeof AppAskMayaRoute
   '/chat': typeof AppChatRoute
   '/chat-care': typeof AppChatCareRoute
   '/community-new': typeof AppCommunityNewRoute
+  '/data': typeof AppDataRoute
   '/hydration': typeof AppHydrationRoute
   '/insights': typeof AppInsightsRoute
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
   '/my-health-dna': typeof AppMyHealthDnaRoute
+  '/plan': typeof AppPlanRoute
   '/reports': typeof AppReportsRouteWithChildren
   '/settings': typeof AppSettingsRouteWithChildren
   '/timeline': typeof AppTimelineRoute
@@ -900,14 +921,17 @@ export interface FileRoutesByTo {
   '/users': typeof UsersRoute
   '/account': typeof AppAccountRoute
   '/apple-health-import': typeof AppAppleHealthImportRoute
+  '/ask-maya': typeof AppAskMayaRoute
   '/chat': typeof AppChatRoute
   '/chat-care': typeof AppChatCareRoute
   '/community-new': typeof AppCommunityNewRoute
+  '/data': typeof AppDataRoute
   '/hydration': typeof AppHydrationRoute
   '/insights': typeof AppInsightsRoute
   '/meds': typeof AppMedsRouteWithChildren
   '/my-health': typeof AppMyHealthRoute
   '/my-health-dna': typeof AppMyHealthDnaRoute
+  '/plan': typeof AppPlanRoute
   '/reports': typeof AppReportsRouteWithChildren
   '/settings': typeof AppSettingsRouteWithChildren
   '/timeline': typeof AppTimelineRoute
@@ -1024,14 +1048,17 @@ export interface FileRoutesById {
   '/_app/account': typeof AppAccountRoute
   '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/apple-health-import': typeof AppAppleHealthImportRoute
+  '/_app/ask-maya': typeof AppAskMayaRoute
   '/_app/chat': typeof AppChatRoute
   '/_app/chat-care': typeof AppChatCareRoute
   '/_app/community-new': typeof AppCommunityNewRoute
+  '/_app/data': typeof AppDataRoute
   '/_app/hydration': typeof AppHydrationRoute
   '/_app/insights': typeof AppInsightsRoute
   '/_app/meds': typeof AppMedsRouteWithChildren
   '/_app/my-health': typeof AppMyHealthRoute
   '/_app/my-health-dna': typeof AppMyHealthDnaRoute
+  '/_app/plan': typeof AppPlanRoute
   '/_app/reports': typeof AppReportsRouteWithChildren
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/timeline': typeof AppTimelineRoute
@@ -1148,14 +1175,17 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/apple-health-import'
+    | '/ask-maya'
     | '/chat'
     | '/chat-care'
     | '/community-new'
+    | '/data'
     | '/hydration'
     | '/insights'
     | '/meds'
     | '/my-health'
     | '/my-health-dna'
+    | '/plan'
     | '/reports'
     | '/settings'
     | '/timeline'
@@ -1269,14 +1299,17 @@ export interface FileRouteTypes {
     | '/users'
     | '/account'
     | '/apple-health-import'
+    | '/ask-maya'
     | '/chat'
     | '/chat-care'
     | '/community-new'
+    | '/data'
     | '/hydration'
     | '/insights'
     | '/meds'
     | '/my-health'
     | '/my-health-dna'
+    | '/plan'
     | '/reports'
     | '/settings'
     | '/timeline'
@@ -1392,14 +1425,17 @@ export interface FileRouteTypes {
     | '/_app/account'
     | '/_app/admin'
     | '/_app/apple-health-import'
+    | '/_app/ask-maya'
     | '/_app/chat'
     | '/_app/chat-care'
     | '/_app/community-new'
+    | '/_app/data'
     | '/_app/hydration'
     | '/_app/insights'
     | '/_app/meds'
     | '/_app/my-health'
     | '/_app/my-health-dna'
+    | '/_app/plan'
     | '/_app/reports'
     | '/_app/settings'
     | '/_app/timeline'
@@ -1805,6 +1841,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppReportsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/plan': {
+      id: '/_app/plan'
+      path: '/plan'
+      fullPath: '/plan'
+      preLoaderRoute: typeof AppPlanRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/my-health-dna': {
       id: '/_app/my-health-dna'
       path: '/my-health-dna'
@@ -1840,6 +1883,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppHydrationRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/data': {
+      id: '/_app/data'
+      path: '/data'
+      fullPath: '/data'
+      preLoaderRoute: typeof AppDataRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/community-new': {
       id: '/_app/community-new'
       path: '/community-new'
@@ -1859,6 +1909,13 @@ declare module '@tanstack/react-router' {
       path: '/chat'
       fullPath: '/chat'
       preLoaderRoute: typeof AppChatRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/ask-maya': {
+      id: '/_app/ask-maya'
+      path: '/ask-maya'
+      fullPath: '/ask-maya'
+      preLoaderRoute: typeof AppAskMayaRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/apple-health-import': {
@@ -2527,14 +2584,17 @@ interface AppRouteChildren {
   AppAccountRoute: typeof AppAccountRoute
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppAppleHealthImportRoute: typeof AppAppleHealthImportRoute
+  AppAskMayaRoute: typeof AppAskMayaRoute
   AppChatRoute: typeof AppChatRoute
   AppChatCareRoute: typeof AppChatCareRoute
   AppCommunityNewRoute: typeof AppCommunityNewRoute
+  AppDataRoute: typeof AppDataRoute
   AppHydrationRoute: typeof AppHydrationRoute
   AppInsightsRoute: typeof AppInsightsRoute
   AppMedsRoute: typeof AppMedsRouteWithChildren
   AppMyHealthRoute: typeof AppMyHealthRoute
   AppMyHealthDnaRoute: typeof AppMyHealthDnaRoute
+  AppPlanRoute: typeof AppPlanRoute
   AppReportsRoute: typeof AppReportsRouteWithChildren
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppTimelineRoute: typeof AppTimelineRoute
@@ -2558,14 +2618,17 @@ const AppRouteChildren: AppRouteChildren = {
   AppAccountRoute: AppAccountRoute,
   AppAdminRoute: AppAdminRouteWithChildren,
   AppAppleHealthImportRoute: AppAppleHealthImportRoute,
+  AppAskMayaRoute: AppAskMayaRoute,
   AppChatRoute: AppChatRoute,
   AppChatCareRoute: AppChatCareRoute,
   AppCommunityNewRoute: AppCommunityNewRoute,
+  AppDataRoute: AppDataRoute,
   AppHydrationRoute: AppHydrationRoute,
   AppInsightsRoute: AppInsightsRoute,
   AppMedsRoute: AppMedsRouteWithChildren,
   AppMyHealthRoute: AppMyHealthRoute,
   AppMyHealthDnaRoute: AppMyHealthDnaRoute,
+  AppPlanRoute: AppPlanRoute,
   AppReportsRoute: AppReportsRouteWithChildren,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppTimelineRoute: AppTimelineRoute,

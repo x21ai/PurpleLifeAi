@@ -66,7 +66,7 @@ type Proposal = {
 type ProposalStatus = "pending" | "confirmed" | "cancelled" | "failed";
 
 export const Route = createFileRoute("/_app/chat")({
-  head: () => ({ meta: [{ title: "Ask · Purple" }] }),
+  head: () => ({ meta: [{ title: "Ask Maya · Purple" }] }),
   component: AskPage,
 });
 
@@ -240,7 +240,7 @@ function AskPage() {
       >
         <div className="mx-auto max-w-3xl">
           <p className="label-eyebrow text-muted-foreground">{t("chatPage.eyebrow")}</p>
-          <h1 className="mt-2 font-serif text-[40px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
+          <h1 className="mt-2 app-hero-title text-[32px] sm:text-[40px] text-foreground">
             {t("chatPage.title1")}
             <br />
             {t("chatPage.title2")}

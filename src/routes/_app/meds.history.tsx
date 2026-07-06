@@ -60,7 +60,7 @@ function MedsHistory() {
       </div>
 
       <p className="mt-6 label-eyebrow text-muted-foreground">{t("meds.history.eyebrow")}</p>
-      <h1 className="mt-2 font-serif text-[44px] sm:text-6xl leading-[1.02] tracking-[-0.02em] text-foreground">
+      <h1 className="mt-2 app-hero-title text-[32px] sm:text-[40px] text-foreground">
         {t("meds.history.title")}
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">{t("meds.history.subtitle")}</p>

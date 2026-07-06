@@ -1,18 +1,35 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Sun, HeartPulse, TrendingUp, Settings2, Plus } from "lucide-react";
+import { Sun, BarChart3, BookOpen, MessageCircle, Plus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
 type Tab = { to: string; icon: LucideIcon; key: string; label: string };
 
-// Four primary tabs flank a raised center capture button (Oura-style).
+/** Merged 5-tab nav: Today · Data · FAB · Plan · Ask Maya */
 const TABS: Tab[] = [
   { to: "/today", icon: Sun, key: "nav.today", label: "Today" },
-  { to: "/my-health", icon: HeartPulse, key: "nav.body", label: "My Body" },
-  { to: "/insights", icon: TrendingUp, key: "nav.patterns", label: "Insights" },
-  { to: "/settings", icon: Settings2, key: "nav.settings", label: "Settings" },
+  { to: "/data", icon: BarChart3, key: "nav.data", label: "Data" },
+  { to: "/plan", icon: BookOpen, key: "nav.plan", label: "Plan" },
+  { to: "/ask-maya", icon: MessageCircle, key: "nav.askMaya", label: "Ask Maya" },
 ];
+
+function isTabActive(pathname: string, tabTo: string): boolean {
+  if (tabTo === "/data") {
+    return (
+      pathname === "/data" ||
+      pathname.startsWith("/biometrics") ||
+      pathname.startsWith("/reports/trends/")
+    );
+  }
+  if (tabTo === "/plan") {
+    return pathname === "/plan" || pathname.startsWith("/plan/");
+  }
+  if (tabTo === "/ask-maya") {
+    return pathname === "/ask-maya" || pathname.startsWith("/chat");
+  }
+  return pathname === tabTo || pathname.startsWith(`${tabTo}/`);
+}
 
 export function BottomNav({ variant = "responsive" }: { variant?: "responsive" | "native" }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -20,7 +37,7 @@ export function BottomNav({ variant = "responsive" }: { variant?: "responsive" |
   const visibilityClass = variant === "native" ? "fixed" : "md:hidden fixed";
 
   const renderTab = (tab: Tab) => {
-    const active = pathname === tab.to || pathname.startsWith(tab.to + "/");
+    const active = isTabActive(pathname, tab.to);
     const Icon = tab.icon;
     const label = t(tab.key, { defaultValue: tab.label });
     return (

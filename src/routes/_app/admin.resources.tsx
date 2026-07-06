@@ -35,7 +35,7 @@ function AdminResources() {
 
   return (
     <div>
-      <h1 className="font-serif text-4xl">Resources</h1>
+      <h1 className="app-hero-title text-2xl">Resources</h1>
       <div className="mt-6 rounded-2xl border border-border bg-card p-6 grid gap-3 sm:grid-cols-2">
         <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Title" className="rounded-xl border border-border bg-background px-4 py-2" />
         <input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="URL" className="rounded-xl border border-border bg-background px-4 py-2" />

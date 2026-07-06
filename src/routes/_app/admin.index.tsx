@@ -58,7 +58,7 @@ function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="font-serif text-4xl">Overview</h1>
+      <h1 className="app-hero-title text-2xl">Overview</h1>
       <p className="mt-2 text-muted-foreground">Operational stats across the platform.</p>
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((c) => (

@@ -507,8 +507,8 @@ function MedsPage() {
       <p className="label-eyebrow text-muted-foreground">{t("meds.eyebrow")}</p>
       <h1
         className={cn(
-          "mt-3 font-serif leading-[1.02] tracking-[-0.02em] text-foreground",
-          hasLibrary ? "text-3xl sm:text-5xl lg:text-6xl" : "text-[44px] sm:text-6xl lg:text-7xl",
+          "mt-3 app-hero-title text-foreground",
+          hasLibrary ? "text-[28px] sm:text-[36px]" : "text-[32px] sm:text-[40px]",
         )}
       >
         {t("meds.title1")}

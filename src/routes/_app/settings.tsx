@@ -82,10 +82,10 @@ function SettingsPage() {
   return (
     <AppPage width="lg" className="px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
       <p className="label-eyebrow text-muted-foreground">{t("settings.eyebrow")}</p>
-      <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
+      <h1 className="mt-3 app-hero-title text-[32px] sm:text-[40px] text-foreground">
         {t("settings.title1")}<br/>{t("settings.title2")}
       </h1>
-      <p className="mt-6 body-serif text-foreground/75 max-w-[600px]">
+      <p className="today-lede mt-6 max-w-[600px] text-foreground/55">
         {t("settings.intro")}
       </p>
 

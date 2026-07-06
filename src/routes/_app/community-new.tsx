@@ -56,7 +56,7 @@ function NewPost() {
       <Link to="/community" className="text-sm text-foreground/70 hover:text-foreground">
         ← Community
       </Link>
-      <h1 className="mt-3 font-serif text-4xl">New post</h1>
+      <h1 className="mt-3 app-hero-title text-[28px] sm:text-[36px]">New post</h1>
       <p className="mt-2 text-muted-foreground">
         Be kind. No medical advice. Don't share other people's info.
       </p>

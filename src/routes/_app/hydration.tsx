@@ -98,7 +98,7 @@ function HydrationPage() {
       </Link>
 
       <p className="mt-8 label-eyebrow text-muted-foreground">Intake</p>
-      <h1 className="mt-2 font-serif text-[40px] sm:text-5xl leading-[1.05] tracking-[-0.02em]">
+      <h1 className="mt-2 app-hero-title text-[28px] sm:text-[36px]">
         What you took in<br/>today.
       </h1>
       <p className="mt-3 text-sm text-muted-foreground max-w-lg">

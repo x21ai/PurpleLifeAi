@@ -329,7 +329,7 @@ function ReportsDocumentsPage() {
       {/* Hero summary */}
       <section className="report-card-strong p-6 sm:p-8">
         <p className="report-eyebrow text-foreground/70">Your labs</p>
-        <h2 className="mt-3 font-serif text-3xl sm:text-4xl text-foreground leading-tight">
+        <h2 className="mt-3 app-hero-title text-[24px] sm:text-[28px] text-foreground leading-tight">
           {latest
             ? "A quiet ledger of what your body has been telling you."
             : "Start your private ledger of lab results."}

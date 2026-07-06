@@ -273,7 +273,7 @@ function WelcomePage() {
           <p className="label-eyebrow mb-4">
             {hasDeviceStep ? t("welcome.stepOneOfThree") : t("welcome.stepOneOfTwo")}
           </p>
-          <h1 className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight text-foreground">
+          <h1 className="app-hero-title text-[28px] sm:text-[36px] leading-[1.05] text-foreground">
             {t("welcome.whoTitle")}
           </h1>
           <p className="mt-5 text-lg text-muted-foreground max-w-lg">{t("welcome.whoBodyShort")}</p>
@@ -321,7 +321,7 @@ function WelcomePage() {
       {step === 1 && hasDeviceStep && (
         <div>
           <p className="label-eyebrow mb-4">{t("welcome.stepTwoOfThree")}</p>
-          <h1 className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight text-foreground">
+          <h1 className="app-hero-title text-[28px] sm:text-[36px] leading-[1.05] text-foreground">
             {t("welcome.devicesTitle")}
           </h1>
           <p className="mt-5 text-lg text-muted-foreground max-w-lg">{t("welcome.connectBody")}</p>
@@ -344,7 +344,7 @@ function WelcomePage() {
           <p className="label-eyebrow mb-4">
             {hasDeviceStep ? t("welcome.stepThreeOfThree") : t("welcome.stepTwoOfTwo")}
           </p>
-          <h1 className="font-serif text-4xl sm:text-6xl leading-[1.05] tracking-tight text-foreground">
+          <h1 className="app-hero-title text-[28px] sm:text-[36px] leading-[1.05] text-foreground">
             {t("welcome.tellTitle")}
           </h1>
           <p className="mt-5 text-lg text-muted-foreground max-w-lg">{t("welcome.tellBody")}</p>
@@ -420,7 +420,7 @@ function WelcomePage() {
       {step === journalStep && phase === "confirmed" && extraction && (
         <div>
           <p className="label-eyebrow mb-4">{t("welcome.heardEyebrow")}</p>
-          <h1 className="font-serif text-4xl sm:text-5xl leading-[1.05] tracking-tight text-foreground">
+          <h1 className="app-hero-title text-[28px] sm:text-[36px] leading-[1.05] text-foreground">
             {t("welcome.heardTitle")}
           </h1>
           <div className="mt-8 rounded-2xl border border-border bg-card p-6">
@@ -461,7 +461,7 @@ function WelcomePage() {
       {step === journalStep && phase === "stillReading" && (
         <div>
           <p className="label-eyebrow mb-4">{t("welcome.savedEyebrow")}</p>
-          <h1 className="font-serif text-4xl sm:text-5xl leading-[1.05] tracking-tight text-foreground">
+          <h1 className="app-hero-title text-[28px] sm:text-[36px] leading-[1.05] text-foreground">
             {t("welcome.savedTitle")}
           </h1>
           <p className="mt-5 text-lg text-muted-foreground max-w-lg">{t("welcome.savedBody")}</p>

@@ -181,7 +181,7 @@ function DnaPage() {
 
       <section className="mt-10">
         <p className="label-eyebrow text-muted-foreground">Optional</p>
-        <h2 className="mt-2 font-serif text-4xl sm:text-5xl tracking-[-0.02em] leading-[1.05]">
+        <h2 className="mt-2 app-hero-title text-[28px] sm:text-[36px]">
           A quiet read of a few
           <br />
           relevant variants.

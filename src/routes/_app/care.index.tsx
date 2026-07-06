@@ -38,9 +38,9 @@ function CareIndexPage() {
   });
 
   return (
-    <div className="mx-auto max-w-4xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
+    <div className="mx-auto max-w-3xl px-5 sm:px-10 lg:px-16 pt-12 sm:pt-20 lg:pt-24 pb-24">
       <p className="label-eyebrow text-muted-foreground">Care</p>
-      <h1 className="mt-3 font-serif text-4xl sm:text-5xl leading-[1.04] tracking-[-0.02em] text-foreground">
+      <h1 className="mt-3 app-hero-title text-[28px] sm:text-[36px] text-foreground">
         Care
       </h1>
       <p className="mt-3 max-w-xl text-sm text-muted-foreground">
@@ -51,7 +51,7 @@ function CareIndexPage() {
       <section className="mt-12">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <h2 className="font-serif text-2xl text-foreground">People you care for</h2>
+            <h2 className="app-section-title">People you care for</h2>
             <p className="mt-1 text-xs text-muted-foreground">
               They control what you can see and can revoke access any time.
             </p>
@@ -169,7 +169,7 @@ function MyCaregiversSection({
     <section className="mt-14">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="font-serif text-2xl text-foreground">My caregivers</h2>
+          <h2 className="app-section-title">My caregivers</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             People you've invited to help with your care.
           </p>

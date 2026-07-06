@@ -70,7 +70,7 @@ export function ReportSectionTitle({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <h2 className={cn("font-serif text-2xl text-foreground", className)}>{children}</h2>;
+  return <h2 className={cn("app-section-title text-xl", className)}>{children}</h2>;
 }
 
 export type ReportPillTone = "neutral" | "success" | "warning" | "alert";

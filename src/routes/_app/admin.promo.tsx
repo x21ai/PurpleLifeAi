@@ -74,7 +74,7 @@ function AdminPromo() {
 
   return (
     <div>
-      <h1 className="font-serif text-4xl">Promo codes</h1>
+      <h1 className="app-hero-title text-2xl">Promo codes</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         Create invite, discount, or share codes. Codes are uppercased and unique.
       </p>

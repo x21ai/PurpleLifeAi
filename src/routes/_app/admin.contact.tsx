@@ -27,7 +27,7 @@ function AdminContact() {
 
   return (
     <div>
-      <h1 className="font-serif text-4xl">Contact messages</h1>
+      <h1 className="app-hero-title text-2xl">Contact messages</h1>
       <ul className="mt-6 space-y-3">
         {rows.map((r) => (
           <li key={r.id} className={`rounded-2xl border border-border bg-card p-5 ${r.handled ? "opacity-60" : ""}`}>

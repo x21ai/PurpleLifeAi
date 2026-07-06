@@ -61,7 +61,7 @@ function AdminBillingPage() {
   return (
     <div className="space-y-10">
       <header>
-        <h1 className="font-serif text-4xl">Billing</h1>
+        <h1 className="app-hero-title text-2xl">Billing</h1>
         <p className="mt-2 text-muted-foreground">Manage Pro tier access and subscriptions.</p>
       </header>
 

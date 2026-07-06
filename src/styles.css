@@ -322,7 +322,7 @@ body::-webkit-scrollbar,
     font-family: var(--font-serif);
   }
 
-  /* Today hero typography (Merged / Flutter parity) */
+  /* App page hero typography (Merged / Flutter parity) */
   .app-route .today-eyebrow {
     font-family: var(--font-sans);
     font-size: 11px;
@@ -333,11 +333,21 @@ body::-webkit-scrollbar,
     line-height: 1;
   }
 
+  .app-route .app-hero-title,
   .app-route .today-hero-title {
     font-family: var(--font-serif);
     font-weight: 600;
     letter-spacing: -0.02em;
     line-height: 1.05;
+    color: var(--foreground);
+  }
+
+  .app-route .app-section-title {
+    font-family: var(--font-sans);
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
     color: var(--foreground);
   }
 

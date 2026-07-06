@@ -34,7 +34,7 @@ export function AskFab() {
 
   if (!enabled) return null;
   if (isNativeApp) return null;
-  if (pathname.startsWith("/chat")) return null;
+  if (pathname.startsWith("/chat") || pathname.startsWith("/ask-maya")) return null;
   // Hide on routes that already render their own primary floating action,
   // so the buttons don't stack on tablet/desktop.
   const routesWithOwnFab = [
@@ -50,8 +50,8 @@ export function AskFab() {
 
   return (
     <Link
-      to="/chat"
-      aria-label="Ask Purple"
+      to="/ask-maya"
+      aria-label="Ask Maya"
       className="inline-flex fixed bottom-28 md:bottom-6 right-5 md:right-6 z-40 h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/40 hover:bg-primary/90 active:scale-95 transition"
       style={{ marginBottom: "env(safe-area-inset-bottom)" }}
     >

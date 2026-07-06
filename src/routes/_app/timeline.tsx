@@ -282,7 +282,7 @@ function TimelinePage() {
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <p className="label-eyebrow text-muted-foreground">{t("timeline.eyebrow")}</p>
-          <h1 className="mt-3 font-serif text-[40px] sm:text-6xl leading-[1.05] tracking-[-0.02em] text-foreground">
+          <h1 className="mt-3 app-hero-title text-[32px] sm:text-[40px] text-foreground">
             {t("timeline.title1")}<br />{t("timeline.title2")}
           </h1>
         </div>
@@ -311,7 +311,7 @@ function TimelinePage() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <p className="mt-5 body-serif text-foreground/75 max-w-[560px]">
+      <p className="mt-5 today-lede max-w-[560px] text-foreground/55">
         {t("timeline.intro")}
       </p>
 

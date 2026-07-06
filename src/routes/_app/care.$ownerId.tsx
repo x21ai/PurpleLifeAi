@@ -204,7 +204,7 @@ function CareDashboardPage() {
         <Link to="/settings/sharing" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> {t("care.back")}
         </Link>
-        <h1 className="mt-6 font-serif text-3xl text-foreground">{t("care.noAccessTitle")}</h1>
+        <h1 className="mt-6 app-hero-title text-[28px] sm:text-[36px] text-foreground">{t("care.noAccessTitle")}</h1>
         <p className="mt-3 text-sm text-muted-foreground">
           {(overview.error as any)?.message ?? t("care.noAccessBody")}
         </p>
@@ -238,7 +238,7 @@ function CareDashboardPage() {
       </div>
 
       <p className="label-eyebrow text-muted-foreground mt-6">{t("care.eyebrow")}</p>
-      <h1 className="mt-3 font-serif text-4xl sm:text-5xl leading-[1.04] tracking-[-0.02em] text-foreground">
+      <h1 className="mt-3 app-hero-title text-[28px] sm:text-[36px] text-foreground">
         {dashboardTitle}
       </h1>
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -638,7 +638,7 @@ function TodayPanel({
       </Section>
 
       <Section>
-        <h2 className="font-serif text-xl text-foreground">Active alerts</h2>
+        <h2 className="app-section-title">Active alerts</h2>
         {alerts.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">None.</p>
         ) : (
@@ -715,7 +715,7 @@ function MedsPanel({
   return (
     <div className="space-y-6">
       <Section>
-        <h2 className="font-serif text-xl text-foreground">Today's doses</h2>
+        <h2 className="app-section-title">Today's doses</h2>
         {canWrite && (
           <p className="mt-1 text-xs text-muted-foreground">
             Actions you take here are logged on their account as caregiver writes.
@@ -736,7 +736,7 @@ function MedsPanel({
       </Section>
 
       <div>
-        <h2 className="font-serif text-xl text-foreground mb-3">Medications</h2>
+        <h2 className="app-section-title mb-3">Medications</h2>
         <MedsListReadOnly
           meds={meds}
           trailing={(m) =>

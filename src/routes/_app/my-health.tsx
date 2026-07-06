@@ -108,10 +108,10 @@ function MyHealthPage() {
           <path d="M 20 70 Q 300 -20 580 70" fill="none" stroke="url(#arc)" strokeWidth="1.5" />
         </svg>
 
-        <h2 className="mt-10 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground max-w-[600px]">
+        <h2 className="mt-10 app-hero-title text-[32px] sm:text-[40px] text-foreground max-w-[600px]">
           The long view of<br/>your health.
         </h2>
-        <p className="mt-6 body-serif text-foreground/70 max-w-[600px]">
+        <p className="today-lede mt-6 max-w-[600px] text-foreground/55">
           {narrative?.narrative ??
             "Purple is gathering your recent days to summarize your patterns here."}
         </p>

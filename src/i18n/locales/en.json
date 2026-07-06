@@ -12,6 +12,10 @@
   },
   "nav": {
     "today": "Today",
+    "data": "Data",
+    "plan": "Plan",
+    "askMaya": "Ask Maya",
+    "capture": "Capture",
     "journal": "Journal",
     "timeline": "Timeline",
     "patterns": "Patterns",

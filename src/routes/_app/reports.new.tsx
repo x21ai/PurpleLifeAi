@@ -132,7 +132,7 @@ function UploadReportPage() {
     >
       <section className="report-card-strong p-6 sm:p-8">
         <p className="report-eyebrow text-foreground/70">Add a report</p>
-        <h2 className="mt-3 font-serif text-3xl sm:text-4xl text-foreground leading-tight">
+        <h2 className="mt-3 app-hero-title text-[24px] sm:text-[28px] text-foreground leading-tight">
           {t("reportsNew.title")}
         </h2>
         <p className="mt-3 text-[15px] text-foreground/65 max-w-[520px]">

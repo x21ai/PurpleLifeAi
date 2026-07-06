@@ -50,7 +50,7 @@ function AdminMessages() {
 
   return (
     <div>
-      <h1 className="font-serif text-4xl">Messages</h1>
+      <h1 className="app-hero-title text-2xl">Messages</h1>
       <div className="mt-6 rounded-2xl border border-border bg-card p-6 space-y-3">
         <input
           value={subject}

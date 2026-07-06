@@ -82,7 +82,7 @@ function RiskDetailPage() {
       </Link>
 
       <p className="label-eyebrow mt-10 text-muted-foreground">{t("riskDetail.eyebrow")}</p>
-      <h1 className="font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] mt-3 text-foreground">
+      <h1 className="app-hero-title text-[32px] sm:text-[40px] mt-3 text-foreground">
         {t("riskDetail.title")}
       </h1>
 
@@ -121,7 +121,7 @@ function ForecastDetail({ forecast }: { forecast: Forecast }) {
           {tone.label} · score {forecast.risk_score}
         </span>
         {forecast.ai_narrative && (
-          <p className="mt-6 font-serif text-xl sm:text-2xl text-foreground max-w-prose leading-snug">
+          <p className="today-lede mt-6 max-w-prose text-foreground/75">
             {forecast.ai_narrative}
           </p>
         )}

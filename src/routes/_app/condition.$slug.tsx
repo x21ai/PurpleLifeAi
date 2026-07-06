@@ -72,7 +72,7 @@ function ConditionPage() {
 
       <header className="mt-6">
         <p className="label-eyebrow">{def.category.replace(/_/g, " ")}</p>
-        <h1 className="mt-2 font-serif text-4xl sm:text-5xl leading-[1.05] tracking-tight text-foreground">
+        <h1 className="mt-2 app-hero-title text-[28px] sm:text-[36px] leading-[1.05] tracking-tight text-foreground">
           {def.label}
         </h1>
         {def.aka.length > 0 && (

@@ -213,7 +213,7 @@ function ReportDetailPage() {
     <ReportShell title="Clinical report" back={{ to: "/reports/documents", label: "Reports" }}>
       <section className="report-card-strong p-6 sm:p-8">
         <ReportPill tone={statusTone}>{statusLabel}</ReportPill>
-        <h2 className="mt-4 font-serif text-3xl sm:text-4xl text-foreground leading-tight break-words">
+        <h2 className="mt-4 app-hero-title text-[24px] sm:text-[28px] text-foreground leading-tight break-words">
           {report.title}
         </h2>
         <p className="mt-2 text-sm text-foreground/65">

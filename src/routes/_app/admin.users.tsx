@@ -74,7 +74,7 @@ function AdminUsers() {
   return (
     <div>
       <div className="flex items-end justify-between gap-4 flex-wrap">
-        <h1 className="font-serif text-4xl">Users</h1>
+        <h1 className="app-hero-title text-2xl">Users</h1>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}

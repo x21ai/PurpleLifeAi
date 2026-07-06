@@ -249,7 +249,7 @@ function LogSeizurePage() {
       <div className="flex items-start justify-between mb-10 gap-4">
         <div>
           <p className="label-eyebrow text-muted-foreground">{t("seizuresNew.eyebrow")}</p>
-          <h1 className="mt-3 font-serif text-[40px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
+          <h1 className="mt-3 app-hero-title text-[32px] sm:text-[40px] text-foreground">
             {t("seizuresNew.title")}
           </h1>
         </div>

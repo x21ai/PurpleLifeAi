@@ -151,7 +151,7 @@ function MedicalHistoryPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-8">
       <header>
-        <h1 className="font-serif text-2xl text-foreground">Medical history report</h1>
+        <h1 className="app-hero-title text-2xl text-foreground">Medical history report</h1>
         <p className="text-sm text-muted-foreground mt-1">
           A consolidated PDF you can download, email yourself, or share with a clinician.
         </p>
@@ -230,7 +230,7 @@ function MedicalHistoryPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-serif text-lg">Your reports</h2>
+        <h2 className="app-section-title">Your reports</h2>
         {reports.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
         {reports.data?.reports?.length === 0 && (
           <p className="text-sm text-muted-foreground">No reports yet. Generate one above.</p>
@@ -281,7 +281,7 @@ function MedicalHistoryPage() {
         <section className="rounded-2xl border border-foreground/10 bg-card/60 p-5 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-serif text-lg">Monthly auto-report</h2>
+              <h2 className="app-section-title">Monthly auto-report</h2>
               <p className="text-xs text-muted-foreground">
                 Generate and email a fresh PDF on the same day every month.
               </p>

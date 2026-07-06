@@ -254,7 +254,7 @@ function BiometricsIndex() {
       </Link>
 
       <p className="label-eyebrow mt-10 text-muted-foreground">{t("biometrics.eyebrow")}</p>
-      <h1 className="font-serif text-[40px] sm:text-6xl leading-[1.04] tracking-[-0.02em] mt-3 text-foreground">
+      <h1 className="app-hero-title text-[32px] sm:text-[40px] mt-3 text-foreground">
         {t("biometrics.title1")}
         <br />
         {t("biometrics.title2")}

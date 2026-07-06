@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_app/biometrics/$metric")({
   },
   notFoundComponent: () => (
     <div className="mx-auto max-w-2xl px-5 py-20 text-center">
-      <h1 className="font-serif text-3xl">Metric not found</h1>
+      <h1 className="app-hero-title text-3xl">Metric not found</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         <Link to="/biometrics" className="underline">
           See all your signals
@@ -56,7 +56,7 @@ export const Route = createFileRoute("/_app/biometrics/$metric")({
     const router = useRouter();
     return (
       <div className="mx-auto max-w-2xl px-5 py-20 text-center">
-        <h1 className="font-serif text-3xl">Something went sideways.</h1>
+        <h1 className="app-hero-title text-3xl">Something went sideways.</h1>
         <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
         <button
           type="button"

@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_app/settings/travel")({
   component: TravelPage,
   errorComponent: ({ error, reset }) => (
     <div className="mx-auto max-w-3xl px-5 sm:px-10 pt-16 pb-24">
-      <h1 className="font-serif text-3xl text-foreground">Travel mode</h1>
+      <h1 className="app-hero-title text-3xl text-foreground">Travel mode</h1>
       <p className="mt-3 text-sm text-muted-foreground">
         We hit a snag loading your trips. {error?.message ? `(${error.message})` : ""}
       </p>
@@ -334,7 +334,7 @@ function TravelPage() {
       >
         <ChevronLeft className="h-3.5 w-3.5" /> {t("nav.settings")}
       </Link>
-      <h1 className="mt-4 font-serif text-4xl sm:text-5xl text-foreground">{t("travel.title")}</h1>
+      <h1 className="mt-4 app-hero-title text-[28px] sm:text-[36px] text-foreground">{t("travel.title")}</h1>
       <p className="mt-3 text-foreground/75 max-w-[600px]">
         {t("travel.intro")}
       </p>

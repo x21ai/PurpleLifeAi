@@ -60,7 +60,7 @@ function FriendBasicsPage() {
         <ArrowLeft className="h-3 w-3" /> Back to Sharing
       </Link>
       <p className="label-eyebrow mt-6">A friend on Purple</p>
-      <h1 className="font-serif text-[28px] sm:text-[32px] leading-tight text-foreground mt-2">
+      <h1 className="app-hero-title text-[28px] sm:text-[32px] text-foreground mt-2">
         About this friend
       </h1>
 

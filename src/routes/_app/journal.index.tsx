@@ -132,7 +132,7 @@ function JournalPage() {
       <div className="flex items-end justify-between mb-10 gap-4">
         <div>
           <p className="label-eyebrow text-muted-foreground">{t("journal.eyebrow")}</p>
-          <h1 className="mt-3 font-serif text-[44px] sm:text-6xl lg:text-7xl leading-[1.02] tracking-[-0.02em] text-foreground">
+          <h1 className="mt-3 app-hero-title text-[32px] sm:text-[40px] text-foreground">
             {t("journal.title1")}<br/>{t("journal.title2")}
           </h1>
         </div>
