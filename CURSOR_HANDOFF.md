@@ -1,19 +1,20 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~20:48 ET (TF25 triage; TF24 LIVE on ASC).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~17:10 ET (TF25 LIVE).
 
-**TF25 integrator:** merge `lovable/redesign` fleet slices (`89cf2d00`, `adf42d6c`, `009fda0f`, `f2ac82d8`) → bump `pubspec` +25 → upload after **P0 meds Taken** decision.
+**Install build 25 now** — fixes TF24 blank/stuck Today, auth session after reinstall, P0 meds Taken, journal UX, More for today, sign-in session error copy.
 
 ## TestFlight — what build has what (2026-07-06)
 
-| Build | ASC status | Founding Team | Git commit | UI | Perf fix | OAuth fix | TF25 slices | Install? |
-|-------|------------|---------------|------------|-----|----------|-----------|-------------|----------|
-| **1.0 (22)** | VALID | IN_BETA_TESTING | `00e9a56` | Old 4-tab | No | No | — | Replace |
-| **1.0 (23)** | VALID | IN_BETA_TESTING | `bfaf648e` | Merged 5-tab | No | No | — | Skip |
-| **1.0 (24)** | VALID | IN_BETA_TESTING | `a594b77`+ | Merged + Luciq | Yes | Yes | — | **Current on ASC** |
-| **1.0 (25)** | not uploaded | — | `f2ac82d8`+ fleet | Merged strip + meds card + journal UX | Yes | Yes | `89cf2d00` `adf42d6c` `009fda0f` | **Target upload** |
+| Build | ASC status | Founding Team | Git commit | TF25 fixes | Install? |
+|-------|------------|---------------|------------|------------|----------|
+| **1.0 (22–23)** | VALID | IN_BETA_TESTING | older | — | Skip |
+| **1.0 (24)** | VALID | IN_BETA_TESTING | `a594b77`+ | OAuth + perf only | Superseded |
+| **1.0 (25)** | **VALID** | **IN_BETA_TESTING** | `4f1eed2c` | auth/sync/data/today/meds/journal/Luciq | **Install now** |
 
-**TF25 observability triage (2026-07-06 ~20:48 ET):** `bun run ios:check-tf-feedback` → **23** ASC screenshot submissions (+4 new from `devynrosewalker@gmail.com` on build 24). `bun run ios:check-luciq` → `status: mcp`. Luciq MCP `list_crashes` + `list_bugs` on `flutter-purple` beta for `1.0.0 (24|25|26)` → **0 open**. **P0 open:** `tf-meds-taken-not-tappable` (Taken button). **TF25 fixes committed, not on device:** Today strip `89cf2d00`, meds card `adf42d6c`, journal honesty `009fda0f`. Full theme map: `docs/OPEN-ISSUES.md` ASC triage table.
+**TF25 ship (2026-07-06 ~17:08 ET):** ASC **1.0 (25) VALID**, Founding Team **IN_BETA_TESTING** (beta review WAITING_FOR_REVIEW). Upload ~17:04 ET. Gates: **`flutter test` 162/162**. Fixes blank/stuck TF24.
+
+**TF25 observability triage (pre-ship):** Luciq MCP **0** open crashes on builds 24–25; ASC **23** screenshot submissions mapped in `docs/OPEN-ISSUES.md`.
 
 **TF24 observability triage (2026-07-06 ~16:35 ET):** ASC **1.0 (24) VALID**, Founding Team **IN_BETA_TESTING** (internal + external). Luciq MCP **0** open crashes/bugs on `1.0.0 (24)`; ASC **19** screenshot submissions (historical, pre-24).
 

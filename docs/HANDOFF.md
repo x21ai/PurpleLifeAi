@@ -9,6 +9,15 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TestFlight 1.0 (25) VALID — Founding Team live (TF25 fleet).**
+`main` + `lovable/redesign` @ **`4f1eed2c`**. Flutter **1.0.0+25**: TF24 blank/stuck fixes
+(`00279718` auth validation, `33a4d953` Today timeouts, `f2ac82d8` readActiveSession glue,
+`0de07055` empty-cache sync, `1122050a` Data parallel fetch), Merged Today preview parity
+(`89cf2d00`, `8b729ea4` More for today), meds card + inline Taken (`adf42d6c`, `98055106`),
+journal UX (`5531d06b`), sign-in session error copy (`feda313c`), Luciq shake (`14ce2756`).
+Gates: **`flutter test` 162/162**. ASC **1.0 (25) VALID** ~17:08 ET; Founding Team via
+`asc-add-build-to-group.mjs 25`. **Install 25** (fixes TF24 blank Today, stuck loading, P0 meds Taken).
+
 **2026-07-06 Luciq shake/report fix (committed, TF25/26 upload).**
 `luciq_bootstrap.dart`: await init before `runApp`; `Luciq.setEnabled` +
 `BugReporting.setEnabled` + `BugReporting.setInvocationEvents` for shake + screenshot;
@@ -480,6 +489,15 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T21:10:00Z — TF25 upload VALID (serial integrator)
+
+- **Requested** — Poll fleet commits (journal, more-for-today, sign-in UI, feedback docs, auth/sync/data/today/meds); merge; `flutter test` 160+; pubspec +25; `ios:testflight` Founding Team; poll VALID; push `main`.
+- **Done** — Merged `lovable/redesign` into `main` (`842995f1`). Stack includes `0de07055` sync, `1122050a` data, `89cf2d00`/`8b729ea4` today, `adf42d6c`/`98055106` meds, `5531d06b` journal, `feda313c` sign-in, `14ce2756` Luciq. **`flutter test` 162/162**. Cleaned duplicate Pod `* 2.*` files. `bun run ios:testflight` **EXPORT SUCCEEDED** ~17:04 ET. ASC **1.0 (25) VALID** ~17:08 ET; `asc-add-build-to-group.mjs 25 "Founding Team"` → **IN_BETA_TESTING**. Pushed `main` + `lovable/redesign`.
+- **Issues** — Beta App Review **WAITING_FOR_REVIEW** (external). Luciq MCP fetch failed once (transient); ASC triage docs on branch pre-merge.
+- **Stand / next** — Testers install **1.0 (25)**; delete+reinstall if upgrading from 24; verify Today data, meds Taken, journal keyboard.
+- **Who / where** — Cursor serial owner, local, `main` @ `4f1eed2c`.
+- **Timestamp** — 2026-07-06T21:10:00Z.
 
 ### 2026-07-06T21:00:00Z — Luciq shake-to-report fix (TF25/26)
 
