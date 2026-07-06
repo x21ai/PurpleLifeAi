@@ -10,7 +10,7 @@ import 'journal_style.dart';
 
 /// Journal capture flow mirroring web `journal.new.tsx` (standard dark theme
 /// canvas): sticky bar (close, title, Save pill), "when" picker, serif text
-/// card, offline queue note. Text-first; media capture stays web/native-only.
+/// card, offline queue note. Text-first; media capture is web-only for now.
 class JournalCaptureScreen extends ConsumerStatefulWidget {
   const JournalCaptureScreen({super.key});
 
@@ -113,9 +113,14 @@ class _JournalCaptureScreenState extends ConsumerState<JournalCaptureScreen> {
               onSave: _save,
             ),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-                child: ContentColumn(
+              child: GestureDetector(
+                onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+                behavior: HitTestBehavior.translucent,
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+                  child: ContentColumn(
                   padding: EdgeInsets.zero,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,6 +183,7 @@ class _JournalCaptureScreenState extends ConsumerState<JournalCaptureScreen> {
                       ),
                     ],
                   ),
+                  ),
                 ),
               ),
             ),
@@ -188,8 +194,8 @@ class _JournalCaptureScreenState extends ConsumerState<JournalCaptureScreen> {
   }
 }
 
-/// Bottom capture dock mirroring web journal.new: Record / Photo / Video.
-/// Disabled with honest "Mobile app" subtitles (no snackbar).
+/// Honest placeholder until native voice/photo/video capture ships (web has
+/// full capture; Flutter repository is text-only for now).
 class _CaptureDock extends StatelessWidget {
   const _CaptureDock();
 
@@ -208,82 +214,37 @@ class _CaptureDock extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _DockButton(
-                palette: palette,
-                icon: Icons.mic_none,
-                label: 'Record',
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _DockButton(
-                palette: palette,
-                icon: Icons.photo_camera_outlined,
-                label: 'Photo',
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _DockButton(
-                palette: palette,
-                icon: Icons.videocam_outlined,
-                label: 'Video',
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _DockButton extends StatelessWidget {
-  const _DockButton({
-    required this.palette,
-    required this.icon,
-    required this.label,
-  });
-
-  final JournalPalette palette;
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: 0.55,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: palette.glassFill,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: palette.divider),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 20, color: palette.textSecondary),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: journalSans(
-                fontSize: 12,
-                color: palette.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Mobile app',
-              style: journalSans(
-                fontSize: 10,
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: palette.glassFill,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: palette.divider),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.mic_none,
+                size: 18,
                 color: palette.textQuaternary,
               ),
-            ),
-          ],
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Voice, photo, and video capture are coming soon. '
+                  'Text entries save normally.',
+                  style: journalSans(
+                    fontSize: 12,
+                    height: 1.4,
+                    color: palette.textTertiary,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -421,8 +382,7 @@ class _WhenPicker extends StatelessWidget {
                 'Change',
                 style: journalSans(
                   fontSize: 11,
-                  color: palette.textQuaternary,
-                  decoration: TextDecoration.underline,
+                  color: palette.textTertiary,
                 ),
               ),
             ],
