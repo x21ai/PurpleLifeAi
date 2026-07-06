@@ -1,20 +1,23 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~16:30 ET (TF24 integrated fleet uploaded).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~16:32 ET (TF24 shipping).
 
-**Recent (2026-07-06 ~16:30 ET): TF24 integrated fleet upload (ASC processing).**
-Branch `lovable/redesign` @ **`ff263b07`** pushed; `main` ff-synced. Fleet merges:
-OAuth (`4430c13`), perf throttle (`5ad15766`), web legacy redirects (`3d9d9179`), Luciq Settings
-row (`b1f78e08`/`ff263b07`), **`pubspec` 1.0.0+24**. **`flutter test` 140/140**, `flutter analyze lib/` clean.
-TestFlight **EXPORT SUCCEEDED** build 24 (~16:28 ET); ASC not yet VALID (poll `ios:check-asc-builds`).
-Build **1.0 (23)** VALID + Founding Team. Worker **`f89ad38f`** (web `_app` redirects). `:8765` HTTP 200.
+**Update TestFlight from 22→23 for Merged UI; 24 adds perf+OAuth+Luciq button.**
 
-**Recent (2026-07-06 ~16:20 ET): TF23 Merged shell VALID on ASC.**
+## TestFlight — what build has what (2026-07-06)
+
+| Build | ASC status | Founding Team | Git commit | UI | Perf fix (`5ad1576`) | OAuth fix (`4430c13`) | About build info | Install? |
+|-------|------------|---------------|------------|-----|----------------------|----------------------|------------------|----------|
+| **1.0 (22)** | VALID | IN_BETA_TESTING | `00e9a56` | **Old** 4-tab | No | No | No | **Replace** — stale |
+| **1.0 (23)** | VALID | IN_BETA_TESTING | `bfaf648e` | **Merged** 5-tab | No | No | No | **Install now** for new design |
+| **1.0 (24)** | Uploading | — | `cc6c2260`+ | Merged + Luciq row | **Yes** | **Yes** | **Yes** (`cc6c2260`) | **Wait** for VALID |
+
+**TF23 observability triage (2026-07-06 ~16:26 ET):** Luciq MCP **0** open crashes on `1.0.0 (23)`; ASC **19** screenshot submissions (historical).
+
+**Recent (2026-07-06 ~16:20 ET): TF23 Merged shell uploaded → VALID.**
 Commit **`b4a9dc1`** wires Flutter 5-tab Merged nav + `/data` `/plan` `/ask-maya`; branch
-`lovable/redesign` @ **`d1f5675`** pushed. `pubspec.yaml` **1.0.0+23**. TestFlight upload
-**EXPORT SUCCEEDED** (~16:19 ET). ASC API not yet listing 1.0 (23) VALID; retry
-`node scripts/asc-add-build-to-group.mjs 23 "Founding Team"` when build appears. Web `:8765`
-rebuilt (HTTP 200; sign-in for tab walkthrough).
+`lovable/redesign` @ **`d1f5675`** pushed. `pubspec.yaml` **1.0.0+23**. ASC **1.0 (23) VALID**,
+Founding Team **IN_BETA_TESTING**. Web `:8765` HTTP 200.
 
 **Recent (2026-07-06 ~16:30 ET): Flutter OAuth P0 fix (Capacitor parity).**
 Google/Apple login used broken `https://www.purplelife.org/auth/callback` redirect. Fixed:

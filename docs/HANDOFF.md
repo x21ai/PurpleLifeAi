@@ -9,19 +9,17 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-**2026-07-06 TF24 integrated fleet serial integrate (pushed).**
-`lovable/redesign` @ **`ff263b07`** (8 commits from `d1f5675`): OAuth (`4430c13`), perf
-(`5ad15766`), web redirects (`3d9d9179`), Luciq Settings (`b1f78e08`/`ff263b07`), **`pubspec`
-1.0.0+24**. Gates: `flutter analyze lib/` clean, **`flutter test` 140/140**. TestFlight build 24
-**EXPORT SUCCEEDED** ~16:28 ET (ASC processing). Build **1.0 (23)** VALID + Founding Team.
-Worker **`f89ad38f`** deployed. `:8765` HTTP 200. Matrix ~68% Merged parity. Stage 5 **NO-GO**.
+**2026-07-06 TF24 shipping — OAuth + perf + Luciq + About build info.**
+`lovable/redesign` merging `main`; includes **`cc6c2260`** About build stamp, OAuth (`4430c13`),
+perf (`5ad15766`), web redirects (`3d9d9179`), Luciq Settings (`b1f78e08`/`ff263b07`), **`pubspec`
+1.0.0+24**. Gates: **`flutter test` 140/140**. ASC **1.0 (23) VALID** + Founding Team.
+**Tester note:** update **22→23** for Merged UI; **24** adds perf + OAuth + Luciq button + About
+version line. Matrix ~68% Merged parity.
 
-**2026-07-06 About version/build date on Flutter + web Settings.**
-`lovable/redesign` (unpushed): Settings About shows `Version 1.0.0 (24) · Jul 6, 2026`
-format on Flutter (`AppBuildInfo` + `package_info_plus`) and TanStack (`formatAppBuildLabel`).
-`BUILD_DATE` injected via `scripts/app-build-env.sh` into TestFlight, Flutter web serve,
-and web `vite build`/`dev`. Gates: `flutter analyze` 0 issues, app_build_info + settings
-scroll tests pass.
+**2026-07-06 About version/build date (`cc6c2260`).**
+Settings About shows `Version 1.0.0 (24) · Jul 6, 2026` on Flutter (`AppBuildInfo` +
+`package_info_plus`) and TanStack (`formatAppBuildLabel`). `BUILD_DATE` injected via
+`scripts/app-build-env.sh` into TestFlight, Flutter web serve, and web `vite build`/`dev`.
 
 **2026-07-06 TestFlight 1.0 (23) VALID — Merged fleet shipped.**
 `main` + `lovable/redesign` @ **`d1f5675`**. Flutter **1.0.0+23**: 5-tab Merged shell
@@ -413,15 +411,6 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 
 ## Log
 
-### 2026-07-06T20:30:00Z — TF24 integrated fleet serial integrate
-
-- **Requested** — Wait for parallel fleet (OAuth, perf, redirects, Luciq); merge; gates; TF23/24 Founding Team; push; deploy web `_app`; update docs.
-- **Done** — Merged 8 commits (`4430c13`..`ff263b07`). `flutter analyze lib/` + **140/140** tests. TF24 **EXPORT SUCCEEDED** (integrated OAuth/perf/Luciq). TF23 **VALID** + Founding Team. Pushed `lovable/redesign`; Worker **`f89ad38f`**. `:8765` curl 200.
-- **Issues** — TF24 ASC processing (not VALID yet); `asc-add-build-to-group.mjs 24` when VALID. OAuth fix needs device QA. ASC feedback P1s from prior builds still open.
-- **Stand / next** — Poll `ios:check-asc-builds` for 1.0 (24) VALID; add Founding Team; Luciq MCP crash triage for build 24.
-- **Who / where** — Cursor serial integrator; `lovable/redesign`@`ff263b07`; macOS.
-- **Timestamp** — 2026-07-06T20:30:00Z
-
 ### 2026-07-06T20:30:00Z — About version/build date (Flutter + web)
 
 - **Requested** — Show exact version, build number, and build date in Settings About on
@@ -431,11 +420,28 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
   `about-section.tsx`; `scripts/app-build-env.sh` + `with-app-build-env.sh`; BUILD_DATE
   dart-define in `flutter-ios-testflight.sh`, `flutter-web-serve.sh`,
   `flutter-web-build-prod.sh`; web `dev`/`build` wrap with build env. Tests:
-  `flutter/test/app_build_info_test.dart`.
-- **Issues** — No push (TF24 agent may merge). Dev without build env shows Unknown date.
-- **Stand / next** — TF24 About should show ship date on device after upload.
-- **Who / where** — Cursor agent, local, `lovable/redesign`.
+  `flutter/test/app_build_info_test.dart`. Commit **`cc6c2260`**.
+- **Issues** — Dev without build env shows Unknown date.
+- **Stand / next** — Include in TF24 upload; About shows ship date on device.
+- **Who / where** — Cursor agent, local, `lovable/redesign@cc6c2260`.
 - **Timestamp** — 2026-07-06T20:30:00Z.
+
+### 2026-07-06T20:26:00Z — TF23 ASC VALID poll + Founding Team + observability triage
+
+- **Requested** — Poll ASC until build 23 VALID; add to Founding Team; run TF feedback + Luciq
+  checks; update `CURSOR_HANDOFF.md`; note OAuth `4430c13` and perf commits are after TF23 → TF24.
+- **Done** — Polled `ios:check-asc-builds` (~2 min); **1.0 (23) VALID** uploaded 13:20 PT.
+  `asc-add-build-to-group.mjs 23 "Founding Team"` → Added (beta review 422: already valid).
+  `ios:check-tf-feedback` → 19 ASC screenshot submissions. `ios:check-luciq` → SDK OK, MCP mode.
+  Luciq MCP `list_crashes` filter `1.0.0 (23)` → **0 open**. Updated `CURSOR_HANDOFF.md` build
+  matrix + triage; refreshed `docs/HANDOFF.md` snapshot.
+- **Issues** — TF23 does not include OAuth fix (`4430c13`) or perf throttle (`5ad1576`); testers
+  on login errors need TF24. ASC duplicate-narrative feedback predates TF22 fix; may recur on TF23
+  if Flutter Today still duplicates (verify on device).
+- **Stand / next** — Founding Team install **1.0 (23)** for Merged UI; upload **TF24** for OAuth +
+  perf + Luciq Settings row + About build info.
+- **Who / where** — Cursor subagent, local, `main@bfaf648e`.
+- **Timestamp** — 2026-07-06T20:26:00Z.
 
 ### 2026-07-06T20:25:00Z — TF23 Merged fleet serial integrate + TestFlight ship
 
