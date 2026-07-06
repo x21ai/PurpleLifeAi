@@ -9,6 +9,16 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 overnight deps security patch on `lovable/redesign` @ `5681373`.** Bumped
+`vite` to `^7.3.5` (lock resolves **7.3.6**); added Bun + pnpm overrides for
+`undici>=7.28.0`, `ws>=8.21.0`, `js-yaml@4.2.0` (pinned 4.x, not 5.x). `bun audit`
+down from **13** (5 high) to **2 low** (`@babel/core`, `esbuild` dev-server Windows
+only). Gates: `check:em-dash`, `check:live-data`, `check:unique-images`,
+`check:lovable-auth`, `check:supabase-types`, `bun run build` **PASS**.
+`check:entry-budget` still **FAIL** pre-existing (273885 gz vs 269000 budget, unchanged
+on old vite). Unrelated WIP in working tree (`reports.functions.ts`, care API routes)
+not in commit.
+
 **2026-07-06 care-accept-server-route DEPLOYED to prod.** `POST /api/care/accept`,
 `POST /api/care/decline`, `GET /api/care/incoming-invites` are now **live** on
 `www.purplelife.org` (Worker Version ID **`07bbab77-f4de-4501-89c0-e22a52e60941`**,
@@ -126,6 +136,21 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T02:20:00Z — overnight deps: vite + transitive CVE overrides
+
+- **Requested:** Bump vite to >=7.3.5; add bun overrides for undici>=7.28.0,
+  ws>=8.21.0, js-yaml>=4.2.0 if safe; `bun install`, full gates; commit if green.
+- **Done:** `package.json` vite `^7.3.5`; root `overrides` + mirrored `pnpm.overrides`
+  for `undici`, `ws`, `js-yaml@4.2.0` (pinned 4.2.0 because `>=4.2.0` pulled 5.x).
+  `bun install`; lock: vite **7.3.6**, undici **7.28.0**, ws **8.21.0**, js-yaml **4.2.0**.
+  Commit **`5681373`** on `lovable/redesign`.
+- **Issues:** `check:entry-budget` still fails pre-existing (same 273885 gz on old vite).
+  `bun audit` residual 2 low (babel, esbuild Windows dev-server). Unrelated WIP tsc errors
+  in working tree not touched.
+- **Stand / next:** None for deps; optional follow-up: entry-budget split or esbuild override.
+- **Who / where:** Cursor dependency-cve-scanner subagent, `lovable/redesign` @ `5681373`.
+- **Timestamp:** 2026-07-06T02:20:00Z.
 
 ### 2026-07-06T02:25:00Z — care-accept-server-route DEPLOYED (wrangler deploy, prod verified)
 
