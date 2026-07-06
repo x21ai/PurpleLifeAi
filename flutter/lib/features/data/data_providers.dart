@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/core_providers.dart';
@@ -8,6 +11,12 @@ import '../today/models/today_data.dart';
 import '../today/today_repository.dart';
 import '../vitals/biometric_metrics.dart';
 import '../vitals/vitals_repository.dart';
+
+/// Per-query timeout for Data tab parallel fetches.
+const dataQueryTimeout = Duration(seconds: 12);
+
+/// Max skeleton display before surfacing a retry CTA in the UI.
+const dataLoadingSkeletonMax = Duration(seconds: 15);
 
 /// Wearable metric keys surfaced on the unified Data tab (merged preview).
 const dataWearableMetricKeys = [
@@ -76,12 +85,58 @@ class DataScreenSnapshot {
     required this.labMetrics,
     required this.wearables,
     required this.hasLabs,
+    this.loadError,
+    this.failedQueries = 0,
   });
 
   final LabFlagSummary labSummary;
   final List<LabMetricLatest> labMetrics;
   final List<WearableMetricLatest> wearables;
   final bool hasLabs;
+  final String? loadError;
+  final int failedQueries;
+
+  bool get hasAnyRows => hasLabs || wearables.isNotEmpty;
+
+  bool get isEmptyFailure => loadError != null && !hasAnyRows;
+}
+
+class _QueryResult<T> {
+  const _QueryResult._({this.value, this.error});
+
+  final T? value;
+  final Object? error;
+
+  static Future<_QueryResult<T>> guard<T>(
+    Future<T> future, {
+    Duration timeout = dataQueryTimeout,
+    String? debugLabel,
+  }) async {
+    try {
+      return _QueryResult._(value: await future.timeout(timeout));
+    } on TimeoutException catch (error, stackTrace) {
+      debugPrint(
+        '[DataScreen] query timed out${debugLabel == null ? '' : ' ($debugLabel)'}: $error\n$stackTrace',
+      );
+      return _QueryResult._(error: error);
+    } catch (error, stackTrace) {
+      debugPrint(
+        '[DataScreen] query failed${debugLabel == null ? '' : ' ($debugLabel)'}: $error\n$stackTrace',
+      );
+      return _QueryResult._(error: error);
+    }
+  }
+}
+
+String? _loadErrorMessage({
+  required int failedQueries,
+  required bool hasAnyRows,
+}) {
+  if (failedQueries == 0) return null;
+  if (!hasAnyRows) {
+    return 'Could not load your data. Pull to refresh or retry.';
+  }
+  return 'Some data could not load. Pull to refresh to try again.';
 }
 
 LabFlagSummary _summarizeFlags(Map<String, List<ReportMetricRow>> seriesByKey) {
@@ -204,40 +259,72 @@ final dataScreenSnapshotProvider =
   ref.watch(authSessionProvider);
   final vitalsRepo = ref.read(vitalsRepositoryProvider);
 
-  final labAndToday = await Future.wait([
-    ref.watch(allMetricSeriesProvider.future),
-    ref.watch(todayDataProvider.future),
-  ]);
-  final labSeries = labAndToday[0] as Map<String, List<ReportMetricRow>>;
-  final today = labAndToday[1] as TodayData;
+  var failedQueries = 0;
+
+  final labAndToday = await (
+    _QueryResult.guard<Map<String, List<ReportMetricRow>>>(
+      ref.watch(allMetricSeriesProvider.future),
+      debugLabel: 'labs',
+    ),
+    _QueryResult.guard<TodayData>(
+      ref.watch(todayDataProvider.future),
+      debugLabel: 'today',
+    ),
+  ).wait;
+  final labResult = labAndToday.$1;
+  final todayResult = labAndToday.$2;
+
+  final labSeries =
+      labResult.value ?? const <String, List<ReportMetricRow>>{};
+  if (labResult.error != null) failedQueries += 1;
+
+  final today = todayResult.value;
+  if (todayResult.error != null) failedQueries += 1;
 
   final labMetrics = _labRows(labSeries);
   final summary = labMetrics.isEmpty
       ? LabFlagSummary.empty
       : _summarizeFlags(labSeries);
 
-  final seriesByKey = await Future.wait(
+  final wearableResults = await Future.wait(
     dataWearableMetricKeys.map(
-      (key) => vitalsRepo.loadMetricSeries(
-        MetricSeriesQuery(metricKey: key, days: 14),
+      (key) => _QueryResult.guard<MetricSeriesResult>(
+        vitalsRepo.loadMetricSeries(
+          MetricSeriesQuery(metricKey: key, days: 14),
+        ),
+        debugLabel: key,
       ),
     ),
   );
 
   final wearables = <WearableMetricLatest>[];
   for (var i = 0; i < dataWearableMetricKeys.length; i++) {
-    final row = _wearableFromSeries(dataWearableMetricKeys[i], seriesByKey[i]);
+    final result = wearableResults[i];
+    if (result.error != null) {
+      failedQueries += 1;
+      continue;
+    }
+    final series = result.value;
+    if (series == null) continue;
+    final row = _wearableFromSeries(dataWearableMetricKeys[i], series);
     if (row != null) wearables.add(row);
   }
 
-  if (wearables.isEmpty && today.scores.hasData) {
-    wearables.addAll(_wearableRows(today.scores));
+  if (wearables.isEmpty && today?.scores.hasData == true) {
+    wearables.addAll(_wearableRows(today!.scores));
   }
+
+  final hasAnyRows = labMetrics.isNotEmpty || wearables.isNotEmpty;
 
   return DataScreenSnapshot(
     labSummary: summary,
     labMetrics: labMetrics,
     wearables: wearables,
     hasLabs: labMetrics.isNotEmpty,
+    failedQueries: failedQueries,
+    loadError: _loadErrorMessage(
+      failedQueries: failedQueries,
+      hasAnyRows: hasAnyRows,
+    ),
   );
 });

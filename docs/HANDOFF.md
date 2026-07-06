@@ -9,6 +9,12 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 Data tab resilient parallel fetch (committed, not pushed).**
+`flutter/lib/features/data/`: per-query `_QueryResult.guard` with 12s timeout, partial
+`DataScreenSnapshot` + `loadError` banner, `DataLoadingGate` 15s skeleton cap with retry CTA.
+Verified: `flutter analyze lib/features/data/` clean. Fixes silent `AsyncLoading` from `5ad1576`
+parallel `Future.wait`.
+
 **2026-07-06 TestFlight 1.0 (24) VALID — Founding Team live.**
 `main` + `lovable/redesign` @ **`2317b217`** (`a594b77b` merge includes **`cc6c2260`** About build
 stamp). Flutter **1.0.0+24**: OAuth (`4430c13`), perf throttle (`5ad15766`), Luciq Settings row,
@@ -411,6 +417,20 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T20:38:00Z — Data tab resilient parallel fetch
+
+- **Requested** — Fix silent `AsyncLoading` from `5ad1576` parallel `Future.wait` on Data tab:
+  per-query error handling, partial data, timeout, loading skeleton max duration + error CTA.
+- **Done** — `flutter/lib/features/data/data_providers.dart`: `_QueryResult.guard` (12s timeout),
+  `DataScreenSnapshot.loadError` / `failedQueries`, parallel lab+today via record `.wait`.
+  `data_screen.dart`: `DataLoadingGate` (15s cap), `DataLoadErrorCard`, `DataPartialLoadBanner`.
+  New widgets: `data_load_error.dart`, `data_loading_gate.dart`. Verified:
+  `flutter analyze lib/features/data/` clean.
+- **Issues** — None. No push.
+- **Stand / next** — Parent fleet merge; optional `flutter test` on full suite.
+- **Who / where** — Cursor subagent, local, `lovable/redesign` (pre-commit).
+- **Timestamp** — 2026-07-06T20:38:00Z
 
 ### 2026-07-06T20:36:00Z — TF24 ship complete (VALID + Founding Team + Worker deploy)
 

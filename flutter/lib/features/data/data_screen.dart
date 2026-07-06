@@ -5,11 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
-import '../shared/loading_skeleton.dart';
 import 'data_insights_teaser.dart';
 import 'data_providers.dart';
 import 'data_style.dart';
 import '../insights/ai_insights_repository.dart';
+import 'widgets/data_load_error.dart';
+import 'widgets/data_loading_gate.dart';
 import 'widgets/data_metric_row.dart';
 import 'widgets/data_summary_bar.dart';
 
@@ -34,7 +35,6 @@ class _DataScreenState extends ConsumerState<DataScreen> {
   Widget build(BuildContext context) {
     final snapshotAsync = ref.watch(dataScreenSnapshotProvider);
     final tokens = PurpleTokens.loaded;
-    final p = DataPalette.dark();
 
     return CanvasBackground(
       child: RefreshIndicator(
@@ -46,44 +46,46 @@ class _DataScreenState extends ConsumerState<DataScreen> {
               top: tokens.spacing.x2,
               bottom: tokens.spacing.xl,
             ),
-            child: const ContentColumn(
-              child: LoadingSkeleton(sectionTitle: 'Your data', tileCount: 5),
-            ),
+            child: DataLoadingGate(onRetry: _refresh),
           ),
           error: (_, __) => SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: ContentColumn(
               child: Padding(
                 padding: EdgeInsets.only(top: tokens.spacing.x2),
-                child: DataCardShell(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Could not load your data',
-                        style: dataSans(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: p.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Pull to refresh or retry.',
-                        style: dataSans(fontSize: 13, color: p.textTertiary),
-                      ),
-                      const SizedBox(height: 12),
-                      FilledButton(
-                        onPressed: _refresh,
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                ),
+                child: DataLoadErrorCard(onRetry: _refresh),
               ),
             ),
           ),
           data: (snapshot) {
+            if (snapshot.isEmptyFailure) {
+              return SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.only(
+                  top: tokens.spacing.x2,
+                  bottom: tokens.spacing.xl,
+                ),
+                child: ContentColumn(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const DataPageTitle(
+                        title: 'Your data',
+                        subtitle:
+                            'Labs from report_metrics and wearable signals from biometrics.',
+                      ),
+                      const SizedBox(height: 16),
+                      DataLoadErrorCard(
+                        onRetry: _refresh,
+                        body: snapshot.loadError ??
+                            'Pull to refresh or retry.',
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
             final q = _query.trim().toLowerCase();
             bool matches(String label, String key) =>
                 q.isEmpty ||
@@ -113,6 +115,10 @@ class _DataScreenState extends ConsumerState<DataScreen> {
                           'Labs from report_metrics and wearable signals from biometrics.',
                     ),
                     const SizedBox(height: 16),
+                    if (snapshot.loadError != null) ...[
+                      DataPartialLoadBanner(message: snapshot.loadError!),
+                      const SizedBox(height: 12),
+                    ],
                     if (snapshot.hasLabs) ...[
                       DataSummaryBar(summary: snapshot.labSummary),
                       const SizedBox(height: 12),
