@@ -9,6 +9,39 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TestFlight 1.0 (20) shipped + external Founding Team group confirmed.**
+Bumped `flutter/pubspec.yaml` to `1.0.0+20` (no build 20 existed yet; latest was
+**19 VALID**). `flutter analyze lib/` clean, `flutter test` **124/124**, then
+`doppler run --project purple-life --config prd -- bun run ios:testflight`
+**uploaded successfully** (`** EXPORT SUCCEEDED **`). ASC processing finished in
+~5 min: **1.0 (20) processing=VALID**. Added build 20 to the external **"Founding
+Team"** group (`8ad416f5-8248-48e6-9951-03af3f932b6c`) and submitted Beta App
+Review via `scripts/asc-add-build-to-group.mjs 20 "Founding Team"` (recovered
+from an earlier uncommitted session and now committed) — review cleared in
+under a minute (expedited re-review, group already had an approved build).
+**Final state: internal=IN_BETA_TESTING, external=IN_BETA_TESTING.** Stale
+Capacitor **build 1** was already `expired=true` from the prior
+`tf-login-wrong-surface` fix; nothing to do there this round.
+**Working-tree safety:** found extensive uncommitted WIP already in the tree
+(native `file_picker`/`image_picker` pickers wired into care chat/reports,
+AI insights repository, care dashboard/settings/vitals edits, `care.server.ts`/
+`report-trends.functions.ts`/`reports.functions.ts`/`routeTree.gen.ts`) from a
+prior/concurrent session, not authored by this task. To avoid shipping
+unverified WIP to external testers, **stashed it (`git stash push -u`) before
+building**, built+shipped from the clean verified baseline, then **`git stash
+pop`** restored it byte-for-byte afterward (confirmed via diff: no conflicts,
+no data loss) — it remains uncommitted and untouched, exactly as found. Only
+the pubspec version bump and the recovered `asc-add-build-to-group.mjs` script
+were committed. Commit **`879bf8f`** on top of `5f971c3`/`5681373` (overnight
+vite CVE patch, already committed, not yet pushed) — all three pushed together.
+**`origin/main` and `origin/lovable/redesign` both now at `879bf8f`** (fast-
+forward, no merge conflicts; `main` was 3 commits behind, brought current via
+`git push origin lovable/redesign:main`).
+**Install for testers:** TestFlight app → Purple for Life → update to build
+**20** (external testers on the Founding Team group see it now); new installs
+via the public TestFlight link if one exists, otherwise an invite is required
+for the "Founding Team" group.
+
 **2026-07-06 overnight deps security patch on `lovable/redesign` @ `5681373`.** Bumped
 `vite` to `^7.3.5` (lock resolves **7.3.6**); added Bun + pnpm overrides for
 `undici>=7.28.0`, `ws>=8.21.0`, `js-yaml@4.2.0` (pinned 4.x, not 5.x). `bun audit`
@@ -136,6 +169,74 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T12:10:00Z — TestFlight 1.0 (20) ship + external Founding Team group
+
+- **Requested:** Publish a new Flutter build to TestFlight if not already current,
+  and make sure the external "Founding Team" beta group actually has it (external
+  testers are not auto-added).
+- **Done:**
+  1. `git fetch origin main lovable/redesign` — both already at the tip local
+     `lovable/redesign` was 2 commits ahead of (`5681373`, `5f971c3`, pending push).
+  2. `doppler run --project purple-life --config prd -- node scripts/asc-list-builds.mjs`
+     → latest was **1.0 (19) VALID**, no build 20 existed.
+  3. Found extensive **uncommitted WIP** already in the working tree (native
+     `file_picker`/`image_picker` pickers, care chat/reports/dashboard/settings/vitals
+     edits, `ai_insights_repository.dart`, `care.server.ts`, `report-trends.functions.ts`,
+     `reports.functions.ts`, `routeTree.gen.ts`) — not part of this task and not
+     verified/tested as a unit. `git stash push -u` to get a clean, previously-verified
+     tree before building, so the TestFlight upload only contains reviewed code plus the
+     version bump.
+  4. Bumped `flutter/pubspec.yaml` → `1.0.0+20`. `flutter analyze lib/` clean;
+     `flutter test` **124/124**.
+  5. First upload attempt failed (`could not find included file 'Developer.xcconfig'`)
+     because that machine-local Xcode-beta path fixup was untracked and got stashed
+     with `-u` along with everything else; recovered just that file (and the also-
+     stashed, previously-uncommitted `scripts/asc-add-build-to-group.mjs` helper) via
+     `git checkout <untracked-stash-commit> -- <path>` + `git reset` to keep them
+     untracked/unstaged as appropriate, then retried.
+  6. `doppler run --project purple-life --config prd -- bun run ios:testflight` →
+     `** ARCHIVE SUCCEEDED **` / `** EXPORT SUCCEEDED **`, upload confirmed complete.
+  7. Polled `asc-list-builds.mjs` every ~90s; **1.0 (20) processing=VALID** within
+     ~5 minutes, `internal=IN_BETA_TESTING` (auto), `external=READY_FOR_BETA_SUBMISSION`
+     (not auto, as expected).
+  8. Beta groups for app `6787298041`: `0871a099-...` "Development Team" (internal=true),
+     `8ad416f5-8248-48e6-9951-03af3f932b6c` "Founding Team" (internal=false) — matches
+     the group ID given in the request.
+  9. `doppler run --project purple-life --config prd -- node scripts/asc-add-build-to-group.mjs 20 "Founding Team"`
+     → added build 20 to the group, submitted Beta App Review
+     (`betaReviewState=WAITING_FOR_REVIEW`).
+  10. Checked stale Capacitor **build 1** — already `expired=true` from the prior
+      `tf-login-wrong-surface` fix (2026-07-06 earlier session); no action needed.
+  11. Re-polled ~1 minute later: **external=IN_BETA_TESTING** (expedited re-review,
+      group already had an approved build in rotation).
+  12. `git stash pop` restored the WIP exactly as found (verified via `git diff` on
+      `pubspec.yaml`: version line and the WIP's `file_picker`/`image_picker` lines both
+      present, no conflict markers). Committed only the version bump + the recovered
+      `asc-add-build-to-group.mjs` script as **`879bf8f`**. Pushed `lovable/redesign`
+      (`e67e04e..879bf8f`, includes the pending overnight vite CVE patch commits), then
+      fast-forwarded `main` to match via `git push origin lovable/redesign:main`
+      (`e67e04e..879bf8f`, no checkout needed, no conflicts). Both branches now
+      identical at `879bf8f` on `origin`.
+- **Final ASC state (build 1.0 (20)):** `processing=VALID`,
+  `internal=IN_BETA_TESTING`, `external=IN_BETA_TESTING`.
+- **Install instruction for testers:** Open the **TestFlight** app on the device
+  → **Purple for Life** → tap **Update** (build 20 is now live for the "Founding
+  Team" external group and the internal Development Team group). Testers who
+  never installed need an invite to the "Founding Team" group (or the public link
+  if one has been generated in ASC) before TestFlight will show the app at all.
+- **Issues:** None blocking. The WIP left in the tree (native pickers, AI insights
+  repo, care dashboard edits) is still uncommitted and **not part of build 20** —
+  it was deliberately excluded from this ship since it was never verified as a
+  unit; whoever owns that WIP should commit or resume it separately. Same for the
+  `" 2"`-suffixed duplicate junk files and `test-results/` — untouched, pre-existing,
+  not cleaned up in this task (out of scope).
+- **Stand / next:** TestFlight 1.0 (20) is live for both internal and external
+  groups; no further action needed for this request. Next real work: land the
+  native-pickers WIP (or discard if abandoned), and the `care.server.ts`/AI Worker
+  routes WIP still sitting uncommitted.
+- **Who / where:** Cursor agent, `lovable/redesign`/`main` @ `879bf8f`.
+- **Timestamp:** 2026-07-06T12:10:00Z.
 
 ### 2026-07-06T02:20:00Z — overnight deps: vite + transitive CVE overrides
 

@@ -1,8 +1,27 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~02:25 ET (care-accept-server-route deployed to prod).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~08:10 ET (TestFlight 1.0 (20) shipped, external Founding Team group confirmed).
 
-**Recent:** `POST /api/care/accept`, `POST /api/care/decline`, `GET /api/care/incoming-invites` **deployed to prod** via `doppler run --project cursor-cloudflare --config prd_cloudlfare -- env CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0 bunx wrangler deploy --config wrangler.deploy.jsonc` (the account-ID override was required; the first attempt without it uploaded the Worker fine but failed the zone-route attach step). **Worker Version ID `07bbab77-f4de-4501-89c0-e22a52e60941`.** Verified live with curl (no auth): all three routes return **401**, not 404; homepage/`/sign-in` unaffected. Deployed from `main`/`lovable/redesign` @ `d31d2a8` (branches identical). Full detail: `docs/HANDOFF.md` 2026-07-06T02:25:00Z log entry; issue closed in `docs/OPEN-ISSUES.md` `care-accept-server-route`.
+**Recent (2026-07-06 ~08:10 ET): TestFlight 1.0 (20) shipped.** Bumped
+`flutter/pubspec.yaml` to `1.0.0+20` (previous latest was 19 VALID), gates PASS
+(`flutter analyze` clean, `flutter test` 124/124), uploaded via `doppler run
+--project purple-life --config prd -- bun run ios:testflight`
+(`** EXPORT SUCCEEDED **`). ASC: **1.0 (20) processing=VALID,
+internal=IN_BETA_TESTING, external=IN_BETA_TESTING** — added to the external
+"Founding Team" group (`8ad416f5-8248-48e6-9951-03af3f932b6c`) and submitted
+Beta App Review via `scripts/asc-add-build-to-group.mjs 20 "Founding Team"`
+(now committed; recovers a helper written during an earlier uncommitted
+session). Stale Capacitor build 1 already `expired=true` from a prior fix,
+no action needed this round. **Safety note:** extensive uncommitted WIP was
+already in the tree (native file/image pickers, AI insights repo, care
+dashboard edits) from a different, unrelated session; it was stashed before
+the build so only verified code shipped, then restored byte-for-byte after
+(`git stash pop`, no conflicts) — still uncommitted, untouched. Only the
+version bump + the recovered script were committed: **`879bf8f`**, pushed to
+both `lovable/redesign` and `main` (fast-forward, now identical). Full detail:
+`docs/HANDOFF.md` 2026-07-06T12:10:00Z log entry.
+
+**Prior:** `POST /api/care/accept`, `POST /api/care/decline`, `GET /api/care/incoming-invites` **deployed to prod** via `doppler run --project cursor-cloudflare --config prd_cloudlfare -- env CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0 bunx wrangler deploy --config wrangler.deploy.jsonc` (the account-ID override was required; the first attempt without it uploaded the Worker fine but failed the zone-route attach step). **Worker Version ID `07bbab77-f4de-4501-89c0-e22a52e60941`.** Verified live with curl (no auth): all three routes return **401**, not 404; homepage/`/sign-in` unaffected. Deployed from `main`/`lovable/redesign` @ `d31d2a8` (branches identical). Full detail: `docs/HANDOFF.md` 2026-07-06T02:25:00Z log entry; issue closed in `docs/OPEN-ISSUES.md` `care-accept-server-route`.
 
 **Prior (2026-07-06 ~06:10 ET):** Deleted **22** untracked `" 2"`-suffixed duplicate files + `.flutter-web-serve.pid`. Gates PASS (`check:em-dash`, `tsc`, `flutter analyze`, `flutter test` 124/124). Committed and pushed on `lovable/redesign`: **`574ac0b`** (care incoming-invites route + Flutter client), **`362b9b6`** (auth screen parity), docs commit in same push. **`main` fast-forwarded** to match. Full detail: `docs/HANDOFF.md` 2026-07-06T06:10:00Z log entry.
 
