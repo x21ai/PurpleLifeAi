@@ -2,7 +2,7 @@
 
 Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~16:35 ET (TF24 LIVE).
 
-**Update TestFlight from 22→24.** Build **23** = Merged UI only; **24** = perf + OAuth + About build info (+ Luciq row).
+**Update TestFlight from 22→23 for Merged UI; 24 adds perf+OAuth+Luciq button.**
 
 ## TestFlight — what build has what (2026-07-06)
 
@@ -509,7 +509,7 @@ cd flutter && flutter test test/health_service_test.dart   # 4/4 pass
 | Branch | `lovable/redesign` @ **918c766** (pushed to `origin`) |
 | Flutter gates | `flutter analyze lib/` PASS; **27/27** tests |
 | `check:em-dash` | PASS |
-| Worker prod | **c3ee806d-f9c0-421b-9186-e56c4a7448e5** (`doppler run … CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0 bunx wrangler deploy -c wrangler.deploy.jsonc`) |
+| Worker prod | **a25b3da7-dc73-4b4f-bc3f-11e869245bed** (`doppler run … CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0 bunx wrangler deploy -c wrangler.deploy.jsonc`) |
 | Whoop routes | `GET /api/health/whoop-config` → **200** on `www.purplelife.org` |
 | TestFlight | **1.0 (12)** `processing=VALID`, `internal=IN_BETA_TESTING` (install latest Flutter native build) |
 

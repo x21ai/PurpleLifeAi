@@ -9,12 +9,13 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-**2026-07-06 TF24 shipping — OAuth + perf + Luciq + About build info.**
-`lovable/redesign` merging `main`; includes **`cc6c2260`** About build stamp, OAuth (`4430c13`),
-perf (`5ad15766`), web redirects (`3d9d9179`), Luciq Settings (`b1f78e08`/`ff263b07`), **`pubspec`
-1.0.0+24**. Gates: **`flutter test` 140/140**. ASC **1.0 (23) VALID** + Founding Team.
-**Tester note:** update **22→23** for Merged UI; **24** adds perf + OAuth + Luciq button + About
-version line. Matrix ~68% Merged parity.
+**2026-07-06 TestFlight 1.0 (24) VALID — Founding Team live.**
+`main` + `lovable/redesign` @ **`2317b217`** (`a594b77b` merge includes **`cc6c2260`** About build
+stamp). Flutter **1.0.0+24**: OAuth (`4430c13`), perf throttle (`5ad15766`), Luciq Settings row,
+web legacy redirects. Gates: **`flutter test` 143/143**. ASC **1.0 (24) VALID** (~16:33 ET);
+Founding Team **IN_BETA_TESTING** via `asc-add-build-to-group.mjs 24`. Worker **`a25b3da7`**
+(eigital `CLOUDFLARE_ACCOUNT_ID`, zone routes bound). **Tester note:** update **22→23** for Merged
+UI; **24** adds perf + OAuth + Luciq button + About version line.
 
 **2026-07-06 About version/build date (`cc6c2260`).**
 Settings About shows `Version 1.0.0 (24) · Jul 6, 2026` on Flutter (`AppBuildInfo` +
@@ -411,7 +412,22 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 
 ## Log
 
-### 2026-07-06T20:30:00Z — About version/build date (Flutter + web)
+### 2026-07-06T20:36:00Z — TF24 ship complete (VALID + Founding Team + Worker deploy)
+
+- **Requested** — Ship TF24 after TF23: merge `cc6c2260` About build info, OAuth/perf/Luciq commits;
+  `pubspec` 1.0.0+24; gates; Founding Team; wrangler deploy (eigital account); push `main`.
+- **Done** — Merged `lovable/redesign` → `main` @ **`a594b77b`** (includes **`cc6c2260`**).
+  **`flutter test` 143/143**. ASC **1.0 (24) VALID** (upload ~16:29 ET; re-upload redundant).
+  `asc-add-build-to-group.mjs 24 "Founding Team"` → Added. `build:prod` PASS; wrangler deploy
+  **`a25b3da7-dc73-4b4f-bc3f-11e869245bed`** with `CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0`.
+  Pushed `main` + `lovable/redesign` @ **`2317b217`**.
+- **Issues** — Re-upload attempt failed (build 24 already on ASC). Luciq/ASC triage for build 24
+  pending full MCP pass.
+- **Stand / next** — Testers on **22** install **24** (or **23** then **24**); verify OAuth login +
+  Settings About line on device.
+- **Who / where** — Cursor subagent, local, `main@2317b217`.
+- **Timestamp** — 2026-07-06T20:36:00Z.
+
 
 - **Requested** — Show exact version, build number, and build date in Settings About on
   Flutter and TanStack; inject `BUILD_DATE` at TestFlight and web build time.
