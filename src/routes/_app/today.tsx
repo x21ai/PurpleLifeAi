@@ -111,6 +111,21 @@ type Forecast = {
   band: string;
 };
 
+type HealthNarrativeRow = { narrative: string; day: string };
+
+function pickHealthNarrative(rows: HealthNarrativeRow[]): string | null {
+  const today = format(new Date(), "yyyy-MM-dd");
+  for (const row of rows) {
+    const text = row.narrative?.trim();
+    if (row.day === today && text) return text;
+  }
+  for (const row of rows) {
+    const text = row.narrative?.trim();
+    if (text) return text;
+  }
+  return null;
+}
+
 type Profile = { first_name: string | null; conditions: string[] | null };
 
 type AdminMessage = { id: string; subject: string; body: string; created_at: string };
@@ -126,11 +141,11 @@ function TodayPage() {
   const showAura = flags.enabled("aura");
   const careProfile = useCareProfile();
   const carePrompts = careProfile?.journalPrompts ?? null;
-  const careGreeting = careProfile?.todayGreeting ?? null;
 
   const [now, setNow] = useState<Date | null>(null);
   const [bio, setBio] = useState<Bio | null>(null);
   const [forecast, setForecast] = useState<Forecast | null>(null);
+  const [healthNarrative, setHealthNarrative] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [focus, setFocusState] = useState<"readiness" | "sleep" | "activity">(() => {
     if (typeof window === "undefined") return "sleep";
@@ -178,7 +193,7 @@ function TodayPage() {
   const load = useCallback(async () => {
     if (!userId) return;
     const since = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
-    const [b, f, p, msg, jc] = await Promise.all([
+    const [b, f, p, msg, jc, hn] = await Promise.all([
       supabase
         .from("biometrics")
         .select(
@@ -208,9 +223,16 @@ function TodayPage() {
         .from("journal_entries")
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId),
+      supabase
+        .from("health_narratives")
+        .select("narrative, day")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(30),
     ]);
     setBio((b.data as Bio | null) ?? null);
     setForecast((f.data as Forecast | null) ?? null);
+    setHealthNarrative(pickHealthNarrative((hn.data as HealthNarrativeRow[] | null) ?? []));
     setProfile((p.data as Profile | null) ?? null);
     setAnnouncement((msg.data as AdminMessage | null) ?? null);
     setJournalCount(jc.count ?? 0);
@@ -320,11 +342,13 @@ function TodayPage() {
     const day = Math.floor(now.getTime() / 86_400_000);
     return list[day % list.length];
   }, [profile?.conditions, now, carePrompts]);
-  const greetingSuffix = useMemo(() => {
-    if (!now) return "";
-    if (careGreeting) return careGreeting;
-    return getTodayGreeting(profile?.conditions ?? [], now.getHours()).greetingSuffix;
-  }, [profile?.conditions, now, careGreeting]);
+
+  const dailyNarrative = useMemo(() => {
+    const forecastText = forecast?.ai_narrative?.trim();
+    if (forecastText) return forecastText;
+    return healthNarrative;
+  }, [forecast?.ai_narrative, healthNarrative]);
+  const hasNarrative = !!dailyNarrative;
 
   const fetchSnapshot = useServerFn(getScoreSnapshot);
   const ymd = format(selectedDate, "yyyy-MM-dd");
@@ -404,21 +428,15 @@ function TodayPage() {
         <p className="mt-2 text-sm text-muted-foreground" suppressHydrationWarning>
           {t("todayPage.firstWordsNote", { words: firstWords })}
         </p>
-      ) : (
-        isToday &&
-        greetingSuffix &&
-        !forecast?.ai_narrative && (
-          <p className="mt-2 text-sm text-muted-foreground">{greetingSuffix}</p>
-        )
-      )}
-
-      {isToday && !forecast?.ai_narrative ? (
-        <p className="today-lede mt-4 max-w-[600px] text-foreground/55">{conditionPrompt}</p>
-      ) : !isToday ? (
-        <p className="today-lede mt-4 max-w-[600px] text-foreground/55">
-          Here's how {format(selectedDate, "EEEE, MMMM d")} went.
-        </p>
       ) : null}
+
+      {(!isToday || !hasNarrative) && (
+        <p className="today-lede mt-4 max-w-[600px] text-foreground/55">
+          {!isToday
+            ? `Here's how ${format(selectedDate, "EEEE, MMMM d")} went.`
+            : conditionPrompt}
+        </p>
+      )}
 
       <DateStrip value={selectedDate} onChange={setSelectedDate} />
       {!isToday && (
@@ -501,7 +519,7 @@ function TodayPage() {
                         ? "Worth slowing down."
                         : "Time to be careful."
                 }
-                narrative={forecast?.ai_narrative ?? undefined}
+                narrative={dailyNarrative ?? undefined}
               />
             </div>
             <div className="mt-6">
@@ -516,9 +534,9 @@ function TodayPage() {
         </div>
       )}
 
-      {forecast?.ai_narrative && (
+      {hasNarrative && (
         <div className="mt-12">
-          <NarrativeBlock className="glass-card rounded-[20px] border-primary/10">{forecast.ai_narrative}</NarrativeBlock>
+          <NarrativeBlock className="glass-card rounded-[20px] border-primary/10">{dailyNarrative}</NarrativeBlock>
         </div>
       )}
 
@@ -563,7 +581,7 @@ function TodayPage() {
           {announcement && (
             <div className="rounded-2xl border border-border bg-card p-4">
               <p className="label-eyebrow">{t("todayPage.fromTeam")}</p>
-              <p className="mt-2 font-serif text-lg text-foreground">{announcement.subject}</p>
+              <p className="mt-2 text-lg text-foreground">{announcement.subject}</p>
               <p className="mt-1 text-sm text-muted-foreground">{announcement.body}</p>
             </div>
           )}

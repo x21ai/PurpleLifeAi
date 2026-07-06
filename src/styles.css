@@ -77,10 +77,9 @@ body::-webkit-scrollbar,
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-info: var(--info);
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
-    system-ui, sans-serif;
-  --font-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-    system-ui, sans-serif;
+  /* Marketing / public routes: editorial serif headlines, system sans body. */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
 }
 
 @theme inline {
@@ -301,9 +300,45 @@ body::-webkit-scrollbar,
     text-rendering: optimizeLegibility;
   }
 
+  /*
+   * Signed-in app shell (`_app` routes): Apple SF Pro system stack for all UI.
+   * Marketing routes outside `.app-route` keep the editorial Georgia stack above.
+   */
+  .app-route {
+    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+      system-ui, sans-serif;
+    --font-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+      system-ui, sans-serif;
+    font-family: var(--font-sans);
+  }
+
+  .app-route .font-serif,
+  .app-route .font-display {
+    font-family: var(--font-serif);
+  }
+
   .font-serif,
   .font-display {
     font-family: var(--font-serif);
+  }
+
+  /* Today hero typography (Merged / Flutter parity) */
+  .app-route .today-eyebrow {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    line-height: 1;
+  }
+
+  .app-route .today-hero-title {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    color: var(--foreground);
   }
 
   /* ===== Purple v2 utility classes ===== */

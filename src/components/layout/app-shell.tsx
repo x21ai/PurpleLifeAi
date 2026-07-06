@@ -9,7 +9,7 @@ import { ReminderAlarmSheet } from "@/components/meds/reminder-alarm-sheet";
 export function AppShell() {
   const [collapsed] = useSidebarCollapsedPref();
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div className="app-route min-h-dvh bg-background text-foreground">
       <SidebarNav />
       <MobileTopBar />
       <main

@@ -33,7 +33,7 @@ export function NativeAppShell() {
     <NativeRouteGuard>
       <NativeConnectivityGate>
         <NativeShellProvider>
-        <div className="native-shell h-dvh bg-background text-foreground flex flex-col overflow-hidden">
+        <div className="app-route native-shell h-dvh bg-background text-foreground flex flex-col overflow-hidden">
           {!hideChrome && <MobileTopBar variant="native" />}
           <main
             className={

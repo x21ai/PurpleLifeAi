@@ -2,7 +2,7 @@ import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * The AI's voice. Source Serif 4 with the Sparkles marker.
+ * The AI daily insight. System sans body with the Sparkles marker.
  * Always max-w-prose for reading comfort.
  */
 export function NarrativeBlock({
