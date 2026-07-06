@@ -249,6 +249,20 @@ function RootComponent() {
     dismissPurpleSplash();
   }, []);
 
+  // Supabase puts auth errors on the site root hash when a recovery link expires.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = window.location.hash.startsWith("#")
+      ? window.location.hash.slice(1)
+      : window.location.hash;
+    if (!raw.includes("error=")) return;
+    const params = new URLSearchParams(raw);
+    const code = params.get("error_code");
+    if (code === "otp_expired" || code === "access_denied") {
+      window.location.replace("/sign-in?reset=expired");
+    }
+  }, []);
+
   useEffect(() => {
     hydrateLocale();
   }, []);

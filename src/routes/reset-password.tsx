@@ -1,6 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { bootstrapRecoverySessionFromUrl } from "@/lib/auth-recovery";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -19,31 +20,52 @@ export const Route = createFileRoute("/reset-password")({
 function ResetPasswordPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [bootstrapping, setBootstrapping] = useState(true);
   const [ready, setReady] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [linkExpired, setLinkExpired] = useState(false);
   const [mfaRequired, setMfaRequired] = useState(false);
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [totpCode, setTotpCode] = useState("");
   const [verifyingMfa, setVerifyingMfa] = useState(false);
 
   useEffect(() => {
-    // Supabase parses the recovery token from the URL hash and fires PASSWORD_RECOVERY.
+    let cancelled = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setReady(true);
+      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
+        setReady(true);
+        setLinkExpired(false);
+      }
     });
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+
+    void (async () => {
+      const result = await bootstrapRecoverySessionFromUrl();
+      if (cancelled) return;
+
+      if (result.ok) {
+        setReady(true);
+        setLinkExpired(false);
+      } else if (result.expired) {
+        setLinkExpired(true);
+        setErrorMsg(result.message ?? t("resetPassword.linkExpired"));
+      } else if (result.message) {
+        setErrorMsg(result.message);
+      }
+
+      setBootstrapping(false);
+    })();
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, [t]);
 
   useEffect(() => {
-    // A recovery-link session is AAL1. If the account has a verified MFA factor,
-    // Supabase rejects updateUser({ password }) until the session is elevated to
-    // AAL2, so we ask for the authenticator code first.
     if (!ready) return;
     let cancelled = false;
     const checkAssuranceLevel = async () => {
@@ -103,8 +125,6 @@ function ResetPasswordPage() {
     setStatus("submitting");
     const { error } = await supabase.auth.updateUser({ password });
     if (error) {
-      // Fallback: if the AAL check above missed it, route the raw AAL2 error
-      // to the authenticator step instead of surfacing Supabase's message.
       if (/aal2/i.test(error.message)) {
         const { data: factors } = await supabase.auth.mfa.listFactors();
         const totp = factors?.totp?.find((f) => f.status === "verified");
@@ -119,8 +139,10 @@ function ResetPasswordPage() {
       return;
     }
     setStatus("done");
-    setTimeout(() => navigate({ to: "/" }), 1200);
+    setTimeout(() => navigate({ to: "/sign-in" }), 1200);
   };
+
+  const showForm = ready && !linkExpired;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-6 py-12">
@@ -134,6 +156,19 @@ function ResetPasswordPage() {
           <p className="mt-10 font-serif text-xl text-muted-foreground">
             {t("resetPassword.done")}
           </p>
+        ) : bootstrapping ? (
+          <p className="mt-10 text-sm text-muted-foreground">
+            {t("resetPassword.verifyingLink")}
+          </p>
+        ) : linkExpired || (!ready && !bootstrapping) ? (
+          <div className="mt-10 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {errorMsg ?? t("resetPassword.openFromEmail")}
+            </p>
+            <Button asChild className="w-full h-14 text-base rounded-xl">
+              <Link to="/sign-in">{t("resetPassword.requestNewLink")}</Link>
+            </Button>
+          </div>
         ) : mfaRequired ? (
           <form onSubmit={handleVerifyMfa} className="mt-10 space-y-4">
             <p className="text-sm text-muted-foreground">{t("resetPassword.mfaPrompt")}</p>
@@ -170,7 +205,7 @@ function ResetPasswordPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="h-14 text-lg font-serif rounded-xl"
-              disabled={!ready || status === "submitting"}
+              disabled={!showForm || status === "submitting"}
             />
             <label htmlFor="confirm-password" className="label-eyebrow block pt-1">{t("resetPassword.confirmPassword")}</label>
             <PasswordInput
@@ -182,16 +217,11 @@ function ResetPasswordPage() {
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               className="h-14 text-lg font-serif rounded-xl"
-              disabled={!ready || status === "submitting"}
+              disabled={!showForm || status === "submitting"}
             />
-            <Button type="submit" className="w-full h-14 text-base rounded-xl" disabled={!ready || status === "submitting"}>
+            <Button type="submit" className="w-full h-14 text-base rounded-xl" disabled={!showForm || status === "submitting"}>
               {status === "submitting" ? t("resetPassword.updating") : t("resetPassword.updateBtn")}
             </Button>
-            {!ready && (
-              <p className="text-sm text-muted-foreground">
-                {t("resetPassword.openFromEmail")}
-              </p>
-            )}
             {errorMsg && (
               <p className="text-sm text-destructive" role="alert">{errorMsg}</p>
             )}

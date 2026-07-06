@@ -105,9 +105,20 @@ function SignInPage() {
   const redeem = useServerFn(redeemInviteCode);
 
   useEffect(() => {
-    // Silently capture invite codes from URL and detect locale for /welcome.
     captureInviteFromUrl();
     detectAndStorePrefill();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("reset") === "expired") {
+      setErrorMsg(
+        "That reset link expired or was already used. Request a new one below, or sign in if you already set a password.",
+      );
+      setStatus("error");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
   }, []);
 
   useEffect(() => {
