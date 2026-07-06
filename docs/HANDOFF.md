@@ -9,6 +9,22 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TestFlight 1.0 (23) VALID — Founding Team live; TF24 next.**
+`main` @ **`bfaf648e`** (pushed). ASC **1.0 (23) VALID** (~16:24 ET poll); Founding Team
+**IN_BETA_TESTING** confirmed via `asc-add-build-to-group.mjs 23`. Observability: Luciq MCP **0**
+open crashes on `1.0.0 (23)`; ASC **19** screenshot submissions (historical pre-TF22/TF21).
+**TF23 lacks** OAuth **`4430c13`** + perf **`5ad1576`** — ship **TF24** (`pubspec` **1.0.0+24**).
+Matrix ~**68%** Merged parity.
+
+**2026-07-06 TestFlight 1.0 (23) VALID — Merged fleet shipped (serial owner verified).**
+`main` + `lovable/redesign` @ **`bfaf648e`** (pushed, fast-forwarded). Flutter **1.0.0+23**:
+5-tab Merged shell (Today · Data · FAB · Plan · Ask Maya), `/data` `/plan` `/ask-maya`, dual-score
+Today, token restyle across meds/settings/reports/care/chat/data. TanStack: `data.tsx`, `plan.tsx`,
+`ask-maya.tsx`, bottom-nav 5-tab, `_app` typography pass. Gates: `flutter analyze` **0 issues**,
+**140/140** tests. ASC **1.0 (23) VALID**; Founding Team via `asc-add-build-to-group.mjs 23`.
+Matrix ~**68%** weighted Merged parity (`docs/FLUTTER-CUTOVER-GAP-MATRIX.md`). **TF24 queued**
+(perf throttle `5ad1576`, OAuth deep link `4430c13`, Luciq Settings row `f4530cde`; `pubspec` +24 local).
+
 **2026-07-06 TestFlight 1.0 (23) VALID — Merged fleet shipped.**
 `main` + `lovable/redesign` @ **`d1f5675`**. Flutter **1.0.0+23**: 5-tab Merged shell
 (Today · Data · FAB · Plan · Ask Maya), `/data` `/plan` `/ask-maya`, dual-score Today,
@@ -398,6 +414,23 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T20:26:00Z — TF23 ASC VALID poll + Founding Team + observability triage
+
+- **Requested** — Poll ASC until build 23 VALID; add to Founding Team; run TF feedback + Luciq
+  checks; update `CURSOR_HANDOFF.md`; note OAuth `4430c13` and perf commits are after TF23 → TF24.
+- **Done** — Polled `ios:check-asc-builds` (~2 min); **1.0 (23) VALID** uploaded 13:20 PT.
+  `asc-add-build-to-group.mjs 23 "Founding Team"` → Added (beta review 422: already valid).
+  `ios:check-tf-feedback` → 19 ASC screenshot submissions. `ios:check-luciq` → SDK OK, MCP mode.
+  Luciq MCP `list_crashes` filter `1.0.0 (23)` → **0 open**. Updated `CURSOR_HANDOFF.md` build
+  matrix + triage; refreshed `docs/HANDOFF.md` snapshot.
+- **Issues** — TF23 does not include OAuth fix (`4430c13`) or perf throttle (`5ad1576`); testers
+  on login errors need TF24. ASC duplicate-narrative feedback predates TF22 fix; may recur on TF23
+  if Flutter Today still duplicates (verify on device).
+- **Stand / next** — Founding Team install **1.0 (23)** for Merged UI; upload **TF24** for OAuth +
+  perf + Luciq Settings row.
+- **Who / where** — Cursor subagent, local, `main@bfaf648e`.
+- **Timestamp** — 2026-07-06T20:26:00Z.
 
 ### 2026-07-06T20:25:00Z — TF23 Merged fleet serial integrate + TestFlight ship
 
