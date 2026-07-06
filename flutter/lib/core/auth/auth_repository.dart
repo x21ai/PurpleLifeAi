@@ -79,6 +79,17 @@ class AuthRepository {
     );
   }
 
+  /// Sends a password reset email (mirrors web `sign-in.tsx` `handleForgotPassword`).
+  ///
+  /// The reset link opens `${siteUrl}/reset-password` in the browser, the same
+  /// web flow used today; there is no native in-app reset screen yet.
+  Future<void> resetPasswordForEmail(String email) {
+    return _client.auth.resetPasswordForEmail(
+      email,
+      redirectTo: '${_config.siteUrl}/reset-password',
+    );
+  }
+
   /// Ends the Supabase session and clears secure-storage backup.
   ///
   /// UI should call [signOutSessionProvider] instead so offline cache and
