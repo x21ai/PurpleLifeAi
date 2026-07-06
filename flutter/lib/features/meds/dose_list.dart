@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../design/purple_type.dart';
 import 'package:intl/intl.dart';
 
+import '../../design/glass_surface.dart';
 import '../../design/tokens.dart';
-import '../shared/glass_helpers.dart';
+import 'meds_style.dart';
 import 'meds_today.dart';
 import 'models/dose.dart';
 import 'models/medication.dart';
@@ -102,9 +102,11 @@ class TodayDosePanel extends StatelessWidget {
         : DateFormat('EEE, MMM d').format(DateTime.now());
     final canGoNext = !_isToday && onChangeDate != null;
 
+    final p = MedsPalette.dark();
+
     return GlassSurface(
       padding: const EdgeInsets.all(20),
-      borderRadius: 20,
+      borderRadius: BorderRadius.circular(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -120,19 +122,16 @@ class TodayDosePanel extends StatelessWidget {
                         Icon(
                           Icons.medication_outlined,
                           size: 16,
-                          color: Colors.white.withValues(alpha: 0.55),
+                          color: p.textTertiary,
                         ),
                         const SizedBox(width: 8),
                         Flexible(
                           child: Text(
                             _isToday ? "Today's doses" : 'Doses for this day',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontFamily: PurpleType.serif,
-                                  color: Colors.white.withValues(alpha: 0.95),
-                                ),
+                            style: medsSerif(
+                              fontSize: 22,
+                              color: p.textPrimary,
+                            ),
                           ),
                         ),
                       ],
@@ -160,9 +159,10 @@ class TodayDosePanel extends StatelessWidget {
                     else
                       Text(
                         '$label · ${_timezoneLabel()}',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.5),
-                            ),
+                        style: medsSans(
+                          fontSize: 12,
+                          color: p.textTertiary,
+                        ),
                       ),
                   ],
                 ),
@@ -173,10 +173,8 @@ class TodayDosePanel extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(0, 44),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
-                    foregroundColor: Colors.white.withValues(alpha: 0.85),
-                    side: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.18),
-                    ),
+                    foregroundColor: p.textPrimary.withValues(alpha: 0.85),
+                    side: BorderSide(color: p.divider),
                     shape: const StadiumBorder(),
                   ),
                   icon: markingAll
@@ -198,16 +196,15 @@ class TodayDosePanel extends StatelessWidget {
             Text.rich(
               TextSpan(
                 text: '$adherencePct%',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.95),
-                      fontWeight: FontWeight.w500,
-                    ),
+                style: medsSerif(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w500,
+                  color: p.textPrimary,
+                ),
                 children: [
                   TextSpan(
                     text: '  on schedule, last 14 days',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.5),
-                        ),
+                    style: medsSans(fontSize: 12, color: p.textTertiary),
                   ),
                 ],
               ),
@@ -215,18 +212,14 @@ class TodayDosePanel extends StatelessWidget {
             if (adherenceTotal > 0)
               Text(
                 '$adherenceTaken of $adherenceTotal doses logged',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.5),
-                    ),
+                style: medsSans(fontSize: 12, color: p.textTertiary),
               ),
           ],
           if (doses.isEmpty) ...[
             const SizedBox(height: 16),
             Text(
               'No scheduled doses today.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.65),
-                  ),
+              style: medsSans(fontSize: 15, color: p.textSecondary),
             ),
             const SizedBox(height: 12),
             OutlinedButton(
@@ -234,8 +227,8 @@ class TodayDosePanel extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(0, 44),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                foregroundColor: Colors.white.withValues(alpha: 0.85),
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
+                foregroundColor: p.textPrimary.withValues(alpha: 0.85),
+                side: BorderSide(color: p.divider),
                 shape: const StadiumBorder(),
               ),
               child: const Text('Add a medication'),
@@ -245,10 +238,11 @@ class TodayDosePanel extends StatelessWidget {
             Text(
               '$taken/${doses.length} taken'
               '${missed > 0 ? ' · $missed missed' : ''}',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
+              style: medsSans(
+                fontSize: 12,
+                color: p.textTertiary,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
             const SizedBox(height: 12),
             _DoseTimeline(
@@ -314,6 +308,7 @@ class _DateNavigator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = MedsPalette.dark();
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
       spacing: 4,
@@ -326,10 +321,11 @@ class _DateNavigator extends StatelessWidget {
         ),
         Text(
           '$label · $timezoneLabel',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
+          style: medsSans(
+            fontSize: 12,
+            color: p.textTertiary,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
         ),
         _RoundNavButton(
           icon: Icons.chevron_right,
@@ -342,8 +338,8 @@ class _DateNavigator extends StatelessWidget {
           style: OutlinedButton.styleFrom(
             minimumSize: const Size(0, 44),
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            foregroundColor: Colors.white.withValues(alpha: 0.65),
-            side: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+            foregroundColor: p.textSecondary,
+            side: BorderSide(color: p.divider),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -376,6 +372,7 @@ class _RoundNavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = MedsPalette.dark();
     return Tooltip(
       message: tooltip,
       child: OutlinedButton(
@@ -384,8 +381,8 @@ class _RoundNavButton extends StatelessWidget {
           minimumSize: const Size(44, 44),
           padding: EdgeInsets.zero,
           shape: const CircleBorder(),
-          foregroundColor: Colors.white.withValues(alpha: enabled ? 0.65 : 0.3),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+          foregroundColor: enabled ? p.textSecondary : p.textTertiary.withValues(alpha: 0.4),
+          side: BorderSide(color: p.divider),
         ),
         child: Icon(icon, size: 18),
       ),
@@ -457,6 +454,7 @@ class _DoseTimelineState extends State<_DoseTimeline> {
 
   @override
   Widget build(BuildContext context) {
+    final p = MedsPalette.dark();
     const dayMs = 86400000;
     final dayStart = _dayStart;
     final nowFraction = widget.showNowMarker
@@ -479,7 +477,7 @@ class _DoseTimelineState extends State<_DoseTimeline> {
                     top: 20,
                     child: Container(
                       height: 1,
-                      color: Colors.white.withValues(alpha: 0.12),
+                      color: p.divider,
                     ),
                   ),
                   for (final h in const [0, 6, 12, 18, 24])
@@ -489,7 +487,7 @@ class _DoseTimelineState extends State<_DoseTimeline> {
                       child: Container(
                         width: 1,
                         height: 8,
-                        color: Colors.white.withValues(alpha: 0.12),
+                        color: p.divider,
                       ),
                     ),
                   if (widget.showNowMarker)
@@ -499,7 +497,7 @@ class _DoseTimelineState extends State<_DoseTimeline> {
                       bottom: 0,
                       child: Container(
                         width: 1,
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: p.textSecondary.withValues(alpha: 0.5),
                       ),
                     ),
                   for (final dose in widget.doses)
@@ -538,9 +536,9 @@ class _DoseTimelineState extends State<_DoseTimeline> {
             for (final label in const ['12a', '6a', '12p', '6p', '12a'])
               Text(
                 label,
-                style: TextStyle(
+                style: medsSans(
                   fontSize: 10,
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: p.textTertiary,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
@@ -578,6 +576,7 @@ class _DoseRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = MedsPalette.dark();
     final med = dose.medication;
     final outOfStock = med?.outOfStock ?? false;
     final statusColor = _statusColor(dose.status);
@@ -586,9 +585,9 @@ class _DoseRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: p.surfaceSecondary.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: p.divider),
       ),
       child: Wrap(
         spacing: 10,
@@ -606,9 +605,10 @@ class _DoseRow extends StatelessWidget {
               children: [
                 Text(
                   med?.name ?? 'Medication',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.92),
-                      ),
+                  style: medsSans(
+                    fontSize: 15,
+                    color: p.textPrimary.withValues(alpha: 0.92),
+                  ),
                 ),
                 if (outOfStock) ...[
                   const SizedBox(width: 8),
@@ -738,8 +738,8 @@ class _ActionButton extends StatelessWidget {
           style: OutlinedButton.styleFrom(
             minimumSize: const Size(0, 44),
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            foregroundColor: Colors.white.withValues(alpha: 0.8),
-            side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
+            foregroundColor: MedsPalette.dark().textPrimary.withValues(alpha: 0.8),
+            side: BorderSide(color: MedsPalette.dark().divider),
             shape: const StadiumBorder(),
           ),
           child: Text(label),
@@ -750,7 +750,7 @@ class _ActionButton extends StatelessWidget {
           style: TextButton.styleFrom(
             minimumSize: const Size(0, 44),
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            foregroundColor: Colors.white.withValues(alpha: 0.65),
+            foregroundColor: MedsPalette.dark().textSecondary,
             shape: const StadiumBorder(),
           ),
           child: Text(label),
@@ -784,40 +784,28 @@ class MedLibraryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          for (var i = 0; i < medications.length; i++) ...[
-            if (i > 0)
-              Divider(
-                height: 1,
-                thickness: 1,
-                color: Colors.white.withValues(alpha: 0.08),
-              ),
-            MedLibraryRow(
-              medication: medications[i],
-              nextDose: nextDoseByMedId[medications[i].id],
-              onTap: () => onOpenMed(medications[i]),
-              onMarkTaken: onMarkTaken,
-              onEdit: onEditMed == null
-                  ? null
-                  : () => onEditMed!(medications[i]),
-              onArchive: onArchiveMed == null
-                  ? null
-                  : () => onArchiveMed!(medications[i]),
-              onRestore: onRestoreMed == null
-                  ? null
-                  : () => onRestoreMed!(medications[i]),
-            ),
-          ],
+    final p = MedsPalette.dark();
+    return MedsGroupedListShell(
+      children: [
+        for (var i = 0; i < medications.length; i++) ...[
+          if (i > 0) medsListDivider(p),
+          MedLibraryRow(
+            medication: medications[i],
+            nextDose: nextDoseByMedId[medications[i].id],
+            onTap: () => onOpenMed(medications[i]),
+            onMarkTaken: onMarkTaken,
+            onEdit: onEditMed == null
+                ? null
+                : () => onEditMed!(medications[i]),
+            onArchive: onArchiveMed == null
+                ? null
+                : () => onArchiveMed!(medications[i]),
+            onRestore: onRestoreMed == null
+                ? null
+                : () => onRestoreMed!(medications[i]),
+          ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -845,6 +833,7 @@ class MedLibraryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = MedsPalette.dark();
     final destructive = _statusColor('missed');
     final pendingNext = nextDose != null && nextDose!.isPending;
     final showQuickTaken =
@@ -871,14 +860,11 @@ class MedLibraryRow extends StatelessWidget {
                         children: [
                           Text(
                             medication.name,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  fontFamily: PurpleType.serif,
-                                  fontSize: 17,
-                                  color: Colors.white.withValues(alpha: 0.95),
-                                ),
+                            style: medsSerif(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w500,
+                              color: p.textPrimary,
+                            ),
                           ),
                           if (medication.outOfStock)
                             _Badge(label: 'OUT OF STOCK', color: destructive)
@@ -900,12 +886,11 @@ class MedLibraryRow extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.right,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.5),
-                              fontFeatures: const [
-                                FontFeature.tabularFigures(),
-                              ],
-                            ),
+                        style: medsSans(
+                          fontSize: 12,
+                          color: p.textTertiary,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -914,7 +899,7 @@ class MedLibraryRow extends StatelessWidget {
                         icon: Icon(
                           Icons.more_horiz,
                           size: 20,
-                          color: Colors.white.withValues(alpha: 0.45),
+                          color: p.textTertiary,
                         ),
                         onSelected: (value) {
                           switch (value) {
@@ -948,7 +933,7 @@ class MedLibraryRow extends StatelessWidget {
                       Icon(
                         Icons.chevron_right,
                         size: 18,
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: p.textTertiary,
                       ),
                   ],
                 ),
@@ -1048,9 +1033,7 @@ class MedFilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final purple = parseTokenColor(
-      PurpleTokens.loaded.colorsFor('dark').purplePrimary,
-    );
+    final p = MedsPalette.dark();
 
     return Wrap(
       spacing: 8,
@@ -1060,7 +1043,7 @@ class MedFilterChips extends StatelessWidget {
           _FilterChip(
             label: label,
             selected: selected == value,
-            accent: purple,
+            palette: p,
             onTap: () => onChanged(value),
           ),
       ],
@@ -1072,33 +1055,40 @@ class _FilterChip extends StatelessWidget {
   const _FilterChip({
     required this.label,
     required this.selected,
-    required this.accent,
+    required this.palette,
     required this.onTap,
   });
 
   final String label;
   final bool selected;
-  final Color accent;
+  final MedsPalette palette;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? accent : Colors.white.withValues(alpha: 0.06),
+      color: selected ? palette.purpleSoft : palette.surfaceSecondary,
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: selected
-                  ? const Color(0xFF0A0710)
-                  : Colors.white.withValues(alpha: 0.65),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 44),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: selected ? palette.purplePrimary : palette.divider,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: medsSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: selected ? palette.purplePrimary : palette.textSecondary,
+              ),
             ),
           ),
         ),

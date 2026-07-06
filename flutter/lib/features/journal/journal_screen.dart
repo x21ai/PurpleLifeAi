@@ -344,6 +344,7 @@ class _JournalHeader extends StatelessWidget {
           ),
         IconButton(
           onPressed: onRefresh,
+          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           icon: refreshing
               ? SizedBox(
                   width: 16,

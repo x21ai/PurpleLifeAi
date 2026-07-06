@@ -5,10 +5,12 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/core_providers.dart';
-import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
+import '../../design/glass_surface.dart';
 import '../../shell/routes.dart';
-import '../shared/glass_helpers.dart';
+import '../shared/glass_helpers.dart' hide GlassSurface;
+import '../shared/merged_style.dart';
+import 'seizures_style.dart';
 
 const _seizureTypes = [
   ('focal_aware', 'Focal aware'),
@@ -154,7 +156,6 @@ class _LogSeizureScreenState extends ConsumerState<LogSeizureScreen> {
   @override
   Widget build(BuildContext context) {
     final tokens = PurpleTokens.loaded;
-    final muted = Colors.white.withValues(alpha: 0.55);
 
     return CanvasBackground(
       child: SingleChildScrollView(
@@ -166,42 +167,18 @@ class _LogSeizureScreenState extends ConsumerState<LogSeizureScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextButton.icon(
+              MergedBackLink(
+                label: 'Today',
                 onPressed: () => context.go(AppRoutes.today),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                icon: Icon(Icons.arrow_back, size: 16, color: muted),
-                label: Text(
-                  'Today',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: muted,
-                      ),
-                ),
               ),
               const SizedBox(height: 32),
-              Text(
-                'LOG EVENT',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.45),
-                    ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Log a seizure',
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      fontFamily: PurpleType.serif,
-                      fontSize: 44,
-                      height: 1.02,
-                      color: Colors.white.withValues(alpha: 0.95),
-                    ),
-              ),
+              const SeizurePageHeader(),
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: _quickSaving ? null : _quickLog,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 44),
+                ),
                 child: _quickSaving
                     ? const SizedBox(
                         width: 18,
@@ -212,26 +189,17 @@ class _LogSeizureScreenState extends ConsumerState<LogSeizureScreen> {
               ),
               const SizedBox(height: 24),
               GlassSurface(
-                borderRadius: 24,
+                borderRadius: BorderRadius.circular(24),
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
                       'Details',
-                      style: PurpleType.serifStyle(
-                        fontSize: 22,
-                        color: Colors.white.withValues(alpha: 0.95),
-                      ),
+                      style: seizureCardTitle(),
                     ),
                     const SizedBox(height: 16),
-                    Text(
-                      'WHEN',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            letterSpacing: 1.2,
-                            color: muted,
-                          ),
-                    ),
+                    Text('WHEN', style: seizureSectionLabel()),
                     const SizedBox(height: 8),
                     OutlinedButton(
                       onPressed: _pickDateTime,
@@ -321,13 +289,14 @@ class _LogSeizureScreenState extends ConsumerState<LogSeizureScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'Photo and video attachments ship on iOS and Android.',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: muted,
-                          ),
+                      style: seizureMuted(),
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
                       onPressed: _saving ? null : _saveDetailed,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 44),
+                      ),
                       child: _saving
                           ? const SizedBox(
                               width: 18,

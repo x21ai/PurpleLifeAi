@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../design/purple_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,6 +12,7 @@ import '../shared/narrative_block.dart';
 import 'dose_list.dart';
 import 'medication_form_sheet.dart';
 import 'meds_repository.dart';
+import 'meds_style.dart';
 import 'models/dose.dart';
 import 'models/medication.dart';
 
@@ -234,9 +234,11 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _MedsHeader(
+                        MedsPageHeader(
+                          eyebrow: 'Medications',
+                          title: 'Your schedule,\nyour record.',
                           isOffline: data.isOffline,
-                          hasLibrary: data.hasMeds,
+                          large: !data.hasMeds,
                         ),
                         if (!data.hasMeds) ...[
                           const SizedBox(height: 24),
@@ -303,13 +305,7 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
                         ),
                         if (data.medications.isNotEmpty) ...[
                           const SizedBox(height: 40),
-                          Text(
-                            'ALL MEDICATIONS',
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  letterSpacing: 1.2,
-                                  color: Colors.white.withValues(alpha: 0.45),
-                                ),
-                          ),
+                          const MedsSectionEyebrow('All medications'),
                           const SizedBox(height: 12),
                           _TabBarUnderline(
                             tab: _tab,
@@ -384,6 +380,7 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
       );
     }
 
+    final p = MedsPalette.dark();
     if (_tab == 'active' && _filter == 'all') {
       final groups = _groupedMeds(filtered);
       return [
@@ -391,13 +388,7 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
           if (groups[kind]?.isNotEmpty ?? false) ...[
             Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 8),
-              child: Text(
-                label.toUpperCase(),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.45),
-                    ),
-              ),
+              child: MedsSectionEyebrow(label, palette: p),
             ),
             MedLibraryList(
               medications: groups[kind]!,
@@ -416,11 +407,11 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
     if (filtered.isEmpty) {
       return [
         GlassSurface(
+          borderRadius: BorderRadius.circular(20),
+          padding: const EdgeInsets.all(20),
           child: Text(
             'No medications match this filter',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.65),
-                ),
+            style: medsSans(fontSize: 15, color: MedsPalette.dark().textSecondary),
           ),
         ),
       ];
@@ -440,65 +431,6 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
   }
 }
 
-class _MedsHeader extends StatelessWidget {
-  const _MedsHeader({required this.isOffline, required this.hasLibrary});
-
-  final bool isOffline;
-  final bool hasLibrary;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'MEDICATIONS',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.45),
-                    ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Your schedule,\nyour record.',
-                style: (hasLibrary
-                        ? Theme.of(context).textTheme.headlineMedium
-                        : Theme.of(context).textTheme.displaySmall)
-                    ?.copyWith(
-                  fontFamily: PurpleType.serif,
-                  height: 1.02,
-                  letterSpacing: -0.5,
-                  color: Colors.white.withValues(alpha: 0.95),
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (isOffline)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-            ),
-            child: Text(
-              'Offline',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.7),
-                  ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-/// Round icon toolbar matching web actionsToolbar (+, scan, voice, history).
 class _MedsActionsToolbar extends StatelessWidget {
   const _MedsActionsToolbar({
     required this.onAdd,
@@ -564,6 +496,7 @@ class _ToolbarOutlineButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = MedsPalette.dark();
     return Tooltip(
       message: tooltip,
       child: OutlinedButton(
@@ -572,7 +505,8 @@ class _ToolbarOutlineButton extends StatelessWidget {
           minimumSize: const Size(44, 44),
           padding: EdgeInsets.zero,
           shape: const CircleBorder(),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
+          side: BorderSide(color: p.divider),
+          foregroundColor: p.textSecondary,
         ),
         child: Icon(icon, size: 20),
       ),
@@ -620,11 +554,10 @@ class _TabBarUnderline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = MedsPalette.dark();
     return Container(
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
-        ),
+        border: Border(bottom: BorderSide(color: p.divider)),
       ),
       child: Row(
         children: [
@@ -657,26 +590,27 @@ class _UnderlineTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = MedsPalette.dark();
     return InkWell(
       onTap: onTap,
       child: Container(
+        constraints: const BoxConstraints(minHeight: 44),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
               width: 2,
-              color: selected
-                  ? Colors.white.withValues(alpha: 0.95)
-                  : Colors.transparent,
+              color: selected ? p.textPrimary : Colors.transparent,
             ),
           ),
         ),
         child: Text(
           label,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Colors.white.withValues(alpha: selected ? 0.95 : 0.55),
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-              ),
+          style: medsSans(
+            fontSize: 14,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            color: selected ? p.textPrimary : p.textTertiary,
+          ),
         ),
       ),
     );
@@ -701,35 +635,31 @@ class _MedsEmptyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = MedsPalette.dark();
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: p.purpleSoft.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        border: Border.all(color: p.divider),
       ),
       child: Column(
         children: [
-          Icon(icon, size: 24, color: Colors.white.withValues(alpha: 0.55)),
+          Icon(icon, size: 24, color: p.textTertiary),
           if (title != null) ...[
             const SizedBox(height: 12),
             Text(
               title!,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontFamily: PurpleType.serif,
-                    color: Colors.white.withValues(alpha: 0.95),
-                  ),
+              style: medsSerif(fontSize: 22, color: p.textPrimary),
             ),
           ],
           const SizedBox(height: 8),
           Text(
             body,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.65),
-                ),
+            style: medsSans(fontSize: 15, color: p.textSecondary),
           ),
           if (actionLabel != null) ...[
             const SizedBox(height: 20),

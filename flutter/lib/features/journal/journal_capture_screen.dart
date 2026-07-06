@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../shared/glass_helpers.dart';
+import '../../design/glass_surface.dart';
+import '../shared/glass_helpers.dart' hide GlassSurface;
 import 'journal_repository.dart';
 import 'journal_style.dart';
 
@@ -131,6 +132,7 @@ class _JournalCaptureScreenState extends ConsumerState<JournalCaptureScreen> {
                       ),
                       const SizedBox(height: 20),
                       GlassSurface(
+                        borderRadius: BorderRadius.circular(20),
                         padding: const EdgeInsets.all(20),
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(minHeight: 220),
@@ -314,10 +316,11 @@ class _TopBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
-          IconButton(
-            onPressed: onClose,
-            tooltip: 'Close',
-            icon: Icon(
+        IconButton(
+          onPressed: onClose,
+          tooltip: 'Close',
+          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+          icon: Icon(
               Icons.close,
               color: palette.textPrimary.withValues(alpha: 0.8),
             ),
@@ -336,6 +339,7 @@ class _TopBar extends StatelessWidget {
           FilledButton(
             onPressed: canSave ? onSave : null,
             style: FilledButton.styleFrom(
+              minimumSize: const Size(0, 44),
               shape: const StadiumBorder(),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
@@ -391,7 +395,7 @@ class _WhenPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassSurface(
       padding: EdgeInsets.zero,
-      borderRadius: 14,
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),

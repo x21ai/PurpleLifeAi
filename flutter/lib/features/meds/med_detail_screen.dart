@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../../design/purple_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../design/glass_surface.dart';
 import '../../shell/routes.dart';
-import '../shared/glass_helpers.dart';
+import '../shared/glass_helpers.dart' show CanvasBackground, ContentColumn;
 import '../shared/loading_skeleton.dart';
 import 'dose_list.dart';
 import 'medication_form_sheet.dart';
 import 'meds_repository.dart';
+import 'meds_style.dart';
 import 'models/dose.dart';
 import 'models/medication.dart';
 
@@ -27,8 +28,8 @@ class MedDetailScreen extends ConsumerWidget {
 
     return CanvasBackground(
       child: medAsync.when(
-        loading: () => const SingleChildScrollView(
-          padding: EdgeInsets.only(top: 24, bottom: 120),
+        loading: () => SingleChildScrollView(
+          padding: const EdgeInsets.only(top: 24, bottom: 120),
           child: ContentColumn(
             child: LoadingSkeleton(sectionTitle: 'Medication', tileCount: 2),
           ),
@@ -138,6 +139,7 @@ class _MedDetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = MedsPalette.dark();
     final schedule = medication.isRescueMed
         ? 'Rescue medication, taken as needed.'
         : medication.timesOfDay.isEmpty
@@ -154,24 +156,16 @@ class _MedDetailBody extends StatelessWidget {
               children: [
                 TextButton.icon(
                   onPressed: () => context.go(AppRoutes.meds),
-                  icon: Icon(
-                    Icons.arrow_back,
-                    size: 18,
-                    color: Colors.white.withValues(alpha: 0.55),
-                  ),
+                  style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
+                  icon: Icon(Icons.arrow_back, size: 18, color: p.textTertiary),
                   label: Text(
                     'Back to medications',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.55),
-                    ),
+                    style: medsSans(fontSize: 14, color: p.textTertiary),
                   ),
                 ),
                 const Spacer(),
                 PopupMenuButton<String>(
-                  icon: Icon(
-                    Icons.more_horiz,
-                    color: Colors.white.withValues(alpha: 0.7),
-                  ),
+                  icon: Icon(Icons.more_horiz, color: p.textSecondary),
                   onSelected: (value) {
                     switch (value) {
                       case 'edit':
@@ -199,33 +193,23 @@ class _MedDetailBody extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              'MEDICATION',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    letterSpacing: 1.2,
-                    color: Colors.white.withValues(alpha: 0.45),
-                  ),
-            ),
+            const MedsSectionEyebrow('Medication'),
             const SizedBox(height: 8),
             Text(
               medication.name,
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    fontFamily: PurpleType.serif,
-                    height: 1.02,
-                    color: Colors.white.withValues(alpha: 0.95),
-                  ),
+              style: medsSerif(fontSize: 36, color: p.textPrimary),
             ),
             if (!medication.active) ...[
               const SizedBox(height: 8),
               Text(
                 'Archived',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.5),
-                    ),
+                style: medsSans(fontSize: 12, color: p.textTertiary),
               ),
             ],
             const SizedBox(height: 24),
             GlassSurface(
+              borderRadius: BorderRadius.circular(20),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -248,82 +232,55 @@ class _MedDetailBody extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              'RECENT DOSES',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    letterSpacing: 1.2,
-                    color: Colors.white.withValues(alpha: 0.45),
-                  ),
-            ),
+            const MedsSectionEyebrow('Recent doses'),
             const SizedBox(height: 12),
             dosesAsync.when(
               loading: () => const LoadingSkeleton(tileCount: 3),
               error: (_, __) => Text(
                 'Could not load doses.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.65),
-                    ),
+                style: medsSans(fontSize: 15, color: p.textSecondary),
               ),
               data: (doses) {
                 if (doses.isEmpty) {
                   return Text(
                     'No doses logged yet.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.65),
-                        ),
+                    style: medsSans(fontSize: 15, color: p.textSecondary),
                   );
                 }
-                return Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.04),
-                    borderRadius: BorderRadius.circular(20),
-                    border:
-                        Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
-                    children: [
-                      for (var i = 0; i < doses.length; i++) ...[
-                        if (i > 0)
-                          Divider(
-                            height: 1,
-                            color: Colors.white.withValues(alpha: 0.08),
-                          ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                DateFormat.yMMMd()
-                                    .add_jm()
-                                    .format(doses[i].scheduledAt.toLocal()),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.copyWith(
-                                      color: Colors.white
-                                          .withValues(alpha: 0.55),
-                                    ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                doses[i].status,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                            ],
-                          ),
+                return MedsGroupedListShell(
+                  children: [
+                    for (var i = 0; i < doses.length; i++) ...[
+                      if (i > 0) medsListDivider(p),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
                         ),
-                      ],
+                        child: Row(
+                          children: [
+                            Text(
+                              DateFormat.yMMMd()
+                                  .add_jm()
+                                  .format(doses[i].scheduledAt.toLocal()),
+                              style: medsSans(
+                                fontSize: 12,
+                                color: p.textTertiary,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              doses[i].status,
+                              style: medsSans(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: p.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
-                  ),
+                  ],
                 );
               },
             ),
@@ -347,22 +304,15 @@ class _DetailLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = MedsPalette.dark();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label.toUpperCase(),
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                letterSpacing: 1.2,
-                color: Colors.white.withValues(alpha: 0.45),
-              ),
-        ),
+        MedsSectionEyebrow(label, palette: p),
         const SizedBox(height: 4),
         Text(
           value,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
+          style: medsSans(fontSize: 17, color: p.textPrimary),
         ),
       ],
     );

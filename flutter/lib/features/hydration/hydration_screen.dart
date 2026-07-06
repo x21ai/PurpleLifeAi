@@ -3,12 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../design/glass_surface.dart' as merged_glass;
 import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
+import '../shared/merged_style.dart';
 import 'hydration_repository.dart';
+import 'hydration_style.dart';
 
 /// Hydration day view mirroring web `/hydration` (quick-add, goal ring, timeline).
 class HydrationScreen extends ConsumerStatefulWidget {
@@ -222,7 +225,7 @@ class _HydrationScreenState extends ConsumerState<HydrationScreen> {
   @override
   Widget build(BuildContext context) {
     final tokens = PurpleTokens.loaded;
-    final muted = Colors.white.withValues(alpha: 0.55);
+    final p = mergedPalette();
     final dayAsync = ref.watch(hydrationDayProvider(_normalizedDay));
 
     return CanvasBackground(
@@ -238,40 +241,12 @@ class _HydrationScreenState extends ConsumerState<HydrationScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextButton.icon(
+                MergedBackLink(
+                  label: 'Vitals',
                   onPressed: () => context.go(AppRoutes.vitals),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  icon: Icon(Icons.arrow_back, size: 16, color: muted),
-                  label: Text(
-                    'Vitals',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: muted,
-                        ),
-                  ),
                 ),
                 const SizedBox(height: 32),
-                Text(
-                  'INTAKE',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        letterSpacing: 1.2,
-                        color: Colors.white.withValues(alpha: 0.45),
-                      ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Water, electrolytes,\nand déjà vu.',
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontFamily: PurpleType.serif,
-                        fontSize: 44,
-                        height: 1.02,
-                        letterSpacing: 44 * -0.02,
-                        color: Colors.white.withValues(alpha: 0.95),
-                      ),
-                ),
+                const HydrationPageHeader(),
                 const SizedBox(height: 20),
                 _DayPicker(
                   day: _normalizedDay,
@@ -297,9 +272,7 @@ class _HydrationScreenState extends ConsumerState<HydrationScreen> {
                   ),
                   error: (_, __) => Text(
                     'Could not load hydration.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: muted,
-                        ),
+                    style: hydrationSans(color: p.textTertiary),
                   ),
                   data: (data) => Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -316,22 +289,14 @@ class _HydrationScreenState extends ConsumerState<HydrationScreen> {
                         ),
                       ],
                       const SizedBox(height: 24),
-                      Text(
-                        'TIMELINE',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              letterSpacing: 1.2,
-                              color: Colors.white.withValues(alpha: 0.45),
-                            ),
-                      ),
+                      const MergedSectionLabel('Timeline'),
                       const SizedBox(height: 12),
                       if (data.rows.isEmpty)
                         Text(
                           _isToday
                               ? 'Nothing logged yet today.'
                               : 'No intake logged this day.',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: muted,
-                              ),
+                          style: hydrationSans(color: p.textTertiary),
                         )
                       else
                         Column(
@@ -349,9 +314,7 @@ class _HydrationScreenState extends ConsumerState<HydrationScreen> {
                         const SizedBox(height: 12),
                         Text(
                           'Offline: showing last known goal; timeline may be empty.',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.4),
-                              ),
+                          style: hydrationSans(fontSize: 12, color: p.textTertiary),
                         ),
                       ],
                     ],
@@ -381,9 +344,10 @@ class _DayPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = mergedPalette();
     final label = DateFormat('EEE, MMM d').format(day);
-    return GlassSurface(
-      borderRadius: 999,
+    return merged_glass.GlassSurface(
+      borderRadius: BorderRadius.circular(999),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -391,19 +355,19 @@ class _DayPicker extends StatelessWidget {
           IconButton(
             onPressed: onPrevious,
             icon: const Icon(Icons.chevron_left),
-            color: Colors.white.withValues(alpha: 0.7),
+            color: p.textSecondary,
           ),
           Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white.withValues(alpha: 0.9),
-                ),
+            style: hydrationSans(
+              fontWeight: FontWeight.w500,
+              color: hydrationBody(),
+            ),
           ),
           IconButton(
             onPressed: onNext,
             icon: const Icon(Icons.chevron_right),
-            color: Colors.white.withValues(alpha: 0.7),
+            color: p.textSecondary,
           ),
         ],
       ),
@@ -418,20 +382,18 @@ class _GoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = mergedPalette();
     final liters = data.totalMl / 1000;
     final goalLiters = data.goalMl / 1000;
-    return GlassSurface(
-      borderRadius: 24,
+    return merged_glass.GlassSurface(
+      borderRadius: BorderRadius.circular(24),
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '${liters.toStringAsFixed(2)} L / ${goalLiters.toStringAsFixed(1)} L',
-            style: PurpleType.serifStyle(
-              fontSize: 32,
-              color: Colors.white.withValues(alpha: 0.95),
-            ),
+            style: medsSerif(fontSize: 32, color: p.textPrimary),
           ),
           const SizedBox(height: 12),
           ClipRRect(
@@ -439,7 +401,8 @@ class _GoalCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: data.progress,
               minHeight: 8,
-              backgroundColor: Colors.white.withValues(alpha: 0.08),
+              backgroundColor: p.divider,
+              color: p.purplePrimary,
             ),
           ),
         ],
@@ -471,18 +434,22 @@ class _QuickAddRow extends StatelessWidget {
       children: [
         FilledButton.tonal(
           onPressed: logging ? null : on250,
+          style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
           child: const Text('250 ml'),
         ),
         FilledButton.tonal(
           onPressed: logging ? null : on500,
+          style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
           child: const Text('500 ml'),
         ),
         OutlinedButton(
           onPressed: logging ? null : onCustomWater,
+          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
           child: const Text('Water'),
         ),
         OutlinedButton(
           onPressed: logging ? null : onElectrolyte,
+          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
           child: const Text('Electrolytes'),
         ),
       ],
@@ -498,11 +465,12 @@ class _TimelineTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = mergedPalette();
     final time = DateFormat('h:mm a').format(row.consumedAt);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: GlassSurface(
-        borderRadius: 16,
+      child: merged_glass.GlassSurface(
+        borderRadius: BorderRadius.circular(16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
@@ -511,7 +479,7 @@ class _TimelineTile extends StatelessWidget {
                   ? Icons.science_outlined
                   : Icons.water_drop_outlined,
               size: 18,
-              color: Colors.white.withValues(alpha: 0.55),
+              color: p.textTertiary,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -520,15 +488,11 @@ class _TimelineTile extends StatelessWidget {
                 children: [
                   Text(
                     '${row.volumeMl} ml · ${row.displayLabel}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
-                        ),
+                    style: hydrationSans(color: hydrationBody()),
                   ),
                   Text(
                     time,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.45),
-                        ),
+                    style: hydrationSans(fontSize: 12, color: p.textTertiary),
                   ),
                 ],
               ),
@@ -536,11 +500,7 @@ class _TimelineTile extends StatelessWidget {
             if (onDelete != null)
               IconButton(
                 onPressed: onDelete,
-                icon: Icon(
-                  Icons.close,
-                  size: 18,
-                  color: Colors.white.withValues(alpha: 0.45),
-                ),
+                icon: Icon(Icons.close, size: 18, color: p.textTertiary),
                 tooltip: 'Remove',
               ),
           ],

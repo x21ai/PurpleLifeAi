@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-import '../../design/purple_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -9,6 +7,7 @@ import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
 import 'meds_repository.dart';
+import 'meds_style.dart';
 import 'meds_today.dart';
 import 'models/dose.dart';
 
@@ -18,6 +17,7 @@ class MedsHistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final p = MedsPalette.dark();
     final historyAsync = ref.watch(doseHistoryProvider);
 
     return CanvasBackground(
@@ -29,44 +29,22 @@ class MedsHistoryScreen extends ConsumerWidget {
             children: [
               TextButton.icon(
                 onPressed: () => context.go(AppRoutes.meds),
-                icon: Icon(
-                  Icons.arrow_back,
-                  size: 18,
-                  color: Colors.white.withValues(alpha: 0.55),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(44, 44),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                 ),
+                icon: Icon(Icons.arrow_back, size: 18, color: p.textTertiary),
                 label: Text(
                   'Medications',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.55),
-                  ),
+                  style: medsSans(fontSize: 14, color: p.textTertiary),
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
-                // Mirrors web meds.history.eyebrow.
-                'MEDICATIONS',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.45),
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                // Mirrors web meds.history.title.
-                'Dose history',
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      fontFamily: PurpleType.serif,
-                      height: 1.02,
-                      color: Colors.white.withValues(alpha: 0.95),
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                // Mirrors web meds.history.subtitle.
-                'Every scheduled dose across your medications, day by day.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.55),
-                    ),
+              const MedsPageHeader(
+                eyebrow: 'Medications',
+                title: 'Dose history',
+                subtitle:
+                    'Every scheduled dose across your medications, day by day.',
               ),
               const SizedBox(height: 24),
               historyAsync.when(
@@ -76,17 +54,13 @@ class MedsHistoryScreen extends ConsumerWidget {
                 ),
                 error: (_, __) => Text(
                   'Could not load dose history.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.65),
-                      ),
+                  style: medsSans(fontSize: 15, color: p.textSecondary),
                 ),
                 data: (result) {
                   if (result.groups.isEmpty) {
                     return Text(
                       'No dose history yet.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.65),
-                          ),
+                      style: medsSans(fontSize: 15, color: p.textSecondary),
                     );
                   }
                   return Column(
@@ -121,52 +95,36 @@ class _HistoryDaySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = MedsPalette.dark();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Expanded(
-              child: Text(
-                day.label.toUpperCase(),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.45),
-                    ),
-              ),
+              child: MedsSectionEyebrow(day.label, palette: p),
             ),
             Text(
               '${day.takenCount} of ${day.total} taken',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
+              style: medsSans(
+                fontSize: 12,
+                color: p.textTertiary,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
           ],
         ),
         const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.04),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: [
-              for (var i = 0; i < day.doses.length; i++) ...[
-                if (i > 0)
-                  Divider(
-                    height: 1,
-                    color: Colors.white.withValues(alpha: 0.08),
-                  ),
-                _HistoryDoseRow(
-                  dose: day.doses[i],
-                  timezone: timezone,
-                ),
-              ],
+        MedsGroupedListShell(
+          children: [
+            for (var i = 0; i < day.doses.length; i++) ...[
+              if (i > 0) medsListDivider(p),
+              _HistoryDoseRow(
+                dose: day.doses[i],
+                timezone: timezone,
+              ),
             ],
-          ),
+          ],
         ),
       ],
     );
@@ -184,6 +142,7 @@ class _HistoryDoseRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = MedsPalette.dark();
     final medId = dose.medication?.id;
     final statusColor = _statusColor(dose.status);
 
@@ -201,10 +160,11 @@ class _HistoryDoseRow extends StatelessWidget {
                 width: 64,
                 child: Text(
                   formatDoseLocalTime(dose.scheduledAt, timezone),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.5),
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
+                  style: medsSans(
+                    fontSize: 12,
+                    color: p.textTertiary,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
               ),
               Expanded(
@@ -212,18 +172,14 @@ class _HistoryDoseRow extends StatelessWidget {
                   dose.medication?.name ?? 'Medication',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.92),
-                      ),
+                  style: medsSans(fontSize: 15, color: p.textPrimary),
                 ),
               ),
               if (dose.amountLabel != null) ...[
                 const SizedBox(width: 8),
                 Text(
                   dose.amountLabel!,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.5),
-                      ),
+                  style: medsSans(fontSize: 12, color: p.textTertiary),
                 ),
               ],
               const SizedBox(width: 8),

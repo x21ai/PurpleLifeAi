@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../design/purple_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../shared/glass_helpers.dart';
+import '../../design/glass_surface.dart';
+import '../../design/tokens.dart';
+import '../shared/glass_helpers.dart' show ContentColumn;
 import 'meds_repository.dart';
+import 'meds_style.dart';
 import 'models/medication.dart';
 
 /// Bottom sheet to add a medication (name, kind, dosage, schedule).
@@ -201,6 +203,7 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final p = MedsPalette.dark();
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Padding(
@@ -211,12 +214,10 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
         maxChildSize: 0.95,
         expand: false,
         builder: (context, scrollController) {
-          return Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF120A18),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-            ),
+          return GlassSurface(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            padding: EdgeInsets.zero,
+            variant: GlassMaterialVariant.thick,
             child: Column(
               children: [
                 Padding(
@@ -228,19 +229,13 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
                           widget.editingMedId == null
                               ? 'Add medication'
                               : 'Edit medication',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(
-                                fontFamily: PurpleType.serif,
-                                color: Colors.white.withValues(alpha: 0.95),
-                              ),
+                          style: medsSerif(fontSize: 22, color: p.textPrimary),
                         ),
                       ),
                       FilledButton(
                         onPressed: _canSave && !_saving ? _save : null,
                         style: FilledButton.styleFrom(
-                          minimumSize: const Size(0, 40),
+                          minimumSize: const Size(0, 44),
                           shape: const StadiumBorder(),
                         ),
                         child: _saving
@@ -266,9 +261,7 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
                           TextField(
                             controller: _nameController,
                             onChanged: (_) => setState(() {}),
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.95),
-                            ),
+                            style: medsSans(fontSize: 16, color: p.textPrimary),
                             decoration: _inputDecoration('Medication name'),
                           ),
                           const SizedBox(height: 20),
@@ -363,12 +356,7 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
                             const SizedBox(height: 12),
                             Text(
                               'Rescue medications are taken as needed, with no daily schedule.',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.55),
-                                  ),
+                              style: medsSans(fontSize: 13, color: p.textTertiary),
                             ),
                           ],
                         ],
@@ -385,18 +373,19 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
   }
 
   InputDecoration _inputDecoration(String hint) {
+    final p = MedsPalette.dark();
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
+      hintStyle: medsSans(fontSize: 14, color: p.textTertiary),
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.06),
+      fillColor: p.surfaceSecondary,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+        borderSide: BorderSide(color: p.divider),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+        borderSide: BorderSide(color: p.divider),
       ),
     );
   }
@@ -411,13 +400,7 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        text.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              letterSpacing: 1.2,
-              color: Colors.white.withValues(alpha: 0.45),
-            ),
-      ),
+      child: MedsSectionEyebrow(text),
     );
   }
 }
