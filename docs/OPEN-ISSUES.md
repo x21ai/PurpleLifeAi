@@ -76,15 +76,60 @@ Format:
 
 ## Flutter / TestFlight
 
+### ASC feedback triage (2026-07-06 ~20:48 ET)
+
+**Commands:** `bun run ios:check-tf-feedback` (23 submissions), `bun run ios:check-luciq`
+(`status: mcp`), Luciq MCP `list_crashes` + `list_bugs` on `flutter-purple` beta for
+`1.0.0 (24|25|26)` → **0 open crashes, 0 bugs**. ASC latest: **1.0 (24) VALID**;
+**TF25/26 not uploaded** (fixes committed on `lovable/redesign`, not yet on device).
+
+| Theme | ASC reports | Seen on build | Status | Fix commit / target build |
+|-------|-------------|---------------|--------|---------------------------|
+| **login** | Unable to login; Error is wrong; Why this error (×3, `a@arora.net`) | ≤21 (Capacitor) / 22–24 | **Fixed TF24** for OAuth; friendly errors TF21 | `4430c13` OAuth; `tf-login-wrong-surface` ASC distro fix |
+| **today duplicate narrative** | Same text twice ×3 (`a@arora.net`) | ≤23 | **Fixed TF22** | `00e9a56` |
+| **today typography** | Text too long/bold on Today (`a@arora.net`) | ≤24 | **Open P2** | — |
+| **today metric strip** | More explanation needed; readiness icon; sleep emoji; date-tab transition (`devynrosewalker`) | 24 | **Partial TF25** layout only | `89cf2d00` strip; labels/transitions **open** |
+| **meds Taken** | Not letting me press Taken (`devynrosewalker`) | 24 | **Open P0** (repeat = P0) | `adf42d6c` read-only card **TF25**; inline Taken still `/meds` only |
+| **journal capture** | Photo/video/record not working (`devynrosewalker`) | 24 | **Open P1** (stub honest) | `009fda0f` UX honesty **TF25**; native capture **deferred** |
+| **journal keyboard** | (implicit in capture flow) | 24 | **Fixed TF25** | `009fda0f` dismiss on tap-outside |
+| **design / shell** | Settings burger left; heading too large; bottom whitespace (×recurring) | 17–24 | **Partial** | `tf-settings-shell-nav` blocked; `tf-heading-typography` / `tf-bottom-whitespace` partial |
+| **sync / data** | Sync bar every page; sync time wrong; what is syncing; synced data visibility; timezone city | ≤18 | **Mostly fixed TF16–18** | see resolved bullets below |
+| **oauth tools** | Why is this not working (`a@arora.net`) | ≤18 | **Partial** | Oura URI registered; Whoop + device QA open |
+| **perf / blank** | App crashing (`a@arora.net` 2026-07-04) | pre-16 | **No repro** | Luciq 0 crashes all builds; `tf-crash-report` open |
+| **blank screen / no data** | (implicit from TF24 fleet) | 24 | **Fixed TF24/25** | `00279718` auth session; `33a4d953` Today timeouts; `f2ac82d8` glue |
+
+**New tester (`devynrosewalker@gmail.com`, 2026-07-06 20:40–20:44 ET, build 24):** four
+screenshots in one session — meds Taken, journal media, metric explanations, Today polish.
+All four logged above; none block TF25 upload but **meds Taken = P0** until inline actions
+ship or Today card wires `TodayDosePanel`.
+
 - [ ] **flutter-journal-media-capture** — Flutter journal new-entry is text-only; voice/photo/video
   work on web (`journal.new.tsx` + `journal-media` uploads) but not wired on native. Capture screen
   shows honest "coming soon" copy (`009fda0f`); `JournalRepository.saveEntry` always `media_urls: []`.
+  ASC **2026-07-06** `devynrosewalker`: "not letting me take a picture or record". **TF25** ships
+  honesty + keyboard fixes only; full native capture remains Phase 5 (`flutter-phase5-nogo`).
   _Raised 2026-07-06 TF tester report._
+
+- [ ] **tf-meds-taken-not-tappable** — **P0** ASC 2026-07-06 `devynrosewalker`: "It's not letting
+  me press taken" on dose UI (build 24). Repeat report class = P0 per observability rule.
+  **TF25 partial:** `adf42d6c` restores read-only `TodayMedsSection` on `/today`; inline
+  Taken / Skip / Snooze remain on `/meds` (`TodayDosePanel`) only. **TF26 target:** wire dose
+  actions on Today card or confirm tester was on `/meds` and fix tap target there.
+  _Raised 2026-07-06 ASC; blocks "build ready" until fixed or wont-fix with owner sign-off._
+
+- [ ] **tf-metric-strip-explanations** — ASC 2026-07-06 `devynrosewalker`: "more of an explanation
+  of what these things mean" on Today metric strip. **TF25** `89cf2d00` ships preview-aligned
+  horizontal strip (Sleep · HRV · Efficiency · Rest HR) but no per-metric tooltips or glossary.
+  Add info affordance or drill-down copy on strip chips. _Raised 2026-07-06 ASC._
+
+- [ ] **tf-today-date-tab-polish** — ASC 2026-07-06 `devynrosewalker`: readiness icon incomplete,
+  sleep needs emoji, Today↔date tab transition should be smoother. Layout parity landed `89cf2d00`;
+  animation and iconography still open P2. _Raised 2026-07-06 ASC._
 
 - [ ] **flutter-today-doses-regression** — Merged Today dropped the dose schedule card
   (`8a09f494`). **Partially fixed** `adf42d6c`: read-only `TodayMedsSection` restored on
-  `/today`. **Gap:** web inline dose actions (Taken / Skip / Snooze) still only on `/meds`.
-  _Raised 2026-07-06 audit `a198e779`._
+  `/today`. **Gap:** web inline dose actions (Taken / Skip / Snooze) still only on `/meds`;
+  ties to **P0** `tf-meds-taken-not-tappable`. _Raised 2026-07-06 audit `a198e779`._
 
 - [ ] **flutter-today-more-for-today-removed** — Merged Today removed web "More for today"
   disclosure: sync nudge, team announcements, secondary cards; signals grid vs web also
@@ -93,6 +138,7 @@ Format:
 - [ ] **flutter-oauth-auth-callback** — P0 login blocker for Google/Apple on Flutter native
   (2026-07-06). **Fix shipped** in `4430c13` (native `org.purplelife.app://auth-callback`, web
   origin `/`) on TF24 **`ff263b07`**. Supabase Google + Apple **enabled** on `xxnzmfzsjplrutrgbzxy`.
+  ASC login errors (×3, `a@arora.net` 2026-07-06) predate TF24 on device; re-verify on build 24+.
   **Next:** device QA on TF24; confirm redirect allow list includes native callback + `:8765`.
   _Raised 2026-07-06; fix committed 2026-07-06 serial integrate._
 
@@ -382,14 +428,11 @@ Format:
   (`luciq_flutter`, `LUCIQ_APP_TOKEN`). **2026-07-05:** Doppler sync (`luciq:sync-secrets`),
   Cursor MCP install (`luciq:install-mcp`, `pmt@eatos.com`, token from `servers-teamkeys/dev`).
   Triage via Luciq MCP **Flutter - Purple - Beta** after Cursor restart (REST API returns 401
-  for MCP token; expected). **Re-verified 2026-07-06 (full audit):** called Luciq MCP
-  `list_crashes` directly for both apps in this Luciq account matching Purple
-  (`purple` slug, iOS, mode beta; `flutter-purple` slug, Flutter, mode beta) — **both
-  return zero crashes**. No crash telemetry exists for the original TF (pre-7/4)
-  report or for any Flutter build since. Still open only because the original
-  screenshot has no reproduction path; downgrading urgency, not closing (cannot
-  prove a negative for a single unreproduced report). _Raised 2026-07-05 from ASC
-  beta feedback; re-verified 2026-07-06._
+  for MCP token; expected). **Re-verified 2026-07-06 ~20:48 ET:** Luciq MCP `list_crashes` +
+  `list_bugs` on `flutter-purple` beta for `1.0.0 (24|25|26)` and unfiltered — **0 crashes, 0
+  bugs**. No crash telemetry for original report or any Flutter build since. Still open only
+  because the original screenshot has no reproduction path; P2 not blocking TF25 upload.
+  _Raised 2026-07-05 from ASC beta feedback; re-verified 2026-07-06._
 
 - [x] ~~**tf-sync-bar-every-page**~~ — RESOLVED 2026-07-05: Removed `SyncStatusBar` from Meds and
   Vitals; kept on Today (+ Tools integrations cards). Sync button labels name providers.

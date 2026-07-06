@@ -9,6 +9,13 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TF25 ASC feedback triage (docs only, this session).**
+`ios:check-tf-feedback` 23 submissions; Luciq MCP 0 crashes/bugs on builds 24–26.
+Mapped all themes to TF25/26 fix commits in `docs/OPEN-ISSUES.md`. **P0 open:**
+`tf-meds-taken-not-tappable` (`devynrosewalker`, build 24). TF25 fleet fixes committed
+not pushed: `89cf2d00` Today strip, `adf42d6c` meds card, `009fda0f` journal UX.
+**Next:** integrator upload TF25 after P0 meds decision.
+
 **2026-07-06 Journal capture UX fixes (`009fda0f`, lovable/redesign, not pushed).**
 TF tester report: photo/video are **stub** (text-only save; honest coming-soon banner replaces
 misleading disabled dock). Keyboard dismisses on tap-outside + scroll drag. "Change" date label no
@@ -457,6 +464,25 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T20:48:00Z — TF25 ASC feedback triage (docs only)
+
+- **Requested** — Complete TestFlight feedback triage: `ios:check-tf-feedback`, `ios:check-luciq`,
+  Luciq MCP bugs/crashes for builds 24–26; map ASC themes to TF25/26 fixes; update
+  `docs/OPEN-ISSUES.md` + `CURSOR_HANDOFF.md`. No journal/today code (other agents).
+- **Done** — Ran `bun run ios:check-tf-feedback` (23 ASC submissions, +4 from
+  `devynrosewalker@gmail.com` on build 24). `ios:check-luciq` → `status: mcp`. Luciq MCP
+  `list_crashes` + `list_bugs` on `flutter-purple` beta for `1.0.0 (24|25|26)` → **0**.
+  ASC latest **1.0 (24) VALID**; TF25/26 not uploaded. Updated `docs/OPEN-ISSUES.md` with
+  theme table + new issues `tf-meds-taken-not-tappable` (P0), `tf-metric-strip-explanations`,
+  `tf-today-date-tab-polish`; cross-ref'd `89cf2d00`, `adf42d6c`, `009fda0f`. Updated
+  `CURSOR_HANDOFF.md` TF25 triage block + build table.
+- **Issues** — **P0 open:** meds Taken button (`tf-meds-taken-not-tappable`). TF25 fleet
+  commits not on device until integrator upload. Journal native capture still deferred.
+- **Stand / next** — TF25 integrator: resolve P0 meds Taken (wire `TodayDosePanel` on Today or
+  fix `/meds` tap target) → bump build → `bun run ios:testflight`.
+- **Who / where** — Cursor subagent, local, `lovable/redesign` @ `70d22f88` (docs commit pending).
+- **Timestamp** — 2026-07-06T20:48:00Z
 
 ### 2026-07-06T20:52:00Z — Journal capture keyboard, Change label, media honesty
 
