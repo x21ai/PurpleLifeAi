@@ -30,6 +30,52 @@ Format:
   (none git-tracked). Confirmed `bun run check:em-dash` **PASS** afterward.
   Kept untracked `flutter/ios/Flutter/Developer.xcconfig` (local Xcode-beta fix).
 
+## Auth / password reset (raised 2026-07-06)
+
+- [x] ~~**email-pump-pgmq-metrics-broken**~~ — RESOLVED 2026-07-06 (ops): Supabase
+  pg_cron job `process-email-queue` failed every minute (~10,080 failures over 7
+  days) with `relation "pgmq.metrics" does not exist`. Auth recovery emails
+  enqueued via the Send Email hook but sat in `pgmq.q_auth_emails` as
+  `email_send_log.status=pending` until manually pumped. **Fix:** rescheduled job
+  on live DB (`xxnzmfzsjplrutrgbzxy`) to count `pgmq.q_auth_emails` /
+  `pgmq.q_transactional_emails` directly; verified cron run **succeeded** at
+  13:52 UTC and auto-sent recovery at 13:53 UTC. Repo:
+  `purple-migration/05-cutover/setup-email-pump.sql`,
+  `scripts/fix-email-pump-cron.sql`. Cloudflare Worker `server.ts` also pumps
+  `/api/email/queue/process` each minute as backup. _Raised 2026-07-06 by email
+  reset investigation._
+
+- [x] ~~**auth-reset-pkce-web**~~ — RESOLVED 2026-07-06: Web `/reset-password` showed
+  expired/invalid links because recovery emails carry PKCE `?code=` (or legacy
+  `#access_token=`) but the page never exchanged the code for a session before
+  `updateUser({ password })`. Multiple recovery sends in one session also
+  invalidate earlier OTPs (only the latest email works). **Fix (uncommitted WIP):**
+  `src/lib/auth-recovery.ts` `bootstrapRecoverySessionFromUrl()` parses errors,
+  calls `exchangeCodeForSession`, polls for implicit tokens; `reset-password.tsx`
+  bootstraps on mount. **Deploy:** needs `bun run build:prod` + owner-approved
+  `wrangler deploy` before prod web serves the fix. Verify: forgot-password from
+  `/sign-in` → open **latest** email only → form loads → password update succeeds.
+  _Raised 2026-07-06 by auth reset session; resolved in code, deploy pending._
+
+- [x] ~~**pmt-migration-no-password-hash**~~ — RESOLVED 2026-07-06 (ops): `pmt@eigital.com`
+  (live-data QA account per `docs/FLUTTER-STAGE1-SIGNOFF.md`) had **no
+  `encrypted_password`** after auth import (`purple-migration/import-auth.mjs`
+  preserves UUIDs, not password hashes). Could not email/password sign-in until
+  ops set a **temporary password via Supabase Admin API**. Password value is **not**
+  stored in repo, docs, or agent logs; rotate or retrieve only via Supabase dashboard
+  or Admin API with Doppler `SERVICE_ROLE_KEY`. User should change password after
+  first sign-in or via recovery email. _Raised 2026-07-06 by auth reset session._
+
+- [ ] **auth-reset-native-tf21** — Flutter native password recovery deep link
+  (`org.purplelife.app://reset-password`) is implemented in uncommitted WIP:
+  `auth_deep_link.dart`, `auth_redirect_uris.dart`, `reset_password_screen.dart`,
+  Android `AndroidManifest.xml` intent filter. Supabase Auth redirect allow list
+  **already includes** `org.purplelife.app://reset-password` (2026-07-06). Shipped
+  TestFlight **1.0 (20)** does **not** contain this code. **Needs TF21+** build
+  upload and device verify: trigger reset from Flutter sign-in → open email on
+  iPhone → app opens → reset screen → new password → sign-in. See
+  `mem/auth-password-reset.md`. _Raised 2026-07-06 by auth reset session._
+
 ## Flutter / TestFlight
 
 - [x] ~~**tf-login-wrong-surface**~~ — RESOLVED 2026-07-06: **confirmed root cause** and fixed the
@@ -78,6 +124,11 @@ Format:
   mapping, forgot-password, and `GlassCard`/token styling. See also `tf-login-wrong-surface`
   if "Welcome back!" appears (that is web/Capacitor, not this issue). _Raised 2026-07-06 by
   TF19 audit._
+
+  **Update 2026-07-06 (auth reset session):** forgot-password + native reset deep link
+  landed in uncommitted WIP (`sign_in_screen.dart` `_forgotPassword`,
+  `reset_password_screen.dart`, `auth_deep_link.dart`); still needs TF21+ and does not
+  yet cover friendly error mapping or liquid-glass layout parity.
 
 - [x] ~~**care-accept-server-route**~~ — RESOLVED (deploy) 2026-07-06: `POST
   /api/care/accept`, `POST /api/care/decline`, and `GET /api/care/incoming-invites`
@@ -333,10 +384,11 @@ Format:
   wearable stats, symptom radar data gaps, Worker-only Settings (export/2FA/avatar),
   journal voice/photo native capture, full reports upload. _Raised 2026-07-05 by verify fleet._
 
-- [ ] **oura-native-redirect-console** — **Flutter UX done 2026-07-05:** Tools shows inline
-  errors plus pre-connect hint to register `org.purplelife.app://oauth-oura-callback` (and Whoop
-  native URI) in provider developer consoles. **Still open:** owner must add the Oura redirect URI
-  in the Oura developer console for native connect to succeed. _Raised 2026-07-05 by OAuth fleet._
+- [x] ~~**oura-native-redirect-console**~~ — **RESOLVED 2026-07-06 (Oura):** Owner registered
+  `org.purplelife.app://oauth-oura-callback` in Oura Cloud. Agent verified: authorize URL returns
+  **302** to Oura login (registered URI); unregistered URI returns **400 invalid_request**.
+  Flutter `wearable_oauth_test.dart` **14/14 PASS**. **Whoop native URI still open** — register
+  `org.purplelife.app://oauth-whoop-callback` in Whoop developer console. _Raised 2026-07-05._
 
 - [ ] **tf16-device-verify** — Apple Health Connect, settings scroll, sync bar labels, and
   Account `home_city` need confirmation on physical iPhone with **TestFlight 1.0 (16)** (ASC VALID
