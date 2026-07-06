@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/network/connectivity_service.dart';
 import '../../core/offline/database.dart';
 import '../../core/offline/supabase_row_parse.dart';
+import '../../core/auth/auth_state.dart' as core_auth;
 import '../../core/providers/core_providers.dart';
 import 'models/score_snapshot.dart';
 import 'models/today_data.dart';
@@ -224,6 +225,7 @@ class TodayRepository {
     final snapshot = ScoreSnapshot(
       readiness: latestFor('oura_readiness_score'),
       sleepScore: latestFor('sleep_score'),
+      sleepEfficiencyPct: latestFor('sleep_efficiency_pct'),
       activity: latestFor('oura_activity_score'),
       stress: latestFor('oura_stress_score'),
       hrvMs: latestFor('hrv_rmssd_ms'),
@@ -520,7 +522,7 @@ final todayRepositoryProvider = Provider<TodayRepository>((ref) {
 final todayDataProvider = FutureProvider.autoDispose<TodayData>((ref) async {
   ref.keepAlive();
   await _awaitAuthReady(ref);
-  final session = ref.watch(authSessionProvider).valueOrNull;
+  final session = core_auth.readActiveSession(ref);
   if (session == null) return TodayData.empty;
   final repository = ref.watch(todayRepositoryProvider);
   return _guardTodayProviderLoad(
@@ -534,7 +536,7 @@ final scoreSnapshotProvider =
     FutureProvider.autoDispose<ScoreSnapshot>((ref) async {
   ref.keepAlive();
   await _awaitAuthReady(ref);
-  final session = ref.watch(authSessionProvider).valueOrNull;
+  final session = core_auth.readActiveSession(ref);
   if (session == null) return ScoreSnapshot.empty;
   final repository = ref.watch(todayRepositoryProvider);
   return _guardTodayProviderLoad(
@@ -550,7 +552,7 @@ final scoreSnapshotForDayProvider = FutureProvider.autoDispose
     .family<ScoreSnapshot, String>((ref, dateYmd) async {
   ref.keepAlive();
   await _awaitAuthReady(ref);
-  final session = ref.watch(authSessionProvider).valueOrNull;
+  final session = core_auth.readActiveSession(ref);
   if (session == null) return ScoreSnapshot.empty;
   final repository = ref.watch(todayRepositoryProvider);
   return _guardTodayProviderLoad(
