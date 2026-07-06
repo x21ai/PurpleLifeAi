@@ -46,12 +46,18 @@ class BottomNav extends StatelessWidget {
   bool _isActive(String path) {
     if (path == AppRoutes.data) {
       return location == AppRoutes.data ||
+          location == AppRoutes.vitals ||
+          location.startsWith('${AppRoutes.vitals}/') ||
+          location == AppRoutes.biometrics ||
           location.startsWith('${AppRoutes.biometrics}/') ||
-          location.startsWith(AppRoutes.reportsTrendsPrefix);
+          location.startsWith(AppRoutes.reportsTrendsPrefix) ||
+          location.startsWith('${AppRoutes.reports}/');
     }
     if (path == AppRoutes.plan) {
       return location == AppRoutes.plan ||
-          location.startsWith('${AppRoutes.plan}/');
+          location.startsWith('${AppRoutes.plan}/') ||
+          location == AppRoutes.timeline ||
+          location.startsWith('${AppRoutes.timeline}/');
     }
     if (path == AppRoutes.askMaya) {
       return location == AppRoutes.askMaya ||

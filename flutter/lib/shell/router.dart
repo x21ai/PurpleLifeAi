@@ -21,7 +21,6 @@ import '../features/marketing/marketing_pricing_screen.dart';
 import '../features/marketing/marketing_privacy_screen.dart';
 import '../features/marketing/marketing_terms_screen.dart';
 import '../features/marketing/marketing_trust_screen.dart';
-import '../features/my_health/my_health_screen.dart';
 import '../features/meds/med_detail_screen.dart';
 import '../features/meds/meds_history_screen.dart';
 import '../features/meds/meds_screen.dart';
@@ -39,7 +38,6 @@ import '../features/settings/settings_screen.dart';
 import '../features/settings/sharing_screen.dart';
 import '../features/settings/terms_screen.dart';
 import '../features/hydration/hydration_screen.dart';
-import '../features/insights/insights_screen.dart';
 import '../features/timeline/timeline_screen.dart';
 import '../features/seizures/log_seizure_screen.dart';
 import '../features/vitals/biometrics_hub_screen.dart';
@@ -164,7 +162,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.plan,
             name: 'plan',
-            builder: (context, state) => const PlanScreen(),
+            builder: (context, state) {
+              final segment = state.uri.queryParameters['segment'];
+              final initial = segment == 'recommended'
+                  ? PlanSegment.recommended
+                  : PlanSegment.protocol;
+              return PlanScreen(initialSegment: initial);
+            },
           ),
           GoRoute(
             path: AppRoutes.askMaya,
@@ -174,12 +178,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.myHealth,
             name: 'my-health',
-            builder: (context, state) => const MyHealthScreen(),
+            redirect: (context, state) => AppRoutes.data,
           ),
           GoRoute(
             path: AppRoutes.insights,
             name: 'insights',
-            builder: (context, state) => const InsightsScreen(),
+            redirect: (context, state) => AppRoutes.plan,
           ),
           GoRoute(
             path: AppRoutes.timeline,
