@@ -1,12 +1,30 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~06:10 ET (cleanup + WIP landed, main synced).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~02:25 ET (care-accept-server-route deployed to prod).
 
-**Recent:** Deleted **22** untracked `" 2"`-suffixed duplicate files + `.flutter-web-serve.pid`. Gates PASS (`check:em-dash`, `tsc`, `flutter analyze`, `flutter test` 124/124). Committed and pushed on `lovable/redesign`: **`574ac0b`** (care incoming-invites route + Flutter client), **`362b9b6`** (auth screen parity), docs commit in same push. **`main` fast-forwarded** to match. **No prod deploy** (owner approval required; care routes still 404 on prod until `wrangler deploy`). Full detail: `docs/HANDOFF.md` 2026-07-06T06:10:00Z log entry.
+**Recent:** `POST /api/care/accept`, `POST /api/care/decline`, `GET /api/care/incoming-invites` **deployed to prod** via `doppler run --project cursor-cloudflare --config prd_cloudlfare -- env CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0 bunx wrangler deploy --config wrangler.deploy.jsonc` (the account-ID override was required; the first attempt without it uploaded the Worker fine but failed the zone-route attach step). **Worker Version ID `07bbab77-f4de-4501-89c0-e22a52e60941`.** Verified live with curl (no auth): all three routes return **401**, not 404; homepage/`/sign-in` unaffected. Deployed from `main`/`lovable/redesign` @ `d31d2a8` (branches identical). Full detail: `docs/HANDOFF.md` 2026-07-06T02:25:00Z log entry; issue closed in `docs/OPEN-ISSUES.md` `care-accept-server-route`.
+
+**Prior (2026-07-06 ~06:10 ET):** Deleted **22** untracked `" 2"`-suffixed duplicate files + `.flutter-web-serve.pid`. Gates PASS (`check:em-dash`, `tsc`, `flutter analyze`, `flutter test` 124/124). Committed and pushed on `lovable/redesign`: **`574ac0b`** (care incoming-invites route + Flutter client), **`362b9b6`** (auth screen parity), docs commit in same push. **`main` fast-forwarded** to match. Full detail: `docs/HANDOFF.md` 2026-07-06T06:10:00Z log entry.
 
 **Prior (2026-07-06 care close-out):** `care-accept-server-route` P0 closed: new `GET /api/care/incoming-invites` Worker route + Flutter rewire off RLS-blocked direct queries. Deploy NOT run, needs operator approval.
 
 **Prior:** Luciq MCP wired (`luciq:sync-secrets`, `luciq:install-mcp`); `ios:check-luciq` returns `status: "mcp"` (REST 401 expected). Restart Cursor for MCP crash triage on **Flutter - Purple - Beta**.
+
+## AI Worker JSON routes for Flutter (2026-07-06, tsc-only slice, no deploy)
+
+Added three Flutter-callable Worker routes fronting the web-only AI server
+fns: `POST /api/ai/summarize-report`, `POST /api/ai/metric-insight`,
+`POST /api/ai/daily-insight-cards`. New `src/lib/ai-insights.server.ts`
+mirrors `care.server.ts`'s pattern (plain functions taking a user-scoped
+Supabase client built from the caller's Bearer JWT + explicit `userId`; RLS
+enforces per-user ownership). Logic mirrors `summarizeReport`
+(`src/lib/reports.functions.ts`) and `getMetricInsight`/
+`getDailyInsightCards` (`src/lib/report-trends.functions.ts`) as of this
+commit — those originals were **not modified**. Verify: `bunx tsc --noEmit`
+**PASS**. **Not done:** Flutter client wiring, `flutter-api-cors.ts`
+allow-list entry (needed for Flutter web), and deploy. Full detail:
+`docs/HANDOFF.md` 2026-07-06T02:15:00Z log entry; open item tracked in
+`docs/OPEN-ISSUES.md` (Insights/reports AI section).
 
 ## Luciq MCP + Doppler (2026-07-05)
 

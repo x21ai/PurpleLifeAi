@@ -79,7 +79,49 @@ Format:
   if "Welcome back!" appears (that is web/Capacitor, not this issue). _Raised 2026-07-06 by
   TF19 audit._
 
-- [ ] **care-accept-server-route** — Caregiver-invite **accept and decline** need a
+- [x] ~~**care-accept-server-route**~~ — RESOLVED (deploy) 2026-07-06: `POST
+  /api/care/accept`, `POST /api/care/decline`, and `GET /api/care/incoming-invites`
+  deployed to prod via `doppler run --project cursor-cloudflare --config
+  prd_cloudlfare -- env CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0 bunx
+  wrangler deploy --config wrangler.deploy.jsonc` from `main`/`lovable/redesign` @
+  `d31d2a8` (both branches identical at deploy time). **Worker Version ID:
+  `07bbab77-f4de-4501-89c0-e22a52e60941`.** First attempt without the
+  `CLOUDFLARE_ACCOUNT_ID` override failed the zone-route attach step (Doppler
+  resolved the POS account `c7f99ecba0ace852de43684ec8a44612` instead of eigital;
+  see `doppler-cloudflare-account-id` below) — script/cron uploaded but
+  `www.purplelife.org/*` route did not attach; retried with the override and it
+  succeeded (`www.purplelife.org/*`, `purplelife.org/*` both listed). **Verified
+  live (curl, no auth):** `POST /api/care/accept` → **401** `{"error":"Unauthorized"}`;
+  `POST /api/care/decline` → **401** `{"error":"Unauthorized"}`; `GET
+  /api/care/incoming-invites` → **401** `{"error":"Unauthorized"}` (all real route
+  hits, not the 404 catch-all — confirmed by a control request to a nonexistent
+  `/api/care/*` path returning 404). Homepage and `/sign-in` both **200** post-deploy
+  (no regression). Gates before deploy: `check:em-dash` PASS, `bun run build:prod`
+  PASS. **Note:** an unrelated, incomplete WIP batch (new `src/routes/api/care/
+  {today,meds,journal,seizures,reports}.ts` + a `src/lib/care.server.ts` docblock
+  update) was found uncommitted in the working tree at task start; those files
+  import `caregiverReadTodayForUser`/`CareApiError`/etc. from `care.server.ts`
+  that **do not exist yet** and would have failed typecheck. They were **stashed**
+  (`git stash`, message "wip: caregiver dashboard backlog routes...") before the
+  build/deploy so only the already-verified accept/decline/incoming-invites code
+  shipped. **Left in `git stash@{1}`, intentionally not popped back:** partway
+  through this task a concurrent agent session was found actively writing to
+  the same checkout, already re-doing/extending this exact backlog (new
+  Flutter chat/reports files, `ai-insights.server.ts`, `/api/ai/*` routes,
+  dependency file changes) — popping the older stash into that live dirty tree
+  risked a collision on the same filenames
+  (`src/routes/api/care/{today,meds,journal,seizures,reports}.ts`,
+  `care.server.ts`, `insights_widgets.dart`). The stashed functions use the
+  same names cited in the "Extended 2026-07-05 (Wave-2 fleet)" backlog below
+  (`caregiverReadToday`, `caregiverReadMeds`, `caregiverReadJournal`,
+  `caregiverReadSeizures`, `caregiverReadReports`). Whoever owns the concurrent
+  work should `git stash show -p stash@{1}` to check for anything worth
+  merging, then `git stash drop stash@{1}` once reconciled.
+  _Raised 2026-07-05 by Wave-1 care/reports agent; deploy closed 2026-07-06 by
+  ops deploy agent._
+
+- [ ] **care-accept-server-route** (original entry, superseded by the resolved entry
+  above) — Caregiver-invite **accept and decline** need a
   service-role server route that does not exist yet. RLS gives caregivers SELECT-only on
   `care_relationships` (no caregiver UPDATE policy), so the status flip to `active`
   (accept) / `revoked` (decline) must run server-side. Web does this via a TanStack
@@ -160,26 +202,84 @@ Format:
        2026-07-05 care-chat HANDOFF entry).
   3. **Insights / reports AI (blocks AI cards on `/insights` and report summaries;
      Flutter currently shows honest server-only gap-states):**
-     - `getVitalsSnapshot`
-     - `getDailyInsightCards`
-     - `computeUserPatterns`
-     - `summarizeReport`
-     - `getMetricInsight`
+     - `getVitalsSnapshot` — still open, no Worker route.
+     - `computeUserPatterns` — still open, no Worker route.
+     - `getDailyInsightCards` — **Worker route added** 2026-07-06
+       (`POST /api/ai/daily-insight-cards`, `src/lib/ai-insights.server.ts`),
+       **Flutter client not wired yet**, **not added to
+       `flutter-api-cors.ts`**, **not deployed**. Not resolved until all
+       three are done.
+     - `summarizeReport` — **Worker route added** 2026-07-06
+       (`POST /api/ai/summarize-report`), same caveats as above.
+     - `getMetricInsight` — **Worker route added** 2026-07-06
+       (`POST /api/ai/metric-insight`), same caveats as above.
 
-  _Extended 2026-07-05 by Wave-2 docs agent (orchestrated fleet)._
+  _Extended 2026-07-05 by Wave-2 docs agent (orchestrated fleet). Worker
+  routes for the three AI fns above landed 2026-07-06 (tsc-only slice, see
+  HANDOFF); Flutter wiring + CORS allow-list + deploy are the remaining
+  steps before this bullet can be marked resolved._
 
 - [ ] **tf-settings-shell-nav** — Tester ASC feedback (2026-07-05 15:41 ET, build 17/18): wants
   settings/shell burger **left of Purple logo**, menu slide **left to right** (not right
   `endDrawer`), more connections visible. Conflicts with current AGENTS.md right-drawer rule;
   needs product decision then Flutter shell work. _Raised 2026-07-05 ASC after TF18._
 
+  **Update 2026-07-05 (Flutter P0 closure pass): still NOT implemented, intentionally.**
+  AGENTS.md hard-mandates a right-edge `Scaffold.endDrawer` for the shell burger menu
+  ("**not** a SnackBar, left drawer, or floating popover"); this issue's ask is the exact
+  opposite (left-of-logo burger, left-to-right slide). Changing it unilaterally would
+  contradict a standing, explicitly documented workspace convention. **Needs an explicit
+  product/owner decision** on which convention wins (tester preference vs. the documented
+  right-drawer standard) before any Flutter shell change lands. `native_app_shell.dart` /
+  `shell_menu_sheet.dart` untouched this pass; only unrelated bottom-padding (`tf-bottom-
+  whitespace`) and typography (`tf-heading-typography`) fixes landed in the shell/screen
+  files. _Re-affirmed 2026-07-05 by Flutter P0 closure pass; still blocked on owner call._
+
 - [ ] **tf-heading-typography** — Tester ASC feedback (2026-07-05 15:41 ET): section heading too
   long, too large vs web. Identify screen(s) from screenshot; match web type scale from
   `design/tokens.json`. _Raised 2026-07-05 ASC after TF18._
 
+  **Update 2026-07-05 (Flutter P0 closure pass): fixed for Settings, the most likely
+  screenshot target.** `settings_screen.dart`'s hero heading ("All in your\ncontrol.") used
+  `textTheme.displaySmall` with no explicit `fontSize` override, unlike every sibling
+  marketing-hero screen (Vitals, My Health, Meds, Hydration, Reports), which all pin
+  `displaySmall` to an explicit `fontSize: 44` matching web's mobile hero scale
+  (`text-[44px]` in `settings.tsx`). Settings is structurally a **hub landing screen**
+  (hub cards below the heading, same role as `/tools`), not a single-metric feature hero,
+  so instead of adding the missing `fontSize: 44` (which would make it bigger, not
+  smaller), changed the token to `headlineMedium` (28px) — the app's established compact
+  section-heading scale already used by `sign_in_screen.dart` ("Purple"),
+  `care_dashboard_screen.dart`, `care_report_screen.dart`, and `empty_state.dart`. Kept the
+  serif font family and copy unchanged (only the size token moved). **Not independently
+  visually re-verified against a live tester screenshot** (the original ASC feedback had no
+  attached screenshot identifying the exact screen); `flutter-web-serve.sh` preview at
+  `:8765` requires a signed-in session which was not available this pass, so this is a
+  code-level fix based on cross-screen convention audit, not a pixel-diff confirmation.
+  Re-open or adjust further if the next TestFlight round shows this was the wrong screen or
+  the new size still reads large. _Partially resolved 2026-07-05 by Flutter P0 closure pass._
+
 - [ ] **tf-bottom-whitespace** — Tester ASC feedback (2026-07-05 15:40 ET, recurring): excess
   whitespace above bottom nav on multiple tabs. Likely safe-area / shell padding; compare web
   `_app` layout. _Raised 2026-07-05 ASC after TF18._
+
+  **Update 2026-07-05 (Flutter P0 closure pass): root-caused and fixed for Today, Vitals,
+  Tools.** `NativeAppShell` (`native_app_shell.dart`) wraps every shell-routed screen's body
+  in `Padding(bottom: shellTabBarInset(context))` (~90-114px: nav bar height + FAB overflow +
+  device safe-area) so content never renders behind the floating glass nav bar. On top of
+  that, `today_screen.dart`, `vitals_screen.dart`, and `tools_screen.dart` each had their own
+  `SingleChildScrollView`/`Padding` bottom padding hardcoded to **120-128px**, stacking
+  additively with the shell's own inset for a combined ~210-240px of dead space above the
+  nav bar on every scroll state (loading, data, error). Reduced each screen's own bottom
+  padding to **32px** (a small breathing-room buffer only, not a second copy of the nav-bar
+  height) across all three files' loading/data/error branches; `native_app_shell.dart`'s
+  `shellTabBarInset` itself was left unchanged since it is the single correct source of the
+  nav-bar clearance and is not itself excessive. **Not audited this pass:** `meds_screen.dart`
+  line ~346 has a different, likely also-excessive pattern (`shellTabBarInset(context) + 12`,
+  which double-counts the shell's own inset) — out of this pass's named scope (Today/Vitals/
+  Tools only); flag for a follow-up sweep of the remaining shell-routed screens
+  (Meds, My Health, Reports, Insights, Timeline, Biometrics, Hydration, Care) for the same
+  additive-padding bug. _Partially resolved 2026-07-05 by Flutter P0 closure pass (Today/
+  Vitals/Tools only; other tabs still open)._
 
 - [ ] **flutter-web-cutover-impl** — Runbook at `docs/FLUTTER-WEB-CUTOVER.md` (plan only).
   Needs `merge-flutter-web-assets.sh`, `src/server.ts` path dispatch, staging smoke, owner
@@ -267,7 +367,14 @@ Format:
 
 - [ ] **doppler-cloudflare-account-id** — Doppler `CLOUDFLARE_ACCOUNT_ID` may point at POS
   account; override with eigital `08e766e92db74bc7ef14c6b5c86bddf0` on wrangler deploy.
-  _Raised 2026-07-04 by ship agent._
+  _Raised 2026-07-04 by ship agent._ **Reconfirmed 2026-07-06:** deploying the
+  `care-accept-server-route` fix without the override deployed the Worker script and
+  cron triggers fine but failed the `www.purplelife.org/*` zone-route attach step
+  (`POST .../accounts/c7f99ecba0ace852de43684ec8a44612/workers/scripts/purplelife/routes`
+  errored); retrying with `CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0`
+  fixed it immediately. Doppler value itself was not changed (no write access
+  needed for the fix); every `wrangler deploy` invocation still needs the explicit
+  env override until Doppler's stored value is corrected at the source.
 
 - [ ] **remote-push-apns-fcm** — Native remote push needs APNs/FCM secrets in Doppler/Worker.
   Local med reminders work natively. _Raised 2026-07-04 by native-app docs._

@@ -9,6 +9,38 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 care-accept-server-route DEPLOYED to prod.** `POST /api/care/accept`,
+`POST /api/care/decline`, `GET /api/care/incoming-invites` are now **live** on
+`www.purplelife.org` (Worker Version ID **`07bbab77-f4de-4501-89c0-e22a52e60941`**,
+deployed from `main`/`lovable/redesign` @ `d31d2a8`, both identical). Verified via
+curl (no auth): all three return **401** `{"error":"Unauthorized"}`, not 404;
+homepage and `/sign-in` unaffected (200). First deploy attempt failed the zone-route
+attach step because Doppler's `CLOUDFLARE_ACCOUNT_ID` resolved to the POS account;
+retried with `CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0` (eigital) and
+it succeeded — see `doppler-cloudflare-account-id` in OPEN-ISSUES. Gates before
+deploy: `check:em-dash` and `bun run build:prod` both PASS. **Found and preserved
+uncommitted WIP** in the working tree at task start (new incomplete
+`src/routes/api/care/{today,meds,journal,seizures,reports}.ts` calling
+not-yet-implemented `care.server.ts` functions) — stashed before build/deploy so
+only verified code shipped. **Left in the stash (`stash@{1}`, not popped)**
+rather than restored: a concurrent agent session was found actively writing to
+this same working tree during this task (Flutter chat/reports/dashboard work,
+`ai-insights.server.ts`, new `/api/ai/*` routes, `package.json`/`bun.lock`/
+`pubspec.yaml` changes all appeared mid-task, none made by this agent), so
+popping the older stash back would have collided with that newer, still-in-
+progress work on the same files. See the log entry below for the exact
+recovery command for whoever owns that stash.
+
+**2026-07-05 AI Worker routes added (Flutter-callable), tsc-only slice, no deploy.**
+New `POST /api/ai/summarize-report`, `POST /api/ai/metric-insight`,
+`POST /api/ai/daily-insight-cards` Worker routes front the existing web-only AI
+server fns (`summarizeReport`/`getMetricInsight`/`getDailyInsightCards`) via a
+new `src/lib/ai-insights.server.ts` (mirrors the `care.server.ts` pattern:
+plain functions taking a user-scoped Supabase client + explicit `userId`, RLS
+enforces ownership). `bunx tsc --noEmit` **PASS**. **Not yet wired into
+Flutter** (no `flutter/` client changes in this slice) and **not deployed**.
+See Log entry below for details.
+
 **2026-07-06 WIP landed + junk cleanup on `lovable/redesign`.** Deleted **22** untracked
 `" 2"`-suffixed macOS duplicate files (mostly under `flutter/build/`, Linux/Windows
 ephemeral symlinks, `Podfile 2`, `xcrun 2`) plus `.flutter-web-serve.pid`. Kept untracked
@@ -94,6 +126,161 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T02:25:00Z — care-accept-server-route DEPLOYED (wrangler deploy, prod verified)
+
+- **Requested:** `git pull origin main`; run `check:em-dash` + `build:prod`; deploy
+  via `doppler run --project cursor-cloudflare --config prd_cloudlfare -- bunx
+  wrangler deploy --config wrangler.deploy.jsonc`; verify `/api/care/{accept,
+  decline,incoming-invites}` are live (not 404) on prod; update HANDOFF +
+  OPEN-ISSUES; commit docs only if changed; push `main` + `lovable/redesign`.
+- **Done:**
+  - Repo was on `lovable/redesign` @ `d31d2a8`; `main` was already identical
+    (`git rev-list --left-right --count main...lovable/redesign` → `0 0`).
+    `git pull origin main` was a no-op (already up to date).
+  - Found uncommitted working-tree WIP unrelated to this task at session start:
+    modified `docs/FLUTTER-CUTOVER-GAP-MATRIX.md`, `CURSOR_HANDOFF.md`,
+    `flutter/lib/features/insights/insights_widgets.dart`/`insights_screen.dart`,
+    `src/lib/flutter-api-cors.ts`, `src/lib/care.server.ts` (docblock only), plus
+    untracked `src/routes/api/care/{today,meds,journal,seizures,reports}.ts` and
+    `mem/native-wearable-oauth-redirects.md`. Inspected the new route files: they
+    `await import("@/lib/care.server")` and call `caregiverReadTodayForUser`
+    (and siblings) which **do not exist** in `care.server.ts` yet (only
+    `acceptCareInviteForUser`/`declineCareInviteForUser`/
+    `listIncomingInvitesForUser` are exported) — this WIP would fail
+    `tsc`/`build:prod` if built. **Stashed it** (`git stash push -u -m "wip:
+    caregiver dashboard backlog routes..."`) so the deploy only shipped
+    already-committed, already-verified code. Did **not** pop it back: partway
+    through this task, a **concurrent agent session** was found actively
+    writing to this same checkout (new Flutter chat/reports/dashboard files,
+    `ai-insights.server.ts`, `/api/ai/*` routes, `package.json`/`bun.lock`/
+    `pubspec.yaml`/`pubspec.lock` changes, `routeTree.gen.ts` regeneration —
+    none made by this agent, all appeared between the stash and the docs
+    commit). Popping the older stash into that live, overlapping dirty tree
+    risked a collision on `care.server.ts`, `insights_widgets.dart`, and the
+    `/api/care/{today,meds,journal,seizures,reports}.ts` filenames (the
+    concurrent session appears to already be re-doing/extending this exact
+    backlog). Left as **`stash@{1}`: "wip: caregiver dashboard backlog routes
+    (incomplete, unrelated to care-accept-server-route deploy)"** for the
+    owner of that concurrent work to reconcile explicitly (`git stash show -p
+    stash@{1}` to inspect, `git stash drop stash@{1}` once confirmed
+    superseded, or apply to a separate branch/worktree if still needed).
+  - Gates on the clean, stashed tree: `bun run check:em-dash` **PASS**;
+    `bun run build:prod` **PASS** (client + SSR + server bundle, `✓ built in
+    11.34s`).
+  - Deploy attempt 1: `doppler run --project cursor-cloudflare --config
+    prd_cloudlfare -- bunx wrangler deploy --config wrangler.deploy.jsonc` — Worker
+    script, assets (268 files), and cron triggers uploaded successfully, but
+    **failed** the zone-route attach step: `A request to the Cloudflare API
+    (/accounts/c7f99ecba0ace852de43684ec8a44612/workers/scripts/purplelife/routes)
+    failed.` (`c7f99ecba0ace852de43684ec8a44612` is the POS account, not eigital
+    — matches the known `doppler-cloudflare-account-id` issue).
+  - Deploy attempt 2 (with override): `doppler run --project cursor-cloudflare
+    --config prd_cloudlfare -- env
+    CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0 bunx wrangler deploy
+    --config wrangler.deploy.jsonc` — **succeeded**. Routes listed:
+    `www.purplelife.org/*`, `purplelife.org/*` (zone `purplelife.org`); cron
+    schedules `* * * * *`, `0 * * * *`, `0 6 * * *`, `0 15 * * 7` all deployed.
+    **Current Version ID: `07bbab77-f4de-4501-89c0-e22a52e60941`.**
+  - Verified live via curl (no `Authorization` header):
+    - `POST https://www.purplelife.org/api/care/accept` → **401**
+      `{"error":"Unauthorized"}`
+    - `POST https://www.purplelife.org/api/care/decline` → **401**
+      `{"error":"Unauthorized"}`
+    - `GET https://www.purplelife.org/api/care/incoming-invites` → **401**
+      `{"error":"Unauthorized"}`
+    - Control checks: `GET /` → 200, `GET /sign-in` → 200, `GET
+      /api/care/nonexistent-route-xyz` → 404 (confirms the 401s above are real
+      route hits, not a catch-all).
+  - Updated `docs/OPEN-ISSUES.md`: marked `care-accept-server-route` resolved
+    (deploy) with full detail, reconfirmed `doppler-cloudflare-account-id` with
+    today's evidence. Updated `docs/HANDOFF.md` Current snapshot (this entry).
+- **Issues:** The caregiver-dashboard-reads backlog (`caregiverReadToday`,
+  `caregiverReadMeds`, `caregiverReadJournal`, `caregiverReadSeizures`,
+  `caregiverReadReports` — see the "Extended 2026-07-05 (Wave-2 fleet)" entry
+  under `care-accept-server-route` in OPEN-ISSUES) is now **partially
+  scaffolded but incomplete and uncommitted**: Worker route files exist for
+  5 of those but the `care.server.ts` functions they call do not. Do not build
+  or deploy from this working tree until those functions are implemented (they
+  will fail `tsc`). The older, narrower version of this same WIP from before
+  this task's deploy is sitting in `git stash@{1}` (unpopped, see above) —
+  reconcile or drop it rather than losing track of two divergent copies.
+  Doppler's stored `CLOUDFLARE_ACCOUNT_ID` still resolves to the POS account —
+  every future `wrangler deploy` needs the explicit env override until that is
+  fixed at the source (Doppler dashboard/API, not done here — out of scope for
+  this task and no destructive/account-level change was made).
+- **Stand / next:** Care-accept/decline/incoming-invites loop is now
+  end-to-end functional in prod (Flutter can call these on `www.purplelife.org`
+  with a real bearer token). Next: implement the missing `care.server.ts`
+  caregiver-read functions for the stashed WIP routes, then repeat this same
+  gate-build-deploy-verify cycle for them.
+- **Who / where:** Cursor agent (ops deploy subagent), local, `main` @
+  `d31d2a8` (+ this docs commit) / `lovable/redesign` kept in sync.
+- **Timestamp:** 2026-07-06T02:25:00Z
+
+### 2026-07-06T02:15:00Z — AI Worker JSON routes for Flutter (summarizeReport / getMetricInsight / getDailyInsightCards), tsc-only slice
+
+- **Requested:** Add Worker JSON routes for Flutter-callable AI, fronting
+  `summarizeReport`, `getMetricInsight`, `getDailyInsightCards` as POST routes
+  under `src/routes/api/ai/`, following existing Worker patterns
+  (`care.server.ts` / server-fn-import pattern). Disjoint slice: explicitly
+  **not** `care/*` (sibling-owned). Scope was `tsc --noEmit` verification
+  only — no deploy, no push, no Flutter client wiring.
+- **Done:**
+  - New `src/lib/ai-insights.server.ts`: `summarizeReportForUser`,
+    `getMetricInsightForUser`, `getDailyInsightCardsForUser` — plain
+    functions taking an already user-scoped Supabase client (created from the
+    caller's Bearer JWT, so RLS enforces per-user ownership on
+    `report_documents`/`report_metrics`/`metric_insights`/`vitals_log`) plus
+    an explicit `userId`. Logic/prompts are a byte-for-byte mirror of the
+    existing web-only `createServerFn` handlers in
+    `src/lib/reports.functions.ts` (`summarizeReport`) and
+    `src/lib/report-trends.functions.ts` (`getMetricInsight`,
+    `getDailyInsightCards`) as of this commit; those originals were **not**
+    modified (zero shared-file edit risk with any parallel slice touching
+    those files). Also exports `AiInsightsApiError` for typed 404s (report
+    not found / cross-user).
+  - New Worker routes (`createFileRoute` + `server.handlers.POST`, same
+    manual-Bearer-auth shape as `src/routes/api/care/{accept,decline}.ts`):
+    - `POST /api/ai/summarize-report` — body `{ id: uuid, force?: boolean }`
+    - `POST /api/ai/metric-insight` — body `{ metricKey: string, force?: boolean }`
+    - `POST /api/ai/daily-insight-cards` — body `{ force?: boolean }` (body may be `{}`)
+    All three: `Authorization: Bearer <supabase access token>` required, JSON
+    body parsed unconditionally (Flutter web omits `Content-Type`), errors
+    returned as `{ error: string }` with a real HTTP status.
+  - `src/routeTree.gen.ts` picked up the three new routes automatically (a
+    background dev/watch process regenerated it); diff reviewed, contains
+    only the three new route imports/registrations.
+- **Issues:**
+  - **Not wired into Flutter yet** — no `flutter/lib/features/**` or
+    `care_repository.dart`-equivalent client changes in this slice. The
+    Flutter app still shows the honest AI gap-states
+    (`docs/DECISIONS.md` 2026-07-05 entry) until a client PR calls these
+    routes.
+  - **Not added to `src/lib/flutter-api-cors.ts` allow-list** — Flutter web
+    (CORS) callers will be blocked until that list is updated; native/mobile
+    callers are unaffected (no CORS). Follow-up needed before Flutter web can
+    use these routes.
+  - **Not deployed** — Worker routes only exist in this working tree/branch
+    until built + deployed per `docs/manual-deploy-bundle.md`.
+  - `getMetricInsightForUser`/`getDailyInsightCardsForUser` intentionally do
+    **not** auto-run AI on first call without `force=true` (matches the
+    original web behavior: avoid surprise billing); callers must pass
+    `force: true` once to generate, after which the cached result is
+    returned on subsequent calls for the same day/latest reading.
+- **Stand / next:** Routes exist and type-check; next action is (a) add the
+  three paths to `src/lib/flutter-api-cors.ts` if Flutter web needs them, (b)
+  wire a Flutter repository/service to call them (mirrors
+  `care_repository.dart`), (c) deploy the Worker once a parent/integrator
+  slice merges and runs the full gate suite (`check:em-dash`,
+  `check:live-data`, `check:unique-images`, `tsc`, `build`), (d) mark
+  `getDailyInsightCards`/`summarizeReport`/`getMetricInsight` resolved in
+  `docs/OPEN-ISSUES.md` once Flutter wiring + deploy are both confirmed
+  end-to-end (left as partially-open below since only the Worker side landed).
+- **Who / where:** Subagent (disjoint AI-routes slice), local checkout,
+  branch `lovable/redesign` (uncommitted at time of writing; parent
+  integrator to commit/merge).
+- **Timestamp:** 2026-07-06T02:15:00Z
 
 ### 2026-07-06T06:10:00Z — audit cleanup, WIP commits, branch sync (no deploy)
 
