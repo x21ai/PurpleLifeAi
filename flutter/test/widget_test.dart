@@ -1,14 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:purple_app/app.dart';
+import 'package:go_router/go_router.dart';
 import 'package:purple_app/core/auth/auth_repository.dart';
 import 'package:purple_app/core/config/app_config.dart';
-import 'package:purple_app/core/network/connectivity_service.dart';
 import 'package:purple_app/core/providers/core_providers.dart';
 import 'package:purple_app/design/purple_theme.dart';
+import 'package:purple_app/features/auth/sign_in_screen.dart';
+import 'package:purple_app/shell/routes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+class _FakeAuthRepo implements AuthRepository {
+  @override
+  bool get isAuthenticated => false;
+
+  @override
+  Session? get currentSession => null;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +52,7 @@ void main() {
     expect(find.text('Hello'), findsOneWidget);
   });
 
-  testWidgets('PurpleApp renders sign-in shell', (tester) async {
+  testWidgets('Sign-in shell renders for signed-out users', (tester) async {
     tester.view.physicalSize = const Size(800, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -48,57 +60,30 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    try {
-      await Supabase.initialize(
-        url: testConfig.supabaseUrl,
-        anonKey: testConfig.supabaseAnonKey,
-        authOptions: const FlutterAuthClientOptions(
-          authFlowType: AuthFlowType.pkce,
-          autoRefreshToken: false,
+    final router = GoRouter(
+      initialLocation: AppRoutes.signIn,
+      routes: [
+        GoRoute(
+          path: AppRoutes.signIn,
+          builder: (context, state) => const SignInScreen(),
         ),
-      );
-    } on AssertionError {
-      // Already initialized in this isolate.
-    }
-    await Supabase.instance.client.auth.signOut();
-    final authRepo = AuthRepository(config: testConfig);
+      ],
+    );
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           appConfigProvider.overrideWithValue(testConfig),
-          authRepositoryProvider.overrideWith((ref) => Future.value(authRepo)),
+          authRepositoryProvider.overrideWith((ref) async => _FakeAuthRepo()),
           authSessionProvider.overrideWith((ref) => Stream.value(null)),
-          connectivityServiceProvider.overrideWith((ref) {
-            final service = ConnectivityService(config: testConfig);
-            ref.onDispose(service.dispose);
-            return service;
-          }),
         ],
-        child: const PurpleApp(),
+        child: MaterialApp.router(routerConfig: router),
       ),
     );
 
     await tester.pump();
-    await tester.pumpAndSettle(const Duration(seconds: 2));
+    await tester.pump(const Duration(milliseconds: 500));
 
-    final signInVisible = find.text('Sign in').evaluate().isNotEmpty;
-    final purpleVisible = find.text('Purple').evaluate().isNotEmpty;
-    final welcomeVisible = find.text('Welcome to Purple').evaluate().isNotEmpty;
-    final todayVisible = find.text('SCORES').evaluate().isNotEmpty ||
-        find.text('TODAY').evaluate().isNotEmpty;
-    final startupErrorVisible =
-        find.textContaining('Could not start Purple').evaluate().isNotEmpty ||
-            find.textContaining('Auth init failed').evaluate().isNotEmpty;
-    expect(
-      signInVisible ||
-          purpleVisible ||
-          welcomeVisible ||
-          todayVisible ||
-          startupErrorVisible,
-      isTrue,
-      reason:
-          'Expected app shell to show sign-in, welcome, today, or startup error UI.',
-    );
+    expect(find.textContaining('Sign in'), findsWidgets);
   });
 }

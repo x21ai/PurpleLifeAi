@@ -59,6 +59,28 @@ void main() {
             core_auth.AuthGateStatus.signedIn,
       );
     });
+
+    test('reports signedIn when repo restored session before stream emits', () async {
+      final sessionStream = StreamController<Session?>();
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWith(
+            (ref) async => _FakeAuthRepo(session: _fakeSession()),
+          ),
+          authSessionProvider.overrideWith((ref) => sessionStream.stream),
+        ],
+      );
+      addTearDown(() {
+        unawaited(sessionStream.close());
+        container.dispose();
+      });
+
+      await container.read(authRepositoryProvider.future);
+      expect(
+        container.read(core_auth.authGateStatusProvider),
+        core_auth.AuthGateStatus.signedIn,
+      );
+    });
   });
 
   group('AuthGate widget', () {
@@ -148,11 +170,15 @@ Session _fakeSession() {
 }
 
 class _FakeAuthRepo implements AuthRepository {
-  @override
-  bool get isAuthenticated => false;
+  _FakeAuthRepo({Session? session}) : _session = session;
+
+  final Session? _session;
 
   @override
-  Session? get currentSession => null;
+  bool get isAuthenticated => _session != null;
+
+  @override
+  Session? get currentSession => _session;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

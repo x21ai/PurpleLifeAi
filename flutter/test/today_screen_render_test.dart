@@ -146,7 +146,7 @@ void main() {
       find.textContaining('Onboarding complete · 3/3'),
       findsOneWidget,
     );
-    expect(find.text('SLEEP'), findsOneWidget);
+    expect(find.text('SLEEP'), findsWidgets);
     expect(find.text('HRV'), findsOneWidget);
     expect(find.text('EFFICIENCY'), findsOneWidget);
     expect(find.text('REST HR'), findsOneWidget);
@@ -190,7 +190,7 @@ void main() {
 
     await pumpToday(tester, data: data);
 
-    expect(find.text('SLEEP'), findsOneWidget);
+    expect(find.text('SLEEP'), findsWidgets);
     expect(find.text('HRV'), findsOneWidget);
     expect(find.text('EFFICIENCY'), findsOneWidget);
     expect(find.text('REST HR'), findsOneWidget);

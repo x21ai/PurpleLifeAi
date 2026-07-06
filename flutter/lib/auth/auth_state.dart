@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/auth/auth_state.dart' as core_auth;
 import '../core/providers/core_providers.dart';
 import '../features/journal/journal_repository.dart';
 import '../features/meds/meds_repository.dart';
@@ -61,7 +62,7 @@ final signOutSessionProvider = Provider<Future<void> Function()>((ref) {
 
 final authProvider = Provider<AppAuthState>((ref) {
   ref.watch(sessionAuthRefreshProvider);
-  final session = ref.watch(authSessionProvider).valueOrNull;
+  final session = core_auth.readActiveSession(ref);
   return AppAuthState(
     isAuthenticated: session != null,
     userId: session?.user.id,

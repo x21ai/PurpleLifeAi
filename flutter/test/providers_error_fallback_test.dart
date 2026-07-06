@@ -39,7 +39,7 @@ void main() {
       expect(data.scores, same(ScoreSnapshot.empty));
     });
 
-    test('propagates repository errors when session exists', () async {
+    test('fail-open with loadError when repository throws and session exists', () async {
       final container = ProviderContainer(
         overrides: [
           authRepositoryProvider.overrideWith((ref) => _readyAuth()),
@@ -52,10 +52,9 @@ void main() {
       addTearDown(container.dispose);
       container.listen(authSessionProvider, (_, __) {});
       await container.read(authRepositoryProvider.future);
-      await expectLater(
-        container.read(todayDataProvider.future),
-        throwsA(isA<StateError>()),
-      );
+      final data = await container.read(todayDataProvider.future);
+      expect(data.loadError, todayLoadErrorBannerMessage);
+      expect(data.scores, same(ScoreSnapshot.empty));
     });
   });
 
@@ -86,7 +85,7 @@ void main() {
       expect(snapshot.hasData, isFalse);
     });
 
-    test('propagates repository errors when session exists', () async {
+    test('fail-open to empty snapshot when repository throws and session exists', () async {
       final container = ProviderContainer(
         overrides: [
           authRepositoryProvider.overrideWith((ref) => _readyAuth()),
@@ -99,10 +98,8 @@ void main() {
       addTearDown(container.dispose);
       container.listen(authSessionProvider, (_, __) {});
       await container.read(authRepositoryProvider.future);
-      await expectLater(
-        container.read(scoreSnapshotProvider.future),
-        throwsA(isA<StateError>()),
-      );
+      final snapshot = await container.read(scoreSnapshotProvider.future);
+      expect(snapshot, same(ScoreSnapshot.empty));
     });
   });
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/auth/auth_state.dart' as core_auth;
 import '../../core/providers/core_providers.dart';
 import '../reports/models/report_row.dart';
 import '../reports/reports_repository.dart' hide metricSeriesProvider;
@@ -256,7 +257,17 @@ WearableMetricLatest? _wearableFromSeries(
 final dataScreenSnapshotProvider =
     FutureProvider.autoDispose<DataScreenSnapshot>((ref) async {
   ref.keepAlive();
-  ref.watch(authSessionProvider);
+  await ref.watch(authRepositoryProvider.future);
+  final session = core_auth.readActiveSession(ref);
+  if (session == null) {
+    return const DataScreenSnapshot(
+      labSummary: LabFlagSummary.empty,
+      labMetrics: [],
+      wearables: [],
+      hasLabs: false,
+    );
+  }
+
   final vitalsRepo = ref.read(vitalsRepositoryProvider);
 
   var failedQueries = 0;
