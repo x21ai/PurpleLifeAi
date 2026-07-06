@@ -68,6 +68,10 @@ String friendlyAuthError(Object error) {
   return 'Something went wrong. Please try again.';
 }
 
+/// Shown when routing from `/sign-in?error=session` (expired or invalid restore).
+const sessionExpiredSignInMessage =
+    'Your session expired or could not be verified. Please sign in again to continue.';
+
 /// Email/password and OAuth sign-in using Supabase auth.
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({this.resetLinkExpired = false, super.key});
@@ -92,6 +96,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool _busy = false;
   bool _resetSent = false;
   String? _error;
+  bool _queryErrorHandled = false;
 
   @override
   void initState() {
@@ -100,6 +105,19 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       _error =
           'That reset link expired or was already used. Reset links expire after $recoveryLinkTtlLabel. '
           'Sign in with your password below, or request a new link only if you still need one.';
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_queryErrorHandled || widget.resetLinkExpired || _error != null) {
+      return;
+    }
+    final error = GoRouterState.of(context).uri.queryParameters['error'];
+    if (error == 'session') {
+      _queryErrorHandled = true;
+      setState(() => _error = sessionExpiredSignInMessage);
     }
   }
 
