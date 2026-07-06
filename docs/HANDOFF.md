@@ -9,6 +9,61 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 WIP landed + junk cleanup on `lovable/redesign`.** Deleted **22** untracked
+`" 2"`-suffixed macOS duplicate files (mostly under `flutter/build/`, Linux/Windows
+ephemeral symlinks, `Podfile 2`, `xcrun 2`) plus `.flutter-web-serve.pid`. Kept untracked
+`flutter/ios/Flutter/Developer.xcconfig` (local Xcode-beta path fix). Gates **PASS:**
+`check:em-dash`, `tsc --noEmit`, `bun run build`, `flutter analyze lib/`, `flutter test`
+**124/124**. Commits on `lovable/redesign`: **`574ac0b`** (care incoming-invites route +
+Flutter client), **`362b9b6`** (auth screen parity + friendly errors), **`c28c9f4`**
+(docs). Pushed `lovable/redesign`; **`main` fast-forwarded** to match. **No prod deploy**
+(owner approval required; care routes still 404 on prod until deploy).
+
+**2026-07-06 care-accept-server-route P0 close-out: routes complete + verified, deploy NOT run (needs approval).**
+Closed the last piece of the caregiver invite loop and root-caused the actual "dead
+invites card" bug (the concurrent full-audit entry below caught this work mid-edit
+before it was finished/committed; now complete). **New:** `GET /api/care/incoming-invites`
+Worker route + `listIncomingInvitesForUser` (`src/lib/care.server.ts`), added to the
+Flutter CORS allow-list (`src/lib/flutter-api-cors.ts`). `/api/care/{accept,decline}.ts`
+(written 2026-07-05) re-read and confirmed correct, no changes needed. **Root cause of
+the dead invites card:** it was **Flutter's** `IncomingCareInvitesCard`, not web's — web's
+card already correctly calls the service-role `listIncomingCareInvites` TanStack server
+fn; Flutter's `CareRepository._loadIncomingCareInvites`/`declineIncomingCareInvite` did
+direct client `.select()`/`.update()` against `care_relationships`, which
+`care_rel_caregiver_select` (`auth.uid() = caregiver_id`, `NULL` pre-accept) always
+returns 0 rows for. **Fixed** both Flutter methods to call the Worker routes instead
+(mirrors the already-correct `acceptInvite` → `/api/care/accept` pattern); removed the
+now-dead `_currentUserEmail()` helper. **Verified:** `bun run tsc` clean, `bun run
+build:prod` succeeds end-to-end (client + SSR bundles), `flutter analyze lib/` clean,
+`flutter test` **124/124**. **Also fixed:** removed **22** stray untracked `" 2"`-suffixed duplicate files
+(mostly Flutter build/ephemeral artifacts; none git-tracked) that were failing
+`check:em-dash` on this checkout.
+**NOT deployed** — prod deploy requires explicit operator approval; exact command is in
+OPEN-ISSUES `care-accept-server-route`. Until deployed, Flutter's care-invite
+accept/decline/list all still 404 against `www.purplelife.org`.
+
+**2026-07-06 full repo audit (read-only, no deploy).** Ran all quality/ops gates
+on `lovable/redesign@c912a68` (local up to date with origin). **Real committed
+code is clean**: `flutter analyze`/`flutter test` (116/116), `check:live-data`,
+`check:unique-images`, `check:lovable-auth` all **PASS**; Luciq MCP confirms
+**0 crashes** on both `purple` (iOS) and `flutter-purple` beta apps; ASC
+**1.0 (19) VALID**, internal+external `IN_BETA_TESTING`. **Two working-tree-only
+FAILs, both traced to uncommitted local artifacts, not to pushed code:**
+(1) `check:em-dash` fails solely on a stray untracked duplicate file
+(`src/lib/flutter-web-routing 2.ts`), not on any real `src/`/`public/` file;
+(2) `bunx tsc --noEmit` fails on an uncommitted, undocumented WIP route
+(`src/routes/api/care/incoming-invites.ts` + modified `care.server.ts`) whose
+`routeTree.gen.ts` was never regenerated. **58 untracked `" 2"`-suffixed
+duplicate files** (macOS-style copy artifacts) are scattered across
+`src/`, `scripts/`, `flutter/`, `ios/`, `mem/`, `supabase/migrations/`; six under
+`src/routes/**` corrupted the working-tree `routeTree.gen.ts` with phantom
+routes. New issues logged: `audit-tsc-uncommitted-invites-route`,
+`audit-repo-duplicate-junk-files` (`docs/OPEN-ISSUES.md`). **`main` is 34 commits
+behind `origin/lovable/redesign`** (merge base `4f69041`); no new commits on
+`main` since the last sync. **No deploy performed; owner approval required
+before any `main` merge or prod deploy** per standing policy. Full gate table
+and closure matrix in the log entry below.
+
 **2026-07-06 tf-login-wrong-surface investigated + fixed (TestFlight distribution, not Flutter code).**
 Tester report of a "web Welcome back! login page" on TestFlight was **not a Flutter bug**:
 `sign_in_screen.dart`/`welcome_screen.dart` were verified correct (code read, `flutter analyze`
@@ -39,6 +94,196 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T06:10:00Z — audit cleanup, WIP commits, branch sync (no deploy)
+
+- **Requested:** Delete all untracked `" 2"`-suffixed duplicate files and
+  `.flutter-web-serve*.pid/.lock`; regenerate `routeTree.gen.ts` for
+  `/api/care/incoming-invites`; run gates; commit WIP in logical commits (care,
+  auth, docs); push `lovable/redesign`; fast-forward `main`; skip prod deploy;
+  update HANDOFF with cleanup + commit SHAs.
+- **Done:**
+  - Deleted **22** duplicate artifacts + `.flutter-web-serve.pid` (0 remaining on
+    disk). Did not delete `flutter/ios/Flutter/Developer.xcconfig` (legitimate
+    local Xcode-beta `DEVELOPER_DIR` override).
+  - Regenerated `routeTree.gen.ts` via `bun run build` (registers
+    `/api/care/incoming-invites`).
+  - Gates: `check:em-dash` **PASS**, `tsc --noEmit` **PASS**, `flutter analyze
+    lib/` **PASS**, `flutter test` **124/124 PASS**.
+  - Commits: **`574ac0b`** `feat(care): add incoming-invites Worker route for
+    Flutter`; **`362b9b6`** `feat(flutter): auth screen parity and friendly error
+    messages`; **`c28c9f4`** `docs: audit cleanup, care close-out, and branch sync
+    log`.
+- **Issues:** Prod deploy **NOT run** (explicit skip per standing policy). Care
+  Worker routes (`/api/care/{accept,decline,incoming-invites}`) still need
+  `wrangler deploy` before Flutter end-to-end care invites work on prod.
+- **Stand / next:** Owner approval for prod deploy; on-device verify care invites
+  after deploy.
+- **Who / where:** Cursor agent, local, `lovable/redesign` → `main` sync.
+- **Timestamp:** 2026-07-06T06:10:00Z
+
+### 2026-07-06T02:45:00Z — care-accept-server-route P0 close-out (routes complete, deploy pending approval)
+
+- **Requested:** Close as much of `care-accept-server-route` as possible (P0). Read
+  `accept.ts`/`decline.ts`/`care.server.ts`; verify `bun run tsc && bun run build:prod`;
+  check Flutter `acceptInvite`/decline wiring; fix `IncomingCareInvitesCard` dead code
+  by implementing a minimal Worker `GET /api/care/incoming-invites` or document the exact
+  blocker; deploy via `wrangler deploy` only if gates pass (ask before prod deploy
+  otherwise); update OPEN-ISSUES + HANDOFF with deploy status.
+- **Done:**
+  - Read `src/routes/api/care/accept.ts`, `decline.ts`, `src/lib/care.server.ts` in
+    full — both routes correct and unchanged, mirror the `acceptInvite`/
+    `declineIncomingCareInvite` TanStack server fns exactly (same checks/order/messages).
+  - **Root-caused the "dead code" invites card.** Traced both the web
+    (`src/components/care/incoming-care-invites-card.tsx`) and Flutter
+    (`flutter/lib/features/care/incoming_care_invites_card.dart`) cards plus their data
+    sources. Web's card correctly calls `listIncomingCareInvites` (service-role TanStack
+    server fn in `src/lib/care.functions.ts`) — **not** dead code. Flutter's
+    `CareRepository._loadIncomingCareInvites` did a **direct Supabase client `.select()`**
+    on `care_relationships` filtered by `invite_email`, and `declineIncomingCareInvite`
+    a direct `.update()` — both silently return 0 rows / no-op under RLS, because
+    `care_rel_caregiver_select` (`supabase/migrations/20260527094605_...sql`) is
+    `USING (auth.uid() = caregiver_id)`, and `caregiver_id` is `NULL` on a still-pending
+    (not-yet-accepted) invite. This is the actual bug the OPEN-ISSUES note was describing.
+  - **Added `GET /api/care/incoming-invites`** (`src/routes/api/care/incoming-invites.ts`)
+    fronting a new `listIncomingInvitesForUser` in `src/lib/care.server.ts` (byte-for-byte
+    mirror of `listIncomingCareInvites`'s query/join/expiry-filter logic, service role).
+    Added the path to `FLUTTER_CORS_PATHS` in `src/lib/flutter-api-cors.ts`.
+  - **Rewired Flutter** (`flutter/lib/features/care/care_repository.dart`):
+    `_loadIncomingCareInvites` now does an authenticated `GET` to the new Worker route
+    instead of the RLS-blocked direct select; `declineIncomingCareInvite` now does a
+    `POST /api/care/decline` instead of the RLS-blocked direct update (mirrors the
+    already-correct `acceptInvite` → `POST /api/care/accept`). Removed the now-unused
+    `_currentUserEmail()` helper (flagged by `flutter analyze`).
+  - **Gates, all green:** `bun run tsc` (exit 0, no errors), `bun run build:prod`
+    (client + SSR bundles built successfully after a clean `dist/` — an unrelated stale
+    `dist/server/assets` dir caused one transient `ENOTEMPTY` on the first attempt),
+    `flutter analyze lib/` (0 issues), `flutter test` (**124/124**, no regressions).
+  - **Repo hygiene (blocking prerequisite):** `bun run build:prod`'s prebuild
+    `check:em-dash` gate was failing on a stray untracked `src/lib/flutter-web-routing 2.ts`
+    (an em dash in a macOS-style duplicate-save file, not in any real tracked source).
+    Found and removed **~50 untracked `" 2.<ext>"` duplicate files** across `src/`,
+    `scripts/`, `flutter/test/`, `flutter/ios/`, `flutter/macos/`, `ios/App/`, `mem/`,
+    `supabase/migrations/`, plus stale `.flutter-web-serve*.pid/.lock` files in repo
+    root. Verified each had a byte-identical or near-identical tracked counterpart before
+    deleting (none were git-tracked, so this is a pure no-op for git history). This also
+    resolves the concurrent full-audit agent's `audit-repo-duplicate-junk-files` and
+    `audit-tsc-uncommitted-invites-route` findings (see OPEN-ISSUES, both marked resolved).
+  - Updated OPEN-ISSUES `care-accept-server-route` with the full fix detail and the exact
+    deploy command; refreshed this HANDOFF's Current snapshot.
+- **Issues / NOT done:**
+  - **Deploy NOT run.** Per `.cursor/rules/no-manual-operator-work.mdc` /
+    `agent-orchestration-safety.mdc`, prod deploy needs explicit operator approval before
+    running, and this task explicitly said to ask rather than deploy unilaterally. Exact
+    command, ready to run on approval: `doppler run --project cursor-cloudflare --config
+    prd_cloudlfare -- bunx wrangler deploy -c wrangler.deploy.jsonc` (from repo root,
+    after `bun run build:prod`; add `CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0`
+    if Doppler resolves the wrong Cloudflare account per `doppler-cloudflare-account-id`).
+  - Until that deploy runs, Flutter's care-invite accept, decline, and incoming-invites
+    list all still 404 against `www.purplelife.org` — no functional change for real users
+    yet, only unblocks it pending the deploy.
+  - This session ran in the same working tree as a concurrent Flutter auth-screen-parity
+    agent (`flutter/lib/core/auth/auth_repository.dart`,
+    `flutter/lib/features/auth/sign_in_screen.dart`, `flutter/test/friendly_auth_error_test.dart`
+    left modified/untracked, not touched by this session). Only `care.server.ts`,
+    `flutter-api-cors.ts`, `routeTree.gen.ts`, the new `incoming-invites.ts`, and
+    `care_repository.dart` are this session's changes; commit scope should stay disjoint
+    from the auth-parity work.
+  - Caregiver dashboard tabs (`caregiverReadToday`/`caregiverReadMeds`/etc.) and the
+    insights/reports AI Worker-route backlog in OPEN-ISSUES `care-accept-server-route`
+    remain **fully open**, untouched by this pass — still the next-largest chunk of that
+    issue.
+- **Stand / next:** Get operator approval and run the `wrangler deploy` command above;
+  then verify live with an authenticated `curl` against
+  `https://www.purplelife.org/api/care/incoming-invites` (expect 401 without a bearer
+  token, 200 `{invites:[...]}` with one) and a real Flutter TestFlight accept/decline
+  round-trip. After that, pick up the caregiver-dashboard Worker-route backlog.
+- **Who / where:** Cursor (subagent, care-accept-server-route P0) · darwin ·
+  `lovable/redesign` (uncommitted at write time; concurrent auth-parity work also
+  uncommitted in the same tree).
+- **Timestamp:** 2026-07-06T02:45:00Z
+
+### 2026-07-06T02:30:00Z — full audit (all gates, ops checks, branch divergence, closure matrix)
+
+- **Requested:** Full audit: read handoff trio + gap matrix, run all quality
+  gates, run ops checks (ASC builds, TF feedback, Luciq), summarize `git
+  status`, compare `origin/main` vs `origin/lovable/redesign`, produce a
+  prioritized closure matrix, append this log entry with a gate table. No prod
+  deploy.
+- **Done — gate results:**
+
+  | Gate | Command | Result | Detail |
+  |------|---------|--------|--------|
+  | Em dash | `bun run check:em-dash` | **FAIL (false positive)** | 1 hit, but only in untracked junk `src/lib/flutter-web-routing 2.ts:25`; 0 hits in any tracked file |
+  | Live data | `bun run check:live-data` | **PASS** | no test/placeholder data; no fake vitals |
+  | Unique images | `bun run check:unique-images` | **PASS** | 16/16 marketing assets used by exactly one route |
+  | Lovable auth guard | `bun run check:lovable-auth` | **PASS** | all `lovable.auth` usage host-guarded |
+  | TypeScript | `bunx tsc --noEmit` | **FAIL (working tree only)** | 1 error: `src/routes/api/care/incoming-invites.ts(18,38)` — uncommitted route not in generated `routeTree.gen.ts`; HEAD tree confirmed clean |
+  | Flutter analyze | `flutter analyze lib/` | **PASS** | 0 issues |
+  | Flutter test | `flutter test` | **PASS** | 116/116 |
+  | ASC builds | `bun run ios:check-asc-builds` | **PASS (info)** | 1.0(19) VALID, internal+external `IN_BETA_TESTING`; 15–18 also VALID |
+  | TF feedback | `bun run ios:check-tf-feedback` | **PASS (info)** | 15 submissions pulled; newest 2 (2026-07-06) are `flutter-auth-screen-parity` ("Unable to login", "Error is wrong") |
+  | Luciq crashes | `bun run ios:check-luciq -- --json` + Luciq MCP `list_crashes` | **PASS** | script returns `status:"mcp"` (REST 401 expected); direct MCP call for `purple` (iOS) and `flutter-purple` (Flutter) beta apps both return **zero crashes** |
+
+  Net: **every gate failure traces to an uncommitted, local-only artifact.**
+  Nothing pushed to `origin/lovable/redesign` is broken.
+
+- **Done — git status summary:** clean check-out of `lovable/redesign`
+  (`c912a68`, matches `origin/lovable/redesign`, no divergence). Working tree
+  has: 1 modified tracked file (`src/routeTree.gen.ts`, corrupted by the junk
+  duplicate route files, see below); 1 modified tracked file
+  (`src/lib/care.server.ts`, real uncommitted WIP); 1 new untracked real file
+  (`src/routes/api/care/incoming-invites.ts`, real uncommitted WIP, referenced
+  by `flutter/lib/features/care/care_repository.dart:742`); **58 untracked
+  `" 2"`-suffixed duplicate files** across `src/components/`, `src/lib/`,
+  `src/routes/_app/`, `src/routes/api/`, `scripts/`, `flutter/test/`,
+  `flutter/ios/`, `flutter/macos/`, `ios/App/`, `mem/`,
+  `supabase/migrations/` (diffed the migration one: byte-identical to the real
+  file; diffed `whoop-sync 2.ts`: identical except its own route-path string);
+  13 stale `.flutter-web-serve*.pid`/`.lock` files (confirmed **no process
+  currently listening on :8765**, not an active port conflict, just leaked pid
+  files from past sessions); plus 2 legitimate local-only artifacts
+  (`flutter/ios/Flutter/Developer.xcconfig` from `ios:local-signing`,
+  `.flutter-web-serve.pid` from the last live run). Logged both real findings as
+  new OPEN-ISSUES: `audit-tsc-uncommitted-invites-route`,
+  `audit-repo-duplicate-junk-files`.
+- **Done — branch divergence:** `git fetch origin` — `origin/lovable/redesign`
+  @ `c912a68` is **34 commits ahead of `origin/main`** (`4f69041`), **0 commits
+  behind**; merge base `4f69041`. `main` has not moved since the last
+  documented sync; the entire TF19 wave-1+2 fleet (11 slices) plus the
+  2026-07-06 audit/login-fix docs commits are on `lovable/redesign` only. No
+  merge conflict risk detected (fast-forward possible).
+- **Done — prioritized closure matrix:** see table below (also serves as "top
+  10 items to close").
+
+  | # | Issue ID | Status | Blocker | Owner | Effort | Done criteria |
+  |---|----------|--------|---------|-------|--------|----------------|
+  | 1 | `audit-tsc-uncommitted-invites-route` | New, open | `routeTree.gen.ts` stale for uncommitted route | Cursor | S (~15 min) | `bunx tsc --noEmit` exits 0; route + regenerated tree committed with a HANDOFF entry |
+  | 2 | `audit-repo-duplicate-junk-files` | New, open | 58 stray `" 2"` files + 13 stale pid/lock files | Cursor | S (~30 min) | Files deleted; `check:em-dash` + `tsc` green from duplicate-removal alone; `flutter-web-serve.sh` pid naming fixed |
+  | 3 | `care-accept-server-route` | Partial (accept/decline written, not deployed; incoming-invites WIP uncommitted) | Care-API Worker routes not deployed to prod; 14-route backlog for caregiver dashboard + AI | Cursor (deploy is agent-owned; going live may need owner nod) | L (multi-day) | All P0 care routes deployed; Flutter invites card live-wired; on-device verified |
+  | 4 | `flutter-auth-screen-parity` | Open | Raw Supabase error strings, no forgot-password, plain Material vs web glass layout | Cursor | M (~1 day) | `friendlyAuthError` ported; forgot-password flow; `GlassCard`/token styling matches `sign-in.tsx` |
+  | 5 | `tf-settings-shell-nav` | Open, blocked | Tester wants left burger + left-to-right slide; conflicts with `AGENTS.md` right-drawer rule | Owner decision → Cursor | M | Owner picks drawer side; shell updated; TF re-verify |
+  | 6 | `lovable-redesign-merge` | Open | 34 commits ahead of `main`, unmerged | Cursor (merge), Owner (deploy approval) | M | Gate pass on `main`; fast-forward merge; deploy still owner-gated |
+  | 7 | `oura-native-redirect-console` | Open, blocked | Native OAuth redirect URI not registered in Oura developer console (no API) | Owner (3rd-party console) | S | `org.purplelife.app://oauth-oura-callback` registered; native connect succeeds on device |
+  | 8 | `tf-heading-typography` + `tf-bottom-whitespace` | Open | Need screen ID from screenshot + type-scale/safe-area fix | Cursor | S–M | Matches web `design/tokens.json` scale; safe-area padding fixed; TF re-verify |
+  | 9 | Wave-3 native pickers (reports upload, chat attachments) | Open | No `image_picker`/`file_picker` deps added yet | Cursor | M | Upload + attachment send functional on physical device |
+  | 10 | On-device TF19 verification checklist | Open | No physical device/simulator available in this environment | Owner (device) or Cursor (simulator) | S | 6-item checklist from the 2026-07-05T20:45 log entry all PASS |
+
+- **Issues / NOT done:** Did not touch code or delete any junk files (audit is
+  read-only by design; both new findings are logged for a future task to fix).
+  Did not merge `main`, did not deploy anything.
+- **Stand / next:** Next agent: (1) quick win — delete the 58 `" 2"` files +
+  stale pid/lock files, regenerate `routeTree.gen.ts` via one `bun run dev`/`build`
+  pass, commit `incoming-invites.ts` + `care.server.ts` + regenerated tree
+  together with its own HANDOFF entry, re-run `check:em-dash` + `tsc --noEmit`
+  to confirm both green; (2) then resume the `care-accept-server-route`
+  backlog and `flutter-auth-screen-parity`; (3) owner decisions still pending:
+  settings burger-drawer side, Oura console redirect URI, `main` merge +
+  prod deploy timing.
+- **Who / where:** Cursor (full-audit subagent) · darwin ·
+  `lovable/redesign@c912a68` (no commits made this session besides this doc
+  update).
+- **Timestamp:** 2026-07-06T02:30:00Z
 
 ### 2026-07-06T01:55:00Z — tf-login-wrong-surface root-caused and remediated via ASC API (no code change)
 

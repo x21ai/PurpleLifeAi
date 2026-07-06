@@ -10,6 +10,26 @@ Format:
 
 ---
 
+## Repo hygiene / gates (raised 2026-07-06 full audit)
+
+- [x] ~~**audit-tsc-uncommitted-invites-route**~~ — RESOLVED 2026-07-06: this was the
+  P0 `care-accept-server-route` close-out work landing concurrently in the same
+  working tree (parallel agent sessions on one checkout). Regenerated
+  `routeTree.gen.ts` via `bun run build:prod` (now registers
+  `/api/care/incoming-invites` correctly); `bunx tsc`/`bun run tsc` now exits 0.
+  `incoming-invites.ts` + `care.server.ts` + `routeTree.gen.ts` are logged and
+  ready to commit together per the `care-accept-server-route` entry below.
+  `bunx tsc --noEmit` was originally run mid-edit
+  (`care_repository.dart` line 742 `GET /care/incoming-invites` call the audit
+  cites did not exist yet at the time it read that file; it does now).
+
+- [x] ~~**audit-repo-duplicate-junk-files**~~ — RESOLVED 2026-07-06: deleted **22**
+  untracked `" 2"`-suffixed duplicate files on this checkout (mostly
+  `flutter/build/ios 2`, Linux/Windows ephemeral symlinks, `Podfile 2`, `xcrun
+  2`; audit had counted 58 on a dirtier tree), plus `.flutter-web-serve.pid`
+  (none git-tracked). Confirmed `bun run check:em-dash` **PASS** afterward.
+  Kept untracked `flutter/ios/Flutter/Developer.xcconfig` (local Xcode-beta fix).
+
 ## Flutter / TestFlight
 
 - [x] ~~**tf-login-wrong-surface**~~ — RESOLVED 2026-07-06: **confirmed root cause** and fixed the
@@ -70,6 +90,49 @@ Format:
   with Flutter CORS. **Also:** the existing Flutter `declineIncomingCareInvite` direct
   `.update()` is silently RLS-blocked today (same root cause). _Raised 2026-07-05 by
   Wave-1 care/reports agent._
+
+  **Update 2026-07-05 (P0 close-out pass):** all three routes now exist and are
+  build-verified (`bun run tsc` + `bun run build:prod` both **pass**, `flutter analyze
+  lib/` clean, `flutter test` **124/124**):
+  - `src/routes/api/care/accept.ts` + `src/routes/api/care/decline.ts` — already written,
+    confirmed still correct, no changes needed.
+  - **New:** `src/routes/api/care/incoming-invites.ts` (GET) fronting a new
+    `listIncomingInvitesForUser` in `src/lib/care.server.ts` (mirrors the existing
+    `listIncomingCareInvites` server fn exactly: same email-match query, same owner-name
+    join, same expiry filter). Added to the Flutter CORS allow-list in
+    `src/lib/flutter-api-cors.ts`.
+  - **Root-caused the actual "dead code" card:** it was the **Flutter**
+    `IncomingCareInvitesCard` (`flutter/lib/features/care/incoming_care_invites_card.dart`),
+    not the web one. Web's card already called the service-role `listIncomingCareInvites`
+    TanStack server fn correctly. Flutter's `CareRepository._loadIncomingCareInvites` did a
+    **direct client `.select()` on `care_relationships` filtered by `invite_email`** —
+    RLS's `care_rel_caregiver_select` policy is `auth.uid() = caregiver_id`, which is
+    `NULL` on a still-pending (not-yet-accepted) invite, so that query always returned 0
+    rows. Same root cause silently broke Flutter's `declineIncomingCareInvite` (direct
+    `.update()`, 0-row no-op).
+  - **Fixed in `flutter/lib/features/care/care_repository.dart`:**
+    `_loadIncomingCareInvites` now calls `GET /api/care/incoming-invites`;
+    `declineIncomingCareInvite` now calls `POST /api/care/decline` (mirroring the existing
+    `acceptInvite` → `POST /api/care/accept` pattern). Removed the now-dead
+    `_currentUserEmail()` helper (flagged by `flutter analyze`).
+  - **NOT deployed.** `wrangler deploy` was prepared but **not run** — prod deploy requires
+    explicit operator approval per `.cursor/rules/no-manual-operator-work.mdc` /
+    `agent-orchestration-safety.mdc` and this branch (`lovable/redesign`) is mid-session
+    with unrelated concurrent Flutter auth-screen work also uncommitted in the same
+    working tree. Until deployed, Flutter's `acceptInvite`/`declineIncomingCareInvite`/
+    incoming-invites list all 404 against prod (`www.purplelife.org`) exactly as before.
+    **Exact command for approval:** `doppler run --project cursor-cloudflare --config
+    prd_cloudlfare -- bunx wrangler deploy -c wrangler.deploy.jsonc` (run from repo root
+    after `bun run build:prod`; override `CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0`
+    per `doppler-cloudflare-account-id` below if Doppler still resolves the POS account).
+  - **Also fixed (unrelated repo hygiene, was blocking `check:em-dash`/`build:prod`):**
+    removed ~50 stray untracked `" 2.<ext>"` duplicate files scattered across `src/`,
+    `scripts/`, `flutter/`, `mem/`, `ios/` (macOS-style duplicate-save artifacts, all
+    either byte-identical to or a stale snapshot of their real tracked counterpart);
+    `src/lib/flutter-web-routing 2.ts` contained a stray em dash that failed the prebuild
+    gate. None were git-tracked, so nothing of substance was lost.
+  - Caregiver dashboard tabs + AI Worker-route backlog below is still **fully open**,
+    untouched by this pass.
 
   **Extended 2026-07-05 (Wave-2 fleet): full Worker-route backlog.** The same gap blocks
   not just accept/decline but **every caregiver dashboard read** and the insights/reports
@@ -148,7 +211,14 @@ Format:
   (`luciq_flutter`, `LUCIQ_APP_TOKEN`). **2026-07-05:** Doppler sync (`luciq:sync-secrets`),
   Cursor MCP install (`luciq:install-mcp`, `pmt@eatos.com`, token from `servers-teamkeys/dev`).
   Triage via Luciq MCP **Flutter - Purple - Beta** after Cursor restart (REST API returns 401
-  for MCP token; expected). _Raised 2026-07-05 from ASC beta feedback._
+  for MCP token; expected). **Re-verified 2026-07-06 (full audit):** called Luciq MCP
+  `list_crashes` directly for both apps in this Luciq account matching Purple
+  (`purple` slug, iOS, mode beta; `flutter-purple` slug, Flutter, mode beta) — **both
+  return zero crashes**. No crash telemetry exists for the original TF (pre-7/4)
+  report or for any Flutter build since. Still open only because the original
+  screenshot has no reproduction path; downgrading urgency, not closing (cannot
+  prove a negative for a single unreproduced report). _Raised 2026-07-05 from ASC
+  beta feedback; re-verified 2026-07-06._
 
 - [x] ~~**tf-sync-bar-every-page**~~ — RESOLVED 2026-07-05: Removed `SyncStatusBar` from Meds and
   Vitals; kept on Today (+ Tools integrations cards). Sync button labels name providers.

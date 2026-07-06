@@ -1,8 +1,12 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-05 ~12:05 ET (Luciq MCP + Doppler integration).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~06:10 ET (cleanup + WIP landed, main synced).
 
-**Recent:** Luciq MCP wired (`luciq:sync-secrets`, `luciq:install-mcp`); `ios:check-luciq` returns `status: "mcp"` (REST 401 expected). Restart Cursor for MCP crash triage on **Flutter - Purple - Beta**.
+**Recent:** Deleted **22** untracked `" 2"`-suffixed duplicate files + `.flutter-web-serve.pid`. Gates PASS (`check:em-dash`, `tsc`, `flutter analyze`, `flutter test` 124/124). Committed and pushed on `lovable/redesign`: **`574ac0b`** (care incoming-invites route + Flutter client), **`362b9b6`** (auth screen parity), docs commit in same push. **`main` fast-forwarded** to match. **No prod deploy** (owner approval required; care routes still 404 on prod until `wrangler deploy`). Full detail: `docs/HANDOFF.md` 2026-07-06T06:10:00Z log entry.
+
+**Prior (2026-07-06 care close-out):** `care-accept-server-route` P0 closed: new `GET /api/care/incoming-invites` Worker route + Flutter rewire off RLS-blocked direct queries. Deploy NOT run, needs operator approval.
+
+**Prior:** Luciq MCP wired (`luciq:sync-secrets`, `luciq:install-mcp`); `ios:check-luciq` returns `status: "mcp"` (REST 401 expected). Restart Cursor for MCP crash triage on **Flutter - Purple - Beta**.
 
 ## Luciq MCP + Doppler (2026-07-05)
 
