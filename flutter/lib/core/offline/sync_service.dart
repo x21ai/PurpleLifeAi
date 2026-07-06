@@ -58,10 +58,27 @@ class SyncService {
   bool _started = false;
   Future<SyncResult>? _inFlightSync;
   DateTime? _lastCompletedSyncAt;
+  int _activeSyncGeneration = 0;
 
   /// Minimum gap between full background syncs (queue flush + table pull).
   /// Prevents tab switches and parallel repository loads from stacking work.
   static const minBackgroundSyncInterval = Duration(seconds: 45);
+
+  /// Upper bound for a full sync run so first load never waits forever.
+  static const syncOperationTimeout = Duration(seconds: 30);
+
+  /// Whether a recent background sync should be skipped (see [syncIfStale]).
+  @visibleForTesting
+  static bool shouldThrottleBackgroundSync({
+    required DateTime? lastCompletedSyncAt,
+    required Duration elapsed,
+    required bool cacheEmpty,
+  }) {
+    if (lastCompletedSyncAt == null) return false;
+    if (elapsed >= minBackgroundSyncInterval) return false;
+    // Reinstall / cold Drift: keep pulling until mirrored rows exist locally.
+    return !cacheEmpty;
+  }
 
   String? get _currentUserId =>
       _auth.currentSession?.user.id ?? _auth.currentUser?.id;
@@ -138,10 +155,23 @@ class SyncService {
 
     // Fail open: sync errors should never block direct Supabase reads
     // in callers (for example meds/today on web when worker calls fail).
-    final next = _runSync().catchError((Object e, StackTrace st) {
-      debugPrint('[SyncService] syncAll failed, continuing: $e\n$st');
-      return SyncResult.skipped();
-    });
+    final generation = ++_activeSyncGeneration;
+    final next = _runSync(generation)
+        .timeout(
+          syncOperationTimeout,
+          onTimeout: () {
+            debugPrint(
+              '[SyncService] syncAll timed out after '
+              '${syncOperationTimeout.inSeconds}s',
+            );
+            _activeSyncGeneration += 1;
+            return SyncResult.skipped();
+          },
+        )
+        .catchError((Object e, StackTrace st) {
+          debugPrint('[SyncService] syncAll failed, continuing: $e\n$st');
+          return SyncResult.skipped();
+        });
     _inFlightSync = next;
     return next.whenComplete(() {
       if (identical(_inFlightSync, next)) {
@@ -151,14 +181,38 @@ class SyncService {
   }
 
   /// Background sync with a minimum interval between completed runs.
-  Future<SyncResult> syncIfStale() {
-    if (_lastCompletedSyncAt != null) {
-      final elapsed = DateTime.now().difference(_lastCompletedSyncAt!);
-      if (elapsed < minBackgroundSyncInterval) {
-        return Future.value(SyncResult.skipped());
-      }
+  ///
+  /// Always runs when Drift has no mirrored rows yet (reinstall / cold cache)
+  /// so the first pull is never throttled by a recent empty sync.
+  Future<SyncResult> syncIfStale() async {
+    if (await _shouldSkipBackgroundSync()) {
+      return SyncResult.skipped();
     }
     return syncAll();
+  }
+
+  Future<bool> _shouldSkipBackgroundSync() async {
+    final last = _lastCompletedSyncAt;
+    if (last == null) return false;
+
+    final elapsed = DateTime.now().difference(last);
+    final cacheEmpty = await _isLocalCacheEmpty();
+    return shouldThrottleBackgroundSync(
+      lastCompletedSyncAt: last,
+      elapsed: elapsed,
+      cacheEmpty: cacheEmpty,
+    );
+  }
+
+  Future<bool> _isLocalCacheEmpty() async {
+    final userId = _currentUserId;
+    if (userId == null) return true;
+
+    for (final table in SyncTables.all) {
+      final rows = await _db.readCachedTable(table, userId: userId);
+      if (rows.isNotEmpty) return false;
+    }
+    return true;
   }
 
   Future<void> _safeSyncAll({required String trigger}) async {
@@ -169,21 +223,33 @@ class SyncService {
     }
   }
 
-  Future<SyncResult> _runSync() async {
+  Future<SyncResult> _runSync(int generation) async {
     var queueSent = 0;
     var queueFailed = 0;
     var rowsPulled = 0;
 
     try {
-      final flush = await _flushQueue();
+      final flush = await _flushQueue().timeout(syncOperationTimeout);
       queueSent = flush.sent;
       queueFailed = flush.failed;
+    } on TimeoutException {
+      debugPrint('[SyncService] queue flush timed out');
     } catch (e, st) {
       debugPrint('[SyncService] queue flush failed: $e\n$st');
     }
 
+    if (generation != _activeSyncGeneration) {
+      return SyncResult(
+        queueSent: queueSent,
+        queueFailed: queueFailed,
+        rowsPulled: rowsPulled,
+      );
+    }
+
     try {
-      rowsPulled = await _pullAllTables();
+      rowsPulled = await _pullAllTables().timeout(syncOperationTimeout);
+    } on TimeoutException {
+      debugPrint('[SyncService] table pull timed out');
     } catch (e, st) {
       debugPrint('[SyncService] table pull failed: $e\n$st');
     }
@@ -193,7 +259,15 @@ class SyncService {
       queueFailed: queueFailed,
       rowsPulled: rowsPulled,
     );
-    _lastCompletedSyncAt = DateTime.now();
+
+    if (generation != _activeSyncGeneration) {
+      return result;
+    }
+
+    final cacheStillEmpty = await _isLocalCacheEmpty();
+    if (!cacheStillEmpty || result.hadWork) {
+      _lastCompletedSyncAt = DateTime.now();
+    }
     return result;
   }
 
@@ -290,7 +364,7 @@ class SyncService {
       );
     }
 
-    final rows = await query;
+    final rows = await query.timeout(syncOperationTimeout);
     final list = (rows as List).cast<Map<String, dynamic>>();
 
     for (final row in list) {
