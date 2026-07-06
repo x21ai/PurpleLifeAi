@@ -19,6 +19,8 @@ class AskMayaScreen extends ConsumerWidget {
     final firstName = todayAsync.valueOrNull?.firstName?.trim();
     final conditions = todayAsync.valueOrNull?.conditions ?? const [];
     final starters = getSuggestedQuestions(conditions, cap: 5);
+    final deepLinkPrompt =
+        GoRouterState.of(context).uri.queryParameters['q']?.trim();
     final purple = parseTokenColor(
       PurpleTokens.loaded.colorsFor('dark').purplePrimary,
     );
@@ -83,6 +85,8 @@ class AskMayaScreen extends ConsumerWidget {
                     _PromptChip(
                       label: prompt,
                       activeColor: purple,
+                      highlighted: deepLinkPrompt != null &&
+                          deepLinkPrompt == prompt,
                       onTap: () => _openChat(context, prompt),
                     ),
                 ],
@@ -154,16 +158,20 @@ class _PromptChip extends StatelessWidget {
     required this.label,
     required this.activeColor,
     required this.onTap,
+    this.highlighted = false,
   });
 
   final String label;
   final Color activeColor;
   final VoidCallback onTap;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white.withValues(alpha: 0.06),
+      color: highlighted
+          ? activeColor.withValues(alpha: 0.18)
+          : Colors.white.withValues(alpha: 0.06),
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
         onTap: onTap,
@@ -174,10 +182,11 @@ class _PromptChip extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    height: 1.3,
-                  ),
+              style: PurpleType.sansStyle(
+                fontSize: 13,
+                color: Colors.white.withValues(alpha: 0.85),
+                height: 1.3,
+              ),
             ),
           ),
         ),

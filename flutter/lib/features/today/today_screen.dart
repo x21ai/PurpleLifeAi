@@ -8,16 +8,19 @@ import '../../design/glass_surface.dart';
 import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
+import '../reports/reports_repository.dart';
 import '../shared/condition_prompts.dart';
 import '../shared/glass_helpers.dart' hide GlassSurface;
 import '../shared/loading_skeleton.dart';
+import 'date_strip.dart';
+import 'models/score_snapshot.dart';
 import 'models/today_data.dart';
 import 'today_merged_widgets.dart';
 import 'today_repository.dart';
 import 'wearable_sync.dart';
 
-/// Merged Today dashboard: calm strip layout from
-/// `docs/previews/personalized-dashboard-preview.html` (merged mode).
+/// Merged Today dashboard: date strip, dual score hero, personalization pill,
+/// metric strip, single Maya narrative (`personalized-dashboard-preview.html`).
 class TodayScreen extends ConsumerStatefulWidget {
   const TodayScreen({super.key});
 
@@ -27,6 +30,17 @@ class TodayScreen extends ConsumerStatefulWidget {
 
 class _TodayScreenState extends ConsumerState<TodayScreen> {
   static bool _emptyDismissed = false;
+
+  DateTime _selectedDate = _startOfDay(DateTime.now());
+
+  static DateTime _startOfDay(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  static bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  String get _dateYmd => DateFormat('yyyy-MM-dd').format(_selectedDate);
+
+  bool get _isToday => _isSameDay(_selectedDate, DateTime.now());
 
   String _greeting() {
     final hour = DateTime.now().hour;
@@ -42,17 +56,37 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
       worker: ref.read(workerClientProvider),
     );
     ref.invalidate(todayDataProvider);
+    if (!_isToday) {
+      ref.invalidate(scoreSnapshotForDayProvider(_dateYmd));
+    }
     try {
       await ref.read(todayDataProvider.future);
+      if (!_isToday) {
+        await ref.read(scoreSnapshotForDayProvider(_dateYmd).future);
+      }
     } catch (_) {
       // Keep pull-to-refresh stable even if one provider fails.
     }
   }
 
+  ScoreSnapshot _resolveScores(TodayData data) {
+    if (_isToday) return data.scores;
+    final dayAsync = ref.watch(scoreSnapshotForDayProvider(_dateYmd));
+    return dayAsync.valueOrNull ?? ScoreSnapshot.empty;
+  }
+
+  bool _scoresLoading(TodayData data) {
+    if (_isToday) return false;
+    final dayAsync = ref.watch(scoreSnapshotForDayProvider(_dateYmd));
+    return dayAsync.isLoading;
+  }
+
   @override
   Widget build(BuildContext context) {
     final todayAsync = ref.watch(todayDataProvider);
+    final hub = ref.watch(reportsHubProvider);
     final tokens = PurpleTokens.loaded;
+    final hasLabs = (hub.valueOrNull?.documents.length ?? 0) > 0;
 
     return CanvasBackground(
       child: SizedBox(
@@ -60,26 +94,38 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
         child: todayAsync.when(
           loading: _TodayLoadingView.new,
           error: (_, __) => _TodayLoadError(onRetry: _refresh),
-          data: (data) => RefreshIndicator(
-            onRefresh: _refresh,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.only(
-                top: tokens.spacing.x2,
-                bottom: tokens.spacing.xl,
-              ),
-              child: ContentColumn(
-                child: _MergedTodayBody(
-                  data: data,
-                  greeting: _greeting(),
-                  showEmptyWelcome:
-                      data.journalEntryCount == 0 && !_emptyDismissed,
-                  onDismissWelcome: () =>
-                      setState(() => _emptyDismissed = true),
+          data: (data) {
+            final scores = _resolveScores(data);
+            final scoresLoading = _scoresLoading(data);
+
+            return RefreshIndicator(
+              onRefresh: _refresh,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.only(
+                  top: tokens.spacing.x2,
+                  bottom: tokens.spacing.xl,
+                ),
+                child: ContentColumn(
+                  child: _MergedTodayBody(
+                    data: data,
+                    scores: scores,
+                    scoresLoading: scoresLoading,
+                    selectedDate: _selectedDate,
+                    isToday: _isToday,
+                    hasLabs: hasLabs,
+                    greeting: _greeting(),
+                    showEmptyWelcome:
+                        data.journalEntryCount == 0 && !_emptyDismissed,
+                    onDismissWelcome: () =>
+                        setState(() => _emptyDismissed = true),
+                    onDateChanged: (day) =>
+                        setState(() => _selectedDate = _startOfDay(day)),
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
@@ -89,48 +135,61 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
 class _MergedTodayBody extends StatelessWidget {
   const _MergedTodayBody({
     required this.data,
+    required this.scores,
+    required this.scoresLoading,
+    required this.selectedDate,
+    required this.isToday,
+    required this.hasLabs,
     required this.greeting,
     required this.showEmptyWelcome,
     required this.onDismissWelcome,
+    required this.onDateChanged,
   });
 
   final TodayData data;
+  final ScoreSnapshot scores;
+  final bool scoresLoading;
+  final DateTime selectedDate;
+  final bool isToday;
+  final bool hasLabs;
   final String greeting;
   final bool showEmptyWelcome;
   final VoidCallback onDismissWelcome;
+  final ValueChanged<DateTime> onDateChanged;
 
   @override
   Widget build(BuildContext context) {
     final tokens = PurpleTokens.loaded;
-    final narrative = data.narrative?.trim();
+    final narrative = isToday ? data.narrative?.trim() : null;
     final hasNarrative = narrative != null && narrative.isNotEmpty;
-    final now = DateTime.now();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (showEmptyWelcome) ...[
+        if (showEmptyWelcome && isToday) ...[
           _TodayEmptyWelcome(
             onStart: () => context.go(AppRoutes.journalNew),
             onDismiss: onDismissWelcome,
           ),
           SizedBox(height: tokens.spacing.xl),
         ],
-        Text(
-          DateFormat('EEEE, MMMM d').format(now),
-          style: TextStyle(
-            fontSize: tokens.typography.labelSize('labelEyebrow'),
-            letterSpacing: tokens.typography.letterSpacing('labelEyebrow'),
-            color: Colors.white.withValues(alpha: 0.55),
-          ),
-        ),
+        DateStrip(value: selectedDate, onChanged: onDateChanged),
         SizedBox(height: tokens.spacing.lg),
         _Header(
           title: greeting,
           firstName: data.firstName,
           isOffline: data.isOffline,
         ),
-        if (!hasNarrative) ...[
+        if (!isToday) ...[
+          SizedBox(height: tokens.spacing.sm),
+          Text(
+            'Here\'s how ${DateFormat('EEEE, MMMM d').format(selectedDate)} went.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.55),
+                  height: 1.45,
+                ),
+          ),
+        ] else if (!hasNarrative) ...[
           SizedBox(height: tokens.spacing.sm),
           Text(
             promptForConditions(data.conditions),
@@ -140,12 +199,30 @@ class _MergedTodayBody extends StatelessWidget {
                 ),
           ),
         ],
-        SizedBox(height: tokens.spacing.xl),
-        TodayMetricStrip(
-          scores: data.scores,
-          conditions: data.conditions,
-          onMetricTap: (key) => context.go(AppRoutes.biometricsMetric(key)),
-        ),
+        SizedBox(height: tokens.spacing.lg),
+        if (isToday)
+          TodayPersonalizationStrip(
+            conditions: data.conditions,
+            hasWearableData: data.scores.hasData,
+            hasLabs: hasLabs,
+            onTap: () => context.go(AppRoutes.plan),
+          ),
+        if (isToday) SizedBox(height: tokens.spacing.md),
+        if (scoresLoading)
+          const _ScoresLoadingPlaceholder()
+        else ...[
+          TodayDualScoreHero(
+            scores: scores,
+            conditions: data.conditions,
+            onMetricTap: (key) => context.go(AppRoutes.biometricsMetric(key)),
+          ),
+          SizedBox(height: tokens.spacing.md),
+          TodayMetricStrip(
+            scores: scores,
+            conditions: data.conditions,
+            onMetricTap: (key) => context.go(AppRoutes.biometricsMetric(key)),
+          ),
+        ],
         if (hasNarrative) ...[
           SizedBox(height: tokens.spacing.x2),
           TodayMayaCard(narrative: narrative),
@@ -153,11 +230,17 @@ class _MergedTodayBody extends StatelessWidget {
         SizedBox(height: tokens.spacing.x2),
         TodayProtocolTeaser(
           conditions: data.conditions,
-          scores: data.scores,
+          scores: scores,
           onSeePlan: () => context.go(AppRoutes.plan),
         ),
-        SizedBox(height: tokens.spacing.lg),
-        TodayAskMayaChips(conditions: data.conditions),
+        if (isToday) ...[
+          SizedBox(height: tokens.spacing.lg),
+          TodayAskMayaChips(conditions: data.conditions),
+          TodayRecommendedInline(
+            conditions: data.conditions,
+            hasLabs: hasLabs,
+          ),
+        ],
         SizedBox(height: tokens.spacing.xl),
         _QuickActions(
           showSeizure: showsSeizureFeatures(data.conditions),
@@ -167,7 +250,7 @@ class _MergedTodayBody extends StatelessWidget {
           onData: () => context.go(AppRoutes.data),
         ),
         SizedBox(height: tokens.spacing.md),
-        if (data.scores.hasData)
+        if (scores.hasData)
           Center(
             child: TextButton.icon(
               onPressed: () => context.go(AppRoutes.data),
@@ -181,6 +264,37 @@ class _MergedTodayBody extends StatelessWidget {
               ),
             ),
           ),
+      ],
+    );
+  }
+}
+
+class _ScoresLoadingPlaceholder extends StatelessWidget {
+  const _ScoresLoadingPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: 140,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Container(
+            height: 140,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ),
       ],
     );
   }

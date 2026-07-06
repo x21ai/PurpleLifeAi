@@ -10,7 +10,7 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 ## Current snapshot
 
 **2026-07-06 Merged Today parity slice (Plan / Ask Maya / Today — committed, not pushed).**
-Merged Today: `DateStrip` with day-filtered scores via `scoreSnapshotForDayProvider`,
+Commit `8d3abf7` on `lovable/redesign`. Merged Today: `DateStrip` with day-filtered scores via `scoreSnapshotForDayProvider`,
 `TodayDualScoreHero` (readiness arc + sleep card), `TodayPersonalizationStrip` onboarding pill,
 single `TodayMayaCard` narrative, metric strip, protocol teaser, Ask Maya chips, inline
 recommended card. Ask Maya highlights deep-link `?q=` prompt chip. SF Pro via `PurpleType`
@@ -18,7 +18,7 @@ throughout. Verified: `flutter analyze` on scoped paths (info-only), `flutter te
 test/today_screen_render_test.dart` 2/2. No shell/router/pubspec/ios changes. No push.
 
 **2026-07-06 TF23 Flutter Data / Vitals merged restyle (committed, not pushed).**
-Commit `3e4ded6` on `lovable/redesign`: `data_style.dart`, unified Data tab, insights teaser,
+Commit `1d461bb` on `lovable/redesign`: `data_style.dart`, unified Data tab, insights teaser,
 metric detail with dated readings. Verified: `flutter analyze` on scope clean. No push.
 
 **2026-07-06 TF23 web _app merged typography pass (committed, not pushed).**
@@ -348,6 +348,21 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 
 ## Log
 
+### 2026-07-06T20:10:00Z — Merged Today dual hero + date strip (Flutter slice)
+
+- **Requested** — Disjoint scope `flutter/lib/features/plan/`, `ask_maya/`, `today/`: Merged Today
+  with dual score hero, personalization strip, single narrative, date strip; preview HTML Merged
+  parity; SF Pro via PurpleType; a86829c pattern; `flutter analyze` + commit; no push; no
+  shell/router/pubspec/ios.
+- **Done** — Commit `8d3abf7`: `TodayDualScoreHero`, `TodayPersonalizationStrip`,
+  `TodayRecommendedInline`; `today_screen.dart` wires `DateStrip` + `scoreSnapshotForDayProvider`;
+  Ask Maya `?q=` chip highlight; render tests updated.
+- **Issues** — Plan unchanged this slice (landed a86829c). Plan `?segment=recommended` query awaits
+  router wiring. Analyze info-only on pre-existing `recommended_catalog.dart` const hints.
+- **Stand / next** — Parent merge; browser QA on `:8765/#/today` after rebuild.
+- **Who / where** — Cursor subagent, local, `lovable/redesign@14fcbd1`.
+- **Timestamp** — 2026-07-06T20:10:00Z.
+
 ### 2026-07-06T20:15:00Z — Flutter Data / Vitals / Insights merged restyle
 
 - **Requested** — Restyle disjoint Data feature scope per merged preview: unified Data tab,
@@ -358,7 +373,7 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
   headers, Insights section headers. Verified: `flutter analyze` on scope clean.
 - **Issues** — Full Insights screen remains at `/insights` (teaser on Data when cards exist).
 - **Stand / next** — Parent merge; browser QA on :8765 after `flutter-web-serve --rebuild`.
-- **Who / where** — Cursor subagent, local, `lovable/redesign` (commit pending).
+- **Who / where** — Cursor subagent, local, `lovable/redesign@1d461bb`.
 - **Timestamp** — 2026-07-06T20:15:00Z.
 
 ### 2026-07-06T22:15:00Z — TF23 web _app merged typography pass

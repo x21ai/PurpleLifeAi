@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
+import 'package:purple_app/features/reports/models/report_row.dart';
+import 'package:purple_app/features/reports/reports_repository.dart';
 import 'package:purple_app/features/today/models/score_snapshot.dart';
 import 'package:purple_app/features/today/models/today_data.dart';
 import 'package:purple_app/features/today/today_repository.dart';
@@ -28,6 +30,9 @@ void main() {
       ProviderScope(
         overrides: [
           todayDataProvider.overrideWith((ref) => Future.value(data)),
+          reportsHubProvider.overrideWith(
+            (ref) => Future.value(ReportsHubData.empty),
+          ),
         ],
         child: const MaterialApp(home: Scaffold(body: TodayScreen())),
       ),
@@ -35,7 +40,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('renders merged Today with score data and narrative',
+  testWidgets('renders merged Today with dual hero, date strip, and narrative',
       (tester) async {
     const data = TodayData(
       scores: ScoreSnapshot(
@@ -50,6 +55,7 @@ void main() {
       ),
       firstName: 'Alex',
       narrative: 'Your signals look steady compared with yesterday.',
+      conditions: const ['epilepsy'],
       medicationCount: 1,
       journalEntryCount: 3,
     );
@@ -58,13 +64,19 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.textContaining(', Alex.'), findsOneWidget);
-    expect(find.text(DateFormat('EEEE, MMMM d').format(DateTime.now())),
-        findsOneWidget);
-    // Merged metric strip (Ready / Sleep / Activity).
-    expect(find.text('READY'), findsOneWidget);
-    expect(find.text('SLEEP'), findsOneWidget);
-    expect(find.text('ACTIVITY'), findsOneWidget);
-    expect(find.text('82'), findsOneWidget);
+    // Date strip header + today tile eyebrow.
+    expect(
+      find.text(DateFormat('MMM d').format(DateTime.now())),
+      findsOneWidget,
+    );
+    expect(find.text('TODAY'), findsOneWidget);
+    // Dual score hero.
+    expect(find.text('READINESS'), findsOneWidget);
+    expect(find.text('SLEEP'), findsWidgets);
+    expect(find.text('82'), findsWidgets);
+    expect(find.text('76'), findsWidgets);
+    // Metric strip still present.
+    expect(find.text('HRV'), findsOneWidget);
     // Single Maya narrative surface.
     expect(find.text('MAYA · daily insight'), findsOneWidget);
     expect(
