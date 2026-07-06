@@ -9,6 +9,14 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TF23 web _app merged typography pass (committed, not pushed).**
+Commit `f11e216` on `lovable/redesign`: `app-hero-title` / `app-section-title` in
+`src/styles.css`; all signed-in `_app` routes aligned to Today merged pass (label-eyebrow,
+capped `max-w-3xl` where applicable, insights/care narrowed from max-w-4xl). Duplicate Ask
+Maya eyebrow removed; insights intro uses `today-lede` not NarrativeBlock. Includes Plan,
+Data, Ask Maya routes + nav/i18n from parallel shell slice. Verified: `bunx tsc --noEmit` clean.
+No push, no wrangler deploy.
+
 **2026-07-06 TF23 reports / care / chat parity (committed, not pushed).**
 Commit `7a3de99` on `lovable/redesign`: shared `lab_upload_prompt.dart` + `merged_style.dart`;
 reports empty states use token-backed lab upload card; care dashboard Chat tab opens
@@ -327,6 +335,24 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T21:10:00Z — TF23 reports / care / chat parity
+
+- **Requested** — EXTENDED TF23 wave disjoint scope: `flutter/lib/features/reports/`,
+  `care/`, `chat/`; merged design tokens, SF Pro, lab upload CTA consistent with preview;
+  React parity for reports/*, care/*, chat, chat-care; analyze + commit; no push; no shell
+  router unless `/chat-care` missing (already wired).
+- **Done** — Commit `7a3de99`: `lab_upload_prompt.dart` (empty card + upload button),
+  `merged_style.dart`, `chat_style.dart`; reports metrics/documents/trend empty states use
+  token-backed lab upload card; care dashboard Chat tab calls `getOrCreateDirectThread` and
+  navigates to `/chat-care?thread=`; removed redundant `PurpleType.serif` fontFamily overrides;
+  Ask Purple / Care chat headers use merged palette helpers. Verified: `flutter analyze` on
+  scope (info-only); `chat_routes_test` + `reports_routes_test` pass.
+- **Issues** — Care dashboard hydration tab still gated (no Worker route). Bulk report zip /
+  re-run extraction remains web-only (noted in documents screen).
+- **Stand / next** — Parent merges remaining TF23 slices; no push until fleet gate passes.
+- **Who / where** — Cursor agent, `lovable/redesign` @ `7a3de99`, local macOS.
+- **Timestamp** — 2026-07-06T21:10:00Z
 
 ### 2026-07-06T20:45:00Z — TF23 Settings / Account / Tools theme parity
 
