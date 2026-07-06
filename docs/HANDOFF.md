@@ -9,6 +9,13 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TF24 integrated fleet serial integrate (pushed).**
+`lovable/redesign` @ **`ff263b07`** (8 commits from `d1f5675`): OAuth (`4430c13`), perf
+(`5ad15766`), web redirects (`3d9d9179`), Luciq Settings (`b1f78e08`/`ff263b07`), **`pubspec`
+1.0.0+24**. Gates: `flutter analyze lib/` clean, **`flutter test` 140/140**. TestFlight build 24
+**EXPORT SUCCEEDED** ~16:28 ET (ASC processing). Build **1.0 (23)** VALID + Founding Team.
+Worker **`f89ad38f`** deployed. `:8765` HTTP 200. Matrix ~68% Merged parity. Stage 5 **NO-GO**.
+
 **2026-07-06 About version/build date on Flutter + web Settings.**
 `lovable/redesign` (unpushed): Settings About shows `Version 1.0.0 (24) · Jul 6, 2026`
 format on Flutter (`AppBuildInfo` + `package_info_plus`) and TanStack (`formatAppBuildLabel`).
@@ -405,6 +412,15 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T20:30:00Z — TF24 integrated fleet serial integrate
+
+- **Requested** — Wait for parallel fleet (OAuth, perf, redirects, Luciq); merge; gates; TF23/24 Founding Team; push; deploy web `_app`; update docs.
+- **Done** — Merged 8 commits (`4430c13`..`ff263b07`). `flutter analyze lib/` + **140/140** tests. TF24 **EXPORT SUCCEEDED** (integrated OAuth/perf/Luciq). TF23 **VALID** + Founding Team. Pushed `lovable/redesign`; Worker **`f89ad38f`**. `:8765` curl 200.
+- **Issues** — TF24 ASC processing (not VALID yet); `asc-add-build-to-group.mjs 24` when VALID. OAuth fix needs device QA. ASC feedback P1s from prior builds still open.
+- **Stand / next** — Poll `ios:check-asc-builds` for 1.0 (24) VALID; add Founding Team; Luciq MCP crash triage for build 24.
+- **Who / where** — Cursor serial integrator; `lovable/redesign`@`ff263b07`; macOS.
+- **Timestamp** — 2026-07-06T20:30:00Z
 
 ### 2026-07-06T20:30:00Z — About version/build date (Flutter + web)
 

@@ -77,12 +77,10 @@ Format:
 ## Flutter / TestFlight
 
 - [ ] **flutter-oauth-auth-callback** — P0 login blocker for Google/Apple on Flutter native
-  (2026-07-06). **Not** missing Supabase providers: Management API confirms Google + Apple
-  **enabled** on `xxnzmfzsjplrutrgbzxy` (verify agent c7052066). Failure is in Flutter
-  `auth-callback` deep-link session completion (`flutter/lib/core/auth/auth_deep_link.dart`,
-  `auth_repository.dart`; scope agent fd0d190b). Symptom: OAuth browser returns but app stays
-  signed out or shows raw provider error. **Next:** fix callback handler + device QA on TF23+.
-  _Raised 2026-07-06 by OAuth verify doc commit._
+  (2026-07-06). **Fix shipped** in `4430c13` (native `org.purplelife.app://auth-callback`, web
+  origin `/`) on TF24 **`ff263b07`**. Supabase Google + Apple **enabled** on `xxnzmfzsjplrutrgbzxy`.
+  **Next:** device QA on TF24; confirm redirect allow list includes native callback + `:8765`.
+  _Raised 2026-07-06; fix committed 2026-07-06 serial integrate._
 
 - [x] ~~**tf-login-wrong-surface**~~ — RESOLVED 2026-07-06: **confirmed root cause** and fixed the
   TestFlight distribution gap (not a Flutter code bug). Investigation: `welcome_screen.dart` and

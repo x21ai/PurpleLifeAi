@@ -1,8 +1,15 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~16:20 ET (TF23 uploaded, ASC processing).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~16:30 ET (TF24 integrated fleet uploaded).
 
-**Recent (2026-07-06 ~16:20 ET): TF23 Merged shell uploaded (ASC processing).**
+**Recent (2026-07-06 ~16:30 ET): TF24 integrated fleet upload (ASC processing).**
+Branch `lovable/redesign` @ **`ff263b07`** pushed; `main` ff-synced. Fleet merges:
+OAuth (`4430c13`), perf throttle (`5ad15766`), web legacy redirects (`3d9d9179`), Luciq Settings
+row (`b1f78e08`/`ff263b07`), **`pubspec` 1.0.0+24**. **`flutter test` 140/140**, `flutter analyze lib/` clean.
+TestFlight **EXPORT SUCCEEDED** build 24 (~16:28 ET); ASC not yet VALID (poll `ios:check-asc-builds`).
+Build **1.0 (23)** VALID + Founding Team. Worker **`f89ad38f`** (web `_app` redirects). `:8765` HTTP 200.
+
+**Recent (2026-07-06 ~16:20 ET): TF23 Merged shell VALID on ASC.**
 Commit **`b4a9dc1`** wires Flutter 5-tab Merged nav + `/data` `/plan` `/ask-maya`; branch
 `lovable/redesign` @ **`d1f5675`** pushed. `pubspec.yaml` **1.0.0+23**. TestFlight upload
 **EXPORT SUCCEEDED** (~16:19 ET). ASC API not yet listing 1.0 (23) VALID; retry

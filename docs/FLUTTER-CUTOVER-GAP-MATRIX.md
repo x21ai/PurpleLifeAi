@@ -42,7 +42,7 @@
 | Marketing route files (TanStack-only by policy) | **30** | **6** public (`/`, `/pricing`, `/privacy`, `/about`, `/trust`, `/sign-in`; 25 stay on Worker) |
 | Route gaps (Missing + Stub) | — | **20** of 55 signed-in paths (was 23 post-TF17) |
 | Partial implementations | — | **35** routes exist but fail design or depth bar |
-| TestFlight latest VALID | Capacitor retired | **1.0 (23)** IN_BETA_TESTING Founding Team (2026-07-06) |
+| TestFlight latest VALID | Capacitor retired | **1.0 (23)** VALID; **1.0 (24)** uploaded processing (2026-07-06) |
 
 ### Stage 5 Go/No-Go: **NO-GO**
 
