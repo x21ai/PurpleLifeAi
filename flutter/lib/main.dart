@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +12,7 @@ Future<void> main() async {
   if (kIsWeb) {
     usePathUrlStrategy();
   }
-  unawaited(bootstrapLuciq());
+  await bootstrapLuciq();
   await PurpleTokens.load();
   runApp(const ProviderScope(child: PurpleApp()));
 }

@@ -4,6 +4,13 @@ import 'package:flutter/foundation.dart';
 import 'package:luciq_flutter/luciq_flutter.dart';
 
 bool _luciqInitialized = false;
+Future<void>? _bootstrapFuture;
+
+/// Shake plus screenshot capture (screenshot is more reliable on iOS TF).
+const List<InvocationEvent> luciqInvocationEvents = [
+  InvocationEvent.shake,
+  InvocationEvent.screenshot,
+];
 
 /// Notifies when [bootstrapLuciq] finishes so Settings can show the report row.
 final ValueNotifier<bool> luciqInitNotifier = ValueNotifier<bool>(false);
@@ -20,9 +27,15 @@ bool luciqReportAvailable() => luciqReportConfigured() && _luciqInitialized;
 
 /// Starts Luciq when [LUCIQ_APP_TOKEN] is passed at compile time.
 ///
-/// Skips web and empty tokens (tests, local analyze). Defers init 1s to match
-/// the prior native AppDelegate guard against launch-time SDK work.
-Future<void> bootstrapLuciq() async {
+/// Skips web and empty tokens (tests, local analyze). Runs before [runApp] so
+/// shake and manual report are ready on first frame.
+Future<void> bootstrapLuciq() {
+  if (_bootstrapFuture != null) return _bootstrapFuture!;
+  _bootstrapFuture = _bootstrapLuciqImpl();
+  return _bootstrapFuture!;
+}
+
+Future<void> _bootstrapLuciqImpl() async {
   if (kIsWeb) return;
 
   const token = String.fromEnvironment('LUCIQ_APP_TOKEN');
@@ -30,30 +43,43 @@ Future<void> bootstrapLuciq() async {
     return;
   }
 
-  await Future<void>.delayed(const Duration(seconds: 1));
-
   try {
     await Luciq.init(
       token: token,
-      invocationEvents: [InvocationEvent.shake],
+      invocationEvents: luciqInvocationEvents,
+      debugLogsLevel: LogLevel.error,
     );
+    await Luciq.setEnabled(true);
+    await BugReporting.setEnabled(true);
+    await BugReporting.setInvocationEvents(luciqInvocationEvents);
     _luciqInitialized = true;
     luciqInitNotifier.value = true;
+    // Non-sensitive marker visible in Luciq dashboard user attributes.
+    unawaited(Luciq.setUserAttribute('ok', 'luciq_bootstrap'));
+    debugPrint('Luciq bootstrap ok');
   } catch (e, st) {
+    _luciqInitialized = false;
+    luciqInitNotifier.value = false;
+    debugPrint('Luciq bootstrap failed: $e');
     if (kDebugMode) {
-      debugPrint('Luciq init skipped: $e\n$st');
+      debugPrint('$st');
     }
   }
 }
 
 /// Opens the Luciq bug-report UI when the SDK is active (shake alternative).
 Future<void> showLuciqReport() async {
-  if (kIsWeb || !luciqReportAvailable()) return;
+  if (kIsWeb || !luciqReportConfigured()) return;
+  if (!luciqReportAvailable()) {
+    await bootstrapLuciq();
+  }
+  if (!luciqReportAvailable()) return;
   try {
     await Luciq.show();
   } catch (e, st) {
+    debugPrint('Luciq show failed: $e');
     if (kDebugMode) {
-      debugPrint('Luciq show skipped: $e\n$st');
+      debugPrint('$st');
     }
   }
 }

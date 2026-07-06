@@ -9,6 +9,13 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 Luciq shake/report fix (committed, TF25/26 upload).**
+`luciq_bootstrap.dart`: await init before `runApp`; `Luciq.setEnabled` +
+`BugReporting.setEnabled` + `BugReporting.setInvocationEvents` for shake + screenshot;
+Settings row when token configured (tap retries bootstrap). TestFlight script verifies
+`LUCIQ_APP_TOKEN` in `Generated.xcconfig`. Doppler token matches **Flutter - Purple - Beta**.
+Verified: `flutter analyze` clean. **Next:** include in TF25/26 upload.
+
 **2026-07-06 TF25 P0 meds Taken fix (this session, commit pending).**
 `TodayMedsSection` wires inline Taken / Snooze / Skip for pending doses (44pt
 `MedsPendingDoseActions` shared with `TodayDosePanel`). `MedLibraryRow` quick Taken
@@ -473,6 +480,26 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T21:00:00Z — Luciq shake-to-report fix (TF25/26)
+
+- **Requested** — Fix Luciq shake feedback not working on TestFlight; verify token,
+  init order, Settings Report a problem fallback; include in TF25/26 upload.
+- **Done** — `flutter/lib/core/observability/luciq_bootstrap.dart`: removed 1s defer +
+  fire-and-forget; await `Luciq.init` before `runApp`; post-init
+  `Luciq.setEnabled(true)`, `BugReporting.setEnabled(true)`,
+  `BugReporting.setInvocationEvents([shake, screenshot])`; release `debugPrint` +
+  `luciq_bootstrap=ok` user attribute; `showLuciqReport` retries bootstrap.
+  `main.dart`: `await bootstrapLuciq()`. `settings_hub.dart`: show Report row when
+  token configured (not only after init). `scripts/flutter-ios-testflight.sh`: grep
+  verify `LUCIQ_APP_TOKEN` in `Generated.xcconfig`. Doppler `LUCIQ_APP_TOKEN` present;
+  Luciq MCP 0 bugs on flutter-purple beta (confirms reports not reaching dashboard).
+- **Issues** — Device QA on TF25+ pending after upload. Floating button not added
+  (UIKit conflict with Capacitor history; manual Settings + shake + screenshot suffice).
+- **Stand / next** — TF integrator upload build 25/26; tester uses Settings → Report a
+  problem until new build installs.
+- **Who / where** — Cursor subagent, local, `main` (commit pending).
+- **Timestamp** — 2026-07-06T21:00:00Z.
 
 ### 2026-07-06 — TF25 P0 meds Taken button tappable
 

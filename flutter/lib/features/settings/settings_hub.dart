@@ -142,7 +142,7 @@ class SettingsHelpSection extends StatelessWidget {
       valueListenable: luciqInitNotifier,
       builder: (context, _, __) {
         final rows = <Widget>[
-          if (luciqReportAvailable())
+          if (luciqReportConfigured())
             const _SettingsHubActionRow(
               icon: Icons.bug_report_outlined,
               title: 'Report a problem',

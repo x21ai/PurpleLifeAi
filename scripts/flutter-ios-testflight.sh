@@ -144,6 +144,11 @@ main() {
       --dart-define=LUCIQ_APP_TOKEN="'"${LUCIQ_TOKEN}"'" \
       --dart-define=BUILD_DATE="'"${BUILD_DATE}"'"
   '
+  if [[ -n "${LUCIQ_TOKEN}" ]]; then
+    grep -q 'TFVDSVF' "${FLUTTER_DIR}/ios/Flutter/Generated.xcconfig" \
+      || fail "LUCIQ_APP_TOKEN missing from ios/Flutter/Generated.xcconfig DART_DEFINES after flutter build ios"
+    log "Verified LUCIQ_APP_TOKEN encoded in Generated.xcconfig"
+  fi
 
   WORKSPACE="${FLUTTER_DIR}/ios/Runner.xcworkspace"
   DERIVED_DATA="${DERIVED_DATA:-/tmp/purpledrw-flutter-dd}"
