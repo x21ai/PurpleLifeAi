@@ -34,7 +34,10 @@ void main() {
             (ref) => Future.value(const PlatformFlags(community: true)),
           ),
         ],
-        child: const MaterialApp(home: Scaffold(body: SettingsScreen())),
+        child: MaterialApp(
+          theme: PurpleTheme.dark(),
+          home: const Scaffold(body: SettingsScreen()),
+        ),
       ),
     );
     await tester.pumpAndSettle();
