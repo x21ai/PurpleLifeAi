@@ -15,8 +15,8 @@ ephemeral symlinks, `Podfile 2`, `xcrun 2`) plus `.flutter-web-serve.pid`. Kept 
 `flutter/ios/Flutter/Developer.xcconfig` (local Xcode-beta path fix). Gates **PASS:**
 `check:em-dash`, `tsc --noEmit`, `bun run build`, `flutter analyze lib/`, `flutter test`
 **124/124**. Commits on `lovable/redesign`: **`574ac0b`** (care incoming-invites route +
-Flutter client), **`362b9b6`** (auth screen parity + friendly errors), **`c28c9f4`**
-(docs). Pushed `lovable/redesign`; **`main` fast-forwarded** to match. **No prod deploy**
+Flutter client), **`362b9b6`** (auth screen parity + friendly errors), docs commit
+`docs: audit cleanup, care close-out, and branch sync log` on same branch tip. **No prod deploy**
 (owner approval required; care routes still 404 on prod until deploy).
 
 **2026-07-06 care-accept-server-route P0 close-out: routes complete + verified, deploy NOT run (needs approval).**
@@ -112,8 +112,7 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
     lib/` **PASS**, `flutter test` **124/124 PASS**.
   - Commits: **`574ac0b`** `feat(care): add incoming-invites Worker route for
     Flutter`; **`362b9b6`** `feat(flutter): auth screen parity and friendly error
-    messages`; **`c28c9f4`** `docs: audit cleanup, care close-out, and branch sync
-    log`.
+    messages`; docs commit on branch tip (this log entry).
 - **Issues:** Prod deploy **NOT run** (explicit skip per standing policy). Care
   Worker routes (`/api/care/{accept,decline,incoming-invites}`) still need
   `wrangler deploy` before Flutter end-to-end care invites work on prod.
