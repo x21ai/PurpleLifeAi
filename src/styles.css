@@ -77,8 +77,10 @@ body::-webkit-scrollbar,
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-info: var(--info);
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Source Serif 4", ui-serif, Georgia, serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    system-ui, sans-serif;
+  --font-serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    system-ui, sans-serif;
 }
 
 @theme inline {
@@ -302,7 +304,6 @@ body::-webkit-scrollbar,
   .font-serif,
   .font-display {
     font-family: var(--font-serif);
-    font-optical-sizing: auto;
   }
 
   /* ===== Purple v2 utility classes ===== */
@@ -333,7 +334,7 @@ body::-webkit-scrollbar,
     font-feature-settings: "tnum", "lnum";
   }
 
-  /* Hero numeric display, Inter, ultra-light, tabular, tight */
+  /* Hero numeric display, SF Pro, ultra-light, tabular, tight */
   .numeric-display {
     font-family: var(--font-sans);
     font-weight: 300;
@@ -343,15 +344,16 @@ body::-webkit-scrollbar,
     line-height: 1;
   }
 
-  /* The AI's voice, Source Serif 4 paragraphs */
-  .body-serif {
-    font-family: var(--font-serif);
+  /* AI narrative and secondary lede copy, system sans regular */
+  .body-serif,
+  .today-lede {
+    font-family: var(--font-sans);
     font-size: 17px;
     line-height: 1.5;
     color: var(--text-secondary);
   }
 
-  /* Brand wordmark, tracked-out Inter */
+  /* Brand wordmark, tracked-out system sans */
   .wordmark {
     font-family: var(--font-sans);
     font-weight: 600;

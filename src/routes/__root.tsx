@@ -182,8 +182,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "manifest", href: "/manifest.json" },
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/icon-192.png" },
       { rel: "apple-touch-icon", href: "/icon-192.png" },
@@ -201,26 +199,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
-        {/* Non-blocking Google Fonts: inject as print stylesheet, swap to all on load.
-            Trimmed to weights actually used: Inter 400/500/600/700, Source Serif 4 400/500/600 + italic 400. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "(function(){var h='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap';var l=document.createElement('link');l.rel='stylesheet';l.href=h;l.media='print';l.onload=function(){this.media='all'};document.head.appendChild(l);})();",
-          }}
-        />
-        <noscript
-          dangerouslySetInnerHTML={{
-            __html:
-              '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap" />',
-          }}
-        />
         {/* Clean branded launch: a centered wordmark on the brand dark, removed
             on first paint so there is no flash of half-built UI. */}
         <style
           dangerouslySetInnerHTML={{
             __html:
-              "@keyframes purpleSplashHide{0%,35%{opacity:1;visibility:visible;pointer-events:auto}36%,100%{opacity:0;visibility:hidden;pointer-events:none}}#purple-splash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0A0710;transition:opacity .25s ease;animation:purpleSplashHide .65s ease forwards;pointer-events:none}#purple-splash .w{color:#FAFAFC;font-family:'Source Serif 4',Georgia,serif;font-weight:600;font-size:26px;letter-spacing:.42em;padding-left:.42em}html.native-app #purple-splash{animation-duration:.35s}@media (prefers-reduced-motion:reduce){#purple-splash{transition:none;animation:none;pointer-events:none}}",
+              "@keyframes purpleSplashHide{0%,35%{opacity:1;visibility:visible;pointer-events:auto}36%,100%{opacity:0;visibility:hidden;pointer-events:none}}#purple-splash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0A0710;transition:opacity .25s ease;animation:purpleSplashHide .65s ease forwards;pointer-events:none}#purple-splash .w{color:#FAFAFC;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;font-weight:600;font-size:26px;letter-spacing:.42em;padding-left:.42em}html.native-app #purple-splash{animation-duration:.35s}@media (prefers-reduced-motion:reduce){#purple-splash{transition:none;animation:none;pointer-events:none}}",
           }}
         />
       </head>

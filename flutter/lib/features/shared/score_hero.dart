@@ -129,8 +129,7 @@ class ScoreHero extends StatelessWidget {
                     Text(
                       resolvedPhrase,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: PurpleType.serif,
+                      style: PurpleType.serifStyle(
                         fontSize: phraseSize,
                         height: 1.2,
                         color: Colors.white,
@@ -144,10 +143,7 @@ class ScoreHero extends StatelessWidget {
                       child: Text(
                         narrative!.trim(),
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: PurpleType.serif,
-                          fontSize: tokens.typography.labelSize('bodySerif'),
-                          height: tokens.typography.lineHeight('bodySerif'),
+                        style: PurpleType.bodySerif(
                           color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),

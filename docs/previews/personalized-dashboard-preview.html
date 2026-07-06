@@ -1,0 +1,2258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Purple — Superpower-Inspired Multi-Screen Preview</title>
+  <style>
+    :root {
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
+      --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+      --serif: var(--display);
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+    }
+    [data-theme="dark"] {
+      --canvas: #0a0710;
+      --bg: #14101c;
+      --bg2: #1f1a2b;
+      --text: #fafafc;
+      --muted: #8b8b92;
+      --border: #25202f;
+      --glass: rgba(20, 16, 28, 0.85);
+      --nav: rgba(10, 7, 16, 0.86);
+      --purple: #b084d1;
+      --purple-deep: #6e3fa0;
+      --purple-soft: rgba(176, 132, 209, 0.12);
+      --success: #6fb394;
+      --warning: #e8c39e;
+      --danger: #e8745c;
+      --info: #82a4d4;
+    }
+    [data-theme="light"] {
+      --canvas: #ffffff;
+      --bg: #faf8fb;
+      --bg2: #f2eef5;
+      --text: #0a0a0f;
+      --muted: #6b6b73;
+      --border: #ececef;
+      --glass: rgba(250, 248, 251, 0.92);
+      --nav: rgba(252, 252, 254, 0.92);
+      --purple: #5b2c82;
+      --purple-deep: #3a1a55;
+      --purple-soft: #ede4f4;
+      --success: #4a8b6f;
+      --warning: #c58a3f;
+      --danger: #b8453a;
+      --info: #4a6fa5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--canvas);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .banner {
+      background: color-mix(in srgb, var(--purple) 18%, var(--bg2));
+      border-bottom: 1px solid var(--border);
+      padding: 10px 24px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--purple);
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--glass);
+      backdrop-filter: blur(20px);
+    }
+    .toolbar h1 { font-size: 15px; margin: 0; font-weight: 600; flex: 1 1 200px; }
+    .toolbar label { font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: center; cursor: pointer; }
+    .screen-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      padding: 16px 16px 0;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .screen-tab {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--muted);
+    }
+    .screen-tab.active {
+      background: var(--purple-soft);
+      border-color: var(--purple);
+      color: var(--purple);
+    }
+    .note {
+      max-width: 900px;
+      margin: 12px auto 0;
+      padding: 0 16px;
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .phone {
+      width: 390px;
+      min-height: 780px;
+      border-radius: 32px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      background: var(--canvas);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.14);
+      display: flex;
+      flex-direction: column;
+    }
+    .status {
+      padding: 12px 20px 0;
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+    .screen {
+      flex: 1;
+      padding: 16px 20px 88px;
+      overflow-y: auto;
+    }
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .greeting {
+      font-family: var(--serif);
+      font-size: 28px;
+      line-height: 1.1;
+      margin: 8px 0 16px;
+    }
+    .hero-scores {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .score-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      text-align: center;
+    }
+    .score-card.focus { border-color: var(--purple); background: var(--purple-soft); }
+    .score-card .label { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+    .score-card .val {
+      font-family: var(--serif);
+      font-size: 36px;
+      line-height: 1;
+      margin: 6px 0 4px;
+      color: var(--purple);
+    }
+    .score-card .sub { font-size: 11px; color: var(--muted); }
+    .gauge-wrap {
+      position: relative;
+      width: 120px;
+      height: 64px;
+      margin: 0 auto 8px;
+      overflow: hidden;
+    }
+    .gauge-wrap svg { width: 120px; height: 120px; transform: translateY(-20px); }
+    .strip {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 16px;
+      scrollbar-width: none;
+    }
+    .strip::-webkit-scrollbar { display: none; }
+    .chip {
+      flex: 0 0 auto;
+      min-width: 88px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+    .chip.focus { border-color: var(--purple); background: var(--purple-soft); }
+    .chip.tappable { cursor: pointer; }
+    .chip.tappable:active { opacity: 0.88; }
+    .chip .l { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .chip .v { font-family: var(--serif); font-size: 18px; margin-top: 4px; }
+    .card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .card.maya { border-color: color-mix(in srgb, var(--purple) 25%, var(--border)); }
+    .card .tag { font-size: 10px; color: var(--purple); letter-spacing: 0.08em; margin-bottom: 8px; font-weight: 600; }
+    .card p { margin: 0; font-family: var(--font); font-size: 15px; line-height: 1.45; }
+    .prompt {
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      font-size: 14px;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .plan-title { font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+    .plan-body { font-size: 13px; color: var(--muted); line-height: 1.4; margin-bottom: 12px; }
+    .btn {
+      display: inline-block;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: var(--purple);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+    }
+    [data-theme="light"] .btn { color: #fafafc; }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .nav {
+      margin-top: auto;
+      height: 64px;
+      border-top: 1px solid var(--border);
+      background: var(--nav);
+      backdrop-filter: blur(24px);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 8px;
+      font-size: 10px;
+      color: var(--muted);
+    }
+    .nav .fab {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--purple);
+      margin-top: -20px;
+      box-shadow: 0 4px 16px color-mix(in srgb, var(--purple) 35%, transparent);
+    }
+    .nav .active { color: var(--purple); font-weight: 600; }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0 8px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .summary-bar {
+      display: flex;
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 12px 0 8px;
+      background: var(--bg2);
+    }
+    .summary-bar span { display: block; height: 100%; }
+    .summary-legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .summary-legend i {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .search {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      font-size: 14px;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .metric-row {
+      padding: 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .metric-row:hover { border-color: color-mix(in srgb, var(--purple) 40%, var(--border)); }
+    .metric-row .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .metric-row .name { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+    .badge { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--bg2); color: var(--muted); white-space: nowrap; }
+    .badge.normal { background: color-mix(in srgb, var(--success) 18%, var(--bg)); color: var(--success); }
+    .badge.high, .badge.low, .badge.abnormal { background: color-mix(in srgb, var(--danger) 15%, var(--bg)); color: var(--danger); }
+    .metric-row .val { font-family: var(--serif); font-size: 26px; margin: 6px 0 4px; }
+    .range-bar {
+      position: relative;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--bg2);
+      margin: 8px 0 4px;
+    }
+    .range-bar .band {
+      position: absolute;
+      top: 0; bottom: 0;
+      background: color-mix(in srgb, var(--success) 35%, transparent);
+      border-radius: 999px;
+    }
+    .range-bar .dot {
+      position: absolute;
+      top: 50%;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--purple);
+      border: 2px solid var(--canvas);
+      transform: translate(-50%, -50%);
+    }
+    .range-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
+    .spark { height: 32px; display: flex; align-items: flex-end; gap: 3px; margin-top: 8px; }
+    .spark i { flex: 1; background: var(--purple); border-radius: 2px 2px 0 0; opacity: 0.65; min-height: 4px; }
+    .protocol-card {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .protocol-num {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--purple-soft);
+      color: var(--purple);
+      font-weight: 700;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .checklist {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 16px;
+    }
+    .checklist li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .checklist .box {
+      width: 22px; height: 22px;
+      border-radius: 6px;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .checklist .done .box { background: var(--success); border-color: var(--success); color: #fff; }
+    .chat-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .chat-tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--muted);
+    }
+    .chat-tab.active { background: var(--purple-soft); border-color: var(--purple); color: var(--purple); }
+    .detail-chart {
+      height: 180px;
+      margin: 16px 0 4px;
+      position: relative;
+      background: var(--bg2);
+      border-radius: var(--radius-md);
+      overflow: visible;
+    }
+    .detail-chart svg { width: 100%; height: 100%; display: block; }
+    .chart-x-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--muted);
+      padding: 0 4px 8px;
+      margin-bottom: 8px;
+    }
+    .latest-result {
+      margin: 12px 0 16px;
+      padding: 14px 16px;
+    }
+    .latest-result .val-row {
+      font-family: var(--serif);
+      font-size: 32px;
+      color: var(--purple);
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    .latest-result .meta {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .latest-result .meta strong { color: var(--text); font-weight: 600; }
+    .optimal-card {
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+    .optimal-card .range-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .optimal-card .range-val { font-size: 15px; font-weight: 600; }
+    .optimal-card .as-of { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .readings-caption {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 8px 0 10px;
+    }
+    .readings-caption strong { color: var(--text); font-weight: 600; }
+    .readings-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .readings-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+    }
+    .readings-list li:last-child { border-bottom: none; }
+    .readings-list .date { color: var(--muted); font-size: 12px; }
+    .readings-list .value { font-weight: 600; font-family: var(--serif); }
+    .readings-list li.latest { background: var(--purple-soft); }
+    .chart-point-label {
+      font-size: 9px;
+      fill: var(--muted);
+      pointer-events: none;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .stat-box {
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+    .stat-box .k { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .stat-box .v { font-family: var(--serif); font-size: 22px; margin-top: 4px; }
+    .back-link {
+      font-size: 13px;
+      color: var(--purple);
+      cursor: pointer;
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+    .hidden { display: none !important; }
+    .rec-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .rec-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+    }
+    .rec-card.focus { border-color: var(--purple); }
+    .rec-card .thumb {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--purple) 35%, var(--bg2)), color-mix(in srgb, var(--purple-deep) 25%, var(--bg)));
+    }
+    .rec-card .thumb svg { width: 32px; height: 32px; opacity: 0.9; }
+    .rec-card .body { padding: 10px 10px 12px; flex: 1; display: flex; flex-direction: column; }
+    .rec-card .cat {
+      font-size: 9px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .rec-card .title {
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.3;
+      margin-bottom: 6px;
+      flex: 1;
+    }
+    .rec-card .focus-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: var(--purple-soft);
+      color: var(--purple);
+      margin-bottom: 6px;
+    }
+    .rec-card .cta {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--purple);
+      margin-top: auto;
+    }
+    .rec-card .disclaimer {
+      font-size: 9px;
+      color: var(--muted);
+      line-height: 1.3;
+      margin-top: 4px;
+    }
+    .rules-card {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .rules-card ul { margin: 8px 0 0; padding-left: 18px; }
+    .rules-card li { margin-bottom: 4px; }
+    .lab-hero {
+      background: linear-gradient(135deg, color-mix(in srgb, var(--purple) 22%, var(--bg)), var(--bg2));
+      border: 1px solid color-mix(in srgb, var(--purple) 35%, var(--border));
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 14px;
+      cursor: pointer;
+    }
+    .lab-hero .tag { font-size: 10px; color: var(--purple); letter-spacing: 0.08em; font-weight: 600; margin-bottom: 6px; }
+    .lab-hero .title { font-family: var(--serif); font-size: 20px; line-height: 1.2; margin-bottom: 6px; }
+    .lab-hero .reason { font-size: 13px; color: var(--muted); line-height: 1.4; margin-bottom: 12px; }
+    .lab-hero .cta-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .lab-hero .pill {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: var(--purple-soft);
+      color: var(--purple);
+    }
+    .empty-labs {
+      text-align: center;
+      padding: 28px 16px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--bg);
+      margin-bottom: 12px;
+    }
+    .empty-labs .icon { font-size: 32px; margin-bottom: 8px; opacity: 0.7; }
+    .empty-labs h3 { font-size: 16px; margin: 0 0 6px; }
+    .empty-labs p { font-size: 13px; color: var(--muted); margin: 0 0 14px; line-height: 1.4; }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      z-index: 50;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-sheet {
+      width: 100%;
+      max-width: 390px;
+      max-height: 85vh;
+      overflow-y: auto;
+      background: var(--canvas);
+      border: 1px solid var(--border);
+      border-radius: 24px 24px 16px 16px;
+      padding: 20px;
+      box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.2);
+    }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .modal-head h2 { font-size: 18px; margin: 0; }
+    .modal-close {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 16px;
+    }
+    .step-dots {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .step-dots i {
+      flex: 1;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--bg2);
+    }
+    .step-dots i.on { background: var(--purple); }
+    .panel-option {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      margin-bottom: 8px;
+      cursor: pointer;
+      color: inherit;
+      font: inherit;
+    }
+    .panel-option.selected { border-color: var(--purple); background: var(--purple-soft); }
+    .panel-option .name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+    .panel-option .desc { font-size: 12px; color: var(--muted); line-height: 1.35; }
+    .panel-option .tags { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .panel-option .tags span {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: var(--bg2);
+      color: var(--muted);
+    }
+    .collection-option {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .collection-option.selected { border-color: var(--purple); background: var(--purple-soft); }
+    .collection-option .radio {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .collection-option.selected .radio {
+      border-color: var(--purple);
+      background: radial-gradient(circle, var(--purple) 45%, transparent 50%);
+    }
+    .checkout-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .checkout-line .k { color: var(--muted); }
+    .stripe-placeholder {
+      margin-top: 12px;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px dashed var(--border);
+      background: var(--bg2);
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .stripe-placeholder strong { display: block; color: var(--text); font-size: 14px; margin-bottom: 4px; }
+    .legal-note {
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.4;
+      margin-top: 12px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .modal-actions .btn { flex: 1; text-align: center; }
+    .mode-switch {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .mode-switch button {
+      padding: 8px 14px;
+      border: none;
+      background: transparent;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .mode-switch button.active {
+      background: var(--purple-soft);
+      color: var(--purple);
+    }
+    .stage {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+      padding: 24px 16px 80px;
+    }
+    .stage.dual .phone-wrap { flex: 0 0 auto; }
+    .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .phone-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .collapsible {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 10px;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .collapsible-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .collapsible-head .chev { color: var(--muted); font-size: 12px; transition: transform 0.2s; }
+    .collapsible.open .collapsible-head .chev { transform: rotate(180deg); }
+    .collapsible-body { display: none; padding: 0 16px 14px; }
+    .collapsible.open .collapsible-body { display: block; }
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .quick-actions .btn { flex: 1 1 calc(50% - 4px); text-align: center; min-width: 120px; }
+    .onboarding-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      font-size: 12px;
+      margin-bottom: 14px;
+      cursor: pointer;
+    }
+    .onboarding-pill .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      flex-shrink: 0;
+    }
+    .chip-row-label {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 600;
+      margin: 12px 0 8px;
+    }
+    .source-badge {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: var(--bg2);
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .rec-inline {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .rec-inline .rec-card { margin-bottom: 8px; }
+    .plan-segments {
+      display: flex;
+      gap: 0;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .plan-segment {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+    }
+    .plan-segment.active {
+      background: var(--purple-soft);
+      color: var(--purple);
+    }
+    .plan-screen-title {
+      font-family: var(--serif);
+      font-size: 22px;
+      margin: 0 0 4px;
+    }
+    /* Light mode accent pass — subtle purple tokens; dark mode unchanged */
+    [data-theme="light"] .nav span[data-nav] {
+      padding: 6px 10px;
+      border-radius: 10px;
+      transition: background 0.15s, color 0.15s;
+    }
+    [data-theme="light"] .nav span[data-nav].active {
+      background: var(--purple-soft);
+      color: var(--purple);
+      font-weight: 600;
+    }
+    [data-theme="light"] .chip.focus {
+      background: var(--purple-soft);
+      border-color: color-mix(in srgb, var(--purple) 50%, var(--border));
+    }
+    [data-theme="light"] .chip.focus .l {
+      color: color-mix(in srgb, var(--purple) 65%, var(--muted));
+    }
+    [data-theme="light"] .chip.focus .v {
+      color: var(--purple-deep);
+    }
+    [data-theme="light"] .score-card.focus {
+      background: var(--purple-soft);
+      border-color: color-mix(in srgb, var(--purple) 45%, var(--border));
+    }
+    [data-theme="light"] .card.maya {
+      background: color-mix(in srgb, var(--purple-soft) 75%, var(--bg));
+      border-color: color-mix(in srgb, var(--purple) 22%, var(--border));
+      border-left: 3px solid var(--purple);
+    }
+    [data-theme="light"] .card:has(.protocol-card) {
+      border-color: color-mix(in srgb, var(--purple) 28%, var(--border));
+    }
+    [data-theme="light"] .rec-card.focus {
+      border-color: color-mix(in srgb, var(--purple) 40%, var(--border));
+      box-shadow: 0 1px 0 color-mix(in srgb, var(--purple) 12%, transparent);
+    }
+    [data-theme="light"] .rec-card .cat {
+      color: color-mix(in srgb, var(--purple) 72%, var(--muted));
+      background: color-mix(in srgb, var(--purple) 8%, var(--bg));
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+    }
+    [data-theme="light"] .focus-badge,
+    [data-theme="light"] .rec-card .focus-badge {
+      background: var(--purple-soft);
+      color: var(--purple-deep);
+      border: 1px solid color-mix(in srgb, var(--purple) 30%, transparent);
+    }
+    [data-theme="light"] .search:focus {
+      outline: none;
+      border-color: color-mix(in srgb, var(--purple) 60%, var(--border));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple) 16%, transparent);
+    }
+    [data-theme="light"] .eyebrow,
+    [data-theme="light"] .section-head > span:first-child,
+    [data-theme="light"] .chip-row-label {
+      color: color-mix(in srgb, var(--purple) 60%, var(--muted));
+    }
+    [data-theme="light"] .btn {
+      background: var(--purple);
+      color: #fafafc;
+      box-shadow: 0 2px 10px color-mix(in srgb, var(--purple) 22%, transparent);
+    }
+    [data-theme="light"] .lab-hero {
+      background: color-mix(in srgb, var(--purple-soft) 85%, var(--bg));
+      border-color: color-mix(in srgb, var(--purple) 28%, var(--border));
+    }
+    [data-theme="light"] .rec-card .thumb {
+      background: color-mix(in srgb, var(--purple-soft) 55%, var(--bg2));
+    }
+    [data-theme="light"] .screen-tab.active,
+    [data-theme="light"] .chat-tab.active,
+    [data-theme="light"] .plan-segment.active,
+    [data-theme="light"] .mode-switch button.active {
+      border-color: color-mix(in srgb, var(--purple) 35%, var(--border));
+    }
+    [data-theme="light"] .plan-segments {
+      border-color: color-mix(in srgb, var(--purple) 20%, var(--border));
+    }
+    [data-theme="light"] .rec-inline .rec-card.focus {
+      background: color-mix(in srgb, var(--purple-soft) 40%, var(--bg));
+    }
+    @media (max-width: 860px) {
+      .stage.dual { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+<body data-theme="dark" data-focus="sleep-heart" data-screen="today" data-chat="maya" data-haslabs="true" data-layout="expanded">
+  <div class="banner">Preview not shipped — design approval only</div>
+  <div class="toolbar">
+    <h1>Purple × Superpower patterns (mock data)</h1>
+    <div class="mode-switch" id="layoutModeSwitch" role="group" aria-label="Layout mode">
+      <button type="button" data-layout="classic">Classic</button>
+      <button type="button" data-layout="expanded" class="active">Expanded</button>
+      <button type="button" data-layout="merged">Merged</button>
+    </div>
+    <label><input type="checkbox" id="themeToggle" checked /> Dark mode</label>
+    <label><input type="checkbox" id="focusToggle" checked /> Focus: sleep + heart</label>
+    <label><input type="checkbox" id="labsToggle" checked /> Labs uploaded</label>
+    <label class="classic-only hidden" id="dualViewLabel"><input type="checkbox" id="dualViewToggle" checked /> Side-by-side (Classic)</label>
+  </div>
+  <p class="note" id="modeNote">
+    Multi-screen mock for Akash/A user (epilepsy + hypertension, sleep/heart focus). Uses real Purple field names:
+    <code>profiles.conditions</code>, <code>oura_readiness_score</code>, <code>report_metrics.flag</code>,
+    <code>feature_suggestions</code>, <code>FEATURE_CATALOG</code>. Toggle theme, focus, and layout mode above.
+  </p>
+  <div class="screen-tabs" id="screenTabs"></div>
+  <div class="stage" id="stage">
+    <div class="phone-wrap" id="phoneWrapA">
+      <span class="phone-label hidden" id="phoneLabelA">Today</span>
+      <div class="phone">
+        <div class="status"><span id="clock">14:28</span><span>Preview</span></div>
+        <div class="screen" id="phoneScreen"></div>
+        <div class="nav" id="phoneNav"></div>
+      </div>
+    </div>
+    <div class="phone-wrap hidden" id="phoneWrapB">
+      <span class="phone-label" id="phoneLabelB">Stats</span>
+      <div class="phone">
+        <div class="status"><span>14:28</span><span>Preview</span></div>
+        <div class="screen" id="phoneScreenB"></div>
+        <div class="nav" id="phoneNavB"></div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="labOrderModal" aria-hidden="true">
+    <div class="modal-sheet" role="dialog" aria-labelledby="labOrderTitle">
+      <div class="modal-head">
+        <h2 id="labOrderTitle">Order a lab panel</h2>
+        <button type="button" class="modal-close" id="labOrderClose" aria-label="Close">×</button>
+      </div>
+      <div class="step-dots" id="labOrderSteps"></div>
+      <div id="labOrderBody"></div>
+      <div class="modal-actions" id="labOrderActions"></div>
+      <p class="legal-note">Preview only. Not medical advice. Lab orders require a licensed provider and are US-only in Phase 1. Purple does not diagnose or interpret results.</p>
+    </div>
+  </div>
+  <script>
+    const CONDITION_TRAITS = {
+      epilepsy: ["seizure_prone", "neuro", "sleep_critical"],
+      "sleep-disorders": ["sleep_critical", "neuro"],
+      hypertension: ["cardiovascular"],
+    };
+
+    const USER = { name: "A", conditions: ["epilepsy", "sleep-disorders", "hypertension"] };
+
+    function traitsForConditions(conditions) {
+      const set = new Set();
+      for (const c of conditions) {
+        for (const t of CONDITION_TRAITS[c] || []) set.add(t);
+      }
+      return [...set];
+    }
+
+    const TRAIT_LABELS = {
+      sleep_critical: "Sleep-sensitive",
+      cardiovascular: "Cardiovascular",
+      seizure_prone: "Seizure-prone",
+      neuro: "Neurology",
+    };
+
+    const MOCK = {
+      readiness: 87,
+      sleepScore: 82,
+      sleepTotalMin: 316,
+      hrv: 34,
+      restingHr: 62,
+      narrative: "Sleep was shorter than your recent average, but HRV and readiness still look steady. Worth pacing the morning and protecting tonight's wind-down.",
+      askMayaStarters: [
+        "What pulled my bedtime late last night?",
+        "How is my HRV trending this week?",
+        "Any seizure triggers in my recent logs?",
+        "Should I adjust meds timing after short sleep?",
+      ],
+      reportMetrics: [
+        { metric_key: "vitamin_d", display_name: "Vitamin D", value: 42, unit: "ng/mL", flag: "normal", reference_low: 30, reference_high: 80, measured_at: "2026-05-12", spark: [38,40,39,41,42] },
+        { metric_key: "ldl", display_name: "LDL Cholesterol", value: 118, unit: "mg/dL", flag: "high", reference_low: 0, reference_high: 100, measured_at: "2026-05-12", spark: [105,110,112,115,118] },
+        { metric_key: "a1c", display_name: "HbA1c", value: 5.4, unit: "%", flag: "normal", reference_low: 4.0, reference_high: 5.7, measured_at: "2026-05-12", spark: [5.5,5.4,5.3,5.4,5.4] },
+        { metric_key: "tsh", display_name: "TSH", value: 2.1, unit: "mIU/L", flag: "normal", reference_low: 0.4, reference_high: 4.0, measured_at: "2026-05-12", spark: [2.0,2.2,2.1,2.0,2.1] },
+        { metric_key: "ferritin", display_name: "Ferritin", value: 18, unit: "ng/mL", flag: "low", reference_low: 30, reference_high: 400, measured_at: "2026-05-12", spark: [22,20,19,18,18] },
+        { metric_key: "crp", display_name: "CRP", value: 0.8, unit: "mg/L", flag: "normal", reference_low: 0, reference_high: 3.0, measured_at: "2026-05-12", spark: [1.2,0.9,0.7,0.8,0.8] },
+      ],
+      wearables: [
+        { metric_key: "sleep_score", display_name: "Sleep score", value: 82, unit: "", source: "oura", recorded_at: "2026-07-06", spark: [78,80,85,76,82] },
+        { metric_key: "hrv_rmssd_ms", display_name: "HRV", value: 34, unit: "ms", source: "oura", recorded_at: "2026-07-06", spark: [30,34,32,36,34] },
+        { metric_key: "resting_hr_bpm", display_name: "Resting HR", value: 62, unit: "bpm", source: "oura", recorded_at: "2026-07-06", spark: [64,62,61,63,62] },
+        { metric_key: "sleep_total_min", display_name: "Total sleep", value_text: "5h 16m", source: "oura", recorded_at: "2026-07-06", spark: [420,390,450,380,316] },
+      ],
+      /* Time series mock — wearables: recorded_at (biometrics); labs: measured_at (report_metrics) */
+      metricHistory: {
+        hrv_rmssd_ms: [
+          { value: 28, recorded_at: "2025-11-18" },
+          { value: 30, recorded_at: "2025-12-20" },
+          { value: 31, recorded_at: "2026-03-15" },
+          { value: 32, recorded_at: "2026-06-30" },
+          { value: 33, recorded_at: "2026-07-02" },
+          { value: 35, recorded_at: "2026-07-04" },
+          { value: 34, recorded_at: "2026-07-06" },
+        ],
+        resting_hr_bpm: [
+          { value: 64, recorded_at: "2026-06-30" },
+          { value: 62, recorded_at: "2026-07-02" },
+          { value: 61, recorded_at: "2026-07-04" },
+          { value: 63, recorded_at: "2026-07-05" },
+          { value: 62, recorded_at: "2026-07-06" },
+        ],
+        sleep_score: [
+          { value: 78, recorded_at: "2026-07-02" },
+          { value: 80, recorded_at: "2026-07-03" },
+          { value: 85, recorded_at: "2026-07-04" },
+          { value: 76, recorded_at: "2026-07-05" },
+          { value: 82, recorded_at: "2026-07-06" },
+        ],
+        vitamin_d: [
+          { value: 38, measured_at: "2025-08-12" },
+          { value: 40, measured_at: "2025-11-20" },
+          { value: 39, measured_at: "2026-02-14" },
+          { value: 41, measured_at: "2026-04-08" },
+          { value: 42, measured_at: "2026-05-12" },
+        ],
+        ldl: [
+          { value: 105, measured_at: "2025-08-12" },
+          { value: 110, measured_at: "2025-11-20" },
+          { value: 112, measured_at: "2026-02-14" },
+          { value: 115, measured_at: "2026-04-08" },
+          { value: 118, measured_at: "2026-05-12" },
+        ],
+      },
+      protocolCards: [
+        { n: 1, title: "Protect sleep window", body: "Your epilepsy + sleep focus: aim for consistent 10:30 pm wind-down. Last night 5h 16m was below your 7-day avg.", cta: "Set bedtime reminder" },
+        { n: 2, title: "Heart recovery check", body: "HRV 34 ms and resting HR 62 bpm are steady. Log any aura or seizure symptoms if stress rises.", cta: "Open cardio signals" },
+        { n: 3, title: "Lab follow-up", body: "Ferritin flag low (18 ng/mL) from May labs. Discuss with care team before supplementing.", cta: "View ferritin trend" },
+      ],
+      onboarding: [
+        { label: "Connect wearables", done: true, detail: "Oura linked" },
+        { label: "Upload past labs", done: true, detail: "1 report, 43 metrics" },
+        { label: "Set focus conditions", done: true, detail: "Epilepsy, sleep, HTN" },
+      ],
+      hasLabs: true,
+      hasCaregiver: false,
+      recommendedUpdated: "Jul 1, 2026",
+    };
+
+    const LAB_PANELS = [
+      {
+        id: "basic_metabolic",
+        name: "Basic metabolic panel",
+        desc: "Common chemistry markers: glucose, electrolytes, kidney function. Baseline for anyone tracking cardio + sleep recovery.",
+        tags: ["CBC-adjacent", "Metabolic"],
+        traits: { cardiovascular: 2, sleep_critical: 1 },
+      },
+      {
+        id: "comprehensive_epilepsy",
+        name: "Comprehensive epilepsy panel (mock)",
+        desc: "Neurology-focused labs often discussed with epileptologists: CBC, metabolic panel, liver enzymes, vitamin D, thyroid. Names only — not a regulated test kit.",
+        tags: ["Neurology", "Epilepsy"],
+        traits: { seizure_prone: 3, neuro: 2, sleep_critical: 1 },
+      },
+      {
+        id: "cardio_lipid",
+        name: "Cardio + lipid panel",
+        desc: "LDL, HDL, triglycerides, and related markers for hypertension and heart recovery tracking.",
+        tags: ["Cardio", "Lipids"],
+        traits: { cardiovascular: 3 },
+      },
+      {
+        id: "thyroid_vitamin",
+        name: "Thyroid + vitamin D",
+        desc: "TSH and vitamin D — often paired with sleep and mood tracking.",
+        tags: ["Thyroid", "Vitamin D"],
+        traits: { sleep_critical: 2, neuro: 1 },
+      },
+    ];
+
+    const COLLECTION_OPTIONS = [
+      { id: "partner_lab", title: "Partner lab visit", desc: "Quest or Labcorp draw site near you (partner API — Phase 2)." },
+      { id: "at_home_kit", title: "At-home collection kit", desc: "Ship-to-home kit placeholder. Requires partner fulfillment." },
+    ];
+
+    let labOrderStep = 1;
+    let selectedPanelId = "comprehensive_epilepsy";
+    let selectedCollectionId = "partner_lab";
+
+    function hasLabsUploaded() {
+      return document.body.dataset.haslabs === "true";
+    }
+
+    function labRecommendationReason(focus) {
+      const traits = traitsForConditions(USER.conditions);
+      if (focus === "sleep-heart" && traits.includes("cardiovascular") && traits.includes("sleep_critical")) {
+        return "Because you track heart recovery and sleep, consider a baseline metabolic panel plus thyroid and vitamin D.";
+      }
+      if (traits.includes("seizure_prone")) {
+        return "Because you manage epilepsy, consider discussing a neurology-focused lab panel with your clinician.";
+      }
+      if (traits.includes("cardiovascular")) {
+        return "Because you track cardiovascular health, consider a lipid and metabolic panel.";
+      }
+      return "Personalized from your conditions and wearable focus.";
+    }
+
+    function rankedLabPanels(focus) {
+      const traits = traitsForConditions(USER.conditions);
+      return LAB_PANELS
+        .map((p) => {
+          let score = 0;
+          for (const t of traits) score += p.traits[t] || 0;
+          if (focus === "sleep-heart") {
+            if (p.traits.sleep_critical) score += 2;
+            if (p.traits.cardiovascular) score += 2;
+          }
+          return { panel: p, score };
+        })
+        .sort((a, b) => b.score - a.score);
+    }
+
+    function renderLabOrderModal() {
+      const overlay = document.getElementById("labOrderModal");
+      const body = document.getElementById("labOrderBody");
+      const actions = document.getElementById("labOrderActions");
+      const dots = document.getElementById("labOrderSteps");
+      const open = overlay.classList.contains("open");
+      if (!open) return;
+
+      dots.innerHTML = [1, 2, 3].map((n) => `<i class="${n <= labOrderStep ? "on" : ""}"></i>`).join("");
+
+      if (labOrderStep === 1) {
+        const ranked = rankedLabPanels(document.body.dataset.focus);
+        body.innerHTML = `
+          <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Choose a panel. Mock names only — discuss with your clinician before ordering.</p>
+          ${ranked.map(({ panel }) => `
+            <button type="button" class="panel-option${panel.id === selectedPanelId ? " selected" : ""}" data-panel="${panel.id}">
+              <div class="name">${panel.name}</div>
+              <div class="desc">${panel.desc}</div>
+              <div class="tags">${panel.tags.map((t) => `<span>${t}</span>`).join("")}</div>
+            </button>`).join("")}
+        `;
+        actions.innerHTML = `<button type="button" class="btn" id="labOrderNext">Continue</button>`;
+      } else if (labOrderStep === 2) {
+        body.innerHTML = `
+          <p style="font-size:13px;color:var(--muted);margin:0 0 12px">How would you like to collect your sample?</p>
+          ${COLLECTION_OPTIONS.map((o) => `
+            <div class="collection-option${o.id === selectedCollectionId ? " selected" : ""}" data-collection="${o.id}">
+              <div class="radio"></div>
+              <div>
+                <div class="plan-title" style="margin-bottom:4px">${o.title}</div>
+                <div class="plan-body" style="margin:0">${o.desc}</div>
+              </div>
+            </div>`).join("")}
+        `;
+        actions.innerHTML = `
+          <button type="button" class="btn btn-outline" id="labOrderBack">Back</button>
+          <button type="button" class="btn" id="labOrderNext">Continue</button>
+        `;
+      } else {
+        const panel = LAB_PANELS.find((p) => p.id === selectedPanelId) || LAB_PANELS[0];
+        const collection = COLLECTION_OPTIONS.find((c) => c.id === selectedCollectionId) || COLLECTION_OPTIONS[0];
+        body.innerHTML = `
+          <div class="checkout-line"><span class="k">Panel</span><span>${panel.name}</span></div>
+          <div class="checkout-line"><span class="k">Collection</span><span>${collection.title}</span></div>
+          <div class="checkout-line"><span class="k">Provider review</span><span>Licensed clinician (partner)</span></div>
+          <div class="checkout-line" style="border:none"><span class="k">Results</span><span>→ report_metrics ingest</span></div>
+          <div class="stripe-placeholder">
+            <strong>Stripe Checkout</strong>
+            Payment handled by Stripe. Price shown at checkout when SKUs are configured — no fake prices in preview.
+          </div>
+        `;
+        actions.innerHTML = `
+          <button type="button" class="btn btn-outline" id="labOrderBack">Back</button>
+          <button type="button" class="btn" id="labOrderDone">Place order (mock)</button>
+        `;
+      }
+
+      body.querySelectorAll("[data-panel]").forEach((el) => {
+        el.onclick = () => {
+          selectedPanelId = el.dataset.panel;
+          renderLabOrderModal();
+        };
+      });
+      body.querySelectorAll("[data-collection]").forEach((el) => {
+        el.onclick = () => {
+          selectedCollectionId = el.dataset.collection;
+          renderLabOrderModal();
+        };
+      });
+      const next = document.getElementById("labOrderNext");
+      if (next) next.onclick = () => { labOrderStep = Math.min(3, labOrderStep + 1); renderLabOrderModal(); };
+      const back = document.getElementById("labOrderBack");
+      if (back) back.onclick = () => { labOrderStep = Math.max(1, labOrderStep - 1); renderLabOrderModal(); };
+      const done = document.getElementById("labOrderDone");
+      if (done) done.onclick = () => closeLabOrderModal();
+    }
+
+    function openLabOrderModal() {
+      labOrderStep = 1;
+      const overlay = document.getElementById("labOrderModal");
+      overlay.classList.add("open");
+      overlay.setAttribute("aria-hidden", "false");
+      renderLabOrderModal();
+    }
+
+    function closeLabOrderModal() {
+      const overlay = document.getElementById("labOrderModal");
+      overlay.classList.remove("open");
+      overlay.setAttribute("aria-hidden", "true");
+    }
+
+    const RECOMMENDED_CATALOG = [
+      {
+        id: "wearable_sync",
+        title: "Sync Oura + Apple Health",
+        category: "Sleep & recovery",
+        traits: { sleep_critical: 3, cardiovascular: 1 },
+        focusTraits: ["sleep_critical"],
+        cta: "Open in Tools",
+        icon: "ring",
+        showWhen: () => true,
+      },
+      {
+        id: "order_blood_panel",
+        title: "Order blood panel",
+        category: "Labs",
+        traits: { cardiovascular: 3, sleep_critical: 2, seizure_prone: 2, neuro: 1 },
+        focusTraits: ["cardiovascular", "sleep_critical", "seizure_prone"],
+        cta: "Start order",
+        disclaimer: "Requires licensed provider. Not medical advice.",
+        icon: "vial",
+        showWhen: () => true,
+        isLabOrder: true,
+      },
+      {
+        id: "lab_panel",
+        title: "Upload past labs",
+        category: "Reports",
+        traits: { cardiovascular: 2, sleep_critical: 1 },
+        focusTraits: ["cardiovascular"],
+        cta: "Upload past labs",
+        icon: "doc",
+        showWhen: (ctx) => !ctx.hasLabs,
+        emptyLabsOnly: true,
+      },
+      {
+        id: "sleep_hygiene",
+        title: "Sleep hygiene protocol",
+        category: "Protocol",
+        traits: { sleep_critical: 3, seizure_prone: 1 },
+        focusTraits: ["sleep_critical"],
+        cta: "Learn more",
+        disclaimer: "Discuss with your clinician. Informational only.",
+        icon: "moon",
+        showWhen: () => true,
+      },
+      {
+        id: "hrv_monitor",
+        title: "HRV + resting HR tracking",
+        category: "Cardio & metabolic",
+        traits: { cardiovascular: 3, sleep_critical: 2 },
+        focusTraits: ["cardiovascular", "sleep_critical"],
+        cta: "Open in Tools",
+        icon: "heart",
+        showWhen: () => true,
+      },
+      {
+        id: "journal_prompts",
+        title: "Seizure + sleep journal pack",
+        category: "Neurology",
+        traits: { seizure_prone: 3, sleep_critical: 2, neuro: 1 },
+        focusTraits: ["seizure_prone"],
+        cta: "Open journal",
+        icon: "journal",
+        showWhen: () => true,
+      },
+      {
+        id: "caregiver_invite",
+        title: "Invite a caregiver",
+        category: "Care",
+        traits: { seizure_prone: 2 },
+        focusTraits: ["seizure_prone"],
+        cta: "Open in Tools",
+        icon: "people",
+        showWhen: (ctx) => !ctx.hasCaregiver,
+      },
+      {
+        id: "bp_trend",
+        title: "Blood pressure trend",
+        category: "Cardio & metabolic",
+        traits: { cardiovascular: 2 },
+        focusTraits: ["cardiovascular"],
+        cta: "Learn more",
+        icon: "bp",
+        showWhen: () => true,
+      },
+    ];
+
+    const SCREENS_EXPANDED = [
+      { id: "today", label: "Today" },
+      { id: "data", label: "Data" },
+      { id: "protocol", label: "Protocol" },
+      { id: "recommended", label: "Recommended" },
+      { id: "ask", label: "Ask Maya" },
+      { id: "metric", label: "Metric detail" },
+    ];
+
+    const SCREENS_CLASSIC = [
+      { id: "today", label: "Today" },
+      { id: "stats", label: "Stats" },
+    ];
+
+    const SCREENS_MERGED = [
+      { id: "today", label: "Today" },
+      { id: "data", label: "Data" },
+      { id: "protocol", label: "Plan" },
+      { id: "recommended", label: "Recommended" },
+      { id: "ask", label: "Ask Maya" },
+      { id: "metric", label: "Metric detail" },
+    ];
+
+    function getLayout() {
+      return document.body.dataset.layout || "expanded";
+    }
+
+    function screensForLayout(layout) {
+      if (layout === "classic") return SCREENS_CLASSIC;
+      if (layout === "merged") return SCREENS_MERGED;
+      return SCREENS_EXPANDED;
+    }
+
+    function isDualClassicView() {
+      return getLayout() === "classic"
+        && document.getElementById("dualViewToggle")?.checked
+        && window.matchMedia("(min-width: 861px)").matches;
+    }
+
+    function fmtSleep(min) {
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      return `${h}h ${String(m).padStart(2, "0")}m`;
+    }
+
+    function countFlags(metrics) {
+      let optimal = 0, normal = 0, out = 0;
+      for (const m of metrics) {
+        if (m.flag === "normal") { optimal++; normal++; }
+        else if (m.flag === "high" || m.flag === "low" || m.flag === "abnormal") out++;
+        else normal++;
+      }
+      const total = metrics.length;
+      return { optimal, normal, out, total };
+    }
+
+    function arcPath(score, max = 100) {
+      const pct = Math.min(1, score / max);
+      const r = 50;
+      const cx = 60, cy = 60;
+      const start = Math.PI;
+      const end = Math.PI + Math.PI * pct;
+      const x1 = cx + r * Math.cos(start);
+      const y1 = cy + r * Math.sin(start);
+      const x2 = cx + r * Math.cos(end);
+      const y2 = cy + r * Math.sin(end);
+      const large = pct > 0.5 ? 1 : 0;
+      return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`;
+    }
+
+    function renderGauge(score, label) {
+      return `
+        <div class="score-card focus">
+          <div class="gauge-wrap">
+            <svg viewBox="0 0 120 120">
+              <path d="M 10 60 A 50 50 0 0 1 110 60" fill="none" stroke="var(--bg2)" stroke-width="8" stroke-linecap="round"/>
+              <path d="${arcPath(score)}" fill="none" stroke="var(--purple)" stroke-width="8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="label">${label}</div>
+          <div class="val">${score}</div>
+        </div>`;
+    }
+
+    function renderTodayClassic(focus) {
+      const strip = focus === "sleep-heart"
+        ? [
+            { l: "Sleep", v: fmtSleep(MOCK.sleepTotalMin), f: true },
+            { l: "HRV", v: `${MOCK.hrv} ms`, f: true },
+            { l: "Efficiency", v: "74%" },
+            { l: "Rest HR", v: String(MOCK.restingHr) },
+            { l: "Ready", v: String(MOCK.readiness) },
+          ]
+        : [
+            { l: "Ready", v: String(MOCK.readiness), f: true },
+            { l: "Sleep", v: String(MOCK.sleepScore), f: true },
+            { l: "Activity", v: "58" },
+          ];
+      const chips = MOCK.askMayaStarters.slice(0, 3);
+      return `
+        <div class="eyebrow">Monday, Jul 6</div>
+        <div class="greeting">Good afternoon, ${USER.name}.</div>
+        <div class="strip">${strip.map(c => `<div class="chip${c.f ? " focus" : ""}"><div class="l">${c.l}</div><div class="v">${c.v}</div></div>`).join("")}</div>
+        <div class="card maya"><div class="tag">MAYA · daily insight</div><p>${MOCK.narrative}</p></div>
+        <div class="chip-row-label">ASK MAYA</div>
+        ${chips.map(p => `<div class="prompt">${p}</div>`).join("")}
+        <div class="quick-actions">
+          <button class="btn btn-outline" data-goto="stats">View stats</button>
+          <button class="btn" data-goto="ask">Open Ask Maya</button>
+        </div>
+      `;
+    }
+
+    function renderStripChip(c) {
+      const tap = c.key ? ` class="chip${c.f ? " focus" : ""} tappable" data-goto="metric" data-key="${c.key}"` : ` class="chip${c.f ? " focus" : ""}"`;
+      return `<div${tap}><div class="l">${c.l}</div><div class="v">${c.v}</div></div>`;
+    }
+
+    function renderTodayMerged(focus) {
+      const strip = focus === "sleep-heart"
+        ? [
+            { l: "Sleep", v: fmtSleep(MOCK.sleepTotalMin), f: true, key: "sleep_score" },
+            { l: "HRV", v: `${MOCK.hrv} ms`, f: true, key: "hrv_rmssd_ms" },
+            { l: "Efficiency", v: "74%" },
+            { l: "Rest HR", v: String(MOCK.restingHr), key: "resting_hr_bpm" },
+            { l: "Ready", v: String(MOCK.readiness) },
+          ]
+        : [
+            { l: "Ready", v: String(MOCK.readiness), f: true },
+            { l: "Sleep", v: String(MOCK.sleepScore), key: "sleep_score" },
+            { l: "Activity", v: "58" },
+          ];
+      const p = MOCK.protocolCards[0];
+      const topRec = rankedRecommended(focus).slice(0, 1);
+      return `
+        <div class="eyebrow">Monday, Jul 6</div>
+        <div class="greeting">Good afternoon, ${USER.name}.</div>
+        <div class="onboarding-pill" data-goto="protocol">
+          <span class="dot"></span>
+          <span>Onboarding complete · 3/3 · wearables, labs, conditions</span>
+        </div>
+        <div class="strip">${strip.map(renderStripChip).join("")}</div>
+        <div class="card maya"><div class="tag">MAYA · daily insight</div><p>${MOCK.narrative}</p></div>
+        <div class="card">
+          <div class="protocol-card">
+            <div class="protocol-num">${p.n}</div>
+            <div>
+              <div class="plan-title">${p.title}</div>
+              <div class="plan-body">${p.body}</div>
+              <button class="btn btn-outline" data-goto="protocol">See full plan</button>
+            </div>
+          </div>
+        </div>
+        <div class="chip-row-label">ASK MAYA</div>
+        ${MOCK.askMayaStarters.slice(0, 2).map(q => `<div class="prompt">${q}</div>`).join("")}
+        ${topRec.length ? `
+          <div class="rec-inline">
+            <div class="section-head"><span>RECOMMENDED</span><span data-goto="plan-recommended" style="cursor:pointer;color:var(--purple)">see all</span></div>
+            <div class="rec-card focus" data-goto="plan-recommended">
+              <div class="body" style="padding:12px">
+                <div class="cat">${topRec[0].item.category}</div>
+                <div class="title">${topRec[0].item.title}</div>
+                <div class="cta">${topRec[0].item.cta}</div>
+              </div>
+            </div>
+          </div>` : ""}
+      `;
+    }
+
+    function renderStatsClassic(focus) {
+      const sleepMetrics = MOCK.wearables.filter(w =>
+        ["sleep_score", "sleep_total_min", "hrv_rmssd_ms"].includes(w.metric_key)
+      );
+      const cardioMetrics = MOCK.wearables.filter(w =>
+        ["hrv_rmssd_ms", "resting_hr_bpm"].includes(w.metric_key)
+      );
+      const activityMetrics = [{ metric_key: "activity_score", display_name: "Activity score", value: 58, unit: "", source: "oura", spark: [52, 55, 60, 54, 58] }];
+
+      function statRow(m) {
+        const val = m.value_text || (m.value != null ? `${m.value}${m.unit ? " " + m.unit : ""}` : "—");
+        const sparkHtml = m.spark
+          ? `<div class="spark">${m.spark.map(h => `<i style="height:${Math.min(100, h / 5)}%"></i>`).join("")}</div>`
+          : "";
+        return `
+          <div class="metric-row" data-goto="metric" data-key="${m.metric_key}">
+            <div class="top">
+              <span class="name">${m.display_name}</span>
+              <span class="source-badge">${m.source || "oura"}</span>
+            </div>
+            <div class="val">${val}</div>
+            ${sparkHtml}
+          </div>`;
+      }
+
+      const sections = [
+        { id: "sleep", label: "Sleep", open: true, metrics: sleepMetrics },
+        { id: "cardio", label: "Cardio", open: true, metrics: cardioMetrics },
+        { id: "activity", label: "Activity", open: false, metrics: activityMetrics },
+      ];
+
+      return `
+        <div class="greeting" style="font-size:22px">Stats</div>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Nori-style collapsible sections · sparklines + source badges.</p>
+        ${sections.map(s => `
+          <div class="collapsible${s.open ? " open" : ""}" data-collapse="${s.id}">
+            <div class="collapsible-head">
+              <span>${s.label}</span>
+              <span class="chev">▼</span>
+            </div>
+            <div class="collapsible-body">${s.metrics.map(statRow).join("")}</div>
+          </div>`).join("")}
+      `;
+    }
+
+    function renderTodayExpanded(focus) {
+      const strip = focus === "sleep-heart"
+        ? [
+            { l: "Sleep", v: fmtSleep(MOCK.sleepTotalMin), f: true },
+            { l: "Efficiency", v: "74%" },
+            { l: "HRV", v: `${MOCK.hrv} ms` },
+            { l: "Rest HR", v: String(MOCK.restingHr) },
+            { l: "Ready", v: String(MOCK.readiness) },
+          ]
+        : [
+            { l: "Ready", v: String(MOCK.readiness), f: true },
+            { l: "Sleep", v: String(MOCK.sleepScore) },
+            { l: "Activity", v: "58" },
+          ];
+      const protocolPreview = MOCK.protocolCards.slice(0, 2).map(p => `
+        <div class="card">
+          <div class="protocol-card">
+            <div class="protocol-num">${p.n}</div>
+            <div>
+              <div class="plan-title">${p.title}</div>
+              <div class="plan-body">${p.body}</div>
+            </div>
+          </div>
+        </div>`).join("");
+      return `
+        <div class="eyebrow">Monday, Jul 6</div>
+        <div class="greeting">Good afternoon, ${USER.name}.</div>
+        <div class="hero-scores">
+          ${renderGauge(MOCK.readiness, "oura_readiness_score")}
+          <div class="score-card${focus === "sleep-heart" ? " focus" : ""}">
+            <div class="label">sleep_score</div>
+            <div class="val">${MOCK.sleepScore}</div>
+            <div class="sub">${fmtSleep(MOCK.sleepTotalMin)} last night</div>
+          </div>
+        </div>
+        <div class="strip">${strip.map(c => `<div class="chip${c.f ? " focus" : ""}"><div class="l">${c.l}</div><div class="v">${c.v}</div></div>`).join("")}</div>
+        <div class="card maya"><div class="tag">MAYA · daily insight</div><p>${MOCK.narrative}</p></div>
+        <div class="section-head"><span>YOUR PROTOCOL</span><span>see all</span></div>
+        ${protocolPreview}
+      `;
+    }
+
+    function renderData(focus, query = "") {
+      const q = query.toLowerCase();
+      const hasLabs = hasLabsUploaded();
+      const labMetrics = hasLabs
+        ? MOCK.reportMetrics.filter(m =>
+            !q || m.display_name.toLowerCase().includes(q) || m.metric_key.includes(q)
+          )
+        : [];
+      const wearMetrics = MOCK.wearables.filter(m =>
+        !q || m.display_name.toLowerCase().includes(q) || m.metric_key.includes(q)
+      );
+      const counts = hasLabs ? countFlags(MOCK.reportMetrics) : { optimal: 0, normal: 0, out: 0, total: 0 };
+      const optPct = counts.total ? (counts.optimal / counts.total) * 100 : 0;
+      const outPct = counts.total ? (counts.out / counts.total) * 100 : 0;
+      const restPct = counts.total ? 100 - optPct - outPct : 0;
+
+      function rowHtml(m, isLab) {
+        const val = m.value_text || (m.value != null ? `${m.value}${m.unit ? " " + m.unit : ""}` : "—");
+        const flag = m.flag || "normal";
+        const refLow = m.reference_low ?? 0;
+        const refHigh = m.reference_high ?? 100;
+        const span = refHigh - refLow || 1;
+        const pct = m.value != null ? Math.max(0, Math.min(100, ((m.value - refLow) / span) * 100)) : 50;
+        const bandL = 20, bandW = 60;
+        return `
+          <div class="metric-row" data-goto="metric" data-key="${m.metric_key}">
+            <div class="top">
+              <span class="name">${m.display_name || m.metric_key}</span>
+              <span class="badge ${flag}">${isLab ? flag : m.source}</span>
+            </div>
+            <div class="val">${val}</div>
+            ${isLab ? `
+              <div class="range-bar">
+                <div class="band" style="left:${bandL}%;width:${bandW}%"></div>
+                <div class="dot" style="left:${bandL + (bandW * pct / 100)}%"></div>
+              </div>
+              <div class="range-labels"><span>${refLow}</span><span>optimal</span><span>${refHigh}</span></div>
+            ` : ""}
+            ${m.spark ? `<div class="spark">${m.spark.map(h => `<i style="height:${Math.min(100, h / (isLab ? 2 : 1))}%"></i>`).join("")}</div>` : ""}
+          </div>`;
+      }
+
+      const wearSection = focus === "sleep-heart"
+        ? `<div class="section-head"><span>WEARABLES · /biometrics</span><span>${wearMetrics.length}</span></div>${wearMetrics.map(w => rowHtml(w, false)).join("")}`
+        : "";
+
+      const labsSection = hasLabs
+        ? `
+        <div class="card">
+          <div class="eyebrow">Biomarkers · ${counts.total} total</div>
+          <div class="summary-bar">
+            <span style="width:${optPct}%;background:var(--success)"></span>
+            <span style="width:${restPct}%;background:var(--info)"></span>
+            <span style="width:${outPct}%;background:var(--danger)"></span>
+          </div>
+          <div class="summary-legend">
+            <span><i style="background:var(--success)"></i>${counts.optimal} optimal (flag normal)</span>
+            <span><i style="background:var(--info)"></i>${counts.normal - counts.optimal} in range</span>
+            <span><i style="background:var(--danger)"></i>${counts.out} out of range</span>
+          </div>
+        </div>
+        <input class="search" id="dataSearch" placeholder="Search metric_key or display_name…" value="${query.replace(/"/g, "&quot;")}" />
+        ${wearSection}
+        <div class="section-head"><span>LABS · /reports</span><span>${labMetrics.length}</span></div>
+        ${labMetrics.map(m => rowHtml(m, true)).join("")}
+        <button class="btn btn-outline" style="width:100%;margin-top:8px">Upload past labs</button>
+        <button class="btn" style="width:100%;margin-top:8px" data-open-lab-order="1">Order a panel</button>`
+        : `
+        <input class="search" id="dataSearch" placeholder="Search metric_key or display_name…" value="${query.replace(/"/g, "&quot;")}" disabled style="opacity:0.5" />
+        ${wearSection}
+        <div class="section-head"><span>LABS · /reports</span><span>0</span></div>
+        <div class="empty-labs">
+          <div class="icon">🧪</div>
+          <h3>No labs yet</h3>
+          <p>${labRecommendationReason(focus)} Upload past results or order a new panel.</p>
+          <button type="button" class="btn" data-open-lab-order="1">Order a panel</button>
+          <button type="button" class="btn btn-outline" style="margin-top:8px">Upload past labs</button>
+        </div>`;
+
+      return `
+        <div class="greeting" style="font-size:22px">Your data</div>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Labs from report_metrics + wearable signals from biometrics.</p>
+        ${labsSection}
+      `;
+    }
+
+    function recIcon(name) {
+      const icons = {
+        ring: '<circle cx="16" cy="16" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="4" fill="currentColor"/>',
+        doc: '<rect x="8" y="6" width="16" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><line x1="11" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="1.5"/><line x1="11" y1="16" x2="19" y2="16" stroke="currentColor" stroke-width="1.5"/>',
+        moon: '<path d="M18 10a7 7 0 1 1-8 8 6 6 0 0 0 8-8z" fill="currentColor"/>',
+        heart: '<path d="M16 26s-8-5.5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 24 15c0 5.5-8 11-8 11z" fill="none" stroke="currentColor" stroke-width="2"/>',
+        journal: '<rect x="7" y="6" width="18" height="22" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><line x1="11" y1="12" x2="21" y2="12" stroke="currentColor"/><line x1="11" y1="17" x2="21" y2="17" stroke="currentColor"/><line x1="11" y1="22" x2="17" y2="22" stroke="currentColor"/>',
+        people: '<circle cx="12" cy="14" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="20" cy="14" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6 24c0-3 2.7-5 6-5s6 2 6 5M18 24c0-3 2.7-5 6-5" fill="none" stroke="currentColor" stroke-width="2"/>',
+        bp: '<rect x="10" y="8" width="12" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><line x1="13" y1="14" x2="19" y2="14" stroke="currentColor" stroke-width="2"/><line x1="13" y1="18" x2="19" y2="18" stroke="currentColor" stroke-width="2"/>',
+        vial: '<rect x="13" y="6" width="6" height="4" rx="1" fill="currentColor"/><rect x="11" y="10" width="10" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><line x1="14" y1="16" x2="18" y2="20" stroke="currentColor" stroke-width="1.5"/><line x1="18" y1="16" x2="14" y2="20" stroke="currentColor" stroke-width="1.5"/>',
+      };
+      return `<svg viewBox="0 0 32 32" fill="none" style="color:var(--purple)">${icons[name] || icons.doc}</svg>`;
+    }
+
+    function scoreRecommendedItem(item, userTraits, focus) {
+      let score = 0;
+      for (const t of userTraits) {
+        score += item.traits[t] || 0;
+      }
+      if (focus === "sleep-heart") {
+        for (const ft of item.focusTraits || []) {
+          if (userTraits.includes(ft)) score += 2;
+        }
+      }
+      return score;
+    }
+
+    function rankedRecommended(focus) {
+      const traits = traitsForConditions(USER.conditions);
+      const ctx = { hasLabs: hasLabsUploaded(), hasCaregiver: MOCK.hasCaregiver };
+      return RECOMMENDED_CATALOG
+        .filter((item) => {
+          if (item.emptyLabsOnly && hasLabsUploaded()) return false;
+          return item.showWhen(ctx);
+        })
+        .map((item) => ({ item, score: scoreRecommendedItem(item, traits, focus) }))
+        .sort((a, b) => b.score - a.score);
+    }
+
+    function renderRecommended(focus, opts = {}) {
+      const traits = traitsForConditions(USER.conditions);
+      const ranked = rankedRecommended(focus);
+      const traitList = traits.map((t) => TRAIT_LABELS[t] || t).join(", ");
+      const topScore = ranked[0]?.score || 0;
+      const reason = labRecommendationReason(focus);
+      const topPanel = rankedLabPanels(focus)[0]?.panel;
+      const head = opts.skipHeader ? "" : `
+        <div class="greeting" style="font-size:22px">Recommended for you</div>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 4px">Updated from your focus · ${MOCK.recommendedUpdated}</p>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Traits: ${traitList}. Ranked by <code>profiles.conditions</code> + <code>feature_suggestions</code>.</p>`;
+
+      function cardHtml({ item, score }) {
+        const isFocus = score >= topScore && score > 0;
+        const focusBadge = isFocus && item.focusTraits?.length
+          ? `<span class="focus-badge">For your focus</span>` : "";
+        const dataAttr = item.isLabOrder ? ' data-open-lab-order="1"' : "";
+        return `
+          <div class="rec-card${isFocus ? " focus" : ""}"${dataAttr}>
+            <div class="thumb">${recIcon(item.icon)}</div>
+            <div class="body">
+              <div class="cat">${item.category}</div>
+              ${focusBadge}
+              <div class="title">${item.title}</div>
+              <div class="cta">${item.cta}</div>
+              ${item.disclaimer ? `<div class="disclaimer">${item.disclaimer}</div>` : ""}
+            </div>
+          </div>`;
+      }
+
+      return `
+        ${head}
+        <div class="lab-hero" data-open-lab-order="1">
+          <div class="tag">LABS · ORDER</div>
+          <div class="title">Order a blood panel</div>
+          <div class="reason">${reason}</div>
+          <div class="cta-row">
+            <span class="pill">Suggested: ${topPanel?.name || "Basic metabolic panel"}</span>
+            <button type="button" class="btn" style="margin-left:auto">Start order</button>
+          </div>
+        </div>
+        <div class="rec-grid">${ranked.map(cardHtml).join("")}</div>
+        <div class="card rules-card">
+          <div class="plan-title" style="font-size:13px">Personalization rules (preview)</div>
+          <ul>
+            <li>Items ranked by condition traits: <code>sleep_critical</code>, <code>cardiovascular</code>, <code>seizure_prone</code> from <code>condition-catalog</code>.</li>
+            <li>Lab order hero uses Maya-style copy from conditions + focus toggle (sleep+heart → metabolic + thyroid).</li>
+            <li>Maya could regenerate weekly from journal + labs; subtitle shows last refresh date.</li>
+            <li>HIPAA: no fake prices or SKUs. Stripe placeholder at checkout; CTAs are informational until partner SKUs exist.</li>
+          </ul>
+        </div>
+      `;
+    }
+
+    function renderProtocol(focus, opts = {}) {
+      const cards = focus === "sleep-heart"
+        ? MOCK.protocolCards
+        : [
+            { n: 1, title: "Daily check-in", body: "Log mood and meds adherence in Journal.", cta: "Open journal" },
+            { n: 2, title: "Review readiness", body: "oura_readiness_score 87 — steady week.", cta: "See vitals" },
+            { n: 3, title: "Care team sync", body: "Share latest lab summary with your neurologist.", cta: "Export report" },
+          ];
+      const head = opts.skipHeader ? "" : `
+        <div class="greeting" style="font-size:22px">Your protocol</div>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 16px">Maya-generated focus cards from profiles.conditions + daily insight cards API.</p>`;
+      return `
+        ${head}
+        <div class="eyebrow" style="margin-bottom:12px">Onboarding 3/3</div>
+        <ul class="checklist">
+          ${MOCK.onboarding.map(o => `<li class="${o.done ? "done" : ""}"><span class="box">${o.done ? "✓" : ""}</span><span>${o.label}<br><small style="color:var(--muted)">${o.detail}</small></span></li>`).join("")}
+        </ul>
+        ${cards.map(p => `
+          <div class="card">
+            <div class="protocol-card">
+              <div class="protocol-num">${p.n}</div>
+              <div style="flex:1">
+                <div class="plan-title">${p.title}</div>
+                <div class="plan-body">${p.body}</div>
+                <button class="btn">${p.cta}</button>
+              </div>
+            </div>
+          </div>`).join("")}
+      `;
+    }
+
+    function renderAsk(chatTab) {
+      const starters = MOCK.askMayaStarters.slice(0, 4);
+      const careContent = `
+        <div class="card"><div class="tag">CARE TEAM</div><p style="font-family:var(--font);font-size:14px;color:var(--muted)">Message your linked caregiver about today's sleep and seizure log.</p></div>
+        <div class="prompt">Can you review my short sleep last night?</div>
+        <div class="prompt">I had an aura at 2 pm — should I log it?</div>
+      `;
+      const mayaContent = `
+        <div class="card maya"><div class="tag">ASK MAYA</div><p>Hi ${USER.name} — I know sleep and heart recovery matter for your epilepsy care. What would you like to explore?</p></div>
+        ${starters.map(p => `<div class="prompt">${p}</div>`).join("")}
+        <div class="card" style="margin-top:16px">
+          <div class="plan-title">Upload past labs</div>
+          <div class="plan-body">Add PDF lab reports to populate report_metrics and unlock biomarker trends.</div>
+          <button class="btn">Go to Reports upload</button>
+        </div>
+        <div class="prompt" style="opacity:0.55;border-style:dashed">Import AI memory — future (gap matrix)</div>
+      `;
+      return `
+        <div class="greeting" style="font-size:22px">Ask Maya</div>
+        <div class="chat-tabs">
+          <div class="chat-tab ${chatTab === "maya" ? "active" : ""}" data-chat="maya">Ask Maya</div>
+          <div class="chat-tab ${chatTab === "care" ? "active" : ""}" data-chat="care">Care Team</div>
+        </div>
+        ${chatTab === "care" ? careContent : mayaContent}
+      `;
+    }
+
+    function fmtShortDate(iso) {
+      const d = new Date(iso + "T12:00:00");
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    }
+
+    function fmtAxisDate(iso) {
+      const d = new Date(iso + "T12:00:00");
+      return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+    }
+
+    function fmtChipDate(iso) {
+      const d = new Date(iso + "T12:00:00");
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    }
+
+    function sourceLabel(source) {
+      if (source === "oura") return "Oura Ring";
+      if (source === "apple_health") return "Apple Health";
+      return source || "Wearable";
+    }
+
+    function getMetricHistory(key, m, isWear) {
+      const dateField = isWear ? "recorded_at" : "measured_at";
+      if (MOCK.metricHistory && MOCK.metricHistory[key]) {
+        return MOCK.metricHistory[key].map((row) => ({ ...row, date: row[dateField] }));
+      }
+      const spark = m.spark || [m.value];
+      const latest = m[dateField] || "2026-07-06";
+      const base = new Date(latest + "T12:00:00");
+      return spark.map((value, i) => {
+        const d = new Date(base);
+        d.setDate(d.getDate() - (spark.length - 1 - i) * 2);
+        const iso = d.toISOString().slice(0, 10);
+        return { value, date: iso, [dateField]: iso };
+      });
+    }
+
+    function renderToday(focus) {
+      const layout = getLayout();
+      if (layout === "classic") return renderTodayClassic(focus);
+      if (layout === "merged") return renderTodayMerged(focus);
+      return renderTodayExpanded(focus);
+    }
+
+    function renderMetric(key = "hrv_rmssd_ms") {
+      const lab = MOCK.reportMetrics.find(m => m.metric_key === key);
+      const wear = MOCK.wearables.find(m => m.metric_key === key);
+      const m = lab || wear || MOCK.wearables[1];
+      const isWear = !lab;
+      const dateField = isWear ? "recorded_at" : "measured_at";
+      const title = m.display_name || m.metric_key;
+      const history = getMetricHistory(key, m, isWear);
+      const latest = history[history.length - 1];
+      const latestDate = latest.date || latest[dateField];
+      const latestVal = latest.value;
+      const val = m.value_text || (latestVal != null ? `${latestVal}${m.unit ? " " + m.unit : ""}` : "—");
+      const src = isWear ? sourceLabel(m.source) : "Lab report";
+      const refLow = m.reference_low ?? (isWear ? 25 : 30);
+      const refHigh = m.reference_high ?? (isWear ? 45 : 80);
+      const yMax = isWear ? Math.max(refHigh * 1.2, ...history.map(h => h.value)) : Math.max(refHigh * 1.1, ...history.map(h => h.value));
+      const chartW = 300;
+      const chartH = 120;
+      const padL = 28;
+      const padR = 12;
+      const padT = 12;
+      const padB = 8;
+      const innerW = chartW - padL - padR;
+      const innerH = chartH - padT - padB;
+      const n = history.length;
+      const points = history.map((h, i) => {
+        const x = padL + (n === 1 ? innerW / 2 : (i / (n - 1)) * innerW);
+        const y = padT + innerH - (h.value / yMax) * innerH;
+        return { x, y, value: h.value, date: h.date, label: fmtChipDate(h.date) };
+      });
+      const poly = points.map(p => `${p.x},${p.y}`).join(" ");
+      const bandY1 = padT + innerH - (refHigh / yMax) * innerH;
+      const bandY2 = padT + innerH - (refLow / yMax) * innerH;
+      const tickIdx = n <= 3 ? [...Array(n).keys()] : [0, Math.floor((n - 1) / 2), n - 1];
+      const xLabels = tickIdx.map(i => ({ x: points[i].x, label: fmtAxisDate(points[i].date) }));
+      const recent = history.slice(-4);
+      const avg7 = history.length
+        ? (history.reduce((s, h) => s + h.value, 0) / history.length).toFixed(isWear ? 0 : 1)
+        : "—";
+      const prev = history.length > 1 ? history[history.length - 2].value : latestVal;
+      const delta = latestVal - prev;
+      const deltaStr = isWear
+        ? `${delta >= 0 ? "+" : ""}${delta} ${m.unit || "ms"}`
+        : (delta === 0 ? "stable" : `${delta >= 0 ? "+" : ""}${delta.toFixed(1)}`);
+
+      return `
+        <span class="back-link" data-goto="data">← Back to Data</span>
+        <div class="eyebrow">${isWear ? "/biometrics/$metric" : "/reports/trends/$metricKey"}</div>
+        <div class="greeting" style="font-size:24px;margin-bottom:4px">${title}</div>
+        <div class="card latest-result">
+          <div class="meta"><span class="val-row" style="display:inline;font-size:28px;margin:0">${val}</span> · <strong>${fmtShortDate(latestDate)}</strong> · ${src}${m.flag ? ` · <span class="badge ${m.flag}">${m.flag}</span>` : ""}</div>
+        </div>
+        <div class="detail-chart" role="img" aria-label="${title} trend with dates">
+          <svg viewBox="0 0 ${chartW} ${chartH}" preserveAspectRatio="xMidYMid meet">
+            <rect x="${padL}" y="${bandY1}" width="${innerW}" height="${Math.max(4, bandY2 - bandY1)}" fill="color-mix(in srgb, var(--success) 25%, transparent)" rx="2"/>
+            ${xLabels.map(t => `<text class="chart-point-label" x="${t.x}" y="${chartH - 2}" text-anchor="middle">${t.label}</text>`).join("")}
+            <polyline points="${poly}" fill="none" stroke="var(--purple)" stroke-width="2.5" stroke-linejoin="round"/>
+            ${points.map(p => `
+              <g class="chart-point">
+                <circle cx="${p.x}" cy="${p.y}" r="5" fill="var(--purple)" stroke="var(--canvas)" stroke-width="2">
+                  <title>${p.label}: ${p.value}${m.unit ? " " + m.unit : ""}</title>
+                </circle>
+              </g>`).join("")}
+          </svg>
+        </div>
+        <div class="optimal-card">
+          <div class="range-title">Optimal range</div>
+          <div class="range-val">${refLow}${m.unit ? " " + m.unit : ""} – ${refHigh}${m.unit ? " " + m.unit : ""}</div>
+          <div class="as-of">as of ${fmtShortDate(latestDate)}</div>
+        </div>
+        <div class="readings-caption"><strong>Readings on:</strong> ${recent.map(h => `${fmtChipDate(h.date)} (${h.value}${m.unit ? " " + m.unit : ""})`).join(" · ")}</div>
+        <ul class="readings-list" aria-label="Reading history">
+          ${[...history].reverse().slice(0, 5).map((h, i) => `
+            <li class="${i === 0 ? "latest" : ""}">
+              <span class="date">${fmtShortDate(h.date)}</span>
+              <span class="value">${h.value}${m.unit ? " " + m.unit : ""}</span>
+            </li>`).join("")}
+        </ul>
+        <div class="stat-grid">
+          <div class="stat-box"><div class="k">${history.length}-reading avg</div><div class="v">${avg7}${m.unit ? " " + m.unit : ""}</div></div>
+          <div class="stat-box"><div class="k">vs prior</div><div class="v">${deltaStr}</div></div>
+        </div>
+        <div class="card maya"><div class="tag">MAYA · metric insight</div><p>${isWear ? `HRV ${latestVal} ms on ${fmtShortDate(latestDate)} held steady despite short sleep — a good sign for recovery.` : `${title} ${latestVal}${m.unit ? " " + m.unit : ""} on ${fmtShortDate(latestDate)} in optimal band. Recheck with next annual panel.`}</p></div>
+        <div class="section-head"><span>ASK ABOUT THIS</span></div>
+        ${MOCK.askMayaStarters.slice(0, 2).map(p => `<div class="prompt">${p.replace("HRV", title)}</div>`).join("")}
+      `;
+    }
+
+    function renderNav(active, layout) {
+      if (layout === "classic") {
+        const items = [
+          { id: "today", label: "Today" },
+          { id: "stats", label: "Stats" },
+        ];
+        return items.map(it => {
+          const cls = active === it.id ? "active" : "";
+          return `<span class="${cls}" data-nav="${it.id}">${it.label}</span>`;
+        }).join("");
+      }
+      if (layout === "merged") {
+        const items = [
+          { id: "today", label: "Today" },
+          { id: "data", label: "Data" },
+          { id: null, label: "", fab: true },
+          { id: "protocol", label: "Plan" },
+          { id: "ask", label: "Ask Maya" },
+        ];
+        return items.map(it => {
+          if (it.fab) return `<div class="fab"></div>`;
+          const cls = active === it.id ? "active" : "";
+          return `<span class="${cls}" data-nav="${it.id}">${it.label}</span>`;
+        }).join("");
+      }
+      const items = [
+        { id: "today", label: "Today" },
+        { id: "data", label: "Data" },
+        { id: null, label: "", fab: true },
+        { id: "protocol", label: "Plan" },
+        { id: "ask", label: "Ask Maya" },
+      ];
+      return items.map(it => {
+        if (it.fab) return `<div class="fab"></div>`;
+        const cls = active === it.id ? "active" : "";
+        return `<span class="${cls}" data-nav="${it.id}">${it.label}</span>`;
+      }).join("");
+    }
+
+    function renderPlanMerged(focus, subTab = "protocol") {
+      const activeSub = subTab === "recommended" ? "recommended" : "protocol";
+      const segments = `
+        <div class="plan-segments" role="tablist" aria-label="Plan sections">
+          <button type="button" class="plan-segment${activeSub === "protocol" ? " active" : ""}" data-plan-sub="protocol" role="tab" aria-selected="${activeSub === "protocol"}">Protocol</button>
+          <button type="button" class="plan-segment${activeSub === "recommended" ? " active" : ""}" data-plan-sub="recommended" role="tab" aria-selected="${activeSub === "recommended"}">Recommended</button>
+        </div>`;
+      const body = activeSub === "recommended"
+        ? renderRecommended(focus, { skipHeader: true })
+        : renderProtocol(focus, { skipHeader: true });
+      return `
+        <div class="eyebrow">Plan · bottom nav</div>
+        <div class="plan-screen-title">Plan</div>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Protocol actions + condition-ranked recommendations.</p>
+        ${segments}
+        ${body}`;
+    }
+
+    function renderScreenTabs(active, layout) {
+      const screens = screensForLayout(layout);
+      document.getElementById("screenTabs").innerHTML = screens.map(s =>
+        `<button class="screen-tab${active === s.id ? " active" : ""}" data-screen="${s.id}">${s.label}</button>`
+      ).join("");
+    }
+
+    function renderPhoneContent(screen, focus, chat) {
+      const layout = getLayout();
+      if (screen === "today") {
+        if (layout === "classic") return renderTodayClassic(focus);
+        if (layout === "merged") return renderTodayMerged(focus);
+        return renderTodayExpanded(focus);
+      }
+      if (screen === "stats") return renderStatsClassic(focus);
+      if (screen === "data") return renderData(focus, dataQuery);
+      if (screen === "protocol") {
+        if (layout === "merged") return renderPlanMerged(focus, planSubTab);
+        return renderProtocol(focus);
+      }
+      if (screen === "recommended") {
+        if (layout === "merged") return renderRecommended(focus);
+        return renderRecommended(focus);
+      }
+      if (screen === "ask") return renderAsk(chat);
+      if (screen === "metric") return renderMetric(metricKey);
+      return "";
+    }
+
+    function navActiveForScreen(screen, layout) {
+      if (screen === "metric") return "data";
+      if (screen === "recommended") return layout === "merged" ? "protocol" : "protocol";
+      if (screen === "stats") return "stats";
+      return screen;
+    }
+
+    function updateModeNote(layout) {
+      const notes = {
+        classic: "Classic — Nori-style calm Today (strip + Maya narrative + Ask Maya chips) and collapsible Stats. Side-by-side phones on wide viewports.",
+        expanded: "Expanded — full 6-tab Superpower-inspired preview (Today gauges, Data, Protocol, Recommended, Ask Maya, Metric detail).",
+        merged: "Merged — Classic calm Today + 5-tab nav (Today · Data · FAB · Plan · Ask Maya). Plan has Protocol | Recommended segments; toolbar mirrors all 6 screens + metric detail + lab order modal.",
+      };
+      const el = document.getElementById("modeNote");
+      if (el) el.textContent = notes[layout] || notes.expanded;
+    }
+
+    let dataQuery = "";
+    let metricKey = "hrv_rmssd_ms";
+    let planSubTab = "protocol";
+
+    function refresh() {
+      const focus = document.body.dataset.focus;
+      const layout = getLayout();
+      let screen = document.body.dataset.screen;
+      const chat = document.body.dataset.chat;
+      const screens = screensForLayout(layout);
+
+      if (!screens.some(s => s.id === screen)) {
+        screen = "today";
+        document.body.dataset.screen = screen;
+      }
+
+      const dual = isDualClassicView();
+      const stage = document.getElementById("stage");
+      const wrapA = document.getElementById("phoneWrapA");
+      const wrapB = document.getElementById("phoneWrapB");
+      const labelA = document.getElementById("phoneLabelA");
+      const dualLabel = document.getElementById("dualViewLabel");
+
+      stage.classList.toggle("dual", dual);
+      wrapB.classList.toggle("hidden", !dual);
+      labelA.classList.toggle("hidden", !dual);
+      dualLabel?.classList.toggle("hidden", layout !== "classic");
+
+      document.querySelectorAll("#layoutModeSwitch button").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.layout === layout);
+      });
+
+      updateModeNote(layout);
+
+      if (dual) {
+        renderScreenTabs("today", layout);
+        document.getElementById("phoneScreen").innerHTML = renderPhoneContent("today", focus, chat);
+        document.getElementById("phoneScreenB").innerHTML = renderPhoneContent("stats", focus, chat);
+        document.getElementById("phoneNav").innerHTML = renderNav("today", layout);
+        document.getElementById("phoneNavB").innerHTML = renderNav("stats", layout);
+      } else {
+        renderScreenTabs(screen, layout);
+        document.getElementById("phoneScreen").innerHTML = renderPhoneContent(screen, focus, chat);
+        document.getElementById("phoneNav").innerHTML = renderNav(navActiveForScreen(screen, layout), layout);
+      }
+
+      bindInnerEvents();
+    }
+
+    function bindInnerEvents() {
+      const search = document.getElementById("dataSearch");
+      if (search) {
+        search.oninput = (e) => { dataQuery = e.target.value; refresh(); };
+      }
+      document.querySelectorAll("[data-plan-sub]").forEach(el => {
+        el.onclick = () => {
+          planSubTab = el.dataset.planSub;
+          document.body.dataset.screen = "protocol";
+          refresh();
+        };
+      });
+      document.querySelectorAll("[data-goto]").forEach(el => {
+        el.onclick = () => {
+          const target = el.dataset.goto;
+          if (target === "plan-recommended") {
+            planSubTab = "recommended";
+            document.body.dataset.screen = "protocol";
+            refresh();
+            return;
+          }
+          if (target === "metric") metricKey = el.dataset.key || "hrv_rmssd_ms";
+          document.body.dataset.screen = target;
+          refresh();
+        };
+      });
+      document.querySelectorAll(".chat-tab").forEach(el => {
+        el.onclick = () => {
+          document.body.dataset.chat = el.dataset.chat;
+          refresh();
+        };
+      });
+      document.querySelectorAll("[data-open-lab-order]").forEach(el => {
+        el.onclick = (e) => {
+          e.stopPropagation();
+          openLabOrderModal();
+        };
+      });
+      document.querySelectorAll("[data-collapse]").forEach(el => {
+        el.querySelector(".collapsible-head").onclick = () => {
+          el.classList.toggle("open");
+        };
+      });
+    }
+
+    function setLayoutMode(mode) {
+      document.body.dataset.layout = mode;
+      sessionStorage.setItem("previewLayoutMode", mode);
+      const screens = screensForLayout(mode);
+      const current = document.body.dataset.screen;
+      if (!screens.some(s => s.id === current)) {
+        document.body.dataset.screen = "today";
+      }
+      refresh();
+    }
+
+    function loadPersistedState() {
+      const savedLayout = sessionStorage.getItem("previewLayoutMode");
+      if (savedLayout && ["classic", "expanded", "merged"].includes(savedLayout)) {
+        document.body.dataset.layout = savedLayout;
+      }
+      const savedTheme = sessionStorage.getItem("previewTheme");
+      if (savedTheme === "light" || savedTheme === "dark") {
+        document.body.dataset.theme = savedTheme;
+        document.getElementById("themeToggle").checked = savedTheme === "dark";
+      }
+    }
+
+    document.getElementById("themeToggle").addEventListener("change", (e) => {
+      const theme = e.target.checked ? "dark" : "light";
+      document.body.dataset.theme = theme;
+      sessionStorage.setItem("previewTheme", theme);
+    });
+    document.getElementById("focusToggle").addEventListener("change", (e) => {
+      document.body.dataset.focus = e.target.checked ? "sleep-heart" : "balanced";
+      refresh();
+    });
+    document.getElementById("labsToggle").addEventListener("change", (e) => {
+      document.body.dataset.haslabs = e.target.checked ? "true" : "false";
+      refresh();
+    });
+    document.getElementById("dualViewToggle")?.addEventListener("change", refresh);
+    document.getElementById("layoutModeSwitch").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-layout]");
+      if (!btn) return;
+      setLayoutMode(btn.dataset.layout);
+    });
+    window.addEventListener("resize", () => {
+      if (getLayout() === "classic") refresh();
+    });
+    document.getElementById("labOrderClose").addEventListener("click", closeLabOrderModal);
+    document.getElementById("labOrderModal").addEventListener("click", (e) => {
+      if (e.target.id === "labOrderModal") closeLabOrderModal();
+    });
+    document.getElementById("screenTabs").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-screen]");
+      if (!btn) return;
+      const screen = btn.dataset.screen;
+      if (getLayout() === "merged") {
+        if (screen === "protocol") planSubTab = "protocol";
+        if (screen === "recommended") planSubTab = "recommended";
+      }
+      document.body.dataset.screen = screen;
+      refresh();
+    });
+    function handleNavClick(e, navEl) {
+      const nav = e.target.closest("[data-nav]");
+      if (!nav || !nav.dataset.nav) return;
+      document.body.dataset.screen = nav.dataset.nav;
+      refresh();
+    }
+    document.getElementById("phoneNav").addEventListener("click", (e) => handleNavClick(e));
+    document.getElementById("phoneNavB").addEventListener("click", (e) => handleNavClick(e));
+
+    loadPersistedState();
+    refresh();
+  </script>
+</body>
+</html>

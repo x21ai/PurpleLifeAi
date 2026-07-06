@@ -495,8 +495,9 @@ const String _embeddedTokensJson = r'''
     "pressCurve": [0.25, 0.1, 0.25, 1]
   },
   "typography": {
-    "fontSans": "Inter",
-    "fontSerif": "Source Serif 4",
+    "fontSans": "SF Pro Text",
+    "fontSerif": "SF Pro Display",
+    "fontStack": "-apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", system-ui, sans-serif",
     "weights": {
       "display": 300,
       "regular": 400,

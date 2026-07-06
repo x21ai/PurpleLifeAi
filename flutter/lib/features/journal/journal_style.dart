@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
@@ -49,8 +48,7 @@ class JournalPalette {
   List<BoxShadow> get glassShadow => glassShadowsFromTokens(_glass.shadow);
 }
 
-/// Serif per tokens (`typography.fontSerif` = Source Serif 4), replacing the
-/// previous hardcoded system serif.
+/// Display/body styles via [PurpleType] (Apple system stack).
 TextStyle journalSerif({
   double fontSize = 15,
   double height = 1.5,
@@ -77,7 +75,7 @@ TextStyle journalSans({
   double? letterSpacing,
   TextDecoration? decoration,
 }) {
-  return GoogleFonts.inter(
+  return PurpleType.sansStyle(
     fontSize: fontSize,
     height: height,
     color: color,

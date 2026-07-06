@@ -1,6 +1,54 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~14:28 ET (TF22 duplicate Today narrative fix).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~21:00 ET (Apple system typography).
+
+**Recent (2026-07-06 ~21:00 ET): Apple system typography shipped.**
+Signed-in app uses SF Pro system stack (no Inter / Source Serif 4). Web: `src/styles.css`,
+`__root.tsx` (Google Fonts removed). Flutter: `purple_type.dart`, `purple_theme.dart`,
+`narrative_block.dart`, `score_hero.dart`, tokens. Preview HTML updated. Doc:
+`mem/design/apple-system-typography.md`. Verify: `flutter analyze lib/design`, `bunx tsc --noEmit`,
+curl 200 on :8766 preview.
+
+**Recent (2026-07-06 ~20:15 ET): Merged mode full page parity (preview only, not shipped).**
+User approved **Merged** layout direction. `docs/previews/personalized-dashboard-preview.html` now
+has full Expanded parity in Merged: all screens reachable via bottom nav + toolbar. **Plan** tab uses
+Protocol | Recommended segmented sub-nav (full 2-col grid + lab order hero). Today strip chips drill
+to metric detail. Toolbar: Today, Data, Plan, Recommended, Ask Maya, Metric detail. Classic and
+Expanded unchanged. Matrix: `docs/previews/SUPERPOWER-PURPLE-FEATURE-MATRIX.md`. Serve:
+`./scripts/preview-design-serve.sh` → http://127.0.0.1:8766/personalized-dashboard-preview.html.
+**No production Flutter/TanStack code** — Flutter P0 still in OPEN-ISSUES `superpower-design-parity`.
+
+**Recent (2026-07-06 ~19:50 ET): Three layout modes + Ask Maya rename (not shipped).**
+`docs/previews/personalized-dashboard-preview.html` — toolbar **Classic / Expanded / Merged**
+segmented control (persisted in `sessionStorage.previewLayoutMode`). AI persona renamed
+**Ask Maya** everywhere in preview + matrix (app name stays Purple). **Classic:** Nori-style
+Today + collapsible Stats, side-by-side phones. **Expanded:** 6-tab Superpower preview
+(as before). **Merged:** Classic Today + one protocol card + 5-tab nav (Today · Data · FAB ·
+Plan · Ask Maya). Matrix: `docs/previews/SUPERPOWER-PURPLE-FEATURE-MATRIX.md`. Serve:
+`./scripts/preview-design-serve.sh` → http://127.0.0.1:8766/personalized-dashboard-preview.html.
+**No production Flutter/TanStack code.**
+
+**Recent (2026-07-06 ~17:00 ET): Lab ordering preview + spec (not shipped).**
+Extended `docs/previews/personalized-dashboard-preview.html` — Recommended tab **Order blood
+panel** hero (condition copy), 3-step order modal (panel / collection / Stripe placeholder),
+Data tab **No labs yet** empty state (uncheck "Labs uploaded"). Spec:
+`docs/previews/LAB-ORDERING-SPEC.md`. OPEN-ISSUES: `lab-ordering-mvp`. Matrix updated.
+Serve: `./scripts/preview-design-serve.sh` → http://127.0.0.1:8766/personalized-dashboard-preview.html.
+**No production Stripe/partner code.**
+
+**Recent (2026-07-06 ~16:00 ET): Recommended for you preview tab (not shipped).**
+Added **Recommended** screen to `docs/previews/personalized-dashboard-preview.html` — 2-column
+trait-ranked cards (wearable sync, HRV, sleep protocol, journal pack, caregiver invite; lab
+upload when empty). Purple-branded, no SKUs/prices. Serve: `./scripts/preview-design-serve.sh` →
+http://127.0.0.1:8766/personalized-dashboard-preview.html#recommended (use screen tab).
+Matrix row updated in `docs/previews/SUPERPOWER-PURPLE-FEATURE-MATRIX.md`. No production routes.
+
+**Recent (2026-07-06 ~15:45 ET): Superpower-inspired design preview (not shipped).**
+Multi-screen HTML mock at `docs/previews/personalized-dashboard-preview.html` — Today,
+Data, Protocol, Ask Maya, Metric detail. Serve: `./scripts/preview-design-serve.sh` →
+http://127.0.0.1:8766/personalized-dashboard-preview.html. Gap matrix:
+`docs/previews/SUPERPOWER-PURPLE-FEATURE-MATRIX.md`. OPEN-ISSUES:
+`superpower-design-parity` (pending user approval). No production code changed.
 
 **Recent (2026-07-06 ~14:28 ET): TF22 fixes duplicate Today narrative.** ASC feedback ×3 (`a@arora.net`) was visible via `ios:check-tf-feedback` but not fixed until this pass. AI text showed in lede + `NarrativeBlock`; now once in glass card only. Web `today.tsx` same fix; Worker **`5122d3c4`**. **TestFlight 1.0 (22)** uploaded (processing). Commit **`00e9a56`**.
 

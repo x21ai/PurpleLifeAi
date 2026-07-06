@@ -9,6 +9,59 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 Apple system typography (SF Pro stack).**
+Signed-in app shell uses platform SF Pro / system-ui stack instead of Inter + Source Serif 4.
+Web: `src/styles.css` `--font-sans` / `--font-serif`, removed Google Fonts from `__root.tsx`.
+Flutter: `purple_type.dart`, `purple_theme.dart`, key Today/narrative/score screens; tokens updated.
+Preview HTML on :8766 updated. Verified: `flutter analyze` clean, `tsc --noEmit` clean, curl 200 on :8766.
+Doc: `mem/design/apple-system-typography.md`.
+
+**2026-07-06 Light mode purple accent pass in design preview (not shipped).**
+`docs/previews/personalized-dashboard-preview.html` — light mode only (`[data-theme="light"]`) subtle
+Apple-grade purple accents from `design/tokens.json` (`#5b2c82`, `#ede4f4`, `#3a1a55`): bottom nav
+active pill, focus metric chips, Maya card left accent, protocol/rec category pills, search focus
+ring, section eyebrows, primary CTAs, "For your focus" badges (purple not green). Dark mode unchanged.
+Matrix notes **light mode accent pass approved**. Verified curl 200 + browser light Merged + Expanded
+(Recommended tab) on :8766. **No production Flutter.**
+
+**2026-07-06 Merged mode full page parity in design preview (not shipped).**
+User approved **Merged** layout. `docs/previews/personalized-dashboard-preview.html` — all Expanded
+screens now reachable in Merged: bottom nav (Today · Data · FAB · Plan · Ask Maya) + toolbar tabs
+(Today, Data, Plan, Recommended, Ask Maya, Metric detail). Plan uses Protocol | Recommended
+segmented sub-nav with full content. Today strip chips drill to metric detail. Lab order modal
+from Data / Recommended / Plan. Classic + Expanded unchanged. Verified curl 200 + browser Merged
+light+dark on :8766. Matrix + OPEN-ISSUES updated. **No production Flutter.**
+
+**2026-07-06 Metric detail dated readings in design preview (not shipped).**
+`docs/previews/personalized-dashboard-preview.html` Metric detail tab now shows latest
+reading card (`34 ms · Jul 6, 2026 · Oura Ring`), chart x-axis dates (Nov 2025 – Jul 2026),
+optimal range "as of" date, readings caption + history list. Mock uses `recorded_at`
+(biometrics) / `measured_at` (report_metrics). Matrix row updated. Verified curl 200 +
+browser on :8766 Metric detail tab (Expanded + dark). **No production Flutter.**
+
+**2026-07-06 Three-mode design preview + Ask Maya rename (not shipped).** User approved
+design direction with edits. `docs/previews/personalized-dashboard-preview.html` adds
+**Classic / Expanded / Merged** toolbar modes (`sessionStorage.previewLayoutMode`). AI
+persona renamed **Ask Maya** in preview + matrix (app name stays Purple). **Classic:** Nori
+Today + collapsible Stats, side-by-side phones. **Expanded:** 6-tab Superpower preview.
+**Merged:** Classic Today + protocol card + 5-tab nav. Matrix +
+`superpower-design-parity` OPEN-ISSUE updated. Serve:
+`./scripts/preview-design-serve.sh` → http://127.0.0.1:8766/personalized-dashboard-preview.html.
+**No production Flutter/TanStack code.**
+
+**2026-07-06 Lab ordering preview + spec (not shipped).** Preview HTML extended:
+Recommended **Order blood panel** hero, 3-step modal (panel / collection / Stripe
+placeholder), Data tab empty state (uncheck "Labs uploaded"). Spec:
+`docs/previews/LAB-ORDERING-SPEC.md`. OPEN-ISSUES: `lab-ordering-mvp`. MVP =
+Phase 1 concierge/deep link; Phase 2 = in-app Stripe + partner API. Serve:
+`./scripts/preview-design-serve.sh` → http://127.0.0.1:8766/personalized-dashboard-preview.html.
+
+**2026-07-06 Recommended for you preview tab (design only).** New **Recommended** screen in
+`docs/previews/personalized-dashboard-preview.html` — 2-column trait-ranked cards (wearable
+sync, HRV, sleep protocol, journal pack, caregiver invite; lab upload when empty). Served at
+http://127.0.0.1:8766 (`./scripts/preview-design-serve.sh`). Matrix +
+`superpower-design-parity` OPEN-ISSUE updated. **No production routes.** Pending user approval.
+
 **2026-07-06 Permanent TestFlight observability rule + TF21 triage.** Rule
 `.cursor/rules/flutter-testflight-observability.mdc` set `alwaysApply: true`: agents
 must triage **all** Luciq crashes and ASC beta feedback before/after every
@@ -241,6 +294,138 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-07T01:00:00Z — Apple system typography (SF Pro stack)
+
+- **Requested** — Use Apple SF Pro system font across signed-in app (not Inter + Source Serif 4).
+  Update web CSS, Flutter tokens/theme, preview HTML, docs. Commit.
+- **Done** — Web: `src/styles.css` (`--font-sans`, `--font-serif`, `.body-serif`, `.today-lede`),
+  `src/routes/__root.tsx` (removed Google Fonts load, splash uses system stack). Flutter:
+  `flutter/lib/design/purple_type.dart`, `purple_theme.dart`, `journal_style.dart`,
+  `sharing_screen.dart`, `narrative_block.dart`, `score_hero.dart`, `today_screen.dart`,
+  `flutter/web/index.html`. Tokens: `design/tokens.json`, flutter copies, `tokens.dart`.
+  Preview: `docs/previews/personalized-dashboard-preview.html`. Docs: `mem/design/apple-system-typography.md`,
+  matrix one-liner, `CURSOR_HANDOFF.md`.
+- **Issues** — `google_fonts` kept in pubspec (unused; optional marketing). Web `.font-serif` class
+  name unchanged but now maps to SF Pro Display stack (not a serif face).
+- **Stand / next** — Rebuild Flutter web preview (`./scripts/flutter-web-serve.sh --rebuild`) to
+  pick up typography on :8765; operator push when ready.
+- **Who / where** — Cursor agent · local · uncommitted
+- **Timestamp** — 2026-07-07T01:00:00Z
+
+### 2026-07-06T20:00:00Z — Light mode purple accent pass (design preview)
+
+- **Requested** — In light mode preview, use subtle Apple-grade purple accents (not heavy); dark
+  mode unchanged. Apply across Merged + Expanded screens. Note in matrix. Verify curl + browser.
+- **Done** — `docs/previews/personalized-dashboard-preview.html`: added `[data-theme="light"]` CSS
+  block for nav active pill, focus chips, Maya card, protocol/rec cards, category pills, focus
+  badges, search focus ring, section eyebrows, CTAs, lab hero. `docs/previews/SUPERPOWER-PURPLE-FEATURE-MATRIX.md`:
+  light mode accent pass approved note. `docs/HANDOFF.md` snapshot. Verified curl **200** + browser
+  light mode Merged Today + Expanded Today/Recommended on http://127.0.0.1:8766.
+- **Issues** — Preview uncommitted. Production tokens not yet synced to Flutter/TanStack.
+- **Stand / next** — User reviews light mode accents; proceed to Flutter P0 when approved.
+- **Who / where** — Cursor agent · local · uncommitted on working tree
+- **Timestamp** — 2026-07-06T20:00:00Z
+
+### 2026-07-07T00:15:00Z — Merged mode full page parity (design preview)
+
+- **Requested** — User approved Merged layout; add all Expanded screens to Merged mode (not just
+  Today + partial nav). Plan should contain Protocol + Recommended; metric detail drill-down; lab
+  order modal; Classic/Expanded unchanged.
+- **Done** — `docs/previews/personalized-dashboard-preview.html`: Plan tab with Protocol |
+  Recommended segmented sub-nav (full content via `renderPlanMerged`); toolbar adds Recommended
+  tab (6 screens in Merged); Today strip chips tappable to metric detail; `planSubTab` state;
+  `renderProtocol`/`renderRecommended` optional `skipHeader`. Docs: `SUPERPOWER-PURPLE-FEATURE-MATRIX.md`,
+  `CURSOR_HANDOFF.md`, `OPEN-ISSUES.md` (`superpower-design-parity` Merged approved, preview complete).
+  Verified curl 200 + browser click-through Merged on :8766.
+- **Issues** — Production Flutter/TanStack P0 still pending (`superpower-design-parity`). Preview
+  uncommitted.
+- **Stand / next** — User reviews Merged preview; when ready, implement Merged shell in Flutter
+  (GoRouter 5-tab + Plan segments).
+- **Who / where** — Cursor agent, local, uncommitted.
+- **Timestamp** — 2026-07-07T00:15:00Z
+
+### 2026-07-06T19:52:00Z — Metric detail temporal context (design preview)
+
+- **Requested** — Metric detail screen in design preview must show date and which date each
+  data point is from (latest card, chart x-axis, history list, optimal range as-of). All layout
+  modes; light + dark. Verify :8766. No production Flutter.
+- **Done** — Updated `docs/previews/personalized-dashboard-preview.html`: `metricHistory` mock
+  with `recorded_at`/`measured_at`, `renderMetric()` latest card, dated chart with SVG
+  `<title>` hovers, optimal range "as of", readings caption + list. CSS for new components.
+  Updated `docs/previews/SUPERPOWER-PURPLE-FEATURE-MATRIX.md` metric detail rows. curl 200 +
+  browser Metric detail tab PASS (Expanded/dark).
+- **Issues** — Production `MetricShell` / Flutter port still deferred.
+- **Stand / next** — User approval on dated metric detail pattern before Flutter/TanStack port.
+- **Who / where** — Cursor subagent, local, uncommitted.
+- **Timestamp** — 2026-07-06T19:52:00Z
+
+### 2026-07-06T23:50:00Z — Three layout modes + Ask Maya rename (design preview)
+
+- **Requested** — User-approved design edits: rename Ask Purple → Ask Maya in preview + docs;
+  add Classic / Expanded / Merged layout modes with sessionStorage persistence; verify :8766
+  all modes + light/dark. No production Flutter. No commit unless ready.
+- **Done** — Extended `docs/previews/personalized-dashboard-preview.html`: toolbar segmented
+  control (Classic / Expanded / Merged), dual-phone Classic view, collapsible Stats, Merged
+  5-tab nav + hybrid Today. Renamed Ask Maya labels/chips throughout preview. Updated
+  `docs/previews/SUPERPOWER-PURPLE-FEATURE-MATRIX.md`, `docs/OPEN-ISSUES.md`,
+  `CURSOR_HANDOFF.md`, `docs/HANDOFF.md`. Verified curl 200 on :8766.
+- **Issues** — Production implementation deferred; Expanded bottom nav still 5 tabs (Recommended
+  via screen tab only, unchanged from prior).
+- **Stand / next** — User picks target mode (likely Merged) for Flutter/TanStack P0 slice plan.
+- **Who / where** — Cursor subagent, local, uncommitted on working tree.
+- **Timestamp** — 2026-07-06T23:50:00Z
+
+### 2026-07-06T21:00:00Z — Lab ordering preview + implementation spec
+
+- **Requested** — Audit codebase for lab ordering; extend design preview (Recommended hero,
+  3-step modal, Data empty state); write `LAB-ORDERING-SPEC.md`; docs sync; verify :8766.
+  No production Stripe/partner integration.
+- **Done** — Extended `docs/previews/personalized-dashboard-preview.html`: **Order blood panel**
+  hero on Recommended (condition copy), 3-step modal (panel / collection / Stripe placeholder),
+  Data **No labs yet** empty state + "Labs uploaded" toolbar toggle. Created
+  `docs/previews/LAB-ORDERING-SPEC.md`. Updated `SUPERPOWER-PURPLE-FEATURE-MATRIX.md`,
+  `docs/OPEN-ISSUES.md` (`lab-ordering-mvp`), `CURSOR_HANDOFF.md`, `docs/HANDOFF.md`.
+- **Issues** — Production blocked on lab partner, Stripe lab SKUs, provider-of-record, legal.
+- **Stand / next** — Owner picks Phase 1 (concierge/deep link) vs Phase 2 (in-app Stripe).
+- **Who / where** — Cursor subagent, local, uncommitted on working tree.
+- **Timestamp** — 2026-07-06T21:00:00Z
+
+### 2026-07-06T20:00:00Z — Recommended for you preview tab (Purple marketplace parity)
+
+- **Requested** — Add Purple-branded "Recommended for you" tab to design preview (not generic
+  e-commerce); trait-ranked cards from `profiles.conditions`; light/dark; docs + verify :8766.
+- **Done** — Extended `docs/previews/personalized-dashboard-preview.html` with **Recommended**
+  screen: 2-column grid (wearable sync, HRV, sleep protocol, journal pack, caregiver invite;
+  lab upload when `hasLabs` false), trait scoring (`sleep_critical`, `cardiovascular`,
+  `seizure_prone`), personalization rules card, "For your focus" badges. Updated
+  `docs/previews/SUPERPOWER-PURPLE-FEATURE-MATRIX.md` (Marketplace → Purple Recommended, P1),
+  `docs/OPEN-ISSUES.md` (`superpower-design-parity`), `CURSOR_HANDOFF.md`. Verified curl **200**
+  + browser on http://127.0.0.1:8766/personalized-dashboard-preview.html (Recommended tab,
+  dark + light toggle).
+- **Issues** — No production routes. No canvas file in repo to update (prior log referenced
+  `purple-personalized-today-stats.canvas.tsx` from parallel session; not present here).
+- **Stand / next** — User approves Recommended P1 scope; then implement ranking API + shell tab.
+- **Who / where** — Cursor subagent, local, uncommitted on working tree.
+- **Timestamp** — 2026-07-06T20:00:00Z
+
+### 2026-07-06T19:45:00Z — Superpower multi-screen design preview (approval gate)
+
+- **Requested** — Expand design previews with Superpower-inspired features; multi-screen HTML
+  with light/dark, sleep+heart focus, real Purple data shapes; gap matrix + docs; browser
+  verify on :8766; no production code.
+- **Done** — Expanded `docs/previews/personalized-dashboard-preview.html` (Today, Data,
+  Protocol, Recommended/Tools placeholder, Ask Maya, Metric detail). Created
+  `docs/previews/SUPERPOWER-PURPLE-FEATURE-MATRIX.md`, `scripts/preview-design-serve.sh`.
+  Updated `docs/OPEN-ISSUES.md` (`superpower-design-parity`), `CURSOR_HANDOFF.md`, canvas
+  `purple-personalized-today-stats.canvas.tsx`. Verified curl **200** +
+  browser load at http://127.0.0.1:8766/personalized-dashboard-preview.html.
+- **Issues** — Production implementation blocked pending user approval. Recommended tab is
+  design-only (replaces Superpower marketplace with trait-ranked Tools cards).
+- **Stand / next** — User reviews preview + matrix; approve P0 list before Flutter/TanStack
+  implementation.
+- **Who / where** — Cursor subagent, local, uncommitted on working tree.
+- **Timestamp** — 2026-07-06T19:45:00Z
 
 ### 2026-07-06T18:15:00Z — Permanent TestFlight observability + Share Beta Feedback research
 

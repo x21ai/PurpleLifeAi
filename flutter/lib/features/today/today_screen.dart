@@ -1012,7 +1012,6 @@ class _SignalTile extends StatelessWidget {
                           TextSpan(
                             text: ' ${item.unit}',
                             style: TextStyle(
-                              fontFamily: 'Inter',
                               fontSize: 14,
                               color: Colors.white.withValues(alpha: 0.55),
                             ),

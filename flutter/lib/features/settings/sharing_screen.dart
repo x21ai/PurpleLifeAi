@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/providers/core_providers.dart';
 import '../../design/purple_type.dart';
@@ -223,8 +222,7 @@ class _PendingApprovalsCard extends StatelessWidget {
               children: [
                 Text(
                   headline,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontFamily: GoogleFonts.sourceSerif4().fontFamily,
+                  style: PurpleType.serifStyle(
                         color: Colors.white.withValues(alpha: 0.92),
                       ),
                 ),
@@ -279,8 +277,8 @@ class _SharingBodyState extends State<_SharingBody> {
         ],
         Text(
           'My caregivers',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontFamily: GoogleFonts.sourceSerif4().fontFamily,
+          style: PurpleType.serifStyle(
+                fontSize: Theme.of(context).textTheme.titleLarge?.fontSize,
                 color: Colors.white.withValues(alpha: 0.95),
               ),
         ),
@@ -340,8 +338,8 @@ class _SharingBodyState extends State<_SharingBody> {
         const SizedBox(height: 28),
         Text(
           'People sharing with me',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontFamily: GoogleFonts.sourceSerif4().fontFamily,
+          style: PurpleType.serifStyle(
+                fontSize: Theme.of(context).textTheme.titleLarge?.fontSize,
                 color: Colors.white.withValues(alpha: 0.95),
               ),
         ),

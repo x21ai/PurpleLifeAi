@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'tokens.dart';
 import 'purple_type.dart';
@@ -117,19 +116,19 @@ class PurpleTheme {
     final weights = typography.weights;
 
     final baseText = TextTheme(
-      bodyLarge: GoogleFonts.inter(
+      bodyLarge: PurpleType.sansStyle(
         fontWeight: _fontWeight(weights.regular),
         fontSize: 16,
         height: 1.5,
         color: textPrimary,
       ),
-      bodyMedium: GoogleFonts.inter(
+      bodyMedium: PurpleType.sansStyle(
         fontWeight: _fontWeight(weights.regular),
         fontSize: 14,
         height: 1.45,
         color: textSecondary,
       ),
-      labelLarge: GoogleFonts.inter(
+      labelLarge: PurpleType.sansStyle(
         fontWeight: _fontWeight(weights.semibold),
         fontSize: typography.labelSize('labelEyebrow'),
         letterSpacing: typography.letterSpacing('labelEyebrow') * 12,
@@ -140,7 +139,7 @@ class PurpleTheme {
               : const Color(0xFF6B6B73),
         ),
       ),
-      labelSmall: GoogleFonts.inter(
+      labelSmall: PurpleType.sansStyle(
         fontWeight: _fontWeight(weights.medium),
         fontSize: typography.labelSize('labelSmall'),
         letterSpacing: typography.letterSpacing('labelSmall') * 11,
@@ -151,21 +150,18 @@ class PurpleTheme {
               : const Color(0xFF6B6B73),
         ),
       ),
-      displayLarge: GoogleFonts.inter(
+      displayLarge: PurpleType.sansStyle(
         fontWeight: _fontWeight(weights.display),
         fontFeatures: const [FontFeature.tabularFigures(), FontFeature.liningFigures()],
         letterSpacing: typography.letterSpacing('numericDisplay') * 44,
         height: typography.lineHeight('numericDisplay'),
         color: textPrimary,
       ),
-      titleMedium: PurpleType.serifStyle(
-        fontWeight: _fontWeight(weights.regular),
-        fontSize: typography.labelSize('bodySerif'),
-        height: typography.lineHeight('bodySerif'),
+      titleMedium: PurpleType.bodySerif(
         color: textSecondary,
       ),
       headlineMedium: PurpleType.serifStyle(
-        fontWeight: _fontWeight(weights.regular),
+        fontWeight: _fontWeight(weights.semibold),
         fontSize: 28,
         height: 1.15,
         color: textPrimary,
@@ -182,7 +178,7 @@ class PurpleTheme {
       colorScheme: colorScheme,
       dividerColor: divider,
       textTheme: baseText,
-      fontFamily: GoogleFonts.inter().fontFamily,
+      fontFamily: PurpleType.sansFamily,
       splashFactory: InkRipple.splashFactory,
       visualDensity: VisualDensity.standard,
       materialTapTargetSize: MaterialTapTargetSize.padded,

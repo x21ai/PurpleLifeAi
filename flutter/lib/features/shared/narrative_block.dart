@@ -46,10 +46,7 @@ class NarrativeBlock extends StatelessWidget {
           SizedBox(height: tokens.spacing.sm),
           Text(
             text.trim(),
-            style: TextStyle(
-              fontFamily: PurpleType.serif,
-              fontSize: tokens.typography.labelSize('bodySerif'),
-              height: tokens.typography.lineHeight('bodySerif'),
+            style: PurpleType.bodySerif(
               color: parseTokenColor(colors.textPrimary).withValues(alpha: 0.85),
             ),
           ),
