@@ -9,21 +9,45 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-**2026-07-05 orchestrated fix fleet (LOCAL ONLY, NOT pushed; TF19 pending):** fleet ran on Flutter branch `lovable/redesign`, base `4f69041`. **Wave 1 landed locally** (meds edit data-loss fix, timeline dose actions, care Accept wired client-side + inbox badge, My Health conditions grid, bottom-nav Meds→Insights, token cleanups) with gates `flutter analyze lib/` **clean** + `flutter test` **91/91**. **Wave 2 foundation landed** (fl_chart, flutter_markdown, seizure read repository). **Wave 2 in flight** on branches `wave2-insights` (`da858ae`) and `wave2-caredash` (`1d7c5a1`), gates green so far; askpurple / carechat / biometrics / reports writers still running. Nothing from the fleet is pushed or in TestFlight yet — see log entry below.
+**2026-07-05 orchestrated fix fleet — SHIPPED to TestFlight as 1.0 (19).** Waves 1+2 landed on `lovable/redesign`, pushed to origin (`4d84721`), iOS archive + ASC upload **succeeded** (`** EXPORT SUCCEEDED **`). 11 slices integrated (meds / vitals / biometrics / reports / insights / ask-purple + care-chat / nav+timeline / settings depth + regression fixes; care-accept client wiring + new `/api/care/*` Worker routes; docs). Gates: `flutter analyze lib/` **clean**, `flutter test` **116/116**.
 
-**Server blocker:** caregiver accept/decline and ALL caregiver dashboard reads need Worker routes fronting `src/lib/care.functions.ts` server fns — see OPEN-ISSUES `care-accept-server-route` (extended 2026-07-05 with the full backlog).
+**Not done — HANDED TO CURSOR** (see the "TF19 ship + Cursor handoff" log entry below and OPEN-ISSUES `care-accept-server-route`): (1) **DEPLOY** the new `/api/care/accept`+`/api/care/decline` Worker routes to web prod (written, `tsc`+`build` pass, NOT deployed); (2) caregiver invite-accept still **not functional end-to-end** — the in-app invites card is dead code (client RLS returns 0 rows; needs a server-listed source); (3) **Wave-3 native pickers** → reports upload + chat attachments still non-functional on device; (4) AI features (insights noticing/pattern cards, reports AI-explain) remain **web-only** (no Flutter endpoint); (5) **on-device verification** of TF19 (checklist in log entry).
 
-**`lovable/redesign` @ `68bf214`** (pubspec **1.0.0+18**, pushed 2026-07-05). **`main` @ `ef05394`** (includes merge wave through `523de05` / `7fd1bc2` fleet). **`origin/lovable/redesign` aligned** with merge + TF18 bump + analyze const fixes.
+**`origin/lovable/redesign` @ `4d84721`** (pubspec **1.0.0+19**, pushed 2026-07-05). **`main` @ `ef05394`** unchanged — the fleet is **NOT merged to `main`**, and the Cloudflare web-prod deploy of the care-API routes is a **separate owner-gated step, NOT done**.
 
-**TestFlight 1.0 (18):** ASC **VALID** 2026-07-05 (internal + external **IN_BETA_TESTING**). Wave: care chat, insights, timeline, marketing extras, synced data panel. **1.0 (17)** also VALID (external READY_FOR_BETA_SUBMISSION). **1.0 (19)**: pending — will carry the 2026-07-05 fleet once landed + pushed.
+**TestFlight 1.0 (19):** uploaded 2026-07-05 ~20:38 PT, **processing** (VALID expected in ~5–15 min; not yet in ASC list at upload time). Carries the full waves 1+2 fleet; replaces the Capacitor WebView binary on install. **1.0 (18)** VALID / IN_BETA_TESTING remains the prior installable build.
 
-**Flutter gates:** `flutter analyze lib/` **clean**; `flutter test` **91/91**. Local **266 untracked `* 2.*` Finder duplicates** removed from `flutter/` to unblock analyze (not in git).
+**Flutter gates:** `flutter analyze lib/` **clean**; `flutter test` **116/116** (was 91; +25 tests across the fleet). 9 untracked `* 2.*` Finder duplicates removed from `flutter/lib` to unblock analyze (not in git).
 
-**Next action:** Land remaining Wave-2 writer branches serially (gate after each); push `lovable/redesign`; web team adds Worker routes per `care-accept-server-route`; then TF19. Also still open: Luciq MCP crash triage on TF18; Oura console redirect (owner).
+**Next action (Cursor):** poll ASC for **1.0 (19) VALID** + tester install; deploy the care-API Worker routes; fix the dead invites-card source; run the on-device verification checklist. Still open from before: Luciq MCP crash triage; Oura console redirect (owner).
 
 ---
 
 ## Log
+
+### 2026-07-05T20:45:00Z — TF19 ship + Cursor handoff (waves 1+2 fleet)
+
+- **Requested:** After the fleet completed + gates passed, commit everything, push live, build/upload TestFlight, and write a proper handoff — operator is moving next steps to Cursor.
+- **Done:**
+  - **Integrated 11 branches** onto `wave2-base` then fast-forwarded `lovable/redesign`: `wave1-{meds,vitals,nav-timeline,care-reports}` (Wave 1) + `wave2-{foundation,biometrics,reports,insights,askpurple,carechat,caredash,careapi,docs,settings,reviewfix}` (Wave 2). Each landed with `flutter analyze lib/` + `flutter test` gate; final combined gate **analyze clean + 116/116**.
+  - **Bumped** `flutter/pubspec.yaml` → **1.0.0+19** (`4d84721`).
+  - **Pushed** `origin/lovable/redesign` `4f69041..4d84721` (32 commits; no divergence).
+  - **Built + uploaded TF19:** `doppler run --project purple-life --config prd -- bun run ios:testflight` → `** EXPORT SUCCEEDED **`, `Upload succeeded`, `Uploaded Runner`. ASC processing at upload time (build 19 not yet listed; 18 latest VALID).
+  - **Feature scope shipped:** meds edit-data-loss fix + history tokens; vitals VO₂/elevated-band regressions + My Health conditions/DNA cards; **biometrics** 18-metric hub (range/compare, ±1σ baseline, per-source, pins); **reports** fl_chart trends + detail depth (signed-URL view/share, delete, panel grouping, processing-poll) + documents filters; **insights** vitals tiles/records counts/seizure heatmap/trends; **ask-purple** action cards + markdown/citations + 10/day limit + save-to-journal; **care-chat** realtime + thread mgmt (new/group/mute/leave); **care-dashboard** biometrics depth + honest gap-states + `/care/:ownerId/reports/:reportId` route; **nav** Meds→Insights + timeline dose actions + inbox badge; **settings** OAuth deep-link fix (`FlutterDeepLinkingEnabled=false`), welcome rewrite + conditions, 2FA (`supabase.auth.mfa`), export enrichment, `/settings/terms` + privacy cards, sharing partial; **web** new `src/routes/api/care/{accept,decline}.ts` + `src/lib/care.server.ts` (tsc + build pass).
+  - **Review:** independent Wave-1 audit ran; its 1 BLOCKER (timeline dose actions not flushing before refetch) + 2 should-fixes were fixed in `wave2-reviewfix` and verified (116/116).
+  - **Decisions:** ship Ask-Purple 10/day limit **as-is for all native users** (no Pro flag yet); push + TF now (operator-approved). Native pickers deferred to Wave 3.
+- **Issues / NOT done (handed to Cursor):**
+  - **DEPLOY care-API Worker routes.** `/api/care/accept`+`/api/care/decline` are written + build-verified but **NOT deployed** to web prod. Until deployed, the Flutter `acceptInvite` POST 404s.
+  - **Caregiver invite-accept not functional end-to-end** even after deploy: the in-app `IncomingCareInvitesCard` is **dead code** (client RLS SELECT on `care_relationships` returns 0 rows for the invitee; web uses service-role `listIncomingCareInvites`). Needs a server-listed source before the Accept button surfaces. Also `decline` still does an RLS-blocked silent 0-row update client-side until rewired to `/api/care/decline`.
+  - **Caregiver dashboard tabs** (Meds/Journal/Seizures/Reports/Today/Hydration/Chat) render honest gap-states — need Worker routes fronting `caregiverRead*` server fns (full list in OPEN-ISSUES `care-accept-server-route`, with `care.functions.ts` line refs + the `phi_access_log` requirement for `caregiverReadReport`).
+  - **AI features web-only:** insights "noticing"/pattern cards, reports AI-explain (`getDailyInsightCards`, `computeUserPatterns`, `summarizeReport`, `getMetricInsight`, `getVitalsSnapshot`) — no Flutter endpoint; gap-stated, not faked.
+  - **Wave-3 native pickers:** reports upload + care-chat attachments are non-functional on device (no `image_picker`/`file_picker`; send-attachment stubbed, receive/render done).
+  - **On-device verification NOT done** (no simulator here): TF19 checklist — (a) OAuth Connect deep-link after the `FlutterDeepLinkingEnabled=false` change; (b) fl_chart rendering (biometrics/reports/insights); (c) biometrics pin write to `profiles.biometrics_pinned` (column confirmed present in types); (d) report **delete** under RLS (`report_documents` DELETE + `storage.reports.remove` + `phi_access_log` INSERT); (e) dose-action sync flush; (f) 2FA enroll/verify.
+  - **`main` NOT updated** — fleet is only on `lovable/redesign`; web-prod Cloudflare deploy is a separate owner-gated step.
+  - Residual `fontFamily:'Georgia'` in `apple_health_panel.dart` + `wearable_oauth_callback_screen.dart` (non-blocking).
+- **Stand / next (Cursor):** ① poll `bun run ios:check-asc-builds` for **1.0 (19) VALID**, tester install; ② deploy `/api/care/*` routes (+ Flutter `decline` rewire) then re-source the invites card; ③ expose caregiver-dashboard + AI Worker routes per OPEN-ISSUES; ④ Wave-3 native pickers; ⑤ run the on-device checklist; ⑥ decide `main` merge + web-prod deploy.
+- **Who / where:** Claude Code (orchestrated fleet: 5 audits + 4 Wave-1 writers + 6 Wave-2 writers + foundation + careapi + docs + reviewfix + settings + independent review) · darwin · `lovable/redesign@4d84721` (pushed).
+- **Timestamp:** 2026-07-05T20:45:00Z
 
 ### 2026-07-05T00:00:00Z — Wave-2 reports depth (trend charts, detail actions, documents filters)
 

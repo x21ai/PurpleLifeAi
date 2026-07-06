@@ -16,6 +16,18 @@ Also see `mem/index.md` for deeper architectural notes.
 
 ---
 
+### 2026-07-05 — Flutter parity is client-side; server-only capabilities stay web-only until a Worker route exists [ACTIVE]
+
+- **Decision:** The Flutter app reaches parity by (a) reusing Supabase-RLS-safe reads/writes and (b) calling Worker `/api/*` routes. Server functions that require service-role/`supabaseAdmin` (caregiver `caregiverRead*`/`caregiverMarkDose`/`acceptInvite`/`declineInvite`, AI `summarizeReport`/`getMetricInsight`/`getDailyInsightCards`/`computeUserPatterns`, `getVitalsSnapshot`) are **not** reimplemented client-side and are **not** faked — they render honest gap-states until a Flutter-callable Worker route is added.
+- **Reason:** RLS correctly blocks these from the anon client; weakening RLS or fabricating data in a health app is unacceptable. Discovered during the 2026-07-05 fleet (caregiver accept + dashboard + AI).
+- **Implications:** New Worker routes must front the existing server fns and preserve `assertScope`/`has_care_scope` + `phi_access_log`. Backlog in OPEN-ISSUES `care-accept-server-route`. `/api/care/{accept,decline}.ts` written 2026-07-05; **deploy pending**.
+
+### 2026-07-05 — Ask-Purple 10/day free limit applies to all native users until a Pro flag is exposed [ACTIVE]
+
+- **Decision:** TF19 ships the Ask-Purple daily limit (10/day) for every native user; the over-limit gate is an upsell to purplelife.org. Web gates on `useIsPro()`; Flutter has no client entitlement flag yet.
+- **Reason:** Operator-approved ship-as-is for TF19 rather than block the release.
+- **Implications:** Pro users are wrongly limited on native until a Pro/entitlement flag (or `/api` check) is exposed to the client. Revisit before GA.
+
 ### 2026-07-05 — profiles.home_city stores user city separately from timezone [ACTIVE]
 
 - **Decision:** `profiles.home_city` (nullable text) holds the user's home city name. IANA
