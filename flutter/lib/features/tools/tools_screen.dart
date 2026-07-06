@@ -9,7 +9,8 @@ import '../../core/providers/core_providers.dart';
 import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
 import '../health/apple_health_panel.dart';
-import '../shared/glass_helpers.dart';
+import '../settings/settings_style.dart';
+import '../shared/glass_helpers.dart' show ContentColumn, GlassCard;
 import '../vitals/sync_status_bar.dart';
 import '../vitals/synced_data_panel.dart';
 import '../vitals/synced_data_overview.dart';
@@ -297,11 +298,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
         ref.watch(syncedDataOverviewProvider).valueOrNull ??
             SyncedDataOverview.empty;
 
-    return CanvasBackground(
-      // Bottom padding is a small buffer only: NativeAppShell already
-      // reserves shellTabBarInset() worth of space for the floating nav
-      // bar, so stacking another ~120px here doubled up as excess
-      // whitespace (tf-bottom-whitespace).
+    return SheetCanvas(
       child: SingleChildScrollView(
         padding: const EdgeInsets.only(top: 16, bottom: 32),
         child: ContentColumn(
@@ -314,7 +311,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                   'Tools',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.95),
+                        color: context.sheet.textHigh,
                       ),
                 ),
               ),
@@ -335,7 +332,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
               ),
               const SizedBox(height: 12),
               if (_loadFailed) ...[
-                GlassSurface(
+                SheetGlass(
                   padding: const EdgeInsets.all(20),
                   child: Row(
                     children: [
@@ -345,9 +342,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                           style: Theme.of(context)
                               .textTheme
                               .bodySmall
-                              ?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.55),
-                              ),
+                              ?.copyWith(color: context.sheet.textSubtle),
                         ),
                       ),
                       TextButton(
@@ -394,7 +389,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                 onDisconnect: () => _disconnect('whoop_tokens', 'Whoop'),
               ),
               const SizedBox(height: 12),
-              GlassSurface(
+              SheetGlass(
                 key: _appleHealthKey,
                 padding: const EdgeInsets.all(20),
                 child: const AppleHealthPanel(embedded: true),
@@ -406,12 +401,12 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                 child: Row(
                   children: [
-                    Icon(Icons.add, color: Colors.white.withValues(alpha: 0.85)),
+                    Icon(Icons.add, color: context.sheet.textBody),
                     const SizedBox(width: 12),
                     Text(
                       'Set up a new device',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.9),
+                            color: context.sheet.textBody,
                           ),
                     ),
                   ],
@@ -419,7 +414,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
               ),
               const SizedBox(height: 24),
               const _SectionLabel('Notifications'),
-              GlassSurface(
+              SheetGlass(
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -427,7 +422,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                     Text(
                       'Medication reminders',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.92),
+                            color: context.sheet.textBody,
                           ),
                     ),
                     const SizedBox(height: 4),
@@ -435,7 +430,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                       'Dose reminders, snooze length, and quiet hours live in '
                       'Settings. Push alerts on this device ship in a later update.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.55),
+                            color: context.sheet.textSubtle,
                             height: 1.4,
                           ),
                     ),
@@ -444,7 +439,6 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                       onPressed: () => context.go(AppRoutes.settings),
                       style: TextButton.styleFrom(
                         minimumSize: const Size(88, 44),
-                        foregroundColor: Colors.white.withValues(alpha: 0.85),
                       ),
                       child: const Text('Open Settings'),
                     ),
@@ -453,7 +447,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
               ),
               const SizedBox(height: 20),
               const _SectionLabel('Tools & utilities'),
-              GlassSurface(
+              SheetGlass(
                 padding: EdgeInsets.zero,
                 child: Column(
                   children: [
@@ -463,14 +457,14 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                       subtitle: 'Schedules, reminders, adherence',
                       onTap: () => context.go(AppRoutes.meds),
                     ),
-                    _rowDivider(),
+                    _rowDivider(context),
                     _ToolRow(
                       icon: Icons.description_outlined,
                       title: 'Lab reports',
                       subtitle: 'Upload PDFs or photos. See trends.',
                       onTap: () => context.go(AppRoutes.reportsMetrics),
                     ),
-                    _rowDivider(),
+                    _rowDivider(context),
                     _ToolRow(
                       icon: Icons.flight_outlined,
                       title: 'Travel mode',
@@ -482,7 +476,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
               ),
               const SizedBox(height: 20),
               const _SectionLabel('Wear and care'),
-              GlassSurface(
+              SheetGlass(
                 padding: EdgeInsets.zero,
                 child: Column(
                   children: [
@@ -490,12 +484,12 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                       title: 'How Purple thinks',
                       onTap: () => context.go(AppRoutes.settingsHowPurpleThinks),
                     ),
-                    _rowDivider(),
+                    _rowDivider(context),
                     _InternalRow(
                       title: 'Privacy & data',
                       onTap: () => context.go(AppRoutes.settingsPrivacy),
                     ),
-                    _rowDivider(),
+                    _rowDivider(context),
                     // Web tools.tsx shows Terms on native (About on web);
                     // /settings/terms is the in-app terms sheet.
                     _InternalRow(
@@ -512,14 +506,14 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
     );
   }
 
-  Widget _rowDivider() {
-    return Divider(height: 1, color: Colors.white.withValues(alpha: 0.08));
+  Widget _rowDivider(BuildContext context) {
+    return Divider(height: 1, color: context.sheet.divider.withValues(alpha: 0.65));
   }
 
   Future<void> _showDevicePicker() async {
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF1A1224),
+      backgroundColor: context.sheet.modalSurface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -534,14 +528,14 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                 Text(
                   'Set up a new device',
                   style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.95),
+                        color: sheetContext.sheet.textHigh,
                       ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   'Choose a device or app to connect. Purple supports these today.',
                   style: Theme.of(sheetContext).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: sheetContext.sheet.textSubtle,
                       ),
                 ),
                 const SizedBox(height: 16),
@@ -569,7 +563,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                 Text(
                   'More devices are on the way. Email hello@purplelife.org to request one.',
                   style: Theme.of(sheetContext).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: sheetContext.sheet.textFaint,
                       ),
                 ),
               ],
@@ -628,7 +622,9 @@ class _ConnectionCard extends StatelessWidget {
                 : 'Connected · Last synced ${_relativeTime(state.lastSync)}'
             : disconnectedSubtitle;
 
-    return GlassSurface(
+    final palette = context.sheet;
+
+    return SheetGlass(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -640,13 +636,9 @@ class _ConnectionCard extends StatelessWidget {
                 height: 36,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: palette.iconChipFill,
                 ),
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: Colors.white.withValues(alpha: 0.85),
-                ),
+                child: Icon(icon, size: 18, color: palette.iconChipIcon),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -657,14 +649,14 @@ class _ConnectionCard extends StatelessWidget {
                       title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontFamily: PurpleType.serif,
-                            color: Colors.white.withValues(alpha: 0.92),
+                            color: palette.textBody,
                           ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       statusText,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.55),
+                            color: palette.textSubtle,
                           ),
                     ),
                   ],
@@ -689,7 +681,7 @@ class _ConnectionCard extends StatelessWidget {
             Text(
               '$coverageDays day${coverageDays == 1 ? '' : 's'} of readings in last 90 days',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.45),
+                    color: palette.textFaint,
                   ),
             ),
           ],
@@ -707,7 +699,7 @@ class _ConnectionCard extends StatelessWidget {
             Text(
               setupHint,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: palette.textSubtle,
                     height: 1.35,
                   ),
             ),
@@ -735,7 +727,6 @@ class _ConnectionCard extends StatelessWidget {
                   onPressed: onDisconnect,
                   style: TextButton.styleFrom(
                     minimumSize: const Size(88, 44),
-                    foregroundColor: Colors.white.withValues(alpha: 0.7),
                   ),
                   child: const Text('Disconnect'),
                 ),
@@ -747,7 +738,7 @@ class _ConnectionCard extends StatelessWidget {
                 Text(
                   'Auto-sync',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: palette.textFaint,
                       ),
                 ),
                 const SizedBox(width: 8),
@@ -774,7 +765,7 @@ class _SectionLabel extends StatelessWidget {
         label.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
               letterSpacing: 1.8,
-              color: Colors.white.withValues(alpha: 0.45),
+              color: context.sheet.textFaint,
             ),
       ),
     );
@@ -796,6 +787,7 @@ class _ToolRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.sheet;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -810,13 +802,9 @@ class _ToolRow extends StatelessWidget {
                 height: 36,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: palette.iconChipFill,
                 ),
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
+                child: Icon(icon, size: 18, color: palette.iconChipIcon),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -826,24 +814,20 @@ class _ToolRow extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.9),
+                            color: palette.textBody,
                           ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.55),
+                            color: palette.textSubtle,
                           ),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: Colors.white.withValues(alpha: 0.4),
-              ),
+              Icon(Icons.chevron_right, size: 18, color: palette.chevron),
             ],
           ),
         ),
@@ -860,6 +844,7 @@ class _InternalRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.sheet;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -873,15 +858,11 @@ class _InternalRow extends StatelessWidget {
                 child: Text(
                   title,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: palette.textBody,
                       ),
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: Colors.white.withValues(alpha: 0.4),
-              ),
+              Icon(Icons.chevron_right, size: 18, color: palette.chevron),
             ],
           ),
         ),
@@ -905,6 +886,7 @@ class _PickerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.sheet;
     return GlassCard(
       onTap: onTap,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -915,11 +897,10 @@ class _PickerRow extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
+              color: palette.iconChipFill,
               borderRadius: BorderRadius.circular(10),
             ),
-            child:
-                Icon(icon, size: 18, color: Colors.white.withValues(alpha: 0.85)),
+            child: Icon(icon, size: 18, color: palette.iconChipIcon),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -929,19 +910,19 @@ class _PickerRow extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: palette.textBody,
                       ),
                 ),
                 Text(
                   subtitle,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: palette.textSubtle,
                       ),
                 ),
               ],
             ),
           ),
-          Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.4)),
+          Icon(Icons.chevron_right, color: palette.chevron),
         ],
       ),
     );

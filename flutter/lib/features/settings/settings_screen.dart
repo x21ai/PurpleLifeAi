@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../design/glass_surface.dart';
 import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
-import '../shared/glass_helpers.dart' hide GlassSurface;
+import '../shared/glass_helpers.dart' show ContentColumn;
 import 'settings_hub.dart';
+import 'settings_style.dart';
 import 'platform_flags.dart';
 import 'settings_sections.dart' show
     AboutSection,
@@ -33,7 +33,7 @@ class SettingsScreen extends ConsumerWidget {
     final platform = ref.watch(platformFlagsProvider).valueOrNull ??
         const PlatformFlags();
 
-    return CanvasBackground(
+    return SheetCanvas(
       child: SingleChildScrollView(
         primary: true,
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -46,13 +46,7 @@ class SettingsScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'SETTINGS',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.45),
-                    ),
-              ),
+              Text('SETTINGS', style: sheetEyebrowStyle(context)),
               const SizedBox(height: 8),
               Text(
                 'All in your\ncontrol.',
@@ -64,14 +58,14 @@ class SettingsScreen extends ConsumerWidget {
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontFamily: PurpleType.serif,
                       height: 1.08,
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: context.sheet.textHigh,
                     ),
               ),
               const SizedBox(height: 12),
               Text(
                 'Account, privacy, integrations, and how Purple talks to you.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.65),
+                      color: context.sheet.textSubtle,
                       height: 1.5,
                     ),
               ),
@@ -169,7 +163,7 @@ class SettingsScreen extends ConsumerWidget {
                 'to Tools. Name, password, 2FA, region, language, and '
                 'appearance live in Account.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: context.sheet.textFaint,
                       height: 1.5,
                     ),
               ),
@@ -216,25 +210,24 @@ class _PastHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassSurface(
+    final palette = context.sheet;
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return SheetGlass(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                Icons.history,
-                size: 18,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+              Icon(Icons.history, size: 18, color: primary),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Add past history',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontFamily: PurpleType.serif,
-                        color: Colors.white.withValues(alpha: 0.95),
+                        color: palette.textHigh,
                       ),
                 ),
               ),
@@ -245,7 +238,7 @@ class _PastHistoryCard extends StatelessWidget {
             'Backfill old medications and past episodes so Purple can see '
             'your full story. Each form lets you pick any date.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: palette.textSubtle,
                   height: 1.5,
                 ),
           ),
@@ -313,6 +306,8 @@ class _PastHistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.sheet;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -323,9 +318,7 @@ class _PastHistoryTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.1),
-            ),
+            border: Border.all(color: palette.cardBorder),
           ),
           child: Row(
             children: [
@@ -339,23 +332,19 @@ class _PastHistoryTile extends StatelessWidget {
                       title,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             fontFamily: PurpleType.serif,
-                            color: Colors.white.withValues(alpha: 0.92),
+                            color: palette.textBody,
                           ),
                     ),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.5),
+                            color: palette.textSubtle,
                           ),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: Colors.white.withValues(alpha: 0.35),
-              ),
+              Icon(Icons.chevron_right, size: 18, color: palette.chevron),
             ],
           ),
         ),
@@ -373,13 +362,7 @@ class _GroupLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 32, bottom: 10),
-      child: Text(
-        title.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              letterSpacing: 1.2,
-              color: Colors.white.withValues(alpha: 0.45),
-            ),
-      ),
+      child: Text(title.toUpperCase(), style: sheetEyebrowStyle(context)),
     );
   }
 }
@@ -391,7 +374,9 @@ class _SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassSurface(
+    final palette = context.sheet;
+
+    return SheetGlass(
       padding: EdgeInsets.zero,
       child: Column(
         children: [
@@ -399,7 +384,7 @@ class _SettingsSection extends StatelessWidget {
             if (i > 0)
               Divider(
                 height: 1,
-                color: Colors.white.withValues(alpha: 0.08),
+                color: palette.divider.withValues(alpha: 0.65),
               ),
             children[i],
           ],
@@ -429,6 +414,7 @@ class _SettingsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final palette = context.sheet;
     final Color chipColor;
     final Color iconColor;
     switch (iconTone) {
@@ -439,8 +425,8 @@ class _SettingsRow extends StatelessWidget {
         chipColor = scheme.error.withValues(alpha: 0.12);
         iconColor = scheme.error;
       case _RowIconTone.standard:
-        chipColor = Colors.white.withValues(alpha: 0.08);
-        iconColor = Colors.white.withValues(alpha: 0.8);
+        chipColor = palette.iconChipFill;
+        iconColor = palette.iconChipIcon;
     }
 
     return Material(
@@ -470,23 +456,19 @@ class _SettingsRow extends StatelessWidget {
                       title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontFamily: PurpleType.serif,
-                            color: Colors.white.withValues(alpha: 0.92),
+                            color: palette.textBody,
                           ),
                     ),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.5),
+                            color: palette.textSubtle,
                           ),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: Colors.white.withValues(alpha: 0.35),
-              ),
+              Icon(Icons.chevron_right, size: 18, color: palette.chevron),
             ],
           ),
         ),

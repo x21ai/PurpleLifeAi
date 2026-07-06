@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../design/purple_type.dart';
-import '../shared/glass_helpers.dart';
+import 'settings_style.dart';
+import '../shared/glass_helpers.dart' show ContentColumn;
 
 /// Hub cards (Account / Settings / Tools) from web `settings.tsx` `HubCard`.
 class SettingsHubCards extends StatelessWidget {
@@ -83,6 +84,7 @@ class SettingsHubCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.sheet;
     final primary = Theme.of(context).colorScheme.primary;
 
     return Material(
@@ -94,13 +96,9 @@ class SettingsHubCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: active
-                ? primary.withValues(alpha: 0.05)
-                : Colors.white.withValues(alpha: 0.03),
+            color: active ? palette.hubActiveFill : palette.hubInactiveFill,
             border: Border.all(
-              color: active
-                  ? primary.withValues(alpha: 0.6)
-                  : Colors.white.withValues(alpha: 0.1),
+              color: active ? palette.hubActiveBorder : palette.hubInactiveBorder,
             ),
           ),
           child: Column(
@@ -112,7 +110,7 @@ class SettingsHubCard extends StatelessWidget {
                 title,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontFamily: PurpleType.serif,
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: palette.textHigh,
                       fontWeight: FontWeight.w600,
                     ),
               ),
@@ -120,7 +118,7 @@ class SettingsHubCard extends StatelessWidget {
               Text(
                 subtitle,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.55),
+                      color: palette.textSubtle,
                     ),
               ),
             ],
@@ -146,12 +144,10 @@ class SettingsHubLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CanvasBackground(
+    final palette = context.sheet;
+
+    return SheetCanvas(
       child: SingleChildScrollView(
-        // Bottom padding is a small buffer only: NativeAppShell already
-        // reserves shellTabBarInset() worth of space for the floating nav
-        // bar, so stacking another ~120px here doubled up as excess
-        // whitespace (tf-bottom-whitespace).
         padding: const EdgeInsets.only(top: 24, bottom: 32),
         child: ContentColumn(
           child: Column(
@@ -159,12 +155,8 @@ class SettingsHubLayout extends StatelessWidget {
             children: [
               TextButton.icon(
                 onPressed: () => context.go('/settings'),
-                icon: Icon(Icons.arrow_back,
-                    color: Colors.white.withValues(alpha: 0.55)),
-                label: Text(
-                  'Settings',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
-                ),
+                icon: Icon(Icons.arrow_back, color: palette.textSubtle),
+                label: Text('Settings', style: TextStyle(color: palette.textSubtle)),
               ),
               const SizedBox(height: 16),
               SettingsHubCards(current: hub),
@@ -173,14 +165,14 @@ class SettingsHubLayout extends StatelessWidget {
                 title,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontFamily: PurpleType.serif,
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: palette.textHigh,
                     ),
               ),
               const SizedBox(height: 12),
               Text(
                 body,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.65),
+                      color: palette.textSubtle,
                       height: 1.5,
                     ),
               ),

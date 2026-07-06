@@ -9,6 +9,19 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TF23 Settings / Account / Tools theme parity (committed, not pushed).**
+New `flutter/lib/features/settings/settings_style.dart`: `SheetPalette`, `SheetCanvas`,
+`SheetGlass`, SF Pro text helpers, light-mode purple accents from `design/tokens.json`.
+Settings hub (scroll), Account sheet, Tools sheet updated for theme-aware colors (dark +
+light appearance). React parity: section order/copy unchanged; hub cards on Settings/Account.
+`endDrawer` untouched. Verified: `flutter analyze lib/features/settings/ lib/features/account/account_screen.dart lib/features/tools/tools_screen.dart` clean. No router/pubspec/ios changes. No push.
+
+**2026-07-06 Flutter Merged 5-tab shell (complete).**
+Bottom nav: Today · Data · FAB · Plan · Ask Maya. Burger `endDrawer`: Account, Settings,
+Tools, Care, Sign out (+ Meds in drawer). Routes wired in `router.dart`; legacy `/my-health`
+→ `/data`, `/insights` → `/plan`. Commit `7521ef8` on `lovable/redesign`. Verified:
+`flutter analyze lib/shell/` clean. No push.
+
 **2026-07-06 Flutter Plan / Ask Maya / metric dates (parallel writer slice).**
 New `flutter/lib/features/plan/` (Protocol | Recommended segmented Plan tab; numbered protocol
 cards from `dailyInsightCardsProvider`; trait-ranked recommended grid). New
@@ -305,6 +318,36 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T20:45:00Z — TF23 Settings / Account / Tools theme parity
+
+- **Requested** — EXTENDED TF23 wave disjoint scope: settings/, account/, tools/; merged design
+  (SF Pro, purple light accents, scroll settings hub); React parity; analyze + commit; no push;
+  no router/pubspec/ios; endDrawer unchanged.
+- **Done** — New `settings_style.dart` (`SheetPalette`, `SheetCanvas`, `SheetGlass`, input/eyebrow
+  helpers). Updated `settings_hub.dart`, `settings_screen.dart`, `settings_sections.dart`,
+  `account_screen.dart`, `tools_screen.dart` for theme-aware token colors (light purple accents +
+  dark unchanged behavior). Account bottom padding aligned to 32px shell inset. Verified:
+  `flutter analyze` on touched paths clean.
+- **Issues** — Settings sub-routes (privacy, sharing, travel, etc.) still use legacy
+  `CanvasBackground` hardcoded dark; follow-up slice if light appearance needed there.
+- **Stand / next** — Parent fleet merge; browser verify Settings/Account/Tools in light + dark on :8765.
+- **Who / where** — Cursor TF23 settings agent · local · uncommitted until parent commit
+- **Timestamp** — 2026-07-06T20:45:00Z
+
+### 2026-07-06T20:10:00Z — Flutter Merged 5-tab shell navigation
+
+- **Requested** — Wire 5-tab nav (Today · Data · FAB · Plan · Ask Maya), burger endDrawer, legacy
+  tab redirects, analyze shell, commit (no push).
+- **Done** — `router.dart`: `/data`, `/plan` (optional `?segment=recommended`), `/ask-maya`;
+  redirects `/my-health` → `/data`, `/insights` → `/plan`. `bottom_nav.dart`: expanded Data/Plan
+  active detection (vitals, biometrics, reports, timeline). `native_app_shell.dart` + `routes.dart`
+  + `auth_gate.dart` unchanged (already correct). Commit `7521ef8` on `lovable/redesign`.
+- **Issues** — Legacy `MyHealthScreen` / `InsightsScreen` remain in repo for reference; deep links
+  from in-app buttons to `/my-health` now land on Data tab.
+- **Stand / next** — Parent fleet: verify `:8765` Merged nav in browser; run `flutter test` if needed.
+- **Who / where** — Cursor shell agent · local · `lovable/redesign@7521ef8`
+- **Timestamp** — 2026-07-06T20:10:00Z
 
 ### 2026-07-07T02:15:00Z — Flutter Plan / Ask Maya / metric dates (parallel writer)
 

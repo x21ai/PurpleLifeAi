@@ -9,12 +9,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/providers/core_providers.dart';
-import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
 import '../shared/condition_prompts.dart';
-import '../shared/glass_helpers.dart';
 import 'data_export_service.dart';
 import 'feature_catalog.dart';
+import 'settings_style.dart';
 
 /// Below-the-fold Settings sections ported from web
 /// `src/routes/_app/settings.tsx` and `src/components/settings/*`.
@@ -140,9 +139,10 @@ void showWebOnlySheet(
   required String title,
   required String message,
 }) {
+  final palette = context.sheet;
   showModalBottomSheet<void>(
     context: context,
-    backgroundColor: const Color(0xFF14101C),
+    backgroundColor: palette.modalSurface,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
@@ -174,35 +174,16 @@ void showWebOnlySheet(
   );
 }
 
-TextStyle sectionTitleStyle(BuildContext context) {
-  return PurpleType.serifStyle(
-    fontSize: 20,
-    height: 1.2,
-    color: Colors.white.withValues(alpha: 0.95),
-  );
-}
+TextStyle sectionTitleStyle(BuildContext context) =>
+    sheetSectionTitleStyle(context);
 
-TextStyle sectionRowTitleStyle(BuildContext context) {
-  return PurpleType.serifStyle(
-    fontSize: 16,
-    height: 1.25,
-    color: Colors.white.withValues(alpha: 0.92),
-  );
-}
+TextStyle sectionRowTitleStyle(BuildContext context) =>
+    sheetSectionRowTitleStyle(context);
 
-TextStyle sectionMutedStyle(BuildContext context) {
-  return Theme.of(context).textTheme.bodySmall!.copyWith(
-        color: Colors.white.withValues(alpha: 0.55),
-        height: 1.45,
-      );
-}
+TextStyle sectionMutedStyle(BuildContext context) =>
+    sheetSectionMutedStyle(context);
 
-Widget _rowDivider() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 16),
-    child: Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
-  );
-}
+Widget _rowDivider(BuildContext context) => sheetRowDivider(context);
 
 Widget _labelWithIcon(
   BuildContext context,
@@ -224,7 +205,7 @@ Widget _labelWithIcon(
           height: 12,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: Colors.white.withValues(alpha: 0.5),
+            color: context.sheet.textSubtle,
           ),
         ),
       ],
@@ -464,7 +445,7 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
 
-    return GlassSurface(
+    return SheetGlass(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -519,29 +500,14 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
                   controller: _customDraftController,
                   enabled: !_loading && !_savingConditions,
                   maxLength: 60,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.92),
-                  ),
-                  decoration: InputDecoration(
+                  style: sheetInputStyle(context).copyWith(fontSize: 14),
+                  decoration: sheetInputDecoration(
+                    context,
+                    'Add your own (e.g. Heart health)',
+                  ).copyWith(
                     counterText: '',
-                    hintText: 'Add your own (e.g. Heart health)',
-                    hintStyle:
-                        TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                    filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.04),
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.1)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.25)),
-                    ),
                   ),
                   onSubmitted: (_) => _addCustomCondition(),
                 ),
@@ -558,7 +524,7 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
               ),
             ],
           ),
-          _rowDivider(),
+          _rowDivider(context),
 
           // AI model.
           _labelWithIcon(context, Icons.auto_awesome_outlined, 'AI model',
@@ -573,12 +539,9 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
             key: ValueKey('ai-model-$_model'),
             initialValue:
                 _aiModelOptions.any((o) => o.value == _model) ? _model : null,
-            dropdownColor: const Color(0xFF1A1224),
+            dropdownColor: context.sheet.dropdownSurface,
             isExpanded: true,
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.white.withValues(alpha: 0.92),
-            ),
+            style: sheetInputStyle(context),
             items: [
               for (final opt in _aiModelOptions)
                 DropdownMenuItem(
@@ -611,7 +574,7 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
                 .hint,
             style: sectionMutedStyle(context),
           ),
-          _rowDivider(),
+          _rowDivider(context),
 
           // Floating Ask button.
           Row(
@@ -653,7 +616,7 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
               ),
             ],
           ),
-          _rowDivider(),
+          _rowDivider(context),
 
           // Sleep window.
           _labelWithIcon(context, Icons.dark_mode_outlined, 'Sleep window'),
@@ -697,7 +660,7 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
               ),
             ],
           ),
-          _rowDivider(),
+          _rowDivider(context),
 
           // Reminder snooze.
           _labelWithIcon(
@@ -714,11 +677,8 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
             initialValue: const [5, 10, 15].contains(_snoozeMinutes)
                 ? _snoozeMinutes
                 : null,
-            dropdownColor: const Color(0xFF1A1224),
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.white.withValues(alpha: 0.92),
-            ),
+            dropdownColor: context.sheet.dropdownSurface,
+            style: sheetInputStyle(context),
             items: const [
               DropdownMenuItem(value: 5, child: Text('5 minutes')),
               DropdownMenuItem(value: 10, child: Text('10 minutes')),
@@ -736,7 +696,7 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
                     }
                   },
           ),
-          _rowDivider(),
+          _rowDivider(context),
 
           // Daily water goal.
           _labelWithIcon(context, Icons.water_drop_outlined, 'Daily water goal',
@@ -756,10 +716,7 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
                   controller: _waterController,
                   enabled: !_loading,
                   keyboardType: TextInputType.number,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.white.withValues(alpha: 0.92),
-                  ),
+                  style: sheetInputStyle(context),
                   onChanged: _scheduleWaterSave,
                 ),
               ),
@@ -767,7 +724,7 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
               Text('ml', style: sectionMutedStyle(context)),
             ],
           ),
-          _rowDivider(),
+          _rowDivider(context),
 
           // Quiet hours.
           _labelWithIcon(context, Icons.bedtime_outlined, 'Quiet hours'),
@@ -829,7 +786,7 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
               child: const Text('Clear'),
             ),
           ],
-          _rowDivider(),
+          _rowDivider(context),
 
           // Weekly recap email.
           Row(
@@ -871,7 +828,7 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
               ),
             ],
           ),
-          _rowDivider(),
+          _rowDivider(context),
 
           // How Purple thinks.
           Material(
@@ -902,7 +859,7 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
                     Icon(
                       Icons.chevron_right,
                       size: 18,
-                      color: Colors.white.withValues(alpha: 0.35),
+                      color: context.sheet.chevron,
                     ),
                   ],
                 ),
@@ -933,6 +890,7 @@ class _ConditionChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
+    final palette = context.sheet;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -942,13 +900,9 @@ class _ConditionChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
-            color: active
-                ? primary.withValues(alpha: 0.85)
-                : Colors.white.withValues(alpha: 0.04),
+            color: active ? primary.withValues(alpha: 0.85) : palette.chipInactiveFill,
             border: Border.all(
-              color: active
-                  ? primary
-                  : Colors.white.withValues(alpha: 0.15),
+              color: active ? primary : palette.chipInactiveBorder,
             ),
           ),
           child: Row(
@@ -960,9 +914,7 @@ class _ConditionChip extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 12,
-                    color: active
-                        ? Colors.white
-                        : Colors.white.withValues(alpha: 0.92),
+                    color: active ? Colors.white : palette.textBody,
                   ),
                 ),
               ),
@@ -993,6 +945,7 @@ class _TimeField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.sheet;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1003,20 +956,14 @@ class _TimeField extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: Colors.white.withValues(alpha: 0.04),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            color: palette.inputFill,
+            border: Border.all(color: palette.inputBorder),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label, style: sectionMutedStyle(context)),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.white.withValues(alpha: 0.92),
-                ),
-              ),
+              Text(value, style: sheetInputStyle(context)),
             ],
           ),
         ),
@@ -1129,8 +1076,9 @@ class _AiProviderSectionState extends State<AiProviderSection> {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
+    final palette = context.sheet;
 
-    return GlassSurface(
+    return SheetGlass(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1167,12 +1115,12 @@ class _AiProviderSectionState extends State<AiProviderSection> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(14),
                         color: _current == option.id
-                            ? primary.withValues(alpha: 0.06)
-                            : Colors.white.withValues(alpha: 0.03),
+                            ? primary.withValues(alpha: palette.isLight ? 0.08 : 0.06)
+                            : palette.cardFill,
                         border: Border.all(
                           color: _current == option.id
-                              ? primary.withValues(alpha: 0.6)
-                              : Colors.white.withValues(alpha: 0.1),
+                              ? primary.withValues(alpha: palette.isLight ? 0.45 : 0.6)
+                              : palette.cardBorder,
                         ),
                       ),
                       child: Row(
@@ -1196,8 +1144,7 @@ class _AiProviderSectionState extends State<AiProviderSection> {
                                         style: TextStyle(
                                           fontSize: 10,
                                           letterSpacing: 0.8,
-                                          color: Colors.white
-                                              .withValues(alpha: 0.45),
+                                          color: palette.textFaint,
                                         ),
                                       ),
                                     ],
@@ -1215,7 +1162,7 @@ class _AiProviderSectionState extends State<AiProviderSection> {
                               height: 14,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white.withValues(alpha: 0.5),
+                                color: context.sheet.textSubtle,
                               ),
                             )
                           else if (_current == option.id)
@@ -1343,7 +1290,7 @@ class _WhatITrackSectionState extends State<WhatITrackSection> {
     final primary = Theme.of(context).colorScheme.primary;
     final groups = groupedFeatures();
 
-    return GlassSurface(
+    return SheetGlass(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1386,7 +1333,7 @@ class _WhatITrackSectionState extends State<WhatITrackSection> {
               (categoryLabels[group.key] ?? group.key).toUpperCase(),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     letterSpacing: 1.2,
-                    color: Colors.white.withValues(alpha: 0.45),
+                    color: context.sheet.textFaint,
                   ),
             ),
             const SizedBox(height: 10),
@@ -1460,7 +1407,7 @@ class _FeatureToggleRow extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 10,
                         letterSpacing: 0.8,
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: context.sheet.textFaint,
                       ),
                     ),
                   ],
@@ -1480,7 +1427,7 @@ class _FeatureToggleRow extends StatelessWidget {
             height: 14,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: Colors.white.withValues(alpha: 0.5),
+              color: context.sheet.textSubtle,
             ),
           )
         else
@@ -1661,8 +1608,9 @@ class _ConditionHistorySectionState extends State<ConditionHistorySection> {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
+    final palette = context.sheet;
 
-    return GlassSurface(
+    return SheetGlass(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1679,7 +1627,7 @@ class _ConditionHistorySectionState extends State<ConditionHistorySection> {
                   height: 12,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: context.sheet.textSubtle,
                   ),
                 ),
               ],
@@ -1715,18 +1663,14 @@ class _ConditionHistorySectionState extends State<ConditionHistorySection> {
                           horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(14),
-                        border:
-                            Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                        border: Border.all(color: palette.cardBorder),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
                             conditionLabel(c),
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white.withValues(alpha: 0.92),
-                            ),
+                            style: TextStyle(fontSize: 14, color: palette.textBody),
                           ),
                           Wrap(
                             spacing: 4,
@@ -1779,7 +1723,7 @@ class _ConditionHistorySectionState extends State<ConditionHistorySection> {
             ),
           ],
           if (_archived.isNotEmpty) ...[
-            _rowDivider(),
+            _rowDivider(context),
             Text('Past / resolved', style: sectionRowTitleStyle(context)),
             const SizedBox(height: 8),
             for (final item in _archived)
@@ -1790,8 +1734,7 @@ class _ConditionHistorySectionState extends State<ConditionHistorySection> {
                       horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    border:
-                        Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    border: Border.all(color: palette.cardBorder),
                   ),
                   child: Row(
                     children: [
@@ -1801,10 +1744,7 @@ class _ConditionHistorySectionState extends State<ConditionHistorySection> {
                           children: [
                             Text(
                               '${item['label'] ?? conditionLabel('${item['id']}')}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.white.withValues(alpha: 0.92),
-                              ),
+                              style: TextStyle(fontSize: 14, color: palette.textBody),
                             ),
                             Text(_archivedSubtitle(item),
                                 style: sectionMutedStyle(context)),
@@ -1822,15 +1762,14 @@ class _ConditionHistorySectionState extends State<ConditionHistorySection> {
                             ? null
                             : () => _removeArchived(item),
                         icon: Icon(Icons.close,
-                            size: 16,
-                            color: Colors.white.withValues(alpha: 0.5)),
+                            size: 16, color: palette.textSubtle),
                       ),
                     ],
                   ),
                 ),
               ),
           ],
-          _rowDivider(),
+          _rowDivider(context),
           Row(
             children: [
               Icon(Icons.people_outline, size: 16, color: primary),
@@ -1857,17 +1796,14 @@ class _ConditionHistorySectionState extends State<ConditionHistorySection> {
                               '${item['relation']}'.isNotEmpty
                           ? '${item['condition']} · ${item['relation']}'
                           : '${item['condition']}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.92),
-                      ),
+                      style: TextStyle(fontSize: 12, color: palette.textBody),
                     ),
                     onDeleted: _loading || _saving
                         ? null
                         : () => _removeFamily('${item['id']}'),
-                    deleteIconColor: Colors.white.withValues(alpha: 0.5),
-                    backgroundColor: Colors.white.withValues(alpha: 0.04),
-                    side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                    deleteIconColor: palette.textSubtle,
+                    backgroundColor: palette.inputFill,
+                    side: BorderSide(color: palette.cardBorder),
                   ),
               ],
             ),
@@ -1879,22 +1815,8 @@ class _ConditionHistorySectionState extends State<ConditionHistorySection> {
                 child: TextField(
                   controller: _famConditionController,
                   enabled: !_loading && !_saving,
-                  decoration: InputDecoration(
-                    hintText: 'Condition (e.g. Heart attack)',
-                    hintStyle:
-                        TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                    filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.04),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.1)),
-                    ),
-                  ),
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.92),
-                  ),
+                  decoration: sheetInputDecoration(context, 'Condition (e.g. Heart attack)'),
+                  style: sheetInputStyle(context).copyWith(fontSize: 14),
                 ),
               ),
               const SizedBox(width: 8),
@@ -1903,22 +1825,8 @@ class _ConditionHistorySectionState extends State<ConditionHistorySection> {
                 child: TextField(
                   controller: _famRelationController,
                   enabled: !_loading && !_saving,
-                  decoration: InputDecoration(
-                    hintText: 'Relation',
-                    hintStyle:
-                        TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                    filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.04),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.1)),
-                    ),
-                  ),
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.92),
-                  ),
+                  decoration: sheetInputDecoration(context, 'Relation'),
+                  style: sheetInputStyle(context).copyWith(fontSize: 14),
                   onSubmitted: (_) => _addFamily(),
                 ),
               ),
@@ -2042,7 +1950,7 @@ class _DataSectionState extends State<DataSection> {
                 (!needsPassword || passwordController.text.isNotEmpty) &&
                 !deleting;
             return AlertDialog(
-              backgroundColor: const Color(0xFF14101C),
+              backgroundColor: context.sheet.modalSurface,
               title: Text('Delete everything?',
                   style: sectionTitleStyle(context)),
               content: SingleChildScrollView(
@@ -2146,7 +2054,7 @@ class _DataSectionState extends State<DataSection> {
 
   @override
   Widget build(BuildContext context) {
-    return GlassSurface(
+    return SheetGlass(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2254,7 +2162,8 @@ class AboutSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassSurface(
+    final palette = context.sheet;
+    return SheetGlass(
       padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2263,7 +2172,7 @@ class AboutSection extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
             child: Text('About', style: sectionTitleStyle(context)),
           ),
-          Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+          Divider(height: 1, color: palette.divider.withValues(alpha: 0.65)),
           _AboutRow(
             icon: Icons.description_outlined,
             title: 'Founding charter',
@@ -2280,13 +2189,13 @@ class AboutSection extends StatelessWidget {
               }
             },
           ),
-          Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+          Divider(height: 1, color: palette.divider.withValues(alpha: 0.65)),
           _AboutRow(
             icon: Icons.verified_user_outlined,
             title: 'Privacy & safety',
             onTap: () => context.go(AppRoutes.settingsPrivacy),
           ),
-          Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+          Divider(height: 1, color: palette.divider.withValues(alpha: 0.65)),
           _AboutRow(
             icon: Icons.code,
             title: 'Open source on GitHub',
@@ -2322,6 +2231,7 @@ class _AboutRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.sheet;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -2336,13 +2246,9 @@ class _AboutRow extends StatelessWidget {
                 height: 32,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: palette.iconChipFill,
                 ),
-                child: Icon(
-                  icon,
-                  size: 15,
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
+                child: Icon(icon, size: 15, color: palette.iconChipIcon),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -2351,7 +2257,7 @@ class _AboutRow extends StatelessWidget {
               Icon(
                 external ? Icons.open_in_new : Icons.chevron_right,
                 size: 16,
-                color: Colors.white.withValues(alpha: 0.35),
+                color: palette.chevron,
               ),
             ],
           ),

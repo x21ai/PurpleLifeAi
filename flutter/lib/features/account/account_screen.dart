@@ -9,11 +9,11 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../auth/auth_state.dart';
 import '../../core/providers/core_providers.dart';
-import '../../design/glass_surface.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../settings/settings_hub.dart';
-import '../shared/glass_helpers.dart' hide GlassSurface;
+import '../settings/settings_style.dart';
+import '../shared/glass_helpers.dart' show ContentColumn;
 import 'locale_data.dart';
 import 'profile_avatar.dart';
 import 'theme_preference.dart';
@@ -285,9 +285,9 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return CanvasBackground(
+    return SheetCanvas(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.only(top: 16, bottom: 120),
+        padding: const EdgeInsets.only(top: 16, bottom: 32),
         child: ContentColumn(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -304,7 +304,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                       child: IconButton(
                         onPressed: () => context.go(AppRoutes.settings),
                         icon: const Icon(Icons.close_rounded, size: 20),
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: context.sheet.textSubtle,
                         tooltip: 'Close',
                         constraints:
                             const BoxConstraints(minWidth: 44, minHeight: 44),
@@ -314,7 +314,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                       'Account',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.95),
+                            color: context.sheet.textHigh,
                           ),
                     ),
                   ],
@@ -376,9 +376,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                             horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.1),
-                          ),
+                          border: Border.all(color: context.sheet.cardBorder),
                         ),
                         child: Row(
                           children: [
@@ -389,8 +387,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                                   .titleMedium
                                   ?.copyWith(
                                     letterSpacing: 2,
-                                    color:
-                                        Colors.white.withValues(alpha: 0.92),
+                                    color: context.sheet.textBody,
                                   ),
                             ),
                             const Spacer(),
@@ -493,7 +490,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               child: TextField(
                 controller: _firstController,
                 enabled: !_loading,
-                decoration: _inputDecoration('First'),
+                decoration: _inputDecoration(context,'First'),
                 style: _inputStyle(context),
                 onChanged: (_) => _scheduleNameSave(),
               ),
@@ -503,7 +500,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               child: TextField(
                 controller: _lastController,
                 enabled: !_loading,
-                decoration: _inputDecoration('Last'),
+                decoration: _inputDecoration(context,'Last'),
                 style: _inputStyle(context),
                 onChanged: (_) => _scheduleNameSave(),
               ),
@@ -528,7 +525,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           controller: _phoneController,
           enabled: !_loading,
           keyboardType: TextInputType.phone,
-          decoration: _inputDecoration('+1 555 555 5555'),
+          decoration: _inputDecoration(context,'+1 555 555 5555'),
           style: _inputStyle(context),
           onChanged: (_) => _schedulePhoneSave(),
         ),
@@ -544,8 +541,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         DropdownButtonFormField<String>(
           key: ValueKey('gender-$_gender'),
           initialValue: _gender.isEmpty ? null : _gender,
-          decoration: _inputDecoration('Select'),
-          dropdownColor: const Color(0xFF1A1224),
+          decoration: _inputDecoration(context,'Select'),
+          dropdownColor: context.sheet.dropdownSurface,
           style: _inputStyle(context),
           items: [
             for (final preset in _genderPresets)
@@ -566,7 +563,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           const SizedBox(height: 8),
           TextField(
             controller: _genderCustomController,
-            decoration: _inputDecoration('Describe in your own words'),
+            decoration: _inputDecoration(context,'Describe in your own words'),
             style: _inputStyle(context),
             onChanged: (_) => _scheduleGenderSave(),
           ),
@@ -607,8 +604,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           key: ValueKey('country-$_country'),
           initialValue: _country,
           isExpanded: true,
-          decoration: _inputDecoration('Select country'),
-          dropdownColor: const Color(0xFF1A1224),
+          decoration: _inputDecoration(context,'Select country'),
+          dropdownColor: context.sheet.dropdownSurface,
           style: _inputStyle(context),
           items: [
             for (final entry in localeCountries)
@@ -625,7 +622,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           controller: _homeCityController,
           enabled: !_loading,
           textCapitalization: TextCapitalization.words,
-          decoration: _inputDecoration('e.g. Brooklyn'),
+          decoration: _inputDecoration(context,'e.g. Brooklyn'),
           style: _inputStyle(context),
           onChanged: (_) => _scheduleHomeCitySave(),
         ),
@@ -638,8 +635,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               ? _timezone
               : null,
           isExpanded: true,
-          decoration: _inputDecoration('Select time zone'),
-          dropdownColor: const Color(0xFF1A1224),
+          decoration: _inputDecoration(context,'Select time zone'),
+          dropdownColor: context.sheet.dropdownSurface,
           style: _inputStyle(context),
           items: [
             for (final tz in commonTimezones)
@@ -667,8 +664,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         DropdownButtonFormField<String>(
           key: ValueKey('locale-$_locale'),
           initialValue: _locale ?? 'en',
-          decoration: _inputDecoration('Select language'),
-          dropdownColor: const Color(0xFF1A1224),
+          decoration: _inputDecoration(context,'Select language'),
+          dropdownColor: context.sheet.dropdownSurface,
           style: _inputStyle(context),
           items: [
             for (final entry in supportedLocales)
@@ -724,7 +721,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   Widget _divider() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+      child: Divider(height: 1, color: context.sheet.divider.withValues(alpha: 0.65)),
     );
   }
 }
@@ -820,7 +817,7 @@ class _PasswordSectionState extends State<_PasswordSection> {
               child: TextField(
                 controller: _passwordController,
                 obscureText: true,
-                decoration: _inputDecoration('New password'),
+                decoration: _inputDecoration(context,'New password'),
                 style: _inputStyle(context),
                 onChanged: (_) => setState(() {}),
               ),
@@ -830,7 +827,7 @@ class _PasswordSectionState extends State<_PasswordSection> {
               child: TextField(
                 controller: _confirmController,
                 obscureText: true,
-                decoration: _inputDecoration('Confirm'),
+                decoration: _inputDecoration(context,'Confirm'),
                 style: _inputStyle(context),
                 onChanged: (_) => setState(() {}),
               ),
@@ -1156,14 +1153,15 @@ class _TwoFactorSectionState extends State<_TwoFactorSection> {
                 : const Text('Enable 2FA'),
           ),
         if (_enrollment != null) ...[
-          Container(
+          Builder(
+            builder: (context) {
+              final palette = context.sheet;
+              return Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              color: Colors.white.withValues(alpha: 0.03),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.1),
-              ),
+              color: palette.cardFill,
+              border: Border.all(color: palette.cardBorder),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1185,7 +1183,7 @@ class _TwoFactorSectionState extends State<_TwoFactorSection> {
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         fontSize: 10,
                         letterSpacing: 1.5,
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: palette.textFaint,
                       ),
                 ),
                 const SizedBox(height: 6),
@@ -1197,14 +1195,14 @@ class _TwoFactorSectionState extends State<_TwoFactorSection> {
                             horizontal: 10, vertical: 8),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
-                          color: Colors.white.withValues(alpha: 0.06),
+                          color: palette.inputFill,
                         ),
                         child: Text(
                           _enrollment!.secret,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontFamily: 'monospace',
-                            color: Colors.white,
+                            color: palette.textBody,
                           ),
                         ),
                       ),
@@ -1215,7 +1213,7 @@ class _TwoFactorSectionState extends State<_TwoFactorSection> {
                         _secretCopied ? Icons.check : Icons.copy,
                         size: 16,
                       ),
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: palette.textSubtle,
                       tooltip: 'Copy setup key',
                       constraints: const BoxConstraints(
                           minWidth: 44, minHeight: 44),
@@ -1228,8 +1226,8 @@ class _TwoFactorSectionState extends State<_TwoFactorSection> {
                   keyboardType: TextInputType.number,
                   maxLength: 6,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration:
-                      _inputDecoration('6-digit code').copyWith(counterText: ''),
+                  decoration: _inputDecoration(context, '6-digit code')
+                      .copyWith(counterText: ''),
                   style: _inputStyle(context),
                   onChanged: (_) => setState(() {}),
                 ),
@@ -1265,6 +1263,8 @@ class _TwoFactorSectionState extends State<_TwoFactorSection> {
                 ),
               ],
             ),
+          );
+            },
           ),
         ],
         if (_error != null) ...[
@@ -1312,10 +1312,9 @@ class _SectionLabel extends StatelessWidget {
       child: Text(
         label.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              // Web sheet section labels: 11px, tracking 0.18em.
               fontSize: 11,
               letterSpacing: 11 * 0.18,
-              color: Colors.white.withValues(alpha: 0.45),
+              color: context.sheet.textFaint,
             ),
       ),
     );
@@ -1329,9 +1328,8 @@ class _SheetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassSurface(
+    return SheetGlass(
       padding: const EdgeInsets.all(20),
-      // Web sheet cards use radius.sheetCard (28) from design tokens.
       borderRadius:
           BorderRadius.circular(PurpleTokens.loaded.radius.sheetCard),
       child: child,
@@ -1347,10 +1345,11 @@ class _SavedIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (state == _SaveState.idle) return const SizedBox(height: 18);
+    final palette = context.sheet;
     final style = Theme.of(context).textTheme.bodySmall?.copyWith(
           color: state == _SaveState.error
               ? Theme.of(context).colorScheme.error
-              : Colors.white.withValues(alpha: 0.5),
+              : palette.textSubtle,
         );
     return Padding(
       padding: const EdgeInsets.only(top: 8),
@@ -1362,14 +1361,14 @@ class _SavedIndicator extends StatelessWidget {
               height: 12,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: Colors.white.withValues(alpha: 0.5),
+                color: palette.textSubtle,
               ),
             ),
             const SizedBox(width: 6),
             Text('Saving', style: style),
           ],
           if (state == _SaveState.saved) ...[
-            const Icon(Icons.check, size: 12, color: Color(0xFF6EE7B7)),
+            Icon(Icons.check, size: 12, color: palette.success),
             const SizedBox(width: 6),
             Text('Saved', style: style),
           ],
@@ -1397,6 +1396,7 @@ class _AppearanceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
+    final palette = context.sheet;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1407,11 +1407,11 @@ class _AppearanceTile extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            color: Colors.white.withValues(alpha: 0.04),
+            color: palette.inputFill,
             border: Border.all(
               color: selected
-                  ? primary.withValues(alpha: 0.5)
-                  : Colors.white.withValues(alpha: 0.1),
+                  ? primary.withValues(alpha: palette.isLight ? 0.45 : 0.5)
+                  : palette.cardBorder,
             ),
           ),
           child: Column(
@@ -1420,14 +1420,14 @@ class _AppearanceTile extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.92),
+                      color: palette.textBody,
                     ),
               ),
               const SizedBox(height: 4),
               Text(
                 description,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: palette.textSubtle,
                     ),
               ),
             ],
@@ -1440,42 +1440,18 @@ class _AppearanceTile extends StatelessWidget {
 
 TextStyle? _titleStyle(BuildContext context) {
   return Theme.of(context).textTheme.bodyLarge?.copyWith(
-        color: Colors.white.withValues(alpha: 0.92),
+        color: context.sheet.textBody,
       );
 }
 
 TextStyle? _mutedStyle(BuildContext context) {
   return Theme.of(context).textTheme.bodySmall?.copyWith(
-        color: Colors.white.withValues(alpha: 0.55),
+        color: context.sheet.textSubtle,
         height: 1.4,
       );
 }
 
-TextStyle _inputStyle(BuildContext context) {
-  return TextStyle(
-    fontSize: 15,
-    color: Colors.white.withValues(alpha: 0.92),
-  );
-}
+TextStyle _inputStyle(BuildContext context) => sheetInputStyle(context);
 
-InputDecoration _inputDecoration(String hint) {
-  return InputDecoration(
-    hintText: hint,
-    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-    filled: true,
-    fillColor: Colors.white.withValues(alpha: 0.04),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
-    ),
-    disabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
-    ),
-  );
-}
+InputDecoration _inputDecoration(BuildContext context, String hint) =>
+    sheetInputDecoration(context, hint);
