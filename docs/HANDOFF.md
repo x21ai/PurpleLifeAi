@@ -9,6 +9,12 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TF25 fleet merge — journal on main (`5531d06b`), upload pending.**
+Journal agent `009fda0f` cherry-picked to `main` as `5531d06b` (keyboard dismiss, Change label,
+media honesty). ASC latest **1.0 (24) VALID**; build **25** not on ASC yet. Integrator
+`f82c971a` owns `ios:testflight` + push (no duplicate upload). Stack on `main`: auth/sync/data/
+today/meds + journal + pubspec **1.0.0+25**.
+
 **2026-07-06 TF25 P0 blank-data fix — ready for upload (`f2ac82d8`).**
 Root cause: auth stream loading gap after reinstall (`authSessionProvider` still
 `AsyncLoading` while `AuthRepository.currentSession` already restored) left `AuthGate`
@@ -460,6 +466,22 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T20:52:00Z — Journal merge into TF25 stack (integrator handoff)
+
+- **Requested** — When journal agent `8d907f3f` commits, merge into TF25/26 upload via integrator
+  `f82c971a`; no duplicate upload.
+- **Done** — Cherry-picked `009fda0f` → `main` @ `5531d06b` (journal capture keyboard, Change label,
+  media honesty). Verified: `flutter analyze lib/features/journal/` clean,
+  `journal_pending_upload_test` **2/2**. ASC still at **1.0 (24) VALID**; build 25 not uploaded.
+  No `ios:testflight` started from this agent (integrator serial owner).
+- **Issues** — Integrator prior upload attempt hit duplicate Pod `* 2.*` files; pod clean done.
+  Other fleet slices (more-for-today `8b729ea4`, sign-in UI `feda313c`) still on `lovable/redesign`
+  only; integrator polling.
+- **Stand / next** — Integrator `f82c971a`: merge remaining fleet commits, `flutter test` 160+,
+  `ios:testflight` build **25**, poll VALID, push `main`.
+- **Who / where** — Cursor merge subagent, local, `main` @ `5531d06b`.
+- **Timestamp** — 2026-07-06T20:52:00Z
 
 ### 2026-07-06T20:48:00Z — TF24 blank-data P0 → TF25 fix
 
