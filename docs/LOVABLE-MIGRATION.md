@@ -7,7 +7,7 @@ Status (2026-06-11):
 | Phase | Status |
 |-------|--------|
 | 1. Vite unwrap | CANCELLED, wrapper kept for Lovable dev compatibility (only the import was fixed to the ESM build for Node 22) |
-| 2. OAuth to native Supabase | CODE DONE, needs new Google/Apple codes configured in the Supabase dashboard |
+| 2. OAuth to native Supabase | DONE (Google + Apple enabled on `xxnzmfzsjplrutrgbzxy`, verified 2026-07-06) |
 | 3. Email to Resend | CODE DONE, needs `RESEND_API_KEY`, domain verification, hook/webhook configuration |
 | 4. AI to Anthropic | CODE DONE, needs `ANTHROPIC_API_KEY` in Worker + edge function secrets, migration `20260611010000` applied, edge functions redeployed |
 | 5. Branding sweep | DONE (dev tooling intentionally kept) |
@@ -38,7 +38,7 @@ One fix landed: the import in `vite.config.ts` points at `@lovable.dev/vite-tans
 
 Landed: `src/components/auth/social-sign-in-buttons.tsx` now calls `supabase.auth.signInWithOAuth({ provider, options: { redirectTo } })`; `src/integrations/lovable/` and `@lovable.dev/cloud-auth-js` are removed. Callback handling in `src/lib/auth-oauth.ts` is unchanged.
 
-Remaining (external): configure the new Google and Apple client codes in the Supabase dashboard per `docs/oauth-provider-setup.md` (callback `https://lzuodgpqseijhhyzgfky.supabase.co/auth/v1/callback`). New client IDs were the chosen path; existing OAuth users re-consent on first sign-in but keep the same accounts (Supabase matches provider subject + email).
+Done (2026-07-06): Google and Apple enabled on `xxnzmfzsjplrutrgbzxy` (Management API verified); callback `https://auth.purplelife.org/auth/v1/callback` per `docs/oauth-provider-setup.md`. Remaining login blocker is Flutter native `auth-callback` deep-link handling (`flutter/lib/core/auth/auth_deep_link.dart`), not missing Supabase providers.
 
 ## Phase 3: Email to Resend (CODE DONE)
 
