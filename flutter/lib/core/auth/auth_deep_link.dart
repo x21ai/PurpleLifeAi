@@ -98,13 +98,23 @@ class AuthDeepLinkService {
 
     try {
       await _supabase.auth.getSessionFromUrl(uri);
+      final session = _supabase.auth.currentSession;
+      if (session == null || session.isExpired) {
+        debugPrint('[auth_deep_link] OAuth callback produced no valid session');
+        _router.go(
+          expiredQuery != null
+              ? '${AppRoutes.signIn}?$expiredQuery'
+              : '${AppRoutes.signIn}?error=session',
+        );
+        return;
+      }
       onSuccess();
     } catch (error, stack) {
       debugPrint('[auth_deep_link] session from url failed: $error\n$stack');
       _router.go(
         expiredQuery != null
             ? '${AppRoutes.signIn}?$expiredQuery'
-            : AppRoutes.signIn,
+            : '${AppRoutes.signIn}?error=session',
       );
     }
   }

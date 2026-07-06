@@ -431,6 +431,23 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 
 ## Log
 
+### 2026-07-06T20:42:00Z — TF24 auth session validation (invalid restore / AsyncLoading gate)
+
+- **Requested** — CRITICAL TF24: app loads, no data, stuck/slow after reinstall. Fix auth
+  session refresh, fail-open to sign-in, don't hang AsyncLoading. Scope: `flutter/lib/core/auth/`,
+  `auth_gate.dart` only.
+- **Done** — `auth_repository.dart`: `ensureValidSession()` after secure restore (refresh expired,
+  `getUser` verify, sign-out on hard failure); `isAuthenticated` ignores expired sessions.
+  New `core/auth/auth_state.dart`: `authGateStatusProvider`, bootstrap helpers.
+  `auth_gate.dart`: spinner during loading, session-error redirect, 10s onboarding timeout.
+  `auth_deep_link.dart`: reject null/expired OAuth session → `/sign-in?error=session`.
+  Tests: `auth_gate_test.dart`, `auth_session_validation_test.dart`. Verified:
+  `flutter analyze lib/core/auth/` clean; auth tests **31/31**.
+- **Issues** — Sign-in screen does not yet show copy for `?error=session` (follow-up UI).
+- **Stand / next** — Parent fleet merge with Today/Data slices; TF25 upload after full gate pass.
+- **Who / where** — Cursor subagent, local, `lovable/redesign` (pre-commit).
+- **Timestamp** — 2026-07-06T20:42:00Z
+
 ### 2026-07-06T20:38:00Z — Data tab resilient parallel fetch
 
 - **Requested** — Fix silent `AsyncLoading` from `5ad1576` parallel `Future.wait` on Data tab:

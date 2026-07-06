@@ -1,17 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../auth/auth_state.dart';
+import '../core/auth/auth_state.dart' as core_auth;
 import '../core/providers/core_providers.dart';
 import '../features/health/native_health_startup.dart';
 import 'routes.dart';
 
 /// Redirects unauthenticated users to sign-in; keeps signed-in users off auth.
 Future<String?> authRedirect(Ref ref, GoRouterState state) async {
-  final authState = ref.read(authProvider);
-  final isAuthenticated = authState.isAuthenticated;
-  final userId = authState.userId;
+  if (!core_auth.isAuthBootstrapReady(ref)) {
+    return null;
+  }
+
+  final session = core_auth.readAuthenticatedSession(ref);
+  final isAuthenticated = session != null;
+  final userId = session?.user.id;
   final path = state.uri.path;
   final isSignIn = path == AppRoutes.signIn;
   final isResetPassword = path == AppRoutes.resetPassword;
@@ -21,6 +27,12 @@ Future<String?> authRedirect(Ref ref, GoRouterState state) async {
   final isProtected = AppRoutes.protectedPaths.any(
     (route) => path == route || path.startsWith('$route/'),
   );
+
+  if (ref.read(core_auth.authGateStatusProvider) ==
+      core_auth.AuthGateStatus.sessionError) {
+    if (isSignIn || isResetPassword) return null;
+    return '${AppRoutes.signIn}?error=session';
+  }
 
   if (isResetPassword) {
     return null;
@@ -75,8 +87,13 @@ Future<bool> _isOnboarded(
         .from('profiles')
         .select('id, onboarded_at, first_name')
         .eq('id', userId)
-        .maybeSingle();
+        .maybeSingle()
+        .timeout(const Duration(seconds: 10));
     return _profileIsOnboarded(profile);
+  } on TimeoutException catch (error) {
+    debugPrint('[authRedirect] onboarding lookup timed out: $error');
+    if (isOnline) return true;
+    return false;
   } catch (error, stack) {
     debugPrint('[authRedirect] onboarding lookup failed: $error\n$stack');
     // Do not trap returning users on welcome when profile read fails online.
@@ -108,10 +125,15 @@ class AuthGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isAuthenticated = ref.watch(isAuthenticatedProvider);
-    if (!isAuthenticated) {
-      return const SizedBox.shrink();
+    final status = ref.watch(core_auth.authGateStatusProvider);
+    switch (status) {
+      case core_auth.AuthGateStatus.loading:
+        return const Center(child: CircularProgressIndicator());
+      case core_auth.AuthGateStatus.signedOut:
+      case core_auth.AuthGateStatus.sessionError:
+        return const SizedBox.shrink();
+      case core_auth.AuthGateStatus.signedIn:
+        return NativeHealthStartupListener(child: child);
     }
-    return NativeHealthStartupListener(child: child);
   }
 }

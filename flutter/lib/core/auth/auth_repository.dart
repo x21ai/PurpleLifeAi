@@ -50,7 +50,10 @@ class AuthRepository {
 
   User? get currentUser => _client.auth.currentUser;
 
-  bool get isAuthenticated => currentSession != null;
+  bool get isAuthenticated {
+    final session = currentSession;
+    return session != null && !session.isExpired;
+  }
 
   /// Initialize Supabase and restore any secure-storage session backup.
   static Future<AuthRepository> initialize(AppConfig config) async {
@@ -65,10 +68,54 @@ class AuthRepository {
 
     final repo = AuthRepository(config: config);
     await repo._restoreSecureSession();
+    await repo.ensureValidSession();
     repo._client.auth.onAuthStateChange.listen((data) {
       unawaited(repo._persistSession(data.session));
     });
     return repo;
+  }
+
+  /// Refreshes expired tokens and verifies the session with Supabase.
+  ///
+  /// Clears local auth on hard failures (invalid refresh, revoked user) so the
+  /// app fails open to sign-in instead of staying "signed in" with no data.
+  /// Keeps a non-expired session when offline and [getUser] is unreachable.
+  Future<Session?> ensureValidSession() async {
+    var session = currentSession;
+    if (session == null) return null;
+    final hadSession = session;
+
+    try {
+      if (session.isExpired) {
+        final response = await _client.auth.refreshSession();
+        session = response.session;
+        if (session == null) {
+          await signOut();
+          return null;
+        }
+        await _persistSession(session);
+      }
+
+      final userResponse = await _client.auth.getUser();
+      if (userResponse.user == null) {
+        await signOut();
+        return null;
+      }
+      return session;
+    } on AuthException catch (error, stack) {
+      debugPrint(
+        '[AuthRepository] ensureValidSession auth error: ${error.message}\n$stack',
+      );
+      await signOut();
+      return null;
+    } catch (error, stack) {
+      debugPrint('[AuthRepository] ensureValidSession failed: $error\n$stack');
+      if (hadSession.isExpired) {
+        await signOut();
+        return null;
+      }
+      return hadSession;
+    }
   }
 
   /// True when [uri] carries a Supabase PKCE `code` or implicit recovery token.
