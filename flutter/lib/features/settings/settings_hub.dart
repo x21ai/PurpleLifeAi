@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/observability/luciq_bootstrap.dart';
 import '../../design/purple_type.dart';
 import 'settings_style.dart';
 import '../shared/glass_helpers.dart' show ContentColumn;
@@ -121,6 +122,131 @@ class SettingsHubCard extends StatelessWidget {
                       color: palette.textSubtle,
                     ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Help rows on the Settings hub: Luciq report (native TF) + contact.
+class SettingsHelpSection extends StatelessWidget {
+  const SettingsHelpSection({super.key, required this.onContactTap});
+
+  final VoidCallback onContactTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: luciqInitNotifier,
+      builder: (context, _, __) {
+        final rows = <Widget>[
+          if (luciqReportAvailable())
+            _SettingsHubActionRow(
+              icon: Icons.bug_report_outlined,
+              title: 'Report a problem',
+              subtitle: 'Send a bug report with optional screenshot',
+              onTap: showLuciqReport,
+            ),
+          _SettingsHubActionRow(
+            icon: Icons.chat_bubble_outline,
+            title: 'Contact the team',
+            subtitle: 'Questions, feedback, anything',
+            onTap: onContactTap,
+          ),
+        ];
+
+        return _SettingsHubSection(children: rows);
+      },
+    );
+  }
+}
+
+class _SettingsHubSection extends StatelessWidget {
+  const _SettingsHubSection({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.sheet;
+
+    return SheetGlass(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0)
+              Divider(
+                height: 1,
+                color: palette.divider.withValues(alpha: 0.65),
+              ),
+            children[i],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsHubActionRow extends StatelessWidget {
+  const _SettingsHubActionRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.sheet;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 64),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: palette.iconChipFill,
+                ),
+                child: Icon(icon, size: 18, color: palette.iconChipIcon),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontFamily: PurpleType.serif,
+                            color: palette.textBody,
+                          ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: palette.textSubtle,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, size: 18, color: palette.chevron),
             ],
           ),
         ),
