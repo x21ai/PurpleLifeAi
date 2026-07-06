@@ -7,7 +7,6 @@ import {
   User,
   Wrench,
   Droplets,
-  HeartPulse,
   MessageCircle,
   Users,
   Activity,
@@ -47,15 +46,11 @@ export type NavGroup = {
 
 export const navTree: NavGroup[] = [
   { id: "today", label: "Today", icon: Sun, to: "/today" },
-  { id: "data", label: "Data", icon: Activity, to: "/data" },
-  { id: "plan", label: "Plan", icon: TrendingUp, to: "/plan" },
-  { id: "ask-maya", label: "Ask Maya", icon: MessageCircle, to: "/ask-maya" },
-  { id: "journal", label: "Journal", icon: BookOpen, to: "/journal" },
   {
-    id: "body",
-    label: "My Body",
-    icon: HeartPulse,
-    to: "/my-health",
+    id: "data",
+    label: "Data",
+    icon: Activity,
+    to: "/data",
     children: [
       { to: "/biometrics", label: "Biometrics", icon: Activity },
       { to: "/hydration", label: "Intake", icon: Droplets },
@@ -64,15 +59,17 @@ export const navTree: NavGroup[] = [
     ],
   },
   {
-    id: "insights",
-    label: "Insights",
+    id: "plan",
+    label: "Plan",
     icon: TrendingUp,
-    to: "/insights",
+    to: "/plan",
     children: [
       { to: "/reports", label: "Reports", icon: FileText },
       { to: "/my-health-dna", label: "DNA", icon: Dna },
     ],
   },
+  { id: "ask-maya", label: "Ask Maya", icon: MessageCircle, to: "/ask-maya" },
+  { id: "journal", label: "Journal", icon: BookOpen, to: "/journal" },
   {
     id: "care",
     label: "Care",
@@ -132,13 +129,14 @@ export function filterNavTree(
     );
 }
 
-/** Legacy flat list, kept for the mobile bottom nav. */
+/** Legacy flat list, kept for the mobile drawer overflow menu. */
 export type NavItem = {
   to:
     | "/today"
     | "/journal"
     | "/timeline"
-    | "/insights"
+    | "/data"
+    | "/plan"
     | "/account"
     | "/tools"
     | "/settings"
@@ -149,10 +147,11 @@ export type NavItem = {
 
 export const navItems: NavItem[] = [
   { to: "/today", label: "Today", icon: Sun },
+  { to: "/data", label: "Data", icon: Activity },
+  { to: "/plan", label: "Plan", icon: TrendingUp },
   { to: "/journal", label: "Journal", icon: BookOpen },
   { to: "/hydration", label: "Intake", icon: Droplets },
   { to: "/timeline", label: "Timeline", icon: Clock },
-  { to: "/insights", label: "Patterns", icon: TrendingUp },
   { to: "/tools", label: "Tools", icon: Wrench },
   { to: "/account", label: "Account", icon: User },
   { to: "/settings", label: "Settings", icon: Settings2 },

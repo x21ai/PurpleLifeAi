@@ -9,6 +9,14 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 Google + Apple OAuth enabled on NEW Supabase (verified).**
+Management API check on project **`xxnzmfzsjplrutrgbzxy`**: Google and Apple providers
+**enabled** (agent c7052066, 2026-07-06). Branded callback
+`https://auth.purplelife.org/auth/v1/callback`. **Login blocker is NOT missing providers** —
+remaining gap is Flutter native **`auth-callback`** deep-link handling
+(`flutter/lib/core/auth/auth_deep_link.dart`; agent fd0d190b). `LOVABLE-MIGRATION.md` Phase 2
+callback line updated (was stale OLD ref).
+
 **2026-07-06 TF23 Merged shell shipped + uploaded (Flutter).**
 Commit **`b4a9dc1`** wires 5-tab nav (Today · Data · FAB · Plan · Ask Maya), routes
 `/data` `/plan` `/ask-maya`, merged Today + Data/Plan/Ask Maya screens, `pubspec` **1.0.0+23**.
@@ -374,6 +382,43 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T21:30:00Z — OAuth providers verified on NEW Supabase (doc-only)
+
+- **Requested** — Doc-only commit from OAuth verify agent c7052066: confirm Google + Apple
+  enabled on `xxnzmfzsjplrutrgbzxy`, fix stale `LOVABLE-MIGRATION.md` Phase 2 callback, record
+  that login blocker is Flutter `auth-callback` code (fd0d190b) not missing Supabase providers.
+- **Done** — Management API verification 2026-07-06: Google and Apple providers **enabled** on
+  project `xxnzmfzsjplrutrgbzxy`. Updated `docs/LOVABLE-MIGRATION.md` Phase 2 (OLD ref
+  `lzuodgpqseijhhyzgfky` callback → `https://auth.purplelife.org/auth/v1/callback`; status
+  DONE). `docs/OPEN-ISSUES.md`: new `flutter-oauth-auth-callback` (P0 login blocker in
+  `auth_deep_link.dart`, not provider config). Current snapshot refreshed.
+- **Issues** — Flutter Google/Apple sign-in still fails until `auth-callback` deep-link path
+  completes session exchange (fd0d190b scope). Supabase redirect allow list must include
+  `org.purplelife.app://auth-callback` (separate verify).
+- **Stand / next** — Fix Flutter `auth-callback` handler (fd0d190b); device QA Google/Apple on
+  TF23+ after deep-link fix.
+- **Who / where** — Cursor OAuth verify doc subagent, local, `lovable/redesign@d1f5675`.
+- **Timestamp** — 2026-07-06T21:30:00Z.
+
+### 2026-07-06T20:20:00Z — Merged shell wiring + TF23 upload (b4a9dc1)
+
+- **Requested** — Complete uncommitted Merged WIP: wire router/bottom_nav 5-tab nav, Today merged
+  layout, integrate Data/Plan/Ask Maya, analyze/test, commit, bump 1.0.0+23, TestFlight upload,
+  Founding Team group, push branches.
+- **Done** — Commit **`b4a9dc1`**: `bottom_nav.dart` → `AppRoutes.plan`/`askMaya`; `router.dart`
+  routes for PlanScreen/AskMayaScreen/DataScreen; merged Today (`today_merged_widgets.dart`,
+  `today_screen.dart` rewrite); `data/` providers + screen; preview serve script + lab spec doc;
+  `today_screen_render_test.dart` updated for merged layout; `pubspec.yaml` **1.0.0+23**. Gates:
+  analyze clean, **135/135** tests. TestFlight: **EXPORT SUCCEEDED** upload build 23
+  (~16:19 ET). `:8765` rebuild HTTP 200.
+- **Issues** — ASC API not yet listing 1.0 (23) (processing); `asc-add-build-to-group.mjs 23`
+  failed "No build found" (retry when VALID). First upload attempt interrupted (SIGTERM on
+  xcodebuild archive).
+- **Stand / next** — `bun run ios:check-asc-builds` until 1.0 (23) VALID →
+  `asc-add-build-to-group.mjs 23 "Founding Team"` → Luciq/ASC triage per TF observability rule.
+- **Who / where** — Cursor subagent (Merged ship slice), local, `lovable/redesign@b4a9dc1`.
+- **Timestamp** — 2026-07-06T20:20:00Z.
 
 ### 2026-07-06T20:45:00Z — TF23 Merged fleet serial integrate + TestFlight 23
 
