@@ -145,15 +145,8 @@ class SettingsScreen extends ConsumerWidget {
               const DataSection(key: Key('settings-data')),
               const SizedBox(height: 28),
               const _GroupLabel(title: 'Help'),
-              _SettingsSection(
-                children: [
-                  _SettingsRow(
-                    icon: Icons.chat_bubble_outline,
-                    title: 'Contact the team',
-                    subtitle: 'Questions, feedback, anything',
-                    onTap: () => context.go(AppRoutes.settingsContact),
-                  ),
-                ],
+              SettingsHelpSection(
+                onContactTap: () => context.go(AppRoutes.settingsContact),
               ),
               const SizedBox(height: 12),
               const AboutSection(key: Key('settings-about')),
