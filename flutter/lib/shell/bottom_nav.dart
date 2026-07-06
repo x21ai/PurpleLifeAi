@@ -27,27 +27,36 @@ class BottomNav extends StatelessWidget {
   static const _tabs = [
     _NavTab(path: AppRoutes.today, icon: Icons.wb_sunny_outlined, label: 'Today'),
     _NavTab(
-      path: AppRoutes.myHealth,
-      icon: Icons.monitor_heart_outlined,
-      label: 'My Body',
+      path: AppRoutes.data,
+      icon: Icons.insights_outlined,
+      label: 'Data',
     ),
     _NavTab(
-      path: AppRoutes.insights,
-      icon: Icons.trending_up,
-      label: 'Insights',
+      path: AppRoutes.plan,
+      icon: Icons.auto_stories_outlined,
+      label: 'Plan',
     ),
     _NavTab(
-      path: AppRoutes.settings,
-      icon: Icons.settings_outlined,
-      label: 'Settings',
+      path: AppRoutes.askMaya,
+      icon: Icons.chat_bubble_outline,
+      label: 'Ask Maya',
     ),
   ];
 
   bool _isActive(String path) {
-    if (path == AppRoutes.myHealth) {
-      return location == AppRoutes.myHealth ||
-          location == AppRoutes.vitals ||
-          location.startsWith('${AppRoutes.vitals}/');
+    if (path == AppRoutes.data) {
+      return location == AppRoutes.data ||
+          location.startsWith('${AppRoutes.biometrics}/') ||
+          location.startsWith(AppRoutes.reportsTrendsPrefix);
+    }
+    if (path == AppRoutes.plan) {
+      return location == AppRoutes.plan ||
+          location.startsWith('${AppRoutes.plan}/');
+    }
+    if (path == AppRoutes.askMaya) {
+      return location == AppRoutes.askMaya ||
+          location == AppRoutes.chat ||
+          location.startsWith('${AppRoutes.chat}/');
     }
     return location == path || location.startsWith('$path/');
   }

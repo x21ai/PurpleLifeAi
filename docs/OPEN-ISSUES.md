@@ -406,6 +406,29 @@ Format:
 - [x] ~~**tf14-missing-settings-oura**~~ — RESOLVED 2026-07-05: TF14 uploaded before
   Settings/Oura commits; **TF15** includes full bundle.
 
+## Design / product (raised 2026-07-06)
+
+- [ ] **superpower-design-parity** — Superpower-inspired multi-screen preview with **three layout modes**
+  (Classic / Expanded / Merged) at `docs/previews/personalized-dashboard-preview.html` served on
+  http://127.0.0.1:8766. AI persona **Ask Maya** (app name Purple). Screens: Today, Data,
+  Protocol, **Recommended for you**, Ask Maya, Metric detail, lab order modal. Feature gap matrix:
+  `docs/previews/SUPERPOWER-PURPLE-FEATURE-MATRIX.md`. **Status: Merged layout approved by user
+  (2026-07-06); preview has full Merged page parity (all screens reachable). Production Flutter/TanStack
+  P0 still pending** — dual-score Today hero (Expanded), unified Data tab, Protocol cards, biomarker
+  summary bar, shell nav refresh (Merged 5-tab). P1: Recommended tab (trait-ranked from
+  `profiles.conditions` + `feature_suggestions`, not e-commerce). **Do not build:** generic
+  marketplace, bio age (no schema field). _Raised 2026-07-06 by design preview session; Merged
+  full parity 2026-07-06._
+
+- [ ] **lab-ordering-mvp** — Lab ordering preview + spec only (no prod integration).
+  Preview: Recommended hero "Order blood panel", 3-step modal (panel / collection /
+  Stripe placeholder), Data tab empty state when labs unchecked. Spec:
+  `docs/previews/LAB-ORDERING-SPEC.md`. **MVP recommendation: Phase 1** concierge or
+  partner deep link + existing upload ingest; **Phase 2** in-app Stripe + Quest/Labcorp
+  API. **Blockers (owner):** lab partner choice, Stripe lab SKUs, provider-of-record,
+  legal review, US state kit availability. _Raised 2026-07-06 by lab ordering preview
+  session._
+
 ## Web / Lovable
 
 - [ ] **lovable-redesign-merge** — `lovable/redesign` branch has large Flutter overnight

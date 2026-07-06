@@ -44,6 +44,9 @@ import '../features/timeline/timeline_screen.dart';
 import '../features/seizures/log_seizure_screen.dart';
 import '../features/vitals/biometrics_hub_screen.dart';
 import '../features/vitals/metric_detail_screen.dart';
+import '../features/ask_maya/ask_maya_screen.dart';
+import '../features/data/data_screen.dart';
+import '../features/plan/plan_screen.dart';
 import '../features/today/today_risk_screen.dart';
 import '../features/today/today_screen.dart';
 import '../features/tools/tools_screen.dart';
@@ -152,6 +155,21 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) => const TodayRiskScreen(),
               ),
             ],
+          ),
+          GoRoute(
+            path: AppRoutes.data,
+            name: 'data',
+            builder: (context, state) => const DataScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.plan,
+            name: 'plan',
+            builder: (context, state) => const PlanScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.askMaya,
+            name: 'ask-maya',
+            builder: (context, state) => const AskMayaScreen(),
           ),
           GoRoute(
             path: AppRoutes.myHealth,
