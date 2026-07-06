@@ -1,24 +1,69 @@
 # Flutter Stage 5 Cutover Gap Matrix
 
-**Date:** 2026-07-05 (post-TF17 fleet route audit)  
+**Date:** 2026-07-06 (post-TF23 Merged fleet integrate)  
 **Baseline:** Web `src/routes/_app/**` (55 files) + marketing `src/routes/*.tsx` (30 files) vs Flutter `flutter/lib/shell/router.dart`  
 **Phase reference:** `docs/LOVABLE-FLUTTER-SYNC.md` Phase 5 exit criteria  
 **Status legend:** **Parity** | **Partial** | **Stub** | **Missing**
 
-> **Correction + delta, 2026-07-05 PM (orchestrated fix fleet):** audit found this matrix
-> stale on two rows — **`/insights` and `/timeline` ARE registered** in
-> `flutter/lib/shell/router.dart` with substantial screens (P1-3 and P2-6 said Missing;
-> corrected to Partial below, verified against code). Fleet delta on top of TF18, **local
-> only, not pushed**: meds edit data-loss fix + dose timeline/toolbar depth, bottom-nav 3rd
-> tab Meds→Insights, timeline dose actions (I took it / Skip / Undo), care Accept wired
-> client-side + `/care/accept?token=` route + top-bar inbox badge, My Health conditions
-> grid + DNA card, fl_chart/flutter_markdown foundation, seizure read repository; wave2
-> insights/caredash depth in flight on branches. Caregiver server routes remain the
-> blocker — see OPEN-ISSUES `care-accept-server-route` (extended with full backlog).
+> **TF23 Merged fleet delta (2026-07-06, `lovable/redesign` @ `1ed98cf`, not pushed):**
+> Flutter shell ships **5-tab Merged nav** (Today · Data · FAB · Plan · Ask Maya) with legacy
+> tab redirects (`7521ef8`). New routes **`/data`**, **`/plan`**, **`/ask-maya`** wired in
+> `router.dart`. TanStack `_app` adds matching **`data.tsx`**, **`plan.tsx`**, **`ask-maya.tsx`**
+> plus bottom-nav refresh. **Merged design restyle** (token palettes, dual-score Today hero,
+> Data summary bar, Settings sheet theme, reports/care/chat depth) across 30+ Flutter screens.
+> Verified: `flutter analyze` (0 errors), **`flutter test` 135/135**. TestFlight target **1.0 (23)**.
+
+---
+
+## Merged mode route parity (2026-07-06)
+
+| Screen | Web `_app` | Flutter | Merged % | Notes |
+|--------|------------|---------|----------|-------|
+| Today | `/today` | `/today` | **~75%** | Dual score hero, date strip, personalization pill shipped; journal FAB depth P1 |
+| Data | `/data` | `/data` | **~70%** | Unified hub + metric rows + summary bar; lab empty state P1 |
+| Plan | `/plan` | `/plan` | **~65%** | Protocol \| Recommended segmented; trait grid from conditions |
+| Ask Maya | `/ask-maya` | `/ask-maya` | **~60%** | Greeting + chips + chat deep link; full Worker history P1 |
+| Metric detail | `/biometrics/$metric` | `/biometrics/:metricKey` | **~70%** | Dated readings + chart axis labels TF23 |
+| Shell / nav | bottom-nav 5-tab | `bottom_nav.dart` 5-tab | **~85%** | Merged tab set + endDrawer menu |
+| Settings / Account | `/settings`, `/account` | same | **~70%** | Theme-aware sheet palette; export/2FA stubs remain |
+| Meds | `/meds/*` | `/meds/*` | **~65%** | Merged token restyle; toolbar/timeline depth P1 |
+| Reports | `/reports/*` | `/reports/*` | **~60%** | All 7 routes Partial; chart/trend depth P1 |
+| Care | `/care/*` | `/care/*` | **~55%** | Dashboard depth improved; marketing accept link Missing |
+
+**Weighted Merged average (10 primary routes): ~68%.** Classic and Expanded preview modes remain design-only on `:8766`.
 
 ---
 
 ## Executive summary
+
+| Metric | Web | Flutter (2026-07-06 post-TF23) |
+|--------|-----|--------------------------------|
+| Signed-in `_app` route files | **55** | **41** GoRouter paths (+3 Merged: data, plan, ask-maya) |
+| Marketing route files (TanStack-only by policy) | **30** | **6** public (`/`, `/pricing`, `/privacy`, `/about`, `/trust`, `/sign-in`; 25 stay on Worker) |
+| Route gaps (Missing + Stub) | — | **20** of 55 signed-in paths (was 23 post-TF17) |
+| Partial implementations | — | **35** routes exist but fail design or depth bar |
+| TestFlight latest VALID | Capacitor retired | **1.0 (22)** IN_BETA_TESTING (2026-07-06); **1.0 (23)** uploading |
+
+### Stage 5 Go/No-Go: **NO-GO**
+
+TF23 closes Merged **shell + primary tabs** and major **design restyle** gaps. Remaining blockers: admin/community paths, push notifications, wearable OAuth console, device sign-off on synced-data depth, and P1 polish on reports/care/chat.
+
+---
+
+## Post-TF23 fleet delta (vs post-TF17)
+
+| Area | Post-TF17 | Post-TF23 Merged |
+|------|-----------|------------------|
+| Shell nav | Today · Insights · FAB · Meds · Vitals | **Today · Data · FAB · Plan · Ask Maya** (+ legacy redirects) |
+| `/data`, `/plan`, `/ask-maya` | **Missing** | **Partial** — routes + screens on Flutter and TanStack |
+| Today hero | Single score strip | **Dual readiness + sleep** cards, date strip |
+| Settings / Account | Hardcoded dark glass | **Theme-aware sheet palette** (light purple accents) |
+| Data / metric detail | Stub charts | **Dated readings**, summary bar, chart axis labels |
+| Gap count (Missing + Stub) | **23** | **20** (−3) |
+
+---
+
+## Executive summary (2026-07-05 baseline, superseded above)
 
 | Metric | Web | Flutter (2026-07-05 post-TF17) |
 |--------|-----|--------------------------------|

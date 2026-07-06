@@ -410,15 +410,13 @@ Format:
 
 - [ ] **superpower-design-parity** — Superpower-inspired multi-screen preview with **three layout modes**
   (Classic / Expanded / Merged) at `docs/previews/personalized-dashboard-preview.html` served on
-  http://127.0.0.1:8766. AI persona **Ask Maya** (app name Purple). Screens: Today, Data,
-  Protocol, **Recommended for you**, Ask Maya, Metric detail, lab order modal. Feature gap matrix:
-  `docs/previews/SUPERPOWER-PURPLE-FEATURE-MATRIX.md`. **Status: Merged layout approved by user
-  (2026-07-06); preview has full Merged page parity (all screens reachable). Production Flutter/TanStack
-  P0 still pending** — dual-score Today hero (Expanded), unified Data tab, Protocol cards, biomarker
-  summary bar, shell nav refresh (Merged 5-tab). P1: Recommended tab (trait-ranked from
-  `profiles.conditions` + `feature_suggestions`, not e-commerce). **Do not build:** generic
-  marketplace, bio age (no schema field). _Raised 2026-07-06 by design preview session; Merged
-  full parity 2026-07-06._
+  http://127.0.0.1:8766. AI persona **Ask Maya** (app name Purple). **Status (2026-07-06 TF23 fleet):**
+  Merged layout **approved** in preview; **production Partial** — Flutter + TanStack now ship Merged
+  5-tab shell, `/data`, `/plan`, `/ask-maya`, dual-score Today hero, Data summary bar, theme-aware
+  Settings/Account, metric dated readings (~68% weighted Merged parity per
+  `docs/FLUTTER-CUTOVER-GAP-MATRIX.md`). **Still P1:** Recommended trait grid depth, lab order modal,
+  light-mode purple accent pass on all routes, chat history attachments. **Do not build:** generic
+  marketplace, bio age (no schema field). _Raised 2026-07-06; TF23 fleet integrate 2026-07-06._
 
 - [ ] **lab-ordering-mvp** — Lab ordering preview + spec only (no prod integration).
   Preview: Recommended hero "Order blood panel", 3-step modal (panel / collection /

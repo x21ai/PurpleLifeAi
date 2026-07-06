@@ -1,6 +1,15 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~21:00 ET (Apple system typography).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~16:15 ET (TF23 Merged fleet integrate).
+
+**Recent (2026-07-06 ~16:15 ET): TF23 Merged fleet integrated (Flutter + TanStack).**
+`lovable/redesign` @ **`1ed98cf`** (13 commits ahead of origin, pushing this session). Flutter:
+5-tab Merged shell (Today · Data · FAB · Plan · Ask Maya), `/data` `/plan` `/ask-maya` routes,
+dual-score Today hero, token restyle across meds/settings/reports/care/chat/data. TanStack:
+`data.tsx`, `plan.tsx`, `ask-maya.tsx`, bottom-nav 5-tab, `_app` typography pass. Verified:
+`flutter analyze` 0 errors, **`flutter test` 135/135**. TestFlight target **1.0 (23)** Founding Team.
+Matrix: `docs/FLUTTER-CUTOVER-GAP-MATRIX.md` (~68% weighted Merged parity). OPEN-ISSUES
+`superpower-design-parity` → production Partial.
 
 **Recent (2026-07-06 ~21:00 ET): Apple system typography shipped.**
 Signed-in app uses SF Pro system stack (no Inter / Source Serif 4). Web: `src/styles.css`,
