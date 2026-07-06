@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../shell/routes.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
+import '../shared/lab_upload_prompt.dart';
 import '../shared/loading_skeleton.dart';
 import 'reports_repository.dart';
 import 'models/report_row.dart';
@@ -131,13 +132,12 @@ class _DocumentsBodyState extends State<_DocumentsBody> {
     }
 
     if (data.documents.isEmpty) {
-      return EmptyState(
-        eyebrow: 'Reports',
+      return LabUploadEmptyCard(
         title: 'Start your private ledger',
         body:
             'Drop a lab PDF or photo. Purple reads title, date, and values automatically.',
-        primaryActionLabel: 'Upload lab report',
-        onPrimaryAction: () => context.go(AppRoutes.reportsNew),
+        buttonLabel: 'Upload lab report',
+        onUpload: () => context.go(AppRoutes.reportsNew),
       );
     }
 
@@ -180,11 +180,7 @@ class _DocumentsBodyState extends State<_DocumentsBody> {
           ],
         ),
         const SizedBox(height: 20),
-        FilledButton.icon(
-          onPressed: () => context.go(AppRoutes.reportsNew),
-          icon: const Icon(Icons.upload_file_outlined),
-          label: const Text('Upload lab report'),
-        ),
+        LabUploadButton(onPressed: () => context.go(AppRoutes.reportsNew)),
         const SizedBox(height: 24),
         // Client-side search over the already-loaded list.
         TextField(

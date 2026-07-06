@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
@@ -108,7 +107,6 @@ class _ReportsUploadScreenState extends ConsumerState<ReportsUploadScreen> {
               Text(
                 'Add a lab\nreport',
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      fontFamily: PurpleType.serif,
                       height: 1.02,
                       color: Colors.white.withValues(alpha: 0.95),
                     ),

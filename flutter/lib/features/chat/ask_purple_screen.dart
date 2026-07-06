@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/worker_client.dart';
 import '../../core/providers/core_providers.dart';
-import '../../design/purple_type.dart';
 import '../shared/condition_prompts.dart';
 import '../shared/glass_helpers.dart';
 import 'action_confirm_card.dart';
 import 'ask_limit.dart';
 import 'chat_copy.dart';
 import 'chat_repository.dart';
+import 'chat_style.dart';
 import 'citation_text.dart';
 
 /// A single assistant turn plus any actions it proposed and their states.
@@ -362,31 +362,7 @@ class _AskHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return ContentColumn(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            ChatCopy.askEyebrow.toUpperCase(),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.55),
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${ChatCopy.askTitleLine1}\n${ChatCopy.askTitleLine2}',
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  fontFamily: PurpleType.serif,
-                  fontSize: 40,
-                  height: 1.02,
-                  letterSpacing: 40 * -0.02,
-                  color: Colors.white.withValues(alpha: 0.95),
-                ),
-          ),
-          const SizedBox(height: 16),
-          Divider(color: Colors.white.withValues(alpha: 0.08), height: 1),
-        ],
-      ),
+      child: const ChatAskHeader(),
     );
   }
 }
@@ -407,11 +383,7 @@ class _AskEmptyState extends StatelessWidget {
       children: [
         Text(
           ChatCopy.askEmptyBody,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontFamily: PurpleType.serif,
-                color: Colors.white.withValues(alpha: 0.85),
-                height: 1.5,
-              ),
+          style: chatBodySerif(),
         ),
         const SizedBox(height: 24),
         Wrap(
@@ -448,9 +420,7 @@ class _SuggestionChip extends StatelessWidget {
           borderRadius: 999,
           child: Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.9),
-                ),
+            style: chatBubbleText(isUser: false),
           ),
         ),
       ),
@@ -514,13 +484,7 @@ class _ChatBubble extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             borderRadius: 20,
             child: isUser
-                ? Text(
-                    text,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.92),
-                          height: 1.45,
-                        ),
-                  )
+                ? Text(text, style: chatBubbleText(isUser: true))
                 : CitationText(text: text),
           ),
         ),
@@ -583,7 +547,6 @@ class _LimitGate extends StatelessWidget {
               Text(
                 ChatCopy.askLimitTitle,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontFamily: PurpleType.serif,
                       color: Colors.white.withValues(alpha: 0.95),
                     ),
               ),
@@ -634,10 +597,7 @@ class _AskComposer extends StatelessWidget {
             Text(
               ChatCopy.askDisclaimer,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.45),
-                    height: 1.35,
-                  ),
+              style: chatComposerHint(),
             ),
             const SizedBox(height: 12),
             Row(

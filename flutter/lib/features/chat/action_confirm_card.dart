@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../design/purple_type.dart';
 import '../shared/glass_helpers.dart';
 import 'chat_repository.dart';
 
@@ -62,7 +61,6 @@ class ActionConfirmCard extends StatelessWidget {
                 Text(
                   proposal.summary,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontFamily: PurpleType.serif,
                         color: Colors.white.withValues(alpha: 0.92),
                         height: 1.4,
                       ),

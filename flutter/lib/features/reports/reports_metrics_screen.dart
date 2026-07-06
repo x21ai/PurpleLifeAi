@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../shell/routes.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
+import '../shared/lab_upload_prompt.dart';
 import '../shared/loading_skeleton.dart';
 import 'models/report_row.dart';
 import 'reports_repository.dart';
@@ -37,13 +38,12 @@ class ReportsMetricsScreen extends ConsumerWidget {
         ),
         data: (metrics) {
           if (metrics.isEmpty) {
-            return EmptyState(
-              eyebrow: 'Metrics',
+            return LabUploadEmptyCard(
               title: 'No lab metrics yet',
               body:
                   'Upload a lab PDF and Purple extracts values for trends over time. Charts and AI insights need at least two readings per metric.',
-              primaryActionLabel: 'Upload lab report',
-              onPrimaryAction: () => context.go(AppRoutes.reportsNew),
+              buttonLabel: 'Upload lab report',
+              onUpload: () => context.go(AppRoutes.reportsNew),
             );
           }
 

@@ -13,6 +13,7 @@ import 'care_attachment_view.dart';
 import 'care_chat_pickers.dart';
 import 'care_chat_repository.dart';
 import 'chat_copy.dart';
+import 'chat_style.dart';
 
 /// Caregiver messaging shell mirroring web `/chat-care`.
 class ChatCareScreen extends ConsumerStatefulWidget {
@@ -190,10 +191,7 @@ class _ThreadListPanel extends ConsumerWidget {
                   ChatCopy.careTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.95),
-                        fontWeight: FontWeight.w600,
-                      ),
+                  style: chatCareTitle(),
                 ),
               ),
               TextButton.icon(

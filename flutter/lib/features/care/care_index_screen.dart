@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
@@ -68,7 +67,6 @@ class _CareIndexBody extends StatelessWidget {
         Text(
           'Care',
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontFamily: PurpleType.serif,
                 height: 1.04,
                 color: Colors.white.withValues(alpha: 0.95),
               ),
@@ -187,7 +185,6 @@ class _SectionHeader extends StatelessWidget {
         Text(
           title,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontFamily: PurpleType.serif,
                 color: Colors.white.withValues(alpha: 0.95),
               ),
         ),

@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../../design/glass_surface.dart';
@@ -250,7 +249,6 @@ class _ReportDetailBodyState extends ConsumerState<_ReportDetailBody> {
         Text(
           doc.displayTitle,
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontFamily: PurpleType.serif,
                 height: 1.05,
                 color: Colors.white.withValues(alpha: 0.95),
               ),
@@ -353,7 +351,6 @@ class _ReportDetailBodyState extends ConsumerState<_ReportDetailBody> {
           Text(
             'Extracted values',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontFamily: PurpleType.serif,
                   color: Colors.white.withValues(alpha: 0.95),
                 ),
           ),

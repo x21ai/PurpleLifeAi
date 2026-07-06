@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
@@ -48,7 +47,6 @@ class ReportsMedicalHistoryScreen extends ConsumerWidget {
               Text(
                 'Clinician\nPDF reports',
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      fontFamily: PurpleType.serif,
                       height: 1.02,
                       color: Colors.white.withValues(alpha: 0.95),
                     ),
@@ -71,7 +69,6 @@ class ReportsMedicalHistoryScreen extends ConsumerWidget {
                     Text(
                       'Generate on web',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontFamily: PurpleType.serif,
                             color: Colors.white.withValues(alpha: 0.95),
                           ),
                     ),

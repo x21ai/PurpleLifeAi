@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../design/purple_type.dart';
-
 /// Renders assistant text as Markdown, splitting out `[Source: Title (Year)](url)`
 /// citations into tappable / muted pills (mirrors web `renderWithSourceCitations`).
 class CitationText extends StatelessWidget {
@@ -49,7 +47,6 @@ class CitationText extends StatelessWidget {
     final trimmed = md.trim();
     if (trimmed.isEmpty) return const SizedBox.shrink();
     final base = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontFamily: PurpleType.serif,
           color: Colors.white.withValues(alpha: 0.92),
           height: 1.45,
         );

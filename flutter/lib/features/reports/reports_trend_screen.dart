@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
+import '../shared/lab_upload_prompt.dart';
 import '../shared/loading_skeleton.dart';
 import 'models/report_row.dart';
 import 'reports_repository.dart';
@@ -52,7 +52,6 @@ class ReportsTrendScreen extends ConsumerWidget {
               Text(
                 _titleCase(metricKey.replaceAll('_', ' ')),
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      fontFamily: PurpleType.serif,
                       height: 1.02,
                       color: Colors.white.withValues(alpha: 0.95),
                     ),
@@ -95,13 +94,12 @@ class _TrendBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (rows.isEmpty) {
-      return EmptyState(
-        eyebrow: 'Trend',
+      return LabUploadEmptyCard(
         title: 'No readings yet',
         body:
             'Upload a lab report that includes $metricKey to start tracking it over time.',
-        primaryActionLabel: 'Upload lab report',
-        onPrimaryAction: () => context.go(AppRoutes.reportsNew),
+        buttonLabel: 'Upload lab report',
+        onUpload: () => context.go(AppRoutes.reportsNew),
       );
     }
 
@@ -177,7 +175,6 @@ class _TrendBody extends StatelessWidget {
         Text(
           'Readings',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontFamily: PurpleType.serif,
                 color: Colors.white.withValues(alpha: 0.95),
               ),
         ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../design/purple_theme.dart';
-import '../../design/purple_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -9,6 +8,7 @@ import '../../shell/routes.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
+import '../chat/care_chat_repository.dart';
 import 'care_repository.dart';
 import 'care_scopes.dart';
 
@@ -134,7 +134,6 @@ class _DashboardBody extends ConsumerWidget {
               Text(
                 overview.dashboardTitle(),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontFamily: PurpleType.serif,
                       height: 1.04,
                       color: Colors.white.withValues(alpha: 0.95),
                     ),
@@ -217,7 +216,7 @@ class _DashboardBody extends ConsumerWidget {
                   canWriteBiometric: overview.hasScope(CareScopes.biometricsWrite),
                 ),
                 const SizedBox(height: 20),
-                _TabPanel(ownerId: overview.ownerId, tab: current),
+                _TabPanel(overview: overview, tab: current),
               ],
             ],
           ),
@@ -491,37 +490,39 @@ class _ToolbarActions extends StatelessWidget {
 }
 
 class _TabPanel extends ConsumerWidget {
-  const _TabPanel({required this.ownerId, required this.tab});
+  const _TabPanel({required this.overview, required this.tab});
 
-  final String ownerId;
+  final CareOverview overview;
   final CareTabKey tab;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     switch (tab) {
       case CareTabKey.biometrics:
-        // Genuinely reachable client-side today via `careBiometricsProvider`
-        // (direct RLS-safe read of the owner's `biometrics` rows).
-        return _BiometricsTab(ownerId: ownerId);
+        return _BiometricsTab(ownerId: overview.ownerId);
       case CareTabKey.today:
-        return _TodayTab(ownerId: ownerId);
+        return _TodayTab(ownerId: overview.ownerId);
       case CareTabKey.meds:
-        return _MedsTab(ownerId: ownerId);
+        return _MedsTab(ownerId: overview.ownerId);
       case CareTabKey.hydration:
         return const _CaregiverAccessGate(
           eyebrow: 'Hydration',
           feature: "their hydration timeline",
         );
       case CareTabKey.journal:
-        return _JournalTab(ownerId: ownerId);
+        return _JournalTab(ownerId: overview.ownerId);
       case CareTabKey.seizures:
-        return _SeizuresTab(ownerId: ownerId);
+        return _SeizuresTab(ownerId: overview.ownerId);
       case CareTabKey.reports:
-        return _ReportsTab(ownerId: ownerId);
+        return _ReportsTab(ownerId: overview.ownerId);
       case CareTabKey.chat:
-        return const _CaregiverAccessGate(
-          eyebrow: 'Chat',
-          feature: 'a private message thread with them',
+        return _ChatTab(
+          relationshipId: overview.relationshipId,
+          ownerName: overview.firstName?.trim().isNotEmpty == true
+              ? overview.firstName!.trim()
+              : (overview.displayName?.trim().isNotEmpty == true
+                  ? overview.displayName!.trim()
+                  : 'them'),
         );
     }
   }
@@ -695,7 +696,6 @@ class _BiometricMetricCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: Colors.white.withValues(alpha: 0.95),
-                  fontFamily: PurpleType.serif,
                 ),
           ),
           const SizedBox(height: 4),
@@ -781,7 +781,6 @@ class _TodayTab extends ConsumerWidget {
                     Text(
                       '${forecast['band'] ?? 'Unknown'} risk',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontFamily: PurpleType.serif,
                             color: Colors.white.withValues(alpha: 0.95),
                           ),
                     ),
@@ -1232,14 +1231,133 @@ class _CachedBanner extends StatelessWidget {
   }
 }
 
+/// Direct chat entry mirroring web `ChatPanel` on `/care/$ownerId`.
+class _ChatTab extends ConsumerStatefulWidget {
+  const _ChatTab({
+    required this.relationshipId,
+    required this.ownerName,
+  });
+
+  final String relationshipId;
+  final String ownerName;
+
+  @override
+  ConsumerState<_ChatTab> createState() => _ChatTabState();
+}
+
+class _ChatTabState extends ConsumerState<_ChatTab> {
+  String? _threadId;
+  String? _error;
+  var _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadThread();
+  }
+
+  Future<void> _loadThread() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final repo = ref.read(careChatRepositoryProvider);
+      final threadId =
+          await repo.getOrCreateDirectThread(widget.relationshipId);
+      if (!mounted) return;
+      setState(() {
+        _threadId = threadId;
+        _loading = false;
+      });
+    } on CareChatException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Could not open chat. Try again in a moment.';
+        _loading = false;
+      });
+    }
+  }
+
+  void _openChat() {
+    final threadId = _threadId;
+    if (threadId == null) return;
+    context.go('${AppRoutes.chatCare}?thread=$threadId');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'DIRECT CHAT',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                letterSpacing: 1.1,
+                color: Colors.white.withValues(alpha: 0.45),
+              ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Send a private message to ${widget.ownerName}. Saved like WhatsApp, full history is kept.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.white.withValues(alpha: 0.65),
+                height: 1.5,
+              ),
+        ),
+        const SizedBox(height: 16),
+        if (_loading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          )
+        else if (_error != null)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _error!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.65),
+                      height: 1.4,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(onPressed: _loadThread, child: const Text('Retry')),
+            ],
+          )
+        else
+          FilledButton.icon(
+            onPressed: _openChat,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(44),
+              shape: const StadiumBorder(),
+            ),
+            icon: const Icon(Icons.message_outlined, size: 18),
+            label: Text('Open chat with ${widget.ownerName}'),
+          ),
+      ],
+    );
+  }
+}
+
 /// Honest gap state for caregiver-scoped tabs whose data is still not
 /// reachable from Flutter. Today/Meds/Journal/Seizures/Reports now call the
 /// Worker routes (`/api/care/{today,meds,journal,seizures,reports}`) that
 /// front the scope-guarded server functions in `care.server.ts`. Hydration
-/// and Chat still have no such route (`listHydrationForDay`,
-/// `getOrCreateDirectThread`), so RLS blocks a caregiver from reading those
-/// owner rows directly and we render this honest state instead of fabricating
-/// data or bypassing RLS.
+/// and Chat still have no such route (`listHydrationForDay`). Hydration
+/// remains blocked by RLS; direct chat uses Supabase RLS via
+/// [CareChatRepository.getOrCreateDirectThread].
 class _CaregiverAccessGate extends StatelessWidget {
   const _CaregiverAccessGate({
     required this.eyebrow,
@@ -1302,7 +1420,6 @@ class _NoAccessView extends StatelessWidget {
         Text(
           'No access',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontFamily: PurpleType.serif,
                 color: Colors.white.withValues(alpha: 0.95),
               ),
         ),

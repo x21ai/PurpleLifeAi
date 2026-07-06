@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../design/purple_type.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
@@ -72,7 +71,6 @@ class CareReportScreen extends ConsumerWidget {
                   orElse: () => 'Report',
                 ),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontFamily: PurpleType.serif,
                       height: 1.04,
                       color: Colors.white.withValues(alpha: 0.95),
                     ),

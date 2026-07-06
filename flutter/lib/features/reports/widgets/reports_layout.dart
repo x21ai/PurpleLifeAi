@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../design/purple_type.dart';
 import '../../../shell/routes.dart';
 import '../../shared/glass_helpers.dart';
 
@@ -53,7 +52,6 @@ class ReportsLayout extends StatelessWidget {
                 Text(
                   'Labs and\nreports',
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontFamily: PurpleType.serif,
                         height: 1.02,
                         color: Colors.white.withValues(alpha: 0.95),
                       ),

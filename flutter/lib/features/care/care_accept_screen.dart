@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../design/purple_theme.dart';
-import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
 import 'care_repository.dart';
 
@@ -83,7 +82,6 @@ class _CareAcceptScreenState extends ConsumerState<CareAcceptScreen> {
                 'Join their circle',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontFamily: PurpleType.serif,
                       color: Colors.white.withValues(alpha: 0.95),
                     ),
               ),
