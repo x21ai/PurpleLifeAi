@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
+import 'data_insights_teaser.dart';
 import 'data_providers.dart';
+import 'data_style.dart';
+import '../insights/ai_insights_repository.dart';
 import 'widgets/data_metric_row.dart';
 import 'widgets/data_summary_bar.dart';
 
@@ -24,6 +26,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
 
   Future<void> _refresh() async {
     ref.invalidate(dataScreenSnapshotProvider);
+    ref.invalidate(dailyInsightCardsProvider);
     await ref.read(dataScreenSnapshotProvider.future);
   }
 
@@ -31,7 +34,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
   Widget build(BuildContext context) {
     final snapshotAsync = ref.watch(dataScreenSnapshotProvider);
     final tokens = PurpleTokens.loaded;
-    final muted = Colors.white.withValues(alpha: 0.55);
+    final p = DataPalette.dark();
 
     return CanvasBackground(
       child: RefreshIndicator(
@@ -52,21 +55,22 @@ class _DataScreenState extends ConsumerState<DataScreen> {
             child: ContentColumn(
               child: Padding(
                 padding: EdgeInsets.only(top: tokens.spacing.x2),
-                child: GlassCard(
+                child: DataCardShell(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Could not load your data',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: dataSans(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          color: p.textPrimary,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Pull to refresh or retry.',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: muted),
+                        style: dataSans(fontSize: 13, color: p.textTertiary),
                       ),
                       const SizedBox(height: 12),
                       FilledButton(
@@ -103,56 +107,29 @@ class _DataScreenState extends ConsumerState<DataScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Your data',
-                      style: PurpleType.displayStyle(
-                        fontSize: 22,
-                        height: 1.1,
-                        color: Colors.white.withValues(alpha: 0.95),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Labs from report_metrics and wearable signals from biometrics.',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: muted, height: 1.4),
+                    const DataPageTitle(
+                      title: 'Your data',
+                      subtitle:
+                          'Labs from report_metrics and wearable signals from biometrics.',
                     ),
                     const SizedBox(height: 16),
                     if (snapshot.hasLabs) ...[
                       DataSummaryBar(summary: snapshot.labSummary),
                       const SizedBox(height: 12),
-                      TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search metric_key or display_name…',
-                          filled: true,
-                          fillColor: Colors.white.withValues(alpha: 0.06),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.12),
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.12),
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                        ),
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      DataSearchField(
                         onChanged: (value) => setState(() => _query = value),
+                      ),
+                      const SizedBox(height: 12),
+                    ] else ...[
+                      DataSearchField(
+                        enabled: false,
+                        onChanged: (_) {},
                       ),
                       const SizedBox(height: 12),
                     ],
                     if (wearables.isNotEmpty) ...[
-                      _SectionHead(
-                        title: 'WEARABLES · /biometrics',
+                      DataSectionHead(
+                        title: 'Wearables · /biometrics',
                         trailing: '${wearables.length}',
                       ),
                       for (final metric in wearables)
@@ -167,8 +144,8 @@ class _DataScreenState extends ConsumerState<DataScreen> {
                           ),
                         ),
                     ],
-                    _SectionHead(
-                      title: 'LABS · /reports',
+                    DataSectionHead(
+                      title: 'Labs · /reports',
                       trailing: '${labs.length}',
                     ),
                     if (!snapshot.hasLabs)
@@ -199,6 +176,8 @@ class _DataScreenState extends ConsumerState<DataScreen> {
                         ),
                       ),
                     ],
+                    const SizedBox(height: 24),
+                    const DataInsightsTeaser(),
                   ],
                 ),
               ),
@@ -216,42 +195,6 @@ class _DataScreenState extends ConsumerState<DataScreen> {
   }
 }
 
-class _SectionHead extends StatelessWidget {
-  const _SectionHead({required this.title, required this.trailing});
-
-  final String title;
-  final String trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 11,
-                letterSpacing: 0.08,
-                fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.55),
-              ),
-            ),
-          ),
-          Text(
-            trailing,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.white.withValues(alpha: 0.55),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _EmptyLabsCard extends StatelessWidget {
   const _EmptyLabsCard({required this.onUpload});
 
@@ -259,43 +202,22 @@ class _EmptyLabsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = PurpleTokens.loaded.colorsFor('dark');
-    return Container(
-      width: double.infinity,
+    final p = DataPalette.dark();
+    return DataCardShell(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 28),
-      decoration: BoxDecoration(
-        color: parseTokenColor(colors.backgroundSecondary),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: parseTokenColor(colors.divider),
-          style: BorderStyle.solid,
-        ),
-      ),
       child: Column(
         children: [
-          Text(
-            '🧪',
-            style: TextStyle(
-              fontSize: 32,
-              color: Colors.white.withValues(alpha: 0.7),
-            ),
-          ),
+          Text('🧪', style: TextStyle(fontSize: 32, color: p.textSecondary)),
           const SizedBox(height: 8),
           Text(
             'No labs yet',
-            style: PurpleType.displayStyle(
-              fontSize: 16,
-              color: Colors.white.withValues(alpha: 0.95),
-            ),
+            style: dataSerif(fontSize: 16, color: p.textPrimary),
           ),
           const SizedBox(height: 6),
           Text(
             'Upload past results to unlock biomarker trends and summary flags.',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.55),
-                  height: 1.4,
-                ),
+            style: dataSans(fontSize: 13, height: 1.4, color: p.textTertiary),
           ),
           const SizedBox(height: 14),
           FilledButton(

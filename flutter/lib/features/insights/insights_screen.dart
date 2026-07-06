@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
+import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
+import '../data/data_style.dart';
 import '../reports/models/report_row.dart';
 import '../reports/reports_repository.dart';
 import '../seizures/seizure_repository.dart';
@@ -104,23 +105,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'PATTERNS',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        letterSpacing: 1.4,
-                        color: Colors.white.withValues(alpha: 0.55),
-                      ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'What your body\nhas been saying.',
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontFamily: PurpleType.serif,
-                        fontSize: 44,
-                        height: 1.02,
-                        letterSpacing: 44 * -0.02,
-                        color: Colors.white.withValues(alpha: 0.95),
-                      ),
+                const DataHeroHeader(
+                  eyebrow: 'Patterns',
+                  title: 'What your body\nhas been saying.',
                 ),
                 const SizedBox(height: 16),
                 const NarrativeBlock(

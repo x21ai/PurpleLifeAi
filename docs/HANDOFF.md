@@ -9,6 +9,18 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 Merged Today parity slice (Plan / Ask Maya / Today — committed, not pushed).**
+Merged Today: `DateStrip` with day-filtered scores via `scoreSnapshotForDayProvider`,
+`TodayDualScoreHero` (readiness arc + sleep card), `TodayPersonalizationStrip` onboarding pill,
+single `TodayMayaCard` narrative, metric strip, protocol teaser, Ask Maya chips, inline
+recommended card. Ask Maya highlights deep-link `?q=` prompt chip. SF Pro via `PurpleType`
+throughout. Verified: `flutter analyze` on scoped paths (info-only), `flutter test
+test/today_screen_render_test.dart` 2/2. No shell/router/pubspec/ios changes. No push.
+
+**2026-07-06 TF23 Flutter Data / Vitals merged restyle (committed, not pushed).**
+Commit `3e4ded6` on `lovable/redesign`: `data_style.dart`, unified Data tab, insights teaser,
+metric detail with dated readings. Verified: `flutter analyze` on scope clean. No push.
+
 **2026-07-06 TF23 web _app merged typography pass (committed, not pushed).**
 Commit `f11e216` on `lovable/redesign`: `app-hero-title` / `app-section-title` in
 `src/styles.css`; all signed-in `_app` routes aligned to Today merged pass (label-eyebrow,
@@ -335,6 +347,35 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T20:15:00Z — Flutter Data / Vitals / Insights merged restyle
+
+- **Requested** — Restyle disjoint Data feature scope per merged preview: unified Data tab,
+  metric detail with dates, SF Pro + purple accents, capped column; fold/restyle Insights;
+  preserve offline sync and empty states; `flutter analyze` + commit; no push, no router.
+- **Done** — Added `data_style.dart`, `data_insights_teaser.dart`; restyled Data tab widgets,
+  metric detail (back to Data, dated readings, stat boxes), Vitals/Biometrics/My Health
+  headers, Insights section headers. Verified: `flutter analyze` on scope clean.
+- **Issues** — Full Insights screen remains at `/insights` (teaser on Data when cards exist).
+- **Stand / next** — Parent merge; browser QA on :8765 after `flutter-web-serve --rebuild`.
+- **Who / where** — Cursor subagent, local, `lovable/redesign` (commit pending).
+- **Timestamp** — 2026-07-06T20:15:00Z.
+
+### 2026-07-06T22:15:00Z — TF23 web _app merged typography pass
+
+- **Requested** — EXTENDED TF23 wave scope `src/routes/_app/` only: SF Pro via `.app-route`,
+  max-w-3xl capped column, remove duplicate narratives, section typography per Today merged
+  pass (5930f3d); priority biometrics/reports/insights/my-health/meds/journal/settings/chat/care/vitals;
+  `bunx tsc --noEmit`; commit `src/`; no push; no wrangler deploy.
+- **Done** — Commit `f11e216`: `app-hero-title`, `app-section-title` in `styles.css`; hero/lede
+  updates across all `_app` routes; insights `max-w-4xl`→`max-w-3xl`, intro `today-lede`;
+  care.index `max-w-4xl`→`max-w-3xl`; Ask Maya duplicate eyebrow removed; ReportSectionTitle
+  uses `app-section-title`. Also includes Plan/Data/Ask Maya routes + nav/i18n from parallel slice.
+- **Issues** — `chat-care` stays `max-w-6xl` (wide chat layout). Biometrics index stays
+  `max-w-5xl` per convention. HANDOFF updated; not pushed.
+- **Stand / next** — Parent TF23 wave: remaining slices or browser QA on `:8080` signed-in routes.
+- **Who / where** — Cursor subagent, local, `lovable/redesign@f11e216`.
+- **Timestamp** — 2026-07-06T22:15:00Z.
 
 ### 2026-07-06T21:10:00Z — TF23 reports / care / chat parity
 

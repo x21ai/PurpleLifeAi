@@ -10,6 +10,7 @@ import '../../core/providers/core_providers.dart';
 import '../../design/glass_surface.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
+import '../data/data_style.dart';
 import '../today/wearable_sync.dart';
 import '../shared/glass_helpers.dart' hide GlassSurface;
 import '../shared/loading_skeleton.dart';
@@ -102,11 +103,14 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildBackLink(context),
+                    DataBackLink(label: 'Today', onTap: () => context.go('/today')),
                     const SizedBox(height: 32),
                     _buildHeaderRow(context),
                     const SizedBox(height: 12),
-                    _buildTitle(context),
+                    const DataHeroHeader(
+                      eyebrow: 'Vitals',
+                      title: 'How your body is\nreading today.',
+                    ),
                     syncedAsync.when(
                       loading: () => const SizedBox.shrink(),
                       error: (_, __) => const SizedBox.shrink(),
@@ -331,22 +335,7 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
   }
 
   /// Web: back link to Today with copy from `vitals.back` ("Today").
-  Widget _buildBackLink(BuildContext context) {
-    final muted = Colors.white.withValues(alpha: 0.55);
-    return TextButton.icon(
-      onPressed: () => context.go('/today'),
-      style: TextButton.styleFrom(
-        padding: EdgeInsets.zero,
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      icon: Icon(Icons.arrow_back, size: 16, color: muted),
-      label: Text(
-        'Today',
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: muted),
-      ),
-    );
-  }
+  // Kept for reference; header uses [DataBackLink] inline.
 
   /// Web: eyebrow label on the left, edit affordance on the right.
   Widget _buildHeaderRow(BuildContext context) {
@@ -379,18 +368,7 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
   }
 
   /// Web copy from en.json: vitals.title1 + vitals.title2.
-  Widget _buildTitle(BuildContext context) {
-    return Text(
-      'How your body is\nreading today.',
-      style: Theme.of(context).textTheme.displaySmall?.copyWith(
-            fontFamily: PurpleType.serif,
-            fontSize: 44,
-            height: 1.02,
-            letterSpacing: 44 * -0.02,
-            color: Colors.white.withValues(alpha: 0.95),
-          ),
-    );
-  }
+  // Title rendered via [DataHeroHeader] in build().
 
   Widget _buildConnectLink(BuildContext context) {
     final muted = Colors.white.withValues(alpha: 0.55);

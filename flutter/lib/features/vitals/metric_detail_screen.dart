@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
+import '../data/data_style.dart';
 import '../shared/glass_helpers.dart';
 import 'biometric_metrics.dart';
 import 'vitals_repository.dart';
@@ -115,7 +115,7 @@ class _MetricDetailScreenState extends ConsumerState<MetricDetailScreen> {
   Widget build(BuildContext context) {
     final meta = biometricMetricForKey(widget.metricKey);
     if (meta == null) {
-      return _MetricNotFound(onBack: () => context.go(AppRoutes.biometrics));
+      return _MetricNotFound(onBack: () => context.go(AppRoutes.data));
     }
 
     final query = MetricSeriesQuery(
@@ -124,7 +124,7 @@ class _MetricDetailScreenState extends ConsumerState<MetricDetailScreen> {
       compareMode: _compare,
     );
     final seriesAsync = ref.watch(metricSeriesProvider(query));
-    final muted = Colors.white.withValues(alpha: 0.55);
+    final p = DataPalette.dark();
     final rangeLabel = rangeOptions
         .firstWhere((r) => r.days == _rangeDays, orElse: () => rangeOptions[2])
         .label;
@@ -142,38 +142,16 @@ class _MetricDetailScreenState extends ConsumerState<MetricDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextButton.icon(
-                  onPressed: () => context.go(AppRoutes.biometrics),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  icon: Icon(Icons.arrow_back, size: 16, color: muted),
-                  label: Text(
-                    'Biometrics',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: muted,
-                        ),
-                  ),
+                DataBackLink(
+                  label: 'Back to Data',
+                  onTap: () => context.go(AppRoutes.data),
                 ),
-                const SizedBox(height: 32),
-                Text(
-                  categoryLabel[meta.category]!.toUpperCase(),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        letterSpacing: 1.2,
-                        color: Colors.white.withValues(alpha: 0.45),
-                      ),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
+                DataSectionEyebrow('/biometrics/\$metric', palette: p),
+                const SizedBox(height: 8),
                 Text(
                   meta.label,
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontFamily: PurpleType.serif,
-                        fontSize: 44,
-                        height: 1.02,
-                        color: Colors.white.withValues(alpha: 0.95),
-                      ),
+                  style: dataSerif(fontSize: 24, height: 1.1, color: p.textPrimary),
                 ),
                 const SizedBox(height: 20),
                 _RangeSelector(
@@ -246,156 +224,183 @@ class _DetailBody extends StatelessWidget {
   final List<MetricReading> readings;
   final bool readingsLoading;
 
-  String? _latestMetaLine() {
+  String? _formatHeadlineDate() {
     final dateYmd = result.headlineDateYmd;
-    final source = result.headlineSource;
-    if (dateYmd == null && source == null) return null;
-    final parts = <String>[];
-    if (dateYmd != null) {
-      final d = DateTime.tryParse(dateYmd);
-      parts.add(d == null ? dateYmd : DateFormat.MMMd().format(d));
-    }
-    if (source != null) {
-      parts.add(sourceLabels[source]!);
-    }
-    return parts.join(' · ');
+    if (dateYmd == null) return null;
+    final d = DateTime.tryParse(dateYmd);
+    return d == null ? dateYmd : DateFormat.yMMMd().format(d);
   }
+
+  String? _rangeAverageLabel() {
+    final mean = result.baseline.mean;
+    if (mean == null) return null;
+    return meta.format(mean);
+  }
+
+  String? _deltaLabel() {
+    if (result.deltaPct == null) return null;
+    final sign = result.deltaPct! >= 0 ? '+' : '';
+    return '$sign${result.deltaPct!.toStringAsFixed(0)}%';
+  }
+
+  String _recentReadingsCaption() {
+    final recent = readings.take(4);
+    return recent
+        .map((r) {
+          final d = DateFormat.MMMd().format(r.recordedAt.toLocal());
+          return '$d (${meta.format(r.value)})';
+        })
+        .join(' · ');
+  }
+
+  int _totalPointCount(MetricSeriesResult result) => result.seriesBySource.values
+      .fold(0, (sum, list) => sum + list.where((p) => p.value != null).length);
 
   @override
   Widget build(BuildContext context) {
+    final p = DataPalette.dark();
     final present = result.presentSources;
     final hasData = present.isNotEmpty;
     final display = meta.format(result.headlineValue);
     final tone = statusTone(meta, result.status);
-    final headlineColor = tone.tone == StatusTone.warn
-        ? warningTokenColor()
-        : Colors.white.withValues(alpha: 0.95);
+    final headlineColor =
+        tone.tone == StatusTone.warn ? warningTokenColor() : p.purplePrimary;
+    final dateLabel = _formatHeadlineDate();
+    final sourceLabel = result.headlineSource != null
+        ? sourceLabels[result.headlineSource]!
+        : null;
+    final avgLabel = _rangeAverageLabel();
+    final deltaLabel = _deltaLabel();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GlassSurface(
-          borderRadius: 24,
-          padding: const EdgeInsets.all(24),
+        DataCardShell(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Text(
-                    'Latest reading',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.55),
-                        ),
-                  ),
-                  const Spacer(),
-                  StatusBadge(meta: meta, status: result.status),
-                ],
-              ),
-              const SizedBox(height: 8),
               Text(
                 display,
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      fontFamily: PurpleType.serif,
-                      fontSize: 56,
-                      height: 1,
-                      color: headlineColor,
-                    ),
+                style: dataSerif(fontSize: 28, height: 1.1, color: headlineColor),
               ),
-              if (_latestMetaLine() != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  _latestMetaLine()!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.55),
-                      ),
-                ),
-              ] else if (result.headlineSource != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'via ${sourceLabels[result.headlineSource]}',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.45),
-                      ),
-                ),
-              ],
-              const SizedBox(height: 24),
-              if (!hasData)
-                Text(
-                  'No readings in this range yet.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        height: 1.45,
-                      ),
-                )
-              else ...[
-                Row(
-                  children: [
+              const SizedBox(height: 6),
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 4,
+                children: [
+                  if (dateLabel != null) ...[
                     Text(
-                      '${rangeLabel.toUpperCase()} TREND',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            letterSpacing: 1.2,
-                            color: Colors.white.withValues(alpha: 0.45),
-                          ),
+                      dateLabel,
+                      style: dataSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: p.textPrimary,
+                      ),
                     ),
-                    const Spacer(),
-                    if (result.deltaPct != null) _DeltaPill(delta: result.deltaPct!),
+                    Text('·', style: dataSans(fontSize: 13, color: p.textTertiary)),
                   ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 180,
-                  width: double.infinity,
-                  child: _totalPointCount(result) < 2
-                      ? Center(
-                          child: Text(
-                            'Not enough history yet for a $rangeLabel trend.',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.7),
-                                  height: 1.45,
-                                ),
-                          ),
-                        )
-                      : _MetricChart(meta: meta, result: result),
-                ),
-                const SizedBox(height: 16),
-                SourceLegend(sources: present),
-              ],
+                  if (sourceLabel != null)
+                    Text(
+                      sourceLabel,
+                      style: dataSans(fontSize: 13, color: p.textTertiary),
+                    ),
+                  if (tone.tone != StatusTone.neutral) ...[
+                    Text('·', style: dataSans(fontSize: 13, color: p.textTertiary)),
+                    StatusBadge(meta: meta, status: result.status),
+                  ],
+                ],
+              ),
             ],
           ),
         ),
-        if (hasData && (readings.isNotEmpty || readingsLoading)) ...[
-          const SizedBox(height: 16),
-          GlassSurface(
-            borderRadius: 24,
-            padding: const EdgeInsets.all(24),
+        const SizedBox(height: 16),
+        if (!hasData)
+          DataCardShell(
+            child: Text(
+              'No readings in this range yet.',
+              style: dataSans(fontSize: 14, height: 1.45, color: p.textSecondary),
+            ),
+          )
+        else ...[
+          Container(
+            height: 180,
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: p.surfaceSecondary,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: _totalPointCount(result) < 2
+                ? Center(
+                    child: Text(
+                      'Not enough history yet for a $rangeLabel trend.',
+                      textAlign: TextAlign.center,
+                      style: dataSans(
+                        fontSize: 14,
+                        height: 1.45,
+                        color: p.textSecondary,
+                      ),
+                    ),
+                  )
+                : _MetricChart(meta: meta, result: result),
+          ),
+          const SizedBox(height: 12),
+          DataCardShell(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Reading history',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.92),
-                        fontWeight: FontWeight.w600,
-                      ),
+                  'OPTIMAL RANGE',
+                  style: dataEyebrow(palette: p),
                 ),
-                const SizedBox(height: 12),
-                if (readingsLoading && readings.isEmpty)
+                const SizedBox(height: 4),
+                Text(
+                  meta.baselineHint,
+                  style: dataSans(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: p.textPrimary,
+                  ),
+                ),
+                if (dateLabel != null) ...[
+                  const SizedBox(height: 4),
                   Text(
-                    'Loading readings…',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.55),
-                        ),
+                    'as of $dateLabel',
+                    style: dataSans(fontSize: 12, color: p.textTertiary),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+        if (hasData && (readings.isNotEmpty || readingsLoading)) ...[
+          const SizedBox(height: 12),
+          if (readings.isNotEmpty) ...[
+            Text(
+              'Readings on: ${_recentReadingsCaption()}',
+              style: dataSans(fontSize: 12, height: 1.4, color: p.textTertiary),
+            ),
+            const SizedBox(height: 8),
+          ],
+          DataCardShell(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                if (readingsLoading && readings.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Loading readings…',
+                      style: dataSans(fontSize: 13, color: p.textTertiary),
+                    ),
                   )
                 else if (readings.isEmpty)
-                  Text(
-                    'No individual readings in this range.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.55),
-                        ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'No individual readings in this range.',
+                      style: dataSans(fontSize: 13, color: p.textTertiary),
+                    ),
                   )
                 else
                   for (var i = 0; i < readings.length && i < 8; i++)
@@ -408,52 +413,47 @@ class _DetailBody extends StatelessWidget {
             ),
           ),
         ],
+        if (hasData && avgLabel != null) ...[
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              DataStatBox(
+                label: '${readings.length.clamp(1, result.days)}-reading avg',
+                value: avgLabel,
+              ),
+              const SizedBox(width: 8),
+              DataStatBox(label: 'vs prior', value: deltaLabel ?? '–'),
+            ],
+          ),
+        ],
         const SizedBox(height: 16),
-        GlassSurface(
-          borderRadius: 24,
-          padding: const EdgeInsets.all(24),
+        DataCardShell(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'What this means for you',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.92),
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: dataSans(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: p.textPrimary,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 meta.meaning,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.75),
-                      height: 1.5,
-                    ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  meta.baselineHint,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        height: 1.45,
-                      ),
-                ),
+                style: dataSans(fontSize: 14, height: 1.5, color: p.textSecondary),
               ),
             ],
           ),
         ),
+        if (hasData) ...[
+          const SizedBox(height: 12),
+          SourceLegend(sources: present),
+        ],
       ],
     );
   }
-
-  int _totalPointCount(MetricSeriesResult result) => result.seriesBySource.values
-      .fold(0, (sum, list) => sum + list.where((p) => p.value != null).length);
 }
 
 class _ReadingHistoryRow extends StatelessWidget {
@@ -469,6 +469,7 @@ class _ReadingHistoryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = DataPalette.dark();
     final dateLabel = DateFormat.yMMMd().format(reading.recordedAt.toLocal());
     final valueLabel = meta.format(reading.value);
     final src = reading.source;
@@ -477,75 +478,41 @@ class _ReadingHistoryRow extends StatelessWidget {
       srcKey = sourceKeyFromString(src);
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: isLatest ? p.purpleSoft : Colors.transparent,
+        border: Border(
+          bottom: BorderSide(color: p.divider),
+        ),
+      ),
       child: Row(
         children: [
           Expanded(
             child: Text(
               dateLabel,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: isLatest
-                        ? Colors.white.withValues(alpha: 0.92)
-                        : Colors.white.withValues(alpha: 0.65),
-                    fontWeight: isLatest ? FontWeight.w600 : FontWeight.w400,
-                  ),
+              style: dataSans(
+                fontSize: 12,
+                fontWeight: isLatest ? FontWeight.w600 : FontWeight.w400,
+                color: isLatest ? p.textPrimary : p.textTertiary,
+              ),
             ),
           ),
           Text(
             valueLabel,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontFamily: PurpleType.serif,
-                  color: Colors.white.withValues(alpha: 0.92),
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
+            style: dataSerif(
+              fontSize: 16,
+              color: p.textPrimary,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
           if (srcKey != null) ...[
             const SizedBox(width: 8),
             Text(
               sourceLabels[srcKey]!,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.45),
-                  ),
+              style: dataSans(fontSize: 11, color: p.textTertiary),
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _DeltaPill extends StatelessWidget {
-  const _DeltaPill({required this.delta});
-
-  final double delta;
-
-  @override
-  Widget build(BuildContext context) {
-    final up = delta >= 0;
-    final sign = up ? '+' : '';
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            up ? Icons.arrow_upward : Icons.arrow_downward,
-            size: 11,
-            color: Colors.white.withValues(alpha: 0.7),
-          ),
-          const SizedBox(width: 3),
-          Text(
-            '$sign${delta.toStringAsFixed(0)}%',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
         ],
       ),
     );
@@ -881,7 +848,7 @@ class _MetricNotFound extends StatelessWidget {
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: onBack,
-                  child: const Text('Back to biometrics'),
+                  child: const Text('Back to Data'),
                 ),
               ],
             ),

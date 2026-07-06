@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
+import '../data/data_style.dart';
 import '../shared/glass_helpers.dart';
 import '../seizures/seizure_repository.dart';
 import '../vitals/vitals_repository.dart';
@@ -22,23 +23,15 @@ class InsightsSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = DataPalette.dark();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          eyebrow.toUpperCase(),
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                letterSpacing: 1.2,
-                color: Colors.white.withValues(alpha: 0.55),
-              ),
-        ),
+        DataSectionEyebrow(eyebrow, palette: p),
         const SizedBox(height: 4),
         Text(
           title,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontFamily: PurpleType.serif,
-                color: Colors.white.withValues(alpha: 0.95),
-              ),
+          style: dataSerif(fontSize: 20, color: p.textPrimary),
         ),
       ],
     );

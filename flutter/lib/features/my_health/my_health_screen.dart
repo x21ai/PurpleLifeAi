@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
+import '../data/data_style.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
 import '../shared/narrative_block.dart';
@@ -68,15 +69,9 @@ class MyHealthScreen extends ConsumerWidget {
                   children: [
                     _HeaderBar(onTools: () => context.go(AppRoutes.tools)),
                     const SizedBox(height: 32),
-                    Text(
-                      'The long view of\nyour health.',
-                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                            fontFamily: PurpleType.serif,
-                            fontSize: 44,
-                            height: 1.02,
-                            letterSpacing: 44 * -0.02,
-                            color: Colors.white.withValues(alpha: 0.95),
-                          ),
+                    const DataHeroHeader(
+                      eyebrow: 'My body',
+                      title: 'The long view of\nyour health.',
                     ),
                     const SizedBox(height: 16),
                     NarrativeBlock(

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
+import '../data/data_style.dart';
 import '../shared/glass_helpers.dart';
 import 'biometric_metrics.dart';
 import 'metric_detail_screen.dart' show StatusBadge, warningTokenColor;
@@ -71,7 +72,6 @@ class _BiometricsHubScreenState extends ConsumerState<BiometricsHubScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final muted = Colors.white.withValues(alpha: 0.55);
     final pinnedAsync = ref.watch(pinnedMetricsProvider);
     final pinnedOverride = ref.watch(_pinnedOverrideProvider);
     final pinned = pinnedOverride ?? pinnedAsync.valueOrNull ?? const [];
@@ -86,38 +86,14 @@ class _BiometricsHubScreenState extends ConsumerState<BiometricsHubScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextButton.icon(
-                  onPressed: () => context.go(AppRoutes.myHealth),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  icon: Icon(Icons.arrow_back, size: 16, color: muted),
-                  label: Text(
-                    'My Health',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: muted,
-                        ),
-                  ),
+                DataBackLink(
+                  label: 'My Health',
+                  onTap: () => context.go(AppRoutes.myHealth),
                 ),
                 const SizedBox(height: 32),
-                Text(
-                  'YOUR BODY',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        letterSpacing: 1.2,
-                        color: Colors.white.withValues(alpha: 0.45),
-                      ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Every signal\nPurple reads.',
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontFamily: PurpleType.serif,
-                        fontSize: 44,
-                        height: 1.02,
-                        color: Colors.white.withValues(alpha: 0.95),
-                      ),
+                const DataHeroHeader(
+                  eyebrow: 'Your body',
+                  title: 'Every signal\nPurple reads.',
                 ),
                 const SizedBox(height: 20),
                 _RangeSelector(

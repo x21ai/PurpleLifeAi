@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../design/purple_type.dart';
-import '../../../design/tokens.dart';
+import '../data_style.dart';
 
 /// Metric list row for the Data tab (labs + wearables).
 class DataMetricRow extends StatelessWidget {
@@ -30,111 +29,85 @@ class DataMetricRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = PurpleTokens.loaded.colorsFor('dark');
-    final bg = parseTokenColor(colors.backgroundSecondary);
-    final border = parseTokenColor(colors.divider);
-    final badgeStyle = _badgeStyle(badge, colors);
+    final p = DataPalette.dark();
+    final badgeStyle = _badgeStyle(badge, p);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: bg,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: border),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: DataCardShell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        label.toUpperCase(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 10,
-                          letterSpacing: 0.06,
-                          color: Colors.white.withValues(alpha: 0.55),
-                        ),
-                      ),
+                Expanded(
+                  child: Text(
+                    label.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: dataSans(
+                      fontSize: 10,
+                      letterSpacing: 0.6,
+                      color: p.textTertiary,
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: badgeStyle.background,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        badge,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: badgeStyle.foreground,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  valueLabel,
-                  style: PurpleType.displayStyle(
-                    fontSize: 26,
-                    height: 1.05,
-                    color: Colors.white.withValues(alpha: 0.95),
                   ),
                 ),
-                if (isLab &&
-                    referenceLow != null &&
-                    referenceHigh != null &&
-                    value != null)
-                  _RangeBar(
-                    low: referenceLow!,
-                    high: referenceHigh!,
-                    value: value!,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: badgeStyle.background,
+                    borderRadius: BorderRadius.circular(999),
                   ),
-                if (spark.length >= 2) ...[
-                  const SizedBox(height: 8),
-                  _Sparkline(values: spark, isLab: isLab),
-                ],
+                  child: Text(
+                    badge,
+                    style: dataSans(fontSize: 10, color: badgeStyle.foreground),
+                  ),
+                ),
               ],
             ),
-          ),
+            const SizedBox(height: 6),
+            Text(
+              valueLabel,
+              style: dataSerif(fontSize: 26, height: 1.05, color: p.textPrimary),
+            ),
+            if (isLab &&
+                referenceLow != null &&
+                referenceHigh != null &&
+                value != null)
+              _RangeBar(
+                low: referenceLow!,
+                high: referenceHigh!,
+                value: value!,
+                palette: p,
+              ),
+            if (spark.length >= 2) ...[
+              const SizedBox(height: 8),
+              _Sparkline(values: spark, palette: p),
+            ],
+          ],
         ),
       ),
     );
   }
 
-  ({Color background, Color foreground}) _badgeStyle(
-    String flag,
-    PurpleColorTokens colors,
-  ) {
+  ({Color background, Color foreground}) _badgeStyle(String flag, DataPalette p) {
     final lower = flag.toLowerCase();
     if (lower == 'high' || lower == 'low' || lower == 'abnormal') {
       return (
-        background: parseTokenColor(colors.destructive).withValues(alpha: 0.15),
-        foreground: parseTokenColor(colors.destructive),
+        background: p.destructive.withValues(alpha: 0.15),
+        foreground: p.destructive,
       );
     }
     if (lower == 'normal') {
       return (
-        background: parseTokenColor(colors.success).withValues(alpha: 0.18),
-        foreground: parseTokenColor(colors.success),
+        background: p.success.withValues(alpha: 0.18),
+        foreground: p.success,
       );
     }
     return (
-      background: parseTokenColor(colors.backgroundTertiary),
-      foreground: Colors.white.withValues(alpha: 0.55),
+      background: p.surfaceSecondary,
+      foreground: p.textTertiary,
     );
   }
 }
@@ -144,15 +117,16 @@ class _RangeBar extends StatelessWidget {
     required this.low,
     required this.high,
     required this.value,
+    required this.palette,
   });
 
   final double low;
   final double high;
   final double value;
+  final DataPalette palette;
 
   @override
   Widget build(BuildContext context) {
-    final colors = PurpleTokens.loaded.colorsFor('dark');
     final span = (high - low).abs().clamp(1.0, double.infinity);
     final pct = ((value - low) / span).clamp(0.0, 1.0);
     const bandLeft = 0.2;
@@ -174,7 +148,7 @@ class _RangeBar extends StatelessWidget {
                   Container(
                     height: 6,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: palette.surfaceSecondary,
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
@@ -185,8 +159,7 @@ class _RangeBar extends StatelessWidget {
                     bottom: 0,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: parseTokenColor(colors.success)
-                            .withValues(alpha: 0.35),
+                        color: palette.success.withValues(alpha: 0.35),
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),
@@ -198,12 +171,9 @@ class _RangeBar extends StatelessWidget {
                       width: 10,
                       height: 10,
                       decoration: BoxDecoration(
-                        color: parseTokenColor(colors.purplePrimary),
+                        color: palette.purplePrimary,
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFF0A0710),
-                          width: 2,
-                        ),
+                        border: Border.all(color: palette.canvas, width: 2),
                       ),
                     ),
                   ),
@@ -218,24 +188,15 @@ class _RangeBar extends StatelessWidget {
           children: [
             Text(
               low.toString(),
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.white.withValues(alpha: 0.55),
-              ),
+              style: dataSans(fontSize: 10, color: palette.textTertiary),
             ),
             Text(
               'optimal',
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.white.withValues(alpha: 0.55),
-              ),
+              style: dataSans(fontSize: 10, color: palette.textTertiary),
             ),
             Text(
               high.toString(),
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.white.withValues(alpha: 0.55),
-              ),
+              style: dataSans(fontSize: 10, color: palette.textTertiary),
             ),
           ],
         ),
@@ -245,15 +206,13 @@ class _RangeBar extends StatelessWidget {
 }
 
 class _Sparkline extends StatelessWidget {
-  const _Sparkline({required this.values, required this.isLab});
+  const _Sparkline({required this.values, required this.palette});
 
   final List<double> values;
-  final bool isLab;
+  final DataPalette palette;
 
   @override
   Widget build(BuildContext context) {
-    final colors = PurpleTokens.loaded.colorsFor('dark');
-    final purple = parseTokenColor(colors.purplePrimary);
     final max = values.reduce((a, b) => a > b ? a : b);
     final min = values.reduce((a, b) => a < b ? a : b);
     final span = (max - min).abs().clamp(1.0, double.infinity);
@@ -272,7 +231,7 @@ class _Sparkline extends StatelessWidget {
                   alignment: Alignment.bottomCenter,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: purple.withValues(alpha: 0.65),
+                      color: palette.purplePrimary.withValues(alpha: 0.65),
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(2),
                       ),
