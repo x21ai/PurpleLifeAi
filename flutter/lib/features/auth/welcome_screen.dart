@@ -351,9 +351,7 @@ class _ConditionPicker extends StatelessWidget {
               child: Text(
                 _categoryLabels[category] ??
                     conditionCategoryLabel(category),
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.55),
-                    ),
+                style: onboardingCategoryLabel(),
               ),
             ),
             Wrap(

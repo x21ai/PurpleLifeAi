@@ -9,6 +9,20 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 Merged styling pass (events, onboarding, shared — committed, not pushed).**
+`events_style.dart`, `onboarding_style.dart`, timeline header + offline snackbar comma fix,
+welcome onboarding token typography, shared skeleton/hero/narrative via `merged_style.dart`.
+Sibling `1ed98cf` covered hydration/seizures/meds/journal. Verified: `flutter analyze` clean
+on scope. No push.
+
+**2026-07-06 TF23 Merged fleet serial integrate (pushing).**
+`lovable/redesign` @ **`7a8a62c`** (14 commits ahead of origin). Flutter: 5-tab Merged shell,
+`/data` `/plan` `/ask-maya`, dual-score Today, token restyle (meds/settings/reports/care/chat).
+TanStack: `data.tsx`, `plan.tsx`, `ask-maya.tsx`, bottom-nav 5-tab, `_app` typography pass.
+Verified: `flutter analyze` 0 errors, **`flutter test` 135/135**. TestFlight **1.0 (23)** uploading
+Founding Team. Matrix ~68% weighted Merged parity. `superpower-design-parity` → production Partial.
+Wrangler deploy pending web gates.
+
 **2026-07-06 Merged Today parity slice (Plan / Ask Maya / Today — committed, not pushed).**
 Commit `8d3abf7` on `lovable/redesign`. Merged Today: `DateStrip` with day-filtered scores via `scoreSnapshotForDayProvider`,
 `TodayDualScoreHero` (readiness arc + sleep card), `TodayPersonalizationStrip` onboarding pill,
@@ -347,6 +361,20 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T20:35:00Z — Merged styling pass (events, onboarding, shared widgets)
+
+- **Requested** — Disjoint scope: hydration, seizures, nutrition (none), events/timeline,
+  onboarding, chat, shared widgets; Merged styling pass; no em dashes; analyze + commit; no push;
+  no router.
+- **Done** — `events_style.dart`, `onboarding_style.dart`; timeline `EventsPageHeader` + offline
+  snackbar comma fix; welcome screen token typography; `loading_skeleton`, `score_hero`,
+  `narrative_block` use `merged_style.dart`. Hydration/seizures/chat landed in sibling commit
+  `1ed98cf`. Verified: `flutter analyze` clean on scope.
+- **Issues** — Nutrition feature absent in Flutter. Care chat message rows still inline alphas.
+- **Stand / next** — Parent merge; browser QA on :8765 timeline + welcome.
+- **Who / where** — Cursor subagent, local, `lovable/redesign@9565b95`.
+- **Timestamp** — 2026-07-06T20:35:00Z.
 
 ### 2026-07-06T20:10:00Z — Merged Today dual hero + date strip (Flutter slice)
 

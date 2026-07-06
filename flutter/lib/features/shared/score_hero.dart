@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../design/purple_type.dart';
 
 import '../../design/tokens.dart';
+import 'merged_style.dart';
 
 /// Readiness band matching web `ScoreBand` / `bandForReadiness`.
 enum ScoreBand { excellent, good, fair, attention }
@@ -116,11 +117,8 @@ class ScoreHero extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     label.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: tokens.typography.labelSize('labelEyebrow'),
-                      letterSpacing:
-                          tokens.typography.letterSpacing('labelEyebrow'),
-                      fontWeight: FontWeight.w600,
+                    style: medsEyebrow(
+                      palette: mergedPalette(),
                       color: Colors.white.withValues(alpha: 0.85),
                     ),
                   ),

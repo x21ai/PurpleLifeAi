@@ -8,6 +8,7 @@ import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
 import '../meds/meds_repository.dart';
 import '../shared/glass_helpers.dart';
+import 'events_style.dart';
 import 'timeline_repository.dart';
 
 enum TimelineRange { day, week, month, year, custom }
@@ -128,61 +129,11 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'TIMELINE',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
-                                ?.copyWith(
-                                  letterSpacing: 1.4,
-                                  color: Colors.white.withValues(alpha: 0.55),
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Everything,\nin order.',
-                            style: Theme.of(context)
-                                .textTheme
-                                .displaySmall
-                                ?.copyWith(
-                                  fontFamily: PurpleType.serif,
-                                  fontSize: 40,
-                                  height: 1.05,
-                                  letterSpacing: 40 * -0.02,
-                                  color: Colors.white.withValues(alpha: 0.95),
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: _showExportNotice,
-                      icon: const Icon(Icons.download_outlined, size: 18),
-                      label: const Text('Export'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white.withValues(alpha: 0.85),
-                        side: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.15),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                EventsPageHeader(onExport: _showExportNotice),
                 const SizedBox(height: 16),
                 Text(
                   'Seizures, journal entries, and doses, side by side. Filter by range, search, then export when you need to share with your care team.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontFamily: PurpleType.serif,
-                        color: Colors.white.withValues(alpha: 0.75),
-                        height: 1.5,
-                      ),
+                  style: eventsIntroBody(),
                 ),
                 const SizedBox(height: 20),
                 Wrap(
@@ -571,7 +522,7 @@ class _TimelineRowState extends ConsumerState<_TimelineRow> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            flushed ? actionLabel : '$actionLabel — will sync when online',
+            flushed ? actionLabel : '$actionLabel, will sync when online',
           ),
         ),
       );

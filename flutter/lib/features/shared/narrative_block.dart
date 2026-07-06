@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../design/purple_type.dart';
 
 import '../../design/tokens.dart';
+import 'merged_style.dart';
 
 /// AI narrative voice mirroring web `NarrativeBlock` as used on Today:
 /// `glass-card rounded-[20px] border-primary/10` over the serif body with the
@@ -47,7 +48,7 @@ class NarrativeBlock extends StatelessWidget {
           Text(
             text.trim(),
             style: PurpleType.bodySerif(
-              color: parseTokenColor(colors.textPrimary).withValues(alpha: 0.85),
+              color: mergedPalette().textPrimary.withValues(alpha: 0.85),
             ),
           ),
         ],
