@@ -9,6 +9,14 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 `pmt@eigital.com` temp password rotated (3rd forgot-password report).**
+Ops set new temp password via `auth.admin.updateUserById`; sign-in verified against
+prod Supabase. Recovery emails at ~14:24 UTC show `sent` in `email_send_log` and
+**delivered** in Resend but never reach `@eigital.com` inbox (corporate quarantine).
+User instruction: sign in with temp password, change in Account, stop forgot-password
+until IT allowlists `notify.purplelife.org`. No alternate email on profile. Doc:
+`CURSOR_HANDOFF.md`, `mem/auth-password-reset.md`.
+
 **2026-07-06 Auth password-reset fixes DEPLOYED to prod.** Worker Version ID
 **`bdf1f37a-9fbf-41f5-b0dc-46cbae616c94`** on `www.purplelife.org` (eigital account
 override). Fixes: admin `resetPasswordForEmail` with prod redirect (not
@@ -180,6 +188,24 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T14:30:00Z — pmt@eigital.com temp password rotation (eigital quarantine)
+
+- **Requested:** 3rd report of no password-reset email for `pmt@eigital.com` (~10:24 AM
+  ET); set new temp password, verify sign-in, check email_send_log + Resend, do not
+  trigger another recovery send.
+- **Done:** Rotated temp password via `auth.admin.updateUserById` (Doppler
+  `SERVICE_ROLE_KEY`); `signInWithPassword` against prod **PASS**. Queried
+  `email_send_log` (2 recovery rows last 30 min, latest `sent` 14:23:14 UTC).
+  Resend latest (`eb814bc7-544a-4588-a606-d3e1c7031655`, 14:24:01 UTC):
+  **`last_event: delivered`**. Prior temp password `PurpleTempba90bac1!` **invalid**.
+  No alternate email on profile. Updated `CURSOR_HANDOFF.md`.
+- **Issues:** `@eigital.com` corporate mail quarantines Purple recovery emails despite
+  Resend delivery. User blocked on forgot-password loop until IT allowlists sender.
+- **Stand / next:** User signs in with new temp password, changes in Account; IT
+  allowlists `notify.purplelife.org` or user adds personal email.
+- **Who / where:** Cursor subagent, local `lovable/redesign` working tree.
+- **Timestamp:** 2026-07-06T14:30:00Z
 
 ### 2026-07-06T13:45:00Z — Auth password-reset fixes deployed to prod
 

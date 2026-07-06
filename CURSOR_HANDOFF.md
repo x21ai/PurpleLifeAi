@@ -1,8 +1,10 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~09:45 ET (auth/password reset fixes deployed).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~10:30 ET (pmt@eigital.com temp password rotated).
 
-**Recent (2026-07-06 ~09:45 ET): Auth password-reset fixes LIVE on prod.** Worker
+**Recent (2026-07-06 ~10:30 ET): `pmt@eigital.com` blocked on forgot-password loop — use temp password, not reset email.** Corporate `@eigital.com` mail quarantines Purple recovery emails: Resend shows **delivered** (`notify.purplelife.org`) but inbox never receives them (6+ recovery sends 2026-07-06, all `sent` in `email_send_log`, Resend `last_event: delivered`). **Ops:** rotate temp password via `auth.admin.updateUserById` (Doppler `SERVICE_ROLE_KEY`); value not stored in repo/docs. User should **sign in with temp password**, change password in Account, and **stop using forgot-password** until IT allowlists `notify.purplelife.org` (or uses a non-corporate email). No alternate email on profile (only `pmt@eigital.com` + phone). Runbook: `mem/auth-password-reset.md` incident table.
+
+**Prior (2026-07-06 ~09:45 ET): Auth password-reset fixes LIVE on prod.** Worker
 Version ID **`bdf1f37a-9fbf-41f5-b0dc-46cbae616c94`**. Admin reset uses
 `resetPasswordForEmail` (not `generateLink`); web forgot-password shows rate-limit
 friendly copy; expired reset CTA → `/sign-in?reset=expired`; recovery email webhook
