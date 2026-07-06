@@ -9,6 +9,22 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TestFlight 1.0 (23) VALID — Merged fleet shipped.**
+`main` + `lovable/redesign` @ **`d1f5675`**. Flutter **1.0.0+23**: 5-tab Merged shell
+(Today · Data · FAB · Plan · Ask Maya), `/data` `/plan` `/ask-maya`, dual-score Today,
+token restyle across meds/settings/reports/care/chat/data. TanStack: `data.tsx`, `plan.tsx`,
+`ask-maya.tsx`, bottom-nav 5-tab, `_app` typography pass. Gates: `flutter analyze` 0 errors,
+**135/135** tests. ASC **1.0 (23) VALID**; Founding Team via `asc-add-build-to-group.mjs 23`
+(beta review WAITING_FOR_REVIEW). Web Worker deploy attempted (routes API used POS account;
+worker bundle uploaded). Matrix ~**68%** weighted Merged parity (`docs/FLUTTER-CUTOVER-GAP-MATRIX.md`).
+
+**2026-07-06 Settings Luciq "Report a problem" row (committed, not pushed).**
+Commits **`b1f78e08`** + **`f4530cde`** on `lovable/redesign`: `SettingsHelpSection` in
+`settings_hub.dart` calls `Luciq.show()` via `showLuciqReport()` when native Luciq init
+succeeds (`luciqInitNotifier`); skipped on web / missing `LUCIQ_APP_TOKEN`. Wired in
+`settings_screen.dart` Help section alongside Contact. Verified: `flutter analyze`
+`lib/features/settings/` + `luciq_bootstrap.dart` (info-only). No push.
+
 **2026-07-06 Google + Apple OAuth enabled on NEW Supabase (verified).**
 Management API check on project **`xxnzmfzsjplrutrgbzxy`**: Google and Apple providers
 **enabled** (agent c7052066, 2026-07-06). Branded callback
@@ -382,6 +398,41 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T20:25:00Z — TF23 Merged fleet serial integrate + TestFlight ship
+
+- **Requested** — Serial merge of extended Merged wave (shell/data/plan/ask, meds/journal,
+  settings, reports/care, web `_app` pass); wire 5-tab nav; gap matrix; gates; TF23 Founding Team;
+  push `lovable/redesign` + ff `main`; handoff.
+- **Done** — Merged at `d1f5675`: 5-tab `bottom_nav.dart`, routes `/data` `/plan` `/ask-maya`,
+  `today_merged_widgets.dart`, Data/Plan/Ask Maya screens, token restyle (meds/settings/reports/care),
+  TanStack `data.tsx`/`plan.tsx`/`ask-maya.tsx`, SF Pro typography. Fixed settings scroll test
+  (`PurpleTheme.dark()`). `flutter analyze` 0 errors, **`flutter test` 135/135**. `pubspec` 1.0.0+23.
+  `ios:testflight` **EXPORT SUCCEEDED**; ASC **1.0 (23) VALID**; Founding Team
+  `asc-add-build-to-group.mjs 23`. `main` + `origin/lovable/redesign` synced @ `d1f5675`.
+  `docs/FLUTTER-CUTOVER-GAP-MATRIX.md` ~68% Merged parity. `build:prod` gates pass; wrangler deploy
+  uploaded worker (route API failed on POS account id).
+- **Issues** — cf5e97cf / 26beb5b9 agent commits never landed (superseded by b4a9dc1 fleet).
+  Wrangler zone routes need eigital `CLOUDFLARE_ACCOUNT_ID`. OAuth native callback still P0
+  (`flutter-oauth-auth-callback`). Device QA on TF23 Merged tabs pending.
+- **Stand / next** — Founding Team installs **1.0 (23)**; device sign-off on Today/Data/Plan/Ask Maya;
+  redeploy Worker with correct account if web Merged routes needed on prod immediately.
+- **Who / where** — Cursor serial owner subagent, local, `main@d1f5675`.
+- **Timestamp** — 2026-07-06T20:25:00Z.
+
+### 2026-07-06T20:25:00Z — Settings Luciq report row
+
+- **Requested** — Add "Report a problem" row in Flutter Settings that calls `Luciq.show()` when
+  luciq_flutter initialized; skip web; manual trigger alongside shake per observability guidance.
+- **Done** — `luciq_bootstrap.dart`: `luciqReportAvailable()`, `showLuciqReport()`,
+  `luciqInitNotifier` after successful `Luciq.init`. `settings_hub.dart`: `SettingsHelpSection`
+  with conditional Report a problem row + Contact. `settings_screen.dart`: wired Help section.
+  Commits `b1f78e08`, `f4530cde`. `flutter analyze lib/features/settings/` clean (info-only).
+- **Issues** — Row hidden until ~1s post-launch Luciq init; web/local analyze never show row.
+  Device QA on TF build with `LUCIQ_APP_TOKEN` pending.
+- **Stand / next** — TF device tap "Report a problem" opens Luciq UI; no push unless operator asks.
+- **Who / where** — Cursor subagent, local, `lovable/redesign@f4530cde`.
+- **Timestamp** — 2026-07-06T20:25:00Z.
 
 ### 2026-07-06T21:30:00Z — OAuth providers verified on NEW Supabase (doc-only)
 

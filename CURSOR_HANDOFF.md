@@ -1,6 +1,13 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~16:15 ET (TF23 Merged fleet integrate).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~16:20 ET (TF23 uploaded, ASC processing).
+
+**Recent (2026-07-06 ~16:20 ET): TF23 Merged shell uploaded (ASC processing).**
+Commit **`b4a9dc1`** wires Flutter 5-tab Merged nav + `/data` `/plan` `/ask-maya`; branch
+`lovable/redesign` @ **`d1f5675`** pushed. `pubspec.yaml` **1.0.0+23**. TestFlight upload
+**EXPORT SUCCEEDED** (~16:19 ET). ASC API not yet listing 1.0 (23) VALID; retry
+`node scripts/asc-add-build-to-group.mjs 23 "Founding Team"` when build appears. Web `:8765`
+rebuilt (HTTP 200; sign-in for tab walkthrough).
 
 **Recent (2026-07-06 ~16:30 ET): Flutter OAuth P0 fix (Capacitor parity).**
 Google/Apple login used broken `https://www.purplelife.org/auth/callback` redirect. Fixed:
@@ -10,6 +17,18 @@ native `org.purplelife.app://auth-callback` + system browser (`getOAuthSignInUrl
 `SITE_URL=http://127.0.0.1:8765` for local OAuth. **Owner step:** confirm Supabase Auth
 redirect allow list includes `org.purplelife.app://auth-callback` and
 `http://127.0.0.1:8765/` (Google/Apple providers enabled). Ref: `src/lib/native/oauth.ts`.
+
+**Recent (2026-07-06 ~16:25 ET): TestFlight 1.0 (23) LIVE — Merged fleet.**
+ASC **1.0 (23) VALID**, internal + external **IN_BETA_TESTING** (Founding Team).
+`flutter/pubspec.yaml` **1.0.0+23**. Gates: **`flutter test` 135/135**, analyze 0 errors.
+**In TF23 (Merged styling ~68% weighted):** Today (dual hero, date strip, Maya card),
+Data (summary bar + metric rows), Plan (Protocol | Recommended), Ask Maya (chips + chat link),
+Metric detail (dated readings), Settings/Account (sheet palette), Meds/Journal (token restyle),
+Reports/Care/Chat (partial depth), 5-tab shell + endDrawer.
+**Still P1:** Insights/Timeline/Vitals/My Health (classic layout), admin/community routes,
+wearable OAuth console, push notifications, reports/care/chat depth, marketing `/care.accept` deep link.
+Matrix: `docs/FLUTTER-CUTOVER-GAP-MATRIX.md`. Web: `build:prod` + wrangler deploy (worker uploaded;
+route bind failed POS account — use eigital `CLOUDFLARE_ACCOUNT_ID`).
 
 **Recent (2026-07-06 ~16:15 ET): TF23 Merged fleet integrated (Flutter + TanStack).**
 `lovable/redesign` @ **`1ed98cf`** (13 commits ahead of origin, pushing this session). Flutter:
