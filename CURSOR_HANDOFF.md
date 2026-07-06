@@ -1,6 +1,8 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~14:20 ET (git sync + docs commit).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~14:28 ET (TF22 duplicate Today narrative fix).
+
+**Recent (2026-07-06 ~14:28 ET): TF22 fixes duplicate Today narrative.** ASC feedback ×3 (`a@arora.net`) was visible via `ios:check-tf-feedback` but not fixed until this pass. AI text showed in lede + `NarrativeBlock`; now once in glass card only. Web `today.tsx` same fix; Worker **`5122d3c4`**. **TestFlight 1.0 (22)** uploaded (processing). Commit **`00e9a56`**.
 
 **Recent (2026-07-06 ~14:20 ET): Git synced to remote.** `main` and `lovable/redesign` both at **`1c1bd21`** on GitHub. Includes wearable OAuth mem (`mem/native-wearable-oauth-redirects.md`), observability templates under `docs/templates/`. Prod Worker still **`8d527d7f`** (care + AI routes); TF21 **1.0 (21)** VALID. Excluded from commit: `test-results/` (local Playwright artifacts).
 
