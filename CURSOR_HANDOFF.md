@@ -1,16 +1,21 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~16:32 ET (TF24 shipping).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~16:35 ET (TF24 LIVE).
 
-**Update TestFlight from 22→23 for Merged UI; 24 adds perf+OAuth+Luciq button.**
+**Update TestFlight from 22→24.** Build **23** = Merged UI only; **24** = perf + OAuth + About build info (+ Luciq row).
 
 ## TestFlight — what build has what (2026-07-06)
 
 | Build | ASC status | Founding Team | Git commit | UI | Perf fix (`5ad1576`) | OAuth fix (`4430c13`) | About build info | Install? |
 |-------|------------|---------------|------------|-----|----------------------|----------------------|------------------|----------|
 | **1.0 (22)** | VALID | IN_BETA_TESTING | `00e9a56` | **Old** 4-tab | No | No | No | **Replace** — stale |
-| **1.0 (23)** | VALID | IN_BETA_TESTING | `bfaf648e` | **Merged** 5-tab | No | No | No | **Install now** for new design |
-| **1.0 (24)** | Uploading | — | `cc6c2260`+ | Merged + Luciq row | **Yes** | **Yes** | **Yes** (`cc6c2260`) | **Wait** for VALID |
+| **1.0 (23)** | VALID | IN_BETA_TESTING | `bfaf648e` | **Merged** 5-tab | No | No | No | Skip — superseded by 24 |
+| **1.0 (24)** | VALID | IN_BETA_TESTING | `a594b77`+ | Merged + Luciq row | **Yes** | **Yes** | **Yes** (`cc6c2260`) | **Install now** |
+
+**TF24 observability triage (2026-07-06 ~16:35 ET):** ASC **1.0 (24) VALID**, Founding Team **IN_BETA_TESTING** (internal + external). Luciq MCP **0** open crashes/bugs on `1.0.0 (24)`; ASC **19** screenshot submissions (historical, pre-24).
+
+**Recent (2026-07-06 ~16:35 ET): TestFlight 1.0 (24) LIVE — perf + OAuth + About.**
+Uploaded ~16:28 ET; ASC processing → **VALID** ~16:33 ET. `asc-add-build-to-group.mjs 24 "Founding Team"` done; beta review **WAITING_FOR_REVIEW**. Commit **`a594b77`**. **Install 24** (skip 23 unless testing UI-only delta).
 
 **TF23 observability triage (2026-07-06 ~16:26 ET):** Luciq MCP **0** open crashes on `1.0.0 (23)`; ASC **19** screenshot submissions (historical).
 
