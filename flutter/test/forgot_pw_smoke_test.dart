@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:purple_app/features/auth/sign_in_screen.dart';
 import 'package:purple_app/core/auth/auth_repository.dart';
 import 'package:purple_app/core/providers/core_providers.dart';
 import 'package:purple_app/core/config/app_config.dart';
+import 'package:purple_app/shell/routes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -42,13 +44,23 @@ void main() {
     await Supabase.instance.client.auth.signOut();
     final authRepo = AuthRepository(config: testConfig);
 
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: AppRoutes.signIn,
+          builder: (context, state) => const SignInScreen(),
+        ),
+      ],
+      initialLocation: AppRoutes.signIn,
+    );
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           appConfigProvider.overrideWithValue(testConfig),
           authRepositoryProvider.overrideWith((ref) async => authRepo),
         ],
-        child: const MaterialApp(home: SignInScreen()),
+        child: MaterialApp.router(routerConfig: router),
       ),
     );
     await tester.pump();
