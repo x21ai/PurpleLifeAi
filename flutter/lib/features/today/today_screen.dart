@@ -23,8 +23,8 @@ import 'today_merged_widgets.dart';
 import 'today_repository.dart';
 import 'wearable_sync.dart';
 
-/// Merged Today dashboard: date strip, dual score hero, personalization pill,
-/// metric strip, single Maya narrative (`personalized-dashboard-preview.html`).
+/// Merged Today dashboard: date strip, personalization pill, metric strip,
+/// single Maya narrative (`personalized-dashboard-preview.html`).
 class TodayScreen extends ConsumerStatefulWidget {
   const TodayScreen({super.key});
 
@@ -276,19 +276,12 @@ class _MergedTodayBody extends StatelessWidget {
         if (isToday) SizedBox(height: tokens.spacing.md),
         if (scoresLoading)
           const _ScoresLoadingPlaceholder()
-        else ...[
-          TodayDualScoreHero(
-            scores: scores,
-            conditions: data.conditions,
-            onMetricTap: (key) => context.go(AppRoutes.biometricsMetric(key)),
-          ),
-          SizedBox(height: tokens.spacing.md),
+        else
           TodayMetricStrip(
             scores: scores,
             conditions: data.conditions,
             onMetricTap: (key) => context.go(AppRoutes.biometricsMetric(key)),
           ),
-        ],
         if (hasNarrative) ...[
           SizedBox(height: tokens.spacing.x2),
           TodayMayaCard(narrative: narrative),
