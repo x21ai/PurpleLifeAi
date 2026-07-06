@@ -82,9 +82,8 @@ export const adminResetPassword = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.auth.admin.generateLink({
-      type: "recovery",
-      email: data.email,
+    const { error } = await supabaseAdmin.auth.resetPasswordForEmail(data.email, {
+      redirectTo: "https://www.purplelife.org/reset-password",
     });
     if (error) throw new Error(error.message);
     return { ok: true };

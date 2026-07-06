@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/auth/auth_deep_link.dart';
 import 'core/providers/core_providers.dart';
 import 'design/purple_theme.dart';
 import 'design/tokens.dart';
@@ -76,11 +77,13 @@ class PurpleApp extends ConsumerWidget {
           data: mq.copyWith(platformBrightness: brightness),
           child: authInit.isLoading || authInit.hasError
               ? ColoredBox(color: canvasColor, child: content)
-              : WearableOAuthListener(
+              : AuthDeepLinkListener(
+                  child: WearableOAuthListener(
                   child: ColoredBox(
                     color: canvasColor,
                     child: content,
                   ),
+                ),
                 ),
         );
       },

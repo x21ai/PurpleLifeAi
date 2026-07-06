@@ -166,7 +166,9 @@ function ResetPasswordPage() {
               {errorMsg ?? t("resetPassword.openFromEmail")}
             </p>
             <Button asChild className="w-full h-14 text-base rounded-xl">
-              <Link to="/sign-in">{t("resetPassword.requestNewLink")}</Link>
+              <Link to="/sign-in" search={{ reset: "expired" }}>
+                {t("resetPassword.requestNewLink")}
+              </Link>
             </Button>
           </div>
         ) : mfaRequired ? (

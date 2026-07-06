@@ -155,6 +155,21 @@ function SignInPage() {
     };
   }, [status, navigate]);
 
+  const friendlyAuthError = (msg: string): string => {
+    const m = msg.toLowerCase();
+    if (m.includes("invalid login credentials")) return "Email or password is incorrect.";
+    if (m.includes("email not confirmed")) return "Please confirm your email first.";
+    if (
+      m.includes("over_email_send_rate_limit") ||
+      m.includes("over_request_rate_limit") ||
+      m.includes("over_sms_send_rate_limit") ||
+      m.includes("rate limit")
+    ) {
+      return "Too many attempts. Please wait a moment and try again.";
+    }
+    return msg;
+  };
+
   const handleForgotPassword = async () => {
     setErrorMsg(null);
     if (!email.trim()) {
@@ -169,19 +184,13 @@ function SignInPage() {
       redirectTo: window.location.origin + "/reset-password",
     });
     if (error) {
-      setErrorMsg(error.message);
-      toast.error(error.message);
+      const msg = friendlyAuthError(error.message);
+      setErrorMsg(msg);
+      toast.error(msg);
       setStatus("error");
       return;
     }
     setStatus("reset-sent");
-  };
-
-  const friendlyAuthError = (msg: string): string => {
-    const m = msg.toLowerCase();
-    if (m.includes("invalid login credentials")) return "Email or password is incorrect.";
-    if (m.includes("email not confirmed")) return "Please confirm your email first.";
-    return msg;
   };
 
   const handleSubmit = async (e: FormEvent) => {

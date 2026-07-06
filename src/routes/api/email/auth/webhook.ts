@@ -114,9 +114,12 @@ export const Route = createFileRoute("/api/email/auth/webhook")({
         const verifyUrl = new URL(`${supabaseUrl}/auth/v1/verify`);
         verifyUrl.searchParams.set("token", emailData.token_hash ?? "");
         verifyUrl.searchParams.set("type", emailType);
+        const recoveryFallback = `https://www.${ROOT_DOMAIN}/reset-password`;
         verifyUrl.searchParams.set(
           "redirect_to",
-          emailData.redirect_to || emailData.site_url || `https://${ROOT_DOMAIN}/`,
+          emailData.redirect_to ||
+            (emailType === "recovery" ? recoveryFallback : emailData.site_url) ||
+            `https://${ROOT_DOMAIN}/`,
         );
 
         const templateProps = {

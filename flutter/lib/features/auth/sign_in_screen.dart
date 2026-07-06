@@ -70,7 +70,10 @@ String friendlyAuthError(Object error) {
 
 /// Email/password and OAuth sign-in using Supabase auth.
 class SignInScreen extends ConsumerStatefulWidget {
-  const SignInScreen({super.key});
+  const SignInScreen({this.resetLinkExpired = false, super.key});
+
+  /// Set when routing from `/sign-in?reset=expired` (expired recovery deep link).
+  final bool resetLinkExpired;
 
   @override
   ConsumerState<SignInScreen> createState() => _SignInScreenState();
@@ -89,6 +92,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   bool _busy = false;
   bool _resetSent = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.resetLinkExpired) {
+      _error =
+          'That reset link expired or was already used. Request a new one below, or sign in if you already set a password.';
+    }
+  }
 
   @override
   void dispose() {

@@ -16,4 +16,5 @@ Metric labels always show the canonical human name from `src/lib/metric-naming.t
 - [Native iOS: Xcode vs CLT](native-ios-xcode-vs-clt.md) - CLT cannot build Capacitor iOS; full Xcode.app, license, and xcode-select required.
 - [Sync and release workflow](../docs/SYNC-AND-RELEASE.md) - How Lovable, Cursor, and production stay in step: branch flow, gates, case studies, runbooks.
 - [Flutter + Lovable workflow](flutter-lovable-workflow.md) - Lovable design on `lovable/redesign`, Cursor Flutter under `flutter/`, `design/tokens.json` bridge, offline-first; **Flutter-only native** for TestFlight/store (Capacitor deprecated 2026-07-04, builds 1–9 were WebView).
+- [Auth password reset](auth-password-reset.md) - Recovery email redirect URIs, web PKCE bootstrap (`auth-recovery.ts`), native `reset-password` deep link, migration accounts without password hashes.
 - [Mobile crash reporting](observability/crash-reporting.md) - Luciq vs Sentry/Crashlytics/ASC; agent runbook after TestFlight upload.

@@ -1,8 +1,40 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~08:10 ET (TestFlight 1.0 (20) shipped, external Founding Team group confirmed).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~09:45 ET (auth/password reset fixes deployed).
 
-**Recent (2026-07-06 ~08:10 ET): TestFlight 1.0 (20) shipped.** Bumped
+**Recent (2026-07-06 ~09:45 ET): Auth password-reset fixes LIVE on prod.** Worker
+Version ID **`bdf1f37a-9fbf-41f5-b0dc-46cbae616c94`**. Admin reset uses
+`resetPasswordForEmail` (not `generateLink`); web forgot-password shows rate-limit
+friendly copy; expired reset CTA → `/sign-in?reset=expired`; recovery email webhook
+fallback redirect → `/reset-password`. Verify: `curl -s -o /dev/null -w '%{http_code}'
+https://www.purplelife.org/reset-password` (200). Native deep-link reset still
+requires **TF21+** (TF20 lacks `auth_deep_link.dart`). Runbook: `mem/auth-password-reset.md`.
+
+**Prior (2026-07-06 ~09:40 ET): Auth and password reset fixes.** Incident on
+`pmt@eigital.com` (primary live-data QA account): post-migration import left **no
+password hash** in `auth.users`; ops set a **temporary password via Supabase Admin
+API** (value not in repo or docs). Reset emails then appeared expired because (1)
+multiple recovery sends invalidate earlier OTPs, and (2) web `/reset-password` did
+not run PKCE `exchangeCodeForSession` before showing the form. **Web fix (uncommitted
+WIP):** `src/lib/auth-recovery.ts` `bootstrapRecoverySessionFromUrl()` +
+`src/routes/reset-password.tsx` bootstrap on mount. **Native fix (same WIP):**
+`flutter/lib/core/auth/auth_deep_link.dart` handles
+`org.purplelife.app://reset-password` via `app_links` + `getSessionFromUrl`;
+`auth_redirect_uris.dart`, `reset_password_screen.dart`, Android intent filter.
+**Supabase:** `org.purplelife.app://reset-password` added to Auth redirect allow
+list (dashboard). **Not on TestFlight yet:** TF20 lacks native deep-link code;
+**TF21+** upload required for device reset flow. Full runbook:
+`mem/auth-password-reset.md`; issues in `docs/OPEN-ISSUES.md`
+(`auth-reset-pkce-web`, `auth-reset-native-tf21`).
+
+**Prior (2026-07-06 ~09:10 ET): Oura native redirect verified.** Owner registered
+`org.purplelife.app://oauth-oura-callback` in Oura Cloud. Live probe: authorize URL
+with that `redirect_uri` returns **HTTP 302** to Oura login; unregistered URI returns
+**400 invalid_request**. Flutter `wearable_oauth_test.dart` **14/14 PASS**. Whoop native
+URI still needs console registration. Device E2E (Tools → Connect → token row in
+`oura_tokens`) pending on TF20 iPhone.
+
+**Prior (2026-07-06 ~08:10 ET): TestFlight 1.0 (20) shipped.** Bumped
 `flutter/pubspec.yaml` to `1.0.0+20` (previous latest was 19 VALID), gates PASS
 (`flutter analyze` clean, `flutter test` 124/124), uploaded via `doppler run
 --project purple-life --config prd -- bun run ios:testflight`

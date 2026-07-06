@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -5,8 +6,22 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
+import 'auth_redirect_uris.dart';
 
 const _secureSessionKey = 'purple.auth.session.v1';
+
+/// Result of parsing a Supabase recovery or OAuth callback URL.
+class RecoveryBootstrapResult {
+  const RecoveryBootstrapResult({
+    required this.ok,
+    this.expired = false,
+    this.message,
+  });
+
+  final bool ok;
+  final bool expired;
+  final String? message;
+}
 
 /// Supabase auth with secure session backup (mirrors web persistSession behavior).
 class AuthRepository {
@@ -43,7 +58,67 @@ class AuthRepository {
 
     final repo = AuthRepository(config: config);
     await repo._restoreSecureSession();
+    repo._client.auth.onAuthStateChange.listen((data) {
+      unawaited(repo._persistSession(data.session));
+    });
     return repo;
+  }
+
+  /// True when [uri] carries a Supabase PKCE `code` or implicit recovery token.
+  static bool isAuthCallbackUri(Uri uri) {
+    if (uri.queryParameters.containsKey('code') ||
+        uri.queryParameters.containsKey('error') ||
+        uri.queryParameters.containsKey('error_code')) {
+      return true;
+    }
+    final fragment = uri.fragment;
+    return fragment.contains('access_token=') ||
+        fragment.contains('error=') ||
+        fragment.contains('error_code=');
+  }
+
+  /// Parses Supabase error redirects (expired OTP, denied access).
+  static RecoveryBootstrapResult? parseAuthCallbackError(Uri uri) {
+    String? errorCode = uri.queryParameters['error_code'];
+    String? errorDescription = uri.queryParameters['error_description'];
+    if (errorCode == null && errorDescription == null && uri.fragment.isNotEmpty) {
+      final hashParams = Uri.splitQueryString(
+        uri.fragment.startsWith('#') ? uri.fragment.substring(1) : uri.fragment,
+      );
+      errorCode = hashParams['error_code'];
+      errorDescription = hashParams['error_description'];
+    }
+    if (errorCode == null && errorDescription == null) return null;
+    return RecoveryBootstrapResult(
+      ok: false,
+      expired: errorCode == 'otp_expired' || errorCode == 'access_denied',
+      message: errorDescription?.replaceAll('+', ' '),
+    );
+  }
+
+  /// Exchanges a recovery deep link or web URL for a Supabase session (PKCE).
+  ///
+  /// Mirrors web `bootstrapRecoverySessionFromUrl` (`src/lib/auth-recovery.ts`).
+  Future<RecoveryBootstrapResult> bootstrapRecoveryFromUri(Uri uri) async {
+    final parsedError = parseAuthCallbackError(uri);
+    if (parsedError != null) return parsedError;
+
+    if (!isAuthCallbackUri(uri)) {
+      return const RecoveryBootstrapResult(ok: false);
+    }
+
+    try {
+      await _client.auth.getSessionFromUrl(uri);
+      await _persistSession(_client.auth.currentSession);
+      return const RecoveryBootstrapResult(ok: true);
+    } catch (error) {
+      final message = error is AuthException ? error.message : error.toString();
+      return RecoveryBootstrapResult(
+        ok: false,
+        expired: RegExp(r'expired|invalid', caseSensitive: false).hasMatch(message),
+        message: message,
+      );
+    }
   }
 
   Future<AuthResponse> signInWithEmail({
@@ -81,12 +156,11 @@ class AuthRepository {
 
   /// Sends a password reset email (mirrors web `sign-in.tsx` `handleForgotPassword`).
   ///
-  /// The reset link opens `${siteUrl}/reset-password` in the browser, the same
-  /// web flow used today; there is no native in-app reset screen yet.
+  /// Native opens `org.purplelife.app://reset-password`; web uses `/reset-password`.
   Future<void> resetPasswordForEmail(String email) {
     return _client.auth.resetPasswordForEmail(
       email,
-      redirectTo: '${_config.siteUrl}/reset-password',
+      redirectTo: AuthRedirectUris.passwordReset(_config.siteUrl),
     );
   }
 

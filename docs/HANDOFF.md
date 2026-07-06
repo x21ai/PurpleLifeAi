@@ -9,6 +9,17 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 Auth password-reset fixes DEPLOYED to prod.** Worker Version ID
+**`bdf1f37a-9fbf-41f5-b0dc-46cbae616c94`** on `www.purplelife.org` (eigital account
+override). Fixes: admin `resetPasswordForEmail` with prod redirect (not
+`generateLink`), web forgot-password rate-limit friendly errors, expired reset link
+→ `/sign-in?reset=expired`, recovery email webhook fallback redirect to
+`/reset-password`. Flutter `?reset=expired` on sign-in already in tree (TF21+ for
+native deep links). Gates: `check:em-dash` PASS, `tsc --noEmit` PASS,
+`build:prod` PASS. Auth Flutter tests **10/10**; full `flutter test` **130/132**
+(2 failures pre-existing reports AI WIP). curl: `/reset-password` and `/sign-in`
+**200**. Commit pending push (operator did not request push).
+
 **2026-07-06 TestFlight 1.0 (20) shipped + external Founding Team group confirmed.**
 Bumped `flutter/pubspec.yaml` to `1.0.0+20` (no build 20 existed yet; latest was
 **19 VALID**). `flutter analyze lib/` clean, `flutter test` **124/124**, then
@@ -169,6 +180,23 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T13:45:00Z — Auth password-reset fixes deployed to prod
+
+- **Requested:** Complete stalled auth audit fixes (admin reset, rate-limit errors,
+  expired-link redirect, recovery email fallback), run gates, deploy to prod, commit
+  (no push unless asked).
+- **Done:** `src/lib/admin-users.functions.ts` uses `resetPasswordForEmail` with
+  `https://www.purplelife.org/reset-password`; `sign-in.tsx` rate-limit mapping in
+  `friendlyAuthError` + used in `handleForgotPassword`; `reset-password.tsx` expired
+  CTA → `/sign-in?reset=expired`; `webhook.ts` recovery fallback to `/reset-password`.
+  Flutter auth slice committed (deep links, reset screen, tests). Deployed Worker
+  **`bdf1f37a-9fbf-41f5-b0dc-46cbae616c94`**. curl `/reset-password` + `/sign-in` 200.
+- **Issues:** Full `flutter test` 130/132 (reports AI WIP compile errors unrelated).
+  Native reset deep links still need TF21+ upload.
+- **Stand / next:** Push commit when operator asks; TF21 for native reset on device.
+- **Who / where:** Cursor agent, local `lovable/redesign`/`main` working tree.
+- **Timestamp:** 2026-07-06T13:45:00Z
 
 ### 2026-07-06T12:10:00Z — TestFlight 1.0 (20) ship + external Founding Team group
 

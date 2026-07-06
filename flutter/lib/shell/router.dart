@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/account/account_screen.dart';
+import '../features/auth/reset_password_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/auth/welcome_screen.dart';
 import '../features/care/care_accept_screen.dart';
@@ -106,7 +107,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.signIn,
         name: 'sign-in',
-        builder: (context, state) => const SignInScreen(),
+        builder: (context, state) => SignInScreen(
+          resetLinkExpired: state.uri.queryParameters['reset'] == 'expired',
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.resetPassword,
+        name: 'reset-password',
+        builder: (context, state) => const ResetPasswordScreen(),
       ),
       GoRoute(
         path: AppRoutes.oauthOuraCallback,

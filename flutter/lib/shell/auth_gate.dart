@@ -14,12 +14,17 @@ Future<String?> authRedirect(Ref ref, GoRouterState state) async {
   final userId = authState.userId;
   final path = state.uri.path;
   final isSignIn = path == AppRoutes.signIn;
+  final isResetPassword = path == AppRoutes.resetPassword;
   final isWelcome = path == AppRoutes.welcome;
   final isWearableOAuthCallback = path == AppRoutes.oauthOuraCallback ||
       path == AppRoutes.oauthWhoopCallback;
   final isProtected = AppRoutes.protectedPaths.any(
     (route) => path == route || path.startsWith('$route/'),
   );
+
+  if (isResetPassword) {
+    return null;
+  }
 
   if (!isAuthenticated && (isProtected || isWearableOAuthCallback)) {
     final from = Uri.encodeComponent(state.uri.toString());
