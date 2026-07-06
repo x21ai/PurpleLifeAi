@@ -77,6 +77,99 @@ void main() {
       expect(find.text('Doses for this day'), findsOneWidget);
       expect(find.text('88%'), findsNothing);
     });
+
+    testWidgets('pending dose shows tappable Taken Snooze Skip at 44pt', (tester) async {
+      final dose = MedicationDose(
+        id: 'd1',
+        medicationId: 'm1',
+        scheduledAt: DateTime.parse('2026-07-05T14:00:00Z'),
+        status: 'pending',
+        medication: Medication(
+          id: 'm1',
+          name: 'Keppra',
+          active: true,
+          kind: 'medication',
+          isRescue: false,
+          timesOfDay: const ['08:00'],
+        ),
+      );
+      var takenCalled = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: TodayDosePanel(
+              doses: [dose],
+              timezone: 'UTC',
+              todayLabel: 'Saturday, July 5, 2026',
+              viewDate: '2026-07-05',
+              todayStr: '2026-07-05',
+              onChangeDate: (_) {},
+              onTaken: (_) => takenCalled = true,
+              onSkip: (_) {},
+              onSnooze: (_) {},
+              onReclassify: (_, __) {},
+              onAddMed: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Taken'), findsOneWidget);
+      expect(find.text('Snooze'), findsOneWidget);
+      expect(find.text('Skip'), findsOneWidget);
+
+      final takenRect = tester.getRect(find.widgetWithText(FilledButton, 'Taken'));
+      expect(takenRect.height, greaterThanOrEqualTo(44));
+
+      await tester.tap(find.text('Taken'));
+      await tester.pumpAndSettle();
+      expect(takenCalled, isTrue);
+    });
+  });
+
+  group('MedsDoseActionButtons', () {
+    testWidgets('MedLibraryRow Taken does not trigger row navigation', (tester) async {
+      var rowTapped = false;
+      var takenTapped = false;
+      final med = Medication(
+        id: 'm1',
+        name: 'Keppra',
+        active: true,
+        kind: 'medication',
+        isRescue: false,
+        timesOfDay: const ['08:00'],
+      );
+      final dose = MedicationDose(
+        id: 'd1',
+        medicationId: 'm1',
+        scheduledAt: DateTime.parse('2026-07-05T14:00:00Z'),
+        status: 'pending',
+        medication: med,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MedLibraryRow(
+              medication: med,
+              nextDose: dose,
+              onTap: () => rowTapped = true,
+              onMarkTaken: (_) => takenTapped = true,
+            ),
+          ),
+        ),
+      );
+
+      final takenRect = tester.getRect(find.widgetWithText(FilledButton, 'Taken'));
+      expect(takenRect.height, greaterThanOrEqualTo(44));
+
+      await tester.tap(find.text('Taken'));
+      await tester.pumpAndSettle();
+
+      expect(takenTapped, isTrue);
+      expect(rowTapped, isFalse);
+    });
   });
 
   group('MedsScreen toolbar and FAB', () {

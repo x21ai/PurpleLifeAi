@@ -76,10 +76,16 @@ Format:
 
 ## Flutter / TestFlight
 
-- [ ] **flutter-today-doses-regression** — Merged Today dropped the dose schedule card
-  (`8a09f494`). **Partially fixed** `adf42d6c`: read-only `TodayMedsSection` restored on
-  `/today`. **Gap:** web inline dose actions (Taken / Skip / Snooze) still only on `/meds`.
-  _Raised 2026-07-06 audit `a198e779`._
+- [x] ~~**flutter-today-doses-regression**~~ — RESOLVED 2026-07-06 (TF25): inline Taken /
+  Snooze / Skip on `TodayMedsSection` for pending doses; shared `MedsPendingDoseActions`
+  (44pt targets); `MedLibraryRow` Taken moved outside parent `InkWell`. Verified:
+  `flutter test test/meds*.dart test/today_meds_actions_test.dart` **7/7**.
+  _Raised 2026-07-06 audit `a198e779`; fixed same day._
+
+- [x] ~~**tf-meds-taken-not-tappable**~~ — RESOLVED 2026-07-06 (TF25): ASC build 24
+  `devynrosewalker` could not press Taken on Today (read-only card) or Meds library
+  (InkWell swallowed tap). Same commit as `flutter-today-doses-regression`. _Raised
+  2026-07-06 ASC; fixed same day._
 
 - [ ] **flutter-today-more-for-today-removed** — Merged Today removed web "More for today"
   disclosure: sync nudge, team announcements, secondary cards; signals grid vs web also

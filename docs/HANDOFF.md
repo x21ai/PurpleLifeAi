@@ -9,6 +9,13 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TF25 P0 meds Taken fix (this session, commit pending).**
+`TodayMedsSection` wires inline Taken / Snooze / Skip for pending doses (44pt
+`MedsPendingDoseActions` shared with `TodayDosePanel`). `MedLibraryRow` quick Taken
+moved outside parent `InkWell` so tap is not swallowed. Verified:
+`flutter test test/meds*.dart test/today_meds_actions_test.dart` **7/7**,
+`flutter analyze` clean on changed files. TF25 integrator merges before upload.
+
 **2026-07-06 TF25 fleet merge — journal on main (`5531d06b`), upload pending.**
 Journal agent `009fda0f` cherry-picked to `main` as `5531d06b` (keyboard dismiss, Change label,
 media honesty). ASC latest **1.0 (24) VALID**; build **25** not on ASC yet. Integrator
@@ -466,6 +473,25 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06 — TF25 P0 meds Taken button tappable
+
+- **Requested** — Fix P0 ASC `tf-meds-taken-not-tappable` (build 24): Taken button not
+  tappable on Today/Meds; ensure 44pt hit targets; wire inline actions or fix navigation.
+- **Done** — `flutter/lib/features/today/today_meds_section.dart`: inline
+  `MedsPendingDoseActions` for pending doses with repository callbacks + provider
+  invalidation. `flutter/lib/features/meds/dose_list.dart`: exported
+  `MedsDoseActionButton` / `MedsPendingDoseActions` (44×44 min); `MedLibraryRow` Taken
+  outside `InkWell`. Tests: `meds_schedule_ux_test.dart` (+3 cases),
+  `today_meds_actions_test.dart` (new). `docs/OPEN-ISSUES.md`: resolved
+  `flutter-today-doses-regression`, `tf-meds-taken-not-tappable`.
+- **Issues** — None. Device QA on TF25 build still required post-upload.
+- **Stand / next** — TF25 integrator merges this slice + runs full `flutter test` before
+  `ios:testflight`.
+- **Who / where** — Cursor agent, local `main` (uncommitted at write).
+- **Timestamp** — 2026-07-06T20:55:00Z
+
+---
 
 ### 2026-07-06T20:52:00Z — Journal merge into TF25 stack (integrator handoff)
 

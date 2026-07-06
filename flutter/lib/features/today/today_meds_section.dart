@@ -7,6 +7,7 @@ import '../../core/providers/core_providers.dart';
 import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
+import '../meds/dose_list.dart';
 import '../meds/meds_repository.dart';
 import '../meds/models/dose.dart';
 import '../shared/glass_helpers.dart';
@@ -23,7 +24,7 @@ final medsForDayProvider = FutureProvider.autoDispose
   return ref.watch(medsRepositoryProvider).loadMeds(viewDateYmd: dateYmd);
 });
 
-/// Read-only dose schedule card on Today (full Taken/Snooze/Skip on [AppRoutes.meds]).
+/// Dose schedule card on Today with inline Taken / Snooze / Skip for pending doses.
 class TodayMedsSection extends ConsumerWidget {
   const TodayMedsSection({
     super.key,
@@ -37,6 +38,33 @@ class TodayMedsSection extends ConsumerWidget {
   final int medicationCount;
 
   String get _dateYmd => DateFormat('yyyy-MM-dd').format(selectedDate);
+
+  Future<void> _doseAction(
+    WidgetRef ref,
+    BuildContext context,
+    Future<void> Function() action, {
+    String? successMessage,
+  }) async {
+    try {
+      await action();
+      ref.invalidate(medsForDayProvider(_dateYmd));
+      ref.invalidate(medsDataProvider);
+      if (successMessage != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(successMessage),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not update dose')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -169,7 +197,38 @@ class TodayMedsSection extends ConsumerWidget {
                     color: parseTokenColor(colors.divider),
                   ),
                   itemBuilder: (context, index) {
-                    return _TodayDoseRow(dose: doses[index]);
+                    final dose = doses[index];
+                    return _TodayDoseRow(
+                      dose: dose,
+                      onTaken: dose.isPending
+                          ? () => _doseAction(
+                                ref,
+                                context,
+                                () => ref
+                                    .read(medsRepositoryProvider)
+                                    .markDoseTaken(dose.id),
+                              )
+                          : null,
+                      onSnooze: dose.isPending
+                          ? () => _doseAction(
+                                ref,
+                                context,
+                                () => ref
+                                    .read(medsRepositoryProvider)
+                                    .snoozeDose(dose.id),
+                                successMessage: 'Snoozed 10 min',
+                              )
+                          : null,
+                      onSkip: dose.isPending
+                          ? () => _doseAction(
+                                ref,
+                                context,
+                                () => ref
+                                    .read(medsRepositoryProvider)
+                                    .markDoseSkipped(dose.id),
+                              )
+                          : null,
+                    );
                   },
                 ),
             ],
@@ -181,9 +240,17 @@ class TodayMedsSection extends ConsumerWidget {
 }
 
 class _TodayDoseRow extends StatelessWidget {
-  const _TodayDoseRow({required this.dose});
+  const _TodayDoseRow({
+    required this.dose,
+    this.onTaken,
+    this.onSnooze,
+    this.onSkip,
+  });
 
   final MedicationDose dose;
+  final VoidCallback? onTaken;
+  final VoidCallback? onSnooze;
+  final VoidCallback? onSkip;
 
   @override
   Widget build(BuildContext context) {
@@ -191,49 +258,67 @@ class _TodayDoseRow extends StatelessWidget {
     final medName = dose.medication?.name ?? 'Medication';
     final strength = dose.medication?.strength;
     final timeLabel = DateFormat.jm().format(dose.scheduledAt.toLocal());
+    final outOfStock = dose.medication?.outOfStock ?? false;
+    final showActions =
+        dose.isPending && !outOfStock && onTaken != null && onSkip != null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _TimePill(time: timeLabel, status: dose.status, colors: colors),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  medName,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  softWrap: true,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.93),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _TimePill(time: timeLabel, status: dose.status, colors: colors),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      medName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.93),
+                          ),
+                    ),
+                    if (strength != null && strength.isNotEmpty)
+                      Text(
+                        strength,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.55),
+                            ),
                       ),
+                  ],
                 ),
-                if (strength != null && strength.isNotEmpty)
-                  Text(
-                    strength,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+              ),
+              if (!showActions) ...[
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    _statusLabel(dose.status),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.55),
+                          color: _statusColor(dose.status, colors),
                         ),
                   ),
+                ),
               ],
-            ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Text(
-              _statusLabel(dose.status),
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: _statusColor(dose.status, colors),
-                  ),
+          if (showActions) ...[
+            const SizedBox(height: 10),
+            MedsPendingDoseActions(
+              onTaken: onTaken!,
+              onSnooze: onSnooze ?? onSkip!,
+              onSkip: onSkip!,
             ),
-          ),
+          ],
         ],
       ),
     );

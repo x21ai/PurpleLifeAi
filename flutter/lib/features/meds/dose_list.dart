@@ -634,13 +634,10 @@ class _DoseRow extends StatelessWidget {
               child: const Text('Refill to update'),
             )
           else if (dose.isPending)
-            Wrap(
-              spacing: 6,
-              children: [
-                _ActionButton(label: 'Taken', onTap: onTaken, kind: _ActionKind.primary),
-                _ActionButton(label: 'Snooze', onTap: onSnooze, kind: _ActionKind.outline),
-                _ActionButton(label: 'Skip', onTap: onSkip, kind: _ActionKind.ghost),
-              ],
+            MedsPendingDoseActions(
+              onTaken: onTaken,
+              onSnooze: onSnooze,
+              onSkip: onSkip,
             )
           else if (dose.status == 'taken')
             Wrap(
@@ -648,10 +645,10 @@ class _DoseRow extends StatelessWidget {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 _StatusPill(label: 'Taken', color: statusColor),
-                _ActionButton(
+                MedsDoseActionButton(
                   label: 'Undo',
                   onTap: () => onReclassify('pending'),
-                  kind: _ActionKind.ghost,
+                  kind: MedsActionKind.ghost,
                 ),
               ],
             )
@@ -664,10 +661,10 @@ class _DoseRow extends StatelessWidget {
                   label: _capitalize(dose.status),
                   color: statusColor,
                 ),
-                _ActionButton(
+                MedsDoseActionButton(
                   label: 'I took it',
                   onTap: () => onReclassify('taken'),
-                  kind: _ActionKind.outline,
+                  kind: MedsActionKind.outline,
                 ),
               ],
             ),
@@ -706,10 +703,12 @@ class _StatusPill extends StatelessWidget {
   }
 }
 
-enum _ActionKind { primary, outline, ghost }
+enum MedsActionKind { primary, outline, ghost }
 
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
+/// Shared dose action chip with 44pt minimum touch target (Apple HIG).
+class MedsDoseActionButton extends StatelessWidget {
+  const MedsDoseActionButton({
+    super.key,
     required this.label,
     required this.onTap,
     required this.kind,
@@ -717,26 +716,28 @@ class _ActionButton extends StatelessWidget {
 
   final String label;
   final VoidCallback onTap;
-  final _ActionKind kind;
+  final MedsActionKind kind;
+
+  static const _minTarget = Size(44, 44);
 
   @override
   Widget build(BuildContext context) {
     switch (kind) {
-      case _ActionKind.primary:
+      case MedsActionKind.primary:
         return FilledButton(
           onPressed: onTap,
           style: FilledButton.styleFrom(
-            minimumSize: const Size(0, 44),
+            minimumSize: _minTarget,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             shape: const StadiumBorder(),
           ),
           child: Text(label),
         );
-      case _ActionKind.outline:
+      case MedsActionKind.outline:
         return OutlinedButton(
           onPressed: onTap,
           style: OutlinedButton.styleFrom(
-            minimumSize: const Size(0, 44),
+            minimumSize: _minTarget,
             padding: const EdgeInsets.symmetric(horizontal: 14),
             foregroundColor: MedsPalette.dark().textPrimary.withValues(alpha: 0.8),
             side: BorderSide(color: MedsPalette.dark().divider),
@@ -744,11 +745,11 @@ class _ActionButton extends StatelessWidget {
           ),
           child: Text(label),
         );
-      case _ActionKind.ghost:
+      case MedsActionKind.ghost:
         return TextButton(
           onPressed: onTap,
           style: TextButton.styleFrom(
-            minimumSize: const Size(0, 44),
+            minimumSize: _minTarget,
             padding: const EdgeInsets.symmetric(horizontal: 14),
             foregroundColor: MedsPalette.dark().textSecondary,
             shape: const StadiumBorder(),
@@ -756,6 +757,45 @@ class _ActionButton extends StatelessWidget {
           child: Text(label),
         );
     }
+  }
+}
+
+/// Taken / Snooze / Skip row for pending doses (Today card + Meds panel).
+class MedsPendingDoseActions extends StatelessWidget {
+  const MedsPendingDoseActions({
+    super.key,
+    required this.onTaken,
+    required this.onSnooze,
+    required this.onSkip,
+  });
+
+  final VoidCallback onTaken;
+  final VoidCallback onSnooze;
+  final VoidCallback onSkip;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        MedsDoseActionButton(
+          label: 'Taken',
+          onTap: onTaken,
+          kind: MedsActionKind.primary,
+        ),
+        MedsDoseActionButton(
+          label: 'Snooze',
+          onTap: onSnooze,
+          kind: MedsActionKind.outline,
+        ),
+        MedsDoseActionButton(
+          label: 'Skip',
+          onTap: onSkip,
+          kind: MedsActionKind.ghost,
+        ),
+      ],
+    );
   }
 }
 
@@ -841,12 +881,12 @@ class MedLibraryRow extends StatelessWidget {
 
     return Material(
       color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: onTap,
+            child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Opacity(
                 opacity: medication.active ? 1 : 0.7,
@@ -939,21 +979,20 @@ class MedLibraryRow extends StatelessWidget {
                 ),
               ),
             ),
-            if (showQuickTaken)
-              Padding(
-                padding: const EdgeInsets.only(left: 20, right: 20, bottom: 12),
-                child: FilledButton(
-                  onPressed: () => onMarkTaken!(nextDose!),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(0, 36),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    shape: const StadiumBorder(),
-                  ),
-                  child: const Text('Taken'),
+          ),
+          if (showQuickTaken)
+            Padding(
+              padding: const EdgeInsets.only(left: 20, right: 20, bottom: 12),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: MedsDoseActionButton(
+                  label: 'Taken',
+                  onTap: () => onMarkTaken!(nextDose!),
+                  kind: MedsActionKind.primary,
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
