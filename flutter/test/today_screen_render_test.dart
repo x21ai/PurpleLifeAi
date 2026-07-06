@@ -98,4 +98,21 @@ void main() {
     expect(find.text('Daily check-in'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('shows error banner with merged empty state on load failure',
+      (tester) async {
+    const data = TodayData(
+      scores: ScoreSnapshot.empty,
+      loadError: todayLoadErrorBannerMessage,
+    );
+
+    await pumpToday(tester, data: data);
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(todayLoadErrorBannerMessage), findsOneWidget);
+    expect(find.text('Start where you are.'), findsOneWidget);
+    expect(find.text('Daily check-in'), findsOneWidget);
+    expect(find.text('TODAY'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

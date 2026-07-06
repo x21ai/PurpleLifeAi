@@ -73,14 +73,30 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   Widget build(BuildContext context) {
     final todayAsync = ref.watch(todayDataProvider);
     final hub = ref.watch(reportsHubProvider);
-    final tokens = PurpleTokens.loaded;
 
     return CanvasBackground(
       child: SizedBox(
         width: double.infinity,
         child: todayAsync.when(
           loading: _TodayLoadingView.new,
-          error: (_, __) => _TodayLoadError(onRetry: _refresh),
+          error: (_, __) => _MergedTodayScrollView(
+            onRefresh: _refresh,
+            child: _MergedTodayBody(
+              data: TodayData.empty.copyWith(
+                loadError: todayLoadErrorBannerMessage,
+              ),
+              scores: ScoreSnapshot.empty,
+              scoresLoading: false,
+              selectedDate: _selectedDate,
+              isToday: _isToday,
+              hasLabs: hub.valueOrNull?.documents.isNotEmpty ?? false,
+              greeting: _greeting(),
+              showEmptyWelcome: !_emptyDismissed,
+              onDismissWelcome: () => setState(() => _emptyDismissed = true),
+              onDateChanged: (day) =>
+                  setState(() => _selectedDate = _startOfDay(day)),
+            ),
+          ),
           data: (data) {
             final dayScoresAsync = _isToday
                 ? null
@@ -92,35 +108,53 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                 !_isToday && (dayScoresAsync?.isLoading ?? false);
             final hasLabs = (hub.valueOrNull?.documents.length ?? 0) > 0;
 
-            return RefreshIndicator(
+            return _MergedTodayScrollView(
               onRefresh: _refresh,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.only(
-                  top: tokens.spacing.x2,
-                  bottom: tokens.spacing.xl,
-                ),
-                child: ContentColumn(
-                  child: _MergedTodayBody(
-                    data: data,
-                    scores: scores,
-                    scoresLoading: scoresLoading,
-                    selectedDate: _selectedDate,
-                    isToday: _isToday,
-                    hasLabs: hasLabs,
-                    greeting: _greeting(),
-                    showEmptyWelcome:
-                        data.journalEntryCount == 0 && !_emptyDismissed,
-                    onDismissWelcome: () =>
-                        setState(() => _emptyDismissed = true),
-                    onDateChanged: (day) =>
-                        setState(() => _selectedDate = _startOfDay(day)),
-                  ),
-                ),
+              child: _MergedTodayBody(
+                data: data,
+                scores: scores,
+                scoresLoading: scoresLoading,
+                selectedDate: _selectedDate,
+                isToday: _isToday,
+                hasLabs: hasLabs,
+                greeting: _greeting(),
+                showEmptyWelcome:
+                    data.journalEntryCount == 0 && !_emptyDismissed,
+                onDismissWelcome: () =>
+                    setState(() => _emptyDismissed = true),
+                onDateChanged: (day) =>
+                    setState(() => _selectedDate = _startOfDay(day)),
               ),
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _MergedTodayScrollView extends StatelessWidget {
+  const _MergedTodayScrollView({
+    required this.onRefresh,
+    required this.child,
+  });
+
+  final Future<void> Function() onRefresh;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = PurpleTokens.loaded;
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(
+          top: tokens.spacing.x2,
+          bottom: tokens.spacing.xl,
+        ),
+        child: ContentColumn(child: child),
       ),
     );
   }
@@ -160,6 +194,10 @@ class _MergedTodayBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (data.loadError != null) ...[
+          _TodayLoadErrorBanner(message: data.loadError!),
+          SizedBox(height: tokens.spacing.lg),
+        ],
         if (showEmptyWelcome && isToday) ...[
           _TodayEmptyWelcome(
             onStart: () => context.go(AppRoutes.journalNew),
@@ -334,57 +372,35 @@ class _TodayLoadingView extends StatelessWidget {
   }
 }
 
-class _TodayLoadError extends StatelessWidget {
-  const _TodayLoadError({required this.onRetry});
+class _TodayLoadErrorBanner extends StatelessWidget {
+  const _TodayLoadErrorBanner({required this.message});
 
-  final Future<void> Function() onRetry;
+  final String message;
 
   @override
   Widget build(BuildContext context) {
-    final tokens = PurpleTokens.loaded;
+    final color = Theme.of(context).colorScheme.error;
 
-    return ContentColumn(
-      child: Padding(
-        padding: EdgeInsets.only(top: tokens.spacing.x2, bottom: tokens.spacing.xl),
-        child: GlassSurface(
-          borderRadius: BorderRadius.circular(24),
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 22),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'TODAY',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.5),
-                    ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Could not load this view',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.95),
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Pull to refresh or retry now.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      height: 1.45,
-                    ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: tokens.touch.minTarget,
-                child: FilledButton(
-                  onPressed: () => onRetry(),
-                  child: const Text('Retry'),
-                ),
-              ),
-            ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.error_outline, size: 18, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(color: color, fontSize: 13, height: 1.35),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

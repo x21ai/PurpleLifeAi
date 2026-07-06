@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -468,6 +470,44 @@ class _ProfileFields {
   final List<String> conditions;
 }
 
+/// Guard against hung Supabase/auth calls that leave Today spinning forever.
+const todayProviderTimeout = Duration(seconds: 15);
+
+const todayLoadErrorBannerMessage =
+    'Could not load today right now. Pull to refresh or try again.';
+
+Future<T> _guardTodayProviderLoad<T>(
+  Future<T> future,
+  T fallback, {
+  required String label,
+}) async {
+  try {
+    return await future.timeout(todayProviderTimeout);
+  } on TimeoutException catch (error, stack) {
+    debugPrint(
+      '[TodayProvider] $label timed out after ${todayProviderTimeout.inSeconds}s: $error\n$stack',
+    );
+    return fallback;
+  } catch (error, stack) {
+    debugPrint('[TodayProvider] $label failed: $error\n$stack');
+    return fallback;
+  }
+}
+
+Future<void> _awaitAuthReady(Ref ref) async {
+  try {
+    await ref
+        .watch(authRepositoryProvider.future)
+        .timeout(todayProviderTimeout);
+  } on TimeoutException catch (error, stack) {
+    debugPrint(
+      '[TodayProvider] authRepositoryProvider timed out after ${todayProviderTimeout.inSeconds}s: $error\n$stack',
+    );
+  } catch (error, stack) {
+    debugPrint('[TodayProvider] authRepositoryProvider failed: $error\n$stack');
+  }
+}
+
 final todayRepositoryProvider = Provider<TodayRepository>((ref) {
   ref.watch(authRepositoryProvider);
   return TodayRepository(
@@ -479,21 +519,29 @@ final todayRepositoryProvider = Provider<TodayRepository>((ref) {
 
 final todayDataProvider = FutureProvider.autoDispose<TodayData>((ref) async {
   ref.keepAlive();
-  await ref.watch(authRepositoryProvider.future);
+  await _awaitAuthReady(ref);
   final session = ref.watch(authSessionProvider).valueOrNull;
   if (session == null) return TodayData.empty;
   final repository = ref.watch(todayRepositoryProvider);
-  return repository.loadToday();
+  return _guardTodayProviderLoad(
+    repository.loadToday(),
+    TodayData.empty.copyWith(loadError: todayLoadErrorBannerMessage),
+    label: 'todayDataProvider',
+  );
 });
 
 final scoreSnapshotProvider =
     FutureProvider.autoDispose<ScoreSnapshot>((ref) async {
   ref.keepAlive();
-  await ref.watch(authRepositoryProvider.future);
+  await _awaitAuthReady(ref);
   final session = ref.watch(authSessionProvider).valueOrNull;
   if (session == null) return ScoreSnapshot.empty;
   final repository = ref.watch(todayRepositoryProvider);
-  return repository.loadScoreSnapshot();
+  return _guardTodayProviderLoad(
+    repository.loadScoreSnapshot(),
+    ScoreSnapshot.empty,
+    label: 'scoreSnapshotProvider',
+  );
 });
 
 /// Day-filtered snapshot for the Today date strip (key: `yyyy-MM-dd`).
@@ -501,9 +549,13 @@ final scoreSnapshotProvider =
 final scoreSnapshotForDayProvider = FutureProvider.autoDispose
     .family<ScoreSnapshot, String>((ref, dateYmd) async {
   ref.keepAlive();
-  await ref.watch(authRepositoryProvider.future);
+  await _awaitAuthReady(ref);
   final session = ref.watch(authSessionProvider).valueOrNull;
   if (session == null) return ScoreSnapshot.empty;
   final repository = ref.watch(todayRepositoryProvider);
-  return repository.loadScoreSnapshot(dateYmd: dateYmd);
+  return _guardTodayProviderLoad(
+    repository.loadScoreSnapshot(dateYmd: dateYmd),
+    ScoreSnapshot.empty,
+    label: 'scoreSnapshotForDayProvider($dateYmd)',
+  );
 });

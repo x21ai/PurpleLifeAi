@@ -9,6 +9,19 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TF24 auth session validation fix (committed, not pushed).**
+Flutter auth: `ensureValidSession()` on bootstrap (refresh + `getUser`, sign-out on invalid
+Keychain restore after reinstall), `core/auth/auth_state.dart` gate status, `AuthGate` spinner
+instead of blank shrink during `AsyncLoading`, onboarding profile 10s timeout, OAuth deep link
+fail-open to `/sign-in?error=session`. Verified: `flutter analyze lib/core/auth/` clean,
+auth tests **31/31**. Scope: auth only; no today/data/sync.
+
+**2026-07-06 TF24 Today infinite-loading fix (committed, not pushed).**
+`flutter/lib/features/today/`: 15s provider timeouts on `todayDataProvider`,
+`scoreSnapshotProvider`, `scoreSnapshotForDayProvider`; fail-open empty `TodayData` with
+`loadError` inline banner instead of full-screen error or infinite skeleton. Merged layout
+preserved. Verified: `flutter test test/today_screen_render_test.dart` 3/3 + vital items 2/2.
+
 **2026-07-06 Data tab resilient parallel fetch (committed, not pushed).**
 `flutter/lib/features/data/`: per-query `_QueryResult.guard` with 12s timeout, partial
 `DataScreenSnapshot` + `loadError` banner, `DataLoadingGate` 15s skeleton cap with retry CTA.

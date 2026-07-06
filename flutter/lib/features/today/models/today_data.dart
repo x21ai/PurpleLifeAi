@@ -22,6 +22,7 @@ class TodayData {
     this.showWearablesNudge = false,
     this.isOffline = false,
     this.loadedAt,
+    this.loadError,
   });
 
   final ScoreSnapshot scores;
@@ -39,8 +40,39 @@ class TodayData {
   final bool isOffline;
   final DateTime? loadedAt;
 
+  /// Non-blocking load failure surfaced as an inline banner on the merged Today UI.
+  final String? loadError;
+
   bool get showEmptyWelcome => journalEntryCount == 0;
   bool get hasVitals => scores.hasData && buildTodayVitalItems(scores).isNotEmpty;
 
   static const empty = TodayData(scores: ScoreSnapshot.empty);
+
+  TodayData copyWith({
+    ScoreSnapshot? scores,
+    String? firstName,
+    String? narrative,
+    List<String>? conditions,
+    int? medicationCount,
+    int? journalEntryCount,
+    TodayAnnouncement? announcement,
+    bool? showWearablesNudge,
+    bool? isOffline,
+    DateTime? loadedAt,
+    String? loadError,
+  }) {
+    return TodayData(
+      scores: scores ?? this.scores,
+      firstName: firstName ?? this.firstName,
+      narrative: narrative ?? this.narrative,
+      conditions: conditions ?? this.conditions,
+      medicationCount: medicationCount ?? this.medicationCount,
+      journalEntryCount: journalEntryCount ?? this.journalEntryCount,
+      announcement: announcement ?? this.announcement,
+      showWearablesNudge: showWearablesNudge ?? this.showWearablesNudge,
+      isOffline: isOffline ?? this.isOffline,
+      loadedAt: loadedAt ?? this.loadedAt,
+      loadError: loadError ?? this.loadError,
+    );
+  }
 }
