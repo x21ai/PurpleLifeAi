@@ -362,6 +362,23 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 
 ## Log
 
+### 2026-07-06T20:45:00Z — TF23 Merged fleet serial integrate + TestFlight 23
+
+- **Requested** — Serial integrator: merge parallel fleet WIP, fix analyze/tests, rebuild
+  `:8765`, update gap matrix/handoff/OPEN-ISSUES, ship TF23 Founding Team, push
+  `lovable/redesign`, ff `main`, wrangler deploy if web `_app` changed.
+- **Done** — Integrated 14 commits on `lovable/redesign@7a8a62c`: Flutter Merged 5-tab shell +
+  restyle, TanStack `data`/`plan`/`ask-maya` routes, docs sync. Fixed analyze regressions
+  (GlassSurface imports, SheetPalette test theme, today_merged_widgets types). Verified:
+  `flutter analyze` 0 errors, **`flutter test` 135/135**, curl 200 on `:8765`. Docs: gap matrix
+  Merged % table, `superpower-design-parity` → Partial, `CURSOR_HANDOFF.md`.
+- **Issues** — Stage 5 still NO-GO (~68% Merged parity). P1: reports/care/chat depth, lab order,
+  Recommended grid, push notifications, Oura OAuth console.
+- **Stand / next** — Confirm ASC VALID for 1.0 (23); triage `ios:check-tf-feedback`; device QA
+  Merged tabs on TF23.
+- **Who / where** — Cursor serial integrator subagent, local, `lovable/redesign@7a8a62c`.
+- **Timestamp** — 2026-07-06T20:45:00Z.
+
 ### 2026-07-06T20:35:00Z — Merged styling pass (events, onboarding, shared widgets)
 
 - **Requested** — Disjoint scope: hydration, seizures, nutrition (none), events/timeline,
@@ -373,7 +390,7 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
   `1ed98cf`. Verified: `flutter analyze` clean on scope.
 - **Issues** — Nutrition feature absent in Flutter. Care chat message rows still inline alphas.
 - **Stand / next** — Parent merge; browser QA on :8765 timeline + welcome.
-- **Who / where** — Cursor subagent, local, `lovable/redesign@9565b95`.
+- **Who / where** — Cursor subagent, local, `lovable/redesign@7d0c1a5`.
 - **Timestamp** — 2026-07-06T20:35:00Z.
 
 ### 2026-07-06T20:10:00Z — Merged Today dual hero + date strip (Flutter slice)
