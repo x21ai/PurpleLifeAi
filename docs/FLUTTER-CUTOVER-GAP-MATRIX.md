@@ -19,7 +19,7 @@
 
 | Screen | Web `_app` | Flutter | Merged % | Notes |
 |--------|------------|---------|----------|-------|
-| Today | `/today` | `/today` | **~75%** | Dual score hero, date strip, personalization pill shipped; journal FAB depth P1 |
+| Today | `/today` | `/today` | **~78%** | Dual score hero, date strip; **TodayMedsSection restored TF25** (`adf42d6c`, read-only dose card visible); inline dose actions still `/meds` only; "More for today" + signals grid **Missing** (`flutter-today-more-for-today-removed`) |
 | Data | `/data` | `/data` | **~70%** | Unified hub + metric rows + summary bar; lab empty state P1 |
 | Plan | `/plan` | `/plan` | **~65%** | Protocol \| Recommended segmented; trait grid from conditions |
 | Ask Maya | `/ask-maya` | `/ask-maya` | **~60%** | Greeting + chips + chat deep link; full Worker history P1 |

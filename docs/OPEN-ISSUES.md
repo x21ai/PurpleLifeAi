@@ -76,6 +76,15 @@ Format:
 
 ## Flutter / TestFlight
 
+- [ ] **flutter-today-doses-regression** — Merged Today dropped the dose schedule card
+  (`8a09f494`). **Partially fixed** `adf42d6c`: read-only `TodayMedsSection` restored on
+  `/today`. **Gap:** web inline dose actions (Taken / Skip / Snooze) still only on `/meds`.
+  _Raised 2026-07-06 audit `a198e779`._
+
+- [ ] **flutter-today-more-for-today-removed** — Merged Today removed web "More for today"
+  disclosure: sync nudge, team announcements, secondary cards; signals grid vs web also
+  regressed. _Raised 2026-07-06 audit `a198e779`._
+
 - [ ] **flutter-oauth-auth-callback** — P0 login blocker for Google/Apple on Flutter native
   (2026-07-06). **Fix shipped** in `4430c13` (native `org.purplelife.app://auth-callback`, web
   origin `/`) on TF24 **`ff263b07`**. Supabase Google + Apple **enabled** on `xxnzmfzsjplrutrgbzxy`.

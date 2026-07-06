@@ -9,6 +9,11 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-06 TF25 audit docs (`7c5f22d8`, not pushed).**
+Audit `a198e779`: logged `flutter-today-doses-regression` (partial fix `adf42d6c`) and
+`flutter-today-more-for-today-removed` in `docs/OPEN-ISSUES.md`; Today row in
+`docs/FLUTTER-CUTOVER-GAP-MATRIX.md` updated for meds visibility. No push (TF25 integrator).
+
 **2026-07-06 TF25 Today meds section restore (committed, not pushed).**
 Merged Today regained pre-merge dose schedule card (`today_meds_section.dart`:
 `medsForDayProvider`, read-only `TodayMedsSection` with link to full dose flow).
@@ -438,6 +443,17 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-06T20:50:00Z — TF25 audit OPEN-ISSUES + gap matrix (docs only)
+
+- **Requested** — From audit `a198e779`: brief OPEN-ISSUES entries for Today doses regression
+  and removed "More for today"; update gap matrix Today meds row. Docs commit only, no push.
+- **Done** — `docs/OPEN-ISSUES.md`: `flutter-today-doses-regression`, `flutter-today-more-for-today-removed`.
+  `docs/FLUTTER-CUTOVER-GAP-MATRIX.md`: Today row notes (TodayMedsSection `adf42d6c`, remaining gaps).
+- **Issues** — None; code fix already in `adf42d6c`.
+- **Stand / next** — TF25 integrator merges doc commit with fleet slices.
+- **Who / where** — Cursor subagent, local, `lovable/redesign`.
+- **Timestamp** — 2026-07-06T20:50:00Z
 
 ### 2026-07-06T20:45:00Z — TF25 Today meds section restore
 
