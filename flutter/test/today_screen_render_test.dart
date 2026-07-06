@@ -78,10 +78,10 @@ void main() {
     // Signals grid.
     expect(find.text('YOUR SIGNALS'), findsOneWidget);
     expect(find.text('HRV'), findsOneWidget);
-    // Narrative appears as the lede and in the narrative block.
+    // Narrative appears once in the glass NarrativeBlock (not duplicated in lede).
     expect(
       find.text('Your signals look steady compared with yesterday.'),
-      findsNWidgets(2),
+      findsOneWidget,
     );
     // Quick actions and doses card.
     expect(find.text('Journal'), findsOneWidget);

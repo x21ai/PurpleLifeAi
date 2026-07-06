@@ -412,15 +412,13 @@ function TodayPage() {
         )
       )}
 
-      {isToday && forecast?.ai_narrative ? (
-        <p className="today-lede mt-4 max-w-[600px] text-foreground/75">{forecast.ai_narrative}</p>
-      ) : isToday ? (
+      {isToday && !forecast?.ai_narrative ? (
         <p className="today-lede mt-4 max-w-[600px] text-foreground/55">{conditionPrompt}</p>
-      ) : (
+      ) : !isToday ? (
         <p className="today-lede mt-4 max-w-[600px] text-foreground/55">
           Here's how {format(selectedDate, "EEEE, MMMM d")} went.
         </p>
-      )}
+      ) : null}
 
       <DateStrip value={selectedDate} onChange={setSelectedDate} />
       {!isToday && (

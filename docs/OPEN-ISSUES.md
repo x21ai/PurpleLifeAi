@@ -324,6 +324,14 @@ Format:
   additive-padding bug. _Partially resolved 2026-07-05 by Flutter P0 closure pass (Today/
   Vitals/Tools only; other tabs still open)._
 
+- [x] ~~**tf-today-duplicate-narrative**~~ — RESOLVED 2026-07-06: ASC screenshot feedback
+  **×3** from `a@arora.net` (14:32, 18:03, 18:19 ET): AI narrative rendered twice on Today
+  (lede under greeting + glass `NarrativeBlock` after scores). Feedback was visible via
+  `ios:check-tf-feedback` but not fixed until this pass (triage logged themes only). **Fix:**
+  show narrative once in `NarrativeBlock` only; lede uses condition prompt when no narrative.
+  Same fix in web `today.tsx`. **TestFlight 1.0 (22)** ships the Flutter fix. _Raised
+  2026-07-06 ASC; resolved 2026-07-06._
+
 - [ ] **flutter-web-cutover-impl** — Runbook at `docs/FLUTTER-WEB-CUTOVER.md` (plan only).
   Needs `merge-flutter-web-assets.sh`, `src/server.ts` path dispatch, staging smoke, owner
   approval before prod. Build: `./scripts/flutter-web-build-prod.sh`. _Raised 2026-07-05._

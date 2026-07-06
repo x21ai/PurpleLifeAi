@@ -310,15 +310,17 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                 ),
           ),
         ],
-        SizedBox(height: tokens.spacing.md),
-        _Lede(
-          text: !isToday
-              ? "Here's how ${DateFormat('EEEE, MMMM d').format(_selectedDate)} went."
-              : hasNarrative
-                  ? narrative
-                  : _conditionPrompt(data.conditions),
-          emphasized: isToday && hasNarrative,
-        ),
+        // AI narrative renders once in [NarrativeBlock] below the score strip
+        // (tf-today-duplicate-narrative). Do not repeat it in the lede under the
+        // greeting — ASC feedback 2026-07-06 x3 from a@arora.net.
+        if (!isToday || !hasNarrative) ...[
+          SizedBox(height: tokens.spacing.md),
+          _Lede(
+            text: !isToday
+                ? "Here's how ${DateFormat('EEEE, MMMM d').format(_selectedDate)} went."
+                : _conditionPrompt(data.conditions),
+          ),
+        ],
         SizedBox(height: tokens.spacing.xl),
         DateStrip(
           value: _selectedDate,
@@ -682,12 +684,9 @@ class _Header extends StatelessWidget {
 }
 
 class _Lede extends StatelessWidget {
-  const _Lede({required this.text, this.emphasized = false});
+  const _Lede({required this.text});
 
   final String text;
-
-  /// Web: AI narrative lede renders at foreground/75, prompt at foreground/55.
-  final bool emphasized;
 
   @override
   Widget build(BuildContext context) {
@@ -696,7 +695,7 @@ class _Lede extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: emphasized ? 0.75 : 0.55),
+              color: Colors.white.withValues(alpha: 0.55),
               height: 1.45,
             ),
       ),
