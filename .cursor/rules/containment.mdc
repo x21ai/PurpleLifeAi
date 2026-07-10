@@ -1,0 +1,79 @@
+---
+description: Least privilege, runtime-injected secrets, reversibility by construction, freeze protocol, and a kill switch. Damage stays local no matter how many agents run. Overrides any convenience shortcut. Only the operator can weaken it.
+alwaysApply: true
+---
+
+# Containment (HARD RULE)
+
+Scaling the fleet is only safe if a failure's blast radius stays constant while
+throughput grows. Everything here exists to keep damage local.
+
+## Secrets (highest-priority standing constraint)
+Secrets, tokens, API keys, credentials, and key material are ALWAYS provided at
+runtime via injection (e.g. `doppler run -- <command>`), never stored in the
+repo or on disk in plaintext. This overrides any workflow shortcut.
+Never:
+- Read secrets from `.env`, `.env.local`, or any `*SECRETS*` plaintext file.
+- Write a secret VALUE into code, config, logs, comments, commit messages,
+  docs, rule files, ledger entries, the event log, or saved terminal output.
+- Echo a secret to stdout or paste it into a chat/PR/issue.
+- Commit a file containing a live secret. If one is found already committed:
+  STOP, tell the operator, and treat rotation as higher priority than any task
+  in progress, fleet-wide.
+Always:
+- Use runtime injection for anything needing a secret. If injection is not
+  configured, halt once and tell the operator how to configure it; never fall
+  back to plaintext.
+- Reference a secret's LOCATION when documenting ("in the Doppler config for
+  this project"), never its value.
+- For sign-in and E2E flows, use runtime-injected test credentials the repo
+  documents, never hardcoded ones.
+A prior credential exposure makes this permanent. No secret should ever exist
+in a place a leak could reach.
+
+## Least privilege per role
+- Writers receive only their partition's paths and only the credentials their
+  task documents. Writers NEVER hold production credentials.
+- Reviewers receive the spec and the diff, nothing more.
+- The deploy owner is a distinct single role per environment; deploy
+  credentials exist only in that role's runtime injection.
+- No agent holds more access than its current task requires.
+
+## Reversibility budget
+Default: every action is revertible by construction: worktrees, branches,
+backup before rebuild. The irreversible class: production deploy, store or
+TestFlight upload, migrations on a shared database, force-push, data deletion,
+DNS changes. Irreversible actions require: single owner + L3 human gate (03) +
+a written rollback plan in the task BEFORE execution. No rollback plan, no
+execution.
+
+## Freeze protocol (broken trunk or shared resource)
+1. Stop dispatching new writer/build/install agents immediately.
+2. One restorer: return the trunk or resource to last-known-good.
+3. One root-causer: diagnose (compile, config, deps); do not fix by piling on.
+4. One rebuild owner: rebuild/restart via the repo's own scripts.
+5. Verify end-to-end at L0, then fix the gate that let it through (04 ratchet).
+6. Resume writers on disjoint partitions.
+"asap" never means adding agents onto a broken base.
+
+## Kill switch
+A file at `.agents/HALT` is the fleet-wide stop. Every agent checks for it at
+the start of every turn. If present: take no new actions, release held leases,
+write current state to the ledger and HANDOFF, and end the turn. Only the
+operator removes the HALT file. Any agent may CREATE it when it observes
+cascading failure (repeated red lands, lease storms, suspected secret
+exposure); creating it is always the safe move and is never punished in
+review.
+
+## Decorrelation note
+For risk high and irreversible work, the reviewing agent uses a different
+model or a fresh session/persona than the writer wherever the platform allows.
+Same-model writer and reviewer share blind spots; diversity is defense in
+depth.
+
+## Rule integrity
+These five rule files change only with explicit operator approval. If a task
+seems to require weakening any of them, STOP and ask first, stating the change
+and why. Repo-specific rules may ADD stricter constraints, never relax these.
+Proposed amendments arrive via the ratchet (04) as suggestions, never as
+self-applied edits.

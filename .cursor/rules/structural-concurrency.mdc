@@ -1,0 +1,73 @@
+---
+description: Collisions are prevented by structure, not judgment. Ownership manifest as data, brokered resources, two-phase waves under frozen contracts, computed writer budget with no fixed cap. Wins over any "max agents" or "asap" instruction. Only the operator can weaken it.
+alwaysApply: true
+---
+
+# Structural Concurrency (HARD RULE)
+
+A rule an agent can violate is advice. Make the wrong action impossible.
+"Max agents" / "asap" / "as fast as possible" means: reach a correct, verified
+result in the least wall-clock time. It changes how wide the independent work
+runs. It never relaxes single-owner, no-self-approval, or verified-before-
+landing. More agents must never make the system worse.
+
+## Ownership manifest (disjointness as data)
+`OWNERSHIP.yaml` at repo root maps partition ids to path globs and owned
+resources (ports, build dirs, schemas, services). Create it on the first wave;
+refine it as the codebase teaches you. Rules:
+- A write task claims exactly ONE partition (declared in its ledger entry).
+- Any diff outside the claimed partition is auto-rejected. Enforce with a
+  pre-commit hook where present; until the hook exists, the writer self-checks
+  the diff against the manifest before every commit and the reviewer re-checks.
+- Two partitions that both modify a shared upstream (same imported type, same
+  schema, same generated code) are NOT disjoint. Fix the manifest, not the
+  judgment call.
+
+## Resource broker (allocated, never hand-picked)
+Ports, build output dirs, simulators/emulators, and local DBs are taken by
+writing a lease file `.agents/leases/<resource>.lease` containing holder, pid,
+heartbeat timestamp, and expiry. Never start a server or build on a hand-picked
+port or dir. Stale lease (no heartbeat past expiry): supervisor reclaims; no
+one else. Read the repo's own scripts for real ports and commands; never invent
+a competing dev/build command. Before starting a server or build, check the
+lease dir, not just the process list.
+
+## Two-phase waves (this is what makes wide safe)
+- Phase 0, contract freeze: ONE owner lands ALL shared-contract changes for the
+  wave: types, schemas, API and websocket contracts, routers, codegen. Then the
+  contracts are frozen for the wave.
+- Phase 1, fan out: writers run wide under the frozen contracts, each inside
+  one partition. Under a frozen contract, disjointness is provable and cheap.
+- A contract change needed mid-wave = stop the wave, re-plan, re-freeze. Never
+  patch a shared contract in parallel with consumers of it.
+
+## Writer budget (computed, not capped)
+Per wave: `writers = min(proven_partitions, review_lanes, merge_budget,
+infra_capacity)`. State the binding constraint in the plan line before
+dispatch, e.g. "18 partitions proven, review lanes 18, merge budget 22, infra
+40: dispatch 18, bound by partitions." Rules:
+- No writer without a proven partition. Fewer writers is correct when the work
+  does not split. There is no fixed numeric cap and no target count.
+- Read-only agents (audit, grep, review, test-running, scanning): unlimited.
+- Collision check before every dispatch: candidate needs a held resource =
+  serialize or defer. Never dispatch into a collision.
+
+## Forever-serial resources (single owner at ANY writer count)
+| Resource | Rule |
+|---|---|
+| Native iOS/Android sync + signing | One owner per wave |
+| Store / TestFlight upload | One owner per build number |
+| Production deploy | One owner per environment |
+| Migrations on a shared database | One migration owner |
+| Git destructive ops (rebase/reset/clean/force-push) | One owner |
+| Package install per root | One install owner |
+| Dev server port / long-running process | One owner per port/process |
+
+## Freeze on breakage
+When a shared resource or the trunk is broken: stop dispatching writers, follow
+the containment protocol (05), resume only after end-to-end green.
+
+## Changing this rule
+Do NOT edit, weaken, or override without explicit operator approval. If a task
+seems to require it, STOP and ask, stating the change and why. Repo-specific
+rules may ADD stricter constraints, never relax these.

@@ -4,7 +4,7 @@ Every completed agent task must update project documentation before claiming don
 
 ## Required surfaces
 
-- `docs/HANDOFF.md` — canonical snapshot + log (append every task; `.cursor/rules/00-handoff.mdc`)
+- `docs/HANDOFF.md` — canonical snapshot + log (append every task; `.cursor/rules/compounding-memory.mdc`)
 - `docs/DECISIONS.md` — standing decisions when made or superseded
 - `docs/OPEN-ISSUES.md` — blockers opened or resolved
 - `CURSOR_HANDOFF.md` — extended operational state (TestFlight, deploy, gates, verify commands)
@@ -14,8 +14,8 @@ Every completed agent task must update project documentation before claiming don
 
 ## Rule files
 
-- `.cursor/rules/00-handoff.mdc` — session start read + log append gate (`alwaysApply: true`)
-- `.cursor/rules/post-task-documentation.mdc` — Purple-specific targets beyond the trio
+- `.cursor/rules/compounding-memory.mdc` — session start read + log append gate (`alwaysApply: true`)
+- `.cursor/rules/00-handoff.mdc` — Purple-specific supplements (CURSOR_HANDOFF skim)
 
 ## Install on other repos
 

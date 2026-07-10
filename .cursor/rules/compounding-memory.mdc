@@ -1,0 +1,67 @@
+---
+description: State lives in the repo and knowledge compounds. Read before work, record after. Every lesson must compile into a check, rule, test, or template before the next wave; raw lessons are standing defects. Never lose history.
+alwaysApply: true
+---
+
+# Compounding Memory (load-bearing, non-negotiable)
+
+Projects run across multiple developers, machines, and agent sessions.
+Documentation is part of finishing the task, not optional cleanup. These files
+live in the repo being worked on. If absent, CREATE them; never skip because
+they do not exist yet.
+
+## On EVERY session start, before changing anything
+Read if present (create on first write if absent):
+1. `docs/HANDOFF.md`, current state of the world.
+2. `docs/DECISIONS.md`, standing architectural and security decisions.
+3. `docs/OPEN-ISSUES.md`, known problems and blockers.
+4. `docs/LEARNINGS.md`, durable lessons; let it change how the next wave is
+   decomposed.
+If the task conflicts with anything in them, stop and surface it first.
+
+## On EVERY task completion, before the task is done
+Append a new entry to the TOP of the log in `docs/HANDOFF.md`:
+- Requested: the actual ask, one or two lines.
+- Done: concrete changes: files, commands, config, infra.
+- Issues: anything broken, incomplete, deferred, or risky.
+- Stand / next: current state and the single next action if any.
+- Who / where: developer or agent identity, machine, branch@commit if known.
+- Evidence: links to the artifacts from the gate (03).
+- Timestamp: ISO 8601 UTC.
+Then refresh the "Current snapshot" block at the top. A task is NOT complete
+until this entry exists. No exceptions, including fast-path tasks.
+
+## The ratchet (what makes the system compound)
+Every rejection, incident, gate failure, or genuine surprise gets a
+`docs/LEARNINGS.md` entry with `status: raw` at creation. Before the NEXT wave
+dispatches, each raw entry must be compiled into exactly one of:
+(a) a new automated check added to the L0 gate,
+(b) a rule amendment proposed to the operator (never self-applied),
+(c) a new test,
+(d) a change to the task template or OWNERSHIP.yaml.
+Then mark it `status: compiled` with a link to the artifact. Compilation is
+done by an agent OTHER than the one that made the mistake. Raw entries older
+than one wave are counted in the next wave's plan line as standing defects.
+The trajectory this enforces: prose becomes policy becomes physics, and the
+fleet's error rate falls monotonically.
+
+## Event log (fleet observability)
+`.agents/events.jsonl`, append-only, one JSON object per line:
+`{ts, agent, action, task, detail}` where action is one of claim, heartbeat,
+land, reject, freeze, lease-expire, halt. Supervisors read it before planning.
+One glance must answer "what did the fleet do and where did it go wrong".
+
+## Decisions as constraints
+Write `docs/DECISIONS.md` entries as checkable statements where possible, e.g.
+"all money math routes through the shared roundHalfEven util", so they can
+graduate into lint rules via the ratchet. Vague decisions cannot be enforced;
+sharpen them at write time.
+
+## Hard constraints
+- Never delete history from these docs. Append and mark status. History is the
+  point.
+- Never write secrets, tokens, credentials, or key material into any doc, rule
+  file, ledger entry, or event log. Reference the secret's location only (05).
+- Keep entries factual and specific. No vague optimism, no filler.
+- If a change spans multiple repos or submodules, note the cross-repo
+  dependency in both HANDOFF files.

@@ -1,7 +1,7 @@
 # CLAUDE.md
 
-Instructions for Claude Code in this repo. Cursor reads `.cursor/rules/00-handoff.mdc`;
-this file is the Claude Code equivalent. Keep the two in sync.
+Instructions for Claude Code in this repo. Cursor reads `.cursor/rules/compounding-memory.mdc`
+and `00-handoff.mdc`; this file is the Claude Code equivalent. Keep them in sync.
 
 Purple also uses `AGENTS.md` (learned preferences), `CURSOR_HANDOFF.md` (extended ops),
 and `mem/` (durable decisions). Session start reads the handoff trio first.
@@ -13,7 +13,8 @@ Read these in order, every session:
 1. `docs/HANDOFF.md` — current snapshot and log (canonical state).
 2. `docs/DECISIONS.md` — standing decisions you must respect.
 3. `docs/OPEN-ISSUES.md` — known blockers.
-4. `CURSOR_HANDOFF.md` — skim for TestFlight, Doppler, gates relevant to the task.
+4. `docs/LEARNINGS.md` — durable lessons; let them change how work is decomposed.
+5. `CURSOR_HANDOFF.md` — skim for TestFlight, Doppler, gates relevant to the task.
 
 If the task conflicts with any of these, stop and surface it before proceeding.
 

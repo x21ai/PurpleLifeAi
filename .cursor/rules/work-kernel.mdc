@@ -1,0 +1,77 @@
+---
+description: Everything is a task in a repo-resident ledger with states, leases, and executable acceptance criteria. Agents pull work; the supervisor supervises. State lives on disk so any agent, machine, or session can resume anything. Foundation for all other rules.
+alwaysApply: true
+---
+
+# Work Kernel (HARD RULE)
+
+Coordination happens through the repo, never through chat memory. Chat dies with
+the session; the ledger survives agents, machines, and developers. If the
+machinery below does not exist yet in a repo, CREATE it on first use. Never skip
+a step because the file is absent.
+
+## The ledger
+Tasks live in `.agents/tasks/<id>.yaml` (one file per task). Required fields:
+
+| Field | Meaning |
+|---|---|
+| id | short unique id, e.g. `T-0042` |
+| title | one line |
+| intent | the actual ask, 1-2 lines, verbatim where possible |
+| partition | the OWNERSHIP.yaml partition this task writes to (one only) |
+| depends_on | task ids that must be `landed` first |
+| risk | low / medium / high / irreversible |
+| acceptance | list of criteria, executable tests where possible |
+| state | see state machine |
+| claimant | agent identity, empty if unclaimed |
+| lease_expires | ISO 8601 UTC, empty if unclaimed |
+| evidence | links to artifacts once verifying/landed |
+
+## State machine (only these transitions)
+`draft -> ready -> claimed -> in-progress -> verifying -> queued -> landed`
+Failure exits: `-> rejected` (keep the file, record why) or `-> blocked`
+(name the blocker task or resource). Rejected work is never merged then
+reverted; it is discarded and the task re-planned.
+
+A task is not `ready` until acceptance criteria exist. A task with vague
+acceptance criteria is a defect in the task, not a license to improvise.
+
+## Leases (no work without a claim)
+- To claim: write `claimant` + `lease_expires` (default now + 30 min).
+- Heartbeat: refresh `lease_expires` every turn while working.
+- Expired lease: only the supervisor releases it and reassigns. Never steal a
+  live lease. An agent death loses minutes, not work, because state is on disk.
+- One claimant per task. One task per writer agent at a time.
+
+## Pull, not push
+Writers pull the highest-priority `ready` task whose dependencies are `landed`
+and whose partition is unheld. Priority order:
+1. Restore a broken dev env or red trunk (always first).
+2. Unblockers: tasks whose landing frees other partitions or agents.
+3. Risk-adjusted value: user-facing correctness before internals.
+4. Cosmetic, docs, cleanup.
+
+## Supervisor role
+The parent agent creates and splits tasks, watches leases, reassigns expired
+ones, runs the merge queue, and reads the event log before planning. The
+supervisor of a wave does NOT write code in that wave and does NOT audit its
+own decomposition; a separate agent reviews the split.
+
+## Idempotent and resumable
+Every step must be safely re-runnable. Write state to the ledger each turn.
+Any agent must be able to resume any task from the ledger plus the repo alone,
+with zero chat context.
+
+## Fast path (anti-bureaucracy valve)
+A single trivial task (docs, one-file low-risk fix) may skip wave machinery
+and run as one writer. It NEVER skips the verification gate (03) or the
+handoff entry (04).
+
+## Wave budget
+Every wave states a token/time budget in its plan line and stops at budget to
+reassess. Budget exhaustion is a normal stop, not a failure.
+
+## Bootstrap
+On first use in a repo: create `.agents/tasks/`, `.agents/leases/`,
+`.agents/events.jsonl`, and `OWNERSHIP.yaml` (see 02). Commit them. These are
+part of the repo, not local scratch.

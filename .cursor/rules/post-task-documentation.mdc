@@ -7,13 +7,15 @@ alwaysApply: true
 
 After every completed prompt or task, before claiming done, update project documentation so the next agent or engineer understands what changed, why, and how to operate it. Skipping this step is not allowed.
 
-Works with `.cursor/rules/00-handoff.mdc`: the **log entry in `docs/HANDOFF.md` is the
-completion gate**. This rule covers Purple-specific targets beyond that trio.
+Works with `.cursor/rules/compounding-memory.mdc` and `00-handoff.mdc`: the **log entry
+in `docs/HANDOFF.md` is the completion gate**. This rule covers Purple-specific targets
+beyond the handoff trio.
 
 ## Session start (before any work)
 
-Read in order: `docs/HANDOFF.md`, `docs/DECISIONS.md`, `docs/OPEN-ISSUES.md`. If the
-task conflicts with any, stop and surface it first. See `00-handoff.mdc`.
+Read in order: `docs/HANDOFF.md`, `docs/DECISIONS.md`, `docs/OPEN-ISSUES.md`,
+`docs/LEARNINGS.md`. If the task conflicts with any, stop and surface it first.
+See `compounding-memory.mdc` and `00-handoff.mdc`.
 
 ## When this applies
 
@@ -26,7 +28,7 @@ task conflicts with any, stop and surface it first. See `00-handoff.mdc`.
 
 | Target | Path | Update when |
 |--------|------|-------------|
-| Handoff log (required) | `docs/HANDOFF.md` | Always: append log entry, refresh Current snapshot (see `00-handoff.mdc`) |
+| Handoff log (required) | `docs/HANDOFF.md` | Always: append log entry, refresh Current snapshot (see `compounding-memory.mdc`) |
 | Decisions | `docs/DECISIONS.md` | Standing decision made or superseded |
 | Open issues | `docs/OPEN-ISSUES.md` | New blocker or issue resolved |
 | Extended ops | `CURSOR_HANDOFF.md` | Always: last-updated date, current commit/deploy, hosting state, known gaps, verification commands |

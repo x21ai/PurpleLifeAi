@@ -1,0 +1,69 @@
+---
+description: Spec before code, machine gates before opinion, adversarial review for risk, human gate only for irreversible. Serialized merge queue with a full gate per land. Evidence or it did not happen. Writers never grade their own work.
+alwaysApply: true
+---
+
+# Proof of Work (HARD RULE)
+
+Agents are superb at satisfying explicit criteria and unreliable at reading
+minds, and they overclaim completion. Both facts are designed around here.
+
+## Spec before code
+A task is not `ready` until acceptance criteria exist (01). Prefer executable
+tests as the criteria; write or approve them BEFORE implementation. UI work
+gets a concrete checklist plus before/after screenshots. If criteria are vague,
+the correct move is to fix the spec, not to guess harder. Spec quality is the
+throughput ceiling at scale; treat a bad spec as a P1 defect.
+
+## Gate ladder (every land climbs it; depth scales with risk)
+- L0 machine, per worktree, always: compile, typecheck, lint, tests (full
+  suite or the documented scoped set), secret scan, diff coverage on changed
+  lines. Red at L0 = the task goes back to `in-progress`; nothing above runs.
+- L1 independent review, always: a reviewer agent that did NOT write the
+  change, briefed with ONLY the spec and the diff (not the writer's chat).
+  Where available, use a different model or a fresh adversarial persona than
+  the writer, so reviewer errors do not correlate with writer errors.
+- L2 adversarial, for risk high: auth, payments, money math, migrations,
+  native, and anything user-facing that can break. A red-team pass actively
+  tries to break the change: edge cases, races, injection, rounding, replay.
+- L3 human, only for risk irreversible: production deploy, store submission,
+  destructive data operations. Present the diff, the evidence, and a rollback
+  plan, then wait.
+
+Writer != reviewer != supervisor, always. The agent that wrote a change never
+approves it; the agent that planned the split never audits its own plan.
+
+## Merge queue (serialize the land, not the work)
+Writers commit on feature branches in their own worktrees and do NOT push.
+Finished slices enter a queue. The supervisor lands them one at a time, runs
+the FULL L0 gate after EACH land (never one batch gate at the end), halts the
+queue on first red, and pushes only after all queued lands are green. On red:
+one restorer returns the trunk to last-known-good, then the gate that let the
+failure through is fixed BEFORE the queue resumes. Never leave the operator on
+a broken build; never merge then revert.
+
+## Evidence or it did not happen
+Every land attaches artifacts, linked from the task ledger entry and the
+HANDOFF entry: test output, build log, screenshot for UI, curl or client
+transcript for APIs, device/simulator run note for mobile. A completion claim
+without evidence is treated as NOT done, and saying "done" without evidence is
+itself a rule violation to record in LEARNINGS.
+
+## Verify before handoff to the operator
+Do NOT ask the operator to open a URL, refresh a page, or confirm a visual fix
+until the agent has:
+1. Confirmed the server/process is running on the stated host:port (via its
+   lease, then the process).
+2. Loaded the URL via the Cursor browser tool or equivalent. Mandatory. If no
+   such tool is available, say so explicitly and state what was verified
+   instead; never silently skip.
+3. Fixed connection-refused, blank page, 404, and obvious runtime errors found
+   in that check.
+Use runtime-injected test credentials for sign-in flows when the repo documents
+them (05). Report PASS/FAIL with the evidence. Never outsource first-pass QA
+the agent can run itself.
+
+## Rebuild discipline
+No full rebuild until L0 is green OR a known-good backup exists. One rebuild
+owner per worktree. A failed rebuild restores the backup; never leave a
+half-written output dir.

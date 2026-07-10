@@ -11,7 +11,7 @@ Purple is an AI-powered health journal (epilepsy and pattern-driven conditions) 
 
 Operational work (Doppler, Supabase API, wrangler, git, native CLI) is agent-owned. See `.cursor/rules/no-manual-operator-work.mdc`.
 
-**Session start:** read `docs/HANDOFF.md`, `docs/DECISIONS.md`, `docs/OPEN-ISSUES.md` (`.cursor/rules/00-handoff.mdc`).
+**Session start:** read `docs/HANDOFF.md`, `docs/DECISIONS.md`, `docs/OPEN-ISSUES.md`, `docs/LEARNINGS.md` (`.cursor/rules/compounding-memory.mdc`).
 **Task done:** append log to `docs/HANDOFF.md` before claiming complete; also sync `CURSOR_HANDOFF.md` per `post-task-documentation.mdc`.
 
 ## Runtime and commands
