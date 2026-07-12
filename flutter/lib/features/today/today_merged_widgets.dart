@@ -834,7 +834,7 @@ class TodayMayaCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'MAYA · daily insight',
+            "Today's reading",
             style: TextStyle(
               fontSize: 10,
               letterSpacing: 0.08,

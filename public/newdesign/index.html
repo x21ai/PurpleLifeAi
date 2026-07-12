@@ -187,24 +187,24 @@
   </style>
 </head>
 <body>
-  <div class="preview-banner">Design preview only · No real data · Tap to explore the full journey</div>
+  <div class="preview-banner">Login preview → opens Merged Today design · No real data</div>
   <div class="app" id="app">
 
-    <!-- SIGN IN -->
+    <!-- SIGN IN (entry for Merged design preview) -->
     <section class="screen active no-nav" id="sign-in">
       <div class="scroll" style="padding-top: 48px;">
         <p style="text-align:center;font-size:32px;font-weight:600;margin:0 0 32px;">Purple</p>
         <div class="card glass">
           <p class="eyebrow" style="text-align:center;">Sign in</p>
           <p class="subtitle" style="text-align:center;margin-bottom:20px;">A quiet intelligence for your health.</p>
-          <button class="btn-ghost" style="margin-bottom:8px;">Continue with Google</button>
-          <button class="btn-ghost" style="margin-bottom:16px;">Continue with Apple</button>
+          <button class="btn-ghost" style="margin-bottom:8px;" data-go="today">Continue with Google</button>
+          <button class="btn-ghost" style="margin-bottom:16px;" data-go="today">Continue with Apple</button>
           <input class="input" placeholder="Email" type="email" />
           <input class="input" placeholder="Password" type="password" />
-          <button class="btn-primary" data-go="welcome-1">Sign in</button>
+          <button class="btn-primary" data-go="today">Sign in</button>
           <button class="btn-ghost" style="margin-top:12px;" data-go="welcome-1">Create your account</button>
         </div>
-        <a class="map-link" href="#" data-go="today">Skip to signed-in preview →</a>
+        <a class="map-link" href="#" data-go="today">Skip to Merged Today →</a>
       </div>
     </section>
 
@@ -292,7 +292,7 @@
       </div>
     </section>
 
-    <!-- TODAY -->
+    <!-- TODAY (legacy stub; live preview hands off to Merged design at :8766) -->
     <section class="screen" id="today" data-nav="today">
       <div class="topbar">
         <button class="side" data-drawer="open" aria-label="Menu">☰</button>
@@ -629,10 +629,22 @@
   </aside>
 
   <script>
+    // Post-login destination: Merged Today design preview (separate local serve).
+    const MERGED_DESIGN_URL = "http://127.0.0.1:8766/personalized-dashboard-preview.html?layout=merged";
+
     const appScreens = new Set(['today','data','plan','ask-maya']);
     const noNav = new Set(['sign-in','welcome-1','welcome-2','welcome-3','processing','hae-wizard','map','tools','account','settings','meds','journal-new']);
 
+    function enterMergedDesign() {
+      window.location.href = MERGED_DESIGN_URL;
+    }
+
     function show(id) {
+      // "today" is the signed-in handoff into the Merged design, not the stub screen below.
+      if (id === "today") {
+        enterMergedDesign();
+        return;
+      }
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       const el = document.getElementById(id);
       if (!el) return;

@@ -4,25 +4,26 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/core_providers.dart';
-import '../../design/glass_surface.dart';
 import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../reports/reports_repository.dart';
 import '../shared/condition_prompts.dart';
-import '../shared/glass_helpers.dart' hide GlassSurface;
+import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
 import '../vitals/sync_status_bar.dart';
 import 'date_strip.dart';
 import 'models/score_snapshot.dart';
 import 'models/today_data.dart';
 import 'today_meds_section.dart';
+import 'today_merged_layout.dart';
 import 'today_merged_widgets.dart';
 import 'today_repository.dart';
 import 'wearable_sync.dart';
 
-/// Merged Today dashboard: date strip, personalization pill, metric strip,
-/// single Maya narrative (`personalized-dashboard-preview.html`).
+/// Merged Today dashboard matching `personalized-dashboard-preview.html`
+/// layout=merged: greeting → date strip → score tiles → signals → narrative →
+/// icon expanders (Meds open by default) → Last 7 days.
 class TodayScreen extends ConsumerStatefulWidget {
   const TodayScreen({super.key});
 
@@ -34,7 +35,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   static bool _emptyDismissed = false;
   static bool _wearablesNudgeDismissed = false;
 
-  bool _showMore = false;
+  /// First visit / cold start: Meds panel open (preview contract).
+  TodayExpandPanel? _expanded = TodayExpandPanel.meds;
   DateTime _selectedDate = _startOfDay(DateTime.now());
   int _syncTick = 0;
 
@@ -53,6 +55,16 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     if (hour < 12) return 'Good morning';
     if (hour < 18) return 'Good afternoon';
     return 'Good evening';
+  }
+
+  void _toggleExpand(TodayExpandPanel panel) {
+    setState(() {
+      if (_expanded == panel) {
+        _expanded = null;
+      } else {
+        _expanded = panel;
+      }
+    });
   }
 
   Future<void> _refresh() async {
@@ -103,8 +115,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
               onDismissWelcome: () => setState(() => _emptyDismissed = true),
               onDateChanged: (day) =>
                   setState(() => _selectedDate = _startOfDay(day)),
-              showMore: _showMore,
-              onToggleMore: () => setState(() => _showMore = !_showMore),
+              expanded: _expanded,
+              onToggleExpand: _toggleExpand,
               syncTick: _syncTick,
               showWearablesNudge:
                   TodayData.empty.showWearablesNudge && !_wearablesNudgeDismissed,
@@ -139,8 +151,8 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                     setState(() => _emptyDismissed = true),
                 onDateChanged: (day) =>
                     setState(() => _selectedDate = _startOfDay(day)),
-                showMore: _showMore,
-                onToggleMore: () => setState(() => _showMore = !_showMore),
+                expanded: _expanded,
+                onToggleExpand: _toggleExpand,
                 syncTick: _syncTick,
                 showWearablesNudge:
                     data.showWearablesNudge && !_wearablesNudgeDismissed,
@@ -194,8 +206,8 @@ class _MergedTodayBody extends StatelessWidget {
     required this.showEmptyWelcome,
     required this.onDismissWelcome,
     required this.onDateChanged,
-    required this.showMore,
-    required this.onToggleMore,
+    required this.expanded,
+    required this.onToggleExpand,
     required this.syncTick,
     required this.showWearablesNudge,
     required this.onDismissWearablesNudge,
@@ -211,8 +223,8 @@ class _MergedTodayBody extends StatelessWidget {
   final bool showEmptyWelcome;
   final VoidCallback onDismissWelcome;
   final ValueChanged<DateTime> onDateChanged;
-  final bool showMore;
-  final VoidCallback onToggleMore;
+  final TodayExpandPanel? expanded;
+  final ValueChanged<TodayExpandPanel> onToggleExpand;
   final int syncTick;
   final bool showWearablesNudge;
   final VoidCallback onDismissWearablesNudge;
@@ -222,6 +234,7 @@ class _MergedTodayBody extends StatelessWidget {
     final tokens = PurpleTokens.loaded;
     final narrative = isToday ? data.narrative?.trim() : null;
     final hasNarrative = narrative != null && narrative.isNotEmpty;
+    final dateEyebrow = DateFormat('EEEE, MMM d').format(selectedDate);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,8 +250,16 @@ class _MergedTodayBody extends StatelessWidget {
           ),
           SizedBox(height: tokens.spacing.xl),
         ],
-        DateStrip(value: selectedDate, onChanged: onDateChanged),
-        SizedBox(height: tokens.spacing.lg),
+        Text(
+          dateEyebrow,
+          style: TextStyle(
+            fontSize: tokens.typography.labelSize('labelEyebrow'),
+            letterSpacing: tokens.typography.letterSpacing('labelEyebrow'),
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withValues(alpha: 0.45),
+          ),
+        ),
+        SizedBox(height: tokens.spacing.sm),
         _Header(
           title: greeting,
           firstName: data.firstName,
@@ -264,80 +285,107 @@ class _MergedTodayBody extends StatelessWidget {
           ),
         ],
         SizedBox(height: tokens.spacing.lg),
-        if (isToday)
-          TodayPersonalizationStrip(
-            conditions: data.conditions,
-            hasWearableData: data.scores.hasData,
-            hasLabs: hasLabs,
-            onTap: () => context.go(AppRoutes.plan),
-          ),
-        if (isToday) SizedBox(height: tokens.spacing.md),
+        DateStrip(value: selectedDate, onChanged: onDateChanged),
+        SizedBox(height: tokens.spacing.lg),
         if (scoresLoading)
           const _ScoresLoadingPlaceholder()
         else
-          TodayMetricStrip(
+          TodayScoreTiles(
             scores: scores,
-            conditions: data.conditions,
-            onMetricTap: (key) => context.go(AppRoutes.biometricsMetric(key)),
+            onTapData: () => context.go(AppRoutes.data),
           ),
+        SizedBox(height: tokens.spacing.xl),
+        TodayYourSignals(
+          scores: scores,
+          onViewAll: () => context.go(AppRoutes.data),
+          onMetricTap: (key) => context.go(AppRoutes.biometricsMetric(key)),
+        ),
         if (hasNarrative) ...[
           SizedBox(height: tokens.spacing.x2),
           TodayMayaCard(narrative: narrative),
         ],
-        SizedBox(height: tokens.spacing.x2),
-        TodayProtocolTeaser(
-          conditions: data.conditions,
-          scores: scores,
-          onSeePlan: () => context.go(AppRoutes.plan),
+        SizedBox(height: tokens.spacing.xl),
+        TodayIconActionRow(
+          expanded: expanded,
+          onSelect: onToggleExpand,
+        ),
+        if (expanded != null) ...[
+          SizedBox(height: tokens.spacing.md),
+          if (expanded == TodayExpandPanel.meds)
+            TodayExpandPanelShell(
+              title: "Today's doses",
+              onClose: () => onToggleExpand(TodayExpandPanel.meds),
+              child: TodayMedsSection(
+                selectedDate: selectedDate,
+                isToday: isToday,
+                medicationCount: data.medicationCount,
+              ),
+            )
+          else if (expanded == TodayExpandPanel.hydration)
+            TodayExpandPanelShell(
+              title: 'Hydration',
+              onClose: () => onToggleExpand(TodayExpandPanel.hydration),
+              child: TodayHydrationExpandBody(
+                onOpen: () => context.go(AppRoutes.hydration),
+              ),
+            )
+          else if (expanded == TodayExpandPanel.wearables)
+            TodayExpandPanelShell(
+              title: 'Wearables',
+              onClose: () => onToggleExpand(TodayExpandPanel.wearables),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (showWearablesNudge) ...[
+                    _WearablesNudgeCard(
+                      onConnect: () => context.go(AppRoutes.tools),
+                      onDismiss: onDismissWearablesNudge,
+                    ),
+                    SizedBox(height: tokens.spacing.md),
+                  ],
+                  TodayWearablesExpandBody(
+                    onOpenTools: () => context.go(AppRoutes.tools),
+                  ),
+                  SizedBox(height: tokens.spacing.sm),
+                  SyncStatusBar(
+                    variant: SyncStatusVariant.compact,
+                    refreshSignal: syncTick,
+                  ),
+                ],
+              ),
+            )
+          else if (expanded == TodayExpandPanel.log)
+            TodayExpandPanelShell(
+              title: 'Quick log',
+              onClose: () => onToggleExpand(TodayExpandPanel.log),
+              child: TodayLogExpandBody(
+                showSeizure: showsSeizureFeatures(data.conditions),
+                onJournal: () => context.go(AppRoutes.journalNew),
+                onSeizure: () => context.go(AppRoutes.seizuresNew),
+              ),
+            ),
+        ],
+        SizedBox(height: tokens.spacing.xl),
+        TodayLastSevenDaysCard(
+          onOpenData: () => context.go(AppRoutes.data),
         ),
         if (isToday) ...[
-          SizedBox(height: tokens.spacing.lg),
-          TodayAskMayaChips(conditions: data.conditions),
+          SizedBox(height: tokens.spacing.md),
           TodayRecommendedInline(
             conditions: data.conditions,
             hasLabs: hasLabs,
           ),
         ],
-        SizedBox(height: tokens.spacing.xl),
-        _QuickActions(
-          showSeizure: showsSeizureFeatures(data.conditions),
-          onJournal: () => context.go(AppRoutes.journal),
-          onMeds: () => context.go(AppRoutes.meds),
-          onSeizure: () => context.go(AppRoutes.seizuresNew),
-          onData: () => context.go(AppRoutes.data),
-        ),
         SizedBox(height: tokens.spacing.lg),
-        TodayMedsSection(
-          selectedDate: selectedDate,
-          isToday: isToday,
-          medicationCount: data.medicationCount,
-        ),
-        SizedBox(height: tokens.spacing.md),
-        if (scores.hasData)
-          Center(
-            child: TextButton.icon(
-              onPressed: () => context.go(AppRoutes.data),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white.withValues(alpha: 0.55),
-              ),
-              icon: const Icon(Icons.show_chart, size: 12),
-              label: const Text(
-                'View all data',
-                style: TextStyle(fontSize: 12),
-              ),
+        Center(
+          child: TextButton.icon(
+            onPressed: () => context.go(AppRoutes.plan),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white.withValues(alpha: 0.45),
             ),
+            icon: const Icon(Icons.checklist, size: 14),
+            label: const Text('Open Plan', style: TextStyle(fontSize: 12)),
           ),
-        SizedBox(height: tokens.spacing.xl),
-        _MoreForToday(
-          expanded: showMore,
-          onToggle: onToggleMore,
-          data: data,
-          syncTick: syncTick,
-          showWearablesNudge: showWearablesNudge,
-          onDismissWearablesNudge: onDismissWearablesNudge,
-          onConnectDevice: () => context.go(AppRoutes.tools),
-          onDigDeeper: () => context.go(AppRoutes.vitals),
-          onHydration: () => context.go(AppRoutes.hydration),
         ),
       ],
     );
@@ -349,27 +397,23 @@ class _ScoresLoadingPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget box() => Expanded(
+          child: Container(
+            height: 120,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        );
+
     return Row(
       children: [
-        Expanded(
-          child: Container(
-            height: 140,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Container(
-            height: 140,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-        ),
+        box(),
+        const SizedBox(width: 8),
+        box(),
+        const SizedBox(width: 8),
+        box(),
       ],
     );
   }
@@ -590,323 +634,6 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _QuickActions extends StatelessWidget {
-  const _QuickActions({
-    required this.showSeizure,
-    required this.onJournal,
-    required this.onMeds,
-    required this.onSeizure,
-    required this.onData,
-  });
-
-  final bool showSeizure;
-  final VoidCallback onJournal;
-  final VoidCallback onMeds;
-  final VoidCallback onSeizure;
-  final VoidCallback onData;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = PurpleTokens.loaded;
-    final purple = parseTokenColor(
-      PurpleTokens.loaded.colorsFor('dark').purplePrimary,
-    );
-
-    return Row(
-      children: [
-        Expanded(
-          child: _QuickActionCard(
-            icon: Icons.menu_book_outlined,
-            label: 'Journal',
-            onTap: onJournal,
-          ),
-        ),
-        SizedBox(width: tokens.spacing.sm),
-        Expanded(
-          child: _QuickActionCard(
-            icon: Icons.medication_outlined,
-            label: 'Meds',
-            onTap: onMeds,
-          ),
-        ),
-        if (showSeizure) ...[
-          SizedBox(width: tokens.spacing.sm),
-          Expanded(
-            child: _QuickActionCard(
-              icon: Icons.bolt_outlined,
-              label: 'Seizure',
-              onTap: onSeizure,
-              accentColor: purple,
-            ),
-          ),
-        ] else ...[
-          SizedBox(width: tokens.spacing.sm),
-          Expanded(
-            child: _QuickActionCard(
-              icon: Icons.insights_outlined,
-              label: 'Data',
-              onTap: onData,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _QuickActionCard extends StatelessWidget {
-  const _QuickActionCard({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.accentColor,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final Color? accentColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = accentColor;
-    return SizedBox(
-      height: 80,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          splashColor: Colors.white.withValues(alpha: 0.06),
-          highlightColor: Colors.white.withValues(alpha: 0.04),
-          child: GlassSurface(
-            borderRadius: BorderRadius.circular(18),
-            padding: EdgeInsets.zero,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: 24,
-                  color: accent ?? Colors.white.withValues(alpha: 0.93),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: accent ?? Colors.white.withValues(alpha: 0.93),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// "More for today" disclosure mirroring the web section: full-width glass
-/// toggle, then the wearables nudge, team announcement, body measurements
-/// row, and the compact sync status with a biometrics deep link.
-class _MoreForToday extends StatelessWidget {
-  const _MoreForToday({
-    required this.expanded,
-    required this.onToggle,
-    required this.data,
-    required this.syncTick,
-    required this.showWearablesNudge,
-    required this.onDismissWearablesNudge,
-    required this.onConnectDevice,
-    required this.onDigDeeper,
-    required this.onHydration,
-  });
-
-  final bool expanded;
-  final VoidCallback onToggle;
-  final TodayData data;
-  final int syncTick;
-  final bool showWearablesNudge;
-  final VoidCallback onDismissWearablesNudge;
-  final VoidCallback onConnectDevice;
-  final VoidCallback onDigDeeper;
-  final VoidCallback onHydration;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = PurpleTokens.loaded;
-    final scores = data.scores;
-    final hasMeasurements = scores.hasData &&
-        (scores.tempDeviationC != null ||
-            scores.respRateBpm != null ||
-            scores.spo2 != null);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onToggle,
-            borderRadius: BorderRadius.circular(20),
-            splashColor: Colors.white.withValues(alpha: 0.06),
-            highlightColor: Colors.white.withValues(alpha: 0.04),
-            child: GlassSurface(
-              borderRadius: BorderRadius.circular(20),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'MORE FOR TODAY',
-                      style: TextStyle(
-                        fontSize: tokens.typography.labelSize('labelEyebrow'),
-                        letterSpacing:
-                            tokens.typography.letterSpacing('labelEyebrow'),
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white.withValues(alpha: 0.55),
-                      ),
-                    ),
-                  ),
-                  AnimatedRotation(
-                    turns: expanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      Icons.keyboard_arrow_down,
-                      size: 18,
-                      color: Colors.white.withValues(alpha: 0.55),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        if (expanded) ...[
-          SizedBox(height: tokens.spacing.md),
-          if (showWearablesNudge) ...[
-            _WearablesNudgeCard(
-              onConnect: onConnectDevice,
-              onDismiss: onDismissWearablesNudge,
-            ),
-            SizedBox(height: tokens.spacing.md),
-          ],
-          if (data.announcement != null) ...[
-            _AnnouncementCard(announcement: data.announcement!),
-            SizedBox(height: tokens.spacing.md),
-          ],
-          if (hasMeasurements) ...[
-            _BodyMeasurementsRow(scores: scores),
-            SizedBox(height: tokens.spacing.md),
-          ],
-          _HydrationLinkCard(onTap: onHydration),
-          SizedBox(height: tokens.spacing.md),
-          if (scores.hasData) ...[
-            SizedBox(height: tokens.spacing.sm),
-            Center(
-              child: SyncStatusBar(
-                variant: SyncStatusVariant.compact,
-                refreshSignal: syncTick,
-              ),
-            ),
-            Center(
-              child: SizedBox(
-                height: tokens.touch.minTarget,
-                child: TextButton.icon(
-                  onPressed: onDigDeeper,
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white.withValues(alpha: 0.55),
-                  ),
-                  icon: const Icon(Icons.show_chart, size: 12),
-                  label: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Dig deeper into your signals',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      Icon(Icons.chevron_right, size: 12),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ],
-    );
-  }
-}
-
-/// Hydration row in "More for today" mirroring web link to `/hydration`.
-class _HydrationLinkCard extends StatelessWidget {
-  const _HydrationLinkCard({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = PurpleTokens.loaded.colorsFor('dark');
-
-    return Material(
-      color: parseTokenColor(colors.backgroundSecondary),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: parseTokenColor(colors.divider)),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.water_drop_outlined,
-                size: 18,
-                color: Colors.white.withValues(alpha: 0.55),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hydration',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.93),
-                          ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Track water, electrolytes, and déjà vu',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.55),
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                size: 16,
-                color: Colors.white.withValues(alpha: 0.55),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Web `ConnectWearablesCard`: gentle nudge to connect a wearable, with the
-/// `today.wearablesNudge*` copy, dismissible.
 class _WearablesNudgeCard extends StatelessWidget {
   const _WearablesNudgeCard({
     required this.onConnect,
@@ -987,146 +714,3 @@ class _WearablesNudgeCard extends StatelessWidget {
 }
 
 /// Team announcement card (`todayPage.fromTeam`).
-class _AnnouncementCard extends StatelessWidget {
-  const _AnnouncementCard({required this.announcement});
-
-  final TodayAnnouncement announcement;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = PurpleTokens.loaded;
-    final colors = tokens.colorsFor('dark');
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: parseTokenColor(colors.backgroundSecondary),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: parseTokenColor(colors.divider)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'FROM THE PURPLE TEAM',
-            style: TextStyle(
-              fontSize: tokens.typography.labelSize('labelEyebrow'),
-              letterSpacing: tokens.typography.letterSpacing('labelEyebrow'),
-              fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: 0.55),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            announcement.subject,
-            style: TextStyle(
-              fontFamily: PurpleType.serif,
-              fontSize: 18,
-              color: const Color(0xFFF2F2F5),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            announcement.body,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.55),
-                  height: 1.4,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Body measurements row (`body-measurements-row.tsx`): Temp deviation,
-/// respiratory rate, SpO2 as three large statistics between hairlines.
-class _BodyMeasurementsRow extends StatelessWidget {
-  const _BodyMeasurementsRow({required this.scores});
-
-  final ScoreSnapshot scores;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = PurpleTokens.loaded;
-    final colors = tokens.colorsFor('dark');
-    final divider = parseTokenColor(colors.divider);
-
-    final temp = scores.tempDeviationC;
-    final resp = scores.respRateBpm;
-    final spo2 = scores.spo2;
-
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: tokens.spacing.x2),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: divider),
-          bottom: BorderSide(color: divider),
-        ),
-      ),
-      child: Row(
-        children: [
-          _Measurement(
-            value: temp != null
-                ? '${temp > 0 ? '+' : ''}${temp.toStringAsFixed(1)}°'
-                : '–',
-            label: 'Temp Δ',
-          ),
-          _Measurement(
-            value: resp != null ? resp.round().toString() : '–',
-            label: 'Resp /min',
-          ),
-          _Measurement(
-            value: spo2 != null ? '${spo2.round()}%' : '–',
-            label: 'SpO₂',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Measurement extends StatelessWidget {
-  const _Measurement({required this.value, required this.label});
-
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = PurpleTokens.loaded;
-
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 36,
-              fontWeight: FontWeight.w300,
-              height: 1.1,
-              letterSpacing: tokens.typography.letterSpacing('numericDisplay'),
-              color: const Color(0xFFF2F2F5),
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            label.toUpperCase(),
-            maxLines: 1,
-            style: TextStyle(
-              fontSize: tokens.typography.labelSize('labelEyebrow'),
-              letterSpacing: tokens.typography.letterSpacing('labelEyebrow'),
-              fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: 0.55),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

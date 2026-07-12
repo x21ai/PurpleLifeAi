@@ -9,6 +9,12 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-12 TF26 upload in progress — newdesign sign-in + Merged Today.**
+`pubspec` **1.0.0+26**. Local: newdesign-parity sign-in, Merged Today layout
+(`today_merged_layout.dart`), preview HTML wiring, Today render tests updated.
+ASC baseline before upload: **1.0 (25) VALID** Founding Team. Shipping via
+`bun run ios:testflight` then `asc-add-build-to-group.mjs 26 "Founding Team"`.
+
 **2026-07-06 TF25 close-out — safe to close Cursor.**
 `main` + `lovable/redesign` **pushed** to origin @ **`7dc121d4`**. ASC **1.0 (25) VALID**,
 Founding Team **IN_BETA_TESTING** (`asc-add-build-to-group.mjs 25`). Upload ~17:04 ET, **EXPORT SUCCEEDED**.
@@ -494,6 +500,33 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-12T21:32:00Z — Flutter sign-in matches newdesign (local)
+- **Requested:** Login page at `:8765/sign-in` should match design at `:8790/newdesign/index.html`.
+- **Done:** Restyled `flutter/lib/features/auth/sign_in_screen.dart` (wordmark, glass card, SIGN IN eyebrow, tagline, social-first, gradient CTA, Create account ghost). `flutter build web --release`; SPA serve on `:8765`. Bundle contains “quiet intelligence” / “Create your account”.
+- **Issues:** Hard-refresh needed if Simple Browser cached prior JS. Not committed/pushed.
+- **Stand / next:** Compare side-by-side with `:8790/newdesign/index.html`; iterate micro-spacing if needed.
+- **Who / where:** Auto / local `main` dirty @ purpledrw
+- **Evidence:** curl `/sign-in` **200**; `main.dart.js` strings match; Simple Browser opened to `http://127.0.0.1:8765/sign-in`
+- **Timestamp:** 2026-07-12T21:32:00Z
+
+### 2026-07-12T21:00:00Z — Merged Today design live in Flutter (local)
+
+- **Requested:** Take Merged preview (`:8766/...layout=merged`) live into Flutter app.
+- **Done:** Restructured `today_screen.dart` + new `today_merged_layout.dart` (score tiles, Your signals, icon expanders with Meds default-open, Last 7 days always visible). Removed More disclosure / QuickActions as primary chrome. Narrative tag → Today's reading. Built web release + serving `:8765`.
+- **Issues:** Last 7 days is deep-link card (full chart grid still P1). Hydration/Wearables/Log expanders open Tools/Hydration/Journal rather than full inline panels. Not committed/pushed/TestFlight.
+- **Stand / next:** Browser QA at http://127.0.0.1:8765/#/today vs preview; commit when approved.
+- **Who / where:** Cursor agent, local, branch main (dirty working tree).
+- **Timestamp:** 2026-07-12T21:00:00Z
+
+### 2026-07-12T20:08:00Z — Reopen unpublished Jul 6 design preview (Cursor browser only)
+- **Requested:** Always use Cursor local browser for pages; bring up last week's design that was made but never pushed live.
+- **Done:** Identified `docs/previews/personalized-dashboard-preview.html` (Jul 6 HANDOFF: Classic/Expanded/Merged, Ask Maya, lab ordering, "not shipped"). Served with `./scripts/preview-design-serve.sh` on `:8766`. Opened `http://127.0.0.1:8766/personalized-dashboard-preview.html` via Cursor Simple Browser (AppleScript Cmd+Shift+P). Curl **200** + title match. Added AGENTS.md preference: Cursor browser only unless user asks external.
+- **Issues:** None. `public/newdesign` (today's pull on `:8790`) is a different artifact.
+- **Stand / next:** Preview server PID in `.preview-design-serve.pid`; stop with `./scripts/preview-design-serve.sh --stop` when done.
+- **Who / where:** subagent; purpledrw; local `:8766`.
+- **Evidence:** curl 200; AppleScript Simple Browser: Show returned PASS; HANDOFF Jul 6 "not shipped" entries.
+- **Timestamp:** 2026-07-12T20:08:00Z
 
 ### 2026-07-06T21:10:00Z — TF25 upload VALID (serial integrator)
 

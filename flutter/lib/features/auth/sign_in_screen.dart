@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-import '../../design/purple_type.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,8 +7,6 @@ import '../../auth/auth_state.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/providers/core_providers.dart';
 import '../../design/glass_card.dart';
-import '../../design/purple_theme.dart';
-import '../../design/tokens.dart';
 import '../shared/glass_helpers.dart' hide GlassCard;
 
 /// Maps a raw Supabase auth error to user-facing copy.
@@ -84,10 +80,6 @@ class SignInScreen extends ConsumerStatefulWidget {
 }
 
 class _SignInScreenState extends ConsumerState<SignInScreen> {
-  static const _foreground = purpleForegroundDark;
-  static const _foregroundMuted = Color(0x8CFFFFFF);
-  static const _foregroundSubtle = Color(0x8FFFFFFF);
-
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _passwordFocusNode = FocusNode();
@@ -224,224 +216,299 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     final authReady = ref.watch(authRepositoryProvider);
-    final themeExt = Theme.of(context).extension<PurpleThemeExtension>();
-    final titleColor = themeExt != null
-        ? parseTokenColor(themeExt.colors.textPrimary)
-        : _foreground;
-    final subtitleColor = themeExt != null
-        ? parseTokenColor(themeExt.colors.textTertiary)
-        : _foregroundSubtle;
+    const canvas = Color(0xFF0A0710);
+    const purple = Color(0xFFB084D1);
+    const purpleDeep = Color(0xFF6E3FA0);
+    const muted = Color(0xFF8B8B92);
+    const border = Color(0xFF25202F);
+    const bg2 = Color(0xFF1F1A2B);
+    const text = Color(0xFFFAFAFC);
     final errorColor = Theme.of(context).colorScheme.error;
-    final spacing = (themeExt?.tokens ?? PurpleTokens.fallback).spacing;
+
+    InputDecoration fieldDecoration(String hint) => InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(color: muted, fontSize: 16),
+          filled: true,
+          fillColor: bg2,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: purple.withValues(alpha: 0.7)),
+          ),
+        );
+
+    final ButtonStyle ghostStyle = OutlinedButton.styleFrom(
+      foregroundColor: purple,
+      side: BorderSide(color: purple.withValues(alpha: 0.45)),
+      minimumSize: const Size.fromHeight(44),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      backgroundColor: Colors.transparent,
+    );
 
     return Scaffold(
-      backgroundColor: purpleCanvasDark,
+      backgroundColor: canvas,
       body: CanvasBackground(
         auth: true,
         child: SafeArea(
           child: ContentColumn(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
             child: authReady.when(
               loading: () => const Center(
-                child: CircularProgressIndicator(color: Color(0xFFB084D1)),
+                child: CircularProgressIndicator(color: purple),
               ),
               error: (error, _) => Text(
                 'Auth init failed: $error',
-                style: const TextStyle(color: _foreground),
+                style: const TextStyle(color: text),
               ),
-              data: (_) => Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Purple',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontFamily: PurpleType.serif,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 4.8,
-                          color: titleColor,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _resetSent
-                        ? 'Reset your password'
-                        : _isRegister
-                            ? 'Create your account'
-                            : 'Sign in',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: subtitleColor,
-                        ),
-                  ),
-                  const SizedBox(height: 32),
-                  if (_resetSent)
-                    GlassCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            'Check your inbox',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(color: titleColor),
-                          ),
-                          SizedBox(height: spacing.xs),
-                          Text(
-                            'We sent a password reset link to '
-                            '${_emailController.text.trim()}. Use only the latest email; '
-                            'older links stop working when you request another. '
-                            'The link stays valid for $recoveryLinkTtlLabel.',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(color: subtitleColor),
-                          ),
-                          SizedBox(height: spacing.md),
-                          TextButton(
-                            onPressed: () => setState(() {
-                              _resetSent = false;
-                              _error = null;
-                            }),
-                            style:
-                                TextButton.styleFrom(foregroundColor: titleColor),
-                            child: const Text('Back to sign in'),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    GlassCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          TextField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            autofillHints: const [AutofillHints.email],
-                            style: const TextStyle(color: _foreground),
-                            enabled: !_busy,
-                            onChanged: (_) {
-                              if (_error != null) setState(() => _error = null);
-                            },
-                            decoration: const InputDecoration(
-                              labelText: 'Email',
-                            ),
-                          ),
-                          SizedBox(height: spacing.md),
-                          TextField(
-                            controller: _passwordController,
-                            focusNode: _passwordFocusNode,
-                            obscureText: !_showPassword,
-                            keyboardType: TextInputType.visiblePassword,
-                            autofillHints: [
-                              _isRegister
-                                  ? AutofillHints.newPassword
-                                  : AutofillHints.password,
-                            ],
-                            autocorrect: false,
-                            enableSuggestions: false,
-                            style: const TextStyle(color: _foreground),
-                            enabled: !_busy,
-                            onChanged: (_) {
-                              if (_error != null) setState(() => _error = null);
-                            },
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              suffixIcon: IconButton(
-                                visualDensity: VisualDensity.compact,
-                                splashRadius: 20,
-                                onPressed: _busy
-                                    ? null
-                                    : () {
-                                        setState(
-                                          () => _showPassword = !_showPassword,
-                                        );
-                                        _passwordFocusNode.requestFocus();
-                                      },
-                                tooltip: _showPassword
-                                    ? 'Hide password'
-                                    : 'Show password',
-                                icon: Icon(
-                                  _showPassword
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                  color: subtitleColor,
-                                ),
-                              ),
-                            ),
-                            onSubmitted: (_) => _busy ? null : _submit(),
-                          ),
-                          if (!_isRegister) ...[
-                            SizedBox(height: spacing.xs),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: _busy ? null : _forgotPassword,
-                                style: TextButton.styleFrom(
-                                  foregroundColor: _foregroundMuted,
-                                  padding: EdgeInsets.zero,
-                                  minimumSize: const Size(0, 32),
-                                  visualDensity: VisualDensity.compact,
-                                ),
-                                child: const Text('Forgot password?'),
-                              ),
-                            ),
-                          ],
-                          if (_error != null) ...[
-                            SizedBox(height: spacing.sm),
-                            _ErrorBanner(message: _error!, color: errorColor),
-                          ],
-                          SizedBox(height: spacing.md),
-                          FilledButton(
-                            onPressed: _busy ? null : _submit,
-                            style: FilledButton.styleFrom(
-                              minimumSize: const Size.fromHeight(48),
-                            ),
-                            child: Text(
-                              _busy
-                                  ? 'Please wait…'
-                                  : _isRegister
-                                      ? 'Create account'
-                                      : 'Sign in',
-                            ),
-                          ),
-                        ],
+              data: (_) => SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Purple',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w600,
+                        color: text,
+                        letterSpacing: 0.02 * 32,
                       ),
                     ),
-                  if (!_resetSent) ...[
-                    SizedBox(height: spacing.md),
-                    OutlinedButton.icon(
-                      onPressed:
-                          _busy ? null : () => _oauth(OAuthProvider.google),
-                      icon: const Icon(Icons.g_mobiledata, size: 28),
-                      label: const Text('Continue with Google'),
-                    ),
-                    SizedBox(height: spacing.sm),
-                    OutlinedButton.icon(
-                      onPressed:
-                          _busy ? null : () => _oauth(OAuthProvider.apple),
-                      icon: const Icon(Icons.apple),
-                      label: const Text('Continue with Apple'),
-                    ),
-                    SizedBox(height: spacing.lg),
-                    TextButton(
-                      onPressed: _busy
-                          ? null
-                          : () => setState(() {
-                                _isRegister = !_isRegister;
+                    const SizedBox(height: 32),
+                    if (_resetSent)
+                      GlassCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text(
+                              'Check your inbox',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: text,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'We sent a password reset link to '
+                              '${_emailController.text.trim()}. Use only the latest email; '
+                              'older links stop working when you request another. '
+                              'The link stays valid for $recoveryLinkTtlLabel.',
+                              style: const TextStyle(
+                                fontSize: 15,
+                                height: 1.45,
+                                color: muted,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            OutlinedButton(
+                              onPressed: () => setState(() {
+                                _resetSent = false;
                                 _error = null;
                               }),
-                      style: TextButton.styleFrom(foregroundColor: _foregroundMuted),
-                      child: Text(
-                        _isRegister
-                            ? 'Already have an account? Sign in'
-                            : 'Need an account? Create one',
+                              style: ghostStyle,
+                              child: const Text('Back to sign in'),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xBF14101C),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: border),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              _isRegister ? 'CREATE ACCOUNT' : 'SIGN IN',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                letterSpacing: 0.1 * 11,
+                                fontWeight: FontWeight.w600,
+                                color: muted,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'A quiet intelligence for your health.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 15,
+                                height: 1.45,
+                                color: muted,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            OutlinedButton(
+                              onPressed: _busy
+                                  ? null
+                                  : () => _oauth(OAuthProvider.google),
+                              style: ghostStyle,
+                              child: const Text('Continue with Google'),
+                            ),
+                            const SizedBox(height: 8),
+                            OutlinedButton(
+                              onPressed: _busy
+                                  ? null
+                                  : () => _oauth(OAuthProvider.apple),
+                              style: ghostStyle,
+                              child: const Text('Continue with Apple'),
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              autofillHints: const [AutofillHints.email],
+                              style: const TextStyle(color: text, fontSize: 16),
+                              enabled: !_busy,
+                              onChanged: (_) {
+                                if (_error != null) {
+                                  setState(() => _error = null);
+                                }
+                              },
+                              decoration: fieldDecoration('Email'),
+                            ),
+                            const SizedBox(height: 10),
+                            TextField(
+                              controller: _passwordController,
+                              focusNode: _passwordFocusNode,
+                              obscureText: !_showPassword,
+                              keyboardType: TextInputType.visiblePassword,
+                              autofillHints: [
+                                _isRegister
+                                    ? AutofillHints.newPassword
+                                    : AutofillHints.password,
+                              ],
+                              autocorrect: false,
+                              enableSuggestions: false,
+                              style: const TextStyle(color: text, fontSize: 16),
+                              enabled: !_busy,
+                              onChanged: (_) {
+                                if (_error != null) {
+                                  setState(() => _error = null);
+                                }
+                              },
+                              decoration: fieldDecoration('Password').copyWith(
+                                suffixIcon: IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  splashRadius: 20,
+                                  onPressed: _busy
+                                      ? null
+                                      : () {
+                                          setState(
+                                            () =>
+                                                _showPassword = !_showPassword,
+                                          );
+                                          _passwordFocusNode.requestFocus();
+                                        },
+                                  tooltip: _showPassword
+                                      ? 'Hide password'
+                                      : 'Show password',
+                                  icon: Icon(
+                                    _showPassword
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    color: muted,
+                                  ),
+                                ),
+                              ),
+                              onSubmitted: (_) => _busy ? null : _submit(),
+                            ),
+                            if (!_isRegister) ...[
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: _busy ? null : _forgotPassword,
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: muted,
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: const Size(0, 36),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                  child: const Text(
+                                    'Forgot password?',
+                                    style: TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              ),
+                            ],
+                            if (_error != null) ...[
+                              const SizedBox(height: 8),
+                              _ErrorBanner(
+                                message: _error!,
+                                color: errorColor,
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            DecoratedBox(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [purpleDeep, purple],
+                                ),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: _busy ? null : _submit,
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: SizedBox(
+                                    height: 48,
+                                    child: Center(
+                                      child: Text(
+                                        _busy
+                                            ? 'Please wait…'
+                                            : _isRegister
+                                                ? 'Create account'
+                                                : 'Sign in',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            OutlinedButton(
+                              onPressed: _busy
+                                  ? null
+                                  : () => setState(() {
+                                        _isRegister = !_isRegister;
+                                        _error = null;
+                                      }),
+                              style: ghostStyle,
+                              child: Text(
+                                _isRegister
+                                    ? 'Already have an account? Sign in'
+                                    : 'Create your account',
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
                   ],
-                ],
+                ),
               ),
             ),
           ),
@@ -450,7 +517,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     );
   }
 }
-
 /// Inline error surface for the auth form, tinted with the theme's error
 /// token instead of a hardcoded color, so light/dark appearance stays correct.
 class _ErrorBanner extends StatelessWidget {

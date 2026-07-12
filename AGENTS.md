@@ -1,5 +1,6 @@
 ## Learned User Preferences
 
+- **Local previews: Cursor browser only.** Always open websites/pages in Cursor Simple Browser (or `cursor-ide-browser` MCP when available). Never open Chrome/Safari/`open` CLI unless the user explicitly asks for an external browser.
 - When implementing an attached plan, do not edit the plan file; mark pre-created to-dos in_progress and complete all without recreating them.
 - On session start read `docs/HANDOFF.md`, `docs/DECISIONS.md`, `docs/OPEN-ISSUES.md`, and `docs/LEARNINGS.md` before changing anything (`.cursor/rules/compounding-memory.mdc`). After every completed task, append a log entry to `docs/HANDOFF.md` and refresh its Current snapshot before claiming done; also sync `CURSOR_HANDOFF.md` (extended ops), relevant `docs/` runbooks, `.cursor/rules/` when conventions change, `AGENTS.md`/`mem/` for durable decisions, and paste-ready Lovable prompts for UI-only follow-ups. Mandatory per `compounding-memory.mdc`, `00-handoff.mdc`, and `post-task-documentation.mdc`; never leave important context only in chat. When switching machines, commit and push all in-progress work and refresh handoff before stopping so the next machine can `git pull` and resume.
 - When migration artifacts are missing from the repo, provide copy-paste Lovable prompts the user can run there.

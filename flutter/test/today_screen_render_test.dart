@@ -62,7 +62,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('renders merged Today with metric strip, Maya, and meds',
+  testWidgets('renders merged Today with score tiles, signals, Maya, and meds',
       (tester) async {
     const data = TodayData(
       scores: ScoreSnapshot(
@@ -78,7 +78,7 @@ void main() {
       ),
       firstName: 'Alex',
       narrative: 'Your signals look steady compared with yesterday.',
-      conditions: const ['epilepsy'],
+      conditions: ['epilepsy'],
       medicationCount: 1,
       journalEntryCount: 3,
     );
@@ -138,35 +138,29 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.textContaining(', Alex.'), findsOneWidget);
     expect(
-      find.text(DateFormat('MMM d').format(DateTime.now())),
+      find.text(DateFormat('EEEE, MMM d').format(DateTime.now())),
       findsOneWidget,
     );
     expect(find.text('TODAY'), findsOneWidget);
-    expect(
-      find.textContaining('Onboarding complete · 3/3'),
-      findsOneWidget,
-    );
-    expect(find.text('SLEEP'), findsWidgets);
+    expect(find.text('READINESS'), findsOneWidget);
+    expect(find.text('SLEEP'), findsOneWidget);
+    expect(find.text('ACTIVITY'), findsOneWidget);
+    expect(find.text('YOUR SIGNALS'), findsOneWidget);
     expect(find.text('HRV'), findsOneWidget);
-    expect(find.text('EFFICIENCY'), findsOneWidget);
-    expect(find.text('REST HR'), findsOneWidget);
-    expect(find.text('74%'), findsOneWidget);
+    expect(find.text('Resting HR'), findsOneWidget);
     expect(find.text('52 ms'), findsOneWidget);
-    expect(find.text('MAYA · daily insight'), findsOneWidget);
+    expect(find.text("Today's reading"), findsOneWidget);
     expect(
       find.text('Your signals look steady compared with yesterday.'),
       findsOneWidget,
     );
-    expect(find.text('Protect sleep window'), findsOneWidget);
-    expect(find.text('See full plan'), findsOneWidget);
-    expect(find.text('ASK MAYA'), findsOneWidget);
-    expect(find.text('RECOMMENDED'), findsOneWidget);
-    expect(find.text('See on Plan'), findsOneWidget);
-    expect(find.text('Journal'), findsOneWidget);
     expect(find.text('Meds'), findsOneWidget);
-    expect(find.text('Today'), findsWidgets);
+    expect(find.text('Hydration'), findsOneWidget);
+    expect(find.text('LAST 7 DAYS'), findsOneWidget);
+    expect(find.text('RECOMMENDED'), findsOneWidget);
+    expect(find.text('Open Plan'), findsOneWidget);
     expect(find.text('Keppra'), findsOneWidget);
-    expect(find.text('Medications'), findsOneWidget);
+    expect(find.text("Today's doses"), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -176,25 +170,29 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('Start where you are.'), findsOneWidget);
-    expect(find.text('Daily check-in'), findsOneWidget);
+    expect(find.text('Start journaling'), findsOneWidget);
+    expect(find.text('TODAY'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('metric strip shows empty states when scores missing',
+  testWidgets('score tiles and signals show empty states when scores missing',
       (tester) async {
     const data = TodayData(
       scores: ScoreSnapshot(hasData: false),
-      conditions: const ['epilepsy'],
+      conditions: ['epilepsy'],
       journalEntryCount: 1,
     );
 
     await pumpToday(tester, data: data);
 
-    expect(find.text('SLEEP'), findsWidgets);
+    expect(find.text('READINESS'), findsOneWidget);
+    expect(find.text('SLEEP'), findsOneWidget);
+    expect(find.text('ACTIVITY'), findsOneWidget);
+    expect(find.text('YOUR SIGNALS'), findsOneWidget);
     expect(find.text('HRV'), findsOneWidget);
-    expect(find.text('EFFICIENCY'), findsOneWidget);
-    expect(find.text('REST HR'), findsOneWidget);
-    expect(find.text('—'), findsNWidgets(4));
+    expect(find.text('Resting HR'), findsOneWidget);
+    // Eight Your-signals cells use em dash when scores are missing.
+    expect(find.text('—'), findsNWidgets(8));
   });
 
   testWidgets('shows error banner with merged empty state on load failure',
@@ -209,7 +207,7 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text(todayLoadErrorBannerMessage), findsOneWidget);
     expect(find.text('Start where you are.'), findsOneWidget);
-    expect(find.text('Daily check-in'), findsOneWidget);
+    expect(find.text('Start journaling'), findsOneWidget);
     expect(find.text('TODAY'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
