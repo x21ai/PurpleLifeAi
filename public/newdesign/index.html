@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0a0710" />
+  <title>Purple New Design Preview</title>
+  <style>
+    :root {
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
+      --canvas: #0a0710;
+      --bg: #14101c;
+      --bg2: #1f1a2b;
+      --text: #fafafc;
+      --muted: #8b8b92;
+      --border: #25202f;
+      --purple: #b084d1;
+      --purple-deep: #6e3fa0;
+      --purple-soft: rgba(176, 132, 209, 0.14);
+      --success: #6fb394;
+      --warning: #e8c39e;
+      --danger: #e8745c;
+      --nav-h: 72px;
+      --top-h: 48px;
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-t: env(safe-area-inset-top, 0px);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; font-family: var(--font); background: var(--canvas); color: var(--text); min-height: 100%; }
+    button, a.btn { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    .preview-banner {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(110, 63, 160, 0.35);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 14px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; text-align: center; color: var(--purple);
+    }
+    .app { display: flex; flex-direction: column; min-height: calc(100dvh - 36px); }
+    .screen { display: none; flex: 1; flex-direction: column; padding-bottom: calc(var(--nav-h) + var(--safe-b)); }
+    .screen.active { display: flex; }
+    .screen.no-nav { padding-bottom: var(--safe-b); }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      min-height: var(--top-h); padding: calc(6px + var(--safe-t)) 16px 6px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(20, 16, 28, 0.92);
+      backdrop-filter: blur(16px);
+    }
+    .topbar h1 { font-size: 17px; font-weight: 600; margin: 0; flex: 1; text-align: center; }
+    .topbar .side { width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+    .topbar .wordmark { font-size: 22px; font-weight: 600; letter-spacing: 0.02em; }
+    .scroll { flex: 1; overflow-y: auto; padding: 16px; }
+    .eyebrow { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+    .title { font-size: 26px; font-weight: 600; line-height: 1.15; margin: 0 0 8px; }
+    .subtitle { font-size: 15px; color: var(--muted); line-height: 1.45; margin: 0 0 20px; }
+    .card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 16px; padding: 14px 16px; margin-bottom: 12px;
+    }
+    .card.glass { background: rgba(20, 16, 28, 0.75); backdrop-filter: blur(12px); }
+    .row { display: flex; align-items: center; gap: 12px; }
+    .row-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;
+      background: var(--purple-soft); border: 1px solid rgba(176, 132, 209, 0.35); color: var(--purple);
+    }
+    .pill.clickable { cursor: pointer; }
+    .pill-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); }
+    .pill-dot.warn { background: var(--warning); }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+    .metric { text-align: center; padding: 10px 4px; background: var(--bg); border-radius: 12px; border: 1px solid var(--border); }
+    .metric .val { font-size: 15px; font-weight: 600; }
+    .metric .lbl { font-size: 10px; color: var(--muted); margin-top: 4px; }
+    .metric .src { font-size: 9px; color: var(--purple); margin-top: 2px; }
+    .metric .trend { font-size: 10px; color: var(--success); }
+    .actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0; }
+    .action {
+      min-height: 56px; border-radius: 14px; border: 1px solid var(--border);
+      background: var(--bg2); font-size: 11px; font-weight: 600; color: var(--text);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    }
+    .action span:first-child { font-size: 18px; }
+    .btn-primary {
+      width: 100%; min-height: 48px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--purple-deep), var(--purple));
+      color: #fff; font-size: 16px; font-weight: 600; margin-top: 8px;
+    }
+    .btn-ghost {
+      width: 100%; min-height: 44px; border-radius: 14px;
+      border: 1px solid rgba(176, 132, 209, 0.45); color: var(--purple);
+      font-size: 15px; font-weight: 600; background: transparent;
+    }
+    .btn-sm {
+      padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 600;
+      background: var(--purple-soft); color: var(--purple); border: 1px solid rgba(176,132,209,0.4);
+    }
+    .group-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 20px 0 8px 4px; }
+    .list-card { background: var(--bg); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 12px; }
+    .list-row {
+      display: flex; align-items: center; justify-content: space-between;
+      min-height: 48px; padding: 0 16px; font-size: 16px;
+      border-bottom: 1px solid var(--border); cursor: pointer;
+    }
+    .list-row:last-child { border-bottom: none; }
+    .list-row .chev { color: var(--muted); font-size: 18px; }
+    .list-row .status { font-size: 13px; color: var(--muted); }
+    .list-row .status.ok { color: var(--success); }
+    .conn-row { padding: 14px 16px; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .conn-row:last-child { border-bottom: none; }
+    .conn-row .name { font-size: 16px; font-weight: 600; }
+    .conn-row .meta { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .input {
+      width: 100%; min-height: 48px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--bg2); color: var(--text); padding: 0 14px; font-size: 16px; margin-bottom: 10px;
+    }
+    .chip-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .chip {
+      padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border);
+      background: var(--bg2); font-size: 14px; cursor: pointer;
+    }
+    .chip.on { background: var(--purple-soft); border-color: var(--purple); color: var(--purple); }
+    .steps { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; }
+    .step-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
+    .step-dot.on { background: var(--purple); }
+    .progress-big { font-size: 56px; font-weight: 300; color: var(--purple); text-align: center; margin: 24px 0 8px; letter-spacing: -0.02em; }
+    .progress-bar { height: 4px; background: var(--border); border-radius: 2px; margin: 16px 0 24px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--purple); border-radius: 2px; transition: width 0.4s; }
+    .checklist { list-style: none; padding: 0; margin: 0 0 24px; }
+    .checklist li { padding: 12px 0; font-size: 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+    .checklist li.done { color: var(--text); }
+    .checklist li.active { color: var(--text); font-weight: 600; }
+    .checklist li.pending { color: var(--muted); }
+    .check { color: var(--success); font-size: 18px; }
+    .nav {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+      display: grid; grid-template-columns: 1fr 1fr 56px 1fr 1fr;
+      align-items: end; gap: 4px;
+      padding: 8px 12px calc(10px + var(--safe-b));
+      background: rgba(10, 7, 16, 0.92); border-top: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+    }
+    .nav.hidden { display: none; }
+    .nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      font-size: 10px; font-weight: 600; color: var(--muted); min-height: 44px; justify-content: center;
+    }
+    .nav-item.on { color: var(--purple); }
+    .nav-item .ico { font-size: 20px; }
+    .nav-fab {
+      width: 56px; height: 56px; border-radius: 50%; margin-top: -18px;
+      background: linear-gradient(135deg, var(--purple-deep), var(--purple));
+      color: #fff; font-size: 28px; font-weight: 300; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 20px rgba(176, 132, 209, 0.35);
+    }
+    .drawer-overlay {
+      display: none; position: fixed; inset: 0; z-index: 80;
+      background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
+    }
+    .drawer-overlay.open { display: block; }
+    .drawer {
+      position: fixed; top: 0; right: 0; bottom: 0; width: min(300px, 82vw); z-index: 90;
+      background: rgba(20, 16, 28, 0.96); border-left: 1px solid var(--border);
+      backdrop-filter: blur(20px); padding: calc(var(--safe-t) + 56px) 0 var(--safe-b);
+      transform: translateX(100%); transition: transform 0.25s ease;
+    }
+    .drawer.open { transform: translateX(0); }
+    .drawer .list-row { padding: 0 20px; }
+    .map-link {
+      display: block; font-size: 12px; color: var(--purple); text-decoration: underline;
+      margin: 8px 0 16px; text-align: center;
+    }
+    .tag { font-size: 10px; padding: 3px 8px; border-radius: 6px; background: rgba(232,195,158,0.2); color: var(--warning); font-weight: 700; }
+    .tag.new { background: var(--purple-soft); color: var(--purple); }
+    .narrative { font-size: 15px; line-height: 1.5; color: var(--muted); margin-bottom: 16px; }
+    .segmented { display: flex; background: var(--bg2); border-radius: 12px; padding: 4px; margin-bottom: 16px; }
+    .segmented button { flex: 1; min-height: 36px; border-radius: 10px; font-size: 14px; font-weight: 600; color: var(--muted); }
+    .segmented button.on { background: var(--bg); color: var(--purple); box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+    .wizard-step { display: none; }
+    .wizard-step.on { display: block; }
+    @media (min-width: 768px) {
+      .app { max-width: 430px; margin: 0 auto; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+      .nav { max-width: 430px; left: 50%; transform: translateX(-50%); }
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-banner">Design preview only · No real data · Tap to explore the full journey</div>
+  <div class="app" id="app">
+
+    <!-- SIGN IN -->
+    <section class="screen active no-nav" id="sign-in">
+      <div class="scroll" style="padding-top: 48px;">
+        <p style="text-align:center;font-size:32px;font-weight:600;margin:0 0 32px;">Purple</p>
+        <div class="card glass">
+          <p class="eyebrow" style="text-align:center;">Sign in</p>
+          <p class="subtitle" style="text-align:center;margin-bottom:20px;">A quiet intelligence for your health.</p>
+          <button class="btn-ghost" style="margin-bottom:8px;">Continue with Google</button>
+          <button class="btn-ghost" style="margin-bottom:16px;">Continue with Apple</button>
+          <input class="input" placeholder="Email" type="email" />
+          <input class="input" placeholder="Password" type="password" />
+          <button class="btn-primary" data-go="welcome-1">Sign in</button>
+          <button class="btn-ghost" style="margin-top:12px;" data-go="welcome-1">Create your account</button>
+        </div>
+        <a class="map-link" href="#" data-go="today">Skip to signed-in preview →</a>
+      </div>
+    </section>
+
+    <!-- WELCOME 1 -->
+    <section class="screen no-nav" id="welcome-1">
+      <div class="scroll">
+        <div class="steps"><span class="step-dot on"></span><span class="step-dot"></span><span class="step-dot"></span></div>
+        <p class="eyebrow">Step 1 of 3</p>
+        <h2 class="title">Welcome to Purple</h2>
+        <p class="subtitle">Tell us a little about you. You can change this anytime in Account.</p>
+        <input class="input" placeholder="First name" value="Alex" />
+        <input class="input" placeholder="Last name" value="" />
+        <p class="eyebrow">Your conditions</p>
+        <div class="chip-grid">
+          <span class="chip on">Epilepsy</span>
+          <span class="chip">Migraine</span>
+          <span class="chip on">Sleep</span>
+          <span class="chip">Anxiety</span>
+        </div>
+        <button class="btn-primary" data-go="welcome-2">Continue</button>
+        <button class="btn-ghost" data-go="welcome-2">Skip for now</button>
+      </div>
+    </section>
+
+    <!-- WELCOME 2 CONNECTIONS -->
+    <section class="screen no-nav" id="welcome-2">
+      <div class="scroll">
+        <div class="steps"><span class="step-dot on"></span><span class="step-dot on"></span><span class="step-dot"></span></div>
+        <p class="eyebrow">Step 2 of 3</p>
+        <h2 class="title">Connect your data</h2>
+        <p class="subtitle">Optional. Link wearables now or anytime from Tools.</p>
+        <div class="list-card">
+          <div class="conn-row" data-go="processing">
+            <div class="row-between">
+              <div><div class="name">Oura Ring</div><div class="meta">Sleep, HRV, readiness</div></div>
+              <button class="btn-sm">Connect</button>
+            </div>
+          </div>
+          <div class="conn-row" data-go="processing">
+            <div class="row-between">
+              <div><div class="name">Apple Health</div><div class="meta">Heart, sleep, activity</div></div>
+              <button class="btn-sm">Connect</button>
+            </div>
+          </div>
+          <div class="conn-row">
+            <div class="row-between">
+              <div><div class="name">WHOOP</div><div class="meta">Recovery, strain, sleep</div></div>
+              <button class="btn-sm">Connect</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn-primary" data-go="welcome-3">Continue</button>
+        <button class="btn-ghost" data-go="welcome-3">Skip</button>
+      </div>
+    </section>
+
+    <!-- WELCOME 3 JOURNAL -->
+    <section class="screen no-nav" id="welcome-3">
+      <div class="scroll">
+        <div class="steps"><span class="step-dot on"></span><span class="step-dot on"></span><span class="step-dot on"></span></div>
+        <p class="eyebrow">Step 3 of 3</p>
+        <h2 class="title">Your first journal entry</h2>
+        <p class="subtitle">A few words help Purple learn your patterns. Voice works too.</p>
+        <textarea class="input" style="min-height:120px;padding:14px;resize:vertical;" placeholder="How are you feeling today?"></textarea>
+        <button class="btn-primary" data-go="processing">Finish setup</button>
+      </div>
+    </section>
+
+    <!-- PROCESSING -->
+    <section class="screen no-nav" id="processing">
+      <div class="scroll" style="padding-top:40px;">
+        <div class="progress-big" id="pct">55%</div>
+        <h2 class="title" style="text-align:center;font-size:20px;">Building your health picture</h2>
+        <div class="progress-bar"><div class="progress-fill" id="pfill" style="width:55%"></div></div>
+        <ul class="checklist">
+          <li class="done">Analyzing wearable data <span class="check">✓</span></li>
+          <li class="done">Checking dose schedule <span class="check">✓</span></li>
+          <li class="active">Reviewing your journal</li>
+          <li class="pending">Personalizing Today insights</li>
+        </ul>
+        <div class="card" style="text-align:center;font-size:14px;color:var(--muted);line-height:1.5;">
+          The more you log and connect, the sharper Purple's patterns become. Wearable data, doses, and journal entries all feed your daily narrative.
+        </div>
+        <button class="btn-primary" data-go="today" style="margin-top:24px;">Continue to Today</button>
+      </div>
+    </section>
+
+    <!-- TODAY -->
+    <section class="screen" id="today" data-nav="today">
+      <div class="topbar">
+        <button class="side" data-drawer="open" aria-label="Menu">☰</button>
+        <span class="wordmark" style="flex:1;text-align:center;font-size:18px;">Purple</span>
+        <button class="side pill clickable" style="width:auto;padding:6px 10px;font-size:11px;" data-go="tools"><span class="pill-dot"></span> Oura · 2h</button>
+      </div>
+      <div class="scroll">
+        <p class="eyebrow">Health monitor</p>
+        <div class="metrics">
+          <div class="metric"><div class="val">7.2h</div><div class="lbl">Sleep</div><div class="src">Oura</div></div>
+          <div class="metric"><div class="val">42ms</div><div class="lbl">HRV</div><div class="trend">+5 ↑</div></div>
+          <div class="metric"><div class="val">88%</div><div class="lbl">Efficiency</div></div>
+          <div class="metric"><div class="val">58</div><div class="lbl">Rest HR</div><div class="src">Apple</div></div>
+        </div>
+        <p class="narrative">Sleep was solid last night. HRV is trending up. Consider logging meds before noon.</p>
+        <div class="actions">
+          <button class="action" data-go="journal-new"><span>✎</span>Journal</button>
+          <button class="action" data-go="meds"><span>💊</span>Meds</button>
+          <button class="action"><span>⚡</span>Seizure</button>
+          <button class="action" data-go="data"><span>📊</span>Data</button>
+        </div>
+        <div class="card">
+          <div class="row-between"><strong>Meds today</strong><button class="btn-sm" data-go="meds">View all</button></div>
+          <p style="font-size:14px;color:var(--muted);margin:8px 0 12px;">Levetiracetam 500mg · 8:00 AM</p>
+          <div class="row" style="gap:8px;">
+            <button class="btn-sm" style="flex:1;background:var(--success);color:#0a0710;border:none;">Taken</button>
+            <button class="btn-sm" style="flex:1;">Snooze</button>
+            <button class="btn-sm" style="flex:1;">Skip</button>
+          </div>
+        </div>
+        <button class="btn-ghost" style="margin-top:8px;">More for today ▾</button>
+      </div>
+    </section>
+
+    <!-- DATA -->
+    <section class="screen" id="data" data-nav="data">
+      <div class="topbar">
+        <button class="side" data-drawer="open">☰</button>
+        <h1>Data</h1>
+        <button class="side" data-go="tools" style="font-size:13px;color:var(--purple);width:auto;">Sync</button>
+      </div>
+      <div class="scroll">
+        <div class="card row-between">
+          <div><div class="eyebrow">90-day overview</div><div style="font-size:15px;">68 days with data</div></div>
+          <span class="pill"><span class="pill-dot"></span> 2 sources</span>
+        </div>
+        <div class="list-card">
+          <div class="list-row" data-go="data"><span>Sleep duration</span><span class="chev">›</span></div>
+          <div class="list-row"><span>Heart rate variability</span><span class="chev">›</span></div>
+          <div class="list-row"><span>Resting heart rate</span><span class="chev">›</span></div>
+          <div class="list-row"><span>Steps</span><span class="chev">›</span></div>
+        </div>
+        <p class="eyebrow">Reports</p>
+        <div class="list-card">
+          <div class="list-row"><span>Trends</span><span class="chev">›</span></div>
+          <div class="list-row"><span>Documents</span><span class="chev">›</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PLAN -->
+    <section class="screen" id="plan" data-nav="plan">
+      <div class="topbar">
+        <button class="side" data-drawer="open">☰</button>
+        <h1>Plan</h1>
+        <div class="side"></div>
+      </div>
+      <div class="scroll">
+        <div class="segmented">
+          <button class="on">Protocol</button>
+          <button>Recommended</button>
+        </div>
+        <div class="card glass">
+          <div class="row-between"><span class="tag new">NEW</span></div>
+          <h3 style="margin:8px 0;">Sleep stability protocol</h3>
+          <p style="font-size:14px;color:var(--muted);line-height:1.45;">Based on your epilepsy and recent HRV trend. Follow for 14 days.</p>
+          <button class="btn-ghost" style="margin-top:12px;width:auto;padding:10px 20px;">View protocol</button>
+        </div>
+        <p class="eyebrow">Recommended for you</p>
+        <div class="list-card">
+          <div class="list-row"><span>Sync Oura + Apple Health</span><span class="chev">›</span></div>
+          <div class="list-row"><span>Journal evening check-in</span><span class="chev">›</span></div>
+          <div class="list-row"><span>Invite a caregiver</span><span class="chev">›</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ASK MAYA -->
+    <section class="screen" id="ask-maya" data-nav="ask-maya">
+      <div class="topbar">
+        <button class="side" data-drawer="open">☰</button>
+        <h1>Ask Maya</h1>
+        <div class="side"></div>
+      </div>
+      <div class="scroll">
+        <h2 class="title" style="font-size:22px;">Good evening, Alex</h2>
+        <p class="subtitle">Ask about sleep, meds, patterns, or what to focus on today.</p>
+        <div class="chip-grid">
+          <span class="chip">Why was HRV low?</span>
+          <span class="chip">Meds interaction check</span>
+          <span class="chip">Sleep vs seizures</span>
+          <span class="chip">Open full chat</span>
+        </div>
+        <div class="card">
+          <p style="font-size:14px;color:var(--muted);margin:0;">10 questions left today on free plan.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TOOLS / CONNECTIONS -->
+    <section class="screen" id="tools">
+      <div class="topbar">
+        <button class="side" data-go="today">←</button>
+        <h1>Connections</h1>
+        <div class="side"></div>
+      </div>
+      <div class="scroll">
+        <div class="card glass">
+          <div class="row-between"><strong>2 of 3 sources active</strong><button class="btn-sm">Sync all</button></div>
+          <p style="font-size:13px;color:var(--muted);margin:8px 0 0;">Last sync 14 min ago</p>
+        </div>
+        <p class="eyebrow">Synced data (90 days)</p>
+        <div class="row" style="gap:6px;margin-bottom:16px;">
+          <div style="flex:2;height:8px;background:var(--purple);border-radius:4px;"></div>
+          <div style="flex:1;height:8px;background:var(--success);border-radius:4px;opacity:0.7;"></div>
+          <div style="flex:0.3;height:8px;background:var(--border);border-radius:4px;"></div>
+        </div>
+        <div class="list-card">
+          <div class="conn-row" data-go="tools-detail-oura">
+            <div class="row-between">
+              <div><div class="name">Oura Ring</div><div class="meta status ok">Connected · Last sync 2h ago</div></div>
+              <span class="chev">›</span>
+            </div>
+          </div>
+          <div class="conn-row" data-go="hae-wizard">
+            <div class="row-between">
+              <div><div class="name">Apple Health</div><div class="meta">Waiting for first reading</div></div>
+              <span class="chev">›</span>
+            </div>
+          </div>
+          <div class="conn-row">
+            <div class="row-between">
+              <div><div class="name">WHOOP</div><div class="meta">Not connected</div></div>
+              <button class="btn-sm">Connect</button>
+            </div>
+          </div>
+        </div>
+        <p class="eyebrow">Also in Tools</p>
+        <div class="list-card">
+          <div class="list-row" data-go="settings"><span>Notifications</span><span class="chev">›</span></div>
+          <div class="list-row"><span>Alarms</span><span class="chev">›</span></div>
+          <div class="list-row"><span>Apple Health import (ZIP)</span><span class="chev">›</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HAE WIZARD -->
+    <section class="screen no-nav" id="hae-wizard">
+      <div class="topbar">
+        <button class="side" data-go="tools">←</button>
+        <h1>Apple Health setup</h1>
+        <div class="side"></div>
+      </div>
+      <div class="scroll">
+        <div class="wizard-step on" data-step="1">
+          <p class="eyebrow">Step 1 of 4</p>
+          <h2 class="title">Install Health Auto Export</h2>
+          <p class="subtitle">Free app on the App Store. It sends Apple Health data to Purple securely.</p>
+          <button class="btn-primary" data-wizard="2">I've installed it</button>
+        </div>
+        <div class="wizard-step" data-step="2">
+          <p class="eyebrow">Step 2 of 4</p>
+          <h2 class="title">Copy your webhook URL</h2>
+          <div class="card" style="font-size:12px;word-break:break-all;color:var(--muted);">https://www.purplelife.org/api/public/hooks/apple-health?token=••••</div>
+          <button class="btn-primary" data-wizard="3">Copied</button>
+        </div>
+        <div class="wizard-step" data-step="3">
+          <p class="eyebrow">Step 3 of 4</p>
+          <h2 class="title">Send a test packet</h2>
+          <p class="subtitle">In HAE, tap Export Now once to verify the connection.</p>
+          <button class="btn-primary" data-wizard="4">Test sent</button>
+        </div>
+        <div class="wizard-step" data-step="4">
+          <p class="eyebrow">Step 4 of 4</p>
+          <h2 class="title">You're connected</h2>
+          <p class="subtitle">First readings usually appear within a few minutes.</p>
+          <button class="btn-primary" data-go="today">Back to Today</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACCOUNT -->
+    <section class="screen" id="account">
+      <div class="topbar">
+        <button class="side" data-drawer="open">←</button>
+        <h1>Account</h1>
+        <div class="side"></div>
+      </div>
+      <div class="scroll">
+        <div class="card row" style="gap:14px;">
+          <div style="width:48px;height:48px;border-radius:50%;background:var(--purple-soft);display:flex;align-items:center;justify-content:center;font-size:20px;">A</div>
+          <div><div style="font-weight:600;">Alex Morgan</div><div style="font-size:13px;color:var(--muted);">alex@privaterelay.appleid.com</div></div>
+        </div>
+        <p class="group-label">Connected sources</p>
+        <div class="list-card">
+          <div class="list-row" data-go="tools"><span>Oura</span><span class="status ok">Connected ›</span></div>
+          <div class="list-row" data-go="hae-wizard"><span>Apple Health</span><span class="status">Setup ›</span></div>
+          <div class="list-row" data-go="tools"><span>WHOOP</span><span class="status">Not set ›</span></div>
+        </div>
+        <p class="group-label">Profile</p>
+        <div class="list-card">
+          <div class="list-row"><span>Home city</span><span class="chev">›</span></div>
+          <div class="list-row"><span>Timezone</span><span class="chev">›</span></div>
+          <div class="list-row"><span>Conditions</span><span class="chev">›</span></div>
+        </div>
+        <button class="btn-ghost" data-go="sign-in" style="margin-top:16px;color:var(--danger);border-color:var(--danger);">Sign out (preview)</button>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="screen" id="settings">
+      <div class="topbar">
+        <button class="side" data-go="account">←</button>
+        <h1>Settings</h1>
+        <div class="side"></div>
+      </div>
+      <div class="scroll">
+        <div class="list-card">
+          <div class="list-row" data-go="tools"><span>Tools and devices</span><span class="chev">›</span></div>
+          <div class="list-row"><span>Privacy and sharing</span><span class="chev">›</span></div>
+          <div class="list-row"><span>Notifications</span><span class="chev">›</span></div>
+          <div class="list-row"><span>How Purple thinks</span><span class="chev">›</span></div>
+          <div class="list-row"><span>Report a problem</span><span class="chev">›</span></div>
+        </div>
+        <p class="group-label">Legal</p>
+        <div class="list-card">
+          <div class="list-row"><span>Terms</span><span class="chev">›</span></div>
+          <div class="list-row"><span>Privacy policy</span><span class="chev">›</span></div>
+        </div>
+        <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:24px;">Version 1.0.0 (25) · Jul 6, 2026</p>
+      </div>
+    </section>
+
+    <!-- MEDS -->
+    <section class="screen" id="meds">
+      <div class="topbar">
+        <button class="side" data-go="today">←</button>
+        <h1>Meds</h1>
+        <div class="side"></div>
+      </div>
+      <div class="scroll">
+        <div class="card">
+          <p class="eyebrow">Today</p>
+          <p style="font-weight:600;">Levetiracetam 500mg · 8:00 AM</p>
+          <div class="row" style="gap:8px;margin-top:12px;">
+            <button class="btn-sm" style="flex:1;background:var(--success);color:#0a0710;border:none;">Taken</button>
+            <button class="btn-sm" style="flex:1;">Snooze</button>
+          </div>
+        </div>
+        <p class="eyebrow">Library</p>
+        <div class="list-card">
+          <div class="list-row"><span>Levetiracetam</span><span class="chev">›</span></div>
+          <div class="list-row"><span>Lamotrigine</span><span class="chev">›</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- JOURNAL NEW -->
+    <section class="screen" id="journal-new">
+      <div class="topbar">
+        <button class="side" data-go="today">←</button>
+        <h1>New entry</h1>
+        <div class="side"></div>
+      </div>
+      <div class="scroll">
+        <textarea class="input" style="min-height:200px;padding:14px;" placeholder="What's on your mind?"></textarea>
+        <div class="row" style="gap:8px;">
+          <button class="btn-ghost" style="flex:1;">Voice</button>
+          <button class="btn-ghost" style="flex:1;">Photo</button>
+        </div>
+        <button class="btn-primary" data-go="today">Save entry</button>
+      </div>
+    </section>
+
+    <!-- JOURNEY MAP -->
+    <section class="screen no-nav" id="map">
+      <div class="scroll">
+        <h2 class="title">Screen map</h2>
+        <p class="subtitle">Tap any screen to jump. All routes preserved in production app.</p>
+        <div class="list-card">
+          <div class="list-row" data-go="sign-in"><span>Sign in</span><span class="chev">›</span></div>
+          <div class="list-row" data-go="welcome-1"><span>Welcome step 1</span><span class="chev">›</span></div>
+          <div class="list-row" data-go="welcome-2"><span>Welcome step 2 · Connections</span><span class="chev">›</span></div>
+          <div class="list-row" data-go="welcome-3"><span>Welcome step 3 · Journal</span><span class="chev">›</span></div>
+          <div class="list-row" data-go="processing"><span>Processing overlay</span><span class="chev">›</span></div>
+          <div class="list-row" data-go="today"><span>Today</span><span class="chev">›</span></div>
+          <div class="list-row" data-go="data"><span>Data</span><span class="chev">›</span></div>
+          <div class="list-row" data-go="plan"><span>Plan</span><span class="chev">›</span></div>
+          <div class="list-row" data-go="ask-maya"><span>Ask Maya</span><span class="chev">›</span></div>
+          <div class="list-row" data-go="tools"><span>Connections (Tools)</span><span class="chev">›</span></div>
+          <div class="list-row" data-go="hae-wizard"><span>Apple Health wizard</span><span class="chev">›</span></div>
+          <div class="list-row" data-go="account"><span>Account</span><span class="chev">›</span></div>
+          <div class="list-row" data-go="settings"><span>Settings</span><span class="chev">›</span></div>
+          <div class="list-row" data-go="meds"><span>Meds</span><span class="chev">›</span></div>
+          <div class="list-row" data-go="journal-new"><span>Journal (FAB)</span><span class="chev">›</span></div>
+        </div>
+        <a class="map-link" href="#" data-go="today">Back to Today →</a>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="nav hidden" id="bottom-nav">
+    <button class="nav-item on" data-go="today" data-tab="today"><span class="ico">☀</span>Today</button>
+    <button class="nav-item" data-go="data" data-tab="data"><span class="ico">📊</span>Data</button>
+    <button class="nav-fab" data-go="journal-new" aria-label="New journal">+</button>
+    <button class="nav-item" data-go="plan" data-tab="plan"><span class="ico">📋</span>Plan</button>
+    <button class="nav-item" data-go="ask-maya" data-tab="ask-maya"><span class="ico">✦</span>Ask Maya</button>
+  </nav>
+
+  <!-- Drawer -->
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+  <aside class="drawer" id="drawer">
+    <div class="list-card" style="margin:0 12px 12px;border:none;background:transparent;">
+      <div class="list-row" data-go="account" data-close-drawer><span>Account</span><span class="chev">›</span></div>
+      <div class="list-row" data-go="meds" data-close-drawer><span>Meds</span><span class="chev">›</span></div>
+      <div class="list-row" data-go="settings" data-close-drawer><span>Settings</span><span class="chev">›</span></div>
+      <div class="list-row" data-go="tools" data-close-drawer><span>Tools</span><span class="chev">›</span></div>
+      <div class="list-row" data-close-drawer><span>Care</span><span class="chev">›</span></div>
+      <div class="list-row" data-go="map" data-close-drawer><span>Screen map</span><span class="chev">›</span></div>
+      <div class="list-row" data-go="sign-in" data-close-drawer><span>Sign out (preview)</span><span class="chev">›</span></div>
+    </div>
+  </aside>
+
+  <script>
+    const appScreens = new Set(['today','data','plan','ask-maya']);
+    const noNav = new Set(['sign-in','welcome-1','welcome-2','welcome-3','processing','hae-wizard','map','tools','account','settings','meds','journal-new']);
+
+    function show(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.add('active');
+      const nav = document.getElementById('bottom-nav');
+      if (appScreens.has(id)) {
+        nav.classList.remove('hidden');
+        nav.querySelectorAll('.nav-item').forEach(n => {
+          n.classList.toggle('on', n.dataset.tab === id);
+        });
+      } else {
+        nav.classList.add('hidden');
+      }
+      window.scrollTo(0, 0);
+      closeDrawer();
+    }
+
+    function closeDrawer() {
+      document.getElementById('drawer').classList.remove('open');
+      document.getElementById('drawer-overlay').classList.remove('open');
+    }
+
+    document.body.addEventListener('click', e => {
+      const go = e.target.closest('[data-go]');
+      if (go) {
+        e.preventDefault();
+        show(go.dataset.go);
+        return;
+      }
+      if (e.target.closest('[data-drawer="open"]')) {
+        document.getElementById('drawer').classList.add('open');
+        document.getElementById('drawer-overlay').classList.add('open');
+        return;
+      }
+      if (e.target.closest('[data-close-drawer]')) closeDrawer();
+      const wiz = e.target.closest('[data-wizard]');
+      if (wiz) {
+        const step = wiz.dataset.wizard;
+        document.querySelectorAll('#hae-wizard .wizard-step').forEach(s => {
+          s.classList.toggle('on', s.dataset.step === step);
+        });
+      }
+    });
+    document.getElementById('drawer-overlay').addEventListener('click', closeDrawer);
+
+    // Animate processing %
+    let pct = 46;
+    const pctEl = document.getElementById('pct');
+    const fillEl = document.getElementById('pfill');
+    setInterval(() => {
+      if (!document.getElementById('processing').classList.contains('active')) return;
+      pct = Math.min(99, pct + 1);
+      if (pctEl) pctEl.textContent = pct + '%';
+      if (fillEl) fillEl.style.width = pct + '%';
+    }, 800);
+  </script>
+</body>
+</html>
