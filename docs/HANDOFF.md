@@ -508,6 +508,15 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 
 ## Log
 
+### 2026-07-12T22:57:20Z — TF26 upload VALID + Founding Team
+
+- **Requested** — `git pull origin main`; `doppler … bun run ios:testflight`; after VALID `asc-add-build-to-group.mjs 26 "Founding Team"`.
+- **Done** — Fast-forwarded `main` to `dfe6a9e1` (`1.0.0+26`). Upload **succeeded** via Xcode-beta. ASC **1.0 (26) VALID** `1b2bb8ab-a712-430f-8c9f-e322522d210b`. Added to Founding Team; internal+external **IN_BETA_TESTING**; beta review **WAITING_FOR_REVIEW**. Docs close-out pushed as `4cb7175a`.
+- **Issues** — `lovable/redesign` still diverged (merge aborted earlier due to conflicts). Luciq MCP crash list not queryable this session. ASC screenshot feedback is historical (pre-26).
+- **Stand / next** — Testers install **1.0 (26)**; reconcile `lovable/redesign` with `main` when ready.
+- **Who / where** — Cursor agent, local, `main` @ `4cb7175a`.
+- **Timestamp** — 2026-07-12T22:57:20Z.
+
 ### 2026-07-12T21:40:00Z — TF26 commit/push; TestFlight blocked (no Xcode)
 - **Requested:** Commit design work and take TestFlight live for testers.
 - **Done:** Bumped `1.0.0+26`; updated Today render tests; `flutter test` **162/162**;
