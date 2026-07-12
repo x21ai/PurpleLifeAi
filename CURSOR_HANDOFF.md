@@ -1,18 +1,20 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~17:12 ET (TF25 close-out complete).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-12 ~18:57 ET (TF26 VALID Founding Team).
 
-**Install build 25 now (update from 24, not 26)** — fixes TF24 blank/stuck Today, auth session after reinstall, P0 meds Taken, journal UX, More for today, sign-in session error copy, Luciq shake.
+**Install build 26 now (update from 25)** — newdesign sign-in + Merged Today Flutter UI (`3e405e51`, pubspec `1.0.0+26`). ASC **1.0 (26) VALID**, Founding Team **IN_BETA_TESTING**.
 
-## TestFlight — what build has what (2026-07-06)
+## TestFlight — what build has what (2026-07-12)
 
-| Build | ASC status | Founding Team | Git commit | TF25 fixes | Install? |
-|-------|------------|---------------|------------|------------|----------|
-| **1.0 (22–23)** | VALID | IN_BETA_TESTING | older | — | Skip |
-| **1.0 (24)** | VALID | IN_BETA_TESTING | `a594b77`+ | OAuth + perf only | Superseded |
-| **1.0 (25)** | **VALID** | **IN_BETA_TESTING** | `4f1eed2c` | auth/sync/data/today/meds/journal/Luciq | **Install now** |
+| Build | ASC status | Founding Team | Git commit | Notes | Install? |
+|-------|------------|---------------|------------|-------|----------|
+| **1.0 (22–24)** | VALID | IN_BETA_TESTING | older | — | Skip |
+| **1.0 (25)** | VALID | IN_BETA_TESTING | `4f1eed2c` | TF25 fleet | Superseded |
+| **1.0 (26)** | **VALID** | **IN_BETA_TESTING** | `3e405e51` / tip `dfe6a9e1` | newdesign sign-in + Merged Today | **Install now** |
 
-**TF25 close-out (2026-07-06 ~17:12 ET):** Git **`main`** + **`lovable/redesign`** pushed to origin @ **`7dc121d4`** (TF25 code @ `4f1eed2c`). ASC **1.0 (25) VALID**, Founding Team **IN_BETA_TESTING** (`asc-add-build-to-group.mjs 25`). Upload ~17:04 ET, **EXPORT SUCCEEDED**. Gates: **`flutter test` 162/162**. **No TF26** — `pubspec.yaml` stays **1.0.0+25**.
+**TF26 close-out (2026-07-12 ~18:57 ET):** Upload **succeeded** (Xcode-beta). ASC **1.0 (26) VALID** `1b2bb8ab-…`. `asc-add-build-to-group.mjs 26 "Founding Team"` done; external beta review **WAITING_FOR_REVIEW**. Luciq SDK token present; MCP crash query not available in this session (status `mcp`).
+
+**TF25 close-out (2026-07-06 ~17:12 ET):** Git **`main`** + **`lovable/redesign`** @ **`7dc121d4`** (TF25 code @ `4f1eed2c`). ASC **1.0 (25) VALID**.
 
 **TF25 observability triage (pre-ship):** Luciq MCP **0** open crashes on builds 24–25; ASC **23** screenshot submissions mapped in `docs/OPEN-ISSUES.md`.
 

@@ -9,19 +9,23 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-12 TF26 VALID — Founding Team live.**
+`main` @ **`dfe6a9e1`** / Flutter **`1.0.0+26`**. Upload via
+`doppler run --project purple-life --config prd -- bun run ios:testflight`
+(**Upload succeeded**, Xcode-beta). ASC **1.0 (26) VALID** id
+`1b2bb8ab-a712-430f-8c9f-e322522d210b`; `asc-add-build-to-group.mjs 26 "Founding Team"`
+→ internal+external **IN_BETA_TESTING** (beta review WAITING_FOR_REVIEW).
+**Testers: update TestFlight 25 → 26** (newdesign sign-in + Merged Today).
+
 **2026-07-12 TF26 committed + pushed; upload blocked — no Xcode.app.**
 `main` @ **`3e405e51`** (`1.0.0+26`): newdesign sign-in + Merged Today + tests
-**162/162**. Pushed to `origin/main`. `bun run ios:testflight` failed:
-**Xcode.app not found** (only Command Line Tools at
-`/Library/Developer/CommandLineTools`). ASC still **1.0 (25) VALID** Founding
-Team. **Next:** install/select full Xcode, then re-run
-`doppler run --project purple-life --config prd -- bun run ios:testflight`
-and `asc-add-build-to-group.mjs 26 "Founding Team"`.
+**162/162**. Pushed to `origin/main`. Earlier session blocked on Xcode.app;
+**resolved this session** with Xcode-beta + successful TF26 upload.
 
 **2026-07-06 TF25 close-out — safe to close Cursor.**
 `main` + `lovable/redesign` **pushed** to origin @ **`7dc121d4`**. ASC **1.0 (25) VALID**,
 Founding Team **IN_BETA_TESTING** (`asc-add-build-to-group.mjs 25`). Upload ~17:04 ET, **EXPORT SUCCEEDED**.
-**No TF26** — `pubspec.yaml` **1.0.0+25**. **Testers: update TestFlight 24 → 25.**
+Superseded by TF26 for install.
 
 **2026-07-06 TestFlight 1.0 (25) VALID — Founding Team live (TF25 fleet).**
 `main` + `lovable/redesign` @ **`4f1eed2c`**. Flutter **1.0.0+25**: TF24 blank/stuck fixes
