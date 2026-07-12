@@ -9,11 +9,14 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-**2026-07-12 TF26 upload in progress — newdesign sign-in + Merged Today.**
-`pubspec` **1.0.0+26**. Local: newdesign-parity sign-in, Merged Today layout
-(`today_merged_layout.dart`), preview HTML wiring, Today render tests updated.
-ASC baseline before upload: **1.0 (25) VALID** Founding Team. Shipping via
-`bun run ios:testflight` then `asc-add-build-to-group.mjs 26 "Founding Team"`.
+**2026-07-12 TF26 committed + pushed; upload blocked — no Xcode.app.**
+`main` @ **`3e405e51`** (`1.0.0+26`): newdesign sign-in + Merged Today + tests
+**162/162**. Pushed to `origin/main`. `bun run ios:testflight` failed:
+**Xcode.app not found** (only Command Line Tools at
+`/Library/Developer/CommandLineTools`). ASC still **1.0 (25) VALID** Founding
+Team. **Next:** install/select full Xcode, then re-run
+`doppler run --project purple-life --config prd -- bun run ios:testflight`
+and `asc-add-build-to-group.mjs 26 "Founding Team"`.
 
 **2026-07-06 TF25 close-out — safe to close Cursor.**
 `main` + `lovable/redesign` **pushed** to origin @ **`7dc121d4`**. ASC **1.0 (25) VALID**,
@@ -500,6 +503,19 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-12T21:40:00Z — TF26 commit/push; TestFlight blocked (no Xcode)
+- **Requested:** Commit design work and take TestFlight live for testers.
+- **Done:** Bumped `1.0.0+26`; updated Today render tests; `flutter test` **162/162**;
+  commit `3e405e51` on `main`; pushed `origin/main`. Baseline ASC **1.0 (25) VALID**;
+  Luciq open crashes for 25: **0**.
+- **Issues:** `ios:testflight` abort — **Xcode.app not found** (CLT only). Build **26**
+  not on ASC; testers still on **25**.
+- **Stand / next:** Operator installs/selects full Xcode (`xcode-select -s
+  /Applications/Xcode.app`), then agent re-runs upload + Founding Team assign.
+- **Who / where:** Auto / local Mac without Xcode.app
+- **Evidence:** push `0b1c4ac7..3e405e51`; testflight log `ERROR: Xcode.app not found`
+- **Timestamp:** 2026-07-12T21:40:00Z
 
 ### 2026-07-12T21:32:00Z — Flutter sign-in matches newdesign (local)
 - **Requested:** Login page at `:8765/sign-in` should match design at `:8790/newdesign/index.html`.
