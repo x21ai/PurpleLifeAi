@@ -9,13 +9,22 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-12 P0 password sign-in fix (TF27 pending upload).**
+Branch **`fix/auth-password-signin-tf27`** / Flutter **`1.0.0+27`**. Root cause: after
+email/password sign-in, `authGateStatusProvider` treated stale `authSessionProvider`
+`AsyncData(null)` as signed-out while `AuthRepository.currentSession` was already set,
+so `AuthGate` blanked `/today`. Also restored `FilledButton` Sign in CTA (TF26 InkWell
+regression risk). Live API password grant **PASS** (E2E user). Auth tests **21/21**.
+**TF26 (`1.0.0+26`) still broken for this race until TF27 uploads.** Next: merge/push +
+`bun run ios:testflight` for build 27.
+
 **2026-07-12 TF26 VALID — Founding Team live.**
-`main` @ **`dfe6a9e1`** / Flutter **`1.0.0+26`**. Upload via
+`main` @ **`64e72520`** / Flutter **`1.0.0+26`**. Upload via
 `doppler run --project purple-life --config prd -- bun run ios:testflight`
 (**Upload succeeded**, Xcode-beta). ASC **1.0 (26) VALID** id
 `1b2bb8ab-a712-430f-8c9f-e322522d210b`; `asc-add-build-to-group.mjs 26 "Founding Team"`
 → internal+external **IN_BETA_TESTING** (beta review WAITING_FOR_REVIEW).
-**Testers: update TestFlight 25 → 26** (newdesign sign-in + Merged Today).
+**Testers: hold TF26 for password sign-in if blank after Sign in; install TF27 when ready.**
 
 **2026-07-12 TF26 committed + pushed; upload blocked — no Xcode.app.**
 `main` @ **`3e405e51`** (`1.0.0+26`): newdesign sign-in + Merged Today + tests
@@ -507,6 +516,16 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-12T23:06:47Z — P0 email/password sign-in blank Today (TF27)
+
+- **Requested** — Live users cannot email/password sign in on Purple after TF26; investigate and fix ASAP.
+- **Done** — Confirmed live password grant **200** for E2E user via `auth.purplelife.org` (21/25 auth users have password hashes; 4 OAuth-only). Fixed `authGateStatusProvider` to treat `AuthRepository.currentSession` as authoritative when the session stream is still null after `signInWithPassword` (TF25/26 race → blank `AuthGate` on `/today`). Restored gradient `FilledButton` Sign in CTA (replaced TF26 `InkWell`). Register without session shows confirm-email copy instead of navigating. Bumped pubspec **`1.0.0+27`**. Tests: auth/sign-in **21/21**; `flutter analyze` clean on touched files. Issue logged resolved in `docs/OPEN-ISSUES.md` (`tf26-password-signin-blank-today`).
+- **Issues** — Fix is **not** in ASC yet; **TF26 remains broken** until TF27 upload. Local `:8765` serve hit CLOSED-socket in this sandbox (could not browser-reproduce). OAuth path unchanged.
+- **Stand / next** — Merge/push `fix/auth-password-signin-tf27` → `main`, then `doppler run --project purple-life --config prd -- bun run ios:testflight` for build **27**; Founding Team assign; testers update 26→27.
+- **Who / where** — Cursor agent (subagent), local, branch `fix/auth-password-signin-tf27`.
+- **Evidence** — password grant HTTP 200; `flutter test` auth suite 21/21; analyze clean.
+- **Timestamp** — 2026-07-12T23:06:47Z.
 
 ### 2026-07-12T22:57:20Z — TF26 upload VALID + Founding Team
 

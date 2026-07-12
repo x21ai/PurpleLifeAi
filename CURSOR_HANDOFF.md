@@ -1,8 +1,8 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-12 ~18:57 ET (TF26 VALID Founding Team).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-12 ~19:07 ET (P0 password sign-in fix → TF27).
 
-**Install build 26 now (update from 25)** — newdesign sign-in + Merged Today Flutter UI (`3e405e51`, pubspec `1.0.0+26`). ASC **1.0 (26) VALID**, Founding Team **IN_BETA_TESTING**.
+**Do not treat TF26 as password-signin ready.** Install **TF27** when uploaded (`1.0.0+27`, branch `fix/auth-password-signin-tf27`). TF26 blanked `/today` after email/password sign-in (auth gate stream lag).
 
 ## TestFlight — what build has what (2026-07-12)
 
@@ -10,7 +10,13 @@ Operational state of the PurpleLife project for the next agent or engineer. Last
 |-------|------------|---------------|------------|-------|----------|
 | **1.0 (22–24)** | VALID | IN_BETA_TESTING | older | — | Skip |
 | **1.0 (25)** | VALID | IN_BETA_TESTING | `4f1eed2c` | TF25 fleet | Superseded |
-| **1.0 (26)** | **VALID** | **IN_BETA_TESTING** | `3e405e51` / tip `dfe6a9e1` | newdesign sign-in + Merged Today | **Install now** |
+| **1.0 (26)** | **VALID** | **IN_BETA_TESTING** | `3e405e51` / tip `64e72520` | newdesign sign-in + Merged Today; **password sign-in blank Today bug** | Hold / skip if login fails |
+| **1.0 (27)** | pending | pending | `fix/auth-password-signin-tf27` | AuthGate session fallback + FilledButton CTA | **Upload next** |
+
+**Recent (2026-07-12 ~19:07 ET): P0 password sign-in fix.**
+`authGateStatusProvider` now uses repo `currentSession` when stream is still null after
+`signInWithPassword`; Sign in CTA restored to `FilledButton` over gradient; pubspec **+27**.
+Auth tests 21/21. **Next:** merge to `main`, `bun run ios:testflight`, Founding Team.
 
 **TF26 close-out (2026-07-12 ~18:57 ET):** Upload **succeeded** (Xcode-beta). ASC **1.0 (26) VALID** `1b2bb8ab-…`. `asc-add-build-to-group.mjs 26 "Founding Team"` done; external beta review **WAITING_FOR_REVIEW**. Luciq SDK token present; MCP crash query not available in this session (status `mcp`).
 

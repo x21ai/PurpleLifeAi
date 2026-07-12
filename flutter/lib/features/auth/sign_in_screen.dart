@@ -160,8 +160,30 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           });
           return;
         }
+        // Confirmations enabled: no session until the user clicks the email link.
+        if (response.session == null) {
+          if (!mounted) return;
+          setState(() {
+            _isRegister = false;
+            _error =
+                'Check your inbox to confirm your email, then sign in.';
+            _busy = false;
+          });
+          return;
+        }
+        ref.read(invalidateSessionDataProvider)();
       } else {
-        await auth.signInWithEmail(email: email, password: password);
+        final response =
+            await auth.signInWithEmail(email: email, password: password);
+        if (response.session == null && auth.currentSession == null) {
+          if (!mounted) return;
+          setState(() {
+            _error =
+                'Sign in did not create a session. Check your connection and try again.';
+            _busy = false;
+          });
+          return;
+        }
         ref.read(invalidateSessionDataProvider)();
       }
       if (!mounted) return;
@@ -455,6 +477,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                               ),
                             ],
                             const SizedBox(height: 8),
+                            // Gradient CTA keeps newdesign look; FilledButton
+                            // restores pre-TF26 semantics and reliable taps
+                            // (InkWell-over-DecoratedBox missed presses on some devices).
                             DecoratedBox(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(14),
@@ -464,27 +489,29 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                                   colors: [purpleDeep, purple],
                                 ),
                               ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: _busy ? null : _submit,
-                                  borderRadius: BorderRadius.circular(14),
-                                  child: SizedBox(
-                                    height: 48,
-                                    child: Center(
-                                      child: Text(
-                                        _busy
-                                            ? 'Please wait…'
-                                            : _isRegister
-                                                ? 'Create account'
-                                                : 'Sign in',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
+                              child: FilledButton(
+                                onPressed: _busy ? null : _submit,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  disabledBackgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  foregroundColor: Colors.white,
+                                  disabledForegroundColor:
+                                      Colors.white.withValues(alpha: 0.7),
+                                  minimumSize: const Size.fromHeight(48),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                                child: Text(
+                                  _busy
+                                      ? 'Please wait…'
+                                      : _isRegister
+                                          ? 'Create account'
+                                          : 'Sign in',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),

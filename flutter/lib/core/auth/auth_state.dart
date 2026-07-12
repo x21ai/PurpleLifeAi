@@ -27,6 +27,11 @@ Session? readActiveSession(Ref ref) {
 }
 
 /// Derived auth gate state for [AuthGate] and redirect helpers.
+///
+/// After email/password sign-in, [AuthRepository.currentSession] is set
+/// immediately while [authSessionProvider] can still be [AsyncData] null for
+/// a frame (stream lag). Treat the repo session as authoritative so [AuthGate]
+/// does not flash [AuthGateStatus.signedOut] / blank on `/today`.
 final authGateStatusProvider = Provider<AuthGateStatus>((ref) {
   final repoAsync = ref.watch(authRepositoryProvider);
   if (repoAsync.isLoading) return AuthGateStatus.loading;
@@ -41,8 +46,12 @@ final authGateStatusProvider = Provider<AuthGateStatus>((ref) {
       return AuthGateStatus.loading;
     },
     error: (_, __) => AuthGateStatus.sessionError,
-    data: (session) =>
-        session == null ? AuthGateStatus.signedOut : AuthGateStatus.signedIn,
+    data: (session) {
+      final active = session ?? restoredSession;
+      return active == null
+          ? AuthGateStatus.signedOut
+          : AuthGateStatus.signedIn;
+    },
   );
 });
 

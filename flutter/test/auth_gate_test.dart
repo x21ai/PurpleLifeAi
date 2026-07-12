@@ -81,6 +81,29 @@ void main() {
         core_auth.AuthGateStatus.signedIn,
       );
     });
+
+    test(
+      'reports signedIn when stream is still null but password sign-in set repo session',
+      () async {
+        final container = ProviderContainer(
+          overrides: [
+            authRepositoryProvider.overrideWith(
+              (ref) async => _FakeAuthRepo(session: _fakeSession()),
+            ),
+            // Stale signed-out stream emission (lag after signInWithPassword).
+            authSessionProvider.overrideWith((ref) => Stream.value(null)),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await container.read(authRepositoryProvider.future);
+        await _waitFor(
+          () =>
+              container.read(core_auth.authGateStatusProvider) ==
+              core_auth.AuthGateStatus.signedIn,
+        );
+      },
+    );
   });
 
   group('AuthGate widget', () {

@@ -30,6 +30,19 @@ Format:
   (none git-tracked). Confirmed `bun run check:em-dash` **PASS** afterward.
   Kept untracked `flutter/ios/Flutter/Developer.xcconfig` (local Xcode-beta fix).
 
+## Auth / password sign-in (raised 2026-07-12)
+
+- [x] ~~**tf26-password-signin-blank-today**~~ — RESOLVED 2026-07-12 (code; **TF27 upload
+  required**): After email/password `signInWithPassword`, `AuthRepository.currentSession`
+  was set immediately while `authSessionProvider` could still be `AsyncData(null)` for a
+  frame. `authGateStatusProvider` treated that as `signedOut`, so `AuthGate` rendered
+  `SizedBox.shrink` on `/today` (looked like sign-in failed). TF26 (`3e405e51`) also
+  replaced the Sign in `FilledButton` with `InkWell` over a gradient. **Fix:** gate falls
+  back to repo `currentSession`; restore `FilledButton` CTA; do not navigate without a
+  session (register confirmation path). Verified: auth/sign-in tests **21/21**, analyze
+  clean. Live API password grant for E2E user **200**. **TF26 still broken until TF27.**
+  _Raised 2026-07-12 by live-user P0; fixed in `fix/auth-password-signin-tf27`._
+
 ## Auth / password reset (raised 2026-07-06)
 
 - [x] ~~**email-pump-pgmq-metrics-broken**~~ — RESOLVED 2026-07-06 (ops): Supabase
