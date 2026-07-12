@@ -1,8 +1,14 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-06 ~17:12 ET (TF25 close-out complete).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-12 ~16:37 ET (Merged Today preview push).
 
 **Install build 25 now (update from 24, not 26)** — fixes TF24 blank/stuck Today, auth session after reinstall, P0 meds Taken, journal UX, More for today, sign-in session error copy, Luciq shake.
+
+**Recent (2026-07-12): Merged Today mock committed and pushed on `lovable/redesign`.**
+`PointofSaleAi` can access `AstroAii/purpledrw` again. Preview: unified hydration, Your signals (no Body Signals duplicate), slim missed-dose Log menu, Last 7 days with week recap, hardened `preview-design-serve.sh`. Open: `http://127.0.0.1:8766/personalized-dashboard-preview.html?layout=merged`. Rule: `.cursor/rules/preview-design-serve.mdc`. Note: `origin/main` is ahead with newdesign preview commits; merge to main is a separate step.
+
+**Recent (2026-07-06 ~18:05 ET): Merged preview mock — Lovable Today parity on :8766.**
+`docs/previews/personalized-dashboard-preview.html` Merged mode mirrors web `today.tsx` blocks. Serve: `./scripts/preview-design-serve.sh` (foreground, bind `0.0.0.0`).
 
 ## TestFlight — what build has what (2026-07-06)
 

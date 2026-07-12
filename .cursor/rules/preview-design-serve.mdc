@@ -1,0 +1,26 @@
+---
+description: Keep design preview at localhost:8766 running and open Merged Lovable Today mock in Cursor browser.
+alwaysApply: true
+---
+
+# Design preview (Merged Lovable Today mock)
+
+**Single owner:** one persistent background shell runs `./scripts/preview-design-serve.sh` (foreground python, PID file `.preview-design-serve.pid`). Never daemonize with nohup (agent shells reap detached children).
+
+When reviewing or porting the approved Merged shell:
+
+1. **Keep the preview server running** at http://127.0.0.1:8766:
+   ```bash
+   ./scripts/preview-design-serve.sh
+   ```
+   Status: `./scripts/preview-design-serve.sh --status`. Stop: `./scripts/preview-design-serve.sh --stop`.
+
+2. **Open in Cursor browser** (not Chrome/Safari `open`):
+   - **Merged + Lovable Today mock:** `http://127.0.0.1:8766/personalized-dashboard-preview.html?layout=merged`
+   - Never use `file://` paths.
+
+3. **Port 8766** is separate from Flutter web (`:8765`) and TanStack dev (`:8080`).
+
+4. After editing `docs/previews/personalized-dashboard-preview.html`, hard-refresh the browser tab.
+
+This preview is mock HTML only (not production Flutter/TanStack). Canonical Lovable product UI remains `src/routes/_app/today.tsx`.

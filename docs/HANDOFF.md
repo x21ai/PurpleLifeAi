@@ -9,6 +9,13 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-12 Merged Today preview pushed on `lovable/redesign`.**
+GitHub access restored for **`PointofSaleAi`** on `AstroAii/purpledrw`. Local Merged
+Today mock work committed and pushed to **`origin/lovable/redesign`**. Preview URL:
+`http://127.0.0.1:8766/personalized-dashboard-preview.html?layout=merged`. Serve:
+`./scripts/preview-design-serve.sh`. **`origin/main` is ahead** (`0b1c4ac7` newdesign
+preview + work-kernel rules); merge redesign → main is a separate step.
+
 **2026-07-06 TF25 close-out — safe to close Cursor.**
 `main` + `lovable/redesign` **pushed** to origin @ **`7dc121d4`**. ASC **1.0 (25) VALID**,
 Founding Team **IN_BETA_TESTING** (`asc-add-build-to-group.mjs 25`). Upload ~17:04 ET, **EXPORT SUCCEEDED**.
@@ -494,6 +501,15 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-12T20:37:00Z — Merged Today preview push (`lovable/redesign`)
+
+- **Requested** — Restore GitHub access for `PointofSaleAi`, then upload and sync pending Merged Today mock work.
+- **Done** — Access confirmed (`gh repo view AstroAii/purpledrw`). Committed and pushed: `docs/previews/personalized-dashboard-preview.html` (unified hydration, Your signals, slim missed-dose, Last 7 days recap), `scripts/preview-design-serve.sh`, `.cursor/rules/preview-design-serve.mdc`, `AGENTS.md`, `CURSOR_HANDOFF.md`, `docs/HANDOFF.md`, continual-learning index, `src/routeTree.gen.ts` (dropped Finder `plan 2` / `ask-maya 2` routes).
+- **Issues** — `origin/main` is ahead (`0b1c4ac7` newdesign preview + work-kernel rules). This push is on `lovable/redesign` only; merge to `main` not done in this step.
+- **Stand / next** — Merge or rebase `lovable/redesign` into `main` when ready; keep preview server on `:8766` for design review.
+- **Who / where** — Cursor agent, local, `lovable/redesign` (push pending this commit).
+- **Timestamp** — 2026-07-12T20:37:00Z.
 
 ### 2026-07-06T21:10:00Z — TF25 upload VALID (serial integrator)
 

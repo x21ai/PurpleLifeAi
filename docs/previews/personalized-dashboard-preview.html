@@ -131,9 +131,92 @@
       display: flex;
       justify-content: space-between;
     }
+    .app-topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 20px 10px;
+      border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    }
+    .app-topbar .menu-btn,
+    .app-topbar .profile-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-family: inherit;
+      padding: 0;
+    }
+    .app-topbar .menu-btn:hover,
+    .app-topbar .profile-btn:hover {
+      border-color: color-mix(in srgb, var(--purple) 40%, var(--border));
+      background: color-mix(in srgb, var(--purple-soft) 50%, var(--bg2));
+    }
+    .app-topbar .wordmark {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--purple);
+    }
+    .app-topbar .topbar-spacer { flex: 1; }
+    .app-topbar .profile-btn {
+      border-radius: 50%;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--purple-soft);
+      color: var(--purple-deep);
+      border-color: color-mix(in srgb, var(--purple) 25%, var(--border));
+    }
+    .apple-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      border-radius: 14px;
+      border: 1px solid color-mix(in srgb, var(--purple) 22%, var(--border));
+      background: color-mix(in srgb, var(--purple-soft) 55%, var(--bg));
+      cursor: pointer;
+    }
+    .apple-banner .new-pill {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 3px 7px;
+      border-radius: 6px;
+      background: var(--purple);
+      color: #fafafc;
+      flex-shrink: 0;
+    }
+    .apple-banner .banner-copy {
+      flex: 1;
+      font-size: 13px;
+      line-height: 1.35;
+      color: var(--text);
+      margin: 0;
+    }
+    .apple-banner .banner-chev {
+      color: var(--muted);
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .phone button {
+      font-family: inherit;
+      color: var(--text);
+    }
     .screen {
       flex: 1;
-      padding: 16px 20px 88px;
+      min-height: 0;
+      padding: 16px 20px 12px;
       overflow-y: auto;
     }
     .eyebrow {
@@ -253,10 +336,28 @@
       color: var(--muted);
     }
     .nav .fab {
-      width: 48px; height: 48px; border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
       background: var(--purple);
       margin-top: -20px;
       box-shadow: 0 4px 16px color-mix(in srgb, var(--purple) 35%, transparent);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fafafc;
+      font-size: 17px;
+      line-height: 1;
+      padding: 0;
+      flex-shrink: 0;
+    }
+    .nav .fab:hover {
+      filter: brightness(1.08);
+    }
+    .nav .fab.active {
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple) 35%, transparent), 0 4px 16px color-mix(in srgb, var(--purple) 35%, transparent);
     }
     .nav .active { color: var(--purple); font-weight: 600; }
     .section-head {
@@ -793,6 +894,1172 @@
       margin-top: 12px;
     }
     .quick-actions .btn { flex: 1 1 calc(50% - 4px); text-align: center; min-width: 120px; }
+    .date-strip {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      margin: 12px 0 16px;
+      padding-bottom: 4px;
+    }
+    .date-strip .day {
+      flex: 0 0 auto;
+      min-width: 44px;
+      padding: 8px 6px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      text-align: center;
+      font-size: 10px;
+      color: var(--muted);
+    }
+    .date-strip .day.active {
+      border-color: var(--purple);
+      background: var(--purple-soft);
+      color: var(--text);
+    }
+    .date-strip .day .dow { display: block; font-weight: 600; }
+    .date-strip .day .num { display: block; font-size: 14px; margin-top: 2px; font-family: var(--serif); }
+    .score-tiles {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 16px 0;
+      padding: 8px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: color-mix(in srgb, var(--glass) 80%, var(--bg));
+    }
+    .score-tile {
+      padding: 12px 8px;
+      border-radius: 14px;
+      text-align: center;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .score-tile:hover {
+      border-color: color-mix(in srgb, var(--purple) 35%, transparent);
+      background: color-mix(in srgb, var(--purple-soft) 30%, transparent);
+    }
+    .score-tile.active {
+      border-color: var(--purple);
+      background: var(--purple-soft);
+    }
+    .score-tile .val { font-family: var(--serif); font-size: 28px; }
+    .score-tile .lbl {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 4px;
+    }
+    .today-vitals {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .signals-section {
+      margin: 20px 0 16px;
+    }
+    .signals-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .signals-head .eyebrow-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0;
+    }
+    .signals-head .view-all {
+      border: none;
+      background: transparent;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: inherit;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .signals-head .view-all:hover { color: var(--text); }
+    .signals-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    @media (min-width: 480px) {
+      .signals-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    .signal-tile {
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      cursor: pointer;
+      transition: border-color 0.15s, opacity 0.15s;
+    }
+    .signal-tile:hover {
+      border-color: color-mix(in srgb, var(--purple) 35%, var(--border));
+      opacity: 0.92;
+    }
+    .signal-tile .k {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .signal-tile .v {
+      margin-top: 4px;
+      font-family: var(--serif);
+      font-size: 24px;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+    .signal-tile .u {
+      margin-left: 4px;
+      font-size: 13px;
+      color: var(--muted);
+      font-family: var(--sans);
+    }
+    .signals-narrative {
+      margin: 16px 0 20px;
+    }
+    .vital-pill {
+      flex: 1 1 calc(33% - 8px);
+      min-width: 90px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 11px;
+    }
+    .vital-pill.tappable {
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .vital-pill.tappable:hover {
+      border-color: color-mix(in srgb, var(--purple) 45%, var(--border));
+      background: color-mix(in srgb, var(--purple-soft) 40%, var(--bg));
+    }
+    .today-lede {
+      font-size: 15px;
+      line-height: 1.45;
+      color: var(--muted);
+      margin: 0 0 16px;
+    }
+    .icon-action-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .icon-action-chip {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 10px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .icon-action-chip:hover {
+      border-color: color-mix(in srgb, var(--purple) 40%, var(--border));
+      background: color-mix(in srgb, var(--purple-soft) 35%, var(--bg2));
+    }
+    .icon-action-chip .ico {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--purple-soft);
+      color: var(--purple);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .rec-compact-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .rec-compact-row:hover {
+      border-color: color-mix(in srgb, var(--purple) 40%, var(--border));
+      background: color-mix(in srgb, var(--purple-soft) 25%, var(--bg));
+    }
+    .rec-compact-row .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--purple);
+      flex-shrink: 0;
+    }
+    .rec-compact-row .title {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .rec-compact-row .chev {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .seven-day-panel .week-recap {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .seven-day-panel .week-recap .insight {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+    .seven-day-panel .week-recap .trend-chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .seven-day-panel .week-recap .trend-chip {
+      font-size: 10px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    .seven-day-panel .week-recap .mini-spark {
+      height: 24px;
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      margin-top: 8px;
+    }
+    .seven-day-panel .week-recap .mini-spark i {
+      flex: 1;
+      background: var(--purple);
+      border-radius: 2px 2px 0 0;
+      opacity: 0.55;
+      min-height: 3px;
+    }
+    .stats-back-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--purple);
+      cursor: pointer;
+      margin-bottom: 12px;
+      font-family: inherit;
+    }
+    .stats-back-chip:hover {
+      border-color: color-mix(in srgb, var(--purple) 40%, var(--border));
+      background: var(--purple-soft);
+    }
+    .metric-row.stat-focus {
+      border-color: var(--purple);
+      background: var(--purple-soft);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--purple) 25%, transparent);
+    }
+    .collapsible.section-focus {
+      border-color: color-mix(in srgb, var(--purple) 45%, var(--border));
+    }
+    .vital-pill .k {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 9px;
+    }
+    .vital-pill .v { font-family: var(--serif); font-size: 18px; margin-top: 4px; }
+    .quick-action-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 16px 0;
+    }
+    .quick-action-grid.cols-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .quick-action-grid.cols-1 {
+      grid-template-columns: 1fr;
+    }
+    .quick-action-btn {
+      padding: 14px 8px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-text-fill-color: currentColor;
+    }
+    [data-theme="light"] .quick-action-btn {
+      background: var(--bg);
+      color: var(--text);
+      border-color: color-mix(in srgb, var(--text) 12%, var(--border));
+    }
+    .quick-action-btn.accent {
+      border-color: color-mix(in srgb, var(--purple) 40%, var(--border));
+      color: var(--purple);
+      background: color-mix(in srgb, var(--purple-soft) 45%, var(--bg2));
+    }
+    .meds-timeline {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+    .meds-timeline .seg { flex: 1; height: 4px; border-radius: 999px; background: var(--bg2); }
+    .meds-timeline .seg.done { background: var(--purple); }
+    .dose-card {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      margin-bottom: 0;
+    }
+    .dose-card:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .dose-card:first-of-type {
+      padding-top: 4px;
+    }
+    .dose-time-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 40px;
+      padding: 5px 6px;
+      border-radius: 10px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+      line-height: 1.1;
+    }
+    .dose-time-stack .t {
+      font-size: 11px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+    }
+    .dose-time-stack .ampm {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+    .dose-card .meta {
+      flex: 1;
+      min-width: 0;
+    }
+    .dose-card .meta .name {
+      font-weight: 600;
+      font-size: 14px;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dose-card .meta .sub {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.2;
+      margin-top: 1px;
+    }
+    .dose-actions-inline {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .dose-card .taken-btn {
+      min-width: 0;
+      min-height: 0;
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: none;
+      background: var(--text);
+      color: var(--bg);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+      font-family: inherit;
+      line-height: 1;
+    }
+    .dose-card .taken-btn:hover {
+      filter: brightness(1.08);
+    }
+    .dose-card .dose-snooze-btn {
+      height: 28px;
+      padding: 0 8px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--text) 20%, var(--border));
+      background: transparent;
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .dose-card .dose-snooze-btn:hover {
+      border-color: var(--purple);
+    }
+    .dose-card .dose-skip-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 0 4px;
+      height: 28px;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .dose-card .dose-skip-btn:hover {
+      color: var(--text);
+    }
+    .dose-card .status-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .dose-card .status-label.taken {
+      color: var(--success);
+    }
+    .dose-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .reminders-nudge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: color-mix(in srgb, var(--bg2) 80%, var(--bg));
+      margin-bottom: 10px;
+      flex-wrap: nowrap;
+    }
+    .reminders-nudge .bell {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--bg2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--muted);
+    }
+    .reminders-nudge .bell svg {
+      width: 12px;
+      height: 12px;
+    }
+    .reminders-nudge .copy {
+      flex: 1;
+      min-width: 0;
+      font-size: 11px;
+      line-height: 1.2;
+      color: var(--text);
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .reminders-nudge .actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .reminders-nudge .enable-btn {
+      height: 24px;
+      padding: 0 9px;
+      border-radius: 999px;
+      border: none;
+      background: var(--text);
+      color: var(--bg);
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      line-height: 1;
+    }
+    .reminders-nudge .ghost-btn {
+      height: 24px;
+      padding: 0 4px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .missed-catchup-slim {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 14px;
+      border: 1px solid color-mix(in srgb, var(--border) 85%, var(--purple) 15%);
+      background: color-mix(in srgb, var(--bg2) 92%, var(--purple-soft) 8%);
+      margin-bottom: 12px;
+    }
+    .missed-catchup-slim .catchup-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--purple-soft) 55%, var(--bg));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--purple);
+    }
+    .missed-catchup-slim .catchup-icon .today-action-svg {
+      width: 12px;
+      height: 12px;
+    }
+    .missed-catchup-slim .catchup-copy {
+      flex: 1;
+      min-width: 0;
+      font-size: 13px;
+      line-height: 1.3;
+      color: var(--text);
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .missed-catchup-slim .catchup-menu-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+    .missed-catchup-slim .catchup-log-btn {
+      border: none;
+      background: transparent;
+      color: var(--purple);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 4px 2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .missed-catchup-slim .catchup-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      min-width: 168px;
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+      z-index: 20;
+    }
+    .missed-catchup-slim .catchup-menu-wrap.open .catchup-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .missed-catchup-slim .catchup-menu button {
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 13px;
+      text-align: left;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .missed-catchup-slim .catchup-menu button:hover {
+      background: color-mix(in srgb, var(--purple-soft) 40%, transparent);
+    }
+    .missed-catchup-slim .catchup-menu .menu-muted {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .seven-day-panel {
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .seven-day-panel .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 12px;
+    }
+    .trend-metric-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .trend-metric-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .trend-metric-head .k {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .trend-metric-head .v {
+      font-family: var(--serif);
+      font-size: 18px;
+      color: var(--text);
+    }
+    .trend-metric-head .sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .capsule-bars {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+      align-items: center;
+    }
+    .capsule-bars i {
+      flex: 1;
+      height: 10px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--muted) 35%, var(--border));
+    }
+    .capsule-bars i.on { background: var(--purple); }
+    .capsule-bars i.warn { background: #d4a24a; }
+    .capsule-bars i.alert { background: #c45c5c; }
+    .hydration-card {
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .hydration-card .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .hydration-card .eyebrow-sm {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 4px;
+    }
+    .hydration-panel-body .lede-sm,
+    .hydration-card .lede-sm {
+      font-size: 13px;
+      color: var(--text);
+      margin: 0;
+      line-height: 1.4;
+    }
+    .today-expand-panel .panel-head-actions .day-link,
+    .hydration-card .day-link {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 0;
+    }
+    .hydration-quick-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 12px 0;
+    }
+    .hydration-quick-row button {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .hydration-today-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .hydration-today-row strong {
+      color: var(--text);
+      font-size: 14px;
+      font-family: var(--serif);
+    }
+    .hydration-card .water-progress,
+    .today-expand-panel .water-progress {
+      height: 6px;
+      border-radius: 999px;
+      background: var(--border);
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .hydration-card .water-progress i,
+    .today-expand-panel .water-progress i {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: var(--purple);
+    }
+    .hydration-panel-body .inline-list,
+    .hydration-card .inline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .hydration-panel-body .inline-row,
+    .hydration-card .inline-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 12px;
+    }
+    .hydration-panel-body .inline-row .sub,
+    .hydration-card .inline-row .sub {
+      font-size: 11px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .hydration-kind {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 999px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .hydration-kind.water {
+      color: #6b8fd4;
+      background: rgba(107, 143, 212, 0.15);
+    }
+    .hydration-kind.electrolyte {
+      color: #d4a24a;
+      background: rgba(212, 162, 74, 0.18);
+    }
+    .hydration-sodium {
+      font-size: 10px;
+      color: var(--muted);
+    }
+    .hydration-quick-row .hydration-electrolyte-btn {
+      border-color: rgba(212, 162, 74, 0.45);
+      color: #d4a24a;
+    }
+    .hydration-week-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 10px 0 6px;
+    }
+    .dose-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .hydration-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--purple) 35%, var(--border));
+      background: color-mix(in srgb, var(--purple-soft) 70%, var(--bg));
+      color: var(--purple-deep);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    [data-theme="dark"] .hydration-inline {
+      color: var(--purple);
+    }
+    .hydration-inline .ico {
+      font-size: 12px;
+      line-height: 1;
+    }
+    .quick-action-btn.expanded,
+    .icon-action-chip.expanded,
+    .hydration-inline.expanded,
+    .today-icon-btn.expanded {
+      border-color: var(--purple);
+      background: color-mix(in srgb, var(--purple-soft) 55%, var(--bg2));
+      color: var(--purple-deep);
+    }
+    [data-theme="dark"] .quick-action-btn.expanded,
+    [data-theme="dark"] .icon-action-chip.expanded,
+    [data-theme="dark"] .hydration-inline.expanded,
+    [data-theme="dark"] .today-icon-btn.expanded {
+      color: var(--purple);
+    }
+    .today-icon-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 16px 0 12px;
+    }
+    .today-icon-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 12px 4px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      -webkit-text-fill-color: currentColor;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .today-icon-btn .ico {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      line-height: 1;
+      color: currentColor;
+    }
+    .today-action-svg {
+      width: 22px;
+      height: 22px;
+      display: block;
+    }
+    .today-expand-panel .panel-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 8px;
+    }
+    .today-expand-panel .panel-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 14px 0;
+    }
+    .today-expand-panel {
+      margin-bottom: 12px;
+      border-radius: 16px;
+      border: 1px solid color-mix(in srgb, var(--purple) 22%, var(--border));
+      background: var(--bg2);
+      overflow: hidden;
+    }
+    .today-expand-panel .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .today-expand-panel .panel-head-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .today-expand-panel .panel-close {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 2px;
+      font-family: inherit;
+    }
+    .today-expand-panel .panel-body {
+      padding: 14px;
+    }
+    .today-expand-panel .panel-note {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0 0 12px;
+      line-height: 1.4;
+    }
+    .today-expand-panel .inline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .today-expand-panel .inline-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 13px;
+    }
+    .today-expand-panel .inline-row .sub {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .today-expand-panel .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .today-expand-panel .pick-chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .today-expand-panel .pick-chip.active {
+      border-color: var(--purple);
+      background: var(--purple-soft);
+      color: var(--purple-deep);
+    }
+    [data-theme="dark"] .today-expand-panel .pick-chip.active {
+      color: var(--purple);
+    }
+    .today-expand-panel .water-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .today-expand-panel .water-add {
+      padding: 10px 6px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .today-expand-panel .water-progress {
+      height: 6px;
+      border-radius: 999px;
+      background: var(--border);
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .today-expand-panel .water-progress i {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      background: var(--purple);
+    }
+    .today-expand-panel .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .today-expand-panel .status-dot.on { background: var(--success); }
+    .today-expand-panel .status-dot.off { background: var(--muted); }
+    .log-composer {
+      position: relative;
+      margin-bottom: 0;
+    }
+    .log-compose-input {
+      width: 100%;
+      box-sizing: border-box;
+      min-height: 72px;
+      max-height: 200px;
+      padding: 12px 76px 12px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      line-height: 1.45;
+      resize: none;
+      overflow-y: auto;
+    }
+    .log-compose-input::placeholder {
+      color: var(--muted);
+    }
+    .log-compose-input:focus {
+      outline: none;
+      border-color: color-mix(in srgb, var(--purple) 45%, var(--border));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple) 15%, transparent);
+    }
+    .log-compose-tools {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      display: flex;
+      gap: 4px;
+    }
+    .log-compose-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      font-family: inherit;
+      color: var(--text);
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .log-compose-icon:hover {
+      border-color: color-mix(in srgb, var(--purple) 40%, var(--border));
+      background: color-mix(in srgb, var(--purple-soft) 40%, var(--bg2));
+    }
+    .log-when-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .log-when-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .log-when-inputs {
+      display: flex;
+      gap: 8px;
+    }
+    .log-when-inputs input {
+      flex: 1;
+      min-width: 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .log-when-inputs input:focus {
+      outline: none;
+      border-color: color-mix(in srgb, var(--purple) 45%, var(--border));
+    }
+    .more-for-today {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: color-mix(in srgb, var(--glass) 80%, var(--bg));
+      cursor: pointer;
+      margin-top: 16px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .more-for-today .chev { transition: transform 0.2s; }
+    .more-for-today.open .chev { transform: rotate(180deg); }
+    .more-cards { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
     .onboarding-pill {
       display: flex;
       align-items: center;
@@ -978,6 +2245,12 @@
       <span class="phone-label hidden" id="phoneLabelA">Today</span>
       <div class="phone">
         <div class="status"><span id="clock">14:28</span><span>Preview</span></div>
+        <div class="app-topbar hidden" id="phoneTopbar">
+          <button type="button" class="menu-btn" aria-label="Menu">☰</button>
+          <span class="wordmark">Purple</span>
+          <span class="topbar-spacer"></span>
+          <button type="button" class="profile-btn" id="phoneProfileBtn" aria-label="Account">A</button>
+        </div>
         <div class="screen" id="phoneScreen"></div>
         <div class="nav" id="phoneNav"></div>
       </div>
@@ -986,6 +2259,12 @@
       <span class="phone-label" id="phoneLabelB">Stats</span>
       <div class="phone">
         <div class="status"><span>14:28</span><span>Preview</span></div>
+        <div class="app-topbar hidden" id="phoneTopbarB">
+          <button type="button" class="menu-btn" aria-label="Menu">☰</button>
+          <span class="wordmark">Purple</span>
+          <span class="topbar-spacer"></span>
+          <button type="button" class="profile-btn" aria-label="Account">A</button>
+        </div>
         <div class="screen" id="phoneScreenB"></div>
         <div class="nav" id="phoneNavB"></div>
       </div>
@@ -1028,12 +2307,15 @@
     };
 
     const MOCK = {
-      readiness: 87,
-      sleepScore: 82,
+      readiness: 80,
+      sleepScore: 84,
       sleepTotalMin: 316,
-      hrv: 34,
-      restingHr: 62,
-      narrative: "Sleep was shorter than your recent average, but HRV and readiness still look steady. Worth pacing the morning and protecting tonight's wind-down.",
+      hrv: 18,
+      restingHr: 58,
+      spo2: 97.076,
+      stress: 70,
+      steps: 1434,
+      narrative: "Your body is definitely feeling the weight of that extra stress lately, and your Readiness score shows you haven't quite bounced back yet. It's one of those days to move a little slower and give yourself some extra grace.",
       askMayaStarters: [
         "What pulled my bedtime late last night?",
         "How is my HRV trending this week?",
@@ -1107,6 +2389,62 @@
       hasLabs: true,
       hasCaregiver: false,
       recommendedUpdated: "Jul 1, 2026",
+      activityScore: 71,
+      doses: [
+        { id: "d1", name: "Crestor", amount: "5 mg", time: "10:00 AM", status: "pending" },
+        { id: "d2", name: "asprin", amount: "81 mg", time: "8:00 AM", status: "taken" },
+      ],
+      missedCatchup: {
+        id: "mc1",
+        doseId: "mc-dose",
+        name: "Crestor",
+        when: "10:00am",
+        dayLabel: "yesterday",
+      },
+      announcement: {
+        subject: "New seizure logging shortcuts",
+        body: "Tap Seizure on Today for faster aura capture.",
+      },
+      bodyMeasurements: { tempDelta: "+0.2°", resp: 14, spo2: 97 },
+      hydration: {
+        goalMl: 2000,
+        todayMl: 840,
+        todayOz: "28.2 oz",
+        weekOz: "58.5 oz",
+        weekBars: [72, 45, 80, 60, 90, 55, 70],
+        stepsWeek: 15000,
+        stepsBars: [60, 80, 100, 70, 85, 90, 75],
+        electrolyteToday: "500 ml",
+        sodiumToday: "1000 mg Na",
+        entries: [
+          { time: "8:10 AM", amount: "12 oz", kind: "water" },
+          { time: "11:30 AM", amount: "8 oz", kind: "water" },
+          { time: "1:05 PM", amount: "500 ml LMNT", kind: "electrolyte", sodium: "1000 mg Na" },
+          { time: "2:15 PM", amount: "250 ml", kind: "water" },
+        ],
+      },
+      sevenDayTrends: {
+        sleepAvg: "6h 48m",
+        sleepDebt: "1h 12m",
+        sleepDelta: "+12m",
+        sleepBars: [65, 70, 58, 72, 68, 80, 74],
+        hrvAvg: 34,
+        hrvDelta: "+2 ms",
+        hrvBars: [28, 32, 30, 34, 36, 33, 35],
+        readinessDaysAbove80: 4,
+        readinessBars: [78, 82, 85, 84, 80, 88, 80],
+        readinessSpark: [62, 68, 72, 70, 78, 82, 87],
+        activityAvg: 71,
+        activityDelta: "+3 vs prior week",
+        activityBars: [65, 68, 70, 72, 69, 74, 71],
+        missedDoses: 1,
+        missedBars: [0, 0, 1, 0, 0, 0, 0],
+      },
+      wearablesStatus: [
+        { name: "Oura", connected: true, lastSync: "2h ago" },
+        { name: "Whoop", connected: false, lastSync: null },
+        { name: "Apple Health", connected: true, lastSync: "via webhook" },
+      ],
     };
 
     const LAB_PANELS = [
@@ -1383,6 +2721,17 @@
       { id: "metric", label: "Metric detail" },
     ];
 
+    const OVERLAY_SCREENS = ["stats", "metric", "journal"];
+
+    const STAT_TAP_CONFIG = {
+      readiness: { section: "sleep", metricKey: "oura_readiness_score" },
+      sleep: { section: "sleep", metricKey: "sleep_score" },
+      activity: { section: "activity", metricKey: "activity_score" },
+      hrv: { section: "cardio", metricKey: "hrv_rmssd_ms" },
+      resting_hr: { section: "cardio", metricKey: "resting_hr_bpm" },
+      sleep_duration: { section: "sleep", metricKey: "sleep_total_min" },
+    };
+
     function getLayout() {
       return document.body.dataset.layout || "expanded";
     }
@@ -1478,55 +2827,449 @@
       return `<div${tap}><div class="l">${c.l}</div><div class="v">${c.v}</div></div>`;
     }
 
-    function renderTodayMerged(focus) {
-      const strip = focus === "sleep-heart"
-        ? [
-            { l: "Sleep", v: fmtSleep(MOCK.sleepTotalMin), f: true, key: "sleep_score" },
-            { l: "HRV", v: `${MOCK.hrv} ms`, f: true, key: "hrv_rmssd_ms" },
-            { l: "Efficiency", v: "74%" },
-            { l: "Rest HR", v: String(MOCK.restingHr), key: "resting_hr_bpm" },
-            { l: "Ready", v: String(MOCK.readiness) },
-          ]
-        : [
-            { l: "Ready", v: String(MOCK.readiness), f: true },
-            { l: "Sleep", v: String(MOCK.sleepScore), key: "sleep_score" },
-            { l: "Activity", v: "58" },
-          ];
-      const p = MOCK.protocolCards[0];
-      const topRec = rankedRecommended(focus).slice(0, 1);
+    function showsSeizureFeatures(conditions) {
+      return traitsForConditions(conditions).includes("seizure_prone");
+    }
+
+    function renderDateStrip() {
+      const days = [];
+      for (let i = -3; i <= 3; i++) {
+        const d = new Date(2026, 6, 6 + i);
+        const isToday = i === 0;
+        const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getDay()];
+        days.push(`<div class="day${isToday ? " active" : ""}"><span class="dow">${dow}</span><span class="num">${d.getDate()}</span></div>`);
+      }
+      return `<div class="date-strip">${days.join("")}</div>`;
+    }
+
+    function renderScoreTiles() {
+      const tiles = [
+        { id: "readiness", label: "Readiness", value: MOCK.readiness },
+        { id: "sleep", label: "Sleep", value: MOCK.sleepScore },
+        { id: "activity", label: "Activity", value: MOCK.activityScore },
+      ];
+      return `<div class="score-tiles">${tiles.map((t) => `
+        <div class="score-tile" data-stat-tap="${t.id}">
+          <div class="val">${t.value}</div>
+          <div class="lbl">${t.label}</div>
+        </div>`).join("")}</div>`;
+    }
+
+    function renderYourSignals() {
+      const h = MOCK;
+      const b = MOCK.bodyMeasurements;
+      const spo2Display = h.spo2 != null ? h.spo2.toFixed(3) : "–";
+      const items = [
+        { key: "hrv", label: "HRV", value: h.hrv, unit: "ms" },
+        { key: "resting_hr", label: "Resting HR", value: h.restingHr, unit: "bpm" },
+        { key: "spo2", label: "SpO2", value: spo2Display, unit: "%" },
+        { key: "stress", label: "Stress", value: h.stress },
+        { key: "steps", label: "Steps", value: h.steps.toLocaleString() },
+        { key: "sleep_duration", label: "Sleep time", value: fmtSleep(h.sleepTotalMin) },
+        { key: "temp_delta", label: "Temp Δ", value: b.tempDelta },
+        { key: "respiratory_rate", label: "Resp", value: b.resp },
+      ];
       return `
-        <div class="eyebrow">Monday, Jul 6</div>
-        <div class="greeting">Good afternoon, ${USER.name}.</div>
-        <div class="onboarding-pill" data-goto="protocol">
-          <span class="dot"></span>
-          <span>Onboarding complete · 3/3 · wearables, labs, conditions</span>
-        </div>
-        <div class="strip">${strip.map(renderStripChip).join("")}</div>
-        <div class="card maya"><div class="tag">MAYA · daily insight</div><p>${MOCK.narrative}</p></div>
-        <div class="card">
-          <div class="protocol-card">
-            <div class="protocol-num">${p.n}</div>
-            <div>
-              <div class="plan-title">${p.title}</div>
-              <div class="plan-body">${p.body}</div>
-              <button class="btn btn-outline" data-goto="protocol">See full plan</button>
+        <section class="signals-section">
+          <div class="signals-head">
+            <p class="eyebrow-label">Your signals</p>
+            <button type="button" class="view-all" data-goto="data">View all ›</button>
+          </div>
+          <div class="signals-grid">${items.map((item) => `
+            <div class="signal-tile tappable" data-stat-tap="${item.key}" data-goto="metric" data-key="${item.key}">
+              <div class="k">${item.label}</div>
+              <div class="v">${item.value}${item.unit ? `<span class="u">${item.unit}</span>` : ""}</div>
+            </div>`).join("")}
+          </div>
+        </section>`;
+    }
+
+    function renderDailyNarrative() {
+      if (!MOCK.narrative) return "";
+      return `
+        <div class="card maya signals-narrative">
+          <div class="tag">Today's reading</div>
+          <p>${MOCK.narrative}</p>
+        </div>`;
+    }
+
+    function renderAppleBanner() {
+      const a = MOCK.announcement;
+      if (!a?.subject) return "";
+      return `
+        <button type="button" class="apple-banner" data-today-expand="log">
+          <span class="new-pill">New</span>
+          <p class="banner-copy">${a.subject}. ${a.body}</p>
+          <span class="banner-chev">›</span>
+        </button>`;
+    }
+
+    function todayActionIcon(id) {
+      const svgs = {
+        meds: `<svg class="today-action-svg" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m10.5 20.5-7-7a4.95 4.95 0 0 1 7-7l7 7a4.95 4.95 0 0 1-7 7z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/><path d="m8.5 8.5 7 7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>`,
+        hydration: `<svg class="today-action-svg" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21.5c-3.5-4-6.5-7.5-6.5-11a6.5 6.5 0 1 1 13 0c0 3.5-3 7-6.5 11z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg>`,
+        wearables: `<svg class="today-action-svg" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="7" y="5" width="10" height="14" rx="2.5" stroke="currentColor" stroke-width="1.75"/><path d="M9 5V3.5M15 5V3.5M9 19v1.5M15 19v1.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>`,
+        log: `<svg class="today-action-svg" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M13 2 3 14h8l-1 8 10-12h-8l1-8z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"/></svg>`,
+      };
+      return svgs[id] || "";
+    }
+
+    function renderTodayIconRow() {
+      return `
+        <div class="today-icon-row">
+          <button type="button" class="today-icon-btn${todayExpanded.meds ? " expanded" : ""}" data-today-expand="meds">
+            <span class="ico">${todayActionIcon("meds")}</span><span>Meds</span>
+          </button>
+          <button type="button" class="today-icon-btn${todayExpanded.hydration ? " expanded" : ""}" data-today-expand="hydration">
+            <span class="ico">${todayActionIcon("hydration")}</span><span>Hydration</span>
+          </button>
+          <button type="button" class="today-icon-btn${todayExpanded.wearables ? " expanded" : ""}" data-today-expand="wearables">
+            <span class="ico">${todayActionIcon("wearables")}</span><span>Wearables</span>
+          </button>
+          <button type="button" class="today-icon-btn${todayExpanded.log ? " expanded" : ""}" data-today-expand="log">
+            <span class="ico">${todayActionIcon("log")}</span><span>Log</span>
+          </button>
+        </div>`;
+    }
+
+    function renderMissedDoseCatchup() {
+      if (previewUi.missedCatchupDismissed) return "";
+      const m = MOCK.missedCatchup;
+      return `
+        <div class="missed-catchup-slim" data-today-panel="missed-catchup">
+          <span class="catchup-icon">${todayActionIcon("meds")}</span>
+          <p class="catchup-copy">Missed ${m.when} ${m.name} dose ${m.dayLabel}</p>
+          <div class="catchup-menu-wrap">
+            <button type="button" class="catchup-log-btn" data-catchup-menu-toggle>Log <span aria-hidden="true">▾</span></button>
+            <div class="catchup-menu" role="menu">
+              <button type="button" role="menuitem" data-missed-action="taken">I took it</button>
+              <button type="button" role="menuitem" data-missed-action="skipped">I missed it</button>
+              <button type="button" role="menuitem" data-today-expand="meds">Review in Meds</button>
+              <button type="button" role="menuitem" class="menu-muted" data-missed-dismiss>Not now</button>
             </div>
           </div>
+        </div>`;
+    }
+
+    function renderCapsuleBars(heights, tone) {
+      const cls = tone === "alert" ? "alert" : tone === "warn" ? "warn" : "on";
+      return `<div class="capsule-bars">${heights.map((h) => {
+        const level = h <= 0 ? "" : h < 50 ? "warn" : cls;
+        return `<i class="${level}" style="opacity:${Math.max(0.35, h / 100)}"></i>`;
+      }).join("")}</div>`;
+    }
+
+    function renderRemindersNudge() {
+      if (previewUi.remindersNudgeDismissed) return "";
+      return `
+        <div class="reminders-nudge">
+          <span class="bell"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.7 21a2 2 0 0 1-3.4 0" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg></span>
+          <p class="copy">Turn on dose-time alerts.</p>
+          <div class="actions">
+            <button type="button" class="enable-btn" data-reminders-enable>Enable</button>
+            <button type="button" class="ghost-btn" data-reminders-dismiss>Not now</button>
+          </div>
+        </div>`;
+    }
+
+    function splitDoseTime(time) {
+      const m = String(time).match(/^(\d{1,2}:\d{2})\s*(AM|PM)$/i);
+      if (m) return { clock: m[1], ampm: m[2].toUpperCase() };
+      return { clock: time, ampm: "" };
+    }
+
+    function renderDoseTimeStack(time) {
+      const { clock, ampm } = splitDoseTime(time);
+      return `<div class="dose-time-stack"><span class="t">${clock}</span>${ampm ? `<span class="ampm">${ampm}</span>` : ""}</div>`;
+    }
+
+    function renderDoseCards() {
+      const takenCount = MOCK.doses.filter((d) => d.status === "taken").length;
+      const segs = MOCK.doses.map((d, i) => `<div class="seg${i < takenCount ? " done" : ""}"></div>`).join("");
+      const cards = MOCK.doses.map((d) => {
+        const timeStack = renderDoseTimeStack(d.time);
+        const meta = `<div class="meta"><div class="name">${d.name}</div><div class="sub">${d.amount}</div></div>`;
+        if (d.status === "pending") {
+          return `
+        <div class="dose-card status-${d.status}">
+          ${timeStack}
+          ${meta}
+          <div class="dose-actions-inline">
+            <button type="button" class="taken-btn" data-dose-action="taken" data-dose-id="${d.id}">Taken</button>
+            <button type="button" class="dose-snooze-btn" data-dose-action="snooze" data-dose-id="${d.id}">Snooze</button>
+            <button type="button" class="dose-skip-btn" data-dose-action="skip" data-dose-id="${d.id}">Skip</button>
+          </div>
+        </div>`;
+        }
+        const statusLabel = d.status === "taken" ? "Taken" : d.status === "skipped" ? "Skipped" : "Snoozed";
+        const statusClass = d.status === "taken" ? " taken" : "";
+        return `
+        <div class="dose-card status-${d.status}">
+          ${timeStack}
+          ${meta}
+          <span class="status-label${statusClass}">${statusLabel}</span>
+        </div>`;
+      }).join("");
+      return `${renderRemindersNudge()}<div class="meds-timeline">${segs}</div><div class="dose-list">${cards}</div>`;
+    }
+
+    function renderSevenDayPanel() {
+      const t = MOCK.sevenDayTrends;
+      const h = MOCK.hydration;
+      return `
+        <div class="seven-day-panel">
+          <p class="section-label">Last 7 days</p>
+          <div class="trend-metric-grid">
+            <div>
+              <div class="trend-metric-head">
+                <div>
+                  <div class="k">Hydration</div>
+                  <div class="sub">week total</div>
+                </div>
+                <div class="v">${h.weekOz}</div>
+              </div>
+              ${renderCapsuleBars(h.weekBars, "on")}
+            </div>
+            <div>
+              <div class="trend-metric-head">
+                <div>
+                  <div class="k">Steps</div>
+                  <div class="sub">weekly avg</div>
+                </div>
+                <div class="v">${h.stepsWeek.toLocaleString()}</div>
+              </div>
+              ${renderCapsuleBars(h.stepsBars, "on")}
+            </div>
+            <div>
+              <div class="trend-metric-head">
+                <div>
+                  <div class="k">Activity avg</div>
+                  <div class="sub">${t.activityDelta}</div>
+                </div>
+                <div class="v">${t.activityAvg}</div>
+              </div>
+              ${renderCapsuleBars(t.activityBars, "on")}
+            </div>
+            <div>
+              <div class="trend-metric-head">
+                <div>
+                  <div class="k">Sleep avg</div>
+                  ${t.sleepDebt ? `<div class="sub">debt ${t.sleepDebt}</div>` : ""}
+                </div>
+                <div class="v">${t.sleepAvg}</div>
+              </div>
+              ${renderCapsuleBars(t.sleepBars, "warn")}
+            </div>
+            <div>
+              <div class="trend-metric-head">
+                <div>
+                  <div class="k">HRV avg</div>
+                  <div class="sub">${t.hrvDelta} vs prior week</div>
+                </div>
+                <div class="v">${t.hrvAvg} ms</div>
+              </div>
+              ${renderCapsuleBars(t.hrvBars, "on")}
+            </div>
+            <div>
+              <div class="trend-metric-head">
+                <div>
+                  <div class="k">Readiness</div>
+                  <div class="sub">≥80 on ${t.readinessDaysAbove80} of 7 days</div>
+                </div>
+                <div class="v">${t.readinessDaysAbove80}/7</div>
+              </div>
+              ${renderCapsuleBars(t.readinessBars, "on")}
+            </div>
+            <div>
+              <div class="trend-metric-head">
+                <div>
+                  <div class="k">Missed doses</div>
+                  <div class="sub">across the week</div>
+                </div>
+                <div class="v">${t.missedDoses}</div>
+              </div>
+              ${renderCapsuleBars(t.missedBars.map((n) => n ? 80 : 12), "alert")}
+            </div>
+          </div>
+          <div class="week-recap">
+            <div class="insight">Sleep averaged ${t.sleepAvg} this week. Readiness held above 80 on ${t.readinessDaysAbove80} of 7 days.</div>
+            <div class="trend-chips">
+              <span class="trend-chip">Sleep ${t.sleepDelta}</span>
+              <span class="trend-chip">Ready ${t.readinessDaysAbove80}/7</span>
+            </div>
+            <div class="mini-spark">${t.readinessSpark.map((h) => `<i style="height:${h}%"></i>`).join("")}</div>
+          </div>
+        </div>`;
+    }
+
+    function renderHydrationEntryRow(e) {
+      const kind = e.kind === "electrolyte" ? "electrolyte" : "water";
+      const kindLabel = kind === "electrolyte"
+        ? `<span class="hydration-kind electrolyte">Electrolyte</span>`
+        : `<span class="hydration-kind water">Water</span>`;
+      const sodium = e.sodium ? `<span class="hydration-sodium">${e.sodium}</span>` : "";
+      return `
+        <div class="inline-row">
+          <span>${kindLabel}${e.amount}${sodium ? ` ${sodium}` : ""}</span>
+          <span class="sub">${e.time}</span>
+        </div>`;
+    }
+
+    function renderHydrationPanelContent() {
+      const h = MOCK.hydration;
+      const pct = Math.min(100, Math.round((h.todayMl / h.goalMl) * 100));
+      const entries = h.entries.map(renderHydrationEntryRow).join("");
+      const electrolyteSummary = h.electrolyteToday && h.sodiumToday
+        ? `<p class="panel-note">Electrolytes today: ${h.electrolyteToday} · ${h.sodiumToday}</p>`
+        : "";
+      return `
+        <p class="lede-sm" style="margin:0 0 10px">Log every drink, water and electrolytes.</p>
+        <div class="hydration-today-row">
+          <span>Today</span>
+          <strong>${h.todayOz}</strong>
+          <span>· ${h.todayMl} ml · ${pct}% of goal</span>
         </div>
-        <div class="chip-row-label">ASK MAYA</div>
-        ${MOCK.askMayaStarters.slice(0, 2).map(q => `<div class="prompt">${q}</div>`).join("")}
-        ${topRec.length ? `
-          <div class="rec-inline">
-            <div class="section-head"><span>RECOMMENDED</span><span data-goto="plan-recommended" style="cursor:pointer;color:var(--purple)">see all</span></div>
-            <div class="rec-card focus" data-goto="plan-recommended">
-              <div class="body" style="padding:12px">
-                <div class="cat">${topRec[0].item.category}</div>
-                <div class="title">${topRec[0].item.title}</div>
-                <div class="cta">${topRec[0].item.cta}</div>
+        <div class="water-progress"><i style="width:${pct}%"></i></div>
+        <p class="hydration-week-label">Last 7 days</p>
+        ${renderCapsuleBars(h.weekBars, "on")}
+        <div class="hydration-quick-row">
+          <button type="button">200 ml</button>
+          <button type="button">250 ml</button>
+          <button type="button">500 ml</button>
+          <button type="button">Water</button>
+          <button type="button" class="hydration-electrolyte-btn">Electrolyte</button>
+          <button type="button">+ Custom</button>
+        </div>
+        <div class="water-grid">
+          <button type="button" class="water-add">+8 oz</button>
+          <button type="button" class="water-add">+12 oz</button>
+          <button type="button" class="water-add">+16 oz</button>
+        </div>
+        ${electrolyteSummary}
+        <div class="inline-list" style="margin-top:10px">${entries}</div>`;
+    }
+
+    function renderLogWhenRow() {
+      return `
+        <div class="log-when-row">
+          <span class="log-when-label">When?</span>
+          <div class="log-when-inputs">
+            <input type="date" class="log-when-date" value="2026-07-06" aria-label="Date">
+            <input type="time" class="log-when-time" value="14:28" aria-label="Time">
+          </div>
+        </div>`;
+    }
+
+    function renderLogComposer() {
+      return `
+        <div class="log-composer">
+          <textarea class="log-compose-input" rows="2" placeholder="What happened? Type here, or tap voice or video."></textarea>
+          <div class="log-compose-tools">
+            <button type="button" class="log-compose-icon" aria-label="Voice note">🎙</button>
+            <button type="button" class="log-compose-icon" aria-label="Video">📹</button>
+          </div>
+        </div>`;
+    }
+
+    function renderTodayExpandPanel(id) {
+      if (!todayExpanded[id]) return "";
+      const panelCloseBtn = (panelId) => `<button type="button" class="panel-close" data-today-expand-close="${panelId}" aria-label="Close">×</button>`;
+      if (id === "meds") {
+        return `
+          <div class="today-expand-panel" data-today-panel="meds">
+            <div class="panel-head"><span>Today's doses</span>${panelCloseBtn("meds")}</div>
+            <div class="panel-body">
+              ${renderDoseCards()}
+            </div>
+          </div>`;
+      }
+      if (id === "log") {
+        const logBody = showsSeizureFeatures(USER.conditions)
+          ? `
+            <p class="panel-note" style="margin-bottom:10px">Capture aura or seizure details without leaving Today.</p>
+            <div class="chip-row">
+              <button type="button" class="pick-chip active">Aura</button>
+              <button type="button" class="pick-chip">Seizure</button>
+              <button type="button" class="pick-chip">Other</button>
+            </div>
+            ${renderLogWhenRow()}
+            ${renderLogComposer()}`
+          : `
+            <p class="panel-note" style="margin-bottom:10px">Journal symptoms, mood, and notes in one place.</p>
+            ${renderLogWhenRow()}
+            ${renderLogComposer()}`;
+        return `
+          <div class="today-expand-panel" data-today-panel="log">
+            <div class="panel-head"><span>Quick log</span>${panelCloseBtn("log")}</div>
+            <div class="panel-body">${logBody}</div>
+          </div>`;
+      }
+      if (id === "wearables") {
+        const rows = MOCK.wearablesStatus.map((w) => `
+          <div class="inline-row">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="status-dot ${w.connected ? "on" : "off"}"></span>
+              <div>
+                <div>${w.name}</div>
+                <div class="sub">${w.connected ? `Synced ${w.lastSync}` : "Not connected"}</div>
               </div>
             </div>
-          </div>` : ""}
-      `;
+            <span style="font-size:12px;color:${w.connected ? "var(--success)" : "var(--purple)"}">${w.connected ? "Connected" : "Connect"}</span>
+          </div>`).join("");
+        return `
+          <div class="today-expand-panel" data-today-panel="wearables">
+            <div class="panel-head"><span>Wearables</span>${panelCloseBtn("wearables")}</div>
+            <div class="panel-body">
+              <p class="panel-note">Manage device sync and connections from Today.</p>
+              <div class="inline-list">${rows}</div>
+            </div>
+          </div>`;
+      }
+      if (id === "hydration") {
+        return `
+          <div class="today-expand-panel" data-today-panel="hydration">
+            <div class="panel-head">
+              <span>Hydration</span>
+              <div class="panel-head-actions">
+                <button type="button" class="day-link">Day view ›</button>
+                ${panelCloseBtn("hydration")}
+              </div>
+            </div>
+            <div class="panel-body hydration-panel-body">
+              ${renderHydrationPanelContent()}
+            </div>
+          </div>`;
+      }
+      return "";
+    }
+
+    function renderMoreForTodayCards() {
+      const topRec = rankedRecommended(document.body.dataset.focus).slice(0, 1)[0];
+      return `
+        ${renderSevenDayPanel()}
+        ${topRec ? `
+        <div class="rec-compact-row" data-goto="plan-recommended">
+          <span class="dot"></span>
+          <span class="title">${topRec.item.title}</span>
+          <span class="chev">›</span>
+        </div>` : ""}`;
+    }
+
+    function renderTodayMerged(focus) {
+      return `
+        ${renderMissedDoseCatchup()}
+        <div class="eyebrow">Monday, Jul 6</div>
+        <div class="greeting">Good afternoon, ${USER.name}.</div>
+        ${renderDateStrip()}
+        ${renderScoreTiles()}
+        ${renderYourSignals()}
+        ${renderDailyNarrative()}
+        ${renderTodayIconRow()}
+        ${renderTodayExpandPanel("meds")}
+        ${renderTodayExpandPanel("log")}
+        ${renderTodayExpandPanel("hydration")}
+        ${renderTodayExpandPanel("wearables")}
+        <div class="more-cards">${renderMoreForTodayCards()}</div>`;
     }
 
     function renderStatsClassic(focus) {
@@ -1571,6 +3314,76 @@
             </div>
             <div class="collapsible-body">${s.metrics.map(statRow).join("")}</div>
           </div>`).join("")}
+      `;
+    }
+
+    function renderStatsMerged(focus, statFocus) {
+      const focusConfig = STAT_TAP_CONFIG[statFocus] || { section: "sleep", metricKey: null };
+      const readinessMetric = {
+        metric_key: "oura_readiness_score",
+        display_name: "Readiness",
+        value: MOCK.readiness,
+        unit: "",
+        source: "oura",
+        spark: [80, 82, 85, 84, MOCK.readiness],
+      };
+      const sleepMetrics = [
+        readinessMetric,
+        ...MOCK.wearables.filter((w) =>
+          ["sleep_score", "sleep_total_min"].includes(w.metric_key)
+        ),
+      ];
+      const cardioMetrics = MOCK.wearables.filter((w) =>
+        ["hrv_rmssd_ms", "resting_hr_bpm"].includes(w.metric_key)
+      );
+      const activityMetrics = [{
+        metric_key: "activity_score",
+        display_name: "Activity score",
+        value: MOCK.activityScore,
+        unit: "",
+        source: "oura",
+        spark: [52, 55, 60, 54, MOCK.activityScore],
+      }];
+
+      function statRow(m) {
+        const val = m.value_text || (m.value != null ? `${m.value}${m.unit ? " " + m.unit : ""}` : "—");
+        const isFocus = focusConfig.metricKey === m.metric_key;
+        const sparkHtml = m.spark
+          ? `<div class="spark">${m.spark.map((h) => `<i style="height:${Math.min(100, h / 5)}%"></i>`).join("")}</div>`
+          : "";
+        return `
+          <div class="metric-row${isFocus ? " stat-focus" : ""}" data-goto="metric" data-key="${m.metric_key}" data-stat-focus="${m.metric_key}">
+            <div class="top">
+              <span class="name">${m.display_name}</span>
+              <span class="source-badge">${m.source || "oura"}</span>
+            </div>
+            <div class="val">${val}</div>
+            ${sparkHtml}
+          </div>`;
+      }
+
+      const sections = [
+        { id: "sleep", label: "Sleep", metrics: sleepMetrics },
+        { id: "cardio", label: "Cardio", metrics: cardioMetrics },
+        { id: "activity", label: "Activity", metrics: activityMetrics },
+      ];
+
+      return `
+        <button type="button" class="stats-back-chip" data-goto="today">← Today</button>
+        <div class="greeting" style="font-size:22px;margin-top:0">Stats</div>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Tap a metric for detail. Sections collapse for quick scanning.</p>
+        ${sections.map((s) => {
+          const isOpen = s.id === focusConfig.section;
+          const sectionFocus = isOpen && statFocus;
+          return `
+          <div class="collapsible${isOpen ? " open" : ""}${sectionFocus ? " section-focus" : ""}" data-collapse="${s.id}">
+            <div class="collapsible-head">
+              <span>${s.label}</span>
+              <span class="chev">▼</span>
+            </div>
+            <div class="collapsible-body">${s.metrics.map(statRow).join("")}</div>
+          </div>`;
+        }).join("")}
       `;
     }
 
@@ -2005,7 +3818,10 @@
           { id: "ask", label: "Ask Maya" },
         ];
         return items.map(it => {
-          if (it.fab) return `<div class="fab"></div>`;
+          if (it.fab) {
+            const fabCls = active === "journal" ? " active" : "";
+            return `<button type="button" class="fab${fabCls}" data-nav="journal" aria-label="Journal">✎</button>`;
+          }
           const cls = active === it.id ? "active" : "";
           return `<span class="${cls}" data-nav="${it.id}">${it.label}</span>`;
         }).join("");
@@ -2018,7 +3834,10 @@
         { id: "ask", label: "Ask Maya" },
       ];
       return items.map(it => {
-        if (it.fab) return `<div class="fab"></div>`;
+        if (it.fab) {
+          const fabCls = active === "journal" ? " active" : "";
+          return `<button type="button" class="fab${fabCls}" data-nav="journal" aria-label="Journal">✎</button>`;
+        }
         const cls = active === it.id ? "active" : "";
         return `<span class="${cls}" data-nav="${it.id}">${it.label}</span>`;
       }).join("");
@@ -2056,7 +3875,10 @@
         if (layout === "merged") return renderTodayMerged(focus);
         return renderTodayExpanded(focus);
       }
-      if (screen === "stats") return renderStatsClassic(focus);
+      if (screen === "stats") {
+        if (layout === "merged") return renderStatsMerged(focus, document.body.dataset.statFocus || "");
+        return renderStatsClassic(focus);
+      }
       if (screen === "data") return renderData(focus, dataQuery);
       if (screen === "protocol") {
         if (layout === "merged") return renderPlanMerged(focus, planSubTab);
@@ -2068,21 +3890,42 @@
       }
       if (screen === "ask") return renderAsk(chat);
       if (screen === "metric") return renderMetric(metricKey);
+      if (screen === "journal") return `<div class="eyebrow">Journal</div><p class="today-lede">Quick capture and daily check-in (preview stub).</p>`;
       return "";
     }
 
     function navActiveForScreen(screen, layout) {
       if (screen === "metric") return "data";
+      if (screen === "journal") return "journal";
+      if (screen === "stats") return layout === "merged" ? "today" : "stats";
       if (screen === "recommended") return layout === "merged" ? "protocol" : "protocol";
-      if (screen === "stats") return "stats";
       return screen;
+    }
+
+    function tabScreenForLayout(screen, layout) {
+      if (layout === "merged" && OVERLAY_SCREENS.includes(screen)) return "today";
+      return screen;
+    }
+
+    function scrollToStatFocus() {
+      const statFocus = document.body.dataset.statFocus;
+      if (!statFocus) return;
+      const config = STAT_TAP_CONFIG[statFocus];
+      const metricKey = config?.metricKey;
+      let el = metricKey
+        ? document.querySelector(`.metric-row[data-stat-focus="${metricKey}"]`)
+        : null;
+      if (!el && config?.section) {
+        el = document.querySelector(`.collapsible[data-collapse="${config.section}"]`);
+      }
+      el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
 
     function updateModeNote(layout) {
       const notes = {
         classic: "Classic — Nori-style calm Today (strip + Maya narrative + Ask Maya chips) and collapsible Stats. Side-by-side phones on wide viewports.",
         expanded: "Expanded — full 6-tab Superpower-inspired preview (Today gauges, Data, Protocol, Recommended, Ask Maya, Metric detail).",
-        merged: "Merged — Classic calm Today + 5-tab nav (Today · Data · FAB · Plan · Ask Maya). Plan has Protocol | Recommended segments; toolbar mirrors all 6 screens + metric detail + lab order modal.",
+        merged: "Merged — Lovable Today parity in 5-tab shell; all Today cards visible (no More disclosure).",
       };
       const el = document.getElementById("modeNote");
       if (el) el.textContent = notes[layout] || notes.expanded;
@@ -2091,6 +3934,50 @@
     let dataQuery = "";
     let metricKey = "hrv_rmssd_ms";
     let planSubTab = "protocol";
+    let todayExpanded = { meds: false, log: false, hydration: false, wearables: false };
+    const previewUi = {
+      missedCatchupDismissed: false,
+      remindersNudgeDismissed: false,
+      catchupMenuBound: false,
+    };
+
+    function applyDoseAction(id, action) {
+      const dose = MOCK.doses.find((d) => d.id === id);
+      if (!dose) return;
+      if (action === "taken") dose.status = "taken";
+      else if (action === "skip") dose.status = "skipped";
+      else if (action === "snooze") {
+        dose.status = "pending";
+        dose.time = "10:10 AM";
+      }
+      refresh();
+    }
+
+    function closeAllTodayPanels() {
+      todayExpanded.meds = false;
+      todayExpanded.log = false;
+      todayExpanded.hydration = false;
+      todayExpanded.wearables = false;
+    }
+
+    function closeTodayPanel(panelKey) {
+      todayExpanded[panelKey] = false;
+      refresh();
+    }
+
+    function toggleTodayExpand(key) {
+      if (todayExpanded[key]) {
+        closeAllTodayPanels();
+        refresh();
+        return;
+      }
+      closeAllTodayPanels();
+      todayExpanded[key] = true;
+      refresh();
+      requestAnimationFrame(() => {
+        document.querySelector(`[data-today-panel="${key}"]`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    }
 
     function refresh() {
       const focus = document.body.dataset.focus;
@@ -2099,7 +3986,7 @@
       const chat = document.body.dataset.chat;
       const screens = screensForLayout(layout);
 
-      if (!screens.some(s => s.id === screen)) {
+      if (!screens.some(s => s.id === screen) && !OVERLAY_SCREENS.includes(screen)) {
         screen = "today";
         document.body.dataset.screen = screen;
       }
@@ -2122,6 +4009,12 @@
 
       updateModeNote(layout);
 
+      const showTopbar = layout === "merged";
+      document.getElementById("phoneTopbar")?.classList.toggle("hidden", !showTopbar);
+      document.getElementById("phoneTopbarB")?.classList.toggle("hidden", !showTopbar);
+      const profileBtn = document.getElementById("phoneProfileBtn");
+      if (profileBtn) profileBtn.textContent = USER.name.charAt(0).toUpperCase();
+
       if (dual) {
         renderScreenTabs("today", layout);
         document.getElementById("phoneScreen").innerHTML = renderPhoneContent("today", focus, chat);
@@ -2129,12 +4022,27 @@
         document.getElementById("phoneNav").innerHTML = renderNav("today", layout);
         document.getElementById("phoneNavB").innerHTML = renderNav("stats", layout);
       } else {
-        renderScreenTabs(screen, layout);
+        renderScreenTabs(tabScreenForLayout(screen, layout), layout);
         document.getElementById("phoneScreen").innerHTML = renderPhoneContent(screen, focus, chat);
         document.getElementById("phoneNav").innerHTML = renderNav(navActiveForScreen(screen, layout), layout);
       }
 
       bindInnerEvents();
+
+      if (screen === "stats" && layout === "merged") {
+        requestAnimationFrame(() => scrollToStatFocus());
+      }
+    }
+
+    function bindLogComposer() {
+      document.querySelectorAll(".log-compose-input").forEach((ta) => {
+        const resize = () => {
+          ta.style.height = "auto";
+          ta.style.height = `${Math.min(200, ta.scrollHeight)}px`;
+        };
+        ta.oninput = resize;
+        resize();
+      });
     }
 
     function bindInnerEvents() {
@@ -2148,6 +4056,12 @@
           document.body.dataset.screen = "protocol";
           refresh();
         };
+      });
+      document.querySelectorAll("[data-today-expand]").forEach(el => {
+        el.onclick = () => toggleTodayExpand(el.dataset.todayExpand);
+      });
+      document.querySelectorAll("[data-today-expand-close]").forEach(el => {
+        el.onclick = () => closeTodayPanel(el.dataset.todayExpandClose);
       });
       document.querySelectorAll("[data-goto]").forEach(el => {
         el.onclick = () => {
@@ -2180,6 +4094,60 @@
           el.classList.toggle("open");
         };
       });
+      document.querySelectorAll("[data-stat-tap]").forEach(el => {
+        el.onclick = () => {
+          document.body.dataset.statFocus = el.dataset.statTap;
+          document.body.dataset.screen = "stats";
+          refresh();
+        };
+      });
+      document.querySelectorAll("[data-dose-action]").forEach(el => {
+        el.onclick = () => applyDoseAction(el.dataset.doseId, el.dataset.doseAction);
+      });
+      document.querySelectorAll("[data-missed-action]").forEach(el => {
+        el.onclick = () => {
+          previewUi.missedCatchupDismissed = true;
+          refresh();
+        };
+      });
+      document.querySelectorAll("[data-missed-dismiss]").forEach(el => {
+        el.onclick = () => {
+          previewUi.missedCatchupDismissed = true;
+          refresh();
+        };
+      });
+      document.querySelectorAll("[data-catchup-menu-toggle]").forEach(el => {
+        el.onclick = (e) => {
+          e.stopPropagation();
+          const wrap = el.closest(".catchup-menu-wrap");
+          document.querySelectorAll(".catchup-menu-wrap.open").forEach((w) => {
+            if (w !== wrap) w.classList.remove("open");
+          });
+          wrap.classList.toggle("open");
+        };
+      });
+      document.querySelectorAll(".catchup-menu").forEach(el => {
+        el.onclick = (e) => e.stopPropagation();
+      });
+      if (!previewUi.catchupMenuBound) {
+        previewUi.catchupMenuBound = true;
+        document.addEventListener("click", () => {
+          document.querySelectorAll(".catchup-menu-wrap.open").forEach((w) => w.classList.remove("open"));
+        });
+      }
+      document.querySelectorAll("[data-reminders-enable]").forEach(el => {
+        el.onclick = () => {
+          previewUi.remindersNudgeDismissed = true;
+          refresh();
+        };
+      });
+      document.querySelectorAll("[data-reminders-dismiss]").forEach(el => {
+        el.onclick = () => {
+          previewUi.remindersNudgeDismissed = true;
+          refresh();
+        };
+      });
+      bindLogComposer();
     }
 
     function setLayoutMode(mode) {
@@ -2187,16 +4155,23 @@
       sessionStorage.setItem("previewLayoutMode", mode);
       const screens = screensForLayout(mode);
       const current = document.body.dataset.screen;
-      if (!screens.some(s => s.id === current)) {
+      if (!screens.some(s => s.id === current) && !OVERLAY_SCREENS.includes(current)) {
         document.body.dataset.screen = "today";
       }
       refresh();
     }
 
     function loadPersistedState() {
-      const savedLayout = sessionStorage.getItem("previewLayoutMode");
-      if (savedLayout && ["classic", "expanded", "merged"].includes(savedLayout)) {
-        document.body.dataset.layout = savedLayout;
+      const params = new URLSearchParams(location.search);
+      const layoutParam = params.get("layout");
+      if (layoutParam && ["classic", "expanded", "merged"].includes(layoutParam)) {
+        document.body.dataset.layout = layoutParam;
+        sessionStorage.setItem("previewLayoutMode", layoutParam);
+      } else {
+        const savedLayout = sessionStorage.getItem("previewLayoutMode");
+        if (savedLayout && ["classic", "expanded", "merged"].includes(savedLayout)) {
+          document.body.dataset.layout = savedLayout;
+        }
       }
       const savedTheme = sessionStorage.getItem("previewTheme");
       if (savedTheme === "light" || savedTheme === "dark") {
