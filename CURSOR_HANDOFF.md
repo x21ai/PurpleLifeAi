@@ -9,8 +9,6 @@ After VALID: `node scripts/asc-add-build-to-group.mjs 28 "Founding Team"`.
 ASC still **1.0.0 (27)** until that upload. Pill-stock DB trigger deferred
 (`meds-pill-stock-trigger-mg-as-pills`). Live install until VALID: **TF27**.
 
-Live install until VALID: **TF27**.
-
 **Luciq TF27 baseline (2026-07-13 ~02:08 UTC):** `bun run ios:check-luciq -- --json`
 → `status: mcp`, SDK + dashboard configured. Luciq HTTP MCP `list_crashes` on
 **Flutter - Purple - Beta** (`flutter-purple` beta): **0** crashes (open/closed/

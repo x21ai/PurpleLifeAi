@@ -200,9 +200,10 @@ Evidence: `flutter test test/meds_refill_test.dart test/meds_refill_stock_test.d
 - **Issues:** Full Flutter i18n not started; web `src/i18n/` remains source of
   truth. ASC still on **1.0.0 (27)** until ship agent re-uploads 28.
 - **Stand / next:** `bun run ios:testflight` for `1.0.0+28`.
-- **Who / where:** cursor-subagent-l10n-cleanup, macOS, `main` (pending commit).
+- **Who / where:** cursor-subagent-l10n-cleanup, macOS, `main`@`2ca350da`.
 - **Evidence:** `rg` no `flutter_gen`/`AppLocalizations` under `lib/`/`test/`;
-  `flutter pub get`; `flutter analyze` exit 0 (19 pre-existing info/warn).
+  `flutter pub get`; `flutter analyze` exit 0 (19 pre-existing info/warn);
+  commit `2ca350da`.
 - **Timestamp:** 2026-07-13T02:07:00Z
 
 ### 2026-07-13T02:00:00Z — TF28 Devyn/Sam/Jaspreet device QA checklist
