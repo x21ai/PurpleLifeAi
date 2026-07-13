@@ -9,6 +9,64 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-13 Full ASC TF feedback triage — 29 screenshots.**
+`ios:check-tf-feedback` pulled all submissions. ASC tip still **1.0 (27)** (no 28).
+Luciq: prior baseline **0** crashes on 27; MCP list OK. Newest P0s (Jul 13): no back
+nav; keyboard/outside-tap (`a@arora.net`). Devyn (Jul 6–7): Taken, journal submit,
+photo/record, sleep sync. Sam (Jul 8): stuck screen + lag. Full table in
+`docs/OPEN-ISSUES.md` (ASC TestFlight feedback triage). Fixes for Taken/keyboard/
+refill/journal sit on `main` at **+28** but **unshipped**. Rollback to TF25 not
+advised without owner call (drops AuthGate login fix).
+
+**2026-07-13 TF28 design vs Flutter report (code audit; PNGs missing).**
+`docs/previews/TF28-DESIGN-VS-FLUTTER.md` written. Polled
+`test-results/flutter-qa-tf28/` (~40 min): dir empty (no `design-*` /
+`flutter-*` PNGs). Report uses Merged preview HTML vs Flutter Today
+code; image slots ready for capture. Largest gaps: Last 7 days stub,
+meds timeline/reminders, signals Sleep time vs score, ScoreHero tap,
+onboarding pill not mounted. Structure (expanders, catch-up, scores,
+Maya 15sp, Taken/refill code) largely match. Device QA still UNVERIFIED.
+
+**2026-07-13 Luciq TF27 baseline: 0 crashes; TF28 not uploaded.**
+`bun run ios:check-luciq -- --json` → `status: mcp`, SDK + dashboard creds OK.
+Luciq HTTP MCP `list_crashes` on **Flutter - Purple - Beta** (`flutter-purple`
+beta): **0** open/closed/all/`1.0.0 (27)`. Bugs/issues **0**. ASC latest
+**1.0 (27)** VALID; **1.0 (28) not on ASC**. No new P0 Luciq crashes. See
+`docs/OPEN-ISSUES.md` Luciq TF27 baseline + `tf-crash-report`.
+
+**2026-07-13 MedicationFormSheet pills remaining: CONFIRMED present.**
+`medication_form_sheet.dart` already has **Pills on hand** /
+**Alert at** (`pills_remaining` / `refill_threshold`) for non-rescue;
+create/update pass stock; rescue hides fields. No form code change.
+Added `flutter/test/medication_form_sheet_test.dart` **4/4**. Did not
+touch l10n (scaffolding removed; avoid upload owner).
+
+**2026-07-13 Unused Flutter l10n scaffolding REMOVED (TF28 archive unblock).**
+No Dart import of `flutter_gen/gen_l10n` or `AppLocalizations` outside
+generated stubs; UI still hardcoded. Deleted `flutter/l10n.yaml`,
+`flutter/lib/l10n/` (ARB + generated), and reverted `generate: true` /
+`flutter_localizations` from `flutter/pubspec.yaml`. Evidence:
+`flutter analyze` exit 0 (pre-existing infos only). Next: re-run
+`ios:testflight` for `1.0.0+28`. Full i18n deferred (web still owns
+`src/i18n/`; Flutter ARB sync notes in `docs/LOVABLE-FLUTTER-SYNC.md`
+remain aspirational until wired).
+
+**2026-07-13 TF28 device QA checklist appended (UNVERIFIED).**
+Concrete Devyn/Sam/Jaspreet matrix in `docs/OPEN-ISSUES.md` under
+**TF28 device QA**: Taken, refill 0 pills, keyboard dismiss, score fonts,
+narrative, journal save, hydration, catch-up. Master id
+`tf28-device-qa-devyn-sam-jaspreet`. All eight rows **UNVERIFIED** until
+physical TF **1.0 (28)** device pass. Was blocked on ASC build 28 (upload
+failed `gen_localizations`; latest VALID still **1.0.0 (27)**); scaffolding
+removal above targets that failure.
+
+**2026-07-13 TF28 upload FAILED (`gen_localizations`); ASC still 27.**
+`ios:testflight` for `1.0.0+28` failed at `gen_localizations`. App Store
+Connect latest VALID remains **1.0.0 (27)** (no build 28). `flutter test`
+**243/243**. Root cause: unused ARB + `l10n.yaml` without UI wiring.
+Scaffolding removed 2026-07-13 (see snapshot above). OPEN-ISSUES:
+`meds-pill-stock-trigger-mg-as-pills` still open.
+
 **2026-07-13 TF28 ship in progress (`1.0.0+28`).**
 Compile gate green (restorer): today+meds analyze clean; `flutter test`
 **243/243**. Product WIP landed on `feat/meds-refill-restore` → `main`:
@@ -77,6 +135,102 @@ user sets pills > 0 via any of those paths. Branch `feat/meds-refill-restore`.
 Evidence: `flutter test test/meds_refill_test.dart test/meds_refill_stock_test.dart`.
 
 ## Log
+
+### 2026-07-13T02:46:36Z — TF28 design vs Flutter markdown report
+- **Requested:** After design + Flutter screenshots under
+  `test-results/flutter-qa-tf28/`, write `docs/previews/TF28-DESIGN-VS-FLUTTER.md`
+  with image links and differences; if images missing, wait/retry then code audit.
+- **Done:** Polled screenshot dir repeatedly (~40 min); empty. Wrote
+  `docs/previews/TF28-DESIGN-VS-FLUTTER.md` from Merged preview
+  (`personalized-dashboard-preview.html` `renderTodayMerged`) vs
+  `flutter/lib/features/today/*` + hydration panel. Includes expected
+  `design-*` / `flutter-*` image link slots, layout contract table, element
+  gap matrix, TF28 device QA cross-links.
+- **Issues:** No PNGs/MP4 yet (sibling capture agents). Report is code audit
+  only until images land.
+- **Stand / next:** When `test-results/flutter-qa-tf28/*.png` exist, refresh
+  image slots; device QA still UNVERIFIED for TF28.
+- **Who / where:** cursor-subagent design-vs-flutter-report · local ·
+  `main`@`8751c44b`
+- **Evidence:** `docs/previews/TF28-DESIGN-VS-FLUTTER.md`; dir listing empty
+  for `test-results/flutter-qa-tf28/`; design serve was on `:8766`.
+- **Timestamp:** 2026-07-13T02:46:36Z
+
+### 2026-07-13T02:08:43Z — Luciq TF27 baseline (0 crashes; 28 not uploaded)
+- **Requested:** Run `bun run ios:check-luciq` via Doppler; Luciq MCP
+  `list_crashes` for Flutter Purple Beta; document TF27 baseline; note TF28
+  not uploaded; update OPEN-ISSUES if new P0 crashes.
+- **Done:** `ios:check-luciq -- --json` → `status: mcp`, SDK + API creds set.
+  ASC `ios:check-asc-builds`: latest **1.0 (27)** VALID; **no build 28**.
+  Cursor GetMcpTools had no Luciq server; queried Luciq HTTP MCP with Doppler
+  OAuth: `flutter-purple` beta `list_crashes` **0** (all filters incl.
+  `1.0.0 (27)`); bugs/issues **0**. Documented baseline in
+  `docs/OPEN-ISSUES.md`; refreshed `tf-crash-report`; updated CURSOR_HANDOFF.
+- **Issues:** None new from Luciq. TF28 still not on ASC. Cursor Luciq MCP not
+  in this session's GetMcpTools catalog.
+- **Stand / next:** Live install remains TF27; re-run Luciq `list_crashes`
+  after TF28 VALID.
+- **Who / where:** cursor-subagent-luciq-baseline, macOS, `main` @ `8751c44b`.
+- **Evidence:** ASC builds list; `ios:check-luciq` JSON; Luciq MCP empty crash
+  arrays for `flutter-purple` beta.
+- **Timestamp:** 2026-07-13T02:08:43Z
+
+### 2026-07-13T02:20:00Z — Confirm MedicationFormSheet pills remaining fields
+- **Requested:** Confirm `medication_form_sheet` has pills remaining fields; add
+  if missing; tests; avoid fighting l10n upload owner.
+- **Done:** Confirmed present (no form code change): non-rescue shows
+  **Pills on hand** / **Alert at**, create/update pass `pillsRemaining` /
+  `refillThreshold`, rescue hides stock. Added
+  `flutter/test/medication_form_sheet_test.dart`. Left l10n alone.
+- **Issues:** None for form stock UI.
+- **Stand / next:** None for this slice.
+- **Who / where:** cursor-subagent-meds-form-stock, macOS.
+- **Evidence:** `flutter test test/medication_form_sheet_test.dart` **4/4**.
+- **Timestamp:** 2026-07-13T02:20:00Z
+
+### 2026-07-13T02:07:00Z — Remove unused Flutter l10n scaffolding (TF28 archive)
+- **Requested:** If no Dart imports `flutter_gen/gen_l10n`, delete broken l10n
+  scaffolding (`l10n.yaml` + unused ARB) to unblock archive faster than full
+  i18n; commit and report. If used, keep and document.
+- **Done:** Confirmed zero consumers of `flutter_gen/gen_l10n` /
+  `AppLocalizations` outside generated files. Deleted `flutter/l10n.yaml`,
+  `flutter/lib/l10n/` (`app_en.arb`, `app_es.arb`, `app_localizations*.dart`).
+  Reverted `flutter_localizations` and `generate: true` from
+  `flutter/pubspec.yaml` (+ lock). UI strings unchanged (still hardcoded).
+- **Issues:** Full Flutter i18n not started; web `src/i18n/` remains source of
+  truth. ASC still on **1.0.0 (27)** until ship agent re-uploads 28.
+- **Stand / next:** `bun run ios:testflight` for `1.0.0+28`.
+- **Who / where:** cursor-subagent-l10n-cleanup, macOS, `main` (pending commit).
+- **Evidence:** `rg` no `flutter_gen`/`AppLocalizations` under `lib/`/`test/`;
+  `flutter pub get`; `flutter analyze` exit 0 (19 pre-existing info/warn).
+- **Timestamp:** 2026-07-13T02:07:00Z
+
+### 2026-07-13T02:00:00Z — TF28 Devyn/Sam/Jaspreet device QA checklist
+- **Requested:** Concrete TF28 device QA checklist (Taken, refill 0 pills,
+  keyboard dismiss, score fonts, narrative, journal save, hydration, catchup);
+  mark each unverified until device; append only.
+- **Done:** Appended **TF28 device QA — Devyn / Sam / Jaspreet** table + master
+  id `tf28-device-qa-devyn-sam-jaspreet` to `docs/OPEN-ISSUES.md` (8 rows, all
+  **UNVERIFIED (device)** with steps + linked `tf27-*` ids). Pointed TF27 live
+  users section at the new matrix. Refreshed Current snapshot.
+- **Issues:** ASC still **1.0.0 (27)**; TF28 upload failed
+  `gen_localizations` (fleet re-upload). Checklist cannot run on device yet.
+- **Stand / next:** After TF28 upload/VALID, run the 8-row matrix on device;
+  append PASS/FAIL under the OPEN-ISSUES section.
+- **Who / where:** docs agent; append-only OPEN-ISSUES + HANDOFF.
+- **Evidence:** `docs/OPEN-ISSUES.md` section `TF28 device QA`.
+- **Timestamp:** 2026-07-13T02:00:00Z
+
+### 2026-07-13T01:58:36Z — TF28 upload failed (gen_localizations); ASC still 27
+- **Requested:** Append HANDOFF: TF28 upload failed `gen_localizations`; ASC
+  still 27; unit 243/243; fleet re-uploading.
+- **Done:** Current snapshot updated. No code change in this entry.
+- **Issues:** `ios:testflight` for `1.0.0+28` failed at `gen_localizations`.
+  ASC latest VALID remains **1.0.0 (27)**; build 28 not present.
+- **Stand / next:** Fleet re-uploading TF28 after localizations fix.
+- **Who / where:** handoff append agent; `main` @ `8751c44b`.
+- **Evidence:** `flutter test` **243/243**; ASC still 27 (no 28).
+- **Timestamp:** 2026-07-13T01:58:36Z
 
 ### 2026-07-13T01:54:00Z — TF28 ship: commit product WIP + bump 1.0.0+28
 - **Requested:** Compile gate green; commit remaining WIP; bump `1.0.0+28`;

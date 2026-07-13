@@ -1,13 +1,20 @@
-# Cursor Handoff
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-13 ~02:48 UTC (TF28 gen_localizations fix).
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-13 ~01:54 UTC (TF28 ship).
-
-**TF28 ship (`1.0.0+28`) in progress.** Compile gate green (today+meds analyze;
-`flutter test` 243/243). Merging `feat/meds-refill-restore` → `main`, then
+**TF28 ship (`1.0.0+28`) packaging unblocked.** Prior `ios:testflight` failed at
+`gen_localizations` because `l10n.yaml` existed without `flutter: generate: true`.
+Fix on `main` @ `8751c44b` (wire generate + committed `lib/l10n/*`). Do **not**
+delete `flutter/l10n.yaml` / ARBs while `generate: true` is set. Upload owner:
 `doppler run --project purple-life --config prd -- bun run ios:testflight`.
 After VALID: `node scripts/asc-add-build-to-group.mjs 28 "Founding Team"`.
-Pill-stock DB trigger mg bug deferred (`meds-pill-stock-trigger-mg-as-pills`).
+ASC still **1.0.0 (27)** until that upload. Pill-stock DB trigger deferred
+(`meds-pill-stock-trigger-mg-as-pills`). Live install until VALID: **TF27**.
+
 Live install until VALID: **TF27**.
+
+**Luciq TF27 baseline (2026-07-13 ~02:08 UTC):** `bun run ios:check-luciq -- --json`
+→ `status: mcp`, SDK + dashboard configured. Luciq HTTP MCP `list_crashes` on
+**Flutter - Purple - Beta** (`flutter-purple` beta): **0** crashes (open/closed/
+`1.0.0 (27)`). Bugs/issues **0**. No new P0. Details: `docs/OPEN-ISSUES.md`.
 
 **Recent (2026-07-13): Med past-dose / getDosesForDate audit PASS.**
 Past days: `loadDosesForDate` / schedule viewDate (no regenerate). P0: Add/edit

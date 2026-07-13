@@ -10,8 +10,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_localizations:
-    sdk: flutter
   flutter_web_plugins:
     sdk: flutter
   connectivity_plus: ^6.1.4
@@ -51,7 +49,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  generate: true
   assets:
     - assets/design/tokens.json
     - design/tokens.json

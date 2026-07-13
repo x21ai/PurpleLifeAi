@@ -1,0 +1,14 @@
+{"ts":"2026-07-13T01:24:30Z","agent":"onboarding-gate-audit","action":"land","task":"onboarded-at-gate-post-password","detail":"fail-open+cache; TF27 AuthGate unchanged; tests 16/16"}
+{"ts":"2026-07-13T01:40:14Z","agent":"cursor-subagent-enddrawer","action":"land","task":"enddrawer-burger-routes","detail":"PASS Account Settings Tools Care SignOut; GoRouter-before-dismiss fix; tests 10/10"}
+{"ts":"2026-07-13T01:45:00Z","agent":"meds-refill-ui","action":"land","task":"meds-pills-remaining-stock","detail":"Wired med detail+form Update stock via pills_remaining; tests 5/5"}
+{"ts":"2026-07-13T01:43:10Z","agent":"journal-audit","action":"land","task":"tf27-journal-capture-p0","detail":"Save viewPadding+photo; tests 5/5; uncommitted"}
+{"ts":"2026-07-13T01:48:00Z","agent":"cursor-keyboard-subagent","action":"land","task":"tf27-stuck-keyboard","detail":"native_app_shell+today unfocus dismiss"}
+{"ts":"2026-07-13T02:00:00Z","agent":"docs-tf28-qa","action":"land","task":"tf28-device-qa-checklist","detail":"Appended TF28 Devyn/Sam/Jaspreet device QA matrix (8 rows UNVERIFIED) to docs/OPEN-ISSUES.md + HANDOFF log"}
+{"ts":"2026-07-13T02:08:41Z","agent":"tf28-upload-owner","action":"claim","task":"TF28-upload","detail":"sole owner lease ios-testflight build 28"}
+{"ts":"2026-07-13T02:07:00Z","agent":"cursor-subagent-l10n-cleanup","action":"land","task":"tf28-remove-unused-l10n","detail":"Deleted unused l10n.yaml+ARB+gen; reverted generate/flutter_localizations; analyze exit 0"}
+{"ts":"2026-07-13T02:20:00Z","agent":"meds-form-stock","action":"land","task":"medication-form-pills-remaining","detail":"Confirmed form Pills on hand/Alert at present; added medication_form_sheet_test 4/4; no l10n touch"}
+{"ts":"2026-07-13T02:08:43Z","agent":"cursor-subagent-luciq-baseline","action":"land","task":"luciq-tf27-baseline","detail":"ios:check-luciq status=mcp; flutter-purple list_crashes=0 for TF27; ASC still 1.0(27); TF28 not uploaded; no new P0"}
+{"ts":"2026-07-13T02:47:01Z","agent":"tf28-l10n-primary","action":"land","task":"tf28-gen-localizations","detail":"verified generate:true + gen-l10n EXIT0 on 8751c44b; no commit needed; lease ios-testflight expired (pid 19997 dead); did not start upload"}
+{"ts":"2026-07-13T02:47:02Z","agent":"tf28-upload-owner","action":"freeze","task":"TF28-upload","detail":"killing competing flutter build ios/ipa; sole owner"}
+{"ts":"2026-07-13T02:46:36Z","agent":"cursor-subagent-tf28-design-vs-flutter","action":"land","task":"TF28-DESIGN-VS-FLUTTER","detail":"wrote docs/previews/TF28-DESIGN-VS-FLUTTER.md from code audit; test-results/flutter-qa-tf28 empty after poll; image slots pending capture"}
+{"ts":"2026-07-13T02:48:00Z","agent":"l10n-fix","action":"land","task":"TF28-gen-l10n","detail":"packaging unblocked at 8751c44b; gen-l10n PASS; ASC still 27; upload agent owns ios:testflight"}
