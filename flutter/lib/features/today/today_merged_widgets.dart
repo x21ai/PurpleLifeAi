@@ -847,6 +847,9 @@ class TodayMayaCard extends StatelessWidget {
             narrative.trim(),
             style: PurpleType.bodySerif(
               color: parseTokenColor(colors.textPrimary).withValues(alpha: 0.85),
+            ).copyWith(
+              // Readable body (~15–16sp); token bodySerif is 17 and reads large on Today.
+              fontSize: 15,
             ),
           ),
         ],
