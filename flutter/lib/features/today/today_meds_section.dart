@@ -3,14 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/auth/auth_state.dart' as core_auth;
 import '../../core/providers/core_providers.dart';
-import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../meds/dose_list.dart';
+import '../meds/med_refill_sheet.dart';
 import '../meds/meds_repository.dart';
 import '../meds/models/dose.dart';
-import '../shared/glass_helpers.dart';
+import '../meds/models/medication.dart';
 
 /// Doses for a specific calendar day (`yyyy-MM-dd`), mirroring web
 /// `TodayDoses date={selectedDate}` without editing [medsDataProvider].
@@ -18,7 +19,8 @@ final medsForDayProvider = FutureProvider.autoDispose
     .family<MedsData, String>((ref, dateYmd) async {
   ref.keepAlive();
   await ref.watch(authRepositoryProvider.future);
-  final session = ref.watch(authSessionProvider).valueOrNull;
+  // Same as todayDataProvider: stream may lag after password sign-in.
+  final session = core_auth.readActiveSession(ref);
   if (session == null) return MedsData.empty;
   if (dateYmd.split('-').length != 3) return MedsData.empty;
   return ref.watch(medsRepositoryProvider).loadMeds(viewDateYmd: dateYmd);
@@ -66,102 +68,104 @@ class TodayMedsSection extends ConsumerWidget {
     }
   }
 
+  Future<void> _openRefill(
+    WidgetRef ref,
+    BuildContext context,
+    Medication medication,
+  ) async {
+    final saved = await MedRefillSheet.show(context, medication);
+    if (saved == true) {
+      ref.invalidate(medsForDayProvider(_dateYmd));
+      ref.invalidate(medsDataProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Stock updated'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final medsAsync = ref.watch(medsForDayProvider(_dateYmd));
     final tokens = PurpleTokens.loaded;
     final colors = tokens.colorsFor('dark');
-    final sectionTitle =
-        isToday ? 'Today' : DateFormat('EEEE, MMMM d').format(selectedDate);
     final emptySchedule = isToday
         ? 'No medications scheduled for today.'
         : 'No medications scheduled for ${DateFormat('EEEE, MMMM d').format(selectedDate)}.';
 
     return medsAsync.when(
-      loading: () => GlassCard(
-        child: Text(
-          'Loading your dose schedule.',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.64),
-              ),
-        ),
+      loading: () => Text(
+        'Loading your dose schedule.',
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Colors.white.withValues(alpha: 0.64),
+            ),
       ),
-      error: (_, __) => GlassCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Could not load doses right now.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.64),
-                  ),
+      error: (_, __) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Could not load doses right now.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.64),
+                ),
+          ),
+          SizedBox(
+            height: tokens.touch.minTarget,
+            child: TextButton(
+              onPressed: () => context.go(AppRoutes.meds),
+              child: const Text('Open meds'),
             ),
-            SizedBox(
-              height: tokens.touch.minTarget,
-              child: TextButton(
-                onPressed: () => context.go(AppRoutes.meds),
-                child: const Text('Open meds'),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
       data: (medsData) {
         final doses = medsData.todayDoses;
         final hasMedication = medicationCount > 0 || medsData.hasMeds;
 
-        return GlassCard(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      sectionTitle,
-                      style: TextStyle(
-                        fontFamily: PurpleType.serif,
-                        fontSize: 20,
-                        color: const Color(0xFFF2F2F5),
-                      ),
+        // Flat body: shell already provides glass chrome + "Today's doses" title.
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: SizedBox(
+                height: tokens.touch.minTarget,
+                child: TextButton(
+                  onPressed: () => context.go(AppRoutes.meds),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: Size(
+                      tokens.touch.minTarget,
+                      tokens.touch.minTarget,
                     ),
                   ),
-                  SizedBox(
-                    height: tokens.touch.minTarget,
-                    child: TextButton(
-                      onPressed: () => context.go(AppRoutes.meds),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        minimumSize: Size(
-                          tokens.touch.minTarget,
-                          tokens.touch.minTarget,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Medications',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.55),
                         ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Medications',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.55),
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_right,
-                            size: 16,
-                            color: Colors.white.withValues(alpha: 0.55),
-                          ),
-                        ],
+                      Icon(
+                        Icons.chevron_right,
+                        size: 16,
+                        color: Colors.white.withValues(alpha: 0.55),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
+            ),
               if (doses.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(top: 16),
+                  padding: const EdgeInsets.only(top: 8),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -190,7 +194,7 @@ class TodayMedsSection extends ConsumerWidget {
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.only(top: 8),
+                  padding: EdgeInsets.zero,
                   itemCount: doses.length,
                   separatorBuilder: (_, __) => Divider(
                     height: 1,
@@ -198,6 +202,7 @@ class TodayMedsSection extends ConsumerWidget {
                   ),
                   itemBuilder: (context, index) {
                     final dose = doses[index];
+                    final med = dose.medication;
                     return _TodayDoseRow(
                       dose: dose,
                       onTaken: dose.isPending
@@ -228,11 +233,13 @@ class TodayMedsSection extends ConsumerWidget {
                                     .markDoseSkipped(dose.id),
                               )
                           : null,
+                      onRefill: med != null && med.outOfStock
+                          ? () => _openRefill(ref, context, med)
+                          : null,
                     );
                   },
                 ),
-            ],
-          ),
+          ],
         );
       },
     );
@@ -245,12 +252,14 @@ class _TodayDoseRow extends StatelessWidget {
     this.onTaken,
     this.onSnooze,
     this.onSkip,
+    this.onRefill,
   });
 
   final MedicationDose dose;
   final VoidCallback? onTaken;
   final VoidCallback? onSnooze;
   final VoidCallback? onSkip;
+  final VoidCallback? onRefill;
 
   @override
   Widget build(BuildContext context) {
@@ -261,6 +270,8 @@ class _TodayDoseRow extends StatelessWidget {
     final outOfStock = dose.medication?.outOfStock ?? false;
     final showActions =
         dose.isPending && !outOfStock && onTaken != null && onSkip != null;
+    final showRefillChip = outOfStock && onRefill != null;
+    final destructive = parseTokenColor(colors.destructive);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -276,14 +287,27 @@ class _TodayDoseRow extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      medName,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: true,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.93),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          medName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: true,
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.93),
+                                  ),
+                        ),
+                        if (showRefillChip)
+                          _ZeroPillsChip(
+                            color: destructive,
+                            onTap: onRefill!,
                           ),
+                      ],
                     ),
                     if (strength != null && strength.isNotEmpty)
                       Text(
@@ -297,7 +321,7 @@ class _TodayDoseRow extends StatelessWidget {
                   ],
                 ),
               ),
-              if (!showActions) ...[
+              if (!showActions && !showRefillChip) ...[
                 const SizedBox(width: 8),
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
@@ -317,6 +341,20 @@ class _TodayDoseRow extends StatelessWidget {
               onTaken: onTaken!,
               onSnooze: onSnooze ?? onSkip!,
               onSkip: onSkip!,
+            ),
+          ] else if (showRefillChip && dose.isPending) ...[
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: onRefill,
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(0, 44),
+                  foregroundColor: destructive,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                child: const Text('Refill to update'),
+              ),
             ),
           ],
         ],
@@ -348,6 +386,44 @@ class _TodayDoseRow extends StatelessWidget {
       default:
         return parseTokenColor(colors.purplePrimary);
     }
+  }
+}
+
+/// Tappable stock chip when remaining count is zero.
+class _ZeroPillsChip extends StatelessWidget {
+  const _ZeroPillsChip({required this.color, required this.onTap});
+
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: color.withValues(alpha: 0.35)),
+            ),
+            child: Text(
+              '0 pills left',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

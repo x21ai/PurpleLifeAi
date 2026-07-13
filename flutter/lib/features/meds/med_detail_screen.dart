@@ -9,11 +9,13 @@ import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart' show CanvasBackground, ContentColumn;
 import '../shared/loading_skeleton.dart';
 import 'dose_list.dart';
+import 'med_refill_sheet.dart';
 import 'medication_form_sheet.dart';
 import 'meds_repository.dart';
 import 'meds_style.dart';
 import 'models/dose.dart';
 import 'models/medication.dart';
+import 'past_dose_sheet.dart';
 
 /// Medication detail at `/meds/:medId` with schedule and recent doses.
 class MedDetailScreen extends ConsumerWidget {
@@ -43,16 +45,38 @@ class MedDetailScreen extends ConsumerWidget {
             medication: medication,
             dosesAsync: dosesAsync,
             onEdit: () async {
+              final names = ref
+                      .read(medsDataProvider)
+                      .asData
+                      ?.value
+                      .medications
+                      .map((m) => m.name)
+                      .where((n) => n.trim().isNotEmpty)
+                      .toList() ??
+                  const <String>[];
               final saved = await MedicationFormSheet.show(
                 context,
                 editingMedId: medication.id,
                 initialName: medication.name,
                 initialKind: medication.kind,
+                userMedNames: names,
               );
               if (saved == true) {
                 ref.invalidate(medicationByIdProvider(medId));
                 ref.invalidate(medicationDosesProvider(medId));
                 ref.invalidate(medsDataProvider);
+              }
+            },
+            onUpdateStock: () async {
+              final saved = await MedRefillSheet.show(context, medication);
+              if (saved == true) {
+                ref.invalidate(medicationByIdProvider(medId));
+                ref.invalidate(medicationDosesProvider(medId));
+                ref.invalidate(medsDataProvider);
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Stock updated')),
+                );
               }
             },
             onArchive: () async {
@@ -122,11 +146,12 @@ class _NotFound extends StatelessWidget {
   }
 }
 
-class _MedDetailBody extends StatelessWidget {
+class _MedDetailBody extends ConsumerWidget {
   const _MedDetailBody({
     required this.medication,
     required this.dosesAsync,
     required this.onEdit,
+    required this.onUpdateStock,
     required this.onArchive,
     required this.onRestore,
   });
@@ -134,11 +159,35 @@ class _MedDetailBody extends StatelessWidget {
   final Medication medication;
   final AsyncValue<List<MedicationDose>> dosesAsync;
   final VoidCallback onEdit;
+  final VoidCallback onUpdateStock;
   final VoidCallback onArchive;
   final VoidCallback onRestore;
 
+  Future<void> _openPastDose(
+    BuildContext context,
+    WidgetRef ref, {
+    MedicationDose? existing,
+  }) async {
+    final saved = await PastDoseSheet.show(
+      context,
+      medication: medication,
+      existing: existing,
+    );
+    if (saved != true) return;
+    ref.invalidate(medicationDosesProvider(medication.id));
+    ref.invalidate(doseHistoryProvider);
+    ref.invalidate(medsDataProvider);
+    ref.invalidate(medsScheduleProvider);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(existing == null ? 'Dose added' : 'Dose updated'),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final p = MedsPalette.dark();
     final schedule = medication.isRescueMed
         ? 'Rescue medication, taken as needed.'
@@ -170,6 +219,8 @@ class _MedDetailBody extends StatelessWidget {
                     switch (value) {
                       case 'edit':
                         onEdit();
+                      case 'stock':
+                        onUpdateStock();
                       case 'archive':
                         onArchive();
                       case 'restore':
@@ -178,6 +229,10 @@ class _MedDetailBody extends StatelessWidget {
                   },
                   itemBuilder: (context) => [
                     const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                    const PopupMenuItem(
+                      value: 'stock',
+                      child: Text('Update stock'),
+                    ),
                     if (medication.active)
                       const PopupMenuItem(
                         value: 'archive',
@@ -225,14 +280,60 @@ class _MedDetailBody extends StatelessWidget {
                     const SizedBox(height: 12),
                     _DetailLine(
                       label: 'Pills remaining',
-                      value: '${medication.pillsRemaining!.round()}',
+                      value: medication.outOfStock
+                          ? '0 (out of stock)'
+                          : '${medication.pillsRemaining!.round()}',
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: onUpdateStock,
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 44),
+                      ),
+                      icon: const Icon(Icons.medication_outlined, size: 18),
+                      label: const Text('Update stock'),
+                    ),
+                  ),
+                  if (medication.outOfStock) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Count is zero. Enter pills on hand to take doses again.',
+                      style: medsSans(
+                        fontSize: 13,
+                        color: const Color(0xFFFF6B6B),
+                      ),
                     ),
                   ],
                 ],
               ),
             ),
             const SizedBox(height: 24),
-            const MedsSectionEyebrow('Recent doses'),
+            Row(
+              children: [
+                const Expanded(child: MedsSectionEyebrow('Dose history')),
+                TextButton.icon(
+                  onPressed: () => _openPastDose(context, ref),
+                  style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
+                  icon: Icon(Icons.add, size: 18, color: p.purplePrimary),
+                  label: Text(
+                    'Add a past dose',
+                    style: medsSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: p.purplePrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Tap a dose to edit it, or add one you forgot to log.',
+              style: medsSans(fontSize: 12, color: p.textTertiary),
+            ),
             const SizedBox(height: 12),
             dosesAsync.when(
               loading: () => const LoadingSkeleton(tileCount: 3),
@@ -251,32 +352,53 @@ class _MedDetailBody extends StatelessWidget {
                   children: [
                     for (var i = 0; i < doses.length; i++) ...[
                       if (i > 0) medsListDivider(p),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              DateFormat.yMMMd()
-                                  .add_jm()
-                                  .format(doses[i].scheduledAt.toLocal()),
-                              style: medsSans(
-                                fontSize: 12,
-                                color: p.textTertiary,
-                              ),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _openPastDose(
+                            context,
+                            ref,
+                            existing: doses[i],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
                             ),
-                            const Spacer(),
-                            Text(
-                              doses[i].status,
-                              style: medsSans(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: p.textPrimary,
-                              ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    DateFormat.yMMMd()
+                                        .add_jm()
+                                        .format(doses[i].scheduledAt.toLocal()),
+                                    style: medsSans(
+                                      fontSize: 12,
+                                      color: p.textTertiary,
+                                    ),
+                                  ),
+                                ),
+                                if (doses[i].amountLabel != null) ...[
+                                  Text(
+                                    doses[i].amountLabel!,
+                                    style: medsSans(
+                                      fontSize: 12,
+                                      color: p.textTertiary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                                Text(
+                                  doses[i].status,
+                                  style: medsSans(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: p.textPrimary,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ],
@@ -287,7 +409,7 @@ class _MedDetailBody extends StatelessWidget {
             const SizedBox(height: 16),
             TextButton(
               onPressed: () => context.push(AppRoutes.medsHistory),
-              child: const Text('View full dose history'),
+              child: const Text('Dose history'),
             ),
           ],
         ),

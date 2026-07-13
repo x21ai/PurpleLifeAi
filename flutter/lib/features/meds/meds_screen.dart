@@ -10,6 +10,7 @@ import '../shared/glass_helpers.dart' hide GlassSurface;
 import '../shared/loading_skeleton.dart';
 import '../shared/narrative_block.dart';
 import 'dose_list.dart';
+import 'med_refill_sheet.dart';
 import 'medication_form_sheet.dart';
 import 'meds_repository.dart';
 import 'meds_style.dart';
@@ -81,7 +82,19 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
   }
 
   Future<void> _openAddMed() async {
-    final saved = await MedicationFormSheet.show(context);
+    final names = ref
+            .read(medsDataProvider)
+            .asData
+            ?.value
+            .medications
+            .map((m) => m.name)
+            .where((n) => n.trim().isNotEmpty)
+            .toList() ??
+        const <String>[];
+    final saved = await MedicationFormSheet.show(
+      context,
+      userMedNames: names,
+    );
     if (saved == true) await _refresh();
   }
 
@@ -108,12 +121,28 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
   }
 
   Future<void> _editMed(Medication medication) async {
+    final names = ref
+            .read(medsDataProvider)
+            .asData
+            ?.value
+            .medications
+            .map((m) => m.name)
+            .where((n) => n.trim().isNotEmpty)
+            .toList() ??
+        const <String>[];
     final saved = await MedicationFormSheet.show(
       context,
       editingMedId: medication.id,
       initialName: medication.name,
       initialKind: medication.kind,
+      userMedNames: names,
     );
+    if (saved == true) await _refresh();
+  }
+
+  /// Opens refill restock sheet (`medications.pills_remaining`).
+  Future<void> _openRefill(Medication medication) async {
+    final saved = await MedRefillSheet.show(context, medication);
     if (saved == true) await _refresh();
   }
 
@@ -273,6 +302,7 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
                           adherenceTotal: data.adherence?.total ?? 0,
                           onAddMed: _openAddMed,
                           onOpenMed: _openMed,
+                          onRefill: _openRefill,
                           onTaken: (dose) => _doseAction(
                             () => ref
                                 .read(medsRepositoryProvider)
@@ -398,6 +428,7 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
               onEditMed: _editMed,
               onArchiveMed: _archiveMed,
               onRestoreMed: _restoreMed,
+              onRefillMed: _openRefill,
             ),
             const SizedBox(height: 24),
           ],
@@ -426,6 +457,7 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
         onEditMed: _editMed,
         onArchiveMed: _archiveMed,
         onRestoreMed: _restoreMed,
+        onRefillMed: _openRefill,
       ),
     ];
   }

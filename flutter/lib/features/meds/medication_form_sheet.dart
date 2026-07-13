@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../design/glass_surface.dart';
 import '../../design/tokens.dart';
 import '../shared/glass_helpers.dart' show ContentColumn;
+import 'med_dictionary.dart';
+import 'med_name_search.dart';
 import 'meds_repository.dart';
 import 'meds_style.dart';
 import 'models/medication.dart';
@@ -16,17 +18,20 @@ class MedicationFormSheet extends ConsumerStatefulWidget {
     this.editingMedId,
     this.initialName,
     this.initialKind = 'medication',
+    this.userMedNames = const [],
   });
 
   final String? editingMedId;
   final String? initialName;
   final String initialKind;
+  final List<String> userMedNames;
 
   static Future<bool?> show(
     BuildContext context, {
     String? editingMedId,
     String? initialName,
     String initialKind = 'medication',
+    List<String> userMedNames = const [],
   }) {
     return showModalBottomSheet<bool>(
       context: context,
@@ -36,6 +41,7 @@ class MedicationFormSheet extends ConsumerStatefulWidget {
         editingMedId: editingMedId,
         initialName: initialName,
         initialKind: initialKind,
+        userMedNames: userMedNames,
       ),
     );
   }
@@ -49,6 +55,8 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
   final _unitController = TextEditingController(text: 'mg');
+  final _pillsController = TextEditingController();
+  final _thresholdController = TextEditingController(text: '7');
 
   final List<TextEditingController> _timeControllers = [];
 
@@ -57,9 +65,9 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
   bool _loading = false;
 
   /// Full existing medication row for edits. Retained so save can pass through
-  /// any field the sheet has no UI control for (prescriber, pills_remaining,
-  /// refill threshold, with-food, start/end dates, alarm fields) instead of
-  /// letting them be nulled. Null when adding a new medication.
+  /// any field the sheet has no UI control for (prescriber, with-food,
+  /// start/end dates, alarm fields) instead of letting them be nulled.
+  /// Null when adding a new medication.
   Medication? _existing;
 
   static const _kindOptions = [
@@ -94,9 +102,9 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
   }
 
   /// Loads the full medication row for an edit and pre-fills every field the
-  /// sheet can edit (name, kind, amount, unit, times). Without this, unedited
-  /// fields would submit blank and wipe existing DB values. Fields the sheet
-  /// has no UI for are preserved via [_existing] on save.
+  /// sheet can edit (name, kind, amount, unit, times, stock). Without this,
+  /// unedited fields would submit blank and wipe existing DB values. Fields
+  /// the sheet has no UI for are preserved via [_existing] on save.
   Future<void> _hydrateFromExisting() async {
     setState(() => _loading = true);
     try {
@@ -120,6 +128,11 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
         if (med.dosageUnit != null && med.dosageUnit!.isNotEmpty) {
           _unitController.text = med.dosageUnit!;
         }
+        if (med.pillsRemaining != null) {
+          _pillsController.text = med.pillsRemaining!.round().toString();
+        }
+        _thresholdController.text =
+            (med.refillThreshold ?? 7).round().toString();
         final times = med.timesOfDay;
         if (times.isNotEmpty) {
           for (final controller in _timeControllers) {
@@ -150,11 +163,29 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
     Navigator.of(context).pop(false);
   }
 
+  /// Apply local dictionary defaults (mirrors web `applyDictEntry`).
+  void _applyDictEntry(MedDictEntry entry) {
+    setState(() {
+      _nameController.text = entry.label;
+      _kind = entry.kind;
+      if (entry.defaultUnit != null && entry.defaultUnit!.isNotEmpty) {
+        _unitController.text = entry.defaultUnit!;
+      }
+      if (entry.commonStrengths != null &&
+          entry.commonStrengths!.isNotEmpty &&
+          _amountController.text.trim().isEmpty) {
+        _amountController.text = entry.commonStrengths!.first;
+      }
+    });
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
     _amountController.dispose();
     _unitController.dispose();
+    _pillsController.dispose();
+    _thresholdController.dispose();
     for (final controller in _timeControllers) {
       controller.dispose();
     }
@@ -164,11 +195,25 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
   List<String> get _times =>
       _timeControllers.map((c) => c.text.trim()).toList();
 
+  int? get _parsedPills {
+    final raw = _pillsController.text.trim();
+    if (raw.isEmpty) return null;
+    return int.tryParse(raw);
+  }
+
+  int get _parsedThreshold {
+    final parsed = int.tryParse(_thresholdController.text.trim());
+    if (parsed == null || parsed < 1) return 7;
+    return parsed;
+  }
+
   Future<void> _save() async {
     if (!_canSave || _saving) return;
     setState(() => _saving = true);
     try {
       final repo = ref.read(medsRepositoryProvider);
+      final pills = _isRescue ? null : _parsedPills;
+      final threshold = _parsedThreshold;
       if (widget.editingMedId != null) {
         await repo.updateMedication(
           widget.editingMedId!,
@@ -178,6 +223,9 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
           dosageUnit: _unitController.text.trim(),
           timesOfDay: _times,
           existing: _existing,
+          updateStock: !_isRescue,
+          pillsRemaining: pills,
+          refillThreshold: threshold,
         );
       } else {
         await repo.createMedication(
@@ -187,6 +235,8 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
           dosageUnit: _unitController.text.trim(),
           timesOfDay: _times,
           isRescue: _isRescue,
+          pillsRemaining: pills,
+          refillThreshold: threshold,
         );
       }
       if (!mounted) return;
@@ -257,12 +307,13 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const _FieldLabel('Name'),
-                          TextField(
+                          MedNameSearch(
                             controller: _nameController,
+                            enabled: !_loading,
+                            userMedNames: widget.userMedNames,
                             onChanged: (_) => setState(() {}),
-                            style: medsSans(fontSize: 16, color: p.textPrimary),
-                            decoration: _inputDecoration('Medication name'),
+                            onSelectEntry: _applyDictEntry,
+                            decoration: _inputDecoration('Search medications'),
                           ),
                           const SizedBox(height: 20),
                           const _FieldLabel('Type'),
@@ -357,6 +408,44 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
                             Text(
                               'Rescue medications are taken as needed, with no daily schedule.',
                               style: medsSans(fontSize: 13, color: p.textTertiary),
+                            ),
+                          ],
+                          if (!_isRescue) ...[
+                            const SizedBox(height: 20),
+                            const _FieldLabel('Update stock'),
+                            Text(
+                              'Pills on hand after a refill. Leave blank to skip tracking.',
+                              style: medsSans(fontSize: 12, color: p.textTertiary),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _pillsController,
+                                    enabled: !_loading,
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (_) => setState(() {}),
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.95),
+                                    ),
+                                    decoration: _inputDecoration('Pills on hand'),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _thresholdController,
+                                    enabled: !_loading,
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (_) => setState(() {}),
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.95),
+                                    ),
+                                    decoration: _inputDecoration('Alert at'),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ],

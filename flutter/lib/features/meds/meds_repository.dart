@@ -8,6 +8,7 @@ import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:uuid/uuid.dart';
 
+import '../../core/auth/auth_state.dart' as core_auth;
 import '../../core/network/connectivity_service.dart';
 import '../../core/offline/sync_service.dart';
 import '../../core/providers/core_providers.dart';
@@ -53,7 +54,8 @@ class MedsRepository {
       'id, medication_id, scheduled_at, status, amount, unit, taken_at, '
       'medication:medications('
       'id, name, dosage, dosage_amount, dosage_unit, times_of_day, '
-      'pills_remaining, is_rescue, kind, active, start_date, end_date'
+      'pills_remaining, refill_threshold, is_rescue, kind, active, '
+      'start_date, end_date'
       ')';
 
   String? get _userId =>
@@ -69,7 +71,12 @@ class MedsRepository {
 
       final todayStr = todayStringForTimezone(timezone);
       final viewStr = viewDateYmd ?? todayStr;
-      if (_connectivity.isOnline && viewStr == todayStr) {
+      // Past days: fetch only (web getDosesForDate). Never fabricate history.
+      if (_connectivity.isOnline &&
+          shouldRegenerateTodayDoses(
+            viewDateStr: viewStr,
+            todayStr: todayStr,
+          )) {
         await _regenerateTodayDoses(userId);
       }
 
@@ -177,6 +184,54 @@ class MedsRepository {
     }
   }
 
+  /// Fetch scheduled doses for a calendar date without regenerating rows.
+  /// Mirrors web `getDosesForDate`.
+  Future<({List<MedicationDose> doses, String timezone, String label})>
+      loadDosesForDate(String dateStr) async {
+    final userId = _userId;
+    if (userId == null) {
+      return (
+        doses: const <MedicationDose>[],
+        timezone: 'UTC',
+        label: dateStr,
+      );
+    }
+    final timezone = await fetchProfileTimezone(userId, _supabase);
+    final window = dayWindowForTimezone(timezone, dateStr);
+    final rows = await _fetchDoseRowsForWindow(
+      userId,
+      startIso: window.startIso,
+      endIso: window.endIso,
+    );
+    final medById = <String, Medication>{};
+    try {
+      final medRows = await _fetchMedicationRows(userId);
+      for (final row in medRows) {
+        _ingestMedicationRow(
+          row,
+          medById: medById,
+          allowPartialRows: true,
+        );
+      }
+    } catch (error, stackTrace) {
+      debugPrint(
+        '[MedsRepository] loadDosesForDate meds prefetch failed: '
+        '$error\n$stackTrace',
+      );
+    }
+    final parsed = _parseDoses(
+      rows,
+      medById: medById,
+      allowPartialRows: true,
+    );
+    final scheduled = parsed.where(isScheduledDose).toList();
+    return (
+      doses: dedupeTodayDoses(scheduled, timezone),
+      timezone: timezone,
+      label: window.label,
+    );
+  }
+
   Future<({List<DoseHistoryDay> groups, String timezone})> loadDoseHistory({
     int days = 30,
   }) async {
@@ -184,59 +239,77 @@ class MedsRepository {
     if (userId == null) {
       return (groups: const <DoseHistoryDay>[], timezone: 'UTC');
     }
-    final timezone = await fetchProfileTimezone(userId, _supabase);
-    final todayStr = todayStringForTimezone(timezone);
-    final start = tzLocalToUtc(
-          shiftDateStr(todayStr, -(days - 1)),
-          '00:00',
-          timezone,
-        ) ??
-        DateTime.now().toUtc();
-    final endBase =
-        tzLocalToUtc(todayStr, '23:59', timezone) ?? DateTime.now().toUtc();
-    final end = endBase.add(const Duration(milliseconds: 59999));
+    try {
+      final timezone = await fetchProfileTimezone(userId, _supabase);
+      final todayStr = todayStringForTimezone(timezone);
+      final start = tzLocalToUtc(
+            shiftDateStr(todayStr, -(days - 1)),
+            '00:00',
+            timezone,
+          ) ??
+          DateTime.now().toUtc();
+      final endBase =
+          tzLocalToUtc(todayStr, '23:59', timezone) ?? DateTime.now().toUtc();
+      final end = endBase.add(const Duration(milliseconds: 59999));
 
-    final rows = await _fetchDoseRowsForWindow(
-      userId,
-      startIso: start.toIso8601String(),
-      endIso: end.toIso8601String(),
-    );
+      final rows = await _fetchDoseRowsForWindow(
+        userId,
+        startIso: start.toIso8601String(),
+        endIso: end.toIso8601String(),
+      );
 
-    final medById = <String, Medication>{};
-    final allDoses = _parseDoses(
-      rows,
-      medById: medById,
-      allowPartialRows: false,
-    );
-    final scheduled = allDoses.where(isScheduledDose).toList();
+      // Prefetch meds so nested-join gaps do not drop history rows.
+      final medById = <String, Medication>{};
+      final medRows = await _fetchMedicationRows(userId);
+      for (final row in medRows) {
+        _ingestMedicationRow(
+          row,
+          medById: medById,
+          allowPartialRows: true,
+        );
+      }
 
-    final loc = _locationForHistory(timezone);
-    final byDay = <String, List<MedicationDose>>{};
-    for (final dose in scheduled) {
-      final local = tz.TZDateTime.from(dose.scheduledAt.toUtc(), loc);
-      final key =
-          '${local.year.toString().padLeft(4, '0')}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
-      byDay.putIfAbsent(key, () => []).add(dose);
+      final allDoses = _parseDoses(
+        rows,
+        medById: medById,
+        allowPartialRows: true,
+      );
+      final scheduled = allDoses.where(isScheduledDose).toList();
+
+      final loc = _locationForHistory(timezone);
+      final byDay = <String, List<MedicationDose>>{};
+      for (final dose in scheduled) {
+        final local = tz.TZDateTime.from(dose.scheduledAt.toUtc(), loc);
+        final key =
+            '${local.year.toString().padLeft(4, '0')}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
+        byDay.putIfAbsent(key, () => []).add(dose);
+      }
+
+      final groups = byDay.entries.toList()
+        ..sort((a, b) => b.key.compareTo(a.key));
+
+      return (
+        groups: groups
+            .map((entry) {
+              final deduped = dedupeTodayDoses(entry.value, timezone);
+              return DoseHistoryDay(
+                date: entry.key,
+                label: dateLabelForTimezone(entry.key, timezone),
+                doses: deduped,
+                takenCount: deduped.where((d) => d.status == 'taken').length,
+                total: deduped.length,
+              );
+            })
+            .toList(),
+        timezone: timezone,
+      );
+    } catch (error, stackTrace) {
+      if (!_canFailOpen(error)) rethrow;
+      debugPrint(
+        '[MedsRepository] loadDoseHistory failed: $error\n$stackTrace',
+      );
+      return (groups: const <DoseHistoryDay>[], timezone: 'UTC');
     }
-
-    final groups = byDay.entries.toList()
-      ..sort((a, b) => b.key.compareTo(a.key));
-
-    return (
-      groups: groups
-          .map((entry) {
-            final deduped = dedupeTodayDoses(entry.value, timezone);
-            return DoseHistoryDay(
-              date: entry.key,
-              label: dateLabelForTimezone(entry.key, timezone),
-              doses: deduped,
-              takenCount: deduped.where((d) => d.status == 'taken').length,
-              total: deduped.length,
-            );
-          })
-          .toList(),
-      timezone: timezone,
-    );
   }
 
   Future<Medication> createMedication({
@@ -246,6 +319,8 @@ class MedsRepository {
     String? dosageUnit,
     List<String> timesOfDay = const ['08:00'],
     bool isRescue = false,
+    int? pillsRemaining,
+    int refillThreshold = 7,
   }) async {
     final userId = _userId;
     if (userId == null) {
@@ -264,6 +339,7 @@ class MedsRepository {
               .toList()
             ..sort());
 
+    final nowIso = DateTime.now().toUtc().toIso8601String();
     final payload = <String, dynamic>{
       'name': name.trim(),
       'kind': kind,
@@ -273,7 +349,10 @@ class MedsRepository {
       'times_of_day': cleanTimes,
       'is_rescue': isRescueKind,
       'active': true,
-      'refill_threshold': 7,
+      'refill_threshold': refillThreshold < 1 ? 7 : refillThreshold,
+      if (pillsRemaining != null) 'pills_remaining': pillsRemaining,
+      'created_at': nowIso,
+      'updated_at': nowIso,
     };
 
     if (_connectivity.isOnline) {
@@ -304,6 +383,9 @@ class MedsRepository {
     String? dosageUnit,
     List<String> timesOfDay = const ['08:00'],
     Medication? existing,
+    int? pillsRemaining,
+    int? refillThreshold,
+    bool updateStock = false,
   }) async {
     final isRescueKind = kind == 'rescue';
     final amount = dosageAmount == null ? null : num.tryParse(dosageAmount);
@@ -319,9 +401,10 @@ class MedsRepository {
 
     // Fall back to the existing row for any editable field the sheet left
     // blank, so an edit never nulls a value that was set before. Columns the
-    // sheet has no control over (prescriber, pills_remaining, refill_threshold,
-    // with_food, start/end dates, alarm fields) are intentionally absent from
-    // the payload: Supabase applies a partial update, so those are preserved.
+    // sheet has no control over (prescriber, with_food, start/end dates, alarm
+    // fields) are intentionally absent from the payload: Supabase applies a
+    // partial update, so those are preserved. Stock fields are written only
+    // when [updateStock] is true (form owns pills_remaining / refill_threshold).
     final resolvedAmount = amount ?? (isRescueKind ? null : existing?.dosageAmount);
     final resolvedUnit = unit.isEmpty ? existing?.dosageUnit : unit;
     final resolvedDosage = resolvedAmount != null
@@ -341,6 +424,13 @@ class MedsRepository {
           (resolvedUnit == null || resolvedUnit.isEmpty) ? null : resolvedUnit,
       'times_of_day': resolvedTimes,
       'is_rescue': isRescueKind,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+      if (updateStock) ...{
+        'pills_remaining': pillsRemaining,
+        'refill_threshold': (refillThreshold == null || refillThreshold < 1)
+            ? 7
+            : refillThreshold,
+      },
     };
 
     await _sync.queueWrite(
@@ -362,10 +452,53 @@ class MedsRepository {
     await _sync.queueWrite(
       tableName: SyncTables.medications,
       operation: 'update',
-      payload: {'id': medId, 'active': active},
+      payload: {
+        'id': medId,
+        'active': active,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      },
       recordId: medId,
     );
     if (_connectivity.isOnline && active) {
+      final userId = _userId;
+      if (userId != null) {
+        await _regenerateTodayDoses(userId);
+      }
+    }
+  }
+
+  /// Updates `medications.pills_remaining` (and optionally `refill_threshold`).
+  /// Same columns as web `MedicationFormSheet`; RLS scopes by `user_id`.
+  /// Pass [pillsRemaining] null to clear stock tracking. Offline-first via queue.
+  Future<void> updatePillsRemaining(
+    String medId, {
+    required int? pillsRemaining,
+    int? refillThreshold,
+  }) async {
+    if (pillsRemaining != null && pillsRemaining < 0) {
+      throw ArgumentError.value(
+        pillsRemaining,
+        'pillsRemaining',
+        'must be >= 0',
+      );
+    }
+    final payload = <String, dynamic>{
+      'id': medId,
+      'pills_remaining': pillsRemaining,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+      if (refillThreshold != null)
+        'refill_threshold': refillThreshold < 1 ? 7 : refillThreshold,
+    };
+    await _sync.queueWrite(
+      tableName: SyncTables.medications,
+      operation: 'update',
+      payload: payload,
+      recordId: medId,
+    );
+    // Out-of-stock meds skip dose generation; restock should rebuild today's pending.
+    if (_connectivity.isOnline &&
+        pillsRemaining != null &&
+        pillsRemaining > 0) {
       final userId = _userId;
       if (userId != null) {
         await _regenerateTodayDoses(userId);
@@ -590,6 +723,21 @@ class MedsRepository {
     return null;
   }
 
+  /// Taken / Skip / Snooze / reclassify.
+  ///
+  /// Online: write Supabase immediately (same as web `meds.tsx` doseAction).
+  /// Queue-only updates race `regenerate_today_pending_doses` on the next
+  /// [loadMeds], which deletes still-pending rows before the flush lands.
+  /// Offline: queue + Drift merge for later flush.
+  /// Own-user dose mutation (Taken / Skip / Snooze / reclassify).
+  ///
+  /// Field contract matches edge `med-dose-action` and web in-app updates:
+  /// - taken → `{ status: taken, taken_at }`
+  /// - skipped → `{ status: skipped }` (edge action wire name is `skip`)
+  /// - snooze → `{ status: pending, scheduled_at: now+10m }`
+  ///
+  /// Not a Cloudflare Worker / [WorkerClient] route. Notification buttons on
+  /// web call the Supabase edge function; Flutter in-app uses RLS (+ queue).
   Future<void> updateDoseStatus(
     String doseId, {
     required String status,
@@ -597,18 +745,36 @@ class MedsRepository {
     DateTime? scheduledAt,
     bool clearTakenAt = false,
   }) async {
-    final payload = <String, dynamic>{
-      'id': doseId,
+    final fields = <String, dynamic>{
       'status': status,
       if (takenAt != null) 'taken_at': takenAt.toUtc().toIso8601String(),
       if (clearTakenAt && takenAt == null) 'taken_at': null,
       if (scheduledAt != null)
         'scheduled_at': scheduledAt.toUtc().toIso8601String(),
     };
+
+    if (_connectivity.isOnline) {
+      // Direct RLS write (same as web meds.tsx / edge med-dose-action).
+      // Do not queueWrite: that would re-flush and double-apply local
+      // pill-stock after the DB trigger already decremented.
+      await _supabase
+          .from(SyncTables.medicationDoses)
+          .update(fields)
+          .eq('id', doseId);
+      await _sync.mirrorRemoteUpdate(
+        tableName: SyncTables.medicationDoses,
+        payload: {'id': doseId, ...fields},
+        recordId: doseId,
+      );
+      // Refresh medications so pills_remaining reflects the DB trigger.
+      _kickSyncIfOnline();
+      return;
+    }
+
     await _sync.queueWrite(
       tableName: SyncTables.medicationDoses,
       operation: 'update',
-      payload: payload,
+      payload: {'id': doseId, ...fields},
       recordId: doseId,
     );
   }
@@ -648,6 +814,145 @@ class MedsRepository {
       );
     }
     return updateDoseStatus(doseId, status: next, clearTakenAt: true);
+  }
+
+  /// Pending doses due in the past 24h (excluding the last hour) that may need
+  /// catch-up logging after a silent notification miss. Mirrors web
+  /// `missed-dose-catchup.tsx`.
+  Future<List<MedicationDose>> loadMissedDoseCatchup({
+    Set<String> actedDoseIds = const {},
+  }) async {
+    final userId = _userId;
+    if (userId == null) return const [];
+
+    final now = DateTime.now().toUtc();
+    final since = now.subtract(const Duration(hours: 24));
+    final until = now.subtract(const Duration(hours: 1));
+
+    try {
+      // Retire stale pending doses (>24h) so catch-up does not cycle forever.
+      if (_connectivity.isOnline) {
+        try {
+          await _supabase
+              .from('medication_doses')
+              .update({'status': 'missed'})
+              .eq('user_id', userId)
+              .eq('status', 'pending')
+              .lt('scheduled_at', since.toIso8601String());
+        } catch (error, stackTrace) {
+          debugPrint(
+            '[MedsRepository] retire stale pending failed: $error\n$stackTrace',
+          );
+        }
+      }
+
+      final doseRows = await _fetchDoseRowsForWindow(
+        userId,
+        startIso: since.toIso8601String(),
+        endIso: until.toIso8601String(),
+      );
+
+      final pending = doseRows
+          .where((row) => (row['status']?.toString() ?? '') == 'pending')
+          .toList(growable: false);
+
+      final firedDoseIds = <String>{};
+      if (_connectivity.isOnline) {
+        try {
+          final logRows = await _supabase
+              .from('notification_delivery_log')
+              .select('dose_id')
+              .eq('user_id', userId)
+              .gte('scheduled_at', since.toIso8601String())
+              .not('fired_at', 'is', null);
+          for (final row in (logRows as List)) {
+            if (row is! Map) continue;
+            final id = row['dose_id']?.toString();
+            if (id != null && id.isNotEmpty) firedDoseIds.add(id);
+          }
+        } catch (error, stackTrace) {
+          // Fail open: surface catch-up even when delivery log is unavailable.
+          debugPrint(
+            '[MedsRepository] delivery log for catchup failed: $error\n$stackTrace',
+          );
+        }
+      }
+
+      final silent = <MedicationDose>[];
+      for (final row in pending) {
+        try {
+          final dose = MedicationDose.fromJson(row);
+          if (firedDoseIds.contains(dose.id)) continue;
+          if (actedDoseIds.contains(dose.id)) continue;
+          silent.add(dose);
+        } catch (_) {
+          // Skip malformed rows.
+        }
+      }
+      silent.sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt));
+      if (silent.length > 10) {
+        return silent.sublist(0, 10);
+      }
+      return silent;
+    } catch (error, stackTrace) {
+      if (!_canFailOpen(error)) rethrow;
+      debugPrint(
+        '[MedsRepository] loadMissedDoseCatchup failed: $error\n$stackTrace',
+      );
+      return const [];
+    }
+  }
+
+  /// Create or update a user-logged dose (web med detail past-dose sheet).
+  ///
+  /// When [doseId] is null, inserts a new row with `created_by_kind: user`.
+  /// Pill stock is adjusted by DB trigger `trg_medication_doses_pill_stock`.
+  Future<void> savePastDose({
+    String? doseId,
+    required String medicationId,
+    required DateTime scheduledAt,
+    required String status,
+    num? amount,
+    String? unit,
+  }) async {
+    final userId = _userId;
+    if (userId == null) {
+      throw StateError('Cannot save dose without authenticated user');
+    }
+
+    final isInsert = doseId == null;
+    final payload = buildPastDosePayload(
+      medicationId: medicationId,
+      scheduledAt: scheduledAt,
+      status: status,
+      amount: amount,
+      unit: unit,
+      includeCreatedByKind: isInsert,
+    );
+
+    if (_connectivity.isOnline) {
+      if (isInsert) {
+        await _supabase.from('medication_doses').insert({
+          ...payload,
+          'user_id': userId,
+        });
+      } else {
+        await _supabase
+            .from('medication_doses')
+            .update(payload)
+            .eq('id', doseId)
+            .eq('user_id', userId);
+      }
+      return;
+    }
+
+    final id = doseId ?? _uuid.v4();
+    await _sync.queueWrite(
+      tableName: SyncTables.medicationDoses,
+      operation: isInsert ? 'insert' : 'update',
+      payload: {...payload, 'id': id},
+      recordId: id,
+    );
   }
 }
 
@@ -738,7 +1043,10 @@ final medsRepositoryProvider = Provider<MedsRepository>((ref) {
 final medsDataProvider = FutureProvider.autoDispose<MedsData>((ref) async {
   ref.keepAlive();
   await ref.watch(authRepositoryProvider.future);
-  final session = ref.watch(authSessionProvider).valueOrNull;
+  // Prefer [readActiveSession]: after password sign-in the session stream can
+  // lag as AsyncData(null) while AuthRepository.currentSession is already set.
+  // valueOrNull-only left Today doses empty so Taken never rendered (TF live).
+  final session = core_auth.readActiveSession(ref);
   if (session == null) return MedsData.empty;
   return ref.watch(medsRepositoryProvider).loadMeds();
 });
@@ -748,7 +1056,7 @@ final medsScheduleProvider = FutureProvider.autoDispose
     .family<MedsData, String?>((ref, viewDateYmd) async {
   ref.keepAlive();
   await ref.watch(authRepositoryProvider.future);
-  final session = ref.watch(authSessionProvider).valueOrNull;
+  final session = core_auth.readActiveSession(ref);
   if (session == null) return MedsData.empty;
   return ref
       .watch(medsRepositoryProvider)
@@ -759,7 +1067,7 @@ final doseHistoryProvider = FutureProvider.autoDispose<
     ({List<DoseHistoryDay> groups, String timezone})>((ref) async {
   ref.keepAlive();
   await ref.watch(authRepositoryProvider.future);
-  final session = ref.watch(authSessionProvider).valueOrNull;
+  final session = core_auth.readActiveSession(ref);
   if (session == null) {
     return (groups: const <DoseHistoryDay>[], timezone: 'UTC');
   }
@@ -769,7 +1077,7 @@ final doseHistoryProvider = FutureProvider.autoDispose<
 final medicationByIdProvider =
     FutureProvider.autoDispose.family<Medication?, String>((ref, medId) async {
   await ref.watch(authRepositoryProvider.future);
-  final session = ref.watch(authSessionProvider).valueOrNull;
+  final session = core_auth.readActiveSession(ref);
   if (session == null) return null;
   return ref.watch(medsRepositoryProvider).loadMedicationById(medId);
 });
@@ -778,7 +1086,7 @@ final medicationDosesProvider =
     FutureProvider.autoDispose.family<List<MedicationDose>, String>(
   (ref, medId) async {
     await ref.watch(authRepositoryProvider.future);
-    final session = ref.watch(authSessionProvider).valueOrNull;
+    final session = core_auth.readActiveSession(ref);
     if (session == null) return const [];
     return ref.watch(medsRepositoryProvider).loadDosesForMedication(medId);
   },

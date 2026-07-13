@@ -7,7 +7,162 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ---
 
+## Log
+
+### 2026-07-13T01:42:00Z — Flutter Wearables audit (Today + Tools)
+- **Requested:** Audit Flutter Wearables from Today icon row + Tools (Oura/Whoop/Apple Health connect/sync); restore missing controls vs web; fix P0 only; no deploy; document gaps; checklist for Devyn/Sam/Jaspreet.
+- **Done:** P0 visit-mode Oura/Whoop auto-sync (`syncVisitModeWearables` + `NativeHealthStartupListener`, matches web `useWearableAutoSync`). Today Wearables Sync now refreshes Today scores (`onSynced`). Oura setup hint removed (redirect registered); Whoop hint kept. Tools Connect/Sync/Disconnect/SyncMode already present. Apple Health panel path already audited separately.
+- **Issues:** Whoop native redirect still needs console registration (`whoop-native-redirect-console`). Apple Health HealthKit device verify still open (`tf16-device-verify`). Fixes uncommitted; need next TF for device QA.
+- **Stand / next:** Land with TF28 when analyze green; owner register Whoop redirect URI; live users follow checklist below.
+- **Who / where:** Cursor wearables subagent, local `purpledrw`.
+- **Evidence:** `flutter test test/wearable_visit_sync_test.dart test/wearable_oauth_test.dart` **21/21**; `dart analyze` clean on wearable_sync / native_health_startup / wearable_oauth.
+- **Timestamp:** 2026-07-13T01:42:00Z
+
+### Live-user wearables checklist (Devyn / Sam / Jaspreet) — TF27 now; re-check after next TF
+1. **Sign in** (email/password or Apple/Google) → Today loads (not blank).
+2. **Today → Wearables** icon → Open Tools + Sync refresh icon visible when a device is connected.
+3. **Tools → Oura:** Connect (Safari consent → back to app) OR Sync if already connected; Auto-sync shows "When I open Purple".
+4. **Tools → Whoop:** Connect may fail until owner registers `org.purplelife.app://oauth-whoop-callback` (known gap). If already connected on web, Sync should work.
+5. **Tools → Apple Health:** Connect → allow HealthKit → Sync now → "Last synced" updates when samples exist.
+6. **Pull to refresh** on Today → scores/sync bar update without hang.
+7. **Kill + reopen app** (after 3h or with fresh connect) → visit-mode sync runs silently for Oura/Whoop.
+8. **Scores:** After Sync, Readiness/Sleep/Activity show real numbers or honest empty (no fake vitals).
+9. Report failures via TestFlight Send Beta Feedback or shake (Luciq).
+
+### 2026-07-13 — endDrawer burger routing audit
+- **Requested:** Audit endDrawer burger Account / Settings / Tools / Care / Sign out routing; fix broken routes; return status.
+- **Done:** Static + router audit: all five destinations registered and menu-wired. Hardened `navigateTo` / `signOut` in `flutter/lib/shell/shell_menu_sheet.dart` to `GoRouter.of(context)` before drawer dismiss (avoids silent nav drop after `maybePop`). Care path uses `AppRoutes.careIndex` in `router.dart` + selected-state match. Added `flutter/test/shell_menu_routes_test.dart`.
+- **Issues:** None on route targets. Prior `#/account` hash redirect marked resolved (`account-hash-redirect`). Left-burger owner preference still open (`tf-settings-shell-nav`). Meds remains an extra drawer row (accepted).
+- **Stand / next:** Burger routes OK; no further route fix required for this ask.
+- **Who / where:** Cursor agent (subagent), local `purpledrw`.
+- **Evidence:** `flutter test test/shell_menu_routes_test.dart test/care_routes_test.dart test/router_deep_link_test.dart` → **10/10**.
+- **Timestamp:** 2026-07-13T01:40:00Z
+
 ## Current snapshot
+
+**2026-07-13 Flutter Wearables audit (Today + Tools): P0 visit-sync restored.**
+Web had `useWearableAutoSync`; Flutter Tools advertised visit mode but never ran
+Oura/Whoop on open. Fixed: `syncVisitModeWearables` + `NativeHealthStartupListener`.
+Today Sync now refreshes scores. Gaps: `whoop-native-redirect-console`, Apple
+Health device verify. No deploy. Checklist for Devyn/Sam/Jaspreet in Log.
+
+**2026-07-13 Med dose Taken contract audit (edge + WorkerClient).**
+Edge `med-dose-action` **ACTIVE** (`verify_jwt=true`); live POST without JWT → 401.
+No Worker dose-action route (404 by design). Flutter own-user Taken = RLS via
+`MedsRepository`, not `WorkerClient`. Online path uses `mirrorRemoteUpdate` (no
+double pill-stock). Tests **15/15**. No deploy. Caregiver mark-dose Worker still open.
+
+**2026-07-13 Flutter meds history blank/crash + edit past dose (fixed).**
+`/meds/history` fail-open load (prefetch meds, `allowPartialRows`, try/catch);
+tap row opens `PastDoseSheet` (edit). Med detail already had Add/edit past dose;
+fixed `past_dose_sheet` `GlassMaterialVariant` import + form sheet trailing
+corruption. Evidence: `flutter test test/meds_past_dose_test.dart
+test/meds_history_screen_test.dart` **all passed**; analyze clean on touched
+meds files. Uncommitted on `feat/meds-refill-restore`.
+
+**2026-07-13 P0 Flutter missed-dose catch-up restored.**
+Merged Today now shows slim catch-up row with **Log ▾** (preview parity) for
+late pending doses (past 24h, older than 1h). Actions: I took it / I missed it /
+Review in Meds / Not now. Files: `missed_dose_catchup.dart`,
+`meds_repository.loadMissedDoseCatchup`, `today_screen` wire. Tests **6/6**.
+
+**2026-07-13 Flutter Today Quick log P0 restored (Log expander).**
+Merged Today Log panel was navigation-only (Journal / Seizure routes). Restored
+inline quick-log vs web Today + preview: Aura / Seizure / Other chips, When
+picker, notes, Save → `aura_events` / `seizure_events.quickLog` / journal.
+Hydration expander already had inline `TodayHydrationPanel` + `QuickAddWater`
+(sibling). Deferred P1: voice/video composer, aura kind subtypes, offline queue
+for aura/seizure. Evidence: `flutter test` today_quick_log + today_screen_render
+**7/7**. Uncommitted on `feat/meds-refill-restore`.
+
+**2026-07-13 onboarded_at gate after password login (fixed, uncommitted).**
+Flutter `authRedirect` fail-closed on offline profile timeout/error (and null
+profile after login RLS race) → `/welcome` ↔ `/today` loop / post-login block.
+**Fix:** `flutter/lib/core/auth/onboarding_gate.dart` (prefs + memory cache,
+fail-open on lookup failure; welcome only on proven incomplete profile). Welcome
+marks cache; sign-out clears. **TF27 AuthGate unchanged.** Live backfill:
+`jaspreet.singh@eigital.org` `onboarded_at`. Evidence: onboarding + auth gate
+tests **16/16**. Issue: `flutter-onboarded-at-redirect-loop` resolved.
+
+**2026-07-13 P0 Flutter missed-dose catch-up restored.**
+Merged Today now shows slim catch-up row with **Log ▾** (preview parity) for
+late pending doses (past 24h, older than 1h). Actions: I took it / I missed it /
+Review in Meds / Not now. Files: `missed_dose_catchup.dart`,
+`meds_repository.loadMissedDoseCatchup`, `today_screen` wire. Tests **6/6**.
+
+**2026-07-13 P0 Crestor Taken missing after password sign-in (meds session).**
+Root cause: `medsForDayProvider` / `medsDataProvider` used
+`authSessionProvider.valueOrNull` only → empty doses after password sign-in →
+Taken never rendered. Fix: `readActiveSession` (same as `todayDataProvider`).
+Also `updateDoseStatus` writes Supabase immediately when online (web parity)
+so regenerate cannot delete pending before flush. Evidence:
+`flutter test test/meds_session_provider_test.dart` **2/2 PASS**.
+`tf27-taken-blocked` marked resolved in OPEN-ISSUES.
+
+**2026-07-13 P0 Flutter missed-dose catch-up restored.**
+Merged Today now shows slim catch-up row with **Log ▾** (preview parity) for
+late pending doses (past 24h, older than 1h). Actions: I took it / I missed it /
+Review in Meds / Not now. Files: `missed_dose_catchup.dart`,
+`meds_repository.loadMissedDoseCatchup`, `today_screen` wire. Tests **6/6**.
+
+**2026-07-13 Flutter med library audit vs web (library agent).**
+Core add / edit schedule / dose / archive **present**. Refill owned by refill
+agents (`MedRefillSheet`, detail Update stock); this agent wired
+`meds_screen._openRefill` into `TodayDosePanel.onRefill` +
+`MedLibraryList.onRefillMed` so library/Meds page restock opens the sheet.
+DB column: `pills_remaining` (no `remaining_quantity`). Remaining gaps logged
+under `tf27-newdesign-meds-capability-gaps`. Evidence: `dart analyze`
+`meds_screen.dart` clean.
+
+**2026-07-13 Apple Health native connect path audit (P0 display).**
+Fixed three authorization/sync display bugs (uncommitted): (1) Tools panel
+`DateTime.parse` crash on bad ISO + stale timestamps after sign-out; Sync no
+longer forces "permission denied" when simply disconnected. (2) Sync status bar
+only counts Apple `last_sync_at`/`last_webhook_at` when Apple is connected
+(device HealthKit on iOS), never `updated_at` or disconnected token rows.
+(3) Synced-data overview treats Apple as connected only when `last_sync_at` is
+set (token row alone is not enough). Auth connect path (Keychain flag, no bool
+gate, VO2 omit) already correct. Evidence: health/overview/visit-sync tests
+**14/14**; `dart analyze` clean on changed files. Device HealthKit QA still
+open (`tf16-device-verify`).
+
+**2026-07-13 Flutter add-med name search fixed (local dict parity).**
+Add medication sheet had no autocomplete (plain `TextField`). Ported web
+`med-dictionary.ts` → `flutter/lib/features/meds/med_dictionary.dart` (111 entries)
+and `MedNameSearch` widget mirroring `med-name-search.tsx`. Selection applies
+kind/unit/first common strength. Deferred: openFDA/RxNorm `getDrugDefaults`
+enrichment (no Worker route for Flutter yet) — logged as
+`flutter-drug-db-enrich-missing`. Evidence: `flutter test test/med_dictionary_test.dart`
+**5/5**, `flutter analyze` clean on changed meds files. Uncommitted.
+
+**2026-07-13 TF27 newdesign capability gaps logged.**
+Appended open issues `tf27-newdesign-today-capability-gaps` and
+`tf27-newdesign-meds-capability-gaps` (cross-linked to `tf27-pills-no-refill`,
+`tf27-taken-blocked`, etc.). Refill write path note: `medications.pills_remaining`
+via sync queue.
+
+**2026-07-13 Flutter med offline queue audit (Taken + refill).**
+**Bug:** `SyncService._applyOptimisticCache` required full dose rows
+(`scheduled_at` + `medication_id`) and med `updated_at`, so partial Taken /
+Skip / Snooze / refill `queueWrite` payloads stayed in `sync_queue` but **never
+updated Drift cache** (and a naive upsert would have wiped `pills_remaining`).
+**Fix:** merge partial payloads onto cached rows; skip server pull overwrite while
+a queue item is pending; locally mirror pill-stock trigger on Taken/Undo;
+`updatePillsRemaining` includes `updated_at`. Evidence:
+`flutter test test/med_offline_queue_test.dart test/med_offline_cache_db_test.dart`
+**10/10**; `dart analyze` clean on changed files. Status: **fixed** (uncommitted
+on `feat/meds-refill-restore`).
+
+**2026-07-13 Data/Vitals/Biometrics audit (live-user empty states).**
+P0 fixed (uncommitted): `health_connect` rows were dropped from metric series
+(`sourceKeyFromString` returned null) so Android Health Connect users saw blank
+Data/Biometrics despite real `biometrics` rows. Added `SourceKey.healthConnect`.
+Also: Vitals `hasData` now requires real metric values (not empty rows), so
+connect prompts stay visible; Biometrics hub no longer flashes false empty while
+loading. No fake vitals. Evidence: analyze clean; scoped tests **22/22**. P1
+deferred: Data tab wearable connect when labs+wearables empty; Biometrics empty
+text lacks Tools link. Live TF27 iOS: Apple Health already mapped; series fix
+matters most for Android + detail/hub.
 
 **2026-07-13 Flutter Today hydration quick-add restored (uncommitted).**
 Today icon-row Hydration expand was a stub ("Open hydration" only). Restored
@@ -595,6 +750,151 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-13T01:35:00Z — P0 Flutter missed-dose catch-up Log dropdown
+
+- **Requested** — Audit Flutter missed-dose / catchup Log dropdown vs preview
+  mock; restore if missing so users can log late doses (P0).
+- **Done** — Added `MissedDoseCatchupBanner` (slim row + Log PopupMenu),
+  `MedsRepository.loadMissedDoseCatchup`, wired on Today when `isToday`.
+  Acted/dismiss TTL via SharedPreferences (`purple-dose-catchup-acted`).
+- **Issues** — None for this slice. Ship in next TF land.
+- **Stand / next** — Include in TF28; device-verify with a late pending dose.
+- **Who / where** — Cursor catchup subagent, local.
+- **Evidence** — `flutter test test/missed_dose_catchup_test.dart
+  test/today_screen_render_test.dart` **6/6**.
+- **Timestamp** — 2026-07-13T01:35:00Z
+
+### 2026-07-13T01:36:00Z — Today Quick log / seizure shortcuts P0
+- **Requested:** Audit Flutter Log / seizure shortcuts / quick log vs web Today; restore missing quick-log; fix P0 only; return gaps + fixes.
+- **Done:** `today_quick_log_panel.dart` inline Aura/Seizure/Other + When + Save; `SeizureRepository.quickLog`; wire in `today_screen.dart`; hydration expand delegates to existing `TodayHydrationPanel`. Tests **7/7**.
+- **Issues:** P1 remaining: voice/video in Log composer; aura kind chips (deja_vu subtypes); offline queue for aura/seizure writes; full web Today widgets still tracked under `tf27-newdesign-today-capability-gaps`.
+- **Stand / next:** Commit with sibling Today/hydration changes; device smoke Log Save on epilepsy profile.
+- **Who / where:** Cursor agent (quick-log audit), `feat/meds-refill-restore` @ a1337d00+WIP.
+- **Evidence:** `flutter test --no-pub test/today_quick_log_panel_test.dart test/today_screen_render_test.dart` → 7/7.
+
+
+### 2026-07-13T01:26:00Z — P0 meds Taken missing (session + online write)
+
+- **Requested** — Live TF: cannot mark Crestor Taken. Trace session providers vs
+  `readActiveSession`; fix Taken path.
+- **Done** — Meds providers + `medsForDayProvider` use `readActiveSession`.
+  `updateDoseStatus` online → direct Supabase (web parity); offline still queues.
+  Test: `flutter/test/meds_session_provider_test.dart`. Marked
+  `tf27-taken-blocked` resolved.
+- **Issues** — Out-of-stock still hides Taken (same as web). Device re-verify TF28.
+- **Stand / next** — Include in TF28 land.
+- **Who / where** — Cursor Taken wiring subagent, local, `feat/meds-refill-restore`.
+- **Evidence** — `meds_session_provider_test` **2/2**; `today_meds_actions_test` PASS.
+- **Timestamp** — 2026-07-13T01:26:00Z
+
+### 2026-07-13T01:31:00Z — Apple Health native connect path P0 display audit
+
+- **Requested** — Audit Flutter native Apple Health connect path; fix P0
+  authorization/sync display bugs only; return status.
+- **Done** — `apple_health_panel.dart`: safe `DateTime.tryParse` for status line;
+  clear sync stamps when session null; Sync unauthorized no longer always
+  marks permission denied. `sync_status_bar.dart`: Apple last-synced stamps
+  only when connected; drop `updated_at` fallback. `vitals_repository.dart`:
+  Apple overview connected/`lastSync` from `last_sync_at` only.
+- **Issues** — Physical-device HealthKit QA still open (`tf16-device-verify`).
+  Auth connect (Keychain, no bool gate) unchanged / already correct.
+- **Stand / next** — Status **fixed** (uncommitted); include in next Flutter
+  land; device verify Connect + Sync on TestFlight.
+- **Who / where** — Cursor Apple Health audit subagent, local.
+- **Evidence** — `flutter test test/health_service_test.dart
+  test/synced_data_overview_test.dart test/wearable_visit_sync_test.dart`
+  **14/14**; `dart analyze` clean on three changed files.
+- **Timestamp** — 2026-07-13T01:31:00Z
+
+### 2026-07-13T01:30:00Z — Flutter med library audit vs web
+
+- **Requested:** Audit Flutter med library (add, edit schedule, dose, archive) vs
+  web meds routes; flag/fix missing capabilities especially quantity/refill
+  only if refill agent missing it.
+- **Done:** Gap inventory under `tf27-newdesign-meds-capability-gaps`. Column is
+  `pills_remaining` (no `remaining_quantity`). Refill owned by siblings
+  (`MedRefillSheet`, detail Update stock); this agent wired
+  `meds_screen._openRefill` → `TodayDosePanel.onRefill` +
+  `MedLibraryList.onRefillMed`. Updated `tf27-pills-no-refill` note.
+- **Issues:** Form still cannot set pills/`refill_threshold` on create; scan/voice
+  stubs; side effects / ICS export / permanent delete / alarm / start-end dates
+  still missing (see OPEN-ISSUES).
+- **Stand / next:** Device re-verify refill path on TF28; form pills fields remain
+  with refill owner if still needed.
+- **Who / where:** Cursor med-library audit subagent, local, `feat/meds-refill-restore`.
+- **Evidence:** `dart analyze lib/features/meds/meds_screen.dart` clean.
+- **Timestamp:** 2026-07-13T01:30:00Z
+
+### 2026-07-13T01:24:30Z — onboarded_at gate after password login
+
+- **Requested** — Audit onboarding_at gate after password login for live users; fix loops/blocks; do not break TF27 AuthGate; return status.
+- **Done** — Root cause: `_isOnboarded` fail-closed offline + null profile → welcome/today bounce. Added `onboarding_gate.dart` (cache + fail-open); wired `auth_gate.dart`, welcome mark, sign-out clear. TF27 `authGateStatusProvider` / AuthGate widget unchanged. Backfilled one live Apple Health user missing `onboarded_at`.
+- **Issues** — ~10 other profiles still lack onboarded metadata (mostly unused/test); first successful profile read still required before cache helps. Uncommitted on `feat/meds-refill-restore`.
+- **Stand / next** — Status **fixed**; include in next TF28 build when analyze green.
+- **Who / where** — Cursor onboarding-gate audit subagent, local, `feat/meds-refill-restore` @ `754f89d4` + uncommitted.
+- **Evidence** — `flutter test test/onboarding_gate_test.dart test/auth_gate_test.dart` **16/16**; `flutter analyze` clean on touched auth files.
+- **Timestamp** — 2026-07-13T01:24:30Z
+
+### 2026-07-13T01:21:00Z — Flutter drug autofill vs web med-name-search
+
+- **Requested** — Audit Flutter drug autofill vs web med-name-search; fix broken search on add med; return status.
+- **Done** — Root cause: Flutter add-med used a plain name field (no search). Ported `src/lib/med-dictionary.ts` → `flutter/lib/features/meds/med_dictionary.dart` (111 entries + scoring); added `med_name_search.dart`; wired into `medication_form_sheet.dart` with dict defaults on select; pass `userMedNames` from meds screen/detail.
+- **Issues** — P2 deferred: web `getDrugDefaults` (openFDA/RxNorm) not exposed to Flutter (`flutter-drug-db-enrich-missing`). Flutter form still lacks dosage-form field (web has it).
+- **Stand / next** — Status **fixed** for local autocomplete search; optional Worker `/api/meds/drug-defaults` for full enrich parity.
+- **Who / where** — Cursor drug-autofill audit subagent, local, uncommitted on shared tree.
+- **Evidence** — `flutter test test/med_dictionary_test.dart` **5/5**; `flutter analyze` clean on med search/form files.
+- **Timestamp** — 2026-07-13T01:21:00Z
+
+### 2026-07-13T01:25:00Z — TF27 newdesign capability gaps logged
+
+- **Requested** — Append `tf27-newdesign-today-capability-gaps` and
+  `tf27-newdesign-meds-capability-gaps` to OPEN-ISSUES if absent; note refill
+  sync-queue write; cross-link `tf27-pills-no-refill` etc.
+- **Done** — Both ids written under TF27 section; cross-links on
+  `tf27-pills-no-refill` / `tf27-taken-blocked`.
+- **Issues** — None (docs only).
+- **Stand / next** — Fix wave owns refill write + Today/Meds gap closure.
+- **Who / where** — Cursor OPEN-ISSUES subagent, local.
+- **Timestamp** — 2026-07-13T01:25:00Z
+
+### 2026-07-13T01:18:50Z — Flutter med offline queue (Taken + refill)
+
+- **Requested** — Audit Flutter offline queue for med dose actions + remaining quantity; ensure Taken/refill offline-first; fix if queue drops med writes; return status.
+- **Done** — Root cause: partial `queueWrite` payloads for dose Taken/Skip/Snooze and med refill never applied to Drift (`_applyOptimisticCache` early-returned without `scheduled_at`/`medication_id`/`updated_at`). Fixed merge-on-cache in `sync_service.dart`, `hasPendingWrite` + `readCachedRow` in `database.dart`, local pill-stock side effect, `updated_at` on med updates / `updatePillsRemaining` / offline create. Tests: `med_offline_queue_test.dart`, `med_offline_cache_db_test.dart`.
+- **Issues** — Queue rows were never deleted incorrectly (flush still worked online); UI looked like writes were dropped offline. Device re-verify Taken + refill offline still needed for TF28. Parallel refill UI (`MedRefillSheet`) already on branch.
+- **Stand / next** — Status **fixed** for offline cache + queue merge; include in TF28 refill/Taken land on `feat/meds-refill-restore`.
+- **Who / where** — Cursor med offline queue audit subagent, local, `feat/meds-refill-restore` @ `754f89d4` + uncommitted.
+- **Evidence** — `flutter test test/med_offline_queue_test.dart test/med_offline_cache_db_test.dart` **10/10**; `dart analyze` sync/database/meds_repository clean.
+- **Timestamp** — 2026-07-13T01:18:50Z
+
+### 2026-07-13T01:14:24Z — Flutter Today hydration vs web (quick-add)
+
+- **Requested** — Audit+fix Flutter Hydration (Today icon row) vs web: can live users log water? Restore missing add-amount / goal UX; tests; HANDOFF. Partition hydration-related Flutter files.
+- **Done** — Gap: `TodayHydrationExpandBody` was link-only (no quick-add). Added `quick_add_water.dart`, `electrolyte_presets.dart` (web-aligned), `today_hydration_panel.dart` (goal progress + quick-add + Day view). Wired expand body; refactored `hydration_screen.dart` to share `QuickAddWater`. Electrolyte dialog now has sodium override + full presets. Repo insert path unchanged (`HydrationRepository.logIntake` → `hydration_intake`).
+- **Issues** — Uncommitted on shared dirty tree. Not ported: Snap/Voice intake, aura sheet, week/month. Goal edit remains Settings (same as web).
+- **Stand / next** — Status **fixed** for water logging from Today + day view; include in TF28 land when owner merges.
+- **Who / where** — Cursor hydration audit subagent, local, `feat/meds-refill-restore` @ `cde62548` + uncommitted.
+- **Evidence** — `flutter test test/hydration_risk_test.dart` **11/11**; `flutter analyze` hydration + today_merged_layout clean.
+- **Timestamp** — 2026-07-13T01:14:24Z
+
+### 2026-07-13T01:20:00Z — Data / Vitals / Biometrics empty-state audit
+- **Requested:** Audit Flutter Data/vitals/biometrics for broken empty states, fake
+  data, missing connect prompts; fix P0 crash/blank only; no fake vitals; status
+  for live users.
+- **Done:** Mapped `health_connect` → `SourceKey.healthConnect` in
+  `biometric_metrics.dart` (+ Data provider switch); Vitals
+  `_computeScoreSnapshot` `hasData` aligns with real metric values;
+  Biometrics hub waits for load before empty copy; safe source label lookups on
+  metric detail. Tests **22/22** scoped; analyze clean.
+- **Issues:** Uncommitted. P1: Data tab has no wearable connect when both labs and
+  wearables empty (labs upload card only). Biometrics empty copy has no Tools CTA.
+- **Stand / next:** Include in TF28 land queue; optional P1 connect CTAs.
+- **Who / where:** Cursor agent (vitals audit subagent), local, branch dirty vs
+  `main` @ TF27 `cde62548`.
+- **Evidence:** `flutter analyze lib/features/vitals lib/features/data/data_providers.dart`;
+  `flutter test test/biometric_metrics_test.dart test/synced_data_overview_test.dart test/today_vital_items_test.dart` **22/22**.
+- **Timestamp:** 2026-07-13T01:20:00Z
 
 ### 2026-07-13T01:15:00Z — Care meds scopes audit (caregiver Taken/refill)
 

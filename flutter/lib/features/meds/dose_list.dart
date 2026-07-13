@@ -51,6 +51,7 @@ class TodayDosePanel extends StatelessWidget {
     required this.onReclassify,
     required this.onAddMed,
     this.onOpenMed,
+    this.onRefill,
     this.onMarkAllTaken,
     this.markingAll = false,
     this.adherencePct,
@@ -72,6 +73,9 @@ class TodayDosePanel extends StatelessWidget {
   final void Function(MedicationDose dose, String next) onReclassify;
   final VoidCallback onAddMed;
   final ValueChanged<Medication>? onOpenMed;
+
+  /// Opens restock UI for out-of-stock doses (updates `pills_remaining`).
+  final ValueChanged<Medication>? onRefill;
   final VoidCallback? onMarkAllTaken;
   final bool markingAll;
   final int? adherencePct;
@@ -261,6 +265,7 @@ class TodayDosePanel extends StatelessWidget {
                   onSnooze: () => onSnooze(dose),
                   onReclassify: (next) => onReclassify(dose, next),
                   onOpenMed: onOpenMed,
+                  onRefill: onRefill,
                 ),
               ),
             ),
@@ -565,6 +570,7 @@ class _DoseRow extends StatelessWidget {
     required this.onSnooze,
     required this.onReclassify,
     this.onOpenMed,
+    this.onRefill,
   });
 
   final MedicationDose dose;
@@ -573,6 +579,7 @@ class _DoseRow extends StatelessWidget {
   final VoidCallback onSnooze;
   final ValueChanged<String> onReclassify;
   final ValueChanged<Medication>? onOpenMed;
+  final ValueChanged<Medication>? onRefill;
 
   @override
   Widget build(BuildContext context) {
@@ -624,9 +631,15 @@ class _DoseRow extends StatelessWidget {
           ),
           if (dose.isPending && outOfStock)
             TextButton(
-              onPressed: med == null || onOpenMed == null
+              onPressed: med == null
                   ? null
-                  : () => onOpenMed!(med),
+                  : () {
+                      if (onRefill != null) {
+                        onRefill!(med);
+                      } else if (onOpenMed != null) {
+                        onOpenMed!(med);
+                      }
+                    },
               style: TextButton.styleFrom(
                 minimumSize: const Size(0, 44),
                 foregroundColor: destructive,
@@ -812,6 +825,7 @@ class MedLibraryList extends StatelessWidget {
     this.onEditMed,
     this.onArchiveMed,
     this.onRestoreMed,
+    this.onRefillMed,
   });
 
   final List<Medication> medications;
@@ -821,6 +835,7 @@ class MedLibraryList extends StatelessWidget {
   final ValueChanged<Medication>? onEditMed;
   final ValueChanged<Medication>? onArchiveMed;
   final ValueChanged<Medication>? onRestoreMed;
+  final ValueChanged<Medication>? onRefillMed;
 
   @override
   Widget build(BuildContext context) {
@@ -843,6 +858,9 @@ class MedLibraryList extends StatelessWidget {
             onRestore: onRestoreMed == null
                 ? null
                 : () => onRestoreMed!(medications[i]),
+            onRefill: onRefillMed == null
+                ? null
+                : () => onRefillMed!(medications[i]),
           ),
         ],
       ],
@@ -861,6 +879,7 @@ class MedLibraryRow extends StatelessWidget {
     this.onEdit,
     this.onArchive,
     this.onRestore,
+    this.onRefill,
   });
 
   final Medication medication;
@@ -870,6 +889,7 @@ class MedLibraryRow extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onArchive;
   final VoidCallback? onRestore;
+  final VoidCallback? onRefill;
 
   @override
   Widget build(BuildContext context) {
@@ -878,6 +898,8 @@ class MedLibraryRow extends StatelessWidget {
     final pendingNext = nextDose != null && nextDose!.isPending;
     final showQuickTaken =
         !medication.outOfStock && pendingNext && onMarkTaken != null;
+    final showUpdateStock = onRefill != null;
+    final showOutOfStockRefill = medication.outOfStock && onRefill != null;
 
     return Material(
       color: Colors.transparent,
@@ -934,7 +956,10 @@ class MedLibraryRow extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    if (onEdit != null || onArchive != null || onRestore != null)
+                    if (onEdit != null ||
+                        onArchive != null ||
+                        onRestore != null ||
+                        showUpdateStock)
                       PopupMenuButton<String>(
                         icon: Icon(
                           Icons.more_horiz,
@@ -945,6 +970,8 @@ class MedLibraryRow extends StatelessWidget {
                           switch (value) {
                             case 'edit':
                               onEdit?.call();
+                            case 'refill':
+                              onRefill?.call();
                             case 'archive':
                               onArchive?.call();
                             case 'restore':
@@ -956,6 +983,11 @@ class MedLibraryRow extends StatelessWidget {
                             const PopupMenuItem(
                               value: 'edit',
                               child: Text('Edit'),
+                            ),
+                          if (showUpdateStock)
+                            const PopupMenuItem(
+                              value: 'refill',
+                              child: Text('Update stock'),
                             ),
                           if (medication.active && onArchive != null)
                             const PopupMenuItem(
@@ -980,7 +1012,19 @@ class MedLibraryRow extends StatelessWidget {
               ),
             ),
           ),
-          if (showQuickTaken)
+          if (showOutOfStockRefill)
+            Padding(
+              padding: const EdgeInsets.only(left: 20, right: 20, bottom: 12),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: MedsDoseActionButton(
+                  label: 'Update stock',
+                  onTap: onRefill!,
+                  kind: MedsActionKind.outline,
+                ),
+              ),
+            )
+          else if (showQuickTaken)
             Padding(
               padding: const EdgeInsets.only(left: 20, right: 20, bottom: 12),
               child: Align(
@@ -1013,6 +1057,9 @@ class MedLibraryRow extends StatelessWidget {
       parts.add('Next today ${_formatLocaleTime(nextDose!.scheduledAt)}');
     } else if (medication.timesOfDay.isNotEmpty) {
       parts.add(medication.timesOfDay.map(formatTimeOfDay).join(', '));
+    }
+    if (!medication.outOfStock && medication.pillsRemaining != null) {
+      parts.add('${medication.pillsRemaining!.round()} left');
     }
     return parts.join(' · ');
   }
