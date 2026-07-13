@@ -9,15 +9,32 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-**2026-07-13 TF28 gen_localizations: FIXED on main (`8751c44b`).**
-Root cause: ARB + `l10n.yaml` without `flutter: generate: true`. Fix kept
-the complete gen-l10n path (do NOT delete scaffolding): `generate: true`,
-`flutter_localizations`, `flutter/l10n.yaml`, `lib/l10n/app_*.arb` +
-checked-in `app_localizations*.dart`. Evidence: `flutter gen-l10n` EXIT 0.
-Earlier snapshot lines claiming scaffolding **removed** are superseded
-(race; files remain on `main` and on disk). ASC still **1.0 (27)** until
-upload owner re-runs `ios:testflight`. This agent did not start a second
-upload (lease expired; no active upload process).
+**2026-07-13 TF28 gen_localizations: FIXED via removal (`2ca350da`).**
+Root cause: unused ARB + `l10n.yaml` without `generate: true` broke Xcode
+`gen_localizations` packaging. Landed fix: delete `flutter/l10n.yaml`,
+`flutter/lib/l10n/`, and drop `generate: true` / `flutter_localizations`
+(UI never imported `AppLocalizations`). Evidence: no l10n config on disk;
+`main` @ `2ca350da`/`eb591b18`. ASC still **1.0 (27)** until upload owner
+re-runs `ios:testflight`. This agent did not start a second upload.
+
+### 2026-07-13T02:54:21Z — Rollback assessment (no destructive git)
+
+- **Requested:** Honest evidence on capability loss / rollback options after
+  operator concern that much was broken or removed.
+- **Done:** ASC `ios:check-asc-builds` (tip **1.0 (27)**; 26–23 VALID); mapped
+  TF25=`4f1eed2c`/`f2ac82d8`, TF26=`3e405e51`, TF27=`cde62548`, TF28=`0b70e2dc`+;
+  compared Merged removals vs never-ported web; wrote OPEN-ISSUES
+  `tf28-rollback-assessment` + refreshed this snapshot. No reset/force-push.
+- **Issues:** Uncommitted Today/hydration WIP still on disk; TF28 not on ASC;
+  device QA for +28 fixes UNVERIFIED; `tf27-newdesign-today-capability-gaps`
+  text still lists some items restored on +28 (stale inventory vs code).
+- **Stand / next:** Prefer **ship TF28 (Option A)**; owner call required before
+  ASC install of 25/26 or any Merged revert.
+- **Who / where:** rollback-assessment subagent @ local `main` `879dbcd2`.
+- **Evidence:** ASC builds list; `git grep` MedRefillSheet 0@TF27 / 4@+28;
+  meds providers `valueOrNull`@TF27 vs `readActiveSession`@+28; TF26 diff
+  removing `_MoreForToday`; `docs/previews/TF28-DESIGN-VS-FLUTTER.md`.
+- **Timestamp:** 2026-07-13T02:54:21Z
 
 **2026-07-13 Full ASC TF feedback triage — 29 screenshots.**
 `ios:check-tf-feedback` pulled all submissions. ASC tip still **1.0 (27)** (no 28).
@@ -28,14 +45,13 @@ photo/record, sleep sync. Sam (Jul 8): stuck screen + lag. Full table in
 refill/journal sit on `main` at **+28** but **unshipped**. Rollback to TF25 not
 advised without owner call (drops AuthGate login fix).
 
-**2026-07-13 TF28 design vs Flutter report (code audit; PNGs missing).**
-`docs/previews/TF28-DESIGN-VS-FLUTTER.md` written. Polled
-`test-results/flutter-qa-tf28/` (~40 min): dir empty (no `design-*` /
-`flutter-*` PNGs). Report uses Merged preview HTML vs Flutter Today
-code; image slots ready for capture. Largest gaps: Last 7 days stub,
-meds timeline/reminders, signals Sleep time vs score, ScoreHero tap,
-onboarding pill not mounted. Structure (expanders, catch-up, scores,
-Maya 15sp, Taken/refill code) largely match. Device QA still UNVERIFIED.
+**2026-07-13 TF28 design vs Flutter report (design PNGs + code audit).**
+`docs/previews/TF28-DESIGN-VS-FLUTTER.md` updated. Design captures landed:
+`design-today-{scores,narrative,meds,hydration}.png`. Flutter `flutter-*.png`
+still missing; `simulator-boot-screen.png` solid black. Gaps: Last 7 days
+stub, meds timeline/reminders nudge, signals Sleep time vs score, ScoreHero
+tap, onboarding pill unmounted, hydration oz/week bars. Structure match in
+code. Device QA still UNVERIFIED.
 
 **2026-07-13 Luciq TF27 baseline: 0 crashes; TF28 not uploaded.**
 `bun run ios:check-luciq -- --json` → `status: mcp`, SDK + dashboard creds OK.
@@ -51,7 +67,7 @@ create/update pass stock; rescue hides fields. No form code change.
 Added `flutter/test/medication_form_sheet_test.dart` **4/4**. Did not
 touch l10n (scaffolding removed; avoid upload owner).
 
-**2026-07-13 Unused Flutter l10n scaffolding REMOVED (SUPERSEDED; keep gen-l10n).**
+**2026-07-13 Unused Flutter l10n scaffolding REMOVED (TF28 archive unblock).**
 No Dart import of `flutter_gen/gen_l10n` or `AppLocalizations` outside
 generated stubs; UI still hardcoded. Deleted `flutter/l10n.yaml`,
 `flutter/lib/l10n/` (ARB + generated), and reverted `generate: true` /
@@ -150,20 +166,19 @@ Evidence: `flutter test test/meds_refill_test.dart test/meds_refill_stock_test.d
 - **Requested:** After design + Flutter screenshots under
   `test-results/flutter-qa-tf28/`, write `docs/previews/TF28-DESIGN-VS-FLUTTER.md`
   with image links and differences; if images missing, wait/retry then code audit.
-- **Done:** Polled screenshot dir repeatedly (~40 min); empty. Wrote
-  `docs/previews/TF28-DESIGN-VS-FLUTTER.md` from Merged preview
-  (`personalized-dashboard-preview.html` `renderTodayMerged`) vs
-  `flutter/lib/features/today/*` + hydration panel. Includes expected
-  `design-*` / `flutter-*` image link slots, layout contract table, element
-  gap matrix, TF28 device QA cross-links.
-- **Issues:** No PNGs/MP4 yet (sibling capture agents). Report is code audit
-  only until images land.
-- **Stand / next:** When `test-results/flutter-qa-tf28/*.png` exist, refresh
-  image slots; device QA still UNVERIFIED for TF28.
+- **Done:** Polled screenshot dir (~40 min empty, then design PNGs landed).
+  Wrote/updated `docs/previews/TF28-DESIGN-VS-FLUTTER.md` with linked
+  `design-today-{scores,narrative,meds,hydration}.png`, layout contract,
+  gap matrix (Merged HTML + Flutter Today code), TF28 device QA cross-links.
+- **Issues:** No `flutter-*.png`; `simulator-boot-screen.png` black; design
+  frames look viewport-cropped/tiled. Flutter side is code audit until
+  capture lands.
+- **Stand / next:** Drop Flutter PNGs into same folder and refresh slots;
+  device QA still UNVERIFIED for TF28.
 - **Who / where:** cursor-subagent design-vs-flutter-report · local ·
   `main`@`8751c44b`
-- **Evidence:** `docs/previews/TF28-DESIGN-VS-FLUTTER.md`; dir listing empty
-  for `test-results/flutter-qa-tf28/`; design serve was on `:8766`.
+- **Evidence:** `docs/previews/TF28-DESIGN-VS-FLUTTER.md`;
+  `test-results/flutter-qa-tf28/design-today-*.png`.
 - **Timestamp:** 2026-07-13T02:46:36Z
 
 ### 2026-07-13T02:08:43Z — Luciq TF27 baseline (0 crashes; 28 not uploaded)

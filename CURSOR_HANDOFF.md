@@ -1,9 +1,9 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-13 ~02:48 UTC (TF28 gen_localizations fix).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-13 ~02:50 UTC (TF28 gen_localizations fix).
 
 **TF28 ship (`1.0.0+28`) packaging unblocked.** Prior `ios:testflight` failed at
-`gen_localizations` because `l10n.yaml` existed without `flutter: generate: true`.
-Fix on `main` @ `8751c44b` (wire generate + committed `lib/l10n/*`). Do **not**
-delete `flutter/l10n.yaml` / ARBs while `generate: true` is set. Upload owner:
+`gen_localizations` (`l10n.yaml` without `flutter: generate: true`). Final fix on
+`main` @ `2ca350da`: removed unused l10n scaffolding (no `l10n.yaml` / ARBs /
+`generate: true`). Upload owner:
 `doppler run --project purple-life --config prd -- bun run ios:testflight`.
 After VALID: `node scripts/asc-add-build-to-group.mjs 28 "Founding Team"`.
 ASC still **1.0.0 (27)** until that upload. Pill-stock DB trigger deferred

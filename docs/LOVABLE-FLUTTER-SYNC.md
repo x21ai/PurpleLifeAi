@@ -60,7 +60,7 @@ flowchart LR
 |--------|--------|-------|
 | Tailwind semantic colors, spacing, radii in Lovable UI | `design/tokens.json` | Cursor after each Lovable merge |
 | Liquid glass values in `src/styles.css` (`--glass-*`) | `design/tokens.json` → `ThemeExtension` in Flutter | Cursor |
-| i18n keys in `src/i18n/locales/en.json` | Flutter ARB under `flutter/lib/l10n/` + `l10n.yaml` (gen-l10n; `generate: true`). UI mostly hardcoded until screens call `AppLocalizations` | Cursor when strings change |
+| i18n keys in `src/i18n/locales/en.json` | Flutter UI still hardcoded (ARB/`l10n.yaml` removed 2026-07-13; unused scaffolding blocked TF archive). Re-add ARB + wire `AppLocalizations` when full Flutter i18n starts | Cursor when Flutter i18n is implemented |
 | Route map in `docs/FEATURES.md` | Flutter `GoRouter` routes | Cursor |
 
 `design/tokens.json` is the **single cross-platform design contract**. Lovable

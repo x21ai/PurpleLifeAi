@@ -10,6 +10,89 @@ Format:
 
 ---
 
+## ASC TestFlight feedback triage (full pull 2026-07-13)
+
+**Source:** `bun run ios:check-tf-feedback` via Doppler `purple-life`/`prd`.
+**ASC builds:** latest **1.0 (27)** VALID Founding Team; **no build 28** on ASC.
+**Code tip:** `main` @ `2ca350da`+ pubspec **1.0.0+28** (l10n scaffolding removed);
+TF28 upload previously failed `gen_localizations` (fixed in tree, re-upload pending).
+**Luciq:** SDK/MCP creds OK (`status: mcp`); crash list **not** queried this pass (MCP
+tools unavailable in session). ASC crash API empty as usual.
+**Count:** **29** screenshot submissions (all listed below by theme). _Triage 2026-07-13._
+
+### Newest (post-TF27 / Jul 13) — treat as live on build 27
+
+| Pri | Id | Reporter | When | Comment | Status |
+|-----|-----|----------|------|---------|--------|
+| P0 | `tf27-no-back-navigation` | a@arora.net | 2026-07-13 | How do I go back? No navigation | **OPEN** on TF27 |
+| P0 | `tf27-stuck-keyboard` / touch | a@arora.net | 2026-07-13 | Box/text cannot touch; keyboard does not dismiss on outside tap | Code on main (+28); **unshipped** / device UNVERIFIED |
+| P0 | `tf28-pre-baseline-stuck-screen` | samuel.cortez@eatos.com | 2026-07-08 | Stuck on this screen | **OPEN** device |
+| P1 | `tf28-pre-baseline-share-menus-lag` | samuel.cortez@eatos.com | 2026-07-08 | Lag on clicking selection | **OPEN** |
+| P0 | `tf27-taken-blocked` + sleep sync | devynrosewalker@gmail.com | 2026-07-07 | Can't mark Taken; can't sync sleep | Taken code on main; **TF27 may still broken**; sleep sync open |
+| P0 | `tf27-journal-save-under-status-bar` | devynrosewalker@gmail.com | 2026-07-07 | Trying to submit, isn't letting me | Code on main; **unshipped** |
+| P0 | Taken again | devynrosewalker@gmail.com | 2026-07-06 | Not letting me press Taken | Same as taken-blocked |
+| P1 | Journal photo/record | devynrosewalker@gmail.com | 2026-07-06 | Can't take picture or record | Photo code on main; record still coming soon |
+| P2 | Scores explanation | devynrosewalker@gmail.com | 2026-07-06 | Need more explanation of scores | Open polish |
+| P2 | Readiness icon / sleep emoji / tab transition | devynrosewalker@gmail.com | 2026-07-06 | Visual polish | Open |
+
+### Earlier themes (Jul 4–6, mostly a@arora.net) — still track
+
+| Pri | Theme | Status |
+|-----|-------|--------|
+| P0 | Unable to login / wrong error | AuthGate fixed TF27; old-password/quarantine separate |
+| P0 | App is crashing (Jul 4) | Luciq MCP list still needed |
+| P0 | Duplicate Today narrative (x3 reports) | Marked resolved in code historically; re-verify on 27 |
+| P1 | Settings missing features / wrong design / burger left of logo | Open design debt (`tf-settings-*`) |
+| P1 | Heading text too large / long | Partial (narrative 15sp on +28 unshipped) |
+| P1 | Bottom whitespace all screens | Open (`tf-bottom-whitespace`) |
+| P1 | Synced data visibility / sync button every page / sync time wrong / syncing without what | Partial wearables fixes on +28 |
+| P2 | City vs timezone only | Open |
+| P2 | Error copy wrong | Open |
+
+### Rollback note
+Do **not** blindly roll ASC to TF25 without owner call: TF27 has AuthGate password fix;
+TF25/26 lack it. Preferred path: ship **TF28** (fixes on main) then device QA matrix
+`tf28-device-qa-devyn-sam-jaspreet`. If TF28 keeps failing upload, consider holding
+testers on **27** for login-only and document remaining P0s.
+
+- [ ] **tf28-rollback-assessment** — Operator concern ("broken a lot / may take app
+  back / removed originally built functionality"). Evidence pass 2026-07-13T02:54Z.
+  **Git / ASC:** local `main` `879dbcd2` **1.0.0+28**; ASC tip **1.0 (27)** VALID
+  (Founding + external); builds 26/25/24/23 also VALID `IN_BETA_TESTING`; **no 28**
+  on ASC. TF25≈`4f1eed2c`/`f2ac82d8` (+25); TF26=`3e405e51` (+26 Merged); TF27=
+  `cde62548` (+27 AuthGate); TF28 product=`0b70e2dc` (+28 unshipped).
+  **Removed in Merged (TF26) vs TF25 (intentional layout, not accidental delete):**
+  `_MoreForToday` disclosure suite (wearables nudge card, hydration link card);
+  `TodayPersonalizationStrip` unmounted from Today body (widget still exists);
+  dual-score hero path already dropped earlier (`ac9cf764`). Replaced by Merged
+  icon expanders (Meds/Hydration/Wearables/Log) per preview.
+  **Broken on live TF27, fixed on main +28 (unshipped):** Taken empty after password
+  (`valueOrNull` → `readActiveSession` + online Taken flush); `MedRefillSheet` /
+  `updatePillsRemaining` (0 files on TF27 tree); stuck keyboard dismiss; narrative
+  15sp; score FittedBox; journal save/photo (per OPEN-ISSUES resolved-pending);
+  missed-dose catch-up + visit wearables sync (code on +28). **Device QA still
+  UNVERIFIED** for all of the above.
+  **Never ported from web (not "removed by redesign"):** `MedsMiniTimeline`;
+  ScoreHero/risk focus tap; signals null-filter + Sleep time vs score; Last 7 days
+  rich trend grid (stub); med form dosage_form/with_food/dates/Rx/pharmacy; side
+  effects; ICS export; openFDA Worker enrich; critical alarm; IncomingCareInvites
+  on Today; scan/voice. See `tf27-newdesign-*-capability-gaps` +
+  `docs/previews/TF28-DESIGN-VS-FLUTTER.md` (code audit; PNGs missing).
+  **Options:**
+  | Opt | Action | Returns / keeps | Loses / risks |
+  |-----|--------|-----------------|---------------|
+  | **A** | Ship TF28 from current main | AuthGate + Taken/refill/keyboard/narrative/scores/journal/catch-up code | Upload must succeed; device QA still required; DB pill-stock trigger still wrong; uncommitted Today WIP on disk must not confuse ship |
+  | **B** | Hold TF27 + hotfix only critical P0s | Login works (AuthGate) | Testers keep Taken/refill/keyboard pain until cherry-pick build; slower than A if +28 already bundled |
+  | **C** | Ask testers to install ASC **25** (or 26) | Older More-for-today layout; maybe fewer Merged UI P0s | **Drops AuthGate** (TF25/26); TF26 blank-Today after password; ASC does not auto-expire 27; confusing multi-build fleet; no code rollback |
+  | **D** | `git revert` TF26 Merged (`3e405e51`) | Restores TF25-ish Today disclosure | Loses newdesign sign-in + Merged contract; re-breaks parity with preview; high conflict with +28 wave; **do not force-push** |
+  **Recommend: A.** C only with explicit owner call. D last resort. No destructive
+  git performed this pass. _Raised 2026-07-13 by rollback assessment subagent._
+
+- [ ] **tf27-no-back-navigation** — ASC 2026-07-13 a@arora.net: no back navigation on
+  current screen. _Raised 2026-07-13 full TF feedback triage._
+- [ ] **tf27-devyn-sleep-sync** — ASC 2026-07-07 Devyn: cannot sync sleep from last night
+  (alongside Taken). Cross-check wearables/visit sync + Apple Health. _Raised 2026-07-13._
+
 ## Flutter Meds catch-up (raised 2026-07-12)
 
 - [x] ~~**flutter-missed-dose-catchup-log-dropdown**~~ — RESOLVED 2026-07-13: Flutter
@@ -252,6 +335,30 @@ Format:
 
 ## Flutter / TestFlight
 
+### Luciq TF27 baseline (2026-07-13 ~02:08 UTC)
+
+- **Live install / ASC:** **1.0 (27)** VALID, Founding Team IN_BETA_TESTING.
+  **1.0 (28) not uploaded** (ASC list shows no build 28; latest remains 27).
+- **`bun run ios:check-luciq -- --json`:** `sdkTokenConfigured: true`,
+  `dashboardApiConfigured: true`, `status: "mcp"`, project
+  **Flutter - Purple - Beta**.
+- **Luciq MCP `list_crashes`** (`flutter-purple` / beta): **0** crashes (open,
+  in_progress, closed, unfiltered, and `app_versions: ["1.0.0 (27)"]`).
+  Legacy `purple` / beta open crashes: **0**. `list_bugs` / `list_issues`: **0**.
+- **Cursor GetMcpTools:** Luciq server not connected in this session; triage via
+  Luciq HTTP MCP (`api.luciq.ai`) with Doppler `LUCIQ_OAUTH_TOKEN`
+  (`servers-teamkeys`/`dev`) + `LUCIQ_ACCOUNT_EMAIL` (`purple-life`/`prd`).
+- **No new P0 Luciq crashes** to file for TF27. Prior ASC "App is crashing"
+  screenshot remains under `tf-crash-report` (unreproduced, no telemetry).
+
+- [x] **tf28-gen-localizations-fail** — P0 TF28 upload blocker: Xcode
+  `gen_localizations` failed without `flutter: generate: true` while
+  `l10n.yaml`/ARB existed (`/tmp/tf28-upload.log`). **Fixed on `main` @
+  `2ca350da`:** removed unused `flutter/l10n.yaml`, `flutter/lib/l10n/`, and
+  `generate`/`flutter_localizations` (no UI imports). ASC still **1.0 (27)**
+  until `ios:testflight` re-run. _Raised 2026-07-13; closed 2026-07-13._
+
+
 - [ ] **tf28-pre-baseline-stuck-screen** — ASC screenshot 2026-07-08
   (`samuel.cortez@eatos.com`): "Stuck on this screen". **P0 candidate** until
   reproduced on **TF27** (or dismissed as pre-TF25 blank/stuck already fixed).
@@ -265,12 +372,40 @@ Format:
   feedback button not working. Treat as **P1/P2** polish (not login/data-loss).
   _Raised 2026-07-13 TF28 pre-upload baseline._
 
+### TF28 device QA — Devyn / Sam / Jaspreet (raised 2026-07-13)
+
+Build **1.0.0 (28)** / ASC **1.0 (28)** when VALID. Code land claimed for Taken,
+refill, keyboard, score fonts, narrative, journal save, hydration, catch-up.
+**All rows below are UNVERIFIED until a physical TestFlight device pass.** Do not
+close linked `tf27-*` ids on unit tests alone. Testers: Devyn, Sam, Jaspreet
+(Founding Team). Record PASS/FAIL + screenshot or Luciq shake per row; append
+results under this section (do not delete the checklist).
+
+| # | Area | Linked id(s) | Concrete device steps | Status |
+|---|---|---|---|---|
+| 1 | **Taken** | `tf27-taken-blocked` | Sign in (password + Apple if available). Today → pending dose → **Taken**. Confirm chip flips to Taken, Undo works, Meds timeline matches, dose survives pull-to-refresh / cold relaunch. Retry after airplane-mode Taken then online flush. | **UNVERIFIED** (device) |
+| 2 | **Refill 0 pills** | `tf27-pills-no-refill`, `meds-pill-stock-amount-vs-count`, `meds-pill-stock-trigger-mg-as-pills` | Find med at **0 pills left** / **Refill to update**. Open **Update stock** / **Refill** sheet → set pills on hand > 0 → save. Confirm badge leaves zero, Taken is available again, stock persists after relaunch. Note if one Taken still depletes by mg (`amount`) rather than 1 pill. | **UNVERIFIED** (device) |
+| 3 | **Keyboard dismiss** | `tf27-stuck-keyboard` | Today → open Log / Quick log notes → focus field so keyboard shows. Scroll Today, tap empty scaffold, close expand panel, open Meds panel, open burger menu. Keyboard must dismiss each time; meds row must remain tappable (not covered). | **UNVERIFIED** (device) |
+| 4 | **Score fonts** | `tf27-score-font-wrap` | Today three-up Sleep / Activity / Readiness (or equivalent). Digits must stay **one line** (e.g. `82`, not `8` over `2`). Check light + dark; rotate or Dynamic Type if available. | **UNVERIFIED** (device) |
+| 5 | **Narrative** | `tf27-huge-narrative` | Today **"Today's reading"** / Maya card: body ~compact (~15sp), does not dominate first viewport; still readable; no duplicate narrative block. | **UNVERIFIED** (device) |
+| 6 | **Journal save** | `tf27-journal-save-under-status-bar`, `tf27-journal-photo-dead` | Today → Journal/Log → `/journal/new`. **Save** fully tappable below status bar (not under notch/Dynamic Island). Enter text → Save → appears in Journal list after sync. **Photo**: camera or library → attaches → survives save. Voice/video may still be coming soon. | **UNVERIFIED** (device) |
+| 7 | **Hydration** | `tf27-newdesign-today-capability-gaps` (hydration) | Today → Hydration expand (or `/hydration`). Quick-add water (e.g. 250/500 ml) updates today's total; Electrolyte path works if shown; day timeline shows new entry; total survives relaunch. | **UNVERIFIED** (device) |
+| 8 | **Catch-up** | `flutter-missed-dose-catchup-log-dropdown` | With a missed/overdue dose eligible for catch-up: slim banner + **Log ▾**. Exercise **I took it**, **I missed it**, **Review in Meds**, **Not now**. Confirm status updates, banner dismiss/TTL, Meds history aligns. | **UNVERIFIED** (device) |
+
+- [ ] **tf28-device-qa-devyn-sam-jaspreet** — Master gate for the table above. Stays open
+  until each of the 8 rows is PASS or explicitly wont-fix with owner note on
+  build **1.0 (28)**. Cross-links: `tf27-taken-blocked`, `tf27-pills-no-refill`,
+  `tf27-stuck-keyboard`, `tf27-score-font-wrap`, `tf27-huge-narrative`,
+  `tf27-journal-save-under-status-bar`, `tf27-journal-photo-dead`,
+  `flutter-missed-dose-catchup-log-dropdown`. _Raised 2026-07-13 for TF28 ship._
+
 ### TF27 live users Devyn / Sam / Jaspreet (raised 2026-07-12)
 
 P0 screenshots on ASC build **1.0 (27)** Today (Merged). Capability-gap explores
 (pills/refill audit, sibling TF28 Today P0 search) and the TF28 fix wave share
 these ids; do not close until TF28+ device re-verify. Coordinate: do not duplicate
 as new ids when logging explore findings, append updates under these entries.
+See **TF28 device QA** checklist above for the executable device matrix.
 
 - [ ] **tf27-pills-no-refill** — Meds show **"0 pills left"** / **"Count zero, refill to
   update"**; Taken gated by `outOfStock`. **TF28 WIP (`feat/meds-refill-restore`):**
@@ -689,11 +824,13 @@ as new ids when logging explore findings, append updates under these entries.
   for MCP token; expected). **Re-verified 2026-07-06 (full audit):** called Luciq MCP
   `list_crashes` directly for both apps in this Luciq account matching Purple
   (`purple` slug, iOS, mode beta; `flutter-purple` slug, Flutter, mode beta) — **both
-  return zero crashes**. No crash telemetry exists for the original TF (pre-7/4)
-  report or for any Flutter build since. Still open only because the original
-  screenshot has no reproduction path; downgrading urgency, not closing (cannot
-  prove a negative for a single unreproduced report). _Raised 2026-07-05 from ASC
-  beta feedback; re-verified 2026-07-06._
+  return zero crashes**. **Re-verified 2026-07-13 (TF27 baseline):** `ios:check-luciq`
+  `status: mcp`; Luciq HTTP MCP `list_crashes` on `flutter-purple` beta = **0**
+  (including `1.0.0 (27)`); bugs/issues = **0**. ASC still **1.0 (27)**; **28 not
+  uploaded**. No crash telemetry for the original TF (pre-7/4) report or any Flutter
+  build since. Still open only because the original screenshot has no reproduction
+  path; not a new P0. _Raised 2026-07-05 from ASC beta feedback; re-verified
+  2026-07-06 and 2026-07-13._
 
 - [x] ~~**tf-sync-bar-every-page**~~ — RESOLVED 2026-07-05: Removed `SyncStatusBar` from Meds and
   Vitals; kept on Today (+ Tools integrations cards). Sync button labels name providers.
