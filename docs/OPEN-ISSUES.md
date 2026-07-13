@@ -10,6 +10,78 @@ Format:
 
 ---
 
+## Flutter Meds catch-up (raised 2026-07-12)
+
+- [x] ~~**flutter-missed-dose-catchup-log-dropdown**~~ — RESOLVED 2026-07-13: Flutter
+  Today had no Merged-preview missed-dose catch-up (`Log ▾`). Restored slim banner
+  with PopupMenu (I took it / I missed it / Review in Meds / Not now), wired to
+  `MedsRepository.loadMissedDoseCatchup` + SharedPreferences acted TTL. Evidence:
+  `flutter test test/missed_dose_catchup_test.dart test/today_screen_render_test.dart`
+  **6/6**. _Raised 2026-07-12 by preview parity audit._
+
+## Flutter Wearables (raised 2026-07-13 audit)
+
+- [x] ~~**flutter-wearable-visit-sync-missing**~~ — RESOLVED 2026-07-13: Tools
+  `SyncModeSelect` advertised "When I open Purple (every 3h)" but Flutter never ran
+  visit-mode Oura/Whoop sync (web has `useWearableAutoSync`). Added
+  `syncVisitModeWearables` + wired into `NativeHealthStartupListener` (startup +
+  resume, 3h throttle). Evidence: `wearable_visit_sync_test.dart` +
+  `wearable_oauth_test.dart` **21/21**. _Raised 2026-07-13 by wearables audit._
+
+- [x] ~~**flutter-today-sync-now-no-refresh**~~ — RESOLVED 2026-07-13: Today Wearables
+  expand `SyncStatusBar` Sync now did not invalidate Today scores. Wired
+  `onSynced` → invalidate `todayDataProvider` + bump `syncTick`. _Raised 2026-07-13
+  by wearables audit._
+
+- [ ] **whoop-native-redirect-console** — Whoop Connect on native still needs
+  `org.purplelife.app://oauth-whoop-callback` registered in the Whoop developer
+  console (Oura URI already registered). Until then Whoop Connect fails after
+  consent with redirect_uri rejection. Flutter shows setup hint under Whoop card
+  only. Owner console action; cannot fix in app code. Split from resolved
+  `oura-native-redirect-console`. See also `tf-oauth-not-working`,
+  `tf16-device-verify`. _Raised 2026-07-05; restated 2026-07-13 wearables audit._
+
+## Auth / onboarded_at gate (raised 2026-07-13)
+
+- [x] ~~**flutter-onboarded-at-redirect-loop**~~ — RESOLVED 2026-07-13: After password
+  login, `authRedirect` `_isOnboarded` fail-closed on offline timeout/error and
+  treated null profile as not onboarded, bouncing live users `/welcome` ↔ `/today`
+  or blocking on welcome. Fixed via `onboarding_gate.dart` (cache + always
+  fail-open on lookup failure; welcome only on proven incomplete profile). TF27
+  `AuthGate` / `authGateStatusProvider` unchanged. Ops: backfilled
+  `onboarded_at` for Apple Health user without metadata. Evidence: auth +
+  onboarding gate tests **16/16**. _Raised 2026-07-13 by post-TF27 password login audit._
+
+## Flutter Meds (raised 2026-07-13 drug autofill audit)
+
+- [x] ~~**flutter-add-med-no-name-search**~~ — RESOLVED 2026-07-13: Add-med sheet had a
+  plain name `TextField` with no autocomplete. Ported `med-dictionary.ts` to
+  `flutter/lib/features/meds/med_dictionary.dart` and wired `MedNameSearch` (mirrors
+  web `med-name-search.tsx`) into `medication_form_sheet.dart`. Selecting a hit
+  applies kind/unit/strength defaults. Evidence: `flutter test test/med_dictionary_test.dart`
+  5/5. _Raised 2026-07-13 by drug autofill audit._
+
+- [ ] **flutter-drug-db-enrich-missing** — P2: Web calls `getDrugDefaults` (openFDA +
+  RxNorm via Worker server fn) on name commit to fill form/strength when the local
+  dict has no defaults. Flutter has no Worker `/api/meds/drug-defaults` yet, so
+  enrichment is local-dictionary only. Custom/out-of-dict names still save fine.
+  _Raised 2026-07-13 by drug autofill audit._
+
+## Flutter Data / Vitals / Biometrics (raised 2026-07-13 audit)
+
+- [x] ~~**vitals-health-connect-series-blank**~~ — RESOLVED 2026-07-13: `sourceKeyFromString`
+  ignored `health_connect`, so `_buildSeriesResult` skipped Android native rows and
+  Data/Biometrics hub/detail looked empty. Added `SourceKey.healthConnect` + labels.
+  Also aligned Vitals `hasData` with real metric values; hub avoids empty-while-loading.
+  _Raised 2026-07-13 by live-user vitals audit._
+
+- [ ] **data-tab-wearable-connect-cta** — P1: Data tab with no labs and no wearables
+  shows labs upload empty only; no "Connect a device" path to Tools. Vitals/My Health
+  already have connect links. _Raised 2026-07-13 by vitals audit._
+
+- [ ] **biometrics-hub-empty-tools-link** — P1: Biometrics hub empty copy mentions
+  connect but is not a tappable Tools CTA. _Raised 2026-07-13 by vitals audit._
+
 ## Repo hygiene / gates (raised 2026-07-06 full audit)
 
 - [x] ~~**audit-tsc-uncommitted-invites-route**~~ — RESOLVED 2026-07-06: this was the
@@ -30,6 +102,82 @@ Format:
   (none git-tracked). Confirmed `bun run check:em-dash` **PASS** afterward.
   Kept untracked `flutter/ios/Flutter/Developer.xcconfig` (local Xcode-beta fix).
 
+## Journal / Log capture (raised 2026-07-13 TF audit)
+
+- [x] ~~**tf27-journal-save-under-status-bar**~~ — RESOLVED 2026-07-13 (code, TF28
+  pending): `/journal/new` Save was drawn under the iOS status bar because
+  `NativeAppShell` removes `MediaQuery.padding` on full-bleed routes and
+  `SafeArea` became a no-op. ASC Devyn: "trying to submit and it isn't letting
+  me." **Fix:** pad with `MediaQuery.viewPadding`, nested Scaffold, high-contrast
+  Save, keyboard-hide control, flush sync + pending-cache merge after save.
+  Files: `journal_capture_screen.dart`, `journal_repository.dart`. Tests
+  `journal_pending_upload_test.dart` **5/5**. _Raised 2026-07-06 ASC; fixed
+  2026-07-13._
+
+- [x] ~~**tf27-journal-photo-dead**~~ — RESOLVED 2026-07-13 (code, TF28 pending):
+  Photo/Record buttons were disabled or "coming soon" only; ASC Devyn could not
+  take a picture. **Fix:** Photo opens camera/library via `image_picker`, uploads
+  to `journal-media`, updates `media_urls`. Voice/video remain coming soon.
+  _Raised 2026-07-06 ASC; photo fixed 2026-07-13._
+
+## Care scopes / meds Taken (raised 2026-07-12 audit)
+
+- [x] ~~**flutter-med-offline-queue-optimistic-drop**~~ — RESOLVED 2026-07-13:
+  Partial dose Taken/Skip/Snooze and med refill `queueWrite`s stayed in
+  `sync_queue` but Drift optimistic cache ignored them (required full
+  `scheduled_at`+`medication_id` / `updated_at`). Fixed merge-on-partial +
+  pending-write pull skip + local pill-stock mirror in
+  `flutter/lib/core/offline/sync_service.dart` + `database.dart`. Tests
+  `med_offline_queue_test.dart` + `med_offline_cache_db_test.dart` **10/10**.
+  _Raised 2026-07-13 by med offline queue audit._
+
+- [x] ~~**care-meds-scope-403-to-404**~~ — RESOLVED 2026-07-12: Worker
+  `assertScopeForUser` in `src/lib/care.server.ts` returned **403**
+  `"Missing scope: …"` on denied caregiver reads (including `/api/care/meds`).
+  Project rule is cross-user denial → **404**. Fixed to `CareApiError("Not found", 404)`.
+  Flutter caregiver Meds tab is **read-only** via `POST /api/care/meds` (no raw
+  owner `user_id` Taken/refill path). Own-user Taken uses `MedsRepository` + auth uid
+  + RLS. Web `caregiverMarkDose` already 404s wrong-owner dose ids (`Dose not found`).
+  **Still open:** no Worker `POST /api/care/mark-dose` for Flutter caregiver Taken
+  (see `caregiverMarkDose` under care Worker backlog). Refill remains owner-only.
+
+## Flutter Plan + Ask Maya (raised 2026-07-12 audit)
+
+- [x] ~~**plan-protocol-stuck-loading**~~ — RESOLVED 2026-07-12: Plan Protocol
+  (and Insights / Data teaser) could spin forever when `/api/ai/daily-insight-cards`
+  hung. `dailyInsightCardsProvider` had catch-all fail-open but **no timeout**, and
+  caught errors returned `DailyInsightCardsResult.empty` with `error: null`, so empty
+  copy said "log more readings" on transport failure. **Fix:** 20s timeout +
+  `error: timeout|unavailable` so Protocol empty state is honest. Files:
+  `flutter/lib/features/insights/ai_insights_repository.dart`. Ask Maya em dash in
+  greeting removed (`ask_maya_screen.dart`). _Raised 2026-07-12 by Plan/Maya audit._
+
+- [ ] **plan-recommended-loading-flash** — P2: Recommended segment uses
+  `todayDataProvider` / `reportsHubProvider` via `valueOrNull`. While those are still
+  loading, conditions are treated as empty and the UI briefly shows "Set your focus
+  conditions..." even for users who have conditions. Prefer a small loading glass
+  (or keep last known conditions) until first settle. _Raised 2026-07-12 by Plan/Maya
+  audit._
+
+- [ ] **ask-maya-load-error-polish** — P2: Ask Maya always fail-opens (greeting
+  "there", general starter chips) with no loading indicator, error banner, or
+  pull-to-refresh when `todayDataProvider` is loading or failed. Deep-link `?q=`
+  only highlights a matching chip; it does not auto-open `/chat`. Chat itself has
+  empty/error/limit handling. _Raised 2026-07-12 by Plan/Maya audit._
+
+## Care / burger menu (raised 2026-07-13)
+
+- [x] ~~**care-index-incoming-invites-missing**~~ — RESOLVED 2026-07-13 (code, uncommitted):
+  Burger → Care (`/care`) listed only RLS-visible relationships (`caregiver_id = me`).
+  Email-addressed pending invites have `caregiver_id` NULL, so Accept/Decline never
+  appeared on the Care hub (card lived only on `/care/inbox`). **Fix:** `loadCareIndex`
+  calls Worker `GET /api/care/incoming-invites`; `CareIndexScreen` renders
+  `IncomingCareInvitesCard`. _Raised 2026-07-13 by burger Account/Care audit._
+
+- [ ] **flutter-today-incoming-care-invites** — Web Today shows `IncomingCareInvitesCard`;
+  Flutter Today does not. Care Index + Care Inbox now cover Accept/Decline; Today parity
+  still open (P1 discoverability). _Raised 2026-07-13 by burger Care audit._
+
 ## Auth / password sign-in (raised 2026-07-12)
 
 - [x] ~~**tf26-password-signin-blank-today**~~ — RESOLVED 2026-07-12 (code; **TF27 upload
@@ -42,6 +190,21 @@ Format:
   session (register confirmation path). Verified: auth/sign-in tests **21/21**, analyze
   clean. Live API password grant for E2E user **200**. **TF26 still broken until TF27.**
   _Raised 2026-07-12 by live-user P0; fixed in `fix/auth-password-signin-tf27`._
+
+- [ ] **auth-old-password-and-forgot-post-tf27** — Distinct from TF27 AuthGate race.
+  Live 2026-07-12 re-check: E2E password grant on `auth.purplelife.org` **200**; wrong
+  password **400** `invalid_credentials`; `/auth/v1/recover` with
+  `org.purplelife.app://reset-password` **200**; redirect allow list includes native
+  reset; email hook + cron healthy (`email_send_log` recovery **sent**, queue depth 0).
+  Auth users: **21/25** have `encrypted_password`; **4** without are OAuth-only
+  (Apple/Google). `import-auth.mjs` never imported Lovable password hashes, so
+  pre-migration "old passwords" cannot work. `pmt@eigital.com` has a hash +
+  `recovery_sent_at` today, but `@eigital.com` corporate quarantine still blocks
+  inbox delivery of `notify.purplelife.org` (Resend delivered, inbox empty). **Ops
+  unblock:** Admin API temp password out-of-band; user changes password in Account;
+  IT allowlist or non-corporate email for recovery. Copy hint added on Flutter
+  forgot-password success (spam/quarantine). Native deep-link E2E still open under
+  `auth-reset-native-tf21`. _Raised 2026-07-12 by live-user report after TF27._
 
 ## Auth / password reset (raised 2026-07-06)
 
@@ -89,6 +252,127 @@ Format:
 
 ## Flutter / TestFlight
 
+- [ ] **tf28-pre-baseline-stuck-screen** — ASC screenshot 2026-07-08
+  (`samuel.cortez@eatos.com`): "Stuck on this screen". **P0 candidate** until
+  reproduced on **TF27** (or dismissed as pre-TF25 blank/stuck already fixed).
+  No ASC submissions dated after TF27 upload (2026-07-12). Screenshot URL in
+  `ios:check-tf-feedback` run 2026-07-13 UTC. **Next:** device QA on TF27; if
+  still stuck, fix before TF28 upload. _Raised 2026-07-13 TF28 pre-upload
+  baseline._
+
+- [ ] **tf28-pre-baseline-share-menus-lag** — ASC screenshot 2026-07-08
+  (`samuel.cortez@eatos.com`): lag on selection, menus missing X/cancel, share
+  feedback button not working. Treat as **P1/P2** polish (not login/data-loss).
+  _Raised 2026-07-13 TF28 pre-upload baseline._
+
+### TF27 live users Devyn / Sam / Jaspreet (raised 2026-07-12)
+
+P0 screenshots on ASC build **1.0 (27)** Today (Merged). Capability-gap explores
+(pills/refill audit, sibling TF28 Today P0 search) and the TF28 fix wave share
+these ids; do not close until TF28+ device re-verify. Coordinate: do not duplicate
+as new ids when logging explore findings, append updates under these entries.
+
+- [ ] **tf27-pills-no-refill** — Meds show **"0 pills left"** / **"Count zero, refill to
+  update"**; Taken gated by `outOfStock`. **TF28 WIP (`feat/meds-refill-restore`):**
+  `MedRefillSheet` + `MedsRepository.updatePillsRemaining` (`pills_remaining` +
+  `updated_at` via queueWrite); dose **Refill to update**, library/detail **Update
+  stock**, form **Pills on hand** / **Alert at** (`refill_threshold`). Offline
+  optimistic cache fix: `flutter-med-offline-queue-optimistic-drop`. Do **not**
+  close until TF28 device re-verify. Cross-links: `tf27-taken-blocked`,
+  `meds-pill-stock-amount-vs-count`, `tf27-newdesign-meds-capability-gaps`.
+  _Raised 2026-07-12 by live TF27 users Devyn/Sam/Jaspreet._
+  _Code restore 2026-07-13._
+
+- [ ] **meds-pill-stock-amount-vs-count** — DB trigger
+  `medication_doses_pill_stock` (`supabase/migrations/20260625143701_…sql`)
+  decrements `medications.pills_remaining` by `COALESCE(dose.amount, 1)` on Taken.
+  When `amount` stores **mg / dosage units** (e.g. Crestor `5`) rather than **pill
+  count (1)**, one Taken can subtract 5 and drive stock to a **real 0** quickly,
+  which then gates UI via `outOfStock`. Refill write path is still required
+  regardless; this is a separate semantic bug. **Next:** confirm live dose
+  `amount` units vs pill count; either store amount as pill units for stocked
+  meds, or change trigger to decrement by 1 (or a dedicated `pill_units` field).
+  Do not silently change trigger without owner + migration. Cross-links:
+  `tf27-pills-no-refill`, `tf27-taken-blocked`,
+  `meds-pill-stock-trigger-mg-as-pills`.
+  _Raised 2026-07-12 by TF28 live-user regression audit._
+
+- [ ] **meds-pill-stock-trigger-mg-as-pills** — Live `pills_remaining=0` can be
+  **trigger over-depletion**: dose `amount` in mg is subtracted as if it were
+  pill count (`COALESCE(dose.amount, 1)` in `medication_doses_pill_stock`).
+  Same root as `meds-pill-stock-amount-vs-count`; tracked separately for TF28
+  containment. **Refill UI still required** (`MedRefillSheet` / Today zero-stock
+  CTA) so users can recover stock even before trigger semantics are fixed.
+  Do not change the DB trigger without owner + migration. Cross-links:
+  `tf27-pills-no-refill`, `meds-pill-stock-amount-vs-count`.
+  _Raised 2026-07-13 by TF28 compile-restore containment._
+
+- [x] ~~**tf27-stuck-keyboard**~~ — RESOLVED 2026-07-13: Soft keyboard stayed
+  visible on Today with no focused field, covering meds. Root: Quick log
+  `TextField` (and leftover focus after route change) plus shell
+  `resizeToAvoidBottomInset: false` with no unfocus on scroll / tap / panel /
+  route. Fix: `native_app_shell.dart` dismiss on drag scroll, scaffold tap,
+  route change, menu; Today `_toggleExpand` / `_openMedsPanel` / `_openLogPanel`
+  unfocus + scroll `keyboardDismissBehavior.onDrag`. Evidence: `dart analyze`
+  clean on shell + Today. Originally: leftover focus from sign-in / Ask Maya /
+  journal; TF27 users Devyn/Sam/Jaspreet. _Raised 2026-07-12._
+
+- [ ] **tf27-score-font-wrap** — Today three-up **score tiles** wrap digits vertically
+  (Sleep shows "8" over "2", Activity "5" over "8") because fixed ~56px numerals
+  overflow the narrow column. Should stay one line ("82", "58", or duration).
+  **Next:** FittedBox / smaller `TextStyle` / `maxLines: 1` in
+  `flutter/lib/features/shared/score_tile.dart` (partial WIP may already be in
+  tree for TF28). _Raised 2026-07-12 by live TF27 users Devyn/Sam/Jaspreet._
+
+- [ ] **tf27-huge-narrative** — **"Today's reading"** AI narrative card
+  (`TodayMayaCard` in `today_merged_widgets.dart`) uses large `bodySerif` and
+  dominates the phone viewport. Distinct from resolved
+  `tf-today-duplicate-narrative` (duplicate render). **Next:** compact body size
+  (~14 / regular) without changing copy or removing the card. TF28 wave in
+  progress. _Raised 2026-07-12 by live TF27 users Devyn/Sam/Jaspreet._
+
+- [x] ~~**tf27-taken-blocked**~~ — RESOLVED 2026-07-13 (code, TF28 pending):
+  Root cause A: `medsForDayProvider` / `medsDataProvider` used
+  `authSessionProvider.valueOrNull` only → empty doses after password sign-in
+  (Taken never rendered). Fixed via `readActiveSession`. Root cause B: online
+  Taken only queued, then `regenerate_today_pending_doses` deleted pending
+  before flush. Fixed: `updateDoseStatus` direct Supabase when online. Evidence:
+  `meds_session_provider_test.dart` **2/2**. Remaining product choice: Taken when
+  `outOfStock` (still gated like web). Cross-links: `tf27-stuck-keyboard`,
+  `tf27-pills-no-refill`. _Raised 2026-07-12; fixed 2026-07-13._
+
+- [ ] **tf27-newdesign-today-capability-gaps** — Flutter Merged Today capability
+  inventory vs web. **Dropped / missing:** signals filter nulls; score focus /
+  ScoreHero → risk; inline `QuickAddWater`; `MissedDoseCatchup`; `MedsMiniTimeline`;
+  "More for today" suite (also `flutter-today-more-for-today-removed`). **Present:**
+  score row, Maya narrative, dose Taken/Snooze/Skip. Cross-links: `tf27-taken-blocked`,
+  `tf27-score-font-wrap`, `tf27-huge-narrative`, `tf27-stuck-keyboard`,
+  `flutter-today-more-for-today-removed`. _Raised 2026-07-13 by TF27 newdesign
+  capability-gap audit._
+
+- [ ] **tf27-newdesign-meds-capability-gaps** — Flutter Meds ship-risk inventory vs
+  web (`src/routes/_app/meds*`, `src/components/meds/*`). Library audit 2026-07-13
+  (column is `pills_remaining`, not `remaining_quantity`).
+  **Present (core):** add/edit name+kind+strength+times; Active/Archive;
+  Taken/Snooze/Skip/reclassify/mark-all; library badges; history; archive/restore;
+  drug name search (`MedNameSearch` + local dict); past dose sheet on detail
+  and `/meds/history` row tap;
+  refill restock (`MedRefillSheet` / detail Update stock / library Update stock
+  wired from `meds_screen`). **Write path:** Flutter refill writes
+  `medications.pills_remaining` (+ optional `refill_threshold`) via
+  `MedsRepository.updatePillsRemaining` / form `updateStock` + offline
+  `queueWrite` with `updated_at` (RLS `medications_all_own`). Form sheet now
+  edits pills on hand + alert threshold on create/edit (non-rescue).
+  **Still missing / stub vs web:** scan/voice (toolbar snackbar); form
+  dosage_form / with_food / per-slot amounts / start+end dates / prescriber /
+  pharmacy / Rx; side effects log; permanent
+  delete archived; export ICS; med-intelligence refill forecast cards; critical
+  alarm + reminder sound; openFDA enrich; profile snooze_minutes alarm sheet.
+  Cross-links: `tf27-pills-no-refill`, `tf27-taken-blocked`,
+  `meds-pill-stock-amount-vs-count`, `flutter-drug-db-enrich-missing`, care
+  refill owner-only.
+  _Raised 2026-07-13 by TF27 newdesign capability-gap audit._
+
 - [x] ~~**flutter-today-doses-regression**~~ — RESOLVED 2026-07-06 (TF25): inline Taken /
   Snooze / Skip on `TodayMedsSection` for pending doses; shared `MedsPendingDoseActions`
   (44pt targets); `MedLibraryRow` Taken moved outside parent `InkWell`. Verified:
@@ -100,9 +384,14 @@ Format:
   (InkWell swallowed tap). Same commit as `flutter-today-doses-regression`. _Raised
   2026-07-06 ASC; fixed same day._
 
-- [ ] **flutter-today-more-for-today-removed** — Merged Today removed web "More for today"
-  disclosure: sync nudge, team announcements, secondary cards; signals grid vs web also
-  regressed. _Raised 2026-07-06 audit `a198e779`._
+- [x] ~~**flutter-today-more-for-today-removed**~~ — PARTIAL 2026-07-13: Merged
+  preview drops the "More for today" disclosure (always-visible cards). Flutter now
+  matches that contract for expanders + secondary cards: icon row (Meds default open),
+  flat Meds panel body (no nested GlassCard), Quick log inline composer, Wearables
+  expand fail-open SyncStatusBar, team announcement banner → opens Log, missed-dose
+  catchup, Last 7 days + Recommended. **Still open / sibling-owned:** rich Last 7
+  trend grid vs stub; Hydration expand depth (hydration sibling). _Raised 2026-07-06
+  audit `a198e779`; expand panels fixed 2026-07-13._
 
 - [ ] **flutter-oauth-auth-callback** — P0 login blocker for Google/Apple on Flutter native
   (2026-07-06). **Fix shipped** in `4430c13` (native `org.purplelife.app://auth-callback`, web
@@ -264,16 +553,15 @@ Format:
      - `acceptInvite` — `POST /api/care/accept` (Flutter already posts this).
      - `decline` — `POST /api/care/decline` (fixes the silent RLS no-op above).
   2. **Caregiver dashboard reads/actions (blocks all `/care/$ownerId` tabs):**
-     - `caregiverReadToday` (L1356)
-     - `caregiverReadMeds` (L1233)
-     - `caregiverMarkDose` (L1414)
-     - `caregiverReadJournal` (L1274)
+     - ~~`caregiverReadToday`~~ — Worker `POST /api/care/today` landed
+     - ~~`caregiverReadMeds`~~ — Worker `POST /api/care/meds` landed
+     - `caregiverMarkDose` (L1414) — **still open** (Flutter Taken for caregivers)
+     - ~~`caregiverReadJournal`~~ — Worker `POST /api/care/journal` landed
      - `proposeChange` (L978)
-     - `caregiverReadSeizures` (L1289)
+     - ~~`caregiverReadSeizures`~~ — Worker `POST /api/care/seizures` landed
      - `caregiverLogSeizure` (L1469)
-     - `caregiverReadReports` (L1303)
-     - `caregiverReadReport` (L1323) — **must preserve the `phi_access_log`
-       `caregiver_view` audit write** when fronted by a Worker route.
+     - ~~`caregiverReadReports`~~ — Worker `POST /api/care/reports` landed
+     - ~~`caregiverReadReport`~~ — Worker `POST /api/care/report` landed (+ `phi_access_log`)
      - `listHydrationForDay`
      - `getOrCreateDirectThread` (also unblocks caregiver-initiated care chat, see
        2026-07-05 care-chat HANDOFF entry).
@@ -377,8 +665,10 @@ Format:
   and bottom-nav My Body label still open for TF17+ re-verify. _Raised 2026-07-05 cutover audit._
 
 - [ ] **tf-oauth-not-working** — Tester ASC feedback (2026-07-05): "why is this not workibg"
-  (Tools). Likely Oura native redirect + connect UX; ties to `oura-native-redirect-console`.
-  _Raised 2026-07-05 cutover audit._
+  (Tools). Oura native redirect **registered** 2026-07-06. Remaining: Whoop console URI
+  (`whoop-native-redirect-console`) or expired Oura/Whoop tokens (Disconnect + Connect).
+  Visit-mode Oura/Whoop sync restored 2026-07-13 (`flutter-wearable-visit-sync-missing`).
+  Device verify on next TF. _Raised 2026-07-05 cutover audit; updated 2026-07-13._
 
 - [x] ~~**tf16-asc-processing**~~ — RESOLVED 2026-07-05: ASC builds API shows **1.0 (16)** VALID,
   IN_BETA_TESTING. Bundle: Luciq, settings scroll, `home_city`, sync fixes. Re-run
@@ -421,8 +711,8 @@ Format:
 - [x] ~~**oura-native-redirect-console**~~ — **RESOLVED 2026-07-06 (Oura):** Owner registered
   `org.purplelife.app://oauth-oura-callback` in Oura Cloud. Agent verified: authorize URL returns
   **302** to Oura login (registered URI); unregistered URI returns **400 invalid_request**.
-  Flutter `wearable_oauth_test.dart` **14/14 PASS**. **Whoop native URI still open** — register
-  `org.purplelife.app://oauth-whoop-callback` in Whoop developer console. _Raised 2026-07-05._
+  Flutter `wearable_oauth_test.dart` **PASS**. Whoop URI tracked separately as
+  `whoop-native-redirect-console`. _Raised 2026-07-05._
 
 - [ ] **tf16-device-verify** — Apple Health Connect, settings scroll, sync bar labels, and
   Account `home_city` need confirmation on physical iPhone with **TestFlight 1.0 (16)** (ASC VALID

@@ -1,6 +1,81 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-13 ~21:15 ET (Today hydration quick-add).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-13 ~01:48 UTC (med past-dose + keyboard).
+
+**Recent (2026-07-13): Med past-dose / getDosesForDate audit PASS.**
+Past days: `loadDosesForDate` / schedule viewDate (no regenerate). P0: Add/edit
+past dose via `PastDoseSheet` + `savePastDose` on med detail + history tap.
+Verify: `cd flutter && flutter test test/meds_past_dose_test.dart
+test/meds_schedule_ux_test.dart test/today_meds_actions_test.dart` (**13/13**).
+Status: **fixed** (uncommitted `feat/meds-refill-restore`).
+
+**Recent (2026-07-13): P0 Today soft keyboard dismiss (tf27-stuck-keyboard).**
+Shell unfocus on scroll/tap/route/menu; Today expand toggles dismiss focus.
+Verify: `cd flutter && dart analyze lib/shell/native_app_shell.dart lib/features/today/today_screen.dart lib/features/today/today_quick_log_panel.dart`
+Status: **fixed** (device QA on next TF).
+
+**Recent (2026-07-13): Meds refill/restock P0 (`feat/meds-refill-restore`).**
+Restores `medications.pills_remaining` (+ form `refill_threshold`). User restocks
+via **Refill to update** / **Update stock** / form **Pills on hand** → **I refilled**.
+Verify: `cd flutter && flutter test test/meds_refill_test.dart test/meds_refill_stock_test.dart`.
+Open until TF28 device QA: `tf27-pills-no-refill`.
+
+**Recent (2026-07-13): Journal/Log capture P0 (uncommitted).**
+Save was under status bar (shell strips padding); Photo now works (camera/library).
+Verify: `cd flutter && flutter test test/journal_pending_upload_test.dart` (**5/5**);
+`flutter analyze lib/features/journal/` clean. Voice/video still coming soon.
+Status: **fixed** (ship with TF28).
+
+**Recent (2026-07-13): endDrawer burger routes audit PASS.**
+Account/Settings/Tools/Care/Sign out all wired; hardened drawer nav to capture
+`GoRouter` before `maybePop`. Verify:
+`cd flutter && flutter test test/shell_menu_routes_test.dart test/care_routes_test.dart test/router_deep_link_test.dart`
+(**10/10**). Status: **PASS**.
+
+**Recent (2026-07-13): Wearables visit-sync P0 (uncommitted).**
+Flutter now runs Oura/Whoop visit-mode sync on open/resume (web `useWearableAutoSync`
+parity). Today Wearables Sync now refreshes scores. Whoop native redirect still
+owner console (`whoop-native-redirect-console`). Verify:
+`cd flutter && flutter test test/wearable_visit_sync_test.dart test/wearable_oauth_test.dart`
+(**21/21**). Status: **fixed**. Live checklist in `docs/HANDOFF.md` Log.
+
+**Recent (2026-07-13): Meds history blank/crash + edit past dose (uncommitted).**
+`loadDoseHistory` fail-open + med prefetch; history tap opens `PastDoseSheet`.
+Fixed `GlassMaterialVariant` import on sheet. Verify:
+`cd flutter && flutter test test/meds_past_dose_test.dart test/meds_history_screen_test.dart`
+(all passed). Status: **fixed**.
+
+**Recent (2026-07-13): Med dose Taken contract (uncommitted).**
+Edge `med-dose-action` live; Worker has no dose-action route. Online Flutter
+Taken mirrors via `SyncService.mirrorRemoteUpdate` (no double pill-stock).
+Verify: `cd flutter && flutter test test/worker_client_test.dart test/med_offline_queue_test.dart` (**15/15**).
+No Worker deploy. Caregiver mark-dose Worker still open.
+
+**Recent (2026-07-13): Apple Health native P0 display (uncommitted).**
+Tools panel: safe date parse + clear stamps on sign-out; Sync no longer forces
+permission-denied when disconnected. Sync bar / synced-data overview: Apple
+`last_sync_at` only when connected (never token `updated_at`). Auth connect path
+already OK (Keychain, no bool gate). Verify:
+`cd flutter && flutter test test/health_service_test.dart test/synced_data_overview_test.dart test/wearable_visit_sync_test.dart`
+(**14/14**). Status: **fixed**. Device QA: `tf16-device-verify`.
+
+**Recent (2026-07-13): onboarded_at redirect loop fixed (uncommitted).**
+`onboarding_gate.dart` cache + fail-open; TF27 AuthGate unchanged. Verify:
+`cd flutter && flutter test test/onboarding_gate_test.dart test/auth_gate_test.dart`
+(**16/16**). Status: **fixed**. Issue: `flutter-onboarded-at-redirect-loop`.
+
+**Recent (2026-07-13): Med offline queue fix (uncommitted on `feat/meds-refill-restore`).**
+Partial Taken/Skip/Snooze/refill writes were queued but Drift cache ignored them.
+`SyncService` now merges partial payloads, skips pull overwrite while pending, and
+mirrors pill-stock locally. Verify:
+`cd flutter && flutter test test/med_offline_queue_test.dart test/med_offline_cache_db_test.dart`
+(**10/10**). Status: **fixed**. Issue: `flutter-med-offline-queue-optimistic-drop`.
+
+**TF28 upload STOPPED.** Sibling collisions: today+meds `flutter analyze` still RED (`_openMedsPanel`, expand bodies, `_ZeroPillsChip`, `GlassMaterialVariant`). Restorer owns green; **no `ios:testflight`** until analyze clean + `flutter test` green. Live install: **TF27**. Pill stock: see `meds-pill-stock-amount-vs-count` (trigger may zero stock via dose `amount`/mg).
+
+**Recent (2026-07-13): Data/Vitals/Biometrics P0.** `health_connect` no longer dropped from metric series; Vitals `hasData` requires real values; hub skips false empty-while-loading. Verify: `cd flutter && flutter test test/biometric_metrics_test.dart test/synced_data_overview_test.dart test/today_vital_items_test.dart`.
+
+**Recent (2026-07-12): Care meds scopes audit.** Worker `assertScopeForUser` → **404** (was 403). Flutter caregiver Meds read-only via `/api/care/meds`; no raw owner `user_id` Taken. Gap: `caregiverMarkDose` Worker route still missing.
 
 **Recent (2026-07-13): Flutter Today hydration quick-add fixed (uncommitted).**
 Today Hydration expand had no log chips (web has `QuickAddWater`). Restored shared

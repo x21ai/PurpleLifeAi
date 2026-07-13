@@ -9,6 +9,23 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-13 P0 Today soft keyboard dismiss (`tf27-stuck-keyboard`).**
+Root: Quick log notes `TextField` + shell `resizeToAvoidBottomInset: false`
+left the keyboard overlaying Today with no focused field, blocking meds.
+Fix: `native_app_shell.dart` unfocus on scroll drag, scaffold tap, route
+change, menu; Today expand toggles + scroll `onDrag` dismiss. Branch
+`feat/meds-refill-restore`. Issue closed in OPEN-ISSUES.
+
+**2026-07-13 Flutter med dose history / past-dose vs web `getDosesForDate`: PASS.**
+Past-day schedule already used day-window fetch without regenerate (web
+`getDosesForDate` parity via `loadMeds(viewDateYmd)` + `loadDosesForDate`).
+P0 restored: med detail **Add a past dose** / tap-to-edit + `PastDoseSheet` +
+`MedsRepository.savePastDose` (insert `created_by_kind: user` / update; offline
+queue). History row also opens edit sheet. Evidence:
+`flutter test test/meds_past_dose_test.dart test/meds_schedule_ux_test.dart
+test/today_meds_actions_test.dart` **13/13**. Status: **fixed** (uncommitted on
+`feat/meds-refill-restore` @ `5c04ea9e`).
+
 **2026-07-13 Journal/Log from Today P0 (Save under status bar + photo).**
 TF ASC: Devyn could not submit / attach photo. Root cause: `NativeAppShell`
 strips `MediaQuery.padding` on full-bleed `/journal/new`, so `SafeArea` was a
@@ -34,9 +51,34 @@ Column is `medications.pills_remaining` (+ optional `refill_threshold`), not
 detail **Update stock** → `MedRefillSheet`; form **Pills on hand** / **Alert at**;
 meds list / Today dose **Update stock** / **Refill to update**. After count hits 0,
 user sets pills > 0 via any of those paths. Branch `feat/meds-refill-restore`.
-Evidence: `flutter test test/meds_refill_stock_test.dart` **5/5**.
+Evidence: `flutter test test/meds_refill_test.dart test/meds_refill_stock_test.dart`.
 
 ## Log
+
+### 2026-07-13T01:48:00Z — P0 Today soft keyboard dismiss (tf27-stuck-keyboard)
+- **Requested:** Soft keyboard stuck open on Today with no focused field, blocking
+  meds; unfocus on scroll, panel close, Meds/Hydration/Log tap, scaffold tap.
+- **Done:** `flutter/lib/shell/native_app_shell.dart` (`_dismissKeyboard` on
+  scroll drag, translucent scaffold tap, route change, menu open);
+  `flutter/lib/features/today/today_screen.dart` unfocus in `_toggleExpand` /
+  `_openMedsPanel` / `_openLogPanel` + `keyboardDismissBehavior.onDrag`; Quick
+  log notes field in `today_quick_log_panel.dart` is the on-Today TextField
+  source. Closed `tf27-stuck-keyboard` in OPEN-ISSUES.
+- **Issues:** Working tree still has parallel sibling WIP (score tile, wearables,
+  etc.); this land is keyboard dismiss only.
+- **Stand / next:** Device QA on TF28 build; merge with meds refill branch.
+- **Who / where:** Cursor agent / feat/meds-refill-restore
+- **Evidence:** `dart analyze` clean on shell + Today + quick log panel
+- **Timestamp:** 2026-07-13T01:48:00Z
+
+### 2026-07-13T01:43:30Z — Flutter med dose history / past-dose vs web getDosesForDate
+- **Requested:** Audit Flutter med dose history / backfill vs web `getDosesForDate`. Can users log past doses? Restore if missing in newdesign. Fix P0. Tests. Return status.
+- **Done:** Confirmed past-day schedule does not regenerate (`shouldRegenerateTodayDoses` + `loadDosesForDate`). Restored P0 past-dose create/edit: `past_dose_sheet.dart`, `MedsRepository.savePastDose`, med detail Add a past dose + row edit; history tap → edit. Helpers `buildPastDosePayload` in `meds_today.dart`. Tests: `flutter/test/meds_past_dose_test.dart` (+ schedule/today meds) **13/13**.
+- **Issues:** Uncommitted on `feat/meds-refill-restore` with parallel meds WIP. Side-effects log / ICS export still out of scope (`tf27-newdesign-meds-capability-gaps`).
+- **Stand / next:** Land with meds refill branch for TF28; device QA add/edit past dose on Founding Team.
+- **Who / where:** Cursor meds past-dose audit subagent, `feat/meds-refill-restore`@`5c04ea9e`.
+- **Evidence:** `flutter test test/meds_past_dose_test.dart test/meds_schedule_ux_test.dart test/today_meds_actions_test.dart` **13/13**; `dart analyze lib/features/meds/` clean.
+- **Timestamp:** 2026-07-13T01:43:30Z
 
 ### 2026-07-13T01:42:00Z — Journal capture P0 (Save, photo, keyboard)
 - **Requested:** Audit Flutter Journal/Log from Today (create entry, media,
@@ -60,13 +102,14 @@ Evidence: `flutter test test/meds_refill_stock_test.dart` **5/5**.
   with `id`, `pills_remaining`, `updated_at`; do not use `remaining_quantity`.
 - **Done:** `updatePillsRemaining` payload includes `updated_at`; form fields
   Pills on hand / Alert at; med detail Update stock → `MedRefillSheet`; list/Today
-  refill CTAs wired via `onRefill` / `onRefillMed`. Tests in
-  `flutter/test/meds_refill_stock_test.dart`.
+  refill CTAs wired via `onRefill` / `onRefillMed`. Tests:
+  `flutter/test/meds_refill_test.dart`, `flutter/test/meds_refill_stock_test.dart`.
 - **Issues:** Working tree has unrelated parallel WIP; this land is meds stock only.
+  Device QA still open (`tf27-pills-no-refill`).
 - **Stand / next:** Merge `feat/meds-refill-restore` when sibling meds slices ready.
 - **Who / where:** Cursor meds refill subagent, `feat/meds-refill-restore`.
-- **Evidence:** `flutter test test/meds_refill_stock_test.dart` **5/5**;
-  `dart analyze` clean on med_detail / form / repository / refill sheet.
+- **Evidence:** `flutter test test/meds_refill_test.dart test/meds_refill_stock_test.dart`;
+  `dart analyze` on meds refill files.
 - **Timestamp:** 2026-07-13T01:45:00Z
 
 ### 2026-07-13T01:42:00Z — Flutter Wearables audit (Today + Tools)
