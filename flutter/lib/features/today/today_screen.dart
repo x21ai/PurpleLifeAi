@@ -13,11 +13,13 @@ import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
 import '../vitals/sync_status_bar.dart';
 import 'date_strip.dart';
+import 'missed_dose_catchup.dart';
 import 'models/score_snapshot.dart';
 import 'models/today_data.dart';
 import 'today_meds_section.dart';
 import 'today_merged_layout.dart';
 import 'today_merged_widgets.dart';
+import 'today_quick_log_panel.dart';
 import 'today_repository.dart';
 import 'wearable_sync.dart';
 
@@ -58,6 +60,9 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
   }
 
   void _toggleExpand(TodayExpandPanel panel) {
+    // Meds / Hydration / Log / Wearables taps and panel close: drop any
+    // leftover focus so the soft keyboard cannot block dose actions.
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       if (_expanded == panel) {
         _expanded = null;
@@ -67,25 +72,40 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     });
   }
 
-  Future<void> _refresh() async {
-    await syncConnectedWearables(
-      supabase: ref.read(supabaseClientProvider),
-      worker: ref.read(workerClientProvider),
-    );
+  void _openMedsPanel() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _expanded = TodayExpandPanel.meds);
+  }
+
+  void _openLogPanel() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _expanded = TodayExpandPanel.log);
+  }
+
+  void _onWearablesSynced() {
     ref.invalidate(todayDataProvider);
     ref.invalidate(medsForDayProvider(_dateYmd));
     if (!_isToday) {
       ref.invalidate(scoreSnapshotForDayProvider(_dateYmd));
     }
     if (mounted) setState(() => _syncTick += 1);
+  }
+
+  Future<void> _refresh() async {
+    // Wearable sync is fail-open with its own timeout; never block refresh forever.
+    await syncConnectedWearables(
+      supabase: ref.read(supabaseClientProvider),
+      worker: ref.read(workerClientProvider),
+    );
+    _onWearablesSynced();
     try {
       await Future.wait([
         ref.read(todayDataProvider.future),
         ref.read(medsForDayProvider(_dateYmd).future),
         if (!_isToday) ref.read(scoreSnapshotForDayProvider(_dateYmd).future),
-      ]);
+      ]).timeout(todayProviderTimeout);
     } catch (_) {
-      // Keep pull-to-refresh stable even if one provider fails.
+      // Keep pull-to-refresh stable even if one provider fails or times out.
     }
   }
 
@@ -98,6 +118,10 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
       child: SizedBox(
         width: double.infinity,
         child: todayAsync.when(
+          // Keep prior Today content visible while pull-to-refresh reloads;
+          // otherwise invalidate flashes the full-screen loading skeleton (blank).
+          skipLoadingOnReload: true,
+          skipLoadingOnRefresh: true,
           loading: _TodayLoadingView.new,
           error: (_, __) => _MergedTodayScrollView(
             onRefresh: _refresh,
@@ -117,7 +141,10 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                   setState(() => _selectedDate = _startOfDay(day)),
               expanded: _expanded,
               onToggleExpand: _toggleExpand,
+              onOpenMedsPanel: _openMedsPanel,
+              onOpenLogPanel: _openLogPanel,
               syncTick: _syncTick,
+              onWearablesSynced: _onWearablesSynced,
               showWearablesNudge:
                   TodayData.empty.showWearablesNudge && !_wearablesNudgeDismissed,
               onDismissWearablesNudge: () =>
@@ -153,7 +180,10 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
                     setState(() => _selectedDate = _startOfDay(day)),
                 expanded: _expanded,
                 onToggleExpand: _toggleExpand,
+                onOpenMedsPanel: _openMedsPanel,
+                onOpenLogPanel: _openLogPanel,
                 syncTick: _syncTick,
+                onWearablesSynced: _onWearablesSynced,
                 showWearablesNudge:
                     data.showWearablesNudge && !_wearablesNudgeDismissed,
                 onDismissWearablesNudge: () =>
@@ -184,6 +214,7 @@ class _MergedTodayScrollView extends StatelessWidget {
       onRefresh: onRefresh,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: EdgeInsets.only(
           top: tokens.spacing.x2,
           bottom: tokens.spacing.xl,
@@ -208,7 +239,10 @@ class _MergedTodayBody extends StatelessWidget {
     required this.onDateChanged,
     required this.expanded,
     required this.onToggleExpand,
+    required this.onOpenMedsPanel,
+    required this.onOpenLogPanel,
     required this.syncTick,
+    required this.onWearablesSynced,
     required this.showWearablesNudge,
     required this.onDismissWearablesNudge,
   });
@@ -225,7 +259,10 @@ class _MergedTodayBody extends StatelessWidget {
   final ValueChanged<DateTime> onDateChanged;
   final TodayExpandPanel? expanded;
   final ValueChanged<TodayExpandPanel> onToggleExpand;
+  final VoidCallback onOpenMedsPanel;
+  final VoidCallback onOpenLogPanel;
   final int syncTick;
+  final VoidCallback onWearablesSynced;
   final bool showWearablesNudge;
   final VoidCallback onDismissWearablesNudge;
 
@@ -243,6 +280,10 @@ class _MergedTodayBody extends StatelessWidget {
           _TodayLoadErrorBanner(message: data.loadError!),
           SizedBox(height: tokens.spacing.lg),
         ],
+        if (isToday)
+          MissedDoseCatchupBanner(
+            onExpandMeds: onOpenMedsPanel,
+          ),
         if (showEmptyWelcome && isToday) ...[
           _TodayEmptyWelcome(
             onStart: () => context.go(AppRoutes.journalNew),
@@ -304,6 +345,13 @@ class _MergedTodayBody extends StatelessWidget {
           SizedBox(height: tokens.spacing.x2),
           TodayMayaCard(narrative: narrative),
         ],
+        if (isToday && data.announcement != null) ...[
+          SizedBox(height: tokens.spacing.lg),
+          _AnnouncementBanner(
+            announcement: data.announcement!,
+            onTap: onOpenLogPanel,
+          ),
+        ],
         SizedBox(height: tokens.spacing.xl),
         TodayIconActionRow(
           expanded: expanded,
@@ -350,6 +398,7 @@ class _MergedTodayBody extends StatelessWidget {
                   SyncStatusBar(
                     variant: SyncStatusVariant.compact,
                     refreshSignal: syncTick,
+                    onSynced: onWearablesSynced,
                   ),
                 ],
               ),
@@ -360,6 +409,7 @@ class _MergedTodayBody extends StatelessWidget {
               onClose: () => onToggleExpand(TodayExpandPanel.log),
               child: TodayLogExpandBody(
                 showSeizure: showsSeizureFeatures(data.conditions),
+                selectedDate: selectedDate,
                 onJournal: () => context.go(AppRoutes.journalNew),
                 onSeizure: () => context.go(AppRoutes.seizuresNew),
               ),
@@ -713,4 +763,79 @@ class _WearablesNudgeCard extends StatelessWidget {
   }
 }
 
-/// Team announcement card (`todayPage.fromTeam`).
+/// Preview `apple-banner`: team announcement opens Quick log expander.
+class _AnnouncementBanner extends StatelessWidget {
+  const _AnnouncementBanner({
+    required this.announcement,
+    required this.onTap,
+  });
+
+  final TodayAnnouncement announcement;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = PurpleTokens.loaded;
+    final colors = tokens.colorsFor('dark');
+    final purple = parseTokenColor(colors.purplePrimary);
+    final subject = announcement.subject.trim();
+    final body = announcement.body.trim();
+    final copy = body.isEmpty
+        ? subject
+        : (subject.isEmpty ? body : '$subject. $body');
+
+    return Material(
+      color: parseTokenColor(colors.backgroundSecondary),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: parseTokenColor(colors.divider)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: purple.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  'New',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: purple,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  copy,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        height: 1.35,
+                      ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: Colors.white.withValues(alpha: 0.45),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

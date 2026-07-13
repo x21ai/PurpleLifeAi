@@ -9,6 +9,13 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-13 TF28 compile restore: PASS (analyze + tests green).**
+Parallel-agent collisions fixed. Expand bodies deduped; MissedDoseCatchup /
+wearables / GlassMaterialVariant / healthConnect / refill chip wired.
+Evidence: `flutter analyze lib/features/today lib/features/meds` **No issues**;
+`flutter test` **243/243**. OPEN-ISSUES: `meds-pill-stock-trigger-mg-as-pills`.
+**Compile gate green for TF28 ship agent.**
+
 **2026-07-13 Flutter More / expand panels vs Merged preview: FIXED (partial).**
 Expand panels broken by nested Meds GlassCard, Wearables SyncStatusBar assert
 before Supabase init, missing announcement wiring. Hydration left to sibling.
