@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../design/tokens.dart';
+import '../hydration/today_hydration_panel.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/score_tile.dart';
 import 'models/score_snapshot.dart';
@@ -178,9 +179,12 @@ class TodayYourSignals extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         item.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11,
                           color: muted,
@@ -188,12 +192,26 @@ class TodayYourSignals extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        item.value,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                      // Same overflow pattern as ScoreTile: units like
+                      // "+0.3°", "58 bpm", "12,345" must stay one line in
+                      // the half-width grid (Temp Δ / Resp especially).
+                      SizedBox(
+                        width: double.infinity,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            item.value,
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              height: 1,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -422,7 +440,7 @@ class TodayLastSevenDaysCard extends StatelessWidget {
   }
 }
 
-/// Compact hydration / wearables / log panel bodies for expanders.
+/// Compact hydration expand body (delegates to hydration feature panel).
 class TodayHydrationExpandBody extends StatelessWidget {
   const TodayHydrationExpandBody({super.key, required this.onOpen});
 
@@ -430,27 +448,11 @@ class TodayHydrationExpandBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Track fluids from Today. Day view has weekly bars and quick adds.',
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.white.withValues(alpha: 0.65),
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 12),
-        FilledButton(
-          onPressed: onOpen,
-          child: const Text('Open hydration'),
-        ),
-      ],
-    );
+    return TodayHydrationPanel(onOpenDayView: onOpen);
   }
 }
 
+/// Wearables expander body (connection management stays on Tools).
 class TodayWearablesExpandBody extends StatelessWidget {
   const TodayWearablesExpandBody({
     super.key,
@@ -477,50 +479,6 @@ class TodayWearablesExpandBody extends StatelessWidget {
           onPressed: onOpenTools,
           child: const Text('Open Tools'),
         ),
-      ],
-    );
-  }
-}
-
-class TodayLogExpandBody extends StatelessWidget {
-  const TodayLogExpandBody({
-    super.key,
-    required this.showSeizure,
-    required this.onJournal,
-    required this.onSeizure,
-  });
-
-  final bool showSeizure;
-  final VoidCallback onJournal;
-  final VoidCallback onSeizure;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          showSeizure
-              ? 'Capture aura or seizure details, or open Journal for a full entry.'
-              : 'Journal symptoms, mood, and notes without leaving the Today flow.',
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.white.withValues(alpha: 0.65),
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 12),
-        FilledButton(
-          onPressed: onJournal,
-          child: const Text('New journal entry'),
-        ),
-        if (showSeizure) ...[
-          const SizedBox(height: 8),
-          OutlinedButton(
-            onPressed: onSeizure,
-            child: const Text('Log seizure / aura'),
-          ),
-        ],
       ],
     );
   }

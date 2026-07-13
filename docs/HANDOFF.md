@@ -9,14 +9,93 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-**2026-07-12 P0 password sign-in fix (TF27 pending upload).**
-Branch **`fix/auth-password-signin-tf27`** / Flutter **`1.0.0+27`**. Root cause: after
-email/password sign-in, `authGateStatusProvider` treated stale `authSessionProvider`
-`AsyncData(null)` as signed-out while `AuthRepository.currentSession` was already set,
-so `AuthGate` blanked `/today`. Also restored `FilledButton` Sign in CTA (TF26 InkWell
-regression risk). Live API password grant **PASS** (E2E user). Auth tests **21/21**.
-**TF26 (`1.0.0+26`) still broken for this race until TF27 uploads.** Next: merge/push +
-`bun run ios:testflight` for build 27.
+**2026-07-13 Flutter Today hydration quick-add restored (uncommitted).**
+Today icon-row Hydration expand was a stub ("Open hydration" only). Restored
+web-parity `QuickAddWater` (250 / 500 / custom Water / Electrolytes + goal bar)
+via `TodayHydrationPanel`; day view reuses same widget; electrolyte presets
+aligned with web. Live signed-in users can log water (`hydration_intake` RLS).
+Tests: `flutter test test/hydration_risk_test.dart` **11/11**. Status: **fixed**.
+Still not ported: Snap/Voice intake, aura on Today, week/month range.
+
+**2026-07-12 Care meds scopes audit (caregiver Taken/refill).**
+Flutter caregiver Meds: **read-only**, scope-checked via `POST /api/care/meds`
+(`meds:read`); no raw owner `user_id` Taken/refill path. Own-user Taken uses auth
+uid + RLS. Fixed Worker `assertScopeForUser` **403 → 404** (`Not found`) in
+`src/lib/care.server.ts`. Gap: no Flutter/Worker `caregiverMarkDose` yet; refill
+is owner-only. Web `caregiverMarkDose` already rejects cross-owner dose ids.
+
+**2026-07-13 Score tiles: Sleep/Activity stay one line (fonts slice).**
+`ScoreTile` active/inactive numerals **40/32** (was 56/36) with
+`FittedBox` + `maxLines: 1` + `softWrap: false` + ellipsis so two-digit
+scores do not wrap digit-per-line in the three-up row. Same pattern on
+`TodayYourSignals` values. Tests: `flutter/test/score_tile_test.dart` **PASS**.
+Files: `flutter/lib/features/shared/score_tile.dart`,
+`flutter/lib/features/today/today_merged_layout.dart`.
+
+**2026-07-13 Plan + Ask Maya audit: P0 protocol stuck-loading fixed.**
+`dailyInsightCardsProvider` now times out at 20s and returns `error: timeout|unavailable`
+(honest Protocol empty copy). Ask Maya greeting em dash removed. P2 logged:
+`plan-recommended-loading-flash`, `ask-maya-load-error-polish`. Analyze clean on
+changed files. Uncommitted (shared tree).
+
+**2026-07-13 Today date strip sizing polish (TODAY chip).**
+Selected day tiles no longer shrink to 54x70; uniform **56x72** matching web.
+`flutter/lib/features/today/date_strip.dart` + `flutter/test/date_strip_sizing_test.dart`
+**PASS**. Score tiles untouched.
+
+**2026-07-13 P0 Today's reading body font shrunk (narrative slice).**
+`TodayMayaCard` narrative body: `PurpleType.bodySerif` **17sp → 15sp** via
+`copyWith(fontSize: 15)`; title "Today's reading" unchanged. File:
+`flutter/lib/features/today/today_merged_widgets.dart`. Score tiles / meds untouched.
+
+**2026-07-13 TF28 owner merge plan (supervisor, no force-push).**
+Land queue for TF28 owner (serial ff-only into `main`, L0 after each):
+1. **fonts** (design/type tokens, score tiles typography)
+2. **keyboard** (dismiss / focus scopes on capture screens)
+3. **narrative** (Today Maya / narrative font + single block) — body size landed
+4. **Taken** (meds dose actions / tappable Taken)
+5. **refill** (pills remaining restock UI; branch WIP `feat/meds-refill-restore`)
+Then bump `1.0.0+28`, full `flutter analyze` + `flutter test`, ASC/Luciq triage, upload.
+**Do not force-push.** Sibling agents currently share one dirty checkout; wait for per-slice commits before integrating.
+
+**2026-07-13 TF27 AuthGate + sync fail-open re-verify: still green.**
+`main` @ **`cde62548`** / Flutter **`1.0.0+27`**. `authGateStatusProvider` still
+falls back to `AuthRepository.currentSession` on stream lag; `SyncService.syncAll`
+still catchError → `SyncResult.skipped()`. Auth/sync tests **39/39**. Uncommitted
+forgot-password copy only (no AuthGate/sync drift). Pubspec not bumped.
+
+**2026-07-13 TF28 pre-upload observability baseline (no upload).**
+ASC latest **1.0 (27) VALID** id `08dec37b-b4c1-4c50-ae4a-ded7a5a9eda2`
+internal+external **IN_BETA_TESTING** (uploaded 2026-07-12T16:17:07-07:00).
+Also live: 26, 25, 24, 23. ASC beta feedback: **27** screenshot submissions;
+**0** new since TF27 upload; newest is 2026-07-08 (`samuel.cortez`: stuck screen,
+share/menus lag). Logged `tf28-pre-baseline-stuck-screen` (P0 candidate) +
+`tf28-pre-baseline-share-menus-lag` (P1/P2). Luciq: `sdkTokenConfigured` true,
+`status: mcp` (REST 401 expected); crash list needs Luciq MCP in parent session.
+**Do not claim TF28 ready until stuck-screen cleared on TF27 or deferred with owner.**
+
+**2026-07-12 Post-TF27 auth re-check: old password / forgot-password ≠ AuthGate race.**
+Live API password grant **PASS** (E2E); recover API **PASS**; email pump healthy.
+Root causes for remaining block: (1) migration `import-auth.mjs` never preserved
+Lovable `encrypted_password` (pre-cutover passwords invalid forever); (2)
+`@eigital.com` quarantine of `notify.purplelife.org` recovery mail (sent in
+`email_send_log`, inbox empty) — `pmt@eigital.com` `recovery_sent_at` today.
+TF27 only fixes blank `/today` after a **successful** grant. Ops: Admin temp
+password out-of-band. Flutter forgot-password success copy mentions quarantine
+(uncommitted). Issue: `auth-old-password-and-forgot-post-tf27`.
+
+**2026-07-12 TF27 VALID — password sign-in fix live for Founding Team.**
+`main` @ **`cde62548`** / Flutter **`1.0.0+27`**. Merged `fix/auth-password-signin-tf27`:
+AuthGate falls back to `AuthRepository.currentSession` when session stream lags after
+`signInWithPassword`; restored `FilledButton` Sign in CTA. Upload **succeeded** (Xcode-beta).
+ASC **1.0 (27) VALID** id `08dec37b-b4c1-4c50-ae4a-ded7a5a9eda2`;
+`asc-add-build-to-group.mjs 27 "Founding Team"` → internal **IN_BETA_TESTING**,
+external beta review **WAITING_FOR_REVIEW**. **Testers: install 27; skip 26 for password sign-in.**
+
+**2026-07-12 P0 password sign-in fix (merged to main).**
+Root cause: `authGateStatusProvider` treated stale `authSessionProvider` `AsyncData(null)` as
+signed-out while repo session was set → blank `/today`. Live API password grant **PASS**.
+Auth tests **21/21**.
 
 **2026-07-12 TF26 VALID — Founding Team live.**
 `main` @ **`64e72520`** / Flutter **`1.0.0+26`**. Upload via
@@ -516,6 +595,104 @@ the external group, submitted it for Beta App Review — **cleared within ~2 min
 ---
 
 ## Log
+
+### 2026-07-13T01:15:00Z — Care meds scopes audit (caregiver Taken/refill)
+
+- **Requested** — Audit care scopes for meds Taken/refill for caregivers; cross-user must 404 not 403; fix Flutter if raw `user_id` wrongly.
+- **Done** — Flutter caregiver Meds is read-only via `/api/care/meds` (no Taken/refill UI, no owner `user_id` write). Own-user `MedsRepository.markDoseTaken` uses auth session uid + RLS only. Fixed `assertScopeForUser` in `src/lib/care.server.ts` from 403 Missing-scope to **404 Not found**. Documented remaining `caregiverMarkDose` Worker gap in `docs/OPEN-ISSUES.md`.
+- **Issues** — Flutter caregiver Taken still needs Worker `POST` fronting `caregiverMarkDose` + UI gated on `meds:write`. Refill is owner-only by design (`meds:write` = mark doses, not restock).
+- **Stand / next** — Optional: add `/api/care/mark-dose` + Flutter Taken for caregivers with `meds:write`.
+- **Who / where** — care-scopes audit agent, local shared tree, uncommitted `care.server.ts` + docs.
+- **Evidence** — `care_repository.dart` `loadOwnerMeds`, `care_dashboard_screen.dart` `_MedsTab`, `care.functions.ts` `caregiverMarkDose`, `care.server.ts` `assertScopeForUser`.
+- **Timestamp** — 2026-07-13T01:15:00Z
+
+### 2026-07-13T01:12:00Z — Plan + Ask Maya load/empty/error audit
+
+- **Requested** — Audit Flutter Plan + Ask Maya tabs (load, empty, errors); fix P0 crash/blank; document P2 in OPEN-ISSUES; return status.
+- **Done** — P0: `dailyInsightCardsProvider` 20s timeout + `error: timeout|unavailable` on failure (`flutter/lib/features/insights/ai_insights_repository.dart`) so Plan Protocol cannot spin forever and empty copy is honest. Ask Maya greeting em dash → comma (`ask_maya_screen.dart`). OPEN-ISSUES: resolved `plan-protocol-stuck-loading`; logged P2 `plan-recommended-loading-flash`, `ask-maya-load-error-polish`.
+- **Issues** — Recommended still flashes false empty while today/hub load; Ask Maya has no loading/error/refresh chrome (fail-open by design). Chat from Ask Maya already has empty/error/limit handling; not blank.
+- **Stand / next** — Include provider timeout in next TF28 land; optional P2 polish later.
+- **Who / where** — Cursor Plan/Maya audit subagent, local shared tree @ `cde62548` + uncommitted.
+- **Evidence** — `flutter analyze` on plan/ask_maya/ai_insights paths: No issues found.
+- **Timestamp** — 2026-07-13T01:12:00Z
+
+### 2026-07-13T01:13:43Z — Today date strip (TODAY chip) sizing polish
+
+- **Requested** — Audit Today date strip (TODAY 12) sizing; minor polish if broken; avoid score tiles; return status.
+- **Done** — Bug: selected `_DayTile` used inner `54x70` while unselected used `56x72`, so active TODAY chip looked smaller and risked clipping. Fixed `flutter/lib/features/today/date_strip.dart` to keep uniform **56x72**, ring overlays without shrink; TODAY eyebrow `FittedBox` + slightly tighter letterSpacing. Added `flutter/test/date_strip_sizing_test.dart` (**PASS**). Score tiles not touched.
+- **Issues** — Uncommitted on shared dirty worktree (`feat/meds-refill-restore`); parent owns commit/merge for TF28.
+- **Stand / next** — Include date-strip file in TF28 polish land if desired; no further date-strip work needed.
+- **Who / where** — Cursor date-strip audit subagent, local, `feat/meds-refill-restore` @ `cde62548` + uncommitted.
+- **Evidence** — `flutter test test/date_strip_sizing_test.dart` PASS.
+- **Timestamp** — 2026-07-13T01:13:43Z
+
+### 2026-07-13T01:10:00Z — P0 Today's reading narrative body font
+
+- **Requested** — Shrink "Today's reading" AI narrative body on Flutter Today to ~15–16sp; keep title; avoid score tiles / meds; commit.
+- **Done** — `TodayMayaCard` in `flutter/lib/features/today/today_merged_widgets.dart`: body `PurpleType.bodySerif` (token **17sp**, height 1.5) → `.copyWith(fontSize: 15)`; title style unchanged (`fontSize: 10`, purple eyebrow).
+- **Issues** — Shared dirty worktree; commit scoped to narrative file (+ this handoff). Global `bodySerif` token still 17 elsewhere.
+- **Stand / next** — TF28 owner merges narrative slice; continue fonts/keyboard/Taken/refill queue.
+- **Who / where** — Cursor narrative typography subagent, `feat/meds-refill-restore`.
+- **Evidence** — `dart analyze lib/features/today/today_merged_widgets.dart` clean.
+- **Timestamp** — 2026-07-13T01:10:00Z
+
+### 2026-07-13T01:08:00Z — TF27 AuthGate session fallback + sync fail-open re-verify
+
+- **Requested** — Re-verify TF27 AuthGate session fallback + sync fail-open still intact on `main`; run auth-related Flutter tests; fix regressions from uncommitted work; do not bump pubspec.
+- **Done** — Code review: `auth_state.dart` `session ?? restoredSession` + loading-path repo fallback intact vs HEAD `cde62548`; `sync_service.dart` fail-open `catchError` → `SyncResult.skipped()` intact. Uncommitted Flutter diff is forgot-password success copy only (`sign_in_screen.dart`). Tests **39/39** green (auth_gate, auth_session_*, auth_redirect, auth_recovery, providers_error_fallback, sync_if_stale). No code fix required. Pubspec remains `1.0.0+27`.
+- **Issues** — None for AuthGate/sync. Uncommitted quarantine copy still local.
+- **Stand / next** — TF28 owner owns pubspec bump / upload when ready.
+- **Who / where** — Cursor auth re-verify subagent, local, `main` @ `cde62548`.
+- **Evidence** — `flutter test` auth/sync suite exit 0, `+39: All tests passed!` (~01:08Z); `git diff HEAD -- flutter/lib/core/auth/auth_state.dart flutter/lib/core/offline/sync_service.dart` empty.
+- **Timestamp** — 2026-07-13T01:08:00Z
+
+### 2026-07-13 — TF28 supervisor merge order (no force-push)
+- **Requested:** List branches/dirty files; watch sibling commits; prepare merge order for TF28 owner: fonts, keyboard, narrative, Taken, refill first. No force-push.
+- **Done:** Snapshot at `feat/meds-refill-restore` @ `cde62548` (= `main`/`origin/main`). No sibling commits yet (HEAD still TF27). Dirty WIP (shared tree): auth/sign-in + score_tile + today_merged_* + docs/OPEN-ISSUES TF28 baseline + untracked hydration stubs. Active branch `feat/meds-refill-restore` (0 commits ahead of main). Land order: fonts → keyboard → narrative → Taken → refill → pubspec +28 → gates → upload.
+- **Issues:** Single worktree collision (multiple agents editing same dirty files). `tf28-pre-baseline-stuck-screen` still open. No force-push.
+- **Stand / next:** Writers land one slice commit each; TF28 owner merges serial ff-only to `main` in order above.
+- **Who / where:** supervisor subagent, purpledrw, branch `feat/meds-refill-restore`@`cde62548`.
+- **Timestamp:** 2026-07-13T01:09:00Z
+
+
+### TF28 pre-upload ASC/Luciq baseline (no upload)
+
+- **Requested:** Run `ios:check-asc-builds`, `ios:check-tf-feedback`, `ios:check-luciq` via Doppler `purple-life`/`prd`; document baseline before TF28; do not upload; update OPEN-ISSUES if new P0.
+- **Done:** All three commands exit 0. ASC **1.0 (27)** VALID IN_BETA_TESTING. Feedback count **27** (no post-TF27 submissions). OPEN-ISSUES: `tf28-pre-baseline-stuck-screen`, `tf28-pre-baseline-share-menus-lag`. Luciq cred check `status: mcp`.
+- **Issues:** Luciq crash enumeration not available in this session (MCP-only). Jul 8 stuck-screen remains P0 candidate pending TF27 device QA.
+- **Stand / next:** Device-verify TF27 for stuck screen; then TF28 upload when ready.
+- **Who / where:** Cursor agent (command specialist), purpledrw checkout.
+- **Evidence:** `doppler run --project purple-life --config prd -- bun run ios:check-asc-builds|ios:check-tf-feedback|ios:check-luciq -- --json` 2026-07-12 ~21:05 ET.
+- **Timestamp:** 2026-07-13T01:05:00Z
+
+
+### 2026-07-12T23:50:00Z — Post-TF27 old-password / forgot-password investigation
+
+- **Requested** — User still cannot login with old password; forgot password does not work after TF27 AuthGate fix.
+- **Done** — Live checks: password grant E2E **200** on `auth.purplelife.org` and `.supabase.co`; wrong password **400**; recover native redirect **200**; redirect allow list includes `org.purplelife.app://reset-password`; email cron active, queue depth 0; recovery emails **sent** (incl. `pmt@eigital.com` today). Auth.users: 21 with password / 4 OAuth-only without. Confirmed `import-auth.mjs` creates users without password hashes. Added forgot-password success copy for spam/quarantine. Opened `auth-old-password-and-forgot-post-tf27` in `docs/OPEN-ISSUES.md`; refreshed `CURSOR_HANDOFF.md`.
+- **Issues** — No AuthGate/code regression found for wrong-password case. Remaining blockers are ops: pre-migration passwords invalid; `@eigital.com` quarantine. Native deep-link E2E still pending (`auth-reset-native-tf21`). Uncommitted: `sign_in_screen.dart` copy + docs.
+- **Stand / next** — Ops rotate Admin temp password for blocked user and deliver out-of-band; user installs TF27+ and changes password in Account. No TF28 required for this failure mode unless shipping the copy tweak.
+- **Who / where** — Cursor auth-investigation subagent, local, `main` @ `cde62548` + uncommitted docs/copy.
+- **Evidence** — Live grant/recover HTTP codes above; Management API auth.users aggregates; `email_send_log` recovery rows; Flutter auth file review.
+- **Timestamp** — 2026-07-12T23:50:00Z.
+
+### 2026-07-12T23:50:00Z — pmt@eigital.com temp password rotated (post-TF27 unblock)
+
+- **Requested** — User still cannot sign in with old password; forgot password does not work.
+- **Done** — Investigation ([Investigate password login P0](3477640c-7153-4af1-afa7-2ea623cee25d)): TF27 AuthGate fix is separate; old Lovable passwords were never migrated; `@eigital.com` quarantines recovery mail despite hook success. Rotated temp password for `pmt@eigital.com` via Admin API; live password grant **200**. Credential stored in Doppler `purple-life`/`prd` as `PURPLE_OPERATOR_TEMP_PASSWORD` (not in repo/chat).
+- **Issues** — Forgot-password loop will continue for corporate inbox until IT allowlists `notify.purplelife.org` or user adds a personal email.
+- **Stand / next** — User retrieves temp password from Doppler, signs in on **TF27+**, changes password in Account; stop using forgot-password on `@eigital.com`.
+- **Who / where** — Cursor agent (parent follow-up), local, `main`.
+- **Timestamp** — 2026-07-12T23:50:00Z.
+
+### 2026-07-12T23:20:00Z — TF27 upload VALID + Founding Team (password sign-in fix)
+
+- **Requested** — Follow-up from P0 password sign-in fix: merge to `main`, ship TF27.
+- **Done** — Fast-forward merged `fix/auth-password-signin-tf27` → `main` @ `cde62548` (`1.0.0+27`); pushed `origin/main`. `doppler run --project purple-life --config prd -- bun run ios:testflight` **Upload succeeded**. ASC **1.0 (27) VALID** `08dec37b-b4c1-4c50-ae4a-ded7a5a9eda2`; `asc-add-build-to-group.mjs 27 "Founding Team"` → internal **IN_BETA_TESTING**, beta review **WAITING_FOR_REVIEW**.
+- **Issues** — External group was `READY_FOR_BETA_SUBMISSION` until assign; Luciq MCP crash triage for build 27 not run this session. `lovable/redesign` still diverged from `main`.
+- **Stand / next** — Testers install **1.0 (27)** for password sign-in; Luciq/ASC triage when build 27 feedback arrives.
+- **Who / where** — Cursor agent (parent follow-up), local, `main` @ `cde62548`.
+- **Timestamp** — 2026-07-12T23:20:00Z.
 
 ### 2026-07-12T23:06:47Z — P0 email/password sign-in blank Today (TF27)
 

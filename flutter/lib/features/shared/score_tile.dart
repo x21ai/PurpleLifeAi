@@ -7,6 +7,9 @@ import 'glass_helpers.dart';
 /// (`src/components/ui-oura/v2/score-tile.tsx`). The active tile renders as a
 /// glass card with a primary ring and a larger numeral; inactive tiles are
 /// dimmed. A null value renders as an en dash, never a fake number.
+///
+/// Numerals use [FittedBox] + `maxLines: 1` so two-digit scores stay on one
+/// line inside the narrow three-up column (TF27 regression: 56px digits wrapped).
 class ScoreTile extends StatelessWidget {
   const ScoreTile({
     super.key,
@@ -25,26 +28,40 @@ class ScoreTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = PurpleTokens.loaded;
     final minTarget = tokens.touch.minTarget;
-    // Web: active 56px (72 on sm), inactive 36px (44 on sm). Mobile scale.
-    final numberSize = active ? 56.0 : 36.0;
+    // Sized for ~1/3 phone width; FittedBox scales down further if needed.
+    final numberSize = active ? 40.0 : 32.0;
     final display = value?.round().toString() ?? '–';
 
     Widget content = Column(
       mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          display,
-          style: TextStyle(
-            fontSize: numberSize,
-            fontWeight: FontWeight.w300,
-            height: tokens.typography.lineHeight('numericDisplay'),
-            letterSpacing: tokens.typography.letterSpacing('numericDisplay'),
-            color: Colors.white.withValues(alpha: 0.96),
+        SizedBox(
+          width: double.infinity,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              display,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: numberSize,
+                fontWeight: FontWeight.w300,
+                height: 1,
+                letterSpacing: tokens.typography.letterSpacing('numericDisplay'),
+                color: Colors.white.withValues(alpha: 0.96),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 8),
         Text(
           label.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: tokens.typography.labelSize('labelEyebrow'),
             letterSpacing: tokens.typography.letterSpacing('labelEyebrow'),

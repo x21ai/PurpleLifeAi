@@ -1,8 +1,30 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-12 ~19:07 ET (P0 password sign-in fix → TF27).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-13 ~21:15 ET (Today hydration quick-add).
 
-**Do not treat TF26 as password-signin ready.** Install **TF27** when uploaded (`1.0.0+27`, branch `fix/auth-password-signin-tf27`). TF26 blanked `/today` after email/password sign-in (auth gate stream lag).
+**Recent (2026-07-13): Flutter Today hydration quick-add fixed (uncommitted).**
+Today Hydration expand had no log chips (web has `QuickAddWater`). Restored shared
+`QuickAddWater` + goal bar on Today expand and `/hydration` day view. Verify:
+`cd flutter && flutter test test/hydration_risk_test.dart` (**11/11**). Status: **fixed**.
+
+**Recent (2026-07-12 ~21:15 ET): Today score tiles one-line fix (TF28 fonts slice).**
+`ScoreTile` 40/32sp + FittedBox so Sleep/Activity no longer wrap digit-per-line.
+Verify: `cd flutter && flutter test test/score_tile_test.dart`.
+
+**Install TF27 for password sign-in.** TF26 blanked `/today` after email/password sign-in (auth gate stream lag). TF27 (`1.0.0+27`, `main` @ `cde62548`) fixes AuthGate session fallback + restores `FilledButton` CTA.
+
+**TF28 pre-upload baseline (2026-07-12 ~21:05 ET, no upload):** ASC **1.0 (27)** VALID
+IN_BETA_TESTING. Feedback **27** screenshots; **0** new after TF27. P0 candidate:
+`tf28-pre-baseline-stuck-screen` (ASC 2026-07-08 samuel.cortez). Luciq SDK ok,
+`status: mcp`. Doppler: `purple-life`/`prd` + `ios:check-asc-builds` /
+`ios:check-tf-feedback` / `ios:check-luciq -- --json`.
+
+
+**Post-TF27 (2026-07-12 ~19:50 ET): "old password" / forgot-password still blocked for some users is NOT the AuthGate race.** Live grant+recover APIs healthy. Remaining causes: migration without password hashes (old Lovable passwords never work) + `@eigital.com` quarantine of recovery mail. Ops: Admin API temp password out-of-band. See `docs/OPEN-ISSUES.md` `auth-old-password-and-forgot-post-tf27`.
+
+**Eigital quarantine password path:** forgot-password email will not land in `@eigital.com` inbox. Ops sets Admin API temp password → user signs in → **Account → Change password** (`auth.updateUser`). Do not rely on recovery email for those accounts.
+
+**Recent (2026-07-12 ~21:15 ET): Burger Care invites P0.** `/care` now shows `IncomingCareInvitesCard` (Worker incoming-invites). Sign out / theme / Account password change OK in audit. Today invites card still P1 (`flutter-today-incoming-care-invites`).
 
 ## TestFlight — what build has what (2026-07-12)
 
@@ -10,13 +32,12 @@ Operational state of the PurpleLife project for the next agent or engineer. Last
 |-------|------------|---------------|------------|-------|----------|
 | **1.0 (22–24)** | VALID | IN_BETA_TESTING | older | — | Skip |
 | **1.0 (25)** | VALID | IN_BETA_TESTING | `4f1eed2c` | TF25 fleet | Superseded |
-| **1.0 (26)** | **VALID** | **IN_BETA_TESTING** | `3e405e51` / tip `64e72520` | newdesign sign-in + Merged Today; **password sign-in blank Today bug** | Hold / skip if login fails |
-| **1.0 (27)** | pending | pending | `fix/auth-password-signin-tf27` | AuthGate session fallback + FilledButton CTA | **Upload next** |
+| **1.0 (26)** | VALID | IN_BETA_TESTING | `3e405e51` / `64e72520` | newdesign sign-in + Merged Today; **password sign-in blank Today bug** | Skip for password login |
+| **1.0 (27)** | **VALID** | **IN_BETA_TESTING** | `cde62548` | AuthGate session fallback + FilledButton CTA | **Install** |
 
-**Recent (2026-07-12 ~19:07 ET): P0 password sign-in fix.**
-`authGateStatusProvider` now uses repo `currentSession` when stream is still null after
-`signInWithPassword`; Sign in CTA restored to `FilledButton` over gradient; pubspec **+27**.
-Auth tests 21/21. **Next:** merge to `main`, `bun run ios:testflight`, Founding Team.
+**Recent (2026-07-12 ~19:20 ET): TF27 VALID — password sign-in fix shipped.**
+Merged `fix/auth-password-signin-tf27` → `main` @ `cde62548`. Upload succeeded; ASC **1.0 (27) VALID**
+`08dec37b-b4c1-4c50-ae4a-ded7a5a9eda2`. Founding Team assigned; beta review **WAITING_FOR_REVIEW**.
 
 **TF26 close-out (2026-07-12 ~18:57 ET):** Upload **succeeded** (Xcode-beta). ASC **1.0 (26) VALID** `1b2bb8ab-…`. `asc-add-build-to-group.mjs 26 "Founding Team"` done; external beta review **WAITING_FOR_REVIEW**. Luciq SDK token present; MCP crash query not available in this session (status `mcp`).
 
