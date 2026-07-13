@@ -9,6 +9,15 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-13 TF28 ship in progress (`1.0.0+28`).**
+Compile gate green (restorer): today+meds analyze clean; `flutter test`
+**243/243**. Product WIP landed on `feat/meds-refill-restore` → `main`:
+score FittedBox, narrative 15sp, keyboard dismiss, Taken/`readActiveSession`,
+refill `pills_remaining`, hydration quick-add, journal save, missed-dose
+catch-up, wearables visit sync, past-dose, med dict search, Health Connect
+source. DB pill-stock mg trigger untouched (`meds-pill-stock-trigger-mg-as-pills`).
+Next: `ios:testflight` → ASC VALID → Founding Team group 28.
+
 **2026-07-13 TF28 compile restore: PASS (analyze + tests green).**
 Parallel-agent collisions fixed. Expand bodies deduped; MissedDoseCatchup /
 wearables / GlassMaterialVariant / healthConnect / refill chip wired.
@@ -68,6 +77,20 @@ user sets pills > 0 via any of those paths. Branch `feat/meds-refill-restore`.
 Evidence: `flutter test test/meds_refill_test.dart test/meds_refill_stock_test.dart`.
 
 ## Log
+
+### 2026-07-13T01:54:00Z — TF28 ship: commit product WIP + bump 1.0.0+28
+- **Requested:** Compile gate green; commit remaining WIP; bump `1.0.0+28`;
+  merge to main; push; `ios:testflight`; Founding Team group 28.
+- **Done:** Staged product WIP (Taken/session, refill, hydration, journal,
+  catch-up, wearables visit sync, past-dose, med dict, Health Connect,
+  onboarding gate, care scopes, tests) + `flutter/pubspec.yaml` **1.0.0+28**.
+  HANDOFF/CURSOR_HANDOFF ship-in-progress. Upload next.
+- **Issues:** Pill-stock DB trigger mg-as-pills deferred (refill UI only).
+- **Stand / next:** Merge `feat/meds-refill-restore` → `main`, push,
+  `doppler run --project purple-life --config prd -- bun run ios:testflight`.
+- **Who / where:** TF28 ship agent; `feat/meds-refill-restore`.
+- **Evidence:** Restorer: analyze today+meds clean; `flutter test` **243/243**.
+- **Timestamp:** 2026-07-13T01:54:00Z
 
 ### 2026-07-13T01:50:00Z — TF28 compile restore (containment)
 - **Requested:** Fix Flutter analyze/test compile errors from parallel agents;

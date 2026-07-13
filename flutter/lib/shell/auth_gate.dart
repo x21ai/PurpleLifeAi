@@ -1,10 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/auth/auth_state.dart' as core_auth;
+import '../core/auth/onboarding_gate.dart';
 import '../core/providers/core_providers.dart';
 import '../features/health/native_health_startup.dart';
 import 'routes.dart';
@@ -51,8 +50,10 @@ Future<String?> authRedirect(Ref ref, GoRouterState state) async {
     return null;
   }
 
-  final isOnline = ref.read(connectivityServiceProvider).isOnline;
-  final isOnboarded = await _isOnboarded(ref, userId, isOnline: isOnline);
+  final isOnboarded = await resolveOnboarded(
+    client: ref.read(supabaseClientProvider),
+    userId: userId,
+  );
 
   if (isAuthenticated && isSignIn) {
     if (!isOnboarded) {
@@ -76,40 +77,6 @@ Future<String?> authRedirect(Ref ref, GoRouterState state) async {
   return null;
 }
 
-Future<bool> _isOnboarded(
-  Ref ref,
-  String userId, {
-  required bool isOnline,
-}) async {
-  try {
-    final client = ref.read(supabaseClientProvider);
-    final profile = await client
-        .from('profiles')
-        .select('id, onboarded_at, first_name')
-        .eq('id', userId)
-        .maybeSingle()
-        .timeout(const Duration(seconds: 10));
-    return _profileIsOnboarded(profile);
-  } on TimeoutException catch (error) {
-    debugPrint('[authRedirect] onboarding lookup timed out: $error');
-    if (isOnline) return true;
-    return false;
-  } catch (error, stack) {
-    debugPrint('[authRedirect] onboarding lookup failed: $error\n$stack');
-    // Do not trap returning users on welcome when profile read fails online.
-    if (isOnline) return true;
-    return false;
-  }
-}
-
-bool _profileIsOnboarded(Map<String, dynamic>? profile) {
-  if (profile == null) return false;
-  if (profile['onboarded_at'] != null) return true;
-  final firstName = profile['first_name'];
-  if (firstName is String && firstName.trim().isNotEmpty) return true;
-  return false;
-}
-
 String? _decodedFrom(GoRouterState state) {
   final from = state.uri.queryParameters['from'];
   if (from == null || from.isEmpty) return null;
@@ -118,6 +85,10 @@ String? _decodedFrom(GoRouterState state) {
 }
 
 /// Widget gate used inside [ShellRoute] for defense in depth.
+///
+/// TF27: uses [core_auth.authGateStatusProvider] which treats
+/// [AuthRepository.currentSession] as authoritative when the session stream
+/// lags after password sign-in (do not regress to blank [SizedBox.shrink]).
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key, required this.child});
 

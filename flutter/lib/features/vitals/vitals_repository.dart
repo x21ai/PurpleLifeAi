@@ -700,19 +700,23 @@ class VitalsRepository {
       String? tokenSync(Map<String, dynamic>? row) =>
           (row?['last_sync_at'] as String?) ?? (row?['updated_at'] as String?);
 
+      // Apple Health last sync is last_sync_at only (never updated_at). A token
+      // row alone (webhook secret / migration) is not a live connection.
+      final appleLastSync = appleRow?['last_sync_at'] as String?;
+
       return SyncedDataOverview.merge(
         coverage: coverage,
         tokenLastSync: {
           'oura': tokenSync(ouraRow),
           'whoop': tokenSync(whoopRow),
-          'apple_health': tokenSync(appleRow),
-          'health_connect': tokenSync(appleRow),
+          'apple_health': appleLastSync,
+          'health_connect': appleLastSync,
         },
         tokenConnected: {
           'oura': ouraRow != null,
           'whoop': whoopRow != null,
-          'apple_health': appleRow != null,
-          'health_connect': appleRow != null,
+          'apple_health': appleLastSync != null,
+          'health_connect': appleLastSync != null,
         },
         windowDays: days,
       );
@@ -855,7 +859,7 @@ class VitalsRepository {
       return (values.reduce((a, b) => a + b) / values.length).roundToDouble();
     }
 
-    return ScoreSnapshot(
+    final snapshot = ScoreSnapshot(
       readiness: latestFor('oura_readiness_score'),
       sleepScore: latestFor('sleep_score'),
       activity: latestFor('oura_activity_score'),
@@ -868,8 +872,14 @@ class VitalsRepository {
       stepsAvg30: averageStepsWithin(30),
       stepsAvg60: averageStepsWithin(60),
       latestAt: formatSupabaseDateTime(rows.first['recorded_at']),
-      hasData: rows.isNotEmpty,
+      hasData: false,
     );
+    // Match Today: only treat as hasData when at least one metric value exists.
+    // Empty biometrics rows must not hide the connect prompt or label "Latest".
+    final hasAnyMetric = buildTodayVitalItems(snapshot).isNotEmpty ||
+        snapshot.stepsAvg30 != null ||
+        snapshot.stepsAvg60 != null;
+    return snapshot.copyWith(hasData: hasAnyMetric);
   }
 
   double? _asDouble(Object? value) {

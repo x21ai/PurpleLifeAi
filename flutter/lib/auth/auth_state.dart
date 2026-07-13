@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/auth/auth_state.dart' as core_auth;
+import '../core/auth/onboarding_gate.dart';
 import '../core/providers/core_providers.dart';
 import '../features/journal/journal_repository.dart';
 import '../features/meds/meds_repository.dart';
@@ -54,6 +55,7 @@ final signOutSessionProvider = Provider<Future<void> Function()>((ref) {
     if (userId != null) {
       final sync = ref.read(syncServiceProvider);
       await sync.clearUserCache(userId);
+      await clearOnboardedCache(userId);
     }
     invalidateSessionDataProviders(ref);
     await auth.signOut();

@@ -626,6 +626,7 @@ class CareRepository {
         owners: [],
         pendingInvites: [],
         myCaregivers: [],
+        incomingInvites: [],
         loadError: 'Sign in to view care.',
       );
     }
@@ -658,16 +659,22 @@ class CareRepository {
           )
           .toList();
       final myCaregivers = await _listRelationships(ownerId: userId);
+      // Email-addressed pending invites have caregiver_id NULL until accept,
+      // so RLS client selects never return them. Load via Worker service-role
+      // route (same as care inbox / web Today card).
+      final incomingInvites = await _loadIncomingCareInvites(userId);
       return CareIndexData(
         owners: owners,
         pendingInvites: pendingInvites,
         myCaregivers: myCaregivers,
+        incomingInvites: incomingInvites,
       );
     } catch (_) {
       return const CareIndexData(
         owners: [],
         pendingInvites: [],
         myCaregivers: [],
+        incomingInvites: [],
         loadError: 'Could not load care relationships right now.',
       );
     }
@@ -1420,18 +1427,23 @@ class CareIndexData {
     required this.owners,
     required this.pendingInvites,
     required this.myCaregivers,
+    this.incomingInvites = const [],
     this.loadError,
   });
 
   final List<CareRelationshipRow> owners;
   final List<CareRelationshipRow> pendingInvites;
   final List<CareRelationshipRow> myCaregivers;
+
+  /// Pending invites addressed to the signed-in user's email (Worker route).
+  final List<IncomingCareInvite> incomingInvites;
   final String? loadError;
 
   static const empty = CareIndexData(
     owners: [],
     pendingInvites: [],
     myCaregivers: [],
+    incomingInvites: [],
   );
 }
 

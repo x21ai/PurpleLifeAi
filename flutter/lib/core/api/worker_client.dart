@@ -7,6 +7,15 @@ import '../auth/auth_repository.dart';
 import '../config/app_config.dart';
 
 /// Authenticated HTTP client for Cloudflare Worker routes on www.purplelife.org.
+///
+/// Dose Taken / Skip / Snooze for the signed-in user is **not** a Worker route:
+/// - In-app Flutter: `MedsRepository.updateDoseStatus` → Supabase RLS (+ offline
+///   queue when offline). DB fields match edge `med-dose-action`.
+/// - Web notification actions: Supabase edge `POST …/functions/v1/med-dose-action`
+///   body `{ doseId, action: "taken"|"skip"|"snooze" }` → `{ ok, doseId, action }`.
+/// - Caregiver Taken: web `caregiverMarkDose` server fn only; Worker
+///   `POST /api/care/mark-dose` is still an open backlog (do not invent a
+///   WorkerClient method that 404s).
 class WorkerClient {
   WorkerClient({
     required AppConfig config,

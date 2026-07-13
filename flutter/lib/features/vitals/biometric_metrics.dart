@@ -32,7 +32,7 @@ enum StatusTone {
 }
 
 /// Wearable data source key.
-enum SourceKey { oura, whoop, appleHealth, manual }
+enum SourceKey { oura, whoop, appleHealth, healthConnect, manual }
 
 // ---------------------------------------------------------------------------
 // Order + category tables (§1, §2)
@@ -527,6 +527,7 @@ const List<SourceKey> sources = <SourceKey>[
   SourceKey.oura,
   SourceKey.whoop,
   SourceKey.appleHealth,
+  SourceKey.healthConnect,
   SourceKey.manual,
 ];
 
@@ -539,6 +540,8 @@ SourceKey? sourceKeyFromString(String? raw) {
       return SourceKey.whoop;
     case 'apple_health':
       return SourceKey.appleHealth;
+    case 'health_connect':
+      return SourceKey.healthConnect;
     case 'manual':
       return SourceKey.manual;
     default:
@@ -555,6 +558,8 @@ String sourceKeyToString(SourceKey key) {
       return 'whoop';
     case SourceKey.appleHealth:
       return 'apple_health';
+    case SourceKey.healthConnect:
+      return 'health_connect';
     case SourceKey.manual:
       return 'manual';
   }
@@ -565,6 +570,7 @@ const Map<SourceKey, String> sourceLabels = <SourceKey, String>{
   SourceKey.oura: 'Oura',
   SourceKey.whoop: 'Whoop',
   SourceKey.appleHealth: 'Apple Health',
+  SourceKey.healthConnect: 'Health Connect',
   SourceKey.manual: 'Manual',
 };
 
@@ -573,6 +579,7 @@ const Map<SourceKey, String> sourceLabels = <SourceKey, String>{
 const Map<SourceKey, Color> sourceColors = <SourceKey, Color>{
   SourceKey.whoop: Color(0xFF34D399),
   SourceKey.appleHealth: Color(0xFFF472B6),
+  SourceKey.healthConnect: Color(0xFFF472B6),
   SourceKey.manual: Color(0xFFA1A1AA),
 };
 

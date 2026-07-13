@@ -10,8 +10,9 @@ import 'meds_repository.dart';
 import 'meds_style.dart';
 import 'meds_today.dart';
 import 'models/dose.dart';
+import 'past_dose_sheet.dart';
 
-/// 30-day dose history
+/// 30-day dose history with tap-to-edit past doses.
 class MedsHistoryScreen extends ConsumerWidget {
   const MedsHistoryScreen({super.key});
 
@@ -69,6 +70,7 @@ class MedsHistoryScreen extends ConsumerWidget {
                         _HistoryDaySection(
                           day: day,
                           timezone: result.timezone,
+                          onEditDose: (dose) => _openEditDose(context, ref, dose),
                         ),
                         const SizedBox(height: 24),
                       ],
@@ -82,16 +84,45 @@ class MedsHistoryScreen extends ConsumerWidget {
       ),
     );
   }
+
+  Future<void> _openEditDose(
+    BuildContext context,
+    WidgetRef ref,
+    MedicationDose dose,
+  ) async {
+    final med = dose.medication ??
+        await ref.read(medicationByIdProvider(dose.medicationId).future);
+    if (med == null) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not load that medication.')),
+      );
+      return;
+    }
+    if (!context.mounted) return;
+    final saved = await PastDoseSheet.show(
+      context,
+      medication: med,
+      existing: dose,
+    );
+    if (saved == true) {
+      ref.invalidate(doseHistoryProvider);
+      ref.invalidate(medsDataProvider);
+      ref.invalidate(medicationDosesProvider(med.id));
+    }
+  }
 }
 
 class _HistoryDaySection extends StatelessWidget {
   const _HistoryDaySection({
     required this.day,
     required this.timezone,
+    required this.onEditDose,
   });
 
   final DoseHistoryDay day;
   final String timezone;
+  final ValueChanged<MedicationDose> onEditDose;
 
   @override
   Widget build(BuildContext context) {
@@ -122,6 +153,13 @@ class _HistoryDaySection extends StatelessWidget {
               _HistoryDoseRow(
                 dose: day.doses[i],
                 timezone: timezone,
+                onEdit: () => onEditDose(day.doses[i]),
+                onOpenMed: () {
+                  final medId = day.doses[i].medication?.id ??
+                      day.doses[i].medicationId;
+                  if (medId.isEmpty) return;
+                  context.push(AppRoutes.medDetail(medId));
+                },
               ),
             ],
           ],
@@ -135,23 +173,25 @@ class _HistoryDoseRow extends StatelessWidget {
   const _HistoryDoseRow({
     required this.dose,
     required this.timezone,
+    required this.onEdit,
+    required this.onOpenMed,
   });
 
   final MedicationDose dose;
   final String timezone;
+  final VoidCallback onEdit;
+  final VoidCallback onOpenMed;
 
   @override
   Widget build(BuildContext context) {
     final p = MedsPalette.dark();
-    final medId = dose.medication?.id;
     final statusColor = _statusColor(dose.status);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: medId == null
-            ? null
-            : () => context.push(AppRoutes.medDetail(medId)),
+        onTap: onEdit,
+        onLongPress: onOpenMed,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           child: Row(
@@ -198,6 +238,8 @@ class _HistoryDoseRow extends StatelessWidget {
                       ),
                 ),
               ),
+              const SizedBox(width: 4),
+              Icon(Icons.edit_outlined, size: 16, color: p.textTertiary),
             ],
           ),
         ),

@@ -267,7 +267,8 @@ class _DetailBody extends StatelessWidget {
         tone.tone == StatusTone.warn ? warningTokenColor() : p.purplePrimary;
     final dateLabel = _formatHeadlineDate();
     final sourceLabel = result.headlineSource != null
-        ? sourceLabels[result.headlineSource]!
+        ? (sourceLabels[result.headlineSource] ??
+            sourceKeyToString(result.headlineSource!))
         : null;
     final avgLabel = _rangeAverageLabel();
     final deltaLabel = _deltaLabel();
@@ -509,7 +510,7 @@ class _ReadingHistoryRow extends StatelessWidget {
           if (srcKey != null) ...[
             const SizedBox(width: 8),
             Text(
-              sourceLabels[srcKey]!,
+              sourceLabels[srcKey] ?? sourceKeyToString(srcKey),
               style: dataSans(fontSize: 11, color: p.textTertiary),
             ),
           ],
@@ -704,7 +705,7 @@ class SourceLegend extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                sourceLabels[s]!,
+                sourceLabels[s] ?? sourceKeyToString(s),
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: Colors.white.withValues(alpha: 0.55),
                     ),

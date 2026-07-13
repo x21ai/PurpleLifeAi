@@ -141,13 +141,16 @@ class _HubSections extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Resolve each metric's series result (or null while loading).
     final results = <String, MetricSeriesResult?>{};
+    var anyLoading = false;
     for (final key in metricOrder) {
       final q = MetricSeriesQuery(
         metricKey: key,
         days: rangeDays,
         compareMode: compare,
       );
-      results[key] = ref.watch(metricSeriesProvider(q)).valueOrNull;
+      final async = ref.watch(metricSeriesProvider(q));
+      if (async.isLoading && !async.hasValue) anyLoading = true;
+      results[key] = async.valueOrNull;
     }
 
     // Needs a look: metrics whose status is attention-worthy.
@@ -235,6 +238,13 @@ class _HubSections extends ConsumerWidget {
     }
 
     if (children.isEmpty) {
+      // Avoid flashing a false empty state while series are still loading.
+      if (anyLoading) {
+        return const Padding(
+          padding: EdgeInsets.only(top: 48),
+          child: Center(child: CircularProgressIndicator()),
+        );
+      }
       return Padding(
         padding: const EdgeInsets.only(top: 28),
         child: Text(
@@ -404,7 +414,7 @@ class _MetricCard extends StatelessWidget {
                 if (r != null && r.headlineSource != null) ...[
                   const SizedBox(height: 6),
                   Text(
-                    'via ${sourceLabels[r.headlineSource]}'
+                    'via ${sourceLabels[r.headlineSource] ?? sourceKeyToString(r.headlineSource!)}'
                     '${_deltaSuffix(r)}',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: Colors.white.withValues(alpha: 0.45),

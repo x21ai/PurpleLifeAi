@@ -98,7 +98,15 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
 
   Future<void> _loadSyncTimestamps() async {
     final session = Supabase.instance.client.auth.currentSession;
-    if (session == null) return;
+    if (session == null) {
+      if (!mounted) return;
+      setState(() {
+        _lastDataAt = null;
+        _lastSyncAt = null;
+        _hasSyncedData = false;
+      });
+      return;
+    }
 
     final uid = session.user.id;
     final source =
@@ -122,6 +130,7 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
     if (!mounted) return;
     setState(() {
       _lastDataAt = bio?['recorded_at'] as String?;
+      // Last synced UI uses apple_health_tokens.last_sync_at only (not updated_at).
       _lastSyncAt = token?['last_sync_at'] as String?;
       _hasSyncedData = _lastDataAt != null;
     });
@@ -137,10 +146,12 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
       if (mounted) {
         setState(() {
           _authorized = false;
-          _permissionDenied = true;
+          _permissionDenied = status.readDenied.isNotEmpty;
           _lastError = status.reason != null
               ? _availabilityMessage(status.reason)
-              : 'HealthKit access is off. Open Settings, Health, and allow Purple.';
+              : status.readDenied.isNotEmpty
+                  ? 'HealthKit access is off. Open Settings, Health, and allow Purple.'
+                  : 'HealthKit is not connected on this iPhone. Tap Connect to grant access.';
         });
       }
       return;
@@ -376,21 +387,22 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
     if (!_authorized) return _AppleHealthSyncState.waiting;
     final freshness = _lastSyncAt ?? _lastDataAt;
     if (freshness == null) return _AppleHealthSyncState.reachable;
-    final age = DateTime.now().difference(DateTime.parse(freshness));
+    final parsed = DateTime.tryParse(freshness);
+    if (parsed == null) return _AppleHealthSyncState.reachable;
+    final age = DateTime.now().difference(parsed);
     if (age < _freshWindow) return _AppleHealthSyncState.receiving;
     return _AppleHealthSyncState.stale;
   }
 
   String _statusLine() {
-    final freshness = _lastSyncAt ?? _lastDataAt;
     switch (_syncState) {
       case _AppleHealthSyncState.receiving:
         return _lastSyncAt != null
-            ? 'Last synced ${_relativeTime(freshness)}'
+            ? 'Last synced ${_relativeTime(_lastSyncAt)}'
             : 'Syncing · latest vitals ${_relativeTime(_lastDataAt)}';
       case _AppleHealthSyncState.stale:
         return _lastSyncAt != null
-            ? 'Last synced ${_relativeTime(freshness)} · open Purple to refresh from HealthKit'
+            ? 'Last synced ${_relativeTime(_lastSyncAt)} · open Purple to refresh from HealthKit'
             : 'Last vitals ${_relativeTime(_lastDataAt)} · open Purple to refresh from HealthKit';
       case _AppleHealthSyncState.reachable:
         return 'Connected · waiting for the first HealthKit sync';
@@ -404,7 +416,9 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
 
   String _relativeTime(String? iso) {
     if (iso == null) return 'never';
-    final diff = DateTime.now().difference(DateTime.parse(iso));
+    final parsed = DateTime.tryParse(iso);
+    if (parsed == null) return 'never';
+    final diff = DateTime.now().difference(parsed);
     final minutes = diff.inMinutes;
     if (minutes < 1) return 'just now';
     if (minutes < 60) return '$minutes min ago';

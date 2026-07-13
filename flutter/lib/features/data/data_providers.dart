@@ -218,6 +218,7 @@ String? _sourceLabel(SourceKey? source) {
     SourceKey.oura => 'oura',
     SourceKey.whoop => 'whoop',
     SourceKey.appleHealth => 'apple_health',
+    SourceKey.healthConnect => 'health_connect',
     SourceKey.manual => 'manual',
   };
 }

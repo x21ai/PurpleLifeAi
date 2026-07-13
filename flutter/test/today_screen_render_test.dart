@@ -9,6 +9,7 @@ import 'package:purple_app/features/reports/models/report_row.dart';
 import 'package:purple_app/features/reports/reports_repository.dart';
 import 'package:purple_app/features/today/models/score_snapshot.dart';
 import 'package:purple_app/features/today/models/today_data.dart';
+import 'package:purple_app/features/today/missed_dose_catchup.dart';
 import 'package:purple_app/features/today/today_meds_section.dart';
 import 'package:purple_app/features/today/today_repository.dart';
 import 'package:purple_app/features/today/today_screen.dart';
@@ -55,6 +56,7 @@ void main() {
           medsForDayProvider(todayYmd).overrideWith(
             (ref) => Future.value(resolvedMeds),
           ),
+          missedDoseCatchupProvider.overrideWith((ref) async => null),
         ],
         child: const MaterialApp(home: Scaffold(body: TodayScreen())),
       ),
@@ -161,6 +163,26 @@ void main() {
     expect(find.text('Open Plan'), findsOneWidget);
     expect(find.text('Keppra'), findsOneWidget);
     expect(find.text("Today's doses"), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    // Expand panels: Wearables / Log toggle without layout exceptions.
+    await tester.tap(find.text('Wearables'));
+    await tester.pumpAndSettle();
+    expect(find.text('Wearables'), findsWidgets);
+    expect(find.text('Open Tools'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Log'));
+    await tester.pumpAndSettle();
+    expect(find.text('Quick log'), findsOneWidget);
+    expect(find.text('What happened?'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    // Meds panel again (accordion).
+    await tester.tap(find.text('Meds'));
+    await tester.pumpAndSettle();
+    expect(find.text("Today's doses"), findsOneWidget);
+    expect(find.text('Keppra'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

@@ -67,7 +67,7 @@ class AskMayaScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Hi $greetingName — I know your conditions and wearable '
+                      'Hi $greetingName, I know your conditions and wearable '
                       'data. What would you like to explore?',
                       style: PurpleType.bodySerif(
                         color: Colors.white.withValues(alpha: 0.85),

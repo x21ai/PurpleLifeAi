@@ -167,6 +167,45 @@ String shiftDateStr(String dateStr, int deltaDays) {
   return d.add(Duration(days: deltaDays)).toIso8601String().substring(0, 10);
 }
 
+/// Allowed statuses for past-dose create/edit (web `DOSE_STATUSES`).
+const kPastDoseStatuses = <String>['taken', 'skipped', 'missed', 'pending'];
+
+String normalizePastDoseStatus(String status) {
+  return kPastDoseStatuses.contains(status) ? status : 'taken';
+}
+
+/// True only for the user's calendar today. Past days must be fetched as-is
+/// (web `getDosesForDate`), never regenerated.
+bool shouldRegenerateTodayDoses({
+  required String viewDateStr,
+  required String todayStr,
+}) {
+  if (viewDateStr.isEmpty || todayStr.isEmpty) return true;
+  return viewDateStr == todayStr;
+}
+
+/// Payload for insert/update of a user-logged dose (web med detail `saveDose`).
+Map<String, dynamic> buildPastDosePayload({
+  required String medicationId,
+  required DateTime scheduledAt,
+  required String status,
+  num? amount,
+  String? unit,
+  bool includeCreatedByKind = false,
+}) {
+  final normalized = normalizePastDoseStatus(status);
+  final scheduledIso = scheduledAt.toUtc().toIso8601String();
+  return <String, dynamic>{
+    'medication_id': medicationId,
+    'scheduled_at': scheduledIso,
+    'status': normalized,
+    'amount': amount,
+    'unit': unit,
+    'taken_at': normalized == 'taken' ? scheduledIso : null,
+    if (includeCreatedByKind) 'created_by_kind': 'user',
+  };
+}
+
 /// One day group for the history screen.
 class DoseHistoryDay {
   const DoseHistoryDay({

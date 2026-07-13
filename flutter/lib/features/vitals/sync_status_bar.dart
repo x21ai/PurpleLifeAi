@@ -60,7 +60,24 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
   }
 
   Future<void> _refresh() async {
-    final session = Supabase.instance.client.auth.currentSession;
+    late final Session? session;
+    try {
+      // Widget tests and early boot can mount Wearables expand before
+      // Supabase.initialize; fail open instead of asserting.
+      session = Supabase.instance.client.auth.currentSession;
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loaded = true;
+        _loadError = null;
+        _connected = {};
+        _appleConnected = false;
+        _nativeHealthKitLinked = false;
+        _dataThrough = null;
+        _lastPulledIso = null;
+      });
+      return;
+    }
     if (session == null) {
       if (!mounted) return;
       setState(() {
@@ -120,11 +137,14 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
       // Native iOS: connected state is device HealthKit auth, not prior DB rows.
       final appleConnected = nativeHealthKitLinked ||
           (!isNativeHealthPlatform && apple != null);
-      final appleTs = _pickTimestamp(
-        apple?['last_sync_at'] as String?,
-        apple?['last_webhook_at'] as String?,
-        apple?['updated_at'] as String?,
-      );
+      // Last synced uses last_sync_at / last_webhook_at only when Apple is
+      // actually connected. Never fall back to updated_at (token create time).
+      final appleTs = appleConnected
+          ? _pickTimestamp(
+              apple?['last_sync_at'] as String?,
+              apple?['last_webhook_at'] as String?,
+            )
+          : null;
       if (appleTs != null) stamps.add(appleTs.millisecondsSinceEpoch);
 
       final latest = stamps.isEmpty

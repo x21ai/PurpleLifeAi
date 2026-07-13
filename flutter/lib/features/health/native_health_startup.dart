@@ -4,12 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/core_providers.dart';
+import '../today/wearable_sync.dart';
 import 'health_providers.dart';
 import 'health_service.dart';
 import 'native_health_autosync.dart';
 
-/// Defers native HealthKit sync shortly after auth bootstrap (web
-/// `DeferredStartup` + visit-mode wearable pattern).
+/// Defers visit-mode wearable sync shortly after auth bootstrap (web
+/// `DeferredStartup` + `useWearableAutoSync` + native HealthKit visit sync).
 class NativeHealthStartupListener extends ConsumerStatefulWidget {
   const NativeHealthStartupListener({super.key, required this.child});
 
@@ -57,18 +58,28 @@ class _NativeHealthStartupListenerState
   }
 
   Future<void> _runVisitSync({required bool force}) async {
+    final supabase = ref.read(supabaseClientProvider);
+    final worker = ref.read(workerClientProvider);
+
+    // Oura + Whoop visit mode (3h throttle), matching web useWearableAutoSync.
+    await syncVisitModeWearables(
+      supabase: supabase,
+      worker: worker,
+      force: force,
+    );
+
     if (!isNativeHealthPlatform) return;
 
     final health = ref.read(healthServiceProvider);
     final sync = buildNativeHealthSync(
-      workerClient: ref.read(workerClientProvider),
+      workerClient: worker,
       syncService: ref.read(syncServiceProvider),
     );
 
     await syncNativeHealthIfAuthorized(
       healthService: health,
       syncClient: sync,
-      supabase: ref.read(supabaseClientProvider),
+      supabase: supabase,
       force: force,
     );
   }

@@ -9,10 +9,10 @@ import '../shared/glass_helpers.dart';
 
 /// Horizontal date strip ported from `src/components/today/date-strip.tsx`:
 /// 7 past days + today + 7 future days (future disabled at 30% opacity),
-/// today centered on load, 56x72 rounded-18 tiles with a weekday eyebrow over
-/// a serif day numeral; selected tile gets a primary ring and glow. The
-/// header row shows the selected `MMM d`, a "Today" pill when off-today, and
-/// a calendar picker.
+/// today centered on load, uniform 56x72 rounded-18 tiles with a weekday
+/// eyebrow over a serif day numeral; selected tile gets a primary ring and
+/// glow without shrinking the chip. The header row shows the selected
+/// `MMM d`, a "Today" pill when off-today, and a calendar picker.
 class DateStrip extends StatefulWidget {
   const DateStrip({
     super.key,
@@ -221,33 +221,52 @@ class _DayTile extends StatelessWidget {
     final eyebrow = isToday ? 'TODAY' : DateFormat('EEE').format(day).toUpperCase();
     final highlightEyebrow = isSelected && isToday;
 
-    Widget tile = Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          eyebrow,
-          style: TextStyle(
-            fontSize: 10,
-            letterSpacing: 1.2,
-            fontWeight: highlightEyebrow ? FontWeight.w600 : FontWeight.w400,
-            color: highlightEyebrow
-                ? purple
-                : Colors.white.withValues(alpha: 0.55),
-          ),
+    // Keep content at the full 56x72 tile (web `w-14 h-[72px]`). Selected
+    // used to shrink to 54x70 for the ring, which clipped "TODAY" and made
+    // the active chip look smaller than neighbors.
+    Widget tile = GlassSurface(
+      borderRadius: 18,
+      padding: EdgeInsets.zero,
+      child: SizedBox(
+        width: _DateStripState._tileWidth,
+        height: 72,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  eyebrow,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 10,
+                    letterSpacing: isToday ? 0.8 : 1.2,
+                    fontWeight:
+                        highlightEyebrow ? FontWeight.w600 : FontWeight.w400,
+                    color: highlightEyebrow
+                        ? purple
+                        : Colors.white.withValues(alpha: 0.55),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${day.day}',
+              style: TextStyle(
+                fontFamily: PurpleType.serif,
+                fontSize: 20,
+                color: isSelected && !isFuture
+                    ? const Color(0xFFF2F2F5)
+                    : Colors.white.withValues(alpha: 0.55),
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          '${day.day}',
-          style: TextStyle(
-            fontFamily: PurpleType.serif,
-            fontSize: 20,
-            color: isSelected && !isFuture
-                ? const Color(0xFFF2F2F5)
-                : Colors.white.withValues(alpha: 0.55),
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
-        ),
-      ],
+      ),
     );
 
     if (isSelected && !isFuture) {
@@ -262,23 +281,14 @@ class _DayTile extends StatelessWidget {
             ),
           ],
         ),
-        child: GlassSurface(
-          borderRadius: 18,
-          padding: EdgeInsets.zero,
-          child: SizedBox(width: 54, height: 70, child: tile),
-        ),
+        child: tile,
       );
-    } else {
-      tile = GlassSurface(
-        borderRadius: 18,
-        padding: EdgeInsets.zero,
-        child: SizedBox(width: 56, height: 72, child: tile),
-      );
-      if (isFuture) tile = Opacity(opacity: 0.3, child: tile);
+    } else if (isFuture) {
+      tile = Opacity(opacity: 0.3, child: tile);
     }
 
     return SizedBox(
-      width: 56,
+      width: _DateStripState._tileWidth,
       height: 72,
       child: isFuture
           ? tile

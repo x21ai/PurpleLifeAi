@@ -76,7 +76,22 @@ sign in with email/password until a password is set.
 `docs/FLUTTER-STAGE1-SIGNOFF.md`). Ops set a **temporary password via Supabase Admin
 API** (`auth.admin.updateUserById`). The value is **not** stored in repo, docs, or
 chat; retrieve or rotate only through Supabase dashboard or Admin API with Doppler
-`SERVICE_ROLE_KEY`. User should change password after first sign-in or via reset email.
+`SERVICE_ROLE_KEY`.
+
+### Eigital / corporate quarantine path (2026-07-12+)
+
+`@eigital.com` mailboxes often quarantine `notify.purplelife.org` recovery mail
+(Resend shows sent; inbox empty). Do **not** rely on Forgot password for those accounts.
+
+1. Ops: Admin API temp password out-of-band (same as migration no-hash case).
+2. User: sign in with the temp password (TF27+ for AuthGate).
+3. User: **Account → Change password** (`supabase.auth.updateUser({ password })` in
+   `flutter/lib/features/account/account_screen.dart` `_PasswordSection`).
+4. Optional later: IT allowlist `notify.purplelife.org`, or use a non-corporate email
+   for recovery.
+
+User should change password after first sign-in; recovery email is a backup only when
+the mailbox can receive Purple auth mail.
 
 ## Verify
 
@@ -143,3 +158,5 @@ Increase TTL (optional, ops): `PATCH .../config/auth` with `{"mailer_otp_exp": 8
 | Expired on first click | Old link / prefetch / PKCE not exchanged | Web bootstrap deployed; open **newest** email only |
 | Native reset from email | TF20 lacks deep link code | **TF21+** with `org.purplelife.app://reset-password` |
 | Email queue stuck | pg_cron `pgmq.metrics` bug | Fixed 2026-07-06 (`scripts/fix-email-pump-cron.sql`) |
+| TF27 still "cannot login" with old password | AuthGate race was a different bug; migration dropped hashes | Admin temp password; not TF28 AuthGate work |
+| Forgot password "does nothing" for eigital | Hook+Resend succeed; corporate quarantine | Out-of-band temp password; IT allowlist |

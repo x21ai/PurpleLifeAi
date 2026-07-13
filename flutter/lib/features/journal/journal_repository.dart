@@ -9,6 +9,7 @@ import '../../core/network/connectivity_service.dart';
 import '../../core/offline/database.dart';
 import '../../core/offline/sync_service.dart';
 import '../../core/providers/core_providers.dart';
+import 'journal_media_file.dart';
 import 'models/journal_entry.dart';
 
 /// Journal entries from Supabase with Drift cache and offline queue writes.
@@ -39,7 +40,9 @@ class JournalRepository {
     if (userId == null) return JournalData.empty;
     try {
       _kickSyncIfOnline();
-      final rows = await _fetchEntryRows(userId);
+      final rows = await _mergePendingCache(
+        await _fetchEntryRows(userId),
+      );
       return await _toJournalData(
         rows,
         isOffline: false,
@@ -54,6 +57,31 @@ class JournalRepository {
         allowPartialRows: true,
       );
     }
+  }
+
+  /// Include locally queued inserts that have not reached Supabase yet so a
+  /// just-saved entry is not missing from the list after navigation.
+  Future<List<Map<String, dynamic>>> _mergePendingCache(
+    List<Map<String, dynamic>> serverRows,
+  ) async {
+    final pendingIds = await _pendingUploadEntryIds();
+    if (pendingIds.isEmpty) return serverRows;
+
+    final cached =
+        await _sync.readCached(tableName: SyncTables.journalEntries);
+    if (cached.isEmpty) return serverRows;
+
+    final byId = <String, Map<String, dynamic>>{
+      for (final row in serverRows)
+        if (row['id'] != null) row['id'].toString(): row,
+    };
+    for (final row in cached) {
+      final id = row['id']?.toString();
+      if (id == null || id.isEmpty) continue;
+      if (!pendingIds.contains(id)) continue;
+      byId.putIfAbsent(id, () => row);
+    }
+    return byId.values.toList();
   }
 
   /// Entry IDs with writes still in the offline sync queue (not AI processing).
@@ -90,6 +118,7 @@ class JournalRepository {
   Future<JournalEntry> saveEntry({
     required String text,
     DateTime? capturedAt,
+    List<JournalMediaFile> media = const [],
   }) async {
     final userId = _userId;
     if (userId == null) {
@@ -97,17 +126,18 @@ class JournalRepository {
     }
 
     final trimmed = text.trim();
-    if (trimmed.isEmpty) {
-      throw ArgumentError('Entry text cannot be empty');
+    if (trimmed.isEmpty && media.isEmpty) {
+      throw ArgumentError('Entry text or media is required');
     }
 
     final id = _uuid.v4();
     final at = (capturedAt ?? DateTime.now()).toUtc();
+    final kind = _inferKind(text: trimmed, mediaCount: media.length);
     final payload = <String, dynamic>{
       'id': id,
       'user_id': userId,
-      'text': trimmed,
-      'kind': 'text',
+      'text': trimmed.isEmpty ? null : trimmed,
+      'kind': kind,
       'status': 'processing',
       'captured_at': at.toIso8601String(),
       'media_urls': <String>[],
@@ -122,7 +152,92 @@ class JournalRepository {
       recordId: id,
     );
 
-    return JournalEntry.fromJson(payload, pendingUpload: true);
+    // Flush immediately when online so the entry (and media) land before
+    // the user lands on the journal list.
+    if (_connectivity.isOnline) {
+      await _sync.syncAll();
+      if (media.isNotEmpty) {
+        try {
+          final urls = await _uploadMedia(
+            userId: userId,
+            entryId: id,
+            media: media,
+          );
+          if (urls.isNotEmpty) {
+            payload['media_urls'] = urls;
+            await _supabase
+                .from('journal_entries')
+                .update({'media_urls': urls}).eq('id', id);
+          }
+        } catch (error, stack) {
+          debugPrint(
+            '[JournalRepository] media upload failed: $error\n$stack',
+          );
+          // Text row already flushed; keep entry without blocking save.
+        }
+      }
+    } else if (media.isNotEmpty && trimmed.isEmpty) {
+      throw StateError(
+        'Photos need a network connection to save. Add a text note or try again online.',
+      );
+    }
+
+    return JournalEntry.fromJson(
+      payload,
+      pendingUpload: !_connectivity.isOnline,
+    );
+  }
+
+  static String _inferKind({required String text, required int mediaCount}) {
+    final hasText = text.isNotEmpty;
+    final hasMedia = mediaCount > 0;
+    if (hasText && hasMedia) return 'mixed';
+    if (hasMedia) return 'photo';
+    return 'text';
+  }
+
+  Future<List<String>> _uploadMedia({
+    required String userId,
+    required String entryId,
+    required List<JournalMediaFile> media,
+  }) async {
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final paths = <String>[];
+    for (var i = 0; i < media.length; i++) {
+      final file = media[i];
+      final ext = _extFor(file);
+      final path = '$userId/$entryId/photo-$ts-$i.$ext';
+      await _supabase.storage.from('journal-media').uploadBinary(
+            path,
+            file.bytes,
+            fileOptions: FileOptions(
+              contentType: file.mimeType,
+              upsert: false,
+            ),
+          );
+      paths.add(path);
+    }
+    if (paths.isEmpty) return const [];
+    final urls = <String>[];
+    for (final path in paths) {
+      final signed = await _supabase.storage
+          .from('journal-media')
+          .createSignedUrl(path, 60 * 60 * 24 * 365);
+      if (signed.isNotEmpty) urls.add(signed);
+    }
+    return urls;
+  }
+
+  static String _extFor(JournalMediaFile file) {
+    final fromName = file.fileName.split('.').last.toLowerCase();
+    if (fromName.isNotEmpty && fromName.length <= 5 && fromName != file.fileName) {
+      return fromName;
+    }
+    final mime = file.mimeType.toLowerCase();
+    if (mime.contains('png')) return 'png';
+    if (mime.contains('webp')) return 'webp';
+    if (mime.contains('heic')) return 'heic';
+    return 'jpg';
   }
 
   /// Archive or restore an entry (queued offline-first update).

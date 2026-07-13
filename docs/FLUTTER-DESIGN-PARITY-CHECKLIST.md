@@ -77,7 +77,7 @@ Web token sources: `src/styles.css` (`:root` light, `.dark` dark) and
 
 1. Pull-to-refresh indicator (Flutter `RefreshIndicator` is acceptable).
 2. Today-only banners when applicable: restore banner, incoming care invites,
-   install banner, missed-dose catch-up, first-run empty state
+   install banner, missed-dose catch-up (`MissedDoseCatchupBanner` Log ▾), first-run empty state
    (`journalCount == 0`, dismissible, copy `today.empty*`).
 3. Date eyebrow: `EEEE, MMMM d` (class `today-eyebrow`).
 4. Greeting h1, serif 32px (40px on wide): `"{greeting}, {firstName}."`

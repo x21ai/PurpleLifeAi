@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/worker_client.dart';
@@ -167,15 +170,40 @@ final aiInsightsRepositoryProvider = Provider<AiInsightsRepository>((ref) {
   return AiInsightsRepository(worker: ref.watch(workerClientProvider));
 });
 
+/// Guard against hung Worker AI calls that leave Plan / Insights spinning.
+const dailyInsightCardsTimeout = Duration(seconds: 20);
+
 /// Auto-loads the daily "For you" cards (cached server-side per user per
 /// day), mirroring the web Insights page's automatic behavior.
+///
+/// Fail-open: timeout or transport errors return an empty result with
+/// [DailyInsightCardsResult.error] set so Protocol / Insights empty copy
+/// stays honest (not "log more readings").
 final dailyInsightCardsProvider =
     FutureProvider.autoDispose<DailyInsightCardsResult>((ref) async {
   ref.keepAlive();
   ref.watch(authSessionProvider);
   try {
-    return await ref.watch(aiInsightsRepositoryProvider).loadDailyCards();
-  } catch (_) {
-    return DailyInsightCardsResult.empty;
+    return await ref
+        .watch(aiInsightsRepositoryProvider)
+        .loadDailyCards()
+        .timeout(dailyInsightCardsTimeout);
+  } on TimeoutException catch (error, stack) {
+    debugPrint(
+      '[dailyInsightCards] timed out after '
+      '${dailyInsightCardsTimeout.inSeconds}s: $error\n$stack',
+    );
+    return const DailyInsightCardsResult(
+      cards: [],
+      cached: false,
+      error: 'timeout',
+    );
+  } catch (error, stack) {
+    debugPrint('[dailyInsightCards] failed: $error\n$stack');
+    return const DailyInsightCardsResult(
+      cards: [],
+      cached: false,
+      error: 'unavailable',
+    );
   }
 });

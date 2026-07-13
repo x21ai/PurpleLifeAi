@@ -5,6 +5,19 @@ work (especially multi-agent fleets) is decomposed. Append, never delete.
 
 ---
 
+### 2026-07-12 — TF28 sibling collision + pill stock trigger (status: raw)
+
+- **Parallel writers on one checkout collided on Today/Meds shared surfaces**
+  (`today_screen` expand bodies, `onWearablesSynced`, `onRefill`, wearable
+  SourceKey / OAuth hints). Analyze went RED mid-integration. Fix: one restorer
+  owns compile green before product land or `ios:testflight`; sole upload owner
+  waits for `flutter analyze` today+meds clean AND `flutter test` green.
+- **`pills_remaining` can be a true 0 from the DB trigger, not only missing
+  refill UI.** Trigger uses `COALESCE(dose.amount, 1)` as the decrement; if
+  `amount` is mg, stock collapses. Log as `meds-pill-stock-amount-vs-count`;
+  still ship refill write. Compile into: (a) migration/unit test for stock
+  delta semantics, or (b) product decision + trigger change.
+
 ### 2026-07-05 — Multi-agent fleet run (waves 1+2 Flutter parity → TF19)
 
 - **Agent-tool worktrees fork off the original base commit, not the parent's advanced HEAD.** When you land wave N onto `lovable/redesign` locally and then spawn wave N+1 via the Agent tool's `isolation: worktree`, the new worktrees still branch off the *original* base — so they miss wave N's changes and the new packages. Fix used: build a combined base branch (`wave2-base` = wave1 + foundation), create **manual** `git worktree`s off it, and drive each writer into its assigned directory by absolute path (no `isolation`). Do this for any dependent wave.

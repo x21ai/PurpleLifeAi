@@ -276,7 +276,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const ToolsScreen(),
           ),
           GoRoute(
-            path: '/care',
+            path: AppRoutes.careIndex,
             name: 'care',
             builder: (context, state) => const CareIndexScreen(),
           ),

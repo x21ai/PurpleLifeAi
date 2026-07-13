@@ -32,6 +32,36 @@ abstract class SyncTables {
   static const serverWins = {biometrics, medications, medicationDoses};
 }
 
+/// Merge a partial queue payload onto an existing Drift cache row.
+///
+/// Dose Taken / Skip / Snooze and medication refill updates send only changed
+/// columns. Replacing the cache with the partial map would drop
+/// `medication_id`, `scheduled_at`, `pills_remaining`, etc.
+@visibleForTesting
+Map<String, dynamic> mergeCachedPayload(
+  Map<String, dynamic>? existing,
+  Map<String, dynamic> incoming,
+) {
+  if (existing == null || existing.isEmpty) {
+    return Map<String, dynamic>.from(incoming);
+  }
+  return {...existing, ...incoming};
+}
+
+/// Local mirror of `medication_doses_pill_stock` trigger delta.
+@visibleForTesting
+num? pillStockDelta({
+  required String? oldStatus,
+  required String? newStatus,
+  num? amount,
+}) {
+  if (newStatus == null) return null;
+  final qty = amount ?? 1;
+  if (oldStatus != 'taken' && newStatus == 'taken') return qty;
+  if (oldStatus == 'taken' && newStatus != 'taken') return -qty;
+  return null;
+}
+
 /// Offline-first sync: queue writes offline, flush and pull on reconnect.
 class SyncService {
   SyncService({
@@ -124,6 +154,28 @@ class SyncService {
     );
 
     await _applyOptimisticCache(tableName, enriched, pendingUpload: true);
+  }
+
+  /// Mirror a row that was already written to Supabase (no sync_queue entry).
+  ///
+  /// Used by online dose Taken / Skip / Snooze after a direct RLS update so we
+  /// do not re-flush the same mutation or apply the local pill-stock side
+  /// effect (the DB trigger `medication_doses_pill_stock` already ran).
+  Future<void> mirrorRemoteUpdate({
+    required String tableName,
+    required Map<String, dynamic> payload,
+    String? recordId,
+  }) async {
+    final userId = _currentUserId;
+    if (userId == null) {
+      throw StateError('Cannot mirror update without authenticated user');
+    }
+
+    final enriched = Map<String, dynamic>.from(payload)..['user_id'] = userId;
+    final id = recordId ?? enriched['id'] as String? ?? _uuid.v4();
+    enriched['id'] = id;
+
+    await _applyOptimisticCache(tableName, enriched, pendingUpload: false);
   }
 
   /// Queue a native HealthKit / Health Connect batch for Worker flush.
@@ -404,7 +456,13 @@ class SyncService {
     final userId = row['user_id'] as String?;
     if (id == null || userId == null) return;
 
-    // Pull path: server rows replace local cache (health data conflicts: server wins).
+    // Do not clobber local optimistic state while a queue write is pending.
+    // Flush runs before pull; if flush failed, keep the queued mutation visible.
+    if (await _db.hasPendingWrite(tableName: tableName, recordId: id)) {
+      return;
+    }
+
+    // Pull path: server rows replace local cache when no pending write.
     await _applyOptimisticCache(tableName, row, pendingUpload: false);
   }
 
@@ -419,53 +477,119 @@ class SyncService {
       return;
     }
 
+    final existing = await _db.readCachedRow(
+      tableName: tableName,
+      id: id,
+      userId: userId,
+    );
+    final merged = mergeCachedPayload(existing, row);
+
     switch (tableName) {
       case SyncTables.biometrics:
-        final recordedAt = _parseTimestamp(row['recorded_at']);
+        final recordedAt = _parseTimestamp(merged['recorded_at']);
         if (recordedAt == null) return;
         await _db.upsertBiometricCache(
           id: id,
           userId: userId,
-          payload: row,
+          payload: merged,
           recordedAt: recordedAt,
         );
       case SyncTables.medications:
-        final updatedAt =
-            _parseTimestamp(row['updated_at'] ?? row['created_at']);
-        if (updatedAt == null) return;
+        final updatedAt = _parseTimestamp(
+              merged['updated_at'] ?? merged['created_at'],
+            ) ??
+            DateTime.now().toUtc();
+        merged['updated_at'] = updatedAt.toIso8601String();
         await _db.upsertMedicationCache(
           id: id,
           userId: userId,
-          payload: row,
+          payload: merged,
           updatedAt: updatedAt,
         );
       case SyncTables.medicationDoses:
-        final scheduledAt = _parseTimestamp(row['scheduled_at']);
-        final medicationId = row['medication_id']?.toString();
+        final scheduledAt = _parseTimestamp(merged['scheduled_at']);
+        final medicationId = merged['medication_id']?.toString();
         if (scheduledAt == null ||
             medicationId == null ||
             medicationId.isEmpty) {
+          // Partial update with no prior cache row cannot be mirrored locally;
+          // the sync_queue entry still flushes to Supabase on reconnect.
           return;
         }
         await _db.upsertDoseCache(
           id: id,
           userId: userId,
           medicationId: medicationId,
-          payload: row,
+          payload: merged,
           scheduledAt: scheduledAt,
         );
+        if (pendingUpload) {
+          await _applyLocalPillStockSideEffect(
+            userId: userId,
+            existingDose: existing,
+            mergedDose: merged,
+          );
+        }
       case SyncTables.journalEntries:
         final capturedAt =
-            _parseTimestamp(row['captured_at'] ?? row['created_at']);
+            _parseTimestamp(merged['captured_at'] ?? merged['created_at']);
         if (capturedAt == null) return;
         await _db.upsertJournalCache(
           id: id,
           userId: userId,
-          payload: row,
+          payload: merged,
           capturedAt: capturedAt,
           pendingUpload: pendingUpload,
         );
     }
+  }
+
+  /// Mirror DB trigger `medication_doses_pill_stock` in Drift while offline.
+  Future<void> _applyLocalPillStockSideEffect({
+    required String userId,
+    required Map<String, dynamic>? existingDose,
+    required Map<String, dynamic> mergedDose,
+  }) async {
+    final delta = pillStockDelta(
+      oldStatus: existingDose?['status']?.toString(),
+      newStatus: mergedDose['status']?.toString(),
+      amount: mergedDose['amount'] is num
+          ? mergedDose['amount'] as num
+          : num.tryParse(mergedDose['amount']?.toString() ?? ''),
+    );
+    if (delta == null || delta == 0) return;
+
+    final medicationId = mergedDose['medication_id']?.toString();
+    if (medicationId == null || medicationId.isEmpty) return;
+
+    final medRow = await _db.readCachedRow(
+      tableName: SyncTables.medications,
+      id: medicationId,
+      userId: userId,
+    );
+    if (medRow == null) return;
+    final rawRemaining = medRow['pills_remaining'];
+    if (rawRemaining == null) return;
+    final remaining = rawRemaining is num
+        ? rawRemaining
+        : num.tryParse(rawRemaining.toString());
+    if (remaining == null) return;
+
+    final next = remaining - delta;
+    final clamped = next < 0 ? 0 : next;
+    final updatedAt = DateTime.now().toUtc();
+    final updatedMed = mergeCachedPayload(medRow, {
+      'id': medicationId,
+      'user_id': userId,
+      'pills_remaining': clamped is int ? clamped : clamped.round(),
+      'updated_at': updatedAt.toIso8601String(),
+    });
+    await _db.upsertMedicationCache(
+      id: medicationId,
+      userId: userId,
+      payload: updatedMed,
+      updatedAt: updatedAt,
+    );
   }
 
   DateTime? _parseTimestamp(Object? raw) {

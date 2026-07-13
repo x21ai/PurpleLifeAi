@@ -8,6 +8,7 @@ import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
 import 'care_relationship_tile.dart';
 import 'care_repository.dart';
+import 'incoming_care_invites_card.dart';
 
 /// Care hub: people you care for and quick link to sharing settings.
 class CareIndexScreen extends ConsumerWidget {
@@ -17,12 +18,14 @@ class CareIndexScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final indexAsync = ref.watch(careIndexProvider);
 
+    Future<void> refresh() async {
+      ref.invalidate(careIndexProvider);
+      await ref.read(careIndexProvider.future);
+    }
+
     return CanvasBackground(
       child: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(careIndexProvider);
-          await ref.read(careIndexProvider.future);
-        },
+        onRefresh: refresh,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.only(top: 24, bottom: 120),
@@ -37,7 +40,10 @@ class CareIndexScreen extends ConsumerWidget {
                 title: 'Could not load care',
                 body: 'Pull to refresh and try again in a moment.',
               ),
-              data: (data) => _CareIndexBody(data: data),
+              data: (data) => _CareIndexBody(
+                data: data,
+                onIncomingChanged: refresh,
+              ),
             ),
           ),
         ),
@@ -47,12 +53,20 @@ class CareIndexScreen extends ConsumerWidget {
 }
 
 class _CareIndexBody extends StatelessWidget {
-  const _CareIndexBody({required this.data});
+  const _CareIndexBody({
+    required this.data,
+    required this.onIncomingChanged,
+  });
 
   final CareIndexData data;
+  final Future<void> Function() onIncomingChanged;
 
   @override
   Widget build(BuildContext context) {
+    final hasIncoming = data.incomingInvites.isNotEmpty;
+    final hasPeople =
+        data.owners.isNotEmpty || data.pendingInvites.isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -88,6 +102,13 @@ class _CareIndexBody extends StatelessWidget {
                 ),
           ),
         ],
+        if (hasIncoming) ...[
+          const SizedBox(height: 24),
+          IncomingCareInvitesCard(
+            invites: data.incomingInvites,
+            onChanged: () => onIncomingChanged(),
+          ),
+        ],
         const SizedBox(height: 28),
         const _SectionHeader(
           title: 'People you care for',
@@ -115,7 +136,7 @@ class _CareIndexBody extends StatelessWidget {
             ),
           const SizedBox(height: 12),
         ],
-        if (data.owners.isEmpty && data.pendingInvites.isEmpty)
+        if (!hasPeople && !hasIncoming)
           EmptyState(
             eyebrow: 'Care',
             title: 'No one is sharing with you yet',
@@ -124,7 +145,7 @@ class _CareIndexBody extends StatelessWidget {
             primaryActionLabel: 'Open sharing settings',
             onPrimaryAction: () => context.go(AppRoutes.settingsSharing),
           )
-        else
+        else if (data.owners.isNotEmpty)
           for (final owner in data.owners)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),

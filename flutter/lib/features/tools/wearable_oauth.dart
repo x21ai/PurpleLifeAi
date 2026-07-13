@@ -69,19 +69,18 @@ abstract final class WearableOAuth {
     return null;
   }
 
-  /// Pre-connect hint for native apps when redirect URI must be registered manually.
+  /// Pre-connect hint when the native redirect URI is not yet registered.
+  ///
+  /// Oura Cloud already has `nativeRedirectOura` (see OPEN-ISSUES
+  /// `oura-native-redirect-console`). Whoop still needs console registration.
   static String? nativeConnectSetupHint(WearableOAuthProvider provider) {
     if (kIsWeb) return null;
-    final redirect = switch (provider) {
-      WearableOAuthProvider.oura => nativeRedirectOura,
-      WearableOAuthProvider.whoop => nativeRedirectWhoop,
+    return switch (provider) {
+      WearableOAuthProvider.oura => null,
+      WearableOAuthProvider.whoop =>
+        'On iPhone, register $nativeRedirectWhoop in the Whoop developer '
+            'console before Connect works.',
     };
-    final console = switch (provider) {
-      WearableOAuthProvider.oura => 'Oura',
-      WearableOAuthProvider.whoop => 'Whoop',
-    };
-    return 'On iPhone, register $redirect in the $console developer '
-        'console before Connect works.';
   }
 }
 

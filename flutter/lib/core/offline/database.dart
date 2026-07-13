@@ -123,6 +123,21 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
+  /// True when [recordId] still has at least one unflushed queue row.
+  Future<bool> hasPendingWrite({
+    required String tableName,
+    required String recordId,
+  }) async {
+    final row = await (select(syncQueue)
+          ..where(
+            (q) =>
+                q.targetTable.equals(tableName) & q.recordId.equals(recordId),
+          )
+          ..limit(1))
+        .getSingleOrNull();
+    return row != null;
+  }
+
   Future<void> enqueueWrite({
     required String tableName,
     required String operation,
@@ -137,6 +152,42 @@ class AppDatabase extends _$AppDatabase {
         payloadJson: jsonEncode(payload),
       ),
     );
+  }
+
+  /// Single cached row payload for merge-on-partial-update, or null.
+  Future<Map<String, dynamic>?> readCachedRow({
+    required String tableName,
+    required String id,
+    required String userId,
+  }) async {
+    switch (tableName) {
+      case 'biometrics':
+        final row = await (select(cachedBiometrics)
+              ..where((t) => t.id.equals(id) & t.userId.equals(userId)))
+            .getSingleOrNull();
+        if (row == null) return null;
+        return jsonDecode(row.payloadJson) as Map<String, dynamic>;
+      case 'medications':
+        final row = await (select(cachedMedications)
+              ..where((t) => t.id.equals(id) & t.userId.equals(userId)))
+            .getSingleOrNull();
+        if (row == null) return null;
+        return jsonDecode(row.payloadJson) as Map<String, dynamic>;
+      case 'medication_doses':
+        final row = await (select(cachedDoses)
+              ..where((t) => t.id.equals(id) & t.userId.equals(userId)))
+            .getSingleOrNull();
+        if (row == null) return null;
+        return jsonDecode(row.payloadJson) as Map<String, dynamic>;
+      case 'journal_entries':
+        final row = await (select(cachedJournalEntries)
+              ..where((t) => t.id.equals(id) & t.userId.equals(userId)))
+            .getSingleOrNull();
+        if (row == null) return null;
+        return jsonDecode(row.payloadJson) as Map<String, dynamic>;
+      default:
+        return null;
+    }
   }
 
   Future<void> removeQueueItem(int id) {

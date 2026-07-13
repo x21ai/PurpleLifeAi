@@ -239,7 +239,8 @@ export async function listIncomingInvitesForUser(
  * Service-role mirror of `assertScope` in `care.functions.ts`. Same
  * `has_care_scope` RPC (checks an active, non-expired relationship plus the
  * specific granted scope), but throws `CareApiError` so the Worker routes can
- * map it to a real HTTP status (403) instead of a generic 500.
+ * map it to a real HTTP status. Cross-user / missing-scope denials are 404
+ * (not 403) so callers cannot distinguish "no access" from "not found".
  */
 async function assertScopeForUser(ownerId: string, caregiverId: string, scope: string) {
   const { data, error } = await supabaseAdmin.rpc("has_care_scope", {
@@ -248,7 +249,7 @@ async function assertScopeForUser(ownerId: string, caregiverId: string, scope: s
     _scope: scope,
   });
   if (error) throw new CareApiError(error.message, 500);
-  if (!data) throw new CareApiError("Missing scope: " + scope, 403);
+  if (!data) throw new CareApiError("Not found", 404);
 }
 
 /** Mirrors `caregiverReadToday` in `care.functions.ts`. */

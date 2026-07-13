@@ -102,6 +102,15 @@ void main() {
     });
   });
 
+  group('source mapping', () {
+    test('sourceKeyFromString maps native health sources', () {
+      expect(sourceKeyFromString('apple_health'), SourceKey.appleHealth);
+      expect(sourceKeyFromString('health_connect'), SourceKey.healthConnect);
+      expect(sourceKeyToString(SourceKey.healthConnect), 'health_connect');
+      expect(sourceLabels[SourceKey.healthConnect], 'Health Connect');
+    });
+  });
+
   group('compare lookback (§8)', () {
     test('none/previous/year_ago windows', () {
       expect(lookbackDaysForCompare(30, CompareMode.none), 30);

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../design/glass_surface.dart' as merged_glass;
-import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
@@ -12,6 +11,7 @@ import '../shared/loading_skeleton.dart';
 import '../shared/merged_style.dart';
 import 'hydration_repository.dart';
 import 'hydration_style.dart';
+import 'quick_add_water.dart';
 
 /// Hydration day view mirroring web `/hydration` (quick-add, goal ring, timeline).
 class HydrationScreen extends ConsumerStatefulWidget {
@@ -23,7 +23,6 @@ class HydrationScreen extends ConsumerStatefulWidget {
 
 class _HydrationScreenState extends ConsumerState<HydrationScreen> {
   DateTime _day = DateTime.now();
-  bool _logging = false;
 
   DateTime get _normalizedDay =>
       DateTime(_day.year, _day.month, _day.day);
@@ -40,44 +39,6 @@ class _HydrationScreenState extends ConsumerState<HydrationScreen> {
     await ref.read(hydrationDayProvider(_normalizedDay).future);
   }
 
-  Future<void> _log({
-    required int volumeMl,
-    required String kind,
-    String? brand,
-    int? sodiumMg,
-  }) async {
-    if (_logging) return;
-    setState(() => _logging = true);
-    try {
-      await ref.read(hydrationRepositoryProvider).logIntake(
-            volumeMl: volumeMl,
-            kind: kind,
-            electrolyteBrand: brand,
-            sodiumMg: sodiumMg,
-          );
-      ref.invalidate(hydrationDayProvider(_normalizedDay));
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              kind == 'water'
-                  ? 'Logged $volumeMl ml water'
-                  : 'Logged $volumeMl ml ${brand ?? 'electrolytes'}',
-            ),
-          ),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not log intake. Try again.')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _logging = false);
-    }
-  }
-
   Future<void> _deleteEntry(String id) async {
     try {
       await ref.read(hydrationRepositoryProvider).deleteEntry(id);
@@ -88,137 +49,6 @@ class _HydrationScreenState extends ConsumerState<HydrationScreen> {
           const SnackBar(content: Text('Could not remove entry')),
         );
       }
-    }
-  }
-
-  Future<void> _showCustomWaterDialog() async {
-    var volume = 250;
-    final result = await showDialog<int>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Add water', style: PurpleType.serifStyle(fontSize: 22)),
-          content: StatefulBuilder(
-            builder: (context, setDialogState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [200, 250, 330, 500, 750].map((v) {
-                      final selected = volume == v;
-                      return ChoiceChip(
-                        label: Text('$v ml'),
-                        selected: selected,
-                        onSelected: (_) => setDialogState(() => volume = v),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Custom (ml)'),
-                    onChanged: (value) {
-                      final parsed = int.tryParse(value);
-                      if (parsed != null) setDialogState(() => volume = parsed);
-                    },
-                  ),
-                ],
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: volume > 0 ? () => Navigator.pop(context, volume) : null,
-              child: const Text('Add'),
-            ),
-          ],
-        );
-      },
-    );
-    if (result != null && result > 0) {
-      await _log(volumeMl: result, kind: 'water');
-    }
-  }
-
-  Future<void> _showElectrolyteDialog() async {
-    const presets = [
-      ('LMNT', 1000, 355),
-      ('Liquid I.V.', 500, 473),
-      ('Pedialyte', 370, 354),
-    ];
-    var brand = presets.first.$1;
-    var sodium = presets.first.$2;
-    var volume = presets.first.$3;
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(
-            'Add electrolytes',
-            style: PurpleType.serifStyle(fontSize: 22),
-          ),
-          content: StatefulBuilder(
-            builder: (context, setDialogState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: presets.map((p) {
-                      return ChoiceChip(
-                        label: Text(p.$1),
-                        selected: brand == p.$1,
-                        onSelected: (_) => setDialogState(() {
-                          brand = p.$1;
-                          sodium = p.$2;
-                          volume = p.$3;
-                        }),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Volume (ml)'),
-                    controller: TextEditingController(text: '$volume'),
-                    onChanged: (value) {
-                      volume = int.tryParse(value) ?? volume;
-                    },
-                  ),
-                ],
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: volume > 0 ? () => Navigator.pop(context, true) : null,
-              child: const Text('Add'),
-            ),
-          ],
-        );
-      },
-    );
-    if (result == true) {
-      await _log(
-        volumeMl: volume,
-        kind: 'electrolyte',
-        brand: brand,
-        sodiumMg: sodium,
-      );
     }
   }
 
@@ -257,11 +87,15 @@ class _HydrationScreenState extends ConsumerState<HydrationScreen> {
                   onNext: _isToday
                       ? null
                       : () => setState(() {
-                            final next = _normalizedDay.add(const Duration(days: 1));
+                            final next =
+                                _normalizedDay.add(const Duration(days: 1));
                             final today = DateTime.now();
-                            _day = next.isAfter(DateTime(today.year, today.month, today.day))
-                                ? DateTime(today.year, today.month, today.day)
-                                : next;
+                            final todayKey = DateTime(
+                              today.year,
+                              today.month,
+                              today.day,
+                            );
+                            _day = next.isAfter(todayKey) ? todayKey : next;
                           }),
                 ),
                 const SizedBox(height: 24),
@@ -280,12 +114,12 @@ class _HydrationScreenState extends ConsumerState<HydrationScreen> {
                       _GoalCard(data: data),
                       if (_isToday) ...[
                         const SizedBox(height: 20),
-                        _QuickAddRow(
-                          logging: _logging,
-                          on250: () => _log(volumeMl: 250, kind: 'water'),
-                          on500: () => _log(volumeMl: 500, kind: 'water'),
-                          onCustomWater: _showCustomWaterDialog,
-                          onElectrolyte: _showElectrolyteDialog,
+                        QuickAddWater(
+                          onLogged: () {
+                            ref.invalidate(
+                              hydrationDayProvider(_normalizedDay),
+                            );
+                          },
                         ),
                       ],
                       const SizedBox(height: 24),
@@ -314,7 +148,10 @@ class _HydrationScreenState extends ConsumerState<HydrationScreen> {
                         const SizedBox(height: 12),
                         Text(
                           'Offline: showing last known goal; timeline may be empty.',
-                          style: hydrationSans(fontSize: 12, color: p.textTertiary),
+                          style: hydrationSans(
+                            fontSize: 12,
+                            color: p.textTertiary,
+                          ),
                         ),
                       ],
                     ],
@@ -385,6 +222,7 @@ class _GoalCard extends StatelessWidget {
     final p = mergedPalette();
     final liters = data.totalMl / 1000;
     final goalLiters = data.goalMl / 1000;
+    final pct = (data.progress * 100).round();
     return merged_glass.GlassSurface(
       borderRadius: BorderRadius.circular(24),
       padding: const EdgeInsets.all(24),
@@ -394,6 +232,11 @@ class _GoalCard extends StatelessWidget {
           Text(
             '${liters.toStringAsFixed(2)} L / ${goalLiters.toStringAsFixed(1)} L',
             style: medsSerif(fontSize: 32, color: p.textPrimary),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Goal · $pct%',
+            style: hydrationSans(fontSize: 12, color: p.textTertiary),
           ),
           const SizedBox(height: 12),
           ClipRRect(
@@ -407,52 +250,6 @@ class _GoalCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _QuickAddRow extends StatelessWidget {
-  const _QuickAddRow({
-    required this.logging,
-    required this.on250,
-    required this.on500,
-    required this.onCustomWater,
-    required this.onElectrolyte,
-  });
-
-  final bool logging;
-  final VoidCallback on250;
-  final VoidCallback on500;
-  final VoidCallback onCustomWater;
-  final VoidCallback onElectrolyte;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        FilledButton.tonal(
-          onPressed: logging ? null : on250,
-          style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-          child: const Text('250 ml'),
-        ),
-        FilledButton.tonal(
-          onPressed: logging ? null : on500,
-          style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-          child: const Text('500 ml'),
-        ),
-        OutlinedButton(
-          onPressed: logging ? null : onCustomWater,
-          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
-          child: const Text('Water'),
-        ),
-        OutlinedButton(
-          onPressed: logging ? null : onElectrolyte,
-          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
-          child: const Text('Electrolytes'),
-        ),
-      ],
     );
   }
 }

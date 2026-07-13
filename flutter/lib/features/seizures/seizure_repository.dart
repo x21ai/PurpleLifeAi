@@ -91,6 +91,26 @@ class SeizureRepository {
   String? get _userId =>
       _supabase.auth.currentSession?.user.id ?? _supabase.auth.currentUser?.id;
 
+  /// One-tap / Today quick log into `seizure_events` (mirrors web Quick log now).
+  ///
+  /// Writes [startedAt] and optional [notes] only; detailed fields stay on
+  /// `/seizures/new`. Throws when signed out or the insert fails.
+  Future<void> quickLog({
+    required DateTime startedAt,
+    String? notes,
+  }) async {
+    final userId = _userId;
+    if (userId == null) {
+      throw StateError('Sign in to log a seizure');
+    }
+    final trimmed = notes?.trim();
+    await _supabase.from('seizure_events').insert({
+      'user_id': userId,
+      'started_at': startedAt.toUtc().toIso8601String(),
+      if (trimmed != null && trimmed.isNotEmpty) 'notes': trimmed,
+    });
+  }
+
   /// Loads the signed-in user's most recent seizures, newest first.
   ///
   /// [limit] caps the number of rows. When [days] is provided, only events with

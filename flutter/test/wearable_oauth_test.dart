@@ -121,10 +121,17 @@ void main() {
   });
 
   group('WearableOAuth.nativeConnectSetupHint', () {
-    test('Oura hint includes native redirect URI', () {
+    test('Oura has no setup hint once redirect is registered', () {
       expect(
         WearableOAuth.nativeConnectSetupHint(WearableOAuthProvider.oura),
-        contains('org.purplelife.app://oauth-oura-callback'),
+        isNull,
+      );
+    });
+
+    test('Whoop hint includes native redirect URI', () {
+      expect(
+        WearableOAuth.nativeConnectSetupHint(WearableOAuthProvider.whoop),
+        contains('org.purplelife.app://oauth-whoop-callback'),
       );
     });
   });

@@ -1,0 +1,36 @@
+{
+  "@@locale": "es",
+  "medsMarkTaken": "Tomada",
+  "medsPillsLeft": "{count} pastillas restantes",
+  "@medsPillsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "0"
+      }
+    }
+  },
+  "medsCurrentlyPillsLeft": "Actualmente {count} pastillas restantes",
+  "@medsCurrentlyPillsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "0"
+      }
+    }
+  },
+  "medsPillsRemaining": "Pastillas restantes",
+  "medsPillsRemainingAfterRefill": "Pastillas restantes despues del resurtido",
+  "medsPills": "Pastillas",
+  "medsFormRefill": "Resurtido",
+  "medsRefillSoon": "Reabastecer pronto",
+  "medsRefillSoonBadge": "REABASTECER PRONTO",
+  "medsRefillToUpdate": "Resurtir para actualizar",
+  "medsOutOfStock": "Cantidad en cero, resurtir para actualizar",
+  "medsOutOfStockBadge": "SIN EXISTENCIAS",
+  "medsZeroStock": "Sin existencias",
+  "medsDetailRefillTime": "hora de resurtir",
+  "medsUpdateStock": "Actualizar existencia",
+  "medsIRefilled": "Ya resurtí",
+  "medsUpdatePillCountFailed": "No se pudo actualizar la cantidad de pastillas"
+}

@@ -325,7 +325,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                               'We sent a password reset link to '
                               '${_emailController.text.trim()}. Use only the latest email; '
                               'older links stop working when you request another. '
-                              'The link stays valid for $recoveryLinkTtlLabel.',
+                              'The link stays valid for $recoveryLinkTtlLabel. '
+                              'If nothing arrives, check spam and any work-email quarantine '
+                              '(sender notify.purplelife.org), or sign in with a password '
+                              'set by support and change it under Account.',
                               style: const TextStyle(
                                 fontSize: 15,
                                 height: 1.45,

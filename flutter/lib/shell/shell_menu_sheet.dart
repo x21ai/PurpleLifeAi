@@ -93,18 +93,18 @@ class ShellMenuPanel extends ConsumerWidget {
         parseTokenColor(PurpleTokens.loaded.glassFor('dark').border);
 
     Future<void> navigateTo(String target) async {
+      // Capture router before dismissing the drawer. Popping the endDrawer can
+      // unmount this context and silently drop context.go after maybePop.
+      final router = GoRouter.of(context);
       onDismiss();
-      if (context.mounted) {
-        context.go(target);
-      }
+      router.go(target);
     }
 
     Future<void> signOut() async {
+      final router = GoRouter.of(context);
       onDismiss();
       await ref.read(signOutSessionProvider)();
-      if (context.mounted) {
-        context.go(AppRoutes.signIn);
-      }
+      router.go(AppRoutes.signIn);
     }
 
     return GlassSurface(
@@ -173,7 +173,7 @@ class ShellMenuPanel extends ConsumerWidget {
                   _ShellMenuItem(
                     icon: Icons.favorite_outline,
                     label: 'Care',
-                    selected: _matchesRoute('/care') ||
+                    selected: _matchesRoute(AppRoutes.careIndex) ||
                         _matchesRoute(AppRoutes.settingsSharing),
                     onTap: () => navigateTo(AppRoutes.careIndex),
                   ),

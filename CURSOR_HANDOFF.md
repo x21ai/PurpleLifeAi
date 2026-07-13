@@ -1,13 +1,20 @@
 # Cursor Handoff
 
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-13 ~01:48 UTC (med past-dose + keyboard).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-13 ~01:54 UTC (TF28 ship).
+
+**TF28 ship (`1.0.0+28`) in progress.** Compile gate green (today+meds analyze;
+`flutter test` 243/243). Merging `feat/meds-refill-restore` → `main`, then
+`doppler run --project purple-life --config prd -- bun run ios:testflight`.
+After VALID: `node scripts/asc-add-build-to-group.mjs 28 "Founding Team"`.
+Pill-stock DB trigger mg bug deferred (`meds-pill-stock-trigger-mg-as-pills`).
+Live install until VALID: **TF27**.
 
 **Recent (2026-07-13): Med past-dose / getDosesForDate audit PASS.**
 Past days: `loadDosesForDate` / schedule viewDate (no regenerate). P0: Add/edit
 past dose via `PastDoseSheet` + `savePastDose` on med detail + history tap.
 Verify: `cd flutter && flutter test test/meds_past_dose_test.dart
 test/meds_schedule_ux_test.dart test/today_meds_actions_test.dart` (**13/13**).
-Status: **fixed** (uncommitted `feat/meds-refill-restore`).
+Status: **fixed** (shipping TF28).
 
 **Recent (2026-07-13): P0 Today soft keyboard dismiss (tf27-stuck-keyboard).**
 Shell unfocus on scroll/tap/route/menu; Today expand toggles dismiss focus.
@@ -71,7 +78,9 @@ mirrors pill-stock locally. Verify:
 `cd flutter && flutter test test/med_offline_queue_test.dart test/med_offline_cache_db_test.dart`
 (**10/10**). Status: **fixed**. Issue: `flutter-med-offline-queue-optimistic-drop`.
 
-**TF28 upload STOPPED.** Sibling collisions: today+meds `flutter analyze` still RED (`_openMedsPanel`, expand bodies, `_ZeroPillsChip`, `GlassMaterialVariant`). Restorer owns green; **no `ios:testflight`** until analyze clean + `flutter test` green. Live install: **TF27**. Pill stock: see `meds-pill-stock-amount-vs-count` (trigger may zero stock via dose `amount`/mg).
+**TF28 upload RESUMED.** Restorer cleared today+meds analyze + **243/243** tests.
+Ship agent uploading `1.0.0+28`. Pill stock: see `meds-pill-stock-amount-vs-count`
+(trigger may zero stock via dose `amount`/mg); refill UI ships without DB change.
 
 **Recent (2026-07-13): Data/Vitals/Biometrics P0.** `health_connect` no longer dropped from metric series; Vitals `hasData` requires real values; hub skips false empty-while-loading. Verify: `cd flutter && flutter test test/biometric_metrics_test.dart test/synced_data_overview_test.dart test/today_vital_items_test.dart`.
 

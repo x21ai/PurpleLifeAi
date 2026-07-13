@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/auth/onboarding_gate.dart';
 import '../../core/providers/core_providers.dart';
 import '../../design/glass_card.dart';
 import '../../design/purple_theme.dart';
@@ -172,6 +173,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         'conditions': _conditions,
         'onboarded_at': DateTime.now().toUtc().toIso8601String(),
       }, onConflict: 'id');
+
+      await markOnboardedCache(user.id);
 
       if (!mounted) return;
       context.go(AppRoutes.today);
