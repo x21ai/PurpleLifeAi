@@ -43,8 +43,15 @@ class _NativeAppShellState extends State<NativeAppShell> {
 
   bool get _hideChrome => shellHidesChrome(widget.location);
 
+  /// Clears focus so the soft keyboard cannot stay up with no field focused
+  /// (`resizeToAvoidBottomInset: false` otherwise leaves it overlaying Today).
+  void _dismissKeyboard() {
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
+
   void _openMenu() {
     if (_hideChrome) return;
+    _dismissKeyboard();
     // Defer one frame so Scaffold.endDrawer is ready on web canvases.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _hideChrome) return;
@@ -55,12 +62,20 @@ class _NativeAppShellState extends State<NativeAppShell> {
   @override
   void didUpdateWidget(covariant NativeAppShell oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.location != widget.location) {
+      _dismissKeyboard();
+    }
     if (oldWidget.location != widget.location || _hideChrome) {
       _scaffoldKey.currentState?.closeEndDrawer();
     }
   }
 
   bool _handleScroll(ScrollNotification notification) {
+    // User-driven drag only; metrics noise must not steal focus mid-type.
+    if (notification is ScrollUpdateNotification &&
+        notification.dragDetails != null) {
+      _dismissKeyboard();
+    }
     if (notification is ScrollUpdateNotification ||
         notification is ScrollMetricsNotification) {
       final next = notification.metrics.pixels > 6;
@@ -129,32 +144,36 @@ class _NativeAppShellState extends State<NativeAppShell> {
   @override
   Widget build(BuildContext context) {
     // Explicit viewport sizing avoids unbounded shell height issues on web.
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: purpleCanvasDark,
-      resizeToAvoidBottomInset: false,
-      endDrawer: _hideChrome
-          ? null
-          : ShellMenuEndDrawer(location: widget.location),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const ColoredBox(color: CanvasBackground.canvasColor),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0, -0.85),
-                radius: 1.2,
-                colors: [CanvasBackground.gradientCenter, Colors.transparent],
-                stops: [0, 0.58],
+    return GestureDetector(
+      onTap: _dismissKeyboard,
+      behavior: HitTestBehavior.translucent,
+      child: Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: purpleCanvasDark,
+        resizeToAvoidBottomInset: false,
+        endDrawer: _hideChrome
+            ? null
+            : ShellMenuEndDrawer(location: widget.location),
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            const ColoredBox(color: CanvasBackground.canvasColor),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(0, -0.85),
+                  radius: 1.2,
+                  colors: [CanvasBackground.gradientCenter, Colors.transparent],
+                  stops: [0, 0.58],
+                ),
               ),
             ),
-          ),
-          LayoutBuilder(
-            builder: (context, constraints) =>
-                _buildShellBody(context, constraints),
-          ),
-        ],
+            LayoutBuilder(
+              builder: (context, constraints) =>
+                  _buildShellBody(context, constraints),
+            ),
+          ],
+        ),
       ),
     );
   }

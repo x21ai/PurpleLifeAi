@@ -9,6 +9,13 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-13 Flutter More / expand panels vs Merged preview: FIXED (partial).**
+Expand panels broken by nested Meds GlassCard, Wearables SyncStatusBar assert
+before Supabase init, missing announcement wiring. Hydration left to sibling.
+Last 7 days still stub vs preview trend grid. Evidence:
+`flutter test test/today_screen_render_test.dart test/today_meds_actions_test.dart`
+passed. Branch `feat/meds-refill-restore`.
+
 **2026-07-13 P0 Today soft keyboard dismiss (`tf27-stuck-keyboard`).**
 Root: Quick log notes `TextField` + shell `resizeToAvoidBottomInset: false`
 left the keyboard overlaying Today with no focused field, blocking meds.
@@ -54,6 +61,22 @@ user sets pills > 0 via any of those paths. Branch `feat/meds-refill-restore`.
 Evidence: `flutter test test/meds_refill_test.dart test/meds_refill_stock_test.dart`.
 
 ## Log
+
+### 2026-07-13T01:50:00Z — TF28 compile restore (containment)
+- **Requested:** Fix Flutter analyze/test compile errors from parallel agents;
+  do not upload TF yet; append `meds-pill-stock-trigger-mg-as-pills`.
+- **Done:** Deduped Today expand bodies; restored imports/wiring for
+  `MissedDoseCatchupBanner`, log/meds panel openers, wearables sync callbacks,
+  `GlassMaterialVariant`, healthConnect source key, refill/zero-pills chip.
+  Scoped analyze clean; full `flutter test` **243/243**. OPEN-ISSUES entry
+  `meds-pill-stock-trigger-mg-as-pills` (refill UI still required).
+- **Issues:** None remaining for compile. Product: pill-stock mg-as-pills
+  trigger + TF28 device/ASC ship still open for ship agent.
+- **Stand / next:** TF28 ship agent may upload after own ASC/Luciq baseline.
+- **Who / where:** compile-restorer agent; `feat/meds-refill-restore`.
+- **Evidence:** `flutter analyze lib/features/today lib/features/meds` No issues;
+  `flutter test` +243 All tests passed.
+- **Timestamp:** 2026-07-13T01:50:00Z
 
 ### 2026-07-13T01:48:00Z — P0 Today soft keyboard dismiss (tf27-stuck-keyboard)
 - **Requested:** Soft keyboard stuck open on Today with no focused field, blocking
