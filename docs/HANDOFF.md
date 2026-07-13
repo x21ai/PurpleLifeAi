@@ -9,6 +9,16 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-13 TF28 gen_localizations: FIXED on main (`8751c44b`).**
+Root cause: ARB + `l10n.yaml` without `flutter: generate: true`. Fix kept
+the complete gen-l10n path (do NOT delete scaffolding): `generate: true`,
+`flutter_localizations`, `flutter/l10n.yaml`, `lib/l10n/app_*.arb` +
+checked-in `app_localizations*.dart`. Evidence: `flutter gen-l10n` EXIT 0.
+Earlier snapshot lines claiming scaffolding **removed** are superseded
+(race; files remain on `main` and on disk). ASC still **1.0 (27)** until
+upload owner re-runs `ios:testflight`. This agent did not start a second
+upload (lease expired; no active upload process).
+
 **2026-07-13 Full ASC TF feedback triage — 29 screenshots.**
 `ios:check-tf-feedback` pulled all submissions. ASC tip still **1.0 (27)** (no 28).
 Luciq: prior baseline **0** crashes on 27; MCP list OK. Newest P0s (Jul 13): no back
@@ -41,7 +51,7 @@ create/update pass stock; rescue hides fields. No form code change.
 Added `flutter/test/medication_form_sheet_test.dart` **4/4**. Did not
 touch l10n (scaffolding removed; avoid upload owner).
 
-**2026-07-13 Unused Flutter l10n scaffolding REMOVED (TF28 archive unblock).**
+**2026-07-13 Unused Flutter l10n scaffolding REMOVED (SUPERSEDED; keep gen-l10n).**
 No Dart import of `flutter_gen/gen_l10n` or `AppLocalizations` outside
 generated stubs; UI still hardcoded. Deleted `flutter/l10n.yaml`,
 `flutter/lib/l10n/` (ARB + generated), and reverted `generate: true` /
