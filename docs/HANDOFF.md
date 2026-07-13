@@ -9,13 +9,32 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-07-13 Rollback assessment (operator: broken / removed functionality).**
+Evidence-only; no git reset/force-push. OPEN-ISSUES `tf28-rollback-assessment`.
+
+| Fact | Value |
+|------|-------|
+| Code tip | `main` pubspec **1.0.0+28** (l10n scaffolding removed for archive; TF28 **unshipped**) |
+| ASC live | **1.0 (27)** VALID Founding + external; also 26/25/24/23 VALID |
+| TF25 | `4f1eed2c` / `f2ac82d8` → +25 |
+| TF26 | `3e405e51` → +26 Merged Today + newdesign sign-in |
+| TF27 | `cde62548` → +27 AuthGate password blank-Today fix |
+| TF28 product | `0b70e2dc`+ → +28 unshipped |
+
+**Verdict (blunt):** Concern is **partly true for live TF27**, not a full wipe.
+TF26 **intentionally removed** TF25 `_MoreForToday` (wearables nudge + hydration
+link cards) for icon expanders. Live TF27 still has Taken/refill/keyboard/narrative
+P0s that are **fixed on main +28 but not on devices**. Much web depth was **never
+ported**. **Recommend Option A: ship TF28.** Do not ASC-install TF25 without owner
+call (drops AuthGate). Do not revert Merged without accepting loss of newdesign
+sign-in. Options table in OPEN-ISSUES.
+
 **2026-07-13 TF28 gen_localizations: FIXED via removal (`2ca350da`).**
 Root cause: unused ARB + `l10n.yaml` without `generate: true` broke Xcode
 `gen_localizations` packaging. Landed fix: delete `flutter/l10n.yaml`,
 `flutter/lib/l10n/`, and drop `generate: true` / `flutter_localizations`
 (UI never imported `AppLocalizations`). Evidence: no l10n config on disk;
-`main` @ `2ca350da`/`eb591b18`. ASC still **1.0 (27)** until upload owner
-re-runs `ios:testflight`. This agent did not start a second upload.
+ASC still **1.0 (27)** until upload owner re-runs `ios:testflight`.
 
 ### 2026-07-13T02:54:21Z — Rollback assessment (no destructive git)
 
@@ -25,13 +44,13 @@ re-runs `ios:testflight`. This agent did not start a second upload.
   TF25=`4f1eed2c`/`f2ac82d8`, TF26=`3e405e51`, TF27=`cde62548`, TF28=`0b70e2dc`+;
   compared Merged removals vs never-ported web; wrote OPEN-ISSUES
   `tf28-rollback-assessment` + refreshed this snapshot. No reset/force-push.
-- **Issues:** Uncommitted Today/hydration WIP still on disk; TF28 not on ASC;
-  device QA for +28 fixes UNVERIFIED; `tf27-newdesign-today-capability-gaps`
+- **Issues:** Uncommitted Today/hydration WIP may still be on disk; TF28 not on
+  ASC; device QA for +28 fixes UNVERIFIED; `tf27-newdesign-today-capability-gaps`
   text still lists some items restored on +28 (stale inventory vs code).
 - **Stand / next:** Prefer **ship TF28 (Option A)**; owner call required before
   ASC install of 25/26 or any Merged revert.
-- **Who / where:** rollback-assessment subagent @ local `main` `879dbcd2`.
-- **Evidence:** ASC builds list; `git grep` MedRefillSheet 0@TF27 / 4@+28;
+- **Who / where:** rollback-assessment subagent @ local `main` (+28).
+- **Evidence:** ASC builds list; `git grep` MedRefillSheet 0@TF27 / present@+28;
   meds providers `valueOrNull`@TF27 vs `readActiveSession`@+28; TF26 diff
   removing `_MoreForToday`; `docs/previews/TF28-DESIGN-VS-FLUTTER.md`.
 - **Timestamp:** 2026-07-13T02:54:21Z
