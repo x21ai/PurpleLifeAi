@@ -7,7 +7,67 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ---
 
+## Current snapshot
+
+**2026-07-13 Journal/Log from Today P0 (Save under status bar + photo).**
+TF ASC: Devyn could not submit / attach photo. Root cause: `NativeAppShell`
+strips `MediaQuery.padding` on full-bleed `/journal/new`, so `SafeArea` was a
+no-op and Save drew under the status bar (unusable). Fix: pad with
+`viewPadding`, nested Scaffold, explicit Save colors, keyboard hide control,
+working Photo (camera/library → `journal-media`), flush sync after save, merge
+pending cache into list. Voice/video still coming soon. Evidence:
+`flutter test test/journal_pending_upload_test.dart` **5/5**,
+`flutter analyze lib/features/journal/` clean. Avoided Today score files.
+
+**2026-07-13 endDrawer burger routes audit: PASS (nav race hardened).**
+Account `/account`, Settings `/settings`, Tools `/tools`, Care `/care`, Sign out
+→ `signOutSessionProvider` + `/sign-in` all registered in `router.dart` and wired
+in `shell_menu_sheet.dart` (plus Meds in drawer). Fix: capture `GoRouter` before
+drawer `maybePop` so dismiss cannot drop `context.go`. Care route uses
+`AppRoutes.careIndex`. Evidence: `flutter test test/shell_menu_routes_test.dart
+test/care_routes_test.dart test/router_deep_link_test.dart` **10/10**.
+
+**2026-07-13 Flutter med stock refill (`pills_remaining`).**
+Column is `medications.pills_remaining` (+ optional `refill_threshold`), not
+`remaining_quantity`. `MedsRepository.updatePillsRemaining` queueWrites
+`id` / `pills_remaining` / `updated_at` (+ optional threshold). Wired: med
+detail **Update stock** → `MedRefillSheet`; form **Pills on hand** / **Alert at**;
+meds list / Today dose **Update stock** / **Refill to update**. After count hits 0,
+user sets pills > 0 via any of those paths. Branch `feat/meds-refill-restore`.
+Evidence: `flutter test test/meds_refill_stock_test.dart` **5/5**.
+
 ## Log
+
+### 2026-07-13T01:42:00Z — Journal capture P0 (Save, photo, keyboard)
+- **Requested:** Audit Flutter Journal/Log from Today (create entry, media,
+  keyboard dismiss); fix P0 for live users; tests; avoid Today score files.
+- **Done:** `journal_capture_screen.dart` pads with `MediaQuery.viewPadding`
+  (shell strips padding), nested Scaffold + keyboard hide, Photo via
+  `image_picker` + storage upload; `journal_repository.dart` flush sync, merge
+  pending cache, optional media on `saveEntry`; `journal_media_file.dart`;
+  tests in `journal_pending_upload_test.dart` **5/5**.
+- **Issues:** Voice/video still coming soon (`flutter-phase5-nogo` partial).
+  Not committed/pushed; TF28 integrator owns upload.
+- **Stand / next:** Land with TF28 wave; device QA submit + photo on Founding Team.
+- **Who / where:** journal audit subagent, local, uncommitted on current branch.
+- **Evidence:** `flutter test test/journal_pending_upload_test.dart` **5/5**;
+  `flutter analyze lib/features/journal/` clean; ASC screenshots Devyn Jul 6–7.
+- **Timestamp:** 2026-07-13T01:42:00Z
+
+### 2026-07-13T01:45:00Z — Flutter med detail/form stock refill (`pills_remaining`)
+- **Requested:** Wire Flutter med detail + form to edit stock after 0 using
+  `pills_remaining` (+ optional `refill_threshold`); queueWrite medications update
+  with `id`, `pills_remaining`, `updated_at`; do not use `remaining_quantity`.
+- **Done:** `updatePillsRemaining` payload includes `updated_at`; form fields
+  Pills on hand / Alert at; med detail Update stock → `MedRefillSheet`; list/Today
+  refill CTAs wired via `onRefill` / `onRefillMed`. Tests in
+  `flutter/test/meds_refill_stock_test.dart`.
+- **Issues:** Working tree has unrelated parallel WIP; this land is meds stock only.
+- **Stand / next:** Merge `feat/meds-refill-restore` when sibling meds slices ready.
+- **Who / where:** Cursor meds refill subagent, `feat/meds-refill-restore`.
+- **Evidence:** `flutter test test/meds_refill_stock_test.dart` **5/5**;
+  `dart analyze` clean on med_detail / form / repository / refill sheet.
+- **Timestamp:** 2026-07-13T01:45:00Z
 
 ### 2026-07-13T01:42:00Z — Flutter Wearables audit (Today + Tools)
 - **Requested:** Audit Flutter Wearables from Today icon row + Tools (Oura/Whoop/Apple Health connect/sync); restore missing controls vs web; fix P0 only; no deploy; document gaps; checklist for Devyn/Sam/Jaspreet.
