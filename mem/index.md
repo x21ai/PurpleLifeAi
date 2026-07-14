@@ -20,3 +20,4 @@ Metric labels always show the canonical human name from `src/lib/metric-naming.t
 - [Auth password reset](auth-password-reset.md) - Recovery email redirect URIs, web PKCE bootstrap (`auth-recovery.ts`), native `reset-password` deep link, migration accounts without password hashes.
 - [Mobile crash reporting](observability/crash-reporting.md) - Luciq vs Sentry/Crashlytics/ASC; agent runbook after TestFlight upload.
 - [TestFlight beta feedback](observability/testflight-beta-feedback.md) - Share Beta Feedback iOS/TestFlight requirements, external tester alternatives, ASC + Luciq triage.
+- [Doppler Purple Life secrets](doppler-purple-life.md) - x21/prd `PURPLE_LIFE_*` keys for ASC, team, Luciq (2026-07-14 migration from `purple-life`).

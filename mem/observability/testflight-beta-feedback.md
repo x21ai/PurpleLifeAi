@@ -47,7 +47,7 @@ Tell external testers to use **any** of these (document in release notes / Found
 ## Agent access (ASC API)
 
 ```bash
-doppler run --project purple-life --config prd -- bun run ios:check-tf-feedback
+doppler run --project x21 --config prd -- bun run ios:check-tf-feedback
 # ASC only:
 doppler run --project purple-life --config prd -- node scripts/asc-list-testflight-feedback.mjs
 ```

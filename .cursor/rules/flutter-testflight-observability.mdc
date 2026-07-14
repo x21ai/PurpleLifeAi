@@ -59,7 +59,7 @@ For each new ASC submission and each new Luciq crash/bug since the prior build:
   reports of the same bug count as P0 until fixed or explicitly wont-fix with owner sign-off).
 - Feedback was **logged** in HANDOFF but not **fixed** (regression: TF21 shipped with duplicate
   Today narrative despite 3 ASC reports — never ship again without closing repeat items).
-- `ios:check-luciq` shows SDK token missing (`LUCIQ_APP_TOKEN` must be in Doppler for TF builds).
+- `ios:check-luciq` shows SDK token missing (`PURPLE_LIFE_LUCIQ_APP_TOKEN` must be in Doppler for TF builds).
 
 Acceptable to ship with open **P2** polish items only if logged in OPEN-ISSUES with owner.
 
@@ -71,17 +71,17 @@ Acceptable to ship with open **P2** polish items only if logged in OPEN-ISSUES w
 | `ios:check-asc-feedback` | ASC only | Same ASC half without Luciq |
 | `ios:check-luciq` | Luciq | SDK + MCP cred check (`status: mcp` or `ok`) |
 | `ios:check-asc-builds` | ASC | Build processing state, beta groups |
-| `luciq:sync-secrets` | Doppler | Copy `LUCIQ_OAUTH_TOKEN` from `servers-teamkeys/dev` → `purple-life/prd` |
+| `luciq:sync-secrets` | Doppler | Copy `LUCIQ_OAUTH_TOKEN` from `servers-teamkeys/dev` → `x21/prd` |
 | `luciq:install-mcp` | Local Cursor | Merge Luciq HTTP MCP into `~/.cursor/mcp.json` (restart Cursor) |
 
 ## Luciq tokens (Doppler)
 
 | Secret | Project / config | Purpose |
 |--------|------------------|---------|
-| `LUCIQ_APP_TOKEN` | `purple-life` / `prd` | SDK on device (TestFlight `--dart-define`) |
+| `PURPLE_LIFE_LUCIQ_APP_TOKEN` | `x21` / `prd` | SDK on device (TestFlight `--dart-define`) |
 | `LUCIQ_OAUTH_TOKEN` | `servers-teamkeys` / `dev` | **Source** MCP/API token |
-| `LUCIQ_API_TOKEN` | `purple-life` / `prd` | **Runtime** copy from sync |
-| `LUCIQ_ACCOUNT_EMAIL` | `purple-life` / `prd` | Luciq account |
+| `PURPLE_LIFE_LUCIQ_API_TOKEN` | `x21` / `prd` | **Runtime** copy from sync |
+| `PURPLE_LIFE_LUCIQ_ACCOUNT_EMAIL` | `x21` / `prd` | Luciq account |
 
 ## Tester feedback paths (when screenshot menu missing)
 

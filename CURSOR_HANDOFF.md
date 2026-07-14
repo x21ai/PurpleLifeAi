@@ -1,18 +1,26 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-13 ~02:50 UTC (TF28 gen_localizations fix).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-07-14 (laptop handoff commit: Doppler x21 + TF28 fixes landed on `main`).
 
-**TF28 ship (`1.0.0+28`) packaging unblocked.** Prior `ios:testflight` failed at
-`gen_localizations` (`l10n.yaml` without `flutter: generate: true`). Final fix on
-`main` @ `2ca350da`: removed unused l10n scaffolding (no `l10n.yaml` / ARBs /
-`generate: true`). Upload owner:
-`doppler run --project purple-life --config prd -- bun run ios:testflight`.
-After VALID: `node scripts/asc-add-build-to-group.mjs 28 "Founding Team"`.
-ASC still **1.0.0 (27)** until that upload. Pill-stock DB trigger deferred
-(`meds-pill-stock-trigger-mg-as-pills`). Live install until VALID: **TF27**.
+**TF28 LIVE (`1.0.0+28`).** ASC **1.0 (28)** `ec30baa8-79cc-42b1-bbd6-6b678e8f57fc`
+**VALID**, internal + external **IN_BETA_TESTING**. Founding Team added;
+beta review **WAITING_FOR_REVIEW**. Packaging: unused l10n removed
+(`2ca350da` / tip `7682539d`). Upload log `/tmp/tf28-exclusive-upload.log`
+(`TF_SKIP_PREFLIGHT=1` after 8GB OOM/pkill races). Pill-stock DB trigger still
+deferred (`meds-pill-stock-trigger-mg-as-pills`). Install: **TF28**.
 
 **Luciq TF27 baseline (2026-07-13 ~02:08 UTC):** `bun run ios:check-luciq -- --json`
 → `status: mcp`, SDK + dashboard configured. Luciq HTTP MCP `list_crashes` on
 **Flutter - Purple - Beta** (`flutter-purple` beta): **0** crashes (open/closed/
 `1.0.0 (27)`). Bugs/issues **0**. No new P0. Details: `docs/OPEN-ISSUES.md`.
+
+**Install: TF28** (tip). Rollback on device: TestFlight → Purple → **Previous Builds**
+→ **1.0 (22)** (narrative fix, pre-merged bottom nav), **1.0 (15)** (early Flutter),
+**1.0 (9)** (Capacitor WebView → prod TanStack web). Local previews: TanStack
+`bun run dev` → `:8080`; Flutter `./scripts/flutter-web-serve.sh` → `:8765`.
+
+**Recent (2026-07-14): Doppler `x21`/`prd` + `PURPLE_LIFE_*`.** Native iOS secrets
+moved from deleted `purple-life` project. Helpers: `scripts/lib/doppler-purple-life.sh`,
+`scripts/doppler-run-purple-life.sh`, `mem/doppler-purple-life.md`. Web/Worker unchanged
+(`cursor-cloudflare`/`prd_cloudlfare`). Verify: `bun run ios:check-asc`.
 
 **Recent (2026-07-13): Med past-dose / getDosesForDate audit PASS.**
 Past days: `loadDosesForDate` / schedule viewDate (no regenerate). P0: Add/edit
@@ -23,7 +31,8 @@ Status: **fixed** (shipping TF28).
 
 **Recent (2026-07-13): P0 Today soft keyboard dismiss (tf27-stuck-keyboard).**
 Shell unfocus on scroll/tap/route/menu; Today expand toggles dismiss focus.
-Verify: `cd flutter && dart analyze lib/shell/native_app_shell.dart lib/features/today/today_screen.dart lib/features/today/today_quick_log_panel.dart`
+Widget regression: `flutter/test/today_shell_unfocus_test.dart` (**4/4**).
+Also: `cd flutter && dart analyze lib/shell/native_app_shell.dart lib/features/today/today_screen.dart lib/features/today/today_quick_log_panel.dart`
 Status: **fixed** (device QA on next TF).
 
 **Recent (2026-07-13): Meds refill/restock P0 (`feat/meds-refill-restore`).**
@@ -100,13 +109,16 @@ Today Hydration expand had no log chips (web has `QuickAddWater`). Restored shar
 `ScoreTile` 40/32sp + FittedBox so Sleep/Activity no longer wrap digit-per-line.
 Verify: `cd flutter && flutter test test/score_tile_test.dart`.
 
-**Install TF27 for password sign-in.** TF26 blanked `/today` after email/password sign-in (auth gate stream lag). TF27 (`1.0.0+27`, `main` @ `cde62548`) fixes AuthGate session fallback + restores `FilledButton` CTA.
+**Install TF28 for the TF28 product wave.** TF27 remains installable as fallback.
+TF28 (`1.0.0+28`, `main` @ `7682539d`) ships meds/Today/journal/keyboard/wearables
+fixes plus l10n packaging unblock.
 
-**TF28 pre-upload baseline (2026-07-12 ~21:05 ET, no upload):** ASC **1.0 (27)** VALID
-IN_BETA_TESTING. Feedback **27** screenshots; **0** new after TF27. P0 candidate:
-`tf28-pre-baseline-stuck-screen` (ASC 2026-07-08 samuel.cortez). Luciq SDK ok,
-`status: mcp`. Doppler: `purple-life`/`prd` + `ios:check-asc-builds` /
-`ios:check-tf-feedback` / `ios:check-luciq -- --json`.
+**TF28 LIVE (2026-07-13 ~03:34 UTC):** ASC **1.0 (28)** VALID IN_BETA_TESTING
+(Founding Team). Upload evidence `/tmp/tf28-exclusive-upload.log`. Luciq SDK ok,
+`status: mcp`. Doppler: **`x21`/`prd`** (`PURPLE_LIFE_*`, see `mem/doppler-purple-life.md`).
+
+**TF28 pre-upload baseline (2026-07-12 ~21:05 ET, historical):** ASC was **1.0 (27)**
+before TF28 upload. Feedback baseline logged under OPEN-ISSUES.
 
 
 **Post-TF27 (2026-07-12 ~19:50 ET): "old password" / forgot-password still blocked for some users is NOT the AuthGate race.** Live grant+recover APIs healthy. Remaining causes: migration without password hashes (old Lovable passwords never work) + `@eigital.com` quarantine of recovery mail. Ops: Admin API temp password out-of-band. See `docs/OPEN-ISSUES.md` `auth-old-password-and-forgot-post-tf27`.
@@ -115,14 +127,20 @@ IN_BETA_TESTING. Feedback **27** screenshots; **0** new after TF27. P0 candidate
 
 **Recent (2026-07-12 ~21:15 ET): Burger Care invites P0.** `/care` now shows `IncomingCareInvitesCard` (Worker incoming-invites). Sign out / theme / Account password change OK in audit. Today invites card still P1 (`flutter-today-incoming-care-invites`).
 
-## TestFlight — what build has what (2026-07-12)
+## TestFlight — what build has what (2026-07-13)
 
 | Build | ASC status | Founding Team | Git commit | Notes | Install? |
 |-------|------------|---------------|------------|-------|----------|
 | **1.0 (22–24)** | VALID | IN_BETA_TESTING | older | — | Skip |
 | **1.0 (25)** | VALID | IN_BETA_TESTING | `4f1eed2c` | TF25 fleet | Superseded |
-| **1.0 (26)** | VALID | IN_BETA_TESTING | `3e405e51` / `64e72520` | newdesign sign-in + Merged Today; **password sign-in blank Today bug** | Skip for password login |
-| **1.0 (27)** | **VALID** | **IN_BETA_TESTING** | `cde62548` | AuthGate session fallback + FilledButton CTA | **Install** |
+| **1.0 (26)** | VALID | IN_BETA_TESTING | `3e405e51` / `64e72520` | newdesign sign-in + Merged Today | Skip |
+| **1.0 (27)** | VALID | IN_BETA_TESTING | `cde62548` | AuthGate session fallback | Superseded |
+| **1.0 (28)** | **VALID** | **IN_BETA_TESTING** | `7682539d` | TF28 product wave; l10n packaging fix | **Install** |
+
+**Recent (2026-07-13 ~03:34 UTC): TF28 VALID — product wave shipped.**
+Exclusive upload `UPLOAD_EXIT:0` (`TF_SKIP_PREFLIGHT=1`). ASC **1.0 (28) VALID**
+`ec30baa8-79cc-42b1-bbd6-6b678e8f57fc`. Founding Team assigned; beta review
+**WAITING_FOR_REVIEW**. Tip `main` @ `7682539d`.
 
 **Recent (2026-07-12 ~19:20 ET): TF27 VALID — password sign-in fix shipped.**
 Merged `fix/auth-password-signin-tf27` → `main` @ `cde62548`. Upload succeeded; ASC **1.0 (27) VALID**
@@ -327,7 +345,7 @@ allow-list entry (needed for Flutter web), and deploy. Full detail:
 
 | Item | Detail |
 |------|--------|
-| Sync | `bun run luciq:sync-secrets` — `LUCIQ_OAUTH_TOKEN` from `servers-teamkeys/dev` → `purple-life/prd` as `LUCIQ_API_TOKEN` + `LUCIQ_ACCOUNT_EMAIL` |
+| Sync | `bun run luciq:sync-secrets` — `LUCIQ_OAUTH_TOKEN` from `servers-teamkeys/dev` → `x21/prd` as `PURPLE_LIFE_LUCIQ_API_TOKEN` + `PURPLE_LIFE_LUCIQ_ACCOUNT_EMAIL` |
 | Cursor MCP | `bun run luciq:install-mcp` — merges into `~/.cursor/mcp.json`; **restart Cursor** |
 | Check | `bun run ios:check-luciq -- --json` → `dashboardApiConfigured: true`, `status: "mcp"` |
 | Triage | Luciq MCP → **Flutter - Purple** beta (`slug=flutter-purple`, `list_crashes`); legacy REST 401 with MCP token is expected |

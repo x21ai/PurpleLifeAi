@@ -115,5 +115,65 @@ void main() {
       final size = tester.getSize(find.text(value));
       expect(size.height, lessThan(48));
     }
+
+    // FittedBox must wrap each numeral (TF27 scale-down path).
+    expect(find.byType(FittedBox), findsNWidgets(3));
+  });
+
+  testWidgets('ScoreTile null value shows en dash, never a fake number',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Row(
+            children: [
+              Expanded(
+                child: ScoreTile(label: 'Sleep', value: null, active: false),
+              ),
+              Expanded(
+                child: ScoreTile(label: 'Activity', value: null, active: false),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('–'), findsNWidgets(2));
+    expect(find.text('0'), findsNothing);
+    expect(find.text('--'), findsNothing);
+  });
+
+  testWidgets('TodayScoreTiles empty snapshot keeps en dashes on one line',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: TodayScoreTiles(
+              scores: ScoreSnapshot(hasData: false),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('–'), findsNWidgets(3));
+    expect(find.text('READINESS'), findsOneWidget);
+    expect(find.text('SLEEP'), findsOneWidget);
+    expect(find.text('ACTIVITY'), findsOneWidget);
+
+    for (final dash in tester.widgetList<Text>(find.text('–'))) {
+      expect(dash.maxLines, 1);
+      expect(dash.softWrap, isFalse);
+    }
   });
 }

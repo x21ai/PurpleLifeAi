@@ -10,6 +10,72 @@ Format:
 
 ---
 
+## Agent / CI environment (raised 2026-07-13)
+
+- [ ] **`xcode-beta-simulator-app-missing`** — Xcode 27.0 beta (`27A5209h`) at
+  `/Applications/Xcode-beta.app` is incomplete (~3.6G): **`Simulator.app` missing**
+  from both `Contents/Developer/Applications/` and `Contents/Applications/`.
+  `simctl` can boot devices and capture frames, but screenshots are solid black and
+  `recordVideo` yields corrupt ~1.5KB files. `flutter devices` lists no iOS
+  simulator. Blocks `test-results/flutter-qa-tf28/simulator-walkthrough.mp4`.
+  Evidence: `test-results/flutter-qa-tf28/SIMULATOR-BLOCKED.md`. Unblock: install
+  full Xcode with Simulator.app. Rely on web Flutter QA PNGs in the same folder
+  until then. _Raised 2026-07-13 by flutter-qa-tf28-sim-walkthrough._
+
+## TF28 design ↔ Flutter parity (Merged Today + Meds)
+
+**Source:** `docs/previews/personalized-dashboard-preview.html` (`data-layout="merged"`)
++ `docs/FLUTTER-DESIGN-PARITY-CHECKLIST.md` §Today/Meds vs
+`flutter/lib/features/today/*` + `flutter/lib/features/meds/*`.
+**Audit:** 2026-07-13. TF upload left to upload owner.
+
+### Gap matrix (`tf28-design-flutter-parity`)
+
+| Design element | Flutter status | Notes |
+|---|---|---|
+| Merged order: greeting → date strip → scores → signals → narrative → icon expanders → Last 7 | **match** | `TodayScreen` / `_MergedTodayBody` |
+| Date strip (7+today+7, picker, back-to-today) | **match** | `date_strip.dart` |
+| Score tiles Readiness / Sleep / Activity (FittedBox) | **match** | `TodayScoreTiles` + `ScoreTile` |
+| Score tap → ScoreHero / risk detail overlay | **partial** | Tiles route to Data; no inline ScoreHero overlay |
+| Your signals grid + View all | **match** | Always shows 8 tiles (incl. em dash empty); web filters nulls |
+| Maya / AI narrative card | **match** | `TodayMayaCard` when narrative present |
+| Icon row Meds / Hydration / Wearables / Log (Meds default open) | **match** | `TodayIconActionRow` |
+| Meds expand: Taken / Snooze / Skip | **match** | `TodayMedsSection` + `MedsPendingDoseActions` |
+| Meds expand: Undo (taken) / I took it (missed/skipped) | **match** | Wired 2026-07-13 (was status-label only) |
+| Meds expand: Refill to update + 0 pills chip | **match** | `MedRefillSheet` / `pills_remaining` |
+| Meds mini timeline (segment bar) | **missing** | Preview `meds-timeline` segs; Meds `/meds` has 24h dots |
+| Missed-dose catch-up Log ▾ | **match** | `MissedDoseCatchupBanner` |
+| Hydration expand: progress + quick-add + Day view | **match** | Wired `TodayHydrationPanel` 2026-07-13 (was stub CTA) |
+| Hydration expand: week bars + entry list | **partial** | Full list/bars on `/hydration` day view only |
+| Quick log: chips / when / notes / Save | **match** | `TodayLogExpandBody` |
+| Quick log: voice / video compose icons | **missing** | Preview stubs; Flutter Save path only |
+| Wearables expand + Sync now | **match** | `SyncStatusBar` + visit sync |
+| Last 7 days trend metric grid | **partial** | Stub card + Open Data; no spark/grid |
+| Team announcement → Log | **match** | `_AnnouncementBanner` |
+| `/meds` Taken / Undo / I took it / Mark all / refill | **match** | `dose_list.dart` + `MedRefillSheet` |
+| `/meds` 24h timeline + adherence 14d | **match** | Panel present |
+| `/meds` refill forecast / intelligence cards | **missing** | Checklist P0 leftover; see `tf27-newdesign-meds-capability-gaps` |
+| `/meds` underline Active/Archive tabs | **partial** | Pill-style tabs remain |
+| Hardcoded Colors.amber / greenAccent in today+meds | **match** | Tokenized status colors |
+
+- [x] ~~**tf28-design-flutter-parity-hydration-stub**~~ — RESOLVED 2026-07-13: Today
+  Hydration expand used stub `TodayHydrationExpandBody` ("Open hydration" only)
+  while `TodayHydrationPanel` (progress + `QuickAddWater`) already existed.
+  Wired panel + Day view › trailing. Evidence: analyze today+hydration clean;
+  prior `hydration_risk_test` covers `QuickAddWater`.
+- [x] ~~**tf28-design-flutter-parity-today-undo-reclassify**~~ — RESOLVED 2026-07-13:
+  Today dose rows lacked Undo / I took it (Meds panel had them). Added
+  `reclassifyDose` wiring on Today. Evidence:
+  `flutter test test/today_meds_actions_test.dart` Undo + I took it cases green
+  (2 environmental ink_sparkle failures on unrelated Material taps).
+- [ ] **tf28-design-flutter-parity** — Parent tracker for residual **partial/missing**
+  rows above (Last 7 grid, signals null-filter, ScoreHero overlay, meds mini
+  timeline, hydration week bars inline, log voice/video, med-intelligence cards,
+  underline tabs). Not TF28 upload-blocking once Taken/refill/catchup/hydration/log
+  P0s above are green. Cross-links: `tf27-newdesign-today-capability-gaps`,
+  `tf27-newdesign-meds-capability-gaps`, `flutter-today-more-for-today-removed`.
+  _Raised 2026-07-13 by Merged preview parity audit._
+
 ## ASC TestFlight feedback triage (full pull 2026-07-13)
 
 **Source:** `bun run ios:check-tf-feedback` via Doppler `purple-life`/`prd`.
@@ -57,10 +123,10 @@ testers on **27** for login-only and document remaining P0s.
 
 - [ ] **tf28-rollback-assessment** — Operator concern ("broken a lot / may take app
   back / removed originally built functionality"). Evidence pass 2026-07-13T02:54Z.
-  **Git / ASC:** local `main` `879dbcd2` **1.0.0+28**; ASC tip **1.0 (27)** VALID
-  (Founding + external); builds 26/25/24/23 also VALID `IN_BETA_TESTING`; **no 28**
-  on ASC. TF25≈`4f1eed2c`/`f2ac82d8` (+25); TF26=`3e405e51` (+26 Merged); TF27=
-  `cde62548` (+27 AuthGate); TF28 product=`0b70e2dc` (+28 unshipped).
+  **Git / ASC:** `main` tip ~`379159b9` pubspec **1.0.0+28**; ASC tip **1.0 (27)**
+  VALID (Founding + external); builds 26/25/24/23 also VALID `IN_BETA_TESTING`;
+  **no 28** on ASC. TF25≈`4f1eed2c`/`f2ac82d8` (+25); TF26=`3e405e51` (+26 Merged);
+  TF27=`cde62548` (+27 AuthGate); TF28 product=`0b70e2dc` (+28 unshipped).
   **Removed in Merged (TF26) vs TF25 (intentional layout, not accidental delete):**
   `_MoreForToday` disclosure suite (wearables nudge card, hydration link card);
   `TodayPersonalizationStrip` unmounted from Today body (widget still exists);
@@ -452,19 +518,19 @@ See **TF28 device QA** checklist above for the executable device matrix.
   clean on shell + Today. Originally: leftover focus from sign-in / Ask Maya /
   journal; TF27 users Devyn/Sam/Jaspreet. _Raised 2026-07-12._
 
-- [ ] **tf27-score-font-wrap** — Today three-up **score tiles** wrap digits vertically
-  (Sleep shows "8" over "2", Activity "5" over "8") because fixed ~56px numerals
-  overflow the narrow column. Should stay one line ("82", "58", or duration).
-  **Next:** FittedBox / smaller `TextStyle` / `maxLines: 1` in
-  `flutter/lib/features/shared/score_tile.dart` (partial WIP may already be in
-  tree for TF28). _Raised 2026-07-12 by live TF27 users Devyn/Sam/Jaspreet._
+- [x] ~~**tf27-score-font-wrap**~~ — RESOLVED 2026-07-13 (code, TF28 device pending):
+  Today three-up score tiles wrapped digits vertically (Sleep "8"/"2"). Fixed in
+  `flutter/lib/features/shared/score_tile.dart` via `FittedBox` + `maxLines: 1` +
+  smaller active/inactive sizes (40/32). Evidence: `score_tile_test.dart`. Keep
+  device QA row open under TF28 checklist. _Raised 2026-07-12 by live TF27 users
+  Devyn/Sam/Jaspreet; code fixed 2026-07-13._
 
-- [ ] **tf27-huge-narrative** — **"Today's reading"** AI narrative card
-  (`TodayMayaCard` in `today_merged_widgets.dart`) uses large `bodySerif` and
-  dominates the phone viewport. Distinct from resolved
-  `tf-today-duplicate-narrative` (duplicate render). **Next:** compact body size
-  (~14 / regular) without changing copy or removing the card. TF28 wave in
-  progress. _Raised 2026-07-12 by live TF27 users Devyn/Sam/Jaspreet._
+- [x] ~~**tf27-huge-narrative**~~ — RESOLVED 2026-07-13 (code, TF28 device pending):
+  "Today's reading" (`TodayMayaCard`) used large `bodySerif` and dominated the
+  viewport. Compacted to **15sp** via `.copyWith(fontSize: 15)` in
+  `today_merged_widgets.dart` (copy unchanged). Distinct from resolved
+  `tf-today-duplicate-narrative`. Device QA still required on TF28. _Raised
+  2026-07-12 by live TF27 users Devyn/Sam/Jaspreet; code fixed 2026-07-13._
 
 - [x] ~~**tf27-taken-blocked**~~ — RESOLVED 2026-07-13 (code, TF28 pending):
   Root cause A: `medsForDayProvider` / `medsDataProvider` used

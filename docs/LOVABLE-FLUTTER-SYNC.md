@@ -179,7 +179,7 @@ parity per phase rollout below.
 ### iOS TestFlight (Flutter, when ready)
 
 1. Apple Developer team and ASC app record (see [`testflight-setup.md`](testflight-setup.md)).
-2. Signing via Xcode or CI with Doppler `purple-life` / `prd` (`DEVELOPMENT_TEAM`, `APP_STORE_CONNECT_*`).
+2. Signing via Xcode or CI with Doppler `x21` / `prd` (`PURPLE_LIFE_DEVELOPMENT_TEAM`, `PURPLE_LIFE_APP_STORE_CONNECT_*`).
 3. `cd flutter && flutter build ipa --export-options-plist=ios/ExportOptions.plist` (add plist in Phase 1+).
 4. Upload with `xcrun altool` or App Store Connect API (same Doppler keys as Capacitor pipeline).
 

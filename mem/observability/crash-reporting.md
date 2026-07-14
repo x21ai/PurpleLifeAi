@@ -1,8 +1,8 @@
 # Mobile crash reporting (Luciq vs alternatives)
 
 Purple TestFlight builds use **Luciq** (formerly Instabug) for native crash capture,
-session context, and shake-to-report. Token: Doppler `purple-life` / `prd`
-`LUCIQ_APP_TOKEN` (SDK app token, never committed). Dashboard project:
+session context, and shake-to-report. Token: Doppler `x21` / `prd`
+`PURPLE_LIFE_LUCIQ_APP_TOKEN` (SDK app token, never committed). Dashboard project:
 **Flutter - Purple - Beta**.
 
 ## Do we need Luciq?
@@ -35,7 +35,7 @@ a deliberate migration (noise and duplicate PII).
 ## Agent runbook (after TestFlight upload)
 
 ```bash
-bun run luciq:sync-secrets      # once: copy MCP token servers-teamkeys/dev -> purple-life/prd
+bun run luciq:sync-secrets      # once: copy MCP token servers-teamkeys/dev -> x21/prd
 bun run luciq:install-mcp       # once per machine: ~/.cursor/mcp.json, restart Cursor
 bun run ios:check-tf-feedback   # ASC screenshots/crashes + Luciq cred check
 bun run ios:check-asc-builds    # confirm VALID build number
@@ -46,7 +46,7 @@ bun run ios:check-asc-builds    # confirm VALID build number
 | Role | Project / config | Secrets |
 |------|------------------|---------|
 | Source (team keys) | `servers-teamkeys` / `dev` | `LUCIQ_OAUTH_TOKEN` |
-| Purple runtime | `purple-life` / `prd` | `LUCIQ_APP_TOKEN` (SDK), `LUCIQ_API_TOKEN`, `LUCIQ_ACCOUNT_EMAIL` |
+| Purple runtime | `x21` / `prd` | `PURPLE_LIFE_LUCIQ_APP_TOKEN` (SDK), `PURPLE_LIFE_LUCIQ_API_TOKEN`, `PURPLE_LIFE_LUCIQ_ACCOUNT_EMAIL` |
 
 ### Cursor MCP (crash triage)
 

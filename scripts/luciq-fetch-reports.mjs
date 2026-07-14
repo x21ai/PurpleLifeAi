@@ -2,17 +2,18 @@
 /**
  * Summarize Luciq crash/health signals for Purple Flutter TestFlight.
  *
- * SDK token (LUCIQ_APP_TOKEN) is for the mobile app only. Dashboard queries need
+ * SDK token (PURPLE_LIFE_LUCIQ_APP_TOKEN) is for the mobile app only. Dashboard queries need
  * optional Doppler secrets (MCP token in servers-teamkeys/dev LUCIQ_OAUTH_TOKEN;
- * synced to purple-life/prd as LUCIQ_API_TOKEN via luciq:sync-secrets):
- *   LUCIQ_API_TOKEN      — dashboard or MCP API token (runtime)
- *   LUCIQ_OAUTH_TOKEN    — alias accepted (source in servers-teamkeys/dev)
- *   LUCIQ_ACCOUNT_EMAIL  — Luciq account email
+ * synced to x21/prd as PURPLE_LIFE_LUCIQ_API_TOKEN via luciq:sync-secrets):
+ *   PURPLE_LIFE_LUCIQ_API_TOKEN — dashboard or MCP API token (runtime)
+ *   LUCIQ_OAUTH_TOKEN           — alias accepted (source in servers-teamkeys/dev)
+ *   PURPLE_LIFE_LUCIQ_ACCOUNT_EMAIL — Luciq account email
  *
  * Usage:
- *   doppler run --project purple-life --config prd -- node scripts/luciq-fetch-reports.mjs
- *   doppler run --project purple-life --config prd -- node scripts/luciq-fetch-reports.mjs --json
+ *   bash scripts/doppler-run-purple-life.sh node scripts/luciq-fetch-reports.mjs
+ *   bun run ios:check-luciq -- --json
  */
+import { readLuciqSecrets } from "./lib/purple-life-secrets.mjs";
 const DASHBOARD_API = "https://dashboard-api.instabug.com";
 const asJson = process.argv.includes("--json");
 
@@ -49,15 +50,12 @@ function appLabel(app) {
 }
 
 function resolveApiToken() {
-  const api = process.env.LUCIQ_API_TOKEN?.trim() ?? "";
-  if (api) return api;
-  return process.env.LUCIQ_OAUTH_TOKEN?.trim() ?? "";
+  return readLuciqSecrets().apiToken;
 }
 
 async function main() {
-  const apiToken = resolveApiToken();
-  const email = process.env.LUCIQ_ACCOUNT_EMAIL?.trim() ?? "";
-  const sdkConfigured = Boolean(process.env.LUCIQ_APP_TOKEN?.trim());
+  const { apiToken, email, sdkToken } = readLuciqSecrets();
+  const sdkConfigured = Boolean(sdkToken);
 
   const base = {
     sdkTokenConfigured: sdkConfigured,

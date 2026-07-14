@@ -19,7 +19,7 @@ bun run ios:testflight
 This runs `scripts/flutter-ios-testflight.sh`, which:
 
 1. `flutter analyze lib/` and `flutter test`
-2. `bun run ios:check-asc` (Doppler `purple-life` / `prd` ASC API key + team)
+2. `bun run ios:check-asc` (Doppler `x21` / `prd`, `PURPLE_LIFE_*` ASC + team)
 3. `bun run ios:local-signing` (writes `LocalSigning.xcconfig` for Flutter + Capacitor)
 4. Reads build number from `flutter/pubspec.yaml` (`version: x.y.z+N`)
 5. Ensures an App Store Connect app record exists (`scripts/asc-ensure-app.mjs`)
@@ -38,8 +38,8 @@ still uses native Luciq in `ios/App/AppDelegate.swift`.
 | Item | Value |
 |------|--------|
 | Flutter package | `luciq_flutter` (^19.8) |
-| SDK app token | Doppler `purple-life` / `prd` → **`LUCIQ_APP_TOKEN`** |
-| Build injection | `scripts/flutter-ios-testflight.sh` → `--dart-define=LUCIQ_APP_TOKEN=...` |
+| SDK app token | Doppler `x21` / `prd` → **`PURPLE_LIFE_LUCIQ_APP_TOKEN`** |
+| Build injection | `scripts/flutter-ios-testflight.sh` → `--dart-define=LUCIQ_APP_TOKEN=...` (from Doppler) |
 | Dashboard | Luciq project **Flutter - Purple - Beta** |
 | Agent checks | `bun run ios:check-tf-feedback` (ASC + Luciq) after each upload |
 
@@ -60,9 +60,9 @@ Crashlytics, ASC crash API alone) are documented in
 | Secret | Doppler location | Purpose |
 |--------|------------------|---------|
 | `LUCIQ_OAUTH_TOKEN` | `servers-teamkeys` / `dev` | Source MCP token (team keys) |
-| `LUCIQ_API_TOKEN` | `purple-life` / `prd` | Runtime copy (sync script) |
-| `LUCIQ_ACCOUNT_EMAIL` | `purple-life` / `prd` | `pmt@eatos.com` |
-| `LUCIQ_APP_TOKEN` | `purple-life` / `prd` | SDK app token (device builds) |
+| `PURPLE_LIFE_LUCIQ_API_TOKEN` | `x21` / `prd` | Runtime copy (sync script) |
+| `PURPLE_LIFE_LUCIQ_ACCOUNT_EMAIL` | `x21` / `prd` | Luciq account |
+| `PURPLE_LIFE_LUCIQ_APP_TOKEN` | `x21` / `prd` | SDK app token (device builds) |
 
 MCP server URL: `https://api.luciq.ai/api/mcp` with headers `Email` + `Token` (see Luciq docs).
 The MCP OAuth token does **not** work on legacy REST `dashboard-api.instabug.com`; use MCP for stack traces.
@@ -139,24 +139,24 @@ everything via `bun run ios:testflight`.
 
 | Secret | Value |
 |--------|--------|
-| `APP_STORE_CONNECT_KEY_ID` | 10-character Key ID from App Store Connect |
-| `APP_STORE_CONNECT_ISSUER_ID` | Issuer UUID (Users and Access → Integrations) |
-| `APP_STORE_CONNECT_API_KEY` | Full contents of the downloaded `.p8` file |
+| `PURPLE_LIFE_APP_STORE_CONNECT_KEY_ID` | 10-character Key ID from App Store Connect |
+| `PURPLE_LIFE_APP_STORE_CONNECT_ISSUER_ID` | Issuer UUID (Users and Access → Integrations) |
+| `PURPLE_LIFE_APP_STORE_CONNECT_API_KEY` | Full contents of the downloaded `.p8` file |
 
 Create the key: App Store Connect → **Users and Access** → **Integrations** →
 **App Store Connect API** → **Generate API Key** (role: **App Manager** or
 **Admin**).
 
 ```bash
-doppler secrets set APP_STORE_CONNECT_KEY_ID="..." \
-  APP_STORE_CONNECT_ISSUER_ID="..." \
-  --project purple-life --config prd
+doppler secrets set PURPLE_LIFE_APP_STORE_CONNECT_KEY_ID="..." \
+  PURPLE_LIFE_APP_STORE_CONNECT_ISSUER_ID="..." \
+  --project x21 --config prd
 
-doppler secrets set APP_STORE_CONNECT_API_KEY="$(cat AuthKey_XXXXX.p8)" \
-  --project purple-life --config prd
+doppler secrets set PURPLE_LIFE_APP_STORE_CONNECT_API_KEY="$(cat AuthKey_XXXXX.p8)" \
+  --project x21 --config prd
 ```
 
-`DEVELOPMENT_TEAM` (`C3HY4MF66F`) is already in the same Doppler project.
+`PURPLE_LIFE_DEVELOPMENT_TEAM` (`C3HY4MF66F`) is in the same Doppler project.
 
 Verify before asking the agent to upload:
 
@@ -164,7 +164,7 @@ Verify before asking the agent to upload:
 bash scripts/check-asc-doppler.sh
 ```
 
-Then tell the agent: *"ASC keys are in Doppler purple-life/prd. Run ios:testflight."*
+Then tell the agent: *"ASC keys are in Doppler x21/prd. Run ios:testflight."*
 
 ## One-time: Bundle ID and HealthKit
 
@@ -239,11 +239,11 @@ and **push** (when APNs is wired). See `docs/native-app-setup.md`.
 
 ## Agent run log (2026-07-03, Xcode-beta 27.0)
 
-Environment: `DEVELOPER_DIR` → `/Applications/Xcode-beta.app`, team `C3HY4MF66F` from Doppler `purple-life/prd`.
+Environment: `DEVELOPER_DIR` → `/Applications/Xcode-beta.app`, team `C3HY4MF66F` from Doppler `x21/prd`.
 
 | Step | Result |
 |------|--------|
-| `bun run ios:check-asc` | **Pass** (all three `APP_STORE_CONNECT_*` + `DEVELOPMENT_TEAM`) |
+| `bun run ios:check-asc` | **Pass** (all three `PURPLE_LIFE_APP_STORE_CONNECT_*` + `PURPLE_LIFE_DEVELOPMENT_TEAM`) |
 | ASC app record | **Exists** (owner created **Purple for Life**, Apple ID `6787298041`, bundle `org.purplelife.app`) |
 | First `bun run ios:testflight` | **Fail** export: missing `NSHealthUpdateUsageDescription` in `Info.plist` |
 | `ios/App/App/Info.plist` | **Fixed** (added `NSHealthUpdateUsageDescription`) |

@@ -1,21 +1,15 @@
 #!/usr/bin/env node
 /**
  * Mint a short-lived JWT for the App Store Connect API.
- * Env: APP_STORE_CONNECT_KEY_ID, APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_API_KEY (.p8 PEM)
+ * Env (x21/prd): PURPLE_LIFE_APP_STORE_CONNECT_KEY_ID, _ISSUER_ID, _API_KEY
  */
 import crypto from "node:crypto";
+import { ASC_DOPPLER_HINT, readAscCredentials } from "./purple-life-secrets.mjs";
 
-const KEY_ID = process.env.APP_STORE_CONNECT_KEY_ID?.trim();
-const ISSUER_ID = process.env.APP_STORE_CONNECT_ISSUER_ID?.trim();
-const API_KEY = process.env.APP_STORE_CONNECT_API_KEY?.trim();
+const { KEY_ID, ISSUER_ID, API_KEY } = readAscCredentials();
 
 if (!KEY_ID || !ISSUER_ID || !API_KEY) {
-  console.error(
-    "Missing App Store Connect API credentials. Add to Doppler purple-life/prd:\n" +
-      "  APP_STORE_CONNECT_KEY_ID\n" +
-      "  APP_STORE_CONNECT_ISSUER_ID\n" +
-      "  APP_STORE_CONNECT_API_KEY (full .p8 file contents)",
-  );
+  console.error(`Missing App Store Connect API credentials. ${ASC_DOPPLER_HINT}`);
   process.exit(1);
 }
 

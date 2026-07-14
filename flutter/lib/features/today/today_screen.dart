@@ -7,6 +7,7 @@ import '../../core/providers/core_providers.dart';
 import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
+import '../hydration/today_hydration_panel.dart';
 import '../reports/reports_repository.dart';
 import '../shared/condition_prompts.dart';
 import '../shared/glass_helpers.dart';
@@ -373,8 +374,20 @@ class _MergedTodayBody extends StatelessWidget {
             TodayExpandPanelShell(
               title: 'Hydration',
               onClose: () => onToggleExpand(TodayExpandPanel.hydration),
-              child: TodayHydrationExpandBody(
-                onOpen: () => context.go(AppRoutes.hydration),
+              trailing: TextButton(
+                onPressed: () => context.go(AppRoutes.hydration),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white.withValues(alpha: 0.55),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  minimumSize: Size(
+                    tokens.touch.minTarget,
+                    tokens.touch.minTarget,
+                  ),
+                ),
+                child: const Text('Day view ›', style: TextStyle(fontSize: 12)),
+              ),
+              child: TodayHydrationPanel(
+                onOpenDayView: () => context.go(AppRoutes.hydration),
               ),
             )
           else if (expanded == TodayExpandPanel.wearables)

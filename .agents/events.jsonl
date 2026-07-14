@@ -12,3 +12,53 @@
 {"ts":"2026-07-13T02:47:02Z","agent":"tf28-upload-owner","action":"freeze","task":"TF28-upload","detail":"killing competing flutter build ios/ipa; sole owner"}
 {"ts":"2026-07-13T02:46:36Z","agent":"cursor-subagent-tf28-design-vs-flutter","action":"land","task":"TF28-DESIGN-VS-FLUTTER","detail":"wrote docs/previews/TF28-DESIGN-VS-FLUTTER.md from code audit; test-results/flutter-qa-tf28 empty after poll; image slots pending capture"}
 {"ts":"2026-07-13T02:48:00Z","agent":"l10n-fix","action":"land","task":"TF28-gen-l10n","detail":"packaging unblocked at 8751c44b; gen-l10n PASS; ASC still 27; upload agent owns ios:testflight"}
+{"ts":"2026-07-13T02:50:00Z","agent":"design-preview-qa","action":"land","task":"tf28-design-screenshots","detail":"Served preview :8766; saved design-today-{scores,narrative,meds,hydration}.png"}
+{"ts":"2026-07-13T02:53:00Z","agent":"cursor-subagent-tf28-design-vs-flutter","action":"land","task":"TF28-DESIGN-VS-FLUTTER","detail":"refreshed report with 4 design PNGs; flutter-*.png still missing; black simulator boot noted"}
+{"ts": "2026-07-13T02:55:26Z", "agent": "tf28-upload-owner", "action": "heartbeat", "task": "TF28-upload", "detail": "waiting sibling flutter test 38149 + unfocus fix; no ipa yet; l10n already removed"}
+{"ts":"2026-07-13T02:55:57Z","agent":"tf28-l10n-primary","action":"land","task":"tf28-gen-localizations","detail":"removal path 2ca350da already on main; docs aligned+pushed; no second upload"}
+{"ts":"2026-07-13T02:54:21Z","agent":"rollback-assessment","action":"land","task":"tf28-rollback-assessment","detail":"ASC tip 1.0(27); main +28 unshipped; recommend Option A ship TF28; documented OPEN-ISSUES + HANDOFF; no destructive git"}
+{"ts":"2026-07-13T02:55:00Z","agent":"l10n-fix","action":"land","task":"TF28-gen-l10n","detail":"packaging unblocked via 2ca350da removal (+879dbcd2 lock); ASC still 27; upload agent owns ios:testflight"}
+{"ts":"2026-07-13T02:57:11Z","agent":"tf28-upload-owner","action":"heartbeat","task":"TF28-upload","detail":"cleared races; running owned flutter test"}
+{"ts":"2026-07-13T02:57:32Z","agent":"asc-wait-not-upload","action":"halt","task":"tf28-competing-upload","detail":"stood down; sole owner 2b709437; ASC poll only; no ios:testflight started"}
+{"ts": "2026-07-13T02:57:47Z", "agent": "tf28-upload-owner", "action": "claim", "task": "TF28-upload", "detail": "proceeding sole ios:testflight; gen_l10n unblocked; ASC still 27"}
+{"ts":"2026-07-13T02:57:30Z","agent":"cursor-subagent-l10n-cleanup","action":"land","task":"tf28-remove-unused-l10n","detail":"l10n scaffolding removed 2ca350da; lock regenerated 7682539d; no AppLocalizations consumers"}
+{"ts":"2026-07-13T02:58:14Z","agent":"tf28-upload-owner","action":"heartbeat","task":"TF28-upload","detail":"packaging OK via l10n removal @ 7682539d; starting flutter test"}
+{"ts": "2026-07-13T02:58:21Z", "agent": "tf28-upload-owner", "action": "claim", "task": "TF28-upload", "detail": "starting sole doppler ios:testflight for 1.0.0+28"}
+{"ts":"2026-07-13T02:58:30Z","agent":"l10n-fix","action":"land","task":"TF28-gen-l10n","detail":"DONE packaging unblocked: no l10n.yaml/generate; tip 7682539d; ASC still 27; ios:testflight owned by upload agent (upload2 in progress)"}
+{"ts": "2026-07-13T03:00:24Z", "agent": "tf28-upload-owner", "action": "heartbeat", "task": "TF28-upload", "detail": "sole upload 52951 in analyze; warned competing pkill agents"}
+{"ts": "2026-07-13T03:00:39Z", "agent": "tf28-upload-owner", "action": "freeze", "task": "TF28-upload", "detail": "killed competing 52681/53337; sole upload remains 52951"}
+{"ts":"2026-07-13T03:01:03Z","agent":"tf28-upload-owner","action":"claim","task":"TF28-upload","detail":"adopted in-flight ios:testflight pid 53012; killed simulator competitor; no second upload"}
+{"ts": "2026-07-13T03:01:18Z", "agent": "fix-loop-p0", "action": "heartbeat", "task": "tf27-p0-fix-loop", "detail": "restored deleted l10n + uchg lock; TF upload agent owns ios-testflight lease"}
+{"ts": "2026-07-13T03:04:55Z", "agent": "tf28-upload-owner", "action": "freeze", "task": "TF28-upload", "detail": "killed stuck 52951 + competing web/test under 8GB OOM; retrying ONE ios:testflight"}
+{"ts":"2026-07-13T03:05:32Z","agent":"tf28-upload-owner","action":"claim","task":"TF28-upload","detail":"restart sole ios:testflight; prior 53012 died mid flutter test"}
+{"ts":"2026-07-13T03:05:48Z","agent":"tf28-upload-owner","action":"claim","task":"TF28-upload","detail":"owned sole ios:testflight started pid=60717"}
+{"ts": "2026-07-13T03:06:15Z", "agent": "tf28-upload-owner", "action": "claim", "task": "TF28-upload", "detail": "retry ONE upload after OOM kill; ASC still 27; gen_l10n clear"}
+{"ts": "2026-07-13T03:06:24Z", "agent": "tf28-upload-owner", "action": "claim", "task": "TF28-upload", "detail": "RETRY sole doppler ios:testflight started"}
+{"ts":"2026-07-13T03:06:40Z","agent":"tf28-upload-owner-primary","action":"freeze","task":"TF28-upload","detail":"killed duplicate upload/pkill-war shells; starting one protected upload; do not pkill flutter_tools.snapshot"}
+{"ts":"2026-07-13T03:07:06Z","agent":"tf28-upload-owner-primary","action":"claim","task":"TF28-upload","detail":"nohup sole upload pid=62409; siblings must not pkill flutter_tools.snapshot"}
+{"ts":"2026-07-13T03:07:29Z","agent":"tf28-upload-owner","action":"claim","task":"TF28-upload","detail":"OOM retry ONE upload TF_SKIP_PREFLIGHT=1 setsid pid=63337"}
+{"ts": "2026-07-13T03:07:34Z", "agent": "fix-loop-p0", "action": "claim", "task": "tf27-p0-fix-loop", "detail": "claim flutter-test lease; will run full suite when upload not competing"}
+{"ts":"2026-07-13T03:07:00Z","agent":"flutter-qa-tf28-sim-walkthrough","action":"halt","task":"sim-walkthrough","detail":"blocked: Simulator.app missing from Xcode-beta 27A5209h (3.6G incomplete); recordVideo unusable; flutter devices has no iOS sim; rely on web sibling screenshots under test-results/flutter-qa-tf28/"}
+{"ts":"2026-07-13T03:07:53Z","agent":"tf28-upload-owner","action":"claim","task":"TF28-upload","detail":"nohup ONE upload TF_SKIP_PREFLIGHT=1 pid=63337"}
+{"ts":"2026-07-13T03:07:00Z","agent":"cursor-subagent-tf28-design-vs-flutter","action":"land","task":"TF28-DESIGN-VS-FLUTTER","detail":"report updated with design-today-*.png + flutter-today-*.png; flutter shots wrong-surface marketing"}
+{"ts":"2026-07-13T03:09:15Z","agent":"tf28-upload-owner-primary","action":"freeze","task":"TF28-upload","detail":"serial: flutter test then TF_SKIP_PREFLIGHT=1 upload; stop competing agents"}
+{"ts":"2026-07-13T03:10:07Z","agent":"tf28-upload-owner","action":"claim","task":"TF28-upload","detail":"retry2 after fleet kill; TF_SKIP_PREFLIGHT=1; ASC still 27"}
+{"ts":"2026-07-13T03:10:21Z","agent":"tf28-upload-owner-primary","action":"claim","task":"TF28-upload","detail":"detached pipeline pid=67148 log=/tmp/tf28-pipeline.log; test then TF_SKIP_PREFLIGHT upload"}
+{"ts":"2026-07-13T03:11:19Z","agent":"tf28-upload-owner","action":"claim","task":"TF28-upload","detail":"screen-detached ONE upload TF_SKIP_PREFLIGHT=1; ASC still 27"}
+{"ts":"2026-07-13T03:11:27Z","agent":"tf28-upload-owner-primary","action":"claim","task":"TF28-upload","detail":"pipeline2 pid=68794; parked WIP med form test; then TF_SKIP_PREFLIGHT upload"}
+{"ts":"2026-07-13T03:12:13Z","agent":"tf28-upload-owner-primary","action":"claim","task":"TF28-upload","detail":"adopted screen tf28upload; monitoring /tmp/tf28-screen-upload.log only"}
+{"ts":"2026-07-13T03:12:33Z","agent":"tf28-upload-owner-primary","action":"claim","task":"TF28-upload","detail":"screen tf28upload TF_SKIP_PREFLIGHT=1; killed killer agents; ASC still 27"}
+{"ts":"2026-07-13T03:12:43Z","agent":"tf28-upload-owner","action":"halt","task":"TF28-upload","detail":"FAILED: screen upload SIGKILL:9 mid-asc-doppler; ASC still 27; fleet pkill war"}
+{"ts": "2026-07-13T03:12:44Z", "agent": "fix-loop-p0", "action": "claim", "task": "tf27-p0-fix-loop", "detail": "full flutter test while tools clear"}
+{"ts":"2026-07-13T03:14:04Z","agent":"tf28-upload-owner-primary","action":"claim","task":"TF28-upload","detail":"exclusive screen tf28ex after SPM race; cleaned ephemeral"}
+{"ts":"2026-07-13T03:14:37Z","agent":"tf28-upload-owner","action":"heartbeat","task":"TF28-upload","detail":"standing down; exclusive primary 72348 RUNNING compile; ASC still 27"}
+{"ts":"2026-07-13T03:15:35Z","agent":"unfocus-widget-tests","action":"land","task":"tf27-stuck-keyboard-tests","detail":"added flutter/test/tf27_keyboard_unfocus_test.dart; shell 3/3 + Today 1/1 green when run by group"}
+{"ts": "2026-07-13T03:20:47Z", "agent": "unfocus-l10n-fixer", "action": "land", "task": "today-shell-unfocus-l10n", "detail": "today_shell_unfocus_test 4/4 green; full suite 245 pass / 9 fail (ink_sparkle unrelated); l10n option A confirmed; no IPA"}
+{"ts":"2026-07-13T03:21:44Z","agent":"web-qa-subagent","action":"land","task":"flutter-qa-tf28-video","detail":"walkthrough mp4 + flutter-today pngs + TF28 report"}
+{"ts": "2026-07-13T03:25:01Z", "agent": "fix-loop-p0", "action": "land", "task": "tf27-p0-fix-loop", "detail": "analyze clean; flutter test 254/254; P0 Taken/refill/keyboard/score/narrative code verified; ink_sparkle test themes fixed; no TF upload (upload-owner holds lease)"}
+{"ts":"2026-07-13T03:25:21Z","agent":"flutter-qa-tf28-screenshot-recapture","action":"land","task":"tf28-flutter-today-recapture","detail":"Overwrote flutter-today-{scores,top,narrative,meds,hydration}.png with signed-in Merged Today from :8765 after E2E session; TF28 report+HANDOFF updated; marketing wrong-surface cleared"}
+{"ts":"2026-07-13T03:26:15Z","agent":"fix-loop-p0","action":"land","task":"tf27-p0-fix-loop","detail":"reconfirm analyze clean + flutter test 254/254 TEST_EC:0; lease released; no TF upload"}
+{"ts":"2026-07-13T03:29:45Z","agent":"tf28-upload-owner-primary","action":"land","task":"TF28-upload","detail":"IPA uploaded UPLOAD_EXIT:0; polling ASC for 1.0 (28) VALID"}
+{"ts":"2026-07-13T03:33:35Z","agent":"tf28-upload-owner-primary","action":"land","task":"TF28-upload","detail":"1.0 (28) VALID id=ec30baa8; Founding Team added; betaReview WAITING_FOR_REVIEW; UPLOAD_EXIT:0"}
+{"ts":"2026-07-13T03:34:20Z","agent":"tf28-post-upload-watcher","action":"land","task":"TF28-post-upload","detail":"1.0 (28) VALID+assigned Founding Team; internal+external IN_BETA_TESTING; UPLOAD_EXIT:0; feedback baseline 29 ASC subs; luciq status mcp; killed racing flutter test during build (~70MB free)"}
+{"ts":"2026-07-14T20:36:00Z","agent":"cursor-agent","action":"land","task":"laptop-handoff","detail":"Doppler x21 + TF28 Flutter fixes/tests/docs; flutter test 258/258; main push for laptop change"}

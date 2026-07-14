@@ -80,8 +80,8 @@ void main() {
         'ai_summary': {
           'headline': 'Stable',
           'explanation': 'Looks stable overall.',
-          'flagged': [],
-          'questions': [],
+          'flagged': <dynamic>[],
+          'questions': <dynamic>[],
         },
         'error_message': 'unreadable scan',
       });

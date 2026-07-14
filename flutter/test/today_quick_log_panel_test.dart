@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:purple_app/features/today/today_quick_log_panel.dart';
+import 'support/purple_test_theme.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -13,6 +14,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          theme: purpleTestTheme(),
           home: Scaffold(
             body: SingleChildScrollView(
               child: TodayLogExpandBody(

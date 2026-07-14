@@ -2,6 +2,10 @@
 # Merge Luciq HTTP MCP into ~/.cursor/mcp.json using Doppler (never commit tokens to repo).
 set -euo pipefail
 
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/doppler-purple-life.sh
+source "${REPO_ROOT}/scripts/lib/doppler-purple-life.sh"
+
 MCP_JSON="${CURSOR_MCP_JSON:-$HOME/.cursor/mcp.json}"
 DOPPLER_PROJECT="${LUCIQ_DOPPLER_PROJECT:-servers-teamkeys}"
 DOPPLER_CONFIG="${LUCIQ_DOPPLER_CONFIG:-dev}"
@@ -26,12 +30,12 @@ if ! TOKEN="$(doppler secrets get "$TOKEN_SECRET" \
   --project "$DOPPLER_PROJECT" \
   --config "$DOPPLER_CONFIG" \
   --plain 2>/dev/null)"; then
-  log "Trying purple-life/prd LUCIQ_API_TOKEN fallback..."
-  if ! TOKEN="$(doppler secrets get LUCIQ_API_TOKEN \
-    --project purple-life \
-    --config prd \
+  log "Trying ${PURPLE_DOPPLER_PROJECT}/${PURPLE_DOPPLER_CONFIG} ${PURPLE_LUCIQ_API_SECRET} fallback..."
+  if ! TOKEN="$(doppler secrets get "${PURPLE_LUCIQ_API_SECRET}" \
+    --project "${PURPLE_DOPPLER_PROJECT:-x21}" \
+    --config "${PURPLE_DOPPLER_CONFIG:-prd}" \
     --plain 2>/dev/null)"; then
-    log "ERROR: no token in $DOPPLER_PROJECT/$DOPPLER_CONFIG or purple-life/prd"
+    log "ERROR: no token in $DOPPLER_PROJECT/$DOPPLER_CONFIG or ${PURPLE_DOPPLER_PROJECT:-x21}/${PURPLE_DOPPLER_CONFIG:-prd}"
     log 'Run: bun run luciq:sync-secrets'
     exit 1
   fi

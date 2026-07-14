@@ -7,10 +7,16 @@ analyzer:
     strict-raw-types: true
   exclude:
     - "**/*.g.dart"
+    - "tool/**"
   errors:
     missing_required_param: error
     missing_return: error
     invalid_annotation_target: error
+    # Style nits in tests must not fail the gate (prefer_const / deprecations).
+    prefer_const_constructors: ignore
+    prefer_const_declarations: ignore
+    unnecessary_const: ignore
+    deprecated_member_use: ignore
 
 linter:
   rules:

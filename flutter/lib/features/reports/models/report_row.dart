@@ -155,8 +155,8 @@ class ReportsHubData {
   bool get isEmpty => documents.isEmpty && medicalReports.isEmpty;
 
   static const empty = ReportsHubData(
-    documents: [],
-    medicalReports: [],
+    documents: <ReportDocumentRow>[],
+    medicalReports: <MedicalReportRow>[],
   );
 }
 

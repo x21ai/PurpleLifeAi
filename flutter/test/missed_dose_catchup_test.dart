@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:purple_app/features/meds/models/dose.dart';
 import 'package:purple_app/features/meds/models/medication.dart';
 import 'package:purple_app/features/today/missed_dose_catchup.dart';
+import 'support/purple_test_theme.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -46,7 +47,8 @@ void main() {
         overrides: [
           missedDoseCatchupProvider.overrideWith((ref) async => item),
         ],
-        child: const MaterialApp(
+        child: MaterialApp(
+          theme: purpleTestTheme(),
           home: Scaffold(
             body: MissedDoseCatchupBanner(),
           ),

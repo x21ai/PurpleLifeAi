@@ -233,6 +233,27 @@ class TodayMedsSection extends ConsumerWidget {
                                     .markDoseSkipped(dose.id),
                               )
                           : null,
+                      onUndo: dose.status == 'taken'
+                          ? () => _doseAction(
+                                ref,
+                                context,
+                                () => ref
+                                    .read(medsRepositoryProvider)
+                                    .reclassifyDose(dose.id, 'pending'),
+                                successMessage: 'Marked pending',
+                              )
+                          : null,
+                      onITookIt: (dose.status == 'missed' ||
+                              dose.status == 'skipped')
+                          ? () => _doseAction(
+                                ref,
+                                context,
+                                () => ref
+                                    .read(medsRepositoryProvider)
+                                    .reclassifyDose(dose.id, 'taken'),
+                                successMessage: 'Marked as taken',
+                              )
+                          : null,
                       onRefill: med != null && med.outOfStock
                           ? () => _openRefill(ref, context, med)
                           : null,
@@ -252,6 +273,8 @@ class _TodayDoseRow extends StatelessWidget {
     this.onTaken,
     this.onSnooze,
     this.onSkip,
+    this.onUndo,
+    this.onITookIt,
     this.onRefill,
   });
 
@@ -259,6 +282,8 @@ class _TodayDoseRow extends StatelessWidget {
   final VoidCallback? onTaken;
   final VoidCallback? onSnooze;
   final VoidCallback? onSkip;
+  final VoidCallback? onUndo;
+  final VoidCallback? onITookIt;
   final VoidCallback? onRefill;
 
   @override
@@ -271,7 +296,10 @@ class _TodayDoseRow extends StatelessWidget {
     final showActions =
         dose.isPending && !outOfStock && onTaken != null && onSkip != null;
     final showRefillChip = outOfStock && onRefill != null;
+    final showTakenUndo = dose.status == 'taken' && onUndo != null;
+    final showITookIt = onITookIt != null;
     final destructive = parseTokenColor(colors.destructive);
+    final statusColor = _statusColor(dose.status, colors);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -321,18 +349,6 @@ class _TodayDoseRow extends StatelessWidget {
                   ],
                 ),
               ),
-              if (!showActions && !showRefillChip) ...[
-                const SizedBox(width: 8),
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    _statusLabel(dose.status),
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: _statusColor(dose.status, colors),
-                        ),
-                  ),
-                ),
-              ],
             ],
           ),
           if (showActions) ...[
@@ -355,6 +371,56 @@ class _TodayDoseRow extends StatelessWidget {
                 ),
                 child: const Text('Refill to update'),
               ),
+            ),
+          ] else if (showTakenUndo) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  'Taken',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                MedsDoseActionButton(
+                  label: 'Undo',
+                  onTap: onUndo!,
+                  kind: MedsActionKind.ghost,
+                ),
+              ],
+            ),
+          ] else if (showITookIt) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  _statusLabel(dose.status),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                MedsDoseActionButton(
+                  label: 'I took it',
+                  onTap: onITookIt!,
+                  kind: MedsActionKind.outline,
+                ),
+              ],
+            ),
+          ] else ...[
+            const SizedBox(height: 8),
+            Text(
+              _statusLabel(dose.status),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: statusColor,
+                  ),
             ),
           ],
         ],

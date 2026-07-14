@@ -64,6 +64,8 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
     try {
       // Widget tests and early boot can mount Wearables expand before
       // Supabase.initialize; fail open instead of asserting.
+      // Note: do not read Supabase.instance.isInitialized first — the getter
+      // itself asserts when uninitialized.
       session = Supabase.instance.client.auth.currentSession;
     } catch (_) {
       if (!mounted) return;

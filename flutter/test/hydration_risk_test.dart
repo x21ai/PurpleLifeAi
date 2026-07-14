@@ -126,12 +126,18 @@ void main() {
   });
 
   group('QuickAddWater', () {
+    ThemeData noSparkleTheme() => ThemeData(
+          useMaterial3: true,
+          splashFactory: NoSplash.splashFactory,
+        );
+
     testWidgets('renders 250 / 500 / Water / Electrolytes actions',
         (tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
+        ProviderScope(
           child: MaterialApp(
-            home: Scaffold(body: QuickAddWater()),
+            theme: noSparkleTheme(),
+            home: const Scaffold(body: QuickAddWater()),
           ),
         ),
       );
@@ -143,14 +149,16 @@ void main() {
 
     testWidgets('Water dialog exposes quick amounts and Add', (tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
+        ProviderScope(
           child: MaterialApp(
-            home: Scaffold(body: QuickAddWater()),
+            theme: noSparkleTheme(),
+            home: const Scaffold(body: QuickAddWater()),
           ),
         ),
       );
       await tester.tap(find.text('Water'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Add water'), findsOneWidget);
       for (final ml in kQuickWaterAmountsMl) {
         expect(find.text('$ml ml'), findsWidgets);

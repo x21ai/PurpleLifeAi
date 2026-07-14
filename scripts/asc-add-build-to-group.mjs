@@ -3,7 +3,7 @@
  * Add a TestFlight build to a named beta group and submit it for Beta App
  * Review (required before Apple serves it to an external group).
  *
- * Usage: doppler run --project purple-life --config prd -- \
+ * Usage: bash scripts/doppler-run-purple-life.sh node scripts/asc-add-build-to-group.mjs …
  *   node scripts/asc-add-build-to-group.mjs <buildVersion> [groupName]
  *
  * <buildVersion> is the build number (e.g. 20), not the marketing version.

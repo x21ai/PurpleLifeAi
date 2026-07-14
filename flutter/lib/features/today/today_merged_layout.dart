@@ -440,6 +440,9 @@ class TodayLastSevenDaysCard extends StatelessWidget {
 }
 
 /// Compact hydration / wearables / log panel bodies for expanders.
+///
+/// Hydration expand on Today uses [TodayHydrationPanel] (progress + quick-add).
+/// Keep this stub only if a screen needs a deep-link-only fallback.
 class TodayHydrationExpandBody extends StatelessWidget {
   const TodayHydrationExpandBody({super.key, required this.onOpen});
 
@@ -451,7 +454,7 @@ class TodayHydrationExpandBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Track fluids from Today. Day view has weekly bars and quick adds.',
+          'Log every drink, water and electrolytes.',
           style: TextStyle(
             fontSize: 13,
             color: Colors.white.withValues(alpha: 0.65),

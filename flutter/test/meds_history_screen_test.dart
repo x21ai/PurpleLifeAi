@@ -8,6 +8,7 @@ import 'package:purple_app/features/meds/meds_today.dart';
 import 'package:purple_app/features/meds/models/dose.dart';
 import 'package:purple_app/features/meds/models/medication.dart';
 import 'package:purple_app/features/meds/past_dose_sheet.dart';
+import 'support/purple_test_theme.dart';
 
 void main() {
   group('MedsHistoryScreen', () {
@@ -72,7 +73,9 @@ void main() {
             doseHistoryProvider.overrideWith((ref) async => history),
             medicationByIdProvider('m1').overrideWith((ref) async => med),
           ],
-          child: MaterialApp.router(routerConfig: router),
+          child: MaterialApp.router(
+            theme: purpleTestTheme(),
+            routerConfig: router),
         ),
       );
       await tester.pumpAndSettle();
@@ -116,7 +119,9 @@ void main() {
               ),
             ),
           ],
-          child: MaterialApp.router(routerConfig: router),
+          child: MaterialApp.router(
+            theme: purpleTestTheme(),
+            routerConfig: router),
         ),
       );
       await tester.pumpAndSettle();

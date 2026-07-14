@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:purple_app/features/meds/dose_list.dart';
 import 'package:purple_app/features/meds/med_refill_sheet.dart';
 import 'package:purple_app/features/meds/models/medication.dart';
+import 'support/purple_test_theme.dart';
 
 void main() {
   group('Medication stock flags (pills_remaining)', () {
@@ -63,8 +64,9 @@ void main() {
       );
 
       await tester.pumpWidget(
-        const ProviderScope(
+        ProviderScope(
           child: MaterialApp(
+            theme: purpleTestTheme(),
             home: Scaffold(
               body: MedRefillSheet(medication: med),
             ),
@@ -94,6 +96,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: purpleTestTheme(),
           home: Scaffold(
             body: MedLibraryRow(
               medication: med,

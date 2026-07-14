@@ -3,7 +3,7 @@
  * Combined TestFlight feedback check: App Store Connect + Luciq.
  *
  * Usage:
- *   doppler run --project purple-life --config prd -- node scripts/check-testflight-feedback.mjs
+ *   bash scripts/doppler-run-purple-life.sh node scripts/check-testflight-feedback.mjs
  */
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";

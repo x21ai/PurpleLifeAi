@@ -6,6 +6,7 @@ import 'package:purple_app/features/meds/meds_repository.dart';
 import 'package:purple_app/features/meds/meds_screen.dart';
 import 'package:purple_app/features/meds/models/dose.dart';
 import 'package:purple_app/features/meds/models/medication.dart';
+import 'support/purple_test_theme.dart';
 
 void main() {
   group('TodayDosePanel schedule UX', () {
@@ -27,6 +28,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: purpleTestTheme(),
           home: Scaffold(
             body: TodayDosePanel(
               doses: [dose],
@@ -55,6 +57,7 @@ void main() {
     testWidgets('past day hides adherence and uses alternate title', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: purpleTestTheme(),
           home: Scaffold(
             body: TodayDosePanel(
               doses: const [],
@@ -97,6 +100,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: purpleTestTheme(),
           home: Scaffold(
             body: TodayDosePanel(
               doses: [dose],
@@ -150,6 +154,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: purpleTestTheme(),
           home: Scaffold(
             body: MedLibraryRow(
               medication: med,
@@ -194,7 +199,9 @@ void main() {
           overrides: [
             medsScheduleProvider(null).overrideWith((ref) async => data),
           ],
-          child: const MaterialApp(home: MedsScreen()),
+          child: MaterialApp(
+          theme: purpleTestTheme(),
+          home: MedsScreen()),
         ),
       );
       await tester.pumpAndSettle();

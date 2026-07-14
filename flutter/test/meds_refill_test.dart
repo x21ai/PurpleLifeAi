@@ -7,6 +7,8 @@ import 'package:purple_app/features/meds/meds_repository.dart';
 import 'package:purple_app/features/meds/models/dose.dart';
 import 'package:purple_app/features/meds/models/medication.dart';
 
+import 'support/purple_test_theme.dart';
+
 void main() {
   group('Medication stock helpers', () {
     test('outOfStock when pills_remaining is zero', () {
@@ -60,6 +62,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: purpleTestTheme(),
           home: Scaffold(
             body: TodayDosePanel(
               doses: [dose],
@@ -99,6 +102,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: purpleTestTheme(),
           home: Scaffold(
             body: MedLibraryRow(
               medication: med,
@@ -134,6 +138,7 @@ void main() {
             medsRepositoryProvider.overrideWithValue(fake),
           ],
           child: MaterialApp(
+            theme: purpleTestTheme(),
             home: Scaffold(
               body: Builder(
                 builder: (context) => TextButton(
@@ -147,7 +152,8 @@ void main() {
       );
 
       await tester.tap(find.text('Open'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Update stock'), findsOneWidget);
       expect(find.text('I refilled'), findsOneWidget);
@@ -155,7 +161,8 @@ void main() {
       await tester.enterText(find.byType(TextField), '60');
       await tester.pump();
       await tester.tap(find.text('I refilled'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(fake.lastMedId, 'm1');
       expect(fake.lastPills, 60);

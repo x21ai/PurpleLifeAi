@@ -3,14 +3,16 @@
 # Primary TestFlight path (bun run ios:testflight).
 # Capacitor emergency rollback: scripts/native-ios-testflight.sh (ios:testflight:capacitor).
 #
-# Prerequisites: full Xcode.app, Doppler purple-life/prd (DEVELOPMENT_TEAM, ASC API key,
-# LUCIQ_APP_TOKEN), cursor-cloudflare/prd_cloudlfare (VITE_SUPABASE_PUBLISHABLE_KEY).
+# Prerequisites: full Xcode.app, Doppler x21/prd (PURPLE_LIFE_* ASC + team + Luciq),
+# cursor-cloudflare/prd_cloudlfare (VITE_SUPABASE_PUBLISHABLE_KEY).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FLUTTER_DIR="${REPO_ROOT}/flutter"
-DOPPLER_PROJECT="${DOPPLER_PROJECT:-purple-life}"
-DOPPLER_CONFIG="${DOPPLER_CONFIG:-prd}"
+# shellcheck source=lib/doppler-purple-life.sh
+source "${REPO_ROOT}/scripts/lib/doppler-purple-life.sh"
+DOPPLER_PROJECT="${PURPLE_DOPPLER_PROJECT}"
+DOPPLER_CONFIG="${PURPLE_DOPPLER_CONFIG}"
 FLUTTER_DOPPLER_PROJECT="${FLUTTER_DOPPLER_PROJECT:-cursor-cloudflare}"
 FLUTTER_DOPPLER_CONFIG="${FLUTTER_DOPPLER_CONFIG:-prd_cloudlfare}"
 ARCHIVE_PATH="${ARCHIVE_PATH:-${FLUTTER_DIR}/build/ios/archive/Runner.xcarchive}"
@@ -38,9 +40,8 @@ find_xcode_dev_dir() {
 }
 
 require_asc_secrets() {
-  doppler secrets get APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_API_KEY \
-    --project "${DOPPLER_PROJECT}" --config "${DOPPLER_CONFIG}" --plain >/dev/null 2>&1 \
-    || fail "Add App Store Connect API key to Doppler ${DOPPLER_PROJECT}/${DOPPLER_CONFIG}"
+  purple_require_asc_secrets \
+    || fail "Add App Store Connect API key to Doppler ${DOPPLER_PROJECT}/${DOPPLER_CONFIG} (PURPLE_LIFE_APP_STORE_CONNECT_*)"
 }
 
 ASC_KEY_FILE=""
@@ -55,10 +56,10 @@ cleanup_asc_key() {
 }
 
 prepare_asc_auth() {
-  ASC_KEY_ID="$(doppler secrets get APP_STORE_CONNECT_KEY_ID --project "${DOPPLER_PROJECT}" --config "${DOPPLER_CONFIG}" --plain)"
-  ASC_ISSUER_ID="$(doppler secrets get APP_STORE_CONNECT_ISSUER_ID --project "${DOPPLER_PROJECT}" --config "${DOPPLER_CONFIG}" --plain)"
+  ASC_KEY_ID="$(purple_get_asc_key_id)" || fail "Missing ${PURPLE_ASC_KEY_ID_SECRET}"
+  ASC_ISSUER_ID="$(purple_get_asc_issuer_id)" || fail "Missing ${PURPLE_ASC_ISSUER_ID_SECRET}"
   ASC_KEY_FILE="$(mktemp "${TMPDIR:-/tmp}/AuthKey_XXXXXX")"
-  doppler secrets get APP_STORE_CONNECT_API_KEY --project "${DOPPLER_PROJECT}" --config "${DOPPLER_CONFIG}" --plain >"${ASC_KEY_FILE}"
+  purple_get_asc_api_key >"${ASC_KEY_FILE}" || fail "Missing ${PURPLE_ASC_API_KEY_SECRET}"
   chmod 600 "${ASC_KEY_FILE}"
   trap cleanup_asc_key EXIT
 }
@@ -89,11 +90,15 @@ main() {
 
   cd "${REPO_ROOT}"
 
-  log "Running Flutter analyze + test"
-  cd "${FLUTTER_DIR}"
-  flutter analyze lib/
-  flutter test
-  cd "${REPO_ROOT}"
+  if [[ "${TF_SKIP_PREFLIGHT:-}" == "1" ]]; then
+    log "Skipping Flutter analyze + test (TF_SKIP_PREFLIGHT=1; OOM recovery)"
+  else
+    log "Running Flutter analyze + test"
+    cd "${FLUTTER_DIR}"
+    flutter analyze lib/
+    flutter test
+    cd "${REPO_ROOT}"
+  fi
 
   bash "${REPO_ROOT}/scripts/check-asc-doppler.sh"
 
@@ -131,10 +136,10 @@ main() {
 
   log "Compiling Flutter Release (no codesign, build ${BUILD_NUMBER})"
   LUCIQ_TOKEN=""
-  if LUCIQ_TOKEN="$(doppler secrets get LUCIQ_APP_TOKEN --project "${DOPPLER_PROJECT}" --config "${DOPPLER_CONFIG}" --plain 2>/dev/null)"; then
+  if LUCIQ_TOKEN="$(purple_get_luciq_app_token 2>/dev/null)"; then
     log "Luciq SDK token loaded from Doppler (${DOPPLER_PROJECT}/${DOPPLER_CONFIG})"
   else
-    log "WARN: LUCIQ_APP_TOKEN missing; TestFlight build will ship without Luciq dart-define"
+    log "WARN: ${PURPLE_LUCIQ_APP_SECRET} missing; TestFlight build will ship without Luciq dart-define"
   fi
   doppler run --project "${FLUTTER_DOPPLER_PROJECT}" --config "${FLUTTER_DOPPLER_CONFIG}" -- bash -c '
     flutter build ios --release --no-codesign \

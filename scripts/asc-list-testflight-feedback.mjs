@@ -1,11 +1,9 @@
 #!/usr/bin/env node
 /**
  * List TestFlight screenshot + crash feedback for Purple (org.purplelife.app).
- * Requires Doppler purple-life/prd: APP_STORE_CONNECT_KEY_ID, ISSUER_ID, API_KEY
+ * Requires Doppler x21/prd: PURPLE_LIFE_APP_STORE_CONNECT_* (via doppler-run-purple-life.sh)
  *
- * Usage:
- *   doppler run --project purple-life --config prd -- node scripts/asc-list-testflight-feedback.mjs
- *   doppler run --project purple-life --config prd -- node scripts/asc-list-testflight-feedback.mjs --json
+ *   bash scripts/doppler-run-purple-life.sh node scripts/asc-list-testflight-feedback.mjs
  */
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";

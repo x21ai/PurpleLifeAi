@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
-# Copy Luciq MCP/API token from servers-teamkeys (source) to purple-life/prd (runtime).
+# Copy Luciq MCP/API token from servers-teamkeys (source) to x21/prd (runtime).
 # Never prints secret values.
 set -euo pipefail
 
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/doppler-purple-life.sh
+source "${REPO_ROOT}/scripts/lib/doppler-purple-life.sh"
+
 SOURCE_PROJECT="${LUCIQ_SOURCE_DOPPLER_PROJECT:-servers-teamkeys}"
 SOURCE_CONFIG="${LUCIQ_SOURCE_DOPPLER_CONFIG:-dev}"
-TARGET_PROJECT="${LUCIQ_TARGET_DOPPLER_PROJECT:-purple-life}"
-TARGET_CONFIG="${LUCIQ_TARGET_DOPPLER_CONFIG:-prd}"
 SOURCE_SECRET="${LUCIQ_SOURCE_SECRET:-LUCIQ_OAUTH_TOKEN}"
-TARGET_TOKEN_SECRET="${LUCIQ_TARGET_TOKEN_SECRET:-LUCIQ_API_TOKEN}"
+TARGET_PROJECT="${LUCIQ_TARGET_DOPPLER_PROJECT:-${PURPLE_DOPPLER_PROJECT}}"
+TARGET_CONFIG="${LUCIQ_TARGET_DOPPLER_CONFIG:-${PURPLE_DOPPLER_CONFIG}}"
+TARGET_TOKEN_SECRET="${LUCIQ_TARGET_TOKEN_SECRET:-${PURPLE_LUCIQ_API_SECRET}}"
+TARGET_EMAIL_SECRET="${LUCIQ_TARGET_EMAIL_SECRET:-${PURPLE_LUCIQ_EMAIL_SECRET}}"
 TARGET_EMAIL="${LUCIQ_ACCOUNT_EMAIL:-pmt@eatos.com}"
 
 log() { printf '[luciq-sync] %s\n' "$*"; }
@@ -34,12 +39,12 @@ fi
 
 doppler secrets set \
   "$TARGET_TOKEN_SECRET=$TOKEN" \
-  "LUCIQ_ACCOUNT_EMAIL=$TARGET_EMAIL" \
+  "$TARGET_EMAIL_SECRET=$TARGET_EMAIL" \
   --project "$TARGET_PROJECT" \
   --config "$TARGET_CONFIG" \
   >/dev/null
 
 log "Synced $SOURCE_PROJECT/$SOURCE_CONFIG:$SOURCE_SECRET"
 log "  -> $TARGET_PROJECT/$TARGET_CONFIG:$TARGET_TOKEN_SECRET"
-log "  -> $TARGET_PROJECT/$TARGET_CONFIG:LUCIQ_ACCOUNT_EMAIL ($TARGET_EMAIL)"
+log "  -> $TARGET_PROJECT/$TARGET_CONFIG:$TARGET_EMAIL_SECRET ($TARGET_EMAIL)"
 log 'Run: bun run ios:check-luciq -- --json'

@@ -132,7 +132,7 @@ Register it everywhere:
 - iOS: signing certificate + provisioning profile in Xcode, app icons and
   launch screen, then Archive and upload to TestFlight; submit to the App Store.
 - **TestFlight runbook:** `docs/testflight-setup.md` (`bun run ios:testflight` after
-  App Store Connect API key is in Doppler `purple-life` / `prd`).
+  App Store Connect API key is in Doppler `x21` / `prd`, `PURPLE_LIFE_APP_STORE_CONNECT_*`).
 - Android: generate an upload keystore, build an AAB, upload to the Play Console
   internal testing track, then promote to production.
 - App Store guideline 4.2: justify the native value (push + local notifications +
@@ -178,7 +178,7 @@ replays, and in-app bug reports (shake, screenshot, floating button).
 |------|-------|
 | SPM package | `https://github.com/luciqai/luciq-ios-sdk` (product `Luciq`, import `LuciqSDK`) |
 | Init | `ios/App/App/AppDelegate.swift` on `didFinishLaunchingWithOptions` |
-| App token | Doppler `purple-life` / `prd` secret `LUCIQ_APP_TOKEN` |
+| App token | Doppler `x21` / `prd` secret `PURPLE_LIFE_LUCIQ_APP_TOKEN` |
 | Local xcconfig | `bun run ios:local-signing` writes `ios/LocalSigning.xcconfig` (gitignored) |
 | Dashboard | Luciq project **Purple - Beta** |
 

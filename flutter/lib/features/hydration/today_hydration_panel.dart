@@ -25,6 +25,11 @@ class TodayHydrationPanel extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Text(
+          'Log every drink, water and electrolytes.',
+          style: hydrationSans(fontSize: 13, color: p.textTertiary),
+        ),
+        const SizedBox(height: 10),
         dayAsync.when(
           loading: () => Text(
             'Loading today…',
@@ -77,7 +82,7 @@ class TodayHydrationPanel extends ConsumerWidget {
             ref.invalidate(hydrationDayProvider(_todayKey()));
           },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 4),
         TextButton(
           onPressed: onOpenDayView,
           style: TextButton.styleFrom(

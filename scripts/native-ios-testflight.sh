@@ -3,13 +3,14 @@
 # Primary TestFlight path: scripts/flutter-ios-testflight.sh (bun run ios:testflight).
 #
 # Archive Capacitor iOS shell and upload to TestFlight (App Store Connect).
-# Prerequisites: full Xcode.app, Doppler purple-life/prd with DEVELOPMENT_TEAM and
-# App Store Connect API key (APP_STORE_CONNECT_KEY_ID, ISSUER_ID, API_KEY .p8).
+# Prerequisites: full Xcode.app, Doppler x21/prd with PURPLE_LIFE_* ASC + team secrets.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DOPPLER_PROJECT="${DOPPLER_PROJECT:-purple-life}"
-DOPPLER_CONFIG="${DOPPLER_CONFIG:-prd}"
+# shellcheck source=lib/doppler-purple-life.sh
+source "${REPO_ROOT}/scripts/lib/doppler-purple-life.sh"
+DOPPLER_PROJECT="${PURPLE_DOPPLER_PROJECT}"
+DOPPLER_CONFIG="${PURPLE_DOPPLER_CONFIG}"
 ARCHIVE_PATH="${ARCHIVE_PATH:-${REPO_ROOT}/build/ios/Purple.xcarchive}"
 EXPORT_DIR="${EXPORT_DIR:-${REPO_ROOT}/build/ios/export}"
 IOS_DIR="${REPO_ROOT}/ios/App"
@@ -36,9 +37,8 @@ find_xcode_dev_dir() {
 }
 
 require_asc_secrets() {
-  doppler secrets get APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_API_KEY \
-    --project "${DOPPLER_PROJECT}" --config "${DOPPLER_CONFIG}" --plain >/dev/null 2>&1 \
-    || fail "Add App Store Connect API key to Doppler ${DOPPLER_PROJECT}/${DOPPLER_CONFIG}: APP_STORE_CONNECT_KEY_ID, APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_API_KEY"
+  purple_require_asc_secrets \
+    || fail "Add App Store Connect API key to Doppler ${DOPPLER_PROJECT}/${DOPPLER_CONFIG} (PURPLE_LIFE_APP_STORE_CONNECT_*)"
 }
 
 ASC_KEY_FILE=""
@@ -53,11 +53,11 @@ cleanup_asc_key() {
 }
 
 prepare_asc_auth() {
-  ASC_KEY_ID="$(doppler secrets get APP_STORE_CONNECT_KEY_ID --project "${DOPPLER_PROJECT}" --config "${DOPPLER_CONFIG}" --plain)"
-  ASC_ISSUER_ID="$(doppler secrets get APP_STORE_CONNECT_ISSUER_ID --project "${DOPPLER_PROJECT}" --config "${DOPPLER_CONFIG}" --plain)"
+  ASC_KEY_ID="$(purple_get_asc_key_id)" || fail "Missing ${PURPLE_ASC_KEY_ID_SECRET}"
+  ASC_ISSUER_ID="$(purple_get_asc_issuer_id)" || fail "Missing ${PURPLE_ASC_ISSUER_ID_SECRET}"
   # macOS mktemp requires trailing Xs; extension is optional for xcodebuild auth key path.
   ASC_KEY_FILE="$(mktemp "${TMPDIR:-/tmp}/AuthKey_XXXXXX")"
-  doppler secrets get APP_STORE_CONNECT_API_KEY --project "${DOPPLER_PROJECT}" --config "${DOPPLER_CONFIG}" --plain >"${ASC_KEY_FILE}"
+  purple_get_asc_api_key >"${ASC_KEY_FILE}" || fail "Missing ${PURPLE_ASC_API_KEY_SECRET}"
   chmod 600 "${ASC_KEY_FILE}"
   trap cleanup_asc_key EXIT
 }

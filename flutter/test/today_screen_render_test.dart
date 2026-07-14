@@ -13,6 +13,7 @@ import 'package:purple_app/features/today/missed_dose_catchup.dart';
 import 'package:purple_app/features/today/today_meds_section.dart';
 import 'package:purple_app/features/today/today_repository.dart';
 import 'package:purple_app/features/today/today_screen.dart';
+import 'support/purple_test_theme.dart';
 
 /// Regression guard for the blank /today content area: any layout exception
 /// (unbounded constraints, nested scrollable misuse) must fail these tests
@@ -58,7 +59,9 @@ void main() {
           ),
           missedDoseCatchupProvider.overrideWith((ref) async => null),
         ],
-        child: const MaterialApp(home: Scaffold(body: TodayScreen())),
+        child: MaterialApp(
+          theme: purpleTestTheme(),
+          home: Scaffold(body: TodayScreen())),
       ),
     );
     await tester.pumpAndSettle();

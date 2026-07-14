@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:purple_app/design/tokens.dart';
 import 'package:purple_app/features/journal/journal_capture_screen.dart';
 import 'package:purple_app/features/journal/models/journal_entry.dart';
+import 'support/purple_test_theme.dart';
 
 void main() {
   setUpAll(() async {
@@ -51,7 +52,8 @@ void main() {
                 viewPadding: EdgeInsets.only(top: 59, bottom: 34),
                 viewInsets: EdgeInsets.zero,
               ),
-              child: const MaterialApp(
+              child: MaterialApp(
+          theme: purpleTestTheme(),
                 home: JournalCaptureScreen(),
               ),
             ),
@@ -84,7 +86,8 @@ void main() {
               padding: EdgeInsets.zero,
               viewPadding: EdgeInsets.only(top: 59, bottom: 34),
             ),
-            child: const MaterialApp(
+            child: MaterialApp(
+          theme: purpleTestTheme(),
               home: JournalCaptureScreen(),
             ),
           ),
@@ -111,7 +114,8 @@ void main() {
               padding: EdgeInsets.zero,
               viewPadding: EdgeInsets.only(top: 59),
             ),
-            child: const MaterialApp(
+            child: MaterialApp(
+          theme: purpleTestTheme(),
               home: JournalCaptureScreen(),
             ),
           ),
