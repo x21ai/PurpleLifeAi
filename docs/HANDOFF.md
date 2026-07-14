@@ -48,7 +48,7 @@ clean + 254/254; web QA video ready. See Log for details.
   TF28 design doc). Worktrees under `/tmp/` remain on old machine only.
 - **Stand / next:** `git pull` on new laptop; Doppler `x21`/`prd` for iOS;
   `cursor-cloudflare`/`prd_cloudlfare` for web. TF28 device QA still open.
-- **Who / where:** cursor-agent · local · `main` (pre-push)
+- **Who / where:** cursor-agent · local · `main`@`283fb264`
 - **Evidence:** `flutter analyze lib/` clean; `flutter test` **258/258**; commit on
   `main` pushed to `origin/main`
 - **Timestamp:** 2026-07-14T20:35:00Z
