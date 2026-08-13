@@ -35,15 +35,15 @@ clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
 
-### 2026-08-13T13:45:00Z — Cursor Cloud dev environment setup
+### 2026-08-13T16:30:00Z — Cursor Cloud dev environment setup
 
 - **Requested:** Set up the dev environment on a fresh Cursor Cloud VM, run the app, and prove it works.
-- **Done:** Installed bun (`~/.bun`), installed JS deps with **`npm install`** (not bun/npm ci; see below), started `bun run dev` on http://localhost:8080. Verified homepage SSR + `/sign-in`/`/sign-up` (HTTP 200), ran `bunx tsc --noEmit` (PASS), and completed a hello-world account creation through the UI against live Supabase (reached "Check your inbox" confirmation state). Added a `## Cursor Cloud specific instructions` section to `AGENTS.md`. Registered VM update script = `npm install`.
-- **Issues:** Fresh installs are broken with `bun install` and `npm ci`: the `entities@4.5.0` override conflicts with `htmlparser2@10` (via `@tanstack/react-start`->`cheerio`) which needs `entities/decode`; only `npm install` reconciles the (stale) `package-lock.json` while preserving the nested `entities@7.0.1`. `npm install` dirties `package-lock.json` (restored before commit). `bun run lint` reports ~21k pre-existing prettier errors (not a CI gate). Signed-in flows need a confirmed test login not reachable from this VM's Doppler token.
-- **Stand / next:** Web dev env works on Cloud VMs via update script `npm install` + `bun run dev`. To exercise authenticated app screens, provide a confirmed test login (Doppler `cursor-cloudflare`/`prd_cloudlfare`).
+- **Done:** Installed bun (`~/.bun`) and doppler (`~/.doppler`), installed JS deps with **`npm install`** (not bun/npm ci; see below). Ran the web app via `doppler run -p x21 -c prd_cloudflare -- bun run dev` (http://localhost:8080). Verified homepage SSR + `/sign-in`/`/sign-up` (HTTP 200) and `bunx tsc --noEmit` (PASS). Completed the authenticated hello-world end to end: signed in as `e2e-smoke@purplelife.org` (Doppler `x21`/`prd_cloudflare` `E2E_TEST_USER_*`), reached `/today`, created a journal entry, confirmed it persisted across reload. Added/corrected `## Cursor Cloud specific instructions` in `AGENTS.md`. Registered VM update script = `npm install`.
+- **Issues:** Fresh installs break with `bun install` and `npm ci`: the `entities@4.5.0` override conflicts with `htmlparser2@10` (via `@tanstack/react-start`->`cheerio`) which needs `entities/decode`; only `npm install` reconciles the (stale) `package-lock.json` while preserving nested `entities@7.0.1`. `npm install` dirties `package-lock.json` (restored before commit). Committed root `.env` is STALE (OLD project `lzuodgpqseijhhyzgfky`); dev must run via `doppler run` so `VITE_SUPABASE_URL` resolves to the NEW project (`auth.purplelife.org`). `bun run lint` reports ~21k pre-existing prettier errors (not a CI gate). Journal entry shows "Retry reading" (AI pipeline/Worker not wired locally) but the entry saves fine.
+- **Stand / next:** Web dev env fully working on Cloud VMs: update script `npm install` + run `doppler run -p x21 -c prd_cloudflare -- bun run dev`.
 - **Who / where:** cursor-cloud-agent · Cloud VM · `cursor/dev-environment-setup-1b40`
-- **Evidence:** dev server HTTP 200; `tsc --noEmit` PASS; signup demo video + screenshots in run artifacts.
-- **Timestamp:** 2026-08-13T13:45:00Z
+- **Evidence:** dev server HTTP 200; `tsc --noEmit` PASS; signed-in journal-entry demo video + screenshots in run artifacts.
+- **Timestamp:** 2026-08-13T16:30:00Z
 
 ### 2026-07-14T20:35:00Z — Laptop handoff: commit all local work to main
 
