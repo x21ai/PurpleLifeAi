@@ -35,6 +35,16 @@ clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
 
+### 2026-08-13T13:45:00Z — Cursor Cloud dev environment setup
+
+- **Requested:** Set up the dev environment on a fresh Cursor Cloud VM, run the app, and prove it works.
+- **Done:** Installed bun (`~/.bun`), installed JS deps with **`npm install`** (not bun/npm ci; see below), started `bun run dev` on http://localhost:8080. Verified homepage SSR + `/sign-in`/`/sign-up` (HTTP 200), ran `bunx tsc --noEmit` (PASS), and completed a hello-world account creation through the UI against live Supabase (reached "Check your inbox" confirmation state). Added a `## Cursor Cloud specific instructions` section to `AGENTS.md`. Registered VM update script = `npm install`.
+- **Issues:** Fresh installs are broken with `bun install` and `npm ci`: the `entities@4.5.0` override conflicts with `htmlparser2@10` (via `@tanstack/react-start`->`cheerio`) which needs `entities/decode`; only `npm install` reconciles the (stale) `package-lock.json` while preserving the nested `entities@7.0.1`. `npm install` dirties `package-lock.json` (restored before commit). `bun run lint` reports ~21k pre-existing prettier errors (not a CI gate). Signed-in flows need a confirmed test login not reachable from this VM's Doppler token.
+- **Stand / next:** Web dev env works on Cloud VMs via update script `npm install` + `bun run dev`. To exercise authenticated app screens, provide a confirmed test login (Doppler `cursor-cloudflare`/`prd_cloudlfare`).
+- **Who / where:** cursor-cloud-agent · Cloud VM · `cursor/dev-environment-setup-1b40`
+- **Evidence:** dev server HTTP 200; `tsc --noEmit` PASS; signup demo video + screenshots in run artifacts.
+- **Timestamp:** 2026-08-13T13:45:00Z
+
 ### 2026-07-14T20:35:00Z — Laptop handoff: commit all local work to main
 
 - **Requested:** Save everything to repo and commit before laptop change; leave
