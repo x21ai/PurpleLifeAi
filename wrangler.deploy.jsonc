@@ -4,6 +4,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "purplelife",
+  "account_id": "c7f99ecba0ace852de43684ec8a44612",
   "workers_dev": true,
   "routes": [
     { "pattern": "www.purplelife.org/*", "zone_name": "purplelife.org" },
@@ -22,6 +23,25 @@
   // Self service binding so the scheduled handler can invoke the app's own
   // cron endpoints without a same-zone subrequest loop.
   "services": [{ "binding": "SELF", "service": "purplelife" }],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "purplelifeai",
+      "database_id": "bfb642b9-b71b-4d7f-a823-669efc2f2168",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "STORAGE",
+      "bucket_name": "purplelifeai",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "73356a0e339447059bdddc33b93f26a9",
+    },
+  ],
   "triggers": {
     // Mapped to endpoints in the scheduled handler (src/server.ts).
     "crons": [

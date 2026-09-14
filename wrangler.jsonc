@@ -1,7 +1,29 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "purplelife",
+  "account_id": "c7f99ecba0ace852de43684ec8a44612",
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
+  // D1 / R2 / KV for Cloudflare-only cutover (DATA_BACKEND=cloudflare).
+  // Legacy Supabase stays live until import is verified; default backend is supabase.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "purplelifeai",
+      "database_id": "bfb642b9-b71b-4d7f-a823-669efc2f2168",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "STORAGE",
+      "bucket_name": "purplelifeai",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "73356a0e339447059bdddc33b93f26a9",
+    },
+  ],
 }

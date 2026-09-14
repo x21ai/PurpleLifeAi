@@ -14,6 +14,8 @@ import {
   normalizePathname,
   rewriteFlutterAssetPath,
 } from "./lib/flutter-web-routing";
+import { setRequestBindings } from "./lib/cloudflare/bindings";
+import type { PurpleWorkerBindings } from "./lib/cloudflare/env";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -91,7 +93,8 @@ type CronEnv = {
   SELF?: { fetch: (request: Request) => Promise<Response> };
 };
 
-type WorkerEnv = CronEnv & {
+type WorkerEnv = CronEnv &
+  Partial<Pick<PurpleWorkerBindings, "DB" | "STORAGE" | "CACHE" | "DATA_BACKEND" | "AUTH_JWT_SECRET">> & {
   ASSETS?: AssetsBinding;
   /** When "true" or "1", signed-in app paths serve Flutter web SPA from _flutter/index.html. */
   FLUTTER_WEB_CUTOVER?: string;
@@ -300,6 +303,7 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      setRequestBindings(env);
       const preflight = handleFlutterApiCorsPreflight(request);
       if (preflight) return preflight;
 

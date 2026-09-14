@@ -49,7 +49,12 @@
     "ios:check-luciq": "bash scripts/doppler-run-purple-life.sh node scripts/luciq-fetch-reports.mjs",
     "ios:check-tf-feedback": "bash scripts/doppler-run-purple-life.sh node scripts/check-testflight-feedback.mjs",
     "luciq:sync-secrets": "bash scripts/luciq-sync-doppler-secrets.sh",
-    "luciq:install-mcp": "bash scripts/install-luciq-mcp-cursor.sh"
+    "luciq:install-mcp": "bash scripts/install-luciq-mcp-cursor.sh",
+    "cf:d1:migrate": "bash scripts/cloudflare/apply-d1-migrations.sh",
+    "cf:d1:migrate:remote": "bash scripts/cloudflare/apply-d1-migrations.sh --remote",
+    "cf:d1:schema": "node scripts/cloudflare/generate-d1-schema.mjs",
+    "cf:d1:import": "node scripts/cloudflare/import-d1-from-csv.mjs",
+    "cf:r2:import": "node scripts/cloudflare/import-r2-from-manifest.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.82",

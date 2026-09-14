@@ -9,6 +9,12 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-14 Cloudflare migration foundation (PR):** D1/R2/KV wrangler bindings
+(POS Ai `c7f99ecba0ace852de43684ec8a44612`), D1 schema migrations, Workers JWT auth,
+edge-function ports (oura-sync, journal-processor stub), import scripts, and
+`DATA_BACKEND=supabase|cloudflare` feature flag. **Default remains Supabase**; legacy
+project `xxnzmfzsjplrutrgbzxy` untouched. Runbook: `docs/CLOUDFLARE-MIGRATION.md`.
+
 **2026-07-14 Laptop handoff commit (main):** Lands Doppler `x21`/`prd` +
 `PURPLE_LIFE_*` migration, TF28 Flutter P0 fixes (Today/meds/journal/hydration/tests),
 design parity doc, and iOS script updates. ASC tip **1.0 (28)** VALID; rollback
@@ -34,6 +40,26 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-14T21:45:00Z — Cloudflare-only migration foundation (D1/R2/KV)
+
+- **Requested:** Migrate PurpleLifeAi off Supabase onto Cloudflare D1+R2+KV+Workers
+  auth; wire bindings, schema, import path, feature flag; open PR without hard cutover.
+- **Done:** `wrangler.jsonc` + `wrangler.deploy.jsonc` bindings (`DB`, `STORAGE`, `CACHE`);
+  `cloudflare/migrations/0001_auth.sql`, generated `0002_core_schema.sql` (67 tables);
+  `src/lib/cloudflare/*` (D1 client, R2 storage, JWT auth, edge ports);
+  `DATA_BACKEND` flag; cron routes branch supabase/cloudflare; API routes
+  `/api/auth/sign-in`, `/api/auth/sign-up`, `/api/cloudflare/edge/invoke`,
+  `/api/admin/d1-import`; import scripts under `scripts/cloudflare/`; docs
+  `docs/CLOUDFLARE-MIGRATION.md`; package.json `cf:*` scripts.
+- **Issues:** Full app still Supabase-coupled (~180 files); journal-processor AI port
+  is stub-only; build env entities/cheerio pre-existing failure on this VM; edge
+  functions ai-orchestrator/risk-forecaster/med-dose-action/journal-extract not ported.
+- **Stand / next:** Apply D1 migrations on remote `purplelifeai`, import staging data,
+  incrementally migrate server fns to D1; flip `DATA_BACKEND` only after verify.
+- **Who / where:** cursor-agent · cloud VM · `cursor/cloudflare-migration-f855`
+- **Evidence:** `bunx tsc --noEmit` clean; `@tanstack/router-cli generate` updated route tree
+- **Timestamp:** 2026-09-14T21:45:00Z
 
 ### 2026-07-14T20:35:00Z — Laptop handoff: commit all local work to main
 

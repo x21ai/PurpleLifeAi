@@ -9,219 +9,142 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as UsersRouteImport } from './routes/users'
-import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
-import { Route as TrustRouteImport } from './routes/trust'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as SignUpRouteImport } from './routes/sign-up'
-import { Route as SignInRouteImport } from './routes/sign-in'
-import { Route as RiskRouteImport } from './routes/risk'
-import { Route as ResourcesRouteImport } from './routes/resources'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as PricingRouteImport } from './routes/pricing'
-import { Route as MessagesRouteImport } from './routes/messages'
-import { Route as HowPurpleThinksRouteImport } from './routes/how-purple-thinks'
-import { Route as FeedbackRouteImport } from './routes/feedback'
-import { Route as FeaturesRouteImport } from './routes/features'
-import { Route as ContactRouteImport } from './routes/contact'
-import { Route as CommunityRouteImport } from './routes/community'
-import { Route as CharterRouteImport } from './routes/charter'
-import { Route as AboutRouteImport } from './routes/about'
-import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as FriendJoinRouteImport } from './routes/friend.join'
-import { Route as FriendAcceptRouteImport } from './routes/friend.accept'
-import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
-import { Route as CommunityResourcesRouteImport } from './routes/community.resources'
-import { Route as CommunityPostIdRouteImport } from './routes/community.$postId'
-import { Route as CareAcceptRouteImport } from './routes/care.accept'
-import { Route as ApiChatRouteImport } from './routes/api/chat'
-import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
-import { Route as AppVitalsRouteImport } from './routes/_app/vitals'
-import { Route as AppToolsRouteImport } from './routes/_app/tools'
-import { Route as AppTodayRouteImport } from './routes/_app/today'
-import { Route as AppTimelineRouteImport } from './routes/_app/timeline'
-import { Route as AppSettingsRouteImport } from './routes/_app/settings'
-import { Route as AppReportsRouteImport } from './routes/_app/reports'
-import { Route as AppPlanRouteImport } from './routes/_app/plan'
-import { Route as AppMyHealthDnaRouteImport } from './routes/_app/my-health-dna'
-import { Route as AppMyHealthRouteImport } from './routes/_app/my-health'
-import { Route as AppMedsRouteImport } from './routes/_app/meds'
-import { Route as AppInsightsRouteImport } from './routes/_app/insights'
-import { Route as AppHydrationRouteImport } from './routes/_app/hydration'
-import { Route as AppDataRouteImport } from './routes/_app/data'
-import { Route as AppCommunityNewRouteImport } from './routes/_app/community-new'
-import { Route as AppChatCareRouteImport } from './routes/_app/chat-care'
-import { Route as AppChatRouteImport } from './routes/_app/chat'
-import { Route as AppAskMayaRouteImport } from './routes/_app/ask-maya'
-import { Route as AppAppleHealthImportRouteImport } from './routes/_app/apple-health-import'
-import { Route as AppAdminRouteImport } from './routes/_app/admin'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as CharterRouteImport } from './routes/charter'
+import { Route as CommunityRouteImport } from './routes/community'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as FeaturesRouteImport } from './routes/features'
+import { Route as FeedbackRouteImport } from './routes/feedback'
+import { Route as HowPurpleThinksRouteImport } from './routes/how-purple-thinks'
+import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ResourcesRouteImport } from './routes/resources'
+import { Route as RiskRouteImport } from './routes/risk'
+import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as SignUpRouteImport } from './routes/sign-up'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as TrustRouteImport } from './routes/trust'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
+import { Route as UsersRouteImport } from './routes/users'
 import { Route as AppAccountRouteImport } from './routes/_app/account'
-import { Route as AppJournalIndexRouteImport } from './routes/_app/journal.index'
-import { Route as AppCareIndexRouteImport } from './routes/_app/care.index'
-import { Route as AppBiometricsIndexRouteImport } from './routes/_app/biometrics.index'
+import { Route as AppAdminRouteImport } from './routes/_app/admin'
+import { Route as AppAppleHealthImportRouteImport } from './routes/_app/apple-health-import'
+import { Route as AppAskMayaRouteImport } from './routes/_app/ask-maya'
+import { Route as AppChatRouteImport } from './routes/_app/chat'
+import { Route as AppChatCareRouteImport } from './routes/_app/chat-care'
+import { Route as AppCommunityNewRouteImport } from './routes/_app/community-new'
+import { Route as AppDataRouteImport } from './routes/_app/data'
+import { Route as AppHydrationRouteImport } from './routes/_app/hydration'
+import { Route as AppInsightsRouteImport } from './routes/_app/insights'
+import { Route as AppMedsRouteImport } from './routes/_app/meds'
+import { Route as AppMyHealthRouteImport } from './routes/_app/my-health'
+import { Route as AppMyHealthDnaRouteImport } from './routes/_app/my-health-dna'
+import { Route as AppPlanRouteImport } from './routes/_app/plan'
+import { Route as AppReportsRouteImport } from './routes/_app/reports'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppTimelineRouteImport } from './routes/_app/timeline'
+import { Route as AppTodayRouteImport } from './routes/_app/today'
+import { Route as AppToolsRouteImport } from './routes/_app/tools'
+import { Route as AppVitalsRouteImport } from './routes/_app/vitals'
+import { Route as AppWelcomeRouteImport } from './routes/_app/welcome'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as CareAcceptRouteImport } from './routes/care.accept'
+import { Route as CommunityPostIdRouteImport } from './routes/community.$postId'
+import { Route as CommunityResourcesRouteImport } from './routes/community.resources'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as FriendAcceptRouteImport } from './routes/friend.accept'
+import { Route as FriendJoinRouteImport } from './routes/friend.join'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin.index'
-import { Route as ShareReportTokenRouteImport } from './routes/share.report.$token'
-import { Route as OauthWhoopCallbackRouteImport } from './routes/oauth.whoop.callback'
-import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
-import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
-import { Route as ApiHealthWhoopSyncRouteImport } from './routes/api/health/whoop-sync'
-import { Route as ApiHealthWhoopExchangeRouteImport } from './routes/api/health/whoop-exchange'
-import { Route as ApiHealthWhoopConfigRouteImport } from './routes/api/health/whoop-config'
-import { Route as ApiHealthNativeSyncRouteImport } from './routes/api/health/native-sync'
-import { Route as ApiEmailSuppressionRouteImport } from './routes/api/email/suppression'
-import { Route as ApiCareTodayRouteImport } from './routes/api/care/today'
-import { Route as ApiCareSeizuresRouteImport } from './routes/api/care/seizures'
-import { Route as ApiCareReportsRouteImport } from './routes/api/care/reports'
-import { Route as ApiCareReportRouteImport } from './routes/api/care/report'
-import { Route as ApiCareMedsRouteImport } from './routes/api/care/meds'
-import { Route as ApiCareJournalRouteImport } from './routes/api/care/journal'
-import { Route as ApiCareIncomingInvitesRouteImport } from './routes/api/care/incoming-invites'
-import { Route as ApiCareDeclineRouteImport } from './routes/api/care/decline'
-import { Route as ApiCareAcceptRouteImport } from './routes/api/care/accept'
-import { Route as ApiAiSummarizeReportRouteImport } from './routes/api/ai/summarize-report'
-import { Route as ApiAiMetricInsightRouteImport } from './routes/api/ai/metric-insight'
-import { Route as ApiAiDailyInsightCardsRouteImport } from './routes/api/ai/daily-insight-cards'
-import { Route as ApiAccountPersonalShareCodeRouteImport } from './routes/api/account/personal-share-code'
-import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
-import { Route as AppSettingsTravelRouteImport } from './routes/_app/settings.travel'
-import { Route as AppSettingsTermsRouteImport } from './routes/_app/settings.terms'
-import { Route as AppSettingsSharingRouteImport } from './routes/_app/settings.sharing'
-import { Route as AppSettingsPrivacyRouteImport } from './routes/_app/settings.privacy'
-import { Route as AppSettingsHowPurpleThinksRouteImport } from './routes/_app/settings.how-purple-thinks'
-import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
-import { Route as AppReportsNewRouteImport } from './routes/_app/reports.new'
-import { Route as AppReportsMetricsRouteImport } from './routes/_app/reports.metrics'
-import { Route as AppReportsMedicalHistoryRouteImport } from './routes/_app/reports.medical-history'
-import { Route as AppReportsDocumentsRouteImport } from './routes/_app/reports.documents'
-import { Route as AppReportsReportIdRouteImport } from './routes/_app/reports.$reportId'
-import { Route as AppMedsHistoryRouteImport } from './routes/_app/meds.history'
-import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
-import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
-import { Route as AppFriendsFriendshipIdRouteImport } from './routes/_app/friends.$friendshipId'
-import { Route as AppConditionSlugRouteImport } from './routes/_app/condition.$slug'
-import { Route as AppCareInboxRouteImport } from './routes/_app/care.inbox'
-import { Route as AppCareOwnerIdRouteImport } from './routes/_app/care.$ownerId'
-import { Route as AppBiometricsMetricRouteImport } from './routes/_app/biometrics.$metric'
-import { Route as AppAdminUsersRouteImport } from './routes/_app/admin.users'
-import { Route as AppAdminRulesRouteImport } from './routes/_app/admin.rules'
-import { Route as AppAdminResourcesRouteImport } from './routes/_app/admin.resources'
-import { Route as AppAdminPromoRouteImport } from './routes/_app/admin.promo'
-import { Route as AppAdminMigrationExportRouteImport } from './routes/_app/admin.migration-export'
-import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin.messages'
-import { Route as AppAdminFeedbackRouteImport } from './routes/_app/admin.feedback'
-import { Route as AppAdminContactRouteImport } from './routes/_app/admin.contact'
-import { Route as AppAdminCommunityRouteImport } from './routes/_app/admin.community'
 import { Route as AppAdminBillingRouteImport } from './routes/_app/admin.billing'
-import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
-import { Route as ApiPublicHooksAppleHealthRouteImport } from './routes/api/public/hooks/apple-health'
-import { Route as ApiPublicCronWhoopSyncAllRouteImport } from './routes/api/public/cron/whoop-sync-all'
-import { Route as ApiPublicCronWeeklyRecapRouteImport } from './routes/api/public/cron/weekly-recap'
-import { Route as ApiPublicCronPurgeDeletedAccountsRouteImport } from './routes/api/public/cron/purge-deleted-accounts'
-import { Route as ApiPublicCronOuraSyncAllRouteImport } from './routes/api/public/cron/oura-sync-all'
-import { Route as ApiPublicCronMedicalReportsRouteImport } from './routes/api/public/cron/medical-reports'
-import { Route as ApiPublicCronJournalReprocessRouteImport } from './routes/api/public/cron/journal-reprocess'
-import { Route as ApiPublicCronEmailQueuePumpRouteImport } from './routes/api/public/cron/email-queue-pump'
-import { Route as ApiPublicCronDoseRemindersRouteImport } from './routes/api/public/cron/dose-reminders'
-import { Route as ApiPublicCronCareDailyDigestRouteImport } from './routes/api/public/cron/care-daily-digest'
-import { Route as ApiEmailTransactionalSendRouteImport } from './routes/api/email/transactional/send'
-import { Route as ApiEmailTransactionalPreviewRouteImport } from './routes/api/email/transactional/preview'
-import { Route as ApiEmailQueueProcessRouteImport } from './routes/api/email/queue/process'
-import { Route as ApiEmailAuthWebhookRouteImport } from './routes/api/email/auth/webhook'
-import { Route as ApiEmailAuthPreviewRouteImport } from './routes/api/email/auth/preview'
-import { Route as AppReportsTrendsMetricKeyRouteImport } from './routes/_app/reports.trends.$metricKey'
+import { Route as AppAdminCommunityRouteImport } from './routes/_app/admin.community'
+import { Route as AppAdminContactRouteImport } from './routes/_app/admin.contact'
+import { Route as AppAdminFeedbackRouteImport } from './routes/_app/admin.feedback'
+import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin.messages'
+import { Route as AppAdminMigrationExportRouteImport } from './routes/_app/admin.migration-export'
+import { Route as AppAdminPromoRouteImport } from './routes/_app/admin.promo'
+import { Route as AppAdminResourcesRouteImport } from './routes/_app/admin.resources'
+import { Route as AppAdminRulesRouteImport } from './routes/_app/admin.rules'
+import { Route as AppAdminUsersRouteImport } from './routes/_app/admin.users'
+import { Route as AppBiometricsIndexRouteImport } from './routes/_app/biometrics.index'
+import { Route as AppBiometricsMetricRouteImport } from './routes/_app/biometrics.$metric'
+import { Route as AppCareIndexRouteImport } from './routes/_app/care.index'
+import { Route as AppCareOwnerIdRouteImport } from './routes/_app/care.$ownerId'
+import { Route as AppCareInboxRouteImport } from './routes/_app/care.inbox'
+import { Route as AppConditionSlugRouteImport } from './routes/_app/condition.$slug'
+import { Route as AppFriendsFriendshipIdRouteImport } from './routes/_app/friends.$friendshipId'
+import { Route as AppJournalIndexRouteImport } from './routes/_app/journal.index'
+import { Route as AppJournalNewRouteImport } from './routes/_app/journal.new'
+import { Route as AppMedsMedIdRouteImport } from './routes/_app/meds.$medId'
+import { Route as AppMedsHistoryRouteImport } from './routes/_app/meds.history'
+import { Route as AppReportsReportIdRouteImport } from './routes/_app/reports.$reportId'
+import { Route as AppReportsDocumentsRouteImport } from './routes/_app/reports.documents'
+import { Route as AppReportsMedicalHistoryRouteImport } from './routes/_app/reports.medical-history'
+import { Route as AppReportsMetricsRouteImport } from './routes/_app/reports.metrics'
+import { Route as AppReportsNewRouteImport } from './routes/_app/reports.new'
+import { Route as AppSeizuresNewRouteImport } from './routes/_app/seizures.new'
+import { Route as AppSettingsHowPurpleThinksRouteImport } from './routes/_app/settings.how-purple-thinks'
+import { Route as AppSettingsPrivacyRouteImport } from './routes/_app/settings.privacy'
+import { Route as AppSettingsSharingRouteImport } from './routes/_app/settings.sharing'
+import { Route as AppSettingsTermsRouteImport } from './routes/_app/settings.terms'
+import { Route as AppSettingsTravelRouteImport } from './routes/_app/settings.travel'
+import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
+import { Route as ApiAccountPersonalShareCodeRouteImport } from './routes/api/account/personal-share-code'
+import { Route as ApiAdminD1ImportRouteImport } from './routes/api/admin/d1-import'
+import { Route as ApiAiDailyInsightCardsRouteImport } from './routes/api/ai/daily-insight-cards'
+import { Route as ApiAiMetricInsightRouteImport } from './routes/api/ai/metric-insight'
+import { Route as ApiAiSummarizeReportRouteImport } from './routes/api/ai/summarize-report'
+import { Route as ApiAuthSignInRouteImport } from './routes/api/auth/sign-in'
+import { Route as ApiAuthSignUpRouteImport } from './routes/api/auth/sign-up'
+import { Route as ApiCareAcceptRouteImport } from './routes/api/care/accept'
+import { Route as ApiCareDeclineRouteImport } from './routes/api/care/decline'
+import { Route as ApiCareIncomingInvitesRouteImport } from './routes/api/care/incoming-invites'
+import { Route as ApiCareJournalRouteImport } from './routes/api/care/journal'
+import { Route as ApiCareMedsRouteImport } from './routes/api/care/meds'
+import { Route as ApiCareReportRouteImport } from './routes/api/care/report'
+import { Route as ApiCareReportsRouteImport } from './routes/api/care/reports'
+import { Route as ApiCareSeizuresRouteImport } from './routes/api/care/seizures'
+import { Route as ApiCareTodayRouteImport } from './routes/api/care/today'
+import { Route as ApiEmailSuppressionRouteImport } from './routes/api/email/suppression'
+import { Route as ApiHealthNativeSyncRouteImport } from './routes/api/health/native-sync'
+import { Route as ApiHealthWhoopConfigRouteImport } from './routes/api/health/whoop-config'
+import { Route as ApiHealthWhoopExchangeRouteImport } from './routes/api/health/whoop-exchange'
+import { Route as ApiHealthWhoopSyncRouteImport } from './routes/api/health/whoop-sync'
+import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
+import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
+import { Route as OauthWhoopCallbackRouteImport } from './routes/oauth.whoop.callback'
+import { Route as ShareReportTokenRouteImport } from './routes/share.report.$token'
 import { Route as AppAdminReportsDuplicatesRouteImport } from './routes/_app/admin.reports.duplicates'
+import { Route as AppReportsTrendsMetricKeyRouteImport } from './routes/_app/reports.trends.$metricKey'
+import { Route as ApiCloudflareEdgeInvokeRouteImport } from './routes/api/cloudflare/edge/invoke'
+import { Route as ApiEmailAuthPreviewRouteImport } from './routes/api/email/auth/preview'
+import { Route as ApiEmailAuthWebhookRouteImport } from './routes/api/email/auth/webhook'
+import { Route as ApiEmailQueueProcessRouteImport } from './routes/api/email/queue/process'
+import { Route as ApiEmailTransactionalPreviewRouteImport } from './routes/api/email/transactional/preview'
+import { Route as ApiEmailTransactionalSendRouteImport } from './routes/api/email/transactional/send'
+import { Route as ApiPublicCronCareDailyDigestRouteImport } from './routes/api/public/cron/care-daily-digest'
+import { Route as ApiPublicCronDoseRemindersRouteImport } from './routes/api/public/cron/dose-reminders'
+import { Route as ApiPublicCronEmailQueuePumpRouteImport } from './routes/api/public/cron/email-queue-pump'
+import { Route as ApiPublicCronJournalReprocessRouteImport } from './routes/api/public/cron/journal-reprocess'
+import { Route as ApiPublicCronMedicalReportsRouteImport } from './routes/api/public/cron/medical-reports'
+import { Route as ApiPublicCronOuraSyncAllRouteImport } from './routes/api/public/cron/oura-sync-all'
+import { Route as ApiPublicCronPurgeDeletedAccountsRouteImport } from './routes/api/public/cron/purge-deleted-accounts'
+import { Route as ApiPublicCronWeeklyRecapRouteImport } from './routes/api/public/cron/weekly-recap'
+import { Route as ApiPublicCronWhoopSyncAllRouteImport } from './routes/api/public/cron/whoop-sync-all'
+import { Route as ApiPublicHooksAppleHealthRouteImport } from './routes/api/public/hooks/apple-health'
+import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
 import { Route as AppCareOwnerIdReportsReportIdRouteImport } from './routes/_app/care.$ownerId.reports.$reportId'
 
-const UsersRoute = UsersRouteImport.update({
-  id: '/users',
-  path: '/users',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const UnsubscribeRoute = UnsubscribeRouteImport.update({
-  id: '/unsubscribe',
-  path: '/unsubscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TrustRoute = TrustRouteImport.update({
-  id: '/trust',
-  path: '/trust',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignUpRoute = SignUpRouteImport.update({
-  id: '/sign-up',
-  path: '/sign-up',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignInRoute = SignInRouteImport.update({
-  id: '/sign-in',
-  path: '/sign-in',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RiskRoute = RiskRouteImport.update({
-  id: '/risk',
-  path: '/risk',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResourcesRoute = ResourcesRouteImport.update({
-  id: '/resources',
-  path: '/resources',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PricingRoute = PricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MessagesRoute = MessagesRouteImport.update({
-  id: '/messages',
-  path: '/messages',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HowPurpleThinksRoute = HowPurpleThinksRouteImport.update({
-  id: '/how-purple-thinks',
-  path: '/how-purple-thinks',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeedbackRoute = FeedbackRouteImport.update({
-  id: '/feedback',
-  path: '/feedback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeaturesRoute = FeaturesRouteImport.update({
-  id: '/features',
-  path: '/features',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ContactRoute = ContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CommunityRoute = CommunityRouteImport.update({
-  id: '/community',
-  path: '/community',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CharterRoute = CharterRouteImport.update({
-  id: '/charter',
-  path: '/charter',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -229,143 +152,99 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
-  id: '/_app',
+const CharterRoute = CharterRouteImport.update({
+  id: '/charter',
+  path: '/charter',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const CommunityRoute = CommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FriendJoinRoute = FriendJoinRouteImport.update({
-  id: '/friend/join',
-  path: '/friend/join',
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FriendAcceptRoute = FriendAcceptRouteImport.update({
-  id: '/friend/accept',
-  path: '/friend/accept',
+const FeaturesRoute = FeaturesRouteImport.update({
+  id: '/features',
+  path: '/features',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
-  id: '/email/unsubscribe',
-  path: '/email/unsubscribe',
+const FeedbackRoute = FeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CommunityResourcesRoute = CommunityResourcesRouteImport.update({
+const HowPurpleThinksRoute = HowPurpleThinksRouteImport.update({
+  id: '/how-purple-thinks',
+  path: '/how-purple-thinks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResourcesRoute = ResourcesRouteImport.update({
   id: '/resources',
   path: '/resources',
-  getParentRoute: () => CommunityRoute,
-} as any)
-const CommunityPostIdRoute = CommunityPostIdRouteImport.update({
-  id: '/$postId',
-  path: '/$postId',
-  getParentRoute: () => CommunityRoute,
-} as any)
-const CareAcceptRoute = CareAcceptRouteImport.update({
-  id: '/care/accept',
-  path: '/care/accept',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiChatRoute = ApiChatRouteImport.update({
-  id: '/api/chat',
-  path: '/api/chat',
+const RiskRoute = RiskRouteImport.update({
+  id: '/risk',
+  path: '/risk',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppWelcomeRoute = AppWelcomeRouteImport.update({
-  id: '/welcome',
-  path: '/welcome',
-  getParentRoute: () => AppRoute,
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppVitalsRoute = AppVitalsRouteImport.update({
-  id: '/vitals',
-  path: '/vitals',
-  getParentRoute: () => AppRoute,
+const SignUpRoute = SignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppToolsRoute = AppToolsRouteImport.update({
-  id: '/tools',
-  path: '/tools',
-  getParentRoute: () => AppRoute,
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppTodayRoute = AppTodayRouteImport.update({
-  id: '/today',
-  path: '/today',
-  getParentRoute: () => AppRoute,
+const TrustRoute = TrustRouteImport.update({
+  id: '/trust',
+  path: '/trust',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppTimelineRoute = AppTimelineRouteImport.update({
-  id: '/timeline',
-  path: '/timeline',
-  getParentRoute: () => AppRoute,
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppRoute,
+const UsersRoute = UsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppReportsRoute = AppReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPlanRoute = AppPlanRouteImport.update({
-  id: '/plan',
-  path: '/plan',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppMyHealthDnaRoute = AppMyHealthDnaRouteImport.update({
-  id: '/my-health-dna',
-  path: '/my-health-dna',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppMyHealthRoute = AppMyHealthRouteImport.update({
-  id: '/my-health',
-  path: '/my-health',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppMedsRoute = AppMedsRouteImport.update({
-  id: '/meds',
-  path: '/meds',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppInsightsRoute = AppInsightsRouteImport.update({
-  id: '/insights',
-  path: '/insights',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppHydrationRoute = AppHydrationRouteImport.update({
-  id: '/hydration',
-  path: '/hydration',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppDataRoute = AppDataRouteImport.update({
-  id: '/data',
-  path: '/data',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppCommunityNewRoute = AppCommunityNewRouteImport.update({
-  id: '/community-new',
-  path: '/community-new',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppChatCareRoute = AppChatCareRouteImport.update({
-  id: '/chat-care',
-  path: '/chat-care',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppChatRoute = AppChatRouteImport.update({
-  id: '/chat',
-  path: '/chat',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAskMayaRoute = AppAskMayaRouteImport.update({
-  id: '/ask-maya',
-  path: '/ask-maya',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAppleHealthImportRoute = AppAppleHealthImportRouteImport.update({
-  id: '/apple-health-import',
-  path: '/apple-health-import',
+const AppAccountRoute = AppAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminRoute = AppAdminRouteImport.update({
@@ -373,14 +252,199 @@ const AppAdminRoute = AppAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAccountRoute = AppAccountRouteImport.update({
-  id: '/account',
-  path: '/account',
+const AppAppleHealthImportRoute = AppAppleHealthImportRouteImport.update({
+  id: '/apple-health-import',
+  path: '/apple-health-import',
   getParentRoute: () => AppRoute,
 } as any)
-const AppJournalIndexRoute = AppJournalIndexRouteImport.update({
-  id: '/journal/',
-  path: '/journal/',
+const AppAskMayaRoute = AppAskMayaRouteImport.update({
+  id: '/ask-maya',
+  path: '/ask-maya',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppChatRoute = AppChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppChatCareRoute = AppChatCareRouteImport.update({
+  id: '/chat-care',
+  path: '/chat-care',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCommunityNewRoute = AppCommunityNewRouteImport.update({
+  id: '/community-new',
+  path: '/community-new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDataRoute = AppDataRouteImport.update({
+  id: '/data',
+  path: '/data',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHydrationRoute = AppHydrationRouteImport.update({
+  id: '/hydration',
+  path: '/hydration',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInsightsRoute = AppInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMedsRoute = AppMedsRouteImport.update({
+  id: '/meds',
+  path: '/meds',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyHealthRoute = AppMyHealthRouteImport.update({
+  id: '/my-health',
+  path: '/my-health',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyHealthDnaRoute = AppMyHealthDnaRouteImport.update({
+  id: '/my-health-dna',
+  path: '/my-health-dna',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPlanRoute = AppPlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsRoute = AppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTimelineRoute = AppTimelineRouteImport.update({
+  id: '/timeline',
+  path: '/timeline',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTodayRoute = AppTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppToolsRoute = AppToolsRouteImport.update({
+  id: '/tools',
+  path: '/tools',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppVitalsRoute = AppVitalsRouteImport.update({
+  id: '/vitals',
+  path: '/vitals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWelcomeRoute = AppWelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
+  getParentRoute: () => AppRoute,
+} as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CareAcceptRoute = CareAcceptRouteImport.update({
+  id: '/care/accept',
+  path: '/care/accept',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommunityPostIdRoute = CommunityPostIdRouteImport.update({
+  id: '/$postId',
+  path: '/$postId',
+  getParentRoute: () => CommunityRoute,
+} as any)
+const CommunityResourcesRoute = CommunityResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => CommunityRoute,
+} as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email/unsubscribe',
+  path: '/email/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FriendAcceptRoute = FriendAcceptRouteImport.update({
+  id: '/friend/accept',
+  path: '/friend/accept',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FriendJoinRoute = FriendJoinRouteImport.update({
+  id: '/friend/join',
+  path: '/friend/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminBillingRoute = AppAdminBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminCommunityRoute = AppAdminCommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminContactRoute = AppAdminContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminFeedbackRoute = AppAdminFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminMessagesRoute = AppAdminMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminMigrationExportRoute = AppAdminMigrationExportRouteImport.update({
+  id: '/migration-export',
+  path: '/migration-export',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminPromoRoute = AppAdminPromoRouteImport.update({
+  id: '/promo',
+  path: '/promo',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminResourcesRoute = AppAdminResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminRulesRoute = AppAdminRulesRouteImport.update({
+  id: '/rules',
+  path: '/rules',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminUsersRoute = AppAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppBiometricsIndexRoute = AppBiometricsIndexRouteImport.update({
+  id: '/biometrics/',
+  path: '/biometrics/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBiometricsMetricRoute = AppBiometricsMetricRouteImport.update({
+  id: '/biometrics/$metric',
+  path: '/biometrics/$metric',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCareIndexRoute = AppCareIndexRouteImport.update({
@@ -388,171 +452,54 @@ const AppCareIndexRoute = AppCareIndexRouteImport.update({
   path: '/care/',
   getParentRoute: () => AppRoute,
 } as any)
-const AppBiometricsIndexRoute = AppBiometricsIndexRouteImport.update({
-  id: '/biometrics/',
-  path: '/biometrics/',
+const AppCareOwnerIdRoute = AppCareOwnerIdRouteImport.update({
+  id: '/care/$ownerId',
+  path: '/care/$ownerId',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const ShareReportTokenRoute = ShareReportTokenRouteImport.update({
-  id: '/share/report/$token',
-  path: '/share/report/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OauthWhoopCallbackRoute = OauthWhoopCallbackRouteImport.update({
-  id: '/oauth/whoop/callback',
-  path: '/oauth/whoop/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OauthOuraCallbackRoute = OauthOuraCallbackRouteImport.update({
-  id: '/oauth/oura/callback',
-  path: '/oauth/oura/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
-  id: '/api/public/stripe-webhook',
-  path: '/api/public/stripe-webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiHealthWhoopSyncRoute = ApiHealthWhoopSyncRouteImport.update({
-  id: '/api/health/whoop-sync',
-  path: '/api/health/whoop-sync',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiHealthWhoopExchangeRoute = ApiHealthWhoopExchangeRouteImport.update({
-  id: '/api/health/whoop-exchange',
-  path: '/api/health/whoop-exchange',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiHealthWhoopConfigRoute = ApiHealthWhoopConfigRouteImport.update({
-  id: '/api/health/whoop-config',
-  path: '/api/health/whoop-config',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiHealthNativeSyncRoute = ApiHealthNativeSyncRouteImport.update({
-  id: '/api/health/native-sync',
-  path: '/api/health/native-sync',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiEmailSuppressionRoute = ApiEmailSuppressionRouteImport.update({
-  id: '/api/email/suppression',
-  path: '/api/email/suppression',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCareTodayRoute = ApiCareTodayRouteImport.update({
-  id: '/api/care/today',
-  path: '/api/care/today',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCareSeizuresRoute = ApiCareSeizuresRouteImport.update({
-  id: '/api/care/seizures',
-  path: '/api/care/seizures',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCareReportsRoute = ApiCareReportsRouteImport.update({
-  id: '/api/care/reports',
-  path: '/api/care/reports',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCareReportRoute = ApiCareReportRouteImport.update({
-  id: '/api/care/report',
-  path: '/api/care/report',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCareMedsRoute = ApiCareMedsRouteImport.update({
-  id: '/api/care/meds',
-  path: '/api/care/meds',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCareJournalRoute = ApiCareJournalRouteImport.update({
-  id: '/api/care/journal',
-  path: '/api/care/journal',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCareIncomingInvitesRoute = ApiCareIncomingInvitesRouteImport.update({
-  id: '/api/care/incoming-invites',
-  path: '/api/care/incoming-invites',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCareDeclineRoute = ApiCareDeclineRouteImport.update({
-  id: '/api/care/decline',
-  path: '/api/care/decline',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCareAcceptRoute = ApiCareAcceptRouteImport.update({
-  id: '/api/care/accept',
-  path: '/api/care/accept',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAiSummarizeReportRoute = ApiAiSummarizeReportRouteImport.update({
-  id: '/api/ai/summarize-report',
-  path: '/api/ai/summarize-report',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAiMetricInsightRoute = ApiAiMetricInsightRouteImport.update({
-  id: '/api/ai/metric-insight',
-  path: '/api/ai/metric-insight',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAiDailyInsightCardsRoute = ApiAiDailyInsightCardsRouteImport.update({
-  id: '/api/ai/daily-insight-cards',
-  path: '/api/ai/daily-insight-cards',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAccountPersonalShareCodeRoute =
-  ApiAccountPersonalShareCodeRouteImport.update({
-    id: '/api/account/personal-share-code',
-    path: '/api/account/personal-share-code',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AppTodayRiskRoute = AppTodayRiskRouteImport.update({
-  id: '/risk',
-  path: '/risk',
-  getParentRoute: () => AppTodayRoute,
-} as any)
-const AppSettingsTravelRoute = AppSettingsTravelRouteImport.update({
-  id: '/travel',
-  path: '/travel',
-  getParentRoute: () => AppSettingsRoute,
-} as any)
-const AppSettingsTermsRoute = AppSettingsTermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => AppSettingsRoute,
-} as any)
-const AppSettingsSharingRoute = AppSettingsSharingRouteImport.update({
-  id: '/sharing',
-  path: '/sharing',
-  getParentRoute: () => AppSettingsRoute,
-} as any)
-const AppSettingsPrivacyRoute = AppSettingsPrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => AppSettingsRoute,
-} as any)
-const AppSettingsHowPurpleThinksRoute =
-  AppSettingsHowPurpleThinksRouteImport.update({
-    id: '/how-purple-thinks',
-    path: '/how-purple-thinks',
-    getParentRoute: () => AppSettingsRoute,
-  } as any)
-const AppSeizuresNewRoute = AppSeizuresNewRouteImport.update({
-  id: '/seizures/new',
-  path: '/seizures/new',
+const AppCareInboxRoute = AppCareInboxRouteImport.update({
+  id: '/care/inbox',
+  path: '/care/inbox',
   getParentRoute: () => AppRoute,
 } as any)
-const AppReportsNewRoute = AppReportsNewRouteImport.update({
-  id: '/new',
-  path: '/new',
+const AppConditionSlugRoute = AppConditionSlugRouteImport.update({
+  id: '/condition/$slug',
+  path: '/condition/$slug',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFriendsFriendshipIdRoute = AppFriendsFriendshipIdRouteImport.update({
+  id: '/friends/$friendshipId',
+  path: '/friends/$friendshipId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppJournalIndexRoute = AppJournalIndexRouteImport.update({
+  id: '/journal/',
+  path: '/journal/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppJournalNewRoute = AppJournalNewRouteImport.update({
+  id: '/journal/new',
+  path: '/journal/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMedsMedIdRoute = AppMedsMedIdRouteImport.update({
+  id: '/$medId',
+  path: '/$medId',
+  getParentRoute: () => AppMedsRoute,
+} as any)
+const AppMedsHistoryRoute = AppMedsHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AppMedsRoute,
+} as any)
+const AppReportsReportIdRoute = AppReportsReportIdRouteImport.update({
+  id: '/$reportId',
+  path: '/$reportId',
   getParentRoute: () => AppReportsRoute,
 } as any)
-const AppReportsMetricsRoute = AppReportsMetricsRouteImport.update({
-  id: '/metrics',
-  path: '/metrics',
+const AppReportsDocumentsRoute = AppReportsDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
   getParentRoute: () => AppReportsRoute,
 } as any)
 const AppReportsMedicalHistoryRoute =
@@ -561,170 +508,214 @@ const AppReportsMedicalHistoryRoute =
     path: '/medical-history',
     getParentRoute: () => AppReportsRoute,
   } as any)
-const AppReportsDocumentsRoute = AppReportsDocumentsRouteImport.update({
-  id: '/documents',
-  path: '/documents',
+const AppReportsMetricsRoute = AppReportsMetricsRouteImport.update({
+  id: '/metrics',
+  path: '/metrics',
   getParentRoute: () => AppReportsRoute,
 } as any)
-const AppReportsReportIdRoute = AppReportsReportIdRouteImport.update({
-  id: '/$reportId',
-  path: '/$reportId',
+const AppReportsNewRoute = AppReportsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
   getParentRoute: () => AppReportsRoute,
 } as any)
-const AppMedsHistoryRoute = AppMedsHistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
-  getParentRoute: () => AppMedsRoute,
-} as any)
-const AppMedsMedIdRoute = AppMedsMedIdRouteImport.update({
-  id: '/$medId',
-  path: '/$medId',
-  getParentRoute: () => AppMedsRoute,
-} as any)
-const AppJournalNewRoute = AppJournalNewRouteImport.update({
-  id: '/journal/new',
-  path: '/journal/new',
+const AppSeizuresNewRoute = AppSeizuresNewRouteImport.update({
+  id: '/seizures/new',
+  path: '/seizures/new',
   getParentRoute: () => AppRoute,
 } as any)
-const AppFriendsFriendshipIdRoute = AppFriendsFriendshipIdRouteImport.update({
-  id: '/friends/$friendshipId',
-  path: '/friends/$friendshipId',
-  getParentRoute: () => AppRoute,
+const AppSettingsHowPurpleThinksRoute =
+  AppSettingsHowPurpleThinksRouteImport.update({
+    id: '/how-purple-thinks',
+    path: '/how-purple-thinks',
+    getParentRoute: () => AppSettingsRoute,
+  } as any)
+const AppSettingsPrivacyRoute = AppSettingsPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => AppSettingsRoute,
 } as any)
-const AppConditionSlugRoute = AppConditionSlugRouteImport.update({
-  id: '/condition/$slug',
-  path: '/condition/$slug',
-  getParentRoute: () => AppRoute,
+const AppSettingsSharingRoute = AppSettingsSharingRouteImport.update({
+  id: '/sharing',
+  path: '/sharing',
+  getParentRoute: () => AppSettingsRoute,
 } as any)
-const AppCareInboxRoute = AppCareInboxRouteImport.update({
-  id: '/care/inbox',
-  path: '/care/inbox',
-  getParentRoute: () => AppRoute,
+const AppSettingsTermsRoute = AppSettingsTermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => AppSettingsRoute,
 } as any)
-const AppCareOwnerIdRoute = AppCareOwnerIdRouteImport.update({
-  id: '/care/$ownerId',
-  path: '/care/$ownerId',
-  getParentRoute: () => AppRoute,
+const AppSettingsTravelRoute = AppSettingsTravelRouteImport.update({
+  id: '/travel',
+  path: '/travel',
+  getParentRoute: () => AppSettingsRoute,
 } as any)
-const AppBiometricsMetricRoute = AppBiometricsMetricRouteImport.update({
-  id: '/biometrics/$metric',
-  path: '/biometrics/$metric',
-  getParentRoute: () => AppRoute,
+const AppTodayRiskRoute = AppTodayRiskRouteImport.update({
+  id: '/risk',
+  path: '/risk',
+  getParentRoute: () => AppTodayRoute,
 } as any)
-const AppAdminUsersRoute = AppAdminUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminRulesRoute = AppAdminRulesRouteImport.update({
-  id: '/rules',
-  path: '/rules',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminResourcesRoute = AppAdminResourcesRouteImport.update({
-  id: '/resources',
-  path: '/resources',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminPromoRoute = AppAdminPromoRouteImport.update({
-  id: '/promo',
-  path: '/promo',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminMigrationExportRoute = AppAdminMigrationExportRouteImport.update({
-  id: '/migration-export',
-  path: '/migration-export',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminMessagesRoute = AppAdminMessagesRouteImport.update({
-  id: '/messages',
-  path: '/messages',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminFeedbackRoute = AppAdminFeedbackRouteImport.update({
-  id: '/feedback',
-  path: '/feedback',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminContactRoute = AppAdminContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminCommunityRoute = AppAdminCommunityRouteImport.update({
-  id: '/community',
-  path: '/community',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const AppAdminBillingRoute = AppAdminBillingRouteImport.update({
-  id: '/billing',
-  path: '/billing',
-  getParentRoute: () => AppAdminRoute,
-} as any)
-const ApiPublicHooksRiskForecasterRoute =
-  ApiPublicHooksRiskForecasterRouteImport.update({
-    id: '/api/public/hooks/risk-forecaster',
-    path: '/api/public/hooks/risk-forecaster',
+const ApiAccountPersonalShareCodeRoute =
+  ApiAccountPersonalShareCodeRouteImport.update({
+    id: '/api/account/personal-share-code',
+    path: '/api/account/personal-share-code',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksAppleHealthRoute =
-  ApiPublicHooksAppleHealthRouteImport.update({
-    id: '/api/public/hooks/apple-health',
-    path: '/api/public/hooks/apple-health',
-    getParentRoute: () => rootRouteImport,
+const ApiAdminD1ImportRoute = ApiAdminD1ImportRouteImport.update({
+  id: '/api/admin/d1-import',
+  path: '/api/admin/d1-import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiDailyInsightCardsRoute = ApiAiDailyInsightCardsRouteImport.update({
+  id: '/api/ai/daily-insight-cards',
+  path: '/api/ai/daily-insight-cards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiMetricInsightRoute = ApiAiMetricInsightRouteImport.update({
+  id: '/api/ai/metric-insight',
+  path: '/api/ai/metric-insight',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiSummarizeReportRoute = ApiAiSummarizeReportRouteImport.update({
+  id: '/api/ai/summarize-report',
+  path: '/api/ai/summarize-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSignInRoute = ApiAuthSignInRouteImport.update({
+  id: '/api/auth/sign-in',
+  path: '/api/auth/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSignUpRoute = ApiAuthSignUpRouteImport.update({
+  id: '/api/auth/sign-up',
+  path: '/api/auth/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareAcceptRoute = ApiCareAcceptRouteImport.update({
+  id: '/api/care/accept',
+  path: '/api/care/accept',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareDeclineRoute = ApiCareDeclineRouteImport.update({
+  id: '/api/care/decline',
+  path: '/api/care/decline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareIncomingInvitesRoute = ApiCareIncomingInvitesRouteImport.update({
+  id: '/api/care/incoming-invites',
+  path: '/api/care/incoming-invites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareJournalRoute = ApiCareJournalRouteImport.update({
+  id: '/api/care/journal',
+  path: '/api/care/journal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareMedsRoute = ApiCareMedsRouteImport.update({
+  id: '/api/care/meds',
+  path: '/api/care/meds',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareReportRoute = ApiCareReportRouteImport.update({
+  id: '/api/care/report',
+  path: '/api/care/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareReportsRoute = ApiCareReportsRouteImport.update({
+  id: '/api/care/reports',
+  path: '/api/care/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareSeizuresRoute = ApiCareSeizuresRouteImport.update({
+  id: '/api/care/seizures',
+  path: '/api/care/seizures',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCareTodayRoute = ApiCareTodayRouteImport.update({
+  id: '/api/care/today',
+  path: '/api/care/today',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmailSuppressionRoute = ApiEmailSuppressionRouteImport.update({
+  id: '/api/email/suppression',
+  path: '/api/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthNativeSyncRoute = ApiHealthNativeSyncRouteImport.update({
+  id: '/api/health/native-sync',
+  path: '/api/health/native-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthWhoopConfigRoute = ApiHealthWhoopConfigRouteImport.update({
+  id: '/api/health/whoop-config',
+  path: '/api/health/whoop-config',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthWhoopExchangeRoute = ApiHealthWhoopExchangeRouteImport.update({
+  id: '/api/health/whoop-exchange',
+  path: '/api/health/whoop-exchange',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthWhoopSyncRoute = ApiHealthWhoopSyncRouteImport.update({
+  id: '/api/health/whoop-sync',
+  path: '/api/health/whoop-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
+  id: '/api/public/stripe-webhook',
+  path: '/api/public/stripe-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthOuraCallbackRoute = OauthOuraCallbackRouteImport.update({
+  id: '/oauth/oura/callback',
+  path: '/oauth/oura/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthWhoopCallbackRoute = OauthWhoopCallbackRouteImport.update({
+  id: '/oauth/whoop/callback',
+  path: '/oauth/whoop/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShareReportTokenRoute = ShareReportTokenRouteImport.update({
+  id: '/share/report/$token',
+  path: '/share/report/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAdminReportsDuplicatesRoute =
+  AppAdminReportsDuplicatesRouteImport.update({
+    id: '/reports/duplicates',
+    path: '/reports/duplicates',
+    getParentRoute: () => AppAdminRoute,
   } as any)
-const ApiPublicCronWhoopSyncAllRoute =
-  ApiPublicCronWhoopSyncAllRouteImport.update({
-    id: '/api/public/cron/whoop-sync-all',
-    path: '/api/public/cron/whoop-sync-all',
-    getParentRoute: () => rootRouteImport,
+const AppReportsTrendsMetricKeyRoute =
+  AppReportsTrendsMetricKeyRouteImport.update({
+    id: '/trends/$metricKey',
+    path: '/trends/$metricKey',
+    getParentRoute: () => AppReportsRoute,
   } as any)
-const ApiPublicCronWeeklyRecapRoute =
-  ApiPublicCronWeeklyRecapRouteImport.update({
-    id: '/api/public/cron/weekly-recap',
-    path: '/api/public/cron/weekly-recap',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronPurgeDeletedAccountsRoute =
-  ApiPublicCronPurgeDeletedAccountsRouteImport.update({
-    id: '/api/public/cron/purge-deleted-accounts',
-    path: '/api/public/cron/purge-deleted-accounts',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronOuraSyncAllRoute =
-  ApiPublicCronOuraSyncAllRouteImport.update({
-    id: '/api/public/cron/oura-sync-all',
-    path: '/api/public/cron/oura-sync-all',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronMedicalReportsRoute =
-  ApiPublicCronMedicalReportsRouteImport.update({
-    id: '/api/public/cron/medical-reports',
-    path: '/api/public/cron/medical-reports',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronJournalReprocessRoute =
-  ApiPublicCronJournalReprocessRouteImport.update({
-    id: '/api/public/cron/journal-reprocess',
-    path: '/api/public/cron/journal-reprocess',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronEmailQueuePumpRoute =
-  ApiPublicCronEmailQueuePumpRouteImport.update({
-    id: '/api/public/cron/email-queue-pump',
-    path: '/api/public/cron/email-queue-pump',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronDoseRemindersRoute =
-  ApiPublicCronDoseRemindersRouteImport.update({
-    id: '/api/public/cron/dose-reminders',
-    path: '/api/public/cron/dose-reminders',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicCronCareDailyDigestRoute =
-  ApiPublicCronCareDailyDigestRouteImport.update({
-    id: '/api/public/cron/care-daily-digest',
-    path: '/api/public/cron/care-daily-digest',
+const ApiCloudflareEdgeInvokeRoute = ApiCloudflareEdgeInvokeRouteImport.update({
+  id: '/api/cloudflare/edge/invoke',
+  path: '/api/cloudflare/edge/invoke',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmailAuthPreviewRoute = ApiEmailAuthPreviewRouteImport.update({
+  id: '/api/email/auth/preview',
+  path: '/api/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmailAuthWebhookRoute = ApiEmailAuthWebhookRouteImport.update({
+  id: '/api/email/auth/webhook',
+  path: '/api/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmailQueueProcessRoute = ApiEmailQueueProcessRouteImport.update({
+  id: '/api/email/queue/process',
+  path: '/api/email/queue/process',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmailTransactionalPreviewRoute =
+  ApiEmailTransactionalPreviewRouteImport.update({
+    id: '/api/email/transactional/preview',
+    path: '/api/email/transactional/preview',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiEmailTransactionalSendRoute =
@@ -733,38 +724,71 @@ const ApiEmailTransactionalSendRoute =
     path: '/api/email/transactional/send',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiEmailTransactionalPreviewRoute =
-  ApiEmailTransactionalPreviewRouteImport.update({
-    id: '/api/email/transactional/preview',
-    path: '/api/email/transactional/preview',
+const ApiPublicCronCareDailyDigestRoute =
+  ApiPublicCronCareDailyDigestRouteImport.update({
+    id: '/api/public/cron/care-daily-digest',
+    path: '/api/public/cron/care-daily-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiEmailQueueProcessRoute = ApiEmailQueueProcessRouteImport.update({
-  id: '/api/email/queue/process',
-  path: '/api/email/queue/process',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiEmailAuthWebhookRoute = ApiEmailAuthWebhookRouteImport.update({
-  id: '/api/email/auth/webhook',
-  path: '/api/email/auth/webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiEmailAuthPreviewRoute = ApiEmailAuthPreviewRouteImport.update({
-  id: '/api/email/auth/preview',
-  path: '/api/email/auth/preview',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppReportsTrendsMetricKeyRoute =
-  AppReportsTrendsMetricKeyRouteImport.update({
-    id: '/trends/$metricKey',
-    path: '/trends/$metricKey',
-    getParentRoute: () => AppReportsRoute,
+const ApiPublicCronDoseRemindersRoute =
+  ApiPublicCronDoseRemindersRouteImport.update({
+    id: '/api/public/cron/dose-reminders',
+    path: '/api/public/cron/dose-reminders',
+    getParentRoute: () => rootRouteImport,
   } as any)
-const AppAdminReportsDuplicatesRoute =
-  AppAdminReportsDuplicatesRouteImport.update({
-    id: '/reports/duplicates',
-    path: '/reports/duplicates',
-    getParentRoute: () => AppAdminRoute,
+const ApiPublicCronEmailQueuePumpRoute =
+  ApiPublicCronEmailQueuePumpRouteImport.update({
+    id: '/api/public/cron/email-queue-pump',
+    path: '/api/public/cron/email-queue-pump',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronJournalReprocessRoute =
+  ApiPublicCronJournalReprocessRouteImport.update({
+    id: '/api/public/cron/journal-reprocess',
+    path: '/api/public/cron/journal-reprocess',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronMedicalReportsRoute =
+  ApiPublicCronMedicalReportsRouteImport.update({
+    id: '/api/public/cron/medical-reports',
+    path: '/api/public/cron/medical-reports',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronOuraSyncAllRoute =
+  ApiPublicCronOuraSyncAllRouteImport.update({
+    id: '/api/public/cron/oura-sync-all',
+    path: '/api/public/cron/oura-sync-all',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronPurgeDeletedAccountsRoute =
+  ApiPublicCronPurgeDeletedAccountsRouteImport.update({
+    id: '/api/public/cron/purge-deleted-accounts',
+    path: '/api/public/cron/purge-deleted-accounts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronWeeklyRecapRoute =
+  ApiPublicCronWeeklyRecapRouteImport.update({
+    id: '/api/public/cron/weekly-recap',
+    path: '/api/public/cron/weekly-recap',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronWhoopSyncAllRoute =
+  ApiPublicCronWhoopSyncAllRouteImport.update({
+    id: '/api/public/cron/whoop-sync-all',
+    path: '/api/public/cron/whoop-sync-all',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksAppleHealthRoute =
+  ApiPublicHooksAppleHealthRouteImport.update({
+    id: '/api/public/hooks/apple-health',
+    path: '/api/public/hooks/apple-health',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksRiskForecasterRoute =
+  ApiPublicHooksRiskForecasterRouteImport.update({
+    id: '/api/public/hooks/risk-forecaster',
+    path: '/api/public/hooks/risk-forecaster',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const AppCareOwnerIdReportsReportIdRoute =
   AppCareOwnerIdReportsReportIdRouteImport.update({
@@ -853,9 +877,12 @@ export interface FileRoutesByFullPath {
   '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
+  '/api/admin/d1-import': typeof ApiAdminD1ImportRoute
   '/api/ai/daily-insight-cards': typeof ApiAiDailyInsightCardsRoute
   '/api/ai/metric-insight': typeof ApiAiMetricInsightRoute
   '/api/ai/summarize-report': typeof ApiAiSummarizeReportRoute
+  '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/auth/sign-up': typeof ApiAuthSignUpRoute
   '/api/care/accept': typeof ApiCareAcceptRoute
   '/api/care/decline': typeof ApiCareDeclineRoute
   '/api/care/incoming-invites': typeof ApiCareIncomingInvitesRoute
@@ -880,6 +907,7 @@ export interface FileRoutesByFullPath {
   '/journal/': typeof AppJournalIndexRoute
   '/admin/reports/duplicates': typeof AppAdminReportsDuplicatesRoute
   '/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
+  '/api/cloudflare/edge/invoke': typeof ApiCloudflareEdgeInvokeRoute
   '/api/email/auth/preview': typeof ApiEmailAuthPreviewRoute
   '/api/email/auth/webhook': typeof ApiEmailAuthWebhookRoute
   '/api/email/queue/process': typeof ApiEmailQueueProcessRoute
@@ -977,9 +1005,12 @@ export interface FileRoutesByTo {
   '/settings/travel': typeof AppSettingsTravelRoute
   '/today/risk': typeof AppTodayRiskRoute
   '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
+  '/api/admin/d1-import': typeof ApiAdminD1ImportRoute
   '/api/ai/daily-insight-cards': typeof ApiAiDailyInsightCardsRoute
   '/api/ai/metric-insight': typeof ApiAiMetricInsightRoute
   '/api/ai/summarize-report': typeof ApiAiSummarizeReportRoute
+  '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/auth/sign-up': typeof ApiAuthSignUpRoute
   '/api/care/accept': typeof ApiCareAcceptRoute
   '/api/care/decline': typeof ApiCareDeclineRoute
   '/api/care/incoming-invites': typeof ApiCareIncomingInvitesRoute
@@ -1004,6 +1035,7 @@ export interface FileRoutesByTo {
   '/journal': typeof AppJournalIndexRoute
   '/admin/reports/duplicates': typeof AppAdminReportsDuplicatesRoute
   '/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
+  '/api/cloudflare/edge/invoke': typeof ApiCloudflareEdgeInvokeRoute
   '/api/email/auth/preview': typeof ApiEmailAuthPreviewRoute
   '/api/email/auth/webhook': typeof ApiEmailAuthWebhookRoute
   '/api/email/queue/process': typeof ApiEmailQueueProcessRoute
@@ -1104,9 +1136,12 @@ export interface FileRoutesById {
   '/_app/settings/travel': typeof AppSettingsTravelRoute
   '/_app/today/risk': typeof AppTodayRiskRoute
   '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
+  '/api/admin/d1-import': typeof ApiAdminD1ImportRoute
   '/api/ai/daily-insight-cards': typeof ApiAiDailyInsightCardsRoute
   '/api/ai/metric-insight': typeof ApiAiMetricInsightRoute
   '/api/ai/summarize-report': typeof ApiAiSummarizeReportRoute
+  '/api/auth/sign-in': typeof ApiAuthSignInRoute
+  '/api/auth/sign-up': typeof ApiAuthSignUpRoute
   '/api/care/accept': typeof ApiCareAcceptRoute
   '/api/care/decline': typeof ApiCareDeclineRoute
   '/api/care/incoming-invites': typeof ApiCareIncomingInvitesRoute
@@ -1131,6 +1166,7 @@ export interface FileRoutesById {
   '/_app/journal/': typeof AppJournalIndexRoute
   '/_app/admin/reports/duplicates': typeof AppAdminReportsDuplicatesRoute
   '/_app/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
+  '/api/cloudflare/edge/invoke': typeof ApiCloudflareEdgeInvokeRoute
   '/api/email/auth/preview': typeof ApiEmailAuthPreviewRoute
   '/api/email/auth/webhook': typeof ApiEmailAuthWebhookRoute
   '/api/email/queue/process': typeof ApiEmailQueueProcessRoute
@@ -1231,9 +1267,12 @@ export interface FileRouteTypes {
     | '/settings/travel'
     | '/today/risk'
     | '/api/account/personal-share-code'
+    | '/api/admin/d1-import'
     | '/api/ai/daily-insight-cards'
     | '/api/ai/metric-insight'
     | '/api/ai/summarize-report'
+    | '/api/auth/sign-in'
+    | '/api/auth/sign-up'
     | '/api/care/accept'
     | '/api/care/decline'
     | '/api/care/incoming-invites'
@@ -1258,6 +1297,7 @@ export interface FileRouteTypes {
     | '/journal/'
     | '/admin/reports/duplicates'
     | '/reports/trends/$metricKey'
+    | '/api/cloudflare/edge/invoke'
     | '/api/email/auth/preview'
     | '/api/email/auth/webhook'
     | '/api/email/queue/process'
@@ -1355,9 +1395,12 @@ export interface FileRouteTypes {
     | '/settings/travel'
     | '/today/risk'
     | '/api/account/personal-share-code'
+    | '/api/admin/d1-import'
     | '/api/ai/daily-insight-cards'
     | '/api/ai/metric-insight'
     | '/api/ai/summarize-report'
+    | '/api/auth/sign-in'
+    | '/api/auth/sign-up'
     | '/api/care/accept'
     | '/api/care/decline'
     | '/api/care/incoming-invites'
@@ -1382,6 +1425,7 @@ export interface FileRouteTypes {
     | '/journal'
     | '/admin/reports/duplicates'
     | '/reports/trends/$metricKey'
+    | '/api/cloudflare/edge/invoke'
     | '/api/email/auth/preview'
     | '/api/email/auth/webhook'
     | '/api/email/queue/process'
@@ -1481,9 +1525,12 @@ export interface FileRouteTypes {
     | '/_app/settings/travel'
     | '/_app/today/risk'
     | '/api/account/personal-share-code'
+    | '/api/admin/d1-import'
     | '/api/ai/daily-insight-cards'
     | '/api/ai/metric-insight'
     | '/api/ai/summarize-report'
+    | '/api/auth/sign-in'
+    | '/api/auth/sign-up'
     | '/api/care/accept'
     | '/api/care/decline'
     | '/api/care/incoming-invites'
@@ -1508,6 +1555,7 @@ export interface FileRouteTypes {
     | '/_app/journal/'
     | '/_app/admin/reports/duplicates'
     | '/_app/reports/trends/$metricKey'
+    | '/api/cloudflare/edge/invoke'
     | '/api/email/auth/preview'
     | '/api/email/auth/webhook'
     | '/api/email/queue/process'
@@ -1555,9 +1603,12 @@ export interface RootRouteChildren {
   FriendAcceptRoute: typeof FriendAcceptRoute
   FriendJoinRoute: typeof FriendJoinRoute
   ApiAccountPersonalShareCodeRoute: typeof ApiAccountPersonalShareCodeRoute
+  ApiAdminD1ImportRoute: typeof ApiAdminD1ImportRoute
   ApiAiDailyInsightCardsRoute: typeof ApiAiDailyInsightCardsRoute
   ApiAiMetricInsightRoute: typeof ApiAiMetricInsightRoute
   ApiAiSummarizeReportRoute: typeof ApiAiSummarizeReportRoute
+  ApiAuthSignInRoute: typeof ApiAuthSignInRoute
+  ApiAuthSignUpRoute: typeof ApiAuthSignUpRoute
   ApiCareAcceptRoute: typeof ApiCareAcceptRoute
   ApiCareDeclineRoute: typeof ApiCareDeclineRoute
   ApiCareIncomingInvitesRoute: typeof ApiCareIncomingInvitesRoute
@@ -1576,6 +1627,7 @@ export interface RootRouteChildren {
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   OauthWhoopCallbackRoute: typeof OauthWhoopCallbackRoute
   ShareReportTokenRoute: typeof ShareReportTokenRoute
+  ApiCloudflareEdgeInvokeRoute: typeof ApiCloudflareEdgeInvokeRoute
   ApiEmailAuthPreviewRoute: typeof ApiEmailAuthPreviewRoute
   ApiEmailAuthWebhookRoute: typeof ApiEmailAuthWebhookRoute
   ApiEmailQueueProcessRoute: typeof ApiEmailQueueProcessRoute
@@ -1596,137 +1648,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/users': {
-      id: '/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof UsersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/unsubscribe': {
-      id: '/unsubscribe'
-      path: '/unsubscribe'
-      fullPath: '/unsubscribe'
-      preLoaderRoute: typeof UnsubscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/trust': {
-      id: '/trust'
-      path: '/trust'
-      fullPath: '/trust'
-      preLoaderRoute: typeof TrustRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sign-up': {
-      id: '/sign-up'
-      path: '/sign-up'
-      fullPath: '/sign-up'
-      preLoaderRoute: typeof SignUpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sign-in': {
-      id: '/sign-in'
-      path: '/sign-in'
-      fullPath: '/sign-in'
-      preLoaderRoute: typeof SignInRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/risk': {
-      id: '/risk'
-      path: '/risk'
-      fullPath: '/risk'
-      preLoaderRoute: typeof RiskRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/resources': {
-      id: '/resources'
-      path: '/resources'
-      fullPath: '/resources'
-      preLoaderRoute: typeof ResourcesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pricing': {
-      id: '/pricing'
-      path: '/pricing'
-      fullPath: '/pricing'
-      preLoaderRoute: typeof PricingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/messages': {
-      id: '/messages'
-      path: '/messages'
-      fullPath: '/messages'
-      preLoaderRoute: typeof MessagesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/how-purple-thinks': {
-      id: '/how-purple-thinks'
-      path: '/how-purple-thinks'
-      fullPath: '/how-purple-thinks'
-      preLoaderRoute: typeof HowPurpleThinksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/feedback': {
-      id: '/feedback'
-      path: '/feedback'
-      fullPath: '/feedback'
-      preLoaderRoute: typeof FeedbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/features': {
-      id: '/features'
-      path: '/features'
-      fullPath: '/features'
-      preLoaderRoute: typeof FeaturesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/community': {
-      id: '/community'
-      path: '/community'
-      fullPath: '/community'
-      preLoaderRoute: typeof CommunityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/charter': {
-      id: '/charter'
-      path: '/charter'
-      fullPath: '/charter'
-      preLoaderRoute: typeof CharterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -1736,193 +1662,144 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/friend/join': {
-      id: '/friend/join'
-      path: '/friend/join'
-      fullPath: '/friend/join'
-      preLoaderRoute: typeof FriendJoinRouteImport
+    '/charter': {
+      id: '/charter'
+      path: '/charter'
+      fullPath: '/charter'
+      preLoaderRoute: typeof CharterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/friend/accept': {
-      id: '/friend/accept'
-      path: '/friend/accept'
-      fullPath: '/friend/accept'
-      preLoaderRoute: typeof FriendAcceptRouteImport
+    '/community': {
+      id: '/community'
+      path: '/community'
+      fullPath: '/community'
+      preLoaderRoute: typeof CommunityRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/email/unsubscribe': {
-      id: '/email/unsubscribe'
-      path: '/email/unsubscribe'
-      fullPath: '/email/unsubscribe'
-      preLoaderRoute: typeof EmailUnsubscribeRouteImport
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/community/resources': {
-      id: '/community/resources'
+    '/features': {
+      id: '/features'
+      path: '/features'
+      fullPath: '/features'
+      preLoaderRoute: typeof FeaturesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feedback': {
+      id: '/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof FeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-purple-thinks': {
+      id: '/how-purple-thinks'
+      path: '/how-purple-thinks'
+      fullPath: '/how-purple-thinks'
+      preLoaderRoute: typeof HowPurpleThinksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resources': {
+      id: '/resources'
       path: '/resources'
-      fullPath: '/community/resources'
-      preLoaderRoute: typeof CommunityResourcesRouteImport
-      parentRoute: typeof CommunityRoute
-    }
-    '/community/$postId': {
-      id: '/community/$postId'
-      path: '/$postId'
-      fullPath: '/community/$postId'
-      preLoaderRoute: typeof CommunityPostIdRouteImport
-      parentRoute: typeof CommunityRoute
-    }
-    '/care/accept': {
-      id: '/care/accept'
-      path: '/care/accept'
-      fullPath: '/care/accept'
-      preLoaderRoute: typeof CareAcceptRouteImport
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/chat': {
-      id: '/api/chat'
-      path: '/api/chat'
-      fullPath: '/api/chat'
-      preLoaderRoute: typeof ApiChatRouteImport
+    '/risk': {
+      id: '/risk'
+      path: '/risk'
+      fullPath: '/risk'
+      preLoaderRoute: typeof RiskRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/welcome': {
-      id: '/_app/welcome'
-      path: '/welcome'
-      fullPath: '/welcome'
-      preLoaderRoute: typeof AppWelcomeRouteImport
-      parentRoute: typeof AppRoute
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/vitals': {
-      id: '/_app/vitals'
-      path: '/vitals'
-      fullPath: '/vitals'
-      preLoaderRoute: typeof AppVitalsRouteImport
-      parentRoute: typeof AppRoute
+    '/sign-up': {
+      id: '/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/tools': {
-      id: '/_app/tools'
-      path: '/tools'
-      fullPath: '/tools'
-      preLoaderRoute: typeof AppToolsRouteImport
-      parentRoute: typeof AppRoute
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/today': {
-      id: '/_app/today'
-      path: '/today'
-      fullPath: '/today'
-      preLoaderRoute: typeof AppTodayRouteImport
-      parentRoute: typeof AppRoute
+    '/trust': {
+      id: '/trust'
+      path: '/trust'
+      fullPath: '/trust'
+      preLoaderRoute: typeof TrustRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/timeline': {
-      id: '/_app/timeline'
-      path: '/timeline'
-      fullPath: '/timeline'
-      preLoaderRoute: typeof AppTimelineRouteImport
-      parentRoute: typeof AppRoute
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/settings': {
-      id: '/_app/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
+    '/users': {
+      id: '/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof UsersRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/reports': {
-      id: '/_app/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof AppReportsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/plan': {
-      id: '/_app/plan'
-      path: '/plan'
-      fullPath: '/plan'
-      preLoaderRoute: typeof AppPlanRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/my-health-dna': {
-      id: '/_app/my-health-dna'
-      path: '/my-health-dna'
-      fullPath: '/my-health-dna'
-      preLoaderRoute: typeof AppMyHealthDnaRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/my-health': {
-      id: '/_app/my-health'
-      path: '/my-health'
-      fullPath: '/my-health'
-      preLoaderRoute: typeof AppMyHealthRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/meds': {
-      id: '/_app/meds'
-      path: '/meds'
-      fullPath: '/meds'
-      preLoaderRoute: typeof AppMedsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/insights': {
-      id: '/_app/insights'
-      path: '/insights'
-      fullPath: '/insights'
-      preLoaderRoute: typeof AppInsightsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/hydration': {
-      id: '/_app/hydration'
-      path: '/hydration'
-      fullPath: '/hydration'
-      preLoaderRoute: typeof AppHydrationRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/data': {
-      id: '/_app/data'
-      path: '/data'
-      fullPath: '/data'
-      preLoaderRoute: typeof AppDataRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/community-new': {
-      id: '/_app/community-new'
-      path: '/community-new'
-      fullPath: '/community-new'
-      preLoaderRoute: typeof AppCommunityNewRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/chat-care': {
-      id: '/_app/chat-care'
-      path: '/chat-care'
-      fullPath: '/chat-care'
-      preLoaderRoute: typeof AppChatCareRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/chat': {
-      id: '/_app/chat'
-      path: '/chat'
-      fullPath: '/chat'
-      preLoaderRoute: typeof AppChatRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/ask-maya': {
-      id: '/_app/ask-maya'
-      path: '/ask-maya'
-      fullPath: '/ask-maya'
-      preLoaderRoute: typeof AppAskMayaRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/apple-health-import': {
-      id: '/_app/apple-health-import'
-      path: '/apple-health-import'
-      fullPath: '/apple-health-import'
-      preLoaderRoute: typeof AppAppleHealthImportRouteImport
+    '/_app/account': {
+      id: '/_app/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AppAccountRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/admin': {
@@ -1932,396 +1809,193 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/account': {
-      id: '/_app/account'
-      path: '/account'
-      fullPath: '/account'
-      preLoaderRoute: typeof AppAccountRouteImport
+    '/_app/apple-health-import': {
+      id: '/_app/apple-health-import'
+      path: '/apple-health-import'
+      fullPath: '/apple-health-import'
+      preLoaderRoute: typeof AppAppleHealthImportRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/journal/': {
-      id: '/_app/journal/'
-      path: '/journal'
-      fullPath: '/journal/'
-      preLoaderRoute: typeof AppJournalIndexRouteImport
+    '/_app/ask-maya': {
+      id: '/_app/ask-maya'
+      path: '/ask-maya'
+      fullPath: '/ask-maya'
+      preLoaderRoute: typeof AppAskMayaRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/care/': {
-      id: '/_app/care/'
-      path: '/care'
-      fullPath: '/care/'
-      preLoaderRoute: typeof AppCareIndexRouteImport
+    '/_app/chat': {
+      id: '/_app/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof AppChatRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/biometrics/': {
-      id: '/_app/biometrics/'
-      path: '/biometrics'
-      fullPath: '/biometrics/'
-      preLoaderRoute: typeof AppBiometricsIndexRouteImport
+    '/_app/chat-care': {
+      id: '/_app/chat-care'
+      path: '/chat-care'
+      fullPath: '/chat-care'
+      preLoaderRoute: typeof AppChatCareRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/community-new': {
+      id: '/_app/community-new'
+      path: '/community-new'
+      fullPath: '/community-new'
+      preLoaderRoute: typeof AppCommunityNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/data': {
+      id: '/_app/data'
+      path: '/data'
+      fullPath: '/data'
+      preLoaderRoute: typeof AppDataRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/hydration': {
+      id: '/_app/hydration'
+      path: '/hydration'
+      fullPath: '/hydration'
+      preLoaderRoute: typeof AppHydrationRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/insights': {
+      id: '/_app/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof AppInsightsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/meds': {
+      id: '/_app/meds'
+      path: '/meds'
+      fullPath: '/meds'
+      preLoaderRoute: typeof AppMedsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-health': {
+      id: '/_app/my-health'
+      path: '/my-health'
+      fullPath: '/my-health'
+      preLoaderRoute: typeof AppMyHealthRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-health-dna': {
+      id: '/_app/my-health-dna'
+      path: '/my-health-dna'
+      fullPath: '/my-health-dna'
+      preLoaderRoute: typeof AppMyHealthDnaRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/plan': {
+      id: '/_app/plan'
+      path: '/plan'
+      fullPath: '/plan'
+      preLoaderRoute: typeof AppPlanRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reports': {
+      id: '/_app/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AppReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/timeline': {
+      id: '/_app/timeline'
+      path: '/timeline'
+      fullPath: '/timeline'
+      preLoaderRoute: typeof AppTimelineRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/today': {
+      id: '/_app/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof AppTodayRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tools': {
+      id: '/_app/tools'
+      path: '/tools'
+      fullPath: '/tools'
+      preLoaderRoute: typeof AppToolsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/vitals': {
+      id: '/_app/vitals'
+      path: '/vitals'
+      fullPath: '/vitals'
+      preLoaderRoute: typeof AppVitalsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/welcome': {
+      id: '/_app/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof AppWelcomeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/care/accept': {
+      id: '/care/accept'
+      path: '/care/accept'
+      fullPath: '/care/accept'
+      preLoaderRoute: typeof CareAcceptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/community/$postId': {
+      id: '/community/$postId'
+      path: '/$postId'
+      fullPath: '/community/$postId'
+      preLoaderRoute: typeof CommunityPostIdRouteImport
+      parentRoute: typeof CommunityRoute
+    }
+    '/community/resources': {
+      id: '/community/resources'
+      path: '/resources'
+      fullPath: '/community/resources'
+      preLoaderRoute: typeof CommunityResourcesRouteImport
+      parentRoute: typeof CommunityRoute
+    }
+    '/email/unsubscribe': {
+      id: '/email/unsubscribe'
+      path: '/email/unsubscribe'
+      fullPath: '/email/unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/friend/accept': {
+      id: '/friend/accept'
+      path: '/friend/accept'
+      fullPath: '/friend/accept'
+      preLoaderRoute: typeof FriendAcceptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/friend/join': {
+      id: '/friend/join'
+      path: '/friend/join'
+      fullPath: '/friend/join'
+      preLoaderRoute: typeof FriendJoinRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/admin/': {
       id: '/_app/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AppAdminIndexRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/share/report/$token': {
-      id: '/share/report/$token'
-      path: '/share/report/$token'
-      fullPath: '/share/report/$token'
-      preLoaderRoute: typeof ShareReportTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/oauth/whoop/callback': {
-      id: '/oauth/whoop/callback'
-      path: '/oauth/whoop/callback'
-      fullPath: '/oauth/whoop/callback'
-      preLoaderRoute: typeof OauthWhoopCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/oauth/oura/callback': {
-      id: '/oauth/oura/callback'
-      path: '/oauth/oura/callback'
-      fullPath: '/oauth/oura/callback'
-      preLoaderRoute: typeof OauthOuraCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/stripe-webhook': {
-      id: '/api/public/stripe-webhook'
-      path: '/api/public/stripe-webhook'
-      fullPath: '/api/public/stripe-webhook'
-      preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/health/whoop-sync': {
-      id: '/api/health/whoop-sync'
-      path: '/api/health/whoop-sync'
-      fullPath: '/api/health/whoop-sync'
-      preLoaderRoute: typeof ApiHealthWhoopSyncRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/health/whoop-exchange': {
-      id: '/api/health/whoop-exchange'
-      path: '/api/health/whoop-exchange'
-      fullPath: '/api/health/whoop-exchange'
-      preLoaderRoute: typeof ApiHealthWhoopExchangeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/health/whoop-config': {
-      id: '/api/health/whoop-config'
-      path: '/api/health/whoop-config'
-      fullPath: '/api/health/whoop-config'
-      preLoaderRoute: typeof ApiHealthWhoopConfigRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/health/native-sync': {
-      id: '/api/health/native-sync'
-      path: '/api/health/native-sync'
-      fullPath: '/api/health/native-sync'
-      preLoaderRoute: typeof ApiHealthNativeSyncRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/email/suppression': {
-      id: '/api/email/suppression'
-      path: '/api/email/suppression'
-      fullPath: '/api/email/suppression'
-      preLoaderRoute: typeof ApiEmailSuppressionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/care/today': {
-      id: '/api/care/today'
-      path: '/api/care/today'
-      fullPath: '/api/care/today'
-      preLoaderRoute: typeof ApiCareTodayRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/care/seizures': {
-      id: '/api/care/seizures'
-      path: '/api/care/seizures'
-      fullPath: '/api/care/seizures'
-      preLoaderRoute: typeof ApiCareSeizuresRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/care/reports': {
-      id: '/api/care/reports'
-      path: '/api/care/reports'
-      fullPath: '/api/care/reports'
-      preLoaderRoute: typeof ApiCareReportsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/care/report': {
-      id: '/api/care/report'
-      path: '/api/care/report'
-      fullPath: '/api/care/report'
-      preLoaderRoute: typeof ApiCareReportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/care/meds': {
-      id: '/api/care/meds'
-      path: '/api/care/meds'
-      fullPath: '/api/care/meds'
-      preLoaderRoute: typeof ApiCareMedsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/care/journal': {
-      id: '/api/care/journal'
-      path: '/api/care/journal'
-      fullPath: '/api/care/journal'
-      preLoaderRoute: typeof ApiCareJournalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/care/incoming-invites': {
-      id: '/api/care/incoming-invites'
-      path: '/api/care/incoming-invites'
-      fullPath: '/api/care/incoming-invites'
-      preLoaderRoute: typeof ApiCareIncomingInvitesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/care/decline': {
-      id: '/api/care/decline'
-      path: '/api/care/decline'
-      fullPath: '/api/care/decline'
-      preLoaderRoute: typeof ApiCareDeclineRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/care/accept': {
-      id: '/api/care/accept'
-      path: '/api/care/accept'
-      fullPath: '/api/care/accept'
-      preLoaderRoute: typeof ApiCareAcceptRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/ai/summarize-report': {
-      id: '/api/ai/summarize-report'
-      path: '/api/ai/summarize-report'
-      fullPath: '/api/ai/summarize-report'
-      preLoaderRoute: typeof ApiAiSummarizeReportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/ai/metric-insight': {
-      id: '/api/ai/metric-insight'
-      path: '/api/ai/metric-insight'
-      fullPath: '/api/ai/metric-insight'
-      preLoaderRoute: typeof ApiAiMetricInsightRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/ai/daily-insight-cards': {
-      id: '/api/ai/daily-insight-cards'
-      path: '/api/ai/daily-insight-cards'
-      fullPath: '/api/ai/daily-insight-cards'
-      preLoaderRoute: typeof ApiAiDailyInsightCardsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/account/personal-share-code': {
-      id: '/api/account/personal-share-code'
-      path: '/api/account/personal-share-code'
-      fullPath: '/api/account/personal-share-code'
-      preLoaderRoute: typeof ApiAccountPersonalShareCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_app/today/risk': {
-      id: '/_app/today/risk'
-      path: '/risk'
-      fullPath: '/today/risk'
-      preLoaderRoute: typeof AppTodayRiskRouteImport
-      parentRoute: typeof AppTodayRoute
-    }
-    '/_app/settings/travel': {
-      id: '/_app/settings/travel'
-      path: '/travel'
-      fullPath: '/settings/travel'
-      preLoaderRoute: typeof AppSettingsTravelRouteImport
-      parentRoute: typeof AppSettingsRoute
-    }
-    '/_app/settings/terms': {
-      id: '/_app/settings/terms'
-      path: '/terms'
-      fullPath: '/settings/terms'
-      preLoaderRoute: typeof AppSettingsTermsRouteImport
-      parentRoute: typeof AppSettingsRoute
-    }
-    '/_app/settings/sharing': {
-      id: '/_app/settings/sharing'
-      path: '/sharing'
-      fullPath: '/settings/sharing'
-      preLoaderRoute: typeof AppSettingsSharingRouteImport
-      parentRoute: typeof AppSettingsRoute
-    }
-    '/_app/settings/privacy': {
-      id: '/_app/settings/privacy'
-      path: '/privacy'
-      fullPath: '/settings/privacy'
-      preLoaderRoute: typeof AppSettingsPrivacyRouteImport
-      parentRoute: typeof AppSettingsRoute
-    }
-    '/_app/settings/how-purple-thinks': {
-      id: '/_app/settings/how-purple-thinks'
-      path: '/how-purple-thinks'
-      fullPath: '/settings/how-purple-thinks'
-      preLoaderRoute: typeof AppSettingsHowPurpleThinksRouteImport
-      parentRoute: typeof AppSettingsRoute
-    }
-    '/_app/seizures/new': {
-      id: '/_app/seizures/new'
-      path: '/seizures/new'
-      fullPath: '/seizures/new'
-      preLoaderRoute: typeof AppSeizuresNewRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/reports/new': {
-      id: '/_app/reports/new'
-      path: '/new'
-      fullPath: '/reports/new'
-      preLoaderRoute: typeof AppReportsNewRouteImport
-      parentRoute: typeof AppReportsRoute
-    }
-    '/_app/reports/metrics': {
-      id: '/_app/reports/metrics'
-      path: '/metrics'
-      fullPath: '/reports/metrics'
-      preLoaderRoute: typeof AppReportsMetricsRouteImport
-      parentRoute: typeof AppReportsRoute
-    }
-    '/_app/reports/medical-history': {
-      id: '/_app/reports/medical-history'
-      path: '/medical-history'
-      fullPath: '/reports/medical-history'
-      preLoaderRoute: typeof AppReportsMedicalHistoryRouteImport
-      parentRoute: typeof AppReportsRoute
-    }
-    '/_app/reports/documents': {
-      id: '/_app/reports/documents'
-      path: '/documents'
-      fullPath: '/reports/documents'
-      preLoaderRoute: typeof AppReportsDocumentsRouteImport
-      parentRoute: typeof AppReportsRoute
-    }
-    '/_app/reports/$reportId': {
-      id: '/_app/reports/$reportId'
-      path: '/$reportId'
-      fullPath: '/reports/$reportId'
-      preLoaderRoute: typeof AppReportsReportIdRouteImport
-      parentRoute: typeof AppReportsRoute
-    }
-    '/_app/meds/history': {
-      id: '/_app/meds/history'
-      path: '/history'
-      fullPath: '/meds/history'
-      preLoaderRoute: typeof AppMedsHistoryRouteImport
-      parentRoute: typeof AppMedsRoute
-    }
-    '/_app/meds/$medId': {
-      id: '/_app/meds/$medId'
-      path: '/$medId'
-      fullPath: '/meds/$medId'
-      preLoaderRoute: typeof AppMedsMedIdRouteImport
-      parentRoute: typeof AppMedsRoute
-    }
-    '/_app/journal/new': {
-      id: '/_app/journal/new'
-      path: '/journal/new'
-      fullPath: '/journal/new'
-      preLoaderRoute: typeof AppJournalNewRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/friends/$friendshipId': {
-      id: '/_app/friends/$friendshipId'
-      path: '/friends/$friendshipId'
-      fullPath: '/friends/$friendshipId'
-      preLoaderRoute: typeof AppFriendsFriendshipIdRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/condition/$slug': {
-      id: '/_app/condition/$slug'
-      path: '/condition/$slug'
-      fullPath: '/condition/$slug'
-      preLoaderRoute: typeof AppConditionSlugRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/care/inbox': {
-      id: '/_app/care/inbox'
-      path: '/care/inbox'
-      fullPath: '/care/inbox'
-      preLoaderRoute: typeof AppCareInboxRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/care/$ownerId': {
-      id: '/_app/care/$ownerId'
-      path: '/care/$ownerId'
-      fullPath: '/care/$ownerId'
-      preLoaderRoute: typeof AppCareOwnerIdRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/biometrics/$metric': {
-      id: '/_app/biometrics/$metric'
-      path: '/biometrics/$metric'
-      fullPath: '/biometrics/$metric'
-      preLoaderRoute: typeof AppBiometricsMetricRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/users': {
-      id: '/_app/admin/users'
-      path: '/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AppAdminUsersRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/admin/rules': {
-      id: '/_app/admin/rules'
-      path: '/rules'
-      fullPath: '/admin/rules'
-      preLoaderRoute: typeof AppAdminRulesRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/admin/resources': {
-      id: '/_app/admin/resources'
-      path: '/resources'
-      fullPath: '/admin/resources'
-      preLoaderRoute: typeof AppAdminResourcesRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/admin/promo': {
-      id: '/_app/admin/promo'
-      path: '/promo'
-      fullPath: '/admin/promo'
-      preLoaderRoute: typeof AppAdminPromoRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/admin/migration-export': {
-      id: '/_app/admin/migration-export'
-      path: '/migration-export'
-      fullPath: '/admin/migration-export'
-      preLoaderRoute: typeof AppAdminMigrationExportRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/admin/messages': {
-      id: '/_app/admin/messages'
-      path: '/messages'
-      fullPath: '/admin/messages'
-      preLoaderRoute: typeof AppAdminMessagesRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/admin/feedback': {
-      id: '/_app/admin/feedback'
-      path: '/feedback'
-      fullPath: '/admin/feedback'
-      preLoaderRoute: typeof AppAdminFeedbackRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/admin/contact': {
-      id: '/_app/admin/contact'
-      path: '/contact'
-      fullPath: '/admin/contact'
-      preLoaderRoute: typeof AppAdminContactRouteImport
-      parentRoute: typeof AppAdminRoute
-    }
-    '/_app/admin/community': {
-      id: '/_app/admin/community'
-      path: '/community'
-      fullPath: '/admin/community'
-      preLoaderRoute: typeof AppAdminCommunityRouteImport
       parentRoute: typeof AppAdminRoute
     }
     '/_app/admin/billing': {
@@ -2331,109 +2005,424 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminBillingRouteImport
       parentRoute: typeof AppAdminRoute
     }
-    '/api/public/hooks/risk-forecaster': {
-      id: '/api/public/hooks/risk-forecaster'
-      path: '/api/public/hooks/risk-forecaster'
-      fullPath: '/api/public/hooks/risk-forecaster'
-      preLoaderRoute: typeof ApiPublicHooksRiskForecasterRouteImport
+    '/_app/admin/community': {
+      id: '/_app/admin/community'
+      path: '/community'
+      fullPath: '/admin/community'
+      preLoaderRoute: typeof AppAdminCommunityRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/contact': {
+      id: '/_app/admin/contact'
+      path: '/contact'
+      fullPath: '/admin/contact'
+      preLoaderRoute: typeof AppAdminContactRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/feedback': {
+      id: '/_app/admin/feedback'
+      path: '/feedback'
+      fullPath: '/admin/feedback'
+      preLoaderRoute: typeof AppAdminFeedbackRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/messages': {
+      id: '/_app/admin/messages'
+      path: '/messages'
+      fullPath: '/admin/messages'
+      preLoaderRoute: typeof AppAdminMessagesRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/migration-export': {
+      id: '/_app/admin/migration-export'
+      path: '/migration-export'
+      fullPath: '/admin/migration-export'
+      preLoaderRoute: typeof AppAdminMigrationExportRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/promo': {
+      id: '/_app/admin/promo'
+      path: '/promo'
+      fullPath: '/admin/promo'
+      preLoaderRoute: typeof AppAdminPromoRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/resources': {
+      id: '/_app/admin/resources'
+      path: '/resources'
+      fullPath: '/admin/resources'
+      preLoaderRoute: typeof AppAdminResourcesRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/rules': {
+      id: '/_app/admin/rules'
+      path: '/rules'
+      fullPath: '/admin/rules'
+      preLoaderRoute: typeof AppAdminRulesRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/users': {
+      id: '/_app/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AppAdminUsersRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/biometrics/': {
+      id: '/_app/biometrics/'
+      path: '/biometrics'
+      fullPath: '/biometrics/'
+      preLoaderRoute: typeof AppBiometricsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/biometrics/$metric': {
+      id: '/_app/biometrics/$metric'
+      path: '/biometrics/$metric'
+      fullPath: '/biometrics/$metric'
+      preLoaderRoute: typeof AppBiometricsMetricRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/care/': {
+      id: '/_app/care/'
+      path: '/care'
+      fullPath: '/care/'
+      preLoaderRoute: typeof AppCareIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/care/$ownerId': {
+      id: '/_app/care/$ownerId'
+      path: '/care/$ownerId'
+      fullPath: '/care/$ownerId'
+      preLoaderRoute: typeof AppCareOwnerIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/care/inbox': {
+      id: '/_app/care/inbox'
+      path: '/care/inbox'
+      fullPath: '/care/inbox'
+      preLoaderRoute: typeof AppCareInboxRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/condition/$slug': {
+      id: '/_app/condition/$slug'
+      path: '/condition/$slug'
+      fullPath: '/condition/$slug'
+      preLoaderRoute: typeof AppConditionSlugRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/friends/$friendshipId': {
+      id: '/_app/friends/$friendshipId'
+      path: '/friends/$friendshipId'
+      fullPath: '/friends/$friendshipId'
+      preLoaderRoute: typeof AppFriendsFriendshipIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/journal/': {
+      id: '/_app/journal/'
+      path: '/journal'
+      fullPath: '/journal/'
+      preLoaderRoute: typeof AppJournalIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/journal/new': {
+      id: '/_app/journal/new'
+      path: '/journal/new'
+      fullPath: '/journal/new'
+      preLoaderRoute: typeof AppJournalNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/meds/$medId': {
+      id: '/_app/meds/$medId'
+      path: '/$medId'
+      fullPath: '/meds/$medId'
+      preLoaderRoute: typeof AppMedsMedIdRouteImport
+      parentRoute: typeof AppMedsRoute
+    }
+    '/_app/meds/history': {
+      id: '/_app/meds/history'
+      path: '/history'
+      fullPath: '/meds/history'
+      preLoaderRoute: typeof AppMedsHistoryRouteImport
+      parentRoute: typeof AppMedsRoute
+    }
+    '/_app/reports/$reportId': {
+      id: '/_app/reports/$reportId'
+      path: '/$reportId'
+      fullPath: '/reports/$reportId'
+      preLoaderRoute: typeof AppReportsReportIdRouteImport
+      parentRoute: typeof AppReportsRoute
+    }
+    '/_app/reports/documents': {
+      id: '/_app/reports/documents'
+      path: '/documents'
+      fullPath: '/reports/documents'
+      preLoaderRoute: typeof AppReportsDocumentsRouteImport
+      parentRoute: typeof AppReportsRoute
+    }
+    '/_app/reports/medical-history': {
+      id: '/_app/reports/medical-history'
+      path: '/medical-history'
+      fullPath: '/reports/medical-history'
+      preLoaderRoute: typeof AppReportsMedicalHistoryRouteImport
+      parentRoute: typeof AppReportsRoute
+    }
+    '/_app/reports/metrics': {
+      id: '/_app/reports/metrics'
+      path: '/metrics'
+      fullPath: '/reports/metrics'
+      preLoaderRoute: typeof AppReportsMetricsRouteImport
+      parentRoute: typeof AppReportsRoute
+    }
+    '/_app/reports/new': {
+      id: '/_app/reports/new'
+      path: '/new'
+      fullPath: '/reports/new'
+      preLoaderRoute: typeof AppReportsNewRouteImport
+      parentRoute: typeof AppReportsRoute
+    }
+    '/_app/seizures/new': {
+      id: '/_app/seizures/new'
+      path: '/seizures/new'
+      fullPath: '/seizures/new'
+      preLoaderRoute: typeof AppSeizuresNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/how-purple-thinks': {
+      id: '/_app/settings/how-purple-thinks'
+      path: '/how-purple-thinks'
+      fullPath: '/settings/how-purple-thinks'
+      preLoaderRoute: typeof AppSettingsHowPurpleThinksRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/privacy': {
+      id: '/_app/settings/privacy'
+      path: '/privacy'
+      fullPath: '/settings/privacy'
+      preLoaderRoute: typeof AppSettingsPrivacyRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/sharing': {
+      id: '/_app/settings/sharing'
+      path: '/sharing'
+      fullPath: '/settings/sharing'
+      preLoaderRoute: typeof AppSettingsSharingRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/terms': {
+      id: '/_app/settings/terms'
+      path: '/terms'
+      fullPath: '/settings/terms'
+      preLoaderRoute: typeof AppSettingsTermsRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/travel': {
+      id: '/_app/settings/travel'
+      path: '/travel'
+      fullPath: '/settings/travel'
+      preLoaderRoute: typeof AppSettingsTravelRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/today/risk': {
+      id: '/_app/today/risk'
+      path: '/risk'
+      fullPath: '/today/risk'
+      preLoaderRoute: typeof AppTodayRiskRouteImport
+      parentRoute: typeof AppTodayRoute
+    }
+    '/api/account/personal-share-code': {
+      id: '/api/account/personal-share-code'
+      path: '/api/account/personal-share-code'
+      fullPath: '/api/account/personal-share-code'
+      preLoaderRoute: typeof ApiAccountPersonalShareCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/apple-health': {
-      id: '/api/public/hooks/apple-health'
-      path: '/api/public/hooks/apple-health'
-      fullPath: '/api/public/hooks/apple-health'
-      preLoaderRoute: typeof ApiPublicHooksAppleHealthRouteImport
+    '/api/admin/d1-import': {
+      id: '/api/admin/d1-import'
+      path: '/api/admin/d1-import'
+      fullPath: '/api/admin/d1-import'
+      preLoaderRoute: typeof ApiAdminD1ImportRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/whoop-sync-all': {
-      id: '/api/public/cron/whoop-sync-all'
-      path: '/api/public/cron/whoop-sync-all'
-      fullPath: '/api/public/cron/whoop-sync-all'
-      preLoaderRoute: typeof ApiPublicCronWhoopSyncAllRouteImport
+    '/api/ai/daily-insight-cards': {
+      id: '/api/ai/daily-insight-cards'
+      path: '/api/ai/daily-insight-cards'
+      fullPath: '/api/ai/daily-insight-cards'
+      preLoaderRoute: typeof ApiAiDailyInsightCardsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/weekly-recap': {
-      id: '/api/public/cron/weekly-recap'
-      path: '/api/public/cron/weekly-recap'
-      fullPath: '/api/public/cron/weekly-recap'
-      preLoaderRoute: typeof ApiPublicCronWeeklyRecapRouteImport
+    '/api/ai/metric-insight': {
+      id: '/api/ai/metric-insight'
+      path: '/api/ai/metric-insight'
+      fullPath: '/api/ai/metric-insight'
+      preLoaderRoute: typeof ApiAiMetricInsightRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/purge-deleted-accounts': {
-      id: '/api/public/cron/purge-deleted-accounts'
-      path: '/api/public/cron/purge-deleted-accounts'
-      fullPath: '/api/public/cron/purge-deleted-accounts'
-      preLoaderRoute: typeof ApiPublicCronPurgeDeletedAccountsRouteImport
+    '/api/ai/summarize-report': {
+      id: '/api/ai/summarize-report'
+      path: '/api/ai/summarize-report'
+      fullPath: '/api/ai/summarize-report'
+      preLoaderRoute: typeof ApiAiSummarizeReportRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/oura-sync-all': {
-      id: '/api/public/cron/oura-sync-all'
-      path: '/api/public/cron/oura-sync-all'
-      fullPath: '/api/public/cron/oura-sync-all'
-      preLoaderRoute: typeof ApiPublicCronOuraSyncAllRouteImport
+    '/api/auth/sign-in': {
+      id: '/api/auth/sign-in'
+      path: '/api/auth/sign-in'
+      fullPath: '/api/auth/sign-in'
+      preLoaderRoute: typeof ApiAuthSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/medical-reports': {
-      id: '/api/public/cron/medical-reports'
-      path: '/api/public/cron/medical-reports'
-      fullPath: '/api/public/cron/medical-reports'
-      preLoaderRoute: typeof ApiPublicCronMedicalReportsRouteImport
+    '/api/auth/sign-up': {
+      id: '/api/auth/sign-up'
+      path: '/api/auth/sign-up'
+      fullPath: '/api/auth/sign-up'
+      preLoaderRoute: typeof ApiAuthSignUpRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/journal-reprocess': {
-      id: '/api/public/cron/journal-reprocess'
-      path: '/api/public/cron/journal-reprocess'
-      fullPath: '/api/public/cron/journal-reprocess'
-      preLoaderRoute: typeof ApiPublicCronJournalReprocessRouteImport
+    '/api/care/accept': {
+      id: '/api/care/accept'
+      path: '/api/care/accept'
+      fullPath: '/api/care/accept'
+      preLoaderRoute: typeof ApiCareAcceptRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/email-queue-pump': {
-      id: '/api/public/cron/email-queue-pump'
-      path: '/api/public/cron/email-queue-pump'
-      fullPath: '/api/public/cron/email-queue-pump'
-      preLoaderRoute: typeof ApiPublicCronEmailQueuePumpRouteImport
+    '/api/care/decline': {
+      id: '/api/care/decline'
+      path: '/api/care/decline'
+      fullPath: '/api/care/decline'
+      preLoaderRoute: typeof ApiCareDeclineRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/dose-reminders': {
-      id: '/api/public/cron/dose-reminders'
-      path: '/api/public/cron/dose-reminders'
-      fullPath: '/api/public/cron/dose-reminders'
-      preLoaderRoute: typeof ApiPublicCronDoseRemindersRouteImport
+    '/api/care/incoming-invites': {
+      id: '/api/care/incoming-invites'
+      path: '/api/care/incoming-invites'
+      fullPath: '/api/care/incoming-invites'
+      preLoaderRoute: typeof ApiCareIncomingInvitesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/care-daily-digest': {
-      id: '/api/public/cron/care-daily-digest'
-      path: '/api/public/cron/care-daily-digest'
-      fullPath: '/api/public/cron/care-daily-digest'
-      preLoaderRoute: typeof ApiPublicCronCareDailyDigestRouteImport
+    '/api/care/journal': {
+      id: '/api/care/journal'
+      path: '/api/care/journal'
+      fullPath: '/api/care/journal'
+      preLoaderRoute: typeof ApiCareJournalRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/email/transactional/send': {
-      id: '/api/email/transactional/send'
-      path: '/api/email/transactional/send'
-      fullPath: '/api/email/transactional/send'
-      preLoaderRoute: typeof ApiEmailTransactionalSendRouteImport
+    '/api/care/meds': {
+      id: '/api/care/meds'
+      path: '/api/care/meds'
+      fullPath: '/api/care/meds'
+      preLoaderRoute: typeof ApiCareMedsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/email/transactional/preview': {
-      id: '/api/email/transactional/preview'
-      path: '/api/email/transactional/preview'
-      fullPath: '/api/email/transactional/preview'
-      preLoaderRoute: typeof ApiEmailTransactionalPreviewRouteImport
+    '/api/care/report': {
+      id: '/api/care/report'
+      path: '/api/care/report'
+      fullPath: '/api/care/report'
+      preLoaderRoute: typeof ApiCareReportRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/email/queue/process': {
-      id: '/api/email/queue/process'
-      path: '/api/email/queue/process'
-      fullPath: '/api/email/queue/process'
-      preLoaderRoute: typeof ApiEmailQueueProcessRouteImport
+    '/api/care/reports': {
+      id: '/api/care/reports'
+      path: '/api/care/reports'
+      fullPath: '/api/care/reports'
+      preLoaderRoute: typeof ApiCareReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/email/auth/webhook': {
-      id: '/api/email/auth/webhook'
-      path: '/api/email/auth/webhook'
-      fullPath: '/api/email/auth/webhook'
-      preLoaderRoute: typeof ApiEmailAuthWebhookRouteImport
+    '/api/care/seizures': {
+      id: '/api/care/seizures'
+      path: '/api/care/seizures'
+      fullPath: '/api/care/seizures'
+      preLoaderRoute: typeof ApiCareSeizuresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/care/today': {
+      id: '/api/care/today'
+      path: '/api/care/today'
+      fullPath: '/api/care/today'
+      preLoaderRoute: typeof ApiCareTodayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/email/suppression': {
+      id: '/api/email/suppression'
+      path: '/api/email/suppression'
+      fullPath: '/api/email/suppression'
+      preLoaderRoute: typeof ApiEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health/native-sync': {
+      id: '/api/health/native-sync'
+      path: '/api/health/native-sync'
+      fullPath: '/api/health/native-sync'
+      preLoaderRoute: typeof ApiHealthNativeSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health/whoop-config': {
+      id: '/api/health/whoop-config'
+      path: '/api/health/whoop-config'
+      fullPath: '/api/health/whoop-config'
+      preLoaderRoute: typeof ApiHealthWhoopConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health/whoop-exchange': {
+      id: '/api/health/whoop-exchange'
+      path: '/api/health/whoop-exchange'
+      fullPath: '/api/health/whoop-exchange'
+      preLoaderRoute: typeof ApiHealthWhoopExchangeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health/whoop-sync': {
+      id: '/api/health/whoop-sync'
+      path: '/api/health/whoop-sync'
+      fullPath: '/api/health/whoop-sync'
+      preLoaderRoute: typeof ApiHealthWhoopSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/stripe-webhook': {
+      id: '/api/public/stripe-webhook'
+      path: '/api/public/stripe-webhook'
+      fullPath: '/api/public/stripe-webhook'
+      preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth/oura/callback': {
+      id: '/oauth/oura/callback'
+      path: '/oauth/oura/callback'
+      fullPath: '/oauth/oura/callback'
+      preLoaderRoute: typeof OauthOuraCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth/whoop/callback': {
+      id: '/oauth/whoop/callback'
+      path: '/oauth/whoop/callback'
+      fullPath: '/oauth/whoop/callback'
+      preLoaderRoute: typeof OauthWhoopCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share/report/$token': {
+      id: '/share/report/$token'
+      path: '/share/report/$token'
+      fullPath: '/share/report/$token'
+      preLoaderRoute: typeof ShareReportTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/admin/reports/duplicates': {
+      id: '/_app/admin/reports/duplicates'
+      path: '/reports/duplicates'
+      fullPath: '/admin/reports/duplicates'
+      preLoaderRoute: typeof AppAdminReportsDuplicatesRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/reports/trends/$metricKey': {
+      id: '/_app/reports/trends/$metricKey'
+      path: '/trends/$metricKey'
+      fullPath: '/reports/trends/$metricKey'
+      preLoaderRoute: typeof AppReportsTrendsMetricKeyRouteImport
+      parentRoute: typeof AppReportsRoute
+    }
+    '/api/cloudflare/edge/invoke': {
+      id: '/api/cloudflare/edge/invoke'
+      path: '/api/cloudflare/edge/invoke'
+      fullPath: '/api/cloudflare/edge/invoke'
+      preLoaderRoute: typeof ApiCloudflareEdgeInvokeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/email/auth/preview': {
@@ -2443,19 +2432,110 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/reports/trends/$metricKey': {
-      id: '/_app/reports/trends/$metricKey'
-      path: '/trends/$metricKey'
-      fullPath: '/reports/trends/$metricKey'
-      preLoaderRoute: typeof AppReportsTrendsMetricKeyRouteImport
-      parentRoute: typeof AppReportsRoute
+    '/api/email/auth/webhook': {
+      id: '/api/email/auth/webhook'
+      path: '/api/email/auth/webhook'
+      fullPath: '/api/email/auth/webhook'
+      preLoaderRoute: typeof ApiEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/admin/reports/duplicates': {
-      id: '/_app/admin/reports/duplicates'
-      path: '/reports/duplicates'
-      fullPath: '/admin/reports/duplicates'
-      preLoaderRoute: typeof AppAdminReportsDuplicatesRouteImport
-      parentRoute: typeof AppAdminRoute
+    '/api/email/queue/process': {
+      id: '/api/email/queue/process'
+      path: '/api/email/queue/process'
+      fullPath: '/api/email/queue/process'
+      preLoaderRoute: typeof ApiEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/email/transactional/preview': {
+      id: '/api/email/transactional/preview'
+      path: '/api/email/transactional/preview'
+      fullPath: '/api/email/transactional/preview'
+      preLoaderRoute: typeof ApiEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/email/transactional/send': {
+      id: '/api/email/transactional/send'
+      path: '/api/email/transactional/send'
+      fullPath: '/api/email/transactional/send'
+      preLoaderRoute: typeof ApiEmailTransactionalSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/care-daily-digest': {
+      id: '/api/public/cron/care-daily-digest'
+      path: '/api/public/cron/care-daily-digest'
+      fullPath: '/api/public/cron/care-daily-digest'
+      preLoaderRoute: typeof ApiPublicCronCareDailyDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/dose-reminders': {
+      id: '/api/public/cron/dose-reminders'
+      path: '/api/public/cron/dose-reminders'
+      fullPath: '/api/public/cron/dose-reminders'
+      preLoaderRoute: typeof ApiPublicCronDoseRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/email-queue-pump': {
+      id: '/api/public/cron/email-queue-pump'
+      path: '/api/public/cron/email-queue-pump'
+      fullPath: '/api/public/cron/email-queue-pump'
+      preLoaderRoute: typeof ApiPublicCronEmailQueuePumpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/journal-reprocess': {
+      id: '/api/public/cron/journal-reprocess'
+      path: '/api/public/cron/journal-reprocess'
+      fullPath: '/api/public/cron/journal-reprocess'
+      preLoaderRoute: typeof ApiPublicCronJournalReprocessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/medical-reports': {
+      id: '/api/public/cron/medical-reports'
+      path: '/api/public/cron/medical-reports'
+      fullPath: '/api/public/cron/medical-reports'
+      preLoaderRoute: typeof ApiPublicCronMedicalReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/oura-sync-all': {
+      id: '/api/public/cron/oura-sync-all'
+      path: '/api/public/cron/oura-sync-all'
+      fullPath: '/api/public/cron/oura-sync-all'
+      preLoaderRoute: typeof ApiPublicCronOuraSyncAllRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/purge-deleted-accounts': {
+      id: '/api/public/cron/purge-deleted-accounts'
+      path: '/api/public/cron/purge-deleted-accounts'
+      fullPath: '/api/public/cron/purge-deleted-accounts'
+      preLoaderRoute: typeof ApiPublicCronPurgeDeletedAccountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/weekly-recap': {
+      id: '/api/public/cron/weekly-recap'
+      path: '/api/public/cron/weekly-recap'
+      fullPath: '/api/public/cron/weekly-recap'
+      preLoaderRoute: typeof ApiPublicCronWeeklyRecapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/whoop-sync-all': {
+      id: '/api/public/cron/whoop-sync-all'
+      path: '/api/public/cron/whoop-sync-all'
+      fullPath: '/api/public/cron/whoop-sync-all'
+      preLoaderRoute: typeof ApiPublicCronWhoopSyncAllRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/apple-health': {
+      id: '/api/public/hooks/apple-health'
+      path: '/api/public/hooks/apple-health'
+      fullPath: '/api/public/hooks/apple-health'
+      preLoaderRoute: typeof ApiPublicHooksAppleHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/risk-forecaster': {
+      id: '/api/public/hooks/risk-forecaster'
+      path: '/api/public/hooks/risk-forecaster'
+      fullPath: '/api/public/hooks/risk-forecaster'
+      preLoaderRoute: typeof ApiPublicHooksRiskForecasterRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/care/$ownerId/reports/$reportId': {
       id: '/_app/care/$ownerId/reports/$reportId'
@@ -2692,9 +2772,12 @@ const rootRouteChildren: RootRouteChildren = {
   FriendAcceptRoute: FriendAcceptRoute,
   FriendJoinRoute: FriendJoinRoute,
   ApiAccountPersonalShareCodeRoute: ApiAccountPersonalShareCodeRoute,
+  ApiAdminD1ImportRoute: ApiAdminD1ImportRoute,
   ApiAiDailyInsightCardsRoute: ApiAiDailyInsightCardsRoute,
   ApiAiMetricInsightRoute: ApiAiMetricInsightRoute,
   ApiAiSummarizeReportRoute: ApiAiSummarizeReportRoute,
+  ApiAuthSignInRoute: ApiAuthSignInRoute,
+  ApiAuthSignUpRoute: ApiAuthSignUpRoute,
   ApiCareAcceptRoute: ApiCareAcceptRoute,
   ApiCareDeclineRoute: ApiCareDeclineRoute,
   ApiCareIncomingInvitesRoute: ApiCareIncomingInvitesRoute,
@@ -2713,6 +2796,7 @@ const rootRouteChildren: RootRouteChildren = {
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   OauthWhoopCallbackRoute: OauthWhoopCallbackRoute,
   ShareReportTokenRoute: ShareReportTokenRoute,
+  ApiCloudflareEdgeInvokeRoute: ApiCloudflareEdgeInvokeRoute,
   ApiEmailAuthPreviewRoute: ApiEmailAuthPreviewRoute,
   ApiEmailAuthWebhookRoute: ApiEmailAuthWebhookRoute,
   ApiEmailQueueProcessRoute: ApiEmailQueueProcessRoute,
@@ -2734,13 +2818,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

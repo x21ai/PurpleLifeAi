@@ -1,4 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { isCloudflareBackend } from "@/lib/cloudflare/data-backend";
+import { setRequestBindings } from "@/lib/cloudflare/bindings";
+import { d1All, d1Run } from "@/lib/cloudflare/d1/client";
+import { processJournalEntry } from "@/lib/cloudflare/edge/journal-processor";
 
 /**
  * Recover journal entries stuck in "processing":
@@ -16,11 +20,45 @@ export const Route = createFileRoute("/api/public/cron/journal-reprocess")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        setRequestBindings(process.env);
         const cronSecret = process.env.CRON_SECRET;
         const provided =
           request.headers.get("x-cron-secret") ?? request.headers.get("apikey");
         if (!cronSecret || provided !== cronSecret) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const staleBefore = new Date(Date.now() - STALE_MIN * 60_000).toISOString();
+        const failBefore = new Date(Date.now() - FAIL_MIN * 60_000).toISOString();
+
+        if (isCloudflareBackend(process.env)) {
+          try {
+            const rows = await d1All<{ id: string; created_at: string }>(
+              `SELECT id, created_at FROM journal_entries
+               WHERE status = 'processing' AND created_at < ?
+               ORDER BY created_at ASC LIMIT ?`,
+              staleBefore,
+              BATCH,
+            );
+            let reprocessed = 0;
+            let failed = 0;
+            for (const row of rows) {
+              if (row.created_at < failBefore) {
+                await d1Run(
+                  `UPDATE journal_entries SET status = 'failed' WHERE id = ?`,
+                  row.id,
+                );
+                failed += 1;
+              } else {
+                await processJournalEntry(row.id).catch(() => undefined);
+                reprocessed += 1;
+              }
+            }
+            return Response.json({ reprocessed, failed });
+          } catch (e) {
+            console.error("journal-reprocess (cloudflare) failed", e);
+            return Response.json({ error: "Internal error" }, { status: 502 });
+          }
         }
 
         const url = process.env.SUPABASE_URL;
@@ -34,8 +72,6 @@ export const Route = createFileRoute("/api/public/cron/journal-reprocess")({
           Authorization: `Bearer ${serviceRole}`,
           "Content-Type": "application/json",
         };
-        const staleBefore = new Date(Date.now() - STALE_MIN * 60_000).toISOString();
-        const failBefore = new Date(Date.now() - FAIL_MIN * 60_000).toISOString();
 
         try {
           const res = await fetch(

@@ -16,6 +16,18 @@ Also see `mem/index.md` for deeper architectural notes.
 
 ---
 
+### 2026-09-14 — Cloudflare cutover uses DATA_BACKEND flag; Workers JWT replaces Supabase Auth on cloudflare path [ACTIVE]
+
+- **Decision:** Persistence backend is selected by `DATA_BACKEND` (`supabase` default,
+  `cloudflare` after verified import). Cloudflare path uses D1 (`DB`), R2 (`STORAGE`),
+  KV (`CACHE`), and HS256 JWT auth in D1 `auth_users`. RLS is enforced in Worker code,
+  not SQL. Legacy Supabase project stays live until operator flips the flag.
+- **Reason:** Avoid hard cutover before data import; POS Ai account already provisioned
+  empty D1/R2/KV.
+- **Implications:** New server code should use `unified-auth-middleware` and check
+  `getDataBackend()`. Runbook: `docs/CLOUDFLARE-MIGRATION.md`. Do not delete Supabase
+  from this work alone.
+
 ### 2026-07-05 — Flutter parity is client-side; server-only capabilities stay web-only until a Worker route exists [ACTIVE]
 
 - **Decision:** The Flutter app reaches parity by (a) reusing Supabase-RLS-safe reads/writes and (b) calling Worker `/api/*` routes. Server functions that require service-role/`supabaseAdmin` (caregiver `caregiverRead*`/`caregiverMarkDose`/`acceptInvite`/`declineInvite`, AI `summarizeReport`/`getMetricInsight`/`getDailyInsightCards`/`computeUserPatterns`, `getVitalsSnapshot`) are **not** reimplemented client-side and are **not** faked — they render honest gap-states until a Flutter-callable Worker route is added.
