@@ -9,6 +9,13 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-15 Apple OAuth on Cloudflare auth path (PR pending):** Implements Sign in with Apple
+end-to-end for `DATA_BACKEND=cloudflare`: `/api/auth/oauth/apple` start redirect,
+`/oauth/apple/callback` client page, `/api/auth/oauth/apple/callback` token exchange,
+D1 `auth_users`/`auth_identities` linking, Workers JWT. Google path refactored to shared
+`oauth-complete` helper; `APPLE_*` + `PUBLIC_SITE_URL` in Worker env types. Redirect URIs
+documented in `docs/oauth-provider-setup.md`. Deploy + device QA pending.
+
 **2026-09-15 Cloudflare go-live attempt (blocked on credentials):** PR #39 merged to `main`
 (`2276e897`). Deploy **not** run: `DOPPLER_TOKEN` invalid in cloud VM; no
 `CLOUDFLARE_API_TOKEN`; wrangler unauthenticated. Operator secrets + tester password
@@ -52,6 +59,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-15T16:40:00Z — Apple OAuth for Cloudflare auth (PR)
+
+- **Requested:** Google and Apple social sign-in on Cloudflare auth path (Workers JWT + D1), not Supabase Auth.
+- **Done:** Apple OAuth start (`$provider.ts`), callback API (`apple/callback.ts`), client route (`oauth.apple.callback.tsx`), shared `oauth-complete.ts`; Google callback uses shared helper; `APPLE_CLIENT_ID`/`APPLE_CLIENT_SECRET` in `env.ts`; docs updated (`oauth-provider-setup.md`, `CLOUDFLARE-MIGRATION.md`, `CLOUDFLARE-TESTER-CHECKLIST.md`); `routeTree.gen.ts` Apple routes.
+- **Issues:** Local `vite dev`/`build` blocked by pre-existing `entities`/`cheerio` ESM error on cloud VM; `tsc --noEmit` clean. Live redirect/callback QA requires deploy with existing Worker secrets.
+- **Stand / next:** Merge PR, deploy Worker, verify `/api/auth/oauth/{google,apple}?redirect_to=...` 302 and sign-in on www.purplelife.org.
+- **Who / where:** cursor-agent · cloud VM · `cursor/apple-oauth-cloudflare-50a9`
+- **Evidence:** `bunx tsc --noEmit` exit 0; `check-no-em-dash` pass
+- **Timestamp:** 2026-09-15T16:40:00Z
 
 ### 2026-09-15T11:50:00Z — Go-live deploy blocked (credentials)
 

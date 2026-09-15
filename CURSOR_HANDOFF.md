@@ -1,4 +1,10 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-15 (go-live blocked on credentials).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-15 (Apple OAuth PR pending deploy).
+
+**Recent (2026-09-15): Apple + Google OAuth on Cloudflare auth.** Worker routes:
+`GET /api/auth/oauth/{google,apple}`, `POST /api/auth/oauth/{google,apple}/callback`,
+client callbacks `/oauth/{google,apple}/callback`. Secrets: `GOOGLE_*`, `APPLE_*`
+(Services ID `org.purplelife.web` + JWT client secret), `PUBLIC_SITE_URL`,
+`AUTH_JWT_SECRET`. Redirect URIs: `docs/oauth-provider-setup.md` Cloudflare section.
 
 **Cloudflare cutover (code merged, deploy pending):** PR #39 merged `main` @ `2276e897`.
 D1 `purplelifeai` `bfb642b9-b71b-4d7f-a823-669efc2f2168`, R2 `purplelifeai`, KV
