@@ -22,7 +22,8 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
   private countHead = false;
   private insertRow: Record<string, unknown> | Record<string, unknown>[] | null = null;
   private updateRow: Record<string, unknown> | null = null;
-  private mode: "select" | "insert" | "update" | "delete" = "select";
+  private onConflict: string | null = null;
+  private mode: "select" | "insert" | "update" | "delete" | "upsert" = "select";
   private userScopeCol: string | null = null;
   private userScopeVal: string | null = null;
 
@@ -97,6 +98,16 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
   insert(row: Record<string, unknown> | Record<string, unknown>[]): this {
     this.mode = "insert";
     this.insertRow = row;
+    return this;
+  }
+
+  upsert(
+    row: Record<string, unknown> | Record<string, unknown>[],
+    opts?: { onConflict?: string },
+  ): this {
+    this.mode = "upsert";
+    this.insertRow = row;
+    this.onConflict = opts?.onConflict ?? null;
     return this;
   }
 
@@ -214,6 +225,7 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
   private async execute(): Promise<{ data: T[] | null; error: Error | null }> {
     try {
       if (this.mode === "insert") return this.executeInsert();
+      if (this.mode === "upsert") return this.executeUpsert();
       if (this.mode === "update") return this.executeUpdate();
       if (this.mode === "delete") return this.executeDelete();
       return this.executeSelect();
@@ -308,6 +320,37 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
       out.push(parsed);
     }
     return { data: out as T[], error: null };
+  }
+
+  private async executeUpsert(): Promise<{ data: T[] | null; error: Error | null }> {
+    if (!this.insertRow) return { data: null, error: new Error("No upsert row") };
+    const conflictCols = (this.onConflict ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (conflictCols.length === 0) {
+      return { data: null, error: new Error("upsert requires onConflict columns") };
+    }
+
+    const rows = Array.isArray(this.insertRow) ? this.insertRow : [this.insertRow];
+    const saved: T[] = [];
+    for (const row of rows) {
+      const full: Record<string, unknown> = { ...row };
+      if (this.userScopeVal && !full.user_id) full.user_id = this.userScopeVal;
+      const cols = Object.keys(full);
+      const vals = cols.map((c) => this.serializeValue(full[c]));
+      const updateCols = cols.filter((c) => !conflictCols.includes(c));
+      const setClause =
+        updateCols.length > 0
+          ? updateCols.map((c) => `${c} = excluded.${c}`).join(", ")
+          : `${conflictCols[0]} = excluded.${conflictCols[0]}`;
+      await d1Run(
+        `INSERT INTO ${this.table} (${cols.join(", ")}) VALUES (${cols.map(() => "?").join(", ")}) ON CONFLICT(${conflictCols.join(", ")}) DO UPDATE SET ${setClause}`,
+        ...vals,
+      );
+      saved.push(parseRow(full) as T);
+    }
+    return { data: saved, error: null };
   }
 
   private async executeInsert(): Promise<{ data: T[] | null; error: Error | null }> {

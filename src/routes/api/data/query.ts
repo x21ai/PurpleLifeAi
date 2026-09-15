@@ -38,6 +38,7 @@ export const Route = createFileRoute("/api/data/query")({
           countHead?: boolean;
           insert?: Record<string, unknown> | Record<string, unknown>[];
           update?: Record<string, unknown>;
+          onConflict?: string | null;
         };
         try {
           body = await request.json();
@@ -82,6 +83,11 @@ export const Route = createFileRoute("/api/data/query")({
             const { data, error } = await q.then();
             return Response.json({ data, error: error?.message ?? null });
           }
+          const { data, error } = await q.then();
+          return Response.json({ data, error: error?.message ?? null });
+        }
+        if (body.mode === "upsert" && body.insert) {
+          q = q.upsert(body.insert, { onConflict: body.onConflict ?? undefined });
           const { data, error } = await q.then();
           return Response.json({ data, error: error?.message ?? null });
         }

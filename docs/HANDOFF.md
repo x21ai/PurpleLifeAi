@@ -9,12 +9,11 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-**2026-09-15 Today/Vitals Oura UI on Cloudflare D1 (PR open):** Fixes D1 query
-`.or()`/count support, `health_narratives` migration (`0003_today_vitals.sql`),
-admin_messages typed columns, Today `load()` fail-open, and `getScoreSnapshot` day
-filter normalization. **Operator:** apply `0003` on remote D1 `purplelifeai`
-(`8d0be2b3-84ec-4581-86f4-6b372ec1d5d7`) then deploy Worker. Verify: Devyn sign-in
-→ Today readiness/sleep ~91.
+**2026-09-15 Today/Vitals Oura UI on Cloudflare D1 (PR #42):** D1 query `.or()`,
+`.upsert(onConflict)`, count/head; Today `load()` fail-open; `getScoreSnapshot` day
+filter fix. Prod zone D1 already has `health_narratives` + typed `admin_messages`.
+**Deploy Worker only** (no SQL if tables exist). Verify: Devyn Today readiness/sleep ~91,
+`getHealthNarrative` upsert works.
 
 **2026-09-15 Oura biometrics on Cloudflare D1 (merged):** PR #41 squash-merged to `main`
 @ `03ede232`. Cron and edge invoke persist `biometrics` (`source=oura`). Deploy bundle:
@@ -76,12 +75,22 @@ clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
 
-### 2026-09-15T20:15:00Z — Today/Vitals Oura UI D1 gaps (PR)
+### 2026-09-15T20:25:00Z — PR #42 upsert + prod D1 schema note
+
+- **Requested:** Add `.upsert()` for `getHealthNarrative`; confirm `.or()` on client builder; prod already has D1 tables.
+- **Done:** `D1QueryBuilder` + `ApiQueryBuilder` + `/api/data/query` `.upsert(row, { onConflict })` via SQLite `ON CONFLICT DO UPDATE`; `0003` trimmed to `health_narratives` CREATE IF NOT EXISTS only; docs note prod schema ready, deploy Worker without SQL.
+- **Issues:** PR #42 not deployed to prod yet (`.or()`/`.upsert()` live after deploy).
+- **Stand / next:** Merge PR #42, deploy Worker, Devyn verify Today + narrative.
+- **Who / where:** cursor-agent · cloud VM · `cursor/oura-today-d1-fix-7c1f`
+- **Evidence:** scoped eslint on changed files
+- **Timestamp:** 2026-09-15T20:25:00Z
+
+### 2026-09-15T20:15:00Z — Today/Vitals Oura UI D1 gaps (PR #42)
 
 - **Requested:** Fix remaining Cloudflare gaps so Today/Vitals show Oura end-to-end; open PR.
-- **Done:** Added `.or()`/`.is()`/count-head to `api-query-builder` + `query-builder` + `/api/data/query`; `filter-parser.ts`; D1 migration `0003_today_vitals.sql` (`health_narratives`, `admin_messages` columns); Today `load()` uses `Promise.allSettled`; `getScoreSnapshot` day filter via UTC date key; docs in `CLOUDFLARE-MIGRATION.md`.
-- **Issues:** Remote D1 migration + Worker deploy operator-owned. Full-repo `eslint` slow in cloud VM; changed files lint clean.
-- **Stand / next:** Merge PR, `./scripts/cloudflare/apply-d1-migrations.sh --remote`, deploy Worker, Devyn verify Today tiles.
+- **Done:** Added `.or()`/`.is()`/count-head to query builders; `filter-parser.ts`; Today `load()` uses `Promise.allSettled`; `getScoreSnapshot` day filter via UTC date key.
+- **Issues:** Remote Worker deploy operator-owned.
+- **Stand / next:** See upsert follow-up above.
 - **Who / where:** cursor-agent · cloud VM · `cursor/oura-today-d1-fix-7c1f`
 - **Evidence:** scoped eslint PASS; em-dash check PASS
 - **Timestamp:** 2026-09-15T20:15:00Z

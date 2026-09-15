@@ -24,7 +24,8 @@ export class ApiQueryBuilder<T = Record<string, unknown>> {
   private countHead = false;
   private insertRow: Record<string, unknown> | Record<string, unknown>[] | null = null;
   private updateRow: Record<string, unknown> | null = null;
-  private mode: "select" | "insert" | "update" | "delete" = "select";
+  private onConflict: string | null = null;
+  private mode: "select" | "insert" | "update" | "delete" | "upsert" = "select";
   private returnSelect: string | null = null;
 
   constructor(private table: string) {}
@@ -97,6 +98,16 @@ export class ApiQueryBuilder<T = Record<string, unknown>> {
     return this;
   }
 
+  upsert(
+    row: Record<string, unknown> | Record<string, unknown>[],
+    opts?: { onConflict?: string },
+  ): this {
+    this.mode = "upsert";
+    this.insertRow = row;
+    this.onConflict = opts?.onConflict ?? null;
+    return this;
+  }
+
   update(row: Record<string, unknown>): this {
     this.mode = "update";
     this.updateRow = row;
@@ -134,6 +145,7 @@ export class ApiQueryBuilder<T = Record<string, unknown>> {
         countHead: this.countHead,
         insert: this.insertRow,
         update: this.updateRow,
+        onConflict: this.onConflict,
       }),
     });
     const body = await res.json().catch(() => ({}));
