@@ -71,20 +71,19 @@ cloudflare/migrations/
 ```
 
 **Production D1 (zone account):** database `purplelifeai`, id `8d0be2b3-84ec-4581-86f4-6b372ec1d5d7`.
-After deploying Worker code from this PR, apply pending migrations on remote D1:
+
+**Prod schema (2026-09-15):** `health_narratives` and typed `admin_messages` already exist on
+zone D1. No SQL required before deploy if tables match app types. Worker deploy from PR #42
+adds D1 query `.or()`, `.upsert()`, and Today fail-open load.
+
+Optional idempotent migration (creates `health_narratives` only if missing):
 
 ```bash
-# All pending migrations (preferred)
-./scripts/cloudflare/apply-d1-migrations.sh --remote
-
-# Or apply 0003 only (re-run safe except duplicate ALTER COLUMN errors)
 bunx wrangler d1 execute purplelifeai --remote --file=cloudflare/migrations/0003_today_vitals.sql
 ```
 
-`0003_today_vitals.sql` creates `health_narratives` (`user_id`, `day`, `narrative`, `created_at`,
-PK `user_id+day`, matches Postgres/app) and adds `subject`, `body`, `is_broadcast`, `recipient_id`,
-`sender_id` to `admin_messages`. Without this migration, Today client load errors on missing
-`health_narratives` and `.or()` on admin broadcast queries.
+`0003_today_vitals.sql` is `CREATE TABLE IF NOT EXISTS health_narratives` with columns
+`user_id`, `day`, `narrative`, `created_at`, PK `(user_id, day)`.
 
 Regenerate core schema after table list changes:
 
