@@ -1,9 +1,12 @@
 import { d1All, d1First, d1Run } from "../d1/client";
+import { parseOrFilter, serializeBool, type ParsedOrClause } from "./filter-parser";
 
 type Filter =
   | { op: "eq"; col: string; val: unknown }
   | { op: "gte"; col: string; val: unknown }
   | { op: "lte"; col: string; val: unknown }
+  | { op: "gt"; col: string; val: unknown }
+  | { op: "lt"; col: string; val: unknown }
   | { op: "in"; col: string; val: unknown[] }
   | { op: "is"; col: string; val: null };
 
@@ -11,9 +14,12 @@ type Order = { col: string; ascending: boolean };
 
 export class D1QueryBuilder<T = Record<string, unknown>> {
   private filters: Filter[] = [];
+  private orGroups: ParsedOrClause[][] = [];
   private orderBy: Order[] = [];
   private limitN: number | null = null;
   private selectCols = "*";
+  private countExact = false;
+  private countHead = false;
   private insertRow: Record<string, unknown> | Record<string, unknown>[] | null = null;
   private updateRow: Record<string, unknown> | null = null;
   private mode: "select" | "insert" | "update" | "delete" = "select";
@@ -30,8 +36,10 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     }
   }
 
-  select(cols: string): this {
-    this.selectCols = cols.trim();
+  select(cols: string, opts?: { count?: "exact"; head?: boolean }): this {
+    if (opts?.count === "exact") this.countExact = true;
+    if (opts?.head) this.countHead = true;
+    if (!opts?.count) this.selectCols = cols.trim();
     return this;
   }
 
@@ -47,6 +55,22 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
 
   lte(col: string, val: unknown): this {
     this.filters.push({ op: "lte", col, val });
+    return this;
+  }
+
+  gt(col: string, val: unknown): this {
+    this.filters.push({ op: "gt", col, val });
+    return this;
+  }
+
+  lt(col: string, val: unknown): this {
+    this.filters.push({ op: "lt", col, val });
+    return this;
+  }
+
+  or(filter: string): this {
+    const clauses = parseOrFilter(filter);
+    if (clauses.length) this.orGroups.push(clauses);
     return this;
   }
 
@@ -96,12 +120,18 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     for (const f of this.filters) {
       if (f.op === "eq") {
         clauses.push(`${f.col} = ?`);
-        params.push(f.val);
+        params.push(serializeBool(f.val));
       } else if (f.op === "gte") {
         clauses.push(`${f.col} >= ?`);
         params.push(f.val);
       } else if (f.op === "lte") {
         clauses.push(`${f.col} <= ?`);
+        params.push(f.val);
+      } else if (f.op === "gt") {
+        clauses.push(`${f.col} > ?`);
+        params.push(f.val);
+      } else if (f.op === "lt") {
+        clauses.push(`${f.col} < ?`);
         params.push(f.val);
       } else if (f.op === "in") {
         const arr = f.val as unknown[];
@@ -114,6 +144,30 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
       } else if (f.op === "is") {
         clauses.push(`${f.col} IS NULL`);
       }
+    }
+    for (const group of this.orGroups) {
+      const parts: string[] = [];
+      for (const c of group) {
+        if (c.op === "eq") {
+          parts.push(`${c.col} = ?`);
+          params.push(serializeBool(c.val));
+        } else if (c.op === "gte") {
+          parts.push(`${c.col} >= ?`);
+          params.push(c.val);
+        } else if (c.op === "lte") {
+          parts.push(`${c.col} <= ?`);
+          params.push(c.val);
+        } else if (c.op === "gt") {
+          parts.push(`${c.col} > ?`);
+          params.push(c.val);
+        } else if (c.op === "lt") {
+          parts.push(`${c.col} < ?`);
+          params.push(c.val);
+        } else if (c.op === "is") {
+          parts.push(`${c.col} IS NULL`);
+        }
+      }
+      if (parts.length) clauses.push(`(${parts.join(" OR ")})`);
     }
     return clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
   }
@@ -141,8 +195,17 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     return res;
   }
 
-  then<TResult1 = { data: T[] | null; error: Error | null }, TResult2 = never>(
-    onfulfilled?: ((value: { data: T[] | null; error: Error | null }) => TResult1 | PromiseLike<TResult1>) | null,
+  then<
+    TResult1 = { data: T[] | null; error: Error | null; count?: number | null },
+    TResult2 = never,
+  >(
+    onfulfilled?:
+      | ((value: {
+          data: T[] | null;
+          error: Error | null;
+          count?: number | null;
+        }) => TResult1 | PromiseLike<TResult1>)
+      | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
@@ -159,7 +222,10 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     }
   }
 
-  private parseSelectColumns(): { base: string[]; embeds: Array<{ alias: string; table: string; cols: string }> } {
+  private parseSelectColumns(): {
+    base: string[];
+    embeds: Array<{ alias: string; table: string; cols: string }>;
+  } {
     const parts = this.selectCols.split(",").map((s) => s.trim());
     const base: string[] = [];
     const embeds: Array<{ alias: string; table: string; cols: string }> = [];
@@ -174,13 +240,28 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     return { base, embeds };
   }
 
-  private async executeSelect(): Promise<{ data: T[] | null; error: Error | null }> {
+  private async executeSelect(): Promise<{
+    data: T[] | null;
+    error: Error | null;
+    count?: number | null;
+  }> {
     const params: unknown[] = [];
     const where = this.buildWhere(params);
+
+    if (this.countHead && this.countExact) {
+      const row = await d1First<{ cnt: number }>(
+        `SELECT COUNT(*) AS cnt FROM ${this.table} ${where}`,
+        ...params,
+      );
+      return { data: null, error: null, count: row?.cnt ?? 0 };
+    }
+
     const { base, embeds } = this.parseSelectColumns();
     const cols =
       base.length > 0 || embeds.length > 0
-        ? [...base, ...embeds.map((e) => `${this.table}.${e.alias}_fk`)].filter(Boolean).join(", ") || "*"
+        ? [...base, ...embeds.map((e) => `${this.table}.${e.alias}_fk`)]
+            .filter(Boolean)
+            .join(", ") || "*"
         : "*";
 
     // Simple select without embeds first

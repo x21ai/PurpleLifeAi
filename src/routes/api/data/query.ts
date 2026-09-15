@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { isCloudflareBackend } from "@/lib/cloudflare/data-backend";
 import { setRequestBindings } from "@/lib/cloudflare/bindings";
 import { d1From } from "@/lib/cloudflare/d1/query-builder";
+import type { ParsedOrClause } from "@/lib/cloudflare/d1/filter-parser";
 
 export const Route = createFileRoute("/api/data/query")({
   server: {
@@ -30,8 +31,11 @@ export const Route = createFileRoute("/api/data/query")({
           select?: string;
           returnSelect?: string | null;
           filters?: Array<{ op: string; col: string; val: unknown }>;
+          orGroups?: ParsedOrClause[][];
           order?: Array<{ col: string; ascending: boolean }>;
           limit?: number | null;
+          countExact?: boolean;
+          countHead?: boolean;
           insert?: Record<string, unknown> | Record<string, unknown>[];
           update?: Record<string, unknown>;
         };
@@ -45,12 +49,27 @@ export const Route = createFileRoute("/api/data/query")({
         if (!table) return Response.json({ error: "table required" }, { status: 400 });
 
         let q = d1From(table, claims.sub);
-        if (body.select) q = q.select(body.select);
+        if (body.countHead && body.countExact) {
+          q = q.select("id", { count: "exact", head: true });
+        } else if (body.select) {
+          q = q.select(body.select);
+        }
         for (const f of body.filters ?? []) {
-          if (f.op === "eq") q = q.eq(f.col.replace(/[^a-z_]/g, ""), f.val);
-          if (f.op === "gte") q = q.gte(f.col.replace(/[^a-z_]/g, ""), f.val);
-          if (f.op === "lte") q = q.lte(f.col.replace(/[^a-z_]/g, ""), f.val);
-          if (f.op === "in") q = q.in(f.col.replace(/[^a-z_]/g, ""), f.val as unknown[]);
+          const col = f.col.replace(/[^a-z_]/g, "");
+          if (f.op === "eq") q = q.eq(col, f.val);
+          if (f.op === "gte") q = q.gte(col, f.val);
+          if (f.op === "lte") q = q.lte(col, f.val);
+          if (f.op === "gt") q = q.gt(col, f.val);
+          if (f.op === "lt") q = q.lt(col, f.val);
+          if (f.op === "in") q = q.in(col, f.val as unknown[]);
+          if (f.op === "is") q = q.is(col, null);
+        }
+        for (const group of body.orGroups ?? []) {
+          const parts = group.map((c) => {
+            if (c.op === "is") return `${c.col}.is.null`;
+            return `${c.col}.${c.op}.${String(c.val)}`;
+          });
+          if (parts.length) q = q.or(parts.join(","));
         }
         for (const o of body.order ?? []) {
           q = q.order(o.col.replace(/[^a-z_]/g, ""), { ascending: o.ascending });
@@ -75,6 +94,11 @@ export const Route = createFileRoute("/api/data/query")({
           q = q.delete();
           const { error } = await q.then();
           return Response.json({ data: null, error: error?.message ?? null });
+        }
+
+        if (body.countHead && body.countExact) {
+          const { count, error } = await q.then();
+          return Response.json({ data: null, count: count ?? 0, error: error?.message ?? null });
         }
 
         if (body.limit === 1) {

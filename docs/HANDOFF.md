@@ -9,6 +9,13 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-15 Today/Vitals Oura UI on Cloudflare D1 (PR open):** Fixes D1 query
+`.or()`/count support, `health_narratives` migration (`0003_today_vitals.sql`),
+admin_messages typed columns, Today `load()` fail-open, and `getScoreSnapshot` day
+filter normalization. **Operator:** apply `0003` on remote D1 `purplelifeai`
+(`8d0be2b3-84ec-4581-86f4-6b372ec1d5d7`) then deploy Worker. Verify: Devyn sign-in
+→ Today readiness/sleep ~91.
+
 **2026-09-15 Oura biometrics on Cloudflare D1 (merged):** PR #41 squash-merged to `main`
 @ `03ede232`. Cron and edge invoke persist `biometrics` (`source=oura`). Deploy bundle:
 `/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz` and GitHub Release
@@ -68,6 +75,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-15T20:15:00Z — Today/Vitals Oura UI D1 gaps (PR)
+
+- **Requested:** Fix remaining Cloudflare gaps so Today/Vitals show Oura end-to-end; open PR.
+- **Done:** Added `.or()`/`.is()`/count-head to `api-query-builder` + `query-builder` + `/api/data/query`; `filter-parser.ts`; D1 migration `0003_today_vitals.sql` (`health_narratives`, `admin_messages` columns); Today `load()` uses `Promise.allSettled`; `getScoreSnapshot` day filter via UTC date key; docs in `CLOUDFLARE-MIGRATION.md`.
+- **Issues:** Remote D1 migration + Worker deploy operator-owned. Full-repo `eslint` slow in cloud VM; changed files lint clean.
+- **Stand / next:** Merge PR, `./scripts/cloudflare/apply-d1-migrations.sh --remote`, deploy Worker, Devyn verify Today tiles.
+- **Who / where:** cursor-agent · cloud VM · `cursor/oura-today-d1-fix-7c1f`
+- **Evidence:** scoped eslint PASS; em-dash check PASS
+- **Timestamp:** 2026-09-15T20:15:00Z
 
 ### 2026-09-15T18:28:00Z — PR #41 merged + deploy bundle (Oura D1)
 
