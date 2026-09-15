@@ -42,6 +42,12 @@ export type PurpleWorkerBindings = {
   /** Apple client secret JWT (generated from .p8 key; rotate per Apple docs) */
   APPLE_CLIENT_SECRET?: string;
   IMPORT_ADMIN_SECRET?: string;
+  /** When "1", enables public design staging (separate Worker only) */
+  DESIGN_PREVIEW?: string;
+  /** D1 auth_users id for auto design session (preferred) */
+  DESIGN_PREVIEW_USER_ID?: string;
+  /** Fallback lookup when id missing from D1 */
+  DESIGN_PREVIEW_USER_EMAIL?: string;
 };
 
 /** Resolve bindings from the Worker env object or Node process.env in dev. */

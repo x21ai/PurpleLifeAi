@@ -10,6 +10,8 @@
     "build": "bash scripts/with-app-build-env.sh vite build",
     "build:prod": "doppler run --project cursor-cloudflare --config prd_cloudlfare -- env VITE_DATA_BACKEND=cloudflare bun run build",
     "build:prod:supabase": "doppler run --project cursor-cloudflare --config prd_cloudlfare -- env VITE_DATA_BACKEND=supabase bun run build",
+    "build:design": "doppler run --project cursor-cloudflare --config prd_cloudlfare -- env VITE_DATA_BACKEND=cloudflare VITE_DESIGN_PREVIEW=1 bun run build",
+    "deploy:design": "bun run build:design && doppler run --project cursor-cloudflare --config prd_cloudlfare -- wrangler deploy -c wrangler.design.jsonc",
     "build:prod:flutter-web": "bun run build:prod && bash scripts/flutter-web-build-prod.sh && bash scripts/merge-flutter-web-assets.sh",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",

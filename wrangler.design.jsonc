@@ -1,0 +1,48 @@
+// Public design/staging Worker for Ploy and external design tools.
+// Serves app routes without interactive login when DESIGN_PREVIEW=1.
+// Does NOT attach production zone routes; workers.dev only.
+//
+// Deploy: bun run build:design && doppler run -- ... wrangler deploy -c wrangler.design.jsonc
+// Tear down: wrangler delete purplelife-design -c wrangler.design.jsonc
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "purplelife-design",
+  "account_id": "c7f99ecba0ace852de43684ec8a44612",
+  "workers_dev": true,
+  "compatibility_date": "2025-09-24",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "dist/server/server.js",
+  "assets": {
+    "directory": "dist/client",
+    "binding": "ASSETS",
+  },
+  "observability": {
+    "enabled": true,
+  },
+  "services": [{ "binding": "SELF", "service": "purplelife-design" }],
+  "vars": {
+    "DESIGN_PREVIEW": "1",
+    "DATA_BACKEND": "cloudflare",
+    "DESIGN_PREVIEW_USER_ID": "bb160030-2ed6-45d7-8a5a-7f6f7879e9bb",
+    "DESIGN_PREVIEW_USER_EMAIL": "pmt@eigital.com",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "purplelifeai",
+      "database_id": "bfb642b9-b71b-4d7f-a823-669efc2f2168",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "STORAGE",
+      "bucket_name": "purplelifeai",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "73356a0e339447059bdddc33b93f26a9",
+    },
+  ],
+}

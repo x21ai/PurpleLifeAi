@@ -31,6 +31,12 @@ function notifyAuth(event: string, session: CloudflareSession | null) {
   for (const fn of authListeners) fn(event, session);
 }
 
+/** Used by design staging to establish a session without a password. */
+export function applyCloudflareSessionFromBootstrap(session: CloudflareSession): void {
+  setCloudflareSession(session);
+  notifyAuth("SIGNED_IN", session);
+}
+
 async function apiAuth(path: string, body: Record<string, unknown>) {
   const res = await fetch(`/api/auth/${path}`, {
     method: "POST",
@@ -146,6 +152,15 @@ export function createCloudflareSupabaseShim(userId?: string) {
         return { data: { user: data.user }, error: null };
       },
       async signInWithOAuth(opts: { provider: string; options?: { redirectTo?: string } }) {
+        if (
+          typeof import.meta !== "undefined" &&
+          import.meta.env?.VITE_DESIGN_PREVIEW === "1"
+        ) {
+          return {
+            data: { provider: opts.provider, url: null },
+            error: { message: "OAuth is disabled on the design staging host." },
+          };
+        }
         const redirectTo = opts.options?.redirectTo ?? (typeof window !== "undefined" ? window.location.origin : "");
         window.location.href = `/api/auth/oauth/${opts.provider}?redirect_to=${encodeURIComponent(redirectTo)}`;
         return { data: { provider: opts.provider, url: null }, error: null };

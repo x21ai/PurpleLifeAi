@@ -2,12 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { isCloudflareBackend } from "@/lib/cloudflare/data-backend";
 import { setRequestBindings, getBindings } from "@/lib/cloudflare/bindings";
 import { oauthSiteOrigin } from "@/lib/cloudflare/auth/oauth-complete";
+import { designPreviewBlockedResponse, isDesignPreviewEnabled } from "@/lib/design-preview";
 
 export const Route = createFileRoute("/api/auth/oauth/$provider")({
   server: {
     handlers: {
       GET: async ({ request, params }) => {
         setRequestBindings(process.env);
+        if (isDesignPreviewEnabled(process.env)) {
+          return designPreviewBlockedResponse("OAuth");
+        }
         if (!isCloudflareBackend(process.env)) {
           return Response.json({ error: "Use Supabase OAuth" }, { status: 400 });
         }
