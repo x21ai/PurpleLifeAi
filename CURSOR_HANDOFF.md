@@ -1,10 +1,11 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-14 (Cloudflare migration foundation PR).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-15 (Cloudflare tester cutover PR #39).
 
 **Cloudflare cutover (in progress):** D1 `purplelifeai` `bfb642b9-b71b-4d7f-a823-669efc2f2168`,
 R2 `purplelifeai`, KV `73356a0e339447059bdddc33b93f26a9`, account `c7f99ecba0ace852de43684ec8a44612`.
-Wrangler bindings `DB`/`STORAGE`/`CACHE`. Default `DATA_BACKEND=supabase` (prod safe).
-Runbook: `docs/CLOUDFLARE-MIGRATION.md`. Commands: `bun run cf:d1:migrate:remote`,
-`bun run cf:d1:import`, `bun run cf:r2:import`.
+Wrangler bindings `DB`/`STORAGE`/`CACHE`. **Tester deploy:** `DATA_BACKEND=cloudflare`,
+`bun run build:prod` (VITE_DATA_BACKEND=cloudflare), `wrangler deploy -c wrangler.deploy.jsonc`,
+then `bun run cf:set-tester-passwords`. Rollback: `DATA_BACKEND=supabase` + `build:prod:supabase`.
+Runbooks: `docs/CLOUDFLARE-MIGRATION.md`, `docs/CLOUDFLARE-TESTER-CHECKLIST.md`.
 
 **TF28 LIVE (`1.0.0+28`).** ASC **1.0 (28)** `ec30baa8-79cc-42b1-bbd6-6b678e8f57fc`
 **VALID**, internal + external **IN_BETA_TESTING**. Founding Team added;

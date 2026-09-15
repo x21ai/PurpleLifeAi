@@ -9,6 +9,12 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-15 Cloudflare tester cutover (PR #39):** Deploy path is Cloudflare-primary:
+Supabase-compatible client shim (D1/R2/JWT), `/api/data/query`, storage routes, Google OAuth,
+tester password admin route, `bun run build:prod` bakes `VITE_DATA_BACKEND=cloudflare`.
+Rollback: `DATA_BACKEND=supabase` + `build:prod:supabase`. Checklist:
+`docs/CLOUDFLARE-TESTER-CHECKLIST.md`.
+
 **2026-09-14 Cloudflare migration foundation (PR):** D1/R2/KV wrangler bindings
 (POS Ai `c7f99ecba0ace852de43684ec8a44612`), D1 schema migrations, Workers JWT auth,
 edge-function ports (oura-sync, journal-processor stub), import scripts, and
@@ -40,6 +46,21 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-15T12:00:00Z — Cloudflare-primary runtime for testers (PR #39)
+
+- **Requested:** 100% Cloudflare for tester access; Supabase rollback only; login + core flows on D1/R2.
+- **Done:** Supabase-compatible shim (`src/lib/cloudflare/supabase-shim.ts`) routes client
+  `.from()`/auth/storage/RPC to D1 API + R2; auth-middleware branches JWT; routes for
+  `/api/data/query`, `/api/data/rpc`, `/api/storage/*`, OAuth Google, admin set-tester-password;
+  `regenerate_today_pending_doses` ported; `build:prod` sets `VITE_DATA_BACKEND=cloudflare`;
+  `docs/CLOUDFLARE-TESTER-CHECKLIST.md`, `scripts/cloudflare/set-tester-passwords.mjs`.
+- **Issues:** Admin/care/billing still use Supabase-only server paths; journal AI processor stub;
+  password reset email not wired on Cloudflare (use set-tester-password for beta).
+- **Stand / next:** Deploy with `DATA_BACKEND=cloudflare`, run set-tester-passwords, device QA.
+- **Who / where:** cursor-agent · cloud VM · `cursor/cloudflare-migration-f855`
+- **Evidence:** `bunx tsc --noEmit` clean
+- **Timestamp:** 2026-09-15T12:00:00Z
 
 ### 2026-09-14T21:45:00Z — Cloudflare-only migration foundation (D1/R2/KV)
 
