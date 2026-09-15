@@ -1,4 +1,9 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-15 (Apple OAuth PR pending deploy).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-15 (Oura D1 sync PR #41).
+
+**Recent (2026-09-15): Oura biometrics on Cloudflare D1.** PR #41 ports full
+`supabase/functions/oura-sync` field mapping into `src/lib/cloudflare/edge/oura-sync.ts`.
+After deploy with `DATA_BACKEND=cloudflare`: reconnect Oura if token refresh fails,
+then pull-to-refresh on Today or hourly cron `/api/public/cron/oura-sync-all`.
 
 **Recent (2026-09-15): Apple + Google OAuth on Cloudflare auth.** Worker routes:
 `GET /api/auth/oauth/{google,apple}`, `POST /api/auth/oauth/{google,apple}/callback`,

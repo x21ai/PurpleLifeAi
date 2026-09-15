@@ -9,6 +9,12 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-15 Oura biometrics on Cloudflare D1 (PR #41):** Draft PR ports full
+`syncRange` from Supabase `oura-sync` into `src/lib/cloudflare/edge/oura-sync.ts`.
+Cron `/api/public/cron/oura-sync-all` and edge invoke now write `biometrics`
+rows (`source=oura`). After deploy: reconnect Oura if refresh fails, then
+pull-to-refresh or wait for hourly cron.
+
 **2026-09-15 Apple OAuth on Cloudflare auth path (merged):** PR #40 squash-merged to `main`
 @ `ef98f7d9`. Sign in with Apple + Google on Cloudflare auth path; deploy pending
 (operator-owned).
@@ -56,6 +62,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-15T18:30:00Z — Oura biometrics on Cloudflare D1 (PR #41)
+
+- **Requested:** Port full Oura incremental sync from Supabase edge function to Cloudflare D1 path so cron and edge invoke persist `biometrics`.
+- **Done:** Rewrote `src/lib/cloudflare/edge/oura-sync.ts` with `syncRange`: multi-endpoint Oura v2 fetch, stress score mapping, merge-with-existing-day, delete-and-insert biometrics; aligned cron interval gating (manual skip, 3-day window). PR #41 opened.
+- **Issues:** Exchange/backfill/config actions on CF edge invoke still route through incremental-only handler (pre-existing); live QA requires deploy with `DATA_BACKEND=cloudflare`.
+- **Stand / next:** Merge PR #41, deploy Worker, verify Oura pull-to-refresh writes biometrics.
+- **Who / where:** cursor-agent · cloud VM · `cursor/oura-sync-biometrics-d1-3dfe` @ `ffc5f984`
+- **Evidence:** `./node_modules/.bin/tsc --noEmit` exit 0; PR https://github.com/x21ai/PurpleLifeAi/pull/41
+- **Timestamp:** 2026-09-15T18:30:00Z
 
 ### 2026-09-15T16:42:00Z — PR #40 merged (Apple OAuth)
 
