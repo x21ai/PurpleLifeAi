@@ -9,6 +9,12 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-15 Cloudflare go-live attempt (blocked on credentials):** PR #39 merged to `main`
+(`2276e897`). Deploy **not** run: `DOPPLER_TOKEN` invalid in cloud VM; no
+`CLOUDFLARE_API_TOKEN`; wrangler unauthenticated. Operator secrets + tester password
+generated at `/opt/cursor/artifacts/cloudflare-tester-cutover-operator.txt` (600).
+Production URL unchanged: https://www.purplelife.org (still Supabase backend until deploy).
+
 **2026-09-15 Cloudflare tester cutover (PR #39):** Deploy path is Cloudflare-primary:
 Supabase-compatible client shim (D1/R2/JWT), `/api/data/query`, storage routes, Google OAuth,
 tester password admin route, `bun run build:prod` bakes `VITE_DATA_BACKEND=cloudflare`.
@@ -46,6 +52,20 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-15T11:50:00Z — Go-live deploy blocked (credentials)
+
+- **Requested:** Merge PR #39, deploy Worker with Cloudflare-primary config, set tester passwords.
+- **Done:** Verified PR #39 closed+merged (`2276e897` on `origin/main`); generated
+  `AUTH_JWT_SECRET`, `IMPORT_ADMIN_SECRET`, tester shared password in
+  `/opt/cursor/artifacts/cloudflare-tester-cutover-operator.txt`; wrangler 4.105 via bunx available.
+- **Issues:** Deploy not executed — `DOPPLER_TOKEN` → "Invalid Auth token"; no
+  `CLOUDFLARE_API_TOKEN` in env; GitHub workflow_dispatch 403; local `bun run build` fails
+  entities/cheerio on this VM (pre-existing override). Tester passwords not set (needs live deploy).
+- **Stand / next:** Operator on box with Doppler or `CLOUDFLARE_API_TOKEN`: run commands in artifact file.
+- **Who / where:** cursor-agent · cloud VM · `main` @ `2276e897`
+- **Evidence:** `doppler secrets` invalid; `wrangler whoami` not authenticated; PR API merged=true
+- **Timestamp:** 2026-09-15T11:50:00Z
 
 ### 2026-09-15T12:00:00Z — Cloudflare-primary runtime for testers (PR #39)
 
