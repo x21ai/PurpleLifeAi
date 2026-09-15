@@ -1,4 +1,5 @@
 import { d1All, d1First, d1Run } from "../d1/client";
+import { chunkArray, D1_MAX_IN_BINDINGS } from "./in-batch";
 import { parseOrFilter, serializeBool, type ParsedOrClause } from "./filter-parser";
 
 type Filter =
@@ -122,13 +123,48 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     return this;
   }
 
-  private buildWhere(params: unknown[]): string {
+  private oversizedInFilter(
+    filters: Filter[],
+  ): { index: number; col: string; val: unknown[] } | null {
+    let pick: { index: number; col: string; val: unknown[] } | null = null;
+    filters.forEach((f, index) => {
+      if (f.op !== "in") return;
+      const val = f.val as unknown[];
+      if (val.length <= D1_MAX_IN_BINDINGS) return;
+      if (!pick || val.length > pick.val.length) pick = { index, col: f.col, val };
+    });
+    return pick;
+  }
+
+  private sortMergedRows(rows: Record<string, unknown>[]): Record<string, unknown>[] {
+    if (!this.orderBy.length) return rows;
+    const sorted = [...rows];
+    sorted.sort((a, b) => {
+      for (const o of this.orderBy) {
+        const av = a[o.col];
+        const bv = b[o.col];
+        if (av === bv) continue;
+        if (av == null) return o.ascending ? 1 : -1;
+        if (bv == null) return o.ascending ? -1 : 1;
+        const cmp = av < bv ? -1 : 1;
+        return o.ascending ? cmp : -cmp;
+      }
+      return 0;
+    });
+    return sorted;
+  }
+
+  private buildWhere(
+    params: unknown[],
+    filters: Filter[] = this.filters,
+    orGroups: ParsedOrClause[][] = this.orGroups,
+  ): string {
     const clauses: string[] = [];
     if (this.userScopeCol && this.userScopeVal) {
       clauses.push(`${this.userScopeCol} = ?`);
       params.push(this.userScopeVal);
     }
-    for (const f of this.filters) {
+    for (const f of filters) {
       if (f.op === "eq") {
         clauses.push(`${f.col} = ?`);
         params.push(serializeBool(f.val));
@@ -156,7 +192,7 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
         clauses.push(`${f.col} IS NULL`);
       }
     }
-    for (const group of this.orGroups) {
+    for (const group of orGroups) {
       const parts: string[] = [];
       for (const c of group) {
         if (c.op === "eq") {
@@ -257,8 +293,48 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     error: Error | null;
     count?: number | null;
   }> {
+    const largeIn = this.oversizedInFilter(this.filters);
+    if (largeIn) {
+      return this.executeSelectInBatches(largeIn);
+    }
+    return this.executeSelectOnce(this.filters, this.orGroups);
+  }
+
+  private async executeSelectInBatches(largeIn: {
+    index: number;
+    col: string;
+    val: unknown[];
+  }): Promise<{ data: T[] | null; error: Error | null; count?: number | null }> {
+    const otherFilters = this.filters.filter((_, i) => i !== largeIn.index);
+    let merged: Record<string, unknown>[] = [];
+    let totalCount = 0;
+
+    for (const chunk of chunkArray(largeIn.val, D1_MAX_IN_BINDINGS)) {
+      const batchFilters: Filter[] = [...otherFilters, { op: "in", col: largeIn.col, val: chunk }];
+      const result = await this.executeSelectOnce(batchFilters, this.orGroups);
+      if (result.error) return { data: null, error: result.error };
+      if (this.countHead && this.countExact) {
+        totalCount += result.count ?? 0;
+      } else {
+        merged.push(...((result.data as Record<string, unknown>[] | null) ?? []));
+      }
+    }
+
+    if (this.countHead && this.countExact) {
+      return { data: null, error: null, count: totalCount };
+    }
+
+    merged = this.sortMergedRows(merged);
+    if (this.limitN != null) merged = merged.slice(0, this.limitN);
+    return { data: merged.map(parseRow) as T[], error: null };
+  }
+
+  private async executeSelectOnce(
+    filters: Filter[],
+    orGroups: ParsedOrClause[][],
+  ): Promise<{ data: T[] | null; error: Error | null; count?: number | null }> {
     const params: unknown[] = [];
-    const where = this.buildWhere(params);
+    const where = this.buildWhere(params, filters, orGroups);
 
     if (this.countHead && this.countExact) {
       const row = await d1First<{ cnt: number }>(
