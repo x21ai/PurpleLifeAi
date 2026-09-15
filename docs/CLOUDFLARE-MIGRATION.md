@@ -22,7 +22,9 @@ Bindings are declared in `wrangler.jsonc` (dev/build) and `wrangler.deploy.jsonc
 | `VITE_DATA_BACKEND` | same | from build | **`cloudflare`** via `bun run build:prod` |
 | `AUTH_JWT_SECRET` | random 32+ bytes | required when cloudflare | required |
 | `IMPORT_ADMIN_SECRET` | random | admin import + tester passwords | set then rotate |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | OAuth | optional | recommended |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth | optional | recommended |
+| `APPLE_CLIENT_ID` / `APPLE_CLIENT_SECRET` | Apple Sign In (Services ID + JWT secret) | optional | recommended |
+| `PUBLIC_SITE_URL` | OAuth redirect origin (e.g. `https://www.purplelife.org`) | optional | recommended |
 
 **Tester cutover (2026-09):** D1 + R2 import complete on POS Ai. Deploy with `DATA_BACKEND=cloudflare` and `bun run build:prod` (sets `VITE_DATA_BACKEND=cloudflare`). Rollback: `DATA_BACKEND=supabase` + `bun run build:prod:supabase`. See `docs/CLOUDFLARE-TESTER-CHECKLIST.md`.
 

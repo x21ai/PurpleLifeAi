@@ -1,9 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { isCloudflareBackend } from "@/lib/cloudflare/data-backend";
 import { setRequestBindings, getBindings } from "@/lib/cloudflare/bindings";
-import { d1First, d1Run } from "@/lib/cloudflare/d1/client";
-import { signJwt } from "@/lib/cloudflare/auth/jwt";
-import { importAuthUser } from "@/lib/cloudflare/auth/service";
+import { completeOAuthSignIn } from "@/lib/cloudflare/auth/oauth-complete";
 
 export const Route = createFileRoute("/api/auth/oauth/google/callback")({
   server: {
@@ -62,51 +60,22 @@ export const Route = createFileRoute("/api/auth/oauth/google/callback")({
           verified_email?: boolean;
         };
 
-        const email = googleUser.email?.toLowerCase();
+        const email = googleUser.email?.toLowerCase() ?? null;
         if (!email) return Response.json({ error: "Email required" }, { status: 400 });
 
-        let user = await d1First<{ id: string; email: string }>(
-          `SELECT u.id, u.email FROM auth_users u
-           LEFT JOIN auth_identities i ON i.user_id = u.id
-           WHERE u.email = ? OR (i.provider = 'google' AND i.provider_user_id = ?)
-           LIMIT 1`,
+        const result = await completeOAuthSignIn({
+          provider: "google",
+          providerUserId: googleUser.id,
           email,
-          googleUser.id,
-        );
+          emailVerified: googleUser.verified_email,
+          identityData: googleUser,
+        });
 
-        if (!user) {
-          const id = crypto.randomUUID();
-          await importAuthUser({
-            id,
-            email,
-            email_confirmed_at: googleUser.verified_email ? new Date().toISOString() : null,
-          });
-          user = { id, email };
+        if ("error" in result) {
+          return Response.json({ error: result.error }, { status: result.status });
         }
 
-        await d1Run(
-          `INSERT INTO auth_identities (id, user_id, provider, provider_user_id, identity_data, created_at, updated_at)
-           VALUES (?, ?, 'google', ?, ?, datetime('now'), datetime('now'))
-           ON CONFLICT(provider, provider_user_id) DO UPDATE SET user_id = excluded.user_id, updated_at = datetime('now')`,
-          crypto.randomUUID(),
-          user.id,
-          googleUser.id,
-          JSON.stringify(googleUser),
-        );
-
-        const secret = process.env.AUTH_JWT_SECRET;
-        if (!secret) return Response.json({ error: "Auth not configured" }, { status: 500 });
-        const accessToken = await signJwt(secret, {
-          sub: user.id,
-          email: user.email,
-          expSeconds: 3600,
-        });
-
-        return Response.json({
-          access_token: accessToken,
-          expires_in: 3600,
-          user: { id: user.id, email: user.email },
-        });
+        return Response.json(result);
       },
     },
   },

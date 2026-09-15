@@ -37,6 +37,10 @@ export type PurpleWorkerBindings = {
   FLUTTER_WEB_CUTOVER?: string;
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
+  /** Apple Services ID (e.g. org.purplelife.web) */
+  APPLE_CLIENT_ID?: string;
+  /** Apple client secret JWT (generated from .p8 key; rotate per Apple docs) */
+  APPLE_CLIENT_SECRET?: string;
   IMPORT_ADMIN_SECRET?: string;
 };
 
@@ -62,6 +66,8 @@ export function getWorkerBindings(env?: unknown): Partial<PurpleWorkerBindings> 
     OPENAI_API_KEY: e.OPENAI_API_KEY ?? process.env.OPENAI_API_KEY,
     GOOGLE_CLIENT_ID: e.GOOGLE_CLIENT_ID ?? process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: e.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_CLIENT_SECRET,
+    APPLE_CLIENT_ID: e.APPLE_CLIENT_ID ?? process.env.APPLE_CLIENT_ID,
+    APPLE_CLIENT_SECRET: e.APPLE_CLIENT_SECRET ?? process.env.APPLE_CLIENT_SECRET,
     IMPORT_ADMIN_SECRET: e.IMPORT_ADMIN_SECRET ?? process.env.IMPORT_ADMIN_SECRET,
   };
 }

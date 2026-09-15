@@ -16,7 +16,9 @@ Production target: **100% Cloudflare** (`DATA_BACKEND=cloudflare`) with Supabase
 #    DATA_BACKEND=cloudflare
 #    AUTH_JWT_SECRET=<random 32+ bytes>
 #    IMPORT_ADMIN_SECRET=<random>  # remove after tester passwords set
-#    GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET  # optional OAuth
+#    GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET  # Google OAuth
+#    APPLE_CLIENT_ID / APPLE_CLIENT_SECRET    # Apple Sign In (Services ID + JWT secret)
+#    PUBLIC_SITE_URL=https://www.purplelife.org
 
 # 2. Build with Cloudflare client flag baked in
 bun run build:prod
@@ -39,7 +41,8 @@ IMPORT_ADMIN_SECRET=... PUBLIC_SITE_URL=https://www.purplelife.org \
 
 Sign in at `/sign-in` with email + password after operator runs `set-tester-passwords.mjs`.
 
-Google sign-in works when `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` are set on the Worker.
+Google and Apple sign-in work when the matching OAuth secrets are set on the Worker.
+Redirect URIs must be registered in each provider console (see PR tester notes).
 
 ## What to test (core flows)
 

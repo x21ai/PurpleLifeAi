@@ -122,6 +122,7 @@ import { Route as ApiHealthWhoopSyncRouteImport } from './routes/api/health/whoo
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
 import { Route as ApiStorageObjectRouteImport } from './routes/api/storage/object'
 import { Route as ApiStorageUploadRouteImport } from './routes/api/storage/upload'
+import { Route as OauthAppleCallbackRouteImport } from './routes/oauth.apple.callback'
 import { Route as OauthGoogleCallbackRouteImport } from './routes/oauth.google.callback'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
 import { Route as OauthWhoopCallbackRouteImport } from './routes/oauth.whoop.callback'
@@ -147,6 +148,7 @@ import { Route as ApiPublicCronWhoopSyncAllRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksAppleHealthRouteImport } from './routes/api/public/hooks/apple-health'
 import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
 import { Route as AppCareOwnerIdReportsReportIdRouteImport } from './routes/_app/care.$ownerId.reports.$reportId'
+import { Route as ApiAuthOauthAppleCallbackRouteImport } from './routes/api/auth/oauth/apple/callback'
 import { Route as ApiAuthOauthGoogleCallbackRouteImport } from './routes/api/auth/oauth/google/callback'
 
 const IndexRoute = IndexRouteImport.update({
@@ -717,6 +719,11 @@ const ApiStorageUploadRoute = ApiStorageUploadRouteImport.update({
   path: '/api/storage/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OauthAppleCallbackRoute = OauthAppleCallbackRouteImport.update({
+  id: '/oauth/apple/callback',
+  path: '/oauth/apple/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OauthGoogleCallbackRoute = OauthGoogleCallbackRouteImport.update({
   id: '/oauth/google/callback',
   path: '/oauth/google/callback',
@@ -858,6 +865,12 @@ const AppCareOwnerIdReportsReportIdRoute =
     path: '/reports/$reportId',
     getParentRoute: () => AppCareOwnerIdRoute,
   } as any)
+const ApiAuthOauthAppleCallbackRoute =
+  ApiAuthOauthAppleCallbackRouteImport.update({
+    id: '/api/auth/oauth/apple/callback',
+    path: '/api/auth/oauth/apple/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAuthOauthGoogleCallbackRoute =
   ApiAuthOauthGoogleCallbackRouteImport.update({
     id: '/api/auth/oauth/google/callback',
@@ -974,6 +987,7 @@ export interface FileRoutesByFullPath {
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/api/storage/object': typeof ApiStorageObjectRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
+  '/oauth/apple/callback': typeof OauthAppleCallbackRoute
   '/oauth/google/callback': typeof OauthGoogleCallbackRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
@@ -1003,6 +1017,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/apple-health': typeof ApiPublicHooksAppleHealthRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
   '/care/$ownerId/reports/$reportId': typeof AppCareOwnerIdReportsReportIdRoute
+  '/api/auth/oauth/apple/callback': typeof ApiAuthOauthAppleCallbackRoute
   '/api/auth/oauth/google/callback': typeof ApiAuthOauthGoogleCallbackRoute
 }
 export interface FileRoutesByTo {
@@ -1113,6 +1128,7 @@ export interface FileRoutesByTo {
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/api/storage/object': typeof ApiStorageObjectRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
+  '/oauth/apple/callback': typeof OauthAppleCallbackRoute
   '/oauth/google/callback': typeof OauthGoogleCallbackRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
@@ -1142,6 +1158,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/apple-health': typeof ApiPublicHooksAppleHealthRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
   '/care/$ownerId/reports/$reportId': typeof AppCareOwnerIdReportsReportIdRoute
+  '/api/auth/oauth/apple/callback': typeof ApiAuthOauthAppleCallbackRoute
   '/api/auth/oauth/google/callback': typeof ApiAuthOauthGoogleCallbackRoute
 }
 export interface FileRoutesById {
@@ -1255,6 +1272,7 @@ export interface FileRoutesById {
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/api/storage/object': typeof ApiStorageObjectRoute
   '/api/storage/upload': typeof ApiStorageUploadRoute
+  '/oauth/apple/callback': typeof OauthAppleCallbackRoute
   '/oauth/google/callback': typeof OauthGoogleCallbackRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
@@ -1284,6 +1302,7 @@ export interface FileRoutesById {
   '/api/public/hooks/apple-health': typeof ApiPublicHooksAppleHealthRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
   '/_app/care/$ownerId/reports/$reportId': typeof AppCareOwnerIdReportsReportIdRoute
+  '/api/auth/oauth/apple/callback': typeof ApiAuthOauthAppleCallbackRoute
   '/api/auth/oauth/google/callback': typeof ApiAuthOauthGoogleCallbackRoute
 }
 export interface FileRouteTypes {
@@ -1397,6 +1416,7 @@ export interface FileRouteTypes {
     | '/api/public/stripe-webhook'
     | '/api/storage/object'
     | '/api/storage/upload'
+    | '/oauth/apple/callback'
     | '/oauth/google/callback'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
@@ -1426,6 +1446,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/apple-health'
     | '/api/public/hooks/risk-forecaster'
     | '/care/$ownerId/reports/$reportId'
+    | '/api/auth/oauth/apple/callback'
     | '/api/auth/oauth/google/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1536,6 +1557,7 @@ export interface FileRouteTypes {
     | '/api/public/stripe-webhook'
     | '/api/storage/object'
     | '/api/storage/upload'
+    | '/oauth/apple/callback'
     | '/oauth/google/callback'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
@@ -1565,6 +1587,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/apple-health'
     | '/api/public/hooks/risk-forecaster'
     | '/care/$ownerId/reports/$reportId'
+    | '/api/auth/oauth/apple/callback'
     | '/api/auth/oauth/google/callback'
   id:
     | '__root__'
@@ -1677,6 +1700,7 @@ export interface FileRouteTypes {
     | '/api/public/stripe-webhook'
     | '/api/storage/object'
     | '/api/storage/upload'
+    | '/oauth/apple/callback'
     | '/oauth/google/callback'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
@@ -1706,6 +1730,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/apple-health'
     | '/api/public/hooks/risk-forecaster'
     | '/_app/care/$ownerId/reports/$reportId'
+    | '/api/auth/oauth/apple/callback'
     | '/api/auth/oauth/google/callback'
   fileRoutesById: FileRoutesById
 }
@@ -1766,6 +1791,7 @@ export interface RootRouteChildren {
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   ApiStorageObjectRoute: typeof ApiStorageObjectRoute
   ApiStorageUploadRoute: typeof ApiStorageUploadRoute
+  OauthAppleCallbackRoute: typeof OauthAppleCallbackRoute
   OauthGoogleCallbackRoute: typeof OauthGoogleCallbackRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   OauthWhoopCallbackRoute: typeof OauthWhoopCallbackRoute
@@ -1788,6 +1814,7 @@ export interface RootRouteChildren {
   ApiPublicCronWhoopSyncAllRoute: typeof ApiPublicCronWhoopSyncAllRoute
   ApiPublicHooksAppleHealthRoute: typeof ApiPublicHooksAppleHealthRoute
   ApiPublicHooksRiskForecasterRoute: typeof ApiPublicHooksRiskForecasterRoute
+  ApiAuthOauthAppleCallbackRoute: typeof ApiAuthOauthAppleCallbackRoute
   ApiAuthOauthGoogleCallbackRoute: typeof ApiAuthOauthGoogleCallbackRoute
 }
 
@@ -2584,6 +2611,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStorageUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/oauth/apple/callback': {
+      id: '/oauth/apple/callback'
+      path: '/oauth/apple/callback'
+      fullPath: '/oauth/apple/callback'
+      preLoaderRoute: typeof OauthAppleCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/oauth/google/callback': {
       id: '/oauth/google/callback'
       path: '/oauth/google/callback'
@@ -2758,6 +2792,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/care/$ownerId/reports/$reportId'
       preLoaderRoute: typeof AppCareOwnerIdReportsReportIdRouteImport
       parentRoute: typeof AppCareOwnerIdRoute
+    }
+    '/api/auth/oauth/apple/callback': {
+      id: '/api/auth/oauth/apple/callback'
+      path: '/api/auth/oauth/apple/callback'
+      fullPath: '/api/auth/oauth/apple/callback'
+      preLoaderRoute: typeof ApiAuthOauthAppleCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/auth/oauth/google/callback': {
       id: '/api/auth/oauth/google/callback'
@@ -3023,6 +3064,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   ApiStorageObjectRoute: ApiStorageObjectRoute,
   ApiStorageUploadRoute: ApiStorageUploadRoute,
+  OauthAppleCallbackRoute: OauthAppleCallbackRoute,
   OauthGoogleCallbackRoute: OauthGoogleCallbackRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   OauthWhoopCallbackRoute: OauthWhoopCallbackRoute,
@@ -3046,6 +3088,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronWhoopSyncAllRoute: ApiPublicCronWhoopSyncAllRoute,
   ApiPublicHooksAppleHealthRoute: ApiPublicHooksAppleHealthRoute,
   ApiPublicHooksRiskForecasterRoute: ApiPublicHooksRiskForecasterRoute,
+  ApiAuthOauthAppleCallbackRoute: ApiAuthOauthAppleCallbackRoute,
   ApiAuthOauthGoogleCallbackRoute: ApiAuthOauthGoogleCallbackRoute,
 }
 export const routeTree = rootRouteImport

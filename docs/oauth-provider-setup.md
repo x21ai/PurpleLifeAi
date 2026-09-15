@@ -57,7 +57,34 @@ Keep both redirect URIs registered: the branded one is what the client uses, the
 
 ---
 
+## Cloudflare backend (`DATA_BACKEND=cloudflare`)
+
+When production runs on Workers JWT + D1 (not Supabase Auth), social sign-in uses
+`/api/auth/oauth/{google,apple}` and callback pages at `/oauth/{google,apple}/callback`.
+
+Worker secrets (Doppler `cursor-cloudflare` / `prd_cloudlfare`):
+
+| Secret | Purpose |
+|--------|---------|
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth web client |
+| `APPLE_CLIENT_ID` | Apple Services ID (prod: `org.purplelife.web`) |
+| `APPLE_CLIENT_SECRET` | JWT client secret (same format Supabase used; rotate with Team ID + Key ID + `.p8`) |
+| `PUBLIC_SITE_URL` | Default redirect origin (`https://www.purplelife.org`) |
+
+**Redirect URIs to register (character-for-character):**
+
+| Provider | Console | Redirect URI |
+|----------|---------|--------------|
+| Google | [Cloud Console](https://console.cloud.google.com/apis/credentials) | `https://www.purplelife.org/oauth/google/callback` |
+| Google | same | `https://purplelife.org/oauth/google/callback` (apex, optional) |
+| Apple | [Services ID → Sign in with Apple → Web](https://developer.apple.com/account/resources/identifiers/list/serviceId) | `https://www.purplelife.org/oauth/apple/callback` |
+| Apple | same | `https://purplelife.org/oauth/apple/callback` (apex, optional) |
+
+Supabase callback URLs above remain for rollback (`DATA_BACKEND=supabase`).
+
+---
+
 ## Related
 
 - PR #1 merged auth UI for Apple + Google above email.
-- Provider secrets live only in Supabase Dashboard, not in the repo.
+- Provider secrets live in Supabase Dashboard (Supabase path) or Worker secrets (Cloudflare path), not in the repo.
