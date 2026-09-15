@@ -67,7 +67,24 @@ Client invoke helper: `src/lib/cloudflare/invoke-edge.ts` (Supabase `functions.i
 cloudflare/migrations/
   0001_auth.sql          auth_users, auth_identities, refresh tokens
   0002_core_schema.sql   67 public tables (generated from import.sh order)
+  0003_today_vitals.sql  health_narratives + admin_messages typed columns
 ```
+
+**Production D1 (zone account):** database `purplelifeai`, id `8d0be2b3-84ec-4581-86f4-6b372ec1d5d7`.
+After deploying Worker code from this PR, apply pending migrations on remote D1:
+
+```bash
+# All pending migrations (preferred)
+./scripts/cloudflare/apply-d1-migrations.sh --remote
+
+# Or apply 0003 only (re-run safe except duplicate ALTER COLUMN errors)
+bunx wrangler d1 execute purplelifeai --remote --file=cloudflare/migrations/0003_today_vitals.sql
+```
+
+`0003_today_vitals.sql` creates `health_narratives` (`user_id`, `day`, `narrative`, `created_at`,
+PK `user_id+day`, matches Postgres/app) and adds `subject`, `body`, `is_broadcast`, `recipient_id`,
+`sender_id` to `admin_messages`. Without this migration, Today client load errors on missing
+`health_narratives` and `.or()` on admin broadcast queries.
 
 Regenerate core schema after table list changes:
 
