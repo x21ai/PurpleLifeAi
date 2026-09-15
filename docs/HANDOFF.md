@@ -9,12 +9,9 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-**2026-09-15 Apple OAuth on Cloudflare auth path (PR pending):** Implements Sign in with Apple
-end-to-end for `DATA_BACKEND=cloudflare`: `/api/auth/oauth/apple` start redirect,
-`/oauth/apple/callback` client page, `/api/auth/oauth/apple/callback` token exchange,
-D1 `auth_users`/`auth_identities` linking, Workers JWT. Google path refactored to shared
-`oauth-complete` helper; `APPLE_*` + `PUBLIC_SITE_URL` in Worker env types. Redirect URIs
-documented in `docs/oauth-provider-setup.md`. Deploy + device QA pending.
+**2026-09-15 Apple OAuth on Cloudflare auth path (merged):** PR #40 squash-merged to `main`
+@ `ef98f7d9`. Sign in with Apple + Google on Cloudflare auth path; deploy pending
+(operator-owned).
 
 **2026-09-15 Cloudflare go-live attempt (blocked on credentials):** PR #39 merged to `main`
 (`2276e897`). Deploy **not** run: `DOPPLER_TOKEN` invalid in cloud VM; no
@@ -59,6 +56,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-15T16:42:00Z — PR #40 merged (Apple OAuth)
+
+- **Requested:** Merge PR #40 to `main`; no deploy.
+- **Done:** Marked ready for review; squash-merged PR #40 → `main` @ `ef98f7d980fc2642f17d0da74f68f8dc2196e2c5`.
+- **Issues:** None.
+- **Stand / next:** Operator deploy from `main`; verify OAuth redirects on www.purplelife.org.
+- **Who / where:** cursor-agent · cloud VM · `main` @ `ef98f7d9`
+- **Evidence:** `gh pr view 40` → MERGED, mergedAt 2026-09-15T16:42:22Z
+- **Timestamp:** 2026-09-15T16:42:00Z
 
 ### 2026-09-15T16:40:00Z — Apple OAuth for Cloudflare auth (PR)
 
