@@ -5,6 +5,8 @@ import { callAIForUser, tryParseJson } from "./ai-provider.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createHash } from "crypto";
 import { guessReportCategory } from "./report-categories";
+import { getDataBackend } from "@/lib/cloudflare/data-backend";
+import { d1All } from "@/lib/cloudflare/d1/client";
 
 const ProcessInput = z.object({
   reportId: z.string().uuid(),
@@ -44,7 +46,11 @@ type ExtractionResult = {
   patient_dob?: string | null;
 };
 
-function flagFor(v: number | null | undefined, low: number | null | undefined, high: number | null | undefined): string | null {
+function flagFor(
+  v: number | null | undefined,
+  low: number | null | undefined,
+  high: number | null | undefined,
+): string | null {
   if (v == null) return null;
   if (low != null && v < low) return "low";
   if (high != null && v > high) return "high";
@@ -70,10 +76,12 @@ async function isPlatformRuleEnabled(supabase: SupabaseClient, key: string): Pro
 export const setReportIdentityDecision = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      reportId: z.string().uuid(),
-      decision: z.enum(["approve", "reject"]),
-    }).parse(input),
+    z
+      .object({
+        reportId: z.string().uuid(),
+        decision: z.enum(["approve", "reject"]),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -114,10 +122,7 @@ export const setReportIdentityDecision = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     let aliasRemembered = false;
     if (doc?.patient_name) {
-      const nameNormalized = doc.patient_name
-        .toLowerCase()
-        .replace(/\s+/g, " ")
-        .trim();
+      const nameNormalized = doc.patient_name.toLowerCase().replace(/\s+/g, " ").trim();
       if (nameNormalized.length > 0) {
         let q = supabase
           .from("report_identity_aliases")
@@ -128,14 +133,12 @@ export const setReportIdentityDecision = createServerFn({ method: "POST" })
         q = doc.patient_dob ? q.eq("dob", doc.patient_dob) : q.is("dob", null);
         const { data: existingRows } = await q;
         if (!existingRows || existingRows.length === 0) {
-          const { error: aliasErr } = await supabase
-            .from("report_identity_aliases")
-            .insert({
-              user_id: doc.user_id,
-              name_normalized: nameNormalized,
-              dob: doc.patient_dob ?? null,
-              source: "approval",
-            });
+          const { error: aliasErr } = await supabase.from("report_identity_aliases").insert({
+            user_id: doc.user_id,
+            name_normalized: nameNormalized,
+            dob: doc.patient_dob ?? null,
+            source: "approval",
+          });
           if (!aliasErr) aliasRemembered = true;
         } else {
           aliasRemembered = true;
@@ -150,10 +153,21 @@ async function extractWithAI(
   userId: string,
   text: string,
   media: { base64: string; mime: string } | null,
-  dictionary: Array<{ metric_key: string; display_name: string; aliases: string[]; default_unit: string | null; default_ref_low: number | null; default_ref_high: number | null; panel?: string | null }>,
+  dictionary: Array<{
+    metric_key: string;
+    display_name: string;
+    aliases: string[];
+    default_unit: string | null;
+    default_ref_low: number | null;
+    default_ref_high: number | null;
+    panel?: string | null;
+  }>,
 ): Promise<ExtractionResult> {
   const dictPrompt = dictionary
-    .map((d) => `- ${d.metric_key} ("${d.display_name}", panel: ${d.panel ?? "other"}, aliases: ${d.aliases.join(", ") || "none"}, typical unit: ${d.default_unit ?? "?"})`)
+    .map(
+      (d) =>
+        `- ${d.metric_key} ("${d.display_name}", panel: ${d.panel ?? "other"}, aliases: ${d.aliases.join(", ") || "none"}, typical unit: ${d.default_unit ?? "?"})`,
+    )
     .join("\n");
 
   const systemPrompt = `You are a medical report extractor for a patient-facing health journal app.
@@ -189,9 +203,10 @@ Return ONLY a JSON object with this exact shape:
 
 Do NOT include diagnoses, treatments, prescriptions, or recommendations. Only extract what is on the page.`;
 
-  const prompt = text.trim().length > 0
-    ? `Extract from this lab report text:\n\n${text.slice(0, 30000)}`
-    : "Extract from this lab report file.";
+  const prompt =
+    text.trim().length > 0
+      ? `Extract from this lab report text:\n\n${text.slice(0, 30000)}`
+      : "Extract from this lab report file.";
 
   const responseText = await callAIForUser(supabase, userId, {
     system: systemPrompt,
@@ -204,28 +219,52 @@ Do NOT include diagnoses, treatments, prescriptions, or recommendations. Only ex
   return parsed ?? { report_type: null, report_date: null, metrics: [] };
 }
 
+async function metricCountsByReportId(
+  supabase: SupabaseClient,
+  userId: string,
+  reportIds: string[],
+): Promise<Record<string, number>> {
+  const counts: Record<string, number> = {};
+  if (reportIds.length === 0) return counts;
+
+  // D1/SQLite caps bind variables (~100). Avoid giant IN lists; one grouped query per user.
+  if (getDataBackend(process.env) === "cloudflare") {
+    const rows = await d1All<{ report_id: string; cnt: number }>(
+      `SELECT report_id, COUNT(*) AS cnt FROM report_metrics WHERE user_id = ? GROUP BY report_id`,
+      userId,
+    );
+    for (const row of rows) counts[row.report_id] = Number(row.cnt);
+    return counts;
+  }
+
+  const { data: rows, error } = await supabase
+    .from("report_metrics")
+    .select("report_id")
+    .in("report_id", reportIds);
+  if (error) throw new Error(error.message);
+  for (const m of rows ?? []) {
+    counts[m.report_id] = (counts[m.report_id] ?? 0) + 1;
+  }
+  return counts;
+}
+
 export const listReports = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("report_documents")
-      .select("id, title, report_type, report_category, report_date, file_mime, status, created_at, summary, panel_keys, error_message, identity_status, patient_name, patient_dob, duplicate_of")
+      .select(
+        "id, title, report_type, report_category, report_date, file_mime, status, created_at, summary, panel_keys, error_message, identity_status, patient_name, patient_dob, duplicate_of",
+      )
       .order("report_date", { ascending: false, nullsFirst: false });
     if (error) throw new Error(error.message);
     const reports = data ?? [];
-    // Cheap metric counts in one round-trip.
-    const ids = reports.map((r) => r.id);
-    let counts: Record<string, number> = {};
-    if (ids.length > 0) {
-      const { data: rows } = await supabase
-        .from("report_metrics")
-        .select("report_id")
-        .in("report_id", ids);
-      for (const m of rows ?? []) {
-        counts[m.report_id] = (counts[m.report_id] ?? 0) + 1;
-      }
-    }
+    const counts = await metricCountsByReportId(
+      supabase,
+      userId,
+      reports.map((r) => r.id),
+    );
     return {
       reports: reports.map((r) => ({ ...r, metric_count: counts[r.id] ?? 0 })),
     };
@@ -288,7 +327,9 @@ export const getMetricTrend = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data: rows, error } = await supabase
       .from("report_metrics")
-      .select("id, value, value_text, unit, reference_low, reference_high, flag, measured_at, report:report_documents(id, title, report_date)")
+      .select(
+        "id, value, value_text, unit, reference_low, reference_high, flag, measured_at, report:report_documents(id, title, report_date)",
+      )
       .eq("metric_key", data.metricKey)
       .order("measured_at", { ascending: true });
     if (error) throw new Error(error.message);
@@ -342,14 +383,18 @@ export const processReport = createServerFn({ method: "POST" })
 
       const { data: dict } = await supabase
         .from("metric_dictionary")
-        .select("metric_key, display_name, aliases, default_unit, default_ref_low, default_ref_high, panel");
+        .select(
+          "metric_key, display_name, aliases, default_unit, default_ref_low, default_ref_high, panel",
+        );
 
       const extraction = await extractWithAI(supabase, doc.user_id, text, media, dict ?? []);
 
       // Clear existing extracted metrics for this report (idempotent re-process)
       await supabase.from("report_metrics").delete().eq("report_id", doc.id);
 
-      const measuredAt = extraction.report_date ? new Date(extraction.report_date + "T12:00:00Z").toISOString() : new Date().toISOString();
+      const measuredAt = extraction.report_date
+        ? new Date(extraction.report_date + "T12:00:00Z").toISOString()
+        : new Date().toISOString();
 
       const dictByKey = new Map((dict ?? []).map((d) => [d.metric_key, d]));
       const rows = extraction.metrics
@@ -378,9 +423,7 @@ export const processReport = createServerFn({ method: "POST" })
       // same data even when the file path or filename differs.
       const hashBasis = [
         extraction.report_date ?? "",
-        ...rows
-          .map((r) => `${r.metric_key}=${r.value ?? r.value_text ?? ""}`)
-          .sort(),
+        ...rows.map((r) => `${r.metric_key}=${r.value ?? r.value_text ?? ""}`).sort(),
       ].join("|");
       const contentHash = createHash("sha256").update(hashBasis).digest("hex");
 
@@ -464,8 +507,12 @@ export const processReport = createServerFn({ method: "POST" })
           ocr_text: text.length > 0 ? text.slice(0, 50000) : null,
           summary: extraction.summary ?? null,
           panel_keys: Array.from(panelSet),
-          findings: extraction.findings && extraction.findings.length > 0 ? extraction.findings : null,
-          impressions: extraction.impressions && extraction.impressions.length > 0 ? extraction.impressions : null,
+          findings:
+            extraction.findings && extraction.findings.length > 0 ? extraction.findings : null,
+          impressions:
+            extraction.impressions && extraction.impressions.length > 0
+              ? extraction.impressions
+              : null,
           patient_name: extraction.patient_name ?? null,
           patient_dob: extraction.patient_dob ?? null,
         })
@@ -473,13 +520,20 @@ export const processReport = createServerFn({ method: "POST" })
 
       // 1) Identity verification: compare extracted patient_name / patient_dob with profile.
       // 2) Duplicate detection: same user + dob + report_date with overlapping metrics.
-      const ruleEnabled = await isPlatformRuleEnabled(supabase, "require_identity_match_for_metrics");
+      const ruleEnabled = await isPlatformRuleEnabled(
+        supabase,
+        "require_identity_match_for_metrics",
+      );
       const { data: profile } = await supabase
         .from("profiles")
         .select("first_name, last_name, date_of_birth")
         .eq("id", doc.user_id)
         .maybeSingle();
-      const profName = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ").trim().toLowerCase();
+      const profName = [profile?.first_name, profile?.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim()
+        .toLowerCase();
       const extName = (extraction.patient_name ?? "").trim().toLowerCase();
       const extDob = extraction.patient_dob ?? null;
       const profDob = (profile?.date_of_birth as string | null) ?? null;
@@ -533,7 +587,9 @@ export const processReport = createServerFn({ method: "POST" })
             .from("report_metrics")
             .select("metric_key, value")
             .eq("report_id", c.id);
-          const otherKeys = new Set((otherRows ?? []).map((r) => `${r.metric_key}=${r.value ?? ""}`));
+          const otherKeys = new Set(
+            (otherRows ?? []).map((r) => `${r.metric_key}=${r.value ?? ""}`),
+          );
           if (otherKeys.size === 0) continue;
           const mine = new Set(rows.map((r) => `${r.metric_key}=${r.value ?? ""}`));
           let overlap = 0;
@@ -660,10 +716,12 @@ export const getReportFileUrl = createServerFn({ method: "POST" })
 export const getReportShareUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      id: z.string().uuid(),
-      expiresInDays: z.number().int().min(1).max(30).optional(),
-    }).parse(input),
+    z
+      .object({
+        id: z.string().uuid(),
+        expiresInDays: z.number().int().min(1).max(30).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -698,9 +756,11 @@ export const getReportShareUrl = createServerFn({ method: "POST" })
 export const bulkDownloadReports = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      reportIds: z.array(z.string().uuid()).min(1).max(200),
-    }).parse(input),
+    z
+      .object({
+        reportIds: z.array(z.string().uuid()).min(1).max(200),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -709,7 +769,13 @@ export const bulkDownloadReports = createServerFn({ method: "POST" })
       .select("id, title, file_path, file_mime, report_date, created_at")
       .in("id", data.reportIds);
     if (error) throw new Error(error.message);
-    const items: Array<{ id: string; title: string; mime: string; url: string; suggestedName: string }> = [];
+    const items: Array<{
+      id: string;
+      title: string;
+      mime: string;
+      url: string;
+      suggestedName: string;
+    }> = [];
     for (const d of docs ?? []) {
       const { data: signed } = await supabase.storage
         .from("reports")
@@ -768,7 +834,9 @@ export async function summarizeReportForUser(
 ): Promise<{ ok: true; cached: boolean; summary: AiReportSummary }> {
   const { data: doc, error } = await supabase
     .from("report_documents")
-    .select("id, user_id, title, report_type, report_date, report_category, summary, findings, impressions, ai_summary, ai_summary_at")
+    .select(
+      "id, user_id, title, report_type, report_date, report_category, summary, findings, impressions, ai_summary, ai_summary_at",
+    )
     .eq("id", input.id)
     .maybeSingle();
   if (error || !doc) throw new Error("Report not found");
@@ -779,15 +847,18 @@ export async function summarizeReportForUser(
 
   const { data: metrics } = await supabase
     .from("report_metrics")
-    .select("metric_key, display_name, value, value_text, unit, reference_low, reference_high, flag")
+    .select(
+      "metric_key, display_name, value, value_text, unit, reference_low, reference_high, flag",
+    )
     .eq("report_id", doc.id);
 
   const metricLines = (metrics ?? [])
     .map((m) => {
       const v = m.value != null ? `${m.value}${m.unit ? ` ${m.unit}` : ""}` : (m.value_text ?? ",");
-      const range = m.reference_low != null && m.reference_high != null
-        ? ` (ref ${m.reference_low}–${m.reference_high}${m.unit ? ` ${m.unit}` : ""})`
-        : "";
+      const range =
+        m.reference_low != null && m.reference_high != null
+          ? ` (ref ${m.reference_low}–${m.reference_high}${m.unit ? ` ${m.unit}` : ""})`
+          : "";
       const flag = m.flag && m.flag !== "normal" ? ` [${m.flag.toUpperCase()}]` : "";
       return `- ${m.display_name ?? m.metric_key}: ${v}${range}${flag}`;
     })
@@ -840,13 +911,19 @@ Impressions: ${Array.isArray(doc.impressions) ? (doc.impressions as string[]).jo
   const cleaned: AiReportSummary = {
     headline: String(parsed.headline ?? "").slice(0, 200),
     explanation: String(parsed.explanation ?? "").slice(0, 2000),
-    flagged: Array.isArray(parsed.flagged) ? parsed.flagged.slice(0, 10).map((f) => ({
-      metric: String(f.metric ?? "").slice(0, 120),
-      value: String(f.value ?? "").slice(0, 80),
-      concern: String(f.concern ?? "").slice(0, 400),
-      severity: (["info", "watch", "attention"].includes(String(f.severity)) ? f.severity : "info") as "info" | "watch" | "attention",
-    })) : [],
-    questions: Array.isArray(parsed.questions) ? parsed.questions.slice(0, 3).map((q) => String(q).slice(0, 200)) : [],
+    flagged: Array.isArray(parsed.flagged)
+      ? parsed.flagged.slice(0, 10).map((f) => ({
+          metric: String(f.metric ?? "").slice(0, 120),
+          value: String(f.value ?? "").slice(0, 80),
+          concern: String(f.concern ?? "").slice(0, 400),
+          severity: (["info", "watch", "attention"].includes(String(f.severity))
+            ? f.severity
+            : "info") as "info" | "watch" | "attention",
+        }))
+      : [],
+    questions: Array.isArray(parsed.questions)
+      ? parsed.questions.slice(0, 3).map((q) => String(q).slice(0, 200))
+      : [],
   };
 
   await supabase
@@ -864,9 +941,13 @@ Impressions: ${Array.isArray(doc.impressions) ? (doc.impressions as string[]).jo
 export const summarizeReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      id: z.string().uuid(),
-      force: z.boolean().optional(),
-    }).parse(input),
+    z
+      .object({
+        id: z.string().uuid(),
+        force: z.boolean().optional(),
+      })
+      .parse(input),
   )
-  .handler(async ({ data, context }) => summarizeReportForUser(context.supabase, context.userId, data));
+  .handler(async ({ data, context }) =>
+    summarizeReportForUser(context.supabase, context.userId, data),
+  );
