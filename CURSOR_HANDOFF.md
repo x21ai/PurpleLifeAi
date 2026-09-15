@@ -1,4 +1,9 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-15 (Oura D1 sync PR #41).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-15 (Oura D1 merged @ 03ede232).
+
+**Recent (2026-09-15): Oura biometrics merged + deploy bundle.** PR #41 → `main` @
+`03ede232`. Deploy: `/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz`
+or GitHub Release `deploy-main-03ede232`. Reconnect Oura if token refresh fails;
+pull-to-refresh or hourly cron after deploy.
 
 **Recent (2026-09-15): Oura biometrics on Cloudflare D1.** PR #41 ports full
 `supabase/functions/oura-sync` field mapping into `src/lib/cloudflare/edge/oura-sync.ts`.

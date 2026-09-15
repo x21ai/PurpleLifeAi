@@ -9,6 +9,12 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-15 Oura biometrics on Cloudflare D1 (merged):** PR #41 squash-merged to `main`
+@ `03ede232`. Cron and edge invoke persist `biometrics` (`source=oura`). Deploy bundle:
+`/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz` and GitHub Release
+`deploy-main-03ede232`. After deploy: reconnect Oura if refresh fails, pull-to-refresh
+or hourly cron.
+
 **2026-09-15 Oura biometrics on Cloudflare D1 (PR #41):** Draft PR ports full
 `syncRange` from Supabase `oura-sync` into `src/lib/cloudflare/edge/oura-sync.ts`.
 Cron `/api/public/cron/oura-sync-all` and edge invoke now write `biometrics`
@@ -62,6 +68,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-15T18:28:00Z — PR #41 merged + deploy bundle (Oura D1)
+
+- **Requested:** Mark PR #41 ready, squash-merge to main, publish deploy tarball/release for production Oura fix.
+- **Done:** PR #41 marked ready and squash-merged via GitHub API → `main` @ `03ede232`. Tarball at `/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz`. GitHub Release `deploy-main-03ede232` with asset `purplelife-main-oura-fix-03ede232.tar.gz`.
+- **Issues:** Transient duplicate squash commit `6ead62a1` on main from local push before API merge; tip is `03ede232` only.
+- **Stand / next:** Operator deploy Worker from `main` @ `03ede232`; verify Oura biometrics after reconnect/sync.
+- **Who / where:** cursor-agent · cloud VM · `main` @ `03ede232`
+- **Evidence:** https://github.com/x21ai/PurpleLifeAi/releases/tag/deploy-main-03ede232
+- **Timestamp:** 2026-09-15T18:28:00Z
 
 ### 2026-09-15T18:30:00Z — Oura biometrics on Cloudflare D1 (PR #41)
 
