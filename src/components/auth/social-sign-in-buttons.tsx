@@ -2,6 +2,7 @@ import { useState } from "react";
 import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
 import { oauthRedirectUrl } from "@/lib/auth-oauth";
+import { isDesignPreviewClient } from "@/lib/design-preview";
 import { isLovablePreviewHost } from "@/lib/lovable-preview";
 import { isNativeApp } from "@/lib/native";
 import { nativeSignInWithOAuth } from "@/lib/native/oauth";
@@ -47,6 +48,15 @@ const providerLabels: Record<Provider, string> = {
 
 export function SocialSignInButtons({ helper }: { helper?: string } = {}) {
   const [busy, setBusy] = useState<Provider | null>(null);
+
+  if (isDesignPreviewClient()) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Social sign-in is disabled on the public design staging host. App pages load with an
+        automatic demo session.
+      </p>
+    );
+  }
 
   const handleOAuth = async (provider: Provider) => {
     setBusy(provider);

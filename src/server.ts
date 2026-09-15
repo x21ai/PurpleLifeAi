@@ -2,10 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
-import {
-  applyFlutterApiCors,
-  handleFlutterApiCorsPreflight,
-} from "./lib/flutter-api-cors";
+import { applyFlutterApiCors, handleFlutterApiCorsPreflight } from "./lib/flutter-api-cors";
 import {
   isFlutterAppPath,
   isFlutterStaticAsset,
@@ -16,6 +13,7 @@ import {
 } from "./lib/flutter-web-routing";
 import { setRequestBindings } from "./lib/cloudflare/bindings";
 import type { PurpleWorkerBindings } from "./lib/cloudflare/env";
+import { isDesignPreviewEnabled } from "./lib/design-preview";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -94,11 +92,28 @@ type CronEnv = {
 };
 
 type WorkerEnv = CronEnv &
-  Partial<Pick<PurpleWorkerBindings, "DB" | "STORAGE" | "CACHE" | "DATA_BACKEND" | "AUTH_JWT_SECRET">> & {
-  ASSETS?: AssetsBinding;
-  /** When "true" or "1", signed-in app paths serve Flutter web SPA from _flutter/index.html. */
-  FLUTTER_WEB_CUTOVER?: string;
-};
+  Partial<
+    Pick<
+      PurpleWorkerBindings,
+      "DB" | "STORAGE" | "CACHE" | "DATA_BACKEND" | "AUTH_JWT_SECRET" | "DESIGN_PREVIEW"
+    >
+  > & {
+    ASSETS?: AssetsBinding;
+    /** When "true" or "1", signed-in app paths serve Flutter web SPA from _flutter/index.html. */
+    FLUTTER_WEB_CUTOVER?: string;
+  };
+
+function withDesignPreviewHeaders(response: Response, env: WorkerEnv): Response {
+  if (!isDesignPreviewEnabled(env)) return response;
+  const headers = new Headers(response.headers);
+  headers.set("X-Purple-Design-Preview", "1");
+  headers.set("X-Robots-Tag", "noindex, nofollow");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
 
 // Prefer the self service binding; a plain fetch to our own hostname is a
 // same-zone subrequest back into this worker and is not reliable.
@@ -232,10 +247,7 @@ async function serveFlutterAsset(
   return response;
 }
 
-async function serveFlutterSpaFallback(
-  request: Request,
-  env: WorkerEnv,
-): Promise<Response | null> {
+async function serveFlutterSpaFallback(request: Request, env: WorkerEnv): Promise<Response | null> {
   const assets = env.ASSETS;
   if (!assets) return null;
 
@@ -312,7 +324,8 @@ export default {
 
       // Worker API routes and OAuth token exchange stay on TanStack handlers.
       if (pathname.startsWith("/api/") || pathname.startsWith("/oauth/")) {
-        return applyFlutterApiCors(request, await handleTanStackRequest(request, env, ctx));
+        const apiResponse = await handleTanStackRequest(request, env, ctx);
+        return applyFlutterApiCors(request, withDesignPreviewHeaders(apiResponse, workerEnv));
       }
 
       if (request.method === "GET") {
@@ -332,7 +345,8 @@ export default {
       }
 
       // Marketing and legacy TanStack _app/* SSR (default until FLUTTER_WEB_CUTOVER is on).
-      return applyFlutterApiCors(request, await handleTanStackRequest(request, env, ctx));
+      const pageResponse = await handleTanStackRequest(request, env, ctx);
+      return applyFlutterApiCors(request, withDesignPreviewHeaders(pageResponse, workerEnv));
     } catch (error) {
       console.error(error);
       return brandedErrorResponse();

@@ -1,4 +1,9 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-15 (Oura D1 merged @ 03ede232).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-15 (design preview staging PR).
+
+**Recent (2026-09-15): Design preview staging (Ploy).** Separate Worker `purplelife-design`
+(`wrangler.design.jsonc`, workers.dev). Auto JWT as `pmt@eigital.com` when
+`DESIGN_PREVIEW=1`. Deploy: `bun run deploy:design`. **Public PHI exposure** until
+`wrangler delete purplelife-design`. Runbook: `docs/DESIGN-PREVIEW-DEPLOY.md`.
 
 **Recent (2026-09-15): Oura biometrics merged + deploy bundle.** PR #41 → `main` @
 `03ede232`. Deploy: `/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz`

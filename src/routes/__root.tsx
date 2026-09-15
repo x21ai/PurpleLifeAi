@@ -28,6 +28,7 @@ import {
 import "@/i18n";
 import { hydrateLocale } from "@/i18n";
 import { isNativeApp } from "@/lib/native/capacitor";
+import { DesignPreviewBanner } from "@/components/design/design-preview-banner";
 
 // Loaded after the browser goes idle so service worker registration and the
 // Oura auto-sync never compete with first paint (and stay out of the entry chunk).
@@ -300,6 +301,7 @@ function RootComponent() {
         <ThemeProvider>
           <NativeAppProvider>
             <AuthProvider>
+              <DesignPreviewBanner />
               <NativeAppBootstrap />
               <Outlet />
               <Toaster />

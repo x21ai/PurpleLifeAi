@@ -9,6 +9,12 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-15 Design preview staging Worker (PR open):** Separate `purplelife-design`
+Worker (`wrangler.design.jsonc`) auto-authenticates as `pmt@eigital.com`
+(`bb160030-2ed6-45d7-8a5a-7f6f7879e9bb`) when `DESIGN_PREVIEW=1` +
+`VITE_DESIGN_PREVIEW=1`. Public workers.dev URL exposes live PHI until torn down.
+Runbook: `docs/DESIGN-PREVIEW-DEPLOY.md`. Prod `www.purplelife.org` unchanged.
+
 **2026-09-15 Oura biometrics on Cloudflare D1 (merged):** PR #41 squash-merged to `main`
 @ `03ede232`. Cron and edge invoke persist `biometrics` (`source=oura`). Deploy bundle:
 `/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz` and GitHub Release
@@ -68,6 +74,24 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-15T22:10:00Z — Public design staging Worker for Ploy (pmt auto-auth)
+
+- **Requested:** Temporary public design/staging deployment so Ploy can crawl marketing +
+  authenticated app pages without login; auto-session as real pmt account with full D1/R2
+  fidelity; separate Worker from prod; PHI warning documented.
+- **Done:** `wrangler.design.jsonc` (`purplelife-design`, workers.dev only, same D1/R2/KV,
+  no crons). `DESIGN_PREVIEW=1` + `VITE_DESIGN_PREVIEW=1` gates:
+  `/api/public/design-preview/session` mints JWT for pmt user; `_app` client bootstrap;
+  staging banner; OAuth blocked on design host. Scripts `build:design`, `deploy:design`.
+  Runbook `docs/DESIGN-PREVIEW-DEPLOY.md`.
+- **Issues:** Design Worker not deployed from cloud VM (no Doppler/Wrangler creds). Build
+  blocked locally by cheerio/entities vite config error (pre-existing env issue).
+- **Stand / next:** Operator runs `bun run deploy:design`, sets `PUBLIC_SITE_URL` + secrets,
+  shares workers.dev URL with Ploy; `wrangler delete purplelife-design` when done.
+- **Who / where:** cursor-agent · cloud VM · `cursor/design-preview-staging-3366`
+- **Evidence:** PR (design preview), `docs/DESIGN-PREVIEW-DEPLOY.md`
+- **Timestamp:** 2026-09-15T22:10:00Z
 
 ### 2026-09-15T18:28:00Z — PR #41 merged + deploy bundle (Oura D1)
 
