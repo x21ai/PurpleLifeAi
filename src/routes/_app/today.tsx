@@ -193,7 +193,7 @@ function TodayPage() {
   const load = useCallback(async () => {
     if (!userId) return;
     const since = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
-    const [b, f, p, msg, jc, hn] = await Promise.all([
+    const settled = await Promise.allSettled([
       supabase
         .from("biometrics")
         .select(
@@ -230,12 +230,31 @@ function TodayPage() {
         .order("created_at", { ascending: false })
         .limit(30),
     ]);
-    setBio((b.data as Bio | null) ?? null);
-    setForecast((f.data as Forecast | null) ?? null);
-    setHealthNarrative(pickHealthNarrative((hn.data as HealthNarrativeRow[] | null) ?? []));
-    setProfile((p.data as Profile | null) ?? null);
-    setAnnouncement((msg.data as AdminMessage | null) ?? null);
-    setJournalCount(jc.count ?? 0);
+
+    const unwrap = <T,>(index: number, label: string, fallback: T): T => {
+      const result = settled[index];
+      if (result.status === "rejected") {
+        console.warn(`[today] ${label} query rejected`, result.reason);
+        return fallback;
+      }
+      const value = result.value as { data?: unknown; count?: number | null; error?: Error | null };
+      if (value.error) {
+        console.warn(`[today] ${label} query error`, value.error);
+        return fallback;
+      }
+      return (value.data as T) ?? fallback;
+    };
+
+    setBio(unwrap(0, "biometrics", null));
+    setForecast(unwrap(1, "risk_forecasts", null));
+    setProfile(unwrap(2, "profiles", null));
+    setAnnouncement(unwrap(3, "admin_messages", null));
+    const jc = settled[4];
+    if (jc.status === "fulfilled") {
+      const row = jc.value as { count?: number | null; error?: Error | null };
+      setJournalCount(row.error ? 0 : (row.count ?? 0));
+    }
+    setHealthNarrative(pickHealthNarrative(unwrap(5, "health_narratives", [])));
   }, [userId]);
 
   useEffect(() => {
@@ -410,10 +429,7 @@ function TodayPage() {
           : format(selectedDate, "EEEE, MMMM d")}
       </p>
 
-      <h1
-        className="today-hero-title text-[32px] sm:text-[40px] mt-6"
-        suppressHydrationWarning
-      >
+      <h1 className="today-hero-title text-[32px] sm:text-[40px] mt-6" suppressHydrationWarning>
         {isToday ? (
           <>
             <span suppressHydrationWarning>{greeting}</span>
@@ -432,9 +448,7 @@ function TodayPage() {
 
       {(!isToday || !hasNarrative) && (
         <p className="today-lede mt-4 max-w-[600px] text-foreground/55">
-          {!isToday
-            ? `Here's how ${format(selectedDate, "EEEE, MMMM d")} went.`
-            : conditionPrompt}
+          {!isToday ? `Here's how ${format(selectedDate, "EEEE, MMMM d")} went.` : conditionPrompt}
         </p>
       )}
 
@@ -536,7 +550,9 @@ function TodayPage() {
 
       {hasNarrative && (
         <div className="mt-12">
-          <NarrativeBlock className="glass-card rounded-[20px] border-primary/10">{dailyNarrative}</NarrativeBlock>
+          <NarrativeBlock className="glass-card rounded-[20px] border-primary/10">
+            {dailyNarrative}
+          </NarrativeBlock>
         </div>
       )}
 

@@ -1,4 +1,10 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-15 (Oura D1 merged @ 03ede232).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-15 (Today/Vitals D1 UI fix PR).
+
+**Recent (2026-09-15): Today/Vitals Oura UI on Cloudflare D1 (PR #42).** D1 `.or()`,
+`.upsert(onConflict)`, count/head; Today `load()` fail-open; `getScoreSnapshot` day filter.
+Prod zone D1 already has `health_narratives` + typed `admin_messages` — **deploy Worker
+only** (no SQL). Fixes `getHealthNarrative` upsert + Today admin_messages `.or()` crash.
+Verify Devyn Today readiness/sleep ~91 after deploy.
 
 **Recent (2026-09-15): Oura biometrics merged + deploy bundle.** PR #41 → `main` @
 `03ede232`. Deploy: `/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz`

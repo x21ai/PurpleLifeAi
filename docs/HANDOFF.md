@@ -9,6 +9,10 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-15 Cloudflare D1 query fixes (PR #42):** `.or()`, `.upsert()`, IN batching
+(D1 bind cap), `listReports` metric counts via `GROUP BY` (fixes pmt 119-doc error).
+Prod zone D1 schema ready; **deploy Worker only**. Verify: pmt reports list, Devyn Today ~91.
+
 **2026-09-15 Oura biometrics on Cloudflare D1 (merged):** PR #41 squash-merged to `main`
 @ `03ede232`. Cron and edge invoke persist `biometrics` (`source=oura`). Deploy bundle:
 `/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz` and GitHub Release
@@ -68,6 +72,36 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-15T20:35:00Z — listReports D1 IN variable limit (PR #42)
+
+- **Requested:** Fix `listReports` `too many SQL variables` for pmt (~119 report_documents on live D1).
+- **Done:** `listReports` uses `GROUP BY report_id` on Cloudflare (1 bind param); `D1QueryBuilder` auto-batches oversized `.in()` (48/chunk) for bulk download and similar paths; `in-batch.ts`.
+- **Issues:** Deploy Worker from PR #42 to prod.
+- **Stand / next:** Merge + deploy; verify pmt@eigital.com reports page loads.
+- **Who / where:** cursor-agent · `cursor/oura-today-d1-fix-7c1f`
+- **Evidence:** eslint on changed files PASS
+- **Timestamp:** 2026-09-15T20:35:00Z
+
+### 2026-09-15T20:25:00Z — PR #42 upsert + prod D1 schema note
+
+- **Requested:** Add `.upsert()` for `getHealthNarrative`; confirm `.or()` on client builder; prod already has D1 tables.
+- **Done:** `D1QueryBuilder` + `ApiQueryBuilder` + `/api/data/query` `.upsert(row, { onConflict })` via SQLite `ON CONFLICT DO UPDATE`; `0003` trimmed to `health_narratives` CREATE IF NOT EXISTS only; docs note prod schema ready, deploy Worker without SQL.
+- **Issues:** PR #42 not deployed to prod yet (`.or()`/`.upsert()` live after deploy).
+- **Stand / next:** Merge PR #42, deploy Worker, Devyn verify Today + narrative.
+- **Who / where:** cursor-agent · cloud VM · `cursor/oura-today-d1-fix-7c1f`
+- **Evidence:** scoped eslint on changed files
+- **Timestamp:** 2026-09-15T20:25:00Z
+
+### 2026-09-15T20:15:00Z — Today/Vitals Oura UI D1 gaps (PR #42)
+
+- **Requested:** Fix remaining Cloudflare gaps so Today/Vitals show Oura end-to-end; open PR.
+- **Done:** Added `.or()`/`.is()`/count-head to query builders; `filter-parser.ts`; Today `load()` uses `Promise.allSettled`; `getScoreSnapshot` day filter via UTC date key.
+- **Issues:** Remote Worker deploy operator-owned.
+- **Stand / next:** See upsert follow-up above.
+- **Who / where:** cursor-agent · cloud VM · `cursor/oura-today-d1-fix-7c1f`
+- **Evidence:** scoped eslint PASS; em-dash check PASS
+- **Timestamp:** 2026-09-15T20:15:00Z
 
 ### 2026-09-15T18:28:00Z — PR #41 merged + deploy bundle (Oura D1)
 

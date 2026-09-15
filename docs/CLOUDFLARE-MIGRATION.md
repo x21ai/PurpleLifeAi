@@ -67,7 +67,23 @@ Client invoke helper: `src/lib/cloudflare/invoke-edge.ts` (Supabase `functions.i
 cloudflare/migrations/
   0001_auth.sql          auth_users, auth_identities, refresh tokens
   0002_core_schema.sql   67 public tables (generated from import.sh order)
+  0003_today_vitals.sql  health_narratives + admin_messages typed columns
 ```
+
+**Production D1 (zone account):** database `purplelifeai`, id `8d0be2b3-84ec-4581-86f4-6b372ec1d5d7`.
+
+**Prod schema (2026-09-15):** `health_narratives` and typed `admin_messages` already exist on
+zone D1. No SQL required before deploy if tables match app types. Worker deploy from PR #42
+adds D1 query `.or()`, `.upsert()`, and Today fail-open load.
+
+Optional idempotent migration (creates `health_narratives` only if missing):
+
+```bash
+bunx wrangler d1 execute purplelifeai --remote --file=cloudflare/migrations/0003_today_vitals.sql
+```
+
+`0003_today_vitals.sql` is `CREATE TABLE IF NOT EXISTS health_narratives` with columns
+`user_id`, `day`, `narrative`, `created_at`, PK `(user_id, day)`.
 
 Regenerate core schema after table list changes:
 

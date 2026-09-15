@@ -40,6 +40,13 @@ type ScoreRow = {
 
 const DAY_MS = 24 * 3600 * 1000;
 
+/** UTC calendar day from recorded_at (handles Z, +00:00, and date-only strings). */
+function dayKeyFromRecordedAt(recordedAt: string): string {
+  const d = new Date(recordedAt);
+  if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  return recordedAt.slice(0, 10);
+}
+
 function average(values: number[]): number | null {
   if (values.length === 0) return null;
   return Math.round(values.reduce((sum, v) => sum + v, 0) / values.length);
@@ -56,9 +63,6 @@ export const getScoreSnapshot = createServerFn({ method: "GET" })
     // When a specific day is requested, narrow the "latest" values to rows
     // whose recorded_at falls inside that UTC day. Trailing step averages
     // continue to use the rolling 30/60 window from today.
-    const dayStartIso = input.date ? `${input.date}T00:00:00.000Z` : null;
-    const dayEndIso = input.date ? `${input.date}T23:59:59.999Z` : null;
-
     const { data: rowData } = await supabase
       .from("biometrics")
       .select(
@@ -70,11 +74,8 @@ export const getScoreSnapshot = createServerFn({ method: "GET" })
       .limit(200);
 
     const rows = (rowData as ScoreRow[] | null) ?? [];
-    const dayRows = dayStartIso && dayEndIso
-      ? rows.filter((r) => {
-          const t = r.recorded_at;
-          return t >= dayStartIso && t <= dayEndIso;
-        })
+    const dayRows = input.date
+      ? rows.filter((r) => dayKeyFromRecordedAt(r.recorded_at) === input.date)
       : rows;
 
     const latest = <K extends keyof ScoreRow>(key: K): number | null => {
@@ -88,9 +89,7 @@ export const getScoreSnapshot = createServerFn({ method: "GET" })
     const now = Date.now();
     const stepsWithin = (days: number): number[] =>
       rows
-        .filter(
-          (r) => r.steps != null && now - new Date(r.recorded_at).getTime() <= days * DAY_MS,
-        )
+        .filter((r) => r.steps != null && now - new Date(r.recorded_at).getTime() <= days * DAY_MS)
         .map((r) => Number(r.steps));
 
     return {
@@ -162,7 +161,8 @@ export const getHealthNarrative = createServerFn({ method: "GET" })
       return { narrative: EMPTY_NARRATIVE, demo: true };
     }
 
-    const conditions = ((profile?.conditions as string[] | null) ?? []).join(", ") || "none recorded";
+    const conditions =
+      ((profile?.conditions as string[] | null) ?? []).join(", ") || "none recorded";
     const patternLines = cards.map((c) => `- ${c.title}: ${c.detail}`).join("\n");
     const recent = rows.slice(0, 14);
     const metricLines = recent
@@ -192,7 +192,9 @@ export const getHealthNarrative = createServerFn({ method: "GET" })
 
     let narrative: string;
     try {
-      narrative = (await callAIForUser(supabase, userId, { system, prompt, maxTokens: 220 })).trim();
+      narrative = (
+        await callAIForUser(supabase, userId, { system, prompt, maxTokens: 220 })
+      ).trim();
     } catch {
       // If the model is unavailable, fall back to connect guidance rather than
       // surfacing an error or fabricating a summary.
