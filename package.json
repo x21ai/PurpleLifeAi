@@ -8,7 +8,8 @@
     "prebuild": "node scripts/check-no-em-dash.mjs && node scripts/check-supabase-types.mjs",
     "check:supabase-types": "node scripts/check-supabase-types.mjs",
     "build": "bash scripts/with-app-build-env.sh vite build",
-    "build:prod": "doppler run --project cursor-cloudflare --config prd_cloudlfare -- bun run build",
+    "build:prod": "doppler run --project cursor-cloudflare --config prd_cloudlfare -- env VITE_DATA_BACKEND=cloudflare bun run build",
+    "build:prod:supabase": "doppler run --project cursor-cloudflare --config prd_cloudlfare -- env VITE_DATA_BACKEND=supabase bun run build",
     "build:prod:flutter-web": "bun run build:prod && bash scripts/flutter-web-build-prod.sh && bash scripts/merge-flutter-web-assets.sh",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
@@ -54,7 +55,8 @@
     "cf:d1:migrate:remote": "bash scripts/cloudflare/apply-d1-migrations.sh --remote",
     "cf:d1:schema": "node scripts/cloudflare/generate-d1-schema.mjs",
     "cf:d1:import": "node scripts/cloudflare/import-d1-from-csv.mjs",
-    "cf:r2:import": "node scripts/cloudflare/import-r2-from-manifest.mjs"
+    "cf:r2:import": "node scripts/cloudflare/import-r2-from-manifest.mjs",
+    "cf:set-tester-passwords": "node scripts/cloudflare/set-tester-passwords.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.82",

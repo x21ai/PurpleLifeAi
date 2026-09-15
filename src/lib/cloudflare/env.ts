@@ -35,6 +35,9 @@ export type PurpleWorkerBindings = {
   ANTHROPIC_API_KEY?: string;
   OPENAI_API_KEY?: string;
   FLUTTER_WEB_CUTOVER?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  IMPORT_ADMIN_SECRET?: string;
 };
 
 /** Resolve bindings from the Worker env object or Node process.env in dev. */
@@ -57,5 +60,8 @@ export function getWorkerBindings(env?: unknown): Partial<PurpleWorkerBindings> 
     WHOOP_CLIENT_SECRET: e.WHOOP_CLIENT_SECRET ?? process.env.WHOOP_CLIENT_SECRET,
     ANTHROPIC_API_KEY: e.ANTHROPIC_API_KEY ?? process.env.ANTHROPIC_API_KEY,
     OPENAI_API_KEY: e.OPENAI_API_KEY ?? process.env.OPENAI_API_KEY,
+    GOOGLE_CLIENT_ID: e.GOOGLE_CLIENT_ID ?? process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: e.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_CLIENT_SECRET,
+    IMPORT_ADMIN_SECRET: e.IMPORT_ADMIN_SECRET ?? process.env.IMPORT_ADMIN_SECRET,
   };
 }

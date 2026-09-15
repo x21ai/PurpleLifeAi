@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { bootstrapRecoverySessionFromUrl, RECOVERY_LINK_TTL_LABEL } from "@/lib/auth-recovery";
+import { isCloudflareClient } from "@/lib/cloudflare/supabase-shim";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -43,6 +44,16 @@ function ResetPasswordPage() {
     });
 
     void (async () => {
+      if (isCloudflareClient() && typeof window !== "undefined") {
+        const token = new URLSearchParams(window.location.search).get("token");
+        if (token) {
+          setReady(true);
+          setLinkExpired(false);
+          setBootstrapping(false);
+          return;
+        }
+      }
+
       const result = await bootstrapRecoverySessionFromUrl();
       if (cancelled) return;
 
@@ -123,6 +134,31 @@ function ResetPasswordPage() {
       return;
     }
     setStatus("submitting");
+    if (isCloudflareClient() && typeof window !== "undefined") {
+      const token = new URLSearchParams(window.location.search).get("token");
+      const res = await fetch("/api/auth/update-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? {} : { Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token ?? ""}` }),
+        },
+        body: JSON.stringify({ password, token: token ?? undefined }),
+      });
+      if (token) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("token");
+        window.history.replaceState({}, "", url.pathname);
+      }
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setErrorMsg((body as { error?: string }).error ?? t("resetPassword.error"));
+        setStatus("error");
+        return;
+      }
+      setStatus("done");
+      setTimeout(() => navigate({ to: "/sign-in" }), 1200);
+      return;
+    }
     const { error } = await supabase.auth.updateUser({ password });
     if (error) {
       if (/aal2/i.test(error.message)) {

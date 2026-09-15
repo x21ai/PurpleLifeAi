@@ -14,21 +14,17 @@ the legacy Supabase project live until cutover is verified.
 
 Bindings are declared in `wrangler.jsonc` (dev/build) and `wrangler.deploy.jsonc` (prod deploy).
 
-## Feature flag (production safety)
+## Feature flag
 
-| Variable | Values | Default |
-|----------|--------|---------|
-| `DATA_BACKEND` | `supabase` \| `cloudflare` | `supabase` |
-| `AUTH_JWT_SECRET` | random 32+ bytes | required when cloudflare |
-| `IMPORT_ADMIN_SECRET` | random | required for `/api/admin/d1-import` |
+| Variable | Values | Default (code) | Production testers |
+|----------|--------|----------------|-------------------|
+| `DATA_BACKEND` | `supabase` \| `cloudflare` | `supabase` | **`cloudflare`** |
+| `VITE_DATA_BACKEND` | same | from build | **`cloudflare`** via `bun run build:prod` |
+| `AUTH_JWT_SECRET` | random 32+ bytes | required when cloudflare | required |
+| `IMPORT_ADMIN_SECRET` | random | admin import + tester passwords | set then rotate |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | OAuth | optional | recommended |
 
-**Do not set `DATA_BACKEND=cloudflare` in production until:**
-
-1. D1 schema applied
-2. Auth users + public tables imported
-3. R2 objects imported
-4. Row-count verification passes
-5. Smoke tests on staging Worker with cloudflare backend
+**Tester cutover (2026-09):** D1 + R2 import complete on POS Ai. Deploy with `DATA_BACKEND=cloudflare` and `bun run build:prod` (sets `VITE_DATA_BACKEND=cloudflare`). Rollback: `DATA_BACKEND=supabase` + `bun run build:prod:supabase`. See `docs/CLOUDFLARE-TESTER-CHECKLIST.md`.
 
 ## Auth choice: Workers JWT (not Supabase Auth)
 

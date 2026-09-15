@@ -10,7 +10,13 @@
 export type DataBackend = "supabase" | "cloudflare";
 
 export function getDataBackend(env?: { DATA_BACKEND?: string }): DataBackend {
-  const raw = env?.DATA_BACKEND ?? process.env.DATA_BACKEND ?? "supabase";
+  const raw =
+    env?.DATA_BACKEND ??
+    process.env.DATA_BACKEND ??
+    (typeof import.meta !== "undefined"
+      ? (import.meta.env.VITE_DATA_BACKEND as string | undefined)
+      : undefined) ??
+    "supabase";
   const normalized = raw.trim().toLowerCase();
   if (normalized === "cloudflare" || normalized === "cf" || normalized === "d1") {
     return "cloudflare";

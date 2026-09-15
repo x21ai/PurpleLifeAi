@@ -94,11 +94,15 @@ import { Route as AppSettingsTravelRouteImport } from './routes/_app/settings.tr
 import { Route as AppTodayRiskRouteImport } from './routes/_app/today.risk'
 import { Route as ApiAccountPersonalShareCodeRouteImport } from './routes/api/account/personal-share-code'
 import { Route as ApiAdminD1ImportRouteImport } from './routes/api/admin/d1-import'
+import { Route as ApiAdminSetTesterPasswordRouteImport } from './routes/api/admin/set-tester-password'
 import { Route as ApiAiDailyInsightCardsRouteImport } from './routes/api/ai/daily-insight-cards'
 import { Route as ApiAiMetricInsightRouteImport } from './routes/api/ai/metric-insight'
 import { Route as ApiAiSummarizeReportRouteImport } from './routes/api/ai/summarize-report'
+import { Route as ApiAuthResetRequestRouteImport } from './routes/api/auth/reset-request'
 import { Route as ApiAuthSignInRouteImport } from './routes/api/auth/sign-in'
 import { Route as ApiAuthSignUpRouteImport } from './routes/api/auth/sign-up'
+import { Route as ApiAuthUpdatePasswordRouteImport } from './routes/api/auth/update-password'
+import { Route as ApiAuthVerifyRouteImport } from './routes/api/auth/verify'
 import { Route as ApiCareAcceptRouteImport } from './routes/api/care/accept'
 import { Route as ApiCareDeclineRouteImport } from './routes/api/care/decline'
 import { Route as ApiCareIncomingInvitesRouteImport } from './routes/api/care/incoming-invites'
@@ -108,17 +112,23 @@ import { Route as ApiCareReportRouteImport } from './routes/api/care/report'
 import { Route as ApiCareReportsRouteImport } from './routes/api/care/reports'
 import { Route as ApiCareSeizuresRouteImport } from './routes/api/care/seizures'
 import { Route as ApiCareTodayRouteImport } from './routes/api/care/today'
+import { Route as ApiDataQueryRouteImport } from './routes/api/data/query'
+import { Route as ApiDataRpcRouteImport } from './routes/api/data/rpc'
 import { Route as ApiEmailSuppressionRouteImport } from './routes/api/email/suppression'
 import { Route as ApiHealthNativeSyncRouteImport } from './routes/api/health/native-sync'
 import { Route as ApiHealthWhoopConfigRouteImport } from './routes/api/health/whoop-config'
 import { Route as ApiHealthWhoopExchangeRouteImport } from './routes/api/health/whoop-exchange'
 import { Route as ApiHealthWhoopSyncRouteImport } from './routes/api/health/whoop-sync'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
+import { Route as ApiStorageObjectRouteImport } from './routes/api/storage/object'
+import { Route as ApiStorageUploadRouteImport } from './routes/api/storage/upload'
+import { Route as OauthGoogleCallbackRouteImport } from './routes/oauth.google.callback'
 import { Route as OauthOuraCallbackRouteImport } from './routes/oauth.oura.callback'
 import { Route as OauthWhoopCallbackRouteImport } from './routes/oauth.whoop.callback'
 import { Route as ShareReportTokenRouteImport } from './routes/share.report.$token'
 import { Route as AppAdminReportsDuplicatesRouteImport } from './routes/_app/admin.reports.duplicates'
 import { Route as AppReportsTrendsMetricKeyRouteImport } from './routes/_app/reports.trends.$metricKey'
+import { Route as ApiAuthOauthProviderRouteImport } from './routes/api/auth/oauth/$provider'
 import { Route as ApiCloudflareEdgeInvokeRouteImport } from './routes/api/cloudflare/edge/invoke'
 import { Route as ApiEmailAuthPreviewRouteImport } from './routes/api/email/auth/preview'
 import { Route as ApiEmailAuthWebhookRouteImport } from './routes/api/email/auth/webhook'
@@ -137,6 +147,7 @@ import { Route as ApiPublicCronWhoopSyncAllRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksAppleHealthRouteImport } from './routes/api/public/hooks/apple-health'
 import { Route as ApiPublicHooksRiskForecasterRouteImport } from './routes/api/public/hooks/risk-forecaster'
 import { Route as AppCareOwnerIdReportsReportIdRouteImport } from './routes/_app/care.$ownerId.reports.$reportId'
+import { Route as ApiAuthOauthGoogleCallbackRouteImport } from './routes/api/auth/oauth/google/callback'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -565,6 +576,12 @@ const ApiAdminD1ImportRoute = ApiAdminD1ImportRouteImport.update({
   path: '/api/admin/d1-import',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminSetTesterPasswordRoute =
+  ApiAdminSetTesterPasswordRouteImport.update({
+    id: '/api/admin/set-tester-password',
+    path: '/api/admin/set-tester-password',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAiDailyInsightCardsRoute = ApiAiDailyInsightCardsRouteImport.update({
   id: '/api/ai/daily-insight-cards',
   path: '/api/ai/daily-insight-cards',
@@ -580,6 +597,11 @@ const ApiAiSummarizeReportRoute = ApiAiSummarizeReportRouteImport.update({
   path: '/api/ai/summarize-report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthResetRequestRoute = ApiAuthResetRequestRouteImport.update({
+  id: '/api/auth/reset-request',
+  path: '/api/auth/reset-request',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSignInRoute = ApiAuthSignInRouteImport.update({
   id: '/api/auth/sign-in',
   path: '/api/auth/sign-in',
@@ -588,6 +610,16 @@ const ApiAuthSignInRoute = ApiAuthSignInRouteImport.update({
 const ApiAuthSignUpRoute = ApiAuthSignUpRouteImport.update({
   id: '/api/auth/sign-up',
   path: '/api/auth/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthUpdatePasswordRoute = ApiAuthUpdatePasswordRouteImport.update({
+  id: '/api/auth/update-password',
+  path: '/api/auth/update-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthVerifyRoute = ApiAuthVerifyRouteImport.update({
+  id: '/api/auth/verify',
+  path: '/api/auth/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCareAcceptRoute = ApiCareAcceptRouteImport.update({
@@ -635,6 +667,16 @@ const ApiCareTodayRoute = ApiCareTodayRouteImport.update({
   path: '/api/care/today',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDataQueryRoute = ApiDataQueryRouteImport.update({
+  id: '/api/data/query',
+  path: '/api/data/query',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDataRpcRoute = ApiDataRpcRouteImport.update({
+  id: '/api/data/rpc',
+  path: '/api/data/rpc',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiEmailSuppressionRoute = ApiEmailSuppressionRouteImport.update({
   id: '/api/email/suppression',
   path: '/api/email/suppression',
@@ -665,6 +707,21 @@ const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
   path: '/api/public/stripe-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStorageObjectRoute = ApiStorageObjectRouteImport.update({
+  id: '/api/storage/object',
+  path: '/api/storage/object',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStorageUploadRoute = ApiStorageUploadRouteImport.update({
+  id: '/api/storage/upload',
+  path: '/api/storage/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthGoogleCallbackRoute = OauthGoogleCallbackRouteImport.update({
+  id: '/oauth/google/callback',
+  path: '/oauth/google/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OauthOuraCallbackRoute = OauthOuraCallbackRouteImport.update({
   id: '/oauth/oura/callback',
   path: '/oauth/oura/callback',
@@ -692,6 +749,11 @@ const AppReportsTrendsMetricKeyRoute =
     path: '/trends/$metricKey',
     getParentRoute: () => AppReportsRoute,
   } as any)
+const ApiAuthOauthProviderRoute = ApiAuthOauthProviderRouteImport.update({
+  id: '/api/auth/oauth/$provider',
+  path: '/api/auth/oauth/$provider',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCloudflareEdgeInvokeRoute = ApiCloudflareEdgeInvokeRouteImport.update({
   id: '/api/cloudflare/edge/invoke',
   path: '/api/cloudflare/edge/invoke',
@@ -796,6 +858,12 @@ const AppCareOwnerIdReportsReportIdRoute =
     path: '/reports/$reportId',
     getParentRoute: () => AppCareOwnerIdRoute,
   } as any)
+const ApiAuthOauthGoogleCallbackRoute =
+  ApiAuthOauthGoogleCallbackRouteImport.update({
+    id: '/api/auth/oauth/google/callback',
+    path: '/api/auth/oauth/google/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -878,11 +946,15 @@ export interface FileRoutesByFullPath {
   '/today/risk': typeof AppTodayRiskRoute
   '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
   '/api/admin/d1-import': typeof ApiAdminD1ImportRoute
+  '/api/admin/set-tester-password': typeof ApiAdminSetTesterPasswordRoute
   '/api/ai/daily-insight-cards': typeof ApiAiDailyInsightCardsRoute
   '/api/ai/metric-insight': typeof ApiAiMetricInsightRoute
   '/api/ai/summarize-report': typeof ApiAiSummarizeReportRoute
+  '/api/auth/reset-request': typeof ApiAuthResetRequestRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/api/auth/sign-up': typeof ApiAuthSignUpRoute
+  '/api/auth/update-password': typeof ApiAuthUpdatePasswordRoute
+  '/api/auth/verify': typeof ApiAuthVerifyRoute
   '/api/care/accept': typeof ApiCareAcceptRoute
   '/api/care/decline': typeof ApiCareDeclineRoute
   '/api/care/incoming-invites': typeof ApiCareIncomingInvitesRoute
@@ -892,12 +964,17 @@ export interface FileRoutesByFullPath {
   '/api/care/reports': typeof ApiCareReportsRoute
   '/api/care/seizures': typeof ApiCareSeizuresRoute
   '/api/care/today': typeof ApiCareTodayRoute
+  '/api/data/query': typeof ApiDataQueryRoute
+  '/api/data/rpc': typeof ApiDataRpcRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/health/native-sync': typeof ApiHealthNativeSyncRoute
   '/api/health/whoop-config': typeof ApiHealthWhoopConfigRoute
   '/api/health/whoop-exchange': typeof ApiHealthWhoopExchangeRoute
   '/api/health/whoop-sync': typeof ApiHealthWhoopSyncRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
+  '/api/storage/object': typeof ApiStorageObjectRoute
+  '/api/storage/upload': typeof ApiStorageUploadRoute
+  '/oauth/google/callback': typeof OauthGoogleCallbackRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
   '/share/report/$token': typeof ShareReportTokenRoute
@@ -907,6 +984,7 @@ export interface FileRoutesByFullPath {
   '/journal/': typeof AppJournalIndexRoute
   '/admin/reports/duplicates': typeof AppAdminReportsDuplicatesRoute
   '/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
+  '/api/auth/oauth/$provider': typeof ApiAuthOauthProviderRoute
   '/api/cloudflare/edge/invoke': typeof ApiCloudflareEdgeInvokeRoute
   '/api/email/auth/preview': typeof ApiEmailAuthPreviewRoute
   '/api/email/auth/webhook': typeof ApiEmailAuthWebhookRoute
@@ -925,6 +1003,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/apple-health': typeof ApiPublicHooksAppleHealthRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
   '/care/$ownerId/reports/$reportId': typeof AppCareOwnerIdReportsReportIdRoute
+  '/api/auth/oauth/google/callback': typeof ApiAuthOauthGoogleCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1006,11 +1085,15 @@ export interface FileRoutesByTo {
   '/today/risk': typeof AppTodayRiskRoute
   '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
   '/api/admin/d1-import': typeof ApiAdminD1ImportRoute
+  '/api/admin/set-tester-password': typeof ApiAdminSetTesterPasswordRoute
   '/api/ai/daily-insight-cards': typeof ApiAiDailyInsightCardsRoute
   '/api/ai/metric-insight': typeof ApiAiMetricInsightRoute
   '/api/ai/summarize-report': typeof ApiAiSummarizeReportRoute
+  '/api/auth/reset-request': typeof ApiAuthResetRequestRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/api/auth/sign-up': typeof ApiAuthSignUpRoute
+  '/api/auth/update-password': typeof ApiAuthUpdatePasswordRoute
+  '/api/auth/verify': typeof ApiAuthVerifyRoute
   '/api/care/accept': typeof ApiCareAcceptRoute
   '/api/care/decline': typeof ApiCareDeclineRoute
   '/api/care/incoming-invites': typeof ApiCareIncomingInvitesRoute
@@ -1020,12 +1103,17 @@ export interface FileRoutesByTo {
   '/api/care/reports': typeof ApiCareReportsRoute
   '/api/care/seizures': typeof ApiCareSeizuresRoute
   '/api/care/today': typeof ApiCareTodayRoute
+  '/api/data/query': typeof ApiDataQueryRoute
+  '/api/data/rpc': typeof ApiDataRpcRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/health/native-sync': typeof ApiHealthNativeSyncRoute
   '/api/health/whoop-config': typeof ApiHealthWhoopConfigRoute
   '/api/health/whoop-exchange': typeof ApiHealthWhoopExchangeRoute
   '/api/health/whoop-sync': typeof ApiHealthWhoopSyncRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
+  '/api/storage/object': typeof ApiStorageObjectRoute
+  '/api/storage/upload': typeof ApiStorageUploadRoute
+  '/oauth/google/callback': typeof OauthGoogleCallbackRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
   '/share/report/$token': typeof ShareReportTokenRoute
@@ -1035,6 +1123,7 @@ export interface FileRoutesByTo {
   '/journal': typeof AppJournalIndexRoute
   '/admin/reports/duplicates': typeof AppAdminReportsDuplicatesRoute
   '/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
+  '/api/auth/oauth/$provider': typeof ApiAuthOauthProviderRoute
   '/api/cloudflare/edge/invoke': typeof ApiCloudflareEdgeInvokeRoute
   '/api/email/auth/preview': typeof ApiEmailAuthPreviewRoute
   '/api/email/auth/webhook': typeof ApiEmailAuthWebhookRoute
@@ -1053,6 +1142,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/apple-health': typeof ApiPublicHooksAppleHealthRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
   '/care/$ownerId/reports/$reportId': typeof AppCareOwnerIdReportsReportIdRoute
+  '/api/auth/oauth/google/callback': typeof ApiAuthOauthGoogleCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1137,11 +1227,15 @@ export interface FileRoutesById {
   '/_app/today/risk': typeof AppTodayRiskRoute
   '/api/account/personal-share-code': typeof ApiAccountPersonalShareCodeRoute
   '/api/admin/d1-import': typeof ApiAdminD1ImportRoute
+  '/api/admin/set-tester-password': typeof ApiAdminSetTesterPasswordRoute
   '/api/ai/daily-insight-cards': typeof ApiAiDailyInsightCardsRoute
   '/api/ai/metric-insight': typeof ApiAiMetricInsightRoute
   '/api/ai/summarize-report': typeof ApiAiSummarizeReportRoute
+  '/api/auth/reset-request': typeof ApiAuthResetRequestRoute
   '/api/auth/sign-in': typeof ApiAuthSignInRoute
   '/api/auth/sign-up': typeof ApiAuthSignUpRoute
+  '/api/auth/update-password': typeof ApiAuthUpdatePasswordRoute
+  '/api/auth/verify': typeof ApiAuthVerifyRoute
   '/api/care/accept': typeof ApiCareAcceptRoute
   '/api/care/decline': typeof ApiCareDeclineRoute
   '/api/care/incoming-invites': typeof ApiCareIncomingInvitesRoute
@@ -1151,12 +1245,17 @@ export interface FileRoutesById {
   '/api/care/reports': typeof ApiCareReportsRoute
   '/api/care/seizures': typeof ApiCareSeizuresRoute
   '/api/care/today': typeof ApiCareTodayRoute
+  '/api/data/query': typeof ApiDataQueryRoute
+  '/api/data/rpc': typeof ApiDataRpcRoute
   '/api/email/suppression': typeof ApiEmailSuppressionRoute
   '/api/health/native-sync': typeof ApiHealthNativeSyncRoute
   '/api/health/whoop-config': typeof ApiHealthWhoopConfigRoute
   '/api/health/whoop-exchange': typeof ApiHealthWhoopExchangeRoute
   '/api/health/whoop-sync': typeof ApiHealthWhoopSyncRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
+  '/api/storage/object': typeof ApiStorageObjectRoute
+  '/api/storage/upload': typeof ApiStorageUploadRoute
+  '/oauth/google/callback': typeof OauthGoogleCallbackRoute
   '/oauth/oura/callback': typeof OauthOuraCallbackRoute
   '/oauth/whoop/callback': typeof OauthWhoopCallbackRoute
   '/share/report/$token': typeof ShareReportTokenRoute
@@ -1166,6 +1265,7 @@ export interface FileRoutesById {
   '/_app/journal/': typeof AppJournalIndexRoute
   '/_app/admin/reports/duplicates': typeof AppAdminReportsDuplicatesRoute
   '/_app/reports/trends/$metricKey': typeof AppReportsTrendsMetricKeyRoute
+  '/api/auth/oauth/$provider': typeof ApiAuthOauthProviderRoute
   '/api/cloudflare/edge/invoke': typeof ApiCloudflareEdgeInvokeRoute
   '/api/email/auth/preview': typeof ApiEmailAuthPreviewRoute
   '/api/email/auth/webhook': typeof ApiEmailAuthWebhookRoute
@@ -1184,6 +1284,7 @@ export interface FileRoutesById {
   '/api/public/hooks/apple-health': typeof ApiPublicHooksAppleHealthRoute
   '/api/public/hooks/risk-forecaster': typeof ApiPublicHooksRiskForecasterRoute
   '/_app/care/$ownerId/reports/$reportId': typeof AppCareOwnerIdReportsReportIdRoute
+  '/api/auth/oauth/google/callback': typeof ApiAuthOauthGoogleCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1268,11 +1369,15 @@ export interface FileRouteTypes {
     | '/today/risk'
     | '/api/account/personal-share-code'
     | '/api/admin/d1-import'
+    | '/api/admin/set-tester-password'
     | '/api/ai/daily-insight-cards'
     | '/api/ai/metric-insight'
     | '/api/ai/summarize-report'
+    | '/api/auth/reset-request'
     | '/api/auth/sign-in'
     | '/api/auth/sign-up'
+    | '/api/auth/update-password'
+    | '/api/auth/verify'
     | '/api/care/accept'
     | '/api/care/decline'
     | '/api/care/incoming-invites'
@@ -1282,12 +1387,17 @@ export interface FileRouteTypes {
     | '/api/care/reports'
     | '/api/care/seizures'
     | '/api/care/today'
+    | '/api/data/query'
+    | '/api/data/rpc'
     | '/api/email/suppression'
     | '/api/health/native-sync'
     | '/api/health/whoop-config'
     | '/api/health/whoop-exchange'
     | '/api/health/whoop-sync'
     | '/api/public/stripe-webhook'
+    | '/api/storage/object'
+    | '/api/storage/upload'
+    | '/oauth/google/callback'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
     | '/share/report/$token'
@@ -1297,6 +1407,7 @@ export interface FileRouteTypes {
     | '/journal/'
     | '/admin/reports/duplicates'
     | '/reports/trends/$metricKey'
+    | '/api/auth/oauth/$provider'
     | '/api/cloudflare/edge/invoke'
     | '/api/email/auth/preview'
     | '/api/email/auth/webhook'
@@ -1315,6 +1426,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/apple-health'
     | '/api/public/hooks/risk-forecaster'
     | '/care/$ownerId/reports/$reportId'
+    | '/api/auth/oauth/google/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1396,11 +1508,15 @@ export interface FileRouteTypes {
     | '/today/risk'
     | '/api/account/personal-share-code'
     | '/api/admin/d1-import'
+    | '/api/admin/set-tester-password'
     | '/api/ai/daily-insight-cards'
     | '/api/ai/metric-insight'
     | '/api/ai/summarize-report'
+    | '/api/auth/reset-request'
     | '/api/auth/sign-in'
     | '/api/auth/sign-up'
+    | '/api/auth/update-password'
+    | '/api/auth/verify'
     | '/api/care/accept'
     | '/api/care/decline'
     | '/api/care/incoming-invites'
@@ -1410,12 +1526,17 @@ export interface FileRouteTypes {
     | '/api/care/reports'
     | '/api/care/seizures'
     | '/api/care/today'
+    | '/api/data/query'
+    | '/api/data/rpc'
     | '/api/email/suppression'
     | '/api/health/native-sync'
     | '/api/health/whoop-config'
     | '/api/health/whoop-exchange'
     | '/api/health/whoop-sync'
     | '/api/public/stripe-webhook'
+    | '/api/storage/object'
+    | '/api/storage/upload'
+    | '/oauth/google/callback'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
     | '/share/report/$token'
@@ -1425,6 +1546,7 @@ export interface FileRouteTypes {
     | '/journal'
     | '/admin/reports/duplicates'
     | '/reports/trends/$metricKey'
+    | '/api/auth/oauth/$provider'
     | '/api/cloudflare/edge/invoke'
     | '/api/email/auth/preview'
     | '/api/email/auth/webhook'
@@ -1443,6 +1565,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/apple-health'
     | '/api/public/hooks/risk-forecaster'
     | '/care/$ownerId/reports/$reportId'
+    | '/api/auth/oauth/google/callback'
   id:
     | '__root__'
     | '/'
@@ -1526,11 +1649,15 @@ export interface FileRouteTypes {
     | '/_app/today/risk'
     | '/api/account/personal-share-code'
     | '/api/admin/d1-import'
+    | '/api/admin/set-tester-password'
     | '/api/ai/daily-insight-cards'
     | '/api/ai/metric-insight'
     | '/api/ai/summarize-report'
+    | '/api/auth/reset-request'
     | '/api/auth/sign-in'
     | '/api/auth/sign-up'
+    | '/api/auth/update-password'
+    | '/api/auth/verify'
     | '/api/care/accept'
     | '/api/care/decline'
     | '/api/care/incoming-invites'
@@ -1540,12 +1667,17 @@ export interface FileRouteTypes {
     | '/api/care/reports'
     | '/api/care/seizures'
     | '/api/care/today'
+    | '/api/data/query'
+    | '/api/data/rpc'
     | '/api/email/suppression'
     | '/api/health/native-sync'
     | '/api/health/whoop-config'
     | '/api/health/whoop-exchange'
     | '/api/health/whoop-sync'
     | '/api/public/stripe-webhook'
+    | '/api/storage/object'
+    | '/api/storage/upload'
+    | '/oauth/google/callback'
     | '/oauth/oura/callback'
     | '/oauth/whoop/callback'
     | '/share/report/$token'
@@ -1555,6 +1687,7 @@ export interface FileRouteTypes {
     | '/_app/journal/'
     | '/_app/admin/reports/duplicates'
     | '/_app/reports/trends/$metricKey'
+    | '/api/auth/oauth/$provider'
     | '/api/cloudflare/edge/invoke'
     | '/api/email/auth/preview'
     | '/api/email/auth/webhook'
@@ -1573,6 +1706,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/apple-health'
     | '/api/public/hooks/risk-forecaster'
     | '/_app/care/$ownerId/reports/$reportId'
+    | '/api/auth/oauth/google/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1604,11 +1738,15 @@ export interface RootRouteChildren {
   FriendJoinRoute: typeof FriendJoinRoute
   ApiAccountPersonalShareCodeRoute: typeof ApiAccountPersonalShareCodeRoute
   ApiAdminD1ImportRoute: typeof ApiAdminD1ImportRoute
+  ApiAdminSetTesterPasswordRoute: typeof ApiAdminSetTesterPasswordRoute
   ApiAiDailyInsightCardsRoute: typeof ApiAiDailyInsightCardsRoute
   ApiAiMetricInsightRoute: typeof ApiAiMetricInsightRoute
   ApiAiSummarizeReportRoute: typeof ApiAiSummarizeReportRoute
+  ApiAuthResetRequestRoute: typeof ApiAuthResetRequestRoute
   ApiAuthSignInRoute: typeof ApiAuthSignInRoute
   ApiAuthSignUpRoute: typeof ApiAuthSignUpRoute
+  ApiAuthUpdatePasswordRoute: typeof ApiAuthUpdatePasswordRoute
+  ApiAuthVerifyRoute: typeof ApiAuthVerifyRoute
   ApiCareAcceptRoute: typeof ApiCareAcceptRoute
   ApiCareDeclineRoute: typeof ApiCareDeclineRoute
   ApiCareIncomingInvitesRoute: typeof ApiCareIncomingInvitesRoute
@@ -1618,15 +1756,21 @@ export interface RootRouteChildren {
   ApiCareReportsRoute: typeof ApiCareReportsRoute
   ApiCareSeizuresRoute: typeof ApiCareSeizuresRoute
   ApiCareTodayRoute: typeof ApiCareTodayRoute
+  ApiDataQueryRoute: typeof ApiDataQueryRoute
+  ApiDataRpcRoute: typeof ApiDataRpcRoute
   ApiEmailSuppressionRoute: typeof ApiEmailSuppressionRoute
   ApiHealthNativeSyncRoute: typeof ApiHealthNativeSyncRoute
   ApiHealthWhoopConfigRoute: typeof ApiHealthWhoopConfigRoute
   ApiHealthWhoopExchangeRoute: typeof ApiHealthWhoopExchangeRoute
   ApiHealthWhoopSyncRoute: typeof ApiHealthWhoopSyncRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
+  ApiStorageObjectRoute: typeof ApiStorageObjectRoute
+  ApiStorageUploadRoute: typeof ApiStorageUploadRoute
+  OauthGoogleCallbackRoute: typeof OauthGoogleCallbackRoute
   OauthOuraCallbackRoute: typeof OauthOuraCallbackRoute
   OauthWhoopCallbackRoute: typeof OauthWhoopCallbackRoute
   ShareReportTokenRoute: typeof ShareReportTokenRoute
+  ApiAuthOauthProviderRoute: typeof ApiAuthOauthProviderRoute
   ApiCloudflareEdgeInvokeRoute: typeof ApiCloudflareEdgeInvokeRoute
   ApiEmailAuthPreviewRoute: typeof ApiEmailAuthPreviewRoute
   ApiEmailAuthWebhookRoute: typeof ApiEmailAuthWebhookRoute
@@ -1644,6 +1788,7 @@ export interface RootRouteChildren {
   ApiPublicCronWhoopSyncAllRoute: typeof ApiPublicCronWhoopSyncAllRoute
   ApiPublicHooksAppleHealthRoute: typeof ApiPublicHooksAppleHealthRoute
   ApiPublicHooksRiskForecasterRoute: typeof ApiPublicHooksRiskForecasterRoute
+  ApiAuthOauthGoogleCallbackRoute: typeof ApiAuthOauthGoogleCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2243,6 +2388,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminD1ImportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/set-tester-password': {
+      id: '/api/admin/set-tester-password'
+      path: '/api/admin/set-tester-password'
+      fullPath: '/api/admin/set-tester-password'
+      preLoaderRoute: typeof ApiAdminSetTesterPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ai/daily-insight-cards': {
       id: '/api/ai/daily-insight-cards'
       path: '/api/ai/daily-insight-cards'
@@ -2264,6 +2416,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAiSummarizeReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/reset-request': {
+      id: '/api/auth/reset-request'
+      path: '/api/auth/reset-request'
+      fullPath: '/api/auth/reset-request'
+      preLoaderRoute: typeof ApiAuthResetRequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/sign-in': {
       id: '/api/auth/sign-in'
       path: '/api/auth/sign-in'
@@ -2276,6 +2435,20 @@ declare module '@tanstack/react-router' {
       path: '/api/auth/sign-up'
       fullPath: '/api/auth/sign-up'
       preLoaderRoute: typeof ApiAuthSignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/update-password': {
+      id: '/api/auth/update-password'
+      path: '/api/auth/update-password'
+      fullPath: '/api/auth/update-password'
+      preLoaderRoute: typeof ApiAuthUpdatePasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/verify': {
+      id: '/api/auth/verify'
+      path: '/api/auth/verify'
+      fullPath: '/api/auth/verify'
+      preLoaderRoute: typeof ApiAuthVerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/care/accept': {
@@ -2341,6 +2514,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCareTodayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/data/query': {
+      id: '/api/data/query'
+      path: '/api/data/query'
+      fullPath: '/api/data/query'
+      preLoaderRoute: typeof ApiDataQueryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/data/rpc': {
+      id: '/api/data/rpc'
+      path: '/api/data/rpc'
+      fullPath: '/api/data/rpc'
+      preLoaderRoute: typeof ApiDataRpcRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/email/suppression': {
       id: '/api/email/suppression'
       path: '/api/email/suppression'
@@ -2383,6 +2570,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/storage/object': {
+      id: '/api/storage/object'
+      path: '/api/storage/object'
+      fullPath: '/api/storage/object'
+      preLoaderRoute: typeof ApiStorageObjectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/storage/upload': {
+      id: '/api/storage/upload'
+      path: '/api/storage/upload'
+      fullPath: '/api/storage/upload'
+      preLoaderRoute: typeof ApiStorageUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth/google/callback': {
+      id: '/oauth/google/callback'
+      path: '/oauth/google/callback'
+      fullPath: '/oauth/google/callback'
+      preLoaderRoute: typeof OauthGoogleCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/oauth/oura/callback': {
       id: '/oauth/oura/callback'
       path: '/oauth/oura/callback'
@@ -2417,6 +2625,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reports/trends/$metricKey'
       preLoaderRoute: typeof AppReportsTrendsMetricKeyRouteImport
       parentRoute: typeof AppReportsRoute
+    }
+    '/api/auth/oauth/$provider': {
+      id: '/api/auth/oauth/$provider'
+      path: '/api/auth/oauth/$provider'
+      fullPath: '/api/auth/oauth/$provider'
+      preLoaderRoute: typeof ApiAuthOauthProviderRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/cloudflare/edge/invoke': {
       id: '/api/cloudflare/edge/invoke'
@@ -2543,6 +2758,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/care/$ownerId/reports/$reportId'
       preLoaderRoute: typeof AppCareOwnerIdReportsReportIdRouteImport
       parentRoute: typeof AppCareOwnerIdRoute
+    }
+    '/api/auth/oauth/google/callback': {
+      id: '/api/auth/oauth/google/callback'
+      path: '/api/auth/oauth/google/callback'
+      fullPath: '/api/auth/oauth/google/callback'
+      preLoaderRoute: typeof ApiAuthOauthGoogleCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -2773,11 +2995,15 @@ const rootRouteChildren: RootRouteChildren = {
   FriendJoinRoute: FriendJoinRoute,
   ApiAccountPersonalShareCodeRoute: ApiAccountPersonalShareCodeRoute,
   ApiAdminD1ImportRoute: ApiAdminD1ImportRoute,
+  ApiAdminSetTesterPasswordRoute: ApiAdminSetTesterPasswordRoute,
   ApiAiDailyInsightCardsRoute: ApiAiDailyInsightCardsRoute,
   ApiAiMetricInsightRoute: ApiAiMetricInsightRoute,
   ApiAiSummarizeReportRoute: ApiAiSummarizeReportRoute,
+  ApiAuthResetRequestRoute: ApiAuthResetRequestRoute,
   ApiAuthSignInRoute: ApiAuthSignInRoute,
   ApiAuthSignUpRoute: ApiAuthSignUpRoute,
+  ApiAuthUpdatePasswordRoute: ApiAuthUpdatePasswordRoute,
+  ApiAuthVerifyRoute: ApiAuthVerifyRoute,
   ApiCareAcceptRoute: ApiCareAcceptRoute,
   ApiCareDeclineRoute: ApiCareDeclineRoute,
   ApiCareIncomingInvitesRoute: ApiCareIncomingInvitesRoute,
@@ -2787,15 +3013,21 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCareReportsRoute: ApiCareReportsRoute,
   ApiCareSeizuresRoute: ApiCareSeizuresRoute,
   ApiCareTodayRoute: ApiCareTodayRoute,
+  ApiDataQueryRoute: ApiDataQueryRoute,
+  ApiDataRpcRoute: ApiDataRpcRoute,
   ApiEmailSuppressionRoute: ApiEmailSuppressionRoute,
   ApiHealthNativeSyncRoute: ApiHealthNativeSyncRoute,
   ApiHealthWhoopConfigRoute: ApiHealthWhoopConfigRoute,
   ApiHealthWhoopExchangeRoute: ApiHealthWhoopExchangeRoute,
   ApiHealthWhoopSyncRoute: ApiHealthWhoopSyncRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
+  ApiStorageObjectRoute: ApiStorageObjectRoute,
+  ApiStorageUploadRoute: ApiStorageUploadRoute,
+  OauthGoogleCallbackRoute: OauthGoogleCallbackRoute,
   OauthOuraCallbackRoute: OauthOuraCallbackRoute,
   OauthWhoopCallbackRoute: OauthWhoopCallbackRoute,
   ShareReportTokenRoute: ShareReportTokenRoute,
+  ApiAuthOauthProviderRoute: ApiAuthOauthProviderRoute,
   ApiCloudflareEdgeInvokeRoute: ApiCloudflareEdgeInvokeRoute,
   ApiEmailAuthPreviewRoute: ApiEmailAuthPreviewRoute,
   ApiEmailAuthWebhookRoute: ApiEmailAuthWebhookRoute,
@@ -2814,6 +3046,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronWhoopSyncAllRoute: ApiPublicCronWhoopSyncAllRoute,
   ApiPublicHooksAppleHealthRoute: ApiPublicHooksAppleHealthRoute,
   ApiPublicHooksRiskForecasterRoute: ApiPublicHooksRiskForecasterRoute,
+  ApiAuthOauthGoogleCallbackRoute: ApiAuthOauthGoogleCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
