@@ -14,55 +14,42 @@ import {
   StillLife,
 } from "@/components/marketing/calm-scene";
 import { homeImages } from "@/lib/calm-images/home";
+import {
+  marketingHead,
+  marketingOrganizationJsonLd,
+  MARKETING_SITE_ORIGIN,
+} from "@/lib/marketing-seo";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Purple. A quiet companion for your health." },
-      {
-        name: "description",
-        content:
-          "A private journal for the people carrying something heavy. Write a sentence. Say a thought. Snap a photo. Purple remembers, quietly, for as long as you need it.",
+  head: () =>
+    marketingHead({
+      path: "/",
+      title: "Purple. A quiet companion for your health.",
+      description:
+        "A private journal for the people carrying something heavy. Write a sentence. Say a thought. Snap a photo. Purple remembers, quietly, for as long as you need it.",
+      ogDescription:
+        "Free forever. Open source. Made for people who didn't ask for any of this.",
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@graph": [
+          marketingOrganizationJsonLd(),
+          {
+            "@type": "WebSite",
+            name: "Purple",
+            url: MARKETING_SITE_ORIGIN,
+          },
+          {
+            "@type": "SoftwareApplication",
+            name: "Purple",
+            applicationCategory: "HealthApplication",
+            operatingSystem: "Web",
+            offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+            description:
+              "Private, AI-powered health journal for people living with epilepsy, migraine, diabetes, mental health, and other pattern-driven conditions.",
+          },
+        ],
       },
-      { property: "og:title", content: "Purple. A quiet companion for your health." },
-      {
-        property: "og:description",
-        content: "Free forever. Open source. Made for people who didn't ask for any of this.",
-      },
-      { property: "og:url", content: "https://www.purplelife.org/" },
-    ],
-    links: [{ rel: "canonical", href: "https://www.purplelife.org/" }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "Organization",
-              name: "Purple",
-              url: "https://purplelife.org",
-              logo: "https://purplelife.org/icon-512.png",
-            },
-            {
-              "@type": "WebSite",
-              name: "Purple",
-              url: "https://purplelife.org",
-            },
-            {
-              "@type": "SoftwareApplication",
-              name: "Purple",
-              applicationCategory: "HealthApplication",
-              operatingSystem: "Web",
-              offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-              description:
-                "Private, AI-powered health journal for people living with epilepsy, migraine, diabetes, mental health, and other pattern-driven conditions.",
-            },
-          ],
-        }),
-      },
-    ],
-  }),
+    }),
   component: MarketingHome,
 });
 

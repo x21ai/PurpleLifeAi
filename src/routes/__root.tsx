@@ -164,6 +164,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Purple" },
+      { property: "og:url", content: "https://www.purplelife.org/" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Purple - Lets be calm" },
       {
