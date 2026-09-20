@@ -75,15 +75,35 @@ clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
 
+### 2026-09-20T13:45:00Z — PR #48 squash-merged to main (entities CI fix)
+
+- **Requested:** Mark #48 ready, squash-merge; update #45; report #45/#44/#47; no www design flip deploy.
+- **Done:** #48 ready + squash-merged → `main` @ `cac619b4`. #45 rebased onto main after conflict in `docs/HANDOFF.md`.
+- **Issues:** #45 still needs CI green before merge. #44 CI red. #47 conflicting vs its base (#44 branch); do not deploy.
+- **Stand / next:** Wait for CI on rebased #45; do not merge #44/#47 yet.
+- **Who / where:** cursor-agent · cloud VM · merge sequence
+- **Evidence:** https://github.com/x21ai/PurpleLifeAi/pull/48
+- **Timestamp:** 2026-09-20T13:45:00Z
+
 ### 2026-09-20T13:15:00Z — Trunk CI: fix entities/vite build failure
 
 - **Requested:** Fix pre-existing CI failure (`entities/decode` ESM export) blocking merge of #44/#45/#47; no www deploy.
-- **Done:** Removed `entities: 4.5.0` from Bun/pnpm overrides in `package.json`; removed ineffective `entities` vite aliases from `vite.config.ts`; updated `bun.lock`. Branch `cursor/fix-entities-ci-1547`.
-- **Issues:** Follow-up commit adds entry-budget headroom (282k), responsive webkit install, e2e WebKit console filter.
-- **Stand / next:** Merge CI-fix PR when green; then unblock #45/#44/#47 merge order.
+- **Done:** Removed `entities: 4.5.0` from Bun/pnpm overrides in `package.json`; removed ineffective `entities` vite aliases from `vite.config.ts`; updated `bun.lock`. Branch `cursor/fix-entities-ci-1547`. Squash-merged as PR #48 → `cac619b4`.
+- **Issues:** Follow-up commits: entry-budget, webkit, e2e auth shim.
+- **Stand / next:** Unblock #45/#44/#47 after rebase/CI.
 - **Who / where:** cursor-agent · cloud VM · `cursor/fix-entities-ci-1547`
-- **Evidence:** `bun run build` PASS; repro was `ERR_PACKAGE_PATH_NOT_EXPORTED: entities/decode`
+- **Evidence:** `bun run build` PASS; CI all green on tip `837b79ad`
 - **Timestamp:** 2026-09-20T13:15:00Z
+
+### 2026-09-20T12:45:00Z — OAuth + CORS hardening (Step 4)
+
+- **Requested:** Audit CORS/OAuth for www + Flutter; allowlist origins (no `*`); match redirect URIs; document Flutter rebuild; fix bugs; new PR off main.
+- **Done:** Added `src/lib/oauth-allowed-origins.ts`, extended `flutter-api-cors.ts` (caregiver + chat + account paths), validated social/Whoop `redirect_uri`, gate `check:oauth-cors`, audit `docs/OAUTH-CORS-AUDIT.md`. Updated `docs/oauth-provider-setup.md`.
+- **Issues:** Oura exchange still on Supabase edge. Whoop native redirect still needs manual Whoop Developer Portal step. Flutter Google/Apple still Supabase Auth until Cloudflare native OAuth ships.
+- **Stand / next:** Merge PR after CI green on rebased tip; operator deploy `purplelife` Worker; verify CORS preflight from `:8765`; confirm provider console URIs per audit §6.
+- **Who / where:** cursor-agent · cloud VM · `cursor/oauth-cors-hardening-1547`
+- **Evidence:** `bun run check:oauth-cors` PASS; `tsc --noEmit` PASS
+- **Timestamp:** 2026-09-20T12:45:00Z
 
 ### 2026-09-15T18:28:00Z — PR #41 merged + deploy bundle (Oura D1)
 
