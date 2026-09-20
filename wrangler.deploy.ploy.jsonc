@@ -1,0 +1,65 @@
+// Deploy config for www Ploy Astro UI flip (Worker name stays `purplelife`).
+// Hybrid entry: TanStack in-process for /api/* + /oauth/*; Ploy Astro for all other routes.
+//
+// DO NOT deploy until operator GO — see docs/DEPLOY-WWW-PLOY.md and
+// ploy-purplelife-source/STEP6-WWW-FLIP-DRYRUN.md.
+//
+// Usage (operator only, after GO):
+//   bun run build:www-ploy
+//   doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+//     bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} \
+//     bunx wrangler deploy -c wrangler.deploy.ploy.jsonc'
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "purplelife",
+  "account_id": "08e766e92db74bc7ef14c6b5c86bddf0",
+  "workers_dev": true,
+  "routes": [
+    { "pattern": "www.purplelife.org/*", "zone_name": "purplelife.org" },
+    { "pattern": "purplelife.org/*", "zone_name": "purplelife.org" },
+  ],
+  "compatibility_date": "2026-04-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "ploy-staging/worker/www-entry.ts",
+  "assets": {
+    "directory": "ploy-staging/dist/client",
+    "binding": "ASSETS",
+  },
+  "observability": {
+    "enabled": true,
+  },
+  // Self service binding so scheduled crons invoke this Worker's /api/* endpoints.
+  "services": [{ "binding": "SELF", "service": "purplelife" }],
+  "vars": {
+    "DATA_BACKEND": "cloudflare",
+    "PUBLIC_SITE_URL": "https://www.purplelife.org",
+  },
+  // Production D1/R2/KV on eigital account (same as staging.purplelife.org bindings).
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "purplelifeai",
+      "database_id": "8d0be2b3-84ec-4581-86f4-6b372ec1d5d7",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "STORAGE",
+      "bucket_name": "purplelifeai",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "73356a0e339447059bdddc33b93f26a9",
+    },
+  ],
+  "triggers": {
+    "crons": [
+      "* * * * *",
+      "0 * * * *",
+      "0 6 * * *",
+      "0 15 * * 7",
+    ],
+  },
+}
