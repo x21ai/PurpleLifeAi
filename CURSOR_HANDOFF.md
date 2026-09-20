@@ -1,4 +1,10 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-15 (Oura D1 merged @ 03ede232).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-20 (OAuth + CORS Step 4).
+
+**Recent (2026-09-20): OAuth + CORS hardening (Step 4).** Audit `docs/OAUTH-CORS-AUDIT.md`.
+Allowlists: `src/lib/oauth-allowed-origins.ts`, `src/lib/flutter-api-cors.ts`. Gate:
+`bun run check:oauth-cors`. Branch `cursor/oauth-cors-hardening-1547` off `main`.
+Deploy www Worker only. Manual consoles: Google Cloud (pmt@x21.com), Apple Developer
+(`org.purplelife.web`), Whoop native redirect (`whoop-native-redirect-console`).
 
 **Recent (2026-09-15): Oura biometrics merged + deploy bundle.** PR #41 → `main` @
 `03ede232`. Deploy: `/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz`

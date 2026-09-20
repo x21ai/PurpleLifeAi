@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { isCloudflareBackend } from "@/lib/cloudflare/data-backend";
 import { setRequestBindings, getBindings } from "@/lib/cloudflare/bindings";
 import { completeOAuthSignIn, decodeJwtPayload } from "@/lib/cloudflare/auth/oauth-complete";
+import { isAllowedSocialOAuthRedirectUri } from "@/lib/oauth-allowed-origins";
 
 export const Route = createFileRoute("/api/auth/oauth/apple/callback")({
   server: {
@@ -27,6 +28,9 @@ export const Route = createFileRoute("/api/auth/oauth/apple/callback")({
           process.env.APPLE_CLIENT_SECRET;
         if (!clientId || !clientSecret || !body.code || !body.redirect_uri) {
           return Response.json({ error: "OAuth not configured" }, { status: 500 });
+        }
+        if (!isAllowedSocialOAuthRedirectUri(body.redirect_uri)) {
+          return Response.json({ error: "Invalid redirect_uri" }, { status: 400 });
         }
 
         const tokenRes = await fetch("https://appleid.apple.com/auth/token", {

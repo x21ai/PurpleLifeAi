@@ -84,7 +84,15 @@ Supabase callback URLs above remain for rollback (`DATA_BACKEND=supabase`).
 
 ---
 
+## Flutter / native clients
+
+Wearable and social OAuth redirect URIs, Worker CORS allowlists, and TestFlight
+`--dart-define` rebuild checklist: **`docs/OAUTH-CORS-AUDIT.md`**.
+
+Native deep links: `docs/native-oauth-setup.md`, `mem/native-wearable-oauth-redirects.md`.
+
 ## Related
 
 - PR #1 merged auth UI for Apple + Google above email.
 - Provider secrets live in Supabase Dashboard (Supabase path) or Worker secrets (Cloudflare path), not in the repo.
+- Full audit: `docs/OAUTH-CORS-AUDIT.md`

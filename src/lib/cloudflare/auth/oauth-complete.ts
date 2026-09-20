@@ -1,3 +1,4 @@
+import { resolveOAuthSiteOrigin } from "@/lib/oauth-allowed-origins";
 import { d1First, d1Run } from "../d1/client";
 import { getBindings } from "../bindings";
 import { signJwt } from "./jwt";
@@ -78,14 +79,11 @@ export async function completeOAuthSignIn(
   };
 }
 
-/** Resolve public site origin for OAuth redirect URIs. */
+/** Resolve public site origin for OAuth redirect URIs (allowlisted hosts only). */
 export function oauthSiteOrigin(redirectTo?: string | null): string {
-  const fromParam = redirectTo?.replace(/\/$/, "");
-  if (fromParam?.startsWith("http")) return fromParam;
-  return (
-    getBindings().PUBLIC_SITE_URL?.replace(/\/$/, "") ??
-    process.env.PUBLIC_SITE_URL?.replace(/\/$/, "") ??
-    "https://www.purplelife.org"
+  return resolveOAuthSiteOrigin(
+    redirectTo,
+    getBindings().PUBLIC_SITE_URL ?? process.env.PUBLIC_SITE_URL,
   );
 }
 

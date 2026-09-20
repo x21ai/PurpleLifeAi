@@ -3,19 +3,24 @@
  * JSON routes cross-origin (e.g. http://127.0.0.1:8765 → www.purplelife.org).
  */
 
-const FLUTTER_WEB_ORIGINS = new Set([
-  "http://127.0.0.1:8765",
-  "http://localhost:8765",
-]);
+import { isAllowedSiteOrigin } from "./oauth-allowed-origins";
 
 /** Worker routes Flutter calls from a different origin than the site host. */
 const FLUTTER_CORS_PATHS = new Set([
   "/api/care/accept",
   "/api/care/decline",
   "/api/care/incoming-invites",
+  "/api/care/today",
+  "/api/care/meds",
+  "/api/care/journal",
+  "/api/care/seizures",
+  "/api/care/reports",
+  "/api/care/report",
   "/api/health/whoop-config",
   "/api/health/whoop-exchange",
   "/api/health/whoop-sync",
+  "/api/account/personal-share-code",
+  "/api/chat",
   "/api/ai/summarize-report",
   "/api/ai/metric-insight",
   "/api/ai/daily-insight-cards",
@@ -27,7 +32,7 @@ function isFlutterCorsPath(pathname: string): boolean {
 
 function allowedOrigin(origin: string | null): string | null {
   if (!origin) return null;
-  if (FLUTTER_WEB_ORIGINS.has(origin)) return origin;
+  if (isAllowedSiteOrigin(origin)) return origin;
   const site = process.env.PUBLIC_SITE_URL?.replace(/\/+$/, "");
   if (site && origin === site) return origin;
   return null;

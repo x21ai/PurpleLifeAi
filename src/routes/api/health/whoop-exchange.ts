@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { createFileRoute } from "@tanstack/react-router";
+import { isAllowedWearableOAuthRedirectUri } from "@/lib/oauth-allowed-origins";
 
 /**
  * Whoop OAuth code exchange for Flutter and other non-TanStack clients.
@@ -41,6 +42,9 @@ export const Route = createFileRoute("/api/health/whoop-exchange")({
         const redirect_uri = body.redirect_uri?.trim();
         if (!code || !redirect_uri) {
           return json({ error: "code and redirect_uri are required" }, 400);
+        }
+        if (!isAllowedWearableOAuthRedirectUri(redirect_uri)) {
+          return json({ error: "Invalid redirect_uri" }, 400);
         }
 
         try {
