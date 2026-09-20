@@ -20,30 +20,36 @@ https://www.purplelife.org is unchanged (`purplelife` Worker + `wrangler.deploy.
 
 **Request routing on staging:**
 
-1. `/api/public/design-preview/session` — minted on staging (prod D1 user lookup + shared `AUTH_JWT_SECRET`)
+1. `/api/public/design-preview/session` — **disabled** for public (`404` when `STAGING_REAL_AUTH=1`); operator bypass only (see below)
 2. `/api/*` — proxied to prod `purplelife` (same JWT, same D1 queries)
 3. Everything else — Ploy Astro static/SSR from `ploy-staging/dist/client`
 
 Config: `wrangler.staging.jsonc` (account `08e766e92db74bc7ef14c6b5c86bddf0`).
 
-## Auth on staging
+## Auth on staging (production-shaped)
 
-Every visitor is auto-signed in as the **founding-team account** (full prod D1/R2 fidelity):
+Staging uses the **same sign-in path as www**: `POST /api/auth/sign-in` (proxied to prod `purplelife`), JWT in `localStorage` as `purple-cf-session`, then `Authorization: Bearer` on `POST /api/data/query`.
 
-| Field | Value |
-|-------|-------|
+**Testers:**
+
+1. Open https://staging.purplelife.org/login (or `/sign-in`)
+2. Sign in with a production account (default QA user: `pmt@eigital.com`)
+3. Password is **not** in the repo; operators use the known founding-team password from Doppler / internal runbook (same credential as www)
+4. After sign-in, live pages (`/today`, `/journal`, `/meds`, `/reports`, `/tools`, etc.) load production D1/R2 for that user
+5. Sign out from the amber staging banner (clears session, returns to `/login`)
+
+| Field | Default QA user |
+|-------|-----------------|
 | Email | `pmt@eigital.com` |
 | User id | `bb160030-2ed6-45d7-8a5a-7f6f7879e9bb` |
 
-Flow (same pattern as `purplelife-design.eigital.workers.dev`):
+**Design-preview auto-mint (operator only):**
 
-1. Astro client calls `GET /api/public/design-preview/session`
-2. Staging Worker reads `auth_users` from **production D1**
-3. Mints HS256 JWT with `AUTH_JWT_SECRET` (must match prod Worker)
-4. Client stores token in `localStorage` (`purple-cf-session`)
-5. Data fetches go to `POST /api/data/query` (proxied to prod)
+Public `GET /api/public/design-preview/session` returns **404** when `DESIGN_PREVIEW=0` and `STAGING_REAL_AUTH=1` (current default).
 
-Real sign-in (`POST /api/auth/sign-in`) also works via prod proxy if you add a sign-in form later.
+For curl/smoke without a password, set Worker secret `DESIGN_PREVIEW_BYPASS_SECRET` and pass header `X-Purple-Design-Preview-Secret: <value>`. Do not share the secret in docs or chat.
+
+**www unchanged:** production Worker `purplelife` and `wrangler.deploy.jsonc` are not modified by staging auth.
 
 ## DNS
 
@@ -86,22 +92,36 @@ Set `PUBLIC_SITE_URL` is already in `wrangler.staging.jsonc` vars.
 ```bash
 BASE=https://staging.purplelife.org
 
-# Session bootstrap (200 + access_token; sub = pmt user id)
-curl -sS "$BASE/api/public/design-preview/session" | jq '.user.id, .access_token[:24]'
+# Public mint disabled (404)
+curl -sS -o /dev/null -w "design-preview session %{http_code}\n" \
+  "$BASE/api/public/design-preview/session"
 
-# Ploy Today shell (200, new design)
-curl -sS -o /dev/null -w "%{http_code}\n" "$BASE/today/"
+# Login page (200)
+curl -sS -o /dev/null -w "/login %{http_code}\n" "$BASE/login/"
+
+# Real sign-in (password from operator; never commit)
+# doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c '
+#   curl -sS "$BASE/api/auth/sign-in" -H "Content-Type: application/json" \
+#     -d "{\"email\":\"pmt@eigital.com\",\"password\":\"$E2E_PASSWORD\"}" | jq ".user.id, .access_token[:24]"
+# '
+TOKEN="<paste access_token from sign-in or browser localStorage purple-cf-session>"
 
 # Proxied API (401 without token, 200 with token)
-TOKEN=$(curl -sS "$BASE/api/public/design-preview/session" | jq -r .access_token)
-curl -sS -o /dev/null -w "%{http_code}\n" \
+curl -sS -o /dev/null -w "data/query %{http_code}\n" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"table":"biometrics","mode":"select","select":"recorded_at","limit":1}' \
   "$BASE/api/data/query"
+
+# Ploy Today shell (200; data chips need browser sign-in first)
+curl -sS -o /dev/null -w "/today %{http_code}\n" "$BASE/today/"
 ```
 
-Browser: open `/today` — status chips and narrative should reflect **live** pmt data (not Empty day / Sample day toggles).
+Browser:
+
+1. Open `/login`, sign in as `pmt@eigital.com`
+2. Open `/today` — status chips and narrative should reflect **live** pmt data (not Empty day / Sample day toggles)
+3. Amber banner shows signed-in email; **Sign out** clears session
 
 Journal and meds live pages (same session + proxy):
 
@@ -157,7 +177,9 @@ Browser: `/reports` and `/reports/documents` list live `report_documents`; `/too
 
 ## Security warning
 
-Staging is **public**. Anyone with the URL can browse **all of pmt@eigital.com's production data** until the Worker is removed or auth is tightened. Share only with design/engineering. Not HIPAA-safe for external audiences.
+Staging is **public**, but live data pages require **sign-in** (production password). Do not commit passwords or bypass secrets. Share staging URL only with design/engineering who have founding-team credentials. Not HIPAA-safe for external audiences.
+
+Operator bypass (`DESIGN_PREVIEW_BYPASS_SECRET`) mints a JWT without password; treat like a live credential.
 
 ## Tear down
 

@@ -5,7 +5,7 @@ import { PilotAppShell } from "@/components/sections/pilot-app-shell";
 import { JournalRibbon } from "@/components/pages/pilot/components/mobile-graphics";
 import { StagingBanner } from "./staging-banner";
 import { isStagingLiveData } from "@/lib/staging/config";
-import { ensureStagingSession } from "@/lib/staging/session";
+import { ensureStagingSession, stagingSignInRequiredMessage } from "@/lib/staging/session";
 import {
   createJournalEntry,
   fetchJournalEntries,
@@ -129,7 +129,7 @@ export function StagingLiveJournalPage() {
                 ? "Connecting to production data…"
                 : sessionOk
                   ? `Live journal · ${entries.length} entr${entries.length === 1 ? "y" : "ies"} (pmt account).`
-                  : "Could not bootstrap staging session. Check Worker secrets."}
+                  : stagingSignInRequiredMessage()}
             </p>
           )}
           {searchOpen && (

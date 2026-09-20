@@ -16,7 +16,7 @@ import { DetailHeader } from "@/components/pages/pilot/detail/page";
 import { SignalOrb } from "@/components/pages/pilot/components/mobile-graphics";
 import { StagingBanner } from "./staging-banner";
 import { isStagingLiveData } from "@/lib/staging/config";
-import { ensureStagingSession } from "@/lib/staging/session";
+import { ensureStagingSession, stagingSignInRequiredMessage } from "@/lib/staging/session";
 import {
   fetchWearableConnections,
   type ConnectionState,
@@ -116,7 +116,7 @@ export function StagingLiveToolsPage() {
               ? "Connecting to production data…"
               : sessionOk
                 ? `Live integrations · ${connectedCount} of 3 connected (pmt account).`
-                : "Could not bootstrap staging session. Check Worker secrets."}
+                : stagingSignInRequiredMessage()}
           </p>
         )}
 

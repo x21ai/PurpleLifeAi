@@ -6,8 +6,12 @@ export type StagingEnv = {
   STORAGE: R2Bucket;
   AUTH_JWT_SECRET?: string;
   DESIGN_PREVIEW?: string;
+  /** When set, GET /api/public/design-preview/session requires this header value. */
+  DESIGN_PREVIEW_BYPASS_SECRET?: string;
   DESIGN_PREVIEW_USER_ID?: string;
   DESIGN_PREVIEW_USER_EMAIL?: string;
+  /** When "1", public design-preview mint is off; use POST /api/auth/sign-in. */
+  STAGING_REAL_AUTH?: string;
   DATA_BACKEND?: string;
   STAGING_LIVE_DATA?: string;
   PUBLIC_SITE_URL?: string;

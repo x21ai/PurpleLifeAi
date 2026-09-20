@@ -1,4 +1,4 @@
-import { DESIGN_PREVIEW_DEFAULT_USER_ID, isStagingLiveData, STAGING_SESSION_KEY } from "./config";
+import { isStagingLiveData, STAGING_SESSION_KEY } from "./config";
 
 export type StagingSession = {
   access_token: string;
@@ -10,7 +10,12 @@ export type StagingSession = {
   };
 };
 
-let bootstrapPromise: Promise<boolean> | null = null;
+export const STAGING_SIGN_IN_PATH = "/login";
+
+/** Message for live pages when no session is stored. */
+export function stagingSignInRequiredMessage(): string {
+  return `Sign in at ${STAGING_SIGN_IN_PATH} to load production data.`;
+}
 
 export function getStagingSession(): StagingSession | null {
   if (typeof window === "undefined") return null;
@@ -23,38 +28,54 @@ export function getStagingSession(): StagingSession | null {
   }
 }
 
-function setStagingSession(session: StagingSession): void {
+export function setStagingSession(session: StagingSession): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(STAGING_SESSION_KEY, JSON.stringify(session));
+}
+
+export function clearStagingSession(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(STAGING_SESSION_KEY);
+}
+
+/** True when a JWT from sign-in (or prior session) is in localStorage. Does not auto-mint. */
+export function hasStagingSession(): boolean {
+  return Boolean(getStagingSession()?.access_token);
 }
 
 export async function ensureStagingSession(): Promise<boolean> {
   if (!isStagingLiveData()) return false;
   if (typeof window === "undefined") return false;
-  if (getStagingSession()?.access_token) return true;
-  if (!bootstrapPromise) {
-    bootstrapPromise = fetchStagingSession().finally(() => {
-      bootstrapPromise = null;
-    });
-  }
-  return bootstrapPromise;
+  return hasStagingSession();
 }
 
-async function fetchStagingSession(): Promise<boolean> {
+export async function signInWithPassword(
+  email: string,
+  password: string,
+): Promise<{ ok: boolean; error: string | null }> {
   try {
-    const res = await fetch("/api/public/design-preview/session", {
-      method: "GET",
+    const res = await fetch("/api/auth/sign-in", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
       credentials: "same-origin",
-      headers: { Accept: "application/json" },
+      body: JSON.stringify({ email: email.trim(), password }),
     });
-    if (!res.ok) return false;
-    const data = (await res.json()) as StagingSession;
-    if (!data.access_token || !data.user?.id) return false;
+    const data = (await res.json().catch(() => ({}))) as StagingSession & { error?: string };
+    if (!res.ok) {
+      return { ok: false, error: data.error ?? "Invalid email or password" };
+    }
+    if (!data.access_token || !data.user?.id) {
+      return { ok: false, error: "Sign-in response missing token" };
+    }
     setStagingSession(data);
-    return data.user.id === DESIGN_PREVIEW_DEFAULT_USER_ID || Boolean(data.user.id);
+    return { ok: true, error: null };
   } catch {
-    return false;
+    return { ok: false, error: "Could not reach sign-in service" };
   }
+}
+
+export function signOutStaging(): void {
+  clearStagingSession();
 }
 
 export function authHeaders(): Record<string, string> {

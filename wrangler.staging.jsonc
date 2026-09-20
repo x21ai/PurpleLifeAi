@@ -1,7 +1,8 @@
 // Ploy Astro staging at staging.purplelife.org — separate Worker from production.
 // Uses the SAME production D1 + R2 as www.purplelife.org (no staging data fork).
 // Page routes: Astro build. /api/*: proxied to prod `purplelife` Worker (service binding).
-// Session mint: handled locally on staging (DESIGN_PREVIEW + shared AUTH_JWT_SECRET + prod D1).
+// Auth: POST /api/auth/sign-in proxied to prod (real password). Design-preview mint disabled
+// unless DESIGN_PREVIEW_BYPASS_SECRET header is set (operator curl only).
 //
 // Deploy: bun run deploy:staging:ploy
 // Prod www is untouched (wrangler.deploy.jsonc / Worker name `purplelife`).
@@ -24,7 +25,8 @@
   // Prod API surface (TanStack routes, D1 query, storage, AI, etc.)
   "services": [{ "binding": "PROD", "service": "purplelife" }],
   "vars": {
-    "DESIGN_PREVIEW": "1",
+    "DESIGN_PREVIEW": "0",
+    "STAGING_REAL_AUTH": "1",
     "DATA_BACKEND": "cloudflare",
     "STAGING_LIVE_DATA": "1",
     "DESIGN_PREVIEW_USER_ID": "bb160030-2ed6-45d7-8a5a-7f6f7879e9bb",

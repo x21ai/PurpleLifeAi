@@ -1,8 +1,8 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import { AccessPreviewPage } from "@/components/pages/access-preview/page";
+import { StagingLiveSignInPage } from "@/components/staging/staging-live-sign-in";
 export const prerender = true;
 ---
-<Layout title="Create account · PurpleLife" description="Create a private PurpleLife health journal." noindex={true}>
-  <AccessPreviewPage mode="sign-up" client:load />
+<Layout title="Create account · PurpleLife staging" description="Create a private PurpleLife health journal on staging." noindex={true}>
+  <StagingLiveSignInPage mode="sign-up" client:load />
 </Layout>

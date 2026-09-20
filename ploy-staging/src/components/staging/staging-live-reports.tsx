@@ -14,7 +14,7 @@ import { DetailHeader } from "@/components/pages/pilot/detail/page";
 import { JournalRibbon } from "@/components/pages/pilot/components/mobile-graphics";
 import { StagingBanner } from "./staging-banner";
 import { isStagingLiveData } from "@/lib/staging/config";
-import { ensureStagingSession } from "@/lib/staging/session";
+import { ensureStagingSession, stagingSignInRequiredMessage } from "@/lib/staging/session";
 import {
   fetchMedicalReports,
   fetchReportDocuments,
@@ -145,7 +145,7 @@ export function StagingLiveReportsPage() {
               ? "Connecting to production data…"
               : sessionOk
                 ? `Live reports · ${documents.length} document${documents.length === 1 ? "" : "s"} · ${medicalCount} generated report${medicalCount === 1 ? "" : "s"}.`
-                : "Could not bootstrap staging session. Check Worker secrets."}
+                : stagingSignInRequiredMessage()}
           </p>
         )}
 

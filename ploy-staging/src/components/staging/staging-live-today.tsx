@@ -4,7 +4,7 @@ import { PilotAppShell } from "@/components/sections/pilot-app-shell";
 import { MorningRhythmGraphic, WellbeingBloom } from "@/components/pages/pilot/components/mobile-graphics";
 import { StagingBanner } from "./staging-banner";
 import { isStagingLiveData } from "@/lib/staging/config";
-import { ensureStagingSession } from "@/lib/staging/session";
+import { ensureStagingSession, stagingSignInRequiredMessage } from "@/lib/staging/session";
 import {
   EMPTY_TODAY_LIVE,
   fetchTodayLiveData,
@@ -19,7 +19,7 @@ const addOptions = [
 ];
 
 /**
- * Today screen wired to production D1 via staging /api proxy + design-preview session.
+ * Today screen wired to production D1 via staging /api proxy + signed-in session.
  */
 export function StagingLiveTodayPage() {
   const [addOpen, setAddOpen] = useState(false);
@@ -108,7 +108,7 @@ export function StagingLiveTodayPage() {
                 ? "Connecting to production data…"
                 : live.hasLiveSession
                   ? "Live data from production D1 (pmt account)."
-                  : "Could not bootstrap staging session. Check Worker secrets."}
+                  : stagingSignInRequiredMessage()}
             </p>
           )}
         </header>

@@ -14,7 +14,7 @@ export default {
     const pathname = url.pathname.replace(/\/+$/, "") || "/";
 
     if (pathname === SESSION_PATH) {
-      return handleDesignPreviewSession(env);
+      return handleDesignPreviewSession(env, request);
     }
 
     // Same-origin /api/* on staging → prod `purplelife` Worker (shared prod D1/R2 logic).

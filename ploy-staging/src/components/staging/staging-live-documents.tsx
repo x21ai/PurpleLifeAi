@@ -15,7 +15,7 @@ import { DetailHeader } from "@/components/pages/pilot/detail/page";
 import { JournalRibbon } from "@/components/pages/pilot/components/mobile-graphics";
 import { StagingBanner } from "./staging-banner";
 import { isStagingLiveData } from "@/lib/staging/config";
-import { ensureStagingSession } from "@/lib/staging/session";
+import { ensureStagingSession, stagingSignInRequiredMessage } from "@/lib/staging/session";
 import { fetchReportDocuments, type ReportListItem } from "@/lib/staging/reports-data";
 
 type StagingLiveDocumentsPageProps = {
@@ -89,7 +89,7 @@ export function StagingLiveDocumentsPage({ backHref = "/reports" }: StagingLiveD
               ? "Connecting to production data…"
               : sessionOk
                 ? `Live documents · ${documents.filter((d) => !d.archived).length} current · ${documents.filter((d) => d.archived).length} rejected.`
-                : "Could not bootstrap staging session."}
+                : stagingSignInRequiredMessage()}
           </p>
         )}
 

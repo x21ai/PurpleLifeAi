@@ -35,8 +35,23 @@ async function findUserByEmail(db: D1Database, email: string): Promise<AuthUser 
     .first<AuthUser>();
 }
 
-export async function handleDesignPreviewSession(env: StagingEnv): Promise<Response> {
-  if (!isDesignPreviewEnabled(env)) {
+function hasDesignPreviewBypass(env: StagingEnv, request: Request): boolean {
+  const secret = env.DESIGN_PREVIEW_BYPASS_SECRET?.trim();
+  if (!secret) return false;
+  const header = request.headers.get("X-Purple-Design-Preview-Secret")?.trim();
+  return Boolean(header && header === secret);
+}
+
+/** Operator-only session mint. Disabled when DESIGN_PREVIEW=0 unless bypass header matches. */
+export async function handleDesignPreviewSession(
+  env: StagingEnv,
+  request: Request,
+): Promise<Response> {
+  const bypass = hasDesignPreviewBypass(env, request);
+  if (!bypass && !isDesignPreviewEnabled(env)) {
+    return Response.json({ error: "not_found" }, { status: 404 });
+  }
+  if (env.STAGING_REAL_AUTH === "1" && !bypass) {
     return Response.json({ error: "not_found" }, { status: 404 });
   }
   if (env.DATA_BACKEND !== "cloudflare") {

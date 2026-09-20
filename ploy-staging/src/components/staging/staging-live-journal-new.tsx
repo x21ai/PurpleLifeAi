@@ -5,7 +5,7 @@ import { DetailHeader } from "@/components/pages/pilot/detail/page";
 import { CaptureHalo } from "@/components/pages/pilot/components/mobile-graphics";
 import { StagingBanner } from "./staging-banner";
 import { isStagingLiveData } from "@/lib/staging/config";
-import { ensureStagingSession } from "@/lib/staging/session";
+import { ensureStagingSession, stagingSignInRequiredMessage } from "@/lib/staging/session";
 import { createJournalEntry } from "@/lib/staging/journal-data";
 
 const ENTRY_TYPES = [
@@ -80,7 +80,7 @@ export function StagingLiveJournalNewPage() {
               ? "Connecting…"
               : sessionOk
                 ? "Live write path enabled (pmt account)."
-                : "Could not bootstrap staging session."}
+                : stagingSignInRequiredMessage()}
           </p>
         )}
 

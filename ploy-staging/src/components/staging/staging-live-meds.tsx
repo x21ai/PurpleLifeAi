@@ -5,7 +5,7 @@ import { DetailHeader } from "@/components/pages/pilot/detail/page";
 import { MedicationOrbit } from "@/components/pages/pilot/components/mobile-graphics";
 import { StagingBanner } from "./staging-banner";
 import { isStagingLiveData } from "@/lib/staging/config";
-import { ensureStagingSession } from "@/lib/staging/session";
+import { ensureStagingSession, stagingSignInRequiredMessage } from "@/lib/staging/session";
 import {
   fetchMedsWithTodayDoses,
   formatMedSchedule,
@@ -108,7 +108,7 @@ export function StagingLiveMedsPage() {
               ? "Connecting to production data…"
               : sessionOk
                 ? `Live meds · ${medications.length} active · ${doses.length} dose${doses.length === 1 ? "" : "s"} today (${takenCount} taken).`
-                : "Could not bootstrap staging session. Check Worker secrets."}
+                : stagingSignInRequiredMessage()}
           </p>
         )}
 

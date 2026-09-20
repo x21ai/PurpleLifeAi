@@ -5,7 +5,7 @@ import { DetailHeader } from "@/components/pages/pilot/detail/page";
 import { MedicationOrbit } from "@/components/pages/pilot/components/mobile-graphics";
 import { StagingBanner } from "./staging-banner";
 import { isStagingLiveData } from "@/lib/staging/config";
-import { ensureStagingSession } from "@/lib/staging/session";
+import { ensureStagingSession, stagingSignInRequiredMessage } from "@/lib/staging/session";
 import { fetchDoseHistory, type DoseHistoryItem } from "@/lib/staging/meds-data";
 
 /**
@@ -63,7 +63,7 @@ export function StagingLiveMedsHistoryPage() {
               ? "Connecting to production data…"
               : sessionOk
                 ? `Live history · ${entries.length} dose row${entries.length === 1 ? "" : "s"} (last 30 days).`
-                : "Could not bootstrap staging session."}
+                : stagingSignInRequiredMessage()}
           </p>
         )}
 
