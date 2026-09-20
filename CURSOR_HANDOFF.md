@@ -1,4 +1,8 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-20 (Step 8 Flutter rebuild runbook; Step 9 SEO merged #52, not deployed; OAuth + CORS Step 4; Ploy staging Step 3 PR #44).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-20 (Flutter iOS build 29 merged; Step 8 rebuild runbook; Step 9 SEO #52 not deployed; PR #47 held).
+
+**Recent (2026-09-20): Flutter iOS build 29.** Squash-merged PR #54 → `main` @ `7d742575`.
+`flutter/pubspec.yaml` `1.0.0+29`. Exceeds ASC VALID 1.0 (28). No Worker deploy.
+Upload: `bun run ios:testflight` (see `docs/STEP8-FLUTTER-REBUILD.md`).
 
 **Recent (2026-09-20): Step 8 Flutter store rebuild runbook.** `docs/STEP8-FLUTTER-REBUILD.md`
 covers iOS TestFlight + Android AAB against `https://www.purplelife.org/api`. Shared dart-defines:

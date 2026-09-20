@@ -9,6 +9,10 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-20 Flutter iOS build 29 (merged):** Squash-merged to `main` @ `7d742575`.
+`flutter/pubspec.yaml` `1.0.0+28` → `1.0.0+29` (exceeds ASC VALID build 28). PR #54.
+No Worker deploy. PR #47 untouched. Next: `bun run ios:testflight`.
+
 **2026-09-20 Step 8 Flutter rebuild runbook:** `docs/STEP8-FLUTTER-REBUILD.md` inventories
 `org.purplelife.app` bundle ids, dart-defines, `WORKER_API_BASE_URL` routes, deep links, ASC/Play
 signing blockers. Shared `scripts/lib/flutter-dart-defines.sh`; iOS TestFlight + Android
