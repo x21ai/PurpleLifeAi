@@ -33,6 +33,11 @@ jobs:
 
   e2e-smoke:
     runs-on: ubuntu-latest
+    # Auth redirect tests need a client that can resolve getSession() without
+    # Supabase publishable secrets (often empty on fork/PR CI). Cloudflare shim
+    # reads localStorage only and redirects logged-out users to /sign-in.
+    env:
+      VITE_DATA_BACKEND: cloudflare
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
