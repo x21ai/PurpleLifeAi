@@ -14,15 +14,15 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 rebased onto main after #48. Explicit allowlists (`src/lib/oauth-allowed-origins.ts`); extended Flutter
 CORS paths; Google/Apple/Whoop `redirect_uri` validation. Audit: `docs/OAUTH-CORS-AUDIT.md`.
 Gate: `bun run check:oauth-cors`. Deploy **www** Worker only; staging (PR #44) unchanged. Do not merge until CI green.
-**2026-09-20 Ploy staging live-data Step 2 (PR #44 updated):** Branch
-`cursor/ploy-astro-staging-5b1c`. Worker `purplelife-staging` at
-staging.purplelife.org binds **production** D1 `8d0be2b3-84ec-4581-86f4-6b372ec1d5d7`
-and R2 `purplelifeai` (no data fork). Session mint + `/api/*` proxy unchanged.
-Live pages: `/today`, `/journal`, `/journal/new` (insert), `/meds`, `/meds/history`
-via `ploy-staging/src/lib/staging/` + `StagingLive*` components. Deploy:
-`bun run deploy:staging:ploy`; runbook `docs/DEPLOY-STAGING-PLOY.md`. **Deploy not
-run from cloud VM** (no wrangler auth). Smoke on live staging API: pmt user
-`bb160030-…`, journal_entries=2, active meds=0, today doses=0. www unchanged.
+**2026-09-20 Ploy staging live-data Step 2b (PR #44):** Branch
+`cursor/ploy-astro-staging-5b1c`. Staging Worker `purplelife-staging` @
+staging.purplelife.org (deployed Step 2a @ `258e06ca`). Live pages: `/today`,
+`/journal`, `/journal/new`, `/meds`, `/meds/history`, `/reports`,
+`/reports/documents`, `/documents`, `/tools` via `StagingLive*` + `/api/data/query`.
+Tools reads `oura_tokens`, `whoop_tokens`, `apple_health_tokens` (no secrets in UI).
+Reports reads `report_documents` + `medical_reports`. Deploy:
+`bun run deploy:staging:ploy`. www unchanged.
+
 
 **2026-09-15 Oura biometrics on Cloudflare D1 (merged):** PR #41 squash-merged to `main`
 @ `03ede232`. Cron and edge invoke persist `biometrics` (`source=oura`). Deploy bundle:

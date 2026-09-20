@@ -1,10 +1,10 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import { ReportsPreviewPage } from "@/components/pages/reports-preview/page";
+import { StagingLiveReportsPage } from "@/components/staging/staging-live-reports";
 
 export const prerender = true;
 ---
 
 <Layout title="Reports · PurpleLife" description="Prepare a read-only health summary to review before sharing." noindex={true}>
-  <ReportsPreviewPage area="Reports" client:load />
+  <StagingLiveReportsPage client:load />
 </Layout>

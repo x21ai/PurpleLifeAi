@@ -1,10 +1,10 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import { DocumentsPage } from "@/components/pages/documents/page";
+import { StagingLiveDocumentsPage } from "@/components/staging/staging-live-documents";
 
 export const prerender = true;
 ---
 
 <Layout title="Documents · PurpleLife" description="Review current and archived report files in the PurpleLife design preview." noindex={true}>
-  <DocumentsPage client:load />
+  <StagingLiveDocumentsPage backHref="/reports" client:load />
 </Layout>

@@ -1,10 +1,10 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import { ToolsPage } from "@/components/pages/tools/page";
+import { StagingLiveToolsPage } from "@/components/staging/staging-live-tools";
 
 export const prerender = true;
 ---
 
 <Layout title="Tools · PurpleLife" description="Preview Oura, Whoop, and Apple Health connection states without linking production accounts." noindex={true}>
-  <ToolsPage client:load />
+  <StagingLiveToolsPage client:load />
 </Layout>

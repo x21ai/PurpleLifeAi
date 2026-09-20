@@ -1,4 +1,4 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-20 (OAuth + CORS Step 4; Ploy staging journal+meds live data PR #44).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-20 (OAuth + CORS Step 4; Ploy staging Step 2b reports+tools PR #44).
 
 **Recent (2026-09-20): OAuth + CORS hardening (Step 4).** Audit `docs/OAUTH-CORS-AUDIT.md`.
 Allowlists: `src/lib/oauth-allowed-origins.ts`, `src/lib/flutter-api-cors.ts`. Gate:
@@ -6,12 +6,11 @@ Allowlists: `src/lib/oauth-allowed-origins.ts`, `src/lib/flutter-api-cors.ts`. G
 Deploy www Worker only. Manual consoles: Google Cloud (pmt@x21.com), Apple Developer
 (`org.purplelife.web`), Whoop native redirect (`whoop-native-redirect-console`).
 
-**Recent (2026-09-20): Ploy staging live data Step 2.** `/journal`, `/journal/new`,
-`/meds`, `/meds/history` wired like `/today` (`StagingLive*` + `ploy-staging/src/lib/staging/`).
-Insert journal entries and mark doses taken via proxied `POST /api/data/query`. Deploy:
-`bun run build:staging:ploy` then `bun run deploy:staging:ploy` (operator; cloud VM
-has no wrangler). Verify: `docs/DEPLOY-STAGING-PLOY.md` journal/meds curl block.
-Branch: `cursor/ploy-astro-staging-5b1c` / PR #44. www unchanged.
+**Recent (2026-09-20): Ploy staging live data Step 2b.** `/reports`, `/reports/documents`,
+`/documents`, `/tools` wired like `/today`. Reports from `report_documents`; tools shows
+Oura/Whoop/Apple token status (safe columns only). Step 2a deployed @ `258e06ca`; redeploy
+for Step 2b: `bun run build:staging:ploy` then `bun run deploy:staging:ploy`. Verify:
+`docs/DEPLOY-STAGING-PLOY.md`. Branch: `cursor/ploy-astro-staging-5b1c` / PR #44. www unchanged.
 
 **Recent (2026-09-15): Oura biometrics merged + deploy bundle.** PR #41 → `main` @
 `03ede232`. Deploy: `/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz`

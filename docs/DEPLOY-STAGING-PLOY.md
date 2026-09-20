@@ -129,6 +129,32 @@ done
 
 Browser: `/journal` lists live entries; `/journal/new` inserts to D1; `/meds` and `/meds/history` show live medication and dose rows (counts match API above).
 
+Reports and tools (same session):
+
+```bash
+# Report documents count
+curl -sS -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"table":"report_documents","mode":"select","select":"id,title,status","limit":100}' \
+  "$BASE/api/data/query" | jq '.data | length'
+
+# Wearable / Apple Health token status (no secrets)
+curl -sS -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"table":"oura_tokens","mode":"select","select":"last_sync_at,expires_at","limit":1}' \
+  "$BASE/api/data/query" | jq '.data'
+curl -sS -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"table":"whoop_tokens","mode":"select","select":"last_sync_at,expires_at","limit":1}' \
+  "$BASE/api/data/query" | jq '.data'
+curl -sS -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"table":"apple_health_tokens","mode":"select","select":"last_sync_at,last_webhook_at","limit":1}' \
+  "$BASE/api/data/query" | jq '.data'
+
+for p in /reports/ /reports/documents/ /documents/ /tools/; do
+  curl -sS -o /dev/null -w "$p %{http_code}\n" "$BASE$p"
+done
+```
+
+Browser: `/reports` and `/reports/documents` list live `report_documents`; `/tools` shows Oura, Whoop, and Apple Health connection status from token tables (read-only; OAuth on www).
+
 ## Security warning
 
 Staging is **public**. Anyone with the URL can browse **all of pmt@eigital.com's production data** until the Worker is removed or auth is tightened. Share only with design/engineering. Not HIPAA-safe for external audiences.
