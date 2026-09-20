@@ -10,6 +10,14 @@ Format:
 
 ---
 
+## Step 8 Flutter Android Play (raised 2026-09-20)
+
+- [ ] **`step8-android-play-signing`** — Flutter Android Release still signs with debug
+  keystore (`flutter/android/app/build.gradle.kts`); no Play Console app, upload keystore,
+  or Play Developer API service account. AAB build script exists (`bun run android:release`)
+  but Play upload is manual/blocked. Target: `docs/templates/play-store-automation-plan.md`.
+  _Raised 2026-09-20 by Step 8 runbook._
+
 ## Agent / CI environment (raised 2026-07-13)
 
 - [ ] **`xcode-beta-simulator-app-missing`** — Xcode 27.0 beta (`27A5209h`) at
