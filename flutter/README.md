@@ -102,5 +102,6 @@ flutter test
 
 ## Related docs
 
+- **Step 8 store rebuild:** `docs/STEP8-FLUTTER-REBUILD.md` (iOS TestFlight + Android AAB, Cloudflare Worker API)
 - Web counterpart: `docs/native-app-setup.md`
 - Sync runbook: `docs/LOVABLE-FLUTTER-SYNC.md` (when present)

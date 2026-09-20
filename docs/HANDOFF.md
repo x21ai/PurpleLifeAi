@@ -9,10 +9,14 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-**2026-09-20 Step 9 SEO marketing pass (PR open):** Branch
-`cursor/step9-seo-marketing-pass-cce9` adds `src/lib/marketing-seo.ts`, completes
-OG/Twitter/canonical on trust/privacy/terms/charter/community resources, fixes
-robots/sitemap (www sitemap URL, +trust/charter/privacy/terms, −/feedback redirect),
+**2026-09-20 Step 8 Flutter rebuild runbook:** `docs/STEP8-FLUTTER-REBUILD.md` inventories
+`org.purplelife.app` bundle ids, dart-defines, `WORKER_API_BASE_URL` routes, deep links, ASC/Play
+signing blockers. Shared `scripts/lib/flutter-dart-defines.sh`; iOS TestFlight + Android
+`bun run android:release` use explicit prod Worker base URL. **No www design flip** (PR #47 held).
+
+**2026-09-20 Step 9 SEO marketing pass (PR #52 merged):** Squash-merged to main. Adds
+`src/lib/marketing-seo.ts`, completes OG/Twitter/canonical on trust/privacy/terms/charter/community
+resources, fixes robots/sitemap (www sitemap URL, +trust/charter/privacy/terms, −/feedback redirect),
 `noindex` on community post detail. Runbook: `docs/STEP9-SEO-PASS.md`. **Not deployed**
 (Ploy #47 held).
 
@@ -89,12 +93,32 @@ clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
 
+### 2026-09-20T14:30:00Z — Step 8: Flutter iOS + Android rebuild runbook (Cloudflare www)
+
+- **Requested:** Inventory Flutter mobile app (bundle ids, dart-defines, `WORKER_API_BASE_URL`,
+  deep links, store notes); deliver `docs/STEP8-FLUTTER-REBUILD.md` + PR for CF API base URL fixes;
+  list Apple/Play signing blockers; no www design flip (do not merge/deploy PR #47).
+- **Done:** Added `docs/STEP8-FLUTTER-REBUILD.md` (full inventory, rebuild commands, verification
+  gates, signing blockers). Added `scripts/lib/flutter-dart-defines.sh` (shared prod
+  `WORKER_API_BASE_URL` + `SITE_URL`). Updated `scripts/flutter-ios-testflight.sh` and
+  `scripts/flutter-web-build-prod.sh` to use shared defines. Added
+  `scripts/flutter-android-release.sh` + `bun run android:release`. Linked from `flutter/README.md`.
+- **Issues:** Flutter SDK not installed on cloud VM (could not run `flutter test` here). Android Play
+  upload still blocked (debug signing, no Console app, no service account). PR #47 remains held.
+- **Stand / next:** Operator runs iOS rebuild on Mac (`bun run ios:testflight` after pubspec `+N`
+  bump); implement Play signing per `docs/templates/play-store-automation-plan.md` before Android
+  store upload.
+- **Who / where:** Cloud agent, branch `cursor/step8-flutter-rebuild-runbook-af3a`
+- **Evidence:** Runbook `docs/STEP8-FLUTTER-REBUILD.md`; dart-define helper
+  `scripts/lib/flutter-dart-defines.sh`
+- **Timestamp:** 2026-09-20T14:30:00Z
+
 ### 2026-09-20T14:30:00Z — Step 9: SEO marketing pass (TanStack www)
 
 - **Requested:** Audit live meta/OG/robots/sitemap/canonicals on marketing routes; safe SEO improvements in PR; document in `docs/STEP9-SEO-PASS.md`; no deploy; do not merge #47 / Ploy www flip.
-- **Done:** Live curl audit of prod head tags, `robots.txt`, `sitemap.xml`. Added `src/lib/marketing-seo.ts`; refactored 11 marketing routes to shared `marketingHead()` (per-page Twitter + canonical); expanded sitemap (+trust, +charter, +privacy, +terms, −feedback); robots.txt www sitemap + admin/friend/messages/users disallow; `noindex` on `/community/$postId`; default `og:url` in `__root.tsx`. Branch `cursor/step9-seo-marketing-pass-cce9`.
+- **Done:** Live curl audit of prod head tags, `robots.txt`, `sitemap.xml`. Added `src/lib/marketing-seo.ts`; refactored 11 marketing routes to shared `marketingHead()` (per-page Twitter + canonical); expanded sitemap (+trust, +charter, +privacy, +terms, −feedback); robots.txt www sitemap + admin/friend/messages/users disallow; `noindex` on `/community/$postId`; default `og:url` in `__root.tsx`. Squash-merged as PR #52.
 - **Issues:** Cloud VM has no `bun`/deps installed; L0 gates not run here. Operator runs `tsc`, `build`, deploy smoke per runbook.
-- **Stand / next:** Open/merge SEO PR; operator deploy when ready (manual workflow only).
+- **Stand / next:** Operator deploy when ready (manual workflow only). SEO is on main; not auto-deployed.
 - **Who / where:** Cursor cloud agent, `cursor/step9-seo-marketing-pass-cce9`.
 - **Evidence:** Live audit in `docs/STEP9-SEO-PASS.md`; prod `curl` 2026-09-20 pre-change.
 - **Timestamp:** 2026-09-20T14:30:00Z

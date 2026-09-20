@@ -1,6 +1,11 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-20 (Step 9 SEO pass, not deployed; OAuth + CORS Step 4 merged; Ploy staging Step 3 real auth PR #44).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-20 (Step 8 Flutter rebuild runbook; Step 9 SEO merged #52, not deployed; OAuth + CORS Step 4; Ploy staging Step 3 PR #44).
 
-**Recent (2026-09-20): Step 9 SEO marketing pass.** Branch `cursor/step9-seo-marketing-pass-cce9`:
+**Recent (2026-09-20): Step 8 Flutter store rebuild runbook.** `docs/STEP8-FLUTTER-REBUILD.md`
+covers iOS TestFlight + Android AAB against `https://www.purplelife.org/api`. Shared dart-defines:
+`scripts/lib/flutter-dart-defines.sh`. Commands: `bun run ios:testflight`, `bun run android:release`.
+**PR #47 (Ploy www) held** — no design flip. Android Play blocked: debug signing only.
+
+**Recent (2026-09-20): Step 9 SEO marketing pass.** Squash-merged PR #52 → `main`:
 shared `marketingHead()` for public marketing routes, sitemap/robots fixes, runbook
 `docs/STEP9-SEO-PASS.md`. **Not deployed.** Ploy www flip (#47) still held.
 
