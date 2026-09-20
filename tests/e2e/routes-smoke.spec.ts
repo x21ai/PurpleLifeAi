@@ -12,7 +12,11 @@ for (const path of PUBLIC_ROUTES) {
     await expect(page.locator("body")).not.toContainText(/Application error/i);
     // No uncaught console errors on first paint.
     expect(
-      consoleErrors.filter((e) => !/Failed to load resource/i.test(e)),
+      consoleErrors.filter(
+        (e) =>
+          !/Failed to load resource/i.test(e) &&
+          !/Viewport argument key .* not recognized/i.test(e),
+      ),
     ).toEqual([]);
   });
 }
@@ -20,8 +24,7 @@ for (const path of PUBLIC_ROUTES) {
 const AUTH_ROUTES = ["/today", "/biometrics", "/journal", "/meds", "/settings", "/settings/sharing"];
 for (const path of AUTH_ROUTES) {
   test(`auth route ${path} redirects when logged out`, async ({ page }) => {
-    await page.goto(path);
-    await page.waitForLoadState("domcontentloaded");
-    await expect(page).toHaveURL(/\/sign-in|\/welcome|\/$/);
+    await page.goto(path, { waitUntil: "domcontentloaded" });
+    await page.waitForURL(/\/sign-in|\/welcome|\/$/, { timeout: 15_000 });
   });
 }

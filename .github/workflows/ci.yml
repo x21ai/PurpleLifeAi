@@ -33,6 +33,11 @@ jobs:
 
   e2e-smoke:
     runs-on: ubuntu-latest
+    # Auth redirect tests need a client that can resolve getSession() without
+    # Supabase publishable secrets (often empty on fork/PR CI). Cloudflare shim
+    # reads localStorage only and redirects logged-out users to /sign-in.
+    env:
+      VITE_DATA_BACKEND: cloudflare
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -57,7 +62,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
-      - run: bunx playwright install --with-deps chromium
+      - run: bunx playwright install --with-deps chromium webkit
       - run: bunx playwright test tests/e2e/responsive-sweep.spec.ts -g "public routes" --project=mobile-375 --project=tablet-768
       - uses: actions/upload-artifact@v4
         if: failure()

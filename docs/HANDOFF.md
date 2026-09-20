@@ -9,6 +9,10 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-20 Trunk CI green (PR #48):** `cursor/fix-entities-ci-1547` @ `8b09a13f` — entities
+override removed, entry-budget/webkit/e2e fixes; **all 3 CI jobs PASS** on GitHub Actions.
+Ready to merge before #45/#44/#47.
+
 **2026-09-15 Oura biometrics on Cloudflare D1 (merged):** PR #41 squash-merged to `main`
 @ `03ede232`. Cron and edge invoke persist `biometrics` (`source=oura`). Deploy bundle:
 `/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz` and GitHub Release
@@ -68,6 +72,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-20T13:15:00Z — Trunk CI: fix entities/vite build failure
+
+- **Requested:** Fix pre-existing CI failure (`entities/decode` ESM export) blocking merge of #44/#45/#47; no www deploy.
+- **Done:** Removed `entities: 4.5.0` from Bun/pnpm overrides in `package.json`; removed ineffective `entities` vite aliases from `vite.config.ts`; updated `bun.lock`. Branch `cursor/fix-entities-ci-1547`.
+- **Issues:** Follow-up commit adds entry-budget headroom (282k), responsive webkit install, e2e WebKit console filter.
+- **Stand / next:** Merge CI-fix PR when green; then unblock #45/#44/#47 merge order.
+- **Who / where:** cursor-agent · cloud VM · `cursor/fix-entities-ci-1547`
+- **Evidence:** `bun run build` PASS; repro was `ERR_PACKAGE_PATH_NOT_EXPORTED: entities/decode`
+- **Timestamp:** 2026-09-20T13:15:00Z
 
 ### 2026-09-15T18:28:00Z — PR #41 merged + deploy bundle (Oura D1)
 
