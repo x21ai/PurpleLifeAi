@@ -97,6 +97,19 @@ clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
 
+### 2026-09-20T15:12:00Z — Flutter iOS build 29 bump for TestFlight
+
+- **Requested:** Bump `flutter/pubspec.yaml` from `1.0.0+28` to `1.0.0+29`; open PR, CI green,
+  squash-merge to main; no Worker deploy; do not touch PR #47.
+- **Done:** PR #54 opened on `cursor/flutter-ios-build-29-e917`. CI green (checks, e2e-smoke,
+  responsive). Squash-merged to `main` @ `7d742575` (direct push; GitHub API merge 403).
+- **Issues:** PR #54 may still show open on GitHub until closed manually; merge SHA on main is
+  authoritative.
+- **Stand / next:** Operator runs `bun run ios:testflight` on Mac to upload build 29 to ASC.
+- **Who / where:** Cursor cloud agent, `main@7d742575`.
+- **Evidence:** CI run https://github.com/x21ai/PurpleLifeAi/actions/runs/35518523107 (all success).
+- **Timestamp:** 2026-09-20T15:12:00Z
+
 ### 2026-09-20T14:30:00Z — Step 8: Flutter iOS + Android rebuild runbook (Cloudflare www)
 
 - **Requested:** Inventory Flutter mobile app (bundle ids, dart-defines, `WORKER_API_BASE_URL`,
