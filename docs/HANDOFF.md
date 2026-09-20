@@ -9,18 +9,20 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-20 www Ploy hybrid entry (draft PR #47, NO deploy):** `ploy-staging/worker/www-entry.ts`
++ `wrangler.deploy.ploy.jsonc` route `/api/*` + `/oauth/*` to TanStack in-process and
+UI to Ploy Astro. Runbook `docs/DEPLOY-WWW-PLOY.md`; Step 6 still **NO-GO** for www flip
+until QA + owner GO. Verify: `bun run verify:www-ploy-entry`. Do **not** run wrangler deploy.
+**2026-09-20 PR #44 squash-merged to main:** `a24de80e` — Ploy Astro staging live-data + Step 3 real auth.
 **2026-09-20 PR #45 squash-merged to main:** `25c42d65` — OAuth + CORS allowlists for www and Flutter (`src/lib/oauth-allowed-origins.ts`, extended Flutter CORS, redirect_uri validation). Audit: `docs/OAUTH-CORS-AUDIT.md`. Gate: `bun run check:oauth-cors`. Deploy www Worker only (operator).
 **2026-09-20 PR #48 merged to main:** `cac619b4` — entities override removed, entry-budget/webkit/e2e fixes; trunk CI green.
-**2026-09-20 Ploy staging Step 3 real auth (PR #44):** Branch
-`cursor/ploy-astro-staging-5b1c`. Staging `purplelife-staging` @
+**2026-09-20 Ploy staging Step 3 real auth (merged via #44):** Staging `purplelife-staging` @
 staging.purplelife.org (last operator deploy Step 2b @ `ee4e187b`). **Auth:** public
 design-preview mint disabled (`DESIGN_PREVIEW=0`, `STAGING_REAL_AUTH=1`); testers sign
 in at `/login` via proxied `POST /api/auth/sign-in` (same JWT/`purple-cf-session` as
 www). Live pages require sign-in. Operator bypass: `DESIGN_PREVIEW_BYPASS_SECRET` +
-`X-Purple-Design-Preview-Secret` header. Live pages unchanged list from Step 2b.
-Redeploy: `bun run build:staging:ploy` then `bun run deploy:staging:ploy`. www
-Worker untouched.
-
+`X-Purple-Design-Preview-Secret` header. Redeploy: `bun run build:staging:ploy` then
+`bun run deploy:staging:ploy`. www Worker untouched pending owner GO on #47.
 
 
 **2026-09-15 Oura biometrics on Cloudflare D1 (merged):** PR #41 squash-merged to `main`
@@ -83,6 +85,16 @@ clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
 
+### 2026-09-20T13:55:58Z — PR #44 squash-merged; #47 rebased onto main
+
+- **Requested:** Continue merge sequence after #48; merge #45/#44 if CI green; rebase #47; no www deploy.
+- **Done:** #45 → `25c42d65`; #44 rebased (HANDOFF conflicts resolved) tip `1b90529`, CI green, squash-merged → `a24de80e`. #47 rebased onto main (base was #44 branch).
+- **Issues:** #47 still draft; do not deploy www / wrangler design flip.
+- **Stand / next:** Keep #47 draft until owner GO; no wrangler deploy.
+- **Who / where:** cursor-agent · cloud VM · merge sequence
+- **Evidence:** https://github.com/x21ai/PurpleLifeAi/pull/44 https://github.com/x21ai/PurpleLifeAi/pull/47
+- **Timestamp:** 2026-09-20T13:55:58Z
+
 ### 2026-09-20T13:50:51Z — PR #45 squash-merged to main (OAuth + CORS)
 
 - **Requested:** Continue merge sequence after #48; mark #45 ready; squash-merge; rebase #44; update #47; no www/wrangler design flip deploy.
@@ -112,6 +124,16 @@ clean + 254/254; web QA video ready. See Log for details.
 - **Who / where:** cursor-agent · cloud VM · `cursor/fix-entities-ci-1547`
 - **Evidence:** `bun run build` PASS; CI all green on tip `837b79ad`
 - **Timestamp:** 2026-09-20T13:15:00Z
+
+### 2026-09-20T13:05:00Z — www hybrid Worker entry (Step 6 infra, no flip)
+
+- **Requested:** Build `www-entry.ts` + `wrangler.deploy.ploy.jsonc` so Worker `purplelife` can serve Ploy Astro UI with in-process TanStack API; document flip commands; draft PR; no www deploy.
+- **Done:** Added `ploy-staging/worker/www-entry.ts`, `www-env.ts`, `wrangler.deploy.ploy.jsonc` (eigital D1 `8d0be2b3-…`), `scripts/build-ploy-www.sh`, `scripts/verify-www-ploy-entry.sh`, `docs/DEPLOY-WWW-PLOY.md`, Step 6 runbook update, `package.json` scripts (`build:ploy:www`, `build:www-ploy`, `verify:www-ploy-entry`, `deploy:www-ploy:dry-run`). Branch `cursor/www-hybrid-entry-1547` @ `3a068ca8`.
+- **Issues:** Full `bun run build:www-ploy` blocked on trunk `entities`/vite CI break + Doppler in VM; verify uses ephemeral TanStack stub. `ploy-staging` source still on PR #44 (dist-only on branch until merge).
+- **Stand / next:** Open draft PR; merge order: fix CI → #45 → #44 → www hybrid PR → owner GO → deploy `wrangler.deploy.ploy.jsonc`.
+- **Who / where:** cursor-agent · cloud VM · `cursor/www-hybrid-entry-1547` @ `3a068ca8`
+- **Evidence:** `bun run verify:www-ploy-entry` PASS (wrangler dry-run bundles `www-entry.js`)
+- **Timestamp:** 2026-09-20T13:05:00Z
 
 ### 2026-09-20T12:45:00Z — OAuth + CORS hardening (Step 4)
 
