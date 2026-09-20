@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
-      - run: bunx playwright install --with-deps chromium
+      - run: bunx playwright install --with-deps chromium webkit
       - run: bunx playwright test tests/e2e/responsive-sweep.spec.ts -g "public routes" --project=mobile-375 --project=tablet-768
       - uses: actions/upload-artifact@v4
         if: failure()

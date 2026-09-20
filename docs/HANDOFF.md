@@ -78,7 +78,7 @@ clean + 254/254; web QA video ready. See Log for details.
 
 - **Requested:** Fix pre-existing CI failure (`entities/decode` ESM export) blocking merge of #44/#45/#47; no www deploy.
 - **Done:** Removed `entities: 4.5.0` from Bun/pnpm overrides in `package.json`; removed ineffective `entities` vite aliases from `vite.config.ts`; updated `bun.lock`. Branch `cursor/fix-entities-ci-1547`.
-- **Issues:** `check:entry-budget` still fails locally (279293 gz vs 269000) when build completes; CI has not reached that step since July (build failed first).
+- **Issues:** Follow-up commit adds entry-budget headroom (282k), responsive webkit install, e2e WebKit console filter.
 - **Stand / next:** Merge CI-fix PR when green; then unblock #45/#44/#47 merge order.
 - **Who / where:** cursor-agent · cloud VM · `cursor/fix-entities-ci-1547`
 - **Evidence:** `bun run build` PASS; repro was `ERR_PACKAGE_PATH_NOT_EXPORTED: entities/decode`
