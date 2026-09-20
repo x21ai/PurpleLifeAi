@@ -9,6 +9,11 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-20 Trunk CI entities fix (draft PR):** Removed global `entities@4.5.0` Bun override
+that forced `htmlparser2@10` (cheerio) to use incompatible exports; `bun run build` PASS locally.
+Branch `cursor/fix-entities-ci-1547`. Unblocks CI build step; `check:entry-budget` may still
+fail separately (pre-existing).
+
 **2026-09-15 Oura biometrics on Cloudflare D1 (merged):** PR #41 squash-merged to `main`
 @ `03ede232`. Cron and edge invoke persist `biometrics` (`source=oura`). Deploy bundle:
 `/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz` and GitHub Release
@@ -68,6 +73,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-20T13:15:00Z — Trunk CI: fix entities/vite build failure
+
+- **Requested:** Fix pre-existing CI failure (`entities/decode` ESM export) blocking merge of #44/#45/#47; no www deploy.
+- **Done:** Removed `entities: 4.5.0` from Bun/pnpm overrides in `package.json`; removed ineffective `entities` vite aliases from `vite.config.ts`; updated `bun.lock`. Branch `cursor/fix-entities-ci-1547`.
+- **Issues:** `check:entry-budget` still fails locally (279293 gz vs 269000) when build completes; CI has not reached that step since July (build failed first).
+- **Stand / next:** Merge CI-fix PR when green; then unblock #45/#44/#47 merge order.
+- **Who / where:** cursor-agent · cloud VM · `cursor/fix-entities-ci-1547`
+- **Evidence:** `bun run build` PASS; repro was `ERR_PACKAGE_PATH_NOT_EXPORTED: entities/decode`
+- **Timestamp:** 2026-09-20T13:15:00Z
 
 ### 2026-09-15T18:28:00Z — PR #41 merged + deploy bundle (Oura D1)
 
