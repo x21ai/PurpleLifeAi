@@ -3,18 +3,18 @@ import { ArrowLeft } from "lucide-react";
 import { useRouteTheme } from "@/lib/use-route-theme";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { marketingHead } from "@/lib/marketing-seo";
 
 export const Route = createFileRoute("/privacy")({
-  head: () => ({
-    meta: [
-      { title: "Privacy & safety · Purple" },
-      {
-        name: "description",
-        content:
-          "How Purple handles your health data. Your journal, biometrics, and medications belong to you. No ads, no trackers, no selling. Export or delete anytime.",
-      },
-    ],
-  }),
+  head: () =>
+    marketingHead({
+      path: "/privacy",
+      title: "Privacy & safety · Purple",
+      description:
+        "How Purple handles your health data. Your journal, biometrics, and medications belong to you. No ads, no trackers, no selling. Export or delete anytime.",
+      ogDescription:
+        "Your health data belongs to you. No ads, no trackers, no selling. Export or delete anytime.",
+    }),
   component: PrivacyPage,
 });
 

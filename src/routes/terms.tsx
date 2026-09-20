@@ -1,16 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { marketingHead } from "@/lib/marketing-seo";
 
 export const Route = createFileRoute("/terms")({
-  head: () => ({
-    meta: [
-      { title: "Terms · Purple" },
-      { name: "description", content: "The terms of using Purple, plain language, no surprises." },
-      { property: "og:title", content: "Terms · Purple" },
-      { property: "og:description", content: "The terms of using Purple, plain language, no surprises." },
-    ],
-  }),
+  head: () =>
+    marketingHead({
+      path: "/terms",
+      title: "Terms · Purple",
+      description: "The terms of using Purple, plain language, no surprises.",
+    }),
   component: TermsPage,
 });
 

@@ -11,25 +11,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { CalmHero } from "@/components/marketing/calm-scene";
 import { contactImages } from "@/lib/calm-images/contact";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
+import { marketingHead } from "@/lib/marketing-seo";
 
 export const Route = createFileRoute("/contact")({
-  head: () => ({
-    meta: [
-      { title: "Say hello · Purple" },
-      {
-        name: "description",
-        content:
-          "A real person reads every message. Usually within a day. Questions, feedback, or just want to chat, we&rsquo;re here.",
-      },
-      { property: "og:title", content: "Say hello · Purple" },
-      {
-        property: "og:description",
-        content: "A real person reads every message. Usually within a day.",
-      },
-      { property: "og:url", content: "https://www.purplelife.org/contact" },
-    ],
-    links: [{ rel: "canonical", href: "https://www.purplelife.org/contact" }],
-  }),
+  head: () =>
+    marketingHead({
+      path: "/contact",
+      title: "Say hello · Purple",
+      description:
+        "A real person reads every message. Usually within a day. Questions, feedback, or just want to chat, we're here.",
+      ogDescription: "A real person reads every message. Usually within a day.",
+    }),
   component: ContactPage,
 });
 

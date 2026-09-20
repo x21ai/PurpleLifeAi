@@ -7,22 +7,17 @@ import { CalmHero, CalmBand, HumanMoment, StillLife } from "@/components/marketi
 import { ResponsiveImage } from "@/components/marketing/responsive-image";
 import { featuresImages } from "@/lib/calm-images/features";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
+import { marketingHead } from "@/lib/marketing-seo";
 
 export const Route = createFileRoute("/features")({
-  head: () => ({
-    meta: [
-      { title: "Features. Purple." },
-      {
-        name: "description",
-        content:
-          "Everything Purple does: a multi-modal journal, a quiet AI that knows your history, a unified timeline, smart meds, biometrics, and a community that gets it.",
-      },
-      { property: "og:title", content: "Features. Purple." },
-      { property: "og:description", content: "Everything Purple does, in one quiet companion." },
-      { property: "og:url", content: "https://www.purplelife.org/features" },
-    ],
-    links: [{ rel: "canonical", href: "https://www.purplelife.org/features" }],
-  }),
+  head: () =>
+    marketingHead({
+      path: "/features",
+      title: "Features. Purple.",
+      description:
+        "Everything Purple does: a multi-modal journal, a quiet AI that knows your history, a unified timeline, smart meds, biometrics, and a community that gets it.",
+      ogDescription: "Everything Purple does, in one quiet companion.",
+    }),
   component: FeaturesPage,
 });
 
