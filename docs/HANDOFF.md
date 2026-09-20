@@ -114,6 +114,17 @@ clean + 254/254; web QA video ready. See Log for details.
 - **Evidence:** `bun run check:oauth-cors` PASS; `tsc --noEmit` PASS
 - **Timestamp:** 2026-09-20T12:45:00Z
 
+### 2026-09-20T04:36:00Z — Ploy staging reports + tools live data (Step 2b)
+
+- **Requested:** Wire `/reports`, documents, and `/tools` (Oura/Whoop/Apple status) on staging PR #44; www unchanged.
+- **Done:** Added `reports-data.ts`, `tools-data.ts`, `format.ts`. Components `StagingLiveReportsPage`, `StagingLiveDocumentsPage`, `StagingLiveToolsPage`. Astro routes `/reports`, `/reports/documents`, `/documents`, `/tools` swapped. Runbook verify extended. Build PASS.
+- **Issues:** Cloud VM did not deploy (operator owns wrangler). Step 2a already live @ `258e06ca`; Step 2b needs redeploy for new JS bundles.
+- **Stand / next:** Operator `bun run deploy:staging:ploy`; browser QA `/reports` (report_documents), `/tools` (3 token rows).
+- **Who / where:** cursor-agent · cloud VM · `cursor/ploy-astro-staging-5b1c`
+- **Evidence:** `bun run build:staging:ploy` PASS; staging API probe report_documents + token tables; shells 200 for `/reports/`, `/reports/documents/`, `/documents/`, `/tools/`
+- **Timestamp:** 2026-09-20T04:36:00Z
+
+
 ### 2026-09-20T04:32:00Z — Ploy staging journal + meds live data (Step 2)
 
 - **Requested:** Wire staging Journal list/new entry and Meds/history to production D1 via proxied APIs (Today pattern); keep www unchanged; update PR #44.
