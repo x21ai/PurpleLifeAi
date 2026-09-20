@@ -1,4 +1,9 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-15 (Oura D1 merged @ 03ede232).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-20 (Step 6 www flip dry-run).
+
+**Recent (2026-09-20): Step 6 www Ploy flip dry-run.** Runbook:
+`ploy-purplelife-source/STEP6-WWW-FLIP-DRYRUN.md`. **NO-GO** for www design flip.
+Open PRs: #44 staging Ploy (draft), #45 OAuth/CORS (draft, deployed to www from branch).
+Next: fix trunk CI, merge order #45→#44, implement `www-entry` Worker before flip.
 
 **Recent (2026-09-15): Oura biometrics merged + deploy bundle.** PR #41 → `main` @
 `03ede232`. Deploy: `/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz`

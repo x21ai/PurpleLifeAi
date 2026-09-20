@@ -9,6 +9,11 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-20 www Ploy flip dry-run (Step 6):** Runbook
+`ploy-purplelife-source/STEP6-WWW-FLIP-DRYRUN.md`. **NO-GO** for www design flip:
+trunk CI red, `www-entry` Worker missing, PR #44/#45 unmerged. Staging smoke PASS;
+`purplelife-design` deleted (Step 5). www + staging healthy.
+
 **2026-09-15 Oura biometrics on Cloudflare D1 (merged):** PR #41 squash-merged to `main`
 @ `03ede232`. Cron and edge invoke persist `biometrics` (`source=oura`). Deploy bundle:
 `/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz` and GitHub Release
@@ -68,6 +73,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-20T12:55:00Z — www Ploy flip dry-run runbook (Step 6)
+
+- **Requested:** Harden + dry-run readiness for www flip to Ploy Astro (no deploy, no merge unless safe). Summarize PRs #44/#45, merge order, blockers, rollback.
+- **Done:** Created `ploy-purplelife-source/STEP6-WWW-FLIP-DRYRUN.md` + README. GO/NO-GO table, staging preflight curls, rollback steps, future cutover commands, blocker list. Live checks: staging mint 404, live pages 200, www 200.
+- **Issues:** **NO-GO** — trunk CI broken, `www-entry.ts`/`wrangler.deploy.ploy.jsonc` not implemented, PRs draft/unmerged. PR #45 OAuth/CORS deployed to www from branch but not on `main`.
+- **Stand / next:** Fix trunk CI; merge #45 then #44; implement www hybrid Worker PR; extended staging QA; operator records pre-flip Worker version.
+- **Who / where:** cursor-agent · cloud VM · `cursor/step6-www-flip-dryrun-1547`
+- **Evidence:** curl staging/www smoke; CI status PR #44/#45 all failed (pre-existing entities/vite)
+- **Timestamp:** 2026-09-20T12:55:00Z
 
 ### 2026-09-15T18:28:00Z — PR #41 merged + deploy bundle (Oura D1)
 
