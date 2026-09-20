@@ -103,6 +103,32 @@ curl -sS -o /dev/null -w "%{http_code}\n" \
 
 Browser: open `/today` — status chips and narrative should reflect **live** pmt data (not Empty day / Sample day toggles).
 
+Journal and meds live pages (same session + proxy):
+
+```bash
+# Journal entry count for pmt
+curl -sS -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"table":"journal_entries","mode":"select","select":"id","limit":500}' \
+  "$BASE/api/data/query" | jq '.data | length'
+
+# Active medications + today's doses
+curl -sS -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"table":"medications","mode":"select","select":"id,name","filters":[{"op":"eq","col":"active","val":1}],"limit":100}' \
+  "$BASE/api/data/query" | jq '.data | length'
+
+DAY=$(date -u +%Y-%m-%d)
+curl -sS -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"table\":\"medication_doses\",\"mode\":\"select\",\"select\":\"id,status\",\"filters\":[{\"op\":\"gte\",\"col\":\"scheduled_at\",\"val\":\"${DAY}T00:00:00.000Z\"},{\"op\":\"lte\",\"col\":\"scheduled_at\",\"val\":\"${DAY}T23:59:59.999Z\"}],\"limit\":100}" \
+  "$BASE/api/data/query" | jq '.data | length'
+
+# Page shells (200)
+for p in /journal/ /journal/new/ /meds/ /meds/history/; do
+  curl -sS -o /dev/null -w "$p %{http_code}\n" "$BASE$p"
+done
+```
+
+Browser: `/journal` lists live entries; `/journal/new` inserts to D1; `/meds` and `/meds/history` show live medication and dose rows (counts match API above).
+
 ## Security warning
 
 Staging is **public**. Anyone with the URL can browse **all of pmt@eigital.com's production data** until the Worker is removed or auth is tightened. Share only with design/engineering. Not HIPAA-safe for external audiences.

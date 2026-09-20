@@ -1,6 +1,6 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import UtilityPage from "../../components/pages/utility-mobile/page";
+import { StagingLiveMedsHistoryPage } from "@/components/staging/staging-live-meds-history";
 export const prerender = true;
 ---
 <Layout
@@ -8,5 +8,5 @@ export const prerender = true;
   description="Review medication entries recorded in PurpleLife."
   noindex={true}
 >
-  <UtilityPage kind="med-history" client:load />
+  <StagingLiveMedsHistoryPage client:load />
 </Layout>

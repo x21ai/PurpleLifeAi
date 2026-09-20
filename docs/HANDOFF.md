@@ -14,15 +14,15 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 rebased onto main after #48. Explicit allowlists (`src/lib/oauth-allowed-origins.ts`); extended Flutter
 CORS paths; Google/Apple/Whoop `redirect_uri` validation. Audit: `docs/OAUTH-CORS-AUDIT.md`.
 Gate: `bun run check:oauth-cors`. Deploy **www** Worker only; staging (PR #44) unchanged. Do not merge until CI green.
-**2026-09-20 Ploy staging live-data wiring (PR #44):** Branch
+**2026-09-20 Ploy staging live-data Step 2 (PR #44 updated):** Branch
 `cursor/ploy-astro-staging-5b1c`. Worker `purplelife-staging` at
 staging.purplelife.org binds **production** D1 `8d0be2b3-84ec-4581-86f4-6b372ec1d5d7`
-and R2 `purplelifeai` (no data fork). Custom entry mints
-`/api/public/design-preview/session` (pmt auto-auth) and proxies `/api/*` to prod
-`purplelife`. Astro `/today` reads live biometrics/journal/meds/narrative via
-`/api/data/query`. Deploy: `bun run deploy:staging:ploy`; runbook
-`docs/DEPLOY-STAGING-PLOY.md`. **Not deployed from cloud VM** (no wrangler auth);
-operator must copy `AUTH_JWT_SECRET` to staging Worker. www unchanged.
+and R2 `purplelifeai` (no data fork). Session mint + `/api/*` proxy unchanged.
+Live pages: `/today`, `/journal`, `/journal/new` (insert), `/meds`, `/meds/history`
+via `ploy-staging/src/lib/staging/` + `StagingLive*` components. Deploy:
+`bun run deploy:staging:ploy`; runbook `docs/DEPLOY-STAGING-PLOY.md`. **Deploy not
+run from cloud VM** (no wrangler auth). Smoke on live staging API: pmt user
+`bb160030-…`, journal_entries=2, active meds=0, today doses=0. www unchanged.
 
 **2026-09-15 Oura biometrics on Cloudflare D1 (merged):** PR #41 squash-merged to `main`
 @ `03ede232`. Cron and edge invoke persist `biometrics` (`source=oura`). Deploy bundle:
@@ -113,6 +113,17 @@ clean + 254/254; web QA video ready. See Log for details.
 - **Who / where:** cursor-agent · cloud VM · `cursor/oauth-cors-hardening-1547`
 - **Evidence:** `bun run check:oauth-cors` PASS; `tsc --noEmit` PASS
 - **Timestamp:** 2026-09-20T12:45:00Z
+
+### 2026-09-20T04:32:00Z — Ploy staging journal + meds live data (Step 2)
+
+- **Requested:** Wire staging Journal list/new entry and Meds/history to production D1 via proxied APIs (Today pattern); keep www unchanged; update PR #44.
+- **Done:** Extended `ploy-staging/src/lib/staging/api-query.ts` (insert/update). Added `journal-data.ts`, `meds-data.ts`. New components: `StagingLiveJournalPage`, `StagingLiveJournalNewPage`, `StagingLiveMedsPage`, `StagingLiveMedsHistoryPage`. Astro routes `/journal`, `/journal/new`, `/meds`, `/meds/history` swapped to live components. Runbook verify section updated. Build `VITE_STAGING_LIVE_DATA=1` PASS.
+- **Issues:** Staging UI deploy not run from cloud VM (no wrangler). Live staging still serves prior build until operator runs `bun run deploy:staging:ploy`. pmt account has 0 active medications in prod D1 (meds pages show empty state correctly).
+- **Stand / next:** Operator deploy staging Worker; browser QA journal list + new entry insert; wire reports/vitals next if needed.
+- **Who / where:** cursor-agent · cloud VM · `cursor/ploy-astro-staging-5b1c`
+- **Evidence:** `bun run build:staging:ploy` PASS; curl staging session + journal_entries count=2, meds=0, doses=0; page shells 200 for `/journal/`, `/journal/new/`, `/meds/`, `/meds/history/`, `/today/`
+- **Timestamp:** 2026-09-20T04:32:00Z
+
 
 ### 2026-09-20T02:46:00Z — Ploy staging live-data wiring (PR)
 

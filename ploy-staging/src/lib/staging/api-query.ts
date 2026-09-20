@@ -11,6 +11,9 @@ export class StagingApiQuery<T = Record<string, unknown>> {
   private orderBy: { col: string; ascending: boolean }[] = [];
   private limitN: number | null = null;
   private selectCols = "*";
+  private mode: "select" | "insert" | "update" = "select";
+  private insertRow: Record<string, unknown> | null = null;
+  private updateRow: Record<string, unknown> | null = null;
 
   constructor(private table: string) {}
 
@@ -44,24 +47,40 @@ export class StagingApiQuery<T = Record<string, unknown>> {
     return this;
   }
 
+  insert(row: Record<string, unknown>): this {
+    this.mode = "insert";
+    this.insertRow = row;
+    return this;
+  }
+
+  update(row: Record<string, unknown>): this {
+    this.mode = "update";
+    this.updateRow = row;
+    return this;
+  }
+
   private async run(): Promise<{ data: T[] | T | null; error: Error | null }> {
+    const payload: Record<string, unknown> = {
+      table: this.table,
+      mode: this.mode,
+      select: this.selectCols,
+      filters: this.filters,
+      order: this.orderBy,
+      limit: this.limitN,
+    };
+    if (this.mode === "insert" && this.insertRow) payload.insert = this.insertRow;
+    if (this.mode === "update" && this.updateRow) payload.update = this.updateRow;
+
     const res = await fetch("/api/data/query", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({
-        table: this.table,
-        mode: "select",
-        select: this.selectCols,
-        filters: this.filters,
-        order: this.orderBy,
-        limit: this.limitN,
-      }),
+      body: JSON.stringify(payload),
     });
-    const body = (await res.json().catch(() => ({}))) as { data?: T[] | T; error?: string };
+    const json = (await res.json().catch(() => ({}))) as { data?: T[] | T; error?: string };
     if (!res.ok) {
-      return { data: null, error: new Error(body.error ?? res.statusText) };
+      return { data: null, error: new Error(json.error ?? res.statusText) };
     }
-    return { data: body.data ?? null, error: null };
+    return { data: json.data ?? null, error: null };
   }
 
   async maybeSingle(): Promise<{ data: T | null; error: Error | null }> {
