@@ -1,10 +1,16 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-20 (OAuth + CORS Step 4).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-20 (OAuth + CORS Step 4; Ploy staging live-data PR #44).
 
 **Recent (2026-09-20): OAuth + CORS hardening (Step 4).** Audit `docs/OAUTH-CORS-AUDIT.md`.
 Allowlists: `src/lib/oauth-allowed-origins.ts`, `src/lib/flutter-api-cors.ts`. Gate:
 `bun run check:oauth-cors`. Branch `cursor/oauth-cors-hardening-1547` off `main`.
 Deploy www Worker only. Manual consoles: Google Cloud (pmt@x21.com), Apple Developer
 (`org.purplelife.web`), Whoop native redirect (`whoop-native-redirect-console`).
+
+**Recent (2026-09-20): Ploy staging live data.** `staging.purplelife.org` Worker
+`purplelife-staging` uses **production** D1 `8d0be2b3-84ec-4581-86f4-6b372ec1d5d7` +
+R2 `purplelifeai` (same as www). Session mint on staging; `/api/*` proxied to
+`purplelife`. Deploy: `bun run deploy:staging:ploy` + copy `AUTH_JWT_SECRET`.
+Runbook: `docs/DEPLOY-STAGING-PLOY.md`. Branch: `cursor/ploy-astro-staging-5b1c`.
 
 **Recent (2026-09-15): Oura biometrics merged + deploy bundle.** PR #41 → `main` @
 `03ede232`. Deploy: `/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz`

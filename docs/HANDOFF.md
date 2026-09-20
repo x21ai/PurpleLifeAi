@@ -14,6 +14,15 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 rebased onto main after #48. Explicit allowlists (`src/lib/oauth-allowed-origins.ts`); extended Flutter
 CORS paths; Google/Apple/Whoop `redirect_uri` validation. Audit: `docs/OAUTH-CORS-AUDIT.md`.
 Gate: `bun run check:oauth-cors`. Deploy **www** Worker only; staging (PR #44) unchanged. Do not merge until CI green.
+**2026-09-20 Ploy staging live-data wiring (PR #44):** Branch
+`cursor/ploy-astro-staging-5b1c`. Worker `purplelife-staging` at
+staging.purplelife.org binds **production** D1 `8d0be2b3-84ec-4581-86f4-6b372ec1d5d7`
+and R2 `purplelifeai` (no data fork). Custom entry mints
+`/api/public/design-preview/session` (pmt auto-auth) and proxies `/api/*` to prod
+`purplelife`. Astro `/today` reads live biometrics/journal/meds/narrative via
+`/api/data/query`. Deploy: `bun run deploy:staging:ploy`; runbook
+`docs/DEPLOY-STAGING-PLOY.md`. **Not deployed from cloud VM** (no wrangler auth);
+operator must copy `AUTH_JWT_SECRET` to staging Worker. www unchanged.
 
 **2026-09-15 Oura biometrics on Cloudflare D1 (merged):** PR #41 squash-merged to `main`
 @ `03ede232`. Cron and edge invoke persist `biometrics` (`source=oura`). Deploy bundle:
@@ -104,6 +113,17 @@ clean + 254/254; web QA video ready. See Log for details.
 - **Who / where:** cursor-agent · cloud VM · `cursor/oauth-cors-hardening-1547`
 - **Evidence:** `bun run check:oauth-cors` PASS; `tsc --noEmit` PASS
 - **Timestamp:** 2026-09-20T12:45:00Z
+
+### 2026-09-20T02:46:00Z — Ploy staging live-data wiring (PR)
+
+- **Requested:** Wire staging.purplelife.org (Ploy Astro UI) to same production D1/R2 as www; auto-session as pmt; real data on /today; leave www Worker alone.
+- **Done:** Added `wrangler.staging.jsonc` (prod D1 `8d0be2b3…`, R2 `purplelifeai`, service binding `PROD`→`purplelife`). `ploy-staging/worker/staging-entry.ts` mints design-preview session + proxies `/api/*`. Client layer under `ploy-staging/src/lib/staging/`; `StagingLiveTodayPage` on `/today`. Scripts `build:staging:ploy`, `deploy:staging:ploy`. Runbook `docs/DEPLOY-STAGING-PLOY.md`. Branch `cursor/ploy-astro-staging-5b1c` pushed; wrangler `--dry-run` OK (1618 KiB, bindings verified).
+- **Issues:** Deploy not executed (cloud VM unauthenticated wrangler). Staging currently UI-only until operator deploys + sets `AUTH_JWT_SECRET`. Journal/meds/reports pages still mock (Today wired first).
+- **Stand / next:** Merge PR; operator `bun run deploy:staging:ploy`; verify curl session + `/today` live chips; wire journal/meds next.
+- **Who / where:** cursor-agent · cloud VM · `cursor/ploy-astro-staging-5b1c`
+- **Evidence:** `npx wrangler deploy -c wrangler.staging.jsonc --dry-run` bindings OK; build `VITE_STAGING_LIVE_DATA=1` PASS
+- **Timestamp:** 2026-09-20T02:46:00Z
+
 
 ### 2026-09-15T18:28:00Z — PR #41 merged + deploy bundle (Oura D1)
 
