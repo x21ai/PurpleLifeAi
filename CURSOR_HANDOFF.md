@@ -1,4 +1,8 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-20 (OAuth + CORS Step 4 merged; Ploy staging Step 3 real auth PR #44).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-20 (Step 9 SEO pass, not deployed; OAuth + CORS Step 4 merged; Ploy staging Step 3 real auth PR #44).
+
+**Recent (2026-09-20): Step 9 SEO marketing pass.** Branch `cursor/step9-seo-marketing-pass-cce9`:
+shared `marketingHead()` for public marketing routes, sitemap/robots fixes, runbook
+`docs/STEP9-SEO-PASS.md`. **Not deployed.** Ploy www flip (#47) still held.
 
 **Recent (2026-09-20): OAuth + CORS hardening (Step 4).** Audit `docs/OAUTH-CORS-AUDIT.md`.
 Allowlists: `src/lib/oauth-allowed-origins.ts`, `src/lib/flutter-api-cors.ts`. Gate:

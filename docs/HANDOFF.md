@@ -9,6 +9,13 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-20 Step 9 SEO marketing pass (PR open):** Branch
+`cursor/step9-seo-marketing-pass-cce9` adds `src/lib/marketing-seo.ts`, completes
+OG/Twitter/canonical on trust/privacy/terms/charter/community resources, fixes
+robots/sitemap (www sitemap URL, +trust/charter/privacy/terms, −/feedback redirect),
+`noindex` on community post detail. Runbook: `docs/STEP9-SEO-PASS.md`. **Not deployed**
+(Ploy #47 held).
+
 **2026-09-20 PR #45 squash-merged to main:** `25c42d65` — OAuth + CORS allowlists for www and Flutter (`src/lib/oauth-allowed-origins.ts`, extended Flutter CORS, redirect_uri validation). Audit: `docs/OAUTH-CORS-AUDIT.md`. Gate: `bun run check:oauth-cors`. Deploy www Worker only (operator).
 **2026-09-20 PR #48 merged to main:** `cac619b4` — entities override removed, entry-budget/webkit/e2e fixes; trunk CI green.
 **2026-09-20 Ploy staging Step 3 real auth (PR #44):** Branch
@@ -20,7 +27,6 @@ www). Live pages require sign-in. Operator bypass: `DESIGN_PREVIEW_BYPASS_SECRET
 `X-Purple-Design-Preview-Secret` header. Live pages unchanged list from Step 2b.
 Redeploy: `bun run build:staging:ploy` then `bun run deploy:staging:ploy`. www
 Worker untouched.
-
 
 
 **2026-09-15 Oura biometrics on Cloudflare D1 (merged):** PR #41 squash-merged to `main`
@@ -82,6 +88,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-20T14:30:00Z — Step 9: SEO marketing pass (TanStack www)
+
+- **Requested:** Audit live meta/OG/robots/sitemap/canonicals on marketing routes; safe SEO improvements in PR; document in `docs/STEP9-SEO-PASS.md`; no deploy; do not merge #47 / Ploy www flip.
+- **Done:** Live curl audit of prod head tags, `robots.txt`, `sitemap.xml`. Added `src/lib/marketing-seo.ts`; refactored 11 marketing routes to shared `marketingHead()` (per-page Twitter + canonical); expanded sitemap (+trust, +charter, +privacy, +terms, −feedback); robots.txt www sitemap + admin/friend/messages/users disallow; `noindex` on `/community/$postId`; default `og:url` in `__root.tsx`. Branch `cursor/step9-seo-marketing-pass-cce9`.
+- **Issues:** Cloud VM has no `bun`/deps installed; L0 gates not run here. Operator runs `tsc`, `build`, deploy smoke per runbook.
+- **Stand / next:** Open/merge SEO PR; operator deploy when ready (manual workflow only).
+- **Who / where:** Cursor cloud agent, `cursor/step9-seo-marketing-pass-cce9`.
+- **Evidence:** Live audit in `docs/STEP9-SEO-PASS.md`; prod `curl` 2026-09-20 pre-change.
+- **Timestamp:** 2026-09-20T14:30:00Z
 
 ### 2026-09-20T13:50:51Z — PR #45 squash-merged to main (OAuth + CORS)
 
