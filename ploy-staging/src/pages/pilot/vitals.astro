@@ -1,0 +1,10 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { VitalsPage } from "@/components/pages/vitals/page";
+
+export const prerender = true;
+---
+
+<Layout title="Vitals · PurpleLife design pilot" description="A mobile view of measurements recorded in PurpleLife." noindex={true}>
+  <VitalsPage client:load />
+</Layout>

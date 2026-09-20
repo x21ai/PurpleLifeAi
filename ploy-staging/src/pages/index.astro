@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { HomePage } from "@/components/pages/home/page";
+
+export const prerender = true;
+---
+
+<Layout title="PurpleLife · A calm health journal" description="Capture symptoms, medication, sleep, photos, and notes, then notice patterns and choose what to share.">
+  <HomePage client:load />
+</Layout>

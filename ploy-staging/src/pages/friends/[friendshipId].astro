@@ -1,0 +1,9 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { SharedHealthPage } from "@/components/pages/shared-health/page";
+export const ployPreviewParams = { friendshipId: "friend-preview" };
+const { friendshipId = "friend-preview" } = Astro.params;
+---
+<Layout title="Friend health · PurpleLife" description="Review health information a friend chose to share." noindex={true}>
+  <SharedHealthPage id={friendshipId} mode="friend" client:load />
+</Layout>

@@ -1,0 +1,10 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { RiskPage } from "@/components/pages/risk/page";
+
+export const prerender = true;
+---
+
+<Layout title="Health context · PurpleLife design pilot" description="Clear guidance on what PurpleLife health observations can and cannot indicate." noindex={true}>
+  <RiskPage client:load />
+</Layout>

@@ -1,0 +1,6 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { HealthWorkflowsPage } from "@/components/pages/health-workflows/page";
+export const prerender = true;
+---
+<Layout title="Care inbox · PurpleLife" description="Review care questions and updates separately from sharing permissions." noindex={true}><HealthWorkflowsPage kind="care-messages" client:load /></Layout>

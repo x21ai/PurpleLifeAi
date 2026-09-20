@@ -1,0 +1,10 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { SocialSupportPage } from "@/components/pages/social-support/page";
+
+export const prerender = true;
+---
+
+<Layout title="Friend invitation · PurpleLife" description="Review a PurpleLife friend invitation and its limited sharing context." noindex={true}>
+  <SocialSupportPage kind="friend-invite" client:load />
+</Layout>

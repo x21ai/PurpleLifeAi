@@ -1,0 +1,9 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import RecordPage from "../../components/pages/record-mobile/page";
+export const prerender = true;
+export const ployPreviewParams = { linkCode: "friend-preview" };
+export function getStaticPaths() { return [{ params: ployPreviewParams }]; }
+const { linkCode = "friend-preview" } = Astro.params;
+---
+<Layout title="Friend connection · PurpleLife" noindex={true}><RecordPage kind="friend-link" recordId={linkCode} client:load /></Layout>

@@ -1,0 +1,8 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { AccessPreviewPage } from "@/components/pages/access-preview/page";
+export const prerender = true;
+---
+<Layout title="Create account · PurpleLife" description="Create a private PurpleLife health journal." noindex={true}>
+  <AccessPreviewPage mode="sign-up" client:load />
+</Layout>

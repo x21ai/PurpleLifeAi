@@ -1,0 +1,9 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import RecordPage from "../../../components/pages/record-mobile/page";
+export const prerender = true;
+export const ployPreviewParams = { insightId: "steadier-mornings" };
+export function getStaticPaths() { return [{ params: ployPreviewParams }]; }
+const { insightId = "steadier-mornings" } = Astro.params;
+---
+<Layout title="Sleep insight · PurpleLife" noindex={true}><RecordPage kind="sleep-insight" recordId={insightId} client:load /></Layout>

@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { MyHealthPage } from "@/components/pages/my-health/page";
+
+export const prerender = true;
+---
+
+<Layout title="My health · PurpleLife" description="Review the information recorded in PurpleLife." noindex={true}>
+  <MyHealthPage client:load />
+</Layout>

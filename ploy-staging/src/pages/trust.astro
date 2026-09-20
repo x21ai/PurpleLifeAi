@@ -1,0 +1,16 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Page from "../components/pages/trust/page";
+
+export const prerender = true;
+---
+
+<Layout
+  title="Why PurpleLife is different"
+  description="PurpleLife's privacy and transparency promises, with clear boundaries around what this visual preview can verify."
+>
+  <Fragment slot="head">
+    <meta name="author" content="Devyn Walker" />
+  </Fragment>
+  <Page client:load />
+</Layout>

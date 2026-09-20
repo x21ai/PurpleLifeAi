@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { BiometricsPage } from "@/components/pages/biometrics/page";
+
+export const prerender = true;
+---
+
+<Layout title="Measurements · PurpleLife" description="Browse measurements recorded or connected in PurpleLife, with source context beside every value." noindex={true}>
+  <BiometricsPage client:load />
+</Layout>

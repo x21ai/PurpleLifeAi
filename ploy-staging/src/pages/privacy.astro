@@ -1,0 +1,11 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { LegalMobilePage } from "../components/pages/legal-mobile/page";
+export const prerender = true;
+---
+<Layout
+  title="Privacy & safety · PurpleLife"
+  description="How PurpleLife handles your health data and privacy choices."
+>
+  <LegalMobilePage kind="privacy" client:load />
+</Layout>

@@ -1,0 +1,7 @@
+export default function PageIcon29() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="w-3.5 h-3.5 stroke-[2px] overflow-hidden"><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2" className="stroke-[2px]" />
+    <path d="M6.453 15h11.094" className="stroke-[2px]" />
+    <path d="M8.5 2h7" className="stroke-[2px]" /></svg>
+  );
+}

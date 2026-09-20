@@ -1,0 +1,9 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { BiometricDetailPage } from "@/components/pages/biometric-detail/page";
+export const ployPreviewParams = { metric: "hrv" };
+const { metric = "hrv" } = Astro.params;
+---
+<Layout title={`${metric.replace(/[-_]+/g, " ")} · PurpleLife`} description="Review a recorded health signal in context." noindex={true}>
+  <BiometricDetailPage metric={metric} client:load />
+</Layout>

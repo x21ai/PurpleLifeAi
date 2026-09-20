@@ -1,0 +1,6 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { HealthWorkflowsPage } from "@/components/pages/health-workflows/page";
+export const prerender = true;
+---
+<Layout title="Apple Health import · PurpleLife" description="Review an Apple Health export before adding selected categories." noindex={true}><HealthWorkflowsPage kind="health-import" client:load /></Layout>

@@ -1,0 +1,6 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { HealthWorkflowsPage } from "@/components/pages/health-workflows/page";
+export const prerender = true;
+---
+<Layout title="Record seizure · PurpleLife" description="Record seizure timing, awareness, and context." noindex={true}><HealthWorkflowsPage kind="seizure-entry" client:load /></Layout>

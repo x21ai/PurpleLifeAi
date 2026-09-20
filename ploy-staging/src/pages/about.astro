@@ -1,0 +1,16 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Page from "../components/pages/about/page";
+
+export const prerender = true;
+---
+
+<Layout
+  title="Why PurpleLife exists"
+  description="PurpleLife is a quiet health journaling companion for capturing symptoms, medication, sleep, photos, and notes, with optional read-only sharing."
+>
+  <Fragment slot="head">
+    <meta name="author" content="Devyn Walker" />
+  </Fragment>
+  <Page client:load />
+</Layout>

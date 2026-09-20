@@ -1,0 +1,10 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { SocialSupportPage } from "@/components/pages/social-support/page";
+
+export const prerender = true;
+---
+
+<Layout title="Feedback · PurpleLife" description="Send product feedback to the PurpleLife team without including private health information." noindex={true}>
+  <SocialSupportPage kind="feedback" client:load />
+</Layout>

@@ -1,0 +1,16 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Page from "../components/pages/contact/page";
+
+export const prerender = true;
+---
+
+<Layout
+  title="Say hello"
+  description="A real person reads every message. Usually within a day. Questions, feedback, or just want to chat, we’re here."
+>
+  <Fragment slot="head">
+    <meta name="author" content="Devyn Walker" />
+  </Fragment>
+  <Page client:load />
+</Layout>

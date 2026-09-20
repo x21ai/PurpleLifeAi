@@ -1,0 +1,10 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { SocialSupportPage } from "@/components/pages/social-support/page";
+
+export const prerender = true;
+---
+
+<Layout title="Caregiver invitation · PurpleLife" description="Review a caregiver invitation and its read-only information scopes." noindex={true}>
+  <SocialSupportPage kind="care-invite" client:load />
+</Layout>

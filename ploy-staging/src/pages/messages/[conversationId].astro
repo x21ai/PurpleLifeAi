@@ -1,0 +1,9 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import RecordPage from "../../components/pages/record-mobile/page";
+export const prerender = true;
+export const ployPreviewParams = { conversationId: "care-team" };
+export function getStaticPaths() { return [{ params: ployPreviewParams }]; }
+const { conversationId = "care-team" } = Astro.params;
+---
+<Layout title="Messages · PurpleLife" noindex={true}><RecordPage kind="conversation" recordId={conversationId} client:load /></Layout>

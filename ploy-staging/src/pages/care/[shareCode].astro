@@ -1,0 +1,9 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import RecordPage from "../../components/pages/record-mobile/page";
+export const prerender = true;
+export const ployPreviewParams = { shareCode: "care-preview" };
+export function getStaticPaths() { return [{ params: ployPreviewParams }]; }
+const { shareCode = "care-preview" } = Astro.params;
+---
+<Layout title="Care connection · PurpleLife" noindex={true}><RecordPage kind="care-link" recordId={shareCode} client:load /></Layout>

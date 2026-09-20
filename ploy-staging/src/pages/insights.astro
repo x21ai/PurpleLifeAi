@@ -1,0 +1,6 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { HealthWorkflowsPage } from "@/components/pages/health-workflows/page";
+export const prerender = true;
+---
+<Layout title="Insights · PurpleLife" description="Review careful observations from what you recorded." noindex={true}><HealthWorkflowsPage kind="insights" client:load /></Layout>

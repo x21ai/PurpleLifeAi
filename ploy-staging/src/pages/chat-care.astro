@@ -1,0 +1,8 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { MessagesPage } from "@/components/pages/messages/page";
+export const prerender = true;
+---
+<Layout title="Care conversations · PurpleLife" description="Review conversations connected to chosen sharing." noindex={true}>
+  <MessagesPage mode="care" client:load />
+</Layout>

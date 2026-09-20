@@ -1,0 +1,6 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { HealthWorkflowsPage } from "@/components/pages/health-workflows/page";
+export const prerender = true;
+---
+<Layout title="Hydration · PurpleLife" description="Record water for context without turning it into a medical score." noindex={true}><HealthWorkflowsPage kind="hydration" client:load /></Layout>

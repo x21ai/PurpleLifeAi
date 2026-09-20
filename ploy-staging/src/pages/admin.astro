@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { AdminPreviewPage } from "@/components/pages/admin-preview/page";
+
+export const prerender = true;
+---
+
+<Layout title="Overview · PurpleLife administration" description="A privacy-first PurpleLife administration preview." noindex={true}>
+  <AdminPreviewPage area="Overview" client:load />
+</Layout>

@@ -1,0 +1,10 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { MedicationPage } from "@/components/pages/medication/page";
+
+export const prerender = true;
+---
+
+<Layout title="Medication · PurpleLife design pilot" description="A calm mobile medication record for PurpleLife." noindex={true}>
+  <MedicationPage client:load />
+</Layout>

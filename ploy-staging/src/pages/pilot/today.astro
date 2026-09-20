@@ -1,0 +1,14 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { PilotTodayPage } from "@/components/pages/pilot/today/page";
+
+export const prerender = true;
+---
+
+<Layout
+  title="Today · PurpleLife design pilot"
+  description="A list-first daily health journal view for PurpleLife."
+  noindex={true}
+>
+  <PilotTodayPage client:load />
+</Layout>

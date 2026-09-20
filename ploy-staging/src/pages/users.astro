@@ -1,0 +1,8 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import UtilityPage from "@/components/pages/utility-mobile/page";
+export const prerender = true;
+---
+<Layout title="Users · PurpleLife" description="Review account access without exposing health data." noindex={true}>
+  <UtilityPage kind="users" client:load />
+</Layout>

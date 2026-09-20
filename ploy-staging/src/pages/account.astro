@@ -1,0 +1,6 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { HealthWorkflowsPage } from "@/components/pages/health-workflows/page";
+export const prerender = true;
+---
+<Layout title="Account · PurpleLife" description="Manage your PurpleLife account, region, privacy, and session." noindex={true}><HealthWorkflowsPage kind="account" client:load /></Layout>
