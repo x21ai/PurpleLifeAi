@@ -9,9 +9,11 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-**2026-09-20 Trunk CI green (PR #48):** `cursor/fix-entities-ci-1547` @ `8b09a13f` — entities
-override removed, entry-budget/webkit/e2e fixes; **all 3 CI jobs PASS** on GitHub Actions.
-Ready to merge before #45/#44/#47.
+**2026-09-20 PR #48 merged to main:** `cac619b4` — entities override removed, entry-budget/webkit/e2e fixes; trunk CI green.
+**2026-09-20 OAuth + CORS hardening (Step 4 / PR #45):** Branch `cursor/oauth-cors-hardening-1547`
+rebased onto main after #48. Explicit allowlists (`src/lib/oauth-allowed-origins.ts`); extended Flutter
+CORS paths; Google/Apple/Whoop `redirect_uri` validation. Audit: `docs/OAUTH-CORS-AUDIT.md`.
+Gate: `bun run check:oauth-cors`. Deploy **www** Worker only; staging (PR #44) unchanged. Do not merge until CI green.
 
 **2026-09-15 Oura biometrics on Cloudflare D1 (merged):** PR #41 squash-merged to `main`
 @ `03ede232`. Cron and edge invoke persist `biometrics` (`source=oura`). Deploy bundle:

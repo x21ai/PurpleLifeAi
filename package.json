@@ -29,6 +29,7 @@
     "check:native-shell": "node scripts/check-native-shell.mjs",
     "check:unique-images": "node scripts/check-unique-route-images.mjs",
     "check:lovable-auth": "node scripts/check-lovable-auth-guard.mjs",
+    "check:oauth-cors": "node scripts/check-oauth-cors-allowlist.mjs",
     "check:entry-budget": "node scripts/check-entry-budget.mjs",
     "test:responsive": "playwright test tests/e2e/responsive-sweep.spec.ts",
     "test:vitals": "playwright test tests/e2e/web-vitals.spec.ts --project=desktop-1024 --workers=1",
