@@ -1,0 +1,50 @@
+// Ploy Astro staging at staging.purplelife.org — separate Worker from production.
+// Uses the SAME production D1 + R2 as www.purplelife.org (no staging data fork).
+// Page routes: Astro build. /api/*: proxied to prod `purplelife` Worker (service binding).
+// Auth: POST /api/auth/sign-in proxied to prod (real password). Design-preview mint disabled
+// unless DESIGN_PREVIEW_BYPASS_SECRET header is set (operator curl only).
+//
+// Deploy: bun run deploy:staging:ploy
+// Prod www is untouched (wrangler.deploy.jsonc / Worker name `purplelife`).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "purplelife-staging",
+  "account_id": "08e766e92db74bc7ef14c6b5c86bddf0",
+  "workers_dev": true,
+  "routes": [{ "pattern": "staging.purplelife.org/*", "zone_name": "purplelife.org" }],
+  "compatibility_date": "2026-04-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "ploy-staging/worker/staging-entry.ts",
+  "assets": {
+    "directory": "ploy-staging/dist/client",
+    "binding": "ASSETS",
+  },
+  "observability": {
+    "enabled": true,
+  },
+  // Prod API surface (TanStack routes, D1 query, storage, AI, etc.)
+  "services": [{ "binding": "PROD", "service": "purplelife" }],
+  "vars": {
+    "DESIGN_PREVIEW": "0",
+    "STAGING_REAL_AUTH": "1",
+    "DATA_BACKEND": "cloudflare",
+    "STAGING_LIVE_DATA": "1",
+    "DESIGN_PREVIEW_USER_ID": "bb160030-2ed6-45d7-8a5a-7f6f7879e9bb",
+    "DESIGN_PREVIEW_USER_EMAIL": "pmt@eigital.com",
+    "PUBLIC_SITE_URL": "https://staging.purplelife.org",
+  },
+  // Production D1/R2 on eigital zone account — same bindings as www.purplelife.org.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "purplelifeai",
+      "database_id": "8d0be2b3-84ec-4581-86f4-6b372ec1d5d7",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "STORAGE",
+      "bucket_name": "purplelifeai",
+    },
+  ],
+}

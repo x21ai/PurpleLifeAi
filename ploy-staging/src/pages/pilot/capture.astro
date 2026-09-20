@@ -1,0 +1,10 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { CapturePage } from "@/components/pages/capture/page";
+
+export const prerender = true;
+---
+
+<Layout title="Capture · PurpleLife design pilot" description="A focused mobile capture flow for PurpleLife." noindex={true}>
+  <CapturePage client:load />
+</Layout>

@@ -1,0 +1,10 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { SocialSupportPage } from "@/components/pages/social-support/page";
+
+export const prerender = true;
+---
+
+<Layout title="Community · PurpleLife" description="A careful place to exchange practical journaling ideas without sharing private health records.">
+  <SocialSupportPage kind="community" client:load />
+</Layout>

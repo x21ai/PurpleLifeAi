@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { BiometricDetailPage } from "@/components/pages/biometric-detail/page";
+
+export const prerender = true;
+---
+
+<Layout title="Activity score · PurpleLife" description="Review activity score in the context of your PurpleLife journal." noindex={true}>
+  <BiometricDetailPage metric="Activity score" client:load />
+</Layout>

@@ -1,0 +1,8 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { SharingPage } from "@/components/pages/sharing/page";
+export const prerender = true;
+---
+<Layout title="Sharing & access · PurpleLife" description="Review selective read-only sharing controls." noindex={true}>
+  <SharingPage client:load />
+</Layout>

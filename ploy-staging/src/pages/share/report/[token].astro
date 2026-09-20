@@ -1,0 +1,9 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import { SharedHealthPage } from "@/components/pages/shared-health/page";
+export const ployPreviewParams = { token: "shared-preview" };
+const { token = "shared-preview" } = Astro.params;
+---
+<Layout title="Shared health report · PurpleLife" description="Open a read-only health summary shared with you." noindex={true}>
+  <SharedHealthPage id={token} mode="public-report" client:load />
+</Layout>

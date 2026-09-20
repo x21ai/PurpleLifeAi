@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { BiometricDetailPage } from "@/components/pages/biometric-detail/page";
+
+export const prerender = true;
+---
+
+<Layout title="Whoop strain · PurpleLife" description="Review whoop strain in the context of your PurpleLife journal." noindex={true}>
+  <BiometricDetailPage metric="Whoop strain" client:load />
+</Layout>

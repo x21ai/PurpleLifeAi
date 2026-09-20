@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { SettingsPage } from "@/components/pages/settings/page";
+
+export const prerender = true;
+---
+
+<Layout title="Settings · PurpleLife" description="Review privacy, account, and reminder controls." noindex={true}>
+  <SettingsPage client:load />
+</Layout>

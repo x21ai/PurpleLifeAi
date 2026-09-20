@@ -1,0 +1,5 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import { OAuthCallbackPage } from "@/components/pages/oauth-callback/page";
+---
+<Layout title="Google connection · PurpleLife" noindex={true}><OAuthCallbackPage provider="Google" client:load /></Layout>

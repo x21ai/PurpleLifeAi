@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { CapturePage } from "@/components/pages/capture/page";
+
+export const prerender = true;
+---
+
+<Layout title="Capture · PurpleLife" description="Capture a symptom, note, photo, voice memo, or medication entry." noindex={true}>
+  <CapturePage client:load />
+</Layout>

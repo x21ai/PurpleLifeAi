@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { StagingLiveMedsPage } from "@/components/staging/staging-live-meds";
+
+export const prerender = true;
+---
+
+<Layout title="Medication · PurpleLife" description="Review medication records and scheduled doses." noindex={true}>
+  <StagingLiveMedsPage client:load />
+</Layout>

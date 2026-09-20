@@ -1,0 +1,14 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { PurpleLifeShareImage } from "@/components/og/purplelife-share-image-view";
+
+export const prerender = true;
+---
+
+<Layout
+  title="PurpleLife share image"
+  description="PurpleLife social sharing artwork."
+  noindex={true}
+>
+  <PurpleLifeShareImage />
+</Layout>

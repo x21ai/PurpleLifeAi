@@ -1,0 +1,16 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Page from "../components/pages/charter/page";
+
+export const prerender = true;
+---
+
+<Layout
+  title="Why PurpleLife exists"
+  description="PurpleLife is a calm, private health journal for people living with conditions that need daily attention. Open source. Your story is yours."
+>
+  <Fragment slot="head">
+    <meta name="author" content="Devyn Walker" />
+  </Fragment>
+  <Page client:load />
+</Layout>

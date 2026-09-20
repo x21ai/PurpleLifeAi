@@ -9,11 +9,19 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-20 PR #45 squash-merged to main:** `25c42d65` — OAuth + CORS allowlists for www and Flutter (`src/lib/oauth-allowed-origins.ts`, extended Flutter CORS, redirect_uri validation). Audit: `docs/OAUTH-CORS-AUDIT.md`. Gate: `bun run check:oauth-cors`. Deploy www Worker only (operator).
 **2026-09-20 PR #48 merged to main:** `cac619b4` — entities override removed, entry-budget/webkit/e2e fixes; trunk CI green.
-**2026-09-20 OAuth + CORS hardening (Step 4 / PR #45):** Branch `cursor/oauth-cors-hardening-1547`
-rebased onto main after #48. Explicit allowlists (`src/lib/oauth-allowed-origins.ts`); extended Flutter
-CORS paths; Google/Apple/Whoop `redirect_uri` validation. Audit: `docs/OAUTH-CORS-AUDIT.md`.
-Gate: `bun run check:oauth-cors`. Deploy **www** Worker only; staging (PR #44) unchanged. Do not merge until CI green.
+**2026-09-20 Ploy staging Step 3 real auth (PR #44):** Branch
+`cursor/ploy-astro-staging-5b1c`. Staging `purplelife-staging` @
+staging.purplelife.org (last operator deploy Step 2b @ `ee4e187b`). **Auth:** public
+design-preview mint disabled (`DESIGN_PREVIEW=0`, `STAGING_REAL_AUTH=1`); testers sign
+in at `/login` via proxied `POST /api/auth/sign-in` (same JWT/`purple-cf-session` as
+www). Live pages require sign-in. Operator bypass: `DESIGN_PREVIEW_BYPASS_SECRET` +
+`X-Purple-Design-Preview-Secret` header. Live pages unchanged list from Step 2b.
+Redeploy: `bun run build:staging:ploy` then `bun run deploy:staging:ploy`. www
+Worker untouched.
+
+
 
 **2026-09-15 Oura biometrics on Cloudflare D1 (merged):** PR #41 squash-merged to `main`
 @ `03ede232`. Cron and edge invoke persist `biometrics` (`source=oura`). Deploy bundle:
@@ -75,6 +83,16 @@ clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
 
+### 2026-09-20T13:50:51Z — PR #45 squash-merged to main (OAuth + CORS)
+
+- **Requested:** Continue merge sequence after #48; mark #45 ready; squash-merge; rebase #44; update #47; no www/wrangler design flip deploy.
+- **Done:** #45 ready + squash-merged → `main` @ `25c42d65` (tip was `930acaaa`, CI green). Rebasing #44 onto new main.
+- **Issues:** #44/#47 need rebase after #45 land.
+- **Stand / next:** Finish #44 rebase + CI; then update #47.
+- **Who / where:** cursor-agent · cloud VM · merge sequence
+- **Evidence:** https://github.com/x21ai/PurpleLifeAi/pull/45
+- **Timestamp:** 2026-09-20T13:50:51Z
+
 ### 2026-09-20T13:45:00Z — PR #48 squash-merged to main (entities CI fix)
 
 - **Requested:** Mark #48 ready, squash-merge; update #45; report #45/#44/#47; no www design flip deploy.
@@ -104,6 +122,50 @@ clean + 254/254; web QA video ready. See Log for details.
 - **Who / where:** cursor-agent · cloud VM · `cursor/oauth-cors-hardening-1547`
 - **Evidence:** `bun run check:oauth-cors` PASS; `tsc --noEmit` PASS
 - **Timestamp:** 2026-09-20T12:45:00Z
+
+### 2026-09-20T12:36:00Z — Ploy staging production-shaped auth (Step 3)
+
+- **Requested:** Replace design-preview auto-mint with real login on staging.purplelife.org; keep STAGING_LIVE_DATA pages working after sign-in; gate mint endpoint; do not break www; document tester flow; PR deploy notes.
+- **Done:** Gated `GET /api/public/design-preview/session` (404 unless `DESIGN_PREVIEW=1` or bypass secret). `wrangler.staging.jsonc`: `DESIGN_PREVIEW=0`, `STAGING_REAL_AUTH=1`. Rewrote `session.ts` (no auto-mint; `signInWithPassword` → proxied `/api/auth/sign-in`). Added `StagingLiveSignInPage`, `/login`, updated `/sign-in` + `/sign-up`. Banner shows signed-in email + sign out. All `StagingLive*` pages use `stagingSignInRequiredMessage()`. Runbook `docs/DEPLOY-STAGING-PLOY.md` auth section rewritten. Build PASS.
+- **Issues:** Cloud VM did not deploy (operator wrangler). Staging still serves Step 2b build until redeploy. Sign-up form on staging is informational only (use www for new accounts).
+- **Stand / next:** Operator redeploy; verify mint 404, `/login` sign-in, live pages after auth; optional set `DESIGN_PREVIEW_BYPASS_SECRET` for curl smoke.
+- **Who / where:** cursor-agent · cloud VM · `cursor/ploy-astro-staging-5b1c`
+- **Evidence:** `bun run build:staging:ploy` PASS; `/login/index.html` prerendered
+- **Timestamp:** 2026-09-20T12:36:00Z
+
+
+### 2026-09-20T04:36:00Z — Ploy staging reports + tools live data (Step 2b)
+
+- **Requested:** Wire `/reports`, documents, and `/tools` (Oura/Whoop/Apple status) on staging PR #44; www unchanged.
+- **Done:** Added `reports-data.ts`, `tools-data.ts`, `format.ts`. Components `StagingLiveReportsPage`, `StagingLiveDocumentsPage`, `StagingLiveToolsPage`. Astro routes `/reports`, `/reports/documents`, `/documents`, `/tools` swapped. Runbook verify extended. Build PASS.
+- **Issues:** Cloud VM did not deploy (operator owns wrangler). Step 2a already live @ `258e06ca`; Step 2b needs redeploy for new JS bundles.
+- **Stand / next:** Operator `bun run deploy:staging:ploy`; browser QA `/reports` (report_documents), `/tools` (3 token rows).
+- **Who / where:** cursor-agent · cloud VM · `cursor/ploy-astro-staging-5b1c`
+- **Evidence:** `bun run build:staging:ploy` PASS; staging API probe report_documents + token tables; shells 200 for `/reports/`, `/reports/documents/`, `/documents/`, `/tools/`
+- **Timestamp:** 2026-09-20T04:36:00Z
+
+
+### 2026-09-20T04:32:00Z — Ploy staging journal + meds live data (Step 2)
+
+- **Requested:** Wire staging Journal list/new entry and Meds/history to production D1 via proxied APIs (Today pattern); keep www unchanged; update PR #44.
+- **Done:** Extended `ploy-staging/src/lib/staging/api-query.ts` (insert/update). Added `journal-data.ts`, `meds-data.ts`. New components: `StagingLiveJournalPage`, `StagingLiveJournalNewPage`, `StagingLiveMedsPage`, `StagingLiveMedsHistoryPage`. Astro routes `/journal`, `/journal/new`, `/meds`, `/meds/history` swapped to live components. Runbook verify section updated. Build `VITE_STAGING_LIVE_DATA=1` PASS.
+- **Issues:** Staging UI deploy not run from cloud VM (no wrangler). Live staging still serves prior build until operator runs `bun run deploy:staging:ploy`. pmt account has 0 active medications in prod D1 (meds pages show empty state correctly).
+- **Stand / next:** Operator deploy staging Worker; browser QA journal list + new entry insert; wire reports/vitals next if needed.
+- **Who / where:** cursor-agent · cloud VM · `cursor/ploy-astro-staging-5b1c`
+- **Evidence:** `bun run build:staging:ploy` PASS; curl staging session + journal_entries count=2, meds=0, doses=0; page shells 200 for `/journal/`, `/journal/new/`, `/meds/`, `/meds/history/`, `/today/`
+- **Timestamp:** 2026-09-20T04:32:00Z
+
+
+### 2026-09-20T02:46:00Z — Ploy staging live-data wiring (PR)
+
+- **Requested:** Wire staging.purplelife.org (Ploy Astro UI) to same production D1/R2 as www; auto-session as pmt; real data on /today; leave www Worker alone.
+- **Done:** Added `wrangler.staging.jsonc` (prod D1 `8d0be2b3…`, R2 `purplelifeai`, service binding `PROD`→`purplelife`). `ploy-staging/worker/staging-entry.ts` mints design-preview session + proxies `/api/*`. Client layer under `ploy-staging/src/lib/staging/`; `StagingLiveTodayPage` on `/today`. Scripts `build:staging:ploy`, `deploy:staging:ploy`. Runbook `docs/DEPLOY-STAGING-PLOY.md`. Branch `cursor/ploy-astro-staging-5b1c` pushed; wrangler `--dry-run` OK (1618 KiB, bindings verified).
+- **Issues:** Deploy not executed (cloud VM unauthenticated wrangler). Staging currently UI-only until operator deploys + sets `AUTH_JWT_SECRET`. Journal/meds/reports pages still mock (Today wired first).
+- **Stand / next:** Merge PR; operator `bun run deploy:staging:ploy`; verify curl session + `/today` live chips; wire journal/meds next.
+- **Who / where:** cursor-agent · cloud VM · `cursor/ploy-astro-staging-5b1c`
+- **Evidence:** `npx wrangler deploy -c wrangler.staging.jsonc --dry-run` bindings OK; build `VITE_STAGING_LIVE_DATA=1` PASS
+- **Timestamp:** 2026-09-20T02:46:00Z
+
 
 ### 2026-09-15T18:28:00Z — PR #41 merged + deploy bundle (Oura D1)
 

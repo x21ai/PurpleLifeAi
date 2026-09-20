@@ -1,0 +1,10 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { HealthWorkflowsPage } from "@/components/pages/health-workflows/page";
+
+export const prerender = true;
+---
+
+<Layout title="Patterns · PurpleLife design pilot" description="A careful mobile view of observations from the PurpleLife journal." noindex={true}>
+  <HealthWorkflowsPage kind="insights" client:load />
+</Layout>

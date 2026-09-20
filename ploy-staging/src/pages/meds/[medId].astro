@@ -1,0 +1,9 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import RecordPage from "../../components/pages/record-mobile/page";
+export const prerender = true;
+export const ployPreviewParams = { medId: "morning-medication" };
+export function getStaticPaths() { return [{ params: ployPreviewParams }]; }
+const { medId = "morning-medication" } = Astro.params;
+---
+<Layout title="Medication · PurpleLife" noindex={true}><RecordPage kind="medication" recordId={medId} client:load /></Layout>

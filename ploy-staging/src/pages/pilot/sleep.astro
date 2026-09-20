@@ -1,0 +1,10 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { SleepPage } from "@/components/pages/sleep/page";
+
+export const prerender = true;
+---
+
+<Layout title="Sleep · PurpleLife design pilot" description="A graphic-led mobile sleep detail for PurpleLife." noindex={true}>
+  <SleepPage client:load />
+</Layout>

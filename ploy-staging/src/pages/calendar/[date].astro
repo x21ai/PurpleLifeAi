@@ -1,0 +1,9 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import RecordPage from "../../components/pages/record-mobile/page";
+export const prerender = true;
+export const ployPreviewParams = { date: "2026-09-15" };
+export function getStaticPaths() { return [{ params: ployPreviewParams }]; }
+const { date = "2026-09-15" } = Astro.params;
+---
+<Layout title="Day review · PurpleLife" noindex={true}><RecordPage kind="calendar" recordId={date} client:load /></Layout>

@@ -1,0 +1,9 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import RecordPage from "../../../components/pages/record-mobile/page";
+export const prerender = true;
+export const ployPreviewParams = { userId: "quiet-journal" };
+export function getStaticPaths() { return [{ params: ployPreviewParams }]; }
+const { userId = "quiet-journal" } = Astro.params;
+---
+<Layout title="Community profile · PurpleLife" noindex={true}><RecordPage kind="profile" recordId={userId} client:load /></Layout>

@@ -1,0 +1,10 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { SocialSupportPage } from "@/components/pages/social-support/page";
+
+export const prerender = true;
+---
+
+<Layout title="Join a shared circle · PurpleLife" description="Review the information and limits of a PurpleLife shared-circle invitation." noindex={true}>
+  <SocialSupportPage kind="friend-join" client:load />
+</Layout>

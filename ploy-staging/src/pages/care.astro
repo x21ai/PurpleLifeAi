@@ -1,0 +1,6 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { HealthWorkflowsPage } from "@/components/pages/health-workflows/page";
+export const prerender = true;
+---
+<Layout title="Care · PurpleLife" description="Manage who you care for and who supports you." noindex={true}><HealthWorkflowsPage kind="care" client:load /></Layout>

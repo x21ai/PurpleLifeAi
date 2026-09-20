@@ -1,0 +1,16 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Page from "../components/pages/pricing/page";
+
+export const prerender = true;
+---
+
+<Layout
+  title="Pricing"
+  description="PurpleLife is available as a design preview. Future pricing and paid-plan scope are not yet decided."
+>
+  <Fragment slot="head">
+    <meta name="author" content="Devyn Walker" />
+  </Fragment>
+  <Page client:load />
+</Layout>

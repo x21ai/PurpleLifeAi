@@ -1,0 +1,6 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { HealthWorkflowsPage } from "@/components/pages/health-workflows/page";
+export const prerender = true;
+---
+<Layout title="Travel planning · PurpleLife" description="Preview medication timing across a trip without changing a live schedule." noindex={true}><HealthWorkflowsPage kind="travel" client:load /></Layout>

@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { BiometricDetailPage } from "@/components/pages/biometric-detail/page";
+
+export const prerender = true;
+---
+
+<Layout title="Blood oxygen · PurpleLife" description="Review blood oxygen in the context of your PurpleLife journal." noindex={true}>
+  <BiometricDetailPage metric="Blood oxygen" client:load />
+</Layout>

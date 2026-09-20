@@ -1,0 +1,9 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import { ReportDetailPage } from "@/components/pages/report-detail/page";
+export const ployPreviewParams = { metricKey: "resting-heart-rate" };
+const { metricKey = "resting-heart-rate" } = Astro.params;
+---
+<Layout title="Metric trend · PurpleLife" description="Review a recorded metric trend and its source." noindex={true}>
+  <ReportDetailPage id={metricKey} mode="trend" client:load />
+</Layout>

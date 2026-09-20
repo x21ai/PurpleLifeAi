@@ -1,0 +1,8 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { StagingLiveJournalNewPage } from "@/components/staging/staging-live-journal-new";
+export const prerender = true;
+---
+<Layout title="New journal entry · PurpleLife" description="Capture a private health note." noindex={true}>
+  <StagingLiveJournalNewPage client:load />
+</Layout>

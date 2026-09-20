@@ -1,0 +1,8 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import UtilityPage from "@/components/pages/utility-mobile/page";
+export const prerender = true;
+---
+<Layout title="Ask PurpleLife" description="Ask sourced questions about what you recorded." noindex={true}>
+  <UtilityPage kind="chat" client:load />
+</Layout>

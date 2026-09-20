@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { ReportsPreviewPage } from "@/components/pages/reports-preview/page";
+
+export const prerender = true;
+---
+
+<Layout title="Medical history · PurpleLife" description="Prepare a read-only health summary to review before sharing." noindex={true}>
+  <ReportsPreviewPage area="Medical history" client:load />
+</Layout>

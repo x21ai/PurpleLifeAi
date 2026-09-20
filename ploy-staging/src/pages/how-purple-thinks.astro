@@ -1,0 +1,11 @@
+---
+import Layout from "../layouts/Layout.astro";
+import UtilityPage from "../components/pages/utility-mobile/page";
+export const prerender = true;
+---
+<Layout
+  title="How PurpleLife thinks · PurpleLife"
+  description="How PurpleLife groups journal details, explains sources, and communicates uncertainty."
+>
+  <UtilityPage kind="thinking" client:load />
+</Layout>

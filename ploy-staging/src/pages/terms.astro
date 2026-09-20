@@ -1,0 +1,11 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { LegalMobilePage } from "../components/pages/legal-mobile/page";
+export const prerender = true;
+---
+<Layout
+  title="Terms · PurpleLife"
+  description="Terms for using PurpleLife, kept in the original source wording."
+>
+  <LegalMobilePage kind="terms" client:load />
+</Layout>

@@ -1,0 +1,8 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import UtilityPage from "@/components/pages/utility-mobile/page";
+export const prerender = true;
+---
+<Layout title="Email preferences · PurpleLife" description="Choose which optional PurpleLife email updates you receive." noindex={true}>
+  <UtilityPage kind="unsubscribe" client:load />
+</Layout>

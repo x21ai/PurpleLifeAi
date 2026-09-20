@@ -1,0 +1,8 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { TimelinePage } from "@/components/pages/timeline/page";
+export const prerender = true;
+---
+<Layout title="Timeline · PurpleLife" description="Review a chronological health journal." noindex={true}>
+  <TimelinePage client:load />
+</Layout>

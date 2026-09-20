@@ -1,0 +1,10 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { DnaPage } from "@/components/pages/dna/page";
+
+export const prerender = true;
+---
+
+<Layout title="DNA · PurpleLife design pilot" description="A privacy-first mobile connection state for optional genetic-data sources." noindex={true}>
+  <DnaPage client:load />
+</Layout>

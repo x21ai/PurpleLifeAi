@@ -1,0 +1,14 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { PilotBrowsePage } from "@/components/pages/pilot/browse/page";
+
+export const prerender = true;
+---
+
+<Layout
+  title="Browse · PurpleLife mobile design pilot"
+  description="A visual mobile directory for PurpleLife health journal details and insights."
+  noindex={true}
+>
+  <PilotBrowsePage client:load />
+</Layout>

@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { StagingLiveJournalPage } from "@/components/staging/staging-live-journal";
+
+export const prerender = true;
+---
+
+<Layout title="Journal · PurpleLife" description="A searchable, chronological health journal." noindex={true}>
+  <StagingLiveJournalPage client:load />
+</Layout>

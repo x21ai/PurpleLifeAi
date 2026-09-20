@@ -1,0 +1,10 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { SocialSupportPage } from "@/components/pages/social-support/page";
+
+export const prerender = true;
+---
+
+<Layout title="New community post · PurpleLife" description="Draft and review a privacy-conscious PurpleLife community post." noindex={true}>
+  <SocialSupportPage kind="new-post" client:load />
+</Layout>

@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { StagingLiveTodayPage } from "@/components/staging/staging-live-today";
+
+export const prerender = true;
+---
+
+<Layout title="Today · PurpleLife" description="Your calm space to capture what is happening today." noindex={true}>
+  <StagingLiveTodayPage client:load />
+</Layout>

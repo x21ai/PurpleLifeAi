@@ -57,7 +57,9 @@
     "cf:d1:schema": "node scripts/cloudflare/generate-d1-schema.mjs",
     "cf:d1:import": "node scripts/cloudflare/import-d1-from-csv.mjs",
     "cf:r2:import": "node scripts/cloudflare/import-r2-from-manifest.mjs",
-    "cf:set-tester-passwords": "node scripts/cloudflare/set-tester-passwords.mjs"
+    "cf:set-tester-passwords": "node scripts/cloudflare/set-tester-passwords.mjs",
+    "build:staging:ploy": "cd ploy-staging && bun install && VITE_STAGING_LIVE_DATA=1 bun run build",
+    "deploy:staging:ploy": "bun run build:staging:ploy && doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} bunx wrangler deploy -c wrangler.staging.jsonc'"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.82",

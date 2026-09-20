@@ -1,0 +1,16 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Page from "../components/pages/features/page";
+
+export const prerender = true;
+---
+
+<Layout
+  title="Features"
+  description="Everything PurpleLife does: a multi-modal journal, a quiet AI that knows your history, a unified timeline, smart meds, biometrics, and a community that gets it."
+>
+  <Fragment slot="head">
+    <meta name="author" content="Devyn Walker" />
+  </Fragment>
+  <Page client:load />
+</Layout>

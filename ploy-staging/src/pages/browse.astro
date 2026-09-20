@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { PilotBrowsePage } from "@/components/pages/pilot/browse/page";
+
+export const prerender = true;
+---
+
+<Layout title="Browse · PurpleLife" description="Browse your health journal, sharing, privacy, and support tools." noindex={true}>
+  <PilotBrowsePage client:load />
+</Layout>

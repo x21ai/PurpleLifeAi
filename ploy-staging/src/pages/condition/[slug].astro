@@ -1,0 +1,9 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { ConditionDetailPage } from "@/components/pages/condition-detail/page";
+export const ployPreviewParams = { slug: "migraine" };
+const { slug = "migraine" } = Astro.params;
+---
+<Layout title={`${slug.replace(/[-_]+/g, " ")} · PurpleLife`} description="Keep condition notes, questions, and observations together." noindex={true}>
+  <ConditionDetailPage slug={slug} client:load />
+</Layout>

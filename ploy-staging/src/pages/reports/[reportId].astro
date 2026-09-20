@@ -1,0 +1,9 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { ReportDetailPage } from "@/components/pages/report-detail/page";
+export const ployPreviewParams = { reportId: "journal-summary" };
+const { reportId = "journal-summary" } = Astro.params;
+---
+<Layout title="Report detail · PurpleLife" description="Review a prepared health report before sharing." noindex={true}>
+  <ReportDetailPage id={reportId} mode="report" client:load />
+</Layout>
