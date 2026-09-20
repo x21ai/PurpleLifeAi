@@ -1,4 +1,9 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-20 (OAuth + CORS Step 4 merged; Ploy staging Step 3 real auth PR #44).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-20 (www hybrid entry draft PR #47, NO deploy; #44/#45/#48 on main).
+
+**Recent (2026-09-20): www Ploy hybrid entry (Step 6 infra, NO deploy).** Branch
+`cursor/www-hybrid-entry-1547` / PR #47: `ploy-staging/worker/www-entry.ts`,
+`wrangler.deploy.ploy.jsonc`, `docs/DEPLOY-WWW-PLOY.md`. Verify:
+`bun run verify:www-ploy-entry`. **Do not** wrangler deploy / www flip until owner GO.
 
 **Recent (2026-09-20): OAuth + CORS hardening (Step 4).** Audit `docs/OAUTH-CORS-AUDIT.md`.
 Allowlists: `src/lib/oauth-allowed-origins.ts`, `src/lib/flutter-api-cors.ts`. Gate:
@@ -16,6 +21,7 @@ Step 3: `bun run build:staging:ploy` then `bun run deploy:staging:ploy`. Verify:
 **Recent (2026-09-20): Ploy staging live data Step 2b.** `/reports`, `/reports/documents`,
 `/documents`, `/tools` wired like `/today`. Reports from `report_documents`; tools shows
 Oura/Whoop/Apple token status (safe columns only).
+
 
 **Recent (2026-09-15): Oura biometrics merged + deploy bundle.** PR #41 → `main` @
 `03ede232`. Deploy: `/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz`
