@@ -1,4 +1,9 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-20 (Flutter iOS build 29 merged; Step 8 rebuild runbook; Step 9 SEO #52 not deployed; PR #47 held).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-24 (staging footer drops Design preview; Flutter iOS build 29 merged; PR #47 held).
+
+**Recent (2026-09-24): Staging copyright footer.** Ploy Astro bottom-right line is
+`© 2026 PurpleLife` (no ` · Design preview`). Files under `ploy-staging/src/components/pages/*/layout/footer.tsx`
+and privacy/terms/charter pages. Home CTA "Design review build" kept. **Staging redeploy required:**
+`bun run build:staging:ploy` then `bun run deploy:staging:ploy`. Do not deploy www. Do not merge PR #47.
 
 **Recent (2026-09-20): Flutter iOS build 29.** Squash-merged PR #54 → `main` @ `7d742575`.
 `flutter/pubspec.yaml` `1.0.0+29`. Exceeds ASC VALID 1.0 (28). No Worker deploy.
