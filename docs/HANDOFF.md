@@ -9,6 +9,13 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-24 Staging footer: drop "Design preview":** Ploy Astro copyright line is now
+`© 2026 PurpleLife` (removed ` · Design preview`). Home still uses
+`ploy-staging/src/components/pages/about/layout/footer.tsx`. Purple **Design review build**
+CTA banner is unchanged. **Not deployed.** Staging live still needs
+`bun run build:staging:ploy` then `bun run deploy:staging:ploy` after merge. www and
+PR #47 untouched. No Supabase pause.
+
 **2026-09-20 Flutter iOS build 29 (merged):** Squash-merged to `main` @ `7d742575`.
 `flutter/pubspec.yaml` `1.0.0+28` → `1.0.0+29` (exceeds ASC VALID build 28). PR #54.
 No Worker deploy. PR #47 untouched. Next: `bun run ios:testflight`.
@@ -96,6 +103,23 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-24T23:20:00Z — Staging footer: remove Design preview suffix
+
+- **Requested:** On staging.purplelife.org, remove footer text "Design preview" including the
+  middle-dot separator so copyright reads only like "© 2026 PurpleLife". Keep the purple
+  DESIGN REVIEW BUILD banner. Do not deploy www, pause Supabase, or merge PR #47.
+- **Done:** Replaced `{"© 2026 PurpleLife · Design preview"}` with `{"© 2026 PurpleLife"}` in
+  Ploy marketing footers: `about`, `trust`, `features`, `contact`, `pricing` layout footers
+  plus inline footers on `terms`, `charter`, `privacy`. Home imports the about footer.
+- **Issues:** Live staging still shows the old string until `bun run deploy:staging:ploy`.
+  Left alone: home CTA "Design review build", pricing hero "Design preview", timeline mock
+  disclaimer, Worker design-preview error strings.
+- **Stand / next:** Merge this PR (not #47), then operator/agent staging redeploy.
+- **Who / where:** Cursor cloud agent, branch `cursor/staging-footer-design-preview-6441`.
+- **Evidence:** Grep shows no remaining `PurpleLife · Design preview`; banner string still in
+  `ploy-staging/src/components/pages/home/page.tsx`.
+- **Timestamp:** 2026-09-24T23:20:00Z
 
 ### 2026-09-20T15:12:00Z — Flutter iOS build 29 bump for TestFlight
 
