@@ -65,7 +65,7 @@ export default function Footer({ items = links }: { items?: LinkItemProps[] }) {
           </a>
         </nav>
         <p className="leading-snug text-xs">
-          {"© 2026 PurpleLife · Design preview"}
+          {"© 2026 PurpleLife"}
         </p>
       </div>
     </footer>

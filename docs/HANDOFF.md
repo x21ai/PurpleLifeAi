@@ -9,11 +9,17 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-**2026-09-24 www Ploy hybrid entry (PR #47 merge-ready, owner GO, no agent deploy):**
+**2026-09-24 www Ploy hybrid entry (PR #47, owner GO, includes #55 footer source):**
 `ploy-staging/worker/www-entry.ts` + `wrangler.deploy.ploy.jsonc` route `/api/*` + `/oauth/*`
-to TanStack in-process and other routes to Ploy Astro. Rebased/merged onto latest `main`
-(Flutter 29 / Step 8 / Step 9). Verify: `bun run verify:www-ploy-entry`. Runbook:
-`docs/DEPLOY-WWW-PLOY.md`. **Do not** run wrangler deploy from this agent.
+to TanStack in-process and other routes to Ploy Astro. Merged latest `main` including
+`c0690c56` (#55 staging footer). Verify: `bun run verify:www-ploy-entry`. Runbook:
+`docs/DEPLOY-WWW-PLOY.md`. **Do not** wrangler deploy `purplelife` from this agent.
+
+**2026-09-24 Staging footer: drop "Design preview" (PR #55 on main):** Ploy Astro copyright
+line is `© 2026 PurpleLife`. Home still uses `about/layout/footer.tsx`. Design review CTA
+banner unchanged. Staging Worker redeploy is a separate operator step; this PR does not
+deploy `purplelife-staging`.
+
 **2026-09-20 PR #44 squash-merged to main:** `a24de80e` — Ploy Astro staging live-data + Step 3 real auth.
 
 **2026-09-20 Flutter iOS build 29 (merged):** Squash-merged to `main` @ `7d742575`.
@@ -100,6 +106,16 @@ clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
 
+### 2026-09-24T23:25:00Z — PR #47 merge latest main including #55
+
+- **Requested:** Make PR #47 mergeable onto latest `main`; preserve hybrid Ploy www entry; do not deploy `purplelife`.
+- **Done:** Merged `origin/main` @ `c0690c56` (PR #55 footer) into `cursor/www-hybrid-entry-1547`. Conflicts only in `docs/HANDOFF.md` and `CURSOR_HANDOFF.md`. Footer source files from #55 auto-merged. Hybrid `www-entry.ts` / `wrangler.deploy.ploy.jsonc` unchanged.
+- **Issues:** Do not wrangler deploy www or staging from this run.
+- **Stand / next:** Push; wait for CI green; merge #47; operator www flip per `docs/DEPLOY-WWW-PLOY.md`.
+- **Who / where:** Cursor cloud agent · `cursor/www-hybrid-entry-1547`
+- **Evidence:** https://github.com/x21ai/PurpleLifeAi/pull/47
+- **Timestamp:** 2026-09-24T23:25:00Z
+
 ### 2026-09-24T23:20:00Z — PR #47 merge main (owner GO; no deploy)
 
 - **Requested:** Owner GO 2026-09-24: make PR #47 cleanly mergeable onto latest `main`; preserve hybrid Ploy www entry; do not deploy `purplelife`.
@@ -119,6 +135,23 @@ clean + 254/254; web QA video ready. See Log for details.
 - **Who / where:** cursor-agent · cloud VM · merge sequence
 - **Evidence:** https://github.com/x21ai/PurpleLifeAi/pull/44 https://github.com/x21ai/PurpleLifeAi/pull/47
 - **Timestamp:** 2026-09-20T13:55:58Z
+
+### 2026-09-24T23:20:00Z — Staging footer: remove Design preview suffix
+
+- **Requested:** On staging.purplelife.org, remove footer text "Design preview" including the
+  middle-dot separator so copyright reads only like "© 2026 PurpleLife". Keep the purple
+  DESIGN REVIEW BUILD banner. Do not deploy www, pause Supabase, or merge PR #47.
+- **Done:** Replaced `{"© 2026 PurpleLife · Design preview"}` with `{"© 2026 PurpleLife"}` in
+  Ploy marketing footers: `about`, `trust`, `features`, `contact`, `pricing` layout footers
+  plus inline footers on `terms`, `charter`, `privacy`. Home imports the about footer.
+- **Issues:** Live staging still shows the old string until `bun run deploy:staging:ploy`.
+  Left alone: home CTA "Design review build", pricing hero "Design preview", timeline mock
+  disclaimer, Worker design-preview error strings.
+- **Stand / next:** Merge this PR (not #47), then operator/agent staging redeploy.
+- **Who / where:** Cursor cloud agent, branch `cursor/staging-footer-design-preview-6441`.
+- **Evidence:** Grep shows no remaining `PurpleLife · Design preview`; banner string still in
+  `ploy-staging/src/components/pages/home/page.tsx`.
+- **Timestamp:** 2026-09-24T23:20:00Z
 
 ### 2026-09-20T15:12:00Z — Flutter iOS build 29 bump for TestFlight
 

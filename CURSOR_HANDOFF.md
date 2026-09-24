@@ -1,11 +1,15 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-24 (PR #47 merge-ready after main; owner GO for www Ploy flip; **do not** wrangler deploy from this agent).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-24 (PR #47 merging main including #55 footer; owner GO for www Ploy flip; **do not** wrangler deploy from this agent).
 
-**Recent (2026-09-24): www Ploy hybrid entry mergeable (owner GO).** Branch
-`cursor/www-hybrid-entry-1547` / PR #47 merged latest `main` (Flutter 29, Step 8/9).
+**Recent (2026-09-24): www Ploy hybrid entry (owner GO).** Branch
+`cursor/www-hybrid-entry-1547` / PR #47 includes latest `main` (Flutter 29, Step 8/9, #55 footer).
 Hybrid: `ploy-staging/worker/www-entry.ts` + `wrangler.deploy.ploy.jsonc` routes `/api/*`
 and `/oauth/*` to TanStack in-process; other routes to Ploy Astro. Verify:
-`bun run verify:www-ploy-entry`. **Owner GO received 2026-09-24.** Agent must **not**
-`wrangler deploy` Worker `purplelife`. Post-merge deploy: `docs/DEPLOY-WWW-PLOY.md`.
+`bun run verify:www-ploy-entry`. Agent must **not** `wrangler deploy` Worker `purplelife`.
+Post-merge deploy: `docs/DEPLOY-WWW-PLOY.md`.
+
+**Recent (2026-09-24): Staging copyright footer (#55).** Ploy Astro bottom-right line is
+`© 2026 PurpleLife` (no ` · Design preview`). Home CTA "Design review build" kept.
+Staging Worker redeploy is separate (`bun run deploy:staging:ploy`); not done in the #47 run.
 
 **Recent (2026-09-20): Flutter iOS build 29.** Squash-merged PR #54 → `main` @ `7d742575`.
 `flutter/pubspec.yaml` `1.0.0+29`. Exceeds ASC VALID 1.0 (28). No Worker deploy.
