@@ -5,6 +5,14 @@ work (especially multi-agent fleets) is decomposed. Append, never delete.
 
 ---
 
+### 2026-09-24 — node -e trailing VAR=value is argv, not env (status: raw)
+
+- **`node -e 'process.env.SITE' SITE="$SITE"` does not set `process.env.SITE`.** Extra
+  tokens after `-e` are `process.argv`, so the Astro rewrite wrote `site: "undefined"`
+  and `bun run build:www-ploy` failed with Invalid URL. Use `SITE="$SITE" node -e "..."`
+  or `export SITE`. Compile into: (a) this script stays env-prefixed, (b) do not copy
+  the argv pattern into other `node -e` rewrites.
+
 ### 2026-07-12 — TF28 sibling collision + pill stock trigger (status: raw)
 
 - **Parallel writers on one checkout collided on Today/Meds shared surfaces**

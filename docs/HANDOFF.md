@@ -9,6 +9,10 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-24 fix `build-ploy-www.sh` SITE env:** Node rewrite of Astro `site` now runs as
+`SITE="$SITE" node -e "..."` so `process.env.SITE` is set. Trailing argv `SITE="$SITE"`
+left `site: "undefined"` and broke `bun run build:www-ploy`. No Worker deploy.
+
 **2026-09-24 www Ploy hybrid entry (PR #47, owner GO, includes #55 footer source):**
 `ploy-staging/worker/www-entry.ts` + `wrangler.deploy.ploy.jsonc` route `/api/*` + `/oauth/*`
 to TanStack in-process and other routes to Ploy Astro. Merged latest `main` including
@@ -105,6 +109,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-24T23:30:00Z — fix build-ploy-www.sh SITE env for Astro rewrite
+
+- **Requested:** One-line fix: `scripts/build-ploy-www.sh` was passing `SITE` as a trailing argv to `node -e`, so `process.env.SITE` was undefined and Astro `site` became `"undefined"`.
+- **Done:** Prefix the rewrite with `SITE="$SITE" node -e "..."`. Documented in `docs/DEPLOY-WWW-PLOY.md`. No Worker deploy.
+- **Issues:** None. Full `bun run build:www-ploy` not run (Astro dist + wrangler out of scope).
+- **Stand / next:** Merge this PR; www flip still operator-owned.
+- **Who / where:** Cursor cloud agent · `cursor/fix-ploy-www-site-env-6863`
+- **Evidence:** `SITE="$SITE" node -e` in `scripts/build-ploy-www.sh`; node env smoke below.
+- **Timestamp:** 2026-09-24T23:30:00Z
 
 ### 2026-09-24T23:25:00Z — PR #47 merge latest main including #55
 

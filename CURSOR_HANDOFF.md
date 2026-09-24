@@ -1,4 +1,8 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-24 (PR #47 merging main including #55 footer; owner GO for www Ploy flip; **do not** wrangler deploy from this agent).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-24 (`build-ploy-www.sh` SITE env fix; **do not** wrangler deploy from this agent).
+
+**Recent (2026-09-24): `build-ploy-www.sh` SITE for Astro rewrite.** `SITE` is now in the
+environment (`SITE="$SITE" node -e`), not a trailing argv. Fixes `site: "undefined"` /
+Astro Invalid URL during `bun run build:www-ploy`. No Worker deploy.
 
 **Recent (2026-09-24): www Ploy hybrid entry (owner GO).** Branch
 `cursor/www-hybrid-entry-1547` / PR #47 includes latest `main` (Flutter 29, Step 8/9, #55 footer).

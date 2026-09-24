@@ -12,6 +12,8 @@ Format:
 
 ## www Ploy flip (raised 2026-09-24)
 
+- [x] ~~**`www-ploy-build-site-undefined`**~~ — RESOLVED 2026-09-24: `scripts/build-ploy-www.sh`
+  now prefixes `SITE="$SITE"` on the node rewrite so Astro `site` is not `"undefined"`.
 - [ ] **`www-ploy-operator-deploy`** — Owner GO received 2026-09-24. Merge PR #47, then
   operator deploys Worker `purplelife` with `bun run build:www-ploy` + `wrangler deploy -c wrangler.deploy.ploy.jsonc`
   (Doppler `cursor-cloudflare` / `prd_cloudlfare`). Agents must not deploy. Runbook:

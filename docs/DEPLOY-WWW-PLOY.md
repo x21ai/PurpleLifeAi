@@ -61,6 +61,8 @@ bun run build:www-ploy
 
 Ploy build sets `site: https://www.purplelife.org` and `VITE_STAGING_LIVE_DATA=1` for live D1 client pages.
 
+`scripts/build-ploy-www.sh` must pass `SITE` as an environment variable into the node rewrite (`SITE="$SITE" node -e "..."`). A trailing `SITE="$SITE"` after `node -e` is argv, so `process.env.SITE` is undefined and Astro fails with Invalid URL (`site: "undefined"`).
+
 ## Verify entry bundles (safe, no deploy)
 
 ```bash
