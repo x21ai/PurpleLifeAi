@@ -2,7 +2,7 @@
 
 **Repo:** [x21ai/PurpleLifeAi](https://github.com/x21ai/PurpleLifeAi)  
 **Status:** Runbook + build scripts ready. **No www design flip.**  
-**Held:** Do **not** merge [PR #47](https://github.com/x21ai/PurpleLifeAi/pull/47) (Ploy hybrid www entry) or deploy Ploy to `www.purplelife.org` until Step 6 GO + explicit owner approval.
+**www track:** Owner GO for Ploy www received **2026-09-24**. Merge [PR #47](https://github.com/x21ai/PurpleLifeAi/pull/47) then operator-deploy per `docs/DEPLOY-WWW-PLOY.md`. Step 8 native rebuilds remain independent of that flip.
 
 ## Goal
 
@@ -278,9 +278,9 @@ Step 8 assumes **production Worker host unchanged**:
 - Auth: `https://auth.purplelife.org` (Supabase custom domain)
 - Web `DATA_BACKEND=cloudflare` cutover (`docs/CLOUDFLARE-MIGRATION.md`) does not require a new Flutter dart-define; Worker middleware accepts existing Supabase JWTs.
 
-**Do not deploy** PR #47 (`wrangler.deploy.ploy.jsonc`, Ploy Astro UI on www) as part of Step 8. Native apps do not load www HTML; they only call `/api/*` and Supabase.
+Do **not** deploy www Ploy as part of Step 8. Native apps do not load www HTML; they only call `/api/*` and Supabase.
 
-Merge order (www track, separate from Step 8): trunk CI green → #45 → #44 → #47 → owner GO → deploy.
+Merge order (www track, separate from Step 8): trunk CI green → #45 → #44 → #47 (owner GO 2026-09-24) → operator deploy `docs/DEPLOY-WWW-PLOY.md`.
 
 ## Related docs
 

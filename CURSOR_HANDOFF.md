@@ -1,9 +1,15 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-24 (staging footer drops Design preview; Flutter iOS build 29 merged; PR #47 held).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-24 (PR #47 merging main including #55 footer; owner GO for www Ploy flip; **do not** wrangler deploy from this agent).
 
-**Recent (2026-09-24): Staging copyright footer.** Ploy Astro bottom-right line is
-`© 2026 PurpleLife` (no ` · Design preview`). Files under `ploy-staging/src/components/pages/*/layout/footer.tsx`
-and privacy/terms/charter pages. Home CTA "Design review build" kept. **Staging redeploy required:**
-`bun run build:staging:ploy` then `bun run deploy:staging:ploy`. Do not deploy www. Do not merge PR #47.
+**Recent (2026-09-24): www Ploy hybrid entry (owner GO).** Branch
+`cursor/www-hybrid-entry-1547` / PR #47 includes latest `main` (Flutter 29, Step 8/9, #55 footer).
+Hybrid: `ploy-staging/worker/www-entry.ts` + `wrangler.deploy.ploy.jsonc` routes `/api/*`
+and `/oauth/*` to TanStack in-process; other routes to Ploy Astro. Verify:
+`bun run verify:www-ploy-entry`. Agent must **not** `wrangler deploy` Worker `purplelife`.
+Post-merge deploy: `docs/DEPLOY-WWW-PLOY.md`.
+
+**Recent (2026-09-24): Staging copyright footer (#55).** Ploy Astro bottom-right line is
+`© 2026 PurpleLife` (no ` · Design preview`). Home CTA "Design review build" kept.
+Staging Worker redeploy is separate (`bun run deploy:staging:ploy`); not done in the #47 run.
 
 **Recent (2026-09-20): Flutter iOS build 29.** Squash-merged PR #54 → `main` @ `7d742575`.
 `flutter/pubspec.yaml` `1.0.0+29`. Exceeds ASC VALID 1.0 (28). No Worker deploy.
@@ -12,11 +18,11 @@ Upload: `bun run ios:testflight` (see `docs/STEP8-FLUTTER-REBUILD.md`).
 **Recent (2026-09-20): Step 8 Flutter store rebuild runbook.** `docs/STEP8-FLUTTER-REBUILD.md`
 covers iOS TestFlight + Android AAB against `https://www.purplelife.org/api`. Shared dart-defines:
 `scripts/lib/flutter-dart-defines.sh`. Commands: `bun run ios:testflight`, `bun run android:release`.
-**PR #47 (Ploy www) held** — no design flip. Android Play blocked: debug signing only.
+Android Play blocked: debug signing only.
 
 **Recent (2026-09-20): Step 9 SEO marketing pass.** Squash-merged PR #52 → `main`:
 shared `marketingHead()` for public marketing routes, sitemap/robots fixes, runbook
-`docs/STEP9-SEO-PASS.md`. **Not deployed.** Ploy www flip (#47) still held.
+`docs/STEP9-SEO-PASS.md`. **Not deployed** until www Worker deploy after #47 merge.
 
 **Recent (2026-09-20): OAuth + CORS hardening (Step 4).** Audit `docs/OAUTH-CORS-AUDIT.md`.
 Allowlists: `src/lib/oauth-allowed-origins.ts`, `src/lib/flutter-api-cors.ts`. Gate:
@@ -34,6 +40,7 @@ Step 3: `bun run build:staging:ploy` then `bun run deploy:staging:ploy`. Verify:
 **Recent (2026-09-20): Ploy staging live data Step 2b.** `/reports`, `/reports/documents`,
 `/documents`, `/tools` wired like `/today`. Reports from `report_documents`; tools shows
 Oura/Whoop/Apple token status (safe columns only).
+
 
 **Recent (2026-09-15): Oura biometrics merged + deploy bundle.** PR #41 → `main` @
 `03ede232`. Deploy: `/opt/cursor/artifacts/purplelife-main-oura-fix-03ede232.tar.gz`

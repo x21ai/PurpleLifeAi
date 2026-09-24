@@ -10,6 +10,13 @@ Format:
 
 ---
 
+## www Ploy flip (raised 2026-09-24)
+
+- [ ] **`www-ploy-operator-deploy`** — Owner GO received 2026-09-24. Merge PR #47, then
+  operator deploys Worker `purplelife` with `bun run build:www-ploy` + `wrangler deploy -c wrangler.deploy.ploy.jsonc`
+  (Doppler `cursor-cloudflare` / `prd_cloudlfare`). Agents must not deploy. Runbook:
+  `docs/DEPLOY-WWW-PLOY.md`. _Raised 2026-09-24 by www-hybrid-entry rebase._
+
 ## Step 8 Flutter Android Play (raised 2026-09-20)
 
 - [ ] **`step8-android-play-signing`** — Flutter Android Release still signs with debug

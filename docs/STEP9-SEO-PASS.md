@@ -1,7 +1,7 @@
 # Step 9: SEO marketing pass (TanStack www)
 
 **Scope:** Public marketing routes on the current TanStack UI at `https://www.purplelife.org`.
-**Held:** Ploy www design flip (PR #47) is **not** merged; this pass does not change app routes under `/_app/`.
+**Note:** This pass does not change app routes under `/_app/`. Ploy www flip is PR #47 (owner GO 2026-09-24; deploy after merge).
 
 ## Live audit (2026-09-20, pre-deploy)
 

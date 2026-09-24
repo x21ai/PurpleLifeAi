@@ -60,7 +60,11 @@
     "cf:r2:import": "node scripts/cloudflare/import-r2-from-manifest.mjs",
     "cf:set-tester-passwords": "node scripts/cloudflare/set-tester-passwords.mjs",
     "build:staging:ploy": "cd ploy-staging && bun install && VITE_STAGING_LIVE_DATA=1 bun run build",
-    "deploy:staging:ploy": "bun run build:staging:ploy && doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} bunx wrangler deploy -c wrangler.staging.jsonc'"
+    "deploy:staging:ploy": "bun run build:staging:ploy && doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} bunx wrangler deploy -c wrangler.staging.jsonc'",
+    "build:ploy:www": "bash scripts/build-ploy-www.sh",
+    "build:www-ploy": "bun run build:prod && bash scripts/build-ploy-www.sh",
+    "verify:www-ploy-entry": "bash scripts/verify-www-ploy-entry.sh",
+    "deploy:www-ploy:dry-run": "bun run build:www-ploy && doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} bunx wrangler deploy -c wrangler.deploy.ploy.jsonc --dry-run'"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.82",
