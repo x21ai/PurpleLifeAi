@@ -9,11 +9,27 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-**2026-09-20 www Ploy hybrid entry (draft PR #47, NO deploy):** `ploy-staging/worker/www-entry.ts`
-+ `wrangler.deploy.ploy.jsonc` route `/api/*` + `/oauth/*` to TanStack in-process and
-UI to Ploy Astro. Runbook `docs/DEPLOY-WWW-PLOY.md`; Step 6 still **NO-GO** for www flip
-until QA + owner GO. Verify: `bun run verify:www-ploy-entry`. Do **not** run wrangler deploy.
+**2026-09-24 www Ploy hybrid entry (PR #47 merge-ready, owner GO, no agent deploy):**
+`ploy-staging/worker/www-entry.ts` + `wrangler.deploy.ploy.jsonc` route `/api/*` + `/oauth/*`
+to TanStack in-process and other routes to Ploy Astro. Rebased/merged onto latest `main`
+(Flutter 29 / Step 8 / Step 9). Verify: `bun run verify:www-ploy-entry`. Runbook:
+`docs/DEPLOY-WWW-PLOY.md`. **Do not** run wrangler deploy from this agent.
 **2026-09-20 PR #44 squash-merged to main:** `a24de80e` — Ploy Astro staging live-data + Step 3 real auth.
+
+**2026-09-20 Flutter iOS build 29 (merged):** Squash-merged to `main` @ `7d742575`.
+`flutter/pubspec.yaml` `1.0.0+28` → `1.0.0+29` (exceeds ASC VALID build 28). PR #54.
+No Worker deploy. Next: `bun run ios:testflight`.
+
+**2026-09-20 Step 8 Flutter rebuild runbook:** `docs/STEP8-FLUTTER-REBUILD.md` inventories
+`org.purplelife.app` bundle ids, dart-defines, `WORKER_API_BASE_URL` routes, deep links, ASC/Play
+signing blockers. Shared `scripts/lib/flutter-dart-defines.sh`; iOS TestFlight + Android
+`bun run android:release` use explicit prod Worker base URL.
+
+**2026-09-20 Step 9 SEO marketing pass (PR #52 merged):** Squash-merged to main. Adds
+`src/lib/marketing-seo.ts`, completes OG/Twitter/canonical on trust/privacy/terms/charter/community
+resources, fixes robots/sitemap (www sitemap URL, +trust/charter/privacy/terms, −/feedback redirect),
+`noindex` on community post detail. Runbook: `docs/STEP9-SEO-PASS.md`. **Not deployed**
+until www Worker deploy after #47 merge.
 **2026-09-20 PR #45 squash-merged to main:** `25c42d65` — OAuth + CORS allowlists for www and Flutter (`src/lib/oauth-allowed-origins.ts`, extended Flutter CORS, redirect_uri validation). Audit: `docs/OAUTH-CORS-AUDIT.md`. Gate: `bun run check:oauth-cors`. Deploy www Worker only (operator).
 **2026-09-20 PR #48 merged to main:** `cac619b4` — entities override removed, entry-budget/webkit/e2e fixes; trunk CI green.
 **2026-09-20 Ploy staging Step 3 real auth (merged via #44):** Staging `purplelife-staging` @
@@ -23,7 +39,6 @@ in at `/login` via proxied `POST /api/auth/sign-in` (same JWT/`purple-cf-session
 www). Live pages require sign-in. Operator bypass: `DESIGN_PREVIEW_BYPASS_SECRET` +
 `X-Purple-Design-Preview-Secret` header. Redeploy: `bun run build:staging:ploy` then
 `bun run deploy:staging:ploy`. www Worker untouched pending owner GO on #47.
-
 
 **2026-09-15 Oura biometrics on Cloudflare D1 (merged):** PR #41 squash-merged to `main`
 @ `03ede232`. Cron and edge invoke persist `biometrics` (`source=oura`). Deploy bundle:
@@ -85,6 +100,16 @@ clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
 
+### 2026-09-24T23:20:00Z — PR #47 merge main (owner GO; no deploy)
+
+- **Requested:** Owner GO 2026-09-24: make PR #47 cleanly mergeable onto latest `main`; preserve hybrid Ploy www entry; do not deploy `purplelife`.
+- **Done:** Merged `origin/main` into `cursor/www-hybrid-entry-1547`. Conflicts only in `docs/HANDOFF.md` and `CURSOR_HANDOFF.md` (kept both histories). Hybrid entry files unchanged (`www-entry.ts`, `wrangler.deploy.ploy.jsonc`, verify/build scripts).
+- **Issues:** Agent must not `wrangler deploy`. CI on #47 must re-run after push. Staging Design preview footer is a separate task (untouched).
+- **Stand / next:** Merge #47 when GitHub reports mergeable + CI green; then operator deploys per `docs/DEPLOY-WWW-PLOY.md`.
+- **Who / where:** Cursor cloud agent · `cursor/www-hybrid-entry-1547`
+- **Evidence:** https://github.com/x21ai/PurpleLifeAi/pull/47
+- **Timestamp:** 2026-09-24T23:20:00Z
+
 ### 2026-09-20T13:55:58Z — PR #44 squash-merged; #47 rebased onto main
 
 - **Requested:** Continue merge sequence after #48; merge #45/#44 if CI green; rebase #47; no www deploy.
@@ -94,6 +119,49 @@ clean + 254/254; web QA video ready. See Log for details.
 - **Who / where:** cursor-agent · cloud VM · merge sequence
 - **Evidence:** https://github.com/x21ai/PurpleLifeAi/pull/44 https://github.com/x21ai/PurpleLifeAi/pull/47
 - **Timestamp:** 2026-09-20T13:55:58Z
+
+### 2026-09-20T15:12:00Z — Flutter iOS build 29 bump for TestFlight
+
+- **Requested:** Bump `flutter/pubspec.yaml` from `1.0.0+28` to `1.0.0+29`; open PR, CI green,
+  squash-merge to main; no Worker deploy; do not touch PR #47.
+- **Done:** PR #54 opened on `cursor/flutter-ios-build-29-e917`. CI green (checks, e2e-smoke,
+  responsive). Squash-merged to `main` @ `7d742575` (direct push; GitHub API merge 403).
+- **Issues:** PR #54 may still show open on GitHub until closed manually; merge SHA on main is
+  authoritative.
+- **Stand / next:** Operator runs `bun run ios:testflight` on Mac to upload build 29 to ASC.
+- **Who / where:** Cursor cloud agent, `main@7d742575`.
+- **Evidence:** CI run https://github.com/x21ai/PurpleLifeAi/actions/runs/35518523107 (all success).
+- **Timestamp:** 2026-09-20T15:12:00Z
+
+### 2026-09-20T14:30:00Z — Step 8: Flutter iOS + Android rebuild runbook (Cloudflare www)
+
+- **Requested:** Inventory Flutter mobile app (bundle ids, dart-defines, `WORKER_API_BASE_URL`,
+  deep links, store notes); deliver `docs/STEP8-FLUTTER-REBUILD.md` + PR for CF API base URL fixes;
+  list Apple/Play signing blockers; no www design flip (do not merge/deploy PR #47).
+- **Done:** Added `docs/STEP8-FLUTTER-REBUILD.md` (full inventory, rebuild commands, verification
+  gates, signing blockers). Added `scripts/lib/flutter-dart-defines.sh` (shared prod
+  `WORKER_API_BASE_URL` + `SITE_URL`). Updated `scripts/flutter-ios-testflight.sh` and
+  `scripts/flutter-web-build-prod.sh` to use shared defines. Added
+  `scripts/flutter-android-release.sh` + `bun run android:release`. Linked from `flutter/README.md`.
+- **Issues:** Flutter SDK not installed on cloud VM (could not run `flutter test` here). Android Play
+  upload still blocked (debug signing, no Console app, no service account). PR #47 remains held.
+- **Stand / next:** Operator runs iOS rebuild on Mac (`bun run ios:testflight` after pubspec `+N`
+  bump); implement Play signing per `docs/templates/play-store-automation-plan.md` before Android
+  store upload.
+- **Who / where:** Cloud agent, branch `cursor/step8-flutter-rebuild-runbook-af3a`
+- **Evidence:** Runbook `docs/STEP8-FLUTTER-REBUILD.md`; dart-define helper
+  `scripts/lib/flutter-dart-defines.sh`
+- **Timestamp:** 2026-09-20T14:30:00Z
+
+### 2026-09-20T14:30:00Z — Step 9: SEO marketing pass (TanStack www)
+
+- **Requested:** Audit live meta/OG/robots/sitemap/canonicals on marketing routes; safe SEO improvements in PR; document in `docs/STEP9-SEO-PASS.md`; no deploy; do not merge #47 / Ploy www flip.
+- **Done:** Live curl audit of prod head tags, `robots.txt`, `sitemap.xml`. Added `src/lib/marketing-seo.ts`; refactored 11 marketing routes to shared `marketingHead()` (per-page Twitter + canonical); expanded sitemap (+trust, +charter, +privacy, +terms, −feedback); robots.txt www sitemap + admin/friend/messages/users disallow; `noindex` on `/community/$postId`; default `og:url` in `__root.tsx`. Squash-merged as PR #52.
+- **Issues:** Cloud VM has no `bun`/deps installed; L0 gates not run here. Operator runs `tsc`, `build`, deploy smoke per runbook.
+- **Stand / next:** Operator deploy when ready (manual workflow only). SEO is on main; not auto-deployed.
+- **Who / where:** Cursor cloud agent, `cursor/step9-seo-marketing-pass-cce9`.
+- **Evidence:** Live audit in `docs/STEP9-SEO-PASS.md`; prod `curl` 2026-09-20 pre-change.
+- **Timestamp:** 2026-09-20T14:30:00Z
 
 ### 2026-09-20T13:50:51Z — PR #45 squash-merged to main (OAuth + CORS)
 

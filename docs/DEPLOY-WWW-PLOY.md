@@ -1,6 +1,6 @@
 # www.purplelife.org Ploy Astro flip (hybrid Worker)
 
-**Status:** Infra ready in repo; **DO NOT deploy** until Step 6 GO criteria and explicit owner approval (`ploy-purplelife-source/STEP6-WWW-FLIP-DRYRUN.md`).
+**Status:** Infra ready in repo. **Owner GO received 2026-09-24** (merge PR #47, then deploy Worker `purplelife` with this runbook). Agents must **not** deploy unless the operator explicitly asks. Step 6 dry-run notes: `ploy-purplelife-source/STEP6-WWW-FLIP-DRYRUN.md`.
 
 Production **www** today still uses TanStack UI via `wrangler.deploy.jsonc` + `src/server.ts`. This document covers the **future** flip to Ploy Astro UI while keeping TanStack API handlers in-process.
 

@@ -50,4 +50,4 @@ if [[ ! -f "$OUTDIR/www-entry.js" && ! -f "$OUTDIR/worker.js" && ! -f "$OUTDIR/i
   exit 1
 fi
 
-echo "verify-www-ploy-entry: PASS (hybrid entry bundles; DO NOT deploy until owner GO)."
+echo "verify-www-ploy-entry: PASS (hybrid entry bundles; live deploy is operator-owned after #47 merge)."

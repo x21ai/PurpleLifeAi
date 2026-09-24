@@ -141,13 +141,15 @@ main() {
   else
     log "WARN: ${PURPLE_LUCIQ_APP_SECRET} missing; TestFlight build will ship without Luciq dart-define"
   fi
+  export LUCIQ_TOKEN
   doppler run --project "${FLUTTER_DOPPLER_PROJECT}" --config "${FLUTTER_DOPPLER_CONFIG}" -- bash -c '
+    # shellcheck source=lib/flutter-dart-defines.sh
+    source "'"${REPO_ROOT}"'/scripts/lib/flutter-dart-defines.sh"
+    mapfile -t _dart_flags < <(flutter_dart_define_flags)
     flutter build ios --release --no-codesign \
       --build-number="'"${BUILD_NUMBER}"'" \
       --build-name=1.0.0 \
-      --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY" \
-      --dart-define=LUCIQ_APP_TOKEN="'"${LUCIQ_TOKEN}"'" \
-      --dart-define=BUILD_DATE="'"${BUILD_DATE}"'"
+      "${_dart_flags[@]}"
   '
   if [[ -n "${LUCIQ_TOKEN}" ]]; then
     grep -q 'TFVDSVF' "${FLUTTER_DIR}/ios/Flutter/Generated.xcconfig" \

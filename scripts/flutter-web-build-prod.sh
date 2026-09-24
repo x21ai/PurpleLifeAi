@@ -44,12 +44,14 @@ build_flutter_web_release() {
   (
     cd "${FLUTTER_DIR}"
     doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
-      bash -c 'flutter build web --release --base-href="/" --no-tree-shake-icons \
-        --pwa-strategy=none \
-        --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY" \
-        --dart-define=SITE_URL="https://www.purplelife.org" \
-        --dart-define=WORKER_API_BASE_URL="https://www.purplelife.org/api" \
-        --dart-define=BUILD_DATE="'"${BUILD_DATE}"'"'
+      bash -c '
+        # shellcheck source=lib/flutter-dart-defines.sh
+        source "'"${REPO_ROOT}"'/scripts/lib/flutter-dart-defines.sh"
+        mapfile -t _dart_flags < <(flutter_dart_define_flags)
+        flutter build web --release --base-href="/" --no-tree-shake-icons \
+          --pwa-strategy=none \
+          "${_dart_flags[@]}"
+      '
   )
   copy_drift_web_assets
 }

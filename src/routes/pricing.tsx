@@ -6,51 +6,38 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { useRevealOnScroll } from "@/hooks/use-reveal-on-scroll";
 import { useIsPro } from "@/lib/pro-gate";
+import { marketingHead } from "@/lib/marketing-seo";
 
 export const Route = createFileRoute("/pricing")({
-  head: () => ({
-    meta: [
-      { title: "Pricing · Purple" },
-      {
-        name: "description",
-        content:
-          "Purple is free for everyone right now. Two simple plans for the future: Free, and Pro at $9.99/month or $99/year for DNA insights, unlimited Ask Purple, sharing, and unlimited caregivers.",
+  head: () =>
+    marketingHead({
+      path: "/pricing",
+      title: "Pricing · Purple",
+      description:
+        "Purple is free for everyone right now. Two simple plans for the future: Free, and Pro at $9.99/month or $99/year for DNA insights, unlimited Ask Purple, sharing, and unlimited caregivers.",
+      ogDescription: "Free for everyone right now. Two plans for the future.",
+      jsonLd: {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: "Purple",
+        description:
+          "Private health journal for people living with conditions that need daily attention.",
+        brand: { "@type": "Organization", name: "Purple" },
+        offers: {
+          "@type": "AggregateOffer",
+          priceCurrency: "USD",
+          lowPrice: "0",
+          highPrice: "99",
+          offerCount: 3,
+          url: "https://www.purplelife.org/pricing",
+          offers: [
+            { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD" },
+            { "@type": "Offer", name: "Pro Monthly", price: "9.99", priceCurrency: "USD" },
+            { "@type": "Offer", name: "Pro Yearly", price: "99", priceCurrency: "USD" },
+          ],
+        },
       },
-      { property: "og:title", content: "Pricing · Purple" },
-      {
-        property: "og:description",
-        content: "Free for everyone right now. Two plans for the future.",
-      },
-      { property: "og:url", content: "https://www.purplelife.org/pricing" },
-    ],
-    links: [{ rel: "canonical", href: "https://www.purplelife.org/pricing" }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Product",
-          name: "Purple",
-          description:
-            "Private health journal for people living with conditions that need daily attention.",
-          brand: { "@type": "Organization", name: "Purple" },
-          offers: {
-            "@type": "AggregateOffer",
-            priceCurrency: "USD",
-            lowPrice: "0",
-            highPrice: "99",
-            offerCount: 3,
-            url: "https://www.purplelife.org/pricing",
-            offers: [
-              { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD" },
-              { "@type": "Offer", name: "Pro Monthly", price: "9.99", priceCurrency: "USD" },
-              { "@type": "Offer", name: "Pro Yearly", price: "99", priceCurrency: "USD" },
-            ],
-          },
-        }),
-      },
-    ],
-  }),
+    }),
   component: PricingPage,
 });
 

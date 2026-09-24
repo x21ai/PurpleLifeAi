@@ -8,6 +8,9 @@ import { toast } from "sonner";
 import { userMessage } from "@/lib/user-message";
 
 export const Route = createFileRoute("/community/$postId")({
+  head: () => ({
+    meta: [{ name: "robots", content: "noindex,nofollow" }],
+  }),
   component: GatedPostDetail,
 });
 

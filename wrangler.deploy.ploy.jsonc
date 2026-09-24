@@ -1,10 +1,10 @@
 // Deploy config for www Ploy Astro UI flip (Worker name stays `purplelife`).
 // Hybrid entry: TanStack in-process for /api/* + /oauth/*; Ploy Astro for all other routes.
 //
-// DO NOT deploy until operator GO — see docs/DEPLOY-WWW-PLOY.md and
-// ploy-purplelife-source/STEP6-WWW-FLIP-DRYRUN.md.
+// Owner GO 2026-09-24: merge PR #47, then operator deploys. See docs/DEPLOY-WWW-PLOY.md.
+// Agents must not wrangler deploy unless the operator explicitly asks.
 //
-// Usage (operator only, after GO):
+// Usage (after #47 is on main):
 //   bun run build:www-ploy
 //   doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
 //     bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} \

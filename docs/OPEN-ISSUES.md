@@ -10,6 +10,21 @@ Format:
 
 ---
 
+## www Ploy flip (raised 2026-09-24)
+
+- [ ] **`www-ploy-operator-deploy`** — Owner GO received 2026-09-24. Merge PR #47, then
+  operator deploys Worker `purplelife` with `bun run build:www-ploy` + `wrangler deploy -c wrangler.deploy.ploy.jsonc`
+  (Doppler `cursor-cloudflare` / `prd_cloudlfare`). Agents must not deploy. Runbook:
+  `docs/DEPLOY-WWW-PLOY.md`. _Raised 2026-09-24 by www-hybrid-entry rebase._
+
+## Step 8 Flutter Android Play (raised 2026-09-20)
+
+- [ ] **`step8-android-play-signing`** — Flutter Android Release still signs with debug
+  keystore (`flutter/android/app/build.gradle.kts`); no Play Console app, upload keystore,
+  or Play Developer API service account. AAB build script exists (`bun run android:release`)
+  but Play upload is manual/blocked. Target: `docs/templates/play-store-automation-plan.md`.
+  _Raised 2026-09-20 by Step 8 runbook._
+
 ## Agent / CI environment (raised 2026-07-13)
 
 - [ ] **`xcode-beta-simulator-app-missing`** — Xcode 27.0 beta (`27A5209h`) at

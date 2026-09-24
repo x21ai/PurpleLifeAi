@@ -1,9 +1,24 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-20 (www hybrid entry draft PR #47, NO deploy; #44/#45/#48 on main).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-24 (PR #47 merge-ready after main; owner GO for www Ploy flip; **do not** wrangler deploy from this agent).
 
-**Recent (2026-09-20): www Ploy hybrid entry (Step 6 infra, NO deploy).** Branch
-`cursor/www-hybrid-entry-1547` / PR #47: `ploy-staging/worker/www-entry.ts`,
-`wrangler.deploy.ploy.jsonc`, `docs/DEPLOY-WWW-PLOY.md`. Verify:
-`bun run verify:www-ploy-entry`. **Do not** wrangler deploy / www flip until owner GO.
+**Recent (2026-09-24): www Ploy hybrid entry mergeable (owner GO).** Branch
+`cursor/www-hybrid-entry-1547` / PR #47 merged latest `main` (Flutter 29, Step 8/9).
+Hybrid: `ploy-staging/worker/www-entry.ts` + `wrangler.deploy.ploy.jsonc` routes `/api/*`
+and `/oauth/*` to TanStack in-process; other routes to Ploy Astro. Verify:
+`bun run verify:www-ploy-entry`. **Owner GO received 2026-09-24.** Agent must **not**
+`wrangler deploy` Worker `purplelife`. Post-merge deploy: `docs/DEPLOY-WWW-PLOY.md`.
+
+**Recent (2026-09-20): Flutter iOS build 29.** Squash-merged PR #54 → `main` @ `7d742575`.
+`flutter/pubspec.yaml` `1.0.0+29`. Exceeds ASC VALID 1.0 (28). No Worker deploy.
+Upload: `bun run ios:testflight` (see `docs/STEP8-FLUTTER-REBUILD.md`).
+
+**Recent (2026-09-20): Step 8 Flutter store rebuild runbook.** `docs/STEP8-FLUTTER-REBUILD.md`
+covers iOS TestFlight + Android AAB against `https://www.purplelife.org/api`. Shared dart-defines:
+`scripts/lib/flutter-dart-defines.sh`. Commands: `bun run ios:testflight`, `bun run android:release`.
+Android Play blocked: debug signing only.
+
+**Recent (2026-09-20): Step 9 SEO marketing pass.** Squash-merged PR #52 → `main`:
+shared `marketingHead()` for public marketing routes, sitemap/robots fixes, runbook
+`docs/STEP9-SEO-PASS.md`. **Not deployed** until www Worker deploy after #47 merge.
 
 **Recent (2026-09-20): OAuth + CORS hardening (Step 4).** Audit `docs/OAUTH-CORS-AUDIT.md`.
 Allowlists: `src/lib/oauth-allowed-origins.ts`, `src/lib/flutter-api-cors.ts`. Gate:
