@@ -48,10 +48,11 @@
       "bucket_name": "purplelifeai",
     },
   ],
+  // CACHE must be eigital-account KV `purplelifeai` (error 10041 if POS id is used).
   "kv_namespaces": [
     {
       "binding": "CACHE",
-      "id": "73356a0e339447059bdddc33b93f26a9",
+      "id": "9226585702aa4be694ac74981d9859c4",
     },
   ],
   "triggers": {

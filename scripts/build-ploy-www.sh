@@ -28,14 +28,14 @@ fi
 
 # Astro `site` must match www for canonical URLs and sitemap (Ploy reserves string literal).
 cp "$ASTRO_CONFIG" "${ASTRO_CONFIG}.bak"
-node -e "
+SITE="$SITE" node -e "
 const fs = require('fs');
 const site = process.env.SITE;
 let c = fs.readFileSync('$ASTRO_CONFIG', 'utf8');
 if (!c.includes('site:')) throw new Error('site: not found in astro.config.mjs');
 c = c.replace(/site: \"https:\\/\\/[^\"]+\"/, 'site: \"' + site + '\"');
 fs.writeFileSync('$ASTRO_CONFIG', c);
-" SITE="$SITE"
+"
 trap 'mv -f "${ASTRO_CONFIG}.bak" "$ASTRO_CONFIG"' EXIT
 
 VITE_STAGING_LIVE_DATA=1 bun run build

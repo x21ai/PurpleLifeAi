@@ -12,6 +12,10 @@ Format:
 
 ## www Ploy flip (raised 2026-09-24)
 
+- [x] ~~**`www-ploy-build-site-undefined`**~~ — RESOLVED 2026-09-24: `scripts/build-ploy-www.sh`
+  now prefixes `SITE="$SITE"` on the node rewrite so Astro `site` is not `"undefined"`.
+- [x] ~~**`www-ploy-cache-kv-pos-id`**~~ — RESOLVED 2026-09-25: `wrangler.deploy.ploy.jsonc`
+  CACHE id is eigital `9226585702aa4be694ac74981d9859c4` (POS `73356a0e…` → CF 10041).
 - [ ] **`www-ploy-operator-deploy`** — Owner GO received 2026-09-24. Merge PR #47, then
   operator deploys Worker `purplelife` with `bun run build:www-ploy` + `wrangler deploy -c wrangler.deploy.ploy.jsonc`
   (Doppler `cursor-cloudflare` / `prd_cloudlfare`). Agents must not deploy. Runbook:
