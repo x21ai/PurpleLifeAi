@@ -26,6 +26,7 @@ partitions:
       - "scripts/build-ploy-www.sh"
       - "scripts/verify-www-ploy-entry.sh"
       - "scripts/check-www-ploy-production.mjs"
+      - "scripts/clean-workspace-junk.sh"
       - "wrangler.deploy.ploy.jsonc"
       - "package.json"
       - "docs/DEPLOY-WWW-PLOY.md"

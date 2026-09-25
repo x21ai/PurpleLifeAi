@@ -5,6 +5,14 @@ work (especially multi-agent fleets) is decomposed. Append, never delete.
 
 ---
 
+### 2026-09-25 — GNU find rejects prune combined with delete (status: raw)
+
+- The mandatory workspace cleanup failed because GNU `find -delete` implies depth-first
+  traversal, which makes `-prune` ineffective and exits nonzero. The script now preserves
+  pruning and removes matched duplicate paths with `-exec rm -rf -- {} +`, which also
+  handles duplicate directories. Compile into: keep the cleanup script exercised in a
+  Linux CI smoke so handoff cleanup cannot silently become platform-specific.
+
 ### 2026-09-25 — User-facing production labels are still operator jargon (status: raw)
 
 - Independent review rejected the otherwise-correct live-mode change because phrases

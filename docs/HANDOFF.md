@@ -132,20 +132,23 @@ clean + 254/254; web QA video ready. See Log for details.
   receives `/api/*`, `/oauth/*`, and scheduled events; static and TanStack assets route
   through the hybrid Worker; user copy no longer exposes staging/test-account/D1 details.
   Added route and production-build checks plus authenticated post-deploy smoke script.
-- **Issues:** No Worker deployment performed. Authenticated production smoke requires
-  runtime-injected test credentials and remains an operator post-deploy check.
-- **Stand / next:** PR #57 is the deployment candidate. Finish full local gates and
-  independent review, then operator merges and deploys using `docs/DEPLOY-WWW-PLOY.md`.
+  Fixed mandatory cleanup on GNU `find` by replacing incompatible `-prune` + `-delete`
+  with pruned `-exec rm -rf`.
+- **Issues:** No Worker deployment performed. Doppler is not installed and runtime test
+  credentials are absent on this VM, so the authenticated D1 smoke remains an explicit
+  operator post-deploy check.
+- **Stand / next:** PR #57 is GO after independent re-review. Operator merges, deploys,
+  and runs `bun run test:www-cloudflare-data` plus the hybrid browser smoke in
+  `docs/DEPLOY-WWW-PLOY.md`.
 - **Who / where:** Auto cloud agent, `/workspace`,
-  `cursor/www-live-production-mode-9a5d@e34f3653` plus pending review fixes.
-- **Evidence:** Route boundary 23/23 pass; full build/gate evidence will be added after
-  the pre-test revision is committed and pushed. First expanded build check correctly
-  rejected one transitive `/tools` D1 message; fixed in the data formatter before rerun.
-  Focused gates then passed, and browser QA found a desktop status-message layout defect;
-  status blocks were moved into the landscape stack before the final visual rerun.
-  Independent review then rejected remaining operator jargon (`Live production`,
-  `production data`, Cloudflare/Worker labels) and non-recursive hydration checks; those
-  findings are being removed and the checker now follows imported chunks.
+  `cursor/www-live-production-mode-9a5d@9e94cff1` plus final evidence docs.
+- **Evidence:** `build:ploy:www` + recursive production checker PASS;
+  `verify:www-ploy-entry` Wrangler dry-run PASS; route and interaction tests 33/33;
+  Astro check 0 errors; lint 0 errors; live-data, unique-images, lovable-auth,
+  OAuth/CORS, TypeScript, and entry-budget gates PASS. Playwright production-mode
+  browser QA passed 9 routes with no runtime failures; screenshots:
+  `/opt/cursor/artifacts/www-live-preview/`. Changed-line secret scan PASS.
+  Independent adversarial re-review: GO, no blocking findings.
 - **Timestamp:** 2026-09-25T01:33:01Z
 
 ### 2026-09-25T00:15:00Z — eigital CACHE KV id in wrangler.deploy.ploy.jsonc

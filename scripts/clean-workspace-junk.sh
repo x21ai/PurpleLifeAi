@@ -15,7 +15,7 @@ echo "[clean-workspace] Removing test-results/..."
 rm -rf test-results
 
 echo "[clean-workspace] Removing macOS duplicate copies (* 2.*) outside deps/build..."
-find . \( "${prune[@]}" \) -prune -o -name '* 2.*' -print -delete
+find . \( "${prune[@]}" \) -prune -o -name '* 2.*' -print -exec rm -rf -- {} +
 
 echo "[clean-workspace] Done."
 git status -sb

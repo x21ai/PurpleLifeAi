@@ -26,4 +26,6 @@ Append material development prompts newest first. Never include secrets or PII.
   Commits `8c59b8c0` and `e34f3653` establish production routing, live-mode flags,
   hydration env exposure, and dual asset support. Commits `e4c84e85` and `3353880e`
   remove remaining operator/backend copy and expand production checks. Commit
-  `625e5196` fixes signed-out status layout; final independent-review remediation pending.
+  `625e5196` fixes signed-out status layout; `9e94cff1` removes deployment jargon,
+  recursively checks hydration imports, and routes Ploy hashed assets directly.
+  Draft PR #57 is independently reviewed GO; no deploy was performed.

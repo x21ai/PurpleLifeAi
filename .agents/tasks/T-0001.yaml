@@ -15,7 +15,14 @@ acceptance:
   - "D1/R2/KV bindings retain the existing eigital production resource identifiers."
   - "Read-only authenticated production smoke proves sign-in and D1-backed reads work."
   - "No Worker deployment is performed."
-state: in-progress
-claimant: auto-cloud-agent
-lease_expires: "2026-09-25T02:20:00Z"
-evidence: []
+state: queued
+claimant: ""
+lease_expires: ""
+evidence:
+  - "bun run build:ploy:www: PASS; recursive production-copy check PASS"
+  - "bun run verify:www-ploy-entry: PASS; Wrangler hybrid dry-run bundles"
+  - "focused L0 gates: live-data, unique-images, lovable-auth, oauth-cors, tsc, entry-budget PASS"
+  - "ploy-staging astro check: 0 errors; lint: 0 errors; tests: 33/33 PASS"
+  - "Playwright local production-mode browser QA: 9 routes PASS; screenshots /opt/cursor/artifacts/www-live-preview/"
+  - "independent adversarial re-review: GO at 9e94cff1"
+  - "Authenticated D1 read remains post-deploy because this VM has no Doppler/test credentials"

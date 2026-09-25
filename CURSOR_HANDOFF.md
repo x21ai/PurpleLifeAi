@@ -8,7 +8,11 @@ crons, and unfinished/dynamic routes. Static Ploy and TanStack fallback assets a
 routed explicitly. Normal www copy no longer exposes preview, staging, test-account,
 or D1 implementation language. Existing D1/R2/eigital KV bindings are unchanged.
 Operator deploy and authenticated post-deploy smoke remain pending. Runbook:
-`docs/DEPLOY-WWW-PLOY.md`. Branch tip before final review remediation: `625e5196`.
+`docs/DEPLOY-WWW-PLOY.md`. Branch tip: `9e94cff1` plus final evidence docs.
+Verification: production Ploy build/checker PASS; hybrid Wrangler dry-run PASS;
+33/33 Ploy tests; Astro check/lint 0 errors; Playwright production-mode browser QA
+passed 9 routes; independent re-review GO. Doppler/test credentials are unavailable
+on this VM, so authenticated D1 read is intentionally a post-deploy operator smoke.
 
 **Recent (2026-09-25): www Ploy wrangler CACHE KV (eigital).** `wrangler.deploy.ploy.jsonc`
 CACHE id is `9226585702aa4be694ac74981d9859c4` (account `08e766e92db74bc7…`, title
