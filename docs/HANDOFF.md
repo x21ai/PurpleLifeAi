@@ -9,6 +9,11 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-24 ~10:00 PM ET Ploy-first www routing (PR #57 follow-up):** Cloud agent
+usage exhausted mid-turn. Operator finished on Mac: `www-routing.ts` now defaults all UI
+to latest Ploy Astro; TanStack only for `/api/*` and `/oauth/*`. No TanStack fallback for
+Ploy page counterparts. Deploy still pending after merge.
+
 **2026-09-25 www live-production hardening (PR #57, no deploy):** Root causes were
 hardcoded preview copy, over-broad Ploy routing, missing client-side `VITE_*` exposure,
 asset routing bypass, and missing TanStack fallback assets. Production now uses real auth

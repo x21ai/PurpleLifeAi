@@ -1,5 +1,11 @@
 Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-25 (PR #57 www live-production hardening; **do not** wrangler deploy from this agent).
 
+**Recent (2026-09-24 ~10:00 PM ET): Ploy-first www routing.** After cloud-agent credit
+block, Mac follow-up on PR #57: every non-API/OAuth path serves latest Ploy Astro (same
+page tree as staging). TanStack only for `/api/*` + `/oauth/*`. No old-UI fallback for
+routes that have Ploy pages. Deploy pending after merge/CI.
+
+
 **Recent (2026-09-25): www live production mode (PR #57).** Production Ploy now
 receives `VITE_STAGING_LIVE_DATA=1` + `VITE_PUBLIC_SITE_ENV=production`; Worker vars
 pin real auth, live Cloudflare data, and preview-off mode. The hybrid route allowlist

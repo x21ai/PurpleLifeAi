@@ -35,8 +35,9 @@ assert.match(
 );
 assert.match(astroConfig, /envPrefix: \["PUBLIC_", "VITE_"\]/);
 assert.match(homeSource, /production \? "Private health journal" : "Static design preview"/);
-assert.match(routingSource, /PLOY_LIVE_APP_ROUTES/);
-assert.match(routingSource, /return "tanstack";/);
+assert.match(routingSource, /Latest Ploy design for every other route/);
+assert.match(routingSource, /normalized\.startsWith\("\/api\/"\)/);
+assert.match(routingSource, /return "astro";/);
 
 if (process.argv.includes("--built")) {
   const ployRoutes = [

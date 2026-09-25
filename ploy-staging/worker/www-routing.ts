@@ -1,30 +1,14 @@
 export type WwwRouteTarget = "assets" | "astro" | "tanstack";
 
-const PLOY_PUBLIC_ROUTES = new Set([
-  "/",
-  "/about",
-  "/charter",
-  "/contact",
-  "/features",
-  "/privacy",
-  "/terms",
-  "/trust",
-]);
-
-const PLOY_LIVE_APP_ROUTES = new Set([
-  "/documents",
-  "/journal",
-  "/journal/new",
-  "/login",
-  "/meds",
-  "/meds/history",
-  "/reports",
-  "/reports/documents",
-  "/sign-in",
-  "/today",
-  "/tools",
-]);
-
+/**
+ * www hybrid routing:
+ * - /api/* and /oauth/* → TanStack (production auth, data, OAuth, crons)
+ * - static asset paths → ASSETS binding
+ * - everything else → Ploy Astro (latest design, same page tree as staging)
+ *
+ * Do not fall back unfinished Ploy pages to TanStack — that shows the old UI.
+ * TanStack is only for API/OAuth (and static assets via ASSETS).
+ */
 export function normalizeWwwPathname(pathname: string): string {
   return pathname.replace(/\/+$/, "") || "/";
 }
@@ -42,6 +26,7 @@ export function getWwwRouteTarget(pathname: string): WwwRouteTarget {
     return "assets";
   }
 
+  // Worker OAuth + API stay on TanStack even when Ploy also has matching .astro files.
   if (normalized.startsWith("/api/") || normalized.startsWith("/oauth/")) {
     return "tanstack";
   }
@@ -54,9 +39,6 @@ export function getWwwRouteTarget(pathname: string): WwwRouteTarget {
     return "assets";
   }
 
-  if (PLOY_PUBLIC_ROUTES.has(normalized) || PLOY_LIVE_APP_ROUTES.has(normalized)) {
-    return "astro";
-  }
-
-  return "tanstack";
+  // Latest Ploy design for every other route (same as staging page tree).
+  return "astro";
 }

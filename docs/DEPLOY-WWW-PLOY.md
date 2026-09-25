@@ -2,9 +2,9 @@
 
 **Status:** Infra ready in repo. **Owner GO received 2026-09-24** (merge PR #47, then deploy Worker `purplelife` with this runbook). Agents must **not** deploy unless the operator explicitly asks. Step 6 dry-run notes: `ploy-purplelife-source/STEP6-WWW-FLIP-DRYRUN.md`.
 
-Production **www** uses the hybrid Worker entry. Ploy serves production-approved marketing
-and live-wired app routes. TanStack remains in-process for APIs, OAuth, scheduled handlers,
-and app routes that have not yet been wired to live data in Ploy.
+Production **www** uses the hybrid Worker entry. Ploy Astro serves the full latest design
+(same page tree as staging). TanStack remains in-process only for `/api/*`, `/oauth/*`, and
+scheduled handlers.
 
 ## Architecture
 
@@ -18,38 +18,30 @@ and app routes that have not yet been wired to live data in Ploy.
 Request → purplelife (www.purplelife.org)
   /api/*, /oauth/*  → dist/server/server.js (TanStack)     [unchanged behavior]
   scheduled crons   → TanStack scheduled handler           [unchanged]
-  approved Ploy UI  → ploy-staging/dist (Ploy Astro)
-  other app routes  → dist/server/server.js (TanStack live-data fallback)
+  all other UI      → ploy-staging/dist (Ploy Astro, latest design)
 ```
 
 **Auth:** Real production sign-in only (`POST /api/auth/sign-in`, JWT in `purple-cf-session`). No `DESIGN_PREVIEW` auto-mint on www.
 
 ### Production route boundary
 
-`ploy-staging/worker/www-routing.ts` is the allowlist:
+`ploy-staging/worker/www-routing.ts` is Ploy-first:
 
-- Ploy marketing: `/`, `/about`, `/charter`, `/contact`, `/features`, `/privacy`,
-  `/terms`, `/trust`.
-- Ploy live app: `/login`, `/sign-in`, `/today`, `/journal`, `/journal/new`,
-  `/meds`, `/meds/history`, `/reports`, `/reports/documents`, `/documents`, `/tools`.
-- TanStack: `/api/*`, `/oauth/*`, account creation/recovery, pricing, dynamic detail
-  pages, and every app route not listed above.
+- TanStack: `/api/*`, `/oauth/*` only (plus scheduled crons on the Worker).
+- Assets: `/assets/*`, `/_ploy_static/_astro/*`, favicon/robots/sitemaps/`llms.txt`.
+- Ploy Astro: **every other path** — latest design, same page tree as staging.
 
-This boundary is intentional. Several Ploy routes are still visual prototypes with local
-state. They remain in the source for staging design work, but normal www traffic must not
-use them in place of the production TanStack implementation.
+Do not fall unfinished Ploy pages back to TanStack; that shows the old UI. Some Ploy
+pages may still use mock client state until live adapters catch up; they still must render
+as Ploy so the design stays current.
 
-`assets.run_worker_first=true` is required in `wrangler.deploy.ploy.jsonc`. Without it,
-Cloudflare serves matching prerendered Ploy HTML before `www-entry.ts` runs, bypassing the
-route boundary for prototype paths.
+`assets.run_worker_first=true` is required in `wrangler.deploy.ploy.jsonc` so the Worker
+owns routing before static HTML is served.
 
-The Ploy build copies TanStack's hashed `dist/client/assets/` directory into
-`ploy-staging/dist/client/assets/`. TanStack fallback HTML references `/assets/*`; omitting
-this merge leaves fallback routes blank even though server-side routing is correct.
-The Worker also sends `/_ploy_static/_astro/*`, `/favicon.ico`, `/robots.txt`,
-`/sitemap-index.xml`, `/sitemap-*.xml`, and `/llms.txt` directly to the static asset
-binding. This is required when `assets.run_worker_first=true`; otherwise these files can
-incorrectly fall through to a server handler.
+The Ploy build may still merge TanStack hashed `dist/client/assets/` for any residual
+TanStack asset URLs. The Worker also sends `/_ploy_static/_astro/*`, `/favicon.ico`,
+`/robots.txt`, `/sitemap-index.xml`, `/sitemap-*.xml`, and `/llms.txt` to the static asset
+binding when `assets.run_worker_first=true`.
 
 **Bindings:** Same production D1/R2/KV as staging (eigital account):
 
@@ -125,7 +117,7 @@ The verification also runs the route-boundary tests and checks this live-mode co
 They do not make www a staging deployment. No preview user id/email is configured, and
 the www entry has no design-preview session handler.
 
-The production checker inspects every allowlisted Ploy page and recursively follows its
+The production checker inspects built Ploy production pages and recursively follows its
 hydration component imports. It rejects preview/mock claims and operator-only staging
 language such as test-account, staging-proxy, D1, Worker-auth, or Cloudflare
 implementation details.
