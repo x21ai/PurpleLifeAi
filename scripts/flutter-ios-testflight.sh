@@ -145,7 +145,11 @@ main() {
   doppler run --project "${FLUTTER_DOPPLER_PROJECT}" --config "${FLUTTER_DOPPLER_CONFIG}" -- bash -c '
     # shellcheck source=lib/flutter-dart-defines.sh
     source "'"${REPO_ROOT}"'/scripts/lib/flutter-dart-defines.sh"
-    mapfile -t _dart_flags < <(flutter_dart_define_flags)
+    # macOS /bin/bash is 3.2 — no mapfile. Collect flags with a while-read loop.
+    _dart_flags=()
+    while IFS= read -r _flag; do
+      [ -n "$_flag" ] && _dart_flags+=("$_flag")
+    done < <(flutter_dart_define_flags)
     flutter build ios --release --no-codesign \
       --build-number="'"${BUILD_NUMBER}"'" \
       --build-name=1.0.0 \
