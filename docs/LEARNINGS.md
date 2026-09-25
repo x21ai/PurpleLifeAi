@@ -5,6 +5,15 @@ work (especially multi-agent fleets) is decomposed. Append, never delete.
 
 ---
 
+### 2026-09-25 — Build cleanup traps need absolute paths after `cd` (status: raw)
+
+- `scripts/build-ploy-www.sh` registered a trap with relative
+  `astro.config.mjs.bak`, then changed back to the repo root before exit. A post-build
+  assertion failure made the trap run from the wrong directory, leaving the production
+  URL rewrite in the tracked staging config and a stray backup file. The script now uses
+  absolute config/backup paths. Compile into: an automated failure-path test that proves
+  the tracked Astro config is restored when the post-build production check fails.
+
 ### 2026-09-25 — wrangler KV ids are account-scoped (status: raw)
 
 - **Eigital Worker `purplelife` cannot bind POS KV `73356a0e339447059bdddc33b93f26a9`.**

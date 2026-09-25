@@ -29,7 +29,7 @@ describe("www hybrid route boundary", () => {
     ["/journal/new", "astro"],
     ["/meds/history/", "astro"],
     ["/reports/documents", "astro"],
-    ["/_astro/page.abc123.js", "astro"],
+    ["/_ploy_static/_astro/page.abc123.js", "astro"],
   ] as const;
 
   for (const [pathname, expected] of astroCases) {
@@ -37,4 +37,8 @@ describe("www hybrid route boundary", () => {
       assert.equal(getWwwRouteTarget(pathname), expected);
     });
   }
+
+  test("/assets/index.hash.js uses the merged static asset binding", () => {
+    assert.equal(getWwwRouteTarget("/assets/index.hash.js"), "assets");
+  });
 });

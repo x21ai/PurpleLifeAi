@@ -39,6 +39,14 @@ This boundary is intentional. Several Ploy routes are still visual prototypes wi
 state. They remain in the source for staging design work, but normal www traffic must not
 use them in place of the production TanStack implementation.
 
+`assets.run_worker_first=true` is required in `wrangler.deploy.ploy.jsonc`. Without it,
+Cloudflare serves matching prerendered Ploy HTML before `www-entry.ts` runs, bypassing the
+route boundary for prototype paths.
+
+The Ploy build copies TanStack's hashed `dist/client/assets/` directory into
+`ploy-staging/dist/client/assets/`. TanStack fallback HTML references `/assets/*`; omitting
+this merge leaves fallback routes blank even though server-side routing is correct.
+
 **Bindings:** Same production D1/R2/KV as staging (eigital account):
 
 | Binding | Resource | ID / name |
@@ -82,6 +90,10 @@ bun run build:www-ploy
 Ploy build sets `site: https://www.purplelife.org`, `VITE_STAGING_LIVE_DATA=1`, and
 `VITE_PUBLIC_SITE_ENV=production`. The first flag enables `/api/data/query`; the second
 removes staging/design-review copy and the staging banner from www.
+
+`ploy-staging/astro.config.mjs` explicitly exposes `VITE_*` through Vite's `envPrefix`.
+Astro otherwise exposes only `PUBLIC_*` to client bundles: prerendered HTML would show
+production while React hydration switched back to preview mode and skipped live reads.
 
 `scripts/build-ploy-www.sh` must pass `SITE` as an environment variable into the node rewrite (`SITE="$SITE" node -e "..."`). A trailing `SITE="$SITE"` after `node -e` is argv, so `process.env.SITE` is undefined and Astro fails with Invalid URL (`site: "undefined"`).
 

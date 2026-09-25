@@ -18,8 +18,13 @@ const tanstackWorker = (tanstackModule as { default?: WorkerHandler }).default ?
 export default {
   async fetch(request: Request, env: WwwEnv, ctx: ExecutionContext): Promise<Response> {
     const pathname = new URL(request.url).pathname;
+    const target = getWwwRouteTarget(pathname);
 
-    if (getWwwRouteTarget(pathname) === "tanstack") {
+    if (target === "assets") {
+      return env.ASSETS.fetch(request);
+    }
+
+    if (target === "tanstack") {
       return tanstackWorker.fetch!(request, env, ctx);
     }
 

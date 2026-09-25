@@ -24,6 +24,9 @@
   "assets": {
     "directory": "ploy-staging/dist/client",
     "binding": "ASSETS",
+    // Route every request through www-entry first so unfinished prerendered
+    // Ploy prototypes cannot bypass the TanStack live-app fallback.
+    "run_worker_first": true,
   },
   "observability": {
     "enabled": true,

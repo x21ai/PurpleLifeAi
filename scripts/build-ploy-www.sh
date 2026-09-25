@@ -20,14 +20,15 @@ fi
 cd "$PLOY"
 bun install
 
-ASTRO_CONFIG="astro.config.mjs"
+ASTRO_CONFIG="$PLOY/astro.config.mjs"
 if [[ ! -f "$ASTRO_CONFIG" ]]; then
   echo "build-ploy-www: missing $ASTRO_CONFIG" >&2
   exit 1
 fi
 
 # Astro `site` must match www for canonical URLs and sitemap (Ploy reserves string literal).
-cp "$ASTRO_CONFIG" "${ASTRO_CONFIG}.bak"
+ASTRO_CONFIG_BACKUP="${ASTRO_CONFIG}.bak"
+cp "$ASTRO_CONFIG" "$ASTRO_CONFIG_BACKUP"
 SITE="$SITE" node -e "
 const fs = require('fs');
 const site = process.env.SITE;
@@ -36,9 +37,19 @@ if (!c.includes('site:')) throw new Error('site: not found in astro.config.mjs')
 c = c.replace(/site: \"https:\\/\\/[^\"]+\"/, 'site: \"' + site + '\"');
 fs.writeFileSync('$ASTRO_CONFIG', c);
 "
-trap 'mv -f "${ASTRO_CONFIG}.bak" "$ASTRO_CONFIG"' EXIT
+trap 'mv -f "$ASTRO_CONFIG_BACKUP" "$ASTRO_CONFIG"' EXIT
 
 VITE_STAGING_LIVE_DATA=1 VITE_PUBLIC_SITE_ENV=production bun run build
+
+# TanStack fallback pages render their own /assets/* client chunks. Merge only
+# that hashed asset directory into the Ploy asset root; never overwrite Ploy HTML.
+if [[ ! -d "$ROOT/dist/client/assets" ]]; then
+  echo "build-ploy-www: missing TanStack dist/client/assets; run bun run build first." >&2
+  exit 1
+fi
+rm -rf "$PLOY/dist/client/assets"
+cp -R "$ROOT/dist/client/assets" "$PLOY/dist/client/assets"
+
 cd "$ROOT"
 node scripts/check-www-ploy-production.mjs --built
 echo "build-ploy-www: ok → ploy-staging/dist (site=$SITE)"

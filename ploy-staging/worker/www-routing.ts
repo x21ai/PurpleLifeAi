@@ -1,4 +1,4 @@
-export type WwwRouteTarget = "astro" | "tanstack";
+export type WwwRouteTarget = "assets" | "astro" | "tanstack";
 
 const PLOY_PUBLIC_ROUTES = new Set([
   "/",
@@ -36,7 +36,11 @@ export function getWwwRouteTarget(pathname: string): WwwRouteTarget {
     return "tanstack";
   }
 
-  if (normalized.startsWith("/_astro/")) {
+  if (normalized.startsWith("/assets/")) {
+    return "assets";
+  }
+
+  if (normalized.startsWith("/_ploy_static/_astro/")) {
     return "astro";
   }
 
