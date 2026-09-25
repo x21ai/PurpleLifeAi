@@ -38,5 +38,7 @@ fs.writeFileSync('$ASTRO_CONFIG', c);
 "
 trap 'mv -f "${ASTRO_CONFIG}.bak" "$ASTRO_CONFIG"' EXIT
 
-VITE_STAGING_LIVE_DATA=1 bun run build
+VITE_STAGING_LIVE_DATA=1 VITE_PUBLIC_SITE_ENV=production bun run build
+cd "$ROOT"
+node scripts/check-www-ploy-production.mjs --built
 echo "build-ploy-www: ok → ploy-staging/dist (site=$SITE)"

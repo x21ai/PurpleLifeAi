@@ -31,7 +31,12 @@
   // Self service binding so scheduled crons invoke this Worker's /api/* endpoints.
   "services": [{ "binding": "SELF", "service": "purplelife" }],
   "vars": {
+    // Keep production on the same proven live-data/auth contract as staging.
+    // www has no design-preview session handler or preview identity.
+    "DESIGN_PREVIEW": "0",
+    "STAGING_REAL_AUTH": "1",
     "DATA_BACKEND": "cloudflare",
+    "STAGING_LIVE_DATA": "1",
     "PUBLIC_SITE_URL": "https://www.purplelife.org",
   },
   // Production D1/R2/KV on eigital account (same as staging.purplelife.org bindings).

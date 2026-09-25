@@ -3,7 +3,7 @@ import { ArrowRight, KeyRound, LockKeyhole } from "lucide-react";
 import { PilotAppShell } from "@/components/sections/pilot-app-shell";
 import { PrivacyShield } from "@/components/pages/pilot/components/mobile-graphics";
 import { StagingBanner } from "./staging-banner";
-import { isStagingLiveData } from "@/lib/staging/config";
+import { isProductionSite, isStagingLiveData } from "@/lib/staging/config";
 import { signInWithPassword } from "@/lib/staging/session";
 
 type StagingLiveSignInPageProps = {
@@ -17,10 +17,11 @@ function redirectAfterAuth(): void {
 }
 
 /**
- * Production-shaped sign-in for staging (POST /api/auth/sign-in via prod proxy).
+ * Real sign-in through POST /api/auth/sign-in for staging and production.
  */
 export function StagingLiveSignInPage({ mode = "sign-in" }: StagingLiveSignInPageProps) {
   const signingIn = mode === "sign-in";
+  const production = isProductionSite();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -48,19 +49,25 @@ export function StagingLiveSignInPage({ mode = "sign-in" }: StagingLiveSignInPag
           <section className="px-5 pt-5 text-center">
             <PrivacyShield className="mx-auto w-full max-w-[310px]" />
             <p className="-mt-2 text-[12px] font-semibold uppercase tracking-[0.06em] text-purplelife-accent">
-              Staging · production D1
+              {production ? "Private account" : "Staging · production D1"}
             </p>
             <h1 className="mx-auto mt-2 max-w-[350px] text-[33px] font-semibold leading-[1.02] tracking-[-0.05em]">
-              {signingIn ? "Sign in to staging." : "Create your calm space."}
+              {signingIn
+                ? production
+                  ? "Sign in to PurpleLife."
+                  : "Sign in to staging."
+                : "Create your calm space."}
             </h1>
             <p className="mx-auto mt-3 max-w-[330px] text-[15px] leading-[1.45] text-purplelife-muted">
               {signingIn
-                ? "Use your production account password. Same JWT and data as www.purplelife.org."
+                ? production
+                  ? "Use your PurpleLife account password to access your private production data."
+                  : "Use your production account password. Same JWT and data as www.purplelife.org."
                 : "Account creation on staging uses the production auth API. Prefer www for new accounts."}
             </p>
           </section>
 
-          {isStagingLiveData() && signingIn && (
+          {isStagingLiveData() && !production && signingIn && (
             <p className="mx-5 mt-4 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
               Testers: sign in with pmt@eigital.com and the operator-provided password (Doppler / runbook).
             </p>
@@ -128,8 +135,9 @@ export function StagingLiveSignInPage({ mode = "sign-in" }: StagingLiveSignInPag
           <section className="mt-5 px-5">
             <p className="flex gap-3 rounded-[22px] bg-purplelife-tint p-4 text-[12px] leading-[1.45] text-purplelife-muted">
               <LockKeyhole size={19} className="shrink-0 text-purplelife-accent" />
-              Staging uses the same prod Worker auth path (`POST /api/auth/sign-in`). Session token is stored in
-              `localStorage` as `purple-cf-session`, matching www Cloudflare auth.
+              {production
+                ? "Sign-in uses the production Worker auth path. Your session token stays in this browser and authorizes private Cloudflare data requests."
+                : "Staging uses the same prod Worker auth path (`POST /api/auth/sign-in`). Session token is stored in `localStorage` as `purple-cf-session`, matching www Cloudflare auth."}
             </p>
           </section>
         </div>

@@ -2,7 +2,9 @@
 
 **Status:** Infra ready in repo. **Owner GO received 2026-09-24** (merge PR #47, then deploy Worker `purplelife` with this runbook). Agents must **not** deploy unless the operator explicitly asks. Step 6 dry-run notes: `ploy-purplelife-source/STEP6-WWW-FLIP-DRYRUN.md`.
 
-Production **www** today still uses TanStack UI via `wrangler.deploy.jsonc` + `src/server.ts`. This document covers the **future** flip to Ploy Astro UI while keeping TanStack API handlers in-process.
+Production **www** uses the hybrid Worker entry. Ploy serves production-approved marketing
+and live-wired app routes. TanStack remains in-process for APIs, OAuth, scheduled handlers,
+and app routes that have not yet been wired to live data in Ploy.
 
 ## Architecture
 
@@ -16,10 +18,26 @@ Production **www** today still uses TanStack UI via `wrangler.deploy.jsonc` + `s
 Request → purplelife (www.purplelife.org)
   /api/*, /oauth/*  → dist/server/server.js (TanStack)     [unchanged behavior]
   scheduled crons   → TanStack scheduled handler           [unchanged]
-  everything else   → ploy-staging/dist (Ploy Astro)       [new UI layer]
+  approved Ploy UI  → ploy-staging/dist (Ploy Astro)
+  other app routes  → dist/server/server.js (TanStack live-data fallback)
 ```
 
 **Auth:** Real production sign-in only (`POST /api/auth/sign-in`, JWT in `purple-cf-session`). No `DESIGN_PREVIEW` auto-mint on www.
+
+### Production route boundary
+
+`ploy-staging/worker/www-routing.ts` is the allowlist:
+
+- Ploy marketing: `/`, `/about`, `/charter`, `/contact`, `/features`, `/privacy`,
+  `/terms`, `/trust`.
+- Ploy live app: `/login`, `/sign-in`, `/today`, `/journal`, `/journal/new`,
+  `/meds`, `/meds/history`, `/reports`, `/reports/documents`, `/documents`, `/tools`.
+- TanStack: `/api/*`, `/oauth/*`, account creation/recovery, pricing, dynamic detail
+  pages, and every app route not listed above.
+
+This boundary is intentional. Several Ploy routes are still visual prototypes with local
+state. They remain in the source for staging design work, but normal www traffic must not
+use them in place of the production TanStack implementation.
 
 **Bindings:** Same production D1/R2/KV as staging (eigital account):
 
@@ -61,7 +79,9 @@ bun run build:ploy:www
 bun run build:www-ploy
 ```
 
-Ploy build sets `site: https://www.purplelife.org` and `VITE_STAGING_LIVE_DATA=1` for live D1 client pages.
+Ploy build sets `site: https://www.purplelife.org`, `VITE_STAGING_LIVE_DATA=1`, and
+`VITE_PUBLIC_SITE_ENV=production`. The first flag enables `/api/data/query`; the second
+removes staging/design-review copy and the staging banner from www.
 
 `scripts/build-ploy-www.sh` must pass `SITE` as an environment variable into the node rewrite (`SITE="$SITE" node -e "..."`). A trailing `SITE="$SITE"` after `node -e` is argv, so `process.env.SITE` is undefined and Astro fails with Invalid URL (`site: "undefined"`).
 
@@ -72,6 +92,22 @@ bun run verify:www-ploy-entry
 ```
 
 Uses `wrangler deploy --dry-run` against `wrangler.deploy.ploy.jsonc`. If `dist/server/server.js` is missing (trunk CI break), the script uses an ephemeral stub so the hybrid router still compiles.
+
+The verification also runs the route-boundary tests and checks this live-mode contract:
+
+| Scope | Variable | www value |
+|---|---|---|
+| Build | `VITE_STAGING_LIVE_DATA` | `1` |
+| Build | `VITE_PUBLIC_SITE_ENV` | `production` |
+| Worker | `DESIGN_PREVIEW` | `0` |
+| Worker | `STAGING_REAL_AUTH` | `1` |
+| Worker | `STAGING_LIVE_DATA` | `1` |
+| Worker | `DATA_BACKEND` | `cloudflare` |
+| Worker | `PUBLIC_SITE_URL` | `https://www.purplelife.org` |
+
+`STAGING_*` names are retained because the existing live-data/auth plumbing uses them.
+They do not make www a staging deployment. No preview user id/email is configured, and
+the www entry has no design-preview session handler.
 
 ## Deploy (operator only, after GO)
 
@@ -105,12 +141,27 @@ for p in / /today/ /journal/ /meds/ /login/; do
   curl -sS -o /dev/null -w "$p %{http_code}\n" "$BASE$p"
 done
 
+# Normal www HTML must not advertise preview/mock mode
+curl -fsSL "$BASE/" | grep -E \
+  'Static design preview|Design review build|local mock state|APIs are not connected' \
+  && echo "FAIL: preview copy found" && exit 1 || true
+
 # Design preview mint must NOT exist on www
 curl -sS -o /dev/null -w "design-preview %{http_code}\n" \
   "$BASE/api/public/design-preview/session"   # expect 404
 ```
 
-Browser: sign in at `/login`, confirm live `/today` data, OAuth redirects still hit `/oauth/*/callback`.
+Authenticated real-data smoke (credentials injected by Doppler, never printed):
+
+```bash
+bun run test:www-cloudflare-data
+```
+
+This signs in through `POST /api/auth/sign-in`, then reads the authenticated user's own
+`profiles` row through `POST /api/data/query`. A pass proves production JWT auth and a
+user-scoped D1 read. Browser smoke: sign in at `/login`, confirm live `/today`, `/journal`,
+`/meds`, `/reports`, and `/tools` data; verify account creation/recovery and detail pages
+fall through to TanStack; verify OAuth callbacks still hit `/oauth/*/callback`.
 
 ## Rollback
 

@@ -1,0 +1,25 @@
+partitions:
+  www-live-production:
+    paths:
+      - "ploy-staging/src/components/pages/home/page.tsx"
+      - "ploy-staging/src/components/pages/pricing/**"
+      - "ploy-staging/src/components/pages/trust/**"
+      - "ploy-staging/src/pages/pricing.astro"
+      - "ploy-staging/src/pages/trust.astro"
+      - "ploy-staging/worker/www-entry.ts"
+      - "ploy-staging/worker/www-env.ts"
+      - "ploy-staging/worker/www-routing.ts"
+      - "ploy-staging/worker/www-routing.test.ts"
+      - "scripts/build-ploy-www.sh"
+      - "scripts/verify-www-ploy-entry.sh"
+      - "wrangler.deploy.ploy.jsonc"
+      - "package.json"
+      - "docs/DEPLOY-WWW-PLOY.md"
+      - "docs/HANDOFF.md"
+      - "docs/CURSOR_PROMPT_LOG.md"
+      - "CURSOR_HANDOFF.md"
+      - "PHASE_MASTER_RUN.md"
+      - ".agents/**"
+      - "OWNERSHIP.yaml"
+    resources:
+      - "production Worker config (no deploy)"

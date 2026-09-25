@@ -1,0 +1,21 @@
+id: T-0001
+title: Make www Ploy production mode use live data
+intent: >-
+  Remove normal-user mock/design-preview messaging, preserve production Cloudflare
+  data and auth paths, and prevent unfinished Ploy prototype routes from replacing
+  the live TanStack app.
+partition: www-live-production
+depends_on: []
+risk: high
+acceptance:
+  - "Production Ploy build contains no static-preview, design-review, prototype, or unconnected-backend claims."
+  - "Known live-wired Ploy routes use Astro; unfinished app routes fall back to TanStack."
+  - "/api/* and /oauth/* remain routed to TanStack, and scheduled handlers remain unchanged."
+  - "Production config pins DESIGN_PREVIEW=0, STAGING_REAL_AUTH=1, STAGING_LIVE_DATA=1, DATA_BACKEND=cloudflare."
+  - "D1/R2/KV bindings retain the existing eigital production resource identifiers."
+  - "Read-only authenticated production smoke proves sign-in and D1-backed reads work."
+  - "No Worker deployment is performed."
+state: in-progress
+claimant: auto-cloud-agent
+lease_expires: "2026-09-25T01:30:00Z"
+evidence: []

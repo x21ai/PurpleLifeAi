@@ -1,8 +1,8 @@
-import { isStagingLiveData } from "@/lib/staging/config";
+import { isProductionSite, isStagingLiveData } from "@/lib/staging/config";
 import { getStagingSession, signOutStaging, STAGING_SIGN_IN_PATH } from "@/lib/staging/session";
 
 export function StagingBanner() {
-  if (!isStagingLiveData()) return null;
+  if (!isStagingLiveData() || isProductionSite()) return null;
 
   const session = typeof window !== "undefined" ? getStagingSession() : null;
   const email = session?.user?.email;

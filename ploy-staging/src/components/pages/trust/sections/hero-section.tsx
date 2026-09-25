@@ -55,9 +55,9 @@ export const heroSection: ListItemProps[] = [
   },
   {
     className: "mb-14",
-    text: "Pricing is not live.",
+    text: "Paid plans are not offered yet.",
     text_1:
-      "The current site is a design preview. No paid plan, checkout, or upgrade action is active here.",
+      "PurpleLife does not currently offer a paid plan, checkout, or upgrade action.",
   },
   {
     className: "",
