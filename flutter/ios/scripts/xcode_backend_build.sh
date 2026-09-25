@@ -2,7 +2,13 @@
 # Xcode Run Script wrapper for `xcode_backend.sh build`.
 set -eu
 
-export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode-beta.app/Contents/Developer}"
+if [ -z "${DEVELOPER_DIR:-}" ]; then
+  if [ -x /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild ]; then
+    export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+  elif [ -x /Applications/Xcode-beta.app/Contents/Developer/usr/bin/xcodebuild ]; then
+    export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
+  fi
+fi
 export PATH="${PROJECT_DIR}/scripts:${PATH}"
 
 strip_codesign_detritus() {

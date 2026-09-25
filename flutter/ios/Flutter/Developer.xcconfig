@@ -1,4 +1,5 @@
 // Full Xcode path for native-asset hooks (objective_c) when xcode-select points at
 // CommandLineTools. Without this, xcrun --sdk iphoneos --show-sdk-path fails inside
-// Xcode script phases ("Bad state: No element").
-DEVELOPER_DIR = /Applications/Xcode-beta.app/Contents/Developer
+// Xcode script phases ("Bad state: No element" / SdkRoot).
+// Prefer full Xcode.app; override with Developer.local.xcconfig if you use beta.
+DEVELOPER_DIR = /Applications/Xcode.app/Contents/Developer
