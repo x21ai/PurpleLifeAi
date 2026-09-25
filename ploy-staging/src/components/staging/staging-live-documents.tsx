@@ -83,17 +83,16 @@ export function StagingLiveDocumentsPage({ backHref = "/reports" }: StagingLiveD
           </p>
         </section>
 
-        {isStagingLiveData() && (
-          <p className="mx-5 mt-4 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
-            {loading
-              ? "Loading your documents…"
-              : sessionOk
-                ? `Live documents · ${documents.filter((d) => !d.archived).length} current · ${documents.filter((d) => d.archived).length} rejected.`
-                : stagingSignInRequiredMessage()}
-          </p>
-        )}
-
         <PilotLandscapeStack>
+          {isStagingLiveData() && (
+            <p className="mx-5 mt-4 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
+              {loading
+                ? "Loading your documents…"
+                : sessionOk
+                  ? `Live documents · ${documents.filter((d) => !d.archived).length} current · ${documents.filter((d) => d.archived).length} rejected.`
+                  : stagingSignInRequiredMessage()}
+            </p>
+          )}
           <section className="mt-7 px-5">
             <div className="rounded-[26px] bg-white p-3 shadow-sm ring-1 ring-purplelife-line">
               <div className="flex rounded-[18px] bg-purplelife-tint p-1">

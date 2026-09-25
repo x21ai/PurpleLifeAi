@@ -141,6 +141,8 @@ clean + 254/254; web QA video ready. See Log for details.
 - **Evidence:** Route boundary 23/23 pass; full build/gate evidence will be added after
   the pre-test revision is committed and pushed. First expanded build check correctly
   rejected one transitive `/tools` D1 message; fixed in the data formatter before rerun.
+  Focused gates then passed, and browser QA found a desktop status-message layout defect;
+  status blocks were moved into the landscape stack before the final visual rerun.
 - **Timestamp:** 2026-09-25T01:33:01Z
 
 ### 2026-09-25T00:15:00Z — eigital CACHE KV id in wrangler.deploy.ploy.jsonc

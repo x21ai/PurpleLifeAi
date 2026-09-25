@@ -139,17 +139,16 @@ export function StagingLiveReportsPage() {
           </p>
         </section>
 
-        {isStagingLiveData() && (
-          <p className="mx-5 mt-4 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
-            {loading
-              ? "Loading your reports…"
-              : sessionOk
-                ? `Live reports · ${documents.length} document${documents.length === 1 ? "" : "s"} · ${medicalCount} generated report${medicalCount === 1 ? "" : "s"}.`
-                : stagingSignInRequiredMessage()}
-          </p>
-        )}
-
         <PilotLandscapeStack>
+          {isStagingLiveData() && (
+            <p className="mx-5 mt-4 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
+              {loading
+                ? "Loading your reports…"
+                : sessionOk
+                  ? `Live reports · ${documents.length} document${documents.length === 1 ? "" : "s"} · ${medicalCount} generated report${medicalCount === 1 ? "" : "s"}.`
+                  : stagingSignInRequiredMessage()}
+            </p>
+          )}
           <section className="mt-7 px-5">
             <div className="overflow-hidden rounded-[28px] bg-white shadow-sm ring-1 ring-purplelife-line">
               <Row

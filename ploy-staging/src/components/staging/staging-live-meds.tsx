@@ -102,17 +102,16 @@ export function StagingLiveMedsPage() {
           </p>
         </section>
 
-        {isStagingLiveData() && (
-          <p className="mx-5 mt-4 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
-            {loading
-              ? "Loading your medications…"
-              : sessionOk
-                ? `Live meds · ${medications.length} active · ${doses.length} dose${doses.length === 1 ? "" : "s"} today (${takenCount} taken).`
-                : stagingSignInRequiredMessage()}
-          </p>
-        )}
-
         <PilotLandscapeStack>
+          {isStagingLiveData() && (
+            <p className="mx-5 mt-4 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
+              {loading
+                ? "Loading your medications…"
+                : sessionOk
+                  ? `Live meds · ${medications.length} active · ${doses.length} dose${doses.length === 1 ? "" : "s"} today (${takenCount} taken).`
+                  : stagingSignInRequiredMessage()}
+            </p>
+          )}
           <section className="mt-7 px-5">
             {loading && (
               <div className="rounded-[28px] bg-white p-6 text-center shadow-sm ring-1 ring-purplelife-line text-[14px] text-purplelife-muted">

@@ -24,4 +24,5 @@ Append material development prompts newest first. Never include secrets or PII.
 - **Phase at prompt:** Production hardening
 - **Outcome / commits:** Draft PR #57 on `cursor/www-live-production-mode-9a5d`.
   Commits `8c59b8c0` and `e34f3653` establish production routing, live-mode flags,
-  hydration env exposure, and dual asset support; final review fixes are pending.
+  hydration env exposure, and dual asset support. Commits `e4c84e85` and `3353880e`
+  remove remaining operator/backend copy and expand production checks.
