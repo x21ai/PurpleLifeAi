@@ -6,6 +6,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+node scripts/check-www-ploy-production.mjs
+node --experimental-strip-types --test ploy-staging/worker/www-routing.test.ts
+
 STUB_DIR=""
 cleanup() {
   if [[ -n "$STUB_DIR" && -d "$STUB_DIR" ]]; then

@@ -1,4 +1,24 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-25 (PR #56 SITE env + eigital CACHE KV; **do not** wrangler deploy from this agent).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-25 (PR #57 www live-production hardening; **do not** wrangler deploy from this agent).
+
+**Recent (2026-09-24 ~10:00 PM ET): Ploy-first www routing.** After cloud-agent credit
+block, Mac follow-up on PR #57: every non-API/OAuth path serves latest Ploy Astro (same
+page tree as staging). TanStack only for `/api/*` + `/oauth/*`. No old-UI fallback for
+routes that have Ploy pages. Deploy pending after merge/CI.
+
+
+**Recent (2026-09-25): www live production mode (PR #57).** Production Ploy now
+receives `VITE_STAGING_LIVE_DATA=1` + `VITE_PUBLIC_SITE_ENV=production`; Worker vars
+pin real auth, live Cloudflare data, and preview-off mode. The hybrid route allowlist
+serves only production-wired Ploy pages, while TanStack retains `/api/*`, `/oauth/*`,
+crons, and unfinished/dynamic routes. Static Ploy and TanStack fallback assets are
+routed explicitly. Normal www copy no longer exposes preview, staging, test-account,
+or D1 implementation language. Existing D1/R2/eigital KV bindings are unchanged.
+Operator deploy and authenticated post-deploy smoke remain pending. Runbook:
+`docs/DEPLOY-WWW-PLOY.md`. Branch tip: `9e94cff1` plus final evidence docs.
+Verification: production Ploy build/checker PASS; hybrid Wrangler dry-run PASS;
+33/33 Ploy tests; Astro check/lint 0 errors; Playwright production-mode browser QA
+passed 9 routes; independent re-review GO. Doppler/test credentials are unavailable
+on this VM, so authenticated D1 read is intentionally a post-deploy operator smoke.
 
 **Recent (2026-09-25): www Ploy wrangler CACHE KV (eigital).** `wrangler.deploy.ploy.jsonc`
 CACHE id is `9226585702aa4be694ac74981d9859c4` (account `08e766e92db74bc7…`, title

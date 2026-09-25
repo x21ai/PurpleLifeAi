@@ -82,7 +82,7 @@ export async function fetchWearableConnections(): Promise<WearableConnection[]> 
             : "Not connected",
       detail:
         ouraConn.state === "disconnected"
-          ? "No Oura account linked in production D1."
+          ? "No Oura account linked."
           : ouraConn.state === "error"
             ? `Token may need refresh. Last sync ${formatRelativeTime(ouraConn.lastSync)}.`
             : `Last sync ${formatRelativeTime(ouraConn.lastSync)}.`,
@@ -99,7 +99,7 @@ export async function fetchWearableConnections(): Promise<WearableConnection[]> 
             : "Not connected",
       detail:
         whoopConn.state === "disconnected"
-          ? "No Whoop account linked in production D1."
+          ? "No Whoop account linked."
           : whoopConn.state === "error"
             ? `Token expired or refresh failed. Last sync ${formatRelativeTime(whoopConn.lastSync)}.`
             : `Last sync ${formatRelativeTime(whoopConn.lastSync)}.`,
@@ -111,7 +111,7 @@ export async function fetchWearableConnections(): Promise<WearableConnection[]> 
       label: appleConnected ? "Connected" : "Not connected",
       detail: appleConnected
         ? `Last webhook ${formatRelativeTime(appleLast)}.`
-        : "No Apple Health webhook configured in production D1.",
+        : "No Apple Health connection configured.",
       lastSync: appleLast,
     },
   ];

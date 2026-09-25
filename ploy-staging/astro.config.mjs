@@ -60,6 +60,10 @@ export default defineConfig({
   ],
   vite: {
     cacheDir: viteCacheDir,
+    // Existing live-data/auth components use VITE_* flags. Astro only exposes
+    // PUBLIC_* to client bundles by default, which caused hydration to fall
+    // back to preview mode after production prerendering.
+    envPrefix: ["PUBLIC_", "VITE_"],
     plugins: [tailwindcss()],
     resolve: {
       // Use react-dom/server.edge instead of react-dom/server.browser for React 19.

@@ -1,4 +1,5 @@
 import type { WwwEnv } from "./www-env";
+import { getWwwRouteTarget } from "./www-routing";
 
 // Ploy Astro SSR + static assets (built output). Resolved at bundle time by wrangler.
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -14,19 +15,16 @@ type WorkerHandler = ExportedHandler<WwwEnv>;
 
 const tanstackWorker = (tanstackModule as { default?: WorkerHandler }).default ?? tanstackModule;
 
-function normalizePathname(pathname: string): string {
-  return pathname.replace(/\/+$/, "") || "/";
-}
-
-function isTanStackRoute(pathname: string): boolean {
-  return pathname.startsWith("/api/") || pathname.startsWith("/oauth/");
-}
-
 export default {
   async fetch(request: Request, env: WwwEnv, ctx: ExecutionContext): Promise<Response> {
-    const pathname = normalizePathname(new URL(request.url).pathname);
+    const pathname = new URL(request.url).pathname;
+    const target = getWwwRouteTarget(pathname);
 
-    if (isTanStackRoute(pathname)) {
+    if (target === "assets") {
+      return env.ASSETS.fetch(request);
+    }
+
+    if (target === "tanstack") {
       return tanstackWorker.fetch!(request, env, ctx);
     }
 

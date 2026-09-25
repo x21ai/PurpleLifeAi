@@ -106,21 +106,20 @@ export function StagingLiveToolsPage() {
             Bring selected health context into one review.
           </h1>
           <p className="mx-auto mt-3 max-w-[360px] text-[15px] leading-[1.45] text-purplelife-muted">
-            Live connection status from production token tables (read-only on staging).
+            Review the connection status of the health sources you choose.
           </p>
         </section>
 
-        {isStagingLiveData() && (
-          <p className="mx-5 mt-4 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
-            {loading
-              ? "Connecting to production data…"
-              : sessionOk
-                ? `Live integrations · ${connectedCount} of 3 connected (pmt account).`
-                : stagingSignInRequiredMessage()}
-          </p>
-        )}
-
         <PilotLandscapeStack>
+          {isStagingLiveData() && (
+            <p className="mx-5 mt-4 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
+              {loading
+                ? "Loading connection status…"
+                : sessionOk
+                  ? `${connectedCount} of 3 health sources connected`
+                  : stagingSignInRequiredMessage()}
+            </p>
+          )}
           <section className="tools-page__connections mt-7 px-5">
             {loading && (
               <div className="rounded-[28px] bg-white p-6 text-center text-[14px] text-purplelife-muted shadow-sm ring-1 ring-purplelife-line">
@@ -194,15 +193,14 @@ export function StagingLiveToolsPage() {
             </a>
             <p className="mt-4 flex gap-3 rounded-[22px] bg-white p-4 text-[12px] leading-[1.5] text-purplelife-muted ring-1 ring-purplelife-line">
               <LockKeyhole size={19} className="shrink-0 text-purplelife-accent" />
-              OAuth connect and disconnect run on www.purplelife.org. Staging shows live token status
-              only; no credentials are stored in the browser.
+              Connection credentials stay protected and are never stored in your browser.
             </p>
           </section>
 
           <PilotContextPanel
             eyebrow="Source-aware by design"
             title="Keep every measurement tied to where it came from."
-            body="Connection health reflects production D1 token rows: last sync, expiry, and webhook activity."
+            body="Connection health reflects last sync, authorization status, and webhook activity."
             items={["Source", "Last sync", "Token health", "Connection status"]}
           />
         </PilotLandscapeStack>

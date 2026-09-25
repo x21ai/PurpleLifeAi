@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "build": "astro build",
     "verify": "node scripts/verify.mjs",
-    "test": "node --test src/lib/purplelife-interactions.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/purplelife-interactions.test.ts",
     "preview": "wrangler dev --local",
     "cf-types": "wrangler types",
     "astro": "astro"

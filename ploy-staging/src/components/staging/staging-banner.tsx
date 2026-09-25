@@ -1,8 +1,8 @@
-import { isStagingLiveData } from "@/lib/staging/config";
+import { isProductionSite, isStagingLiveData } from "@/lib/staging/config";
 import { getStagingSession, signOutStaging, STAGING_SIGN_IN_PATH } from "@/lib/staging/session";
 
 export function StagingBanner() {
-  if (!isStagingLiveData()) return null;
+  if (!isStagingLiveData() || isProductionSite()) return null;
 
   const session = typeof window !== "undefined" ? getStagingSession() : null;
   const email = session?.user?.email;
@@ -12,7 +12,7 @@ export function StagingBanner() {
       role="status"
       className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-[12px] font-medium text-amber-950"
     >
-      Staging · live production D1/R2
+      Staging · connected account data
       {email ? (
         <>
           {" "}

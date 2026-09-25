@@ -1,10 +1,16 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import { StagingLiveSignInPage } from "@/components/staging/staging-live-sign-in";
+import { isProductionSite } from "@/lib/staging/config";
 
 export const prerender = true;
+const production = isProductionSite();
 ---
 
-<Layout title="Sign in · PurpleLife staging" description="Sign in to staging with your production account." noindex={true}>
+<Layout
+  title={production ? "Sign in · PurpleLife" : "Sign in · PurpleLife staging"}
+  description={production ? "Sign in to your private PurpleLife journal." : "Sign in to staging with your production account."}
+  noindex={true}
+>
   <StagingLiveSignInPage mode="sign-in" client:load />
 </Layout>

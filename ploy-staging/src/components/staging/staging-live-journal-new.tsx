@@ -70,16 +70,16 @@ export function StagingLiveJournalNewPage() {
             Anything you want to remember tomorrow.
           </h1>
           <p className="mx-auto mt-3 max-w-[350px] text-[15px] leading-[1.45] text-purplelife-muted">
-            Saved to production D1 via the staging API proxy.
+            Save notes securely to your private journal.
           </p>
         </section>
 
         {isStagingLiveData() && (
           <p className="mx-5 mt-4 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
             {loading
-              ? "Connecting…"
+              ? "Loading your journal…"
               : sessionOk
-                ? "Live write path enabled (pmt account)."
+                ? "Your private journal is ready."
                 : stagingSignInRequiredMessage()}
           </p>
         )}

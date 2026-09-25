@@ -34,4 +34,7 @@ export type WwwEnv = Pick<
   DB: D1Database;
   STORAGE: R2Bucket;
   CACHE: KVNamespace;
+  DESIGN_PREVIEW?: "0";
+  STAGING_REAL_AUTH?: "1";
+  STAGING_LIVE_DATA?: "1";
 };

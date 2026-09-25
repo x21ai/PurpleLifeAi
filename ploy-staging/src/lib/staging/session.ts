@@ -14,7 +14,7 @@ export const STAGING_SIGN_IN_PATH = "/login";
 
 /** Message for live pages when no session is stored. */
 export function stagingSignInRequiredMessage(): string {
-  return `Sign in at ${STAGING_SIGN_IN_PATH} to load production data.`;
+  return `Sign in at ${STAGING_SIGN_IN_PATH} to load your health data.`;
 }
 
 export function getStagingSession(): StagingSession | null {

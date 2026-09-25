@@ -5,6 +5,43 @@ work (especially multi-agent fleets) is decomposed. Append, never delete.
 
 ---
 
+### 2026-09-25 — GNU find rejects prune combined with delete (status: raw)
+
+- The mandatory workspace cleanup failed because GNU `find -delete` implies depth-first
+  traversal, which makes `-prune` ineffective and exits nonzero. The script now preserves
+  pruning and removes matched duplicate paths with `-exec rm -rf -- {} +`, which also
+  handles duplicate directories. Compile into: keep the cleanup script exercised in a
+  Linux CI smoke so handoff cleanup cannot silently become platform-specific.
+
+### 2026-09-25 — User-facing production labels are still operator jargon (status: raw)
+
+- Independent review rejected the otherwise-correct live-mode change because phrases
+  such as `Live production`, `production data`, and `Cloudflare-backed` describe the
+  deployment to operators rather than the product to users. The initial checker even
+  required one of those labels. Production UI should explain privacy and user outcomes;
+  deployment evidence belongs in checks and runbooks. Compile into: keep these phrases
+  in the recursive production-copy forbidden list and never require environment labels
+  in user-facing assertions.
+
+### 2026-09-25 — Production copy can originate in data adapters (status: raw)
+
+- The expanded www production checker correctly rejected `production D1` on `/tools`
+  after the visible component copy had been cleaned. The remaining text came from
+  `src/lib/staging/tools-data.ts`, where disconnected-state messages are constructed,
+  then entered the hydration bundle transitively. Future copy audits must inspect data
+  formatters and hydrated dependencies, not only page components. Compile into: retain
+  the all-allowlisted hydration check and add recursive chunk traversal if Astro begins
+  splitting these messages outside component entry chunks.
+
+### 2026-09-25 — Build cleanup traps need absolute paths after `cd` (status: raw)
+
+- `scripts/build-ploy-www.sh` registered a trap with relative
+  `astro.config.mjs.bak`, then changed back to the repo root before exit. A post-build
+  assertion failure made the trap run from the wrong directory, leaving the production
+  URL rewrite in the tracked staging config and a stray backup file. The script now uses
+  absolute config/backup paths. Compile into: an automated failure-path test that proves
+  the tracked Astro config is restored when the post-build production check fails.
+
 ### 2026-09-25 — wrangler KV ids are account-scoped (status: raw)
 
 - **Eigital Worker `purplelife` cannot bind POS KV `73356a0e339447059bdddc33b93f26a9`.**

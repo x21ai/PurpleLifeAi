@@ -105,9 +105,9 @@ export function StagingLiveTodayPage() {
           {isStagingLiveData() && (
             <p className="mt-3 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
               {loading
-                ? "Connecting to production data…"
+                ? "Loading your data…"
                 : live.hasLiveSession
-                  ? "Live data from production D1 (pmt account)."
+                  ? "Your latest health data is connected."
                   : stagingSignInRequiredMessage()}
             </p>
           )}
@@ -147,7 +147,7 @@ export function StagingLiveTodayPage() {
                 {loading ? "Loading your day…" : live.narrativeTitle}
               </h3>
               <p className="mt-3 text-[15px] leading-[1.4] text-purplelife-muted">
-                {loading ? "Fetching journal, vitals, and narrative from production." : live.narrativeBody}
+                {loading ? "Fetching your journal, vitals, and narrative." : live.narrativeBody}
               </p>
             </div>
           </div>
@@ -172,7 +172,7 @@ export function StagingLiveTodayPage() {
                 {hasLiveData ? "Live patterns may appear as data grows." : "Patterns need a little history."}
               </h3>
               <p className="mt-2 text-[14px] leading-[1.4] text-purplelife-muted">
-                Insights use the same production database as www.purplelife.org.
+                Insights become more useful as you add health and journal history.
               </p>
               <span className="mt-4 inline-flex items-center gap-1 text-[13px] font-semibold text-purplelife-accent">
                 How insights work <ChevronRight size={15} />

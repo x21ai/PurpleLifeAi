@@ -29,7 +29,7 @@ export default function BeginTodaySection() {
             {"Begin today."}
           </h1>
           <p className="text-purplelife-muted leading-relaxed text-lg max-w-xl opacity-85 mt-6 mx-auto">
-            {"Review the design preview. No checkout or billing flow."}
+            {"Sign in to begin your private health journal."}
           </p>
         </div>
       </div>
