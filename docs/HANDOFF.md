@@ -139,7 +139,8 @@ clean + 254/254; web QA video ready. See Log for details.
 - **Who / where:** Auto cloud agent, `/workspace`,
   `cursor/www-live-production-mode-9a5d@e34f3653` plus pending review fixes.
 - **Evidence:** Route boundary 23/23 pass; full build/gate evidence will be added after
-  the pre-test revision is committed and pushed.
+  the pre-test revision is committed and pushed. First expanded build check correctly
+  rejected one transitive `/tools` D1 message; fixed in the data formatter before rerun.
 - **Timestamp:** 2026-09-25T01:33:01Z
 
 ### 2026-09-25T00:15:00Z — eigital CACHE KV id in wrangler.deploy.ploy.jsonc

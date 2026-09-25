@@ -5,6 +5,16 @@ work (especially multi-agent fleets) is decomposed. Append, never delete.
 
 ---
 
+### 2026-09-25 — Production copy can originate in data adapters (status: raw)
+
+- The expanded www production checker correctly rejected `production D1` on `/tools`
+  after the visible component copy had been cleaned. The remaining text came from
+  `src/lib/staging/tools-data.ts`, where disconnected-state messages are constructed,
+  then entered the hydration bundle transitively. Future copy audits must inspect data
+  formatters and hydrated dependencies, not only page components. Compile into: retain
+  the all-allowlisted hydration check and add recursive chunk traversal if Astro begins
+  splitting these messages outside component entry chunks.
+
 ### 2026-09-25 — Build cleanup traps need absolute paths after `cd` (status: raw)
 
 - `scripts/build-ploy-www.sh` registered a trap with relative
