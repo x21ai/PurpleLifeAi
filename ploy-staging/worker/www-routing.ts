@@ -32,6 +32,16 @@ export function normalizeWwwPathname(pathname: string): string {
 export function getWwwRouteTarget(pathname: string): WwwRouteTarget {
   const normalized = normalizeWwwPathname(pathname);
 
+  if (
+    normalized === "/favicon.ico" ||
+    normalized === "/robots.txt" ||
+    normalized === "/sitemap-index.xml" ||
+    normalized === "/llms.txt" ||
+    /^\/sitemap-.*\.xml$/.test(normalized)
+  ) {
+    return "assets";
+  }
+
   if (normalized.startsWith("/api/") || normalized.startsWith("/oauth/")) {
     return "tanstack";
   }

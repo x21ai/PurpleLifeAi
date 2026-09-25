@@ -105,7 +105,7 @@ export function StagingLiveMedsPage() {
         {isStagingLiveData() && (
           <p className="mx-5 mt-4 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
             {loading
-              ? "Connecting to production data…"
+              ? "Loading your medications…"
               : sessionOk
                 ? `Live meds · ${medications.length} active · ${doses.length} dose${doses.length === 1 ? "" : "s"} today (${takenCount} taken).`
                 : stagingSignInRequiredMessage()}
@@ -124,7 +124,7 @@ export function StagingLiveMedsPage() {
                 <Pill size={27} className="mx-auto text-purplelife-accent" />
                 <p className="mt-3 text-[15px] font-semibold">No active medications</p>
                 <p className="mx-auto mt-2 max-w-[290px] text-[12px] leading-[1.45] text-purplelife-muted">
-                  pmt account has no active medication records in production D1.
+                  Add a medication to begin tracking your schedule.
                 </p>
               </div>
             )}
@@ -202,7 +202,7 @@ export function StagingLiveMedsPage() {
               </a>
               <p className="flex gap-3 p-4 text-[12px] leading-[1.5] text-purplelife-muted">
                 <LockKeyhole size={18} className="shrink-0 text-purplelife-accent" />
-                Dose check-offs write to production D1 via the staging API proxy.
+                Dose check-offs are saved securely to your medication history.
               </p>
             </div>
           </section>

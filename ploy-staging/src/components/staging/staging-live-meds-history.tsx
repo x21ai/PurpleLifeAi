@@ -60,7 +60,7 @@ export function StagingLiveMedsHistoryPage() {
         {isStagingLiveData() && (
           <p className="mx-5 mt-4 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
             {loading
-              ? "Connecting to production data…"
+              ? "Loading medication history…"
               : sessionOk
                 ? `Live history · ${entries.length} dose row${entries.length === 1 ? "" : "s"} (last 30 days).`
                 : stagingSignInRequiredMessage()}
@@ -106,8 +106,7 @@ export function StagingLiveMedsHistoryPage() {
         </section>
         <section className="mt-5 px-5">
           <p className="rounded-[22px] bg-purplelife-tint p-4 text-[13px] leading-[1.45] text-purplelife-muted">
-            This history reflects entries in production D1. Discuss medication changes with a qualified
-            clinician.
+            This history reflects the doses you recorded. Discuss medication changes with a qualified clinician.
           </p>
         </section>
       </PilotAppShell>

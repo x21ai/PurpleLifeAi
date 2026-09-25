@@ -38,7 +38,18 @@ describe("www hybrid route boundary", () => {
     });
   }
 
-  test("/assets/index.hash.js uses the merged static asset binding", () => {
-    assert.equal(getWwwRouteTarget("/assets/index.hash.js"), "assets");
-  });
+  const staticAssetCases = [
+    "/assets/index.hash.js",
+    "/favicon.ico",
+    "/robots.txt",
+    "/sitemap-index.xml",
+    "/sitemap-0.xml",
+    "/llms.txt",
+  ];
+
+  for (const pathname of staticAssetCases) {
+    test(`${pathname} uses the static asset binding`, () => {
+      assert.equal(getWwwRouteTarget(pathname), "assets");
+    });
+  }
 });

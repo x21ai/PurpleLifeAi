@@ -79,14 +79,14 @@ export function StagingLiveDocumentsPage({ backHref = "/reports" }: StagingLiveD
             Keep source documents organized.
           </h1>
           <p className="mx-auto mt-3 max-w-[360px] text-[15px] leading-[1.45] text-purplelife-muted">
-            Current and rejected files from production D1, separate from shared summaries.
+            Keep current and rejected files separate from the summaries you share.
           </p>
         </section>
 
         {isStagingLiveData() && (
           <p className="mx-5 mt-4 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
             {loading
-              ? "Connecting to production data…"
+              ? "Loading your documents…"
               : sessionOk
                 ? `Live documents · ${documents.filter((d) => !d.archived).length} current · ${documents.filter((d) => d.archived).length} rejected.`
                 : stagingSignInRequiredMessage()}
@@ -138,8 +138,8 @@ export function StagingLiveDocumentsPage({ backHref = "/reports" }: StagingLiveD
                 </h2>
                 <p className="mx-auto mt-2 max-w-[290px] text-[12px] leading-[1.5] text-purplelife-muted">
                   {archived
-                    ? "Rejected report files from production D1 appear here."
-                    : "Uploaded report files from production D1 appear here after processing."}
+                    ? "Rejected report files appear here."
+                    : "Uploaded report files appear here after processing."}
                 </p>
               </div>
             )}
@@ -180,14 +180,14 @@ export function StagingLiveDocumentsPage({ backHref = "/reports" }: StagingLiveD
           <section className="mt-5 px-5">
             <p className="flex gap-3 rounded-[22px] bg-purplelife-tint p-4 text-[12px] leading-[1.5] text-purplelife-muted">
               <LockKeyhole size={19} className="shrink-0 text-purplelife-accent" />
-              Read-only metadata from production D1. File download and upload run on www.purplelife.org.
+              Document details stay private until you choose to include them in a report.
             </p>
           </section>
 
           <PilotContextPanel
             eyebrow="Source before summary"
             title="Keep the original file beside anything PurpleLife extracts."
-            body="Each document shows type, date, and review status from the same database as production."
+            body="Each document shows its type, date, and review status."
             items={["PDF", "JPEG", "Date", "Review status"]}
           />
         </PilotLandscapeStack>

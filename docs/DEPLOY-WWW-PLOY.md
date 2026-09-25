@@ -46,6 +46,10 @@ route boundary for prototype paths.
 The Ploy build copies TanStack's hashed `dist/client/assets/` directory into
 `ploy-staging/dist/client/assets/`. TanStack fallback HTML references `/assets/*`; omitting
 this merge leaves fallback routes blank even though server-side routing is correct.
+The Worker also sends `/favicon.ico`, `/robots.txt`, `/sitemap-index.xml`,
+`/sitemap-*.xml`, and `/llms.txt` directly to the static asset binding. This is required
+when `assets.run_worker_first=true`; otherwise these files can incorrectly fall through
+to TanStack.
 
 **Bindings:** Same production D1/R2/KV as staging (eigital account):
 
@@ -121,6 +125,10 @@ The verification also runs the route-boundary tests and checks this live-mode co
 They do not make www a staging deployment. No preview user id/email is configured, and
 the www entry has no design-preview session handler.
 
+The production checker inspects every allowlisted Ploy page and its hydration component.
+It rejects preview/mock claims and operator-only staging language such as test-account,
+staging-proxy, or D1 implementation details.
+
 ## Deploy (operator only, after GO)
 
 ```bash
@@ -153,6 +161,11 @@ for p in / /today/ /journal/ /meds/ /login/; do
   curl -sS -o /dev/null -w "$p %{http_code}\n" "$BASE$p"
 done
 
+# Static production files still use the asset binding
+for p in /favicon.ico /robots.txt /sitemap-index.xml /llms.txt; do
+  curl -sS -o /dev/null -w "$p %{http_code}\n" "$BASE$p"
+done
+
 # Normal www HTML must not advertise preview/mock mode
 curl -fsSL "$BASE/" | grep -E \
   'Static design preview|Design review build|local mock state|APIs are not connected' \
@@ -171,7 +184,8 @@ bun run test:www-cloudflare-data
 
 This signs in through `POST /api/auth/sign-in`, then reads the authenticated user's own
 `profiles` row through `POST /api/data/query`. A pass proves production JWT auth and a
-user-scoped D1 read. Browser smoke: sign in at `/login`, confirm live `/today`, `/journal`,
+user-scoped D1 read. It is a post-deploy API contract smoke, not a substitute for the
+browser pass through the hybrid Worker. Browser smoke: sign in at `/login`, confirm live `/today`, `/journal`,
 `/meds`, `/reports`, and `/tools` data; verify account creation/recovery and detail pages
 fall through to TanStack; verify OAuth callbacks still hit `/oauth/*/callback`.
 

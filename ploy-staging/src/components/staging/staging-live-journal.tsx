@@ -88,7 +88,7 @@ export function StagingLiveJournalPage() {
   const weekSummary =
     entries.length === 0
       ? "Notes, photos, symptoms, and sleep records will form a private timeline as you add them."
-      : `${entries.length} entr${entries.length === 1 ? "y" : "ies"} in your live journal from production D1.`;
+      : `${entries.length} entr${entries.length === 1 ? "y" : "ies"} in your private journal.`;
 
   return (
     <>
@@ -126,9 +126,9 @@ export function StagingLiveJournalPage() {
           {isStagingLiveData() && (
             <p className="mt-3 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
               {loading
-                ? "Connecting to production data…"
+                ? "Loading your journal…"
                 : sessionOk
-                  ? `Live journal · ${entries.length} entr${entries.length === 1 ? "y" : "ies"} (pmt account).`
+                  ? `${entries.length} journal entr${entries.length === 1 ? "y" : "ies"}`
                   : stagingSignInRequiredMessage()}
             </p>
           )}
@@ -230,7 +230,7 @@ export function StagingLiveJournalPage() {
                   <p className="text-[13px] font-medium text-purplelife-muted">{selected.time}</p>
                   <h2 className="mt-2 text-[24px] font-semibold tracking-[-0.035em]">{selected.title}</h2>
                   <p className="mt-4 text-[15px] leading-[1.45] text-purplelife-muted">
-                    {selected.detail}. Live entry from production D1.
+                    {selected.detail}.
                   </p>
                 </div>
                 <button
@@ -260,7 +260,7 @@ export function StagingLiveJournalPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-[24px] font-semibold tracking-[-0.035em]">New note</h2>
-                  <p className="mt-1 text-[13px] text-purplelife-muted">Saved to production D1.</p>
+                  <p className="mt-1 text-[13px] text-purplelife-muted">Saved to your private journal.</p>
                 </div>
                 <button
                   type="button"

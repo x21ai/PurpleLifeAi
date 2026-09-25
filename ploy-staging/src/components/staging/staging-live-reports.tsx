@@ -135,14 +135,14 @@ export function StagingLiveReportsPage() {
             Your report workspace.
           </h1>
           <p className="mx-auto mt-3 max-w-[350px] text-[15px] leading-[1.45] text-purplelife-muted">
-            Prepare, review, and share selected health information from production D1.
+            Prepare, review, and share only the health information you select.
           </p>
         </section>
 
         {isStagingLiveData() && (
           <p className="mx-5 mt-4 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
             {loading
-              ? "Connecting to production data…"
+              ? "Loading your reports…"
               : sessionOk
                 ? `Live reports · ${documents.length} document${documents.length === 1 ? "" : "s"} · ${medicalCount} generated report${medicalCount === 1 ? "" : "s"}.`
                 : stagingSignInRequiredMessage()}
@@ -167,7 +167,7 @@ export function StagingLiveReportsPage() {
                 <Row
                   icon={<FileText size={20} />}
                   title="No prepared reports"
-                  detail="Report documents from production D1 will appear here."
+                  detail="Reports you prepare will appear here."
                 />
               )}
               {currentDocs.map((doc) => (
@@ -182,7 +182,7 @@ export function StagingLiveReportsPage() {
               <Row
                 icon={<FileText size={20} />}
                 title="Source documents"
-                detail={`${documents.length} current file${documents.length === 1 ? "" : "s"} in production D1.`}
+                detail={`${documents.length} current file${documents.length === 1 ? "" : "s"}.`}
                 href="/reports/documents"
               />
               <Row
@@ -196,8 +196,7 @@ export function StagingLiveReportsPage() {
           <section className="mt-5 px-5">
             <p className="flex gap-3 rounded-[22px] bg-purplelife-tint p-4 text-[12px] leading-[1.5] text-purplelife-muted">
               <LockKeyhole size={19} className="shrink-0 text-purplelife-accent" />
-              Read-only view of production report_documents. Upload and share flows remain on
-              www.purplelife.org.
+              Reports remain private until you deliberately choose what to share.
             </p>
           </section>
         </PilotLandscapeStack>

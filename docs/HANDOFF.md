@@ -9,6 +9,13 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-25 www live-production hardening (PR #57, no deploy):** Root causes were
+hardcoded preview copy, over-broad Ploy routing, missing client-side `VITE_*` exposure,
+asset routing bypass, and missing TanStack fallback assets. Production now uses real auth
+and Cloudflare data flags, allowlists only live-wired Ploy routes, keeps `/api/*`,
+`/oauth/*`, and crons on TanStack, and serves both Ploy and fallback assets. D1/R2/KV
+bindings are unchanged. Operator deploy remains pending after merge.
+
 **2026-09-25 www Ploy deploy config (PR #56, no deploy from this agent):** Two local
 patches that already shipped live: (1) `scripts/build-ploy-www.sh` prefixes
 `SITE="$SITE"` for the Astro rewrite. (2) `wrangler.deploy.ploy.jsonc` CACHE KV id is
@@ -114,6 +121,26 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-25T01:33:01Z — www Ploy live production mode and routing hardening
+
+- **Requested:** Make www production Ploy use real Cloudflare data and production auth,
+  remove normal-user preview/mock state, preserve API/OAuth/crons, document smoke checks,
+  open a PR, and do not deploy.
+- **Done:** Production flags and build-time live mode are explicit; client hydration sees
+  `VITE_*`; Ploy is allowlisted to live-wired routes; TanStack remains the fallback and
+  receives `/api/*`, `/oauth/*`, and scheduled events; static and TanStack assets route
+  through the hybrid Worker; user copy no longer exposes staging/test-account/D1 details.
+  Added route and production-build checks plus authenticated post-deploy smoke script.
+- **Issues:** No Worker deployment performed. Authenticated production smoke requires
+  runtime-injected test credentials and remains an operator post-deploy check.
+- **Stand / next:** PR #57 is the deployment candidate. Finish full local gates and
+  independent review, then operator merges and deploys using `docs/DEPLOY-WWW-PLOY.md`.
+- **Who / where:** Auto cloud agent, `/workspace`,
+  `cursor/www-live-production-mode-9a5d@e34f3653` plus pending review fixes.
+- **Evidence:** Route boundary 23/23 pass; full build/gate evidence will be added after
+  the pre-test revision is committed and pushed.
+- **Timestamp:** 2026-09-25T01:33:01Z
 
 ### 2026-09-25T00:15:00Z — eigital CACHE KV id in wrangler.deploy.ploy.jsonc
 

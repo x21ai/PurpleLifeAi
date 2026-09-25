@@ -39,34 +39,81 @@ assert.match(routingSource, /PLOY_LIVE_APP_ROUTES/);
 assert.match(routingSource, /return "tanstack";/);
 
 if (process.argv.includes("--built")) {
-  const [homeHtml, loginHtml, tanstackAssets] = await Promise.all([
-    read("ploy-staging/dist/client/index.html"),
-    read("ploy-staging/dist/client/login/index.html"),
-    readdir(new URL("ploy-staging/dist/client/assets/", root)),
-  ]);
+  const ployRoutes = [
+    "/",
+    "/about",
+    "/charter",
+    "/contact",
+    "/features",
+    "/privacy",
+    "/terms",
+    "/trust",
+    "/documents",
+    "/journal",
+    "/journal/new",
+    "/login",
+    "/meds",
+    "/meds/history",
+    "/reports",
+    "/reports/documents",
+    "/sign-in",
+    "/today",
+    "/tools",
+  ];
+  const tanstackAssets = await readdir(new URL("ploy-staging/dist/client/assets/", root));
   assert(
     tanstackAssets.some((name) => /^index-.*\.js$/.test(name)),
     "merged www bundle omitted TanStack fallback client assets",
   );
-  async function readHydrationComponent(html) {
-    const componentUrl = html.match(/component-url="\/_ploy_static\/_astro\/([^"]+\.js)"/)?.[1];
-    assert(componentUrl, "prerendered page omitted its hydration component URL");
-    return read(`ploy-staging/dist/client/_ploy_static/_astro/${componentUrl}`);
-  }
-  const [homeClient, loginClient] = await Promise.all([
-    readHydrationComponent(homeHtml),
-    readHydrationComponent(loginHtml),
-  ]);
 
-  for (const forbidden of [
-    "Static design preview",
-    "Design review build",
-    "Interactions use local mock state",
-    "Production authentication, storage, uploads, billing, and health APIs are not connected",
-  ]) {
-    assert.equal(homeHtml.includes(forbidden), false, `production home contains: ${forbidden}`);
-    assert.equal(homeClient.includes(forbidden), false, `production home hydration contains: ${forbidden}`);
+  async function readBuiltRoute(route) {
+    const relativePath =
+      route === "/" ? "ploy-staging/dist/client/index.html" : `ploy-staging/dist/client${route}/index.html`;
+    const html = await read(relativePath);
+    const componentUrls = [
+      ...html.matchAll(/component-url="\/_ploy_static\/_astro\/([^"]+\.js)"/g),
+    ].map((match) => match[1]);
+    const hydration = await Promise.all(
+      componentUrls.map((componentUrl) =>
+        read(`ploy-staging/dist/client/_ploy_static/_astro/${componentUrl}`),
+      ),
+    );
+    return { route, html, hydration: hydration.join("\n") };
   }
+
+  const builtRoutes = await Promise.all(ployRoutes.map(readBuiltRoute));
+  for (const forbidden of [
+    "design preview",
+    "design review",
+    "static preview",
+    "mock state",
+    "pmt account",
+    "staging api proxy",
+    "production d1",
+    "read-only on staging",
+  ]) {
+    for (const { route, html, hydration } of builtRoutes) {
+      assert.equal(
+        html.toLowerCase().includes(forbidden),
+        false,
+        `production ${route} HTML contains: ${forbidden}`,
+      );
+      assert.equal(
+        hydration.toLowerCase().includes(forbidden),
+        false,
+        `production ${route} hydration contains: ${forbidden}`,
+      );
+    }
+  }
+
+  const home = builtRoutes.find(({ route }) => route === "/");
+  const login = builtRoutes.find(({ route }) => route === "/login");
+  assert(home);
+  assert(login);
+  const homeHtml = home.html;
+  const homeClient = home.hydration;
+  const loginHtml = login.html;
+  const loginClient = login.hydration;
   assert.match(homeHtml, /Live production/);
   assert.match(homeClient, /Live production/);
   assert.equal(loginHtml.includes("Sign in to staging"), false);
