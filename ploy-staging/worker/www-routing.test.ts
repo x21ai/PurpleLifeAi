@@ -29,7 +29,6 @@ describe("www hybrid route boundary", () => {
     ["/journal/new", "astro"],
     ["/meds/history/", "astro"],
     ["/reports/documents", "astro"],
-    ["/_ploy_static/_astro/page.abc123.js", "astro"],
   ] as const;
 
   for (const [pathname, expected] of astroCases) {
@@ -40,6 +39,7 @@ describe("www hybrid route boundary", () => {
 
   const staticAssetCases = [
     "/assets/index.hash.js",
+    "/_ploy_static/_astro/page.abc123.js",
     "/favicon.ico",
     "/robots.txt",
     "/sitemap-index.xml",

@@ -25,4 +25,5 @@ Append material development prompts newest first. Never include secrets or PII.
 - **Outcome / commits:** Draft PR #57 on `cursor/www-live-production-mode-9a5d`.
   Commits `8c59b8c0` and `e34f3653` establish production routing, live-mode flags,
   hydration env exposure, and dual asset support. Commits `e4c84e85` and `3353880e`
-  remove remaining operator/backend copy and expand production checks.
+  remove remaining operator/backend copy and expand production checks. Commit
+  `625e5196` fixes signed-out status layout; final independent-review remediation pending.

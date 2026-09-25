@@ -46,10 +46,10 @@ route boundary for prototype paths.
 The Ploy build copies TanStack's hashed `dist/client/assets/` directory into
 `ploy-staging/dist/client/assets/`. TanStack fallback HTML references `/assets/*`; omitting
 this merge leaves fallback routes blank even though server-side routing is correct.
-The Worker also sends `/favicon.ico`, `/robots.txt`, `/sitemap-index.xml`,
-`/sitemap-*.xml`, and `/llms.txt` directly to the static asset binding. This is required
-when `assets.run_worker_first=true`; otherwise these files can incorrectly fall through
-to TanStack.
+The Worker also sends `/_ploy_static/_astro/*`, `/favicon.ico`, `/robots.txt`,
+`/sitemap-index.xml`, `/sitemap-*.xml`, and `/llms.txt` directly to the static asset
+binding. This is required when `assets.run_worker_first=true`; otherwise these files can
+incorrectly fall through to a server handler.
 
 **Bindings:** Same production D1/R2/KV as staging (eigital account):
 
@@ -125,9 +125,10 @@ The verification also runs the route-boundary tests and checks this live-mode co
 They do not make www a staging deployment. No preview user id/email is configured, and
 the www entry has no design-preview session handler.
 
-The production checker inspects every allowlisted Ploy page and its hydration component.
-It rejects preview/mock claims and operator-only staging language such as test-account,
-staging-proxy, or D1 implementation details.
+The production checker inspects every allowlisted Ploy page and recursively follows its
+hydration component imports. It rejects preview/mock claims and operator-only staging
+language such as test-account, staging-proxy, D1, Worker-auth, or Cloudflare
+implementation details.
 
 ## Deploy (operator only, after GO)
 

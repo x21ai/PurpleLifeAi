@@ -30,7 +30,7 @@ export function HomePage() {
           <div>
             <p className="inline-flex items-center gap-2 rounded-full bg-ploy-background-secondary px-4 py-2 text-xs font-semibold text-ploy-text-primary">
               <span className="size-2 rounded-full bg-purplelife-accent" />
-              {production ? "Live production" : "Static design preview"}
+              {production ? "Private health journal" : "Static design preview"}
             </p>
             <h1 className="mt-7 max-w-[720px] font-heading text-[clamp(3.4rem,8vw,7.5rem)] font-semibold leading-[0.88] tracking-[-0.07em]">
               Your health story, kept in one calm place.
@@ -109,7 +109,7 @@ export function HomePage() {
                 </h2>
                 <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/75">
                   {production
-                    ? "Sign in to use production authentication and your private Cloudflare-backed journal, medications, reports, and connected health data."
+                    ? "Sign in to access your private journal, medications, reports, and connected health data."
                     : "Interactions use local mock state. Production authentication, storage, uploads, billing, and health APIs are not connected."}
                 </p>
               </div>

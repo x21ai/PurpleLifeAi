@@ -17,5 +17,5 @@ acceptance:
   - "No Worker deployment is performed."
 state: in-progress
 claimant: auto-cloud-agent
-lease_expires: "2026-09-25T02:12:30Z"
+lease_expires: "2026-09-25T02:20:00Z"
 evidence: []

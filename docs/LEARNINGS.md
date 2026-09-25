@@ -5,6 +5,16 @@ work (especially multi-agent fleets) is decomposed. Append, never delete.
 
 ---
 
+### 2026-09-25 — User-facing production labels are still operator jargon (status: raw)
+
+- Independent review rejected the otherwise-correct live-mode change because phrases
+  such as `Live production`, `production data`, and `Cloudflare-backed` describe the
+  deployment to operators rather than the product to users. The initial checker even
+  required one of those labels. Production UI should explain privacy and user outcomes;
+  deployment evidence belongs in checks and runbooks. Compile into: keep these phrases
+  in the recursive production-copy forbidden list and never require environment labels
+  in user-facing assertions.
+
 ### 2026-09-25 — Production copy can originate in data adapters (status: raw)
 
 - The expanded www production checker correctly rejected `production D1` on `/tools`

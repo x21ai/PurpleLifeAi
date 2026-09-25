@@ -49,7 +49,7 @@ export function StagingLiveSignInPage({ mode = "sign-in" }: StagingLiveSignInPag
           <section className="px-5 pt-5 text-center">
             <PrivacyShield className="mx-auto w-full max-w-[310px]" />
             <p className="-mt-2 text-[12px] font-semibold uppercase tracking-[0.06em] text-purplelife-accent">
-              {production ? "Private account" : "Staging · production D1"}
+              {production ? "Private account" : "Staging · connected account"}
             </p>
             <h1 className="mx-auto mt-2 max-w-[350px] text-[33px] font-semibold leading-[1.02] tracking-[-0.05em]">
               {signingIn
@@ -61,7 +61,7 @@ export function StagingLiveSignInPage({ mode = "sign-in" }: StagingLiveSignInPag
             <p className="mx-auto mt-3 max-w-[330px] text-[15px] leading-[1.45] text-purplelife-muted">
               {signingIn
                 ? production
-                  ? "Use your PurpleLife account password to access your private production data."
+                  ? "Use your PurpleLife account password to access your private health data."
                   : "Use your production account password. Same JWT and data as www.purplelife.org."
                 : "Account creation on staging uses the production auth API. Prefer www for new accounts."}
             </p>
@@ -136,7 +136,7 @@ export function StagingLiveSignInPage({ mode = "sign-in" }: StagingLiveSignInPag
             <p className="flex gap-3 rounded-[22px] bg-purplelife-tint p-4 text-[12px] leading-[1.45] text-purplelife-muted">
               <LockKeyhole size={19} className="shrink-0 text-purplelife-accent" />
               {production
-                ? "Sign-in uses the production Worker auth path. Your session token stays in this browser and authorizes private Cloudflare data requests."
+                ? "Your secure session stays in this browser and authorizes requests for your private account data."
                 : "Staging uses the same prod Worker auth path (`POST /api/auth/sign-in`). Session token is stored in `localStorage` as `purple-cf-session`, matching www Cloudflare auth."}
             </p>
           </section>

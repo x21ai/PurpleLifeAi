@@ -34,7 +34,7 @@ assert.match(
   /VITE_STAGING_LIVE_DATA=1 VITE_PUBLIC_SITE_ENV=production bun run build/,
 );
 assert.match(astroConfig, /envPrefix: \["PUBLIC_", "VITE_"\]/);
-assert.match(homeSource, /production \? "Live production" : "Static design preview"/);
+assert.match(homeSource, /production \? "Private health journal" : "Static design preview"/);
 assert.match(routingSource, /PLOY_LIVE_APP_ROUTES/);
 assert.match(routingSource, /return "tanstack";/);
 
@@ -66,6 +66,25 @@ if (process.argv.includes("--built")) {
     "merged www bundle omitted TanStack fallback client assets",
   );
 
+  async function readHydrationGraph(entryNames) {
+    const pending = [...entryNames];
+    const visited = new Set();
+    const sources = [];
+
+    while (pending.length > 0) {
+      const name = pending.pop();
+      if (!name || visited.has(name)) continue;
+      visited.add(name);
+      const source = await read(`ploy-staging/dist/client/_ploy_static/_astro/${name}`);
+      sources.push(source);
+      for (const match of source.matchAll(/(?:from|import)\s*(?:\(\s*)?["']\.\/([^"']+\.js)["']/g)) {
+        if (!visited.has(match[1])) pending.push(match[1]);
+      }
+    }
+
+    return sources.join("\n");
+  }
+
   async function readBuiltRoute(route) {
     const relativePath =
       route === "/" ? "ploy-staging/dist/client/index.html" : `ploy-staging/dist/client${route}/index.html`;
@@ -73,12 +92,8 @@ if (process.argv.includes("--built")) {
     const componentUrls = [
       ...html.matchAll(/component-url="\/_ploy_static\/_astro\/([^"]+\.js)"/g),
     ].map((match) => match[1]);
-    const hydration = await Promise.all(
-      componentUrls.map((componentUrl) =>
-        read(`ploy-staging/dist/client/_ploy_static/_astro/${componentUrl}`),
-      ),
-    );
-    return { route, html, hydration: hydration.join("\n") };
+    const hydration = await readHydrationGraph(componentUrls);
+    return { route, html, hydration };
   }
 
   const builtRoutes = await Promise.all(ployRoutes.map(readBuiltRoute));
@@ -90,6 +105,11 @@ if (process.argv.includes("--built")) {
     "pmt account",
     "staging api proxy",
     "production d1",
+    "production data",
+    "production authentication",
+    "production worker auth path",
+    "cloudflare-backed",
+    "cloudflare data requests",
     "read-only on staging",
   ]) {
     for (const { route, html, hydration } of builtRoutes) {
@@ -114,8 +134,8 @@ if (process.argv.includes("--built")) {
   const homeClient = home.hydration;
   const loginHtml = login.html;
   const loginClient = login.hydration;
-  assert.match(homeHtml, /Live production/);
-  assert.match(homeClient, /Live production/);
+  assert.match(homeHtml, /Private health journal/);
+  assert.match(homeClient, /Private health journal/);
   assert.equal(loginHtml.includes("Sign in to staging"), false);
   assert.equal(loginClient.includes("Sign in to staging"), false);
   assert.equal(loginHtml.includes("Testers:"), false);

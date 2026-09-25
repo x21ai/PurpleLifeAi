@@ -51,7 +51,7 @@ export function getWwwRouteTarget(pathname: string): WwwRouteTarget {
   }
 
   if (normalized.startsWith("/_ploy_static/_astro/")) {
-    return "astro";
+    return "assets";
   }
 
   if (PLOY_PUBLIC_ROUTES.has(normalized) || PLOY_LIVE_APP_ROUTES.has(normalized)) {
