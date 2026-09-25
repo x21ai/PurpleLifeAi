@@ -15,7 +15,13 @@ log() {
 prepare_flutter_ios_build_dir
 log "iOS build output: ${FLUTTER_IOS_BUILD_LINK} (symlinked at flutter/build/ios)"
 
-export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode-beta.app/Contents/Developer}"
+if [[ -z "${DEVELOPER_DIR:-}" ]]; then
+  if [[ -x /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild ]]; then
+    export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+  elif [[ -x /Applications/Xcode-beta.app/Contents/Developer/usr/bin/xcodebuild ]]; then
+    export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
+  fi
+fi
 export PATH="${FLUTTER_DIR}/ios/scripts:${PATH}"
 
 cd "${FLUTTER_DIR}"

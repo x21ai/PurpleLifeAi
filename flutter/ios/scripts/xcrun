@@ -6,8 +6,8 @@ set -eu
 
 if [ -z "${DEVELOPER_DIR:-}" ]; then
   for candidate in \
-    /Applications/Xcode-beta.app/Contents/Developer \
     /Applications/Xcode.app/Contents/Developer \
+    /Applications/Xcode-beta.app/Contents/Developer \
     "$HOME/Downloads/Xcode-beta.app/Contents/Developer"
   do
     if [ -x "${candidate}/usr/bin/xcodebuild" ]; then
