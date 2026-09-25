@@ -1,4 +1,9 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-24 (`build-ploy-www.sh` SITE env fix; **do not** wrangler deploy from this agent).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-25 (PR #56 SITE env + eigital CACHE KV; **do not** wrangler deploy from this agent).
+
+**Recent (2026-09-25): www Ploy wrangler CACHE KV (eigital).** `wrangler.deploy.ploy.jsonc`
+CACHE id is `9226585702aa4be694ac74981d9859c4` (account `08e766e92db74bc7…`, title
+`purplelifeai`). POS id `73356a0e339447059bdddc33b93f26a9` caused Cloudflare error 10041.
+www already live with a local patch; this PR lands the repo. No deploy from this agent.
 
 **Recent (2026-09-24): `build-ploy-www.sh` SITE for Astro rewrite.** `SITE` is now in the
 environment (`SITE="$SITE" node -e`), not a trailing argv. Fixes `site: "undefined"` /

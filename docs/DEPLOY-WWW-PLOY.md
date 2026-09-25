@@ -27,10 +27,12 @@ Request → purplelife (www.purplelife.org)
 |---------|----------|-----------|
 | `DB` | D1 `purplelifeai` | `8d0be2b3-84ec-4581-86f4-6b372ec1d5d7` |
 | `STORAGE` | R2 `purplelifeai` | bucket `purplelifeai` |
-| `CACHE` | KV | `73356a0e339447059bdddc33b93f26a9` |
+| `CACHE` | KV `purplelifeai` (eigital) | `9226585702aa4be694ac74981d9859c4` |
 | `SELF` | Service | Worker `purplelife` (cron self-dispatch) |
 
 Config file: `wrangler.deploy.ploy.jsonc` (account `08e766e92db74bc7ef14c6b5c86bddf0`).
+Do not copy POS-account CACHE id `73356a0e339447059bdddc33b93f26a9` into this file;
+Cloudflare error 10041 (KV namespace not found on the account).
 
 Entry: `ploy-staging/worker/www-entry.ts`.
 

@@ -5,6 +5,14 @@ work (especially multi-agent fleets) is decomposed. Append, never delete.
 
 ---
 
+### 2026-09-25 — wrangler KV ids are account-scoped (status: raw)
+
+- **Eigital Worker `purplelife` cannot bind POS KV `73356a0e339447059bdddc33b93f26a9`.**
+  Deploy fails with Cloudflare 10041. Ploy www config must use eigital KV
+  `9226585702aa4be694ac74981d9859c4` (`purplelifeai` on `08e766e92db74bc7…`).
+  Compile into: `wrangler.deploy.ploy.jsonc` CACHE id only; do not copy POS ids
+  from `wrangler.deploy.jsonc` into eigital deploy configs.
+
 ### 2026-09-24 — node -e trailing VAR=value is argv, not env (status: raw)
 
 - **`node -e 'process.env.SITE' SITE="$SITE"` does not set `process.env.SITE`.** Extra
