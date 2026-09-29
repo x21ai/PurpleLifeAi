@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { isCloudflareBackend } from "@/lib/cloudflare/data-backend";
-import { setRequestBindings } from "@/lib/cloudflare/bindings";
+import { getBindings, setRequestBindings } from "@/lib/cloudflare/bindings";
 import { d1From } from "@/lib/cloudflare/d1/query-builder";
 
 export const Route = createFileRoute("/api/data/query")({
@@ -8,7 +8,8 @@ export const Route = createFileRoute("/api/data/query")({
     handlers: {
       POST: async ({ request }) => {
         setRequestBindings(process.env);
-        if (!isCloudflareBackend(process.env)) {
+        const bindings = getBindings();
+        if (!isCloudflareBackend(bindings)) {
           return Response.json({ error: "cloudflare backend only" }, { status: 400 });
         }
 
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/api/data/query")({
 
         const token = authHeader.replace("Bearer ", "");
         const { verifyJwt } = await import("@/lib/cloudflare/auth/jwt");
-        const secret = process.env.AUTH_JWT_SECRET;
+        const secret = bindings.AUTH_JWT_SECRET;
         if (!secret) return Response.json({ error: "Auth not configured" }, { status: 500 });
         const claims = await verifyJwt(secret, token);
         if (!claims?.sub) return Response.json({ error: "Unauthorized" }, { status: 401 });

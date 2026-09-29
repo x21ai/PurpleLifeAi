@@ -21,9 +21,17 @@ function mergeBindings(
   const preserved: Record<string, unknown> = {};
   const incomingRecord = incoming as Record<string, unknown>;
   for (const [key, value] of Object.entries(previous)) {
-    if (!isPlatformBinding(value)) continue;
     const next = incomingRecord[key];
-    if (next == null || typeof next === "string") {
+    if (isPlatformBinding(value)) {
+      // Workers process.env is string-only; never let it replace D1/R2/KV/etc.
+      if (next == null || typeof next === "string") {
+        preserved[key] = value;
+      }
+      continue;
+    }
+    // Keep prior string secrets/vars when the later seed omits them.
+    // process.env may not include Worker secrets even when env.AUTH_JWT_SECRET is set.
+    if (typeof value === "string" && value && (next == null || next === "")) {
       preserved[key] = value;
     }
   }

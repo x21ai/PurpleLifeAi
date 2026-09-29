@@ -5,6 +5,20 @@ work (especially multi-agent fleets) is decomposed. Append, never delete.
 
 ---
 
+### 2026-09-29 — post-#62 live auth follow-ups were not in git (status: raw)
+
+- After PR #62, live Mac Workers still failed sign-in and profile reads until
+  two unpushed commits: `a1a06a70` preserves omitted string secrets in
+  `setRequestBindings` (`AUTH_JWT_SECRET`), and `16076091` caps new PBKDF2 hashes
+  at 100000, scopes `profiles` by `id`, reads `AUTH_JWT_SECRET` from
+  `getBindings()` in `/api/data/query`, and smokes D1 reads with `limit: 5`
+  because `limit: 1` returns one object from `maybeSingle`.
+- Mac `bun run test:www-cloudflare-data` uses Doppler `x21` / `prd_cloudflare`.
+- The E2E user's live `password_hash` was written from that Doppler config.
+  Never copy the password or hash into git.
+- Compile target: `bun run test:bindings`. Do not treat a green #62 merge as the
+  end of issue 61 until these commits are on `main`.
+
 ### 2026-09-29 — process.env replaces Worker bindings (status: compiled)
 
 - `setRequestBindings(process.env)` after `setRequestBindings(workerEnv)` dropped

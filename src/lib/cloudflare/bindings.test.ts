@@ -100,3 +100,19 @@ test("string-only env does not clobber Worker platform bindings", () => {
   assert.equal(getBindings().DB, nextDb);
   assert.equal(requireD1(), nextDb);
 });
+
+test("preserves AUTH_JWT_SECRET when process.env-like seed omits it", () => {
+  const db = { binding: "db" } as unknown as D1Database;
+  setRequestBindings({
+    DB: db,
+    DATA_BACKEND: "cloudflare",
+    AUTH_JWT_SECRET: "worker-secret",
+  });
+  setRequestBindings({
+    DATA_BACKEND: "cloudflare",
+    PUBLIC_SITE_URL: "https://www.purplelife.org",
+  });
+  assert.equal(getBindings().AUTH_JWT_SECRET, "worker-secret");
+  assert.equal(getBindings().DB, db);
+  assert.equal(getBindings().PUBLIC_SITE_URL, "https://www.purplelife.org");
+});

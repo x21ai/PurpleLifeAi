@@ -16,6 +16,29 @@ Also see `mem/index.md` for deeper architectural notes.
 
 ---
 
+### 2026-09-29 — post-#62 auth follow-ups match the live Worker hotfix [ACTIVE]
+
+- **Decision:** `setRequestBindings` keeps a previous non-empty string when a later
+  env omits it (`null`, `undefined`, or `""`). An explicit non-empty string still
+  replaces it. New PBKDF2 hashes use 100000 iterations. `verifyPassword` still
+  uses the iteration count stored in the hash. `d1From("profiles", userId)` scopes
+  by `id`. Other user-owned tables stay on `user_id`. `POST /api/data/query`
+  reads `AUTH_JWT_SECRET` from `getBindings()` after the merge. `limit: 1` still
+  returns one object via `maybeSingle`; smokes that assert an array use `limit: 5`.
+- **Reason:** After PR #62 these behaviors were hotfixed on the live Mac Workers
+  and could not be pushed (token permissions). Verified commits: `a1a06a70`
+  (string secrets) and `16076091` (PBKDF2 cap, profiles `id` scope, query secret,
+  smoke `limit: 5`). 210000 PBKDF2 iterations threw and sign-in returned JSON 500.
+  Profiles scoped by a missing `user_id` column threw an HTML 500 on profile reads.
+  A later `process.env` pass that omitted `AUTH_JWT_SECRET` dropped the Worker secret.
+- **Implications:** Do not deploy this PR to "catch production up"; production
+  already has the hotfix. Merging updates git so a later deploy does not regress
+  it. Mac smoke command `bun run test:www-cloudflare-data` uses Doppler project
+  `x21` config `prd_cloudflare`. The www E2E user's live D1 `password_hash` was
+  set from that Doppler config. Do not commit the password or the hash. Hashes
+  stored at 210000 iterations cannot be checked on Workers until rewritten at
+  100000. Related: GitHub issue 61.
+
 ### 2026-09-29 — setRequestBindings keeps non-string Worker bindings [ACTIVE]
 
 - **Decision:** `setRequestBindings` merges. A later string-only env (`process.env`)

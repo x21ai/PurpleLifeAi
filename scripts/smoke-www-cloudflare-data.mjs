@@ -37,7 +37,7 @@ const profileResponse = await request("/api/data/query", {
     select: "id",
     filters: [{ op: "eq", col: "id", val: signIn.user.id }],
     order: [],
-    limit: 1,
+    limit: 5,
   }),
 });
 const profile = await profileResponse.json().catch(() => ({}));

@@ -25,7 +25,8 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     userId?: string,
   ) {
     if (userId) {
-      this.userScopeCol = "user_id";
+      // profiles PK is the auth user id; most other user tables use user_id.
+      this.userScopeCol = table === "profiles" ? "id" : "user_id";
       this.userScopeVal = userId;
     }
   }

@@ -2,7 +2,7 @@
  * Password hashing with PBKDF2 (Web Crypto). No bcrypt native deps in Workers.
  */
 
-const ITERATIONS = 210_000;
+const ITERATIONS = 100_000; // CF Workers Web Crypto max
 const SALT_BYTES = 16;
 
 function b64(bytes: Uint8Array): string {
