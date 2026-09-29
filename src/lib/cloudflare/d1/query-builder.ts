@@ -437,7 +437,9 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     const saved: T[] = [];
     for (const row of rows) {
       const full: Record<string, unknown> = { ...row };
-      if (this.userScopeVal && !full.user_id) full.user_id = this.userScopeVal;
+      if (this.userScopeCol && this.userScopeVal && full[this.userScopeCol] == null) {
+        full[this.userScopeCol] = this.userScopeVal;
+      }
       const cols = Object.keys(full).filter((c) => sqlIdent(c));
       if (cols.length === 0) return { data: null, error: new Error("upsert row has no columns") };
       const vals = cols.map((c) => this.serializeValue(full[c]));
