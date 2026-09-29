@@ -40,6 +40,11 @@ export function getBindings(): Partial<PurpleWorkerBindings> {
   return cachedBindings ?? getWorkerBindings(undefined);
 }
 
+/** Test helper: clear the module cache between unit cases. */
+export function resetRequestBindingsForTests(): void {
+  cachedBindings = undefined;
+}
+
 export function requireD1(): D1Database {
   const db = getBindings().DB;
   if (!db) {

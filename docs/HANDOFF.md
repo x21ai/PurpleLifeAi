@@ -9,7 +9,8 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
-**2026-09-29 sign-in D1 binding clobber (no deploy):** `setRequestBindings` now keeps
+**2026-09-29 sign-in D1 binding clobber (no deploy):** Mac patch `4670a48f` matches
+this branch. `setRequestBindings` keeps
 non-string Worker bindings (`DB`, `STORAGE`, `CACHE`, `ASSETS`, `PROD`, and others) when a
 handler passes `process.env`. `POST /api/auth/sign-in` returns JSON 500
 `Sign-in failed` instead of the HTML crash page if it still throws. Live www and
@@ -143,6 +144,21 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-29T15:28:00Z — align sign-in fix with Mac patch 4670a48f
+
+- **Requested:** Apply the verified Mac patch from `fix/auth-signin-d1-bindings-clobber`
+  @ `4670a48f` if the PR was not already open. Do not deploy.
+- **Done:** PR #62 was already open with the same merge and JSON 500. Added the
+  Mac smoke script change (`package.json` `test:www-cloudflare-data` uses Doppler
+  `x21` / `prd_cloudflare`), `resetRequestBindingsForTests`, and the two Mac
+  cases (D1 preserved, `requireD1` throws when DB was never seeded). Tests stay
+  on `bun test` because vitest is not a dependency. No Worker deploy.
+- **Issues:** Live www and staging still 500 until both Workers are deployed.
+- **Stand / next:** PR #62. Operator deploys both wrangler configs, then smoke.
+- **Who / where:** Cursor cloud agent, `cursor/auth-signin-d1-bindings-6c69`.
+- **Evidence:** `bun test src/lib/cloudflare/bindings.test.ts` 3/3. `tsc --noEmit` PASS.
+- **Timestamp:** 2026-09-29T15:28:00Z
 
 ### 2026-09-29T15:25:00Z — sign-in keeps D1 when handlers set process.env
 

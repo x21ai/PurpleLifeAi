@@ -1,6 +1,39 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
-import { getBindings, requireD1, requireKv, requireR2, setRequestBindings } from "./bindings.ts";
+import { beforeEach, test } from "node:test";
+import {
+  getBindings,
+  requireD1,
+  requireKv,
+  requireR2,
+  resetRequestBindingsForTests,
+  setRequestBindings,
+} from "./bindings.ts";
+
+beforeEach(() => {
+  resetRequestBindingsForTests();
+});
+
+test("preserves D1 when a later process.env-like seed has no DB", () => {
+  const fakeDb = { prepare: () => ({}) } as unknown as D1Database;
+  setRequestBindings({
+    DB: fakeDb,
+    DATA_BACKEND: "cloudflare",
+    AUTH_JWT_SECRET: "from-worker",
+  });
+  setRequestBindings({
+    DATA_BACKEND: "cloudflare",
+    AUTH_JWT_SECRET: "from-process-env",
+  });
+
+  assert.equal(getBindings().DB, fakeDb);
+  assert.equal(getBindings().AUTH_JWT_SECRET, "from-process-env");
+  assert.equal(requireD1(), fakeDb);
+});
+
+test("still errors when DB was never seeded", () => {
+  setRequestBindings({ DATA_BACKEND: "cloudflare" });
+  assert.throws(() => requireD1(), /D1 binding DB is not configured/);
+});
 
 test("string-only env does not clobber Worker platform bindings", () => {
   const db = { binding: "db" } as unknown as D1Database;

@@ -5,7 +5,8 @@ Operational state of the PurpleLife project for the next agent or engineer. Last
 `setRequestBindings(process.env)`, which only has strings on Workers, so `requireD1()`
 threw and `POST /api/auth/sign-in` became the HTML crash page on www and staging.
 `setRequestBindings` now keeps existing non-string bindings. Handler throws return
-JSON `{ "error": "Sign-in failed" }` status 500. Check: `bun run test:bindings`.
+JSON `{ "error": "Sign-in failed" }` status 500. Check: `bun run test:bindings`. `bun run test:www-cloudflare-data` uses Doppler
+`x21` / `prd_cloudflare` (Mac patch `4670a48f`).
 Live fix needs an operator deploy of BOTH `wrangler.deploy.ploy.jsonc` and
 `wrangler.staging.jsonc`. Mac Doppler for that smoke: project `x21`, config
 `prd_cloudflare`. GitHub issue 61.
