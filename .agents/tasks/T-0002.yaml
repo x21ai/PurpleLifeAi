@@ -13,10 +13,13 @@ acceptance:
   - "0003_today_vitals.sql is CREATE TABLE IF NOT EXISTS only."
   - "Local L0 gates for this diff pass: em-dash, live-data, supabase-types, unique-images, lovable-auth, tsc, build, entry-budget."
   - "No Worker deploy and no remote D1 execute."
-state: verifying
+state: queued
 claimant: cursor-cloud
-lease_expires: "2026-09-29T16:00:00Z"
+lease_expires: "2026-09-29T16:40:00Z"
 evidence:
-  - "origin/main e6895bbf still had unbounded listReports .in(), no D1 upsert/or/IN batch, Today Promise.all"
-  - "local gates PASS 2026-09-29 (tsc, build, entry-budget, check:em-dash, check:live-data, check:supabase-types, check:unique-images, check:lovable-auth)"
-  - "parser smoke 119 ids chunk 48,48,23 PASS"
+  - "origin/main ff720d97 includes #62 and #63; D1 Today/reports gaps were still absent"
+  - "rebased cursor/oura-today-d1-fix-7c1f onto ff720d97; PR #42 kept open, not merged"
+  - "auth files match origin/main: bindings.ts, passwords.ts, sign-in.ts, smoke-www-cloudflare-data.mjs"
+  - "profiles upsert writes id; health_narratives upsert writes user_id"
+  - "local gates PASS 2026-09-29T16:04:10Z: em-dash, test:bindings 8/8, tsc, supabase-types, live-data, unique-images, lovable-auth, build, entry-budget"
+  - "no Worker deploy and no remote D1 execute"

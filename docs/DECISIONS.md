@@ -70,9 +70,10 @@ Also see `mem/index.md` for deeper architectural notes.
   the query builder had no `.or()` or `.upsert()`, so Today and narrative cache
   writes failed. Main through #60 did not include those fixes.
 - **Implications:** Do not reintroduce an unbounded `report_metrics.report_id IN (...)`
-  on the Cloudflare path. Do not apply destructive D1 SQL for this fix. Worker deploy
-  stays operator-owned. Rebased onto `main` `ff720d97` without changing the
-  #62/#63 profile `id` scope or binding merge.
+  on the Cloudflare path. D1 upsert fills the constructor scope column: `profiles`
+  writes `id`, other user tables write `user_id`. Do not apply destructive D1 SQL
+  for this fix. Worker deploy stays operator-owned. Rebased onto `main` `ff720d97`
+  without changing the #62/#63 profile select scope or binding merge.
 
 ### 2026-09-14 — Cloudflare cutover uses DATA_BACKEND flag; Workers JWT replaces Supabase Auth on cloudflare path [ACTIVE]
 

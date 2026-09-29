@@ -4,11 +4,14 @@ Operational state of the PurpleLife project for the next agent or engineer. Last
 gaps were still absent from `main` after #62 and #63. Branch `cursor/oura-today-d1-fix-7c1f`
 keeps `listReports` `GROUP BY report_id`, `.in()` batches of 48, `.upsert()` for
 `health_narratives`, `.or()` for Today `admin_messages`, and Today `Promise.allSettled`.
-Profiles stay scoped by `id` (`#63`). `/api/data/query` still reads
+Upsert writes the scope column (`id` on profiles, `user_id` elsewhere). Profiles
+selects stay scoped by `id` (`#63`). `/api/data/query` still reads
 `getBindings().AUTH_JWT_SECRET`. `cloudflare/migrations/0003_today_vitals.sql` only
 `CREATE TABLE IF NOT EXISTS health_narratives`. Prod zone D1 `purplelifeai`
 (`8d0be2b3-84ec-4581-86f4-6b372ec1d5d7`) already had that table on 2026-09-15, so
-deploy is Worker-only after the operator merges. No deploy from this agent.
+deploy is Worker-only after the operator merges. Local gates 2026-09-29T16:04:10Z:
+em-dash, `test:bindings` 8/8, tsc, supabase-types, live-data, unique-images,
+lovable-auth, build, entry-budget PASS. No deploy from this agent. PR #42 stays open.
 
 **Recent (2026-09-29): live follow-ups after PR #62 are PR #63.** Matches Mac
 commits `a1a06a70` and `16076091`. `setRequestBindings` keeps omitted string
