@@ -14,8 +14,8 @@ export const Route = createFileRoute("/api/auth/sign-in")({
     handlers: {
       POST: async ({ request }) => {
         try {
-          // Refresh string secrets this env actually carries. Omitted strings
-          // (including AUTH_JWT_SECRET) and Worker object bindings stay.
+          // Refresh string secrets/vars only; must not drop Worker object bindings
+          // seeded by src/server.ts (see setRequestBindings merge behavior).
           setRequestBindings(process.env);
           if (!isCloudflareBackend(getBindings())) {
             return Response.json(

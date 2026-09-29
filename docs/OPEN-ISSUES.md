@@ -19,12 +19,14 @@ Format:
   Supabase or wipe data. _Raised 2026-09-29._
 
 - [x] ~~**`auth-d1-live-followups`**~~ — RESOLVED 2026-09-29 in git on PR #63
-  (`cursor/auth-d1-live-followups-54fb`, not deployed). (1) `setRequestBindings`
-  keeps omitted string secrets such as `AUTH_JWT_SECRET`. (2) PBKDF2 max 100000
-  iterations (210000 threw, JSON 500 on sign-in). (3) `d1From` profiles scope by
-  `id`, not missing `user_id` (HTML 500 on profile reads). (4)
-  `scripts/smoke-www-cloudflare-data.mjs` uses `limit: 5` so
-  `test:www-cloudflare-data` asserts an array (`limit: 1` returns one object).
+  (`cursor/auth-d1-live-followups-54fb`, not deployed), matching Mac commits
+  `a1a06a70` and `16076091`. (1) `setRequestBindings` keeps omitted string secrets
+  such as `AUTH_JWT_SECRET`. (2) New PBKDF2 hashes use 100000 iterations (210000
+  threw, JSON 500 on sign-in). (3) `d1From` profiles scope by `id`, not missing
+  `user_id` (HTML 500 on profile reads). `POST /api/data/query` reads
+  `getBindings().AUTH_JWT_SECRET`. (4) `scripts/smoke-www-cloudflare-data.mjs`
+  uses `limit: 5` so `test:www-cloudflare-data` asserts an array (`limit: 1`
+  returns one object).
   Live D1 `auth_users.password_hash` for the www E2E user was set from Doppler
   project `x21` config `prd_cloudflare`. That password and hash are not in git
   and were not rotated here. Mac smokes use that same Doppler project/config.

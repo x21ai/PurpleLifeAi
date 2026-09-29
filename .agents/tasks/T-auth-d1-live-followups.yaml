@@ -12,7 +12,8 @@ depends_on: []
 risk: high
 acceptance:
   - "setRequestBindings keeps AUTH_JWT_SECRET when a later env omits it, and still replaces it when a non-empty string is supplied."
-  - "hashPassword uses 100000 iterations. verifyPassword(210000) returns false and does not throw."
+  - "hashPassword uses 100000 iterations. verifyPassword still uses the stored count."
+  - "POST /api/data/query reads AUTH_JWT_SECRET from getBindings after setRequestBindings."
   - "d1From profiles SQL scopes by id and does not reference user_id. Other tables still use user_id."
   - "smoke-www-cloudflare-data.mjs sends limit 5."
   - "No password, password hash, or secret value is committed."
@@ -21,7 +22,8 @@ state: queued
 claimant: cursor-cloud-agent
 lease_expires: 2026-09-29T16:30:00Z
 evidence:
-  - "bun run test:bindings PASS 12/12"
+  - "bun run test:bindings PASS 6/6"
+  - "production diff matches Mac commits a1a06a70 and 16076091"
   - "bunx tsc --noEmit PASS"
   - "node scripts/check-no-em-dash.mjs PASS"
   - "No Worker deploy"

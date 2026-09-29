@@ -10,13 +10,12 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 ## Current snapshot
 
 **2026-09-29 post-#62 auth/D1 follow-ups (no deploy):** PR #62 is on `main`. Live
-Mac Workers already have four follow-ups that were not pushed (token permissions).
-PR #63 (`cursor/auth-d1-live-followups-54fb` @ `a3149c81`) recreates them: omitted
-string secrets such as `AUTH_JWT_SECRET` survive `setRequestBindings(process.env)`;
-PBKDF2 max is 100000; `d1From` profiles scope by `id`; `test:www-cloudflare-data`
-uses `limit: 5`. Doppler for that Mac smoke is `x21` / `prd_cloudflare`. The www
-E2E user's live D1 `password_hash` was set from that config. No password or hash
-is in git. Do not deploy. Related: GitHub issue 61.
+Mac Workers already have two unpushed commits: `a1a06a70` (keep omitted string
+secrets such as `AUTH_JWT_SECRET`) and `16076091` (PBKDF2 100000, profiles scoped
+by `id`, `/api/data/query` reads `getBindings().AUTH_JWT_SECRET`, smoke `limit: 5`).
+PR #63 matches that patch. Doppler for the Mac smoke is `x21` / `prd_cloudflare`.
+The www E2E user's live D1 `password_hash` was set from that config. No password
+or hash is in git. Do not deploy. Related: GitHub issue 61.
 https://github.com/x21ai/PurpleLifeAi/pull/63
 
 **2026-09-29 sign-in D1 binding clobber (no deploy):** Mac patch `4670a48f` matches
@@ -154,6 +153,25 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-29T15:55:00Z — align PR #63 to Mac commits a1a06a70 and 16076091
+
+- **Requested:** Apply the verified Mac patch for the two live-but-unpushed
+  commits and keep one PR against current main. Do not deploy. Do not include
+  secrets or password hashes.
+- **Done:** Production diff vs `main` matches the patch: `bindings.ts` plus its
+  test, PBKDF2 constant 100000, profiles scope column `id`, smoke `limit: 5`,
+  and `/api/data/query` uses `getBindings().AUTH_JWT_SECRET`. Extra verify-guard,
+  `maybeSingle` catch, and profiles insert changes were removed. Same PR #63.
+- **Issues:** Hashes already stored at 210000 still throw on Workers until
+  rewritten at 100000. This agent did not read or write live D1.
+- **Stand / next:** PR #63. Do not deploy.
+  https://github.com/x21ai/PurpleLifeAi/pull/63
+- **Who / where:** Cursor cloud agent, `/workspace`,
+  `cursor/auth-d1-live-followups-54fb`.
+- **Evidence:** `git diff origin/main` on the patched files matches the Mac patch.
+  `bun run test:bindings` 6/6. `bunx tsc --noEmit` PASS. No Worker deploy.
+- **Timestamp:** 2026-09-29T15:55:00Z
 
 ### 2026-09-29T15:48:08Z — recreate post-#62 live auth/D1 follow-ups
 

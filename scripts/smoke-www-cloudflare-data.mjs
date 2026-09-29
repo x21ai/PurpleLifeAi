@@ -37,8 +37,6 @@ const profileResponse = await request("/api/data/query", {
     select: "id",
     filters: [{ op: "eq", col: "id", val: signIn.user.id }],
     order: [],
-    // limit 1 uses maybeSingle and returns one object. A higher limit stays
-    // on the array path this smoke asserts.
     limit: 5,
   }),
 });

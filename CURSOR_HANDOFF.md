@@ -1,9 +1,10 @@
 Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-29 (post-#62 auth/D1 follow-ups in git; **do not** wrangler deploy `purplelife` or `purplelife-staging` from this agent).
 
-**Recent (2026-09-29): live follow-ups after PR #62 are PR #63.** Mac Workers already have
-these; git did not. `setRequestBindings` keeps omitted string secrets
-(`AUTH_JWT_SECRET`). PBKDF2 max is 100000 (210000 threw, JSON 500 on sign-in).
-`d1From` profiles scope by `id` (missing `user_id` was an HTML 500).
+**Recent (2026-09-29): live follow-ups after PR #62 are PR #63.** Matches Mac
+commits `a1a06a70` and `16076091`. `setRequestBindings` keeps omitted string
+secrets (`AUTH_JWT_SECRET`). New PBKDF2 hashes use 100000 iterations (210000
+threw, JSON 500 on sign-in). `d1From` profiles scope by `id` (missing `user_id`
+was an HTML 500). `POST /api/data/query` reads `getBindings().AUTH_JWT_SECRET`.
 `scripts/smoke-www-cloudflare-data.mjs` uses `limit: 5` because `limit: 1`
 returns one object. Mac smoke Doppler is project `x21` config `prd_cloudflare`
 (`bun run test:www-cloudflare-data`). Live D1 `password_hash` for the www E2E
