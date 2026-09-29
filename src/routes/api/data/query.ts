@@ -67,10 +67,26 @@ export const Route = createFileRoute("/api/data/query")({
           if (f.op === "is") q = q.is(col, null);
         }
         for (const group of body.orGroups ?? []) {
-          const parts = group.map((c) => {
-            if (c.op === "is") return `${c.col}.is.null`;
-            return `${c.col}.${c.op}.${String(c.val)}`;
-          });
+          const parts: string[] = [];
+          for (const c of group) {
+            const col = String(c.col ?? "").replace(/[^a-z0-9_]/gi, "");
+            if (!/^[a-z_][a-z0-9_]*$/i.test(col)) continue;
+            if (c.op === "is") {
+              parts.push(`${col}.is.null`);
+              continue;
+            }
+            if (
+              c.op !== "eq" &&
+              c.op !== "gte" &&
+              c.op !== "lte" &&
+              c.op !== "gt" &&
+              c.op !== "lt"
+            ) {
+              continue;
+            }
+            const val = String(c.val ?? "").replace(/[,\s]/g, "");
+            parts.push(`${col}.${c.op}.${val}`);
+          }
           if (parts.length) q = q.or(parts.join(","));
         }
         for (const o of body.order ?? []) {
@@ -88,7 +104,12 @@ export const Route = createFileRoute("/api/data/query")({
           return Response.json({ data, error: error?.message ?? null });
         }
         if (body.mode === "upsert" && body.insert) {
-          q = q.upsert(body.insert, { onConflict: body.onConflict ?? undefined });
+          const onConflict = (body.onConflict ?? "")
+            .split(",")
+            .map((s) => s.trim().replace(/[^a-z0-9_]/gi, ""))
+            .filter((s) => /^[a-z_][a-z0-9_]*$/i.test(s))
+            .join(",");
+          q = q.upsert(body.insert, { onConflict: onConflict || undefined });
           const { data, error } = await q.then();
           return Response.json({ data, error: error?.message ?? null });
         }

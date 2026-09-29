@@ -1,4 +1,14 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-29 (post-#62 auth/D1 follow-ups in git; **do not** wrangler deploy `purplelife` or `purplelife-staging` from this agent).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-29 (PR #42 rebased onto `main` `ff720d97` after #62/#63; **do not** wrangler deploy `purplelife` or `purplelife-staging`, and **do not** run remote D1 SQL from this agent).
+
+**Recent (2026-09-29): PR #42 rebased onto main `ff720d97` (#63).** Today/Vitals/reports D1
+gaps were still absent from `main` after #62 and #63. Branch `cursor/oura-today-d1-fix-7c1f`
+keeps `listReports` `GROUP BY report_id`, `.in()` batches of 48, `.upsert()` for
+`health_narratives`, `.or()` for Today `admin_messages`, and Today `Promise.allSettled`.
+Profiles stay scoped by `id` (`#63`). `/api/data/query` still reads
+`getBindings().AUTH_JWT_SECRET`. `cloudflare/migrations/0003_today_vitals.sql` only
+`CREATE TABLE IF NOT EXISTS health_narratives`. Prod zone D1 `purplelifeai`
+(`8d0be2b3-84ec-4581-86f4-6b372ec1d5d7`) already had that table on 2026-09-15, so
+deploy is Worker-only after the operator merges. No deploy from this agent.
 
 **Recent (2026-09-29): live follow-ups after PR #62 are PR #63.** Matches Mac
 commits `a1a06a70` and `16076091`. `setRequestBindings` keeps omitted string

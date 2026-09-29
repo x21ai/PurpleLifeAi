@@ -1,0 +1,22 @@
+id: T-0002
+title: Rebase PR #42 D1 Today/Vitals/reports fixes onto main
+intent: >-
+  Verify whether draft PR #42 Cloudflare D1 failures still exist on current main.
+  If they do, rebase the fix onto latest main, keep the PR draft until checks pass,
+  and do not merge, deploy, pause Supabase, or wipe data.
+partition: cloudflare-d1-query
+depends_on: []
+risk: high
+acceptance:
+  - "On origin/main, listReports still uses report_id IN, or the PR is closed as obsolete with evidence."
+  - "If still broken, cursor/oura-today-d1-fix-7c1f contains GROUP BY counts, IN batching at 48, upsert, or(), and Today Promise.allSettled."
+  - "0003_today_vitals.sql is CREATE TABLE IF NOT EXISTS only."
+  - "Local L0 gates for this diff pass: em-dash, live-data, supabase-types, unique-images, lovable-auth, tsc, build, entry-budget."
+  - "No Worker deploy and no remote D1 execute."
+state: verifying
+claimant: cursor-cloud
+lease_expires: "2026-09-29T16:00:00Z"
+evidence:
+  - "origin/main e6895bbf still had unbounded listReports .in(), no D1 upsert/or/IN batch, Today Promise.all"
+  - "local gates PASS 2026-09-29 (tsc, build, entry-budget, check:em-dash, check:live-data, check:supabase-types, check:unique-images, check:lovable-auth)"
+  - "parser smoke 119 ids chunk 48,48,23 PASS"

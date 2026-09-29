@@ -67,14 +67,15 @@ Client invoke helper: `src/lib/cloudflare/invoke-edge.ts` (Supabase `functions.i
 cloudflare/migrations/
   0001_auth.sql          auth_users, auth_identities, refresh tokens
   0002_core_schema.sql   67 public tables (generated from import.sh order)
-  0003_today_vitals.sql  health_narratives + admin_messages typed columns
+  0003_today_vitals.sql  health_narratives CREATE IF NOT EXISTS (no ALTER, no DROP)
 ```
 
 **Production D1 (zone account):** database `purplelifeai`, id `8d0be2b3-84ec-4581-86f4-6b372ec1d5d7`.
 
 **Prod schema (2026-09-15):** `health_narratives` and typed `admin_messages` already exist on
-zone D1. No SQL required before deploy if tables match app types. Worker deploy from PR #42
-adds D1 query `.or()`, `.upsert()`, and Today fail-open load.
+zone D1. No SQL required before deploy if tables match app types. PR #42 (rebased onto
+current `main`) adds D1 query `.or()`, `.upsert()`, IN batching, and Today fail-open load.
+Do not pause Supabase and do not wipe D1. `0003` is create-if-missing only.
 
 Optional idempotent migration (creates `health_narratives` only if missing):
 
