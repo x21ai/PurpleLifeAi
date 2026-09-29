@@ -1,0 +1,21 @@
+id: T-staging-live-ploy
+title: Flip staging Ploy from design-preview to live hybrid
+intent: >-
+  Make staging.purplelife.org serve the same live-data Ploy mode as www.
+  No mock/design-review marketing on home. StagingLive auth hits real API.
+  PR with deploy commands and smoke checks. Do not merge or wrangler-deploy.
+partition: staging-ploy
+depends_on: []
+risk: high
+acceptance:
+  - "wrangler.staging.jsonc uses www-entry.ts, run_worker_first, eigital D1/R2/KV, no crons, no PROD proxy."
+  - "Staging Ploy build sets VITE_PUBLIC_SITE_ENV=production and canonical https://staging.purplelife.org."
+  - "Built home contains Private health journal and does not contain design-preview/mock strings."
+  - "verify-staging-ploy-entry dry-run bundles. No Worker deploy."
+state: verifying
+claimant: cursor-cloud-agent
+lease_expires: 2026-09-29T15:30:00Z
+evidence:
+  - "bun run check:staging-ploy-live --built PASS"
+  - "bash scripts/verify-staging-ploy-entry.sh PASS"
+  - "www-routing tests 24/24"

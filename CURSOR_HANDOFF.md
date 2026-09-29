@@ -1,4 +1,12 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-25 (PR #57 www live-production hardening; **do not** wrangler deploy from this agent).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-29 (staging live Ploy hybrid; **do not** wrangler deploy `purplelife` or `purplelife-staging` from this agent).
+
+**Recent (2026-09-29): staging matches www live Ploy.** Worker `purplelife-staging`
+uses `www-entry.ts` / `www-routing.ts`. Build: `bun run build:staging:ploy`
+(`VITE_PUBLIC_SITE_ENV=production`, site `https://staging.purplelife.org`). No cron
+triggers, no `PROD` proxy, same eigital D1/R2/KV as www. Live
+https://staging.purplelife.org still shows design-preview home until the operator
+deploys. Runbook: `docs/DEPLOY-STAGING-PLOY.md`. Doppler for the Worker is
+`cursor-cloudflare` / `prd_cloudlfare`, not `x21` / `prd` (that project is native iOS).
 
 **Recent (2026-09-24 ~10:00 PM ET): Ploy-first www routing.** After cloud-agent credit
 block, Mac follow-up on PR #57: every non-API/OAuth path serves latest Ploy Astro (same

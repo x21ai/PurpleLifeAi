@@ -9,6 +9,15 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-29 staging live Ploy hybrid (no deploy):** `purplelife-staging` now uses
+`ploy-staging/worker/www-entry.ts` (same route split as www PR #57). Ploy build sets
+`VITE_PUBLIC_SITE_ENV=production` with Astro site `https://staging.purplelife.org`, so
+home is live copy, not design-preview. Same production D1/R2/eigital KV. No cron
+triggers and no `PROD` proxy. Operator deploys from a Mac
+(`docs/DEPLOY-STAGING-PLOY.md`). Live https://staging.purplelife.org still serves the
+old preview HTML until that deploy. `AUTH_JWT_SECRET` on `purplelife-staging` must
+match Worker `purplelife`.
+
 **2026-09-24 ~10:00 PM ET Ploy-first www routing (PR #57 follow-up):** Cloud agent
 usage exhausted mid-turn. Operator finished on Mac: `www-routing.ts` now defaults all UI
 to latest Ploy Astro; TanStack only for `/api/*` and `/oauth/*`. No TanStack fallback for
@@ -126,6 +135,33 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-29T14:57:07Z — staging Ploy live mode, same hybrid routing as www
+
+- **Requested:** Make staging.purplelife.org serve the same live-data Ploy mode as www.
+  Home must not show design-preview/mock marketing. StagingLive auth must hit real API.
+  Open a PR with deploy commands and smoke checks. Do not merge or wrangler-deploy.
+- **Done:** `wrangler.staging.jsonc` main is `www-entry.ts` with `run_worker_first`,
+  eigital D1/R2/KV, `SELF` → `purplelife-staging`, no crons, no `PROD` proxy, no
+  preview user. `scripts/build-ploy-staging.sh` bakes live copy
+  (`VITE_STAGING_LIVE_DATA=1`, `VITE_PUBLIC_SITE_ENV=production`) and staging canonicals.
+  Checker `scripts/check-staging-ploy-live.mjs`. Runbook `docs/DEPLOY-STAGING-PLOY.md`.
+- **Issues:** Live staging still serves the previous design-preview HTML until the
+  operator deploys. This VM did not deploy and has no Doppler credentials, so the
+  authenticated `test:www-cloudflare-data` smoke against staging is an operator step.
+  Empty `POST /api/auth/sign-in` on the current live host already returns
+  `email and password required` (proxied TanStack). After deploy that handler is
+  in-process and still must return that body.
+- **Stand / next:** Operator merges, copies `AUTH_JWT_SECRET` if missing on
+  `purplelife-staging`, runs `bun run build:staging:ploy`, then
+  `wrangler deploy -c wrangler.staging.jsonc` with Doppler
+  `cursor-cloudflare` / `prd_cloudlfare`. Smoke in `docs/DEPLOY-STAGING-PLOY.md`.
+- **Who / where:** Cursor cloud agent, branch `cursor/staging-live-ploy-hybrid-86b2`.
+- **Evidence:** `check-staging-ploy-live` PASS including `--built` home canonical
+  `https://staging.purplelife.org/` and "Private health journal" with no preview
+  strings. `verify-staging-ploy-entry` wrangler dry-run PASS. Route tests 24/24.
+  No Worker deploy.
+- **Timestamp:** 2026-09-29T14:57:07Z
 
 ### 2026-09-25T01:33:01Z — www Ploy live production mode and routing hardening
 

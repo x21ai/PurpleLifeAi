@@ -22,3 +22,4 @@ Metric labels always show the canonical human name from `src/lib/metric-naming.t
 - [TestFlight beta feedback](observability/testflight-beta-feedback.md) - Share Beta Feedback iOS/TestFlight requirements, external tester alternatives, ASC + Luciq triage.
 - [Doppler Purple Life secrets](doppler-purple-life.md) - x21/prd `PURPLE_LIFE_*` keys for ASC, team, Luciq (2026-07-14 migration from `purple-life`).
 - [Cloudflare cutover](cloudflare-cutover.md) - D1/R2/KV bindings, DATA_BACKEND flag, Workers JWT auth; runbook `docs/CLOUDFLARE-MIGRATION.md`.
+- [Staging Ploy hybrid](staging-ploy-hybrid.md) - staging.purplelife.org uses `www-entry.ts`, live Ploy copy, shared production D1/R2/KV, no crons.

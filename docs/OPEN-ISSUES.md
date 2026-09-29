@@ -10,19 +10,28 @@ Format:
 
 ---
 
+## Staging live Ploy (raised 2026-09-29)
+
+- [ ] **`staging-ploy-operator-deploy`** — Repo routes `purplelife-staging` through
+  `www-entry.ts` with live Ploy copy and no cron triggers. Operator deploys from a Mac:
+  `bun run build:staging:ploy`, then `wrangler deploy -c wrangler.staging.jsonc` with
+  Doppler `cursor-cloudflare` / `prd_cloudlfare`. Copy `AUTH_JWT_SECRET` onto
+  `purplelife-staging` if `wrangler secret list` does not already show it (same value
+  as Worker `purplelife`, never print it). Then run the smoke in
+  `docs/DEPLOY-STAGING-PLOY.md`. Home must not contain design-preview copy.
+  `POST /api/auth/sign-in` with `{}` must return `email and password required`.
+  Cloud agents must not deploy. _Raised 2026-09-29._
+
 ## www Ploy flip (raised 2026-09-24)
 
 - [x] ~~**`www-ploy-build-site-undefined`**~~ — RESOLVED 2026-09-24: `scripts/build-ploy-www.sh`
   now prefixes `SITE="$SITE"` on the node rewrite so Astro `site` is not `"undefined"`.
 - [x] ~~**`www-ploy-cache-kv-pos-id`**~~ — RESOLVED 2026-09-25: `wrangler.deploy.ploy.jsonc`
   CACHE id is eigital `9226585702aa4be694ac74981d9859c4` (POS `73356a0e…` → CF 10041).
-- [ ] **`www-ploy-operator-deploy`** — Owner GO received 2026-09-24. PR #47 established
-  the hybrid entry; merge live-production hardening PR #57, then
-  operator deploys Worker `purplelife` with `bun run build:www-ploy` + `wrangler deploy -c wrangler.deploy.ploy.jsonc`
-  (Doppler `cursor-cloudflare` / `prd_cloudlfare`). Agents must not deploy. Runbook:
-  `docs/DEPLOY-WWW-PLOY.md`. After deploy, run `bun run test:www-cloudflare-data`
-  with runtime credentials and the documented hybrid browser smoke; those cannot prove
-  the undeployed revision from this VM. _Raised 2026-09-24 by www-hybrid-entry rebase._
+- [x] ~~**`www-ploy-operator-deploy`**~~ — RESOLVED 2026-09-29: live
+  https://www.purplelife.org serves Ploy hybrid after PR #57 (`137f3149`). Home copy is
+  "Private health journal". `POST /api/auth/sign-in` with `{}` returns
+  `email and password required`. Design-preview session is 404.
 
 ## Step 8 Flutter Android Play (raised 2026-09-20)
 

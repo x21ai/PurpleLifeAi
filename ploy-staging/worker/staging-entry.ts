@@ -1,3 +1,6 @@
+// Rollback-only entry. staging.purplelife.org deploys ploy-staging/worker/www-entry.ts
+// via wrangler.staging.jsonc (same hybrid split as www). Do not point the Worker
+// back at this file unless the PROD service binding is restored with it.
 import type { StagingEnv } from "./env";
 import { handleDesignPreviewSession } from "./design-preview-session";
 
