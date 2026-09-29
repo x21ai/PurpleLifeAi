@@ -15,6 +15,7 @@ handler passes `process.env`. `POST /api/auth/sign-in` returns JSON 500
 `Sign-in failed` instead of the HTML crash page if it still throws. Live www and
 staging still 500 until the operator deploys `wrangler.deploy.ploy.jsonc` and
 `wrangler.staging.jsonc`. Do not deploy from a cloud agent. GitHub issue 61.
+PR #62 (`cursor/auth-signin-d1-bindings-6c69`).
 
 **2026-09-29 staging live Ploy hybrid (no deploy):** `purplelife-staging` now uses
 `ploy-staging/worker/www-entry.ts` (same route split as www PR #57). Ploy build sets
@@ -156,7 +157,7 @@ clean + 254/254; web QA video ready. See Log for details.
   is in CI. Smoke notes in `docs/DEPLOY-WWW-PLOY.md` and `docs/DEPLOY-STAGING-PLOY.md`.
 - **Issues:** Live hosts stay broken until the operator deploys both Workers.
   This agent did not deploy and did not touch Supabase data.
-- **Stand / next:** Merge the PR. Operator deploys `purplelife`
+- **Stand / next:** PR #62 is open. Operator deploys `purplelife`
   (`wrangler.deploy.ploy.jsonc`) and `purplelife-staging` (`wrangler.staging.jsonc`),
   then confirms a real sign-in is not 500 and `{}` is still 400.
 - **Who / where:** Cursor cloud agent, `/workspace`,

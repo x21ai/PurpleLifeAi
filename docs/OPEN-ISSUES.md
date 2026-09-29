@@ -22,7 +22,7 @@ Format:
   Mac (cloud agents must not deploy): `wrangler.deploy.ploy.jsonc` (`purplelife`) and
   `wrangler.staging.jsonc` (`purplelife-staging`). Then a real sign-in must be HTTP
   200 with `access_token`, not 500. GitHub issue 61. Do not pause Supabase or wipe
-  data. _Raised 2026-09-29._
+  data. Code is on PR #62. _Raised 2026-09-29._
 
 ## Staging live Ploy (raised 2026-09-29)
 
