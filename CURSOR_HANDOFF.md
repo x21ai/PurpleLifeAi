@@ -1,12 +1,24 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-29 (staging live Ploy hybrid; **do not** wrangler deploy `purplelife` or `purplelife-staging` from this agent).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-29 (sign-in D1 binding merge; **do not** wrangler deploy `purplelife` or `purplelife-staging` from this agent).
+
+**Recent (2026-09-29): sign-in 500 was a binding clobber, not a missing secret.**
+`server.ts` seeds Worker `env` (including `DB`). API handlers then call
+`setRequestBindings(process.env)`, which only has strings on Workers, so `requireD1()`
+threw and `POST /api/auth/sign-in` became the HTML crash page on www and staging.
+`setRequestBindings` now keeps existing non-string bindings. Handler throws return
+JSON `{ "error": "Sign-in failed" }` status 500. Check: `bun run test:bindings`.
+Live fix needs an operator deploy of BOTH `wrangler.deploy.ploy.jsonc` and
+`wrangler.staging.jsonc`. Mac Doppler for that smoke: project `x21`, config
+`prd_cloudflare`. GitHub issue 61.
 
 **Recent (2026-09-29): staging matches www live Ploy.** Worker `purplelife-staging`
 uses `www-entry.ts` / `www-routing.ts`. Build: `bun run build:staging:ploy`
 (`VITE_PUBLIC_SITE_ENV=production`, site `https://staging.purplelife.org`). No cron
 triggers, no `PROD` proxy, same eigital D1/R2/KV as www. Live
 https://staging.purplelife.org still shows design-preview home until the operator
-deploys. Runbook: `docs/DEPLOY-STAGING-PLOY.md`. Doppler for the Worker is
-`cursor-cloudflare` / `prd_cloudlfare`, not `x21` / `prd` (that project is native iOS).
+deploys. Runbook: `docs/DEPLOY-STAGING-PLOY.md`. On a Mac, Worker smoke and
+deploy prefer Doppler project `x21` config `prd_cloudflare`. Config `prd` on that
+project stays native iOS. Older commands still name `cursor-cloudflare` /
+`prd_cloudlfare`.
 
 **Recent (2026-09-24 ~10:00 PM ET): Ploy-first www routing.** After cloud-agent credit
 block, Mac follow-up on PR #57: every non-API/OAuth path serves latest Ploy Astro (same

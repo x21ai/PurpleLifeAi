@@ -16,6 +16,24 @@ Also see `mem/index.md` for deeper architectural notes.
 
 ---
 
+### 2026-09-29 — setRequestBindings keeps non-string Worker bindings [ACTIVE]
+
+- **Decision:** `setRequestBindings` merges. A later string-only env (`process.env`)
+  must not drop an existing non-string binding (`DB`, `STORAGE`, `CACHE`, `ASSETS`,
+  `SELF`, `PROD`, and any later platform binding). A later env that supplies a real
+  non-string value for that key replaces it. Sign-in handler failures return JSON
+  `{ "error": "Sign-in failed" }` with status 500. Empty or malformed sign-in bodies
+  stay HTTP 400.
+- **Reason:** `src/server.ts` seeds the Worker env, then `POST /api/auth/sign-in`
+  called `setRequestBindings(process.env)`. On Workers, `process.env` has only
+  strings, so the replace removed `DB` and `requireD1()` threw. The Worker turned
+  that into the HTML crash page. GitHub issue 61. `AUTH_JWT_SECRET` was present.
+- **Implications:** Do not assign the binding cache from `getWorkerBindings(env)`
+  alone. `bun run test:bindings` is the regression check. Operator deploys both
+  `wrangler.deploy.ploy.jsonc` (`purplelife`) and `wrangler.staging.jsonc`
+  (`purplelife-staging`) before live sign-in can succeed. Do not deploy from a
+  cloud agent. Do not pause Supabase or wipe data.
+
 ### 2026-09-14 — Cloudflare cutover uses DATA_BACKEND flag; Workers JWT replaces Supabase Auth on cloudflare path [ACTIVE]
 
 - **Decision:** Persistence backend is selected by `DATA_BACKEND` (`supabase` default,

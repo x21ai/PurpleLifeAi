@@ -1,0 +1,23 @@
+id: T-auth-signin-d1
+title: Preserve Worker D1 bindings across process.env sign-in
+intent: >-
+  POST /api/auth/sign-in returns HTTP 500 HTML because setRequestBindings(process.env)
+  drops the D1 binding. Merge-preserve non-string bindings, return JSON 500 on
+  handler throws, add a unit test, open a PR. Do not deploy. GitHub issue 61.
+partition: cloudflare-auth
+depends_on: []
+risk: high
+acceptance:
+  - "setRequestBindings(string-only env) after a full Worker env keeps DB, STORAGE, CACHE, ASSETS, and PROD."
+  - "POST /api/auth/sign-in throws return JSON 500 {error: Sign-in failed}, not the HTML crash page."
+  - "Empty or malformed sign-in bodies stay HTTP 400."
+  - "bun test src/lib/cloudflare/bindings.test.ts passes."
+  - "No Worker deploy and no Supabase data change."
+state: queued
+claimant: cursor-cloud-agent
+lease_expires: 2026-09-29T16:30:00Z
+evidence:
+  - "bun test src/lib/cloudflare/bindings.test.ts PASS 1/1"
+  - "bunx tsc --noEmit PASS"
+  - "node scripts/check-no-em-dash.mjs PASS"
+  - "No Worker deploy"

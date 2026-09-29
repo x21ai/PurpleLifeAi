@@ -5,6 +5,15 @@ work (especially multi-agent fleets) is decomposed. Append, never delete.
 
 ---
 
+### 2026-09-29 — process.env replaces Worker bindings (status: compiled)
+
+- `setRequestBindings(process.env)` after `setRequestBindings(workerEnv)` dropped
+  D1/R2/KV/ASSETS because Workers copy only strings onto `process.env`.
+  `POST /api/auth/sign-in` then threw `D1 binding DB is not configured` and the
+  HTML crash page hid it. Compile target: `src/lib/cloudflare/bindings.test.ts`
+  via `bun run test:bindings` in CI (`.github/workflows/ci.yml`). Do not "simplify"
+  the cache back to a full replace.
+
 ### 2026-09-25 — GNU find rejects prune combined with delete (status: raw)
 
 - The mandatory workspace cleanup failed because GNU `find -delete` implies depth-first
