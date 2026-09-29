@@ -18,8 +18,8 @@ Format:
   GitHub. Those follow-ups are the next item. GitHub issue 61. Do not pause
   Supabase or wipe data. _Raised 2026-09-29._
 
-- [x] ~~**`auth-d1-live-followups`**~~ — RESOLVED 2026-09-29 in git on
-  `cursor/auth-d1-live-followups-54fb` (not deployed). (1) `setRequestBindings`
+- [x] ~~**`auth-d1-live-followups`**~~ — RESOLVED 2026-09-29 in git on PR #63
+  (`cursor/auth-d1-live-followups-54fb`, not deployed). (1) `setRequestBindings`
   keeps omitted string secrets such as `AUTH_JWT_SECRET`. (2) PBKDF2 max 100000
   iterations (210000 threw, JSON 500 on sign-in). (3) `d1From` profiles scope by
   `id`, not missing `user_id` (HTML 500 on profile reads). (4)

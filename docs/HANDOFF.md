@@ -11,11 +11,13 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 **2026-09-29 post-#62 auth/D1 follow-ups (no deploy):** PR #62 is on `main`. Live
 Mac Workers already have four follow-ups that were not pushed (token permissions).
-This branch recreates them: omitted string secrets such as `AUTH_JWT_SECRET` survive
-`setRequestBindings(process.env)`; PBKDF2 max is 100000; `d1From` profiles scope by
-`id`; `test:www-cloudflare-data` uses `limit: 5`. Doppler for that Mac smoke is
-`x21` / `prd_cloudflare`. The www E2E user's live D1 `password_hash` was set from
-that config. No password or hash is in git. Do not deploy. Related: GitHub issue 61.
+PR #63 (`cursor/auth-d1-live-followups-54fb` @ `a3149c81`) recreates them: omitted
+string secrets such as `AUTH_JWT_SECRET` survive `setRequestBindings(process.env)`;
+PBKDF2 max is 100000; `d1From` profiles scope by `id`; `test:www-cloudflare-data`
+uses `limit: 5`. Doppler for that Mac smoke is `x21` / `prd_cloudflare`. The www
+E2E user's live D1 `password_hash` was set from that config. No password or hash
+is in git. Do not deploy. Related: GitHub issue 61.
+https://github.com/x21ai/PurpleLifeAi/pull/63
 
 **2026-09-29 sign-in D1 binding clobber (no deploy):** Mac patch `4670a48f` matches
 this branch. `setRequestBindings` keeps
@@ -167,8 +169,8 @@ clean + 254/254; web QA video ready. See Log for details.
   `prd_cloudflare`. No Worker deploy.
 - **Issues:** Hashes already stored at 210000 cannot be verified on Workers until
   rewritten at 100000. This agent did not read or write live D1.
-- **Stand / next:** PR open. Do not deploy. Merge so a later deploy cannot regress
-  the live hotfix.
+- **Stand / next:** PR #63 is open. Do not deploy. Merge so a later deploy cannot
+  regress the live hotfix. https://github.com/x21ai/PurpleLifeAi/pull/63
 - **Who / where:** Cursor cloud agent, `/workspace`,
   `cursor/auth-d1-live-followups-54fb`.
 - **Evidence:** `bun run test:bindings` 12/12. `bunx tsc --noEmit` PASS. `node scripts/check-no-em-dash.mjs` PASS. No Worker deploy.
