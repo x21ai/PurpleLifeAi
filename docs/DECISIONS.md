@@ -57,6 +57,24 @@ Also see `mem/index.md` for deeper architectural notes.
   (`purplelife-staging`) before live sign-in can succeed. Do not deploy from a
   cloud agent. Do not pause Supabase or wipe data.
 
+### 2026-09-29 — D1 list and Today queries stay under the SQLite bind cap [ACTIVE]
+
+- **Decision:** On `DATA_BACKEND=cloudflare`, `listReports` metric counts use one
+  `GROUP BY report_id` query scoped by `user_id`. Any other `D1QueryBuilder` `.in()`
+  longer than 48 values is split and merged. `getHealthNarrative` writes through
+  `.upsert({ onConflict: "user_id,day" })`. Today `load()` uses `Promise.allSettled`
+  so one failed query does not blank the page. `admin_messages` is not filtered with
+  `user_id = ?`; a read must include `recipient_id` or `is_broadcast`, otherwise it
+  returns no rows. `0003_today_vitals.sql` is `CREATE TABLE IF NOT EXISTS` only.
+- **Reason:** Live D1 rejected ~119-id `IN` lists (`too many SQL variables`), and
+  the query builder had no `.or()` or `.upsert()`, so Today and narrative cache
+  writes failed. Main through #60 did not include those fixes.
+- **Implications:** Do not reintroduce an unbounded `report_metrics.report_id IN (...)`
+  on the Cloudflare path. D1 upsert fills the constructor scope column: `profiles`
+  writes `id`, other user tables write `user_id`. Do not apply destructive D1 SQL
+  for this fix. Worker deploy stays operator-owned. Rebased onto `main` `ff720d97`
+  without changing the #62/#63 profile select scope or binding merge.
+
 ### 2026-09-14 — Cloudflare cutover uses DATA_BACKEND flag; Workers JWT replaces Supabase Auth on cloudflare path [ACTIVE]
 
 - **Decision:** Persistence backend is selected by `DATA_BACKEND` (`supabase` default,

@@ -68,6 +68,8 @@
 {"ts":"2026-09-25T01:50:00Z","agent":"auto-cloud-agent","action":"heartbeat","task":"T-0001","detail":"independent review NO-GO on operator jargon and shallow hydration scan; product copy, recursive import scan, and hashed-asset routing patched"}
 {"ts":"2026-09-25T01:59:00Z","agent":"auto-cloud-agent","action":"heartbeat","task":"T-0001","detail":"queued on PR #57: final build/checks/browser green and independent re-review GO; operator deploy plus authenticated post-deploy smoke pending"}
 {"ts":"2026-09-29T14:57:07Z","agent":"cursor-cloud-agent","action":"heartbeat","task":"T-staging-live-ploy","detail":"staging hybrid config and live-copy build verified; wrangler dry-run PASS; no Worker deploy"}
+{"ts":"2026-09-29T15:20:00Z","agent":"cursor-cloud","action":"heartbeat","task":"T-0002","detail":"PR 42 rebased onto e6895bbf; local gates PASS; no deploy"}
 {"ts":"2026-09-29T15:25:00Z","agent":"cursor-cloud-agent","action":"land","task":"T-auth-signin-d1","detail":"bindings merge preserves DB across process.env; sign-in JSON 500; test 1/1; tsc pass; no deploy"}
 {"ts":"2026-09-29T15:48:08Z","agent":"cursor-cloud-agent","action":"claim","task":"T-auth-d1-live-followups","detail":"recreate post-62 live auth/D1 follow-ups; no deploy"}
 {"ts":"2026-09-29T15:55:00Z","agent":"cursor-cloud-agent","action":"land","task":"T-auth-d1-live-followups","detail":"bindings string secrets, pbkdf2 100000, profiles id scope, smoke limit 5; tsc pass; no deploy"}
+{"ts":"2026-09-29T16:04:10Z","agent":"cursor-cloud","action":"heartbeat","task":"T-0002","detail":"PR 42 rebased onto ff720d97; profiles upsert uses id; bindings 8/8 tsc build entry-budget PASS; no deploy"}

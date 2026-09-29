@@ -9,6 +9,19 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-29 D1 Today/Vitals/reports fix rebased onto main after #63 (PR #42, open, no deploy):**
+`main` is `ff720d97` (#63 on top of #62). Branch `cursor/oura-today-d1-fix-7c1f`
+is rebased onto that commit and remains PR #42 (not merged). Preserved:
+`listReports` `GROUP BY report_id`, `.in()` batches of 48, `.or()`, `.upsert()`
+for `health_narratives`, and Today `Promise.allSettled`. Upsert fills the scope
+column: profiles write `id`, other user tables write `user_id`. Also preserved
+#62/#63: omitted string secrets stay, PBKDF2 100000, `d1From("profiles")` selects
+scope by `id`, and `/api/data/query` reads `getBindings().AUTH_JWT_SECRET`.
+`0003_today_vitals.sql` is create-if-missing only. Local CI gates passed
+(em-dash, bindings 8/8, tsc, supabase-types, live-data, unique-images,
+lovable-auth, build, entry-budget). No remote D1 execute, no Supabase pause,
+no Worker deploy.
+
 **2026-09-29 post-#62 auth/D1 follow-ups (no deploy):** PR #62 is on `main`. Live
 Mac Workers already have two unpushed commits: `a1a06a70` (keep omitted string
 secrets such as `AUTH_JWT_SECRET`) and `16076091` (PBKDF2 100000, profiles scoped
@@ -154,6 +167,34 @@ clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
 
+### 2026-09-29T16:04:10Z — Rebase PR #42 onto main after #62 and #63
+
+- **Requested:** Rebase open PR #42 (`cursor/oura-today-d1-fix-7c1f`) onto current
+  `main` after #62 and #63. Do not merge. Keep the D1 Today/Vitals/reports fixes.
+  Do not regress auth bindings, PBKDF2 100000, profiles scoped by `id`, or smoke
+  `limit: 5`. No wrangler deploy, no remote D1 migrations, no Supabase pause, no data wipe.
+- **Done:** Rebased onto `ff720d97`. Conflicts were docs and `.agents/events.jsonl`
+  only (`docs/HANDOFF.md`, `docs/DECISIONS.md`, `CURSOR_HANDOFF.md`). Both histories
+  kept. `query-builder.ts` and `/api/data/query` auto-merged with profiles `id`
+  scope and `getBindings().AUTH_JWT_SECRET`. Follow-up: D1 upsert writes the scope
+  column (`id` for profiles, `user_id` otherwise) so a profile upsert does not add
+  `user_id`. Same PR #42, marked ready for review.
+- **Issues:** Operator Worker deploy is still required after merge before live
+  Today/reports pick up the D1 query fixes. This VM did not deploy and did not
+  run remote D1 SQL.
+- **Stand / next:** PR #42 is open against `main`. Do not merge from this agent.
+  Do not deploy.
+- **Who / where:** Cursor cloud agent, `/workspace`,
+  `cursor/oura-today-d1-fix-7c1f` rebased onto `ff720d97166b54c9983b20ae42eeab8b3d477c89`.
+- **Evidence:** `bun run check:em-dash` PASS. `bun run test:bindings` 8/8 PASS
+  (includes profiles select by `id`, profiles upsert without `user_id`,
+  `health_narratives` upsert on `user_id`). `bunx tsc --noEmit` PASS.
+  `check:supabase-types`, `check:live-data`, `check:unique-images`,
+  `check:lovable-auth`, `bun run build`, `check:entry-budget` PASS.
+  Auth files match `origin/main` (empty diff): `bindings.ts`, `passwords.ts`,
+  `sign-in.ts`, `smoke-www-cloudflare-data.mjs`. No Worker deploy.
+- **Timestamp:** 2026-09-29T16:04:10Z
+
 ### 2026-09-29T15:55:00Z — align PR #63 to Mac commits a1a06a70 and 16076091
 
 - **Requested:** Apply the verified Mac patch for the two live-but-unpushed
@@ -229,6 +270,28 @@ clean + 254/254; web QA video ready. See Log for details.
   `cursor/auth-signin-d1-bindings-6c69`.
 - **Evidence:** `bun test src/lib/cloudflare/bindings.test.ts` PASS (1/1). `node scripts/check-no-em-dash.mjs` PASS.
 - **Timestamp:** 2026-09-29T15:25:00Z
+
+### 2026-09-29T15:20:00Z — Rebase PR #42 D1 Today/Vitals/reports fixes onto main
+
+- **Requested:** Check whether draft PR #42 D1 fixes are still needed after main
+  moved through #57, #59, and #60. If needed, rebase onto current main. Keep draft
+  until checks pass. Do not merge, deploy, pause Supabase, or wipe data.
+- **Done:** Confirmed the bugs on `origin/main` `e6895bbf`. Rebased
+  `cursor/oura-today-d1-fix-7c1f` (dropped stale handoff-only commits). Kept
+  `listReports` `GROUP BY`, `D1_MAX_IN_BINDINGS` 48, `.upsert()`, `.or()`, and
+  Today `Promise.allSettled`. Hardened `or`/`onConflict` identifiers, skipped
+  `user_id` scope on `admin_messages` unless `recipient_id` or `is_broadcast` is
+  present, and stopped double `parseRow` on batched `.in()`.
+- **Issues:** Live pmt reports and Devyn Today still need an operator Worker deploy
+  after merge. This VM did not run remote D1 SQL. `profiles` queries still add
+  `user_id = ?` (pre-existing); if that column is absent the greeting fail-opens.
+- **Stand / next:** Operator reviews draft PR #42. Do not deploy from this branch.
+- **Who / where:** Cursor cloud agent, branch `cursor/oura-today-d1-fix-7c1f`.
+- **Evidence:** `check:em-dash`, `check:live-data`, `check:supabase-types`,
+  `check:unique-images`, `check:lovable-auth`, `tsc --noEmit`, `bun run build`,
+  `check:entry-budget` PASS. Helper smoke: `parseOrFilter` plus 119-id chunks
+  `48,48,23` PASS. No Worker deploy.
+- **Timestamp:** 2026-09-29T15:20:00Z
 
 ### 2026-09-29T14:57:07Z — staging Ploy live mode, same hybrid routing as www
 

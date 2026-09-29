@@ -1,9 +1,13 @@
 import { d1All, d1First, d1Run } from "../d1/client";
+import { chunkArray, D1_MAX_IN_BINDINGS } from "./in-batch";
+import { parseOrFilter, serializeBool, type ParsedOrClause } from "./filter-parser";
 
 type Filter =
   | { op: "eq"; col: string; val: unknown }
   | { op: "gte"; col: string; val: unknown }
   | { op: "lte"; col: string; val: unknown }
+  | { op: "gt"; col: string; val: unknown }
+  | { op: "lt"; col: string; val: unknown }
   | { op: "in"; col: string; val: unknown[] }
   | { op: "is"; col: string; val: null };
 
@@ -11,12 +15,16 @@ type Order = { col: string; ascending: boolean };
 
 export class D1QueryBuilder<T = Record<string, unknown>> {
   private filters: Filter[] = [];
+  private orGroups: ParsedOrClause[][] = [];
   private orderBy: Order[] = [];
   private limitN: number | null = null;
   private selectCols = "*";
+  private countExact = false;
+  private countHead = false;
   private insertRow: Record<string, unknown> | Record<string, unknown>[] | null = null;
   private updateRow: Record<string, unknown> | null = null;
-  private mode: "select" | "insert" | "update" | "delete" = "select";
+  private onConflict: string | null = null;
+  private mode: "select" | "insert" | "update" | "delete" | "upsert" = "select";
   private userScopeCol: string | null = null;
   private userScopeVal: string | null = null;
 
@@ -31,8 +39,10 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     }
   }
 
-  select(cols: string): this {
-    this.selectCols = cols.trim();
+  select(cols: string, opts?: { count?: "exact"; head?: boolean }): this {
+    if (opts?.count === "exact") this.countExact = true;
+    if (opts?.head) this.countHead = true;
+    if (!opts?.count) this.selectCols = cols.trim();
     return this;
   }
 
@@ -48,6 +58,22 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
 
   lte(col: string, val: unknown): this {
     this.filters.push({ op: "lte", col, val });
+    return this;
+  }
+
+  gt(col: string, val: unknown): this {
+    this.filters.push({ op: "gt", col, val });
+    return this;
+  }
+
+  lt(col: string, val: unknown): this {
+    this.filters.push({ op: "lt", col, val });
+    return this;
+  }
+
+  or(filter: string): this {
+    const clauses = parseOrFilter(filter);
+    if (clauses.length) this.orGroups.push(clauses);
     return this;
   }
 
@@ -77,6 +103,16 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     return this;
   }
 
+  upsert(
+    row: Record<string, unknown> | Record<string, unknown>[],
+    opts?: { onConflict?: string },
+  ): this {
+    this.mode = "upsert";
+    this.insertRow = row;
+    this.onConflict = opts?.onConflict ?? null;
+    return this;
+  }
+
   update(row: Record<string, unknown>): this {
     this.mode = "update";
     this.updateRow = row;
@@ -88,21 +124,83 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     return this;
   }
 
-  private buildWhere(params: unknown[]): string {
-    const clauses: string[] = [];
+  private oversizedInFilter(
+    filters: Filter[],
+  ): { index: number; col: string; val: unknown[] } | null {
+    let pick: { index: number; col: string; val: unknown[] } | null = null;
+    filters.forEach((f, index) => {
+      if (f.op !== "in") return;
+      const val = f.val as unknown[];
+      if (val.length <= D1_MAX_IN_BINDINGS) return;
+      if (!pick || val.length > pick.val.length) pick = { index, col: f.col, val };
+    });
+    return pick;
+  }
+
+  private sortMergedRows(rows: Record<string, unknown>[]): Record<string, unknown>[] {
+    if (!this.orderBy.length) return rows;
+    const sorted = [...rows];
+    sorted.sort((a, b) => {
+      for (const o of this.orderBy) {
+        const av = a[o.col];
+        const bv = b[o.col];
+        if (av === bv) continue;
+        if (av == null) return o.ascending ? 1 : -1;
+        if (bv == null) return o.ascending ? -1 : 1;
+        const cmp = av < bv ? -1 : 1;
+        return o.ascending ? cmp : -cmp;
+      }
+      return 0;
+    });
+    return sorted;
+  }
+
+  /**
+   * admin_messages is keyed by sender/recipient, not user_id. Access is the
+   * broadcast OR recipient predicate. Other tables keep the constructor scope
+   * (profiles uses id; most tables use user_id).
+   */
+  private applyRowScope(
+    clauses: string[],
+    params: unknown[],
+    filters: Filter[],
+    orGroups: ParsedOrClause[][],
+  ): void {
+    if (this.table === "admin_messages") {
+      const allowed = [...filters, ...orGroups.flat()].some(
+        (c) => c.col === "recipient_id" || c.col === "is_broadcast",
+      );
+      if (!allowed) clauses.push("1 = 0");
+      return;
+    }
     if (this.userScopeCol && this.userScopeVal) {
       clauses.push(`${this.userScopeCol} = ?`);
       params.push(this.userScopeVal);
     }
-    for (const f of this.filters) {
+  }
+
+  private buildWhere(
+    params: unknown[],
+    filters: Filter[] = this.filters,
+    orGroups: ParsedOrClause[][] = this.orGroups,
+  ): string {
+    const clauses: string[] = [];
+    this.applyRowScope(clauses, params, filters, orGroups);
+    for (const f of filters) {
       if (f.op === "eq") {
         clauses.push(`${f.col} = ?`);
-        params.push(f.val);
+        params.push(serializeBool(f.val));
       } else if (f.op === "gte") {
         clauses.push(`${f.col} >= ?`);
         params.push(f.val);
       } else if (f.op === "lte") {
         clauses.push(`${f.col} <= ?`);
+        params.push(f.val);
+      } else if (f.op === "gt") {
+        clauses.push(`${f.col} > ?`);
+        params.push(f.val);
+      } else if (f.op === "lt") {
+        clauses.push(`${f.col} < ?`);
         params.push(f.val);
       } else if (f.op === "in") {
         const arr = f.val as unknown[];
@@ -115,6 +213,32 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
       } else if (f.op === "is") {
         clauses.push(`${f.col} IS NULL`);
       }
+    }
+    for (const group of orGroups) {
+      const parts: string[] = [];
+      for (const c of group) {
+        const col = sqlIdent(c.col);
+        if (!col) continue;
+        if (c.op === "eq") {
+          parts.push(`${col} = ?`);
+          params.push(serializeBool(c.val));
+        } else if (c.op === "gte") {
+          parts.push(`${col} >= ?`);
+          params.push(c.val);
+        } else if (c.op === "lte") {
+          parts.push(`${col} <= ?`);
+          params.push(c.val);
+        } else if (c.op === "gt") {
+          parts.push(`${col} > ?`);
+          params.push(c.val);
+        } else if (c.op === "lt") {
+          parts.push(`${col} < ?`);
+          params.push(c.val);
+        } else if (c.op === "is") {
+          parts.push(`${col} IS NULL`);
+        }
+      }
+      if (parts.length) clauses.push(`(${parts.join(" OR ")})`);
     }
     return clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
   }
@@ -142,8 +266,17 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     return res;
   }
 
-  then<TResult1 = { data: T[] | null; error: Error | null }, TResult2 = never>(
-    onfulfilled?: ((value: { data: T[] | null; error: Error | null }) => TResult1 | PromiseLike<TResult1>) | null,
+  then<
+    TResult1 = { data: T[] | null; error: Error | null; count?: number | null },
+    TResult2 = never,
+  >(
+    onfulfilled?:
+      | ((value: {
+          data: T[] | null;
+          error: Error | null;
+          count?: number | null;
+        }) => TResult1 | PromiseLike<TResult1>)
+      | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
   ): Promise<TResult1 | TResult2> {
     return this.execute().then(onfulfilled, onrejected);
@@ -152,6 +285,7 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
   private async execute(): Promise<{ data: T[] | null; error: Error | null }> {
     try {
       if (this.mode === "insert") return this.executeInsert();
+      if (this.mode === "upsert") return this.executeUpsert();
       if (this.mode === "update") return this.executeUpdate();
       if (this.mode === "delete") return this.executeDelete();
       return this.executeSelect();
@@ -160,7 +294,10 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     }
   }
 
-  private parseSelectColumns(): { base: string[]; embeds: Array<{ alias: string; table: string; cols: string }> } {
+  private parseSelectColumns(): {
+    base: string[];
+    embeds: Array<{ alias: string; table: string; cols: string }>;
+  } {
     const parts = this.selectCols.split(",").map((s) => s.trim());
     const base: string[] = [];
     const embeds: Array<{ alias: string; table: string; cols: string }> = [];
@@ -175,13 +312,69 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     return { base, embeds };
   }
 
-  private async executeSelect(): Promise<{ data: T[] | null; error: Error | null }> {
+  private async executeSelect(): Promise<{
+    data: T[] | null;
+    error: Error | null;
+    count?: number | null;
+  }> {
+    const largeIn = this.oversizedInFilter(this.filters);
+    if (largeIn) {
+      return this.executeSelectInBatches(largeIn);
+    }
+    return this.executeSelectOnce(this.filters, this.orGroups);
+  }
+
+  private async executeSelectInBatches(largeIn: {
+    index: number;
+    col: string;
+    val: unknown[];
+  }): Promise<{ data: T[] | null; error: Error | null; count?: number | null }> {
+    const otherFilters = this.filters.filter((_, i) => i !== largeIn.index);
+    let merged: Record<string, unknown>[] = [];
+    let totalCount = 0;
+
+    for (const chunk of chunkArray(largeIn.val, D1_MAX_IN_BINDINGS)) {
+      const batchFilters: Filter[] = [...otherFilters, { op: "in", col: largeIn.col, val: chunk }];
+      const result = await this.executeSelectOnce(batchFilters, this.orGroups);
+      if (result.error) return { data: null, error: result.error };
+      if (this.countHead && this.countExact) {
+        totalCount += result.count ?? 0;
+      } else {
+        merged.push(...((result.data as Record<string, unknown>[] | null) ?? []));
+      }
+    }
+
+    if (this.countHead && this.countExact) {
+      return { data: null, error: null, count: totalCount };
+    }
+
+    merged = this.sortMergedRows(merged);
+    if (this.limitN != null) merged = merged.slice(0, this.limitN);
+    // executeSelectOnce already ran parseRow.
+    return { data: merged as T[], error: null };
+  }
+
+  private async executeSelectOnce(
+    filters: Filter[],
+    orGroups: ParsedOrClause[][],
+  ): Promise<{ data: T[] | null; error: Error | null; count?: number | null }> {
     const params: unknown[] = [];
-    const where = this.buildWhere(params);
+    const where = this.buildWhere(params, filters, orGroups);
+
+    if (this.countHead && this.countExact) {
+      const row = await d1First<{ cnt: number }>(
+        `SELECT COUNT(*) AS cnt FROM ${this.table} ${where}`,
+        ...params,
+      );
+      return { data: null, error: null, count: row?.cnt ?? 0 };
+    }
+
     const { base, embeds } = this.parseSelectColumns();
     const cols =
       base.length > 0 || embeds.length > 0
-        ? [...base, ...embeds.map((e) => `${this.table}.${e.alias}_fk`)].filter(Boolean).join(", ") || "*"
+        ? [...base, ...embeds.map((e) => `${this.table}.${e.alias}_fk`)]
+            .filter(Boolean)
+            .join(", ") || "*"
         : "*";
 
     // Simple select without embeds first
@@ -230,6 +423,40 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     return { data: out as T[], error: null };
   }
 
+  private async executeUpsert(): Promise<{ data: T[] | null; error: Error | null }> {
+    if (!this.insertRow) return { data: null, error: new Error("No upsert row") };
+    const conflictCols = (this.onConflict ?? "")
+      .split(",")
+      .map((s) => sqlIdent(s.trim()))
+      .filter((s): s is string => Boolean(s));
+    if (conflictCols.length === 0) {
+      return { data: null, error: new Error("upsert requires onConflict columns") };
+    }
+
+    const rows = Array.isArray(this.insertRow) ? this.insertRow : [this.insertRow];
+    const saved: T[] = [];
+    for (const row of rows) {
+      const full: Record<string, unknown> = { ...row };
+      if (this.userScopeCol && this.userScopeVal && full[this.userScopeCol] == null) {
+        full[this.userScopeCol] = this.userScopeVal;
+      }
+      const cols = Object.keys(full).filter((c) => sqlIdent(c));
+      if (cols.length === 0) return { data: null, error: new Error("upsert row has no columns") };
+      const vals = cols.map((c) => this.serializeValue(full[c]));
+      const updateCols = cols.filter((c) => !conflictCols.includes(c));
+      const setClause =
+        updateCols.length > 0
+          ? updateCols.map((c) => `${c} = excluded.${c}`).join(", ")
+          : `${conflictCols[0]} = excluded.${conflictCols[0]}`;
+      await d1Run(
+        `INSERT INTO ${this.table} (${cols.join(", ")}) VALUES (${cols.map(() => "?").join(", ")}) ON CONFLICT(${conflictCols.join(", ")}) DO UPDATE SET ${setClause}`,
+        ...vals,
+      );
+      saved.push(parseRow(full) as T);
+    }
+    return { data: saved, error: null };
+  }
+
   private async executeInsert(): Promise<{ data: T[] | null; error: Error | null }> {
     const rows = Array.isArray(this.insertRow) ? this.insertRow : [this.insertRow!];
     const inserted: T[] = [];
@@ -264,6 +491,11 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     await d1Run(`DELETE FROM ${this.table} ${where}`, ...params);
     return { data: null, error: null };
   }
+}
+
+function sqlIdent(name: string): string | null {
+  const cleaned = name.trim();
+  return /^[a-z_][a-z0-9_]*$/i.test(cleaned) ? cleaned : null;
 }
 
 function parseRow(row: Record<string, unknown>): Record<string, unknown> {
