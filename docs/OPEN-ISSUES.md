@@ -12,17 +12,24 @@ Format:
 
 ## Sign-in D1 binding clobber (raised 2026-09-29)
 
-- [ ] **`auth-signin-d1-bindings`** — `POST /api/auth/sign-in` with real
-  email/password returns HTTP 500 HTML on https://www.purplelife.org and
-  https://staging.purplelife.org. Cause: handlers call
-  `setRequestBindings(process.env)` after `server.ts` seeded the Worker env, which
-  dropped non-string bindings (`DB`). Repo fix preserves those bindings and returns
-  JSON 500 `{ "error": "Sign-in failed" }` if the handler still throws. Empty body
-  stays 400 `email and password required`. Operator must deploy BOTH Workers from a
-  Mac (cloud agents must not deploy): `wrangler.deploy.ploy.jsonc` (`purplelife`) and
-  `wrangler.staging.jsonc` (`purplelife-staging`). Then a real sign-in must be HTTP
-  200 with `access_token`, not 500. GitHub issue 61. Do not pause Supabase or wipe
-  data. Code is on PR #62. _Raised 2026-09-29._
+- [x] ~~**`auth-signin-d1-bindings`**~~ — RESOLVED 2026-09-29 in git by PR #62
+  (`setRequestBindings` keeps non-string bindings; sign-in throws return JSON 500).
+  Operator then deployed and applied four more live follow-ups that were not on
+  GitHub. Those follow-ups are the next item. GitHub issue 61. Do not pause
+  Supabase or wipe data. _Raised 2026-09-29._
+
+- [x] ~~**`auth-d1-live-followups`**~~ — RESOLVED 2026-09-29 in git on
+  `cursor/auth-d1-live-followups-54fb` (not deployed). (1) `setRequestBindings`
+  keeps omitted string secrets such as `AUTH_JWT_SECRET`. (2) PBKDF2 max 100000
+  iterations (210000 threw, JSON 500 on sign-in). (3) `d1From` profiles scope by
+  `id`, not missing `user_id` (HTML 500 on profile reads). (4)
+  `scripts/smoke-www-cloudflare-data.mjs` uses `limit: 5` so
+  `test:www-cloudflare-data` asserts an array (`limit: 1` returns one object).
+  Live D1 `auth_users.password_hash` for the www E2E user was set from Doppler
+  project `x21` config `prd_cloudflare`. That password and hash are not in git
+  and were not rotated here. Mac smokes use that same Doppler project/config.
+  Do not wrangler-deploy; live Workers already match this hotfix. Related:
+  GitHub issue 61. _Raised 2026-09-29._
 
 ## Staging live Ploy (raised 2026-09-29)
 

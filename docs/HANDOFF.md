@@ -9,6 +9,14 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-29 post-#62 auth/D1 follow-ups (no deploy):** PR #62 is on `main`. Live
+Mac Workers already have four follow-ups that were not pushed (token permissions).
+This branch recreates them: omitted string secrets such as `AUTH_JWT_SECRET` survive
+`setRequestBindings(process.env)`; PBKDF2 max is 100000; `d1From` profiles scope by
+`id`; `test:www-cloudflare-data` uses `limit: 5`. Doppler for that Mac smoke is
+`x21` / `prd_cloudflare`. The www E2E user's live D1 `password_hash` was set from
+that config. No password or hash is in git. Do not deploy. Related: GitHub issue 61.
+
 **2026-09-29 sign-in D1 binding clobber (no deploy):** Mac patch `4670a48f` matches
 this branch. `setRequestBindings` keeps
 non-string Worker bindings (`DB`, `STORAGE`, `CACHE`, `ASSETS`, `PROD`, and others) when a
@@ -144,6 +152,27 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-29T15:48:08Z — recreate post-#62 live auth/D1 follow-ups
+
+- **Requested:** Open a PR on current main with the production-proven follow-ups
+  applied live on Mac Workers after PR #62 and not pushed (token permissions).
+  Do not deploy. Do not embed or rotate real passwords. Note Doppler for Mac
+  smokes is `x21` / `prd_cloudflare`. Link issue 61 as related.
+- **Done:** `setRequestBindings` keeps omitted non-empty strings (`AUTH_JWT_SECRET`,
+  `CRON_SECRET`). PBKDF2 iterations capped at 100000; 210000 hashes return false
+  without `deriveBits`. `d1From("profiles")` scopes and inserts by `id`.
+  `maybeSingle` returns D1 errors instead of throwing. Smoke script `limit` is 5.
+  Ops note only: live E2E `password_hash` was set from Doppler `x21` /
+  `prd_cloudflare`. No Worker deploy.
+- **Issues:** Hashes already stored at 210000 cannot be verified on Workers until
+  rewritten at 100000. This agent did not read or write live D1.
+- **Stand / next:** PR open. Do not deploy. Merge so a later deploy cannot regress
+  the live hotfix.
+- **Who / where:** Cursor cloud agent, `/workspace`,
+  `cursor/auth-d1-live-followups-54fb`.
+- **Evidence:** `bun run test:bindings` 12/12. `bunx tsc --noEmit` PASS. `node scripts/check-no-em-dash.mjs` PASS. No Worker deploy.
+- **Timestamp:** 2026-09-29T15:48:08Z
 
 ### 2026-09-29T15:28:00Z — align sign-in fix with Mac patch 4670a48f
 

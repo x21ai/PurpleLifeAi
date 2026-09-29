@@ -25,7 +25,7 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     userId?: string,
   ) {
     if (userId) {
-      this.userScopeCol = "user_id";
+      this.userScopeCol = scopeColumnForTable(table);
       this.userScopeVal = userId;
     }
   }
@@ -128,10 +128,14 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
 
   async maybeSingle(): Promise<{ data: T | null; error: Error | null }> {
     this.limitN = 1;
-    const { data, error } = await this.executeSelect();
-    if (error) return { data: null, error };
-    const row = (data ?? [])[0] ?? null;
-    return { data: row as T | null, error: null };
+    try {
+      const { data, error } = await this.executeSelect();
+      if (error) return { data: null, error };
+      const row = (data ?? [])[0] ?? null;
+      return { data: row as T | null, error: null };
+    } catch (e) {
+      return { data: null, error: e instanceof Error ? e : new Error(String(e)) };
+    }
   }
 
   async single(): Promise<{ data: T | null; error: Error | null }> {
@@ -233,9 +237,14 @@ export class D1QueryBuilder<T = Record<string, unknown>> {
     const rows = Array.isArray(this.insertRow) ? this.insertRow : [this.insertRow!];
     const inserted: T[] = [];
     for (const row of rows) {
-      const id = (row.id as string | undefined) ?? crypto.randomUUID();
+      const id =
+        this.userScopeCol === "id" && this.userScopeVal
+          ? this.userScopeVal
+          : ((row.id as string | undefined) ?? crypto.randomUUID());
       const full: Record<string, unknown> = { ...row, id };
-      if (this.userScopeVal && !full.user_id) full.user_id = this.userScopeVal;
+      if (this.userScopeCol === "user_id" && this.userScopeVal && full.user_id == null) {
+        full.user_id = this.userScopeVal;
+      }
       const cols = Object.keys(full);
       const vals = cols.map((c) => this.serializeValue(full[c]));
       await d1Run(
@@ -279,6 +288,15 @@ function parseRow(row: Record<string, unknown>): Record<string, unknown> {
     if (typeof v === "string" && v === "false") out[k] = false;
   }
   return out;
+}
+
+/**
+ * profiles is keyed by the auth user id. Other user-owned tables use user_id.
+ * Scoping profiles by user_id queries a column that does not exist and the
+ * limit-1 path threw that as an HTML 500.
+ */
+export function scopeColumnForTable(table: string): "id" | "user_id" {
+  return table === "profiles" ? "id" : "user_id";
 }
 
 export function d1From(table: string, userId?: string): D1QueryBuilder {

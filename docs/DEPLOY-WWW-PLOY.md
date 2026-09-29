@@ -183,10 +183,23 @@ bun run test:www-cloudflare-data
 
 This signs in through `POST /api/auth/sign-in`, then reads the authenticated user's own
 `profiles` row through `POST /api/data/query`. A pass proves production JWT auth and a
-user-scoped D1 read. HTTP 500 HTML from sign-in means Worker `DB` was dropped.
+user-scoped D1 read. The script sends `limit: 5` because `limit: 1` takes `maybeSingle`
+and returns one object, which fails the array assert. HTTP 500 HTML from sign-in means
+Worker `DB` was dropped. HTTP 500 HTML from the profile read means `profiles` was
+scoped by missing `user_id` instead of `id`. JSON 500 `Sign-in failed` after a good
+password can be PBKDF2 above 100000 iterations or a missing `AUTH_JWT_SECRET`.
 It is a post-deploy API contract smoke, not a substitute for the
-browser pass through the hybrid Worker. On a Mac, prefer Doppler project `x21`
-config `prd_cloudflare` when running this smoke. Browser smoke: sign in at `/login`, confirm live `/today`, `/journal`,
+browser pass through the hybrid Worker. On a Mac, use Doppler project `x21`
+config `prd_cloudflare` (`bun run test:www-cloudflare-data`). Do not use `x21` / `prd`
+(that config is native iOS) or `cursor-cloudflare` / `prd_cloudlfare` for this smoke.
+
+Ops note, not a secret: the www E2E user's `auth_users.password_hash` in live D1 was
+set from Doppler `x21` / `prd_cloudflare` (`E2E_TEST_USER_PASSWORD` or
+`TEST_USER_PASSWORD`) after the 100000 iteration cap. This repo does not store that
+password or hash, and this change does not rotate it. Hashes written at 210000
+iterations cannot be checked on Workers until rewritten at 100000.
+
+Browser smoke: sign in at `/login`, confirm live `/today`, `/journal`,
 `/meds`, `/reports`, and `/tools` data; verify account creation/recovery and detail pages
 fall through to TanStack; verify OAuth callbacks still hit `/oauth/*/callback`.
 

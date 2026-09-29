@@ -1,4 +1,15 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-29 (sign-in D1 binding merge; **do not** wrangler deploy `purplelife` or `purplelife-staging` from this agent).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-29 (post-#62 auth/D1 follow-ups in git; **do not** wrangler deploy `purplelife` or `purplelife-staging` from this agent).
+
+**Recent (2026-09-29): live follow-ups after PR #62.** Mac Workers already have
+these; git did not. `setRequestBindings` keeps omitted string secrets
+(`AUTH_JWT_SECRET`). PBKDF2 max is 100000 (210000 threw, JSON 500 on sign-in).
+`d1From` profiles scope by `id` (missing `user_id` was an HTML 500).
+`scripts/smoke-www-cloudflare-data.mjs` uses `limit: 5` because `limit: 1`
+returns one object. Mac smoke Doppler is project `x21` config `prd_cloudflare`
+(`bun run test:www-cloudflare-data`). Live D1 `password_hash` for the www E2E
+user was set from that Doppler config. Do not commit the password or hash.
+Do not deploy this change to catch production up. Related: GitHub issue 61.
+Check: `bun run test:bindings`.
 
 **Recent (2026-09-29): sign-in 500 was a binding clobber, not a missing secret.**
 `server.ts` seeds Worker `env` (including `DB`). API handlers then call

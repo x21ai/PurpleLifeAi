@@ -33,7 +33,7 @@ Bindings are declared in `wrangler.jsonc` (dev/build) and `wrangler.deploy.jsonc
 Cloudflare has no drop-in Supabase Auth replacement. This PR implements:
 
 - **D1 `auth_users` + `auth_identities`** (replaces `auth.users`)
-- **PBKDF2 password hashing** via Web Crypto (`src/lib/cloudflare/auth/passwords.ts`)
+- **PBKDF2 password hashing** via Web Crypto (`src/lib/cloudflare/auth/passwords.ts`), max **100000** iterations (Workers reject 210000)
 - **HS256 JWT access tokens** (`src/lib/cloudflare/auth/jwt.ts`)
 - **API routes:** `POST /api/auth/sign-in`, `POST /api/auth/sign-up` (cloudflare backend only)
 - **Unified middleware:** `src/lib/auth/unified-auth-middleware.ts` (Supabase JWT or Workers JWT)

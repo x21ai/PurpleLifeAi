@@ -35,6 +35,38 @@ test("still errors when DB was never seeded", () => {
   assert.throws(() => requireD1(), /D1 binding DB is not configured/);
 });
 
+test("preserves string secrets when a later process.env pass omits them", () => {
+  const savedJwt = process.env.AUTH_JWT_SECRET;
+  const savedCron = process.env.CRON_SECRET;
+  delete process.env.AUTH_JWT_SECRET;
+  delete process.env.CRON_SECRET;
+  try {
+    const fakeDb = { prepare: () => ({}) } as unknown as D1Database;
+    setRequestBindings({
+      DB: fakeDb,
+      DATA_BACKEND: "cloudflare",
+      AUTH_JWT_SECRET: "from-worker",
+      CRON_SECRET: "cron-from-worker",
+    });
+    setRequestBindings({
+      DATA_BACKEND: "cloudflare",
+      AUTH_JWT_SECRET: undefined,
+      CRON_SECRET: "",
+    });
+
+    assert.equal(getBindings().DB, fakeDb);
+    assert.equal(getBindings().AUTH_JWT_SECRET, "from-worker");
+    assert.equal(getBindings().CRON_SECRET, "cron-from-worker");
+    assert.equal(getBindings().DATA_BACKEND, "cloudflare");
+    assert.equal(requireD1(), fakeDb);
+  } finally {
+    if (savedJwt === undefined) delete process.env.AUTH_JWT_SECRET;
+    else process.env.AUTH_JWT_SECRET = savedJwt;
+    if (savedCron === undefined) delete process.env.CRON_SECRET;
+    else process.env.CRON_SECRET = savedCron;
+  }
+});
+
 test("string-only env does not clobber Worker platform bindings", () => {
   const db = { binding: "db" } as unknown as D1Database;
   const storage = { binding: "storage" } as unknown as R2Bucket;

@@ -7,9 +7,13 @@ let cachedBindings: Partial<PurpleWorkerBindings> | undefined;
  * Platform bindings (D1, R2, KV, ASSETS, PROD, service bindings) are objects
  * or booleans. Workers copy only strings onto process.env, so a later
  * setRequestBindings(process.env) must not drop them.
+ *
+ * String secrets such as AUTH_JWT_SECRET are kept when that later pass omits
+ * them (null, undefined, or ""). An explicit non-empty string still replaces
+ * the previous value.
  */
-function isPlatformBinding(value: unknown): boolean {
-  return value != null && typeof value !== "string";
+function isOmittedString(value: unknown): boolean {
+  return value == null || value === "";
 }
 
 function mergeBindings(
@@ -21,8 +25,12 @@ function mergeBindings(
   const preserved: Record<string, unknown> = {};
   const incomingRecord = incoming as Record<string, unknown>;
   for (const [key, value] of Object.entries(previous)) {
-    if (!isPlatformBinding(value)) continue;
+    if (value == null || value === "") continue;
     const next = incomingRecord[key];
+    if (typeof value === "string") {
+      if (isOmittedString(next)) preserved[key] = value;
+      continue;
+    }
     if (next == null || typeof next === "string") {
       preserved[key] = value;
     }

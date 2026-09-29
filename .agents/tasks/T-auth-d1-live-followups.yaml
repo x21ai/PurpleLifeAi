@@ -1,0 +1,28 @@
+id: T-auth-d1-live-followups
+title: Recreate post-#62 live auth and D1 follow-ups
+intent: >-
+  Open a PR on current main with the production-proven follow-ups applied live
+  on Mac Workers after PR #62 and not pushed. Preserve omitted string secrets
+  in setRequestBindings, cap PBKDF2 at 100000, scope profiles by id, and use
+  limit 5 in the www Cloudflare data smoke. Do not deploy. Do not embed or
+  rotate passwords. Doppler for Mac smokes is x21/prd_cloudflare. Related to
+  GitHub issue 61.
+partition: cloudflare-auth
+depends_on: []
+risk: high
+acceptance:
+  - "setRequestBindings keeps AUTH_JWT_SECRET when a later env omits it, and still replaces it when a non-empty string is supplied."
+  - "hashPassword uses 100000 iterations. verifyPassword(210000) returns false and does not throw."
+  - "d1From profiles SQL scopes by id and does not reference user_id. Other tables still use user_id."
+  - "smoke-www-cloudflare-data.mjs sends limit 5."
+  - "No password, password hash, or secret value is committed."
+  - "No Worker deploy."
+state: queued
+claimant: cursor-cloud-agent
+lease_expires: 2026-09-29T16:30:00Z
+evidence:
+  - "bun run test:bindings PASS 12/12"
+  - "bunx tsc --noEmit PASS"
+  - "node scripts/check-no-em-dash.mjs PASS"
+  - "No Worker deploy"
+  - "No password or password_hash committed"
