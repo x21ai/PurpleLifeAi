@@ -73,7 +73,7 @@ Entry: `ploy-staging/worker/www-entry.ts`.
 Full www bundle = TanStack API build + Ploy Astro www build:
 
 ```bash
-# TanStack server (needs Doppler prd_cloudlfare for VITE_* bake)
+# TanStack server (needs Doppler x21 / prd_cloudflare for VITE_* bake)
 bun run build:prod
 
 # Ploy Astro for www (needs ploy-staging source from PR #44)
@@ -127,7 +127,7 @@ implementation details.
 ```bash
 bun run build:www-ploy
 
-doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+doppler run --project x21 --config prd_cloudflare -- \
   bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} \
   bunx wrangler deploy -c wrangler.deploy.ploy.jsonc'
 ```
@@ -152,8 +152,8 @@ curl -sS -D - -o /tmp/www-signin-empty.json -X POST "$BASE/api/auth/sign-in" \
 grep -q 'email and password required' /tmp/www-signin-empty.json
 
 # After the D1 binding fix is deployed, a real email/password must return HTTP 200
-# JSON with access_token (not HTTP 500 HTML). Use bun run test:www-cloudflare-data.
-# On a Mac, prefer Doppler project x21 config prd_cloudflare for that smoke.
+# JSON with access_token (not HTTP 500 HTML). Use bun run test:www-cloudflare-data
+# (Doppler project x21, config prd_cloudflare).
 
 # Ploy UI shells
 for p in / /today/ /journal/ /meds/ /login/; do
@@ -208,7 +208,7 @@ fall through to TanStack; verify OAuth callbacks still hit `/oauth/*/callback`.
 Redeploy previous TanStack-only bundle:
 
 ```bash
-doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+doppler run --project x21 --config prd_cloudflare -- \
   bash -c 'CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0 \
   bunx wrangler deploy -c wrangler.deploy.jsonc'
 ```

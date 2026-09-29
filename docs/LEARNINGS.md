@@ -5,6 +5,14 @@ work (especially multi-agent fleets) is decomposed. Append, never delete.
 
 ---
 
+### 2026-09-29 - Worker deploy docs drifted from Mac Doppler (status: raw)
+
+- Package.json deploy scripts and PurpleLife Worker runbooks kept
+  `cursor-cloudflare` / `prd_cloudlfare` after Mac ops moved Worker deploy and
+  `test:www-cloudflare-data` to `x21` / `prd_cloudflare`. Native iOS stayed
+  `x21` / `prd`. Compile into a check that Worker deploy scripts name
+  `x21` / `prd_cloudflare` and do not retarget Flutter dart-define scripts.
+
 ### 2026-09-29 — post-#62 live auth follow-ups were not in git (status: raw)
 
 - After PR #62, live Mac Workers still failed sign-in and profile reads until

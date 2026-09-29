@@ -157,7 +157,7 @@ bun run build:prod
 bunx wrangler deploy -c wrangler.deploy.jsonc
 ```
 
-Set secrets (Doppler `cursor-cloudflare` / staging config):
+Set secrets (Doppler `x21` / `prd_cloudflare`):
 
 - `DATA_BACKEND=cloudflare` (only after verify)
 - `AUTH_JWT_SECRET`

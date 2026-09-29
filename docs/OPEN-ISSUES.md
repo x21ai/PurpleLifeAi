@@ -38,7 +38,7 @@ Format:
 - [ ] **`staging-ploy-operator-deploy`** — Repo routes `purplelife-staging` through
   `www-entry.ts` with live Ploy copy and no cron triggers. Operator deploys from a Mac:
   `bun run build:staging:ploy`, then `wrangler deploy -c wrangler.staging.jsonc` with
-  Doppler `cursor-cloudflare` / `prd_cloudlfare`. Copy `AUTH_JWT_SECRET` onto
+  Doppler `x21` / `prd_cloudflare` (`bun run deploy:staging:ploy`). Copy `AUTH_JWT_SECRET` onto
   `purplelife-staging` if `wrangler secret list` does not already show it (same value
   as Worker `purplelife`, never print it). Then run the smoke in
   `docs/DEPLOY-STAGING-PLOY.md`. Home must not contain design-preview copy.

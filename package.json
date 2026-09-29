@@ -8,8 +8,8 @@
     "prebuild": "node scripts/check-no-em-dash.mjs && node scripts/check-supabase-types.mjs",
     "check:supabase-types": "node scripts/check-supabase-types.mjs",
     "build": "bash scripts/with-app-build-env.sh vite build",
-    "build:prod": "doppler run --project cursor-cloudflare --config prd_cloudlfare -- env VITE_DATA_BACKEND=cloudflare bun run build",
-    "build:prod:supabase": "doppler run --project cursor-cloudflare --config prd_cloudlfare -- env VITE_DATA_BACKEND=supabase bun run build",
+    "build:prod": "doppler run --project x21 --config prd_cloudflare -- env VITE_DATA_BACKEND=cloudflare bun run build",
+    "build:prod:supabase": "doppler run --project x21 --config prd_cloudflare -- env VITE_DATA_BACKEND=supabase bun run build",
     "build:prod:flutter-web": "bun run build:prod && bash scripts/flutter-web-build-prod.sh && bash scripts/merge-flutter-web-assets.sh",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
@@ -65,13 +65,13 @@
     "cf:set-tester-passwords": "node scripts/cloudflare/set-tester-passwords.mjs",
     "build:staging:ploy": "bun run build:prod && bash scripts/build-ploy-staging.sh",
     "build:ploy:staging": "bash scripts/build-ploy-staging.sh",
-    "deploy:staging:ploy": "bun run build:staging:ploy && doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} bunx wrangler deploy -c wrangler.staging.jsonc'",
-    "deploy:staging:ploy:dry-run": "bun run build:staging:ploy && doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} bunx wrangler deploy -c wrangler.staging.jsonc --dry-run'",
+    "deploy:staging:ploy": "bun run build:staging:ploy && doppler run --project x21 --config prd_cloudflare -- bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} bunx wrangler deploy -c wrangler.staging.jsonc'",
+    "deploy:staging:ploy:dry-run": "bun run build:staging:ploy && doppler run --project x21 --config prd_cloudflare -- bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} bunx wrangler deploy -c wrangler.staging.jsonc --dry-run'",
     "verify:staging-ploy-entry": "bash scripts/verify-staging-ploy-entry.sh",
     "build:ploy:www": "bash scripts/build-ploy-www.sh",
     "build:www-ploy": "bun run build:prod && bash scripts/build-ploy-www.sh",
     "verify:www-ploy-entry": "bash scripts/verify-www-ploy-entry.sh",
-    "deploy:www-ploy:dry-run": "bun run build:www-ploy && doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} bunx wrangler deploy -c wrangler.deploy.ploy.jsonc --dry-run'"
+    "deploy:www-ploy:dry-run": "bun run build:www-ploy && doppler run --project x21 --config prd_cloudflare -- bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} bunx wrangler deploy -c wrangler.deploy.ploy.jsonc --dry-run'"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.82",

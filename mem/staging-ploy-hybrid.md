@@ -10,4 +10,4 @@ staging.purplelife.org uses the same Worker entry as www (`ploy-staging/worker/w
 - `AUTH_JWT_SECRET` on `purplelife-staging` must match `purplelife`.
 - A staging write is a production-data write. Do not pause Supabase or wipe D1.
 
-Runbook: `docs/DEPLOY-STAGING-PLOY.md`.
+Runbook: `docs/DEPLOY-STAGING-PLOY.md`. Operator deploy uses Doppler `x21` / `prd_cloudflare` (`bun run deploy:staging:ploy`). Native iOS stays `x21` / `prd`.

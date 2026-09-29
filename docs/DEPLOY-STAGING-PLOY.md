@@ -2,8 +2,9 @@
 
 **Status:** Repo is ready for the live-data flip. **Do not wrangler deploy from a cloud agent.**
 The operator deploys Worker `purplelife-staging` from a Mac with Doppler
-`cursor-cloudflare` / `prd_cloudlfare` (Worker secrets). Doppler `x21` / `prd` is the
-native iOS project, not this Worker.
+`x21` / `prd_cloudflare` (Worker secrets, `build:prod`, and
+`bun run test:www-cloudflare-data`). Doppler `x21` / `prd` is the native iOS
+project, not this Worker. Do not use `cursor-cloudflare` / `prd_cloudlfare`.
 
 Staging serves the **same live Ploy mode as www** (PR #57 hybrid routing). It is not a
 design-preview host. It binds the **same production D1, R2, and KV** as www. Do not
@@ -76,11 +77,11 @@ In-process TanStack needs the same secret **names** as Worker `purplelife`, espe
 Compare names only:
 
 ```bash
-doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+doppler run --project x21 --config prd_cloudflare -- \
   bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} \
   bunx wrangler secret list -c wrangler.deploy.ploy.jsonc'
 
-doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+doppler run --project x21 --config prd_cloudflare -- \
   bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} \
   bunx wrangler secret list -c wrangler.staging.jsonc'
 ```
@@ -90,7 +91,7 @@ Put a missing secret from Doppler without printing it. Example for `AUTH_JWT_SEC
 flows are exercised on staging):
 
 ```bash
-doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+doppler run --project x21 --config prd_cloudflare -- \
   bash -c 'printf %s "$AUTH_JWT_SECRET" | CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} \
   bunx wrangler secret put AUTH_JWT_SECRET -c wrangler.staging.jsonc'
 ```
@@ -102,7 +103,7 @@ doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
 bun run build:staging:ploy
 
 # Deploy staging Worker only. Does not deploy purplelife.
-doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+doppler run --project x21 --config prd_cloudflare -- \
   bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} \
   bunx wrangler deploy -c wrangler.staging.jsonc'
 ```
@@ -152,7 +153,7 @@ done
 Authenticated read (password from Doppler, never printed). Proves sign-in plus a
 user-scoped D1 `profiles` read on the staging host. A real sign-in must return
 HTTP 200 with `access_token`. HTTP 500 HTML means the D1 binding was dropped.
-On a Mac, prefer Doppler project `x21` config `prd_cloudflare`:
+Use Doppler project `x21` config `prd_cloudflare` (native iOS stays `x21` / `prd`):
 
 ```bash
 doppler run --project x21 --config prd_cloudflare -- \
@@ -170,7 +171,7 @@ connect buttons stay www-only.
 Redeploy the previous `purplelife-staging` version:
 
 ```bash
-doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+doppler run --project x21 --config prd_cloudflare -- \
   bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} \
   bunx wrangler versions list -c wrangler.staging.jsonc'
 ```

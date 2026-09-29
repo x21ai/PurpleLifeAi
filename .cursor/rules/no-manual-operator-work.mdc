@@ -11,7 +11,7 @@ The agent executes operational work end to end. Do not instruct the operator to 
 
 Run these yourself (credentials from Doppler when needed):
 
-- **Secrets and env**: `doppler run --project cursor-cloudflare --config prd_cloudlfare -- ...`
+- **Secrets and env**: Worker deploy, `build:prod`, and `bun run test:www-cloudflare-data` use `doppler run --project x21 --config prd_cloudflare -- ...`. Native iOS stays `x21` / `prd`. Do not retarget Flutter dart-define scripts.
 - **Supabase**: Management API (`POST /v1/projects/{ref}/database/query` for DDL, `/secrets`, edge function deploy via `bunx supabase@latest functions deploy`), `psql` via Session pooler (5432), type regen, migration apply
 - **Cloudflare**: `wrangler deploy`, DNS via API (`CLOUDFLARE_DNS`), cron and route config in repo
 - **Build and quality**: `bun run` dev, build, lint, all `check:*` gates, Playwright e2e
@@ -39,6 +39,6 @@ Do not ask the operator to:
 
 ## When blocked
 
-1. Check Doppler (`cursor-cloudflare` / `prd_cloudlfare`) before asking for secrets.
+1. For Worker deploy and www Cloudflare smoke, check Doppler (`x21` / `prd_cloudflare`) before asking for secrets. Native iOS secrets are `x21` / `prd`.
 2. If missing access, ask the user to grant Doppler or API credentials, not to perform the operation manually.
 3. Report what you tried, the error, and the exact credential or permission still needed.

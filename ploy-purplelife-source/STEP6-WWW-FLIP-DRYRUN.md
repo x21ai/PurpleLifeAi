@@ -173,7 +173,7 @@ curl -sS -o /dev/null -w "www /api/auth/sign-in OPTIONS %{http_code}\n" \
 
 ```bash
 CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0 \
-  doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+  doppler run --project x21 --config prd_cloudflare -- \
   bunx wrangler versions list --name purplelife -c wrangler.deploy.jsonc
 ```
 
@@ -185,7 +185,7 @@ Save the **version id** and deploy timestamp in the handoff log.
 
 ```bash
 CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0 \
-  doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+  doppler run --project x21 --config prd_cloudflare -- \
   bunx wrangler rollback -c wrangler.deploy.ploy.jsonc   # after flip exists
 # Or rollback wrangler.deploy.jsonc if flip used that name
 ```
@@ -196,7 +196,7 @@ CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0 \
 git checkout <pre-flip-commit>
 bun run build:prod
 CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0 \
-  doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+  doppler run --project x21 --config prd_cloudflare -- \
   bunx wrangler deploy -c wrangler.deploy.jsonc
 ```
 
@@ -235,12 +235,12 @@ bun run build:staging:ploy   # interim: same Astro tree; swap when www build scr
 ```bash
 # DRY-RUN: validate bundle size and bindings without publishing
 CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0 \
-  doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+  doppler run --project x21 --config prd_cloudflare -- \
   bunx wrangler deploy -c wrangler.deploy.ploy.jsonc --dry-run
 
 # LIVE (when GO):
 CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0 \
-  doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+  doppler run --project x21 --config prd_cloudflare -- \
   bunx wrangler deploy -c wrangler.deploy.ploy.jsonc
 ```
 

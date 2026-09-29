@@ -6,7 +6,7 @@
 //
 // Usage (after #47 is on main):
 //   bun run build:www-ploy
-//   doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+//   doppler run --project x21 --config prd_cloudflare -- \
 //     bash -c 'CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID:-08e766e92db74bc7ef14c6b5c86bddf0} \
 //     bunx wrangler deploy -c wrangler.deploy.ploy.jsonc'
 {

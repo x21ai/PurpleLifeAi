@@ -185,7 +185,7 @@ file, so a reintroduced unguarded call site cannot merge.
    both branches point at the same commit.
 6. Only after explicit owner approval:
    `bun run build:prod` then
-   `doppler run --project cursor-cloudflare --config prd_cloudlfare -- bunx wrangler deploy -c wrangler.deploy.jsonc`
+   `doppler run --project x21 --config prd_cloudflare -- bunx wrangler deploy -c wrangler.deploy.jsonc`
    (override `CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0` if
    Doppler still carries the wrong account).
 7. Post-deploy: `bun run test:e2e:prod` and a quick manual pass of the changed

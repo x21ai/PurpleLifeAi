@@ -9,6 +9,14 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-29 Worker deploy Doppler is x21/prd_cloudflare (no deploy):**
+`build:prod`, `build:prod:supabase`, `deploy:staging:ploy`,
+`deploy:staging:ploy:dry-run`, and `deploy:www-ploy:dry-run` use Doppler project
+`x21` config `prd_cloudflare`, same as `bun run test:www-cloudflare-data`.
+Native iOS stays `x21` / `prd`. Flutter dart-define scripts still name
+`cursor-cloudflare` / `prd_cloudlfare`. Deploy runbooks updated. Do not deploy
+from this change. `main` at branch start includes #42 (`d2e9d075`).
+
 **2026-09-29 D1 Today/Vitals/reports fix rebased onto main after #63 (PR #42, open, no deploy):**
 `main` is `ff720d97` (#63 on top of #62). Branch `cursor/oura-today-d1-fix-7c1f`
 is rebased onto that commit and remains PR #42 (not merged). Preserved:
@@ -166,6 +174,30 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-29T16:40:00Z — Worker deploy Doppler is x21/prd_cloudflare
+
+- **Requested:** On current main, point Cloudflare deploy and www-cloudflare-data
+  smoke commands at Doppler project `x21` config `prd_cloudflare`. Docs and
+  scripts still said `cursor-cloudflare` and typo `prd_cloudlfare`. Do not change
+  native iOS (`x21` / `prd`) or Flutter Doppler projects. Do not deploy. One PR.
+- **Done:** `package.json` `build:prod`, `build:prod:supabase`,
+  `deploy:staging:ploy`, `deploy:staging:ploy:dry-run`, and
+  `deploy:www-ploy:dry-run` now use `x21` / `prd_cloudflare`.
+  `test:www-cloudflare-data` already did. Deploy runbooks updated
+  (`docs/DEPLOY-WWW-PLOY.md`, `docs/DEPLOY-STAGING-PLOY.md`,
+  `docs/OAUTH-CORS-AUDIT.md` deploy section, `docs/SYNC-AND-RELEASE.md`,
+  `docs/CLOUDFLARE-TESTER-CHECKLIST.md`, `docs/CLOUDFLARE-MIGRATION.md`,
+  `docs/oauth-provider-setup.md`, `ploy-purplelife-source/STEP6-WWW-FLIP-DRYRUN.md`,
+  `wrangler.deploy.ploy.jsonc` usage comment). Flutter scripts unchanged.
+  Playwright prod e2e scripts still name the old project.
+- **Issues:** None. No Worker deploy. Live hosts unchanged.
+- **Stand / next:** PR open. Operator deploys only when they choose, with
+  `x21` / `prd_cloudflare`.
+- **Who / where:** Cursor cloud agent, branch `cursor/doppler-x21-prd-cloudflare-776c`.
+- **Evidence:** `node` check that deploy/smoke scripts name `x21` / `prd_cloudflare`
+  and Flutter/e2e scripts were not retargeted. `package.json` parses.
+- **Timestamp:** 2026-09-29T16:40:00Z
 
 ### 2026-09-29T16:04:10Z — Rebase PR #42 onto main after #62 and #63
 
