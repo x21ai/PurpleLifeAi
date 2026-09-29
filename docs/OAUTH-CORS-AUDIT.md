@@ -203,7 +203,7 @@ CORS/OAuth hardening ships with the **www** Worker only:
 bun run check:oauth-cors
 bun run build:prod
 CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0 \
-  doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+  doppler run --project x21 --config prd_cloudflare -- \
   bunx wrangler deploy -c wrangler.deploy.jsonc
 ```
 

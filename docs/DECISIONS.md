@@ -16,6 +16,12 @@ Also see `mem/index.md` for deeper architectural notes.
 
 ---
 
+### 2026-09-29 - PurpleLife Worker deploy Doppler is x21/prd_cloudflare [ACTIVE]
+
+- **Decision:** Cloudflare Worker deploy, `bun run build:prod`, `bun run build:prod:supabase`, staging/www Ploy deploy scripts, and `bun run test:www-cloudflare-data` use Doppler project `x21` and config `prd_cloudflare`. Native iOS stays Doppler project `x21` config `prd`. Flutter dart-define scripts are not retargeted by this decision.
+- **Reason:** Mac deploys after #57, #60, #62, and #42 use `x21` / `prd_cloudflare`. Repo scripts and deploy runbooks still named `cursor-cloudflare` and the typo config `prd_cloudlfare`.
+- **Implications:** New Worker deploy commands must not copy `cursor-cloudflare` or `prd_cloudlfare`. `x21` / `prd` remains native iOS only. Historical handoff lines that record an older deploy command stay as history.
+
 ### 2026-09-29 — post-#62 auth follow-ups match the live Worker hotfix [ACTIVE]
 
 - **Decision:** `setRequestBindings` keeps a previous non-empty string when a later

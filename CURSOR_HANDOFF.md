@@ -1,4 +1,11 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-29 (PR #42 rebased onto `main` `ff720d97` after #62/#63; **do not** wrangler deploy `purplelife` or `purplelife-staging`, and **do not** run remote D1 SQL from this agent).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-29 (Worker deploy Doppler is `x21` / `prd_cloudflare`; **do not** wrangler deploy `purplelife` or `purplelife-staging` from this agent).
+
+**Recent (2026-09-29): Worker deploy Doppler project.** `build:prod`,
+`build:prod:supabase`, `deploy:staging:ploy`, `deploy:staging:ploy:dry-run`, and
+`deploy:www-ploy:dry-run` use Doppler project `x21` config `prd_cloudflare`,
+same as `bun run test:www-cloudflare-data`. Native iOS stays `x21` / `prd`.
+Flutter dart-define scripts still name `cursor-cloudflare` / `prd_cloudlfare`.
+No Worker deploy from this change.
 
 **Recent (2026-09-29): PR #42 rebased onto main `ff720d97` (#63).** Today/Vitals/reports D1
 gaps were still absent from `main` after #62 and #63. Branch `cursor/oura-today-d1-fix-7c1f`
@@ -41,9 +48,9 @@ uses `www-entry.ts` / `www-routing.ts`. Build: `bun run build:staging:ploy`
 (`VITE_PUBLIC_SITE_ENV=production`, site `https://staging.purplelife.org`). No cron
 triggers, no `PROD` proxy, same eigital D1/R2/KV as www. Live
 https://staging.purplelife.org still shows design-preview home until the operator
-deploys. Runbook: `docs/DEPLOY-STAGING-PLOY.md`. On a Mac, Worker smoke and
-deploy prefer Doppler project `x21` config `prd_cloudflare`. Config `prd` on that
-project stays native iOS. Older commands still name `cursor-cloudflare` /
+deploys. Runbook: `docs/DEPLOY-STAGING-PLOY.md`. Worker smoke and deploy use
+Doppler project `x21` config `prd_cloudflare`. Config `prd` on that project
+stays native iOS. Historical log lines may still name `cursor-cloudflare` /
 `prd_cloudlfare`.
 
 **Recent (2026-09-24 ~10:00 PM ET): Ploy-first www routing.** After cloud-agent credit
@@ -1778,7 +1785,7 @@ branded auth at `https://auth.purplelife.org`.
 **Deploy model (during Lovable redesign):** manual only. `.github/workflows/deploy.yml`
 triggers on `workflow_dispatch`, not on push to `main`. Cursor runs the gatekeeper
 checklist in `docs/LOVABLE-REDESIGN-WORKFLOW.md`, then asks the owner before deploy.
-Local path: `bun run build:prod` then `doppler run --project cursor-cloudflare --config prd_cloudlfare -- bash -c 'export CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0; bunx wrangler deploy -c wrangler.deploy.jsonc'`.
+Local path: `bun run build:prod` then `doppler run --project x21 --config prd_cloudflare -- bash -c 'export CLOUDFLARE_ACCOUNT_ID=08e766e92db74bc7ef14c6b5c86bddf0; bunx wrangler deploy -c wrangler.deploy.jsonc'`.
 Cron Triggers fan out from `scheduled()` in `src/server.ts` through a `SELF` service binding.
 
 ## Session audit (2026-07-03, Cursor restart recovery)
@@ -1904,10 +1911,10 @@ The agent runs these end to end via scripts, Doppler, and APIs. Do not hand off 
 |------|----------------|-------|
 | Capacitor sync | `bun run native:sync` | Copies web assets and plugin config into `ios/` and `android/` |
 | iOS simulator build | `scripts/native-ios-build.sh` | `xcode-select`, `native:sync`, `pod install` when a Podfile exists (CapApp-SPM skips pods), `xcodebuild` Debug simulator |
-| Worker deploy | `bun run build:prod` + `wrangler deploy` | Doppler `cursor-cloudflare` / `prd_cloudlfare` |
+| Worker deploy | `bun run build:prod` + `wrangler deploy` | Doppler `x21` / `prd_cloudflare` |
 | Supabase migrations / DDL | Management API `POST /v1/projects/{ref}/database/query` | CLI `db query --linked` may 403; see `docs/manual-deploy-bundle.md` |
 | Edge functions | `bunx supabase@latest functions deploy <name> --project-ref xxnzmfzsjplrutrgbzxy` | |
-| Doppler secrets | `doppler run --project cursor-cloudflare --config prd_cloudlfare -- ...` | Agent resolves keys; do not ask the user for manual env mapping |
+| Doppler secrets | Worker deploy and www smoke: `doppler run --project x21 --config prd_cloudflare -- ...`. Native iOS: `x21` / `prd`. | Agent resolves keys; do not ask the user for manual env mapping |
 | Native health backend | `/api/health/native-sync`, `native-health.server.ts` | Shipped `1a24bd8`, deploy `9a6481ac` |
 
 ### Environment-blocked (machine or account limits, not operator GUI work)
@@ -1966,7 +1973,7 @@ In the local `.env` (values not committed beyond this machine):
 - `SUPABASE_PROJECT_ID`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`
 - `VITE_SUPABASE_PROJECT_ID`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`
 
-Production secrets live in Doppler `cursor-cloudflare` / `prd_cloudlfare`. Agent runs operational commands via `doppler run` automatically; do not ask the user for manual dashboard work unless truly blocked.
+PurpleLife Worker deploy and www Cloudflare smoke use Doppler `x21` / `prd_cloudflare`. Native iOS uses `x21` / `prd`. Agent runs operational commands via `doppler run` automatically; do not ask the user for manual dashboard work unless truly blocked.
 
 Referenced in code but NOT present locally (production needs them; several block local testing of those paths):
 

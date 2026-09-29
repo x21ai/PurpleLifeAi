@@ -62,7 +62,7 @@ Keep both redirect URIs registered: the branded one is what the client uses, the
 When production runs on Workers JWT + D1 (not Supabase Auth), social sign-in uses
 `/api/auth/oauth/{google,apple}` and callback pages at `/oauth/{google,apple}/callback`.
 
-Worker secrets (Doppler `cursor-cloudflare` / `prd_cloudlfare`):
+Worker secrets (Doppler `x21` / `prd_cloudflare`):
 
 | Secret | Purpose |
 |--------|---------|

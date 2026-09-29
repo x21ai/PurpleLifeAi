@@ -12,7 +12,7 @@ Production target: **100% Cloudflare** (`DATA_BACKEND=cloudflare`) with Supabase
 ## Deploy (operator)
 
 ```bash
-# 1. Worker secrets (Doppler cursor-cloudflare / prd_cloudlfare)
+# 1. Worker secrets (Doppler x21 / prd_cloudflare)
 #    DATA_BACKEND=cloudflare
 #    AUTH_JWT_SECRET=<random 32+ bytes>
 #    IMPORT_ADMIN_SECRET=<random>  # remove after tester passwords set
