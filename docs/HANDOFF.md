@@ -9,6 +9,15 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-09-29 sign-in D1 binding clobber (no deploy):** Mac patch `4670a48f` matches
+this branch. `setRequestBindings` keeps
+non-string Worker bindings (`DB`, `STORAGE`, `CACHE`, `ASSETS`, `PROD`, and others) when a
+handler passes `process.env`. `POST /api/auth/sign-in` returns JSON 500
+`Sign-in failed` instead of the HTML crash page if it still throws. Live www and
+staging still 500 until the operator deploys `wrangler.deploy.ploy.jsonc` and
+`wrangler.staging.jsonc`. Do not deploy from a cloud agent. GitHub issue 61.
+PR #62 (`cursor/auth-signin-d1-bindings-6c69`).
+
 **2026-09-29 staging live Ploy hybrid (no deploy):** `purplelife-staging` now uses
 `ploy-staging/worker/www-entry.ts` (same route split as www PR #57). Ploy build sets
 `VITE_PUBLIC_SITE_ENV=production` with Astro site `https://staging.purplelife.org`, so
@@ -135,6 +144,42 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-09-29T15:28:00Z — align sign-in fix with Mac patch 4670a48f
+
+- **Requested:** Apply the verified Mac patch from `fix/auth-signin-d1-bindings-clobber`
+  @ `4670a48f` if the PR was not already open. Do not deploy.
+- **Done:** PR #62 was already open with the same merge and JSON 500. Added the
+  Mac smoke script change (`package.json` `test:www-cloudflare-data` uses Doppler
+  `x21` / `prd_cloudflare`), `resetRequestBindingsForTests`, and the two Mac
+  cases (D1 preserved, `requireD1` throws when DB was never seeded). Tests stay
+  on `bun test` because vitest is not a dependency. No Worker deploy.
+- **Issues:** Live www and staging still 500 until both Workers are deployed.
+- **Stand / next:** PR #62. Operator deploys both wrangler configs, then smoke.
+- **Who / where:** Cursor cloud agent, `cursor/auth-signin-d1-bindings-6c69`.
+- **Evidence:** `bun test src/lib/cloudflare/bindings.test.ts` 3/3. `tsc --noEmit` PASS.
+- **Timestamp:** 2026-09-29T15:28:00Z
+
+### 2026-09-29T15:25:00Z — sign-in keeps D1 when handlers set process.env
+
+- **Requested:** Fix production `POST /api/auth/sign-in` HTTP 500 HTML on www and
+  staging. `setRequestBindings(process.env)` was replacing the Worker env and
+  dropping `DB`. Return JSON 500 on handler throws. Add a unit test. Do not deploy.
+  GitHub issue 61.
+- **Done:** `src/lib/cloudflare/bindings.ts` merges and preserves non-string
+  bindings. `src/routes/api/auth/sign-in.ts` catches throws and returns
+  `{ "error": "Sign-in failed" }` with status 500. Empty or malformed bodies stay
+  400. Regression test `src/lib/cloudflare/bindings.test.ts` (`bun run test:bindings`)
+  is in CI. Smoke notes in `docs/DEPLOY-WWW-PLOY.md` and `docs/DEPLOY-STAGING-PLOY.md`.
+- **Issues:** Live hosts stay broken until the operator deploys both Workers.
+  This agent did not deploy and did not touch Supabase data.
+- **Stand / next:** PR #62 is open. Operator deploys `purplelife`
+  (`wrangler.deploy.ploy.jsonc`) and `purplelife-staging` (`wrangler.staging.jsonc`),
+  then confirms a real sign-in is not 500 and `{}` is still 400.
+- **Who / where:** Cursor cloud agent, `/workspace`,
+  `cursor/auth-signin-d1-bindings-6c69`.
+- **Evidence:** `bun test src/lib/cloudflare/bindings.test.ts` PASS (1/1). `node scripts/check-no-em-dash.mjs` PASS.
+- **Timestamp:** 2026-09-29T15:25:00Z
 
 ### 2026-09-29T14:57:07Z — staging Ploy live mode, same hybrid routing as www
 

@@ -10,6 +10,20 @@ Format:
 
 ---
 
+## Sign-in D1 binding clobber (raised 2026-09-29)
+
+- [ ] **`auth-signin-d1-bindings`** — `POST /api/auth/sign-in` with real
+  email/password returns HTTP 500 HTML on https://www.purplelife.org and
+  https://staging.purplelife.org. Cause: handlers call
+  `setRequestBindings(process.env)` after `server.ts` seeded the Worker env, which
+  dropped non-string bindings (`DB`). Repo fix preserves those bindings and returns
+  JSON 500 `{ "error": "Sign-in failed" }` if the handler still throws. Empty body
+  stays 400 `email and password required`. Operator must deploy BOTH Workers from a
+  Mac (cloud agents must not deploy): `wrangler.deploy.ploy.jsonc` (`purplelife`) and
+  `wrangler.staging.jsonc` (`purplelife-staging`). Then a real sign-in must be HTTP
+  200 with `access_token`, not 500. GitHub issue 61. Do not pause Supabase or wipe
+  data. Code is on PR #62. _Raised 2026-09-29._
+
 ## Staging live Ploy (raised 2026-09-29)
 
 - [ ] **`staging-ploy-operator-deploy`** — Repo routes `purplelife-staging` through

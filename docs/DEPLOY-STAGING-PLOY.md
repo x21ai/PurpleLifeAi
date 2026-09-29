@@ -150,10 +150,12 @@ done
 ```
 
 Authenticated read (password from Doppler, never printed). Proves sign-in plus a
-user-scoped D1 `profiles` read on the staging host:
+user-scoped D1 `profiles` read on the staging host. A real sign-in must return
+HTTP 200 with `access_token`. HTTP 500 HTML means the D1 binding was dropped.
+On a Mac, prefer Doppler project `x21` config `prd_cloudflare`:
 
 ```bash
-doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+doppler run --project x21 --config prd_cloudflare -- \
   env E2E_BASE_URL=https://staging.purplelife.org bun run test:www-cloudflare-data
 ```
 

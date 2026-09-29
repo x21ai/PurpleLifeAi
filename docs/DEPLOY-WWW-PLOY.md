@@ -145,9 +145,15 @@ Secrets (`AUTH_JWT_SECRET`, OAuth keys, `CRON_SECRET`, etc.) remain on Worker `p
 ```bash
 BASE=https://www.purplelife.org
 
-# API still TanStack
-curl -sS -o /dev/null -w "sign-in route %{http_code}\n" -X POST "$BASE/api/auth/sign-in" \
+# API still TanStack. Empty body stays HTTP 400 with
+# {"error":"email and password required"}. HTTP 500 HTML is a failure.
+curl -sS -D - -o /tmp/www-signin-empty.json -X POST "$BASE/api/auth/sign-in" \
   -H 'content-type: application/json' -d '{}'
+grep -q 'email and password required' /tmp/www-signin-empty.json
+
+# After the D1 binding fix is deployed, a real email/password must return HTTP 200
+# JSON with access_token (not HTTP 500 HTML). Use bun run test:www-cloudflare-data.
+# On a Mac, prefer Doppler project x21 config prd_cloudflare for that smoke.
 
 # Ploy UI shells
 for p in / /today/ /journal/ /meds/ /login/; do
@@ -177,8 +183,10 @@ bun run test:www-cloudflare-data
 
 This signs in through `POST /api/auth/sign-in`, then reads the authenticated user's own
 `profiles` row through `POST /api/data/query`. A pass proves production JWT auth and a
-user-scoped D1 read. It is a post-deploy API contract smoke, not a substitute for the
-browser pass through the hybrid Worker. Browser smoke: sign in at `/login`, confirm live `/today`, `/journal`,
+user-scoped D1 read. HTTP 500 HTML from sign-in means Worker `DB` was dropped.
+It is a post-deploy API contract smoke, not a substitute for the
+browser pass through the hybrid Worker. On a Mac, prefer Doppler project `x21`
+config `prd_cloudflare` when running this smoke. Browser smoke: sign in at `/login`, confirm live `/today`, `/journal`,
 `/meds`, `/reports`, and `/tools` data; verify account creation/recovery and detail pages
 fall through to TanStack; verify OAuth callbacks still hit `/oauth/*/callback`.
 
