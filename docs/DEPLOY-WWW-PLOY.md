@@ -11,7 +11,7 @@ scheduled handlers.
 | Host | Worker | UI | API / OAuth / crons |
 |------|--------|-----|---------------------|
 | www (today) | `purplelife` | TanStack SSR | TanStack in `dist/server/server.js` |
-| staging (now) | `purplelife-staging` | Ploy Astro | **Proxied** to `purplelife` via `PROD` binding |
+| staging | `purplelife-staging` | Ploy Astro live copy | TanStack in-process (`www-entry.ts`, no cron triggers) |
 | **www (after flip)** | `purplelife` | Ploy Astro | TanStack **in-process** (no `PROD` proxy) |
 
 ```
@@ -196,6 +196,6 @@ Or roll to a saved version id from pre-flip `wrangler versions list`.
 
 ## Related docs
 
-- Staging (unchanged): `docs/DEPLOY-STAGING-PLOY.md` (on PR #44)
+- Staging hybrid (same entry, no crons): `docs/DEPLOY-STAGING-PLOY.md`
 - Step 6 GO/NO-GO: `ploy-purplelife-source/STEP6-WWW-FLIP-DRYRUN.md`
 - OAuth/CORS: `docs/OAUTH-CORS-AUDIT.md` (PR #45)

@@ -115,6 +115,22 @@ Also see `mem/index.md` for deeper architectural notes.
 - **Reason:** Brand/style constraint (`mem/constraint/no-em-dash.md`).
 - **Implications:** Same rule applies to Flutter user-facing strings.
 
+### 2026-09-29 — Staging uses the www hybrid route split, without crons [ACTIVE]
+
+- **Decision:** Worker `purplelife-staging` uses `ploy-staging/worker/www-entry.ts` and
+  `www-routing.ts`. `/api/*` and `/oauth/*` run TanStack in-process against the same
+  production D1/R2/KV as `purplelife`. Every other path is Ploy Astro built with
+  `VITE_STAGING_LIVE_DATA=1` and `VITE_PUBLIC_SITE_ENV=production`, with Astro `site`
+  set to `https://staging.purplelife.org`. Staging registers no cron triggers and no
+  `PROD` proxy. `AUTH_JWT_SECRET` on `purplelife-staging` must match `purplelife`.
+- **Reason:** The old staging build (`VITE_PUBLIC_SITE_ENV=staging`) prerendered
+  design-preview marketing ("Static design preview", "Design review build", "local mock
+  state") even though sign-in was already proxied. Matching the PR #57 route split
+  keeps one auth and data path.
+- **Implications:** Do not pause Supabase or wipe D1. Do not add staging crons.
+  Operator deploy only (`docs/DEPLOY-STAGING-PLOY.md`). A staging write is a
+  production-data write.
+
 ### 2026-07-04 — Agent-owned operations [ACTIVE]
 
 - **Decision:** Agents run Doppler, Supabase API, wrangler deploy, git, gates, previews,
