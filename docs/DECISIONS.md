@@ -16,6 +16,12 @@ Also see `mem/index.md` for deeper architectural notes.
 
 ---
 
+### 2026-10-01 - Flutter dart-define Doppler is x21/prd_cloudflare [ACTIVE]
+
+- **Decision:** Flutter iOS, Android, and web dart-define scripts, including `bun run ios:testflight`, default Doppler project `x21` and config `prd_cloudflare` for `VITE_SUPABASE_PUBLISHABLE_KEY`. Override with `FLUTTER_DOPPLER_PROJECT` and `FLUTTER_DOPPLER_CONFIG`. Native ASC, team, and Luciq secrets stay `x21` / `prd`.
+- **Reason:** The `cursor-cloudflare` project is missing on the Mac that uploads TestFlight. Build 30 succeeded only after setting those env vars by hand. Playwright prod e2e scripts are unchanged.
+- **Implications:** Supersedes the Flutter dart-define sentence in the 2026-09-29 Worker deploy Doppler decision. That decision stays active for Worker deploy. Do not point new Flutter release scripts at `cursor-cloudflare` or the typo config `prd_cloudlfare`.
+
 ### 2026-09-29 - PurpleLife Worker deploy Doppler is x21/prd_cloudflare [ACTIVE]
 
 - **Decision:** Cloudflare Worker deploy, `bun run build:prod`, `bun run build:prod:supabase`, staging/www Ploy deploy scripts, and `bun run test:www-cloudflare-data` use Doppler project `x21` and config `prd_cloudflare`. Native iOS stays Doppler project `x21` config `prd`. Flutter dart-define scripts are not retargeted by this decision.

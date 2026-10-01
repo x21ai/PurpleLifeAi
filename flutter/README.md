@@ -49,7 +49,7 @@ Optional overrides (defaults match production):
 | `SITE_URL` | `https://www.purplelife.org` |
 | `WORKER_API_BASE_URL` | `https://www.purplelife.org/api` |
 
-Load keys from Doppler (`cursor-cloudflare` / `prd_cloudlfare`): `VITE_SUPABASE_PUBLISHABLE_KEY` maps to `SUPABASE_ANON_KEY`.
+Load keys from Doppler (`x21` / `prd_cloudflare`): `VITE_SUPABASE_PUBLISHABLE_KEY` maps to `SUPABASE_ANON_KEY`.
 
 ## Run (development)
 

@@ -4,7 +4,8 @@
 # Capacitor emergency rollback: scripts/native-ios-testflight.sh (ios:testflight:capacitor).
 #
 # Prerequisites: full Xcode.app, Doppler x21/prd (PURPLE_LIFE_* ASC + team + Luciq),
-# cursor-cloudflare/prd_cloudlfare (VITE_SUPABASE_PUBLISHABLE_KEY).
+# x21/prd_cloudflare (VITE_SUPABASE_PUBLISHABLE_KEY). Override with
+# FLUTTER_DOPPLER_PROJECT / FLUTTER_DOPPLER_CONFIG.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -13,8 +14,8 @@ FLUTTER_DIR="${REPO_ROOT}/flutter"
 source "${REPO_ROOT}/scripts/lib/doppler-purple-life.sh"
 DOPPLER_PROJECT="${PURPLE_DOPPLER_PROJECT}"
 DOPPLER_CONFIG="${PURPLE_DOPPLER_CONFIG}"
-FLUTTER_DOPPLER_PROJECT="${FLUTTER_DOPPLER_PROJECT:-cursor-cloudflare}"
-FLUTTER_DOPPLER_CONFIG="${FLUTTER_DOPPLER_CONFIG:-prd_cloudlfare}"
+FLUTTER_DOPPLER_PROJECT="${FLUTTER_DOPPLER_PROJECT:-x21}"
+FLUTTER_DOPPLER_CONFIG="${FLUTTER_DOPPLER_CONFIG:-prd_cloudflare}"
 ARCHIVE_PATH="${ARCHIVE_PATH:-${FLUTTER_DIR}/build/ios/archive/Runner.xcarchive}"
 EXPORT_DIR="${EXPORT_DIR:-${REPO_ROOT}/build/flutter-ios/export}"
 EXPORT_OPTIONS="${FLUTTER_DIR}/ios/ExportOptions.plist"

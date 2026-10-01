@@ -132,7 +132,7 @@ class JournalRepository {
 
     final id = _uuid.v4();
     final at = (capturedAt ?? DateTime.now()).toUtc();
-    final kind = _inferKind(text: trimmed, mediaCount: media.length);
+    final kind = journalEntryKind(text: trimmed, media: media);
     final payload = <String, dynamic>{
       'id': id,
       'user_id': userId,
@@ -177,8 +177,8 @@ class JournalRepository {
         }
       }
     } else if (media.isNotEmpty && trimmed.isEmpty) {
-      throw StateError(
-        'Photos need a network connection to save. Add a text note or try again online.',
+          throw StateError(
+        'Photos, voice, and video need a network connection to save. Add a text note or try again online.',
       );
     }
 
@@ -186,14 +186,6 @@ class JournalRepository {
       payload,
       pendingUpload: !_connectivity.isOnline,
     );
-  }
-
-  static String _inferKind({required String text, required int mediaCount}) {
-    final hasText = text.isNotEmpty;
-    final hasMedia = mediaCount > 0;
-    if (hasText && hasMedia) return 'mixed';
-    if (hasMedia) return 'photo';
-    return 'text';
   }
 
   Future<List<String>> _uploadMedia({
@@ -205,8 +197,9 @@ class JournalRepository {
     final paths = <String>[];
     for (var i = 0; i < media.length; i++) {
       final file = media[i];
-      final ext = _extFor(file);
-      final path = '$userId/$entryId/photo-$ts-$i.$ext';
+      final ext = journalMediaExtension(file);
+      final prefix = journalMediaStoragePrefix(file.kind);
+      final path = '$userId/$entryId/$prefix-$ts-$i.$ext';
       await _supabase.storage.from('journal-media').uploadBinary(
             path,
             file.bytes,
@@ -226,18 +219,6 @@ class JournalRepository {
       if (signed.isNotEmpty) urls.add(signed);
     }
     return urls;
-  }
-
-  static String _extFor(JournalMediaFile file) {
-    final fromName = file.fileName.split('.').last.toLowerCase();
-    if (fromName.isNotEmpty && fromName.length <= 5 && fromName != file.fileName) {
-      return fromName;
-    }
-    final mime = file.mimeType.toLowerCase();
-    if (mime.contains('png')) return 'png';
-    if (mime.contains('webp')) return 'webp';
-    if (mime.contains('heic')) return 'heic';
-    return 'jpg';
   }
 
   /// Archive or restore an entry (queued offline-first update).

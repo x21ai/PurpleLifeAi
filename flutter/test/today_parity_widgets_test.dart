@@ -1,6 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:purple_app/features/journal/journal_media_capture.dart';
+import 'package:purple_app/features/journal/journal_media_file.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:purple_app/features/hydration/hydration_repository.dart';
 import 'package:purple_app/features/meds/med_intelligence_cards.dart';
 import 'package:purple_app/features/meds/meds_screen.dart';
@@ -13,8 +19,56 @@ import 'package:purple_app/features/today/today_quick_log_panel.dart';
 
 import 'support/purple_test_theme.dart';
 
+class _FakeCapture implements MediaCapturer {
+  bool recording = false;
+
+  @override
+  bool get isRecording => recording;
+
+  @override
+  Future<void> cancelVoice() async {
+    recording = false;
+  }
+
+  @override
+  Future<JournalMediaFile?> pickVideo({required ImageSource source}) async {
+    return JournalMediaFile(
+      bytes: Uint8List.fromList(const [1, 2]),
+      fileName: 'clip.mp4',
+      mimeType: 'video/mp4',
+      kind: JournalMediaKind.video,
+    );
+  }
+
+  @override
+  Future<bool> startVoice() async {
+    recording = true;
+    return true;
+  }
+
+  @override
+  Future<JournalMediaFile?> stopVoice() async {
+    recording = false;
+    return JournalMediaFile(
+      bytes: Uint8List.fromList(const [9, 8, 7]),
+      fileName: 'voice-note.m4a',
+      mimeType: 'audio/mp4',
+      kind: JournalMediaKind.voice,
+    );
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    mediaCapturer = _FakeCapture();
+  });
+
+  tearDown(() {
+    mediaCapturer = null;
+  });
 
   testWidgets('signals grid drops null metrics and shows connect empty state',
       (tester) async {
@@ -122,7 +176,7 @@ void main() {
     expect(find.byKey(const Key('meds-mini-timeline')), findsOneWidget);
   });
 
-  testWidgets('quick log voice and video icons are visible stubs',
+  testWidgets('quick log voice records a note instead of a stub',
       (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -141,9 +195,16 @@ void main() {
 
     expect(find.byIcon(Icons.mic_none_outlined), findsOneWidget);
     expect(find.byIcon(Icons.videocam_outlined), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.mic_none_outlined));
+
+    await tester.tap(find.byTooltip('Voice note'));
     await tester.pump();
-    expect(find.textContaining('Voice notes are not available'), findsOneWidget);
+    expect(find.byTooltip('Stop voice note'), findsOneWidget);
+    expect(find.textContaining('not available'), findsNothing);
+
+    await tester.tap(find.byTooltip('Stop voice note'));
+    await tester.pump();
+    expect(find.text('Voice note'), findsOneWidget);
+    expect(find.byType(InputChip), findsOneWidget);
   });
 
   testWidgets('Active and Archive are underline tabs', (tester) async {

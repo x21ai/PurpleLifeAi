@@ -2,7 +2,7 @@
 # Shared Flutter --dart-define values for Purple release builds.
 #
 # Source after scripts/app-build-env.sh. When calling inside doppler run
-# (cursor-cloudflare/prd_cloudlfare), VITE_SUPABASE_PUBLISHABLE_KEY must be set.
+# (x21/prd_cloudflare), VITE_SUPABASE_PUBLISHABLE_KEY must be set.
 #
 # Override targets for staging:
 #   FLUTTER_SITE_URL=https://staging.example.com

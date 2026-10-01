@@ -15,6 +15,7 @@ import 'package:purple_app/features/today/today_repository.dart';
 import 'package:purple_app/features/today/today_screen.dart';
 import 'package:purple_app/shell/native_app_shell.dart';
 import 'package:purple_app/shell/routes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Regression for `tf27-stuck-keyboard`.
 ///
@@ -22,6 +23,10 @@ import 'package:purple_app/shell/routes.dart';
 /// because SyncStatusBar asserts without Supabase in widget tests.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
 
   group('NativeAppShell unfocus', () {
     const notesKey = Key('shell-unfocus-notes');

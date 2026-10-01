@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/core_providers.dart';
 import '../../shell/routes.dart';
+import '../journal/journal_media_capture.dart';
+import '../journal/journal_media_file.dart';
 import '../journal/journal_repository.dart';
 import '../seizures/seizure_repository.dart';
 
@@ -41,7 +46,9 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
   late TodayQuickLogKind _kind;
   late DateTime _when;
   final _notes = TextEditingController();
+  final List<JournalMediaFile> _media = [];
   bool _saving = false;
+  bool _recording = false;
 
   @override
   void initState() {
@@ -65,6 +72,9 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
 
   @override
   void dispose() {
+    if (mediaCapturer.isRecording) {
+      unawaited(mediaCapturer.cancelVoice());
+    }
     _notes.dispose();
     super.dispose();
   }
@@ -79,7 +89,8 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
   }
 
   bool get _requiresNotes =>
-      !widget.showSeizure || _kind == TodayQuickLogKind.other;
+      _media.isEmpty &&
+      (!widget.showSeizure || _kind == TodayQuickLogKind.other);
 
   Future<void> _pickWhen() async {
     final date = await showDatePicker(
@@ -107,6 +118,17 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
 
   Future<void> _save() async {
     if (_saving) return;
+    if (_recording || mediaCapturer.isRecording) {
+      try {
+        final file = await mediaCapturer.stopVoice();
+        _recording = false;
+        if (file != null) _media.add(file);
+      } catch (_) {
+        _recording = false;
+      }
+      if (mounted) setState(() {});
+    }
+    if (!mounted) return;
     final text = _notes.text.trim();
     if (_requiresNotes && text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -125,13 +147,17 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
               notes: text.isEmpty ? null : text,
             );
       } else {
-        await ref.read(journalRepositoryProvider).saveEntry(
-              text: text,
-              capturedAt: _when,
-            );
+        await _saveJournal(text);
+      }
+      if (widget.showSeizure &&
+          _kind != TodayQuickLogKind.other &&
+          _media.isNotEmpty) {
+        await _saveJournal(text);
       }
       if (!mounted) return;
       _notes.clear();
+      _media.clear();
+      _recording = false;
       setState(() => _when = _defaultWhen(widget.selectedDate));
       final label = switch (_kind) {
         TodayQuickLogKind.aura => 'Aura logged',
@@ -151,13 +177,106 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
     }
   }
 
-  void _stubCapture(String kind) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '$kind are not available in this build yet. Type your note, then save.',
-        ),
+  Future<void> _saveJournal(String text) {
+    return ref.read(journalRepositoryProvider).saveEntry(
+          text: text,
+          capturedAt: _when,
+          media: List<JournalMediaFile>.from(_media),
+        );
+  }
+
+  void _snack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _toggleVoice() async {
+    try {
+      if (_recording || mediaCapturer.isRecording) {
+        final file = await mediaCapturer.stopVoice();
+        if (!mounted) return;
+        setState(() => _recording = false);
+        if (file == null) {
+          _snack('No audio was captured.');
+          return;
+        }
+        setState(() => _media.add(file));
+        return;
+      }
+      final started = await mediaCapturer.startVoice();
+      if (!mounted) return;
+      if (!started) {
+        _snack('Allow microphone access to record a voice note.');
+        return;
+      }
+      setState(() => _recording = true);
+    } on MediaCaptureException catch (error) {
+      if (!mounted) return;
+      setState(() => _recording = false);
+      _snack(error.message);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _recording = false);
+      _snack("Couldn't record. Check microphone access and try again.");
+    }
+  }
+
+  Future<void> _addVideo(ImageSource source) async {
+    try {
+      final file = await mediaCapturer.pickVideo(source: source);
+      if (file == null || !mounted) return;
+      setState(() => _media.add(file));
+    } on MediaCaptureException catch (error) {
+      if (!mounted) return;
+      _snack(error.message);
+    } catch (_) {
+      if (!mounted) return;
+      _snack("Couldn't open the camera or photo library.");
+    }
+  }
+
+  Future<void> _showVideoSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF1A1520),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.videocam_outlined, color: Colors.white),
+                title: const Text('Record video', style: TextStyle(color: Colors.white)),
+                subtitle: Text(
+                  'Up to 60 seconds',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _addVideo(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.video_library_outlined, color: Colors.white),
+                title: const Text(
+                  'Choose from library',
+                  style: TextStyle(color: Colors.white),
+                ),
+                subtitle: Text(
+                  'Max 50 MB',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _addVideo(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -281,20 +400,46 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
             ),
           ),
         ),
+        if (_media.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (var i = 0; i < _media.length; i++)
+                InputChip(
+                  label: Text(
+                    _media[i].kind == JournalMediaKind.voice
+                        ? 'Voice note'
+                        : 'Video',
+                  ),
+                  onDeleted: _saving
+                      ? null
+                      : () => setState(() => _media.removeAt(i)),
+                  deleteIconColor: Colors.white.withValues(alpha: 0.8),
+                  labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                  backgroundColor: Colors.white.withValues(alpha: 0.08),
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
+                ),
+            ],
+          ),
+        ],
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             _ComposeToolButton(
-              icon: Icons.mic_none_outlined,
-              tooltip: 'Voice note',
-              onTap: _saving ? null : () => _stubCapture('Voice notes'),
+              icon: _recording
+                  ? Icons.stop_circle_outlined
+                  : Icons.mic_none_outlined,
+              tooltip: _recording ? 'Stop voice note' : 'Voice note',
+              onTap: _saving ? null : _toggleVoice,
             ),
             const SizedBox(width: 8),
             _ComposeToolButton(
               icon: Icons.videocam_outlined,
               tooltip: 'Video',
-              onTap: _saving ? null : () => _stubCapture('Video'),
+              onTap: _saving || _recording ? null : _showVideoSheet,
             ),
           ],
         ),

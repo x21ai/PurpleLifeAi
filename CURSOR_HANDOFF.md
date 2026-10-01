@@ -1,19 +1,24 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-10-01 (Flutter `1.0.0+30` design parity, not uploaded; **do not** wrangler deploy and **do not** run `ios:testflight` from a cloud agent).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-10-01 (Flutter `1.0.0+31` capture and focus, not uploaded; ASC tip **1.0 (30)** VALID; **do not** wrangler deploy and **do not** run `ios:testflight` from a cloud agent).
+
+**Recent (2026-10-01): Flutter build 31 voice, video, score focus, Doppler.**
+Today quick log and journal Record/Video capture audio and video into
+`journal-media` (60s / 50 MB). Score focus persists as `purple-today-focus`.
+Data and Biometrics empty states link to Tools. Flutter/TestFlight scripts
+default Doppler `x21` / `prd_cloudflare`. `flutter/pubspec.yaml` is `1.0.0+31`.
+Not uploaded. Live speech transcripts and meds scan/voice stay deferred.
+No Worker deploy.
 
 **Recent (2026-10-01): Flutter build 30 Today/Meds parity.** Residual
-`tf28-design-flutter-parity` rows are in the Flutter app: Last 7 capsule grid,
-signals null-filter, ScoreHero overlay, Today meds segment bar, hydration week
-bars and entry list, `/meds` refill and adherence cards, underline
-Active/Archive tabs. Quick log mic/video icons are stubs (no new permissions).
-`flutter/pubspec.yaml` is `1.0.0+30`. Mac next step after merge:
-`bun run ios:testflight`. No Worker deploy.
+`tf28-design-flutter-parity` rows shipped in `1.0.0+30` and ASC **1.0 (30)** is
+VALID. Mac upload used `FLUTTER_DOPPLER_PROJECT=x21` because
+`cursor-cloudflare` was missing. No Worker deploy.
 
 **Recent (2026-09-29): Worker deploy Doppler project.** `build:prod`,
 `build:prod:supabase`, `deploy:staging:ploy`, `deploy:staging:ploy:dry-run`, and
 `deploy:www-ploy:dry-run` use Doppler project `x21` config `prd_cloudflare`,
 same as `bun run test:www-cloudflare-data`. Native iOS stays `x21` / `prd`.
-Flutter dart-define scripts still name `cursor-cloudflare` / `prd_cloudlfare`.
-No Worker deploy from this change.
+Flutter dart-define scripts were retargeted to `x21` / `prd_cloudflare` on
+2026-10-01 (build 31). No Worker deploy from this change.
 
 **Recent (2026-09-29): PR #42 rebased onto main `ff720d97` (#63).** Today/Vitals/reports D1
 gaps were still absent from `main` after #62 and #63. Branch `cursor/oura-today-d1-fix-7c1f`
