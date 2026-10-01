@@ -221,7 +221,10 @@ void main() {
 
       await tester.tap(find.text('Log'));
       await tester.pumpAndSettle();
-      expect(find.text('What happened?'), findsOneWidget);
+      expect(
+        find.text('What happened? Type here, or tap voice or video.'),
+        findsOneWidget,
+      );
 
       final editable = find.byType(EditableText);
       expect(editable, findsWidgets);

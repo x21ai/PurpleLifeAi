@@ -87,7 +87,9 @@ class MedsRepository {
         endIso: window.endIso,
       );
 
-      final since = DateTime.now().toUtc().subtract(const Duration(days: 14));
+      // 60 days feeds refill streak and missed-pattern cards. The 14-day
+      // adherence stat still filters inside [_adherenceLast14Days].
+      final since = DateTime.now().toUtc().subtract(const Duration(days: 60));
       final adherenceRows = await _fetchDoseRowsForWindow(
         userId,
         startIso: since.toIso8601String(),
@@ -617,6 +619,7 @@ class MedsRepository {
       isOffline: isOffline,
       loadedAt: DateTime.now(),
       adherence: adherence,
+      recentDoses: adherenceParsed.where(isScheduledDose).toList(),
       timezone: timezone,
       todayLabel: todayLabel,
       todayStr: todayStr,
@@ -976,6 +979,7 @@ class MedsData {
     required this.isOffline,
     required this.loadedAt,
     this.adherence,
+    this.recentDoses = const [],
     this.timezone = 'UTC',
     this.todayLabel = '',
     this.todayStr = '',
@@ -994,6 +998,11 @@ class MedsData {
   final bool isOffline;
   final DateTime? loadedAt;
   final MedsAdherence? adherence;
+
+  /// Scheduled doses from the recent history window (up to 60 days online).
+  /// Used by refill forecast and adherence extras. Empty when history was
+  /// not loaded.
+  final List<MedicationDose> recentDoses;
   final String timezone;
   final String todayLabel;
 

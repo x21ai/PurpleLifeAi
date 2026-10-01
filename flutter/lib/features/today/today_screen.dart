@@ -334,12 +334,16 @@ class _MergedTodayBody extends StatelessWidget {
         else
           TodayScoreTiles(
             scores: scores,
-            onTapData: () => context.go(AppRoutes.data),
+            narrative: hasNarrative ? narrative : null,
+            onSeeFullReading: () => context.go(AppRoutes.todayRisk),
           ),
         SizedBox(height: tokens.spacing.xl),
         TodayYourSignals(
           scores: scores,
+          isToday: isToday,
+          emptyDateLabel: DateFormat('EEEE, MMMM d').format(selectedDate),
           onViewAll: () => context.go(AppRoutes.data),
+          onConnect: () => context.go(AppRoutes.settings),
           onMetricTap: (key) => context.go(AppRoutes.biometricsMetric(key)),
         ),
         if (hasNarrative) ...[

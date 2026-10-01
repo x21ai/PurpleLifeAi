@@ -11,6 +11,7 @@ import '../../core/auth/auth_state.dart' as core_auth;
 import '../../core/providers/core_providers.dart';
 import 'models/score_snapshot.dart';
 import 'models/today_data.dart';
+import 'seven_day_trends.dart';
 
 /// Fetches Today data from Supabase with Drift fallback when offline.
 /// Mirrors `getScoreSnapshot` and Today page queries without server functions.
@@ -463,6 +464,74 @@ class TodayRepository {
     if (text.length >= 10) return text.substring(0, 10);
     return null;
   }
+
+  /// Sleep, HRV, readiness, activity, steps, and missed doses for Last 7 days.
+  /// Fail-open: a missing table or offline cache still returns a real (possibly
+  /// empty) snapshot, never placeholder numbers.
+  Future<SevenDayTrends> loadSevenDayTrends() async {
+    final userId = _userId;
+    if (userId == null) return SevenDayTrends.empty;
+
+    final since = formatSupabaseFilterTimestamp(
+      DateTime.now().subtract(const Duration(days: 14)),
+    );
+    final doseSince = formatSupabaseFilterTimestamp(
+      DateTime.now().subtract(const Duration(days: 7)),
+    );
+    final doseUntil = formatSupabaseFilterTimestamp(DateTime.now());
+
+    final bios = <TrendBio>[];
+    try {
+      final response = await _supabase
+          .from('biometrics')
+          .select(
+            'recorded_at, sleep_total_min, hrv_rmssd_ms, oura_readiness_score, '
+            'oura_activity_score, steps',
+          )
+          .eq('user_id', userId)
+          .gte('recorded_at', since)
+          .order('recorded_at', ascending: true)
+          .limit(1000);
+      for (final raw in response as List) {
+        final bio = trendBioFromRow(Map<String, dynamic>.from(raw as Map));
+        if (bio != null) bios.add(bio);
+      }
+    } catch (error, stack) {
+      debugPrint('[TodayRepository] seven-day bios failed: $error\n$stack');
+      if (!_canFailOpen(error)) rethrow;
+      try {
+        final cached =
+            await _database.readCachedTable('biometrics', userId: userId);
+        for (final row in cached) {
+          final bio = trendBioFromRow(row);
+          if (bio != null) bios.add(bio);
+        }
+      } catch (cacheError, cacheStack) {
+        debugPrint(
+          '[TodayRepository] seven-day cache skipped: $cacheError\n$cacheStack',
+        );
+      }
+    }
+
+    final doses = <TrendDose>[];
+    try {
+      final response = await _supabase
+          .from('medication_doses')
+          .select('scheduled_at, status')
+          .eq('user_id', userId)
+          .gte('scheduled_at', doseSince)
+          .lte('scheduled_at', doseUntil);
+      for (final raw in response as List) {
+        final dose = trendDoseFromRow(Map<String, dynamic>.from(raw as Map));
+        if (dose != null) doses.add(dose);
+      }
+    } catch (error, stack) {
+      debugPrint('[TodayRepository] seven-day doses failed: $error\n$stack');
+      if (!_canFailOpen(error)) rethrow;
+    }
+
+    return computeSevenDayTrends(bios: bios, doses: doses);
+  }
 }
 
 class _ProfileFields {
@@ -560,4 +629,22 @@ final scoreSnapshotForDayProvider = FutureProvider.autoDispose
     ScoreSnapshot.empty,
     label: 'scoreSnapshotForDayProvider($dateYmd)',
   );
+});
+
+final sevenDayTrendsProvider =
+    FutureProvider.autoDispose<SevenDayTrends>((ref) async {
+  ref.keepAlive();
+  try {
+    await ref.watch(authRepositoryProvider.future);
+  } catch (_) {
+    return SevenDayTrends.empty;
+  }
+  final session = core_auth.readActiveSession(ref);
+  if (session == null) return SevenDayTrends.empty;
+  try {
+    return await ref.watch(todayRepositoryProvider).loadSevenDayTrends();
+  } catch (error, stack) {
+    debugPrint('[sevenDayTrendsProvider] $error\n$stack');
+    return SevenDayTrends.empty;
+  }
 });

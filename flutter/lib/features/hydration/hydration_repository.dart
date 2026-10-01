@@ -74,6 +74,28 @@ class HydrationDayData {
       goalMl <= 0 ? 0 : (totalMl / goalMl).clamp(0.0, 1.0);
 }
 
+/// Seven local days of intake, oldest to newest, ending on [endDay].
+class HydrationWeekData {
+  const HydrationWeekData({
+    required this.dailyMl,
+    required this.goalMl,
+    this.isOffline = false,
+  });
+
+  static const empty = HydrationWeekData(
+    dailyMl: [0, 0, 0, 0, 0, 0, 0],
+    goalMl: 2000,
+  );
+
+  final List<int> dailyMl;
+  final int goalMl;
+  final bool isOffline;
+
+  int get totalMl => dailyMl.fold(0, (sum, ml) => sum + ml);
+
+  bool get hasAny => dailyMl.any((ml) => ml > 0);
+}
+
 /// Reads and writes hydration intake via Supabase (fail-open on read errors).
 class HydrationRepository {
   HydrationRepository({required SupabaseClient supabase}) : _supabase = supabase;
@@ -126,6 +148,47 @@ class HydrationRepository {
     }
   }
 
+  /// One query for the last 7 local days ending on [endDay].
+  Future<HydrationWeekData> loadWeek(DateTime endDay) async {
+    final userId = _userId;
+    final end = DateTime(endDay.year, endDay.month, endDay.day);
+    final start = end.subtract(const Duration(days: 6));
+    if (userId == null) {
+      return HydrationWeekData.empty;
+    }
+    final goal = await _fetchGoalSafe(userId);
+    try {
+      final response = await _supabase
+          .from('hydration_intake')
+          .select('consumed_at, volume_ml')
+          .eq('user_id', userId)
+          .gte('consumed_at', start.toUtc().toIso8601String())
+          .lt(
+            'consumed_at',
+            end.add(const Duration(days: 1)).toUtc().toIso8601String(),
+          );
+      final totals = List<int>.filled(7, 0);
+      for (final raw in response as List) {
+        final row = Map<String, dynamic>.from(raw as Map);
+        final consumedRaw = row['consumed_at'] as String?;
+        if (consumedRaw == null) continue;
+        final local = DateTime.parse(consumedRaw).toLocal();
+        final day = DateTime(local.year, local.month, local.day);
+        final index = day.difference(start).inDays;
+        if (index < 0 || index > 6) continue;
+        totals[index] += (row['volume_ml'] as num?)?.toInt() ?? 0;
+      }
+      return HydrationWeekData(dailyMl: totals, goalMl: goal);
+    } catch (error, stack) {
+      debugPrint('[HydrationRepository] loadWeek failed: $error\n$stack');
+      return HydrationWeekData(
+        dailyMl: HydrationWeekData.empty.dailyMl,
+        goalMl: goal,
+        isOffline: true,
+      );
+    }
+  }
+
   Future<void> logIntake({
     required int volumeMl,
     required String kind,
@@ -173,4 +236,19 @@ final hydrationDayProvider = FutureProvider.autoDispose
   }
   final normalized = DateTime(day.year, day.month, day.day);
   return ref.watch(hydrationRepositoryProvider).loadDay(normalized);
+});
+
+final hydrationWeekProvider =
+    FutureProvider.autoDispose<HydrationWeekData>((ref) async {
+  ref.keepAlive();
+  try {
+    await ref.watch(authRepositoryProvider.future);
+  } catch (_) {
+    return HydrationWeekData.empty;
+  }
+  final session = ref.watch(authSessionProvider).valueOrNull;
+  if (session == null) return HydrationWeekData.empty;
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  return ref.watch(hydrationRepositoryProvider).loadWeek(today);
 });

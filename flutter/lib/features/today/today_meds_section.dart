@@ -8,6 +8,7 @@ import '../../core/providers/core_providers.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../meds/dose_list.dart';
+import '../meds/meds_segment_timeline.dart';
 import '../meds/med_refill_sheet.dart';
 import '../meds/meds_repository.dart';
 import '../meds/models/dose.dart';
@@ -190,7 +191,9 @@ class TodayMedsSection extends ConsumerWidget {
                     ],
                   ),
                 )
-              else
+              else ...[
+                MedsSegmentTimeline(doses: doses),
+                const SizedBox(height: 12),
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -260,6 +263,7 @@ class TodayMedsSection extends ConsumerWidget {
                     );
                   },
                 ),
+              ],
           ],
         );
       },

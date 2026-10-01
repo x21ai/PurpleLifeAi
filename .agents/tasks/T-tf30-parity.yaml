@@ -1,0 +1,23 @@
+id: T-tf30-parity
+title: Flutter TF30 Today and Meds design parity
+intent: >-
+  Ship a TestFlight-ready Flutter build that closes residual
+  tf28-design-flutter-parity rows and bump pubspec to 1.0.0+30.
+  Do not upload, deploy Workers, or merge.
+partition: flutter-today-meds
+depends_on: []
+risk: medium
+acceptance:
+  - "pubspec is 1.0.0+30"
+  - "Residual Today/Meds parity rows are implemented or explicitly stubbed"
+  - "flutter analyze on changed features is clean"
+  - "Relevant Flutter tests pass"
+  - "PR open against main, not merged, no ios:testflight"
+state: queued
+claimant: purplelifeai-eigital
+lease_expires: "2026-10-01T21:00:00Z"
+evidence:
+  - "flutter analyze changed feature paths: no issues"
+  - "full flutter analyze: 1 pre-existing unawaited_return_in_try_block in reports_repository.dart"
+  - "flutter test parity, today, meds action, quick log, schedule, refill: all passed"
+  - "pubspec 1.0.0+30; no ios:testflight; no Worker deploy"
