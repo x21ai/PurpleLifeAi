@@ -151,6 +151,16 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
     }
   }
 
+  void _stubCapture(String kind) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '$kind are not available in this build yet. Type your note, then save.',
+        ),
+      ),
+    );
+  }
+
   Future<void> _logAura({String? notes}) async {
     final client = ref.read(supabaseClientProvider);
     final userId =
@@ -246,7 +256,7 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
           maxLength: 500,
           style: const TextStyle(color: Colors.white, fontSize: 14),
           decoration: InputDecoration(
-            hintText: 'What happened?',
+            hintText: 'What happened? Type here, or tap voice or video.',
             hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
             counterText: '',
             filled: true,
@@ -270,6 +280,23 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
               ),
             ),
           ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            _ComposeToolButton(
+              icon: Icons.mic_none_outlined,
+              tooltip: 'Voice note',
+              onTap: _saving ? null : () => _stubCapture('Voice notes'),
+            ),
+            const SizedBox(width: 8),
+            _ComposeToolButton(
+              icon: Icons.videocam_outlined,
+              tooltip: 'Video',
+              onTap: _saving ? null : () => _stubCapture('Video'),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         FilledButton(
@@ -303,6 +330,46 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _ComposeToolButton extends StatelessWidget {
+  const _ComposeToolButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Semantics(
+        button: true,
+        label: tooltip,
+        child: Material(
+          color: Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(8),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+              width: 44,
+              height: 44,
+              child: Icon(
+                icon,
+                size: 18,
+                color: Colors.white.withValues(alpha: 0.8),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -90,26 +90,26 @@ Format:
 | Merged order: greeting → date strip → scores → signals → narrative → icon expanders → Last 7 | **match** | `TodayScreen` / `_MergedTodayBody` |
 | Date strip (7+today+7, picker, back-to-today) | **match** | `date_strip.dart` |
 | Score tiles Readiness / Sleep / Activity (FittedBox) | **match** | `TodayScoreTiles` + `ScoreTile` |
-| Score tap → ScoreHero / risk detail overlay | **partial** | Tiles route to Data; no inline ScoreHero overlay |
-| Your signals grid + View all | **match** | Always shows 8 tiles (incl. em dash empty); web filters nulls |
+| Score tap → ScoreHero / risk detail overlay | **match** | TF30: focused tile, second tap opens ScoreHero overlay (phrase, narrative, See the full reading → `/today/risk`). Focus is session-only |
+| Your signals grid + View all | **match** | TF30: null metrics omitted via `buildTodayVitalItems`; connect empty state |
 | Maya / AI narrative card | **match** | `TodayMayaCard` when narrative present |
 | Icon row Meds / Hydration / Wearables / Log (Meds default open) | **match** | `TodayIconActionRow` |
 | Meds expand: Taken / Snooze / Skip | **match** | `TodayMedsSection` + `MedsPendingDoseActions` |
 | Meds expand: Undo (taken) / I took it (missed/skipped) | **match** | Wired 2026-07-13 (was status-label only) |
 | Meds expand: Refill to update + 0 pills chip | **match** | `MedRefillSheet` / `pills_remaining` |
-| Meds mini timeline (segment bar) | **missing** | Preview `meds-timeline` segs; Meds `/meds` has 24h dots |
+| Meds mini timeline (segment bar) | **match** | TF30: Today expand `MedsSegmentTimeline` (per-dose status). `/meds` keeps the 24h dot axis |
 | Missed-dose catch-up Log ▾ | **match** | `MissedDoseCatchupBanner` |
 | Hydration expand: progress + quick-add + Day view | **match** | Wired `TodayHydrationPanel` 2026-07-13 (was stub CTA) |
-| Hydration expand: week bars + entry list | **partial** | Full list/bars on `/hydration` day view only |
+| Hydration expand: week bars + entry list | **match** | TF30: inline week capsules + today's entry list in `TodayHydrationPanel` |
 | Quick log: chips / when / notes / Save | **match** | `TodayLogExpandBody` |
-| Quick log: voice / video compose icons | **missing** | Preview stubs; Flutter Save path only |
+| Quick log: voice / video compose icons | **partial** | TF30: 44pt mic and video icons match the preview. Capture is a visible stub (no new mic/camera permission). See `tf30-quick-log-voice-video-capture` |
 | Wearables expand + Sync now | **match** | `SyncStatusBar` + visit sync |
-| Last 7 days trend metric grid | **partial** | Stub card + Open Data; no spark/grid |
+| Last 7 days trend metric grid | **match** | TF30: capsule grid from biometrics, doses, and hydration. Empty when nothing was captured. Open Data remains |
 | Team announcement → Log | **match** | `_AnnouncementBanner` |
 | `/meds` Taken / Undo / I took it / Mark all / refill | **match** | `dose_list.dart` + `MedRefillSheet` |
 | `/meds` 24h timeline + adherence 14d | **match** | Panel present |
-| `/meds` refill forecast / intelligence cards | **missing** | Checklist P0 leftover; see `tf27-newdesign-meds-capability-gaps` |
-| `/meds` underline Active/Archive tabs | **partial** | Pill-style tabs remain |
+| `/meds` refill forecast / intelligence cards | **match** | TF30: local `computeMedIntelligence` (pills, 60-day doses). Cards hide when there is nothing to say |
+| `/meds` underline Active/Archive tabs | **match** | Underline tabs (`MedsActiveArchiveTabs`, bottom border). Regression test locks them against pill chips |
 | Hardcoded Colors.amber / greenAccent in today+meds | **match** | Tokenized status colors |
 
 - [x] ~~**tf28-design-flutter-parity-hydration-stub**~~ — RESOLVED 2026-07-13: Today
@@ -122,13 +122,24 @@ Format:
   `reclassifyDose` wiring on Today. Evidence:
   `flutter test test/today_meds_actions_test.dart` Undo + I took it cases green
   (2 environmental ink_sparkle failures on unrelated Material taps).
-- [ ] **tf28-design-flutter-parity** — Parent tracker for residual **partial/missing**
-  rows above (Last 7 grid, signals null-filter, ScoreHero overlay, meds mini
-  timeline, hydration week bars inline, log voice/video, med-intelligence cards,
-  underline tabs). Not TF28 upload-blocking once Taken/refill/catchup/hydration/log
-  P0s above are green. Cross-links: `tf27-newdesign-today-capability-gaps`,
+- [x] ~~**tf28-design-flutter-parity**~~ — RESOLVED 2026-10-01 in Flutter
+  `1.0.0+30` (not uploaded): Last 7 capsule grid, signals null-filter, ScoreHero
+  overlay, Today meds segment bar, hydration week bars + entry list, med
+  intelligence cards, underline Active/Archive tabs. Voice/video compose icons
+  are visible stubs only. Cross-links kept:
+  `tf27-newdesign-today-capability-gaps`,
   `tf27-newdesign-meds-capability-gaps`, `flutter-today-more-for-today-removed`.
   _Raised 2026-07-13 by Merged preview parity audit._
+
+- [ ] **tf30-quick-log-voice-video-capture** — Today Quick log shows mic and
+  video icons. Tapping them explains that capture is not in this build. Do not
+  add microphone or camera permissions until an owner asks for real recording.
+  Journal capture still says Record/Video coming soon.
+  _Raised 2026-10-01 by TF30 parity._
+
+- [ ] **tf30-asc-upload** — `flutter/pubspec.yaml` is `1.0.0+30`. Mac operator
+  merges, then `bun run ios:testflight`. Cloud agents must not upload.
+  _Raised 2026-10-01._
 
 ## ASC TestFlight feedback triage (full pull 2026-07-13)
 

@@ -178,7 +178,10 @@ void main() {
     await tester.tap(find.text('Log'));
     await tester.pumpAndSettle();
     expect(find.text('Quick log'), findsOneWidget);
-    expect(find.text('What happened?'), findsOneWidget);
+    expect(
+      find.text('What happened? Type here, or tap voice or video.'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
 
     // Meds panel again (accordion).
@@ -214,10 +217,10 @@ void main() {
     expect(find.text('SLEEP'), findsOneWidget);
     expect(find.text('ACTIVITY'), findsOneWidget);
     expect(find.text('YOUR SIGNALS'), findsOneWidget);
-    expect(find.text('HRV'), findsOneWidget);
-    expect(find.text('Resting HR'), findsOneWidget);
-    // Eight Your-signals cells use em dash when scores are missing.
-    expect(find.text('—'), findsNWidgets(8));
+    expect(find.text('Connect a device to see your signals'), findsOneWidget);
+    expect(find.text('HRV'), findsNothing);
+    expect(find.text('Resting HR'), findsNothing);
+    expect(find.text('—'), findsNothing);
   });
 
   testWidgets('shows error banner with merged empty state on load failure',

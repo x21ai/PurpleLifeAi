@@ -9,6 +9,16 @@ Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
 
 ## Current snapshot
 
+**2026-10-01 Flutter Today/Meds parity for TestFlight build 30 (no upload):**
+`flutter/pubspec.yaml` is `1.0.0+30` on branch
+`cursor/tf30-design-parity-22bf`. Closes residual
+`tf28-design-flutter-parity` rows: Last 7 capsule grid, signals null-filter,
+ScoreHero overlay, Today meds segment bar, hydration week bars and entry list,
+`/meds` refill forecast and adherence extras, underline Active/Archive tabs.
+Quick log mic/video icons are visible stubs (no new permissions). Do not
+wrangler-deploy, do not run `ios:testflight` from a cloud agent. Mac next step
+after merge: `bun run ios:testflight`.
+
 **2026-09-29 Worker deploy Doppler is x21/prd_cloudflare (no deploy):**
 `build:prod`, `build:prod:supabase`, `deploy:staging:ploy`,
 `deploy:staging:ploy:dry-run`, and `deploy:www-ploy:dry-run` use Doppler project
@@ -174,6 +184,38 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-10-01T20:10:07Z — Flutter TF30 design parity (no TestFlight upload)
+
+- **Requested:** Close residual Merged Today / Meds design parity gaps in
+  `docs/OPEN-ISSUES.md` (`tf28-design-flutter-parity`) and bump Flutter to
+  `1.0.0+30`. Do not deploy Workers, change Doppler, touch OAuth consoles, or
+  run `ios:testflight`.
+- **Done:** Today signals omit null metrics. Score tiles open a ScoreHero
+  overlay (band phrase, narrative, link to `/today/risk`). Last 7 days is a
+  capsule grid from biometrics, doses, and hydration, empty when nothing was
+  captured. Today meds expand has a per-dose segment bar. Hydration expand
+  shows week bars and today's entry list. Quick log shows mic and video icons
+  that explain capture is not in this build. `/meds` shows refill forecast and
+  adherence extras from local pill and dose history (60-day window).
+  Active/Archive stays an underline tab, locked by test. `pubspec` `1.0.0+30`.
+- **Issues:** Voice and video recording still need an owner decision before
+  new mic/camera permissions (`tf30-quick-log-voice-video-capture`). Score
+  focus is not persisted across launches (web uses localStorage). Build 30 is
+  not on ASC (`tf30-asc-upload`). `flutter analyze` reports one pre-existing
+  warning in `reports_repository.dart` (`unawaited_return_in_try_block`), not
+  in this diff.
+- **Stand / next:** PR open against `main`. Mac operator merges, then
+  `bun run ios:testflight`.
+- **Who / where:** PurpleLifeAi | eigital, cloud agent, branch
+  `cursor/tf30-design-parity-22bf`.
+- **Evidence:** `flutter analyze` on changed feature paths: no issues.
+  Full `flutter analyze`: 1 pre-existing warning. Tests:
+  `seven_day_trends_test`, `med_intelligence_test`, `today_parity_widgets_test`,
+  `today_screen_render_test`, `today_shell_unfocus_test`, `score_tile_test`,
+  `today_meds_actions_test` (5), `today_quick_log_panel_test`,
+  `meds_schedule_ux_test`, refill tests. All passed.
+- **Timestamp:** 2026-10-01T20:10:07Z
 
 ### 2026-09-29T16:40:00Z — Worker deploy Doppler is x21/prd_cloudflare
 

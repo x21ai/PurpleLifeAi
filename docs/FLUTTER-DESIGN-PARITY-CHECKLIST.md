@@ -1,6 +1,13 @@
 # Flutter design parity checklist (acceptance bar)
 
-Last updated: 2026-07-05 (marked items resolved by the 2026-07-05 orchestrated fix fleet;
+TF30 (2026-10-01, `1.0.0+30`, not uploaded) closed the residual Merged Today
+and Meds rows tracked as `tf28-design-flutter-parity`: signals null-filter,
+ScoreHero overlay, Last 7 capsule grid, Today meds segment bar, hydration week
+bars and entry list, med intelligence cards, underline Active/Archive tabs.
+Quick log voice/video icons are visible stubs. Historical deltas below stay
+as the original audit.
+
+Last updated: 2026-10-01 (TF30 parity). Prior note 2026-07-05 (marked items resolved by the 2026-07-05 orchestrated fix fleet;
 verified against code in worktree; original 2026-07-04 findings preserved below with
 strikethrough, never deleted)
 

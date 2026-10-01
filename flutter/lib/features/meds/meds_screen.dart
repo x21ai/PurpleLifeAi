@@ -10,6 +10,7 @@ import '../shared/glass_helpers.dart' hide GlassSurface;
 import '../shared/loading_skeleton.dart';
 import '../shared/narrative_block.dart';
 import 'dose_list.dart';
+import 'med_intelligence_cards.dart';
 import 'med_refill_sheet.dart';
 import 'medication_form_sheet.dart';
 import 'meds_repository.dart';
@@ -333,11 +334,19 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
                               ? null
                               : () => _markAllTaken(data),
                         ),
+                        if (data.activeMeds.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          MedIntelligenceCards(
+                            medications: data.activeMeds,
+                            recentDoses: data.recentDoses,
+                            onOpenMed: _openMed,
+                          ),
+                        ],
                         if (data.medications.isNotEmpty) ...[
                           const SizedBox(height: 40),
                           const MedsSectionEyebrow('All medications'),
                           const SizedBox(height: 12),
-                          _TabBarUnderline(
+                          MedsActiveArchiveTabs(
                             tab: _tab,
                             archivedCount: data.archivedMeds.length,
                             onChanged: (value) => setState(() => _tab = value),
@@ -572,9 +581,10 @@ class _MedsAddFab extends StatelessWidget {
   }
 }
 
-/// Active/Archive underline tabs matching the web tab bar.
-class _TabBarUnderline extends StatelessWidget {
-  const _TabBarUnderline({
+/// Active/Archive underline tabs matching web `border-b-2 border-foreground`.
+class MedsActiveArchiveTabs extends StatelessWidget {
+  const MedsActiveArchiveTabs({
+    super.key,
     required this.tab,
     required this.archivedCount,
     required this.onChanged,

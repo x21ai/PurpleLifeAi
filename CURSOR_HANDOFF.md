@@ -1,4 +1,12 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-09-29 (Worker deploy Doppler is `x21` / `prd_cloudflare`; **do not** wrangler deploy `purplelife` or `purplelife-staging` from this agent).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-10-01 (Flutter `1.0.0+30` design parity, not uploaded; **do not** wrangler deploy and **do not** run `ios:testflight` from a cloud agent).
+
+**Recent (2026-10-01): Flutter build 30 Today/Meds parity.** Residual
+`tf28-design-flutter-parity` rows are in the Flutter app: Last 7 capsule grid,
+signals null-filter, ScoreHero overlay, Today meds segment bar, hydration week
+bars and entry list, `/meds` refill and adherence cards, underline
+Active/Archive tabs. Quick log mic/video icons are stubs (no new permissions).
+`flutter/pubspec.yaml` is `1.0.0+30`. Mac next step after merge:
+`bun run ios:testflight`. No Worker deploy.
 
 **Recent (2026-09-29): Worker deploy Doppler project.** `build:prod`,
 `build:prod:supabase`, `deploy:staging:ploy`, `deploy:staging:ploy:dry-run`, and
