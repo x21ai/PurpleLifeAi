@@ -1,23 +1,14 @@
-# HANDOFF
-
-Current state of the world. Read this first, every session. Update before any task is
-done. Newest entries at the top of the log.
-
-Enforced by `.cursor/rules/00-handoff.mdc`. Extended ops: `CURSOR_HANDOFF.md`.
-
----
-
 ## Current snapshot
 
-**2026-10-01 Flutter Today/Meds parity for TestFlight build 30 (no upload):**
-`flutter/pubspec.yaml` is `1.0.0+30` on branch
-`cursor/tf30-design-parity-22bf`. Closes residual
-`tf28-design-flutter-parity` rows: Last 7 capsule grid, signals null-filter,
-ScoreHero overlay, Today meds segment bar, hydration week bars and entry list,
-`/meds` refill forecast and adherence extras, underline Active/Archive tabs.
-Quick log mic/video icons are visible stubs (no new permissions). Do not
-wrangler-deploy, do not run `ios:testflight` from a cloud agent. Mac next step
-after merge: `bun run ios:testflight`.
+**2026-10-01 TF30 uploaded to ASC (PurpleLifeAi | eigital):**
+PR #66 squash-merged to `main` at `25d91164`. CI green (checks, responsive,
+e2e-smoke). Mac ran `bun run ios:testflight` with Xcode.app; ASC upload succeeded
+for **1.0 (30)** (`fbb42a65-55ba-438a-9800-439a1460c026`, processing=VALID,
+internal=IN_BETA_TESTING). First attempt failed: Doppler project
+`cursor-cloudflare` missing on this Mac — retry used
+`FLUTTER_DOPPLER_PROJECT=x21 FLUTTER_DOPPLER_CONFIG=prd_cloudflare` (same keys).
+No Worker deploy. Next: device QA on TestFlight build 30.
+
 
 **2026-09-29 Worker deploy Doppler is x21/prd_cloudflare (no deploy):**
 `build:prod`, `build:prod:supabase`, `deploy:staging:ploy`,
