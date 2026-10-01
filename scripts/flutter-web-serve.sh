@@ -80,7 +80,9 @@ build_web() {
   source "${REPO_ROOT}/scripts/app-build-env.sh"
   (
     cd "${FLUTTER_DIR}"
-    doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+    FLUTTER_DOPPLER_PROJECT="${FLUTTER_DOPPLER_PROJECT:-x21}"
+    FLUTTER_DOPPLER_CONFIG="${FLUTTER_DOPPLER_CONFIG:-prd_cloudflare}"
+    doppler run --project "${FLUTTER_DOPPLER_PROJECT}" --config "${FLUTTER_DOPPLER_CONFIG}" -- \
       bash -c 'flutter build web --release --base-href="/" --no-tree-shake-icons \
         --pwa-strategy=none \
         --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY" \
@@ -126,7 +128,9 @@ if [[ "${1:-}" == "--dev" ]]; then
   write_pid_file "$$"
   # shellcheck source=app-build-env.sh
   source "${REPO_ROOT}/scripts/app-build-env.sh"
-  exec doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+  FLUTTER_DOPPLER_PROJECT="${FLUTTER_DOPPLER_PROJECT:-x21}"
+  FLUTTER_DOPPLER_CONFIG="${FLUTTER_DOPPLER_CONFIG:-prd_cloudflare}"
+  exec doppler run --project "${FLUTTER_DOPPLER_PROJECT}" --config "${FLUTTER_DOPPLER_CONFIG}" -- \
     bash -c 'flutter run -d web-server --web-port="'"${PORT}"'" --web-hostname=0.0.0.0 \
       --pwa-strategy=none \
       --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY" \

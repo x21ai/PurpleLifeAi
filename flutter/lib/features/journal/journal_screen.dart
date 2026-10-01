@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../design/purple_theme.dart';
 import '../shared/glass_helpers.dart' show ContentColumn;
@@ -983,6 +984,8 @@ class _JournalEntryCardState extends ConsumerState<JournalEntryCard> {
       RegExp(r'\.(png|jpe?g|webp|gif|heic|avif)(\?|$)', caseSensitive: false);
   static final _videoPattern =
       RegExp(r'\.(mp4|webm|mov|m4v)(\?|$)', caseSensitive: false);
+  static final _audioPattern =
+      RegExp(r'\.(m4a|aac|mp3|wav|ogg|opus)(\?|$)', caseSensitive: false);
 
   JournalEntry get entry => widget.entry;
 
@@ -1429,12 +1432,32 @@ class _JournalEntryCardState extends ConsumerState<JournalEntryCard> {
     );
   }
 
+  bool _isVoiceUrl(String url) {
+    final path = url.split('?').first;
+    return path.contains('/voice-') || _audioPattern.hasMatch(url);
+  }
+
+  Future<void> _openMedia(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) _snack('Could not open that file.');
+  }
+
   List<Widget> _buildMediaGrid(JournalPalette palette) {
-    final photos =
-        entry.mediaUrls.where((u) => _imagePattern.hasMatch(u)).toList();
-    final videos =
-        entry.mediaUrls.where((u) => _videoPattern.hasMatch(u)).toList();
-    final total = photos.length + videos.length;
+    final voices = entry.mediaUrls.where(_isVoiceUrl).toList();
+    final videos = entry.mediaUrls
+        .where((u) => !_isVoiceUrl(u) && _videoPattern.hasMatch(u))
+        .toList();
+    final photos = entry.mediaUrls
+        .where(
+          (u) =>
+              !_isVoiceUrl(u) &&
+              !_videoPattern.hasMatch(u) &&
+              _imagePattern.hasMatch(u),
+        )
+        .toList();
+    final total = photos.length + videos.length + voices.length;
     if (total == 0) return const [];
 
     Widget tile(Widget child) => ClipRRect(
@@ -1465,14 +1488,31 @@ class _JournalEntryCardState extends ConsumerState<JournalEntryCard> {
                 ),
               ),
             ),
-          for (final _ in videos)
+          for (final url in videos)
             tile(
-              ColoredBox(
+              Material(
                 color: palette.textPrimary,
-                child: Icon(
-                  Icons.play_circle_outline,
-                  size: 32,
-                  color: palette.surface.withValues(alpha: 0.9),
+                child: InkWell(
+                  onTap: () => _openMedia(url),
+                  child: Icon(
+                    Icons.play_circle_outline,
+                    size: 32,
+                    color: palette.surface.withValues(alpha: 0.9),
+                  ),
+                ),
+              ),
+            ),
+          for (final url in voices)
+            tile(
+              Material(
+                color: palette.backgroundTertiary,
+                child: InkWell(
+                  onTap: () => _openMedia(url),
+                  child: Icon(
+                    Icons.mic_none,
+                    size: 28,
+                    color: palette.purplePrimary,
+                  ),
                 ),
               ),
             ),

@@ -43,7 +43,9 @@ build_flutter_web_release() {
   source "${REPO_ROOT}/scripts/app-build-env.sh"
   (
     cd "${FLUTTER_DIR}"
-    doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+    FLUTTER_DOPPLER_PROJECT="${FLUTTER_DOPPLER_PROJECT:-x21}"
+    FLUTTER_DOPPLER_CONFIG="${FLUTTER_DOPPLER_CONFIG:-prd_cloudflare}"
+    doppler run --project "${FLUTTER_DOPPLER_PROJECT}" --config "${FLUTTER_DOPPLER_CONFIG}" -- \
       bash -c '
         # shellcheck source=lib/flutter-dart-defines.sh
         source "'"${REPO_ROOT}"'/scripts/lib/flutter-dart-defines.sh"

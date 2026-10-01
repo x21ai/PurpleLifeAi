@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../design/glass_surface.dart';
 import '../shared/glass_helpers.dart' hide GlassSurface;
+import 'journal_media_capture.dart';
 import 'journal_media_file.dart';
 import 'journal_repository.dart';
 import 'journal_style.dart';
@@ -31,6 +34,7 @@ class _JournalCaptureScreenState extends ConsumerState<JournalCaptureScreen> {
   final _picker = ImagePicker();
   DateTime _capturedAt = DateTime.now();
   bool _saving = false;
+  bool _recording = false;
   final List<JournalMediaFile> _media = [];
 
   static const _maxPhotos = 6;
@@ -44,6 +48,9 @@ class _JournalCaptureScreenState extends ConsumerState<JournalCaptureScreen> {
 
   @override
   void dispose() {
+    if (mediaCapturer.isRecording) {
+      unawaited(mediaCapturer.cancelVoice());
+    }
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -58,8 +65,19 @@ class _JournalCaptureScreenState extends ConsumerState<JournalCaptureScreen> {
   }
 
   Future<void> _save() async {
-    if (!_hasContent || _saving) return;
+    if (_saving) return;
     _dismissKeyboard();
+    if (_recording || mediaCapturer.isRecording) {
+      try {
+        final file = await mediaCapturer.stopVoice();
+        _recording = false;
+        if (file != null) _media.add(file);
+      } catch (_) {
+        _recording = false;
+      }
+      if (mounted) setState(() {});
+    }
+    if (!_hasContent) return;
 
     setState(() => _saving = true);
     try {
@@ -164,6 +182,149 @@ class _JournalCaptureScreenState extends ConsumerState<JournalCaptureScreen> {
 
   void _removePhoto(int index) {
     setState(() => _media.removeAt(index));
+  }
+
+  bool get _atCap => _media.length >= _maxPhotos;
+
+  Future<void> _addCaptured(JournalMediaFile? file) async {
+    if (file == null || !mounted) return;
+    if (_atCap) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You can attach up to 6 files.')),
+      );
+      return;
+    }
+    setState(() => _media.add(file));
+  }
+
+  Future<void> _addVideo(ImageSource source) async {
+    _dismissKeyboard();
+    if (_atCap) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You can attach up to 6 files.')),
+      );
+      return;
+    }
+    try {
+      final file = await mediaCapturer.pickVideo(source: source);
+      if (!mounted) return;
+      await _addCaptured(file);
+    } on MediaCaptureException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't open the camera or photo library."),
+        ),
+      );
+    }
+  }
+
+  Future<void> _toggleVoice() async {
+    _dismissKeyboard();
+    try {
+      if (_recording || mediaCapturer.isRecording) {
+        final file = await mediaCapturer.stopVoice();
+        if (!mounted) return;
+        setState(() => _recording = false);
+        if (file == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No audio was captured.')),
+          );
+          return;
+        }
+        await _addCaptured(file);
+        return;
+      }
+      if (_atCap) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You can attach up to 6 files.')),
+        );
+        return;
+      }
+      final started = await mediaCapturer.startVoice();
+      if (!mounted) return;
+      if (!started) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Allow microphone access to record a voice note.'),
+          ),
+        );
+        return;
+      }
+      setState(() => _recording = true);
+    } on MediaCaptureException catch (error) {
+      if (!mounted) return;
+      setState(() => _recording = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _recording = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Couldn't record. Check microphone access and try again.",
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _showVideoSheet() async {
+    _dismissKeyboard();
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF1A1520),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        final palette = JournalPalette.dark();
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.videocam_outlined, color: palette.textPrimary),
+                title: Text(
+                  'Record video',
+                  style: journalSans(color: palette.textPrimary),
+                ),
+                subtitle: Text(
+                  'Up to 60 seconds',
+                  style: journalSans(fontSize: 12, color: palette.textTertiary),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _addVideo(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.video_library_outlined, color: palette.textPrimary),
+                title: Text(
+                  'Choose from library',
+                  style: journalSans(color: palette.textPrimary),
+                ),
+                subtitle: Text(
+                  'Max 50 MB',
+                  style: journalSans(fontSize: 12, color: palette.textTertiary),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _addVideo(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _showPhotoSheet() async {
@@ -323,9 +484,15 @@ class _JournalCaptureScreenState extends ConsumerState<JournalCaptureScreen> {
                           const SizedBox(height: 16),
                           _CaptureDock(
                             palette: palette,
-                            photoCount: _media.length,
+                            photoCount: _media
+                                .where((file) => file.kind == JournalMediaKind.photo)
+                                .length,
+                            attachmentCount: _media.length,
                             maxPhotos: _maxPhotos,
-                            onPhoto: _showPhotoSheet,
+                            recording: _recording,
+                            onPhoto: _saving || _recording ? null : _showPhotoSheet,
+                            onVoice: _saving ? null : _toggleVoice,
+                            onVideo: _saving || _recording ? null : _showVideoSheet,
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -377,19 +544,32 @@ class _PhotoPreviewStrip extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.memory(
-                  file.bytes,
-                  width: 88,
-                  height: 88,
-                  fit: BoxFit.cover,
-                ),
+                child: file.isImage
+                    ? Image.memory(
+                        file.bytes,
+                        width: 88,
+                        height: 88,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        width: 88,
+                        height: 88,
+                        color: palette.glassFill,
+                        alignment: Alignment.center,
+                        child: Icon(
+                          file.kind == JournalMediaKind.voice
+                              ? Icons.mic_none
+                              : Icons.videocam_outlined,
+                          color: palette.textSecondary,
+                        ),
+                      ),
               ),
               Positioned(
                 top: -6,
                 right: -6,
                 child: IconButton(
                   onPressed: () => onRemove(index),
-                  tooltip: 'Remove photo',
+                  tooltip: 'Remove attachment',
                   style: IconButton.styleFrom(
                     backgroundColor: palette.surface,
                     foregroundColor: palette.textPrimary,
@@ -407,22 +587,31 @@ class _PhotoPreviewStrip extends StatelessWidget {
   }
 }
 
-/// Photo attach (working) plus honest voice/video coming-soon note.
+/// Photo, voice, and video attach. Camera clips are capped at 60 seconds.
 class _CaptureDock extends StatelessWidget {
   const _CaptureDock({
     required this.palette,
     required this.photoCount,
+    required this.attachmentCount,
     required this.maxPhotos,
+    required this.recording,
     required this.onPhoto,
+    required this.onVoice,
+    required this.onVideo,
   });
 
   final JournalPalette palette;
   final int photoCount;
+  final int attachmentCount;
   final int maxPhotos;
-  final VoidCallback onPhoto;
+  final bool recording;
+  final VoidCallback? onPhoto;
+  final VoidCallback? onVoice;
+  final VoidCallback? onVideo;
 
   @override
   Widget build(BuildContext context) {
+    final atCap = attachmentCount >= maxPhotos;
     final photoLabel =
         photoCount == 0 ? 'Photo' : 'Photo ($photoCount/$maxPhotos)';
     return Column(
@@ -445,7 +634,7 @@ class _CaptureDock extends StatelessWidget {
                 icon: Icons.photo_camera_outlined,
                 label: photoLabel,
                 subtitle: 'Camera or library',
-                enabled: photoCount < maxPhotos,
+                enabled: !atCap && onPhoto != null,
                 onTap: onPhoto,
               ),
             ),
@@ -453,11 +642,11 @@ class _CaptureDock extends StatelessWidget {
             Expanded(
               child: _DockButton(
                 palette: palette,
-                icon: Icons.mic_none,
-                label: 'Record',
-                subtitle: 'Coming soon',
-                enabled: false,
-                onTap: null,
+                icon: recording ? Icons.stop_circle_outlined : Icons.mic_none,
+                label: recording ? 'Stop' : 'Record',
+                subtitle: recording ? 'Recording' : 'Voice note',
+                enabled: onVoice != null && (recording || !atCap),
+                onTap: onVoice,
               ),
             ),
             const SizedBox(width: 10),
@@ -466,9 +655,9 @@ class _CaptureDock extends StatelessWidget {
                 palette: palette,
                 icon: Icons.videocam_outlined,
                 label: 'Video',
-                subtitle: 'Coming soon',
-                enabled: false,
-                onTap: null,
+                subtitle: 'Up to 60s',
+                enabled: !atCap && onVideo != null,
+                onTap: onVideo,
               ),
             ),
           ],

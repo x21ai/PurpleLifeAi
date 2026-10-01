@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,6 +10,7 @@ import '../shared/score_hero.dart';
 import '../shared/score_tile.dart';
 import 'models/score_snapshot.dart';
 import 'seven_day_trends.dart';
+import 'today_focus_store.dart';
 import 'today_repository.dart';
 
 /// Which Today expand panel is open (Merged preview accordion).
@@ -16,8 +19,8 @@ enum TodayExpandPanel { meds, hydration, wearables, log }
 /// Three-up Readiness / Sleep / Activity tiles for Merged Today.
 ///
 /// The focused tile is the active one. A second tap on that tile (when it has
-/// a real score) opens the ScoreHero detail overlay. Web stores the focus in
-/// localStorage; this session keeps it in widget state, defaulting to Sleep.
+/// a real score) opens the ScoreHero detail overlay. Focus is stored with the
+/// same key as web Today (`purple-today-focus`) and restored on the next launch.
 class TodayScoreTiles extends StatefulWidget {
   const TodayScoreTiles({
     super.key,
@@ -35,7 +38,20 @@ class TodayScoreTiles extends StatefulWidget {
 }
 
 class _TodayScoreTilesState extends State<TodayScoreTiles> {
-  String _focus = 'sleep';
+  String _focus = todayFocusFallback;
+  var _userChose = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadFocus());
+  }
+
+  Future<void> _loadFocus() async {
+    final saved = await readTodayFocus();
+    if (!mounted || _userChose || saved == _focus) return;
+    setState(() => _focus = saved);
+  }
 
   void _onTap(String key, double? value) {
     if (value == null) return;
@@ -53,7 +69,9 @@ class _TodayScoreTilesState extends State<TodayScoreTiles> {
       );
       return;
     }
+    _userChose = true;
     setState(() => _focus = key);
+    unawaited(writeTodayFocus(key));
   }
 
   @override

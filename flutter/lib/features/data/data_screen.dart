@@ -157,6 +157,9 @@ class _DataScreenState extends ConsumerState<DataScreen> {
                     if (!snapshot.hasLabs)
                       _EmptyLabsCard(
                         onUpload: () => context.go(AppRoutes.reportsNew),
+                        onConnect: wearables.isEmpty
+                            ? () => context.go(AppRoutes.tools)
+                            : null,
                       )
                     else ...[
                       for (final metric in labs)
@@ -202,9 +205,10 @@ class _DataScreenState extends ConsumerState<DataScreen> {
 }
 
 class _EmptyLabsCard extends StatelessWidget {
-  const _EmptyLabsCard({required this.onUpload});
+  const _EmptyLabsCard({required this.onUpload, this.onConnect});
 
   final VoidCallback onUpload;
+  final VoidCallback? onConnect;
 
   @override
   Widget build(BuildContext context) {
@@ -230,6 +234,14 @@ class _EmptyLabsCard extends StatelessWidget {
             onPressed: onUpload,
             child: const Text('Upload past labs'),
           ),
+          if (onConnect != null) ...[
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: onConnect,
+              style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
+              child: const Text('Connect a device'),
+            ),
+          ],
         ],
       ),
     );

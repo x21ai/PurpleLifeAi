@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:purple_app/design/tokens.dart';
 import 'package:purple_app/features/shared/score_tile.dart';
 import 'package:purple_app/features/today/models/score_snapshot.dart';
+import 'package:purple_app/features/today/today_focus_store.dart';
 import 'package:purple_app/features/today/today_merged_layout.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Regression: TF27 Sleep/Activity numerals wrapped digit-per-line (8/2, 5/8)
 /// when active tiles used a 56px face in the narrow three-up row.
@@ -11,6 +13,10 @@ void main() {
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     await PurpleTokens.load();
+  });
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
   });
 
   testWidgets('ScoreTile keeps two-digit values on one line in narrow row',
@@ -175,5 +181,37 @@ void main() {
       expect(dash.maxLines, 1);
       expect(dash.softWrap, isFalse);
     }
+  });
+
+  testWidgets('TodayScoreTiles restores purple-today-focus', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      todayFocusStorageKey: 'activity',
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: TodayScoreTiles(
+            scores: ScoreSnapshot(
+              readiness: 70,
+              sleepScore: 80,
+              activity: 60,
+              hasData: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final activity = tester.widget<Text>(find.text('ACTIVITY'));
+    final sleep = tester.widget<Text>(find.text('SLEEP'));
+    expect(activity.style?.fontWeight, FontWeight.w600);
+    expect(sleep.style?.fontWeight, FontWeight.w500);
+
+    await tester.tap(find.text('READINESS'));
+    await tester.pumpAndSettle();
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString(todayFocusStorageKey), 'readiness');
   });
 }

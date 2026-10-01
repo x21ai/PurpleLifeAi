@@ -10,7 +10,8 @@ prefix.
 |-------|---------------|--------|
 | Purple native iOS (ASC, team, Luciq SDK) | `x21` | `prd` |
 | PurpleLife Worker deploy, `build:prod`, www Cloudflare smoke (`bun run test:www-cloudflare-data`) | `x21` | `prd_cloudflare` |
-| Flutter dart-defines and older Playwright e2e scripts (not Worker deploy) | `cursor-cloudflare` | `prd_cloudlfare` |
+| Flutter dart-defines, iOS TestFlight anon key, Android release | `x21` | `prd_cloudflare` |
+| Older Playwright prod e2e scripts (not Flutter, not Worker deploy) | `cursor-cloudflare` | `prd_cloudlfare` |
 | Luciq MCP source token (unchanged) | `servers-teamkeys` | `dev` |
 
 ## Secret names (x21/prd)

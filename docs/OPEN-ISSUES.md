@@ -90,7 +90,7 @@ Format:
 | Merged order: greeting → date strip → scores → signals → narrative → icon expanders → Last 7 | **match** | `TodayScreen` / `_MergedTodayBody` |
 | Date strip (7+today+7, picker, back-to-today) | **match** | `date_strip.dart` |
 | Score tiles Readiness / Sleep / Activity (FittedBox) | **match** | `TodayScoreTiles` + `ScoreTile` |
-| Score tap → ScoreHero / risk detail overlay | **match** | TF30: focused tile, second tap opens ScoreHero overlay (phrase, narrative, See the full reading → `/today/risk`). Focus is session-only |
+| Score tap → ScoreHero / risk detail overlay | **match** | TF31: focused tile, second tap opens ScoreHero overlay. Focus persists in SharedPreferences `purple-today-focus` (same key as web localStorage) |
 | Your signals grid + View all | **match** | TF30: null metrics omitted via `buildTodayVitalItems`; connect empty state |
 | Maya / AI narrative card | **match** | `TodayMayaCard` when narrative present |
 | Icon row Meds / Hydration / Wearables / Log (Meds default open) | **match** | `TodayIconActionRow` |
@@ -102,7 +102,7 @@ Format:
 | Hydration expand: progress + quick-add + Day view | **match** | Wired `TodayHydrationPanel` 2026-07-13 (was stub CTA) |
 | Hydration expand: week bars + entry list | **match** | TF30: inline week capsules + today's entry list in `TodayHydrationPanel` |
 | Quick log: chips / when / notes / Save | **match** | `TodayLogExpandBody` |
-| Quick log: voice / video compose icons | **partial** | TF30: 44pt mic and video icons match the preview. Capture is a visible stub (no new mic/camera permission). See `tf30-quick-log-voice-video-capture` |
+| Quick log: voice / video compose icons | **match** | TF31: mic records an audio clip; video is camera or library (60s, 50 MB). Upload uses `journal-media`. Live speech transcript stays web-only |
 | Wearables expand + Sync now | **match** | `SyncStatusBar` + visit sync |
 | Last 7 days trend metric grid | **match** | TF30: capsule grid from biometrics, doses, and hydration. Empty when nothing was captured. Open Data remains |
 | Team announcement → Log | **match** | `_AnnouncementBanner` |
@@ -131,15 +131,46 @@ Format:
   `tf27-newdesign-meds-capability-gaps`, `flutter-today-more-for-today-removed`.
   _Raised 2026-07-13 by Merged preview parity audit._
 
-- [ ] **tf30-quick-log-voice-video-capture** — Today Quick log shows mic and
-  video icons. Tapping them explains that capture is not in this build. Do not
-  add microphone or camera permissions until an owner asks for real recording.
-  Journal capture still says Record/Video coming soon.
-  _Raised 2026-10-01 by TF30 parity._
+- [x] ~~**tf30-quick-log-voice-video-capture**~~ — RESOLVED 2026-10-01 in Flutter
+  `1.0.0+31` (not uploaded): Today quick log and journal Record/Video capture
+  real audio and video. Microphone and camera usage strings were already in
+  Info.plist; Android now declares `CAMERA` and `RECORD_AUDIO`. Clips upload
+  through the existing journal-media path. Live Web Speech transcripts are not
+  ported. _Raised 2026-10-01 by TF30 parity._
 
-- [ ] **tf30-asc-upload** — `flutter/pubspec.yaml` is `1.0.0+30`. Mac operator
-  merges, then `bun run ios:testflight`. Cloud agents must not upload.
+- [x] ~~**tf30-asc-upload**~~ — RESOLVED 2026-10-01: ASC **1.0 (30)** VALID
+  (`fbb42a65-55ba-438a-9800-439a1460c026`, internal IN_BETA_TESTING) after PR #66.
   _Raised 2026-10-01._
+
+- [ ] **tf31-asc-upload** — `flutter/pubspec.yaml` is `1.0.0+31` for voice/video
+  capture, persisted score focus, and Flutter Doppler defaults
+  (`x21` / `prd_cloudflare`). Mac operator merges, then `bun run ios:testflight`.
+  Cloud agents must not upload. External TestFlight submit stays an owner ASC step.
+  _Raised 2026-10-01._
+
+### Still owner-only or intentionally deferred (2026-10-01 TF31 audit)
+
+Shipped in `1.0.0+31`: Today and journal voice/video capture, persisted score
+focus, Data and Biometrics empty-state Tools links, Flutter/TestFlight Doppler
+defaults `x21` / `prd_cloudflare`.
+
+Owner console or device, not an app-code fix:
+
+- Whoop redirect URI (`whoop-native-redirect-console`)
+- Android Play upload keystore and Console (`step8-android-play-signing`)
+- Full Xcode with Simulator.app (`xcode-beta-simulator-app-missing`)
+- ASC external beta submission after the Mac `ios:testflight` upload (`tf31-asc-upload`)
+- Google/Apple/Whoop console redirect edits if a provider still rejects the app callback
+- Staging Worker deploy (`staging-ploy-operator-deploy`) and production Worker deploy
+- Remote push APNs/FCM secrets (`remote-push-apns-fcm`)
+- Pausing Supabase or wiping data
+
+Intentionally not in this build:
+
+- Live speech-to-text into the note (web uses the Web Speech API; Flutter stores the audio clip)
+- Meds scan-label and voice-to-med (Worker `scanMedicationFromText`, not a file upload)
+- Today care-invite card (`flutter-today-incoming-care-invites`; Care hub already accepts invites)
+- Drug-database enrich, med form extras, ICS export, lab ordering, Lovable redesign merge
 
 ## ASC TestFlight feedback triage (full pull 2026-07-13)
 
@@ -289,12 +320,13 @@ testers on **27** for login-only and document remaining P0s.
   Also aligned Vitals `hasData` with real metric values; hub avoids empty-while-loading.
   _Raised 2026-07-13 by live-user vitals audit._
 
-- [ ] **data-tab-wearable-connect-cta** — P1: Data tab with no labs and no wearables
-  shows labs upload empty only; no "Connect a device" path to Tools. Vitals/My Health
-  already have connect links. _Raised 2026-07-13 by vitals audit._
+- [x] ~~**data-tab-wearable-connect-cta**~~ — RESOLVED 2026-10-01: Data empty
+  state (no labs and no wearables) includes Connect a device, which opens Tools.
+  _Raised 2026-07-13 by vitals audit._
 
-- [ ] **biometrics-hub-empty-tools-link** — P1: Biometrics hub empty copy mentions
-  connect but is not a tappable Tools CTA. _Raised 2026-07-13 by vitals audit._
+- [x] ~~**biometrics-hub-empty-tools-link**~~ — RESOLVED 2026-10-01: Biometrics hub
+  empty state has a Connect a wearable button to Tools. _Raised 2026-07-13 by
+  vitals audit._
 
 ## Repo hygiene / gates (raised 2026-07-06 full audit)
 
@@ -629,7 +661,8 @@ See **TF28 device QA** checklist above for the executable device matrix.
   `MedsRepository.updatePillsRemaining` / form `updateStock` + offline
   `queueWrite` with `updated_at` (RLS `medications_all_own`). Form sheet now
   edits pills on hand + alert threshold on create/edit (non-rescue).
-  **Still missing / stub vs web:** scan/voice (toolbar snackbar); form
+  **Still missing / stub vs web:** meds scan/voice toolbar still says web-only
+  (needs Worker `scanMedicationFromText`, not a file upload); form
   dosage_form / with_food / per-slot amounts / start+end dates / prescriber /
   pharmacy / Rx; side effects log; permanent
   delete archived; export ICS; med-intelligence refill forecast cards; critical

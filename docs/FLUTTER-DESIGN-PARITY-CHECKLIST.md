@@ -1,13 +1,12 @@
 # Flutter design parity checklist (acceptance bar)
 
-TF30 (2026-10-01, `1.0.0+30`, not uploaded) closed the residual Merged Today
-and Meds rows tracked as `tf28-design-flutter-parity`: signals null-filter,
-ScoreHero overlay, Last 7 capsule grid, Today meds segment bar, hydration week
-bars and entry list, med intelligence cards, underline Active/Archive tabs.
-Quick log voice/video icons are visible stubs. Historical deltas below stay
-as the original audit.
+TF31 (2026-10-01, `1.0.0+31`, not uploaded) records Today quick-log and journal
+voice notes and video (camera or library, 60s / 50 MB) into `journal-media`,
+and persists Today score focus with the web key `purple-today-focus`.
+Live speech-to-text into the note field stays on web. TF30 (`1.0.0+30`) is
+on TestFlight (ASC VALID). Historical deltas below stay as the original audit.
 
-Last updated: 2026-10-01 (TF30 parity). Prior note 2026-07-05 (marked items resolved by the 2026-07-05 orchestrated fix fleet;
+Last updated: 2026-10-01 (TF31 capture and focus). Prior note 2026-07-05 (marked items resolved by the 2026-07-05 orchestrated fix fleet;
 verified against code in worktree; original 2026-07-04 findings preserved below with
 strikethrough, never deleted)
 

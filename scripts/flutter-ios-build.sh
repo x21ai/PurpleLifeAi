@@ -25,7 +25,9 @@ fi
 export PATH="${FLUTTER_DIR}/ios/scripts:${PATH}"
 
 cd "${FLUTTER_DIR}"
-doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+FLUTTER_DOPPLER_PROJECT="${FLUTTER_DOPPLER_PROJECT:-x21}"
+FLUTTER_DOPPLER_CONFIG="${FLUTTER_DOPPLER_CONFIG:-prd_cloudflare}"
+doppler run --project "${FLUTTER_DOPPLER_PROJECT}" --config "${FLUTTER_DOPPLER_CONFIG}" -- \
   flutter build ios --release --no-codesign "$@"
 
 log "Done. Web preview unaffected: ./scripts/flutter-web-serve.sh"

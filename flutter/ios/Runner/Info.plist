@@ -74,7 +74,7 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Purple uses the microphone when you record voice journal entries.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Purple accesses your photo library when you attach images to journal entries.</string>
+	<string>Purple accesses your photo library when you attach photos or videos to a journal entry.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

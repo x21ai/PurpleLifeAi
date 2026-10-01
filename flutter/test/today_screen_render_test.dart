@@ -13,6 +13,7 @@ import 'package:purple_app/features/today/missed_dose_catchup.dart';
 import 'package:purple_app/features/today/today_meds_section.dart';
 import 'package:purple_app/features/today/today_repository.dart';
 import 'package:purple_app/features/today/today_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'support/purple_test_theme.dart';
 
 /// Regression guard for the blank /today content area: any layout exception
@@ -20,6 +21,10 @@ import 'support/purple_test_theme.dart';
 /// instead of silently rendering nothing in release.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
 
   Future<void> pumpToday(
     WidgetTester tester, {

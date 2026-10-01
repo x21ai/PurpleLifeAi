@@ -73,7 +73,11 @@ void main() {
         expect(find.text('New entry'), findsOneWidget);
         expect(find.byTooltip('Dismiss keyboard'), findsOneWidget);
         expect(find.text('Photo'), findsOneWidget);
-        expect(find.text('Coming soon'), findsNWidgets(2));
+        expect(find.text('Coming soon'), findsNothing);
+        expect(find.text('Record'), findsOneWidget);
+        expect(find.text('Video'), findsOneWidget);
+        expect(find.text('Voice note'), findsOneWidget);
+        expect(find.text('Up to 60s'), findsOneWidget);
       },
     );
 

@@ -247,12 +247,23 @@ class _HubSections extends ConsumerWidget {
       }
       return Padding(
         padding: const EdgeInsets.only(top: 28),
-        child: Text(
-          'No readings yet. Connect a wearable to start seeing your signals.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.65),
-                height: 1.5,
-              ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'No readings yet. Connect a wearable to start seeing your signals.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.65),
+                    height: 1.5,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => context.go(AppRoutes.tools),
+              style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
+              child: const Text('Connect a wearable'),
+            ),
+          ],
         ),
       );
     }

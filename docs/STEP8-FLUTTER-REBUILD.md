@@ -56,7 +56,7 @@ Defined in `flutter/lib/core/config/app_config.dart`. Injected by `scripts/lib/f
 
 | Define | Required | Default (if omitted) | Doppler source |
 |--------|----------|----------------------|----------------|
-| `SUPABASE_ANON_KEY` | **Yes** (runtime throw) | — | `cursor-cloudflare` / `prd_cloudlfare` → `VITE_SUPABASE_PUBLISHABLE_KEY` |
+| `SUPABASE_ANON_KEY` | **Yes** (runtime throw) | — | `x21` / `prd_cloudflare` → `VITE_SUPABASE_PUBLISHABLE_KEY` |
 | `SUPABASE_URL` | No | `https://auth.purplelife.org` | Hardcoded in `AppConfig` |
 | `SITE_URL` | No | `https://www.purplelife.org` | Script (local web preview uses `http://127.0.0.1:8765`) |
 | `WORKER_API_BASE_URL` | No | `https://www.purplelife.org/api` | Script (`SITE_URL` + `/api`) |
@@ -160,7 +160,7 @@ flutter test
 
 Doppler access:
 
-- **`cursor-cloudflare` / `prd_cloudlfare`** — `VITE_SUPABASE_PUBLISHABLE_KEY` (Flutter anon key)
+- **`x21` / `prd_cloudflare`** — `VITE_SUPABASE_PUBLISHABLE_KEY` (Flutter anon key)
 - **`x21` / `prd`** — iOS ASC + team + Luciq (`PURPLE_LIFE_*`)
 
 ### iOS (TestFlight)
@@ -205,13 +205,13 @@ Until upload keystore is configured, the AAB is signed with the **debug** key (P
 ```bash
 # iOS USB device
 bun run ios:device-build    # Capacitor path; for Flutter use:
-cd flutter && doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+cd flutter && doppler run --project x21 --config prd_cloudflare -- \
   flutter run -d <device_id> --release \
   --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY" \
   --dart-define=WORKER_API_BASE_URL=https://www.purplelife.org/api
 
 # Android emulator / USB
-cd flutter && doppler run --project cursor-cloudflare --config prd_cloudlfare -- \
+cd flutter && doppler run --project x21 --config prd_cloudflare -- \
   flutter run -d android --release \
   --dart-define=SUPABASE_ANON_KEY="$VITE_SUPABASE_PUBLISHABLE_KEY"
 ```
@@ -249,7 +249,7 @@ Run before claiming a rebuild ready for testers:
 | Full **Xcode.app** missing (CLT only) | **P0** | Install Xcode from App Store; `xcode-select -s /Applications/Xcode.app` |
 | Doppler `x21/prd` ASC API key missing | **P0** | Add `PURPLE_LIFE_APP_STORE_CONNECT_KEY_ID`, `_ISSUER_ID`, `_API_KEY` (.p8 PEM) |
 | `PURPLE_LIFE_DEVELOPMENT_TEAM` missing | **P0** | Set team `C3HY4MF66F` in Doppler; run `bun run ios:local-signing` |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` missing | **P0** | Doppler `cursor-cloudflare/prd_cloudlfare` |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` missing | **P0** | Doppler `x21` / `prd_cloudflare` |
 | Build number ≤ latest ASC VALID | **P0** | Bump `pubspec.yaml` `+N` |
 | Apple Developer Program membership / agreements | **P0** | Owner: ASC → Agreements, Tax, Banking |
 | Provisioning / cert expiry | **P1** | Automatic signing + `-allowProvisioningUpdates` (script default) |

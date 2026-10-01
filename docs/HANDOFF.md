@@ -1,5 +1,11 @@
 ## Current snapshot
 
+**2026-10-01 Flutter 1.0.0+31 capture, focus, Doppler (not uploaded):**
+Today quick log and journal Record/Video save real audio and video to
+`journal-media`. Score focus persists with web key `purple-today-focus`.
+Flutter/TestFlight dart-define scripts default Doppler `x21` / `prd_cloudflare`.
+ASC tip remains **1.0 (30)** VALID. Do not upload TestFlight. Do not deploy Workers.
+
 **2026-10-01 TF30 uploaded to ASC (PurpleLifeAi | eigital):**
 PR #66 squash-merged to `main` at `25d91164`. CI green (checks, responsive,
 e2e-smoke). Mac ran `bun run ios:testflight` with Xcode.app; ASC upload succeeded
@@ -14,8 +20,8 @@ No Worker deploy. Next: device QA on TestFlight build 30.
 `build:prod`, `build:prod:supabase`, `deploy:staging:ploy`,
 `deploy:staging:ploy:dry-run`, and `deploy:www-ploy:dry-run` use Doppler project
 `x21` config `prd_cloudflare`, same as `bun run test:www-cloudflare-data`.
-Native iOS stays `x21` / `prd`. Flutter dart-define scripts still name
-`cursor-cloudflare` / `prd_cloudlfare`. Deploy runbooks updated. Do not deploy
+Native iOS stays `x21` / `prd`. Flutter dart-define scripts were retargeted
+to `x21` / `prd_cloudflare` on 2026-10-01. Deploy runbooks updated. Do not deploy
 from this change. `main` at branch start includes #42 (`d2e9d075`).
 
 **2026-09-29 D1 Today/Vitals/reports fix rebased onto main after #63 (PR #42, open, no deploy):**
@@ -175,6 +181,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-10-01T21:20:00Z — Flutter TF31 capture, score focus, Doppler defaults
+
+- **Requested:** Inventory stubbed Flutter gaps and ship every agent-fixable one that blocks screens working. Especially quick-log voice/video and score focus. Point Flutter/TestFlight Doppler at `x21` / `prd_cloudflare`. Bump to `1.0.0+31`. Do not merge, deploy Workers, or upload TestFlight.
+- **Done:** Today quick log and journal capture record voice (`record`) and video (`image_picker`, 60s / 50 MB) into `journal-media`. Android `CAMERA` and `RECORD_AUDIO`. Score focus uses SharedPreferences `purple-today-focus`. Data and Biometrics empty states link to Tools. Flutter dart-define scripts default Doppler `x21` / `prd_cloudflare`. `pubspec` `1.0.0+31`.
+- **Issues:** Live speech-to-text transcripts stay web-only. Meds scan/voice still needs Worker `scanMedicationFromText`. Whoop console, Play keystore, Xcode Simulator, and ASC external submit stay owner-only. Build 31 is not on ASC.
+- **Stand / next:** PR open against `main`. Mac operator merges, then `bun run ios:testflight`. No Worker deploy.
+- **Who / where:** cloud agent, `cursor/tf31-capture-focus-doppler-ce3e`.
+- **Evidence:** `flutter analyze` clean on touched libraries. `flutter test` 32/32 on journal, today, score, and focus tests.
+- **Timestamp:** 2026-10-01T21:20:00Z
 
 ### 2026-10-01T20:10:07Z — Flutter TF30 design parity (no TestFlight upload)
 

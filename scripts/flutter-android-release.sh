@@ -11,8 +11,8 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FLUTTER_DIR="${REPO_ROOT}/flutter"
-FLUTTER_DOPPLER_PROJECT="${FLUTTER_DOPPLER_PROJECT:-cursor-cloudflare}"
-FLUTTER_DOPPLER_CONFIG="${FLUTTER_DOPPLER_CONFIG:-prd_cloudlfare}"
+FLUTTER_DOPPLER_PROJECT="${FLUTTER_DOPPLER_PROJECT:-x21}"
+FLUTTER_DOPPLER_CONFIG="${FLUTTER_DOPPLER_CONFIG:-prd_cloudflare}"
 BUILD_APK=false
 
 log() { printf '[flutter-android-release] %s\n' "$*"; }
