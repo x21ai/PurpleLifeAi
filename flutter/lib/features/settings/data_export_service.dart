@@ -5,6 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'file_download.dart';
+import '../../core/data/purple_client.dart';
 
 /// Client-side data export and soft-delete (web `data-export.ts`).
 const restoreWindowDays = 60;
@@ -42,11 +43,11 @@ String toCsv(List<Map<String, dynamic>> rows) {
 String safeFile(String s) =>
     s.replaceAll(RegExp(r'[^a-z0-9\-_]', caseSensitive: false), '_');
 
-Future<void> exportAllUserData(SupabaseClient client) async {
+Future<void> exportAllUserData(PurpleClient client) async {
   final user = client.auth.currentSession?.user;
   if (user == null) throw StateError('Not signed in');
 
-  final results = await Future.wait([
+  final results = await Future.wait<dynamic>(<Future<dynamic>>[
     client.from('profiles').select('*').eq('id', user.id).maybeSingle(),
     client
         .from('journal_entries')
@@ -174,7 +175,7 @@ Future<void> exportAllUserData(SupabaseClient client) async {
 }
 
 Future<DeletionStatus?> checkDeletionStatus(
-  SupabaseClient client,
+  PurpleClient client,
   String userId,
 ) async {
   final row = await client
@@ -202,7 +203,7 @@ bool userHasPasswordIdentity(User user) {
   return user.appMetadata['provider'] == 'email';
 }
 
-Future<void> softDeleteAuthenticatedUser(SupabaseClient client) async {
+Future<void> softDeleteAuthenticatedUser(PurpleClient client) async {
   final user = client.auth.currentSession?.user;
   if (user == null) throw StateError('Not signed in');
   final now = DateTime.now().toUtc();
@@ -214,7 +215,7 @@ Future<void> softDeleteAuthenticatedUser(SupabaseClient client) async {
 }
 
 Future<void> softDeleteUserData(
-  SupabaseClient client, {
+  PurpleClient client, {
   required String password,
 }) async {
   final user = client.auth.currentSession?.user;
@@ -224,7 +225,7 @@ Future<void> softDeleteUserData(
   await softDeleteAuthenticatedUser(client);
 }
 
-Future<void> restoreUserData(SupabaseClient client) async {
+Future<void> restoreUserData(PurpleClient client) async {
   final userId = client.auth.currentSession?.user.id;
   if (userId == null) throw StateError('Not signed in');
   await client.from('profiles').update({

@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/providers/core_providers.dart';
+import '../../core/data/purple_client.dart';
 
 const _maxAttachmentBytes = 15 * 1024 * 1024;
 
@@ -177,9 +178,9 @@ class CareGroupSummary {
 
 /// Care chat data access mirroring web `care-chat.functions.ts` via Supabase RLS.
 class CareChatRepository {
-  CareChatRepository({required SupabaseClient supabase}) : _supabase = supabase;
+  CareChatRepository({required PurpleClient supabase}) : _supabase = supabase;
 
-  final SupabaseClient _supabase;
+  final PurpleClient _supabase;
 
   String? get _userId =>
       _supabase.auth.currentSession?.user.id ?? _supabase.auth.currentUser?.id;
@@ -321,8 +322,8 @@ class CareChatRepository {
   ///
   /// Mirrors web channel `care-thread-<id>` with filter
   /// `thread_id=eq.<id>` (`chat-care.tsx:720-742`). The caller owns the
-  /// returned channel and MUST call [SupabaseClient.removeChannel] on dispose.
-  RealtimeChannel subscribeThread(
+  /// returned channel and MUST call [PurpleClient.removeChannel] on dispose.
+  PurpleChannel subscribeThread(
     String threadId,
     void Function(CareMessage message) onInsert,
   ) {
@@ -351,7 +352,7 @@ class CareChatRepository {
     return channel;
   }
 
-  void removeChannel(RealtimeChannel channel) {
+  void removeChannel(PurpleChannel channel) {
     _supabase.removeChannel(channel);
   }
 

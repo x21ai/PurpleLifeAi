@@ -13,19 +13,23 @@ Rebuild and ship the **Flutter native** app (`flutter/`, bundle `org.purplelife.
 | iOS TestFlight / App Store | Rebuild Flutter IPA, upload ASC | — |
 | Android internal testing | Build signed AAB (Play upload manual until automation) | — |
 | `www.purplelife.org` marketing UI | Unchanged | PR #47 Ploy hybrid entry |
-| Worker `/api/*` | Unchanged host; accepts Supabase JWT from Flutter | `DATA_BACKEND=cloudflare` web cutover is separate |
+| Worker `/api/*` | Unchanged host; Flutter default sends a Workers JWT | `DATA_BACKEND=supabase` is the Flutter rollback |
 
 ## Architecture (native client)
 
 ```
-Flutter (iOS/Android)
-  ├─ Auth/session     → Supabase Auth @ https://auth.purplelife.org (PKCE + secure storage)
-  ├─ Direct data      → Supabase PostgREST (meds doses, journal, vitals RLS) + Drift offline cache
-  └─ Worker API       → https://www.purplelife.org/api/*  (Bearer = Supabase access token)
-        unified-auth-middleware accepts Supabase JWT (and Workers JWT on cloudflare web path)
+Flutter (iOS/Android), DATA_BACKEND=cloudflare (TestFlight default)
+  ├─ Auth/session     → POST https://www.purplelife.org/api/auth/sign-in (HS256 JWT)
+  ├─ Data             → POST /api/data/query and /api/data/rpc (Bearer = Workers JWT)
+  ├─ Media            → POST /api/storage/upload and GET /api/storage/object
+  └─ Offline          → Drift cache (unchanged)
+
+Rollback only: DATA_BACKEND=supabase
+  ├─ Auth/session     → Supabase Auth @ https://auth.purplelife.org
+  └─ Data             → Supabase PostgREST
 ```
 
-Flutter does **not** read `DATA_BACKEND` or `VITE_DATA_BACKEND`. Those flags affect the **TanStack web** build only. Native rebuilds stay valid while www runs Supabase or Cloudflare data backend, as long as Worker routes and Supabase Auth remain live.
+Flutter reads `--dart-define=DATA_BACKEND` (`cloudflare` when omitted). Do not ship a TestFlight build that still sends Supabase GoTrue tokens to Worker data routes.
 
 ## Mobile app inventory
 
@@ -275,10 +279,10 @@ Run before claiming a rebuild ready for testers:
 Step 8 assumes **production Worker host unchanged**:
 
 - API base: `https://www.purplelife.org/api`
-- Auth: `https://auth.purplelife.org` (Supabase custom domain)
-- Web `DATA_BACKEND=cloudflare` cutover (`docs/CLOUDFLARE-MIGRATION.md`) does not require a new Flutter dart-define; Worker middleware accepts existing Supabase JWTs.
+- Auth (Flutter default): `POST /api/auth/sign-in` on that same host
+- Rollback auth: `https://auth.purplelife.org` only when `DATA_BACKEND=supabase`
 
-Do **not** deploy www Ploy as part of Step 8. Native apps do not load www HTML; they only call `/api/*` and Supabase.
+Do **not** deploy www as part of a Flutter-only auth change. Password sign-in works against the current Worker. Native Google/Apple sign-in needs the www OAuth callback handoff deployed before it can return a JWT to the app.
 
 Merge order (www track, separate from Step 8): trunk CI green → #45 → #44 → #47 (owner GO 2026-09-24) → operator deploy `docs/DEPLOY-WWW-PLOY.md`.
 

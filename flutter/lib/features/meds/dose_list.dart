@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -606,29 +607,28 @@ class _DoseRow extends StatelessWidget {
             color: statusColor,
           ),
           ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 32),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  med?.name ?? 'Medication',
-                  style: medsSans(
-                    fontSize: 15,
-                    color: p.textPrimary.withValues(alpha: 0.92),
-                  ),
-                ),
-                if (outOfStock) ...[
-                  const SizedBox(width: 8),
-                  Text(
-                    'Count zero, refill to update',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: destructive,
-                        ),
-                  ),
-                ],
-              ],
+            constraints: BoxConstraints(
+              maxWidth: math.max(120, MediaQuery.sizeOf(context).width - 48),
+            ),
+            child: Text(
+              med?.name ?? 'Medication',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: medsSans(
+                fontSize: 15,
+                color: p.textPrimary.withValues(alpha: 0.92),
+              ),
             ),
           ),
+          if (outOfStock)
+            Text(
+              'Count zero, refill to update',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: destructive,
+                  ),
+            ),
           if (dose.isPending && outOfStock)
             TextButton(
               onPressed: med == null
@@ -741,6 +741,7 @@ class MedsDoseActionButton extends StatelessWidget {
           onPressed: onTap,
           style: FilledButton.styleFrom(
             minimumSize: _minTarget,
+            tapTargetSize: MaterialTapTargetSize.padded,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             shape: const StadiumBorder(),
           ),
@@ -922,6 +923,8 @@ class MedLibraryRow extends StatelessWidget {
                         children: [
                           Text(
                             medication.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: medsSerif(
                               fontSize: 17,
                               fontWeight: FontWeight.w500,

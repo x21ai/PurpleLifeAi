@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../api/worker_client.dart';
@@ -10,6 +9,7 @@ import '../auth/auth_repository.dart';
 import '../network/connectivity_service.dart';
 import 'database.dart';
 import 'supabase_row_parse.dart';
+import '../data/purple_client.dart';
 
 /// Known Supabase tables mirrored locally.
 abstract class SyncTables {
@@ -69,20 +69,20 @@ class SyncService {
     required AuthRepository authRepository,
     required ConnectivityService connectivityService,
     required WorkerClient workerClient,
-    SupabaseClient? supabaseClient,
+    required PurpleClient supabaseClient,
     Uuid? uuid,
   })  : _db = database,
         _auth = authRepository,
         _connectivity = connectivityService,
         _worker = workerClient,
-        _supabase = supabaseClient ?? Supabase.instance.client,
+        _supabase = supabaseClient,
         _uuid = uuid ?? const Uuid();
 
   final AppDatabase _db;
   final AuthRepository _auth;
   final ConnectivityService _connectivity;
   final WorkerClient _worker;
-  final SupabaseClient _supabase;
+  final PurpleClient _supabase;
   final Uuid _uuid;
 
   bool _started = false;

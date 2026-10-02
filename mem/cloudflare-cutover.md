@@ -14,3 +14,8 @@
   config. Do not commit it.
 - **Runbook:** `docs/CLOUDFLARE-MIGRATION.md`
 - **Legacy:** Supabase `xxnzmfzsjplrutrgbzxy` stays until import verified
+- **Flutter (2026-10-02):** TestFlight default `DATA_BACKEND=cloudflare`.
+  Password sign-in is `POST /api/auth/sign-in`. That HS256 JWT is the bearer
+  for `/api/data/query` and R2 storage. `DATA_BACKEND=supabase` is rollback
+  only. Build `1.0.0+32`. Native OAuth handoff needs a www deploy. No refresh
+  token (1 hour). Do not upload build 31.

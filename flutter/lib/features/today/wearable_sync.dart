@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api/worker_client.dart';
 import '../health/health_service.dart';
 import '../health/native_health_autosync.dart';
+import '../../core/data/purple_client.dart';
 
 const _pullProviders = <({String id, String tokensTable})>[
   (id: 'oura', tokensTable: 'oura_tokens'),
@@ -67,7 +67,7 @@ bool shouldVisitSyncProvider({
 ///
 /// Interval/manual/pull modes are not handled here. Fail-open per provider.
 Future<void> syncVisitModeWearables({
-  required SupabaseClient supabase,
+  required PurpleClient supabase,
   WorkerClient? worker,
   bool force = false,
   DateTime? now,
@@ -123,7 +123,7 @@ Future<void> syncVisitModeWearables({
 /// Syncs every connected pull wearable (Oura edge + Whoop Worker).
 /// Fail-open per provider, matching web `today.tsx` / `sync-status.tsx`.
 Future<void> syncConnectedWearables({
-  required SupabaseClient supabase,
+  required PurpleClient supabase,
   WorkerClient? worker,
 }) async {
   final uid = supabase.auth.currentSession?.user.id;
@@ -187,7 +187,7 @@ Future<void> syncConnectedWearables({
 
 /// Pull-to-refresh and visit-mode native HealthKit sync (device auth gated).
 Future<void> _syncNativeHealth({
-  required SupabaseClient supabase,
+  required PurpleClient supabase,
   WorkerClient? worker,
   required bool force,
 }) async {

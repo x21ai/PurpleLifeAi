@@ -17,6 +17,7 @@ import '../shared/glass_helpers.dart' show ContentColumn;
 import 'locale_data.dart';
 import 'profile_avatar.dart';
 import 'theme_preference.dart';
+import '../../core/data/purple_client.dart';
 
 const _genderPresets = ['Female', 'Male', 'Non-binary', 'Prefer not to say'];
 const _genderSelfDescribe = '__self__';
@@ -85,7 +86,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
 
   String? get _userId => ref.read(authProvider).userId;
 
-  SupabaseClient get _client => Supabase.instance.client;
+  PurpleClient get _client => PurpleClient.current;
 
   Future<void> _load() async {
     final userId = _userId;
@@ -730,7 +731,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
 class _PasswordSection extends StatefulWidget {
   const _PasswordSection({required this.client});
 
-  final SupabaseClient client;
+  final PurpleClient client;
 
   @override
   State<_PasswordSection> createState() => _PasswordSectionState();
@@ -885,7 +886,7 @@ class _TotpEnrollment {
 class _TwoFactorSection extends StatefulWidget {
   const _TwoFactorSection({required this.client});
 
-  final SupabaseClient client;
+  final PurpleClient client;
 
   @override
   State<_TwoFactorSection> createState() => _TwoFactorSectionState();

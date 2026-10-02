@@ -1,7 +1,8 @@
 # Purple Flutter app
 
 Multi-platform client for Purple Life (iOS, Android, web, macOS, Windows).
-Production Supabase custom domain: `https://auth.purplelife.org`.
+TestFlight default signs in at `https://www.purplelife.org/api/auth` (`DATA_BACKEND=cloudflare`).
+`https://auth.purplelife.org` is used only when `DATA_BACKEND=supabase`.
 Native bundle ID: `org.purplelife.app` (matches Capacitor shell).
 
 ## Prerequisites
@@ -45,7 +46,8 @@ Optional overrides (defaults match production):
 
 | Define | Default |
 |--------|---------|
-| `SUPABASE_URL` | `https://auth.purplelife.org` |
+| `DATA_BACKEND` | `cloudflare` (`supabase` keeps GoTrue) |
+| `SUPABASE_URL` | `https://auth.purplelife.org` (rollback only) |
 | `SITE_URL` | `https://www.purplelife.org` |
 | `WORKER_API_BASE_URL` | `https://www.purplelife.org/api` |
 

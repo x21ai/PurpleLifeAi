@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,9 +18,34 @@ import 'journal_style.dart';
 /// canvas): sticky bar (close, title, Save pill), "when" picker, serif text
 /// card, photo attach, offline queue note.
 ///
-/// Shell strips [MediaQuery.padding] for full-bleed routes; this screen must
-/// pad with [MediaQuery.viewPadding] or Save draws under the status bar
-/// (TF feedback: submit unreachable).
+/// Full-bleed route. [MediaQuery.removePadding] also clears [viewPadding]
+/// when it equals [padding], so Save must use the larger of the media query
+/// insets and the raw view inset or it draws under the Dynamic Island.
+
+/// Status bar / home indicator that survives a parent [MediaQuery.removePadding].
+EdgeInsets _captureSafePadding(BuildContext context) {
+  final media = MediaQuery.of(context);
+  final raw = MediaQueryData.fromView(View.of(context));
+  double axis(double mediaPadding, double mediaView, double rawView) {
+    return math.max(mediaPadding, math.max(mediaView, rawView));
+  }
+
+  return EdgeInsets.only(
+    top: axis(media.padding.top, media.viewPadding.top, raw.viewPadding.top),
+    bottom: axis(
+      media.padding.bottom,
+      media.viewPadding.bottom,
+      raw.viewPadding.bottom,
+    ),
+    left: axis(media.padding.left, media.viewPadding.left, raw.viewPadding.left),
+    right: axis(
+      media.padding.right,
+      media.viewPadding.right,
+      raw.viewPadding.right,
+    ),
+  );
+}
+
 class JournalCaptureScreen extends ConsumerStatefulWidget {
   const JournalCaptureScreen({super.key});
 
@@ -383,21 +409,15 @@ class _JournalCaptureScreenState extends ConsumerState<JournalCaptureScreen> {
   @override
   Widget build(BuildContext context) {
     final palette = JournalPalette.dark();
-    // Shell removes MediaQuery.padding; viewPadding still reflects the notch.
     // Nested Scaffold restores Material for InkWell/IconButton and respects
     // keyboard viewInsets (shell uses resizeToAvoidBottomInset: false).
-    final viewPadding = MediaQuery.viewPaddingOf(context);
+    final safe = _captureSafePadding(context);
     return CanvasBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         resizeToAvoidBottomInset: true,
         body: Padding(
-          padding: EdgeInsets.only(
-            top: viewPadding.top,
-            bottom: viewPadding.bottom,
-            left: viewPadding.left,
-            right: viewPadding.right,
-          ),
+          padding: safe,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -799,6 +819,7 @@ class _TopBar extends StatelessWidget {
               foregroundColor: Colors.white,
               disabledForegroundColor: Colors.white.withValues(alpha: 0.7),
               minimumSize: const Size(72, 44),
+              tapTargetSize: MaterialTapTargetSize.padded,
               shape: const StadiumBorder(),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
@@ -868,11 +889,15 @@ class _WhenPicker extends StatelessWidget {
                 color: palette.textTertiary,
               ),
               const SizedBox(width: 10),
-              Text(
-                DateFormat('EEE, MMM d · h:mm a').format(capturedAt.toLocal()),
-                style: journalSans(
-                  fontSize: 14,
-                  color: palette.textSecondary,
+              Expanded(
+                child: Text(
+                  DateFormat('EEE, MMM d · h:mm a').format(capturedAt.toLocal()),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: journalSans(
+                    fontSize: 14,
+                    color: palette.textSecondary,
+                  ),
                 ),
               ),
               const Spacer(),

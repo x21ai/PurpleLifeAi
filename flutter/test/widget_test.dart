@@ -37,8 +37,20 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  test('AppConfig requires SUPABASE_ANON_KEY', () {
-    expect(() => AppConfig.fromEnvironment(), throwsStateError);
+  test('cloudflare AppConfig does not require SUPABASE_ANON_KEY', () {
+    final config = AppConfig.fromEnvironment();
+    expect(config.usesCloudflareAuth, isTrue);
+    expect(config.workerApiBaseUrl, 'https://www.purplelife.org/api');
+    expect(
+      AppConfig(
+        supabaseUrl: AppConfig.defaultSupabaseUrl,
+        supabaseAnonKey: '',
+        siteUrl: AppConfig.defaultSiteUrl,
+        workerApiBaseUrl: AppConfig.defaultWorkerApiBaseUrl,
+        dataBackend: AppConfig.dataBackendSupabase,
+      ).usesCloudflareAuth,
+      isFalse,
+    );
   });
 
   testWidgets('ShellContentColumn caps content width', (tester) async {

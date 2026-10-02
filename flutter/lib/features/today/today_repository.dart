@@ -12,19 +12,20 @@ import '../../core/providers/core_providers.dart';
 import 'models/score_snapshot.dart';
 import 'models/today_data.dart';
 import 'seven_day_trends.dart';
+import '../../core/data/purple_client.dart';
 
 /// Fetches Today data from Supabase with Drift fallback when offline.
 /// Mirrors `getScoreSnapshot` and Today page queries without server functions.
 class TodayRepository {
   TodayRepository({
-    required SupabaseClient supabase,
+    required PurpleClient supabase,
     required AppDatabase database,
     required ConnectivityService connectivity,
   })  : _supabase = supabase,
         _database = database,
         _connectivity = connectivity;
 
-  final SupabaseClient _supabase;
+  final PurpleClient _supabase;
   final AppDatabase _database;
   final ConnectivityService _connectivity;
 

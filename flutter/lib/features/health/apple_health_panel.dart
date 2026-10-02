@@ -3,9 +3,8 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../../core/api/worker_client.dart';
+import '../../core/data/purple_client.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
 import 'health_providers.dart';
@@ -97,7 +96,7 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
   }
 
   Future<void> _loadSyncTimestamps() async {
-    final session = Supabase.instance.client.auth.currentSession;
+    final session = PurpleClient.maybeOf()?.auth.currentSession;
     if (session == null) {
       if (!mounted) return;
       setState(() {
@@ -112,7 +111,8 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
     final source =
         Platform.isIOS ? kAppleHealthSource : kHealthConnectSource;
 
-    final bio = await Supabase.instance.client
+    final client = PurpleClient.current;
+    final bio = await client
         .from('biometrics')
         .select('recorded_at')
         .eq('user_id', uid)
@@ -121,7 +121,7 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
         .limit(1)
         .maybeSingle();
 
-    final token = await Supabase.instance.client
+    final token = await client
         .from('apple_health_tokens')
         .select('last_sync_at')
         .eq('user_id', uid)

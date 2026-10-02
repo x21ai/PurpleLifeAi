@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../core/data/purple_client.dart';
 
 import '../../design/purple_type.dart';
 import '../shared/glass_helpers.dart';
@@ -26,7 +27,7 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
   @override
   void initState() {
     super.initState();
-    final session = Supabase.instance.client.auth.currentSession;
+    final session = PurpleClient.maybeOf()?.auth.currentSession;
     _emailController.text = session?.user.email ?? '';
   }
 
@@ -51,7 +52,7 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
     }
     setState(() => _submitting = true);
     try {
-      await Supabase.instance.client.from('contact_messages').insert({
+      await PurpleClient.current.from('contact_messages').insert({
         'name': name.length > 200 ? name.substring(0, 200) : name,
         'email': email.length > 320 ? email.substring(0, 320) : email,
         'subject': _subjectController.text.trim().isEmpty

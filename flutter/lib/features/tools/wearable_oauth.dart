@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api/worker_client.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/core_providers.dart';
+import '../../core/data/purple_client.dart';
 
 /// Wearable OAuth providers supported in Tools (mirrors web connection cards).
 enum WearableOAuthProvider { oura, whoop }
@@ -177,14 +178,14 @@ void emitWearableOAuthFailure(
 /// the app receives the callback (deep link on native, in-app route on web).
 class WearableOAuthService {
   WearableOAuthService({
-    required SupabaseClient supabase,
+    required PurpleClient supabase,
     required WorkerClient worker,
     AppLinks? appLinks,
   })  : _supabase = supabase,
         _worker = worker,
         _appLinks = appLinks ?? AppLinks();
 
-  final SupabaseClient _supabase;
+  final PurpleClient _supabase;
   final WorkerClient _worker;
   final AppLinks _appLinks;
 

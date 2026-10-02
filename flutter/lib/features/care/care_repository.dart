@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api/worker_client.dart';
 import '../../core/config/app_config.dart';
@@ -11,6 +10,7 @@ import '../../core/network/connectivity_service.dart';
 import '../../core/offline/supabase_row_parse.dart';
 import '../../core/providers/core_providers.dart';
 import 'care_scopes.dart';
+import '../../core/data/purple_client.dart';
 
 class CareAccessException implements Exception {
   CareAccessException(this.message);
@@ -178,7 +178,7 @@ class CareReportDetail {
 /// Direct Supabase queries against care tables with offline overview cache.
 class CareRepository {
   CareRepository({
-    required SupabaseClient supabase,
+    required PurpleClient supabase,
     required ConnectivityService connectivity,
     required AppConfig config,
     required WorkerClient worker,
@@ -189,7 +189,7 @@ class CareRepository {
         _worker = worker,
         _http = httpClient ?? http.Client();
 
-  final SupabaseClient _supabase;
+  final PurpleClient _supabase;
   final ConnectivityService _connectivity;
   final AppConfig _config;
   final WorkerClient _worker;

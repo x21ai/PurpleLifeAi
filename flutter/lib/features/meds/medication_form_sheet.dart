@@ -36,6 +36,7 @@ class MedicationFormSheet extends ConsumerStatefulWidget {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (context) => MedicationFormSheet(
         editingMedId: editingMedId,

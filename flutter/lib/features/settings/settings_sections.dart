@@ -15,6 +15,7 @@ import '../shared/condition_prompts.dart';
 import 'data_export_service.dart';
 import 'feature_catalog.dart';
 import 'settings_style.dart';
+import '../../core/data/purple_client.dart';
 
 /// Below-the-fold Settings sections ported from web
 /// `src/routes/_app/settings.tsx` and `src/components/settings/*`.
@@ -74,17 +75,11 @@ const conditionLabels = <String, String>{
 
 String conditionLabel(String id) => conditionLabels[id] ?? id;
 
-/// Safe Supabase access for sections that must fail open in tests or before init.
-SupabaseClient? optionalSettingsSupabaseClient() {
-  try {
-    return Supabase.instance.client;
-  } catch (_) {
-    return null;
-  }
-}
+/// Safe data client for sections that must fail open in tests or before init.
+PurpleClient? optionalSettingsPurpleClient() => PurpleClient.maybeOf();
 
 String? optionalSettingsUserId() =>
-    optionalSettingsSupabaseClient()?.auth.currentSession?.user.id;
+    optionalSettingsPurpleClient()?.auth.currentSession?.user.id;
 
 /// Profile flags for the Settings hub: seizure gating + admin role.
 class SettingsProfileFlags {
@@ -102,7 +97,7 @@ class SettingsProfileFlags {
 final settingsProfileFlagsProvider =
     FutureProvider<SettingsProfileFlags>((ref) async {
   await ref.watch(authRepositoryProvider.future);
-  final client = optionalSettingsSupabaseClient();
+  final client = optionalSettingsPurpleClient();
   final userId = client?.auth.currentSession?.user.id;
   if (userId == null || client == null) return const SettingsProfileFlags();
 
@@ -270,7 +265,7 @@ class _PreferencesSectionState extends ConsumerState<PreferencesSection> {
   final _waterController = TextEditingController();
   Timer? _waterTimer;
 
-  SupabaseClient? get _client => optionalSettingsSupabaseClient();
+  PurpleClient? get _client => optionalSettingsPurpleClient();
 
   String? get _userId => optionalSettingsUserId();
 
@@ -1012,7 +1007,7 @@ class _AiProviderSectionState extends State<AiProviderSection> {
   bool _loading = true;
   String? _saving;
 
-  SupabaseClient? get _client => optionalSettingsSupabaseClient();
+  PurpleClient? get _client => optionalSettingsPurpleClient();
 
   String? get _userId => optionalSettingsUserId();
 
@@ -1197,7 +1192,7 @@ class _WhatITrackSectionState extends State<WhatITrackSection> {
   Map<String, bool> _overrides = {};
   String? _savingKey;
 
-  SupabaseClient? get _client => optionalSettingsSupabaseClient();
+  PurpleClient? get _client => optionalSettingsPurpleClient();
 
   String? get _userId => optionalSettingsUserId();
 
@@ -1460,7 +1455,7 @@ class _ConditionHistorySectionState extends State<ConditionHistorySection> {
   final _famConditionController = TextEditingController();
   final _famRelationController = TextEditingController();
 
-  SupabaseClient? get _client => optionalSettingsSupabaseClient();
+  PurpleClient? get _client => optionalSettingsPurpleClient();
 
   String? get _userId => optionalSettingsUserId();
 
@@ -1863,7 +1858,7 @@ class _DataSectionState extends State<DataSection> {
   DeletionStatus? _pendingDeletion;
   bool _restoring = false;
 
-  SupabaseClient? get _client => optionalSettingsSupabaseClient();
+  PurpleClient? get _client => optionalSettingsPurpleClient();
 
   String? get _userId => optionalSettingsUserId();
 

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/core_providers.dart';
+import '../../core/data/purple_client.dart';
 
 /// A single `seizure_events` row for the signed-in user.
 ///
@@ -80,9 +80,9 @@ class SeizureEvent {
 /// Self-only by design: no caregiver/owner-scoped reads (those require server
 /// routes and are out of scope for this repository).
 class SeizureRepository {
-  SeizureRepository({required SupabaseClient supabase}) : _supabase = supabase;
+  SeizureRepository({required PurpleClient supabase}) : _supabase = supabase;
 
-  final SupabaseClient _supabase;
+  final PurpleClient _supabase;
 
   static const _columns =
       'id, started_at, ended_at, duration_seconds, type, severity, '

@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { setCloudflareSession } from "@/lib/auth/cloudflare-session";
+import { nativeOAuthHandoffUrl } from "@/lib/auth/native-oauth-handoff";
 
 export const Route = createFileRoute("/oauth/google/callback")({
   ssr: false,
@@ -22,11 +23,18 @@ export const Route = createFileRoute("/oauth/google/callback")({
       throw redirect({ to: "/sign-in", search: { error: "oauth_failed" } });
     }
 
-    setCloudflareSession({
+    const session = {
       access_token: data.access_token as string,
       expires_in: (data.expires_in as number) ?? 3600,
       user: data.user as { id: string; email?: string | null },
-    });
+    };
+    setCloudflareSession(session);
+
+    const nativeUrl = nativeOAuthHandoffUrl(state, session);
+    if (nativeUrl) {
+      window.location.replace(nativeUrl);
+      return;
+    }
 
     const dest = decodeURIComponent(state).startsWith("http")
       ? "/today"

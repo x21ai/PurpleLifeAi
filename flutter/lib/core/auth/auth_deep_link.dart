@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../shell/router.dart';
 import '../../shell/routes.dart';
@@ -16,14 +15,14 @@ import 'auth_repository.dart';
 /// Handles native auth deep links (`reset-password`, `auth-callback`).
 class AuthDeepLinkService {
   AuthDeepLinkService({
-    required SupabaseClient supabase,
+    required AuthRepository auth,
     required GoRouter router,
     AppLinks? appLinks,
-  })  : _supabase = supabase,
+  })  : _auth = auth,
         _router = router,
         _appLinks = appLinks ?? AppLinks();
 
-  final SupabaseClient _supabase;
+  final AuthRepository _auth;
   final GoRouter _router;
   final AppLinks _appLinks;
 
@@ -97,10 +96,9 @@ class AuthDeepLinkService {
     if (!AuthRepository.isAuthCallbackUri(uri)) return;
 
     try {
-      await _supabase.auth.getSessionFromUrl(uri);
-      final session = _supabase.auth.currentSession;
-      if (session == null || session.isExpired) {
-        debugPrint('[auth_deep_link] OAuth callback produced no valid session');
+      final result = await _auth.bootstrapRecoveryFromUri(uri);
+      if (!result.ok || !_auth.isAuthenticated) {
+        debugPrint('[auth_deep_link] callback produced no valid session');
         _router.go(
           expiredQuery != null
               ? '${AppRoutes.signIn}?$expiredQuery'
@@ -126,9 +124,9 @@ class AuthDeepLinkService {
 }
 
 final authDeepLinkServiceProvider = Provider<AuthDeepLinkService>((ref) {
-  final supabase = ref.watch(supabaseClientProvider);
+  final auth = ref.watch(authRepositoryProvider).requireValue;
   final router = ref.watch(routerProvider);
-  final service = AuthDeepLinkService(supabase: supabase, router: router);
+  final service = AuthDeepLinkService(auth: auth, router: router);
   ref.onDispose(service.dispose);
   return service;
 });

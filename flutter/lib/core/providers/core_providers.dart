@@ -10,8 +10,9 @@ import '../network/connectivity_service.dart';
 import '../../features/tools/wearable_oauth.dart';
 import '../offline/database.dart';
 import '../offline/sync_service.dart';
+import '../data/purple_client.dart';
 
-/// Compile-time config (requires SUPABASE_ANON_KEY dart-define at run/build).
+/// Compile-time config. Cloudflare auth is the default (`DATA_BACKEND`).
 final appConfigProvider = Provider<AppConfig>((ref) {
   return AppConfig.fromEnvironment();
 });
@@ -27,9 +28,9 @@ final authRepositoryProvider = FutureProvider<AuthRepository>((ref) async {
   return AuthRepository.initialize(config);
 });
 
-final supabaseClientProvider = Provider<SupabaseClient>((ref) {
-  ref.watch(authRepositoryProvider).requireValue;
-  return Supabase.instance.client;
+final supabaseClientProvider = Provider<PurpleClient>((ref) {
+  final auth = ref.watch(authRepositoryProvider).requireValue;
+  return auth.client;
 });
 
 final connectivityServiceProvider = Provider<ConnectivityService>((ref) {

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/core_providers.dart';
 import '../../design/tokens.dart';
@@ -11,6 +10,7 @@ import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart' hide GlassSurface;
 import '../shared/merged_style.dart';
 import 'seizures_style.dart';
+import '../../core/data/purple_client.dart';
 
 const _seizureTypes = [
   ('focal_aware', 'Focal aware'),
@@ -46,7 +46,7 @@ class _LogSeizureScreenState extends ConsumerState<LogSeizureScreen> {
   bool _quickSaving = false;
   bool _saving = false;
 
-  SupabaseClient get _client => ref.read(supabaseClientProvider);
+  PurpleClient get _client => ref.read(supabaseClientProvider);
 
   @override
   void dispose() {

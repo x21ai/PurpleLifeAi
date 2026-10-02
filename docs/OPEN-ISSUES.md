@@ -10,6 +10,33 @@ Format:
 
 ---
 
+## Flutter Worker auth (raised 2026-10-02)
+
+- [ ] **`tf32-worker-auth-upload`** — `flutter/pubspec.yaml` is `1.0.0+32`.
+  Password sign-in uses Worker `POST /api/auth/sign-in` and that JWT on
+  `/api/data/query`. Mac operator merges, then `bun run ios:testflight`.
+  Cloud agents must not upload. Do not upload `1.0.0+31`: it still uses
+  supabase_flutter against `auth.purplelife.org`, and those tokens 401 on
+  Worker data APIs. _Raised 2026-10-02._
+
+- [ ] **`flutter-native-oauth-www-deploy`** — Google/Apple sign-in from the
+  Flutter app opens Worker `/api/auth/oauth/{provider}` and expects the www
+  callback to redirect to `org.purplelife.app://auth-callback` with
+  `access_token`. That handoff is in `src/lib/auth/native-oauth-handoff.ts`
+  and the Google/Apple callback routes. Live www does not do it until an
+  operator deploys Workers. Password sign-in does not need that deploy.
+  _Raised 2026-10-02._
+
+- [ ] **`flutter-worker-jwt-no-refresh`** — Cloudflare session JWTs last 3600
+  seconds. There is no refresh route. Flutter signs out on expiry or on
+  `GET /api/auth/verify` 401. _Raised 2026-10-02._
+
+- [ ] **`flutter-cloudflare-realtime-mfa-storage-delete`** — On
+  `DATA_BACKEND=cloudflare`, care chat realtime is a no-op, MFA enroll is
+  unavailable, and storage `remove` is a no-op (same as the web shim).
+  Password reset request hits `/api/auth/reset-request`, which does not send
+  mail. _Raised 2026-10-02._
+
 ## Sign-in D1 binding clobber (raised 2026-09-29)
 
 - [x] ~~**`auth-signin-d1-bindings`**~~ — RESOLVED 2026-09-29 in git by PR #62
@@ -142,11 +169,10 @@ Format:
   (`fbb42a65-55ba-438a-9800-439a1460c026`, internal IN_BETA_TESTING) after PR #66.
   _Raised 2026-10-01._
 
-- [ ] **tf31-asc-upload** — `flutter/pubspec.yaml` is `1.0.0+31` for voice/video
-  capture, persisted score focus, and Flutter Doppler defaults
-  (`x21` / `prd_cloudflare`). Mac operator merges, then `bun run ios:testflight`.
-  Cloud agents must not upload. External TestFlight submit stays an owner ASC step.
-  _Raised 2026-10-01._
+- [x] ~~**tf31-asc-upload**~~ — SUPERSEDED 2026-10-02: do not upload
+  `1.0.0+31`. That build still signs in with supabase_flutter, and Worker
+  `/api/data/query` returns 401 for those tokens. Next upload is `1.0.0+32`
+  (`tf32-worker-auth-upload`). _Raised 2026-10-01._
 
 ### Still owner-only or intentionally deferred (2026-10-01 TF31 audit)
 
@@ -349,6 +375,15 @@ testers on **27** for login-only and document remaining P0s.
   Kept untracked `flutter/ios/Flutter/Developer.xcconfig` (local Xcode-beta fix).
 
 ## Journal / Log capture (raised 2026-07-13 TF audit)
+
+- [x] ~~**tf32-journal-save-under-island**~~ — RESOLVED 2026-10-02 in
+  `1.0.0+32` (not uploaded): build 31 still drew Journal Save under the
+  Dynamic Island. `MediaQuery.removePadding` subtracts `padding` from
+  `viewPadding`, so they both become 0 on device. The old widget test set
+  `padding` to zero and left `viewPadding` at 59, which the shell never does.
+  Full-bleed routes keep the real insets. Capture Save uses the larger of
+  media padding, view padding, and the raw view inset. _Raised 2026-10-02 ASC
+  build 31, Devyn, iPhone ~440x956._
 
 - [x] ~~**tf27-journal-save-under-status-bar**~~ — RESOLVED 2026-07-13 (code, TF28
   pending): `/journal/new` Save was drawn under the iOS status bar because
@@ -944,6 +979,11 @@ See **TF28 device QA** checklist above for the executable device matrix.
   (Meds, My Health, Reports, Insights, Timeline, Biometrics, Hydration, Care) for the same
   additive-padding bug. _Partially resolved 2026-07-05 by Flutter P0 closure pass (Today/
   Vitals/Tools only; other tabs still open)._
+
+  **Update 2026-10-02:** Meds was the remaining double count. The shell already
+  pads `shellTabBarInset`. Meds scroll bottom is 96 with the add button and 32
+  without it. The add button sits 16pt above the shell inset, not another full
+  inset. Other tabs were not re-audited in this pass.
 
 - [x] ~~**tf-today-duplicate-narrative**~~ — RESOLVED 2026-07-06: ASC screenshot feedback
   **×3** from `a@arora.net` (14:32, 18:03, 18:19 ET): AI narrative rendered twice on Today

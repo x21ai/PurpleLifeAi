@@ -122,13 +122,64 @@ void main() {
       expect(find.text('Taken'), findsOneWidget);
       expect(find.text('Snooze'), findsOneWidget);
       expect(find.text('Skip'), findsOneWidget);
+      expect(tester.takeException(), isNull);
 
       final takenRect = tester.getRect(find.widgetWithText(FilledButton, 'Taken'));
       expect(takenRect.height, greaterThanOrEqualTo(44));
+      expect(takenRect.width, greaterThanOrEqualTo(44));
 
       await tester.tap(find.text('Taken'));
       await tester.pumpAndSettle();
       expect(takenCalled, isTrue);
+    });
+
+    testWidgets('long medication names ellipsize on a 440pt phone', (tester) async {
+      tester.view.physicalSize = const Size(440, 956);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final dose = MedicationDose(
+        id: 'd1',
+        medicationId: 'm1',
+        scheduledAt: DateTime.parse('2026-07-05T14:00:00Z'),
+        status: 'pending',
+        medication: Medication(
+          id: 'm1',
+          name: 'Rosuvastatin calcium (Crestor) 5 mg extended release',
+          active: true,
+          kind: 'medication',
+          isRescue: false,
+          timesOfDay: const ['08:00'],
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: purpleTestTheme(),
+          home: Scaffold(
+            body: TodayDosePanel(
+              doses: [dose],
+              timezone: 'UTC',
+              todayLabel: 'Saturday, July 5, 2026',
+              viewDate: '2026-07-05',
+              todayStr: '2026-07-05',
+              onChangeDate: (_) {},
+              onTaken: (_) {},
+              onSkip: (_) {},
+              onSnooze: (_) {},
+              onReclassify: (_, __) {},
+              onAddMed: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.textContaining('Crestor'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      final name = tester.getRect(find.textContaining('Crestor'));
+      expect(name.right, lessThanOrEqualTo(440));
     });
   });
 
@@ -168,6 +219,7 @@ void main() {
 
       final takenRect = tester.getRect(find.widgetWithText(FilledButton, 'Taken'));
       expect(takenRect.height, greaterThanOrEqualTo(44));
+      expect(takenRect.width, greaterThanOrEqualTo(44));
 
       await tester.tap(find.text('Taken'));
       await tester.pumpAndSettle();

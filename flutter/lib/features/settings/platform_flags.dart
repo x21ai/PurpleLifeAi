@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../core/data/purple_client.dart';
 
 /// Platform dark-launch flags from `app_settings` (web `platform-flags.tsx`).
 class PlatformFlags {
@@ -16,7 +17,9 @@ class PlatformFlags {
 
 final platformFlagsProvider = FutureProvider<PlatformFlags>((ref) async {
   try {
-    final row = await Supabase.instance.client
+    final client = PurpleClient.maybeOf();
+    if (client == null) return const PlatformFlags();
+    final row = await client
         .from('app_settings')
         .select(
             'feature_community_enabled, feature_dna_enabled, feature_friends_enabled')

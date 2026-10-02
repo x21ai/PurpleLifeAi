@@ -16,6 +16,12 @@ Also see `mem/index.md` for deeper architectural notes.
 
 ---
 
+### 2026-10-02 - Flutter TestFlight auth is the Workers JWT when DATA_BACKEND=cloudflare [ACTIVE]
+
+- **Decision:** Flutter builds default `DATA_BACKEND` to `cloudflare`. That path signs in with `POST /api/auth/sign-in` (and OAuth start at `GET /api/auth/oauth/{provider}`) and sends the HS256 `iss=purplelife.org` JWT on Worker `/api/data/*` and `/api/storage/*`. It does not call `https://auth.purplelife.org` for login. `DATA_BACKEND=supabase` is the only path that initializes supabase_flutter.
+- **Reason:** Live Worker data APIs reject Supabase GoTrue ES256 session tokens with 401. Web already uses the Workers JWT. TestFlight through build 31 still used supabase_flutter.
+- **Implications:** Do not upload a Flutter build that still sends GoTrue tokens to Cloudflare data APIs. Native OAuth completion depends on the www callback handing `access_token` to `org.purplelife.app://auth-callback`; that handoff ships in the same change as the client and takes effect only after a www deploy. Worker JWTs are not refreshable (1 hour, then sign-out). Supabase stays in the tree for rollback. Do not delete Supabase or wipe D1/R2 for this cutover.
+
 ### 2026-10-01 - Flutter dart-define Doppler is x21/prd_cloudflare [ACTIVE]
 
 - **Decision:** Flutter iOS, Android, and web dart-define scripts, including `bun run ios:testflight`, default Doppler project `x21` and config `prd_cloudflare` for `VITE_SUPABASE_PUBLISHABLE_KEY`. Override with `FLUTTER_DOPPLER_PROJECT` and `FLUTTER_DOPPLER_CONFIG`. Native ASC, team, and Luciq secrets stay `x21` / `prd`.

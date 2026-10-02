@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/core_providers.dart';
 import '../../design/purple_type.dart';
@@ -17,6 +16,7 @@ import '../vitals/synced_data_overview.dart';
 import '../vitals/vitals_repository.dart';
 import 'sync_mode_select.dart';
 import 'wearable_oauth.dart';
+import '../../core/data/purple_client.dart';
 
 /// Tools and device connections ported from web `src/routes/_app/tools.tsx`.
 ///
@@ -57,7 +57,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
   bool _ouraBackfilling = false;
   int _syncTick = 0;
 
-  SupabaseClient get _client => Supabase.instance.client;
+  PurpleClient get _client => PurpleClient.current;
 
   @override
   void initState() {

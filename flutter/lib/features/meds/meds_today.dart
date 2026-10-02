@@ -1,9 +1,9 @@
 import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 import 'models/dose.dart';
+import '../../core/data/purple_client.dart';
 
 bool _tzInitialized = false;
 
@@ -146,7 +146,7 @@ List<MedicationDose> dedupeTodayDoses(
 
 Future<String> fetchProfileTimezone(
   String userId,
-  SupabaseClient supabase,
+  PurpleClient supabase,
 ) async {
   final data = await supabase
       .from('profiles')
