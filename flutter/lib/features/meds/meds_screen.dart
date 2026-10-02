@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../design/glass_surface.dart';
-import '../../shell/bottom_nav.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart' hide GlassSurface;
 import '../shared/loading_skeleton.dart';
@@ -258,7 +257,9 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: EdgeInsets.only(
                     top: 24,
-                    bottom: showMobileFab ? 160 : 120,
+                    // Shell already reserves shellTabBarInset. Extra space is
+                    // only enough to clear the add button.
+                    bottom: showMobileFab ? 96 : 32,
                   ),
                   child: ContentColumn(
                     child: Column(
@@ -379,7 +380,7 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
           if (showMobileFab)
             Positioned(
               right: 20,
-              bottom: shellTabBarInset(context) + 12,
+              bottom: 16,
               child: _MedsAddFab(onTap: _openAddMed),
             ),
         ],

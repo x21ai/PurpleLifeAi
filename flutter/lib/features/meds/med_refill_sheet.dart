@@ -85,7 +85,10 @@ class _MedRefillSheetState extends ConsumerState<MedRefillSheet> {
   @override
   Widget build(BuildContext context) {
     final p = MedsPalette.dark();
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final media = MediaQuery.of(context);
+    final bottomInset = media.viewInsets.bottom > 0
+        ? media.viewInsets.bottom
+        : media.viewPadding.bottom;
     final current = _med.pillsRemaining;
 
     return Padding(

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:purple_app/core/providers/core_providers.dart';
 import 'package:purple_app/design/tokens.dart';
 import 'package:purple_app/features/journal/journal_capture_screen.dart';
 import 'package:purple_app/features/journal/models/journal_entry.dart';
+import 'package:purple_app/shell/native_app_shell.dart';
+import 'package:purple_app/shell/routes.dart';
 import 'support/purple_test_theme.dart';
 
 void main() {
@@ -78,6 +81,40 @@ void main() {
         expect(find.text('Video'), findsOneWidget);
         expect(find.text('Voice note'), findsOneWidget);
         expect(find.text('Up to 60s'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Save stays tappable when the shell strips padding but the view has an island',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(440, 956);
+        tester.view.padding = const FakeViewPadding(top: 59, bottom: 34);
+        tester.view.viewPadding = const FakeViewPadding(top: 59, bottom: 34);
+        addTearDown(tester.view.reset);
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              isOnlineProvider.overrideWith((ref) => Stream.value(true)),
+            ],
+            child: MaterialApp(
+              theme: purpleTestTheme(),
+              home: NativeAppShell(
+                location: AppRoutes.journalNew,
+                child: const JournalCaptureScreen(),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final save = find.widgetWithText(FilledButton, 'Save');
+        expect(save, findsOneWidget);
+        final saveBox = tester.getRect(save);
+        expect(saveBox.top, greaterThanOrEqualTo(59));
+        expect(saveBox.height, greaterThanOrEqualTo(44));
+        expect(saveBox.bottom, lessThanOrEqualTo(956));
       },
     );
 

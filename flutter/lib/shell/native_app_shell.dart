@@ -116,15 +116,23 @@ class _NativeAppShellState extends State<NativeAppShell> {
               Expanded(
                 child: NotificationListener<ScrollNotification>(
                   onNotification: _handleScroll,
-                  child: MediaQuery.removePadding(
-                    context: context,
-                    removeTop: true,
-                    removeBottom: true,
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: tabInset),
-                      child: widget.child,
-                    ),
-                  ),
+                  child: _hideChrome
+                      ? widget.child
+                      : MediaQuery(
+                          // Zero padding so tab screens do not double-pad under
+                          // the top bar. Keep viewPadding: removePadding also
+                          // subtracts it, which hid Journal Save under the island.
+                          data: MediaQuery.of(context).copyWith(
+                            padding: MediaQuery.paddingOf(context).copyWith(
+                              top: 0,
+                              bottom: 0,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.only(bottom: tabInset),
+                            child: widget.child,
+                          ),
+                        ),
                 ),
               ),
             ],
