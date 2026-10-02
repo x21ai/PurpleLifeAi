@@ -11,11 +11,12 @@ import '../../core/offline/sync_service.dart';
 import '../../core/providers/core_providers.dart';
 import 'journal_media_file.dart';
 import 'models/journal_entry.dart';
+import '../../core/data/purple_client.dart';
 
 /// Journal entries from Supabase with Drift cache and offline queue writes.
 class JournalRepository {
   JournalRepository({
-    required SupabaseClient supabase,
+    required PurpleClient supabase,
     required SyncService syncService,
     required ConnectivityService connectivity,
     required AppDatabase database,
@@ -26,7 +27,7 @@ class JournalRepository {
         _db = database,
         _uuid = uuid ?? const Uuid();
 
-  final SupabaseClient _supabase;
+  final PurpleClient _supabase;
   final SyncService _sync;
   final ConnectivityService _connectivity;
   final AppDatabase _db;

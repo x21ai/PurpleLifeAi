@@ -10,6 +10,33 @@ Format:
 
 ---
 
+## Flutter Worker auth (raised 2026-10-02)
+
+- [ ] **`tf32-worker-auth-upload`** — `flutter/pubspec.yaml` is `1.0.0+32`.
+  Password sign-in uses Worker `POST /api/auth/sign-in` and that JWT on
+  `/api/data/query`. Mac operator merges, then `bun run ios:testflight`.
+  Cloud agents must not upload. Do not upload `1.0.0+31`: it still uses
+  supabase_flutter against `auth.purplelife.org`, and those tokens 401 on
+  Worker data APIs. _Raised 2026-10-02._
+
+- [ ] **`flutter-native-oauth-www-deploy`** — Google/Apple sign-in from the
+  Flutter app opens Worker `/api/auth/oauth/{provider}` and expects the www
+  callback to redirect to `org.purplelife.app://auth-callback` with
+  `access_token`. That handoff is in `src/lib/auth/native-oauth-handoff.ts`
+  and the Google/Apple callback routes. Live www does not do it until an
+  operator deploys Workers. Password sign-in does not need that deploy.
+  _Raised 2026-10-02._
+
+- [ ] **`flutter-worker-jwt-no-refresh`** — Cloudflare session JWTs last 3600
+  seconds. There is no refresh route. Flutter signs out on expiry or on
+  `GET /api/auth/verify` 401. _Raised 2026-10-02._
+
+- [ ] **`flutter-cloudflare-realtime-mfa-storage-delete`** — On
+  `DATA_BACKEND=cloudflare`, care chat realtime is a no-op, MFA enroll is
+  unavailable, and storage `remove` is a no-op (same as the web shim).
+  Password reset request hits `/api/auth/reset-request`, which does not send
+  mail. _Raised 2026-10-02._
+
 ## Sign-in D1 binding clobber (raised 2026-09-29)
 
 - [x] ~~**`auth-signin-d1-bindings`**~~ — RESOLVED 2026-09-29 in git by PR #62
@@ -142,11 +169,10 @@ Format:
   (`fbb42a65-55ba-438a-9800-439a1460c026`, internal IN_BETA_TESTING) after PR #66.
   _Raised 2026-10-01._
 
-- [ ] **tf31-asc-upload** — `flutter/pubspec.yaml` is `1.0.0+31` for voice/video
-  capture, persisted score focus, and Flutter Doppler defaults
-  (`x21` / `prd_cloudflare`). Mac operator merges, then `bun run ios:testflight`.
-  Cloud agents must not upload. External TestFlight submit stays an owner ASC step.
-  _Raised 2026-10-01._
+- [x] ~~**tf31-asc-upload**~~ — SUPERSEDED 2026-10-02: do not upload
+  `1.0.0+31`. That build still signs in with supabase_flutter, and Worker
+  `/api/data/query` returns 401 for those tokens. Next upload is `1.0.0+32`
+  (`tf32-worker-auth-upload`). _Raised 2026-10-01._
 
 ### Still owner-only or intentionally deferred (2026-10-01 TF31 audit)
 

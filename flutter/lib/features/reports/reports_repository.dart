@@ -6,12 +6,13 @@ import 'package:uuid/uuid.dart';
 
 import '../../core/providers/core_providers.dart';
 import 'models/report_row.dart';
+import '../../core/data/purple_client.dart';
 
 /// Read-only reports list from Supabase (`report_documents`, `medical_reports`).
 class ReportsRepository {
-  ReportsRepository({required SupabaseClient supabase}) : _supabase = supabase;
+  ReportsRepository({required PurpleClient supabase}) : _supabase = supabase;
 
-  final SupabaseClient _supabase;
+  final PurpleClient _supabase;
 
   String? get _userId =>
       _supabase.auth.currentSession?.user.id ?? _supabase.auth.currentUser?.id;
@@ -140,7 +141,7 @@ class ReportsRepository {
           .cast<Map<String, dynamic>>()
           .map(ReportMetricRow.fromMap)
           .toList();
-      return _attachPanels(metrics);
+      return await _attachPanels(metrics);
     } catch (_) {
       return const [];
     }

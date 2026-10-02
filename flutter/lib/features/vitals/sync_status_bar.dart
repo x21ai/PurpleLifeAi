@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/data/purple_client.dart';
 import '../../core/providers/core_providers.dart';
 import '../health/health_providers.dart';
 import '../health/health_service.dart';
@@ -60,14 +61,9 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
   }
 
   Future<void> _refresh() async {
-    late final Session? session;
-    try {
-      // Widget tests and early boot can mount Wearables expand before
-      // Supabase.initialize; fail open instead of asserting.
-      // Note: do not read Supabase.instance.isInitialized first — the getter
-      // itself asserts when uninitialized.
-      session = Supabase.instance.client.auth.currentSession;
-    } catch (_) {
+    final client = PurpleClient.maybeOf();
+    final Session? session = client?.auth.currentSession;
+    if (client == null) {
       if (!mounted) return;
       setState(() {
         _loaded = true;
@@ -89,7 +85,6 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
       return;
     }
     final uid = session.user.id;
-    final client = Supabase.instance.client;
 
     try {
       final tokenRows = await Future.wait(
@@ -240,7 +235,7 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
     setState(() => _busy = true);
     try {
       await syncConnectedWearables(
-        supabase: Supabase.instance.client,
+        supabase: PurpleClient.current,
         worker: ref.read(workerClientProvider),
       );
       await _refresh();

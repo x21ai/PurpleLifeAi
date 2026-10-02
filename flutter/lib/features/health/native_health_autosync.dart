@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api/worker_client.dart';
 import '../../core/offline/sync_service.dart';
 import 'health_service.dart';
 import 'native_health_sync.dart';
+import '../../core/data/purple_client.dart';
 
 /// Matches web `SYNC_THROTTLE_MS` in `src/lib/wearable-sync.ts`.
 const nativeHealthSyncThrottle = Duration(hours: 3);
@@ -16,7 +16,7 @@ const nativeHealthSyncThrottle = Duration(hours: 3);
 Future<NativeHealthSyncResult?> syncNativeHealthIfAuthorized({
   required HealthService healthService,
   required NativeHealthSync syncClient,
-  SupabaseClient? supabase,
+  PurpleClient? supabase,
   bool force = false,
 }) async {
   if (!isNativeHealthPlatform) return null;
@@ -37,8 +37,9 @@ Future<NativeHealthSyncResult?> syncNativeHealthIfAuthorized({
   }
 }
 
-Future<bool> _isThrottled(SupabaseClient? supabase) async {
-  final client = supabase ?? Supabase.instance.client;
+Future<bool> _isThrottled(PurpleClient? supabase) async {
+  final client = supabase ?? PurpleClient.maybeOf();
+  if (client == null) return false;
   final uid = client.auth.currentSession?.user.id;
   if (uid == null) return false;
 

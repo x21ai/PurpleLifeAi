@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/core_providers.dart';
 import '../../design/purple_theme.dart';
@@ -54,7 +53,7 @@ class AvatarProfile {
 /// the shell renders offline or when the profile row is unreadable.
 final avatarProfileProvider = FutureProvider<AvatarProfile>((ref) async {
   await ref.watch(authRepositoryProvider.future);
-  final client = Supabase.instance.client;
+  final client = ref.watch(supabaseClientProvider);
   final session = client.auth.currentSession;
   final userId = session?.user.id;
   final email = session?.user.email;

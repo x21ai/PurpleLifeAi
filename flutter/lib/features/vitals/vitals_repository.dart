@@ -11,6 +11,7 @@ import '../../core/providers/core_providers.dart';
 import '../today/models/score_snapshot.dart';
 import 'biometric_metrics.dart';
 import 'synced_data_overview.dart';
+import '../../core/data/purple_client.dart';
 
 /// One daily value for metric trend charts.
 ///
@@ -211,14 +212,14 @@ class WearableCoverage {
 /// Unlike Today, does not fail-open when online: errors surface retry UI.
 class VitalsRepository {
   VitalsRepository({
-    required SupabaseClient supabase,
+    required PurpleClient supabase,
     required AppDatabase database,
     required ConnectivityService connectivity,
   })  : _supabase = supabase,
         _database = database,
         _connectivity = connectivity;
 
-  final SupabaseClient _supabase;
+  final PurpleClient _supabase;
   final AppDatabase _database;
   final ConnectivityService _connectivity;
 

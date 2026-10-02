@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/core_providers.dart';
+import '../../core/data/purple_client.dart';
 
 class MyHealthRepository {
-  MyHealthRepository({required SupabaseClient supabase}) : _supabase = supabase;
+  MyHealthRepository({required PurpleClient supabase}) : _supabase = supabase;
 
-  final SupabaseClient _supabase;
+  final PurpleClient _supabase;
 
   String? get _userId =>
       _supabase.auth.currentSession?.user.id ?? _supabase.auth.currentUser?.id;

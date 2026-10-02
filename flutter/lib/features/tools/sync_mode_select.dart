@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/data/purple_client.dart';
 
 /// Sync-mode picker for pull-based wearables (mirrors web `SyncModeSelect`).
 class SyncModeSelect extends StatefulWidget {
@@ -27,7 +27,7 @@ class _SyncModeSelectState extends State<SyncModeSelect> {
   String _value = 'visit';
   bool _loaded = false;
 
-  SupabaseClient get _client => Supabase.instance.client;
+  PurpleClient get _client => PurpleClient.current;
 
   @override
   void initState() {

@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/api/worker_client.dart';
 import '../../core/providers/core_providers.dart';
 import 'chat_copy.dart';
+import '../../core/data/purple_client.dart';
 
 class ChatTurn {
   const ChatTurn({required this.role, required this.text});
@@ -117,12 +117,12 @@ final chatConditionsProvider = FutureProvider.autoDispose<List<String>>((ref) as
 });
 
 class ChatRepository {
-  ChatRepository({required WorkerClient worker, required SupabaseClient supabase})
+  ChatRepository({required WorkerClient worker, required PurpleClient supabase})
       : _worker = worker,
         _supabase = supabase;
 
   final WorkerClient _worker;
-  final SupabaseClient _supabase;
+  final PurpleClient _supabase;
 
   String? get _userId =>
       _supabase.auth.currentSession?.user.id ?? _supabase.auth.currentUser?.id;

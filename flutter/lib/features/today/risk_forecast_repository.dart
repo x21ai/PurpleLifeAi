@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/core_providers.dart';
+import '../../core/data/purple_client.dart';
 
 class RiskFactor {
   const RiskFactor({
@@ -91,10 +91,10 @@ class RiskForecast {
 }
 
 class RiskForecastRepository {
-  RiskForecastRepository({required SupabaseClient supabase})
+  RiskForecastRepository({required PurpleClient supabase})
       : _supabase = supabase;
 
-  final SupabaseClient _supabase;
+  final PurpleClient _supabase;
 
   String? get _userId =>
       _supabase.auth.currentSession?.user.id ?? _supabase.auth.currentUser?.id;

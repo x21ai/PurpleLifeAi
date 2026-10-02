@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show RealtimeChannel;
-
 import 'dart:async';
+
+import '../../core/data/purple_client.dart';
 
 import '../../core/providers/core_providers.dart';
 import '../../shell/routes.dart';
@@ -485,7 +485,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
   /// Live-appended inserts from the realtime channel, keyed by message id.
   /// Merged with the fetched provider list on build.
   final _liveById = <String, CareMessage>{};
-  RealtimeChannel? _channel;
+  PurpleChannel? _channel;
 
   @override
   void initState() {

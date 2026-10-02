@@ -34,6 +34,7 @@ flutter_dart_define_flags() {
   worker_api="$(flutter_worker_api_base_url)"
 
   printf '%s\n' \
+    "--dart-define=DATA_BACKEND=${FLUTTER_DATA_BACKEND:-cloudflare}" \
     "--dart-define=SUPABASE_ANON_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY:?VITE_SUPABASE_PUBLISHABLE_KEY required}" \
     "--dart-define=SITE_URL=${site_url}" \
     "--dart-define=WORKER_API_BASE_URL=${worker_api}" \

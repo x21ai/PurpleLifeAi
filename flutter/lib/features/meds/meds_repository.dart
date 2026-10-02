@@ -15,6 +15,7 @@ import '../../core/providers/core_providers.dart';
 import 'meds_today.dart';
 import 'models/dose.dart';
 import 'models/medication.dart';
+import '../../core/data/purple_client.dart';
 
 bool _repoTzInit = false;
 
@@ -36,7 +37,7 @@ tz.Location _locationForHistory(String tzName) {
 /// Meds and doses loaded from Supabase with Drift cache fallback.
 class MedsRepository {
   MedsRepository({
-    required SupabaseClient supabase,
+    required PurpleClient supabase,
     required SyncService syncService,
     required ConnectivityService connectivity,
     Uuid? uuid,
@@ -45,7 +46,7 @@ class MedsRepository {
         _connectivity = connectivity,
         _uuid = uuid ?? const Uuid();
 
-  final SupabaseClient _supabase;
+  final PurpleClient _supabase;
   final SyncService _sync;
   final ConnectivityService _connectivity;
   final Uuid _uuid;

@@ -1,4 +1,14 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-10-01 (Flutter `1.0.0+31` capture and focus, not uploaded; ASC tip **1.0 (30)** VALID; **do not** wrangler deploy and **do not** run `ios:testflight` from a cloud agent).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-10-02 (Flutter `1.0.0+32` Worker auth, not uploaded; ASC tip **1.0 (30)** VALID; **do not** wrangler deploy and **do not** run `ios:testflight` from a cloud agent).
+
+**Recent (2026-10-02): Flutter build 32 Worker auth.** Default
+`DATA_BACKEND=cloudflare`. Password sign-in uses
+`POST https://www.purplelife.org/api/auth/sign-in` and that JWT on
+`/api/data/query`, storage, and edge invoke. `DATA_BACKEND=supabase` still
+initializes supabase_flutter against `SUPABASE_URL`. `flutter/pubspec.yaml` is
+`1.0.0+32`. Do not upload build 31 (GoTrue ES256 tokens 401 on Worker data).
+Native Google/Apple completion needs a later www deploy of
+`nativeOAuthHandoffUrl` in the OAuth callback pages. Worker JWTs last 1 hour
+with no refresh. No Worker deploy. No D1/R2 wipe.
 
 **Recent (2026-10-01): Flutter build 31 voice, video, score focus, Doppler.**
 Today quick log and journal Record/Video capture audio and video into

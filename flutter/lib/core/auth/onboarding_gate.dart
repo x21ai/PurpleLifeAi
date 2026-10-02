@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../data/purple_client.dart';
 
 /// Pref key prefix for per-user onboarding completion (mirrors web
 /// `purple-onboarded` localStorage in `src/routes/_app.tsx`).
@@ -68,7 +68,7 @@ Future<void> clearOnboardedCache(String userId) async {
 /// Welcome is only forced when a successful profile read proves the row lacks
 /// `onboarded_at` and a non-empty `first_name`.
 Future<bool> resolveOnboarded({
-  required SupabaseClient client,
+  required PurpleClient client,
   required String userId,
   Duration timeout = const Duration(seconds: 10),
 }) async {
@@ -104,7 +104,7 @@ Future<bool> resolveOnboarded({
 }
 
 Future<Map<String, dynamic>?> _fetchProfile(
-  SupabaseClient client,
+  PurpleClient client,
   String userId,
   Duration timeout,
 ) {

@@ -1,5 +1,13 @@
 ## Current snapshot
 
+**2026-10-02 Flutter 1.0.0+32 Worker auth (not uploaded, no Worker deploy):**
+Flutter TestFlight default is Cloudflare Worker auth. Password sign-in posts
+`https://www.purplelife.org/api/auth/sign-in` and sends that HS256 JWT on
+`POST /api/data/query`. `DATA_BACKEND=supabase` is the rollback dart-define.
+Do not upload build 31 (GoTrue tokens 401 on Worker data APIs). Do not upload
+TestFlight from a cloud agent. Native Google/Apple completion needs a later
+www deploy of the OAuth callback handoff. Do not deploy Workers. Do not wipe D1/R2.
+
 **2026-10-01 Flutter 1.0.0+31 capture, focus, Doppler (not uploaded):**
 Today quick log and journal Record/Video save real audio and video to
 `journal-media`. Score focus persists with web key `purple-today-focus`.
@@ -181,6 +189,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-10-02T15:56:30Z — Flutter Worker auth cutover, build 32
+
+- **Requested:** Cut Flutter iOS auth from supabase_flutter / auth.purplelife.org to Cloudflare Worker auth at www.purplelife.org/api/auth. Password login must store the Worker JWT and send it on Worker data calls. Gate the Supabase auth path. Keep media/R2 and the Worker data client. Bump iOS build 31 to 32. Open a PR. Do not merge, deploy Workers, or wipe D1/R2.
+- **Done:** `AuthRepository` on `DATA_BACKEND=cloudflare` (the default) posts `/api/auth/sign-in` and stores the HS256 JWT in secure storage key `purple.auth.worker.session.v1`. `PurpleClient` / `PurpleQuery` send that bearer token to `/api/data/query`, `/api/data/rpc`, `/api/storage/upload`, and `/api/storage/object`. `scripts/lib/flutter-dart-defines.sh` passes `--dart-define=DATA_BACKEND=cloudflare`. `flutter/pubspec.yaml` is `1.0.0+32`. Web OAuth callbacks can hand the JWT to `org.purplelife.app://auth-callback` after a future www deploy.
+- **Issues:** Worker JWTs expire in 1 hour and are not refreshable; verify 401 signs the user out. Native Google/Apple sign-in does not complete until www is deployed with the callback handoff. Care chat realtime is a no-op on the Cloudflare path. Storage delete matches the web shim (no-op). MFA enroll throws a clear unavailable message. Password reset request does not send email (existing Worker behavior).
+- **Stand / next:** PR open against `main`. Mac operator merges, then `bun run ios:testflight` for build 32. Do not upload build 31. No Worker deploy.
+- **Who / where:** cloud agent, `cursor/flutter-worker-auth-377f`.
+- **Evidence:** `dart analyze lib test` clean. `flutter test` 283/283. `node --test src/lib/auth/native-oauth-handoff.test.ts` 2/2. `flutter/test/worker_auth_test.dart` asserts sign-in hits `/api/auth/sign-in` and the next query sends `Authorization: Bearer`.
+- **Timestamp:** 2026-10-02T15:56:30Z
 
 ### 2026-10-01T21:20:00Z — Flutter TF31 capture, score focus, Doppler defaults
 
