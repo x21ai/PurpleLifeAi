@@ -67,9 +67,11 @@ export function StagingLiveSignInPage({ mode = "sign-in" }: StagingLiveSignInPag
             </p>
           </section>
 
-          {isStagingLiveData() && !production && signingIn && (
+          {isStagingLiveData() && signingIn && (
             <p className="mx-5 mt-4 rounded-[14px] bg-purplelife-tint px-3 py-2 text-[12px] font-medium text-purplelife-accent">
-              Testers: sign in with pmt@eigital.com and the operator-provided password (Doppler / runbook).
+              {production
+                ? "Cloudflare cutover: use pmt@eigital.com / samuelc1@yahoo.com / devynrosewalker@gmail.com with Doppler x21/prd_cloudflare secret E2E_TEST_USER_PASSWORD (not old Supabase passwords). Chrome autofill may still offer a stale password."
+                : "Testers: sign in with pmt@eigital.com and the operator-provided password (Doppler E2E_TEST_USER_PASSWORD / runbook)."}
             </p>
           )}
 

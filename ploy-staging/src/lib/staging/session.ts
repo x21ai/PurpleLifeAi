@@ -62,7 +62,12 @@ export async function signInWithPassword(
     });
     const data = (await res.json().catch(() => ({}))) as StagingSession & { error?: string };
     if (!res.ok) {
-      return { ok: false, error: data.error ?? "Invalid email or password" };
+      const raw = data.error ?? "Invalid email or password";
+      const error =
+        raw === "Invalid credentials"
+          ? "Invalid credentials. After the Cloudflare cutover, use Doppler E2E_TEST_USER_PASSWORD (x21/prd_cloudflare) — not an old Supabase password."
+          : raw;
+      return { ok: false, error };
     }
     if (!data.access_token || !data.user?.id) {
       return { ok: false, error: "Sign-in response missing token" };
