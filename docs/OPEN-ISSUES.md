@@ -376,6 +376,15 @@ testers on **27** for login-only and document remaining P0s.
 
 ## Journal / Log capture (raised 2026-07-13 TF audit)
 
+- [x] ~~**tf32-journal-save-under-island**~~ — RESOLVED 2026-10-02 in
+  `1.0.0+32` (not uploaded): build 31 still drew Journal Save under the
+  Dynamic Island. `MediaQuery.removePadding` subtracts `padding` from
+  `viewPadding`, so they both become 0 on device. The old widget test set
+  `padding` to zero and left `viewPadding` at 59, which the shell never does.
+  Full-bleed routes keep the real insets. Capture Save uses the larger of
+  media padding, view padding, and the raw view inset. _Raised 2026-10-02 ASC
+  build 31, Devyn, iPhone ~440x956._
+
 - [x] ~~**tf27-journal-save-under-status-bar**~~ — RESOLVED 2026-07-13 (code, TF28
   pending): `/journal/new` Save was drawn under the iOS status bar because
   `NativeAppShell` removes `MediaQuery.padding` on full-bleed routes and
@@ -970,6 +979,11 @@ See **TF28 device QA** checklist above for the executable device matrix.
   (Meds, My Health, Reports, Insights, Timeline, Biometrics, Hydration, Care) for the same
   additive-padding bug. _Partially resolved 2026-07-05 by Flutter P0 closure pass (Today/
   Vitals/Tools only; other tabs still open)._
+
+  **Update 2026-10-02:** Meds was the remaining double count. The shell already
+  pads `shellTabBarInset`. Meds scroll bottom is 96 with the add button and 32
+  without it. The add button sits 16pt above the shell inset, not another full
+  inset. Other tabs were not re-audited in this pass.
 
 - [x] ~~**tf-today-duplicate-narrative**~~ — RESOLVED 2026-07-06: ASC screenshot feedback
   **×3** from `a@arora.net` (14:32, 18:03, 18:19 ET): AI narrative rendered twice on Today

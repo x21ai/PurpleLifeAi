@@ -1,5 +1,10 @@
 ## Current snapshot
 
+**2026-10-02 Flutter 1.0.0+32 layout P0s folded into the Worker auth PR (not uploaded):**
+Journal Save clears the Dynamic Island inside the shell. Meds Taken stays 44pt.
+Long med names ellipsize. Meds no longer adds a second `shellTabBarInset`.
+Build stays `1.0.0+32`. Do not upload. Do not deploy Workers.
+
 **2026-10-02 Flutter 1.0.0+32 Worker auth (not uploaded, no Worker deploy):**
 Flutter TestFlight default is Cloudflare Worker auth. Password sign-in posts
 `https://www.purplelife.org/api/auth/sign-in` and sends that HS256 JWT on
@@ -189,6 +194,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-10-02T16:15:00Z — TF layout P0s on the Worker auth branch
+
+- **Requested:** Fold ASC P0 layout fixes into the Flutter Worker auth PR. Keep build `1.0.0+32`. Do not merge or deploy Workers.
+- **Done:** Journal Save uses the raw view inset plus media padding, because `MediaQuery.removePadding` also zeros `viewPadding`. Full-bleed shell routes no longer strip those insets. Meds dose names ellipsize. Taken buttons stay at least 44pt. Meds scroll and add button no longer add a second `shellTabBarInset`. Med sheets keep the primary action above the keyboard or home indicator. Add-medication sheet uses safe area so its header Save can clear the island.
+- **Issues:** Device confirmation is still the Mac TestFlight pass. Ask Maya and Settings chrome were left alone.
+- **Stand / next:** PR #71 updated. Build remains `1.0.0+32`. No Worker deploy.
+- **Who / where:** cloud agent, `cursor/flutter-worker-auth-377f`.
+- **Evidence:** `dart analyze lib test` clean. `flutter test` 285/285.
+- **Timestamp:** 2026-10-02T16:15:00Z
 
 ### 2026-10-02T15:56:30Z — Flutter Worker auth cutover, build 32
 

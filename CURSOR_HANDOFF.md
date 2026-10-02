@@ -1,5 +1,10 @@
 Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-10-02 (Flutter `1.0.0+32` Worker auth, not uploaded; ASC tip **1.0 (30)** VALID; **do not** wrangler deploy and **do not** run `ios:testflight` from a cloud agent).
 
+**Recent (2026-10-02): Flutter build 32 layout P0s, same PR as Worker auth.**
+Journal Save clears the Dynamic Island (shell `removePadding` had also zeroed
+`viewPadding`). Meds long names ellipsize. Taken stays 44pt. Meds no longer
+stacks a second tab-bar inset. Build is still `1.0.0+32`. No Worker deploy.
+
 **Recent (2026-10-02): Flutter build 32 Worker auth.** Default
 `DATA_BACKEND=cloudflare`. Password sign-in uses
 `POST https://www.purplelife.org/api/auth/sign-in` and that JWT on
