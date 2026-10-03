@@ -1,5 +1,12 @@
 ## Current snapshot
 
+**2026-10-03 gap close is live (PurpleLifeAi | eigital):**
+PR #74 squash-merged to main `947c56b0e82103088d7323259385b75d04518254`. CI run 37131689638 on `0f8db7cb` passed `checks`, `e2e-smoke`, and `responsive`. Production Worker `purplelife` version `20a2cfc2-8454-4c9a-8dff-205995bdb3fd` (Doppler `x21` / `prd_cloudflare`, `wrangler.deploy.ploy.jsonc`). The www deploy does not ship staging, so `purplelife-staging` was not redeployed. Additive D1 `0004_auth_sessions` was applied. No D1/R2 wipe. No existing password was changed.
+
+Reset smoke used only `pl-reset-smoke-20261003-947c56b0@example.invalid`. Sign-up and `POST /api/auth/reset-request` returned 200. One unused `auth_password_resets` row existed (created 2026-10-03 15:08:55 UTC). This path calls Resend and does not write `email_send_log`. Resend's list API returned 403, so the send is proven by HTTP 200 (the handler returns 502 when Resend rejects). That synthetic user plus its reset and refresh rows were deleted.
+
+TestFlight 1.0 (34) ASC `b3d07035-87c4-4bd6-b35e-fba7d4e363a1` processing=VALID, uploaded 2026-10-03 11:21 AM ET. Founding Team includes build 34. external=`IN_BETA_TESTING`. Beta App Review submission `WAITING_FOR_REVIEW`. Flutter preflight hung on `flutter test`, so the upload used `TF_SKIP_PREFLIGHT=1`. ASC keys came from Doppler `x21` / `prd`.
+
 **2026-10-03 typecheck fix on the gap-close branch, not deployed (PurpleLifeAi | eigital):**
 `bunx tsc --noEmit` is clean on `cursor/close-purplelife-gaps-0261`. The in-memory auth helper has an ambient `bun:sqlite` module, D1 `meta.changes` is narrowed to a number before the lost-race check, and the care-chat poll timer is a `number`. Bindings tests are 16/16. Product behavior is unchanged. No Worker deploy. No TestFlight upload. No existing password was changed.
 
