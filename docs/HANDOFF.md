@@ -1,5 +1,8 @@
 ## Current snapshot
 
+**2026-10-03 TF 1.0 (33) uploaded, Founding Team (PurpleLifeAi | eigital):**
+main `04672fadb600a07ca7f6d454e9feba1f91e34527` (PR #73 full Ploy light shell). pubspec `1.0.0+33`. Mac archive `bun run ios:testflight` (ASC secrets from Doppler `x21/prd`; Flutter defines `x21/prd_cloudflare`). ASC build `5864cec4-0e3a-4745-84ee-214af69f70ad` processing=VALID, uploaded 2026-10-03 09:24 EDT. External group Founding Team includes build 33. Beta App Review `APPROVED` (submission first reported `WAITING_FOR_REVIEW`). external=`IN_BETA_TESTING`, internal=`IN_BETA_TESTING`. No Worker deploy. No D1/R2 wipe.
+
 **2026-10-03 Flutter 1.0.0+33 full Ploy light shell (not uploaded, no Worker deploy):**
 Signed-in Flutter screens use the live Ploy light palette (canvas `#F8F7FA`,
 white cards, ink `#18161D`, accent `#8E61CF`). That includes Today, Meds,
