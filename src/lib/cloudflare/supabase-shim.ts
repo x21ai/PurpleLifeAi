@@ -76,7 +76,7 @@ function createCareChannel(_name: string) {
   const handlers: CareHandler[] = [];
   let table = "";
   let threadId: string | null = null;
-  let timer: ReturnType<typeof setInterval> | null = null;
+  let timer: number | null = null;
   let since = new Date().toISOString();
   let stopped = false;
 

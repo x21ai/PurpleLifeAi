@@ -46,6 +46,11 @@ type RefreshRow = {
   revoked_at: string | null;
 };
 
+function d1Changes(result: D1Result): number {
+  const changes = result.meta?.changes;
+  return typeof changes === "number" ? changes : 0;
+}
+
 type ResetRow = {
   id: string;
   user_id: string;
@@ -144,7 +149,7 @@ export async function rotateRefreshToken(raw: string): Promise<IssuedSession | n
     `UPDATE auth_refresh_tokens SET revoked_at = datetime('now') WHERE id = ? AND revoked_at IS NULL`,
     row.id,
   );
-  if ((revoked.meta?.changes ?? 0) < 1) return null;
+  if (d1Changes(revoked) < 1) return null;
 
   const user = await findUserById(row.user_id);
   if (!user) return null;
@@ -187,7 +192,7 @@ export async function redeemPasswordResetToken(
     `UPDATE auth_password_resets SET used_at = datetime('now') WHERE id = ? AND used_at IS NULL`,
     row.id,
   );
-  if ((marked.meta?.changes ?? 0) < 1) {
+  if (d1Changes(marked) < 1) {
     return { ok: false, error: "Invalid or expired reset link", status: 401 };
   }
 

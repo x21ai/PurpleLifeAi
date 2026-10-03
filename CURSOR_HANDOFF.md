@@ -1,4 +1,6 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-10-03 (Flutter `1.0.0+34` gap close, not uploaded, not deployed).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-10-03 (PR #74 typecheck fix, not deployed).
+
+**Recent (2026-10-03): PR #74 typecheck.** `bunx tsc --noEmit` failed on `15e7de4c` (missing `bun:sqlite` types, `meta.changes` compared as `{}`, care poll timer typed as `Timeout`). Those three are fixed. Bindings tests stay 16/16. Behavior is unchanged. No Worker deploy. No TestFlight upload.
 
 **Recent (2026-10-03): gap close, build 34.** Reset mail uses Worker
 `RESEND_API_KEY` for any account. Refresh rotates. Care chat polls. Dark and

@@ -1,5 +1,8 @@
 ## Current snapshot
 
+**2026-10-03 typecheck fix on the gap-close branch, not deployed (PurpleLifeAi | eigital):**
+`bunx tsc --noEmit` is clean on `cursor/close-purplelife-gaps-0261`. The in-memory auth helper has an ambient `bun:sqlite` module, D1 `meta.changes` is narrowed to a number before the lost-race check, and the care-chat poll timer is a `number`. Bindings tests are 16/16. Product behavior is unchanged. No Worker deploy. No TestFlight upload. No existing password was changed.
+
 **2026-10-03 gap close in git, not deployed (PurpleLifeAi | eigital):**
 Password reset stores a one-time token and sends mail with Worker `RESEND_API_KEY` for any account. Unknown addresses still return `{ok:true}` and a failed send returns 502. Access JWTs stay 1 hour. `POST /api/auth/refresh` rotates a 30-day refresh token on web and Flutter. Care chat polls `POST /api/realtime/care-messages` every 2 seconds. Flutter appearance Dark and System switch. Tabs are Today, Journal, Browse, and More. Sign-in scrolls instead of clipping the button. Build is `1.0.0+34` and is not uploaded. Play upload still needs an owner keystore and Play Console. Google, Apple, and Whoop consoles are not configured. No Worker deploy. No D1/R2 wipe. No existing password was changed.
 
@@ -212,6 +215,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-10-03T15:10:00Z - Fix PR #74 typecheck
+
+- **Requested:** CI run 37131365543 failed `bunx tsc --noEmit` on `15e7de4c`. Fix the typecheck and push so PR #74 can go green. Do not deploy. Do not change existing passwords. Keep the shipped product behavior.
+- **Done:** `src/types/bun-sqlite.d.ts` declares the in-memory helper's `bun:sqlite` import. `d1Changes` narrows `meta.changes` before the refresh and reset lost-race checks. The care-chat poll timer is `number | null` so `window.setInterval` assigns.
+- **Issues:** Live www still does not send mail or refresh until an operator deploys. Consoles and the Play keystore stay owner leftovers. No existing password was changed.
+- **Stand / next:** PR #74 updated. Wait for the new CI run. Do not deploy. Do not upload TestFlight.
+- **Who / where:** PurpleLifeAi | eigital, cloud agent, `cursor/close-purplelife-gaps-0261`.
+- **Evidence:** `bunx tsc --noEmit` exit 0. `bun run test:bindings` 16/16.
+- **Timestamp:** 2026-10-03T15:10:00Z
 
 ### 2026-10-03T14:55:00Z - Close remaining PurpleLife gaps, build 34
 
