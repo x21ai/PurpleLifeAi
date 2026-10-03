@@ -9,12 +9,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/auth_state.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/providers/core_providers.dart';
-import '../../design/glass_card.dart';
-import '../../design/purple_theme.dart';
-import '../../design/purple_type.dart';
-import '../../design/tokens.dart';
 import '../../shell/routes.dart';
-import '../shared/glass_helpers.dart' hide GlassCard;
+import 'ploy_access_chrome.dart';
 import 'sign_in_screen.dart';
 
 /// Choose a new password after opening a recovery deep link or web URL.
@@ -27,9 +23,6 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
-  static const _foreground = purpleForegroundDark;
-  static const _foregroundMuted = Color(0x8CFFFFFF);
-
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   StreamSubscription<AuthState>? _authSub;
@@ -126,121 +119,118 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeExt = Theme.of(context).extension<PurpleThemeExtension>();
-    final titleColor = themeExt != null
-        ? parseTokenColor(themeExt.colors.textPrimary)
-        : _foreground;
-    final subtitleColor = themeExt != null
-        ? parseTokenColor(themeExt.colors.textTertiary)
-        : _foregroundMuted;
-    final errorColor = Theme.of(context).colorScheme.error;
+    final subtitle = _done
+        ? 'Password updated. Taking you to Today…'
+        : _linkExpired
+            ? 'That reset link expired or was already used.'
+            : 'Choose a new password for your account.';
+    const fieldStyle = TextStyle(color: PloyAccessColors.ink, fontSize: 14);
 
-    return Scaffold(
-      backgroundColor: purpleCanvasDark,
-      body: CanvasBackground(
-        auth: true,
-        child: SafeArea(
-          child: ContentColumn(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Reset password',
-                  style: PurpleType.serifStyle(
-                    fontSize: 36,
-                    height: 1.05,
-                    color: titleColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _done
-                      ? 'Password updated. Taking you to Today…'
-                      : _linkExpired
-                          ? 'That reset link expired or was already used.'
-                          : 'Choose a new password for your account.',
-                  style: PurpleType.bodySerif(color: subtitleColor),
-                ),
-                const SizedBox(height: 24),
-                GlassCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (!_ready && !_done && !_linkExpired)
-                        Text(
-                          'Open the reset link from your email to continue.',
-                          style: TextStyle(color: subtitleColor, fontSize: 14),
-                        ),
-                      if (_linkExpired && !_done) ...[
-                        Text(
-                          _error ??
-                              'Reset links expire after $recoveryLinkTtlLabel and only the latest email works.',
-                          style: TextStyle(color: subtitleColor, fontSize: 14),
-                        ),
-                        const SizedBox(height: 12),
-                        FilledButton(
-                          onPressed: _busy
-                              ? null
-                              : () => context.go(AppRoutes.signIn),
-                          child: const Text('Sign in with your password'),
-                        ),
-                        const SizedBox(height: 8),
-                        TextButton(
-                          onPressed: _busy
-                              ? null
-                              : () => context.go('${AppRoutes.signIn}?reset=expired'),
-                          child: const Text('Request a new reset link'),
-                        ),
-                      ],
-                      if (_ready && !_done) ...[
-                        TextField(
-                          controller: _passwordController,
-                          obscureText: true,
-                          autocorrect: false,
-                          decoration: const InputDecoration(
-                            labelText: 'New password',
-                          ),
-                          enabled: !_busy,
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _confirmController,
-                          obscureText: true,
-                          autocorrect: false,
-                          decoration: const InputDecoration(
-                            labelText: 'Confirm password',
-                          ),
-                          enabled: !_busy,
-                          onSubmitted: (_) => _busy ? null : _submit(),
-                        ),
-                        const SizedBox(height: 16),
-                        FilledButton(
-                          onPressed: _busy ? null : _submit,
-                          child: Text(_busy ? 'Updating…' : 'Update password'),
-                        ),
-                      ],
-                      if (_error != null && !_linkExpired) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          _error!,
-                          style: TextStyle(color: errorColor, fontSize: 14),
-                        ),
-                      ],
-                      if (!_linkExpired) ...[
-                        const SizedBox(height: 8),
-                        TextButton(
-                          onPressed: _busy ? null : () => context.go(AppRoutes.signIn),
-                          child: const Text('Back to sign in'),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
+    return PloyAccessPage(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 32, 20, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            PloyAccessHeader(
+              eyebrow: 'Account security',
+              title: 'Choose a new password.',
+              subtitle: subtitle,
+              shieldMaxWidth: 300,
             ),
-          ),
+            const SizedBox(height: 32),
+            PloyAccessCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (!_ready && !_done && !_linkExpired)
+                    const Text(
+                      'Open the reset link from your email to continue.',
+                      style: TextStyle(
+                        color: PloyAccessColors.muted,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+                  if (_linkExpired && !_done) ...[
+                    Text(
+                      _error ??
+                          'Reset links expire after $recoveryLinkTtlLabel and only the latest email works.',
+                      style: const TextStyle(
+                        color: PloyAccessColors.muted,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    PloyAccentButton(
+                      label: 'Sign in with your password',
+                      showArrow: false,
+                      onPressed:
+                          _busy ? null : () => context.go(AppRoutes.signIn),
+                    ),
+                    PloyLinkButton(
+                      label: 'Request a new reset link',
+                      onPressed: _busy
+                          ? null
+                          : () =>
+                              context.go('${AppRoutes.signIn}?reset=expired'),
+                    ),
+                  ],
+                  if (_ready && !_done) ...[
+                    const PloyFieldLabel('New password'),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      style: fieldStyle,
+                      decoration: ployFieldDecoration(),
+                      enabled: !_busy,
+                    ),
+                    const SizedBox(height: 16),
+                    const PloyFieldLabel('Confirm password'),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _confirmController,
+                      obscureText: true,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      style: fieldStyle,
+                      decoration: ployFieldDecoration(),
+                      enabled: !_busy,
+                      onSubmitted: (_) => _busy ? null : _submit(),
+                    ),
+                    const SizedBox(height: 20),
+                    PloyAccentButton(
+                      label: _busy ? 'Updating…' : 'Update password',
+                      showArrow: false,
+                      onPressed: _busy ? null : _submit,
+                    ),
+                  ],
+                  if (_error != null && !_linkExpired) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      _error!,
+                      style: const TextStyle(
+                        color: PloyAccessColors.coral,
+                        fontSize: 12,
+                        height: 1.4,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                  if (!_linkExpired)
+                    PloyLinkButton(
+                      label: 'Back to sign in',
+                      onPressed:
+                          _busy ? null : () => context.go(AppRoutes.signIn),
+                    ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

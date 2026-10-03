@@ -6,8 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/auth_state.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/providers/core_providers.dart';
-import '../../design/glass_card.dart';
-import '../shared/glass_helpers.dart' hide GlassCard;
+import 'ploy_access_chrome.dart';
 
 /// Maps a raw Supabase auth error to user-facing copy.
 ///
@@ -165,8 +164,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           if (!mounted) return;
           setState(() {
             _isRegister = false;
-            _error =
-                'Check your inbox to confirm your email, then sign in.';
+            _error = 'Check your inbox to confirm your email, then sign in.';
             _busy = false;
           });
           return;
@@ -215,7 +213,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Future<void> _forgotPassword() async {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
-      setState(() => _error = 'Enter your email above first, then tap "Forgot password?" again.');
+      setState(
+        () => _error =
+            'Enter your email above first, then tap Password recovery again.',
+      );
       return;
     }
     setState(() {
@@ -235,348 +236,208 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
+  void _clearErrorOnEdit() {
+    setState(() {
+      if (_error != null) _error = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final authReady = ref.watch(authRepositoryProvider);
-    const canvas = Color(0xFF0A0710);
-    const purple = Color(0xFFB084D1);
-    const purpleDeep = Color(0xFF6E3FA0);
-    const muted = Color(0xFF8B8B92);
-    const border = Color(0xFF25202F);
-    const bg2 = Color(0xFF1F1A2B);
-    const text = Color(0xFFFAFAFC);
-    final errorColor = Theme.of(context).colorScheme.error;
+    final canSubmit = !_busy &&
+        _emailController.text.trim().isNotEmpty &&
+        _passwordController.text.isNotEmpty;
 
-    InputDecoration fieldDecoration(String hint) => InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: muted, fontSize: 16),
-          filled: true,
-          fillColor: bg2,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: border),
+    return PloyAccessPage(
+      child: authReady.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: PloyAccessColors.accent),
+        ),
+        error: (error, _) => Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Auth init failed: $error',
+            style: const TextStyle(color: PloyAccessColors.ink),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: purple.withValues(alpha: 0.7)),
-          ),
-        );
-
-    final ButtonStyle ghostStyle = OutlinedButton.styleFrom(
-      foregroundColor: purple,
-      side: BorderSide(color: purple.withValues(alpha: 0.45)),
-      minimumSize: const Size.fromHeight(44),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      backgroundColor: Colors.transparent,
-    );
-
-    return Scaffold(
-      backgroundColor: canvas,
-      body: CanvasBackground(
-        auth: true,
-        child: SafeArea(
-          child: ContentColumn(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-            child: authReady.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: purple),
+        ),
+        data: (_) => SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PloyAccessHeader(
+                eyebrow: 'Private account',
+                title: _isRegister
+                    ? 'Create your calm space.'
+                    : 'Sign in to PurpleLife.',
+                subtitle: _isRegister
+                    ? 'Choose an email and password for your private PurpleLife account.'
+                    : 'Use your PurpleLife account password to access your private health data.',
               ),
-              error: (error, _) => Text(
-                'Auth init failed: $error',
-                style: const TextStyle(color: text),
+              const SizedBox(height: 32),
+              PloyAccessCard(
+                child: _resetSent ? _resetSentCard() : _formCard(canSubmit),
               ),
-              data: (_) => SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Purple',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w600,
-                        color: text,
-                        letterSpacing: 0.02 * 32,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    if (_resetSent)
-                      GlassCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Text(
-                              'Check your inbox',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: text,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'We sent a password reset link to '
-                              '${_emailController.text.trim()}. Use only the latest email; '
-                              'older links stop working when you request another. '
-                              'The link stays valid for $recoveryLinkTtlLabel. '
-                              'If nothing arrives, check spam and any work-email quarantine '
-                              '(sender notify.purplelife.org), or sign in with a password '
-                              'set by support and change it under Account.',
-                              style: const TextStyle(
-                                fontSize: 15,
-                                height: 1.45,
-                                color: muted,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            OutlinedButton(
-                              onPressed: () => setState(() {
-                                _resetSent = false;
-                                _error = null;
-                              }),
-                              style: ghostStyle,
-                              child: const Text('Back to sign in'),
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      Container(
-                        padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xBF14101C),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: border),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              _isRegister ? 'CREATE ACCOUNT' : 'SIGN IN',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                letterSpacing: 0.1 * 11,
-                                fontWeight: FontWeight.w600,
-                                color: muted,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'A quiet intelligence for your health.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 15,
-                                height: 1.45,
-                                color: muted,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            OutlinedButton(
-                              onPressed: _busy
-                                  ? null
-                                  : () => _oauth(OAuthProvider.google),
-                              style: ghostStyle,
-                              child: const Text('Continue with Google'),
-                            ),
-                            const SizedBox(height: 8),
-                            OutlinedButton(
-                              onPressed: _busy
-                                  ? null
-                                  : () => _oauth(OAuthProvider.apple),
-                              style: ghostStyle,
-                              child: const Text('Continue with Apple'),
-                            ),
-                            const SizedBox(height: 16),
-                            TextField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              autofillHints: const [AutofillHints.email],
-                              style: const TextStyle(color: text, fontSize: 16),
-                              enabled: !_busy,
-                              onChanged: (_) {
-                                if (_error != null) {
-                                  setState(() => _error = null);
-                                }
-                              },
-                              decoration: fieldDecoration('Email'),
-                            ),
-                            const SizedBox(height: 10),
-                            TextField(
-                              controller: _passwordController,
-                              focusNode: _passwordFocusNode,
-                              obscureText: !_showPassword,
-                              keyboardType: TextInputType.visiblePassword,
-                              autofillHints: [
-                                _isRegister
-                                    ? AutofillHints.newPassword
-                                    : AutofillHints.password,
-                              ],
-                              autocorrect: false,
-                              enableSuggestions: false,
-                              style: const TextStyle(color: text, fontSize: 16),
-                              enabled: !_busy,
-                              onChanged: (_) {
-                                if (_error != null) {
-                                  setState(() => _error = null);
-                                }
-                              },
-                              decoration: fieldDecoration('Password').copyWith(
-                                suffixIcon: IconButton(
-                                  visualDensity: VisualDensity.compact,
-                                  splashRadius: 20,
-                                  onPressed: _busy
-                                      ? null
-                                      : () {
-                                          setState(
-                                            () =>
-                                                _showPassword = !_showPassword,
-                                          );
-                                          _passwordFocusNode.requestFocus();
-                                        },
-                                  tooltip: _showPassword
-                                      ? 'Hide password'
-                                      : 'Show password',
-                                  icon: Icon(
-                                    _showPassword
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                    color: muted,
-                                  ),
-                                ),
-                              ),
-                              onSubmitted: (_) => _busy ? null : _submit(),
-                            ),
-                            if (!_isRegister) ...[
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  onPressed: _busy ? null : _forgotPassword,
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: muted,
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: const Size(0, 36),
-                                    visualDensity: VisualDensity.compact,
-                                  ),
-                                  child: const Text(
-                                    'Forgot password?',
-                                    style: TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                              ),
-                            ],
-                            if (_error != null) ...[
-                              const SizedBox(height: 8),
-                              _ErrorBanner(
-                                message: _error!,
-                                color: errorColor,
-                              ),
-                            ],
-                            const SizedBox(height: 8),
-                            // Gradient CTA keeps newdesign look; FilledButton
-                            // restores pre-TF26 semantics and reliable taps
-                            // (InkWell-over-DecoratedBox missed presses on some devices).
-                            DecoratedBox(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(14),
-                                gradient: const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [purpleDeep, purple],
-                                ),
-                              ),
-                              child: FilledButton(
-                                onPressed: _busy ? null : _submit,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  disabledBackgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                  foregroundColor: Colors.white,
-                                  disabledForegroundColor:
-                                      Colors.white.withValues(alpha: 0.7),
-                                  minimumSize: const Size.fromHeight(48),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                                child: Text(
-                                  _busy
-                                      ? 'Please wait…'
-                                      : _isRegister
-                                          ? 'Create account'
-                                          : 'Sign in',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            OutlinedButton(
-                              onPressed: _busy
-                                  ? null
-                                  : () => setState(() {
-                                        _isRegister = !_isRegister;
-                                        _error = null;
-                                      }),
-                              style: ghostStyle,
-                              child: Text(
-                                _isRegister
-                                    ? 'Already have an account? Sign in'
-                                    : 'Create your account',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
+              const SizedBox(height: 20),
+              const PloyPrivacyNote(
+                text:
+                    'Your secure session stays on this device and authorizes requests for your private account data.',
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
   }
-}
-/// Inline error surface for the auth form, tinted with the theme's error
-/// token instead of a hardcoded color, so light/dark appearance stays correct.
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.message, required this.color});
 
-  final String message;
-  final Color color;
+  Widget _resetSentCard() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'Check your inbox',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: PloyAccessColors.ink,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'We sent a password reset link to '
+          '${_emailController.text.trim()}. Use only the latest email; '
+          'older links stop working when you request another. '
+          'The link stays valid for $recoveryLinkTtlLabel. '
+          'If nothing arrives, check spam and any work-email quarantine '
+          '(sender notify.purplelife.org), or sign in with a password '
+          'set by support and change it under Account.',
+          style: const TextStyle(
+            fontSize: 15,
+            height: 1.45,
+            color: PloyAccessColors.muted,
+          ),
+        ),
+        const SizedBox(height: 8),
+        PloyLinkButton(
+          label: 'Back to sign in',
+          onPressed: () => setState(() {
+            _resetSent = false;
+            _error = null;
+          }),
+        ),
+      ],
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.28)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.error_outline, size: 18, color: color),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: TextStyle(color: color, fontSize: 13, height: 1.3),
+  Widget _formCard(bool canSubmit) {
+    const fieldStyle = TextStyle(
+      color: PloyAccessColors.ink,
+      fontSize: 14,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const PloyFieldLabel('Email'),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          autofillHints: const [AutofillHints.email],
+          style: fieldStyle,
+          enabled: !_busy,
+          onChanged: (_) => _clearErrorOnEdit(),
+          decoration: ployFieldDecoration(),
+        ),
+        const SizedBox(height: 16),
+        const PloyFieldLabel('Password'),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _passwordController,
+          focusNode: _passwordFocusNode,
+          obscureText: !_showPassword,
+          keyboardType: TextInputType.visiblePassword,
+          autofillHints: [
+            _isRegister ? AutofillHints.newPassword : AutofillHints.password,
+          ],
+          autocorrect: false,
+          enableSuggestions: false,
+          style: fieldStyle,
+          enabled: !_busy,
+          onChanged: (_) => _clearErrorOnEdit(),
+          decoration: ployFieldDecoration(
+            prefix: const Icon(
+              Icons.key_outlined,
+              size: 17,
+              color: PloyAccessColors.muted,
+            ),
+            suffix: IconButton(
+              visualDensity: VisualDensity.compact,
+              onPressed: _busy
+                  ? null
+                  : () {
+                      setState(() => _showPassword = !_showPassword);
+                      _passwordFocusNode.requestFocus();
+                    },
+              tooltip: _showPassword ? 'Hide password' : 'Show password',
+              icon: Icon(
+                _showPassword ? Icons.visibility_off : Icons.visibility,
+                color: PloyAccessColors.muted,
+              ),
+            ),
+          ),
+          onSubmitted: (_) {
+            if (canSubmit) _submit();
+          },
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            _error!,
+            style: const TextStyle(
+              color: PloyAccessColors.coral,
+              fontSize: 12,
+              height: 1.4,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
-      ),
+        const SizedBox(height: 20),
+        // FilledButton keeps reliable taps (TF26: InkWell over a
+        // decorated box missed presses on some devices).
+        PloyAccentButton(
+          label: _busy
+              ? 'Please wait…'
+              : _isRegister
+                  ? 'Create account'
+                  : 'Sign in',
+          onPressed: canSubmit ? _submit : null,
+        ),
+        if (!_isRegister)
+          PloyLinkButton(
+            label: 'Password recovery',
+            onPressed: _busy ? null : _forgotPassword,
+          ),
+        PloyLinkButton(
+          label:
+              _isRegister ? 'I already have an account' : 'Create an account',
+          accent: false,
+          onPressed: _busy
+              ? null
+              : () => setState(() {
+                    _isRegister = !_isRegister;
+                    _error = null;
+                  }),
+        ),
+        PloyLinkButton(
+          label: 'Continue with Google',
+          onPressed: _busy ? null : () => _oauth(OAuthProvider.google),
+        ),
+        PloyLinkButton(
+          label: 'Continue with Apple',
+          onPressed: _busy ? null : () => _oauth(OAuthProvider.apple),
+        ),
+      ],
     );
   }
 }

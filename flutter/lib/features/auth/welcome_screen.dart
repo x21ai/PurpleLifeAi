@@ -4,14 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/auth/onboarding_gate.dart';
 import '../../core/providers/core_providers.dart';
-import '../../design/glass_card.dart';
-import '../../design/purple_theme.dart';
 import '../../shell/routes.dart';
 import '../health/welcome_apple_health_card.dart';
 import '../my_health/condition_catalog.dart';
-import '../shared/glass_helpers.dart' hide GlassCard;
-import '../shared/merged_style.dart';
 import 'onboarding_style.dart';
+import 'ploy_access_chrome.dart';
 
 // Web welcome (src/routes/_app/welcome.tsx) also auto-redeems stored invite
 // codes (redeemInviteCode) and fires generateCareProfile after saving the
@@ -58,19 +55,50 @@ const _categoryOrder = <String>[
 /// Every catalog slug; labels/categories resolve read-only through
 /// `getConditions` so copy stays in lockstep with the shared catalog.
 const _allConditionSlugs = <String>[
-  'epilepsy', 'migraine', 'cluster_headache', 'parkinsons',
-  'multiple_sclerosis', 'stroke_recovery', 'neuropathy',
-  'autism', 'adhd', 'dementia',
-  'depression', 'anxiety', 'bipolar', 'ptsd', 'ocd', 'eating_disorder',
-  'fibromyalgia', 'chronic_pain', 'long_covid', 'pots', 'eds',
-  'hypertension', 't1_diabetes', 't2_diabetes', 'prediabetes',
-  'high_cholesterol', 'afib', 'heart_failure', 'ckd',
-  'rheumatoid_arthritis', 'lupus', 'crohns', 'ulcerative_colitis',
-  'psoriasis', 'hashimotos', 'celiac',
-  'asthma', 'copd', 'sleep_apnea',
-  'ibs', 'gerd',
+  'epilepsy',
+  'migraine',
+  'cluster_headache',
+  'parkinsons',
+  'multiple_sclerosis',
+  'stroke_recovery',
+  'neuropathy',
+  'autism',
+  'adhd',
+  'dementia',
+  'depression',
+  'anxiety',
+  'bipolar',
+  'ptsd',
+  'ocd',
+  'eating_disorder',
+  'fibromyalgia',
+  'chronic_pain',
+  'long_covid',
+  'pots',
+  'eds',
+  'hypertension',
+  't1_diabetes',
+  't2_diabetes',
+  'prediabetes',
+  'high_cholesterol',
+  'afib',
+  'heart_failure',
+  'ckd',
+  'rheumatoid_arthritis',
+  'lupus',
+  'crohns',
+  'ulcerative_colitis',
+  'psoriasis',
+  'hashimotos',
+  'celiac',
+  'asthma',
+  'copd',
+  'sleep_apnea',
+  'ibs',
+  'gerd',
   'cancer',
-  'caregiver', 'general',
+  'caregiver',
+  'general',
 ];
 
 /// Onboarding gate for users without profile onboarding metadata.
@@ -193,107 +221,104 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: purpleCanvasDark,
-      body: CanvasBackground(
-        auth: true,
-        child: SafeArea(
-          child: SingleChildScrollView(
-            child: ContentColumn(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+    return PloyAccessPage(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'WELCOME TO PURPLELIFE',
+              textAlign: TextAlign.center,
+              style: onboardingEyebrow(),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Let me know who you are.',
+              textAlign: TextAlign.center,
+              style: onboardingTitle(),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Just your first name, and what you are carrying. '
+              'Everything else can wait.',
+              textAlign: TextAlign.center,
+              style: onboardingSubtitle(),
+            ),
+            const SizedBox(height: 32),
+            PloyAccessCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'Let me know who you are.',
-                    style: onboardingTitle(),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Just your first name, and what you are carrying. '
-                    'Everything else can wait.',
-                    style: onboardingSubtitle(),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _NameField(
+                          controller: _firstNameController,
+                          label: 'First name',
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _NameField(
+                          controller: _lastNameController,
+                          label: 'Last name',
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 24),
-                  GlassCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _NameField(
-                                controller: _firstNameController,
-                                label: 'First name',
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _NameField(
-                                controller: _lastNameController,
-                                label: 'Last name',
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'WHAT BRINGS YOU TO PURPLE?',
-                          style: onboardingEyebrow(),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Pick anything that applies. You can change this '
-                          'later in My Health.',
-                          style: onboardingHint(),
-                        ),
-                        const SizedBox(height: 12),
-                        _ConditionPicker(
-                          selected: _conditions,
-                          onToggle: _toggleCondition,
-                        ),
-                        if (_error != null) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            _error!,
-                            style: const TextStyle(color: Color(0xFFE8745C)),
-                          ),
-                        ],
-                        const SizedBox(height: 20),
-                        FilledButton(
-                          onPressed: _saving ? null : _completeOnboarding,
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(48),
-                          ),
-                          child:
-                              Text(_saving ? 'Saving...' : 'Continue to Today'),
-                        ),
-                        const SizedBox(height: 8),
-                        TextButton(
-                          onPressed: _saving ? null : _completeOnboarding,
-                          style: TextButton.styleFrom(
-                            minimumSize: const Size.fromHeight(44),
-                          ),
-                          child: const Text('Skip for now'),
-                        ),
-                      ],
-                    ),
+                  Text(
+                    'WHAT BRINGS YOU TO PURPLE?',
+                    style: onboardingEyebrow(),
                   ),
-                  const SizedBox(height: 16),
-                  WelcomeAppleHealthCard(
-                    onConnected: () {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Apple Health connected. Vitals synced.'),
-                        ),
-                      );
-                    },
+                  const SizedBox(height: 4),
+                  Text(
+                    'Pick anything that applies. You can change this '
+                    'later in My Health.',
+                    style: onboardingHint(),
+                  ),
+                  const SizedBox(height: 12),
+                  _ConditionPicker(
+                    selected: _conditions,
+                    onToggle: _toggleCondition,
+                  ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      _error!,
+                      style: const TextStyle(
+                        color: PloyAccessColors.coral,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  PloyAccentButton(
+                    label: _saving ? 'Saving...' : 'Continue to Today',
+                    onPressed: _saving ? null : _completeOnboarding,
+                  ),
+                  PloyLinkButton(
+                    label: 'Skip for now',
+                    accent: false,
+                    onPressed: _saving ? null : _completeOnboarding,
                   ),
                 ],
               ),
             ),
-          ),
+            const SizedBox(height: 16),
+            WelcomeAppleHealthCard(
+              onConnected: () {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Apple Health connected. Vitals synced.'),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -320,7 +345,7 @@ class _NameField extends StatelessWidget {
           controller: controller,
           textInputAction: TextInputAction.next,
           textCapitalization: TextCapitalization.words,
-          style: TextStyle(color: mergedPalette().textPrimary),
+          style: const TextStyle(color: PloyAccessColors.ink, fontSize: 14),
           decoration: onboardingInputDecoration(label),
         ),
       ],
@@ -352,8 +377,7 @@ class _ConditionPicker extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 12, bottom: 8),
               child: Text(
-                _categoryLabels[category] ??
-                    conditionCategoryLabel(category),
+                _categoryLabels[category] ?? conditionCategoryLabel(category),
                 style: onboardingCategoryLabel(),
               ),
             ),
@@ -388,7 +412,6 @@ class _ConditionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -399,29 +422,27 @@ class _ConditionChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
-            color: selected
-                ? primary.withValues(alpha: 0.22)
-                : Colors.white.withValues(alpha: 0.04),
+            color: selected ? PloyAccessColors.tint : PloyAccessColors.rail,
             border: Border.all(
-              color: selected
-                  ? primary.withValues(alpha: 0.6)
-                  : Colors.white.withValues(alpha: 0.12),
+              color: selected ? PloyAccessColors.accent : PloyAccessColors.line,
             ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (selected) ...[
-                Icon(Icons.check, size: 14, color: primary),
+                const Icon(Icons.check,
+                    size: 14, color: PloyAccessColors.accent),
                 const SizedBox(width: 6),
               ],
               Flexible(
                 child: Text(
                   label,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white
-                            .withValues(alpha: selected ? 0.95 : 0.75),
-                      ),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: PloyAccessColors.ink,
+                  ),
                 ),
               ),
             ],

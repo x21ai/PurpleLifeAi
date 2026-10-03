@@ -1,0 +1,21 @@
+id: T-flutter-ploy-signin
+title: Flutter sign-in matches the live Ploy shield
+intent: >-
+  Update Flutter design so sign-in matches the live Ploy shield, keep Worker
+  JWT auth, bump iOS to 1.0.0+33, and open a PR. Do not merge or deploy.
+partition: flutter-auth
+depends_on: []
+risk: medium
+acceptance:
+  - "Sign-in shows Sign in to PurpleLife. with the Ploy shield"
+  - "Password sign-in still uses POST /api/auth/sign-in"
+  - "pubspec is 1.0.0+33"
+  - "flutter analyze clean and flutter test green"
+  - "PR open against main, not merged"
+state: landed
+claimant: cursor-cloud-agent
+lease_expires: ""
+evidence:
+  - "flutter analyze: no issues"
+  - "flutter test: 285/285"
+  - "widget test expects Sign in to PurpleLife."
