@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/worker_client.dart';
+import '../auth/ploy_access_chrome.dart';
 import 'health_providers.dart';
 import 'health_service.dart';
 
@@ -19,7 +20,8 @@ class WelcomeAppleHealthCard extends ConsumerStatefulWidget {
       _WelcomeAppleHealthCardState();
 }
 
-class _WelcomeAppleHealthCardState extends ConsumerState<WelcomeAppleHealthCard> {
+class _WelcomeAppleHealthCardState
+    extends ConsumerState<WelcomeAppleHealthCard> {
   bool _loaded = false;
   bool _busy = false;
   bool _authorized = false;
@@ -33,8 +35,7 @@ class _WelcomeAppleHealthCardState extends ConsumerState<WelcomeAppleHealthCard>
   }
 
   Future<void> _refresh() async {
-    final status =
-        await ref.read(healthServiceProvider).authorizationStatus();
+    final status = await ref.read(healthServiceProvider).authorizationStatus();
     if (!mounted) return;
     setState(() {
       _authorized = status.authorized;
@@ -118,62 +119,60 @@ class _WelcomeAppleHealthCardState extends ConsumerState<WelcomeAppleHealthCard>
     if (!isNativeHealthPlatform) return const SizedBox.shrink();
     if (_authorized) return const SizedBox.shrink();
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-        color: Colors.white.withValues(alpha: 0.04),
-      ),
-      child: Row(
+    return PloyAccessCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.08),
-            ),
-            child: Icon(
-              Icons.smartphone,
-              color: Colors.white.withValues(alpha: 0.85),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  Platform.isIOS ? 'Apple Health' : 'Health Connect',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.92),
-                      ),
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: PloyAccessColors.tint,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Sleep, heart rate, steps, and more from this phone',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.55),
+                child: const Icon(
+                  Icons.smartphone,
+                  color: PloyAccessColors.accent,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      Platform.isIOS ? 'Apple Health' : 'Health Connect',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: PloyAccessColors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Sleep, heart rate, steps, and more from this phone',
+                      style: TextStyle(
+                        fontSize: 12,
                         height: 1.35,
+                        color: PloyAccessColors.muted,
                       ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          FilledButton(
+          const SizedBox(height: 16),
+          PloyAccentButton(
+            label: _busy
+                ? 'Please wait…'
+                : Platform.isIOS
+                    ? 'Connect Apple Health'
+                    : 'Connect Health Connect',
+            showArrow: false,
             onPressed: _loaded && !_busy ? _connect : null,
-            child: _busy
-                ? const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(
-                    Platform.isIOS
-                        ? 'Connect Apple Health'
-                        : 'Connect Health Connect',
-                  ),
           ),
         ],
       ),

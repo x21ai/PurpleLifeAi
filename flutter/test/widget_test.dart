@@ -96,6 +96,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.textContaining('Sign in'), findsWidgets);
+    expect(find.text('Sign in to PurpleLife.'), findsOneWidget);
+    expect(find.text('A quiet intelligence for your health.'), findsNothing);
+    expect(find.text('SIGN IN'), findsNothing);
+    expect(find.text('Password recovery'), findsOneWidget);
   });
 }

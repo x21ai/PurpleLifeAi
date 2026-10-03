@@ -66,6 +66,6 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('Forgot password?'), findsOneWidget);
+    expect(find.text('Password recovery'), findsOneWidget);
   });
 }

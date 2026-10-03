@@ -16,6 +16,12 @@ Also see `mem/index.md` for deeper architectural notes.
 
 ---
 
+### 2026-10-03 - Flutter auth chrome follows the live Ploy shield [ACTIVE]
+
+- **Decision:** Flutter sign-in, password reset, and welcome onboarding use the light Ploy access chrome from `ploy-staging` (`.purplelife-pilot` tokens and `PrivacyShield` in `mobile-graphics.tsx`). Production copy is "Sign in to PurpleLife." The TanStack `src/routes/sign-in.tsx` "Welcome back!" glass split is not a Flutter source. Signed-in product screens stay on the dark shell until a separate reskin.
+- **Reason:** TestFlight 1.0 (32) still showed the dark sign-in. Live www `/sign-in` is the Ploy Astro shield. A full Today/Meds reskin was out of scope for this change.
+- **Implications:** Do not revert auth chrome to the dark canvas or port `sign-in.tsx`. Do not treat this chrome as permission to restyle Today, Meds, or Journal in the same pass. Password sign-in stays `POST /api/auth/sign-in` when `DATA_BACKEND=cloudflare`.
+
 ### 2026-10-02 - Flutter TestFlight auth is the Workers JWT when DATA_BACKEND=cloudflare [ACTIVE]
 
 - **Decision:** Flutter builds default `DATA_BACKEND` to `cloudflare`. That path signs in with `POST /api/auth/sign-in` (and OAuth start at `GET /api/auth/oauth/{provider}`) and sends the HS256 `iss=purplelife.org` JWT on Worker `/api/data/*` and `/api/storage/*`. It does not call `https://auth.purplelife.org` for login. `DATA_BACKEND=supabase` is the only path that initializes supabase_flutter.

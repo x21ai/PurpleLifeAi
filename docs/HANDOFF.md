@@ -1,5 +1,11 @@
 ## Current snapshot
 
+**2026-10-03 Flutter 1.0.0+33 Ploy sign-in chrome (not uploaded, no Worker deploy):**
+Flutter sign-in, password reset, and welcome onboarding use the live Ploy
+light shield (`PrivacyShield`, white card, canvas `#F8F7FA`). Password sign-in
+still posts `POST /api/auth/sign-in` and keeps the Worker JWT. Today and Meds
+stay on the dark shell. Build is `1.0.0+33`. Do not upload. Do not deploy Workers.
+
 **2026-10-02 Flutter 1.0.0+32 layout P0s folded into the Worker auth PR (not uploaded):**
 Journal Save clears the Dynamic Island inside the shell. Meds Taken stays 44pt.
 Long med names ellipsize. Meds no longer adds a second `shellTabBarInset`.
@@ -194,6 +200,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-10-03T11:53:15Z - Flutter sign-in matches the live Ploy shield, build 33
+
+- **Requested:** Update Flutter design so sign-in matches the live Ploy shield, not the dark "SIGN IN / A quiet intelligence" screen. Keep Worker JWT auth. Do not port the obsolete TanStack "Welcome back!" split. Do not reskin Today/Meds. Bump iOS to `1.0.0+33`. Open a PR. Do not merge, deploy Workers, or touch D1/R2.
+- **Done:** `ploy_access_chrome.dart` ports the Ploy pilot tokens and `PrivacyShield`. Sign-in shows "Sign in to PurpleLife." on a light canvas with a white card. Reset password and welcome onboarding use the same chrome. Google and Apple stay as secondary links. `flutter/pubspec.yaml` is `1.0.0+33`. Auth repository calls are unchanged.
+- **Issues:** Signed-in product screens (Today, Meds, and the rest) remain dark. Native Google/Apple completion still needs a www deploy. Build 33 is not uploaded.
+- **Stand / next:** PR open against `main`. Mac operator merges, then `bun run ios:testflight` for build 33. Do not upload 31 or 32. No Worker deploy.
+- **Who / where:** cloud agent, `cursor/flutter-ploy-signin-4315`.
+- **Evidence:** `flutter analyze` clean. `flutter test` 285/285. Widget test expects `Sign in to PurpleLife.` and rejects the old quiet-intelligence copy.
+- **Timestamp:** 2026-10-03T11:53:15Z
 
 ### 2026-10-02T16:15:00Z — TF layout P0s on the Worker auth branch
 

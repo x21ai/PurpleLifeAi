@@ -1,65 +1,61 @@
 import 'package:flutter/material.dart';
 
-import '../shared/merged_style.dart';
+import 'ploy_access_chrome.dart';
 
 TextStyle onboardingTitle() {
-  return medsSerif(
-    fontSize: 28,
+  return const TextStyle(
+    fontSize: 33,
+    height: 1.02,
     fontWeight: FontWeight.w600,
-    color: mergedPalette().textPrimary,
+    letterSpacing: -1.65,
+    color: PloyAccessColors.ink,
   );
 }
 
 TextStyle onboardingSubtitle() {
-  return medsSans(
+  return const TextStyle(
     fontSize: 15,
     height: 1.45,
-    color: mergedPalette().textPrimary.withValues(alpha: 0.82),
+    color: PloyAccessColors.muted,
   );
 }
 
 TextStyle onboardingFieldLabel() {
-  return medsSans(
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    color: mergedPalette().textPrimary.withValues(alpha: 0.9),
+  return const TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    color: PloyAccessColors.ink,
   );
 }
 
 TextStyle onboardingEyebrow() {
-  return medsEyebrow(palette: mergedPalette());
+  return const TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.72,
+    color: PloyAccessColors.accent,
+  );
 }
 
 TextStyle onboardingHint() {
-  return medsSans(fontSize: 13, color: mergedPalette().textTertiary);
+  return const TextStyle(
+    fontSize: 13,
+    height: 1.4,
+    color: PloyAccessColors.muted,
+  );
 }
 
 TextStyle onboardingCategoryLabel() {
-  return medsSans(
+  return const TextStyle(
     fontSize: 13,
-    fontWeight: FontWeight.w500,
-    color: mergedPalette().textTertiary,
+    fontWeight: FontWeight.w600,
+    color: PloyAccessColors.muted,
   );
 }
 
 InputDecoration onboardingInputDecoration(String hint) {
-  final p = mergedPalette();
-  return InputDecoration(
+  return ployFieldDecoration().copyWith(
     hintText: hint,
-    hintStyle: TextStyle(color: p.textTertiary.withValues(alpha: 0.6)),
-    filled: true,
-    fillColor: p.textPrimary.withValues(alpha: 0.06),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: p.divider),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: p.divider),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: p.purplePrimary.withValues(alpha: 0.5)),
-    ),
+    hintStyle: const TextStyle(color: PloyAccessColors.muted, fontSize: 14),
   );
 }
