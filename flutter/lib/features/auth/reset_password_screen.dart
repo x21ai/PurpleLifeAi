@@ -31,6 +31,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   bool _done = false;
   bool _linkExpired = false;
   String? _error;
+  String? _resetToken;
 
   @override
   void initState() {
@@ -46,7 +47,23 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     final session = client.auth.currentSession;
     if (session != null && mounted) setState(() => _ready = true);
     if (kIsWeb) {
-      unawaited(_bootstrapWebRecovery());
+      final token = Uri.base.queryParameters['reset_token'];
+      if (token != null && token.isNotEmpty) {
+        _resetToken = token;
+        _ready = true;
+      } else {
+        unawaited(_bootstrapWebRecovery());
+      }
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final token = GoRouterState.of(context).uri.queryParameters['reset_token'];
+    if (token != null && token.isNotEmpty && token != _resetToken) {
+      _resetToken = token;
+      _ready = true;
     }
   }
 
@@ -101,8 +118,17 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     });
 
     try {
-      final client = ref.read(supabaseClientProvider);
-      await client.auth.updateUser(UserAttributes(password: password));
+      final resetToken = _resetToken;
+      if (resetToken != null && resetToken.isNotEmpty) {
+        final auth = await ref.read(authRepositoryProvider.future);
+        await auth.completePasswordReset(
+          resetToken: resetToken,
+          password: password,
+        );
+      } else {
+        final client = ref.read(supabaseClientProvider);
+        await client.auth.updateUser(UserAttributes(password: password));
+      }
       if (!mounted) return;
       setState(() => _done = true);
       ref.read(invalidateSessionDataProvider)();

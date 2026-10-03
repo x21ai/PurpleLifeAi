@@ -26,6 +26,7 @@ class PurpleClient {
     }) signInWithPassword,
     required Future<void> Function(String password) updatePassword,
     required Future<RecoveryBootstrap> Function(Uri uri) adoptCallback,
+    Future<String?> Function()? resolveAccessToken,
     SupabaseClient? supabase,
   })  : _config = config,
         _http = httpClient,
@@ -35,6 +36,7 @@ class PurpleClient {
         _signInWithPassword = signInWithPassword,
         _updatePassword = updatePassword,
         _adoptCallback = adoptCallback,
+        _resolveAccessToken = resolveAccessToken,
         _supabase = supabase {
     auth = PurpleAuth(this);
     storage = PurpleStorage(this);
@@ -68,6 +70,7 @@ class PurpleClient {
   }) _signInWithPassword;
   final Future<void> Function(String password) _updatePassword;
   final Future<RecoveryBootstrap> Function(Uri uri) _adoptCallback;
+  final Future<String?> Function()? _resolveAccessToken;
   final SupabaseClient? _supabase;
 
   late final PurpleAuth auth;
@@ -126,10 +129,11 @@ class PurpleClient {
     if (supabase != null) {
       return PurpleChannel._(supabase.channel(name));
     }
-    return PurpleChannel._(null);
+    return PurpleChannel.cloudflare(poll: _pollCareMessages);
   }
 
   void removeChannel(PurpleChannel channel) {
+    channel.dispose();
     final raw = channel._raw;
     final supabase = _supabase;
     if (raw != null && supabase != null) {
@@ -137,7 +141,41 @@ class PurpleClient {
     }
   }
 
+  Future<List<Map<String, dynamic>>> _pollCareMessages({
+    required String threadId,
+    required String? since,
+  }) async {
+    final token = await _accessToken();
+    if (token == null || token.isEmpty) return const [];
+    final response = await _http.post(
+      workerApiUri(_config.workerApiBaseUrl, '/realtime/care-messages'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'threadId': threadId,
+        if (since != null) 'since': since,
+      }),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      return const [];
+    }
+    if (response.body.isEmpty) return const [];
+    final raw = jsonDecode(response.body);
+    if (raw is! Map) return const [];
+    final messages = raw['messages'];
+    if (messages is! List) return const [];
+    return [
+      for (final row in messages)
+        if (row is Map) Map<String, dynamic>.from(row),
+    ];
+  }
+
   Future<String?> _accessToken() async {
+    final resolver = _resolveAccessToken;
+    if (resolver != null) return resolver();
     final session = _readSession();
     if (session == null || session.isExpired) return null;
     return session.accessToken;
@@ -394,10 +432,52 @@ class PurpleInvokeResponse {
   final Object? data;
 }
 
+typedef CarePoll = Future<List<Map<String, dynamic>>> Function({
+  required String threadId,
+  required String? since,
+});
+
 class PurpleChannel {
-  PurpleChannel._(this._raw);
+  PurpleChannel._(this._raw, {CarePoll? poll}) : _poll = poll;
+
+  PurpleChannel.cloudflare({required CarePoll poll}) : this._(null, poll: poll);
 
   final RealtimeChannel? _raw;
+  final CarePoll? _poll;
+  Timer? _timer;
+  String? _since;
+
+  /// Poll care-message inserts newer than subscribe time. Cloudflare has no
+  /// Postgres realtime channel.
+  void pollCareInserts({
+    required String threadId,
+    required void Function(Map<String, dynamic> record) onInsert,
+  }) {
+    final poll = _poll;
+    if (poll == null) return;
+    _since = DateTime.now().toUtc().toIso8601String();
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) async {
+      try {
+        final rows = await poll(threadId: threadId, since: _since);
+        for (final row in rows) {
+          final created = row['created_at']?.toString();
+          if (created != null &&
+              (_since == null || created.compareTo(_since!) > 0)) {
+            _since = created;
+          }
+          onInsert(row);
+        }
+      } catch (_) {
+        // The next tick retries. A failed poll is not a reload.
+      }
+    });
+  }
+
+  void dispose() {
+    _timer?.cancel();
+    _timer = null;
+  }
 
   PurpleChannel onPostgresChanges({
     required PostgresChangeEvent event,

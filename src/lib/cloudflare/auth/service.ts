@@ -1,7 +1,6 @@
 import { d1First, d1Run } from "../d1/client";
-import { getBindings } from "../bindings";
 import { hashPassword, verifyPassword } from "./passwords";
-import { signJwt } from "./jwt";
+import { issueSession, type IssuedSession } from "./sessions";
 
 export type AuthUser = {
   id: string;
@@ -45,7 +44,7 @@ export async function createUserWithPassword(
 export async function signInWithPassword(
   email: string,
   password: string,
-): Promise<{ accessToken: string; user: AuthUser } | null> {
+): Promise<{ session: IssuedSession; user: AuthUser } | null> {
   const row = await d1First<{ id: string; email: string; password_hash: string | null }>(
     `SELECT id, email, password_hash FROM auth_users
      WHERE email = ? AND deleted_at IS NULL`,
@@ -60,17 +59,10 @@ export async function signInWithPassword(
     row.id,
   );
 
-  const secret = getBindings().AUTH_JWT_SECRET;
-  if (!secret) throw new Error("AUTH_JWT_SECRET not configured");
-
-  const accessToken = await signJwt(secret, {
-    sub: row.id,
-    email: row.email,
-    expSeconds: 3600,
-  });
+  const session = await issueSession({ id: row.id, email: row.email });
 
   return {
-    accessToken,
+    session,
     user: { id: row.id, email: row.email, email_confirmed_at: null },
   };
 }

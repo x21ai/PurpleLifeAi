@@ -41,6 +41,12 @@ export type PurpleWorkerBindings = {
   APPLE_CLIENT_ID?: string;
   /** Apple client secret JWT (generated from .p8 key; rotate per Apple docs) */
   APPLE_CLIENT_SECRET?: string;
+  /** Optional. When set with APPLE_KEY_ID and APPLE_PRIVATE_KEY, the Worker signs the client secret. */
+  APPLE_TEAM_ID?: string;
+  APPLE_KEY_ID?: string;
+  APPLE_PRIVATE_KEY?: string;
+  /** Live Worker secret. Not the Doppler RESEND_KEY name. */
+  RESEND_API_KEY?: string;
   IMPORT_ADMIN_SECRET?: string;
 };
 
@@ -68,6 +74,10 @@ export function getWorkerBindings(env?: unknown): Partial<PurpleWorkerBindings> 
     GOOGLE_CLIENT_SECRET: e.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_CLIENT_SECRET,
     APPLE_CLIENT_ID: e.APPLE_CLIENT_ID ?? process.env.APPLE_CLIENT_ID,
     APPLE_CLIENT_SECRET: e.APPLE_CLIENT_SECRET ?? process.env.APPLE_CLIENT_SECRET,
+    APPLE_TEAM_ID: e.APPLE_TEAM_ID ?? process.env.APPLE_TEAM_ID,
+    APPLE_KEY_ID: e.APPLE_KEY_ID ?? process.env.APPLE_KEY_ID,
+    APPLE_PRIVATE_KEY: e.APPLE_PRIVATE_KEY ?? process.env.APPLE_PRIVATE_KEY,
+    RESEND_API_KEY: e.RESEND_API_KEY ?? process.env.RESEND_API_KEY,
     IMPORT_ADMIN_SECRET: e.IMPORT_ADMIN_SECRET ?? process.env.IMPORT_ADMIN_SECRET,
   };
 }

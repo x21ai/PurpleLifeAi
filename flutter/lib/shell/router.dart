@@ -43,6 +43,7 @@ import '../features/seizures/log_seizure_screen.dart';
 import '../features/vitals/biometrics_hub_screen.dart';
 import '../features/vitals/metric_detail_screen.dart';
 import '../features/ask_maya/ask_maya_screen.dart';
+import '../features/browse/browse_screen.dart';
 import '../features/data/data_screen.dart';
 import '../features/plan/plan_screen.dart';
 import '../features/today/today_risk_screen.dart';
@@ -174,6 +175,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: AppRoutes.askMaya,
             name: 'ask-maya',
             builder: (context, state) => const AskMayaScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.browse,
+            name: 'browse',
+            builder: (context, state) => const BrowseScreen(),
           ),
           GoRoute(
             path: AppRoutes.myHealth,

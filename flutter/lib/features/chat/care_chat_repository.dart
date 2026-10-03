@@ -327,7 +327,20 @@ class CareChatRepository {
     String threadId,
     void Function(CareMessage message) onInsert,
   ) {
+    void deliver(Map<String, dynamic> record) {
+      if (record.isEmpty) return;
+      try {
+        onInsert(CareMessage.fromMap(record));
+      } catch (_) {
+        // Ignore malformed realtime payloads.
+      }
+    }
+
     final channel = _supabase.channel('care-thread-$threadId');
+    if (_supabase.usesCloudflare) {
+      channel.pollCareInserts(threadId: threadId, onInsert: deliver);
+      return channel;
+    }
     channel
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
@@ -339,13 +352,7 @@ class CareChatRepository {
             value: threadId,
           ),
           callback: (payload) {
-            final record = payload.newRecord;
-            if (record.isEmpty) return;
-            try {
-              onInsert(CareMessage.fromMap(Map<String, dynamic>.from(record)));
-            } catch (_) {
-              // Ignore malformed realtime payloads.
-            }
+            deliver(Map<String, dynamic>.from(payload.newRecord));
           },
         )
         .subscribe();

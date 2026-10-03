@@ -29,7 +29,7 @@ void main() {
             'expires_in': 3600,
             'user': {
               'id': 'user-1',
-              'email': 'devynrosewalker@gmail.com',
+              'email': 'gap-check@example.test',
             },
           }),
           200,
@@ -51,7 +51,7 @@ void main() {
 
     final repo = AuthRepository(config: config, httpClient: httpClient);
     final response = await repo.signInWithEmail(
-      email: 'devynrosewalker@gmail.com',
+      email: 'gap-check@example.test',
       password: 'secret',
     );
 
@@ -60,7 +60,7 @@ void main() {
     expect(seen.single.url.toString(), 'https://www.purplelife.org/api/auth/sign-in');
     expect(seen.single.headers['content-type'], 'application/json');
     final signInBody = jsonDecode(seen.single.body) as Map<String, dynamic>;
-    expect(signInBody['email'], 'devynrosewalker@gmail.com');
+    expect(signInBody['email'], 'gap-check@example.test');
 
     final rows = await repo.client.from('profiles').select('id').eq('id', 'user-1');
     expect(rows.single['id'], 'user-1');

@@ -191,7 +191,7 @@ class _ReportDetailBodyState extends ConsumerState<_ReportDetailBody> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: PloyColors.surface,
-        title: const Text(
+        title: Text(
           'Delete this report?',
           style: TextStyle(color: PloyColors.ink),
         ),

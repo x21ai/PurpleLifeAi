@@ -9,61 +9,54 @@ import 'routes.dart';
 
 class _NavTab {
   const _NavTab({
-    required this.path,
     required this.icon,
     required this.label,
+    this.path,
   });
 
-  final String path;
+  final String? path;
   final IconData icon;
   final String label;
 }
 
-/// Frosted glass tab bar with center FAB (ports bottom-nav.tsx native variant).
+/// Ploy pilot tab bar: Today, Journal, Browse, and a More sheet.
 class BottomNav extends StatelessWidget {
   const BottomNav({super.key, required this.location});
 
   final String location;
 
   static const _tabs = [
-    _NavTab(path: AppRoutes.today, icon: Icons.wb_sunny_outlined, label: 'Today'),
+    _NavTab(path: AppRoutes.today, icon: Icons.home_outlined, label: 'Today'),
     _NavTab(
-      path: AppRoutes.data,
-      icon: Icons.insights_outlined,
-      label: 'Data',
+      path: AppRoutes.journal,
+      icon: Icons.menu_book_outlined,
+      label: 'Journal',
     ),
     _NavTab(
-      path: AppRoutes.plan,
-      icon: Icons.auto_stories_outlined,
-      label: 'Plan',
+      path: AppRoutes.browse,
+      icon: Icons.grid_view_rounded,
+      label: 'Browse',
     ),
-    _NavTab(
-      path: AppRoutes.askMaya,
-      icon: Icons.chat_bubble_outline,
-      label: 'Ask Maya',
-    ),
+    _NavTab(icon: Icons.menu_rounded, label: 'More'),
   ];
 
-  bool _isActive(String path) {
-    if (path == AppRoutes.data) {
-      return location == AppRoutes.data ||
-          location == AppRoutes.vitals ||
-          location.startsWith('${AppRoutes.vitals}/') ||
-          location == AppRoutes.biometrics ||
-          location.startsWith('${AppRoutes.biometrics}/') ||
-          location.startsWith(AppRoutes.reportsTrendsPrefix) ||
-          location.startsWith('${AppRoutes.reports}/');
+  bool _isActive(_NavTab tab) {
+    final path = tab.path;
+    if (path == null) return false;
+    if (path == AppRoutes.today) {
+      return location == AppRoutes.today ||
+          location.startsWith('${AppRoutes.today}/');
     }
-    if (path == AppRoutes.plan) {
-      return location == AppRoutes.plan ||
-          location.startsWith('${AppRoutes.plan}/') ||
-          location == AppRoutes.timeline ||
-          location.startsWith('${AppRoutes.timeline}/');
+    if (path == AppRoutes.journal) {
+      return location == AppRoutes.journal ||
+          location.startsWith('${AppRoutes.journal}/');
     }
-    if (path == AppRoutes.askMaya) {
-      return location == AppRoutes.askMaya ||
-          location == AppRoutes.chat ||
-          location.startsWith('${AppRoutes.chat}/');
+    if (path == AppRoutes.browse) {
+      final onToday = location == AppRoutes.today ||
+          location.startsWith('${AppRoutes.today}/');
+      final onJournal = location == AppRoutes.journal ||
+          location.startsWith('${AppRoutes.journal}/');
+      return !onToday && !onJournal;
     }
     return location == path || location.startsWith('$path/');
   }
@@ -92,7 +85,6 @@ class BottomNav extends StatelessWidget {
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: purpleMaxContentWidth),
             child: ClipRRect(
-              clipBehavior: Clip.none,
               borderRadius: BorderRadius.circular(28),
               child: GlassSurface(
                 variant: GlassMaterialVariant.nav,
@@ -102,11 +94,16 @@ class BottomNav extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Expanded(child: _TabButton(tab: _tabs[0], active: _isActive(_tabs[0].path))),
-                    Expanded(child: _TabButton(tab: _tabs[1], active: _isActive(_tabs[1].path))),
-                    const Expanded(child: _CaptureFab()),
-                    Expanded(child: _TabButton(tab: _tabs[2], active: _isActive(_tabs[2].path))),
-                    Expanded(child: _TabButton(tab: _tabs[3], active: _isActive(_tabs[3].path))),
+                    for (final tab in _tabs)
+                      Expanded(
+                        child: _TabButton(
+                          tab: tab,
+                          active: _isActive(tab),
+                          onTap: tab.path == null
+                              ? () => showPloyMoreSheet(context)
+                              : () => context.go(tab.path!),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -119,14 +116,19 @@ class BottomNav extends StatelessWidget {
 }
 
 class _TabButton extends StatelessWidget {
-  const _TabButton({required this.tab, required this.active});
+  const _TabButton({
+    required this.tab,
+    required this.active,
+    required this.onTap,
+  });
 
   final _NavTab tab;
   final bool active;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? PurpleColors.purplePrimary : PurpleColors.foregroundTertiary;
+    final color = active ? PloyColors.accent : PloyColors.muted;
 
     return Semantics(
       button: true,
@@ -135,18 +137,16 @@ class _TabButton extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => context.go(tab.path),
+          onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 60),
             child: Padding(
-              padding: const EdgeInsets.only(top: 2, bottom: 0),
+              padding: const EdgeInsets.only(top: 2),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Web `nav-glass-tab-active`: active icon sits in a soft
-                  // purple pill and reads heavier than inactive tabs.
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 140),
                     curve: Curves.easeOutCubic,
@@ -154,20 +154,17 @@ class _TabButton extends StatelessWidget {
                     height: 30,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(15),
-                      color: active ? PloyColors.surface : Colors.transparent,
-                      border: active
-                          ? Border.all(color: PloyColors.line)
-                          : null,
+                      color: active ? PloyColors.tint : Colors.transparent,
                     ),
                     child: Center(
-                      child: Icon(tab.icon, size: 24, color: color),
+                      child: Icon(tab.icon, size: 22, color: color),
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     tab.label,
                     maxLines: 1,
-                    overflow: TextOverflow.visible,
+                    overflow: TextOverflow.ellipsis,
                     softWrap: false,
                     style: TextStyle(
                       fontSize: 11,
@@ -186,54 +183,101 @@ class _TabButton extends StatelessWidget {
   }
 }
 
-class _CaptureFab extends StatelessWidget {
-  const _CaptureFab();
+class _MoreDestination {
+  const _MoreDestination({
+    required this.label,
+    required this.detail,
+    required this.path,
+    required this.icon,
+  });
 
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'Capture',
-      child: Transform.translate(
-        offset: const Offset(0, -12),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => context.go(AppRoutes.journalNew),
-            customBorder: const CircleBorder(),
-            child: Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: PurpleColors.purplePrimary,
-                border: Border.all(color: PurpleColors.glassNavBorder, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: PurpleColors.purplePrimary.withValues(alpha: 0.4),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.add,
-                size: 28,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  final String label;
+  final String detail;
+  final String path;
+  final IconData icon;
 }
 
-/// Bottom inset for tabbed shell body (native-nav-inset equivalent).
+const _moreDestinations = [
+  _MoreDestination(
+    label: 'Account and profile',
+    detail: 'Region, session, and account details',
+    path: AppRoutes.account,
+    icon: Icons.person_outline,
+  ),
+  _MoreDestination(
+    label: 'Privacy and safety',
+    detail: 'Review your data boundaries',
+    path: AppRoutes.settingsPrivacy,
+    icon: Icons.verified_user_outlined,
+  ),
+  _MoreDestination(
+    label: 'Sharing and caregivers',
+    detail: 'Manage read-only access',
+    path: AppRoutes.settingsSharing,
+    icon: Icons.share_outlined,
+  ),
+  _MoreDestination(
+    label: 'Your data',
+    detail: 'Sources and export controls',
+    path: AppRoutes.data,
+    icon: Icons.storage_outlined,
+  ),
+  _MoreDestination(
+    label: 'Travel planning',
+    detail: 'Preview schedule timing',
+    path: AppRoutes.settingsTravel,
+    icon: Icons.flight_takeoff,
+  ),
+  _MoreDestination(
+    label: 'All settings',
+    detail: 'Open every PurpleLife control',
+    path: AppRoutes.settings,
+    icon: Icons.settings_outlined,
+  ),
+];
+
+void showPloyMoreSheet(BuildContext context) {
+  showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    backgroundColor: PloyColors.surface,
+    builder: (sheetContext) {
+      final bottom = MediaQuery.paddingOf(sheetContext).bottom;
+      return SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: EdgeInsets.fromLTRB(8, 0, 8, bottom + 12),
+          children: [
+            for (final item in _moreDestinations)
+              ListTile(
+                leading: Icon(item.icon, color: PloyColors.accent),
+                title: Text(
+                  item.label,
+                  style: TextStyle(
+                    color: PloyColors.ink,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  item.detail,
+                  style: TextStyle(color: PloyColors.muted),
+                ),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  context.go(item.path);
+                },
+              ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+/// Bottom inset for tabbed shell body. Matches the Ploy tab bar, no center FAB.
 double shellTabBarInset(BuildContext context) {
-  const navBarHeight = 60.0;
-  const fabOverflow = 12.0;
+  const navBarHeight = 64.0;
   final bottomInset = MediaQuery.paddingOf(context).bottom;
   final safeBottom = bottomInset > 10 ? bottomInset : 10.0;
-  return navBarHeight + fabOverflow + safeBottom + 8;
+  return navBarHeight + safeBottom + 8;
 }

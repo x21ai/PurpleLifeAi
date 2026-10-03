@@ -1,8 +1,8 @@
 import { resolveOAuthSiteOrigin } from "@/lib/oauth-allowed-origins";
 import { d1First, d1Run } from "../d1/client";
 import { getBindings } from "../bindings";
-import { signJwt } from "./jwt";
 import { importAuthUser } from "./service";
+import { issueSession, type IssuedSession } from "./sessions";
 
 export type OAuthCompleteInput = {
   provider: string;
@@ -12,11 +12,7 @@ export type OAuthCompleteInput = {
   identityData: unknown;
 };
 
-export type OAuthCompleteResult = {
-  access_token: string;
-  expires_in: number;
-  user: { id: string; email: string };
-};
+export type OAuthCompleteResult = IssuedSession;
 
 /** Find or create auth_users row, link auth_identities, issue Workers JWT. */
 export async function completeOAuthSignIn(
@@ -63,20 +59,15 @@ export async function completeOAuthSignIn(
     JSON.stringify(input.identityData),
   );
 
-  const secret = getBindings().AUTH_JWT_SECRET ?? process.env.AUTH_JWT_SECRET;
-  if (!secret) return { error: "Auth not configured", status: 500 };
-
-  const accessToken = await signJwt(secret, {
-    sub: user.id,
-    email: user.email,
-    expSeconds: 3600,
-  });
-
-  return {
-    access_token: accessToken,
-    expires_in: 3600,
-    user: { id: user.id, email: user.email },
-  };
+  try {
+    return await issueSession({ id: user.id, email: user.email });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Auth not configured";
+    if (message.includes("AUTH_JWT_SECRET")) {
+      return { error: "Auth not configured", status: 500 };
+    }
+    throw error;
+  }
 }
 
 /** Resolve public site origin for OAuth redirect URIs (allowlisted hosts only). */

@@ -25,6 +25,7 @@ export const Route = createFileRoute("/oauth/google/callback")({
 
     const session = {
       access_token: data.access_token as string,
+      refresh_token: data.refresh_token as string | undefined,
       expires_in: (data.expires_in as number) ?? 3600,
       user: data.user as { id: string; email?: string | null },
     };

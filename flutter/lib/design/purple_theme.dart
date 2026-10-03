@@ -4,11 +4,11 @@ import 'ploy_colors.dart';
 import 'tokens.dart';
 import 'purple_type.dart';
 
-/// App canvas. Value is the live Ploy canvas (`--purplelife-canvas`).
-const Color purpleCanvasDark = PloyColors.canvas;
+/// App canvas. Follows the active Ploy appearance.
+Color get purpleCanvasDark => PloyColors.canvas;
 
-/// Foreground on the app canvas (`--purplelife-ink`).
-const Color purpleForegroundDark = PloyColors.ink;
+/// Foreground on the app canvas.
+Color get purpleForegroundDark => PloyColors.ink;
 
 /// Dark-default [ThemeData] mapped from [design/tokens.json].
 class PurpleTheme {
@@ -340,10 +340,10 @@ class PurpleTheme {
   }
 }
 
-/// Production theme. Both appearances use the live Ploy light palette.
+/// Dark Ploy theme. Light and dark are different palettes.
 ThemeData buildPurpleDarkTheme({PurpleTokens? tokens}) {
   return PurpleTheme._build(
-    appearance: 'light',
+    appearance: 'dark',
     tokens: tokens ?? PurpleTokens.loaded,
   );
 }
@@ -400,9 +400,10 @@ double get purpleMaxContentWidth => PurpleTokens.loaded.layout.contentMaxWidth;
 /// Semantic colors for shell chrome (dark-default token mapping).
 abstract final class PurpleColors {
   static PurpleColorTokens get _colors =>
-      PurpleTokens.loaded.colorsFor('dark');
+      PurpleTokens.loaded.colorsFor(PloyColors.appearance);
 
-  static PurpleGlassTokens get _glass => PurpleTokens.loaded.glassFor('dark');
+  static PurpleGlassTokens get _glass =>
+      PurpleTokens.loaded.glassFor(PloyColors.appearance);
 
   static Color get background => parseTokenColor(_colors.backgroundPrimary);
 

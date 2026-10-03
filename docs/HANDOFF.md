@@ -1,5 +1,8 @@
 ## Current snapshot
 
+**2026-10-03 gap close in git, not deployed (PurpleLifeAi | eigital):**
+Password reset stores a one-time token and sends mail with Worker `RESEND_API_KEY` for any account. Unknown addresses still return `{ok:true}` and a failed send returns 502. Access JWTs stay 1 hour. `POST /api/auth/refresh` rotates a 30-day refresh token on web and Flutter. Care chat polls `POST /api/realtime/care-messages` every 2 seconds. Flutter appearance Dark and System switch. Tabs are Today, Journal, Browse, and More. Sign-in scrolls instead of clipping the button. Build is `1.0.0+34` and is not uploaded. Play upload still needs an owner keystore and Play Console. Google, Apple, and Whoop consoles are not configured. No Worker deploy. No D1/R2 wipe. No existing password was changed.
+
 **2026-10-03 TF 1.0 (33) uploaded, Founding Team (PurpleLifeAi | eigital):**
 main `04672fadb600a07ca7f6d454e9feba1f91e34527` (PR #73 full Ploy light shell). pubspec `1.0.0+33`. Mac archive `bun run ios:testflight` (ASC secrets from Doppler `x21/prd`; Flutter defines `x21/prd_cloudflare`). ASC build `5864cec4-0e3a-4745-84ee-214af69f70ad` processing=VALID, uploaded 2026-10-03 09:24 EDT. External group Founding Team includes build 33. Beta App Review `APPROVED` (submission first reported `WAITING_FOR_REVIEW`). external=`IN_BETA_TESTING`, internal=`IN_BETA_TESTING`. No Worker deploy. No D1/R2 wipe.
 
@@ -209,6 +212,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-10-03T14:55:00Z - Close remaining PurpleLife gaps, build 34
+
+- **Requested:** Password reset mail for every user, session refresh, live care chat, OAuth and Whoop code gaps, Android Play signing path, Flutter matching live Ploy (including Dark and System), and login that does not clip. One PR. Do not deploy, upload TestFlight, wipe D1/R2, change an existing password, or email anyone.
+- **Done:** Opaque reset tokens in `auth_password_resets`, Resend via Worker `RESEND_API_KEY`, redeem on `/reset-password`. Refresh tokens rotate on `POST /api/auth/refresh`. Care chat polls. Apple `form_post` plus client-secret JWT when the private key is set. Whoop tokens and biometric days write to D1 on the Cloudflare path. Flutter shell is Today / Journal / Browse / More. Dark and System bind a real dark palette. Access pages scroll inside the safe area. Android release reads an owner keystore and the Play script refuses the debug key. `flutter/pubspec.yaml` is `1.0.0+34`.
+- **Issues:** Live www does not send mail or refresh until an operator deploys. Google, Apple, and Whoop consoles still need redirect URIs. Play upload still needs the owner keystore and Play Console. MFA enroll and storage delete stay open. No existing password was changed. Reset proof used synthetic in-memory users only.
+- **Stand / next:** PR open. Operator deploys Workers when ready, adds the console redirect URIs, and supplies the Play keystore. Do not upload TestFlight from this agent.
+- **Who / where:** PurpleLifeAi | eigital, cloud agent, `cursor/close-purplelife-gaps-0261`.
+- **Evidence:** `bun test` 16/16 (bindings, password reset, refresh, care poll). `flutter analyze` clean. `flutter test` 288/288.
+- **Timestamp:** 2026-10-03T14:55:00Z
 
 ### 2026-10-03T12:20:14Z - Flutter signed-in app uses the Ploy light system, build 33
 

@@ -49,12 +49,7 @@ export const Route = createFileRoute("/api/auth/sign-in")({
             return Response.json({ error: "Invalid credentials" }, { status: 401 });
           }
 
-          return Response.json({
-            access_token: result.accessToken,
-            token_type: "bearer",
-            expires_in: 3600,
-            user: result.user,
-          });
+          return Response.json(result.session);
         } catch (error) {
           // Returning a Response keeps h3 from rewriting the throw as the
           // HTML crash page (unhandled HTTPError). Do not echo the raw error:

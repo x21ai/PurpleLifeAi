@@ -62,6 +62,13 @@ class AuthDeepLinkService {
     if (!_isAuthDeepLink(uri)) return;
 
     if (uri.host == 'reset-password') {
+      final resetToken = uri.queryParameters['reset_token'];
+      if (resetToken != null && resetToken.isNotEmpty) {
+        _router.go(
+          '${AppRoutes.resetPassword}?reset_token=${Uri.encodeQueryComponent(resetToken)}',
+        );
+        return;
+      }
       await _completeAuthCallback(
         uri,
         onSuccess: () => _router.go(AppRoutes.resetPassword),

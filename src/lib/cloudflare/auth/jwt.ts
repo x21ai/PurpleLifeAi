@@ -96,5 +96,7 @@ export async function verifyJwt(
   if (claims.exp <= now) return null;
   if (claims.iss && claims.iss !== ISSUER) return null;
   if (!claims.sub) return null;
+  // Reset links are opaque database tokens, never access tokens.
+  if (claims.role === "password_reset") return null;
   return claims;
 }

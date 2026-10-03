@@ -320,7 +320,7 @@ class TodayYourSignals extends StatelessWidget {
                             maxLines: 1,
                             softWrap: false,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               height: 1,
@@ -367,7 +367,7 @@ class _SignalsEmpty extends StatelessWidget {
               isToday
                   ? 'Connect a device to see your signals'
                   : 'No signals recorded on ${dateLabel ?? 'this day'}.',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: PloyColors.ink,
@@ -834,7 +834,7 @@ class _TrendMetric extends StatelessWidget {
             ),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: PloyColors.ink,

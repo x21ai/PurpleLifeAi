@@ -664,7 +664,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: PloyColors.surface,
-        title: const Text('Leave this chat?',
+        title: Text('Leave this chat?',
             style: TextStyle(color: PloyColors.ink)),
         content: Text(
           'You can be re-added later by the chat owner.',
@@ -920,7 +920,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                             widget.thread.muted
                                 ? 'Unmute notifications'
                                 : 'Mute notifications',
-                            style: const TextStyle(color: PloyColors.ink),
+                            style: TextStyle(color: PloyColors.ink),
                           ),
                         ],
                       ),
@@ -1038,7 +1038,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                     backgroundColor: PloyColors.fromWhiteAlpha(0.08),
                     label: Text(
                       file.name,
-                      style: const TextStyle(color: PloyColors.ink, fontSize: 12),
+                      style: TextStyle(color: PloyColors.ink, fontSize: 12),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

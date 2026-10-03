@@ -1,7 +1,7 @@
 /**
  * Browser-side query builder: proxies to POST /api/data/query.
  */
-import { getCloudflareSession } from "@/lib/auth/cloudflare-session";
+import { ensureFreshCloudflareSession, getCloudflareSession } from "@/lib/auth/cloudflare-session";
 import type { ParsedOrClause } from "./filter-parser";
 import { parseOrFilter } from "./filter-parser";
 
@@ -129,25 +129,32 @@ export class ApiQueryBuilder<T = Record<string, unknown>> {
     error: Error | null;
     count?: number | null;
   }> {
-    const res = await fetch("/api/data/query", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...this.authHeaders() },
-      body: JSON.stringify({
-        table: this.table,
-        mode: this.mode,
-        select: this.selectCols,
-        returnSelect: this.returnSelect,
-        filters: this.filters,
-        orGroups: this.orGroups,
-        order: this.orderBy,
-        limit: this.limitN,
-        countExact: this.countExact,
-        countHead: this.countHead,
-        insert: this.insertRow,
-        update: this.updateRow,
-        onConflict: this.onConflict,
-      }),
-    });
+    await ensureFreshCloudflareSession();
+    const send = () =>
+      fetch("/api/data/query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...this.authHeaders() },
+        body: JSON.stringify({
+          table: this.table,
+          mode: this.mode,
+          select: this.selectCols,
+          returnSelect: this.returnSelect,
+          filters: this.filters,
+          orGroups: this.orGroups,
+          order: this.orderBy,
+          limit: this.limitN,
+          countExact: this.countExact,
+          countHead: this.countHead,
+          insert: this.insertRow,
+          update: this.updateRow,
+          onConflict: this.onConflict,
+        }),
+      });
+    let res = await send();
+    if (res.status === 401) {
+      const refreshed = await ensureFreshCloudflareSession(true);
+      if (refreshed) res = await send();
+    }
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {
       return { data: null, error: new Error(body.error ?? res.statusText) };

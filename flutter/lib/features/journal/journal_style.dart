@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../design/ploy_colors.dart';
 import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 
@@ -10,19 +11,16 @@ import '../../design/tokens.dart';
 class JournalPalette {
   JournalPalette._(this._colors, this._glass);
 
-  factory JournalPalette.light() {
-    final tokens = PurpleTokens.loaded;
-    return JournalPalette._(
-      tokens.colorsFor('light'),
-      tokens.glassFor('light'),
-    );
-  }
+  factory JournalPalette.light() => JournalPalette._current();
 
-  factory JournalPalette.dark() {
+  factory JournalPalette.dark() => JournalPalette._current();
+
+  factory JournalPalette._current() {
     final tokens = PurpleTokens.loaded;
+    final appearance = PloyColors.appearance;
     return JournalPalette._(
-      tokens.colorsFor('dark'),
-      tokens.glassFor('dark'),
+      tokens.colorsFor(appearance),
+      tokens.glassFor(appearance),
     );
   }
 

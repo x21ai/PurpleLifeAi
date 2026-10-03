@@ -54,16 +54,12 @@ export const whoopBackfill = createServerFn({ method: "POST" })
     z.object({ days: z.number().int().min(1).max(90).default(30) }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { syncWhoopRange } = await import("./whoop.server");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { syncWhoopRange, touchWhoopLastSync } = await import("./whoop.server");
     const end = new Date().toISOString().slice(0, 10);
     const start = new Date(Date.now() - data.days * 24 * 3600 * 1000)
       .toISOString()
       .slice(0, 10);
     const result = await syncWhoopRange(context.userId, start, end);
-    await supabaseAdmin
-      .from("whoop_tokens")
-      .update({ last_sync_at: new Date().toISOString() })
-      .eq("user_id", context.userId);
+    await touchWhoopLastSync(context.userId);
     return { ok: true, ...result };
   });

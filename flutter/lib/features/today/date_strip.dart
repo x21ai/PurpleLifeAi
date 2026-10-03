@@ -126,18 +126,18 @@ class _DateStripState extends State<DateStrip> {
             Expanded(
               child: Text(
                 DateFormat('MMM d').format(selected),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: PloyColors.ink,
-                  fontFeatures: [FontFeature.tabularFigures()],
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
             ),
             if (!isToday) ...[
               _GlassPillButton(
                 onTap: () => widget.onChanged(today),
-                child: const Text(
+                child: Text(
                   'Today',
                   style: TextStyle(
                     fontSize: 11,
@@ -334,11 +334,11 @@ class _GlassPillButton extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: 28, minWidth: 28),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: parseTokenColor(tokens.glassFor('dark').fillThin),
+              color: parseTokenColor(tokens.glassFor(PloyColors.appearance).fillThin),
               borderRadius: BorderRadius.circular(tokens.radius.pill),
               border: Border.all(
-                color: parseTokenColor(tokens.glassFor('dark').border),
-                width: tokens.glassFor('dark').borderWidthPx,
+                color: parseTokenColor(tokens.glassFor(PloyColors.appearance).border),
+                width: tokens.glassFor(PloyColors.appearance).borderWidthPx,
               ),
             ),
             child: Center(widthFactor: 1, child: child),

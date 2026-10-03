@@ -165,7 +165,7 @@ class _NativeAppShellState extends State<NativeAppShell> {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            const ColoredBox(color: CanvasBackground.canvasColor),
+            ColoredBox(color: CanvasBackground.canvasColor),
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: RadialGradient(

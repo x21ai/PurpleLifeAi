@@ -16,7 +16,14 @@ Format:
   `tf33-ploy-signin-upload`. Build 32 was not uploaded. Build 33 keeps the
   Worker JWT sign-in and replaces the dark sign-in chrome.
 
-- [ ] **`tf33-ploy-signin-upload`** — `flutter/pubspec.yaml` is `1.0.0+33`.
+- [ ] **`tf34-gap-close-upload`** — `flutter/pubspec.yaml` is `1.0.0+34`.
+  Reset mail, refresh, care poll, Dark/System, and the Today/Journal/Browse
+  shell are in git. Not uploaded. Not deployed. Do not upload 31, 32, or 33
+  as the next build. _Raised 2026-10-03._
+
+- [x] ~~**`tf33-ploy-signin-upload`**~~ — SUPERSEDED 2026-10-03 by
+  `tf34-gap-close-upload`. Build 33 was uploaded earlier the same day.
+  `flutter/pubspec.yaml` is `1.0.0+33`.
   Sign-in uses the Ploy shield, and the signed-in app uses the same light
   Ploy palette. Password sign-in still uses Worker `POST /api/auth/sign-in`
   and that JWT on `/api/data/query`. Mac operator merges, then
@@ -29,23 +36,19 @@ Format:
   Journal, Vitals, Tools, Settings, Ask Maya, care, reports, sheets, and
   empty states use the Ploy light tokens. No dark liquid-glass shell remains.
 
-- [ ] **`flutter-native-oauth-www-deploy`** — Google/Apple sign-in from the
-  Flutter app opens Worker `/api/auth/oauth/{provider}` and expects the www
-  callback to redirect to `org.purplelife.app://auth-callback` with
-  `access_token`. That handoff is in `src/lib/auth/native-oauth-handoff.ts`
-  and the Google/Apple callback routes. Live www does not do it until an
-  operator deploys Workers. Password sign-in does not need that deploy.
-  _Raised 2026-10-02._
+- [ ] **`flutter-native-oauth-www-deploy`** — Google/Apple/Whoop code is in
+  git, including Apple `form_post` and refresh tokens on the handoff. Live
+  www does not do it until an operator deploys Workers. The consoles still
+  need the redirect URIs listed in the gap-close PR. Password sign-in does
+  not need that deploy. _Raised 2026-10-02. Updated 2026-10-03._
 
-- [ ] **`flutter-worker-jwt-no-refresh`** — Cloudflare session JWTs last 3600
-  seconds. There is no refresh route. Flutter signs out on expiry or on
-  `GET /api/auth/verify` 401. _Raised 2026-10-02._
+- [x] ~~**`flutter-worker-jwt-no-refresh`**~~ — RESOLVED 2026-10-03 in git:
+  `POST /api/auth/refresh` rotates a hashed 30-day token. Access JWTs stay
+  3600 seconds. Live www does this only after a Worker deploy.
 
-- [ ] **`flutter-cloudflare-realtime-mfa-storage-delete`** — On
-  `DATA_BACKEND=cloudflare`, care chat realtime is a no-op, MFA enroll is
-  unavailable, and storage `remove` is a no-op (same as the web shim).
-  Password reset request hits `/api/auth/reset-request`, which does not send
-  mail. _Raised 2026-10-02._
+- [ ] **`flutter-cloudflare-realtime-mfa-storage-delete`** — Care chat poll
+  and password-reset mail are in git (2026-10-03). MFA enroll is still
+  unavailable, and storage `remove` is still a no-op. _Raised 2026-10-02._
 
 ## Sign-in D1 binding clobber (raised 2026-09-29)
 
@@ -95,11 +98,11 @@ Format:
 
 ## Step 8 Flutter Android Play (raised 2026-09-20)
 
-- [ ] **`step8-android-play-signing`** — Flutter Android Release still signs with debug
-  keystore (`flutter/android/app/build.gradle.kts`); no Play Console app, upload keystore,
-  or Play Developer API service account. AAB build script exists (`bun run android:release`)
-  but Play upload is manual/blocked. Target: `docs/templates/play-store-automation-plan.md`.
-  _Raised 2026-09-20 by Step 8 runbook._
+- [ ] **`step8-android-play-signing`** — Release Gradle reads
+  `PURPLE_UPLOAD_STORE_*` or gitignored `flutter/android/key.properties`.
+  `scripts/flutter-android-release.sh` refuses a debug-signed Play bundle.
+  Still blocked on an owner upload keystore and Play Console access. No
+  keystore is in git. _Raised 2026-09-20 by Step 8 runbook. Updated 2026-10-03._
 
 ## Agent / CI environment (raised 2026-07-13)
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build Purple Flutter Android release artifacts (AAB + optional APK).
 #
-# Does not upload to Google Play (Play signing automation not implemented yet).
+# Does not upload to Google Play. Release signing requires an owner upload keystore.
 # See docs/STEP8-FLUTTER-REBUILD.md and docs/templates/play-store-automation-plan.md.
 #
 # Usage:
@@ -39,10 +39,31 @@ log "Running Flutter analyze + test"
 flutter analyze lib/
 flutter test
 
-log "Release signing uses debug keystore until Play upload keystore is configured"
-log "See flutter/android/app/build.gradle.kts and docs/STEP8-FLUTTER-REBUILD.md"
+KEY_PROPS="${FLUTTER_DIR}/android/key.properties"
+has_upload_key=false
+if [[ -n "${PURPLE_UPLOAD_STORE_FILE:-}" && -n "${PURPLE_UPLOAD_STORE_PASSWORD:-}" && -n "${PURPLE_UPLOAD_KEY_ALIAS:-}" && -n "${PURPLE_UPLOAD_KEY_PASSWORD:-}" ]]; then
+  if [[ ! -f "${PURPLE_UPLOAD_STORE_FILE}" ]]; then
+    fail "PURPLE_UPLOAD_STORE_FILE is set but the keystore file is missing. Do not commit the keystore."
+  fi
+  has_upload_key=true
+elif [[ -f "${KEY_PROPS}" ]]; then
+  missing=""
+  for key in storeFile storePassword keyAlias keyPassword; do
+    if ! grep -Eq "^[[:space:]]*${key}[[:space:]]*=" "${KEY_PROPS}"; then
+      missing="${missing} ${key}"
+    fi
+  done
+  if [[ -n "${missing}" ]]; then
+    fail "flutter/android/key.properties is missing:${missing}. Do not commit that file or the keystore."
+  fi
+  has_upload_key=true
+fi
 
-log "Building appbundle (release) with Doppler dart-defines"
+if [[ "${has_upload_key}" != "true" ]]; then
+  fail "Play upload signing needs an owner keystore and Play Console access. Set PURPLE_UPLOAD_STORE_FILE, PURPLE_UPLOAD_STORE_PASSWORD, PURPLE_UPLOAD_KEY_ALIAS, and PURPLE_UPLOAD_KEY_PASSWORD, or create gitignored flutter/android/key.properties. This script will not sign a Play bundle with the debug key."
+fi
+
+log "Building appbundle (release) with the upload keystore and Doppler dart-defines"
 doppler run --project "${FLUTTER_DOPPLER_PROJECT}" --config "${FLUTTER_DOPPLER_CONFIG}" -- bash -c '
   # shellcheck source=lib/flutter-dart-defines.sh
   source "'"${REPO_ROOT}"'/scripts/lib/flutter-dart-defines.sh"

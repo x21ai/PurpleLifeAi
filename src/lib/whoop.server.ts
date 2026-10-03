@@ -6,6 +6,14 @@
  * Whoop API v2 docs: https://developer.whoop.com/api
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { isCloudflareBackend } from "@/lib/cloudflare/data-backend";
+import { getBindings } from "@/lib/cloudflare/bindings";
+import {
+  listWhoopTokens,
+  readWhoopToken,
+  replaceWhoopBiometricDay,
+  upsertWhoopToken,
+} from "@/lib/cloudflare/whoop-d1";
 
 const WHOOP_TOKEN_URL = "https://api.prod.whoop.com/oauth/oauth2/token";
 const WHOOP_API_BASE = "https://api.prod.whoop.com/developer";
@@ -80,6 +88,23 @@ async function refreshWhoopToken(refresh_token: string) {
 }
 
 async function getValidAccessToken(user_id: string): Promise<string | null> {
+  if (isCloudflareBackend(getBindings())) {
+    const row = await readWhoopToken(user_id);
+    if (!row) return null;
+    const expiresAt = row.expires_at ? new Date(row.expires_at).getTime() : 0;
+    if (expiresAt - Date.now() > 60_000) return row.access_token;
+    if (!row.refresh_token) return row.access_token;
+    const refreshed = await refreshWhoopToken(row.refresh_token);
+    const newExpires = new Date(Date.now() + (refreshed.expires_in ?? 3600) * 1000).toISOString();
+    await upsertWhoopToken(user_id, {
+      access_token: refreshed.access_token,
+      refresh_token: refreshed.refresh_token ?? row.refresh_token,
+      token_type: refreshed.token_type,
+      scope: refreshed.scope,
+      expires_at: newExpires,
+    });
+    return refreshed.access_token;
+  }
   const { data: row } = await supabaseAdmin
     .from("whoop_tokens")
     .select("*")
@@ -324,6 +349,15 @@ export async function syncWhoopRange(
 
     const dayStart = new Date(`${day}T00:00:00Z`).toISOString();
     const dayEnd = new Date(`${day}T23:59:59Z`).toISOString();
+    if (isCloudflareBackend(getBindings())) {
+      try {
+        await replaceWhoopBiometricDay(user_id, dayStart, dayEnd, row);
+        upserts++;
+      } catch (error) {
+        console.error("whoop biometrics insert error", day, error instanceof Error ? error.message : error);
+      }
+      continue;
+    }
     await supabaseAdmin
       .from("biometrics")
       .delete()
@@ -348,6 +382,24 @@ export async function persistTokensAndBackfill(
   const expires_at = new Date(
     Date.now() + (tok.expires_in ?? 3600) * 1000,
   ).toISOString();
+  if (isCloudflareBackend(getBindings())) {
+    await upsertWhoopToken(user_id, {
+      access_token: tok.access_token,
+      refresh_token: tok.refresh_token,
+      token_type: tok.token_type,
+      scope: tok.scope,
+      expires_at,
+    });
+    const end = isoDateOnly(new Date());
+    const start = isoDateOnly(new Date(Date.now() - backfillDays * 24 * 3600 * 1000));
+    const result = await syncWhoopRange(user_id, start, end);
+    await upsertWhoopToken(user_id, {
+      access_token: tok.access_token,
+      refresh_token: tok.refresh_token,
+      last_sync_at: new Date().toISOString(),
+    });
+    return result;
+  }
   await supabaseAdmin
     .from("whoop_tokens")
     .upsert(
@@ -373,6 +425,22 @@ export async function persistTokensAndBackfill(
   return result;
 }
 
+export async function touchWhoopLastSync(user_id: string): Promise<void> {
+  if (isCloudflareBackend(getBindings())) {
+    const existing = await readWhoopToken(user_id);
+    if (!existing) return;
+    await upsertWhoopToken(user_id, {
+      access_token: existing.access_token,
+      last_sync_at: new Date().toISOString(),
+    });
+    return;
+  }
+  await supabaseAdmin
+    .from("whoop_tokens")
+    .update({ last_sync_at: new Date().toISOString() })
+    .eq("user_id", user_id);
+}
+
 export async function incrementalSyncForUser(
   user_id: string,
   daysBack = 3,
@@ -380,6 +448,16 @@ export async function incrementalSyncForUser(
   const end = isoDateOnly(new Date());
   const start = isoDateOnly(new Date(Date.now() - daysBack * 24 * 3600 * 1000));
   const result = await syncWhoopRange(user_id, start, end);
+  if (isCloudflareBackend(getBindings())) {
+    const existing = await readWhoopToken(user_id);
+    if (existing) {
+      await upsertWhoopToken(user_id, {
+        access_token: existing.access_token,
+        last_sync_at: new Date().toISOString(),
+      });
+    }
+    return result;
+  }
   await supabaseAdmin
     .from("whoop_tokens")
     .update({ last_sync_at: new Date().toISOString() })
@@ -391,9 +469,13 @@ export async function syncAllConnectedUsers(): Promise<{
   ok: true;
   results: Array<{ user_id: string; days?: number; error?: string; skipped?: string }>;
 }> {
-  const { data: tokens } = await supabaseAdmin
-    .from("whoop_tokens")
-    .select("user_id, sync_interval_hours, updated_at, last_sync_at");
+  const tokens = isCloudflareBackend(getBindings())
+    ? await listWhoopTokens()
+    : (
+        await supabaseAdmin
+          .from("whoop_tokens")
+          .select("user_id, sync_interval_hours, updated_at, last_sync_at")
+      ).data;
   const results: Array<{
     user_id: string;
     days?: number;

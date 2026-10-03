@@ -8,6 +8,7 @@ import { apiFrom } from "./d1/api-query-builder";
 import { invokePurpleEdgeFunction } from "./invoke-edge";
 import {
   clearCloudflareSession,
+  ensureFreshCloudflareSession,
   getCloudflareSession,
   setCloudflareSession,
   type CloudflareSession,
@@ -61,12 +62,84 @@ function toSupabaseSession(cf: CloudflareSession) {
   };
 }
 
+type CareHandler = (payload: { new: Record<string, unknown> }) => void;
+
+function threadIdFromFilter(filter: unknown): string | null {
+  if (!filter || typeof filter !== "object") return null;
+  const raw = (filter as { filter?: unknown }).filter;
+  if (typeof raw !== "string") return null;
+  const match = /^thread_id=eq\.(.+)$/.exec(raw);
+  return match?.[1] ?? null;
+}
+
+function createCareChannel(_name: string) {
+  const handlers: CareHandler[] = [];
+  let table = "";
+  let threadId: string | null = null;
+  let timer: ReturnType<typeof setInterval> | null = null;
+  let since = new Date().toISOString();
+  let stopped = false;
+
+  const poll = async () => {
+    if (stopped || table !== "care_messages" || !threadId) return;
+    await ensureFreshCloudflareSession();
+    const session = getCloudflareSession();
+    if (!session?.access_token) return;
+    const res = await fetch("/api/realtime/care-messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ threadId, since }),
+    }).catch(() => null);
+    if (!res?.ok) return;
+    const body = (await res.json().catch(() => ({}))) as {
+      messages?: Array<Record<string, unknown>>;
+    };
+    for (const row of body.messages ?? []) {
+      const created = typeof row.created_at === "string" ? row.created_at : "";
+      if (created && created > since) since = created;
+      for (const handler of handlers) handler({ new: row });
+    }
+  };
+
+  return {
+    on(_event: string, filter: unknown, cb: CareHandler) {
+      if (filter && typeof filter === "object") {
+        const record = filter as { table?: string };
+        if (record.table) table = record.table;
+        threadId = threadIdFromFilter(filter) ?? threadId;
+      }
+      handlers.push(cb);
+      return this;
+    },
+    subscribe() {
+      if (timer == null && typeof window !== "undefined") {
+        void poll();
+        timer = window.setInterval(() => {
+          void poll();
+        }, 2000);
+      }
+      return this;
+    },
+    unsubscribe() {
+      stopped = true;
+      if (timer != null) {
+        window.clearInterval(timer);
+        timer = null;
+      }
+    },
+  };
+}
+
 export function createCloudflareSupabaseShim(userId?: string) {
   const scopedUserId = userId;
 
   return {
     auth: {
       async getSession() {
+        await ensureFreshCloudflareSession();
         const cf = getCloudflareSession();
         if (!cf) return { data: { session: null }, error: null };
         return { data: { session: toSupabaseSession(cf) }, error: null };
@@ -102,6 +175,7 @@ export function createCloudflareSupabaseShim(userId?: string) {
         if (error) return { data: { session: null, user: null }, error };
         const cf: CloudflareSession = {
           access_token: data.access_token as string,
+          refresh_token: data.refresh_token as string | undefined,
           expires_in: (data.expires_in as number) ?? 3600,
           user: data.user as CloudflareSession["user"],
         };
@@ -117,6 +191,7 @@ export function createCloudflareSupabaseShim(userId?: string) {
         if (error) return { data: { session: null, user: null }, error };
         const cf: CloudflareSession = {
           access_token: data.access_token as string,
+          refresh_token: data.refresh_token as string | undefined,
           expires_in: (data.expires_in as number) ?? 3600,
           user: data.user as CloudflareSession["user"],
         };
@@ -228,19 +303,11 @@ export function createCloudflareSupabaseShim(userId?: string) {
         }));
       },
     },
-    channel(_name: string) {
-      const handlers: Array<(payload: unknown) => void> = [];
-      return {
-        on(_event: string, _filter: unknown, cb: (payload: unknown) => void) {
-          handlers.push(cb);
-          return this;
-        },
-        subscribe() {
-          return this;
-        },
-      };
+    channel(name: string) {
+      return createCareChannel(name);
     },
-    removeChannel() {
+    removeChannel(channel?: { unsubscribe?: () => void }) {
+      channel?.unsubscribe?.();
       return Promise.resolve({ error: null });
     },
   };

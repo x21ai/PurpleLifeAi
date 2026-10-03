@@ -45,7 +45,8 @@ function ResetPasswordPage() {
 
     void (async () => {
       if (isCloudflareClient() && typeof window !== "undefined") {
-        const token = new URLSearchParams(window.location.search).get("token");
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get("reset_token") ?? params.get("token");
         if (token) {
           setReady(true);
           setLinkExpired(false);
@@ -135,7 +136,8 @@ function ResetPasswordPage() {
     }
     setStatus("submitting");
     if (isCloudflareClient() && typeof window !== "undefined") {
-      const token = new URLSearchParams(window.location.search).get("token");
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get("reset_token") ?? params.get("token");
       const res = await fetch("/api/auth/update-password", {
         method: "POST",
         headers: {
@@ -147,6 +149,7 @@ function ResetPasswordPage() {
       if (token) {
         const url = new URL(window.location.href);
         url.searchParams.delete("token");
+        url.searchParams.delete("reset_token");
         window.history.replaceState({}, "", url.pathname);
       }
       if (!res.ok) {

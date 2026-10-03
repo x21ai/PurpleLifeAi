@@ -187,7 +187,7 @@ class _DocumentsBodyState extends State<_DocumentsBody> {
         TextField(
           controller: _searchController,
           onChanged: (v) => setState(() => _query = v),
-          style: const TextStyle(color: PloyColors.ink),
+          style: TextStyle(color: PloyColors.ink),
           decoration: InputDecoration(
             hintText: 'Search reports',
             hintStyle: TextStyle(color: PloyColors.fromWhiteAlpha(0.4)),

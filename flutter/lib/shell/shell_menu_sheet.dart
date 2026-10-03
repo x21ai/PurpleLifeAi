@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../auth/auth_state.dart';
 import '../design/glass_surface.dart';
+import '../design/ploy_colors.dart';
 import '../design/purple_theme.dart';
 import '../design/tokens.dart';
 import '../features/account/profile_avatar.dart';
@@ -90,7 +91,7 @@ class ShellMenuPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final radius = PurpleTokens.loaded.radius.sheetCard;
     final glassBorder =
-        parseTokenColor(PurpleTokens.loaded.glassFor('dark').border);
+        parseTokenColor(PurpleTokens.loaded.glassFor(PloyColors.appearance).border);
 
     Future<void> navigateTo(String target) async {
       // Capture router before dismissing the drawer. Popping the endDrawer can
